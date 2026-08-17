@@ -605,6 +605,50 @@ several events inside one frame. The handler now acts on a ref; the state exists
 
 ---
 
+## The reduced-motion test failed, and it was right to
+
+`prefers-reduced-motion` had been written since step 3 and never observed, because it cannot be set
+from inside the page. Every previous verification was reading the code and believing it.
+
+The first browser test of it failed, and chasing why turned up two separate things.
+
+**`test.use({ reducedMotion: "reduce" })` never reached the page.** Inside a block named "with
+reduced motion", `matchMedia` reported `false`. The behavioural assertions had been passing anyway,
+which is the worst available outcome: a green test making a claim about the *normal* path while
+wearing the name of the reduced one. The context is now built explicitly, and the emulation is
+asserted before anything else, so the test cannot pass for the wrong reason again.
+
+**The spring overshot its destination, by an amount that varied with frame rate.** Measured at
+145.6, 146.3, 149.9 and 160.5 degrees against a target of 145. Varying with frame rate is the
+signature of an integrator rather than of a physics choice: semi-implicit Euler on a stiffness-100
+spring is only stable while `stiffness * dt^2` stays small, and the 50ms frame clamp is not small
+enough. So a slow machine got the bounce that critical damping was chosen to prevent.
+
+The flight is now integrated in fixed 1/120s slices, which makes it identical at 15fps and 120fps
+and means a reset takes the same second everywhere. A test asserts the entrance settles within
+0.001 degrees of the framing shot.
+
+Worth keeping: **the reduced-motion path itself was correct all along.** The test that failed found
+a bug in the *other* path, and would never have been written if the setting had been left as a
+claim.
+
+---
+
+## Five browser tests, and they stay out of CI
+
+Everything decidable from pure logic already is: association, eviction, filters, the front-spawning
+rule, the update budget. What is left for a browser is the handful of claims that only exist once
+WebGL, real CSS and a real event loop are involved.
+
+They are **not in CI**, for the same reason the live-API tests are not: `waitForData` waits on two
+real agencies, so a quiet planet or an agency doing maintenance would fail the build for reasons
+that are not the code's fault. Run with `pnpm test:e2e`.
+
+**This is a known gap, not a decision I am happy with.** Routing both feeds to the committed
+fixtures would make them deterministic and CI-able, and it is the obvious next improvement.
+
+---
+
 ## Open, and honestly so
 
 - **Reduced motion is written but not observed.** The code path skips momentum and snaps the reset,

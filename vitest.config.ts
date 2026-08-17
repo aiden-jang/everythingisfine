@@ -28,6 +28,8 @@ export default defineConfig({
     exclude: [
       "**/node_modules/**",
       "**/dist/**",
+      // Playwright owns these; vitest would import @playwright/test and fail on the first line.
+      "**/e2e/**",
       ...(includeLive ? [] : ["**/*.live.test.ts"]),
     ],
   },
