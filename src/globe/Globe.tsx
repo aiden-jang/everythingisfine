@@ -22,9 +22,13 @@ export interface GlobeProps {
   onSelect: (key: string | null) => void;
   /** Handed a fly function once, so the rail can send the camera to a region. */
   onReady: (flyTo: (lon: number, lat: number, zoom?: number) => void) => void;
+  /** Called as the camera moves, so the permalink can carry where somebody is looking. */
+  onCamera?: (state: { lon: number; lat: number; zoom: number }) => void;
 }
 
-export function Globe({ feed, filters, selected, ramp, onSelect, onReady }: GlobeProps): JSX.Element {
+export function Globe({
+  feed, filters, selected, ramp, onSelect, onReady, onCamera,
+}: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
   const marker = useRef<HTMLDivElement>(null);
@@ -39,6 +43,8 @@ export function Globe({ feed, filters, selected, ramp, onSelect, onReady }: Glob
    */
   const live = useRef({ filters, selected });
   live.current = { filters, selected };
+  const onCameraRef = useRef(onCamera);
+  onCameraRef.current = onCamera;
 
   useEffect(() => {
     const el = canvas.current;
@@ -96,6 +102,7 @@ export function Globe({ feed, filters, selected, ramp, onSelect, onReady }: Glob
       const expanding = globe.rings.step(dt) > 0;
       globe.render();
       placeOverlays();
+      onCameraRef.current?.(globe.controls.state());
       if (moving || expanding) requestAnimationFrame(frame);
       else running = false;
     };

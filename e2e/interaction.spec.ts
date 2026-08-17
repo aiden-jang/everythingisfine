@@ -160,3 +160,52 @@ test("the entrance settles exactly on the framing shot", async ({ page }) => {
     timeout: 10_000,
   }).toBe(true);
 });
+
+/*
+ * A permalink has to survive leaving the machine that made it.
+ *
+ * The failure this guards against is subtle and would look like success: the store's key is an
+ * arrival counter, so a link carrying `q12` restores *a* twelfth event, just not the same one. This
+ * asserts the link names the event the way the agency does, and that a fresh page finds it again.
+ */
+test("a shared link restores the view on a fresh page", async ({ page }) => {
+  await page.goto("/");
+  await waitForData(page);
+
+  const items = page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button");
+  await items.first().focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator(".zone-panel")).toBeVisible();
+  const pinnedText = await page.locator(".zone-panel").innerText();
+
+  await page.getByRole("button", { name: /colourblind ramp/i }).click();
+  await expect.poll(async () => page.evaluate(() => window.location.hash), { timeout: 5_000 })
+    .toMatch(/e=(usgs|emsc):/);
+
+  const link = await page.evaluate(() => window.location.href);
+  expect(link).toMatch(/r=cividis/);
+  // Never our own key, which means nothing on another machine.
+  expect(link).not.toMatch(/e=q[a-z0-9]+(&|$)/);
+
+  const fresh = await page.context().newPage();
+  await fresh.goto(link);
+  await waitForData(fresh);
+
+  await expect(fresh.locator(".zone-panel")).toBeVisible();
+  await expect(fresh.getByRole("button", { name: /colourblind ramp/i }))
+    .toHaveAttribute("aria-pressed", "true");
+  // The same earthquake, not merely some earthquake.
+  expect(await fresh.locator(".zone-panel").innerText())
+    .toContain(pinnedText.match(/M \d+\.\d/)![0]);
+  await fresh.close();
+});
+
+test("a link naming an event that has aged out says so", async ({ page }) => {
+  await page.goto("/#at=140,35,1.4&m=2&w=24&s=emsc,usgs&r=thermal&e=usgs:us1000gonelongago");
+  await waitForData(page);
+
+  // Silently opening no panel would look like the link was broken. The app knows why, so it says
+  // why, which is the same honesty the window's left edge gets.
+  await expect(page.locator(".zone-rail")).toContainText("no longer in the window");
+  await expect(page.locator(".zone-panel")).toHaveCount(0);
+});
