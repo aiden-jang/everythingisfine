@@ -36,6 +36,28 @@ export function midpoint(
   return [lon, (aLat + bLat) / 2];
 }
 
+/** Mean Earth radius. The value the two agencies' own distance figures are quoted against. */
+export const EARTH_RADIUS_KM = 6371;
+
+/**
+ * Great-circle distance in kilometres.
+ *
+ * Haversine rather than the shorter law-of-cosines form, which loses precision to floating point
+ * at small separations. Small separations are the entire use here: deciding whether two agencies
+ * are describing the same rupture turns on tens of kilometres, and that is exactly where the cheap
+ * formula degrades.
+ */
+export function distanceKm(
+  aLon: number, aLat: number, bLon: number, bLat: number,
+): number {
+  const dLat = (bLat - aLat) * DEG;
+  const dLon = (bLon - aLon) * DEG;
+  const s1 = Math.sin(dLat / 2);
+  const s2 = Math.sin(dLon / 2);
+  const h = s1 * s1 + Math.cos(aLat * DEG) * Math.cos(bLat * DEG) * s2 * s2;
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
 /** Great-circle-ish edge length in degrees. Cheap and only ever used as a subdivision threshold. */
 export function spanDeg(aLon: number, aLat: number, bLon: number, bLat: number): number {
   let d = bLon - aLon;
