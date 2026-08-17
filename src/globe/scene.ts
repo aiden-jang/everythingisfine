@@ -3,8 +3,11 @@ import {
   LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene,
   ShaderMaterial, SphereGeometry, WebGLRenderer,
 } from "three";
-import { buildLand, RADIUS_GRATICULE, RADIUS_SPHERE } from "../geo/land";
+import {
+  buildLand, RADIUS_ATMOSPHERE, RADIUS_GRATICULE, RADIUS_SPHERE, type LandGeometry,
+} from "../geo/land";
 import { DEG, graticule } from "../geo/sphere";
+import { createControls, type Controls } from "./controls";
 
 /*
  * The globe, and nothing on it yet.
@@ -63,7 +66,8 @@ export interface Globe {
   resize: () => void;
   render: () => void;
   dispose: () => void;
-  stats: { vertices: number; triangles: number; segments: number };
+  controls: Controls;
+  stats: LandGeometry["stats"];
 }
 
 export function createGlobe(canvas: HTMLCanvasElement): Globe {
@@ -73,15 +77,17 @@ export function createGlobe(canvas: HTMLCanvasElement): Globe {
   const scene = new Scene();
   const camera = new PerspectiveCamera(FOV, 1, 0.1, 100);
 
-  // Two nested groups rather than one Euler with a chosen order: the inner spin picks the
-  // longitude and the outer tilt picks the latitude, and reading that off two lines beats
-  // remembering which way round three.js composes 'XYZ'.
-  const tilt = new Group();
+  /*
+   * The globe never moves. The camera orbits it.
+   *
+   * The first pass rotated two nested groups and left the camera parked on +Z, which draws the same
+   * picture and is the wrong model the moment anything has to be picked. Every question this app
+   * asks is geographic: what is under the pointer, where is this event, where should the camera fly.
+   * With the geometry pinned to true coordinates those are all answered in degrees; with the world
+   * spinning underneath, every one of them first needs undoing by a rotation.
+   */
   const spin = new Group();
-  tilt.add(spin);
-  scene.add(tilt);
-  tilt.rotation.x = FRAMING.lat * DEG;
-  spin.rotation.y = -FRAMING.lon * DEG;
+  scene.add(spin);
 
   const ocean = new Mesh(
     new SphereGeometry(RADIUS_SPHERE, 96, 64),
@@ -135,7 +141,7 @@ export function createGlobe(canvas: HTMLCanvasElement): Globe {
   // The shell is only a container: it has to be wider than uOuter so the falloff is not clipped by
   // its own geometry, and beyond that its radius does not affect the picture.
   const rim = new Mesh(
-    new SphereGeometry(1.3, 64, 48),
+    new SphereGeometry(RADIUS_ATMOSPHERE, 64, 48),
     new ShaderMaterial({
       ...ATMOSPHERE,
       uniforms: {
@@ -151,6 +157,8 @@ export function createGlobe(canvas: HTMLCanvasElement): Globe {
   );
   scene.add(rim);
 
+  const controls = createControls(camera, canvas, FRAMING, FOV);
+
   const resize = (): void => {
     const parent = canvas.parentElement;
     if (!parent) return;
@@ -160,17 +168,18 @@ export function createGlobe(canvas: HTMLCanvasElement): Globe {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
+    camera.updateProjectionMatrix();
 
     // Fit by whichever dimension is tighter. Fitting by height alone puts the globe off both
-    // sides of a phone; fitting by width alone leaves it swimming on a desktop.
-    const halfAngle = (FOV / 2) * DEG;
+    // sides of a phone; fitting by width alone leaves it swimming on a desktop. Zoom is a
+    // multiple of this, so a resize rescales the view without throwing away where you were.
     const limiting = Math.min(1, camera.aspect);
-    camera.position.set(0, 0, 1 / (FILL * Math.tan(halfAngle) * limiting));
-    camera.updateProjectionMatrix();
+    controls.setFit(1 / (FILL * Math.tan((FOV / 2) * DEG) * limiting));
   };
 
   return {
     resize,
+    controls,
     render: () => renderer.render(scene, camera),
     dispose: () => {
       scene.traverse((o) => {

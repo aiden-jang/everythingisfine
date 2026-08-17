@@ -272,6 +272,10 @@ chrome is what makes a moving arc read as real.
 
 - Camera: orbit with damping and momentum, zoom toward the cursor rather than the screen centre,
   clamped so the globe cannot be entered or lost. Double-click returns to the framing shot.
+- **North stays up.** The globe never rolls, which means a drag does not track exactly what it
+  grabbed away from the equator: 0.2px of slip at the equator, 4.4px at the framing latitude, 53px
+  at 70 degrees. Exact tracking needs rotation about an arbitrary axis, and a map whose north
+  wanders is a worse instrument than one that slips a little up north.
 - Wavefront rings: expansion rate is P-wave velocity, not a duration. See 3.3.
 - Springs (`stiffness 100, damping 20`) for the camera, not for the data, which should feel physical
   rather than bouncy.

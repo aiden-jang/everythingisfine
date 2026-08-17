@@ -42,6 +42,15 @@ const RADIUS_COAST = 1.004;
 export const RADIUS_SPHERE = R_SPHERE;
 export const RADIUS_GRATICULE = 1.003;
 
+/**
+ * Outer shell carrying the rim light.
+ *
+ * Exported because the camera has to stay outside it. Fly inside an additively blended backside
+ * shell and it stops being a halo at the horizon and becomes a wash over the entire screen. The
+ * two constants live one import apart rather than as unrelated numbers in two files.
+ */
+export const RADIUS_ATMOSPHERE = 1.3;
+
 type Ring = number[][];
 
 /**
