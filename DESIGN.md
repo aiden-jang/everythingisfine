@@ -342,8 +342,21 @@ buffer writes, filter predicates, projection maths. That is deterministic and ca
 The reference machine is named and dated wherever a GPU number is published. "60fps at 10k points"
 without the hardware attached is not a measurement.
 
-- **Bundle:** 200KB gzipped application JavaScript, plus 120KB coastline geometry, measured
-  separately so a geometry swap cannot hide a code regression.
+**Bundle: four numbers, not one.** The original single 200KB figure was written before three.js was
+measured, and three.js alone is 127KB gzipped. Under one number an app-code regression of 20KB reads
+as 10% drift; against the thing that actually changed it is a third of the budget. Vendors are paid
+for once and never move; application code and geometry are what drift, so they are watched apart.
+
+| Chunk | Budget (gzip) | At step 2 |
+|---|---|---|
+| Application code | 60KB | 2.3KB |
+| Coastline geometry | 40KB | 26.5KB |
+| three.js | 135KB | 127.3KB |
+| React | 50KB | 45.7KB |
+
+If application code ever genuinely needs more than 60KB, the 40KB sitting in React is the lever:
+nothing here uses React beyond components and effects, so `preact/compat` reclaims most of it. That
+is a deliberate reserve, not a plan.
 - **First arc in flight** within 2.5s on a 4x CPU throttle over a slow connection.
 - **Memory flat over a simulated 4-hour session**, ring buffer capped, drift under 5MB. This is the
   failure that only appears in the demo left running during an interview.
