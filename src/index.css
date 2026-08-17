@@ -1,0 +1,158 @@
+@import "tailwindcss";
+
+/* Self-hosted rather than linked from a font CDN. Geist over Inter: Inter is the default-looking
+   choice and reads as unconsidered. Geist Mono carries every coordinate, timestamp and magnitude. */
+/* `wght` rather than the index: upright axis only, no italic faces, and nothing here is italic.
+   The subsets are left alone deliberately. They look like dead weight in the build output but each
+   carries a `unicode-range`, so a browser fetches Cyrillic only if a glyph needs it, and EMSC
+   region strings do reach past ASCII. Dropping them would trade a real tofu risk for zero bytes. */
+@import "@fontsource-variable/geist/wght.css";
+@import "@fontsource-variable/geist-mono/wght.css";
+
+@theme {
+  /* Chrome. Achromatic on purpose.
+     The default magnitude ramp is warm and the colourblind-safe ramp runs blue to yellow; between
+     them they occupy most of the wheel. Hue-free chrome is the only choice that survives both, which
+     is why this is a constraint rather than a preference. See DESIGN.md section 3. */
+  --color-void: #070b14;
+  --color-sphere: #0a101c;
+  --color-land: #151d2e;
+  --color-coast: #243149;
+  --color-deck: #0d1420;
+  --color-raised: #141c2b;
+  --color-hairline: rgb(148 163 184 / 0.14);
+  --color-ink: #e8edf5;
+  --color-dim: #8a96ac;
+  --color-faint: #55617a;
+
+  /* The one named exception, per DESIGN.md 3.1: it sits on the silhouette where no marker is drawn
+     and never encodes a value. Named because an unstated exception becomes a precedent. */
+  --color-rim: rgb(120 150 190 / 0.16);
+
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@layer base {
+  html {
+    background: var(--color-void);
+    color-scheme: dark;
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-void);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    /* Horizontal overflow at any width is a build failure here, not a cosmetic bug. */
+    overflow-x: hidden;
+  }
+
+  /* Every number on screen updates. Proportional figures make a one-second counter jitter its own
+     width, which is the whole difference between a readout that looks solid and one that looks
+     twitchy. Applied globally so it cannot be forgotten on the one component that matters. */
+  :where(body) {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Chrome communicates focus by brightness and a ring, never by hue. ~11:1 against Deck. */
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+
+  /* The companion rule. Without it, clicking the canvas paints a ring nobody asked for. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+}
+
+/* The three-zone frame.
+   Written as grid areas in plain CSS rather than a wall of arbitrary-value utilities, because the
+   whole point is that three breakpoints reorder the same three zones and that map should be
+   readable in one place. Rows and columns only: no flexbox percentage maths anywhere. */
+@layer components {
+  .frame {
+    display: grid;
+    height: 100dvh; /* never 100vh: the iOS Safari URL bar makes it jump */
+    grid-template-rows: auto 1fr;
+  }
+
+  .zones {
+    display: grid;
+    min-height: 0; /* or the canvas row refuses to shrink and the page grows a scrollbar */
+    /* Phone: globe on top, rail becomes a sheet you scroll under it. A passive watchable
+       visualization gets most of its shared links opened on a phone. */
+    grid-template-rows: 60dvh 1fr;
+    grid-template-areas: "canvas" "rail";
+  }
+
+  @media (min-width: 768px) {
+    .zones {
+      grid-template-rows: auto 1fr;
+      grid-template-areas: "rail" "canvas";
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .zones {
+      grid-template-rows: 1fr;
+      /* The panel column is `auto`, so it costs nothing until an event is pinned and the globe
+         does not get shoved sideways when one is. */
+      grid-template-columns: 320px minmax(0, 1fr) auto;
+      grid-template-areas: "rail canvas panel";
+    }
+  }
+
+  .zone-rail {
+    grid-area: rail;
+  }
+
+  /* Phone only: the rail is a sheet, so it scrolls inside its own row. `min-height: 0` is the part
+     that matters, since a grid item defaults to min-content and would push the page taller instead
+     of scrolling once the regions list fills with real data. */
+  @media (max-width: 767px) {
+    .zone-rail {
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+    }
+  }
+
+  /* The rail stacks in the two layouts where it owns a column, and lies down in the one where it
+     owns a row. Stacked in a 768px-wide band it is 267px tall, which is a column wearing a strip's
+     name and costs the globe a third of its height. */
+  .rail {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  @media (min-width: 768px) and (max-width: 1279px) {
+    .rail {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 2rem;
+    }
+    .rail > * {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+  }
+  .zone-canvas {
+    grid-area: canvas;
+    min-width: 0;
+    min-height: 0;
+  }
+  .zone-panel {
+    grid-area: panel;
+  }
+}
+
+@utility label {
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  color: var(--color-faint);
+  text-transform: uppercase;
+}
