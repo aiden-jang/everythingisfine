@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Globe } from "./globe/Globe";
 
 /*
  * Step 1 of PLAN.md: the frame, and nothing inside it.
@@ -69,7 +70,11 @@ export function App({ detail }: { detail?: ReactNode }): JSX.Element {
       <Header />
       <div className="zones">
         <Rail />
-        <main className="zone-canvas bg-void" aria-label="Globe" />
+        {/* Hidden from assistive tech from the very first commit. The parallel accessible feed in
+            step B is the real interface for a screen reader; the canvas is never it. */}
+        <main className="zone-canvas bg-void" aria-hidden="true">
+          <Globe />
+        </main>
         {detail ? (
           <aside className="zone-panel w-[360px] border-l border-hairline bg-deck p-4">{detail}</aside>
         ) : null}
