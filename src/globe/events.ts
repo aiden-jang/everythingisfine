@@ -175,6 +175,11 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
         // Inlined rather than calling toVec3, which returns a fresh three-element array. At fifty
         // thousand events that is fifty thousand short-lived arrays per filter tick, and the
         // allocation dominates the trigonometry it was hiding.
+        // Nothing but numbers is written in here. An earlier version also stored each event's key
+        // in a parallel string array so hover could search it, and that one pointer store per event
+        // cost 40% of the 50,000-event budget: a typed-array write is a store, a reference write is
+        // a store plus a garbage-collector write barrier. Hit testing now works from geography
+        // instead, and never touches this loop.
         const phi = r.lat * DEG;
         const lam = r.lon * DEG;
         const c = Math.cos(phi) * RADIUS_EVENTS;

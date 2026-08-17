@@ -150,6 +150,71 @@
   }
 }
 
+/*
+ * The magnitude slider.
+ *
+ * Styled because it arrived blue. `accent-color` defaults to the platform's highlight colour, so
+ * the one interactive control in the rail was rendering a saturated system hue directly beside a
+ * data ramp, which is the exact confusion DESIGN.md section 3 exists to prevent. Worth noting that
+ * this was not a decision anybody made: hue got into the chrome through a user-agent default, which
+ * is how it will try to get in again.
+ */
+@layer components {
+  .slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 18px;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  /*
+   * Split, never grouped.
+   *
+   * A selector list containing a pseudo-element the browser does not recognise invalidates the
+   * whole rule, so pairing `::-webkit-slider-runnable-track` with `::-moz-range-track` means
+   * neither engine applies it. The first version did exactly that and the track vanished in every
+   * browser, leaving a white thumb floating on nothing.
+   */
+  .slider::-webkit-slider-runnable-track {
+    height: 2px;
+    background: var(--color-hairline);
+  }
+
+  .slider::-moz-range-track {
+    height: 2px;
+    background: var(--color-hairline);
+  }
+
+  .slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 12px;
+    height: 12px;
+    margin-top: -5px;
+    border-radius: 50%;
+    background: var(--color-ink);
+  }
+
+  .slider::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    border: 0;
+    border-radius: 50%;
+    background: var(--color-ink);
+  }
+
+  /* Tactile, and by brightness rather than by colour, like every other active state here. */
+  .slider:active::-webkit-slider-thumb {
+    background: #ffffff;
+  }
+
+  .slider:active::-moz-range-thumb {
+    background: #ffffff;
+  }
+}
+
 @utility label {
   font-size: 8.5px;
   letter-spacing: 0.16em;

@@ -73,6 +73,10 @@ export interface Controls {
   pick: (clientX: number, clientY: number) => { lon: number; lat: number } | null;
   /** The whole camera in three numbers. This is exactly what a permalink has to carry. */
   state: () => CameraState;
+  /** Springs the camera to a place. Instant under reduced motion, per DESIGN.md section 8. */
+  flyTo: (lon: number, lat: number, zoom?: number) => void;
+  /** Screen position of a geographic point, or null when it is round the back. */
+  project: (lon: number, lat: number) => { x: number; y: number } | null;
 }
 
 export function createControls(
@@ -88,8 +92,15 @@ export function createControls(
 
   let vLon = 0;
   let vLat = 0;
-  let resetting = false;
   let vZoom = 0;
+  /*
+   * Where the camera is being pulled, or null when nothing is pulling it.
+   *
+   * Double-click reset and "fly to this region" are the same motion with different destinations,
+   * so they are one mechanism. Writing the reset as a special case first and then bolting on a
+   * second spring for regions would have given the two an inconsistent feel for no reason.
+   */
+  let target: { lon: number; lat: number; zoom: number } | null = null;
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   const pointers = new Map<number, { x: number; y: number }>();
@@ -99,6 +110,7 @@ export function createControls(
   const raycaster = new Raycaster();
   const ndc = new Vector2();
   const hit = new Vector3();
+  const world = new Vector3();
 
   /**
    * Distance, with a hard floor that does not depend on the zoom clamp being set correctly.
@@ -248,7 +260,7 @@ export function createControls(
       // Touching the globe stops it dead. Coasting through a grab feels broken.
       vLon = 0;
       vLat = 0;
-      resetting = false;
+      target = null;
       lastMove = { x: e.clientX, y: e.clientY, t: performance.now() };
       if (pointers.size === 2) pinchDist = spread();
     };
@@ -338,14 +350,7 @@ export function createControls(
     };
 
     const onDoubleClick = (): void => {
-      if (reduced.matches) {
-        lon = framing.lon;
-        lat = framing.lat;
-        zoom = 1;
-        changed();
-        return;
-      }
-      resetting = true;
+      flyTo(framing.lon, framing.lat, 1);
       onChange();
     };
 
@@ -369,30 +374,32 @@ export function createControls(
   const step = (dt: number): boolean => {
     let moving = false;
 
-    if (resetting) {
+    if (target) {
       // Critically damped, so it arrives without overshooting. An overshoot on a reset reads as a
       // bounce, and a bounce says "animation" where this needs to say "put back".
-      let shortest = framing.lon - lon;
+      // Shortest way round, so flying from 179E to 179W crosses the date line rather than
+      // taking the long way through Greenwich.
+      let shortest = target.lon - lon;
       shortest -= Math.round(shortest / 360) * 360;
-      const acc = (target: number, v: number): number =>
-        SPRING_STIFFNESS * target - SPRING_DAMPING * v;
+      const acc = (gap: number, v: number): number =>
+        SPRING_STIFFNESS * gap - SPRING_DAMPING * v;
 
       vLon += acc(shortest, vLon) * dt;
-      vLat += acc(framing.lat - lat, vLat) * dt;
-      vZoom += acc(1 - zoom, vZoom) * dt;
+      vLat += acc(target.lat - lat, vLat) * dt;
+      vZoom += acc(target.zoom - zoom, vZoom) * dt;
       lon += vLon * dt;
       lat += vLat * dt;
       zoom += vZoom * dt;
 
       const settled =
-        Math.abs(shortest) < 0.05 && Math.abs(framing.lat - lat) < 0.05 &&
-        Math.abs(1 - zoom) < 0.001 && Math.abs(vLon) < 0.5 && Math.abs(vLat) < 0.5;
+        Math.abs(shortest) < 0.05 && Math.abs(target.lat - lat) < 0.05 &&
+        Math.abs(target.zoom - zoom) < 0.001 && Math.abs(vLon) < 0.5 && Math.abs(vLat) < 0.5;
       if (settled) {
-        lon = framing.lon;
-        lat = framing.lat;
-        zoom = 1;
+        lon = target.lon;
+        lat = target.lat;
+        zoom = target.zoom;
         vLon = vLat = vZoom = 0;
-        resetting = false;
+        target = null;
       }
       return true;
     }
@@ -411,11 +418,42 @@ export function createControls(
     return moving;
   };
 
+  function flyTo(toLon: number, toLat: number, toZoom = zoom): void {
+    const clamped = { lon: toLon, lat: clampLat(toLat), zoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, toZoom)) };
+    if (reduced.matches) {
+      // Not eased, not shortened: arrived. A half-disabled motion setting is worse than none.
+      ({ lon, lat, zoom } = clamped);
+      target = null;
+      vLon = vLat = vZoom = 0;
+      apply();
+      return;
+    }
+    vLon = 0;
+    vLat = 0;
+    vZoom = 0;
+    target = clamped;
+  }
+
   return {
     attach,
     step,
     apply,
     pick,
+    flyTo,
+    project: (pLon, pLat) => {
+      const phi = pLat * DEG;
+      const lam = pLon * DEG;
+      const c = Math.cos(phi);
+      world.set(c * Math.sin(lam), Math.sin(phi), c * Math.cos(lam));
+      // Behind the horizon: the surface normal at that point faces away from the eye.
+      if (world.dot(camera.position.clone().sub(world)) <= 0) return null;
+      const r = canvas.getBoundingClientRect();
+      world.project(camera);
+      return {
+        x: r.left + ((world.x + 1) / 2) * r.width,
+        y: r.top + ((1 - world.y) / 2) * r.height,
+      };
+    },
     state: () => ({ lon, lat, zoom }),
     setFit: (d) => {
       fit = d;
