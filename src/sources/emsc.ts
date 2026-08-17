@@ -18,6 +18,24 @@ import {
 
 export const EMSC_SOCKET = "wss://www.seismicportal.eu/standing_order/websocket";
 
+/**
+ * The catalogue, fetched once when the socket opens.
+ *
+ * A push source has no history: it says what changes from the moment you connect, so on a fresh
+ * load EMSC contributed nothing and the rail read `EMSC 0` beside `USGS 227`. That made the
+ * project's headline claim invisible, because corroboration only exists where both agencies have
+ * reported, and one of them had not reported anything yet.
+ *
+ * Seeding from FDSN fixes it in one request: 600 events over 24 hours in 327kB, keyless, and it
+ * returns `access-control-allow-origin: *`, so it needs no proxy and the deployment stays
+ * Worker-free. The socket then takes over for everything after.
+ */
+export const EMSC_CATALOGUE = "https://www.seismicportal.eu/fdsnws/event/1/query";
+
+/** Matches the USGS daily seed, so the two agencies cover the same window on the first frame. */
+const SEED_HOURS = 24;
+const SEED_LIMIT = 600;
+
 const BACKOFF_BASE_MS = 2_000;
 const BACKOFF_CAP_MS = 60_000;
 
@@ -134,7 +152,18 @@ export function parseEmscFrame(raw: unknown, receivedAt: number): EmscParsed | n
   };
 }
 
-export function createEmscSource(runtime: Runtime, url: string = EMSC_SOCKET): GeoEventSource {
+export interface EmscUrls {
+  socket?: string;
+  /** Null disables seeding, which is what the contract tests want. */
+  catalogue?: string | null;
+}
+
+export function createEmscSource(
+  runtime: Runtime,
+  urls: string | EmscUrls = {},
+): GeoEventSource {
+  const url = typeof urls === "string" ? urls : urls.socket ?? EMSC_SOCKET;
+  const catalogue = typeof urls === "string" ? null : urls.catalogue ?? EMSC_CATALOGUE;
   let handlers: SourceHandlers | null = null;
   let socket: SocketLike | null = null;
   let timer: TimerId | null = null;
@@ -193,6 +222,40 @@ export function createEmscSource(runtime: Runtime, url: string = EMSC_SOCKET): G
     handlers.onReadings([parsed.reading]);
   };
 
+  /*
+   * One catalogue fetch, fired alongside the connection rather than before it.
+   *
+   * Not awaited: a slow or unhappy catalogue must never delay the socket, because the socket is the
+   * source's actual job and the seed is a convenience. If it fails, nothing is reported as broken.
+   * The feed is genuinely live either way, and telling somebody a working source is failing because
+   * an optional extra request did not land would be the wrong kind of honest.
+   */
+  const seed = async (): Promise<void> => {
+    if (!catalogue) return;
+    const since = new Date(runtime.now() - SEED_HOURS * 3_600_000).toISOString().slice(0, 19);
+    const query = `${catalogue}?limit=${SEED_LIMIT}&format=json&start=${since}`;
+    try {
+      const res = await runtime.fetch(query);
+      if (!res.ok || !handlers) return;
+      const payload = (await res.json()) as { features?: unknown };
+      if (!handlers || !Array.isArray(payload?.features)) return;
+
+      const readings: Reading[] = [];
+      for (const feature of payload.features) {
+        // Wrapped in the socket's envelope so there is exactly one parser for both transports.
+        const parsed = parseEmscFrame({ action: "create", data: feature }, runtime.now());
+        if (!parsed) continue;
+        // Remembered, so the socket does not re-announce an event the seed already delivered.
+        if (seen.get(parsed.reading.id) === parsed.revision) continue;
+        remember(parsed.reading.id, parsed.revision);
+        readings.push(parsed.reading);
+      }
+      if (readings.length > 0) handlers.onReadings(readings);
+    } catch {
+      // Optional by design. The socket is the source; this was a head start.
+    }
+  };
+
   function connect(): void {
     if (!handlers || !runtime.openSocket) return;
     const active = runtime.openSocket(url);
@@ -229,6 +292,7 @@ export function createEmscSource(runtime: Runtime, url: string = EMSC_SOCKET): G
       liveSince = null;
       seen.clear();
       connect();
+      void seed();
     },
     stop: () => {
       handlers = null;

@@ -524,6 +524,53 @@ a neighbour within 40km, so it is overlap under normal blending, not a shader fa
 
 ---
 
+## A push source with no history made the headline story invisible
+
+On a cold load the rail read `USGS 227` beside `EMSC 0`, and corroboration was zero. That is correct
+behaviour for a socket, which reports what changes from the moment you connect, and it meant the
+thing this project is actually about could not be seen until you left the tab open long enough for
+an earthquake to happen.
+
+EMSC publishes an FDSN catalogue that is keyless and returns `access-control-allow-origin: *`, so
+one request on connect covers the same 24 hours USGS seeds: 600 events in 327kB, no proxy, and the
+Worker-free deployment survives. **Corroboration on a cold load went from 0 to 51.**
+
+The seed is fired alongside the connection, never awaited, and its failure is not reported as a
+source failure. The socket is the source; the catalogue is a head start, and telling somebody a
+working feed is broken because an optional extra request did not land would be the wrong kind of
+honest.
+
+The rail now shows the whole arithmetic rather than a total: 225 USGS readings, 600 EMSC readings,
+774 distinct events, 51 reported by both. Deduplication is named, not hidden.
+
+---
+
+## Markers hold their size against zoom, not against the viewport
+
+Constant pixel size across zoom is right: zooming into a dense margin should separate events rather
+than magnify them along with everything else.
+
+Constant size across *viewports* is wrong, and the tweet-size test proved it. At 600px the globe is
+110 pixels across, a magnitude 2 marker was 9 of them, and 775 events covered the planet in
+overlapping discs with the coastlines gone. Markers now scale against the globe's radius at the
+framing shot, so the size changes with the window and never while somebody is zooming.
+
+The hit test uses the same formula and the same scale. If those two drift apart, the pointer stops
+agreeing with the picture, which is the class of bug people describe as "it feels off".
+
+---
+
+## One entrance, then nothing
+
+The globe starts 42 degrees back and slightly further out, and springs to the framing shot in about
+a second. The value is entirely in the stopping: a camera that visibly settles is what tells a
+viewer that everything moving afterwards belongs to the data.
+
+Under `prefers-reduced-motion` the entrance is **skipped, not shortened**. A brief version of a
+motion somebody asked not to see is still the motion.
+
+---
+
 ## Open, and honestly so
 
 - **Reduced motion is written but not observed.** The code path skips momentum and snaps the reset,

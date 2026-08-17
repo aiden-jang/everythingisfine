@@ -204,6 +204,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   scene.add(rings.object);
 
   const controls = createControls(camera, canvas, FRAMING, FOV);
+  let markerScale = (): number => 1;
 
   const resize = (): void => {
     const parent = canvas.parentElement;
@@ -223,7 +224,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     // sides of a phone; fitting by width alone leaves it swimming on a desktop. Zoom is a
     // multiple of this, so a resize rescales the view without throwing away where you were.
     const limiting = Math.min(1, camera.aspect);
-    controls.setFit(1 / (FILL * Math.tan((FOV / 2) * DEG) * limiting));
+    const fit = 1 / (FILL * Math.tan((FOV / 2) * DEG) * limiting);
+    controls.setFit(fit);
+    // The globe's on-screen radius at the framing shot, which is what marker sizes scale against.
+    const radiusPx = (height / 2) * (1 / (fit * Math.tan((FOV / 2) * DEG)));
+    events.setGlobeRadius(radiusPx);
+    markerScale = () => Math.max(0.45, Math.min(1, radiusPx / 300));
   };
 
   return {
@@ -266,7 +272,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         const at = controls.project(candidate.lon, candidate.lat);
         if (!at) continue;
         const d = Math.hypot(at.x - clientX, at.y - clientY);
-        const radius = 1.7 + 2.9 * Math.sqrt(Math.max(0, candidate.magnitude - 1));
+        // Same formula and same scale as the shader. If these drift, the pointer stops agreeing
+        // with the picture, which is the sort of bug people describe as "it feels off".
+        const radius = (1.7 + 2.9 * Math.sqrt(Math.max(0, candidate.magnitude - 1))) * markerScale();
         if (d > radius + HIT_SLOP_PX) continue;
         // Ranked by how far *outside* the marker the pointer is, so a big marker does not win
         // simply for being big when the pointer is squarely inside a small one on top of it.

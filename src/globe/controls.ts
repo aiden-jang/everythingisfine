@@ -45,6 +45,17 @@ const MOMENTUM_FLOOR = 0.6; // deg/sec, below which it has stopped
  */
 const MOMENTUM_MAX = 200;
 
+/**
+ * How far back the entrance starts, in degrees of longitude.
+ *
+ * One arrival, then nothing. The source doc asks for the globe to rotate into its framing position
+ * and stop, and the value of that is entirely in the stopping: a camera that settles says the
+ * motion afterwards belongs to the data. Forty-two degrees is about a second of critically damped
+ * travel, which is long enough to read as arriving and short enough not to be a title sequence.
+ */
+const ENTRANCE_DEG = 42;
+const ENTRANCE_ZOOM = 0.88;
+
 /** DESIGN.md section 8. Damping 20 against stiffness 100 is exactly critical: no overshoot. */
 const SPRING_STIFFNESS = 100;
 const SPRING_DAMPING = 20;
@@ -75,6 +86,8 @@ export interface Controls {
   state: () => CameraState;
   /** Springs the camera to a place. Instant under reduced motion, per DESIGN.md section 8. */
   flyTo: (lon: number, lat: number, zoom?: number) => void;
+  /** The one entrance. Does nothing at all under reduced motion, which is the correct nothing. */
+  enter: () => void;
   /** Screen position of a geographic point, or null when it is round the back. */
   project: (lon: number, lat: number) => { x: number; y: number } | null;
 }
@@ -440,6 +453,15 @@ export function createControls(
     apply,
     pick,
     flyTo,
+    enter: () => {
+      // Not shortened under reduced motion, skipped. A brief version of a motion somebody asked
+      // not to see is still the motion.
+      if (reduced.matches) return;
+      lon = framing.lon - ENTRANCE_DEG;
+      zoom = ENTRANCE_ZOOM;
+      apply();
+      target = { lon: framing.lon, lat: framing.lat, zoom: 1 };
+    },
     project: (pLon, pLat) => {
       const phi = pLat * DEG;
       const lam = pLon * DEG;

@@ -148,8 +148,10 @@ export function App(): JSX.Element {
                 />
               );
             })}
-            {/* Deduplication is labelled, never hidden inside one total. */}
-            <Row label="reconciled" value={`${snapshot.stats.quakes}`} />
+            {/* Deduplication is labelled, never hidden inside one total: the two raw counts sit
+                above, the distinct total below, and the overlap between them is named. */}
+            <Row label="distinct events" value={`${snapshot.stats.quakes}`} />
+            <Row label="both agencies" value={`${snapshot.stats.corroborated}`} />
           </div>
 
           <div>
