@@ -776,8 +776,28 @@ consecutive runs now read 6.26, 6.45 and 6.61ms.
 
 ## Open, and honestly so
 
-- **Reduced motion is written but not observed.** The code path skips momentum and snaps the reset,
-  but it has not been run under an actual `prefers-reduced-motion: reduce` setting. Playwright can
-  emulate it and that belongs in step B rather than being claimed now.
-- **GPU frame time has never been measured**, because until step 7 there is nothing on the globe
-  whose cost would mean anything.
+Written last, and kept accurate rather than kept short.
+
+- **Aftershocks can be swallowed.** Association uses time and distance, and the two populations
+  genuinely overlap: real matched pairs reach 16.7 seconds and 135km, which is squarely inside
+  aftershock territory. No threshold separates them without dropping genuine matches. The detail
+  panel lists every merged reading so a wrong merge is visible, which is the difference between a
+  limitation and a lie, but it is a real limitation and not a rare one during a sequence.
+
+- **Browser tests are not in CI.** They wait on two real agencies, so a quiet planet or an agency
+  doing maintenance would fail the build for reasons that are not the code's fault. Routing both
+  feeds to the committed fixtures would make them deterministic and CI-able. Not done.
+
+- **GPU frame time has never been measured with a profiler.** The CPU budget is gated and recorded;
+  the rendering side has only ever been judged by looking at it. Nothing has suggested a problem,
+  and "nothing has suggested a problem" is not a measurement.
+
+- **The window cannot go back before the page opened.** No backend, so time scrubbing was rejected
+  rather than shipped as a worse version of itself.
+
+- **Dense sequences are legible but not readable.** 400 events in the Flores Sea collapse to a
+  handful of markers. That is better than a blob and it is still not the same as being able to read
+  the sequence; a timeline would serve it and is out of scope.
+
+- **No demo video.** The write-up asks for one and there is none, because recording it was not
+  something this build could do.
