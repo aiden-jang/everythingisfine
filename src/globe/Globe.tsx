@@ -93,6 +93,7 @@ export function Globe({
      */
     let running = false;
     let last = 0;
+    let lastZoom = globe.controls.state().zoom;
 
     const frame = (now: number): void => {
       const dt = Math.min((now - last) / 1000, 0.05); // clamped, or a backgrounded tab lurches
@@ -100,6 +101,12 @@ export function Globe({
       const moving = globe.controls.step(dt);
       globe.controls.apply();
       const expanding = globe.rings.step(dt) > 0;
+      // Clustering depends on zoom, so a zoom has to redraw the layer, not merely the camera.
+      const zoomNow = globe.controls.state().zoom;
+      if (Math.abs(zoomNow - lastZoom) > 0.001) {
+        lastZoom = zoomNow;
+        globe.events.sync(feed.store, live.current.filters, Date.now(), zoomNow);
+      }
       globe.render();
       placeOverlays();
       onCameraRef.current?.(globe.controls.state());
@@ -115,7 +122,7 @@ export function Globe({
     };
 
     const redraw = (): void => {
-      globe.events.sync(feed.store, live.current.filters, Date.now());
+      globe.events.sync(feed.store, live.current.filters, Date.now(), globe.controls.state().zoom);
       globe.render();
       placeOverlays();
     };
@@ -128,7 +135,7 @@ export function Globe({
     };
 
     const redrawFromData = (snapshot: FeedSnapshot): void => {
-      globe.events.sync(feed.store, live.current.filters, Date.now());
+      globe.events.sync(feed.store, live.current.filters, Date.now(), globe.controls.state().zoom);
       // A front per arrival, except on the seed. See `frontsFor`.
       const fronts = frontsFor(snapshot);
       for (const quake of fronts) {

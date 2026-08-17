@@ -4,6 +4,7 @@ import type { Store } from "../data/store";
 import { matches } from "../data/filter";
 import { DEG } from "../geo/sphere";
 import { MAG_MIN, rampPosition, rampTexture, type RampName } from "./ramp";
+import { cellKey, cellSizeDeg } from "./cluster";
 
 /*
  * Fifty thousand earthquakes, drawn once.
@@ -47,6 +48,7 @@ const REFERENCE_RADIUS_PX = 300;
 const SHADER = {
   vertexShader: /* glsl */ `
     attribute float aMag;
+    attribute float aCluster;
     uniform float uPixelRatio;
     uniform float uBase;
     uniform float uScale;
@@ -54,8 +56,10 @@ const SHADER = {
     uniform float uMagMin;
     varying float vRamp;
     varying float vFacing;
+    varying float vCluster;
 
     void main() {
+      vCluster = aCluster;
       vec4 world = modelMatrix * vec4(position, 1.0);
       // The globe is a unit sphere at the origin, so the surface normal is the position itself.
       // A marker on the far side has its normal pointing away from the eye.
@@ -63,7 +67,9 @@ const SHADER = {
       vFacing = dot(normal, normalize(cameraPosition - world.xyz));
 
       vRamp = clamp((aMag - uMagMin) / 6.5, 0.0, 1.0);
-      float radius = (uBase + uScale * sqrt(max(0.0, aMag - uMagMin))) * uSize;
+      // A collapsed marker is drawn slightly larger so its ring has somewhere to sit, but the fill
+      // inside it still means exactly what every other fill means: the magnitude of an event.
+      float radius = (uBase + uScale * sqrt(max(0.0, aMag - uMagMin))) * uSize + aCluster * 2.0;
 
       gl_Position = projectionMatrix * viewMatrix * world;
       gl_PointSize = 2.0 * radius * uPixelRatio;
@@ -73,6 +79,7 @@ const SHADER = {
     uniform float uOpacity;
     varying float vRamp;
     varying float vFacing;
+    varying float vCluster;
 
     void main() {
       // Discarded rather than depth-tested. The markers sit above the globe's surface, so a
@@ -90,7 +97,23 @@ const SHADER = {
       // strength makes the horizon a bright ring that reads as data.
       float edge = smoothstep(0.0, 0.25, vFacing);
 
-      gl_FragColor = vec4(texture2D(uRamp, vec2(vRamp, 0.5)).rgb, alpha * edge * uOpacity);
+      vec3 colour = texture2D(uRamp, vec2(vRamp, 0.5)).rgb;
+
+      /*
+       * A collapsed marker wears a chrome ring, not a bigger radius or a different hue.
+       *
+       * Radius already means magnitude and hue already means magnitude, so neither is available to
+       * say "this stands for several". The ring is Instrument, the interface colour, which is
+       * exactly right: the fill is data speaking, the ring is the interface admitting it has
+       * folded something up. Without it a cluster is indistinguishable from a single event, which
+       * is hiding data rather than tidying it.
+       */
+      if (vCluster > 0.5) {
+        float ring = smoothstep(0.30, 0.35, d) * (1.0 - smoothstep(0.40, 0.45, d));
+        colour = mix(colour, vec3(0.910, 0.929, 0.961), ring * 0.85);
+      }
+
+      gl_FragColor = vec4(colour, alpha * edge * uOpacity);
     }`,
 };
 
@@ -111,7 +134,7 @@ export interface EventLayer {
    */
   setGlobeRadius: (px: number) => void;
   /** Writes the visible subset into the buffers. Returns how many are drawn. */
-  sync: (store: Store, filters: Filters, now: number) => number;
+  sync: (store: Store, filters: Filters, now: number, zoom: number) => number;
   dispose: () => void;
 }
 
@@ -120,14 +143,20 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
   // a new GPU upload at exactly the moment the app is busiest, which is when a burst arrives.
   const positions = new Float32Array(capacity * 3);
   const magnitudes = new Float32Array(capacity);
+  const clusters = new Float32Array(capacity);
+  /** Reused between syncs. Rebuilding a Map per filter tick is the allocation the budget catches. */
+  const cellFor = new Map<number, number>();
 
   const geometry = new BufferGeometry();
   const positionAttr = new BufferAttribute(positions, 3);
   const magAttr = new BufferAttribute(magnitudes, 1);
+  const clusterAttr = new BufferAttribute(clusters, 1);
   positionAttr.setUsage(35048 /* DynamicDrawUsage */);
   magAttr.setUsage(35048);
+  clusterAttr.setUsage(35048);
   geometry.setAttribute("position", positionAttr);
   geometry.setAttribute("aMag", magAttr);
+  geometry.setAttribute("aCluster", clusterAttr);
   geometry.setDrawRange(0, 0);
   // Never computed. The default bounding sphere pass walks every vertex, and with a draw range
   // that changes on every filter tick that is a full extra sweep of the buffer for nothing.
@@ -186,13 +215,36 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
       material.uniforms["uSize"]!.value = Math.max(0.45, Math.min(1, px / REFERENCE_RADIUS_PX));
     },
 
-    sync: (store, filters, now) => {
+    sync: (store, filters, now, zoom = 3) => {
+      const cell = cellSizeDeg(zoom);
+      cellFor.clear();
       let n = 0;
+
       store.forEach((quake) => {
         if (n >= capacity) return;
         if (!matches(quake, filters, now)) return;
 
         const r = quake.primary;
+
+        /*
+         * One marker per cell, carrying the largest event in it.
+         *
+         * The largest rather than the first or the newest, because the fill still has to mean a
+         * magnitude, and the only magnitude a collapsed marker can honestly claim is the biggest
+         * thing it is standing in front of. Understating it would hide the event a viewer most
+         * needs to see.
+         */
+        if (cell > 0) {
+          const key = cellKey(r.lon, r.lat, cell);
+          const at = cellFor.get(key);
+          if (at !== undefined) {
+            clusters[at] = 1;
+            if (r.magnitude > magnitudes[at]!) magnitudes[at] = r.magnitude;
+            return;
+          }
+          cellFor.set(key, n);
+        }
+        clusters[n] = 0;
         // Inlined rather than calling toVec3, which returns a fresh three-element array. At fifty
         // thousand events that is fifty thousand short-lived arrays per filter tick, and the
         // allocation dominates the trigonometry it was hiding.
@@ -213,6 +265,8 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
       });
 
       geometry.setDrawRange(0, n);
+      clusterAttr.updateRanges = [{ start: 0, count: n }];
+      clusterAttr.needsUpdate = true;
       // Only the written span is uploaded. Handing the driver the whole 50k buffer to redraw 200
       // visible events is the difference between a filter that answers the slider and one that
       // stutters behind it.
@@ -224,6 +278,7 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
     },
 
     dispose: () => {
+      cellFor.clear();
       geometry.dispose();
       material.dispose();
       texture.dispose();
