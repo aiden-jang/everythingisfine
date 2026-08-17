@@ -9,6 +9,7 @@ import {
 import { DEG, graticule } from "../geo/sphere";
 import { createControls, type Controls } from "./controls";
 import { createEventLayer, type EventLayer } from "./events";
+import { createRingLayer, type RingLayer } from "./rings";
 
 /*
  * The globe, and nothing on it yet.
@@ -69,6 +70,7 @@ export interface Globe {
   dispose: () => void;
   controls: Controls;
   events: EventLayer;
+  rings: RingLayer;
   stats: LandGeometry["stats"];
 }
 
@@ -163,6 +165,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   // events off it would only invite someone to rotate one and not the other later.
   const events = createEventLayer(capacity);
   scene.add(events.object);
+  const rings = createRingLayer();
+  scene.add(rings.object);
 
   const controls = createControls(camera, canvas, FRAMING, FOV);
 
@@ -191,9 +195,11 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     resize,
     controls,
     events,
+    rings,
     render: () => renderer.render(scene, camera),
     dispose: () => {
       events.dispose();
+      rings.dispose();
       scene.traverse((o) => {
         if (o instanceof Mesh || o instanceof LineSegments) {
           o.geometry.dispose();

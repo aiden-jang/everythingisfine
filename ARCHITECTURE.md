@@ -417,6 +417,53 @@ DESIGN.md has been corrected rather than quietly diverged from.
 
 ---
 
+## The wavefront rate is derived, and a test keeps it that way
+
+`TRUE_RATE_DEG_PER_S` is computed from `P_WAVE_KM_PER_S / EARTH_RADIUS_KM`, never typed in, and a
+test asserts that 80 seconds of front covers 480km. That sentence appears in DESIGN.md 3.3, and a
+constant written directly is how a claim like it survives a refactor long after the number stopped
+agreeing with it.
+
+Playback is ×20 and the rail prints it. At true rate the front advances 0.16 pixels per second on a
+400px globe, so real rate would have been honest and useless at the same time. A test pins `PLAYBACK`
+to 20 so the label and the behaviour cannot drift apart.
+
+A circle on a sphere needs two vectors perpendicular to its centre, and building that basis from
+the north pole fails when the epicentre *is* the pole. The fallback axis is chosen from whichever
+component of the centre is smallest, and a test spawns fronts at both poles and on the antimeridian
+and asserts every vertex lands on one shell.
+
+---
+
+## The step-8 gate is tested as a rule, because it cannot be observed
+
+The requirement is that a cold load always has a front expanding in the first frame. That cannot be
+watched here: announcements are coalesced through `requestAnimationFrame`, which every headless and
+backgrounded context suspends, so any staged "cold load" is one where the handler never runs. This
+was discovered by trying: 228 quakes held, zero fronts alive.
+
+Coalescing through rAF is still right, since a hidden tab has nothing to draw and should not be
+rewriting GPU buffers. So the rule moved out of the canvas into `frontsFor`, where it can be tested
+directly, and the tests say what the rule is: **a 227-event seed produces exactly one front, the
+most recent**, while every live arrival gets its own.
+
+The most recent, not the largest. A front means "this just arrived", and picking the biggest instead
+would be choosing what to show over what is true.
+
+---
+
+## Overlap, and why clustering is one of the two ceiling-raisers
+
+Markers in dense margins render as crescents rather than circles. It is not a shader bug: with
+normal blending, two markers a few pixels apart in different ramp colours look exactly like that.
+
+Measured on a real seed, **149 of 228 events had another event within 40km**. That is the legibility
+problem DESIGN.md section 12 picked clustering to solve, and it is now visible rather than
+theoretical. It also confirms the choice of clustering over time scrubbing was right for a reason
+beyond the ones written down at the time.
+
+---
+
 ## Open, and honestly so
 
 - **Reduced motion is written but not observed.** The code path skips momentum and snaps the reset,

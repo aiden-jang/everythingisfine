@@ -1,5 +1,5 @@
 import { createStore, type Store, type StoreStats } from "../data/store";
-import type { Filters, SourceId } from "../data/types";
+import type { Filters, Quake, SourceId } from "../data/types";
 import { createEmscSource } from "../sources/emsc";
 import { createUsgsSource } from "../sources/usgs";
 import { browserRuntime, type GeoEventSource, type SourceStatus } from "../sources/types";
@@ -18,6 +18,31 @@ export interface FeedSnapshot {
   statuses: Record<SourceId, SourceStatus>;
   /** Bumped on every ingest, so a subscriber can tell "nothing changed" from "same total". */
   revision: number;
+  /**
+   * Quakes newly created since the previous announcement, oldest first.
+   *
+   * Needed because a wavefront belongs to an *arrival*, not to a state. A subscriber handed only
+   * totals cannot tell one new magnitude 5 from a revision to an existing one, and would either
+   * miss fronts or fire them twice.
+   */
+  arrived: Quake[];
+  /** True for the first announcement only: the daily seed, not live arrivals. */
+  seeding: boolean;
+}
+
+/**
+ * Which arrivals deserve a wavefront.
+ *
+ * Extracted from the canvas because it is a rule, not a rendering detail, and because the canvas
+ * cannot be asked about it: announcements are coalesced through requestAnimationFrame, which a
+ * hidden tab suspends, so observing this on a real cold load is not something a test can do.
+ *
+ * The seed creates 227 quakes at once and none of them just happened. Firing 227 fronts would be a
+ * fireworks display announcing nothing. Replaying exactly one, the most recent, is what makes the
+ * first frame after a cold load already moving without claiming the whole day arrived in it.
+ */
+export function frontsFor(snapshot: Pick<FeedSnapshot, "arrived" | "seeding">): Quake[] {
+  return snapshot.seeding ? snapshot.arrived.slice(-1) : snapshot.arrived;
 }
 
 export interface Feed {
@@ -43,6 +68,14 @@ export function createFeed(capacity = 50_000): Feed {
   };
   let revision = 0;
   let running = false;
+  let announced = false;
+  /*
+   * Capped. The daily seed creates 227 quakes in one batch and a large aftershock sequence can
+   * deliver dozens; holding them all to hand to a subscriber that only wants the newest would make
+   * this array the one unbounded thing in an app built around a bounded store.
+   */
+  const ARRIVAL_LIMIT = 64;
+  let arrived: Quake[] = [];
 
   const sources: GeoEventSource[] = [
     createUsgsSource(browserRuntime),
@@ -53,6 +86,8 @@ export function createFeed(capacity = 50_000): Feed {
     stats: store.stats(),
     statuses: { ...statuses },
     revision,
+    arrived,
+    seeding: !announced,
   });
 
   /*
@@ -69,6 +104,8 @@ export function createFeed(capacity = 50_000): Feed {
     pending = requestAnimationFrame(() => {
       pending = 0;
       const s = snapshot();
+      announced = true;
+      arrived = [];
       for (const fn of listeners) fn(s);
     });
   };
@@ -86,7 +123,10 @@ export function createFeed(capacity = 50_000): Feed {
       for (const source of sources) {
         source.start({
           onReadings: (batch) => {
-            for (const reading of batch) store.ingest(reading);
+            for (const reading of batch) {
+              const result = store.ingest(reading);
+              if (result.isNew && arrived.length < ARRIVAL_LIMIT) arrived.push(result.quake);
+            }
             revision += 1;
             announce();
           },
@@ -102,6 +142,8 @@ export function createFeed(capacity = 50_000): Feed {
       for (const source of sources) source.stop();
       if (pending) cancelAnimationFrame(pending);
       pending = 0;
+      announced = false;
+      arrived = [];
       listeners.clear();
     },
   };
