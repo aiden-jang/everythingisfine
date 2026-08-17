@@ -25,6 +25,13 @@ export interface StoreStats {
   quakes: number;
   /** Readings currently held, per source. Sums to more than `quakes` when both feeds saw an event. */
   readings: Record<SourceId, number>;
+  /**
+   * Events both agencies reported.
+   *
+   * Counted as it happens rather than derived on demand: deriving means walking every held event
+   * on every announcement, which is fifty thousand comparisons a frame to display one number.
+   */
+  corroborated: number;
   /** Earliest arrival still held. The honest left edge of the window. */
   since: number | null;
 }
@@ -73,6 +80,7 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
   const buckets = new Map<number, Set<string>>();
 
   const readingCounts: Record<SourceId, number> = { usgs: 0, emsc: 0 };
+  let corroborated = 0;
   let arrivals = 0;
 
   const readingKey = (r: Reading): string => `${r.source}:${r.id}`;
@@ -99,6 +107,7 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
     const quake = byKey.get(key);
     byKey.delete(key);
     if (!quake) return;
+    if (quake.readings.length > 1) corroborated -= 1;
 
     for (const r of quake.readings) {
       byReadingId.delete(readingKey(r));
@@ -136,7 +145,7 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
 
     if (existing) {
       const at = existing.readings.findIndex((r) => r.source === reading.source);
-      let corroborated = false;
+      let corroboratedNow = false;
       if (at >= 0) {
         // A revision from an agency that already reported. Replace rather than append, or a busy
         // event that gets updated all afternoon grows an unbounded array inside a bounded store.
@@ -154,12 +163,14 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
       } else {
         existing.readings.push(reading);
         readingCounts[reading.source] += 1;
-        corroborated = true;
+        // Only the first time a second agency joins, not on every later revision of either.
+        if (existing.readings.length === 2) corroborated += 1;
+        corroboratedNow = true;
       }
       byReadingId.set(readingKey(reading), existing.key);
       indexBuckets(existing);
       existing.primary = choosePrimary(existing.readings);
-      return { quake: existing, isNew: false, corroborated };
+      return { quake: existing, isNew: false, corroborated: corroboratedNow };
     }
 
     if (count === capacity) evict();
@@ -217,7 +228,7 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
           break;
         }
       }
-      return { quakes: count, readings: { ...readingCounts }, since };
+      return { quakes: count, readings: { ...readingCounts }, corroborated, since };
     },
     debugIndexSizes: () => ({
       byReadingId: byReadingId.size,

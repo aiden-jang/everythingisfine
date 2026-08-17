@@ -166,6 +166,10 @@ export function Globe({ feed, filters, selected, onSelect, onReady }: GlobeProps
     feed.start();
     redraw();
 
+    // The one entrance, started after the first draw so the globe is already painted when it moves.
+    globe.controls.enter();
+    wake();
+
     const ro = new ResizeObserver(() => {
       globe.resize();
       redraw();

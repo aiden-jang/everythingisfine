@@ -33,6 +33,9 @@ const RADIUS_EVENTS = 1.006;
 const RADIUS_BASE = 1.7;
 const RADIUS_SCALE = 2.9;
 
+/** Globe radius the sizes above were chosen against: a desktop window at the framing shot. */
+const REFERENCE_RADIUS_PX = 300;
+
 /**
  * Markers hold their size on screen as the camera zooms.
  *
@@ -47,6 +50,7 @@ const SHADER = {
     uniform float uPixelRatio;
     uniform float uBase;
     uniform float uScale;
+    uniform float uSize;
     uniform float uMagMin;
     varying float vRamp;
     varying float vFacing;
@@ -59,7 +63,7 @@ const SHADER = {
       vFacing = dot(normal, normalize(cameraPosition - world.xyz));
 
       vRamp = clamp((aMag - uMagMin) / 6.5, 0.0, 1.0);
-      float radius = uBase + uScale * sqrt(max(0.0, aMag - uMagMin));
+      float radius = (uBase + uScale * sqrt(max(0.0, aMag - uMagMin))) * uSize;
 
       gl_Position = projectionMatrix * viewMatrix * world;
       gl_PointSize = 2.0 * radius * uPixelRatio;
@@ -95,6 +99,17 @@ export interface EventLayer {
   /** Swaps the entire data palette. One uniform, not fifty thousand rewrites. */
   setRamp: (name: RampName) => void;
   setPixelRatio: (ratio: number) => void;
+  /**
+   * Scales markers to the size of the globe on screen, not to the zoom.
+   *
+   * Holding a constant pixel size across zoom is right: zooming into a dense margin should separate
+   * events rather than magnify them along with everything else. Holding it across *viewports* is
+   * wrong, and the tweet-size test proved it. At 600px the globe is 110 pixels across and a
+   * magnitude 2 marker was 9 of them, so 775 events covered the planet in overlapping discs and the
+   * coastlines disappeared. The reference is the framing radius, so this changes with the window
+   * and never while somebody is zooming.
+   */
+  setGlobeRadius: (px: number) => void;
   /** Writes the visible subset into the buffers. Returns how many are drawn. */
   sync: (store: Store, filters: Filters, now: number) => number;
   dispose: () => void;
@@ -127,6 +142,7 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
       uPixelRatio: { value: 1 },
       uBase: { value: RADIUS_BASE },
       uScale: { value: RADIUS_SCALE },
+      uSize: { value: 1 },
       uMagMin: { value: MAG_MIN },
       uOpacity: { value: 1 },
     },
@@ -163,6 +179,11 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
     },
     setPixelRatio: (ratio) => {
       material.uniforms["uPixelRatio"]!.value = ratio;
+    },
+    setGlobeRadius: (px) => {
+      // Floored at 0.45: below that a magnitude 2 stops being visible at all, and an event that
+      // cannot be seen is worse than one that is slightly too large.
+      material.uniforms["uSize"]!.value = Math.max(0.45, Math.min(1, px / REFERENCE_RADIUS_PX));
     },
 
     sync: (store, filters, now) => {
