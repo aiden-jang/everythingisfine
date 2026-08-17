@@ -649,6 +649,49 @@ fixtures would make them deterministic and CI-able, and it is the obvious next i
 
 ---
 
+## The banned list is a test, not a checklist
+
+Phase C in PLAN.md is a visual audit, and an audit performed once is worth very little because
+everything it checks can come back the next afternoon. Two rules had already been broken by accident
+during this build, and neither was broken by a decision: the slider's blue thumb arrived through a
+`accent-color` default, and a dense cluster clipped to pure white under additive blending. Both were
+caught by looking. Neither would have been caught twice.
+
+So the rules that can be assertions are assertions, across all three breakpoints: **no chrome
+element paints a hue, nothing overflows sideways, every updating number has tabular figures, nothing
+is pure black, and the colourblind ramp survives a reload.** The three rules that genuinely need
+eyes are named in the file rather than pretended away.
+
+### The first version of the audit failed on the palette it was written to protect
+
+It measured HSV saturation, and `Deck` is `#0D1420`: channels differing by 19 out of 255, which
+relative saturation calls 0.59 because the colour is nearly black. Every dark tint scores high that
+way, so the test flagged the design's own chrome.
+
+Absolute chroma is the measure that distinguishes a barely-tinted grey from a blue button. The whole
+chrome palette sits at or below 37; a browser default accent is 255; the threshold is 55. **A test
+that fails on correct code is worse than no test, because it teaches people to skip the suite.**
+
+---
+
+## A claim in DESIGN.md turned out to be false
+
+It said neither ramp contains a neutral grey, so no data value could be mistaken for chrome.
+Measuring the stops killed it: Cividis's midpoint `#7D8E92` has a channel spread of **21**, less
+chromatic than `Instrument Dim` at 34 and `Coastline` at 37. Cividis is perceptually uniform for
+deuteranopia by construction and a near-neutral midpoint is part of how it gets there, so the stop
+cannot simply be swapped.
+
+What actually separates data from chrome in colourblind mode is **position, not chroma**: everything
+inside the canvas is data, everything outside it is chrome, and no element of either kind crosses
+that boundary. That is the stronger guarantee anyway, because it holds for any ramp added later.
+Thermal's least chromatic stop is 57, so the original claim happens to hold there and was simply not
+load-bearing.
+
+DESIGN.md has been corrected rather than left to read well.
+
+---
+
 ## Open, and honestly so
 
 - **Reduced motion is written but not observed.** The code path skips momentum and snaps the reset,

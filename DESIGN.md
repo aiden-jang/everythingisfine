@@ -130,7 +130,17 @@ Two ramps ship. The viewer picks and the choice persists.
 **Cividis**, the same data, deuteranopia-safe by construction:
 `#00224E` → `#35618F` → `#7D8E92` → `#B5A15B` → `#FEE838`
 
-Neither ramp contains a neutral grey, so no data value can be mistaken for chrome in either mode.
+**One correction to an earlier claim in this document.** It used to say neither ramp contains a
+neutral grey. Measured, that is false: Cividis's midpoint `#7D8E92` has a channel spread of 21,
+which is *less* chromatic than `Instrument Dim` at 34 and than `Coastline` at 37. Cividis is
+perceptually uniform for deuteranopia by construction, and a near-neutral midpoint is part of how it
+achieves that, so this is not a stop that can be swapped out.
+
+What actually keeps data and chrome apart in colourblind mode is therefore **position, not chroma**:
+everything inside the canvas is data and everything outside it is chrome, with no element of either
+kind crossing that boundary. That separation is worth more than the chroma claim was, because it
+holds for every ramp anyone might add later. Thermal's least chromatic stop is 57, comfortably clear
+of the chrome, so the original claim happens to hold there and is simply not load-bearing.
 
 **Magnitude is encoded twice: radius and ramp position.** Colour alone fails a colourblind viewer,
 and fails again when the globe is 300px wide on a phone. Radius scales with the square root of
