@@ -15,6 +15,16 @@ const includeLive = process.env["FIRSTMOTION_LIVE"] === "1";
 
 export default defineConfig({
   test: {
+    /*
+     * One file at a time.
+     *
+     * The performance gate measures wall-clock work, and running it beside five other files on a
+     * shared machine measured the scheduler as much as the code: the same 50,000-event sync came
+     * out at 6.9ms alone and 15.3ms under contention, which is a gate that passes or fails
+     * depending on what else is running. The whole suite takes under a second, so serialising it
+     * costs nothing and makes the number mean something.
+     */
+    fileParallelism: false,
     exclude: [
       "**/node_modules/**",
       "**/dist/**",

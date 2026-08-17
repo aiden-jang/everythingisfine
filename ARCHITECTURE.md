@@ -464,6 +464,66 @@ beyond the ones written down at the time.
 
 ---
 
+## The pinned selection is a key, and that is the whole trick
+
+The polish doc calls losing a selection on refresh the most infuriating bug in a live
+visualization and says it is easy to write by accident. The accident is holding the selection as an
+object or an index. The store updates a quake in place when an agency revises it, so a key stays
+valid while the contents change: hold the object and you pin a snapshot, hold an index and you pin
+whatever later takes that slot.
+
+Asserted directly against the store rather than checked by hand, across a re-delivered poll, a
+magnitude revision, the second agency arriving and merging, and 400 unrelated events. The panel
+closes on exactly one thing, eviction, because then the event is genuinely gone.
+
+---
+
+## Hit testing is geographic first, and that came out of the perf budget
+
+The obvious implementation projects every drawn event and compares screen distances, which needs the
+layer to remember what it drew. That list cost **40% of the fifty-thousand-event update budget**:
+6.9ms became 8.8–10.8ms from a single `keys[n] = quake.key` in the hot loop. A typed-array write is
+a store; a reference write is a store plus a garbage-collector write barrier.
+
+So the pointer becomes a longitude and latitude, the first pass is a great-circle distance with no
+projection at all, and only the eight nearest candidates get projected to settle it in pixels.
+Pixels still decide, because foreshortening near the limb makes angles and screen distance disagree.
+
+**The budget caught this, which is the point of having one.** It also exposed a flaw in the gate
+itself: the same measurement read 6.9ms alone and 15.3ms with five other test files running. A gate
+that passes or fails depending on what else is on the machine is worse than no gate, so files now
+run one at a time. The suite takes under a second, so it costs nothing. Three consecutive full runs
+now read 8.8, 7.1 and 9.1ms.
+
+---
+
+## Hue got into the chrome through a user-agent default
+
+The magnitude slider rendered with a saturated blue thumb, because `accent-color` defaults to the
+platform highlight. The one interactive control in the rail was drawing a system hue directly
+beside the data ramp, which is precisely the confusion the two-palette rule exists to prevent.
+
+Nobody decided this. It is worth recording because it is how hue will try to get in again: not
+through a choice, but through a default nobody overrode.
+
+The first fix broke the track instead, by grouping `::-webkit-slider-runnable-track` with
+`::-moz-range-track` in one selector list. A selector list containing a pseudo-element the engine
+does not recognise invalidates the whole rule, so neither browser applied it and a white thumb
+floated on nothing. Split, never grouped.
+
+---
+
+## Two things that looked like bugs and were not
+
+**Regions read "none in this window" while 21 events sat inside the box.** A full reload fixed it
+with no code change: React Fast Refresh had preserved a `useMemo` result across a module edit.
+A dev-only artifact, and worth not "fixing" something that is not broken.
+
+**Markers render as crescents in dense margins.** Checked rather than assumed: 149 of 228 events had
+a neighbour within 40km, so it is overlap under normal blending, not a shader fault.
+
+---
+
 ## Open, and honestly so
 
 - **Reduced motion is written but not observed.** The code path skips momentum and snaps the reset,

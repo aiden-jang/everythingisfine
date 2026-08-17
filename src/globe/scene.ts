@@ -6,10 +6,41 @@ import {
 import {
   buildLand, RADIUS_ATMOSPHERE, RADIUS_GRATICULE, RADIUS_SPHERE, type LandGeometry,
 } from "../geo/land";
-import { DEG, graticule } from "../geo/sphere";
+import { DEG, distanceKm, graticule } from "../geo/sphere";
+import { matches } from "../data/filter";
+import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
 import { createEventLayer, type EventLayer } from "./events";
 import { createRingLayer, type RingLayer } from "./rings";
+
+/** Only the part of the store hit testing needs, so this file does not depend on the whole model. */
+export interface HitStore {
+  forEach: (fn: (quake: HitQuake) => void) => void;
+}
+
+export interface HitQuake {
+  key: string;
+  readings: readonly { source: SourceId }[];
+  primary: { lon: number; lat: number; magnitude: number; time: number };
+}
+
+/**
+ * How far from a marker's centre still counts as pointing at it.
+ *
+ * Generous by four pixels, because a marker for a small earthquake is under four pixels across and
+ * asking someone to hit that exactly on a moving globe is asking them not to use the feature. Ties
+ * go to the larger event, which is the one a person was more likely aiming at.
+ */
+const HIT_SLOP_PX = 4;
+
+/**
+ * How many nearest events get projected before picking a winner.
+ *
+ * Eight, because great-circle distance and screen distance disagree near the limb, so the closest
+ * event on the sphere is not always the closest one to the pointer. Eight is more than enough to
+ * contain that disagreement and small enough that the projections cost nothing.
+ */
+const SHORTLIST = 8;
 
 /*
  * The globe, and nothing on it yet.
@@ -71,6 +102,10 @@ export interface Globe {
   controls: Controls;
   events: EventLayer;
   rings: RingLayer;
+  /** Key of the drawn event nearest a client pixel, or null when the pointer is over nothing. */
+  hitTest: (
+    clientX: number, clientY: number, store: HitStore, filters: Filters, now: number,
+  ) => string | null;
   stats: LandGeometry["stats"];
 }
 
@@ -194,6 +229,55 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   return {
     resize,
     controls,
+    /*
+     * What is under the pointer, answered geographically first and in pixels second.
+     *
+     * The obvious implementation projects every drawn event to the screen and compares distances.
+     * That is a matrix multiply per event per pointer move, and it needs the layer to keep a list
+     * of what it drew, which turned out to cost 40% of the fifty-thousand-event update budget.
+     *
+     * Turning the pointer into a longitude and latitude instead makes the first pass a cheap
+     * great-circle distance and no projection at all. Only a handful of nearest candidates are then
+     * projected to settle it in pixels, which is the part that has to be exact because
+     * foreshortening near the limb makes angles and pixels disagree.
+     */
+    hitTest: (clientX, clientY, store, filters, now) => {
+      const under = controls.pick(clientX, clientY);
+      if (!under) return null;
+
+      const near: { key: string; lon: number; lat: number; magnitude: number }[] = [];
+      let worst = Infinity;
+      store.forEach((quake) => {
+        if (!matches(quake as never, filters, now)) return;
+        const { lon, lat, magnitude } = quake.primary;
+        const km = distanceKm(under.lon, under.lat, lon, lat);
+        if (near.length >= SHORTLIST && km >= worst) return;
+        near.push({ key: quake.key, lon, lat, magnitude });
+        near.sort((a, b) => distanceKm(under.lon, under.lat, a.lon, a.lat)
+          - distanceKm(under.lon, under.lat, b.lon, b.lat));
+        if (near.length > SHORTLIST) near.pop();
+        const last = near[near.length - 1]!;
+        worst = distanceKm(under.lon, under.lat, last.lon, last.lat);
+      });
+
+      let bestKey: string | null = null;
+      let bestScore = Infinity;
+      for (const candidate of near) {
+        const at = controls.project(candidate.lon, candidate.lat);
+        if (!at) continue;
+        const d = Math.hypot(at.x - clientX, at.y - clientY);
+        const radius = 1.7 + 2.9 * Math.sqrt(Math.max(0, candidate.magnitude - 1));
+        if (d > radius + HIT_SLOP_PX) continue;
+        // Ranked by how far *outside* the marker the pointer is, so a big marker does not win
+        // simply for being big when the pointer is squarely inside a small one on top of it.
+        const score = d - radius;
+        if (score < bestScore) {
+          bestScore = score;
+          bestKey = candidate.key;
+        }
+      }
+      return bestKey;
+    },
     events,
     rings,
     render: () => renderer.render(scene, camera),
