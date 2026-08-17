@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { createGlobe } from "./scene";
+import { DEFAULT_FILTERS, type Feed } from "../app/feed";
 
 /*
  * The canvas, and the smallest possible amount of React around it.
@@ -9,8 +10,9 @@ import { createGlobe } from "./scene";
  * directly, not through props, for the reason DESIGN.md cares about: ten thousand points changing
  * every second must never touch the React tree.
  */
-export function Globe(): JSX.Element {
+export function Globe({ feed }: { feed: Feed }): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const filters = DEFAULT_FILTERS;
 
   useEffect(() => {
     const el = canvas.current;
@@ -27,7 +29,7 @@ export function Globe(): JSX.Element {
       // A seam for driving the camera from outside during development and, later, from Playwright.
       // Both members are real interface rather than test-only scaffolding: hover needs `pick` and
       // permalinks need `state`.
-      Object.assign(window, { __globe: globe.controls });
+      Object.assign(window, { __globe: globe.controls, __feed: feed, __events: globe.events });
     }
 
     /*
@@ -61,6 +63,21 @@ export function Globe(): JSX.Element {
 
     const detach = globe.controls.attach(wake);
 
+    /*
+     * Data arriving is the other reason to redraw.
+     *
+     * Not folded into the camera loop: the camera loop runs until motion settles and then stops, and
+     * an arrival is a single discrete redraw rather than something to animate. Syncing and drawing
+     * once per announcement keeps the idle cost at exactly zero, which is the whole point of not
+     * having an ambient loop.
+     */
+    const redrawFromData = (): void => {
+      globe.events.sync(feed.store, filters, Date.now());
+      globe.render();
+    };
+    const unsubscribe = feed.subscribe(redrawFromData);
+    feed.start();
+
     const ro = new ResizeObserver(() => {
       globe.resize();
       globe.render();
@@ -70,10 +87,11 @@ export function Globe(): JSX.Element {
 
     return () => {
       ro.disconnect();
+      unsubscribe();
       detach();
       globe.dispose();
     };
-  }, []);
+  }, [feed, filters]);
 
   return <canvas ref={canvas} className="block h-full w-full cursor-grab active:cursor-grabbing" />;
 }
