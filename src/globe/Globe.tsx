@@ -3,6 +3,7 @@ import { createGlobe } from "./scene";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 import type { Filters } from "../data/types";
 import { magnitude } from "../app/format";
+import type { RampName } from "./ramp";
 
 /*
  * The canvas, and the smallest possible amount of React around it.
@@ -17,16 +18,18 @@ export interface GlobeProps {
   feed: Feed;
   filters: Filters;
   selected: string | null;
+  ramp: RampName;
   onSelect: (key: string | null) => void;
   /** Handed a fly function once, so the rail can send the camera to a region. */
   onReady: (flyTo: (lon: number, lat: number, zoom?: number) => void) => void;
 }
 
-export function Globe({ feed, filters, selected, onSelect, onReady }: GlobeProps): JSX.Element {
+export function Globe({ feed, filters, selected, ramp, onSelect, onReady }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
   const marker = useRef<HTMLDivElement>(null);
   const redrawRef = useRef<() => void>(() => {});
+  const rampRef = useRef<(name: RampName) => void>(() => {});
   /*
    * Read from inside the frame loop, which outlives any single render.
    *
@@ -110,6 +113,12 @@ export function Globe({ feed, filters, selected, onSelect, onReady }: GlobeProps
       placeOverlays();
     };
     redrawRef.current = redraw;
+    rampRef.current = (name) => {
+      // Both layers, or a wavefront would stay warm while its own marker turned blue.
+      globe.events.setRamp(name);
+      globe.rings.setRamp(name);
+      redraw();
+    };
 
     const redrawFromData = (snapshot: FeedSnapshot): void => {
       globe.events.sync(feed.store, live.current.filters, Date.now());
@@ -193,6 +202,10 @@ export function Globe({ feed, filters, selected, onSelect, onReady }: GlobeProps
   useEffect(() => {
     redrawRef.current();
   }, [filters, selected]);
+
+  useEffect(() => {
+    rampRef.current(ramp);
+  }, [ramp]);
 
   return (
     <div className="relative h-full w-full">

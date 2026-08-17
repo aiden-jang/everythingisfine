@@ -571,6 +571,40 @@ motion somebody asked not to see is still the motion.
 
 ---
 
+## The accessible feed is the product, not an affordance on it
+
+The canvas is `aria-hidden`, so for a screen reader the list *is* First Motion. That framing decided
+everything about it: it carries the same information rather than a summary, it is ordered the way
+the globe is thinking, and selecting in it selects everywhere.
+
+**Ordered by recency, not by position.** Arrow-keying around a sphere spatially is disorienting even
+when you can see it. "The next most recent earthquake" is a sentence anybody can follow.
+
+**One tab stop, then arrows.** Tabbing through several hundred earthquakes to reach the filters
+below would be its own accessibility failure.
+
+**Visually hidden until focused, then visible.** A sighted keyboard user gets the same list rather
+than tabbing into something they cannot see, and it costs one `focus-within`. `display: none` and
+`visibility: hidden` both remove an element from the accessibility tree, so the clip technique is
+not a stylistic choice.
+
+**The live region is gated by magnitude, defaulting high.** A busy feed delivers hundreds of events
+an hour and announcing all of them floods a screen reader until the person closes the page. Silence
+that can be lowered is recoverable; an unusable page is not. The threshold and the colourblind ramp
+both persist, because re-choosing an accessibility setting every visit is its own barrier.
+
+**Gate met, with the canvas hidden:** 60 items, one tab stop, arrows move, activation opens the
+detail panel, Escape closes it, `aria-current` marks the pinned event.
+
+### React state is not a keyboard cursor
+
+Three ArrowDown presses moved the focus one position. Each synchronous keypress read the same stale
+`cursor`, because state does not update until the next render, and a key repeat is precisely that:
+several events inside one frame. The handler now acts on a ref; the state exists only to drive
+`tabIndex`.
+
+---
+
 ## Open, and honestly so
 
 - **Reduced motion is written but not observed.** The code path skips momentum and snaps the reset,

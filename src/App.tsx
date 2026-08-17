@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Globe } from "./globe/Globe";
 import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
-import { windowStart } from "./data/filter";
+import { AccessibleFeed } from "./app/AccessibleFeed";
+import type { RampName } from "./globe/ramp";
+import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
 import { PLAYBACK } from "./globe/rings";
 import {
@@ -63,6 +65,21 @@ export function App(): JSX.Element {
   const snapshot = useFeed();
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [selected, setSelected] = useState<string | null>(null);
+  /*
+   * Both persisted, because both are accessibility settings and re-choosing one on every visit is
+   * its own barrier. Read lazily so the first paint already has the right ramp rather than
+   * flashing the default and correcting itself.
+   */
+  const [ramp, setRamp] = useState<RampName>(
+    () => (localStorage.getItem("firstmotion.ramp") as RampName | null) ?? "thermal",
+  );
+  const [announceAbove, setAnnounceAbove] = useState<number>(
+    () => Number(localStorage.getItem("firstmotion.announceAbove") ?? "4.5"),
+  );
+  useEffect(() => { localStorage.setItem("firstmotion.ramp", ramp); }, [ramp]);
+  useEffect(() => {
+    localStorage.setItem("firstmotion.announceAbove", String(announceAbove));
+  }, [announceAbove]);
   const flyTo = useRef<(lon: number, lat: number, zoom?: number) => void>(() => {});
   const onReady = useCallback((fn: typeof flyTo.current) => { flyTo.current = fn; }, []);
 
@@ -102,6 +119,13 @@ export function App(): JSX.Element {
       return { ...f, sources };
     });
   };
+
+  // The accessible feed shows what the globe shows, filtered identically and capped: a screen
+  // reader user navigating 50,000 list items would be worse served than one given the recent 60.
+  const recent = useMemo(
+    () => feed.store.latest(400).filter((q) => matches(q, filters, Date.now())).slice(0, 60),
+    [filters, snapshot.revision],
+  );
 
   const edge = windowStart(now, filters.windowMs, snapshot.stats.since);
   const live = Object.values(snapshot.statuses).filter((s) => s.kind === "live").length;
@@ -183,6 +207,17 @@ export function App(): JSX.Element {
               className="slider mt-2"
               onChange={(e) => setFilters((f) => ({ ...f, minMagnitude: Number(e.target.value) }))}
             />
+            <div className="mt-3 flex gap-1.5">
+              {/* Colourblind-safe ramp, persisted. Labelled by what it does, not by its name. */}
+              <button
+                type="button"
+                onClick={() => setRamp((r) => (r === "thermal" ? "cividis" : "thermal"))}
+                aria-pressed={ramp === "cividis"}
+                className="label cursor-pointer border border-hairline px-2 py-1 text-ink transition-colors hover:bg-raised"
+              >
+                {ramp === "cividis" ? "Colourblind ramp on" : "Colourblind ramp off"}
+              </button>
+            </div>
             <div className="mt-2 flex gap-1.5">
               {(["usgs", "emsc"] as const).map((id) => (
                 <button
@@ -201,6 +236,14 @@ export function App(): JSX.Element {
               ))}
             </div>
           </div>
+
+          <AccessibleFeed
+            quakes={recent}
+            selected={selected}
+            onSelect={setSelected}
+            announceAbove={announceAbove}
+            onAnnounceAboveChange={setAnnounceAbove}
+          />
         </aside>
 
         {/* Hidden from assistive tech. The parallel accessible feed in step B is the real
@@ -210,6 +253,7 @@ export function App(): JSX.Element {
             feed={feed}
             filters={filters}
             selected={selected}
+            ramp={ramp}
             onSelect={setSelected}
             onReady={onReady}
           />
