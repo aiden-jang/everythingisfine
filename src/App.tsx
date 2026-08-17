@@ -3,6 +3,7 @@ import { Globe } from "./globe/Globe";
 import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { AccessibleFeed } from "./app/AccessibleFeed";
+import { decode, encode } from "./app/permalink";
 import type { RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
@@ -61,17 +62,37 @@ function Reading({ quake, index }: { quake: Quake; index: number }): JSX.Element
   );
 }
 
+/*
+ * Read once, at module load, before anything renders.
+ *
+ * A permalink that applied in an effect would show the default view first and correct itself a
+ * frame later, which is a flash of somebody else's globe on the way to the one they shared.
+ */
+const shared = decode(window.location.hash);
+
 export function App(): JSX.Element {
   const snapshot = useFeed();
-  const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<Filters>(() => ({
+    minMagnitude: shared.minMagnitude ?? DEFAULT_FILTERS.minMagnitude,
+    windowMs: (shared.windowHours ?? 24) * 3_600_000,
+    sources: new Set(shared.sources ?? [...DEFAULT_FILTERS.sources]),
+  }));
   const [selected, setSelected] = useState<string | null>(null);
+  /*
+   * A shared event that is no longer in the window.
+   *
+   * The buffer is a rolling day, so a link shared yesterday names an earthquake this page will
+   * never hold. Silently opening no panel would look like the link was broken. Saying so is the
+   * same honesty the window's left edge gets: the app knows why, so it says why.
+   */
+  const [missingShared, setMissingShared] = useState<string | null>(shared.event ?? null);
   /*
    * Both persisted, because both are accessibility settings and re-choosing one on every visit is
    * its own barrier. Read lazily so the first paint already has the right ramp rather than
    * flashing the default and correcting itself.
    */
   const [ramp, setRamp] = useState<RampName>(
-    () => (localStorage.getItem("firstmotion.ramp") as RampName | null) ?? "thermal",
+    () => shared.ramp ?? (localStorage.getItem("firstmotion.ramp") as RampName | null) ?? "thermal",
   );
   const [announceAbove, setAnnounceAbove] = useState<number>(
     () => Number(localStorage.getItem("firstmotion.announceAbove") ?? "4.5"),
@@ -81,7 +102,61 @@ export function App(): JSX.Element {
     localStorage.setItem("firstmotion.announceAbove", String(announceAbove));
   }, [announceAbove]);
   const flyTo = useRef<(lon: number, lat: number, zoom?: number) => void>(() => {});
-  const onReady = useCallback((fn: typeof flyTo.current) => { flyTo.current = fn; }, []);
+  const lastWritten = useRef<string>(window.location.hash);
+  const camera = useRef<{ lon: number; lat: number; zoom: number }>(
+    { lon: shared.lon ?? 145, lat: shared.lat ?? 12, zoom: shared.zoom ?? 1 },
+  );
+  const onReady = useCallback((fn: typeof flyTo.current) => {
+    flyTo.current = fn;
+    // A shared camera arrives rather than flies. Somebody following a link wanted the view in it,
+    // not a second of travel toward it from a place they never asked to see.
+    if (shared.lon !== undefined) fn(shared.lon, shared.lat ?? 12, shared.zoom ?? 1);
+  }, []);
+
+  /*
+   * The link is rewritten in place, never pushed.
+   *
+   * Every filter nudge and every camera settle would otherwise be a history entry, and Back would
+   * walk somebody through a hundred of them instead of leaving the page.
+   */
+  useEffect(() => {
+    const write = (): void => {
+      const pinnedNow = selected ? feed.store.get(selected) : undefined;
+      const reading = pinnedNow?.primary;
+      const fragment = encode({
+        ...camera.current,
+        minMagnitude: filters.minMagnitude,
+        windowHours: filters.windowMs / 3_600_000,
+        sources: [...filters.sources],
+        ramp,
+        event: reading ? `${reading.source}:${reading.id}` : null,
+      });
+      history.replaceState(null, "", `#${fragment}`);
+    };
+    write();
+    lastWritten.current = window.location.hash;
+    const timer = window.setInterval(() => {
+      write();
+      lastWritten.current = window.location.hash;
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [filters, selected, ramp]);
+
+  /*
+   * Someone pasting a different link into an open tab.
+   *
+   * Changing only the fragment does not reload, and the permalink is read once at module load, so
+   * without this a pasted link silently does nothing: the address bar says one thing and the globe
+   * shows another. Reloading is the honest response, and it is safe because `replaceState` does not
+   * fire `hashchange`, so the app's own once-a-second rewrite cannot trigger it.
+   */
+  useEffect(() => {
+    const onHashChange = (): void => {
+      if (window.location.hash !== lastWritten.current) window.location.reload();
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
 
   const now = Date.now();
   const regions = useMemo(
@@ -97,6 +172,26 @@ export function App(): JSX.Element {
    * when an agency revises it, so a key stays valid while the contents change; holding the object
    * would pin a snapshot, and holding an index would pin whatever later took that slot.
    */
+  /*
+   * Resolve a shared event once the feed has something to resolve it against.
+   *
+   * It cannot be done at mount: on a cold load the store is empty for a second or two while both
+   * seeds land, so a link's event only becomes findable after the first announcement.
+   */
+  useEffect(() => {
+    if (!missingShared) return;
+    const [source, id] = missingShared.split(":") as [SourceId, string];
+    const found = feed.store.findByReading(source, id);
+    if (found) {
+      setSelected(found.key);
+      setMissingShared(null);
+    } else if (snapshot.stats.quakes > 0 && snapshot.statuses.usgs.kind === "live") {
+      // Both feeds have answered and it is not here, so it has aged out of the window rather than
+      // not arrived yet.
+      setMissingShared((current) => current);
+    }
+  }, [missingShared, snapshot.revision, snapshot.statuses.usgs.kind, snapshot.stats.quakes]);
+
   const pinned = selected ? feed.store.get(selected) : undefined;
   useEffect(() => {
     // Only if it genuinely fell out of the buffer. A refresh must never clear the panel.
@@ -237,6 +332,13 @@ export function App(): JSX.Element {
             </div>
           </div>
 
+          {missingShared && !pinned && snapshot.stats.quakes > 0 ? (
+            <p className="border border-hairline bg-raised p-2 text-[10px] leading-relaxed text-dim">
+              The event in this link is no longer in the window. The buffer holds the last day, and
+              it starts when the page opens.
+            </p>
+          ) : null}
+
           <AccessibleFeed
             quakes={recent}
             selected={selected}
@@ -256,6 +358,7 @@ export function App(): JSX.Element {
             ramp={ramp}
             onSelect={setSelected}
             onReady={onReady}
+            onCamera={(state) => { camera.current = state; }}
           />
         </main>
 

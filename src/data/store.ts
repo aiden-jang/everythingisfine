@@ -47,6 +47,14 @@ export interface Ingested {
 export interface Store {
   ingest: (reading: Reading) => Ingested;
   get: (key: string) => Quake | undefined;
+  /**
+   * The quake an agency's own identifier belongs to.
+   *
+   * Permalinks need this. Our key is an arrival counter, stable within one page and meaningless
+   * across two, so a shared link has to name the event the way the agency does. The index that
+   * answers this already exists for revision handling; it just was not reachable.
+   */
+  findByReading: (source: SourceId, id: string) => Quake | undefined;
   /** Every quake, oldest arrival first. */
   forEach: (fn: (quake: Quake) => void) => void;
   /** Up to `n` most recently arrived, newest first. For the recency-ordered accessible feed. */
@@ -207,6 +215,10 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
     forEach,
     capacity,
     get: (key) => byKey.get(key),
+    findByReading: (source, id) => {
+      const key = byReadingId.get(`${source}:${id}`);
+      return key ? byKey.get(key) : undefined;
+    },
     size: () => count,
     latest: (n) => {
       const out: Quake[] = [];

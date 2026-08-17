@@ -692,6 +692,46 @@ DESIGN.md has been corrected rather than left to read well.
 
 ---
 
+## A permalink names the event the way the agency does
+
+The obvious implementation puts the store's key in the URL, and it would have been wrong in the way
+that looks like working. Our key is `q` plus an arrival counter: stable for as long as one page is
+open, and meaningless anywhere else, because the twelfth event to arrive on my machine is not the
+twelfth on yours. A link carrying `q12` restores **a different earthquake**, and it does so
+confidently.
+
+So the fragment carries `usgs:us7000abcd`, the agency's own name for the event, which means the same
+thing everywhere. The index that resolves it already existed for revision handling; it just was not
+reachable from outside the store.
+
+**Numbers are rounded to what the app actually knows.** Two decimal places of longitude is about
+100 metres of camera position, and a longitude written to fourteen places in a shared URL is a claim
+to sub-micron aim. Same rule as everything else on screen.
+
+**A decoded fragment is untrusted input.** Not from hostility: people edit URLs, chat clients
+truncate them, and an old link outlives the shape it was written against. Every field is optional,
+longitude wraps, latitude and zoom and magnitude clamp, an unrecognised source or ramp is dropped,
+and an event identifier that is not shaped like one is ignored. An empty source list is honoured
+rather than treated as absent, because showing nothing is a real state.
+
+### Two failures worth keeping
+
+**A shared event may simply be gone.** The buffer is a rolling day, so a link shared yesterday names
+an earthquake this page will never hold. Opening no panel silently would look like a broken link, so
+the rail says why: *the event in this link is no longer in the window*. Same honesty as the window's
+left edge.
+
+**Pasting a link into an open tab did nothing.** Changing only the fragment does not reload, and the
+permalink is read once at module load, so the address bar said one thing while the globe showed
+another. A `hashchange` listener reloads, which is safe precisely because `replaceState` does not
+fire `hashchange`: the app's own once-a-second rewrite cannot trigger it.
+
+The link is rewritten in place rather than pushed. Every filter nudge and camera settle would
+otherwise be a history entry, and Back would walk somebody through a hundred of them instead of
+leaving the page.
+
+---
+
 ## Open, and honestly so
 
 - **Reduced motion is written but not observed.** The code path skips momentum and snaps the reset,
