@@ -12,7 +12,7 @@
     "deploy": "pnpm build && wrangler deploy",
     "test": "vitest run",
     "test:heap": "NODE_OPTIONS=--expose-gc vitest run --pool=forks",
-    "test:live": "FIRSTMOTION_LIVE=1 vitest run src/sources/usgs.live.test.ts"
+    "test:live": "FIRSTMOTION_LIVE=1 vitest run src/sources/usgs.live.test.ts src/sources/emsc.live.test.ts"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.5",
