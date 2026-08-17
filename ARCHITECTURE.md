@@ -732,6 +732,48 @@ leaving the page.
 
 ---
 
+## Clustering, and a collapsed marker that admits it
+
+**781 events become 105 markers zoomed out, 569 zoomed in.** The crescent problem is gone: markers
+along the Ring of Fire are circles again rather than overlapping arcs.
+
+Binned on a longitude/latitude grid rather than merged by distance. Distance-based clustering would
+group better and is the wrong trade here: a grid is one O(n) pass, and it is **stable frame to
+frame**, where distance-based membership flips as the camera moves and the markers shimmer.
+Stability matters more than optimal grouping for something being watched rather than analysed.
+
+Longitude cells widen by `1/cos(lat)`, clamped at 8. Without the widening a cell near the Aleutians
+covers a fraction of the ground an equatorial one does, and the far north stops clustering at
+exactly the latitude where USGS reports most densely. Without the clamp, `1/cos` diverges and one
+cell swallows a hemisphere.
+
+**A cluster carries the largest event in its cell, not the first.** The fill still has to mean a
+magnitude, and the only magnitude a collapsed marker can honestly claim is the biggest thing it
+stands in front of. Understating it hides the event a viewer most needs to see.
+
+**And it wears a chrome ring.** Radius already means magnitude and hue already means magnitude, so
+neither was available to say "this stands for several". The ring is `Instrument`, which is exactly
+right under the two-palette rule: the fill is data speaking, the ring is the interface admitting it
+folded something up. Without it a cluster is indistinguishable from a single event, which is hiding
+data rather than tidying it.
+
+### The budget was re-measured, and the measurement itself was wrong
+
+DESIGN.md requires a re-measure after a render-path change. Clustered: **6.2ms for 50,000 events**,
+against 6.8ms unclustered and a 12ms budget, with zero heap growth.
+
+Getting there exposed a flaw in the harness. The same unclustered 50,000-event sync measured
+**14.99ms in one test and 8.89ms in the very next test of the same file**, on identical work. A gate
+reporting a 68% swing on unchanged code cannot tell a regression from a busy machine, and single-file
+execution had already removed the obvious interference.
+
+It measured the median. For a deterministic CPU-bound operation the **fastest** observed run is the
+honest estimate: every slower sample is the code plus something else, and the something else is
+never the thing under test. Scheduler slices, GC pauses and frequency dips can only add. Three
+consecutive runs now read 6.26, 6.45 and 6.61ms.
+
+---
+
 ## Open, and honestly so
 
 - **Reduced motion is written but not observed.** The code path skips momentum and snaps the reset,
