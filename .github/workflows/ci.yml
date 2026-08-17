@@ -19,6 +19,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
+      # test:heap rather than test. The heap measurement skips itself when gc is unreachable, and a
+      # CI run that quietly skips its own memory gate is worse than one that does not have it.
+      - run: pnpm test:heap
       - run: pnpm build
 
   # Auto-deploy on merge to main, only after the checks above pass.

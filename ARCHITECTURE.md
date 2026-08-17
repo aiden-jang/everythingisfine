@@ -175,6 +175,120 @@ say "put back".
 
 ---
 
+## Eviction is by arrival, not by origin time
+
+It sounds like the lazy choice. It is the honest one.
+
+With no backend the window genuinely begins when the page loads, which is why DESIGN.md section 10
+makes the rail read "since 21:40" rather than "last 24 hours". Dropping the oldest arrival is
+precisely that window, and it is O(1). Evicting by origin time would need a heap in order to
+describe a window the app does not actually have.
+
+Origin time still decides what is *shown*: the filter selects on when the ground moved, the store
+evicts on when we heard about it. The two orderings answer different questions, and collapsing them
+gets one of them wrong. An event that happened twenty minutes ago and reached us a second ago
+belongs twenty minutes back on a timeline, not at the front.
+
+**Association is bucketed by time.** Two readings can only be the same rupture within 60 seconds, so
+quakes are indexed in 60-second buckets and a candidate search touches three of them. Without it,
+every arriving reading would be compared against all fifty thousand held events.
+
+**Known false positive, stated rather than discovered later.** A large event's immediate aftershocks
+can fall inside both the time and distance windows and will be folded into the mainshock. Separating
+them needs waveform data no keyless feed carries. The interface never claims otherwise: the detail
+panel lists every reading it merged, so a wrong merge is visible rather than hidden inside a count.
+
+---
+
+## The four-hour test asserts structure, and only corroborates with the heap
+
+The failure this is guarding against is not "memory crept up". It is "an index kept a key after its
+quake was evicted", and that is directly observable, deterministic, and names the actual bug.
+
+So the gate is structural: after four simulated hours and more than a full extra turnover of the
+buffer, occupied slots equal capacity exactly, the reading index stays bounded by capacity times
+sources, and the bucket index does not grow. The bucket index is the one that leaks silently, since
+an emptied `Set` that is never deleted costs nothing visible and accumulates one entry per minute of
+wall clock forever.
+
+Heap is measured too, and it is corroboration rather than the gate: **1.41MB of growth across four
+simulated hours**, against a 5MB threshold.
+
+**The heap test skips itself rather than passing.** The first version returned early with a console
+note when `gc` was unreachable, and the default reporter swallows stdout for passing tests, so it
+reported green whether or not it had measured anything. That is "an unenforced benchmark is quietly
+false within a month" in miniature. It now shows in the summary as skipped, and CI runs
+`pnpm test:heap` so it cannot skip there.
+
+---
+
+## The contract was written before the second source existed
+
+PLAN.md insisted on this ordering and it earned its place. A contract written after both adapters
+exist is shaped by both, and quietly describes the intersection of what they already do rather than
+what a source owes the app. Written first, adding EMSC means running the file unchanged, and any
+assertion that turns out to be USGS-specific is a finding rather than an edit.
+
+Nothing in the suite mentions HTTP, JSON, sockets, intervals or magnitudes. It asserts four things:
+what a reading is, that stopping stops, that a broken transport degrades instead of throwing, and
+that nothing is announced twice.
+
+### The suite was mutation-tested, and it failed the test
+
+A contract that has never failed is unproven, so two deliberate bugs were introduced.
+
+Sabotage one, a `stop()` that leaks its timer, **was not caught by the test written for it**. "Goes
+completely quiet after stop, and leaves nothing behind" checked `pendingTimers` *after* advancing
+the clock, and by then the stray timer had fired, removed itself from the map, found `handlers`
+already null, and emitted nothing. The leak was real and every downstream symptom was masked. The
+assertion now runs immediately after `stop()`, which is the only moment the question means
+anything, and it catches the sabotage.
+
+Sabotage two, emitting the whole feed every poll instead of only what changed, was caught by four
+tests, which is the right amount.
+
+---
+
+## The live test found a bug the fixtures structurally could not
+
+`browserRuntime` used `window.setTimeout`. Under Node it throws, and because scheduling sat inside
+the poll's `try`, the throw was caught and reported as `failing`. **The feed was perfectly healthy
+and the app said the network was down.**
+
+A source that blames the network for its own bugs is worse than one that crashes, because the status
+it shows is a lie and the retry it schedules will never help. The try block now contains the
+transport and nothing else; scheduling, status and parsing sit outside it, so our own faults
+propagate loudly instead of being laundered into a plausible HTTP-shaped excuse.
+
+Recorded fixtures could never have found this. They answer "does the parser handle this shape", and
+the bug was in the runtime the fixtures replace. That is the entire argument for keeping one live
+test, and for it being excluded from CI rather than deleted.
+
+The other live assertion is that USGS still sends `access-control-allow-origin: *`. If that ever
+stops being true the app needs a proxy Worker, which ends the zero-invocation deployment. Better to
+learn it from a deliberate test than from a blank globe in someone's browser.
+
+---
+
+## Parsing assumes the feed is having a bad day
+
+Every field USGS publishes has been null in a real response at some point, so every one is checked.
+Three choices worth keeping:
+
+- **An event with no magnitude is skipped, and the skip is counted.** Magnitude drives both radius
+  and ramp position, so an event without one cannot be drawn honestly. Discarding is right;
+  discarding invisibly is not.
+- **A missing magnitude scale becomes `unknown`, not `Mww`.** Defaulting to a real scale puts a
+  specific false claim on screen.
+- **A missing depth becomes `NaN`, not zero.** Zero is a real seabed value and would be indistinguishable
+  from a genuine reading.
+
+**Quarry blasts are kept, not filtered.** USGS's hourly feed is a seismic feed, not an earthquake
+feed. Dropping non-earthquakes loses real data a seismometer recorded; drawing them unlabelled calls
+a mine an earthquake. So `kind` travels with every reading and is named on screen.
+
+---
+
 ## Open, and honestly so
 
 - **Reduced motion is written but not observed.** The code path skips momentum and snaps the reset,
