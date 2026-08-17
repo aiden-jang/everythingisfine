@@ -284,8 +284,12 @@ chrome is what makes a moving arc read as real.
 
 **The first frame after load has a ring expanding.** Stated as a requirement because it is the whole
 value proposition compressed into one second, and it is easy to lose to a change in loading order.
-The buffer is seeded from the last hour of USGS on load, and the most recent event replays its ring
-once so that arrival is never a still frame waiting on the WebSocket.
+
+The buffer is seeded from **the last day** of USGS on load, then polls the hourly feed. This
+originally said "the last hour" and measurement killed it: the hourly feed held 8 earthquakes, of
+which 4 cleared the default magnitude floor. Four dots is not a live visualization however genuinely
+live it is. The daily feed holds 227 in 163kB, fills the globe on the first frame, and costs one
+request rather than 163kB every minute forever.
 
 **`prefers-reduced-motion` is honoured completely.** No entrance rotation, no arc travel, no camera
 easing. Events appear and fade in place. A half-disabled motion setting is worse than none, because

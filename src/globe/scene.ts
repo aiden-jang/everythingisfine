@@ -8,6 +8,7 @@ import {
 } from "../geo/land";
 import { DEG, graticule } from "../geo/sphere";
 import { createControls, type Controls } from "./controls";
+import { createEventLayer, type EventLayer } from "./events";
 
 /*
  * The globe, and nothing on it yet.
@@ -67,10 +68,11 @@ export interface Globe {
   render: () => void;
   dispose: () => void;
   controls: Controls;
+  events: EventLayer;
   stats: LandGeometry["stats"];
 }
 
-export function createGlobe(canvas: HTMLCanvasElement): Globe {
+export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe {
   const renderer = new WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setClearAlpha(0);
 
@@ -157,6 +159,11 @@ export function createGlobe(canvas: HTMLCanvasElement): Globe {
   );
   scene.add(rim);
 
+  // Added to the scene root, not to `spin`: the globe group carries no transform, and hanging the
+  // events off it would only invite someone to rotate one and not the other later.
+  const events = createEventLayer(capacity);
+  scene.add(events.object);
+
   const controls = createControls(camera, canvas, FRAMING, FOV);
 
   const resize = (): void => {
@@ -165,8 +172,11 @@ export function createGlobe(canvas: HTMLCanvasElement): Globe {
     const { width, height } = parent.getBoundingClientRect();
     if (width < 1 || height < 1) return;
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    const dpr = Math.min(window.devicePixelRatio, 2);
+    renderer.setPixelRatio(dpr);
     renderer.setSize(width, height, false);
+    // Marker sizes are in CSS pixels, so the shader needs the ratio the renderer actually used.
+    events.setPixelRatio(dpr);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
@@ -180,8 +190,10 @@ export function createGlobe(canvas: HTMLCanvasElement): Globe {
   return {
     resize,
     controls,
+    events,
     render: () => renderer.render(scene, camera),
     dispose: () => {
+      events.dispose();
       scene.traverse((o) => {
         if (o instanceof Mesh || o instanceof LineSegments) {
           o.geometry.dispose();

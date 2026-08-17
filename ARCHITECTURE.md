@@ -349,6 +349,74 @@ alongside invented edge cases: invented fixtures only contain what you already k
 
 ---
 
+## Points with a shader, not instanced quads
+
+A marker is a filled circle facing the camera, which is what a point sprite already is. Instancing
+would spend four vertices and a per-instance matrix each rebuilding something the hardware does for
+free.
+
+Everything per-event is an attribute; everything per-frame is a uniform. The consequence that
+matters is that a filter change rewrites two `Float32Array`s and touches no object graph: no meshes
+created, none destroyed, nothing for the collector to find at hour four.
+
+**The ramp is a 256-pixel texture, not a colour attribute.** Switching ramps becomes one uniform swap
+rather than 50,000 colour rewrites, and more usefully the shader has no way to express a colour that
+is not on the ramp. A 50,000-point layer literally cannot drift off-palette.
+
+### Update cost, measured
+
+CI gates on this; it needs no GPU and it is what an accidental allocation shows up in.
+
+| Events | Budget | Measured (median of 25) |
+|---|---|---|
+| 1,000 | 1.0ms | **0.12ms** |
+| 10,000 | 4.0ms | **1.21ms** |
+| 50,000 | 12.0ms | **6.91ms** |
+
+**200 consecutive syncs of 50,000 events grew the heap by 0.01MB**, which is over three seconds of
+continuous slider dragging at 60fps with no per-event allocation. That number is why `toVec3` is
+inlined in the hot loop: it returns a fresh three-element array, and at 50,000 events per tick the
+allocation dominates the trigonometry it was hiding.
+
+---
+
+## Additive blending drew chrome, and had to go
+
+Additive was the first choice and the reasoning was sound: overlapping events in a dense margin
+should read as brighter rather than as one flat blob. The first frame of real data settled it. Around
+twenty events stacked in the Flores Sea summed past the top of the ramp and clipped to **pure white,
+which is Instrument, the chrome colour**. The densest and most interesting cluster on the globe was
+drawing the one colour reserved for text and focus rings.
+
+No opacity setting fixes that. It is a gamut problem, not a tuning problem: any additive stack
+eventually leaves the ramp, and the setting only moves the density at which it breaks. Normal
+blending keeps every pixel inside the ramp by construction, and density becomes the clustering job
+in step D, which is where it belonged.
+
+---
+
+## The seed window was wrong in DESIGN.md, and the app proved it
+
+DESIGN.md said the buffer is seeded from the last hour of USGS. Wiring it up, the hourly feed held
+**8 earthquakes, of which 4 cleared the default magnitude floor**. Four dots is not a live
+visualization however genuinely live it is, and section 8's promise about the first frame would have
+been false on most loads.
+
+| Feed | Events | Size |
+|---|---|---|
+| `all_hour` | 8 | 6kB |
+| `2.5_day` | 53 | 38kB |
+| `all_day` | **227** | 163kB |
+
+So the first request asks for a day and every one after asks for an hour. Polling the daily feed
+instead would cost 163kB a minute forever to re-learn 8 events. `2.5_day` was rejected because
+discarding everything below magnitude 2.5 discards most of what a seismic network records: the
+magnitude floor belongs to the viewer's filter, not to the fetch.
+
+DESIGN.md has been corrected rather than quietly diverged from.
+
+---
+
 ## Open, and honestly so
 
 - **Reduced motion is written but not observed.** The code path skips momentum and snaps the reset,

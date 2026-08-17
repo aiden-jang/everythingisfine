@@ -8,8 +8,28 @@ import { backoffMs, type GeoEventSource, type Runtime, type SourceHandlers } fro
  * the first frame is never empty: this feed answers immediately to anyone who clones the repo.
  */
 
-export const USGS_HOUR_FEED =
-  "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson";
+const FEED = (window: string): string =>
+  `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/${window}.geojson`;
+
+export const USGS_HOUR_FEED = FEED("all_hour");
+
+/**
+ * The first request asks for a day; every one after asks for an hour.
+ *
+ * DESIGN.md originally said to seed from the last hour, and measuring killed that: the hourly feed
+ * held **8 earthquakes**, of which four cleared the default magnitude floor. Four dots is not a
+ * live visualization, however genuinely live it is, and section 8's promise that the first frame is
+ * already alive would have been false on most loads.
+ *
+ * The daily feed holds 227 events in 163kB, which fills the globe immediately and costs one request.
+ * Polling it every minute instead would cost 163kB a minute forever to re-learn 8 events, so the
+ * seed is a one-off and the steady state stays on the hourly feed.
+ *
+ * The 2.5+ daily feed was the other candidate at 53 events and 38kB, and it was rejected because
+ * discarding everything below magnitude 2.5 discards most of what a seismic network actually
+ * records. The magnitude floor belongs to the viewer's filter, not to the fetch.
+ */
+export const USGS_DAY_FEED = FEED("all_day");
 
 /** USGS republishes about once a minute, so asking faster only costs bandwidth. */
 const INTERVAL_MS = 60_000;
@@ -99,7 +119,21 @@ function revisionOf(feature: UsgsFeature): number {
   return num(feature?.properties?.updated) ?? num(feature?.properties?.time) ?? 0;
 }
 
-export function createUsgsSource(runtime: Runtime, url: string = USGS_HOUR_FEED): GeoEventSource {
+export interface UsgsUrls {
+  /** Fetched once on start. */
+  seed?: string;
+  /** Fetched every interval after that. */
+  poll?: string;
+}
+
+export function createUsgsSource(
+  runtime: Runtime,
+  urls: string | UsgsUrls = {},
+): GeoEventSource {
+  // A bare string means "poll this and do not seed", which is what every test wants.
+  const pollUrl = typeof urls === "string" ? urls : urls.poll ?? USGS_HOUR_FEED;
+  const seedUrl = typeof urls === "string" ? null : urls.seed ?? USGS_DAY_FEED;
+  let seeded = false;
   let handlers: SourceHandlers | null = null;
   let timer: number | null = null;
   let abort: AbortController | null = null;
@@ -109,10 +143,13 @@ export function createUsgsSource(runtime: Runtime, url: string = USGS_HOUR_FEED)
   /*
    * What we have already told the store about.
    *
-   * Replaced wholesale each poll rather than accumulated. The feed is a rolling hour, so keeping
-   * every id ever seen would grow forever for no benefit; keeping only the current response bounds
-   * it to the feed's own size. An event that ages out and reappears is re-emitted, which is
-   * harmless: the store treats a repeat from the same agency as a revision, not a second event.
+   * Replaced wholesale each poll rather than accumulated. Both feeds are rolling windows that
+   * restate themselves, so keeping every id ever seen would grow forever for no benefit; keeping
+   * only the current response bounds it to that response's size.
+   *
+   * It shrinks from 227 to 8 on the first hourly poll after the daily seed, and that is harmless
+   * in both directions: the hour is a subset of the day, so nothing in it is re-announced, and a
+   * day-event that later reappears is treated by the store as a revision rather than a new event.
    */
   let seen = new Map<string, number>();
 
@@ -168,7 +205,8 @@ export function createUsgsSource(runtime: Runtime, url: string = USGS_HOUR_FEED)
     let payload: unknown;
     let failure: string | null = null;
     try {
-      const res = await runtime.fetch(url, { signal: abort.signal });
+      const target = !seeded && seedUrl ? seedUrl : pollUrl;
+      const res = await runtime.fetch(target, { signal: abort.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       payload = await res.json();
     } catch (err) {
@@ -178,6 +216,7 @@ export function createUsgsSource(runtime: Runtime, url: string = USGS_HOUR_FEED)
     if (!handlers) return; // stopped while the request was in flight
 
     if (failure === null) {
+      seeded = true;
       emit(payload);
       if (!handlers) return;
       failures = 0;
@@ -202,6 +241,7 @@ export function createUsgsSource(runtime: Runtime, url: string = USGS_HOUR_FEED)
       handlers = h;
       failures = 0;
       liveSince = null;
+      seeded = false;
       seen = new Map();
       // Immediately, not after the first interval. A minute of empty globe on load would fail
       // DESIGN.md section 8 outright.
@@ -214,6 +254,7 @@ export function createUsgsSource(runtime: Runtime, url: string = USGS_HOUR_FEED)
       timer = null;
       abort?.abort();
       abort = null;
+      seeded = false;
       seen = new Map();
     },
   };

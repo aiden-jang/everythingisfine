@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Globe } from "./globe/Globe";
+import { createFeed } from "./app/feed";
 
 /*
  * Step 1 of PLAN.md: the frame, and nothing inside it.
@@ -64,6 +65,15 @@ function Header(): JSX.Element {
 }
 
 /** `detail` stays optional: the panel column is `auto`, so it costs no width until step 9 fills it. */
+/*
+ * The feed is created once, outside the component.
+ *
+ * Two sources and a fifty-thousand-event ring buffer are not React state and must survive a
+ * re-render, a StrictMode double-mount, and every future filter change. Creating it in a ref or an
+ * effect would open two WebSockets in development and quietly leave one of them running.
+ */
+const feed = createFeed();
+
 export function App({ detail }: { detail?: ReactNode }): JSX.Element {
   return (
     <div className="frame">
@@ -73,7 +83,7 @@ export function App({ detail }: { detail?: ReactNode }): JSX.Element {
         {/* Hidden from assistive tech from the very first commit. The parallel accessible feed in
             step B is the real interface for a screen reader; the canvas is never it. */}
         <main className="zone-canvas bg-void" aria-hidden="true">
-          <Globe />
+          <Globe feed={feed} />
         </main>
         {detail ? (
           <aside className="zone-panel w-[360px] border-l border-hairline bg-deck p-4">{detail}</aside>
