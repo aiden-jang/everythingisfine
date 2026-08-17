@@ -60,6 +60,9 @@ const ENTRANCE_ZOOM = 0.88;
 const SPRING_STIFFNESS = 100;
 const SPRING_DAMPING = 20;
 
+/** Largest slice the spring is integrated over. See the note in `step`. */
+const MAX_SPRING_STEP = 1 / 120;
+
 export interface Framing {
   lon: number;
   lat: number;
@@ -384,36 +387,54 @@ export function createControls(
     };
   };
 
+  /** One fixed slice of the flight. Critically damped, so it arrives without a bounce. */
+  const stepSpring = (h: number): void => {
+    if (!target) return;
+    // Shortest way round, so flying from 179E to 179W crosses the date line rather than taking
+    // the long way through Greenwich.
+    let shortest = target.lon - lon;
+    shortest -= Math.round(shortest / 360) * 360;
+    const acc = (gap: number, v: number): number => SPRING_STIFFNESS * gap - SPRING_DAMPING * v;
+
+    vLon += acc(shortest, vLon) * h;
+    vLat += acc(target.lat - lat, vLat) * h;
+    vZoom += acc(target.zoom - zoom, vZoom) * h;
+    lon += vLon * h;
+    lat += vLat * h;
+    zoom += vZoom * h;
+
+    const settled =
+      Math.abs(shortest) < 0.05 && Math.abs(target.lat - lat) < 0.05 &&
+      Math.abs(target.zoom - zoom) < 0.001 && Math.abs(vLon) < 0.5 && Math.abs(vLat) < 0.5;
+    if (settled) {
+      lon = target.lon;
+      lat = target.lat;
+      zoom = target.zoom;
+      vLon = vLat = vZoom = 0;
+      target = null;
+    }
+  };
+
   const step = (dt: number): boolean => {
     let moving = false;
 
     if (target) {
-      // Critically damped, so it arrives without overshooting. An overshoot on a reset reads as a
-      // bounce, and a bounce says "animation" where this needs to say "put back".
-      // Shortest way round, so flying from 179E to 179W crosses the date line rather than
-      // taking the long way through Greenwich.
-      let shortest = target.lon - lon;
-      shortest -= Math.round(shortest / 360) * 360;
-      const acc = (gap: number, v: number): number =>
-        SPRING_STIFFNESS * gap - SPRING_DAMPING * v;
-
-      vLon += acc(shortest, vLon) * dt;
-      vLat += acc(target.lat - lat, vLat) * dt;
-      vZoom += acc(target.zoom - zoom, vZoom) * dt;
-      lon += vLon * dt;
-      lat += vLat * dt;
-      zoom += vZoom * dt;
-
-      const settled =
-        Math.abs(shortest) < 0.05 && Math.abs(target.lat - lat) < 0.05 &&
-        Math.abs(target.zoom - zoom) < 0.001 && Math.abs(vLon) < 0.5 && Math.abs(vLat) < 0.5;
-      if (settled) {
-        lon = target.lon;
-        lat = target.lat;
-        zoom = target.zoom;
-        vLon = vLat = vZoom = 0;
-        target = null;
-      }
+      /*
+       * Integrated in small fixed slices, not in one step of whatever the frame happened to take.
+       *
+       * Semi-implicit Euler on a stiffness-100 spring is only stable while `stiffness * dt^2` stays
+       * small, and the frame clamp of 50ms is not small enough. On a slow browser the entrance
+       * overshot its destination and wobbled back: measured at 145.6, 146.3, 149.9 and 160.5
+       * degrees against a target of 145, varying with frame rate. Varying with frame rate is the
+       * signature of an integrator, not of a physics choice, and the bounce it produced is exactly
+       * what critical damping was chosen to avoid.
+       *
+       * Slicing makes the flight identical at 15fps and at 120fps, which also means a reset takes
+       * the same second on every machine.
+       */
+      const slices = Math.min(64, Math.max(1, Math.ceil(dt / MAX_SPRING_STEP)));
+      const h = dt / slices;
+      for (let i = 0; i < slices && target; i += 1) stepSpring(h);
       return true;
     }
 
