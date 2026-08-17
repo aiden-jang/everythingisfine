@@ -117,29 +117,40 @@ export interface ContractSubject {
   /**
    * Makes the transport hand over one payload and waits until the source has processed it.
    * For a poller that means running the due timer; for a push source, dispatching a message.
+   *
+   * `mode` is passed because a push source must be told *not* to hand over data when the transport
+   * is meant to be broken. The first version always dispatched a message, so the "degrades instead
+   * of throwing" test fed a healthy payload into a socket it had just declared dead.
    */
-  deliver: (runtime: FakeRuntime) => Promise<void>;
+  deliver: (runtime: FakeRuntime, mode: "healthy" | "broken") => Promise<void>;
   /** How many readings a healthy `deliver` is expected to produce the first time. */
   expectedFirstBatch: number;
 }
 
 export function describeSourceContract(subject: ContractSubject): void {
   describe(`${subject.name} satisfies the source contract`, () => {
-    const collect = (source: GeoEventSource) => {
+    /*
+     * Statuses are stamped with the time they arrived.
+     *
+     * A status carries `retryAt`, an absolute moment, and the thing under test is the gap between
+     * the failure and the retry. Subtracting the clock's *current* value gets that wrong the
+     * instant the clock moves, which is exactly what the backoff test does to itself.
+     */
+    const collect = (source: GeoEventSource, runtime: FakeRuntime) => {
       const readings: Reading[] = [];
-      const statuses: SourceStatus[] = [];
+      const statuses: { status: SourceStatus; at: number }[] = [];
       source.start({
         onReadings: (batch) => readings.push(...batch),
-        onStatus: (s) => statuses.push(s),
+        onStatus: (status) => statuses.push({ status, at: runtime.now() }),
       });
-      return { readings, statuses };
+      return { readings, statuses, kinds: () => statuses.map((s) => s.status.kind) };
     };
 
     it("emits readings that are all structurally sound", async () => {
       const runtime = subject.runtime("healthy");
       const source = subject.create(runtime);
-      const { readings } = collect(source);
-      await subject.deliver(runtime);
+      const { readings } = collect(source, runtime);
+      await subject.deliver(runtime, "healthy");
 
       expect(readings.length).toBe(subject.expectedFirstBatch);
       for (const r of readings) {
@@ -162,22 +173,22 @@ export function describeSourceContract(subject: ContractSubject): void {
     it("reports live once data is flowing", async () => {
       const runtime = subject.runtime("healthy");
       const source = subject.create(runtime);
-      const { statuses } = collect(source);
-      await subject.deliver(runtime);
+      const { statuses } = collect(source, runtime);
+      await subject.deliver(runtime, "healthy");
 
-      expect(statuses.at(-1)?.kind).toBe("live");
+      expect(statuses.at(-1)?.status.kind).toBe("live");
       source.stop();
     });
 
     it("never announces the same unchanged reading twice", async () => {
       const runtime = subject.runtime("healthy");
       const source = subject.create(runtime);
-      const { readings } = collect(source);
+      const { readings } = collect(source, runtime);
 
-      await subject.deliver(runtime);
+      await subject.deliver(runtime, "healthy");
       const first = readings.length;
-      await subject.deliver(runtime);
-      await subject.deliver(runtime);
+      await subject.deliver(runtime, "healthy");
+      await subject.deliver(runtime, "healthy");
 
       expect(readings.length).toBe(first);
       source.stop();
@@ -186,10 +197,10 @@ export function describeSourceContract(subject: ContractSubject): void {
     it("degrades instead of throwing when the transport fails", async () => {
       const runtime = subject.runtime("broken");
       const source = subject.create(runtime);
-      const { statuses, readings } = collect(source);
-      await subject.deliver(runtime);
+      const { statuses, readings } = collect(source, runtime);
+      await subject.deliver(runtime, "broken");
 
-      const last = statuses.at(-1);
+      const last = statuses.at(-1)?.status;
       expect(last?.kind).toBe("failing");
       if (last?.kind === "failing") {
         // Named, and with a time attached: the rail has to say which source and when it retries.
@@ -203,15 +214,16 @@ export function describeSourceContract(subject: ContractSubject): void {
     it("keeps trying after a failure, with a longer wait each time", async () => {
       const runtime = subject.runtime("broken");
       const source = subject.create(runtime);
-      const { statuses } = collect(source);
-      await subject.deliver(runtime);
+      const { statuses } = collect(source, runtime);
+      await subject.deliver(runtime, "broken");
 
-      const waits: number[] = [];
-      for (let i = 0; i < 3; i += 1) {
-        const before = statuses.at(-1);
-        if (before?.kind === "failing") waits.push(before.retryAt - runtime.now());
-        await runtime.advance(10 * 60_000);
-      }
+      for (let i = 0; i < 3; i += 1) await runtime.advance(10 * 60_000);
+
+      // Each wait is measured against the moment its own status was emitted, not against a clock
+      // that has since moved on.
+      const waits = statuses
+        .filter((s) => s.status.kind === "failing")
+        .map((s) => (s.status as { retryAt: number }).retryAt - s.at);
 
       expect(waits.length).toBeGreaterThan(1);
       expect(waits.at(-1)!).toBeGreaterThan(waits[0]!);
@@ -226,8 +238,8 @@ export function describeSourceContract(subject: ContractSubject): void {
     it("goes completely quiet after stop, and leaves nothing behind", async () => {
       const runtime = subject.runtime("healthy");
       const source = subject.create(runtime);
-      const { readings, statuses } = collect(source);
-      await subject.deliver(runtime);
+      const { readings, statuses } = collect(source, runtime);
+      await subject.deliver(runtime, "healthy");
 
       source.stop();
       const readingsAtStop = readings.length;
@@ -246,7 +258,7 @@ export function describeSourceContract(subject: ContractSubject): void {
       expect(runtime.openSockets()).toBe(0);
 
       await runtime.advance(30 * 60_000);
-      await subject.deliver(runtime).catch(() => undefined);
+      await subject.deliver(runtime, "healthy").catch(() => undefined);
 
       expect(readings).toHaveLength(readingsAtStop);
       expect(statuses).toHaveLength(statusesAtStop);
@@ -255,14 +267,14 @@ export function describeSourceContract(subject: ContractSubject): void {
     it("survives stop being called twice, and start after stop", async () => {
       const runtime = subject.runtime("healthy");
       const source = subject.create(runtime);
-      collect(source);
-      await subject.deliver(runtime);
+      collect(source, runtime);
+      await subject.deliver(runtime, "healthy");
 
       source.stop();
       expect(() => source.stop()).not.toThrow();
 
-      const second = collect(source);
-      await subject.deliver(runtime);
+      const second = collect(source, runtime);
+      await subject.deliver(runtime, "healthy");
       expect(second.readings.length).toBe(subject.expectedFirstBatch);
       source.stop();
       expect(runtime.pendingTimers()).toBe(0);

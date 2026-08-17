@@ -289,6 +289,66 @@ a mine an earthquake. So `kind` travels with every reading and is named on scree
 
 ---
 
+## The association windows were guesses; now they are measurements
+
+They started at 60 seconds and 200km, which sounded reasoned and was not. Measuring 24 hours of real
+M2.5+ activity across both catalogues, 50 of 53 USGS events had an EMSC counterpart, and the
+agencies agree far more closely than the guess assumed:
+
+| | median | p95 | max |
+|---|---|---|---|
+| origin-time difference | 0.1s | 3.0s | 16.7s |
+| epicentre distance | 0.0km | 19.6km | 135.6km |
+
+The generous window bought nothing and cost something real: at 60s/200km, one of those 50 events
+already had **two** EMSC candidates to choose between, and every extra second widens the aftershock
+false positive. Tightening to **30s/150km matched exactly the same 50 events** while halving the
+time window, so it is strictly better. 20s/100km would have dropped one genuine pair, which is where
+the evidence stops supporting further tightening.
+
+`one-quake-both-feeds.json` is one of those pairs, recorded unedited, and the measured deltas are
+stored beside it so a future data refresh cannot quietly invalidate the thresholds.
+
+---
+
+## EMSC ran the contract unchanged, and the contract had two bugs
+
+The point of writing the suite first was that adding a second source would either pass or produce a
+finding. It produced two, and both were in the harness rather than the adapter, which is the good
+outcome:
+
+- **The broken-transport test fed data into a socket it had just declared dead.** A poller has
+  nothing to hand over when its fetch fails, so the flaw was invisible with one source. A push
+  source has to be told not to deliver, so `deliver` now takes the mode.
+- **The backoff test measured each wait against a clock that had already moved.** `retryAt` is an
+  absolute moment; subtracting `now()` after advancing ten minutes measures nothing. Statuses are
+  now stamped with the time they arrived.
+
+Neither required a change to `emsc.ts`. The adapter itself passed on the first run.
+
+### What the push transport needs that polling did not
+
+- **A bounded seen-set.** A poller can replace its whole set each cycle because the feed restates
+  itself. A socket only ever says what changed, so anything remembered accumulates for as long as
+  the page is open. Same leak as the store's bucket index, arriving by a different door; capped at
+  20,000 identifiers, evicting oldest-first.
+- **A guard against mistaking its own teardown for a dropped connection.** Closing a socket fires
+  its close handler. Without the guard, `stop()` announces "connection lost" and schedules a
+  reconnect for a session the user just ended.
+- **Position from `properties`, not `geometry`.** The two disagree by design: the geometry's third
+  coordinate is *negative* for depth below the surface, so a 35km-deep event reports `-35.0` there
+  and `35.0` in properties. Reading the wrong one puts every earthquake in the sky.
+
+### Recorded socket frames, not reconstructed ones
+
+The EMSC REST catalogue publishes the same feature the socket sends, but says nothing about the
+envelope wrapping it. So frames were captured verbatim off the live standing-order socket and
+committed. They confirmed the envelope, and they contained a magnitude scale of bare `"m"`, which no
+hand-written fixture would have thought to include. That is the argument for keeping recordings
+alongside invented edge cases: invented fixtures only contain what you already knew to expect.
+
+---
+
 ## Open, and honestly so
 
 - **Reduced motion is written but not observed.** The code path skips momentum and snaps the reset,

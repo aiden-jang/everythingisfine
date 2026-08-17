@@ -15,21 +15,25 @@ import type { Reading, SourceId } from "./types";
  * a window on both, and the limits of that rule are written down below rather than discovered later.
  */
 
-/**
- * Origin times this far apart can still be one rupture.
+/*
+ * The two windows, set from measurement rather than from intuition.
  *
- * Agencies solve for origin time independently and land within a few seconds of each other. Sixty
- * gives generous room without reaching into the aftershock sequence.
- */
-export const TIME_WINDOW_MS = 60_000;
-
-/**
- * Epicentres this far apart can still be one rupture.
+ * They began at 60 seconds and 200km, which were guesses dressed up as reasoning. Measuring 24
+ * hours of real M2.5+ activity, 50 of 53 USGS events had an EMSC counterpart, and the two agencies
+ * turn out to agree far more closely than the guess assumed:
  *
- * Location solutions differ by tens of kilometres routinely and by more for deep or poorly
- * constrained events. Two hundred covers the disagreement without swallowing a neighbouring fault.
+ *              median      p95      max
+ *   origin time   0.1s     3.0s    16.7s
+ *   epicentre     0.0km   19.6km  135.6km
+ *
+ * The generous window bought nothing and cost something real: at 60s/200km one of those 50 events
+ * already had two EMSC candidates to choose between, and every extra second of window is extra
+ * exposure to the aftershock false positive below. Tightening to 30s/150km matched exactly the same
+ * 50 events while halving the time window, so it is strictly better. Tightening further to
+ * 20s/100km would have dropped one genuine pair, which is where the evidence stops supporting it.
  */
-export const DISTANCE_LIMIT_KM = 200;
+export const TIME_WINDOW_MS = 30_000;
+export const DISTANCE_LIMIT_KM = 150;
 
 /**
  * True when two readings plausibly describe one earthquake.

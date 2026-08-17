@@ -1,0 +1,65 @@
+{
+ "_note": "Frames captured verbatim from the EMSC standing-order WebSocket (wss://www.seismicportal.eu/standing_order/websocket) on 2026-08-17. Recorded, not reconstructed: they are the only proof that the envelope the adapter unwraps is the envelope the socket actually sends.",
+ "frames": [
+  {
+   "action": "create",
+   "data": {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      120.6,
+      -7.84,
+      -35.0
+     ]
+    },
+    "id": "20260817_0000653",
+    "properties": {
+     "source_id": "2045790",
+     "source_catalog": "EMSC-RTS",
+     "lastupdate": "2026-08-17T19:56:29.517101Z",
+     "time": "2026-08-17T19:48:47.0Z",
+     "flynn_region": "FLORES SEA",
+     "lat": -7.84,
+     "lon": 120.6,
+     "depth": 35.0,
+     "evtype": "ke",
+     "auth": "BMKG",
+     "mag": 3.3,
+     "magtype": "m",
+     "unid": "20260817_0000653"
+    }
+   }
+  },
+  {
+   "action": "create",
+   "data": {
+    "type": "Feature",
+    "geometry": {
+     "type": "Point",
+     "coordinates": [
+      176.202,
+      51.865,
+      -10.0
+     ]
+    },
+    "id": "20260808_0000406",
+    "properties": {
+     "source_id": "2045792",
+     "source_catalog": "EMSC-RTS",
+     "lastupdate": "2026-08-17T19:57:44.503119Z",
+     "time": "2026-08-08T12:30:37.971341Z",
+     "flynn_region": "RAT ISLANDS, ALEUTIAN ISLANDS",
+     "lat": 51.865,
+     "lon": 176.202,
+     "depth": 10.0,
+     "evtype": "ke",
+     "auth": "AK",
+     "mag": 3.0,
+     "magtype": "ml",
+     "unid": "20260808_0000406"
+    }
+   }
+  }
+ ]
+}
