@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { createGlobe } from "./scene";
-import { DEFAULT_FILTERS, type Feed } from "../app/feed";
+import { DEFAULT_FILTERS, frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 
 /*
  * The canvas, and the smallest possible amount of React around it.
@@ -29,7 +29,9 @@ export function Globe({ feed }: { feed: Feed }): JSX.Element {
       // A seam for driving the camera from outside during development and, later, from Playwright.
       // Both members are real interface rather than test-only scaffolding: hover needs `pick` and
       // permalinks need `state`.
-      Object.assign(window, { __globe: globe.controls, __feed: feed, __events: globe.events });
+      Object.assign(window, {
+        __globe: globe.controls, __feed: feed, __events: globe.events, __rings: globe.rings,
+      });
     }
 
     /*
@@ -49,8 +51,11 @@ export function Globe({ feed }: { feed: Feed }): JSX.Element {
       last = now;
       const moving = globe.controls.step(dt);
       globe.controls.apply();
+      // Rings are the other thing that can be alive. The loop belongs to whichever is still
+      // going, and stops the frame after both are done, so an idle globe still costs nothing.
+      const expanding = globe.rings.step(dt) > 0;
       globe.render();
-      if (moving) requestAnimationFrame(frame);
+      if (moving || expanding) requestAnimationFrame(frame);
       else running = false;
     };
 
@@ -61,8 +66,6 @@ export function Globe({ feed }: { feed: Feed }): JSX.Element {
       requestAnimationFrame(frame);
     };
 
-    const detach = globe.controls.attach(wake);
-
     /*
      * Data arriving is the other reason to redraw.
      *
@@ -71,10 +74,19 @@ export function Globe({ feed }: { feed: Feed }): JSX.Element {
      * once per announcement keeps the idle cost at exactly zero, which is the whole point of not
      * having an ambient loop.
      */
-    const redrawFromData = (): void => {
+    const redrawFromData = (snapshot: FeedSnapshot): void => {
       globe.events.sync(feed.store, filters, Date.now());
-      globe.render();
+
+      // A front per arrival, except on the seed. See `frontsFor`.
+      const fronts = frontsFor(snapshot);
+      for (const quake of fronts) {
+        globe.rings.spawn(quake.primary.lon, quake.primary.lat, quake.primary.magnitude);
+      }
+
+      if (fronts.length > 0) wake();
+      else globe.render();
     };
+    const detach = globe.controls.attach(wake);
     const unsubscribe = feed.subscribe(redrawFromData);
     feed.start();
 
