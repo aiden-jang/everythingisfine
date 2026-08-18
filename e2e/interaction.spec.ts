@@ -574,6 +574,44 @@ test("a pinned event the filters exclude says so", async ({ page }) => {
   await expect(panel).not.toContainText("Outside the current filters");
 });
 
+test("the rail names the largest event and flies to it", async ({ page }) => {
+  /*
+   * The list is newest first, so a magnitude 6 from eight hours ago sits forty rows down while forty
+   * magnitude 2s sit above it. The one fact a person actually wants was the hardest thing in the rail
+   * to find.
+   */
+  const at = (mag: number, id: string, agoMinutes: number, lon: number) => ({
+    id,
+    properties: {
+      mag, place: `${id} region`, time: Date.now() - agoMinutes * 60_000,
+      updated: 1, magType: "mww", type: "earthquake",
+    },
+    geometry: { coordinates: [lon, -8.6, 20] },
+  });
+
+  await installFeeds(page, {
+    usgs: [
+      at(6.3, "mainshock", 480, 120),
+      at(2.4, "newer", 5, -70),
+      at(2.9, "newest", 2, -71),
+    ],
+  });
+  await page.goto("/#at=0,0,1&m=2&w=24&s=usgs&r=thermal");
+
+  const largest = page.getByRole("button", { name: /Largest/ });
+  await expect(largest).toBeVisible({ timeout: 25_000 });
+  await expect(largest).toContainText("6.3");
+  await expect(largest).toContainText("mainshock region");
+  await expect(largest).toContainText("8h");
+
+  // It is the shortest route to the event it names.
+  await largest.click();
+  await expect(page.locator(".zone-panel")).toContainText("M 6.3");
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 10_000 })
+    .toMatch(/^#at=120,-8\.6,1\.9&/);
+});
+
 test("a shared camera survives the entrance", async ({ page }) => {
   /*
    * Regression. The entrance named the default framing as its destination and runs after the

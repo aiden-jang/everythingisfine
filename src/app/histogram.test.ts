@@ -26,7 +26,7 @@ const walk = (quakes: Quake[]) => (fn: (q: Quake) => void) => quakes.forEach(fn)
 
 describe("the activity histogram", () => {
   it("reads oldest first, so the array is the axis", () => {
-    const bars = histogram(walk([]), filters(), NOW, NOW - 24 * HOUR);
+    const { bars } = histogram(walk([]), filters(), NOW, NOW - 24 * HOUR);
     expect(bars).toHaveLength(HOURS);
     expect(bars[0]!.hoursAgo).toBe(23);
     expect(bars[HOURS - 1]!.hoursAgo).toBe(0);
@@ -36,27 +36,27 @@ describe("the activity histogram", () => {
     // Twenty minutes old, delivered a moment ago. It belongs in the current hour either way, so
     // the case that matters is the one that straddles a boundary.
     const late = quake({ time: NOW - 90 * 60_000, receivedAt: NOW - 1_000 });
-    const bars = histogram(walk([late]), filters(), NOW, NOW - 24 * HOUR);
+    const { bars } = histogram(walk([late]), filters(), NOW, NOW - 24 * HOUR);
     expect(bars.find((b) => b.hoursAgo === 1)!.count).toBe(1);
     expect(bars.find((b) => b.hoursAgo === 0)!.count).toBe(0);
   });
 
   it("ignores the window filter, because it is the control for it", () => {
     const old = quake({ time: NOW - 20 * HOUR });
-    const bars = histogram(walk([old]), filters({ windowMs: HOUR }), NOW, NOW - 24 * HOUR);
+    const { bars } = histogram(walk([old]), filters({ windowMs: HOUR }), NOW, NOW - 24 * HOUR);
     expect(bars.find((b) => b.hoursAgo === 20)!.count).toBe(1);
   });
 
   it("applies magnitude and source, because the strip must match the globe", () => {
     const small = quake({ magnitude: 2.5 });
     const emsc = quake({ source: "emsc" });
-    expect(peakCount(histogram(walk([small]), filters({ minMagnitude: 4 }), NOW, null))).toBe(0);
-    expect(peakCount(histogram(walk([emsc]), filters({ sources: new Set(["usgs"]) }), NOW, null)))
+    expect(peakCount(histogram(walk([small]), filters({ minMagnitude: 4 }), NOW, null).bars)).toBe(0);
+    expect(peakCount(histogram(walk([emsc]), filters({ sources: new Set(["usgs"]) }), NOW, null).bars))
       .toBe(0);
   });
 
   it("keeps the strongest magnitude in each hour, not the last one seen", () => {
-    const bars = histogram(
+    const { bars } = histogram(
       walk([quake({ magnitude: 6.1 }), quake({ magnitude: 3.0 })]),
       filters(), NOW, NOW - 24 * HOUR,
     );
@@ -65,26 +65,26 @@ describe("the activity histogram", () => {
 
   it("marks an hour the buffer only partly covers as unobserved", () => {
     // Opened 90 minutes ago: the hour ending now is covered, the one before it is not.
-    const bars = histogram(walk([]), filters(), NOW, NOW - 90 * 60_000);
+    const { bars } = histogram(walk([]), filters(), NOW, NOW - 90 * 60_000);
     expect(bars.find((b) => b.hoursAgo === 0)!.observed).toBe(true);
     expect(bars.find((b) => b.hoursAgo === 1)!.observed).toBe(false);
     expect(bars.find((b) => b.hoursAgo === 2)!.observed).toBe(false);
   });
 
   it("treats an empty buffer as having observed nothing", () => {
-    expect(histogram(walk([]), filters(), NOW, null).every((b) => !b.observed)).toBe(true);
+    expect(histogram(walk([]), filters(), NOW, null).bars.every((b) => !b.observed)).toBe(true);
   });
 
   it("keeps a future-dated event rather than dropping it", () => {
     // Clock skew between an agency and the browser. The window filter accepts it and the globe
     // draws it, so a strip that dropped it would not total the picture beside it.
     const ahead = quake({ time: NOW + 4_000 });
-    const bars = histogram(walk([ahead]), filters(), NOW, NOW - 24 * HOUR);
+    const { bars } = histogram(walk([ahead]), filters(), NOW, NOW - 24 * HOUR);
     expect(bars.find((b) => b.hoursAgo === 0)!.count).toBe(1);
   });
 
   it("totals exactly the events inside the window", () => {
-    const bars = histogram(
+    const { bars } = histogram(
       walk([quake({ time: NOW - 30 * 60_000 }), quake({ time: NOW - 3 * HOUR }),
             quake({ time: NOW - 20 * HOUR })]),
       filters(), NOW, NOW - 24 * HOUR,
@@ -96,6 +96,23 @@ describe("the activity histogram", () => {
 
   it("drops events older than the strip rather than piling them into the last bar", () => {
     const ancient = quake({ time: NOW - 40 * HOUR });
-    expect(peakCount(histogram(walk([ancient]), filters(), NOW, NOW - 24 * HOUR))).toBe(0);
+    expect(peakCount(histogram(walk([ancient]), filters(), NOW, NOW - 24 * HOUR).bars)).toBe(0);
+  });
+});
+
+describe("the strongest event in the window", () => {
+  it("is the largest that passes the filters, not the largest held", () => {
+    const big = quake({ magnitude: 6.4, id: "big" });
+    const small = quake({ magnitude: 3.1, id: "small" });
+    const filtered = quake({ magnitude: 7.2, id: "emsc-only", source: "emsc" });
+
+    const { strongest } = histogram(
+      walk([small, big, filtered]), filters({ sources: new Set(["usgs"]) }), NOW, null,
+    );
+    expect(strongest?.primary.id).toBe("big");
+  });
+
+  it("is null when nothing is in the window", () => {
+    expect(histogram(walk([]), filters(), NOW, null).strongest).toBeNull();
   });
 });

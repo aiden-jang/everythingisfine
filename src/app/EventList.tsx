@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Quake } from "../data/types";
-import { ago, coordinates, depth, place, reportedBy, SOURCE_NAMES } from "./format";
+import { ago, agoShort, coordinates, depth, place, reportedBy, SOURCE_NAMES } from "./format";
 
 /*
  * The list of recent events. One list, for everybody.
@@ -185,9 +185,7 @@ export function EventList({
                   {place(quake.primary.place)}
                 </span>
                 <span className="mt-1 block truncate font-mono text-[10.5px] leading-none text-faint">
-                  {ago(quake.primary.time, now)
-                    .replace(" ago", "").replace(/ minutes?/, "m")
-                    .replace(/ hours?/, "h").replace(/ days?/, "d")}
+                  {agoShort(quake.primary.time, now)}
                   {` · ${depth(quake.primary)}`}
                   {` · ${quake.readings.map((r) => SOURCE_NAMES[r.source]).join(" ")}`}
                   {/*

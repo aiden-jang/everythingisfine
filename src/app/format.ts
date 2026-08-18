@@ -85,6 +85,20 @@ export function windowLabel(
   return `since ${clock(coveredSince)}`;
 }
 
+/**
+ * The same thing as `ago`, in the space a table column has.
+ *
+ * Extracted when the rail's largest-event row needed it too. Two copies of a string transform is how
+ * "5h" and "21 hours" end up side by side in one panel, each correct on its own.
+ */
+export function agoShort(then: number, now: number): string {
+  return ago(then, now)
+    .replace(" ago", "")
+    .replace(/ minutes?/, "m")
+    .replace(/ hours?/, "h")
+    .replace(/ days?/, "d");
+}
+
 /** Which agencies reported an event, for the panel's header line. */
 export function reportedBy(quake: Quake): string {
   return quake.readings.map((r) => SOURCE_NAMES[r.source]).join(" and ");

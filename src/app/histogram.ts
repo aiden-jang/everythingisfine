@@ -46,14 +46,26 @@ export interface Bar {
  * this runs on every revision; copying the buffer out to count it would be the most expensive thing
  * in the frame for no reason.
  */
+export interface Activity {
+  bars: Bar[];
+  /**
+   * The strongest event in the window, or null when there is none.
+   *
+   * Returned from here rather than found separately because this already walks every event in the
+   * buffer, and the alternative is a second full pass to answer a one-line question.
+   */
+  strongest: Quake | null;
+}
+
 export function histogram(
   forEach: (fn: (quake: Quake) => void) => void,
   filters: Filters,
   now: number,
   since: number | null,
-): Bar[] {
+): Activity {
   const counts = new Array<number>(HOURS).fill(0);
   const peaks = new Array<number | null>(HOURS).fill(null);
+  let strongest: Quake | null = null;
 
   forEach((quake) => {
     if (!passesMagnitude(quake, filters.minMagnitude)) return;
@@ -74,9 +86,10 @@ export function histogram(
     counts[bucket] += 1;
     const m = quake.primary.magnitude;
     if (peaks[bucket] === null || m > peaks[bucket]!) peaks[bucket] = m;
+    if (strongest === null || m > strongest.primary.magnitude) strongest = quake;
   });
 
-  return Array.from({ length: HOURS }, (_, i) => {
+  const bars = Array.from({ length: HOURS }, (_, i) => {
     const hoursAgo = HOURS - 1 - i;
     // The hour this bar covers, as [start, end).
     const start = now - (hoursAgo + 1) * HOUR_MS;
@@ -94,6 +107,8 @@ export function histogram(
       observed: since !== null && since <= start,
     };
   });
+
+  return { bars, strongest };
 }
 
 /** The tallest bar, for scaling. Zero when nothing passes, which callers must not divide by. */
