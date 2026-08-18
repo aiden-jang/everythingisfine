@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { frontsFor } from "./feed";
+import { frontsFor, MAX_LIVE_FRONTS } from "./feed";
 import type { Quake, Reading } from "../data/types";
 
 /*
@@ -61,5 +61,43 @@ describe("which arrivals get a wavefront", () => {
   it("gives every live arrival its own front", () => {
     const arrived = [quake("a", 4), quake("b", 5), quake("c", 3)];
     expect(frontsFor({ arrived, seeding: false })).toHaveLength(3);
+  });
+});
+
+describe("a burst that arrived while the tab was hidden", () => {
+  /*
+   * Announcements are coalesced through requestAnimationFrame and a backgrounded tab suspends it, so
+   * arrivals queue behind one pending callback and land together on the switch back. The seed rule
+   * covers the first batch and nothing covered this one: sixty-four fronts in a single frame.
+   */
+  const burst = (n: number): Quake[] =>
+    Array.from({ length: n }, (_, i) => quake(`b${i}`, 2 + (i % 40) / 10));
+
+  it("leaves ordinary live traffic alone", () => {
+    const arrived = burst(2);
+    expect(frontsFor({ arrived, seeding: false })).toEqual(arrived);
+    expect(frontsFor({ arrived: burst(MAX_LIVE_FRONTS), seeding: false }))
+      .toHaveLength(MAX_LIVE_FRONTS);
+  });
+
+  it("fires a few of the largest rather than all forty", () => {
+    const arrived = burst(40);
+    const fronts = frontsFor({ arrived, seeding: false });
+    expect(fronts).toHaveLength(MAX_LIVE_FRONTS);
+
+    const smallest = Math.min(...fronts.map((q) => q.primary.magnitude));
+    const dropped = arrived.filter((q) => !fronts.includes(q));
+    expect(Math.max(...dropped.map((q) => q.primary.magnitude))).toBeLessThanOrEqual(smallest);
+  });
+
+  it("keeps them in arrival order, not in magnitude order", () => {
+    const arrived = burst(40);
+    const fronts = frontsFor({ arrived, seeding: false });
+    const indexes = fronts.map((q) => arrived.indexOf(q));
+    expect([...indexes].sort((a, b) => a - b)).toEqual(indexes);
+  });
+
+  it("still collapses the seed to one, however large the batch", () => {
+    expect(frontsFor({ arrived: burst(64), seeding: true })).toHaveLength(1);
   });
 });

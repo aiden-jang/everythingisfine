@@ -132,8 +132,9 @@ than swapping the number silently, the panel says what it first said, the row is
 header counts how many events have changed. Only a changed magnitude counts as a revision, because
 both USGS feeds re-serve every event they hold on every poll.
 
-Only magnitude is tracked. Depth and epicentre are revised too and are not, which is a real gap: a
-40km event reassessed to 10km is a different event to anyone downstream.
+Magnitude and depth are both tracked, and the panel prints whichever moved. The epicentre is revised
+too and is not: it shifts a few kilometres on most revisions, which is not worth a line, and the
+position on screen already shows it.
 
 ## What is wrong with it
 

@@ -65,8 +65,29 @@ export interface FeedSnapshot {
  * fireworks display announcing nothing. Replaying exactly one, the most recent, is what makes the
  * first frame after a cold load already moving without claiming the whole day arrived in it.
  */
+/**
+ * The most fronts one announcement may fire.
+ *
+ * Live traffic delivers one or two events per announcement, so this changes nothing in normal running.
+ * It exists for the resume case: announcements are coalesced through `requestAnimationFrame`, which a
+ * backgrounded tab suspends, so arrivals pile up behind one pending callback and land together the
+ * moment somebody switches back. Up to sixty-four fronts in one frame is the same fireworks display
+ * announcing nothing that the seed rule exists to prevent, arriving through a different door.
+ */
+export const MAX_LIVE_FRONTS = 3;
+
 export function frontsFor(snapshot: Pick<FeedSnapshot, "arrived" | "seeding">): Quake[] {
-  return snapshot.seeding ? snapshot.arrived.slice(-1) : snapshot.arrived;
+  if (snapshot.seeding) return snapshot.arrived.slice(-1);
+  if (snapshot.arrived.length <= MAX_LIVE_FRONTS) return snapshot.arrived;
+
+  // The largest, then back into arrival order: which ones is a question about what is worth
+  // announcing, and the order they go out in is a separate question with an obvious answer.
+  const largest = new Set(
+    [...snapshot.arrived]
+      .sort((a, b) => b.primary.magnitude - a.primary.magnitude)
+      .slice(0, MAX_LIVE_FRONTS),
+  );
+  return snapshot.arrived.filter((q) => largest.has(q));
 }
 
 export interface Feed {

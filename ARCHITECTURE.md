@@ -1610,6 +1610,66 @@ The keyboard test pressed a key while the entrance was still flying, so the nudg
 moving target. That is the behaviour the wheel fix deliberately introduced and it makes the destination
 depend on when the key arrived. It waits for the entrance to land first.
 
+## A second sweep, and three more
+
+Focus order and reflow came back clean, which is worth recording as a negative result: eleven tab stops
+in a sensible order, a visible 2px ring on every one of them, and no horizontal overflow at 320px, the
+WCAG reflow width. Not everything checked is broken.
+
+### Sixty-four wavefronts waiting behind a hidden tab
+
+Announcements are coalesced through `requestAnimationFrame`, which a backgrounded tab suspends, so
+arrivals pile up behind one pending callback and land together the moment somebody switches back. Up to
+sixty-four fronts in a single frame: the same fireworks display announcing nothing that the seed rule
+exists to prevent, arriving through a different door.
+
+The comment at the top of the fronts test already said "every headless and backgrounded context
+suspends it". The consequence for the arrival queue was never followed through, in a file written to
+reason about exactly this.
+
+An announcement now fires at most three fronts, choosing the largest and putting them back into arrival
+order. Live traffic delivers one or two per announcement, so this changes nothing in normal running,
+which is what makes it a safe rule rather than a tuning knob.
+
+### The globe was a 153px sliver on a small laptop
+
+The tablet band gave the rail an `auto` row and the canvas the remainder. At 900 by 700 the remainder
+measured **153px, 22% of the viewport**: a globe reduced to a strip by the controls describing it.
+
+Every screenshot of that band had been taken at 900 by 900 or taller, where the rail's height happens
+not to matter. The canvas row is now `minmax(45dvh, 1fr)` and the rail scrolls in its band if that
+leaves it short, which is the right way round: the subject gets a floor and the chrome yields.
+
+The first attempt made the rail's row `minmax(0, auto)` so it could shrink. That is not a smaller row,
+it is an overlapping one: the grid sized it to min-content, the rows collapsed, and the event list kept
+its own `max-height` and spilled on top of the key hints. Four candidate fixes were measured before the
+right one, and the one that worked was to stop shrinking the row and cap the rail instead, with the
+list given a definite `height` rather than a `max-height`, because a maximum is not a floor and a
+constrained grid will happily size a row below it.
+
+45dvh, not 50: the header takes its own slice first, so 50 left the globe at 42% of a 640px screen.
+
+Measured after: 47% at 900 by 700 against 22% before, and the test asserts a floor at five sizes rather
+than at one comfortable one.
+
+**The honest cost.** In that band the rail now scrolls, and at 700px tall it clips a list row at its
+boundary. The strip alone needs most of the budget, so there is no arrangement that shows the strip,
+three legend rows, several list rows and a usable globe at once on a short landscape screen. Something
+has to scroll and the globe should not be the thing that shrinks. It is a trade, not a solution.
+
+### Depth revisions, which I had scoped out
+
+The revision feature tracked magnitude only, and I wrote at the time that tracking one thing honestly
+beat tracking four vaguely. That reason expired the moment the mechanism existed. Depth matters as much
+as magnitude to anyone downstream: 40km is inside a descending slab, 10km is the crust, and shallow is
+where the damage happens.
+
+One trap in it. Both feeds spell "no depth given" as `NaN`, and `NaN !== NaN`, so the obvious comparison
+reports a revision on every re-poll of an event that never had a depth. That is the same class of
+mistake as counting re-polls as magnitude revisions, which would have made the count meaningless in a
+day. The panel prints only the half that moved, because showing an unchanged number beside a changed one
+reads as though both had shifted.
+
 ## The CI gap, demonstrated rather than argued
 
 Halfway through this pass both feeds became unreachable from this machine, and the browser suite went
