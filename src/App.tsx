@@ -461,6 +461,26 @@ export function App(): JSX.Element {
             onAnnounceAboveChange={setAnnounceAbove}
             waiting={snapshot.coveredSince === null}
           />
+
+          {/*
+            The keys, said out loud.
+            Every one of these already worked and none of them were written down anywhere, which makes
+            a keyboard-only viewer a person who cannot move the globe. Below the list rather than in
+            the header because it is reference, not status: read once, then ignored.
+          */}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-hairline pt-2.5 font-mono text-[10.5px] text-faint">
+            {([
+              ["arrows", "orbit"],
+              ["+ −", "zoom"],
+              ["0", "reset"],
+              ["esc", "clear"],
+            ] as const).map(([key, what]) => (
+              <span key={key} className="flex items-baseline gap-1.5">
+                <span className="text-dim">{key}</span>
+                {what}
+              </span>
+            ))}
+          </div>
         </aside>
 
         {/* Hidden from assistive tech. The parallel accessible feed in step B is the real

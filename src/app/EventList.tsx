@@ -141,7 +141,20 @@ export function EventList({
 
       {/* One tab stop, then arrows. Tabbing through sixty earthquakes to reach the next control
           would be its own accessibility failure. */}
-      <ul className="mt-2 min-h-0 flex-1 overflow-y-auto pr-2" onKeyDown={onKeyDown}>
+      {/*
+        `contain: paint` is load-bearing, not a hint.
+
+        Without it the sixty rows inflated `documentElement.scrollHeight` to 3,486px against an 820px
+        viewport even though this box clips them: a scroll container's content still reached the
+        document's layout overflow, so the whole app could be dragged off the top of the screen to
+        reveal 2,500px of void. Setting `overflow: clip` here did not fix it and neither did clipping
+        the root. Containment is the only thing that says "nothing in this box affects anything
+        outside it", which is exactly the claim that was false.
+      */}
+      <ul
+        className="mt-2 min-h-0 flex-1 overflow-y-auto pr-2 [contain:paint]"
+        onKeyDown={onKeyDown}
+      >
         {quakes.map((quake, i) => (
           <li key={quake.key}>
             <button

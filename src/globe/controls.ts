@@ -239,22 +239,92 @@ export function createControls(
    * "move it by the difference" is literally a subtraction in the same units. Two passes, because
    * one is visibly short near the limb where the projection compresses hardest.
    */
+  /*
+   * Aims the camera, compounding off wherever it is already heading.
+   *
+   * Shared by the wheel and the keyboard so both feel the same and both survive being repeated faster
+   * than the spring settles. Compounding off the animated value instead is the natural way to write it
+   * and silently undershoots: two quick notches land on 1.59 instead of 1.70, because the second is
+   * measured against a camera still in flight.
+   */
+  const aim = (
+    dest: { lon: number; lat: number; zoom: number }, instant = reduced.matches,
+  ): void => {
+    if (instant) {
+      lon = dest.lon;
+      lat = dest.lat;
+      zoom = dest.zoom;
+      target = null;
+      vLon = vLat = vZoom = 0;
+      apply();
+      return;
+    }
+    // Velocity is deliberately not zeroed the way flyTo does it: these are streams of small inputs,
+    // and resetting on each one is what turns a scroll or a held key into a stutter.
+    target = dest;
+  };
+
+  /** One key press of camera movement, in degrees and in zoom factor. */
+  const nudge = (dLon: number, dLat: number, factor = 1): void => {
+    const base = target ?? { lon, lat, zoom };
+    aim({
+      lon: base.lon + dLon,
+      lat: clampLat(base.lat + dLat),
+      zoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, base.zoom * factor)),
+    });
+  };
+
+  /*
+   * Zooms toward the cursor, through the spring rather than straight onto the camera.
+   *
+   * It used to assign `zoom` directly, so a mouse wheel stepped the camera 14% per notch in one
+   * frame: correct, anchored, and visibly a staircase. The spring that already smooths every `flyTo`
+   * was sitting right there and the wheel was the one input bypassing it.
+   *
+   * The anchoring maths is unchanged and still runs against a real camera, just a hypothetical one:
+   * the camera is moved to where it is *heading*, the correction is solved there, the result becomes
+   * the new target, and the visible camera is put back for the spring to carry. Compounding off the
+   * pending target rather than the current zoom is what makes ten fast notches travel ten notches
+   * instead of racing the animation.
+   */
   const zoomAt = (factor: number, clientX: number, clientY: number): void => {
     const before = pick(clientX, clientY);
-    zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoom * factor));
-    apply();
-    if (!before) return;
+    const base = target ?? { lon, lat, zoom };
+    const nextZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, base.zoom * factor));
 
-    for (let i = 0; i < 2; i += 1) {
-      const after = pick(clientX, clientY);
-      if (!after) return;
-      let d = before.lon - after.lon;
-      if (d > 180) d -= 360;
-      else if (d < -180) d += 360;
-      lon += d;
-      lat = clampLat(lat + (before.lat - after.lat));
-      apply();
+    const wasLon = lon;
+    const wasLat = lat;
+    const wasZoom = zoom;
+    lon = base.lon;
+    lat = base.lat;
+    zoom = nextZoom;
+    apply();
+
+    if (before) {
+      for (let i = 0; i < 2; i += 1) {
+        const after = pick(clientX, clientY);
+        if (!after) break;
+        let d = before.lon - after.lon;
+        if (d > 180) d -= 360;
+        else if (d < -180) d += 360;
+        lon += d;
+        lat = clampLat(lat + (before.lat - after.lat));
+        apply();
+      }
     }
+
+    const dest = { lon, lat, zoom };
+    if (reduced.matches) {
+      target = null;
+      vLon = vLat = vZoom = 0;
+      return;
+    }
+
+    lon = wasLon;
+    lat = wasLat;
+    zoom = wasZoom;
+    apply();
+    aim(dest);
   };
 
   const attach = (onChange: () => void): (() => void) => {
@@ -370,12 +440,43 @@ export function createControls(
       onChange();
     };
 
+    /*
+     * Camera keys, on the window rather than the canvas.
+     *
+     * The canvas is `aria-hidden` and not focusable on purpose: the accessible feed is the interface
+     * for a screen reader and the canvas is never it. But a sighted person with no mouse is a
+     * different user, and until now they could not move the globe at all.
+     *
+     * Only while nothing is focused, so tabbing into the event list gives its arrows back and a slider
+     * keeps its own. That is one rule rather than a list of elements to keep in step, which is how the
+     * touch-target rule went wrong when it named regions instead of naming the thing.
+     */
+    const onKeyDown = (e: KeyboardEvent): void => {
+      if (document.activeElement && document.activeElement !== document.body) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const step = e.shiftKey ? 24 : 8;
+      switch (e.key) {
+        case "ArrowLeft": nudge(-step, 0); break;
+        case "ArrowRight": nudge(step, 0); break;
+        case "ArrowUp": nudge(0, step); break;
+        case "ArrowDown": nudge(0, -step); break;
+        case "+": case "=": nudge(0, 0, 1.25); break;
+        case "-": case "_": nudge(0, 0, 1 / 1.25); break;
+        case "0": flyTo(framing.lon, framing.lat, 1); break;
+        default: return;
+      }
+      e.preventDefault();
+      onChange();
+    };
+
     canvas.addEventListener("pointerdown", onPointerDown);
     canvas.addEventListener("pointermove", onPointerMove);
     canvas.addEventListener("pointerup", onPointerUp);
     canvas.addEventListener("pointercancel", onPointerUp);
     canvas.addEventListener("wheel", onWheel, { passive: false });
     canvas.addEventListener("dblclick", onDoubleClick);
+    window.addEventListener("keydown", onKeyDown);
 
     return () => {
       canvas.removeEventListener("pointerdown", onPointerDown);
@@ -384,6 +485,7 @@ export function createControls(
       canvas.removeEventListener("pointercancel", onPointerUp);
       canvas.removeEventListener("wheel", onWheel);
       canvas.removeEventListener("dblclick", onDoubleClick);
+      window.removeEventListener("keydown", onKeyDown);
     };
   };
 

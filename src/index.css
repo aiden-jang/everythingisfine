@@ -38,6 +38,17 @@
   html {
     background: var(--color-void);
     color-scheme: dark;
+    /* The page itself never scrolls. This is a fixed-viewport instrument: the event list scrolls, and
+       on a phone the rail scrolls, and the document has nothing below the fold to reach.
+
+       Without it the document was 3,486px tall against a 940px viewport, so the whole app could be
+       dragged up off the screen to reveal 2,546px of empty void. `overflow-x: hidden` on body was the
+       cause: it makes body a scroll container, and its scrollable content then counted toward the
+       document's height. The old overflow test only ever measured scrollWidth, so nothing caught it.
+
+       The cause is fixed at the source with containment on the list, so this is the guard rather than
+       the fix. `clip` rather than `hidden` because hidden stays programmatically scrollable. */
+    overflow: clip;
   }
 
   body {
@@ -47,7 +58,7 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     /* Horizontal overflow at any width is a build failure here, not a cosmetic bug. */
-    overflow-x: hidden;
+    overflow: clip;
   }
 
   /* Every number on screen updates. Proportional figures make a one-second counter jitter its own
@@ -136,6 +147,9 @@
       min-height: 0;
       overflow-y: auto;
       overscroll-behavior: contain;
+      /* Same reason as the event list: a scroll container's content reaches the document's layout
+         overflow unless containment says it cannot, and on a phone this box is the one that scrolls. */
+      contain: paint;
     }
   }
 

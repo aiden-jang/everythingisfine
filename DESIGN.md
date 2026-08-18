@@ -366,6 +366,17 @@ chrome is what makes a moving arc read as real.
 
 - Camera: orbit with damping and momentum, zoom toward the cursor rather than the screen centre,
   clamped so the globe cannot be entered or lost. Double-click returns to the framing shot.
+- **Every camera input goes through the spring.** The wheel used to assign zoom straight onto the
+  camera, which is a 14% staircase per notch next to a `flyTo` that eases. One helper aims the camera
+  for the wheel and the keys alike, and it compounds off the pending target so repeating an input
+  faster than the spring settles still arrives where it should.
+- **The globe is operable from the keyboard, and the keys are on screen.** Arrows orbit, `+`/`-` zoom,
+  `0` resets, Shift goes further. The canvas being hidden from assistive tech does not cover this: a
+  sighted person with no mouse is a different user. An undocumented shortcut is a secret, so the rail
+  carries a hint row.
+- **The page itself never scrolls, at any width.** This is a fixed-viewport instrument; the event list
+  scrolls and on a phone the rail does. Scroll containers need `contain: paint` or their content
+  reaches the document's layout overflow and the whole app can be dragged off the screen.
 - **North stays up.** The globe never rolls, which means a drag does not track exactly what it
   grabbed away from the equator: 0.2px of slip at the equator, 4.4px at the framing latitude, 53px
   at 70 degrees. Exact tracking needs rotation about an arbitrary axis, and a map whose north
