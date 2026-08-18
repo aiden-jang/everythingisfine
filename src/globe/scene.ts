@@ -61,8 +61,13 @@ const COLOR_RIM = new Color(0x7896be);
 const FRAMING = { lon: 145, lat: 12 } as const;
 
 const FOV = 32;
-/** Fraction of the smaller viewport dimension the globe occupies. Leaves the limb room to glow. */
-const FILL = 0.78;
+/**
+ * Fraction of the smaller viewport dimension the globe occupies.
+ *
+ * Was 0.78, which left the subject floating in a lot of nothing. 0.86 still leaves the rim room to
+ * fall off into, which is the only thing the margin was ever for.
+ */
+const FILL = 0.86;
 
 /*
  * Rim light. Sits on the silhouette, encodes nothing, and is the one hue DESIGN.md 3.1 allows.
