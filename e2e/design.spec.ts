@@ -242,6 +242,23 @@ test("no user-agent defaults left in the chrome", async ({ page }) => {
   await expect(scroller).toHaveCSS("scrollbar-width", "thin");
 });
 
+test("a shared link previews as something", async ({ page }) => {
+  // Permalinks are a headline feature and every one of them rendered as a bare URL in every client
+  // it was pasted into.
+  await page.goto("/");
+  const meta = async (attr: string, value: string): Promise<string | null> =>
+    page.locator(`meta[${attr}="${value}"]`).getAttribute("content");
+
+  expect(await meta("property", "og:title")).toBe("First Motion");
+  expect(await meta("property", "og:image")).toMatch(/^https:\/\/.+\/share\.png$/);
+  expect(await meta("property", "og:image:alt")).toBeTruthy();
+  expect(await meta("name", "twitter:card")).toBe("summary_large_image");
+
+  const res = await page.request.get("/share.png");
+  expect(res.status()).toBe(200);
+  expect(Number(res.headers()["content-length"] ?? 0)).toBeGreaterThan(10_000);
+});
+
 test("nothing is painted pure black", async ({ page }) => {
   await page.goto("/");
   await waitForData(page);

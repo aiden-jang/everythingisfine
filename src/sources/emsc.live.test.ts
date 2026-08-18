@@ -24,6 +24,7 @@ describe("EMSC, for real", () => {
       const giveUp = setTimeout(() => reject(new Error("no connection in 20s")), 20_000);
       source.start({
         onReadings: () => {},
+        onSeeded: () => {},
         onStatus: (s) => {
           if (s.kind === "live") {
             live = true;

@@ -27,6 +27,7 @@ describe("USGS, for real", () => {
       const done = setTimeout(() => reject(new Error("no response in 15s")), 15_000);
       source.start({
         onReadings: (batch) => readings.push(...batch),
+        onSeeded: () => {},
         onStatus: (s) => {
           status = s.kind;
           if (s.kind !== "idle") {

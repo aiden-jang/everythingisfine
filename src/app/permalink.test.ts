@@ -6,6 +6,22 @@ const state: Permalink = {
   sources: ["usgs", "emsc"], ramp: "thermal", event: null,
 };
 
+describe("longitude on the way out", () => {
+  it("wraps a camera that has been round the world", () => {
+    // The spring takes the shortest way round, so crossing the date line adds a turn to `lon` and
+    // nothing takes it off again. Links were coming out as at=499.37.
+    const at = (lon: number): string => encode({
+      lon, lat: 20, zoom: 1, minMagnitude: 2, windowHours: 24,
+      sources: ["usgs"], ramp: "thermal", event: null,
+    }).split("&")[0]!;
+
+    expect(at(499.37)).toBe("at=139.37,20,1");
+    expect(at(-190)).toBe("at=170,20,1");
+    expect(at(180)).toBe("at=-180,20,1");
+    expect(at(140)).toBe("at=140,20,1");
+  });
+});
+
 describe("permalinks", () => {
   it("survives a round trip", () => {
     const full: Permalink = {

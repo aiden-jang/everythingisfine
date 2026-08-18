@@ -204,8 +204,8 @@ export function createUsgsSource(
 
     let payload: unknown;
     let failure: string | null = null;
+    const target = !seeded && seedUrl ? seedUrl : pollUrl;
     try {
-      const target = !seeded && seedUrl ? seedUrl : pollUrl;
       const res = await runtime.fetch(target, { signal: abort.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       payload = await res.json();
@@ -216,6 +216,8 @@ export function createUsgsSource(
     if (!handlers) return; // stopped while the request was in flight
 
     if (failure === null) {
+      // The day feed has no result cap, so a successful fetch of it vouches for the whole day.
+      if (!seeded && target === seedUrl) handlers.onSeeded(runtime.now() - 24 * 3_600_000);
       seeded = true;
       emit(payload);
       if (!handlers) return;

@@ -58,6 +58,17 @@ export interface SourceHandlers {
   /** Called with new or revised readings only. Never with the same unchanged reading twice. */
   onReadings: (readings: Reading[]) => void;
   onStatus: (status: SourceStatus) => void;
+  /**
+   * Called once, by a source that has successfully fetched a backlog, with the timestamp it reaches
+   * back to.
+   *
+   * Coverage used to be inferred from the first delivery that carried events, on the assumption that
+   * the first delivery is the seed. It is not when the seed request fails: with both seed fetches
+   * dead and two stray socket pushes arriving, the rail read "0 events, last 24 hours", which is the
+   * app claiming a complete day it never asked for. Only a source that actually fetched a backlog
+   * knows how far back it goes, so only a source may say.
+   */
+  onSeeded: (from: number) => void;
 }
 
 export interface GeoEventSource {

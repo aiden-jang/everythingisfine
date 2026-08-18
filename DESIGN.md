@@ -453,6 +453,16 @@ are all visual ones.
   is not a disclosure.
 - **Relative time is rounded honestly.** "2 minutes ago", not "2m 14s ago". False precision on an
   event whose origin time is itself an estimate.
+- **Coverage is reported by whoever fetched it.** A source that successfully pulls a backlog says how
+  far back its own request reaches, and only then does the window claim to be covered. Inferring it
+  from "events have arrived" made the rail read "0 events, last 24 hours" when both seed requests had
+  failed and two stray socket pushes landed.
+- **A failing source is named, with its reason and its retry.** Not "error", and not silence. The
+  status object has carried both since the first source was written; a header that says "one feed live"
+  does not tell you whether the other is connecting or refused.
+- **A link preview makes no claim it cannot keep.** The share image is the globe with its geography and
+  no earthquakes, because a card is cached for days and a picture of one day's seismicity presented as
+  now is unlabelled sample data.
 - **An empty state says what it is waiting for, not what it lacks.** Before any feed answers, the rail
   reads "Asking USGS and EMSC for the last day." with no count, no header arithmetic and no strip
   readout, because a zero is a measurement and none had been taken. An empty list blames the filters

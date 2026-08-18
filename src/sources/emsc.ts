@@ -251,6 +251,18 @@ export function createEmscSource(
         readings.push(parsed.reading);
       }
       if (readings.length > 0) handlers.onReadings(readings);
+      /*
+       * How far back this seed actually reaches, which is not always the whole window.
+       *
+       * The request is capped at SEED_LIMIT results, so on a busy day it returns the most recent 600
+       * events and stops. Claiming 24 hours then would be claiming a backlog that was truncated on
+       * the way out of the server, so a full page vouches only as far as its oldest event.
+       */
+      const full = Array.isArray(payload.features) && payload.features.length >= SEED_LIMIT;
+      const oldest = readings.reduce((min, r) => Math.min(min, r.time), Infinity);
+      handlers.onSeeded(
+        full && Number.isFinite(oldest) ? oldest : runtime.now() - SEED_HOURS * 3_600_000,
+      );
     } catch {
       // Optional by design. The socket is the source; this was a head start.
     }

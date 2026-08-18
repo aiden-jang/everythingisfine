@@ -1532,6 +1532,95 @@ step: naming regions instead of naming the thing is how the touch-target rule we
 And they are written down now, in a row under the event list. Every one of those keys already worked
 and none of them appeared anywhere on screen, which makes a documented shortcut a secret.
 
+## Sweeping the categories I had never looked at
+
+After missing four basic things, I stopped auditing what I had built and went through categories that
+had never been checked at all. Five more defects, four of them in states the happy path never reaches.
+
+### The failure state claimed a day it never fetched
+
+With both seed requests dead and two stray socket pushes arriving, the rail read **"EVENTS 0, last 24
+hours"**. A complete day claimed on the strength of two events it happened to be handed.
+
+`coveredSince` was inferred from the first delivery that carried events, on the assumption that the
+first delivery is the seed. It is not, when the seed fails. Coverage is now reported by whichever
+source actually fetched a backlog, through a new `onSeeded` handler, and each source says how far back
+its own fetch reaches: USGS's day feed has no result cap so it vouches for the whole day, and EMSC's is
+capped at 600, so a full page vouches only as far as its oldest event. That also closes the caveat I
+had written into the README rather than fixed.
+
+This is the third version of this field. Earliest arrival said "still filling" forever; first delivery
+claimed a day that was never fetched; a source's own report is the one that is actually knowable.
+
+### A specified error state that was never built
+
+DESIGN.md section 6: "A failing source degrades to a hairline notice in the rail naming the source and
+the retry." `SourceStatus` has carried `{ kind: "failing", reason, retryAt }` since the first source
+was written and nothing ever read it. The header said "one feed live" whether the other source was
+still connecting or had been refused for ten minutes.
+
+The rail now names it: "USGS is not answering: Failed to fetch. Retrying at 13:15." The raw reason is
+kept rather than softened, because a friendlier sentence would hide which failure it was.
+
+### Pinch was zooming the document
+
+The canvas was `touch-action: auto`, so the browser claims a two-finger gesture before the pointer
+events reach the pinch handler that has been in `controls.ts` since the first version. A one-finger
+drag happened to work, which is why nobody noticed. Touch had no test coverage at all; it does now,
+for both gestures.
+
+### The boundaries never appeared on a load with no data
+
+Found while generating a share image with the feeds stubbed out. The entrance reveal has an eight
+second fallback for exactly this case, and the fallback set its flag without waking the render loop, so
+the frame that reads the flag never ran. On a load where no feed answers, nothing else is moving, and
+the plate boundaries stayed hidden permanently: the one load where geography is all there is to show.
+
+### Every shared link previewed as a bare URL
+
+The permalink is a headline feature of this app and it looked like nothing in every client it was
+pasted into. There are Open Graph and Twitter tags now, and the preview image is captured from the app
+itself by a script rather than drawn by hand.
+
+**It deliberately has no earthquakes on it.** Real events would look better and would also be a lie: a
+card is cached for days, so it would present one particular day's seismicity as if it were now, which
+is sample data unlabelled. The globe with its coastlines and plate boundaries says what the instrument
+is without making a claim about what is happening.
+
+## Links were coming out as at=499.37
+
+Found while diagnosing an unrelated test failure. The camera's longitude accumulates: the spring takes
+the shortest way round, so crossing the date line adds or subtracts a whole turn and nothing ever takes
+it off again. `decode` has normalised on the way in since it was written, so these links worked
+perfectly and read like a bug to anyone who looked at one.
+
+Normalised on encode rather than in the camera, deliberately. The shortest-path spring depends on `lon`
+being continuous, and a permalink is the only place the number is read by a person.
+
+## Two tests that were wrong, not two bugs
+
+The suite finished with two failures and both were mine.
+
+The arrival test routed both HTTP feeds dead and still saw an earthquake from Salta: EMSC pushes over a
+WebSocket, and `page.route` never sees one. It stubs `window.WebSocket` now. Anything that wants a
+genuinely quiet app has to kill the socket as well as the requests, which is easy to forget precisely
+because the other feed is HTTP.
+
+The keyboard test pressed a key while the entrance was still flying, so the nudge compounded off a
+moving target. That is the behaviour the wheel fix deliberately introduced and it makes the destination
+depend on when the key arrived. It waits for the entrance to land first.
+
+## The CI gap, demonstrated rather than argued
+
+Halfway through this pass both feeds became unreachable from this machine, and the browser suite went
+from green to **nine failures**. Seven were pure layout and design assertions, at every breakpoint,
+that have nothing to do with the network: they time out waiting for content that never arrives. When
+the feeds came back they passed again untouched.
+
+That is the open item about browser tests staying out of CI, stated as a measurement instead of a
+worry. Seven tests that assert nothing about data will fail on a quiet network, so the fixture work is
+not a nicety.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
