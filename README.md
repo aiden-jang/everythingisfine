@@ -118,6 +118,12 @@ Live seismicity from **USGS** (polled) and **EMSC** (WebSocket). Coastlines from
 public domain. Plate boundaries from **PB2002** (Bird, P., 2003, *An updated digital model of plate
 boundaries*, Geochemistry Geophysics Geosystems 4(3)), public domain, simplified to 0.15 degrees.
 
+## Day and night
+
+The globe is lit from the real subsolar point, computed from the clock with NOAA's solar position
+algorithm. The geography dims on the night side; the earthquakes do not, because one at 3am is not a
+smaller earthquake.
+
 ## Sequences
 
 Pinning an event shows what happened around it on one axis: time. Every event within 150km appears as a

@@ -1747,6 +1747,43 @@ That is the open item about browser tests staying out of CI, stated as a measure
 worry. Seven tests that assert nothing about data will fail on a quiet network, so the fixture work is
 not a nicety.
 
+## The globe was a disc, and now there is a sun
+
+Told the interface still did not land, I stopped fixing and looked at a screenshot properly. The globe
+was a navy circle with outlines on it. Correct, unlit, and reading as a diagram of Earth rather than as
+Earth. Nothing on screen said *this planet, this minute*, which is the entire claim the app is making.
+
+A terminator fixes that with a fact instead of with styling. The sun really is overhead somewhere right
+now, half the earthquakes on screen are happening in the dark, and a lit sphere has a form that a flat
+fill never will.
+
+**NOAA's low-precision solar position algorithm**, not a hand-waved approximation, because this app has
+a section called Honest Numbers and a terminator in the wrong place is a lie that looks like a
+rendering choice. The part a naive version drops is the equation of time, and dropping it puts the edge
+up to a quarter of an hour out, which is four degrees of longitude: visible, and wrong for a reason
+nobody would ever go looking for.
+
+The test that mattered is the one I got backwards. In early November apparent solar time runs about
+sixteen minutes *ahead* of mean, so by 12:00 UTC the sun has already crossed the Greenwich meridian and
+sits four degrees **west** of it. I asserted east, the code said west, and the code was right. Testing
+this against golden values from a first run would have pinned whichever sign I happened to ship.
+
+**One shell, not a light per layer.** The land fill, the graticule, the plate boundaries and the
+coastlines have to dim together or the night side looks like a rendering fault, and four shaders that
+must agree is four chances for them not to. It sits above the coastline and below the markers, because
+an earthquake at 3am is not dimmer than one at noon.
+
+**Darkening alone was not enough.** The first version only dimmed the night side, and the result was a
+globe that was dimmer rather than lit: the dark half receded and the bright half stayed exactly as flat
+as before. It now darkens one side and lifts the other in a single pass, with the two factors
+deliberately disjoint so they meet at zero across the terminator. Overlapping them paints a band of
+mid-grey along the edge that reads as haze on the lens rather than as dawn.
+
+Recomputed once a minute. Once is wrong for a page somebody leaves open, since the terminator would
+freeze at the moment they arrived while the earthquakes kept coming: a stale claim about the world
+sitting beside a live one. Per frame is pointless, because the edge moves a quarter of a degree a
+minute.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
