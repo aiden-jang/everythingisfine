@@ -208,6 +208,20 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   await fresh.close();
 });
 
+test("a shared camera survives the entrance", async ({ page }) => {
+  /*
+   * Regression. The entrance named the default framing as its destination and runs after the
+   * permalink has already aimed the camera, so every shared link arrived at the default view.
+   * Nothing threw and the entrance looked correct, which is exactly why the older test above,
+   * checking the ramp and the pinned event, never noticed the third thing a link carries.
+   */
+  await page.goto("/#at=-70.5,-33.5,2.4&m=2&w=24&s=emsc,usgs&r=thermal");
+  await waitForData(page);
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 15_000 })
+    .toMatch(/^#at=-70\.5,-33\.5,2\.4&/);
+});
+
 test("a link naming an event that has aged out says so", async ({ page }) => {
   await page.goto("/#at=140,35,1.4&m=2&w=24&s=emsc,usgs&r=thermal&e=usgs:us1000gonelongago");
   await waitForData(page);

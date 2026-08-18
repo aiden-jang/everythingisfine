@@ -1037,6 +1037,55 @@ in code that was fine.
 
 ---
 
+## The earthquakes were tracing a line nothing on screen drew
+
+Every screenshot of this app shows the same thing: a chain of dots down the west coast of South
+America, an arc through Indonesia, a hook around Japan. The globe rendered that faithfully and
+explained none of it. Without the boundaries drawn, the Ring of Fire reads as a coincidence in the
+data rather than the edge of a plate, and a visualization that shows a pattern while withholding its
+cause is decoration.
+
+PB2002 (Bird, 2003) is public domain and is the standard digital boundary model. Raw it is 6,292
+vertices and 221KB, which is more than the entire coastline. Douglas-Peucker at 0.15 degrees takes it
+to 1,872 vertices and **9.4KB gzipped**: 0.15 degrees is about 17km, and the boundaries themselves
+are located to roughly that, so the simplification discards precision the source never had.
+
+The geometry chunk went from 26.5KB to **36.8KB against a 40KB budget**. Recorded rather than
+quietly absorbed, because 3.2KB of headroom is a different situation from 13.5KB and the next person
+to add a layer needs to know that before they start.
+
+Two things about drawing them were wrong on the first pass.
+
+The comment claimed the boundaries go *under* the land. They do not: the land is opaque, the plates
+are transparent, so three.js draws the plates over it regardless of render order. That is also the
+right way round, and the reason is that the boundaries that matter most on land are the Himalayan
+front, the San Andreas and the North Anatolian, all of which would have been buried.
+
+They were also drawn in the coastline's colour at 62%, which made them nearly invisible in the
+screenshot. A line you cannot see cannot explain the dots sitting on it. They are now brighter than
+the coastline, which is a deliberate ranking: a coastline is orientation and tells you where you are
+looking, a plate boundary is the explanation and tells you why the earthquakes are in a line. In a
+seismic map the explanation should not be the fainter mark.
+
+## A permalink carried three things and the tests checked two
+
+Framing the screenshot for the boundaries meant opening `#at=118,-6,3`, and the globe opened on the
+default view instead. The camera in every shared link this app has ever produced was being discarded.
+
+`enter()` named the default framing as its destination. The permalink aims the camera during setup
+and the entrance runs after the first draw, so the entrance overwrote it, every time. Nothing threw.
+The entrance looked exactly as designed, because it was doing exactly what it said.
+
+The existing test, "a shared link restores the view on a fresh page", pins an event, flips the ramp,
+copies the link and asserts both come back. It never asserted the camera, so the one part of the
+permalink that was broken was the one part nobody looked at. The fix is four lines; the lesson is
+that a test named after a whole feature will be trusted for the whole feature, and this one covered
+two thirds of it.
+
+The entrance now flies to wherever the camera is already aimed, so it works for the default framing
+and for a link without knowing which it has. The new test was checked against the old behaviour and
+fails on it.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

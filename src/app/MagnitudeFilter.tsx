@@ -113,6 +113,16 @@ export function MagnitudeFilter({ ramp, value, onChange }: MagnitudeFilterProps)
         </span>
         <span>solid is shallow, hollow is deep</span>
       </div>
+
+      {/*
+        The plate boundaries need naming too. An unexplained line on a data visualisation is a
+        question mark, and somebody could reasonably read these as a second data layer rather than
+        as the geography the events are following.
+      */}
+      <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+        <span className="inline-block h-px w-[38px] shrink-0 bg-plate opacity-90" />
+        <span>plate boundaries</span>
+      </div>
     </div>
   );
 }

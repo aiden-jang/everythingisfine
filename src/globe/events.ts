@@ -261,7 +261,7 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
 
   const object = new Points(geometry, material);
   object.frustumCulled = false;
-  object.renderOrder = 4;
+  object.renderOrder = 5;
 
   return {
     object,
