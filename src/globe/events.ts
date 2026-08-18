@@ -178,6 +178,21 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
     transparent: true,
     depthWrite: false,
     /*
+     * Not depth-tested. This is the fix for markers being sliced flat near the limb.
+     *
+     * A point sprite is rasterised as a screen-aligned square, and the whole square carries the
+     * single depth of its centre vertex. The sphere behind it does not: near the limb the surface
+     * curves away steeply, so pixels a few across from the marker's centre sit in front of an ocean
+     * surface much nearer the camera than the marker's own depth. Those fragments fail the depth
+     * test and vanish, and the survivors end where the two depths cross, which is a clean straight
+     * edge through the middle of the dot.
+     *
+     * The far hemisphere is already handled by the `vFacing` discard in the shader, which asks the
+     * right question, so the depth test was only ever adding the artefact. Same reasoning as the
+     * land fill in scene.ts, arrived at from the opposite direction.
+     */
+    depthTest: false,
+    /*
      * Normal blending, and the first version was additive.
      *
      * Additive looked right in principle: overlapping events in a dense margin read as brighter

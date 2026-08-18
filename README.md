@@ -105,7 +105,12 @@ them. Both feeds are reached straight from the browser, which is what makes that
 pnpm deploy
 ```
 
-CI deploys on merge to `main` and needs a `CLOUDFLARE_API_TOKEN` secret with `Workers Scripts:Edit`.
+**Merging to `main` deploys.** The workflow checks first (typecheck, tests with `--expose-gc` so the
+memory gate cannot skip itself, build) and only deploys if that passes. One repository secret,
+`CLOUDFLARE_API_TOKEN` with `Workers Scripts:Edit`, is the entire setup: no account id, no D1
+permission, and the custom domain is created by Wrangler on first deploy.
+
+[DEPLOY.md](DEPLOY.md) has the whole picture, including what to do when it goes wrong.
 
 ## What is wrong with it
 
