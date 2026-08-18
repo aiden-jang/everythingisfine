@@ -103,8 +103,9 @@ Active, selected and focused states are communicated by **brightness, weight and
 |---|---|---|
 | Void | `#070B14` | Space behind the globe. Not pure black: the rim light needs somewhere to fall off into. |
 | Sphere | `#0A101C` | The ocean face of the globe, a step above Void so the silhouette reads. |
-| Landmass | `#151D2E` | Continent fill. Raised over Sphere, still clearly chrome. |
-| Coastline | `#243149` | 1px land stroke and graticule. |
+| Landmass | `#1E293F` | Continent fill. 1.31:1 against Sphere, and 1.57x darker than the ramp's floor so it can never read as an event. Was `#151D2E`, which measured 1.13:1: not restraint, invisibility. |
+| Coastline | `#31405D` | 1px land stroke. Raised further than the fill, because definition comes from edges and a brighter line adds crispness without adding mass. |
+| Graticule | `#243149` | Meridians and parallels at 38%. Deliberately left behind the land it sits under: it is scaffolding. |
 | Deck | `#0D1420` | Rail and panel background. |
 | Deck Raised | `#141C2B` | Detail panel, popovers, anything above the rail. |
 | Hairline | `rgba(148,163,184,0.14)` | Structural 1px dividers. Never a full-strength border. |
@@ -150,6 +151,23 @@ everything inside the canvas is data and everything outside it is chrome, with n
 kind crossing that boundary. That separation is worth more than the chroma claim was, because it
 holds for every ramp anyone might add later. Thermal's least chromatic stop is 57, comfortably clear
 of the chrome, so the original claim happens to hold there and is simply not load-bearing.
+
+### 3.4 Depth, on the one channel left
+
+Hue means magnitude and radius means magnitude, so neither is available, and inventing a second hue
+would break the rule this whole section exists to protect. What remains is shape: **a shallow event
+is a solid disc, a deep one is a ring**, and everything between is a disc with a hole opening in it.
+The outer edge never moves, because that edge is the magnitude.
+
+Worth encoding because depth changes what an earthquake *is*. Shallow events do the damage; events
+below 300km happen inside a descending slab and are felt far more weakly for their size. Along a
+subduction margin depth increases inland from the trench, so a diving plate now reads on the globe
+as solid dots at the trench giving way to rings behind them. That is the Wadati-Benioff zone, and it
+was in the data the whole time with nothing drawing it.
+
+Boundaries are the conventional 70km and 300km. **A missing depth draws as shallow**, which is a
+choice rather than an oversight: depth is genuinely optional in both feeds, neither shape is
+neutral, and the tie goes to the far more common case. The detail panel still says "not given".
 
 **Magnitude is encoded twice: radius and ramp position.** Colour alone fails a colourblind viewer,
 and fails again when the globe is 300px wide on a phone. Radius scales with the square root of

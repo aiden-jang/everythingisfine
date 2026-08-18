@@ -7,6 +7,22 @@ import { MAG_MIN, rampPosition, rampTexture, type RampName } from "./ramp";
 import { cellKey, cellSizeDeg } from "./cluster";
 
 /*
+ * Depth, as the one channel left.
+ *
+ * Hue means magnitude and radius means magnitude, so neither is available, and the two-palette rule
+ * forbids inventing a second hue. What remains is shape: a shallow event is a solid disc, a deep one
+ * is a ring, and everything between is a disc with a hole opening in it.
+ *
+ * It is worth encoding because depth changes what an earthquake *is*. Shallow events do the damage;
+ * events below 300km happen inside a descending slab and are felt far more weakly for their size.
+ * Along a subduction margin the depth rises with distance from the trench, so a plate diving under
+ * another one now reads on the globe as solid dots at the trench giving way to rings inland. That is
+ * the Wadati-Benioff zone, and it was in the data the whole time with nothing drawing it.
+ */
+const DEPTH_SHALLOW_KM = 70;
+const DEPTH_DEEP_KM = 300;
+
+/*
  * Fifty thousand earthquakes, drawn once.
  *
  * `Points` with a custom shader rather than an InstancedMesh of quads. A marker here is a filled
@@ -49,6 +65,7 @@ const SHADER = {
   vertexShader: /* glsl */ `
     attribute float aMag;
     attribute float aCluster;
+    attribute float aDepth;
     uniform float uPixelRatio;
     uniform float uBase;
     uniform float uScale;
@@ -57,9 +74,11 @@ const SHADER = {
     varying float vRamp;
     varying float vFacing;
     varying float vCluster;
+    varying float vDepth;
 
     void main() {
       vCluster = aCluster;
+      vDepth = aDepth;
       vec4 world = modelMatrix * vec4(position, 1.0);
       // The globe is a unit sphere at the origin, so the surface normal is the position itself.
       // A marker on the far side has its normal pointing away from the eye.
@@ -80,6 +99,7 @@ const SHADER = {
     varying float vRamp;
     varying float vFacing;
     varying float vCluster;
+    varying float vDepth;
 
     void main() {
       // Discarded rather than depth-tested. The markers sit above the globe's surface, so a
@@ -96,6 +116,22 @@ const SHADER = {
       // Events near the limb are foreshortened almost to nothing, and drawing them at full
       // strength makes the horizon a bright ring that reads as data.
       float edge = smoothstep(0.0, 0.25, vFacing);
+
+      /*
+       * Depth carves the centre out.
+       *
+       * vDepth is 0 at the surface and 1 below 300km, and the hole opens with it: a shallow event
+       * stays a solid disc, a deep one becomes a ring. The outer edge never moves, because that
+       * edge is the magnitude and depth is not allowed to touch it.
+       *
+       * (No backticks in here. This is inside a template literal, and one of them ended the shader
+       * mid-comment, which typechecks as a syntax error twenty lines further down.)
+       */
+      if (vDepth > 0.02) {
+        float hole = 0.30 * vDepth;
+        alpha *= smoothstep(hole - 0.05, hole + 0.02, d);
+        if (alpha <= 0.0) discard;
+      }
 
       vec3 colour = texture2D(uRamp, vec2(vRamp, 0.5)).rgb;
 
@@ -153,6 +189,7 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
   const positions = new Float32Array(capacity * 3);
   const magnitudes = new Float32Array(capacity);
   const clusters = new Float32Array(capacity);
+  const depths = new Float32Array(capacity);
   /** Reused between syncs. Rebuilding a Map per filter tick is the allocation the budget catches. */
   const cellFor = new Map<number, number>();
 
@@ -160,12 +197,15 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
   const positionAttr = new BufferAttribute(positions, 3);
   const magAttr = new BufferAttribute(magnitudes, 1);
   const clusterAttr = new BufferAttribute(clusters, 1);
+  const depthAttr = new BufferAttribute(depths, 1);
   positionAttr.setUsage(35048 /* DynamicDrawUsage */);
   magAttr.setUsage(35048);
   clusterAttr.setUsage(35048);
+  depthAttr.setUsage(35048);
   geometry.setAttribute("position", positionAttr);
   geometry.setAttribute("aMag", magAttr);
   geometry.setAttribute("aCluster", clusterAttr);
+  geometry.setAttribute("aDepth", depthAttr);
   geometry.setDrawRange(0, 0);
   // Never computed. The default bounding sphere pass walks every vertex, and with a draw range
   // that changes on every filter tick that is a full extra sweep of the buffer for nothing.
@@ -264,7 +304,14 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
           const at = cellFor.get(key);
           if (at !== undefined) {
             clusters[at] = 1;
-            if (r.magnitude > magnitudes[at]!) magnitudes[at] = r.magnitude;
+            // The cluster keeps the largest event's magnitude, so it keeps that event's depth too.
+            // Averaging would draw a hole that belongs to no earthquake in the cell.
+            if (r.magnitude > magnitudes[at]!) {
+              magnitudes[at] = r.magnitude;
+              depths[at] = Number.isFinite(r.depthKm)
+                ? Math.max(0, Math.min(1, (r.depthKm - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM)))
+                : 0;
+            }
             return;
           }
           cellFor.set(key, n);
@@ -286,12 +333,25 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
         positions[i + 1] = Math.sin(phi) * RADIUS_EVENTS;
         positions[i + 2] = c * Math.cos(lam);
         magnitudes[n] = r.magnitude;
+        /*
+         * A missing depth reads as shallow, and that is a choice rather than an oversight.
+         *
+         * Depth is genuinely optional in both feeds and arrives as NaN. Drawing a ring for it would
+         * claim the event was deep; drawing a solid disc claims it was shallow. Neither is neutral,
+         * so the tie goes to the far more common case: the overwhelming majority of catalogued
+         * earthquakes are shallow, and the detail panel still says "not given" rather than a number.
+         */
+        depths[n] = Number.isFinite(r.depthKm)
+          ? Math.max(0, Math.min(1, (r.depthKm - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM)))
+          : 0;
         n += 1;
       });
 
       geometry.setDrawRange(0, n);
       clusterAttr.updateRanges = [{ start: 0, count: n }];
       clusterAttr.needsUpdate = true;
+      depthAttr.updateRanges = [{ start: 0, count: n }];
+      depthAttr.needsUpdate = true;
       // Only the written span is uploaded. Handing the driver the whole 50k buffer to redraw 200
       // visible events is the difference between a filter that answers the slider and one that
       // stutters behind it.

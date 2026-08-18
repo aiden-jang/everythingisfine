@@ -16,8 +16,8 @@
      is why this is a constraint rather than a preference. See DESIGN.md section 3. */
   --color-void: #070b14;
   --color-sphere: #0a101c;
-  --color-land: #151d2e;
-  --color-coast: #243149;
+  --color-land: #1e293f;
+  --color-coast: #31405d;
   --color-deck: #0d1420;
   --color-raised: #141c2b;
   --color-hairline: rgb(148 163 184 / 0.14);
