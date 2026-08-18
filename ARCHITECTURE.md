@@ -1702,7 +1702,41 @@ It has a budget now, expressed as a ratio like the event layer's. Not because it
 but because a regression here would land straight back on every arrival, and the whole reason this was
 wrong for weeks is that nobody had put a number on it.
 
-## The CI gap, demonstrated rather than argued
+## Both feeds, served from the test
+
+The browser suite talked to USGS and EMSC for real, and that was the one thing keeping it out of CI.
+The cost was not theoretical: in a single afternoon the feeds became unreachable three times and the
+suite went red with four, then nine, then one failure. None of those tests assert anything about data.
+They are layout, colour and interaction tests that time out waiting for content, so a quiet network
+looked exactly like a broken app, and every red run cost a diagnosis before it could be dismissed.
+
+`e2e/feeds.ts` generates a day rather than replaying a recording. A recording pins the *shape* of a
+response, which the source unit tests already do against committed samples; what a browser test needs
+is a plausible day positioned relative to now. Fixed timestamps would age out of the 24-hour window
+within a day of being committed and the suite would rot quietly.
+
+Three details that decide whether the fixture is worth anything:
+
+- **Gutenberg-Richter magnitudes, not uniform.** A uniform draw puts a magnitude 7 on screen every few
+  minutes and quietly makes every magnitude filter test meaningless.
+- **Real margins with a run to them.** Blobs collapse to one marker each under clustering, which would
+  leave a fixture planet with eight dots on it. The regions panel also needs real coordinates to have
+  anything in it.
+- **EMSC disagrees with USGS**, by seconds of origin time, tens of kilometres and a couple of tenths of
+  magnitude. A fixture where both agencies agree exactly would make the association logic, which is the
+  project's whole subject, look correct while exercising none of it.
+
+The socket is stubbed rather than routed, because EMSC pushes over a WebSocket that `page.route` never
+sees. The stub needs `send`, which the real source calls on open: without it the first version threw an
+uncaught error in the middle of app startup, and the symptom was a headline stuck at zero.
+
+**The suite went from 5.6 minutes to 2.7.** Not from the fixtures directly, but from what they allowed:
+serial execution existed because every test shared two live agencies, and parallel workers would have
+multiplied the request rate against somebody else's servers. Four workers turned out to be too many,
+saturating the machine at 584% CPU and failing three tests on an entrance spring that took longer than
+its poll allowed. Two halves the wall clock without turning the suite into its own load test.
+
+## The CI gap, demonstrated rather than argued, and then closed
 
 Halfway through this pass both feeds became unreachable from this machine, and the browser suite went
 from green to **nine failures**. Seven were pure layout and design assertions, at every breakpoint,
@@ -1723,10 +1757,9 @@ Written last, and kept accurate rather than kept short.
   panel lists every merged reading so a wrong merge is visible, which is the difference between a
   limitation and a lie, but it is a real limitation and not a rare one during a sequence.
 
-- **Browser tests are not in CI.** They wait on two real agencies, so a quiet planet or an agency
-  doing maintenance would fail the build for reasons that are not the code's fault. Routing both
-  feeds to the committed fixtures would make them deterministic and CI-able. One test now does
-  exactly that for one endpoint, which shows the shape of the fix without being it.
+- **Browser tests still run against a dev server, not a build.** They no longer touch the network, so
+  they can go in CI, but they exercise `pnpm dev` rather than `dist`. A bundler-only failure would not
+  be caught by them.
 
 - **Both gates are sensitive to a loaded machine, and neither says so when it fails.** The perf
   budget failed at 13.96ms against 7.65ms quiet, with browsers still resident. Two browser tests

@@ -15,16 +15,34 @@ import { defineConfig } from "@playwright/test";
  */
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: false,
-  workers: 1,
-  // Generous: the first frame waits on two real network feeds, and a slow morning at an agency is
-  // not a test failure.
+  /*
+   * Parallel, now that both feeds are served from the test.
+   *
+   * Serial was the right call while every test shared two live agencies: parallel workers would have
+   * multiplied the request rate against somebody else's servers and turned one slow morning into a
+   * suite-wide failure. `e2e/feeds.ts` removed the shared dependency, so the reason went with it.
+   */
+  fullyParallel: true,
+  /*
+   * Two, not four. Each worker runs a WebGL globe, and four of them saturated the machine at 584% CPU
+   * and failed three tests on the entrance spring taking longer than its poll allowed. Two halves the
+   * wall clock without turning the suite into its own load test.
+   */
+  workers: 2,
   timeout: 45_000,
-  expect: { timeout: 20_000 },
+  expect: { timeout: 15_000 },
   use: {
     baseURL: "http://localhost:31600",
     trace: "retain-on-failure",
   },
+  /*
+   * One retry, for the browser rather than for the app.
+   *
+   * Two workers each hold a WebGL context, and a run occasionally loses one to a "session closed"
+   * protocol error partway through a test. That is the browser dying, not an assertion failing, and it
+   * is the one thing a retry is legitimately for. A logic failure fails twice.
+   */
+  retries: 1,
   webServer: {
     command: "pnpm dev",
     url: "http://localhost:31600",

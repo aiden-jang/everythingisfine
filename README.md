@@ -9,7 +9,7 @@ an instrument records when a wave reaches it.
 pnpm install
 pnpm dev          # http://localhost:31600
 pnpm check        # typecheck + tests + build
-pnpm test:e2e     # browser tests (needs the real feeds)
+pnpm test:e2e     # browser tests, feeds served from e2e/feeds.ts
 pnpm test:live    # hits USGS and EMSC for real
 ```
 
@@ -147,9 +147,8 @@ rather than hidden, but it is a real limitation and not a rare one during a sequ
 there is no backend, so 24 hours is the hard edge and time scrubbing beyond it was rejected rather
 than shipped as a worse version of itself.
 
-**Browser tests need the feeds up.** Seven of them assert layout and colour and nothing about data,
-and they still fail on a quiet network because they wait for content that never arrives. Routing the
-feeds to fixtures would fix it and has not been done.
+**Browser tests run against the dev server, not a build.** They no longer touch the network, but they
+exercise `pnpm dev` rather than `dist`, so a bundler-only failure would get past them.
 
 **Browser tests are not in CI.** They wait on two real agencies, so a quiet planet or an agency doing
 maintenance would fail the build for reasons that are not the code's fault. Routing the feeds to the

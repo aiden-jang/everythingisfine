@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { installFeeds } from "./feeds";
 
 /*
  * The claims that only a browser can settle.
@@ -15,6 +16,7 @@ async function waitForData(page: Page): Promise<number> {
 }
 
 test("the first frame is already live", async ({ page }) => {
+  await installFeeds(page);
   await page.goto("/");
   const held = await waitForData(page);
 
@@ -27,6 +29,7 @@ test("the first frame is already live", async ({ page }) => {
 });
 
 test("a pinned selection survives a data refresh", async ({ page }) => {
+  await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
 
@@ -76,6 +79,7 @@ test("a pinned selection survives a data refresh", async ({ page }) => {
 });
 
 test("the globe is operable with the canvas hidden", async ({ page }) => {
+  await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
 
@@ -117,6 +121,7 @@ test("with reduced motion, there is no entrance and flying is instant", async ({
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
   try {
+    await installFeeds(page);
     await page.goto("http://localhost:31600");
 
     expect(await page.evaluate(
@@ -157,6 +162,7 @@ test("with reduced motion, there is no entrance and flying is instant", async ({
  * The spring is now sliced, so the destination is exact whatever the frame rate.
  */
 test("the entrance settles exactly on the framing shot", async ({ page }) => {
+  await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
 
@@ -176,6 +182,7 @@ test("the entrance settles exactly on the framing shot", async ({ page }) => {
  * asserts the link names the event the way the agency does, and that a fresh page finds it again.
  */
 test("a shared link restores the view on a fresh page", async ({ page }) => {
+  await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
 
@@ -195,6 +202,9 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   expect(link).not.toMatch(/e=q[a-z0-9]+(&|$)/);
 
   const fresh = await page.context().newPage();
+  // The second page needs its own fixtures: routes are per-page, so without this the fresh tab went
+  // to the real agencies and could not find the event the link names.
+  await installFeeds(fresh);
   await fresh.goto(link);
   await waitForData(fresh);
 
@@ -215,6 +225,7 @@ test("the activity strip narrows the window and the headline follows", async ({ 
    * buffer. The last one is the reason this test exists. The number was the held total, so every
    * filter in the app moved the picture and left the biggest number in the rail sitting still.
    */
+  await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
 
@@ -256,6 +267,7 @@ test("holding an hour on the strip reads that hour, and lets go", async ({ page 
    * is the half that is observable: the strip reports the hour under the pointer, and stops when the
    * pointer leaves. The veil itself is gated by the perf test and looked at in a screenshot.
    */
+  await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
 
@@ -291,11 +303,7 @@ test("a revised magnitude says what the agency first said", async ({ page }) => 
     geometry: { coordinates: [-177.3, 51.2, depthKm] },
   });
 
-  await page.route(/seismicportal\.eu/, (route) => route.abort());
-  await page.route(/all_hour\.geojson/, (route) =>
-    route.fulfill({ json: { features: [] } }));
-  await page.route(/all_day\.geojson/, (route) =>
-    route.fulfill({ json: { features: [feature(6.1, 1), feature(6.4, 2, 41.2)] } }));
+  await installFeeds(page, { usgs: [feature(6.1, 1), feature(6.4, 2, 41.2)] });
 
   // Filtered to M6 and above so the routed event is the only thing that can be in the list.
   await page.goto("/#at=-177,51,1&m=6&w=24&s=usgs&r=thermal");
@@ -326,17 +334,7 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
    * nothing under two disclaimers stacked by two independently reasonable branches. Neither of them
    * was wrong on its own, which is why nobody had read the sentence they composed.
    */
-  // The socket has to be stubbed, not routed: EMSC pushes over a WebSocket and `page.route` never
-  // sees it, so one live event slipped in and the rail was no longer empty.
-  await page.addInitScript(() => {
-    class Dead {
-      addEventListener(): void {}
-      close(): void {}
-    }
-    (window as unknown as { WebSocket: unknown }).WebSocket = Dead;
-  });
-  await page.route(/seismicportal\.eu/, (route) => route.abort());
-  await page.route(/\.geojson/, async () => { /* held open, so coverage never arrives */ });
+  await installFeeds(page, { silent: true });
 
   await page.goto("/");
   const rail = page.locator(".zone-rail");
@@ -370,18 +368,14 @@ test("the sequence says whether the big one has already happened", async ({ page
     geometry: { coordinates: [120.5, -8.6 + dLat, 20] },
   });
 
-  await page.route(/seismicportal\.eu/, (route) => route.abort());
-  await page.route(/all_hour\.geojson/, (route) => route.fulfill({ json: { features: [] } }));
-  await page.route(/all_day\.geojson/, (route) => route.fulfill({
-    json: {
-      features: [
-        at(6.0, 180, "mainshock"),
-        at(4.2, 150, "after1", 0.1),
-        at(4.1, 90, "after2", 0.2),
-        at(4.4, 30, "pinned", 0.3),
-      ],
-    },
-  }));
+  await installFeeds(page, {
+    usgs: [
+      at(6.0, 180, "mainshock"),
+      at(4.2, 150, "after1", 0.1),
+      at(4.1, 90, "after2", 0.2),
+      at(4.4, 30, "pinned", 0.3),
+    ],
+  });
 
   await page.goto("/#at=120,-8,1&m=4&w=24&s=usgs&r=thermal");
 
@@ -412,8 +406,7 @@ test("notches compound off where the camera is heading", async ({ page }) => {
    * dispatches one notch as about eight wheel events and each wakes the loop for a frame either way.
    * The ramp was measured directly instead and the numbers are in ARCHITECTURE.md.
    */
-  await page.route(/seismicportal\.eu/, (route) => route.abort());
-  await page.route(/\.geojson/, async () => {});
+  await installFeeds(page, { silent: true });
   await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
   await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
   await page.waitForTimeout(2_000);
@@ -434,8 +427,7 @@ test("the globe is operable from the keyboard, and the keys are written down", a
    * for a screen reader. A sighted person with no mouse is a different user and could not move the
    * globe at all: no orbit, no zoom, no reset, and nothing on screen naming a single key.
    */
-  await page.route(/seismicportal\.eu/, (route) => route.abort());
-  await page.route(/\.geojson/, async () => {});
+  await installFeeds(page, { silent: true });
   await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
   await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
 
@@ -483,8 +475,7 @@ test("a dead feed says so, and does not claim a covered day", async ({ page }) =
    * dead and two stray socket pushes arriving, the rail read "0 events, last 24 hours": a complete day
    * claimed on the strength of two events it happened to be handed.
    */
-  await page.route(/seismicportal\.eu/, (route) => route.abort());
-  await page.route(/\.geojson/, (route) => route.abort());
+  await installFeeds(page, { dead: true });
   await page.goto("/");
 
   const rail = page.locator(".zone-rail");
@@ -507,6 +498,7 @@ test.describe("on a touch screen", () => {
      * pointer events reach the pinch handler that has been in controls.ts from the first version.
      */
     test.setTimeout(120_000);
+    await installFeeds(page);
     await page.goto("/#at=140,20,1&m=2&w=24&s=usgs,emsc&r=thermal");
     await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
     await expect(page.locator("canvas")).toHaveCSS("touch-action", "none");
@@ -559,10 +551,7 @@ test("a pinned event the filters exclude says so", async ({ page }) => {
     geometry: { coordinates: [120.5, -8.6, 20] },
   });
 
-  await page.route(/seismicportal\.eu/, (route) => route.abort());
-  await page.route(/all_hour\.geojson/, (route) => route.fulfill({ json: { features: [] } }));
-  await page.route(/all_day\.geojson/, (route) =>
-    route.fulfill({ json: { features: [at(2.7, "small")] } }));
+  await installFeeds(page, { usgs: [at(2.7, "small")] });
 
   await page.goto("/#at=120,-8,1&m=2&w=24&s=usgs&r=thermal");
   const row = page.getByRole("region", { name: "Recent earthquakes" })
@@ -592,6 +581,7 @@ test("a shared camera survives the entrance", async ({ page }) => {
    * Nothing threw and the entrance looked correct, which is exactly why the older test above,
    * checking the ramp and the pinned event, never noticed the third thing a link carries.
    */
+  await installFeeds(page);
   await page.goto("/#at=-70.5,-33.5,2.4&m=2&w=24&s=emsc,usgs&r=thermal");
   await waitForData(page);
   await expect
@@ -600,6 +590,7 @@ test("a shared camera survives the entrance", async ({ page }) => {
 });
 
 test("a link naming an event that has aged out says so", async ({ page }) => {
+  await installFeeds(page);
   await page.goto("/#at=140,35,1.4&m=2&w=24&s=emsc,usgs&r=thermal&e=usgs:us1000gonelongago");
   await waitForData(page);
 
