@@ -1458,6 +1458,80 @@ a three-hundred-element array while doing it. It was already doing the walk. Mem
 the neighbour list while somebody watches a live sequence, which is the wrong trade for an unmeasured
 cost.
 
+## Four things a user found that the audit did not
+
+Reported directly: the page scrolls vertically, the zoom is not smooth, there are no key hints, and
+does this even support a keyboard. All four were real, and the UI/UX audit two entries up had declared
+"nothing else in the brief needs work that I can find". It found what it went looking for.
+
+### The page scrolled into 2,546px of void
+
+Measured: `documentElement.scrollHeight` was **3,486px against an 820px viewport**, so the whole app
+could be dragged off the top of the screen. Below the fold was empty.
+
+The chase was longer than the fix. `body` and `.frame` both measured exactly viewport height, and the
+event list *is* a correctly bounded 224px scroll container holding 2,828px of rows. Setting
+`overflow: clip` on the list did not help. Neither did clipping the root, which is when the second
+lesson landed: `overflow: hidden` is still programmatically scrollable, so the first version of the
+test failed on a page a user could no longer actually move. Only `display: none` on the list made the
+document collapse to viewport height, which named the culprit.
+
+The fix is `contain: paint` on the list. A scroll container's content still reaches the document's
+layout overflow; containment is the only thing that says "nothing in this box affects anything outside
+it", which is exactly the claim that was false. The phone rail needed the same, being the box that
+scrolls there.
+
+The old test measured `scrollWidth` and had passed the whole time. The new one moves a real mouse
+wheel and asserts `scrollY` is still zero, because that is the only question a user asks.
+
+### The wheel was the one input bypassing the spring
+
+`zoomAt` assigned `zoom` directly onto the camera, so a notch moved 14% in a single frame while every
+`flyTo` in the app went through a critically damped spring sitting right there.
+
+Measured per frame, before: `1.3021` from the first frame and every frame after. After:
+`1.00, 1.03, 1.09, 1.14, 1.18, 1.22, 1.24, 1.26, 1.27, 1.28, 1.29, 1.293, 1.296, 1.298, 1.299, 1.300`.
+
+The anchoring maths is unchanged and still solved against a real camera, just a hypothetical one: the
+camera is moved to where it is heading, the correction is solved there, the result becomes the target,
+and the visible camera is put back for the spring to carry.
+
+**Compounding off the pending target, not the animated value.** Two quick notches must land on two
+notches. Compounding off the current zoom is the natural way to write it and silently undershoots,
+because the second notch is measured against a camera still in flight: it lands on 1.59 instead of
+1.70. That is what the test asserts, and the mutation confirms it fails without it.
+
+**Smoothness itself is not asserted, and I tried.** Frame counting cannot tell the two apart: Playwright
+dispatches one notch as about eight wheel events, each wakes the loop for a frame either way, and both
+implementations measure eight. Three versions of that test passed against a deliberately broken
+implementation before I stopped and measured the ramp directly instead. A test that cannot fail is
+worse than no test, because it reads as coverage.
+
+### An accidental finding: the loop does stop, after 40 seconds
+
+Chasing the frame counts turned up an "idle" rate of 15 frames a second. Not idle: every live arrival
+fires a wavefront that animates for 15.7 seconds, and with two feeds delivering there is nearly always
+one in flight. Watched for 40 seconds it does reach zero, so DESIGN.md's claim holds, but "the loop
+stops when nothing is moving" means something closer to half a minute after the last earthquake than
+the fraction of a second it implies. Tests that want a genuinely idle globe have to route the feeds.
+
+### The globe had no keyboard control at all
+
+Everything bound was Escape and the list's own arrows. A keyboard-only viewer could not move the camera
+in any direction, at any zoom.
+
+The canvas is `aria-hidden` and unfocusable on purpose, because the accessible feed is the interface for
+a screen reader and the canvas is never it. That was read as covering the keyboard, and it does not: a
+sighted person with no mouse is a different user with a different need.
+
+Arrows orbit, `+` and `-` zoom, `0` resets, Shift moves further, and every one of them goes through the
+same `aim` helper the wheel uses so a held key behaves like a scroll rather than a series of jumps. The
+handler runs only while nothing is focused, which is one rule rather than a list of elements to keep in
+step: naming regions instead of naming the thing is how the touch-target rule went wrong.
+
+And they are written down now, in a row under the event list. Every one of those keys already worked
+and none of them appeared anywhere on screen, which makes a documented shortcut a secret.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

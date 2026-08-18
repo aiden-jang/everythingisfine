@@ -388,6 +388,75 @@ test("the sequence says whether the big one has already happened", async ({ page
   await expect(panel.locator("[data-ramp] > div.relative > span")).toHaveCount(4);
 });
 
+test("notches compound off where the camera is heading", async ({ page }) => {
+  /*
+   * Wheel zoom used to assign `zoom` straight onto the camera: one notch moved 14% in a single frame
+   * while every `flyTo` in the app went through a spring. It now sets a target instead.
+   *
+   * What is asserted here is the part a test can settle. Two notches in quick succession must land on
+   * two notches, which is only true if each one compounds off the *pending* target rather than off the
+   * animated value it can see. Compounding off the current zoom is the natural way to write it and it
+   * silently undershoots, because the second notch is measured against a camera still in flight.
+   *
+   * The smoothness itself is not asserted. Frame counting cannot tell the two apart, because Playwright
+   * dispatches one notch as about eight wheel events and each wakes the loop for a frame either way.
+   * The ramp was measured directly instead and the numbers are in ARCHITECTURE.md.
+   */
+  await page.route(/seismicportal\.eu/, (route) => route.abort());
+  await page.route(/\.geojson/, async () => {});
+  await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
+  await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
+  await page.waitForTimeout(2_000);
+
+  await page.mouse.move(900, 450);
+  await page.mouse.wheel(0, -240);
+  await page.mouse.wheel(0, -240);
+
+  // exp(0.264) twice is 1.696, and zoom is written to two places.
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+    .toMatch(/,1\.7&/);
+});
+
+test("the globe is operable from the keyboard, and the keys are written down", async ({ page }) => {
+  /*
+   * The canvas is aria-hidden and unfocusable on purpose, because the accessible feed is the interface
+   * for a screen reader. A sighted person with no mouse is a different user and could not move the
+   * globe at all: no orbit, no zoom, no reset, and nothing on screen naming a single key.
+   */
+  await page.route(/seismicportal\.eu/, (route) => route.abort());
+  await page.route(/\.geojson/, async () => {});
+  await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
+  await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
+
+  const rail = page.locator(".zone-rail");
+  await expect(rail).toContainText("orbit");
+  await expect(rail).toContainText("zoom");
+  await expect(rail).toContainText("reset");
+
+  await page.keyboard.press("ArrowRight");
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+    .toMatch(/^#at=148,20,1&/);
+
+  await page.keyboard.press("Equal");
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+    .toMatch(/,1\.25&/);
+
+  await page.keyboard.press("Digit0");
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+    .toMatch(/^#at=145,12,1&/);
+
+  // A focused control keeps its own arrows. One global handler that fired regardless of focus would
+  // break every slider it sits next to.
+  await page.locator("#mag").focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator(".zone-rail")).toContainText("Magnitude 2.1 and above");
+  expect(await page.evaluate(() => window.location.hash)).toMatch(/^#at=145,12,1&/);
+});
+
 test("a shared camera survives the entrance", async ({ page }) => {
   /*
    * Regression. The entrance named the default framing as its destination and runs after the

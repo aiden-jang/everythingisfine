@@ -110,6 +110,28 @@ for (const bp of BREAKPOINTS) {
     expect(await chromeHues(page)).toEqual([]);
   });
 
+  test(`the page does not scroll at ${bp.name}`, async ({ page }) => {
+    /*
+     * Measured by trying to scroll, not by reading a height.
+     *
+     * The sideways test below reads scrollWidth and passed throughout, while the document was 3,486px
+     * tall against a 940px viewport: the entire app could be dragged off the top of the screen to
+     * reveal 2,546px of nothing. A number that could have been read at any point, and was not, because
+     * nothing asked the only question that matters here.
+     */
+    await page.setViewportSize({ width: bp.width, height: bp.height ?? 900 });
+    await page.goto("/");
+    await page.waitForTimeout(1_500);
+    // A real wheel, not `scrollTo`: `overflow: hidden` still honours programmatic scrolling, so the
+    // first version of this test failed on a page a user could not actually move.
+    await page.mouse.move(bp.width / 2, (bp.height ?? 900) / 2);
+    await page.mouse.wheel(0, 1_200);
+    await page.waitForTimeout(200);
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    await page.evaluate(() => { window.scrollTo(0, 2_000); });
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  });
+
   test(`nothing overflows sideways at ${bp.name}`, async ({ page }) => {
     await page.setViewportSize({ width: bp.width, height: bp.height });
     await page.goto("/");
