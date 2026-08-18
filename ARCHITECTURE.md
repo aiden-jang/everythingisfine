@@ -1419,6 +1419,45 @@ ordering invariants are unit-tested and the sequence was checked by screenshot. 
 same reasoning as the entrance: a shortened version of a motion somebody asked not to see is still
 motion.
 
+## The panel knew how many and how far, and never when
+
+The last thing this app promised and did not deliver. It is written up as a limitation in three
+documents: dense sequences are legible on the globe and not readable, because clustering collapses four
+hundred events in the Flores Sea to a handful of markers.
+
+The panel already found every neighbour within 150km and reported the count, the four largest and their
+distances. It never reported a single time, which is the one thing that decides what a pinned event
+actually *is*. An M4 with a larger event three hours behind it is an aftershock. The same M4 with
+smaller ones after it is a mainshock. Every timestamp needed to tell those apart was already held.
+
+So `findNearby` now also returns each neighbour as a signed offset from the pinned event, and the panel
+draws one axis: time, with the pinned event fixed at its true position in chrome and every neighbour as
+a tick coloured and sized by magnitude. Overlap is not a defect. Three hundred ticks piling into ninety
+minutes is the shape of a swarm, and it is precisely what the globe cannot show.
+
+Measured on real data: pinning one M2.6 in the Flores Sea gives **301 neighbours, 207 before and 94
+after, spanning 12 hours before to 4.8 hours after**, with the largest at M4.9 arriving 1.1 hours after
+it. That is a complete answer to "what am I looking at" out of data the app already had.
+
+Two details worth keeping.
+
+**Tick height uses the marker radius function, not the ramp position.** The first version scaled height
+linearly against the ramp, which put a swarm of M2s and an M4.9 within seven pixels of each other:
+the one comparison the strip exists to make. It now uses the same square root the globe uses for radius,
+so height here and size there mean the magnitude the same way, and it stays absolute rather than
+normalising to the local range. Normalising would read better and would make the same M4.9 tall in one
+panel and short in another.
+
+**The sentence states, it does not conclude.** "The largest nearby was M 4.9, 1.1h after it." Whether
+that makes the pinned event a foreshock is the reader's call and depends on things no keyless feed
+carries. The strip shows the shape; the reader draws the inference.
+
+Known cost, not measured: `findNearby` is a full pass over the buffer and the panel re-renders once a
+second with the clock, so a pinned event walks up to fifty thousand events every second and now builds
+a three-hundred-element array while doing it. It was already doing the walk. Memoising it would freeze
+the neighbour list while somebody watches a live sequence, which is the wrong trade for an unmeasured
+cost.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -1448,10 +1487,10 @@ Written last, and kept accurate rather than kept short.
 - **The window cannot go back before the page opened.** No backend, so time scrubbing was rejected
   rather than shipped as a worse version of itself.
 
-- **Dense sequences are legible but not readable.** 400 events in the Flores Sea still collapse to a
-  handful of markers on the globe. The activity strip and the hour hover answer most of what was
-  missing, that a sequence has a shape in time and that the shape belongs to specific dots, but both
-  are hourly: nothing steps through a sequence event by event.
+- **Dense sequences are readable now, and still not steppable.** 400 events in the Flores Sea collapse
+  to a handful of markers on the globe, and the sequence strip in the panel shows every one of them in
+  time. What is still missing is per-event navigation inside a swarm: you can see 301 neighbours and
+  read their shape, and you cannot walk them one at a time.
 
 - **Holding an hour is pointer-only.** Hover has no keyboard or touch equivalent, so the link between
   the strip and the globe is an enhancement rather than a feature. The strip's actual job, selecting

@@ -214,6 +214,17 @@ destination is ever added, and every such source costs a key, so they are out of
 
 ---
 
+### 3.4.1 One quantity, one function, everywhere
+
+Magnitude is drawn three times: marker radius on the globe, legend dot size in the rail, tick height in
+the sequence strip. All three use the same square root of `magnitude - MAG_MIN`, and all three are
+absolute rather than normalised to what happens to be on screen. A viewer who learns to read one has
+learned to read all of them, and the same earthquake is the same size wherever it appears.
+
+The sequence strip's first version scaled tick height linearly against ramp position, which put a swarm
+of M2s and an M4.9 within seven pixels of each other. Two functions for one quantity is worse than a
+slightly worse function used consistently.
+
 ### 3.5 Opacity is a state, not an encoding
 
 Hue is magnitude. Size is magnitude. The carved hole is depth. Opacity is the one channel left and it

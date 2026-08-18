@@ -75,3 +75,41 @@ describe("depth class", () => {
     expect(depthClass(Number.NaN)).toBeNull();
   });
 });
+
+describe("the sequence around a pinned event", () => {
+  const at = (minutes: number, magnitude: number, id: string): Reading =>
+    ({ ...base, id, lon: 120.1, lat: -5.1, magnitude, time: NOW + minutes * 60_000 });
+
+  it("orders neighbours in time and signs them against the pinned event", () => {
+    const store = createStore(100);
+    const pinned = store.ingest(at(0, 5.0, "p1")).quake;
+    store.ingest(at(-90, 6.2, "a1"));
+    store.ingest(at(-30, 4.1, "a2"));
+    store.ingest(at(45, 4.4, "a3"));
+
+    const near = findNearby(store, pinned, filters, NOW + 3_600_000);
+    expect(near.sequence.map((e) => e.at / 60_000)).toEqual([-90, -30, 45]);
+    expect(near.before).toBe(2);
+    expect(near.after).toBe(1);
+  });
+
+  it("reports when the largest happened, which is what decides the reading", () => {
+    const store = createStore(100);
+    const pinned = store.ingest(at(0, 5.0, "p1")).quake;
+    store.ingest(at(-90, 6.2, "big"));
+    store.ingest(at(20, 4.9, "small"));
+
+    const near = findNearby(store, pinned, filters, NOW + 3_600_000);
+    // Larger, and already past: the pinned event is inside somebody else's sequence.
+    expect(near.largest).toBe(6.2);
+    expect(near.largestAt).toBe(-90 * 60_000);
+  });
+
+  it("is empty rather than absent when an event stands alone", () => {
+    const store = createStore(100);
+    const pinned = store.ingest(at(0, 5.0, "p1")).quake;
+    const near = findNearby(store, pinned, filters, NOW);
+    expect(near.sequence).toEqual([]);
+    expect(near.largestAt).toBeNull();
+  });
+});

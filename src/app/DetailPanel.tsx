@@ -1,8 +1,10 @@
 import { useState } from "react";
 import type { Filters, Quake } from "../data/types";
+import type { RampName } from "../globe/ramp";
 import type { Store } from "../data/store";
 import { distanceKm } from "../geo/sphere";
 import { depthClass, findNearby, NEARBY_KM } from "./nearby";
+import { Sequence } from "./Sequence";
 import {
   ago, clock, coordinates, depth, magnitude, place, SOURCE_NAMES,
 } from "./format";
@@ -22,6 +24,7 @@ import {
 
 export interface DetailPanelProps {
   quake: Quake;
+  ramp: RampName;
   store: Store;
   filters: Filters;
   onClose: () => void;
@@ -38,7 +41,7 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
 }
 
 export function DetailPanel({
-  quake, store, filters, onClose, onFlyTo,
+  quake, store, filters, ramp, onClose, onFlyTo,
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
   const r = quake.primary;
@@ -203,6 +206,7 @@ export function DetailPanel({
                 </span>
               </div>
             ))}
+            <Sequence nearby={near} magnitude={r.magnitude} ramp={ramp} />
           </>
         )}
       </div>
