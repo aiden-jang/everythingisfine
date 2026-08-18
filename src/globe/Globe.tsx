@@ -418,8 +418,13 @@ export function Globe({
         reach the pinch handler that has been sitting in controls.ts since the first version. A drag
         happened to work; a pinch was zooming the document.
       */}
+      {/*
+        The `aria-hidden` moved here from the region around it. The canvas is the decorative part, and
+        the region now also holds the legend, which is content and has to stay reachable.
+      */}
       <canvas
         ref={canvas}
+        aria-hidden="true"
         className="block h-full w-full touch-none cursor-grab active:cursor-grabbing"
       />
       {/* Chrome, so achromatic: the selection is a ring of Instrument, never a coloured halo,

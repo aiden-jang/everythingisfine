@@ -6,6 +6,7 @@ import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
 import { Timeline } from "./app/Timeline";
+import { Resizer } from "./app/Resizer";
 import { countWithin, histogram } from "./app/histogram";
 import { decode, encode } from "./app/permalink";
 import { rampColorAt, type RampName } from "./globe/ramp";
@@ -16,6 +17,26 @@ import { PLAYBACK } from "./globe/rings";
 import {
   agoShort, clock, place, SOURCE_NAMES, windowLabel,
 } from "./app/format";
+
+/**
+ * Renders once, in one place or the other.
+ *
+ * The legend belongs on the map at desktop and in the rail on a phone, where a floating panel covers
+ * half a 60dvh globe. Two copies with one hidden is the usual way and it puts a second `#mag` slider
+ * and a second pair of source toggles in the accessibility tree, which is a worse bug than the one it
+ * solves.
+ */
+function useWide(): boolean {
+  const query = "(min-width: 1280px)";
+  const [wide, setWide] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = (): void => setWide(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return wide;
+}
 
 /*
  * The feed is created once, outside the component.
@@ -101,6 +122,17 @@ export function App(): JSX.Element {
    * twenty-three of its twenty-four hours dimmed would look broken rather than shared.
    */
   const [focusHour, setFocusHour] = useState<number | null>(null);
+  /*
+   * Remembered, because a width somebody chose is a preference and re-choosing it on every visit is
+   * the app forgetting something it was told.
+   */
+  const onMap = useWide();
+  const [railWidth, setRailWidth] = useState<number>(
+    () => Number(localStorage.getItem("firstmotion.rail")) || 356,
+  );
+  useEffect(() => {
+    localStorage.setItem("firstmotion.rail", String(railWidth));
+  }, [railWidth]);
   /*
    * Both persisted, because both are accessibility settings and re-choosing one on every visit is
    * its own barrier. Read lazily so the first paint already has the right ramp rather than
@@ -279,6 +311,37 @@ export function App(): JSX.Element {
   const edge = windowStart(now, filters.windowMs, snapshot.coveredSince);
   const live = Object.values(snapshot.statuses).filter((s) => s.kind === "live").length;
 
+  const legend = (
+    <>
+
+              <MagnitudeFilter
+                ramp={ramp}
+                value={filters.minMagnitude}
+                onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
+              />
+              {/*
+                Sources sit with the magnitude control because both answer "what is on the globe".
+              */}
+              <div className="mt-3 flex gap-1.5">
+                {(["usgs", "emsc"] as const).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => toggleSource(id)}
+                    aria-pressed={filters.sources.has(id)}
+                    className={`flex-1 cursor-pointer border px-2.5 py-1.5 text-[11.5px] transition-colors ${
+                      filters.sources.has(id)
+                        ? "border-hairline bg-raised text-ink hover:border-faint"
+                        : "border-hairline text-faint hover:bg-raised hover:text-dim"
+                    }`}
+                  >
+                    {SOURCE_NAMES[id]}
+                  </button>
+                ))}
+              </div>
+    </>
+  );
+
   return (
     <div className="frame">
       {/* The header used to hold a wordmark and two small words on a 1280px bar. It now carries
@@ -345,7 +408,7 @@ export function App(): JSX.Element {
         </div>
       </header>
 
-      <div className="zones">
+      <div className="zones" style={{ "--rail-w": `${railWidth}px` } as React.CSSProperties}>
         <aside className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r">
           <div>
             <div className="label">Events</div>
@@ -433,38 +496,7 @@ export function App(): JSX.Element {
             </button>
           ) : null}
 
-          <div>
-            {/* The legend and the filter, as one control: the track is the scale. */}
-            <MagnitudeFilter
-              ramp={ramp}
-              value={filters.minMagnitude}
-              onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
-            />
-            {/*
-              Sources sit with the magnitude control because both answer "what is on the globe".
-              The colourblind ramp used to sit here too and does not belong: it answers "how is it
-              drawn", which is a display setting, so it moved to the header with the other two.
-            */}
-            <div className="mt-3 flex gap-1.5">
-              {(["usgs", "emsc"] as const).map((id) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() => toggleSource(id)}
-                  aria-pressed={filters.sources.has(id)}
-                  // The active state had no hover at all, so the two most-pressed buttons in the
-                  // rail stopped acknowledging the pointer once on, which reads as disabled.
-                  className={`flex-1 cursor-pointer border px-2.5 py-1.5 text-[11.5px] transition-colors ${
-                    filters.sources.has(id)
-                      ? "border-hairline bg-raised text-ink hover:border-faint"
-                      : "border-hairline text-faint hover:bg-raised hover:text-dim"
-                  }`}
-                >
-                  {SOURCE_NAMES[id]}
-                </button>
-              ))}
-            </div>
-          </div>
+          {onMap ? null : <div>{legend}</div>}
 
           {/*
             The day, and the control for the window that was previously unreachable. Sits under the
@@ -528,30 +560,13 @@ export function App(): JSX.Element {
             waiting={snapshot.coveredSince === null}
           />
 
-          {/*
-            The keys, said out loud.
-            Every one of these already worked and none of them were written down anywhere, which makes
-            a keyboard-only viewer a person who cannot move the globe. Below the list rather than in
-            the header because it is reference, not status: read once, then ignored.
-          */}
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-hairline pt-2.5 font-mono text-[10.5px] text-faint">
-            {([
-              ["arrows", "orbit"],
-              ["+ −", "zoom"],
-              ["0", "reset"],
-              ["esc", "clear"],
-            ] as const).map(([key, what]) => (
-              <span key={key} className="flex items-baseline gap-1.5">
-                <span className="text-dim">{key}</span>
-                {what}
-              </span>
-            ))}
-          </div>
         </aside>
 
         {/* Hidden from assistive tech. The parallel accessible feed in step B is the real
             interface for a screen reader; the canvas is never it. */}
-        <main className="zone-canvas bg-void" aria-hidden="true">
+        <Resizer width={railWidth} min={264} max={620} onChange={setRailWidth} />
+
+        <main className="zone-canvas relative bg-void">
           {/* Split out so the rail paints before three.js parses. The fallback is the void the globe
               sits on, so nothing appears and is then replaced. */}
           <Suspense fallback={null}>
@@ -567,6 +582,37 @@ export function App(): JSX.Element {
             onReplay={setReplay}
           />
           </Suspense>
+
+          {/*
+            The legend lives on the map, not in a column beside it.
+
+            It explains what the marks mean, and it spent its life in a sidebar two hundred pixels from
+            the nearest mark. Over the globe it sits next to the thing it is describing, and the rail
+            gets its height back for the things that are actually a list.
+          */}
+          <div
+            className="pointer-events-none absolute right-0 bottom-0 left-0 z-[1] flex flex-wrap items-end justify-end gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
+          >
+            {onMap ? (
+              <div className="pointer-events-auto order-1 w-full max-w-[300px] border border-hairline bg-deck/82 p-3 backdrop-blur-lg xl:order-2">
+                {legend}
+              </div>
+            ) : null}
+            <div className="pointer-events-auto order-2 font-mono text-[10.5px] text-faint xl:order-1">
+              {([
+                ["arrows", "orbit"],
+                ["+ −", "zoom"],
+                ["0", "reset"],
+                ["esc", "clear"],
+              ] as const).map(([key, what]) => (
+                <span key={key} className="mr-3 inline-flex items-baseline gap-1.5">
+                  <span className="text-dim">{key}</span>
+                  {what}
+                </span>
+              ))}
+            </div>
+
+          </div>
         </main>
 
         {pinned ? (

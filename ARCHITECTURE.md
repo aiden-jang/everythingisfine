@@ -1806,6 +1806,56 @@ neighbour search just had fixed.
 Extracting `agoShort` fell out of it: the compact form was inline in the event list, and a second copy
 in the rail is how "5h" and "21 hours" end up side by side in one panel, each correct on its own.
 
+## The globe was see-through, and it was the winding
+
+Reported directly: the far side of the planet was visible through the near side. Real, and mine.
+
+The land fill is drawn with `depthTest: false` and relies on back-face culling to hide the far
+hemisphere, which is the fix for the fill sagging into the ocean sphere. Culling only works if the
+winding is consistent, and it was not: earcut preserves the winding of the ring it is handed, and
+Natural Earth's polygons are not all wound the same way.
+
+Counted: **1,559 of 303,360 triangles faced inward**. Their far-side copies survived culling and their
+near-side copies were removed, so a handful of landmasses showed faintly through the ocean from the
+other side of the world. It reads as a transparency setting rather than as a bug, which is why it
+lasted.
+
+Fixed where it starts, at build time: one pass over the index buffer flipping any triangle whose face
+normal disagrees with the outward radial. The test asserts zero inward triangles, and a second one
+asserts the flip count is *not* zero, so if the source data ever becomes consistent the pass can go
+rather than sit there forever being a precaution nobody can evaluate.
+
+## The dashboard became a window
+
+Told the interface still read as "oh, cool" rather than "oh, this is cool", with a list of what was
+missing. The list was right, and most of it was structural rather than a matter of polish.
+
+**The globe now fills the frame and the interface floats on it.** The rail was a column beside the
+canvas, so the planet stopped at a hard vertical line 356px in and the app read as a dashboard with a
+globe component in it. The panels are translucent and blurred over a full-bleed canvas now, and the
+globe centres in the whole frame rather than in the space left over, so it passes behind the rail
+instead of dodging it. A planet that ends where a panel begins is a picture of a planet.
+
+`saturate(0.6)` on the blur matters more than it looks: without it the magnitude ramp bleeds through
+the panel as a wash of orange behind the numbers, which is hue arriving in the chrome by the back door.
+
+**The legend moved onto the map.** It explains what the marks mean and it spent its life in a sidebar
+two hundred pixels from the nearest mark. The key hints went with it, which also answers "where are the
+key labels": they existed, at the bottom of a scrolling rail, which is not the same as being visible.
+
+Rendered once and placed in one parent or the other, not duplicated and hidden. On a phone a floating
+legend covers half a 60dvh globe, so below 1280 it goes back in the rail, and the usual two-copies
+approach would put a second magnitude slider and a second pair of source toggles in the accessibility
+tree: a worse bug than the one it solves.
+
+**The rail edge drags.** Both sides genuinely want the space and which one wants it more depends on
+what somebody is doing: reading the list wants a wide rail, watching a sequence wants none of one. It
+is a `separator` with `aria-valuenow` and arrow keys, not a bare div with a pointer handler, for the
+same reason the camera got keys. The width is remembered.
+
+The drag listens on the window rather than the handle, because a pointer moving faster than layout
+leaves a 4px target behind and the drag would stop the moment the cursor overtook it.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
