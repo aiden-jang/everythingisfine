@@ -3,14 +3,15 @@ import { Globe } from "./globe/Globe";
 import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { EventList } from "./app/EventList";
+import { DetailPanel } from "./app/DetailPanel";
 import { Legend } from "./app/Legend";
 import { decode, encode } from "./app/permalink";
 import type { RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
-import type { Filters, Quake, SourceId } from "./data/types";
+import type { Filters, SourceId } from "./data/types";
 import { PLAYBACK } from "./globe/rings";
 import {
-  ago, clock, coordinates, depth, magnitude, place, SOURCE_NAMES, windowLabel,
+  SOURCE_NAMES, windowLabel,
 } from "./app/format";
 
 /*
@@ -42,25 +43,6 @@ function Row({ label, value, onClick }: {
   return onClick
     ? <button type="button" onClick={onClick} className={`${shared} cursor-pointer text-left hover:text-ink`}>{body}</button>
     : <div className={shared}>{body}</div>;
-}
-
-function Reading({ quake, index }: { quake: Quake; index: number }): JSX.Element {
-  const reading = quake.readings[index]!;
-  const drawn = reading === quake.primary;
-  return (
-    <div className={`border-t border-hairline py-2 ${drawn ? "border-l-2 border-l-ink pl-2" : ""}`}>
-      <div className="label mb-1.5">
-        {SOURCE_NAMES[reading.source]}
-        {drawn ? <span className="ml-1.5 tracking-normal text-ink normal-case">drawn</span> : null}
-      </div>
-      <div className="font-mono text-[10px] leading-relaxed text-ink">
-        <div>{magnitude(reading)} <span className="text-faint">{reading.scale}</span></div>
-        <div>{coordinates(reading)}</div>
-        <div>{depth(reading)} deep</div>
-        <div>{clock(reading.time)} <span className="text-faint">{ago(reading.time, Date.now())}</span></div>
-      </div>
-    </div>
-  );
 }
 
 /*
@@ -376,37 +358,13 @@ export function App(): JSX.Element {
         </main>
 
         {pinned ? (
-          <aside className="zone-panel flex w-[360px] flex-col gap-2 border-l border-hairline bg-deck p-4 max-xl:w-full">
-            <div className="flex items-start justify-between">
-              <div className="label">Pinned event</div>
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                className="label cursor-pointer hover:text-ink"
-              >
-                Esc
-              </button>
-            </div>
-            <div className="text-[23px] leading-none font-semibold">{magnitude(pinned.primary)}</div>
-            <div className="text-[12px] leading-snug text-dim">{place(pinned.primary.place)}</div>
-            {pinned.primary.kind !== "earthquake" ? (
-              // Named rather than drawn as an earthquake. A quarry blast is a real seismic event
-              // and calling it something it is not would be the quiet kind of lie.
-              <div className="text-[10px] text-faint">recorded as a {pinned.primary.kind}</div>
-            ) : null}
-
-            <div className="label mt-2">
-              Source readings
-              {pinned.readings.length > 1 ? " (both agencies reported this)" : ""}
-            </div>
-            {pinned.readings.map((_, i) => <Reading key={i} quake={pinned} index={i} />)}
-            {pinned.readings.length > 1 ? (
-              <div className="mt-auto pt-3 text-[9.5px] leading-relaxed text-faint">
-                Neither reading is discarded. The marker is drawn from USGS, the global catalogue of
-                record, so it does not move depending on which feed arrived first.
-              </div>
-            ) : null}
-          </aside>
+          <DetailPanel
+            quake={pinned}
+            store={feed.store}
+            filters={filters}
+            onClose={() => setSelected(null)}
+            onFlyTo={(lon, lat, zoom) => flyTo.current(lon, lat, zoom)}
+          />
         ) : null}
       </div>
     </div>
