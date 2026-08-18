@@ -42,17 +42,21 @@ export function matches(quake: Quake, filters: Filters, now: number): boolean {
 /**
  * The window's honest left edge, as a timestamp.
  *
- * With no backend the buffer starts when the page loads, so "last 24 hours" is false for the first
- * 24 hours. This returns the later of the requested window and the earliest arrival actually held,
- * and the rail prints whichever it is. DESIGN.md section 10 treats this as a design rule rather
- * than a nicety: it is the difference between a demo and a claim.
+ * With no backend the app only knows what its sources handed it, so a requested window can reach
+ * back further than anything it holds. This returns the later of the requested window and the point
+ * coverage actually begins, and the rail prints whichever it is. DESIGN.md section 10 treats this
+ * as a design rule rather than a nicety: it is the difference between a demo and a claim.
+ *
+ * `coveredSince` is coverage, not arrival. It used to be the earliest arrival still held, which was
+ * true when the seed fetched an hour and became a permanent lie when it started fetching a day:
+ * every event in a full day-long buffer arrives at page open, so the rail said "still filling"
+ * forever. A rule that is always on stops being read, which is worse than not having it.
  */
 export function windowStart(
-  now: number, windowMs: number, earliestArrival: number | null,
+  now: number, windowMs: number, coveredSince: number | null,
 ): { at: number; complete: boolean } {
   const requested = now - windowMs;
-  if (earliestArrival === null || earliestArrival <= requested) {
-    return { at: requested, complete: true };
-  }
-  return { at: earliestArrival, complete: false };
+  if (coveredSince === null) return { at: now, complete: false };
+  if (coveredSince <= requested) return { at: requested, complete: true };
+  return { at: coveredSince, complete: false };
 }

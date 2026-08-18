@@ -119,7 +119,7 @@ that non-text contrast requires, and unmistakable for any data value.
 
 **The second named exception: the legend.** The magnitude legend paints the ramp itself, outside
 the canvas, and it must. A legend that cannot show the colours it explains is not a legend. It is
-marked `data-legend` so the design-contract test excludes that one element rather than loosening the
+marked `data-ramp` so the design-contract test excludes that one element rather than loosening the
 rule for everything, and so a third exception has to be argued for rather than slipped in.
 
 Worth recording that the legend did not exist until somebody called the interface bad: the product
@@ -371,10 +371,21 @@ doing. This is a feature, not a compliance checklist.
 Every number on screen is either measured or labelled. This is a design rule because the failures
 are all visual ones.
 
-- **The time window states its own left edge.** With no backend, the buffer starts when the page
-  loads, so "last 24 hours" is a lie for the first 24 hours. The rail reads "since 21:40" until the
-  window genuinely fills, then switches. Getting this wrong is the difference between a demo and a
-  claim.
+- **The time window states its own left edge.** With no backend the app knows only what its sources
+  handed it, so a requested window can reach back further than anything it holds. The rail reads
+  "since 21:40 · still filling" until coverage reaches the window, then switches. Getting this wrong
+  is the difference between a demo and a claim.
+- **Coverage is not arrival.** Both feeds seed a whole day in their first request, so every event in
+  a full buffer arrives at page open. Reading the earliest arrival as the left edge made the rail
+  say "still filling" permanently over a complete day: a rule written for an hourly seed, left in
+  place when the seed became daily. A disclaimer that is always on is not read, which is worse than
+  not having one.
+- **The headline counts what is drawn, not what is held.** Every filter changes the globe, so every
+  filter changes the number beside it. It was the buffer total, which meant dragging magnitude to
+  5.0 emptied the globe and left the largest number in the rail sitting still.
+- **An hour nobody watched is not a quiet hour.** The activity strip draws hours outside its
+  coverage as blocks rather than as empty bars, because a zero-height bar is a measurement and this
+  is an absence.
 - **A deduplicated count is labelled as one.** If USGS and EMSC both reported an event, the counter
   shows distinct events, and the source breakdown shows the raw counts underneath.
 - **Magnitude carries its scale.** `M 5.2 (Mww, USGS)`, not a bare `5.2`. The two feeds do not

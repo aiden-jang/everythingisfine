@@ -208,6 +208,47 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   await fresh.close();
 });
 
+test("the activity strip narrows the window and the headline follows", async ({ page }) => {
+  /*
+   * Three claims that only exist together in a browser: the strip is a control, the control
+   * reaches the data, and the headline counts what is on the globe rather than what is in the
+   * buffer. The last one is the reason this test exists. The number was the held total, so every
+   * filter in the app moved the picture and left the biggest number in the rail sitting still.
+   */
+  await page.goto("/");
+  await waitForData(page);
+
+  const headline = page.locator(".zone-rail .text-\\[38px\\]");
+  const count = async (): Promise<number> =>
+    Number((await headline.innerText()).replace(/[^0-9]/g, ""));
+
+  /*
+   * Settle before measuring. The two feeds seed independently and the first assertion read the
+   * total mid-batch, so narrowing the window to four hours produced a *larger* number and the
+   * test blamed the feature. A baseline taken from a moving total is not a baseline.
+   */
+  let whole = 0;
+  await expect.poll(async () => {
+    const seen = await count();
+    const stable = seen > 0 && seen === whole;
+    whole = seen;
+    return stable;
+  }, { timeout: 30_000, intervals: [1_500] }).toBe(true);
+
+  // Value is the window's left edge in hours-ago, so 20 leaves the last four hours.
+  await page.locator("#window").fill("20");
+  await expect(page.getByText("last 4 hours")).toBeVisible();
+  expect(await count()).toBeLessThan(whole);
+
+  await expect.poll(async () => page.evaluate(() => window.location.hash), { timeout: 5_000 })
+    .toMatch(/&w=4&/);
+
+  // Back to the whole day. Greater-or-equal, not equal: the feeds are live and this is a test, not
+  // a freeze frame.
+  await page.locator("#window").fill("0");
+  await expect.poll(count, { timeout: 5_000 }).toBeGreaterThanOrEqual(whole);
+});
+
 test("a shared camera survives the entrance", async ({ page }) => {
   /*
    * Regression. The entrance named the default framing as its destination and runs after the

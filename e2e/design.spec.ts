@@ -71,7 +71,7 @@ async function chromeHues(
        * pixel of chrome under the same rule.
        */
       if (el.closest("canvas") || el.tagName === "CANVAS") continue;
-      if (el.closest("[data-legend]")) continue;
+      if (el.closest("[data-ramp]")) continue;
       const style = getComputedStyle(el);
       const props: [string, string][] = [
         ["color", style.color],

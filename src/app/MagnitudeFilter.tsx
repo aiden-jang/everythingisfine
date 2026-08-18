@@ -27,9 +27,9 @@ export function MagnitudeFilter({ ramp, value, onChange }: MagnitudeFilterProps)
   const cut = Math.max(0, Math.min(100, ((value - MAG_MIN) / (MAG_MAX - MAG_MIN)) * 100));
 
   return (
-    // `data-legend` marks the one element outside the canvas allowed to paint the data ramp, which
+    // `data-ramp` marks an element outside the canvas allowed to paint the magnitude ramp, which
     // the design-contract test excludes by name rather than by loosening the rule. See DESIGN.md 3.1.
-    <div data-legend>
+    <div data-ramp>
       <label className="label block" htmlFor="mag">
         Magnitude {value.toFixed(1)} and above
       </label>

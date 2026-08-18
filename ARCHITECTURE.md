@@ -809,7 +809,7 @@ what is seen and what is heard.
 Which is exactly what it was built for, one phase earlier.
 
 Three were the legend painting the data ramp outside the canvas. That is a **correct** exception and
-it still had to be named: `data-legend` excludes one marked element rather than loosening the rule,
+it still had to be named: `data-ramp` excludes one marked element rather than loosening the rule,
 because DESIGN.md's own principle is that an unstated exception becomes a precedent and the next one
 is a coloured button.
 
@@ -1086,6 +1086,77 @@ The entrance now flies to wherever the camera is already aimed, so it works for 
 and for a link without knowing which it has. The new test was checked against the old behaviour and
 fails on it.
 
+## The globe cannot show when, and the window filter had no control
+
+Two problems that turned out to be one. The globe draws an event four minutes old exactly like one
+nineteen hours old, so the single thing a seismic sequence *is*, a shape in time, was the one thing
+the app could not show. Separately, `windowMs` was enforced in `matches`, encoded in permalinks and
+clamped on the way back in, and nothing anywhere could change it: a link could carry `w=6` and no
+one could produce one.
+
+A 24-hour histogram answers both. It is the same idea as the magnitude filter, where the ramp is the
+legend and the thumb is the threshold: here the day is the legend and the thumb is the left edge of
+the window. Excluded hours dim in place rather than disappearing, so the day stays whole.
+
+The slider's value is the **left edge in hours-ago**, not the length. A value counting hours would
+have to run backwards for the thumb to sit where the window starts, and the last control here that
+inverted a direction to be clever took three attempts to get right.
+
+Bars are square-rooted. Counts across a day run from zero to several hundred once a sequence starts,
+and linear height flattens the other twenty-three hours into a line: the strip would show the swarm
+and hide the day around it. The peak is printed as a number beside the bars, so the one quantity
+worth knowing exactly is read rather than estimated off a bar.
+
+## The strip came up entirely grey, and it was right
+
+Every hour rendered as "not observed" on a page holding a full day. The histogram was reading
+`stats.since`, the earliest *arrival* still held, and both feeds seed a whole day in their first
+request: every event in a complete buffer arrives at page open.
+
+Which meant the rail had been printing "since 00:11 · still filling" permanently, over a buffer that
+was already full. That disclaimer was written when the seed fetched an hour. The seed became daily
+later and the rule underneath it was never revisited, so it went from a careful piece of honesty to
+a line that was always on. A disclaimer that never turns off is not read.
+
+The fix separates coverage from arrival: the feed records `coveredSince` when the first delivery
+lands, at 24 hours back, and `windowStart` and `windowLabel` read that instead. One optimism worth
+naming, and it is in the source comment: EMSC's seed is capped at 600 events, so on an exceptionally
+busy day its half of the day is truncated. USGS `all_day` has no cap.
+
+A unit test asserted the old behaviour, that no data means the window is complete. Under arrival
+semantics that was defensible: nothing held is nothing to contradict the window. Under coverage
+semantics it is the worst case in the set, an empty page reporting a complete day.
+
+## The biggest number in the rail ignored every filter
+
+Found by dragging the new window control and watching nothing happen. The headline was
+`stats.quakes`, the held total. Magnitude, sources and the window all changed the globe and none of
+them changed the number sitting above it.
+
+The comment directly above that number already said the right thing. It was written about the replay,
+where the held total sat unchanged while the globe filled beneath it, and it calls that "a true
+number describing something other than the picture next to it". The same sentence was permanently
+true of the filters and nobody had turned it around.
+
+It is now derived from the histogram bars rather than counted again: the strip has already applied
+magnitude and source to every event in the buffer and split them by hour, so summing the hours inside
+the window applies exactly the predicate `matches` does, with no second walk. On a real load it
+moved the headline from 789 to 546, which is how much of the buffer was never on the globe.
+
+Two things fell out of making the counts agree. Events dated slightly in the future, which happens
+because agencies and browsers disagree about the clock by a second or two, were being dropped by the
+histogram while the globe drew them; they now land in the current hour. And the first version of the
+browser test read its baseline mid-seed, so narrowing the window to four hours produced a *larger*
+number and the test blamed the feature: a baseline taken from a moving total is not a baseline.
+
+## Two labels, one sentence
+
+The rail printed "last 6 hours" under the headline and again under the strip, from the same number.
+Playwright found it as a strict-mode violation, which is a test failing for a reason better than the
+one it was written for. Nothing on screen told you which of the two you had just changed. The strip
+keeps the axis and the thumb, the headline keeps the count and names the window, and the slider
+carries it for assistive tech in `aria-valuetext`.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -1107,9 +1178,10 @@ Written last, and kept accurate rather than kept short.
 - **The window cannot go back before the page opened.** No backend, so time scrubbing was rejected
   rather than shipped as a worse version of itself.
 
-- **Dense sequences are legible but not readable.** 400 events in the Flores Sea collapse to a
-  handful of markers. That is better than a blob and it is still not the same as being able to read
-  the sequence; a timeline would serve it and is out of scope.
+- **Dense sequences are legible but not readable.** 400 events in the Flores Sea still collapse to a
+  handful of markers on the globe. The activity strip answers the part of this that mattered most,
+  that a sequence has a shape in time, but it is hourly and global: it shows three hundred events
+  inside ninety minutes and does not let you step through them.
 
 - **No demo video.** The write-up asks for one and there is none, because recording it was not
   something this build could do.

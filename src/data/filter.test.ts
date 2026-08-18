@@ -59,7 +59,13 @@ describe("the honest left edge", () => {
     expect(windowStart(NOW, 24 * HOUR, opened)).toEqual({ at: opened, complete: false });
   });
 
-  it("is complete when nothing has arrived at all", () => {
-    expect(windowStart(NOW, HOUR, null).complete).toBe(true);
+  it("is not complete before any coverage exists", () => {
+    /*
+     * This asserted `true` and was written when the argument was the earliest arrival: nothing
+     * held meant nothing to contradict the window. The argument is now coverage, and no coverage
+     * is the one state where the app is certain it cannot answer, so an empty page reporting a
+     * complete day was the failure mode this whole idea exists to prevent.
+     */
+    expect(windowStart(NOW, HOUR, null)).toEqual({ at: NOW, complete: false });
   });
 });
