@@ -282,20 +282,20 @@ test("a revised magnitude says what the agency first said", async ({ page }) => 
    * same identifier twice with two magnitudes exercises exactly the ingest path a real revision
    * takes, an hour of waiting compressed into one response.
    */
-  const feature = (mag: number, updated: number) => ({
+  const feature = (mag: number, updated: number, depthKm = 24.6) => ({
     id: "ak0219neksb",
     properties: {
       mag, place: "88 km SW of Adak, Alaska", time: Date.now() - 20 * 60_000,
       updated, magType: "mww", type: "earthquake",
     },
-    geometry: { coordinates: [-177.3, 51.2, 24.6] },
+    geometry: { coordinates: [-177.3, 51.2, depthKm] },
   });
 
   await page.route(/seismicportal\.eu/, (route) => route.abort());
   await page.route(/all_hour\.geojson/, (route) =>
     route.fulfill({ json: { features: [] } }));
   await page.route(/all_day\.geojson/, (route) =>
-    route.fulfill({ json: { features: [feature(6.1, 1), feature(6.4, 2)] } }));
+    route.fulfill({ json: { features: [feature(6.1, 1), feature(6.4, 2, 41.2)] } }));
 
   // Filtered to M6 and above so the routed event is the only thing that can be in the list.
   await page.goto("/#at=-177,51,1&m=6&w=24&s=usgs&r=thermal");
@@ -313,7 +313,8 @@ test("a revised magnitude says what the agency first said", async ({ page }) => 
   await expect(row).toHaveAccessibleName(/revised/);
 
   const panel = page.locator(".zone-panel");
-  await expect(panel).toContainText("USGS first said 6.1, now 6.4");
+  // Both halves, and only the halves that moved.
+  await expect(panel).toContainText("USGS first said M 6.1 → M 6.4, 25 km → 41 km deep");
   // The current value is what the headline and the marker use, not the first one.
   await expect(panel.locator(".text-\\[30px\\]")).toContainText("6.4");
   await expect(page.locator("header")).toContainText("revised");

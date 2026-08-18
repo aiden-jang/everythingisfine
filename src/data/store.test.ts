@@ -36,7 +36,7 @@ describe("revisions", () => {
 
     expect(quake.primary.magnitude).toBe(6.4);
     expect(quake.primary.revision).toEqual({
-      fromMagnitude: 6.1, count: 1, at: 1_700_003_600_000,
+      fromMagnitude: 6.1, fromDepthKm: 40, count: 1, at: 1_700_003_600_000,
     });
     expect(store.stats().revised).toBe(1);
   });
@@ -51,6 +51,35 @@ describe("revisions", () => {
     // answers nothing anybody asks.
     expect(quake.primary.revision).toMatchObject({ fromMagnitude: 6.1, count: 2 });
     expect(store.stats().revised).toBe(1);
+  });
+
+  it("counts a depth reassessment, which changes what the earthquake is", () => {
+    // 40km is inside a descending slab; 10km is the crust, where the damage happens.
+    const store = createStore(100);
+    store.ingest(reading({ depthKm: 40 }));
+    const { quake } = store.ingest(reading({ depthKm: 10 }));
+
+    expect(quake.primary.revision).toMatchObject({ fromDepthKm: 40, fromMagnitude: 5.2, count: 1 });
+    expect(store.stats().revised).toBe(1);
+  });
+
+  it("does not call a missing depth a revision, however many times it is redelivered", () => {
+    // Both feeds spell "no depth given" as NaN, and NaN !== NaN, so the obvious comparison reports a
+    // revision on every single poll of an event that never had one.
+    const store = createStore(100);
+    store.ingest(reading({ depthKm: NaN }));
+    for (let i = 0; i < 5; i += 1) store.ingest(reading({ depthKm: NaN }));
+
+    expect(store.stats().revised).toBe(0);
+  });
+
+  it("keeps the first depth across a later magnitude-only change", () => {
+    const store = createStore(100);
+    store.ingest(reading({ magnitude: 6.1, depthKm: 40 }));
+    store.ingest(reading({ magnitude: 6.1, depthKm: 12 }));
+    const { quake } = store.ingest(reading({ magnitude: 6.4, depthKm: 12 }));
+
+    expect(quake.primary.revision).toMatchObject({ fromMagnitude: 6.1, fromDepthKm: 40, count: 2 });
   });
 
   it("does not count a re-poll that changed nothing", () => {

@@ -110,14 +110,36 @@ export function DetailPanel({
       */}
       {revisions.length > 0 ? (
         <div className="mt-2 border border-hairline bg-raised px-2.5 py-2">
-          {revisions.map(({ reading, revision }) => (
-            <div key={reading.source} className="text-[11.5px] leading-relaxed text-dim">
-              <span className="text-ink">{SOURCE_NAMES[reading.source]}</span> first said{" "}
-              <span className="font-mono">{revision.fromMagnitude.toFixed(1)}</span>, now{" "}
-              <span className="font-mono">{reading.magnitude.toFixed(1)}</span>
-              {revision.count > 1 ? ` · ${revision.count} changes` : ""}
-            </div>
-          ))}
+          {revisions.map(({ reading, revision }) => {
+            const magMoved = revision.fromMagnitude !== reading.magnitude;
+            const depthMoved = revision.fromDepthKm !== null
+              && Number.isFinite(reading.depthKm)
+              && revision.fromDepthKm !== reading.depthKm;
+            return (
+              <div key={reading.source} className="text-[11.5px] leading-relaxed text-dim">
+                <span className="text-ink">{SOURCE_NAMES[reading.source]}</span> first said{" "}
+                {/* Only what actually moved. A revision usually touches one of the two, and printing
+                    an unchanged number beside a changed one reads as though both had shifted. */}
+                {magMoved ? (
+                  <>
+                    <span className="font-mono">M {revision.fromMagnitude.toFixed(1)}</span>
+                    {" → "}
+                    <span className="font-mono">M {reading.magnitude.toFixed(1)}</span>
+                  </>
+                ) : null}
+                {magMoved && depthMoved ? ", " : null}
+                {depthMoved ? (
+                  <>
+                    <span className="font-mono">{Math.round(revision.fromDepthKm!)} km</span>
+                    {" → "}
+                    <span className="font-mono">{Math.round(reading.depthKm)} km</span>
+                    {" deep"}
+                  </>
+                ) : null}
+                {revision.count > 1 ? ` · ${revision.count} changes` : ""}
+              </div>
+            );
+          })}
           <div className="mt-1.5 text-[11px] leading-relaxed text-faint">
             First estimates are automatic. A reviewed magnitude arriving later is the system working,
             not an error.

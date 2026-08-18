@@ -32,7 +32,16 @@ export type SourceId = "usgs" | "emsc";
 export interface Revision {
   /** The magnitude in this agency's first reading of the event. */
   fromMagnitude: number;
-  /** How many times this agency has changed its own magnitude. Never counts a re-poll. */
+  /**
+   * The depth in kilometres in this agency's first reading, or null when it never gave one.
+   *
+   * Tracked alongside magnitude rather than instead of it, because it changes what the earthquake is
+   * to anyone downstream: a 40km event reassessed to 10km moves from a slab to the crust, and shallow
+   * is where the damage happens. It was left out of the first version to get one thing tracked
+   * honestly rather than four vaguely, and that reason expired once the mechanism existed.
+   */
+  fromDepthKm: number | null;
+  /** How many times this agency has changed its own magnitude or depth. Never counts a re-poll. */
   count: number;
   /** When the most recent change arrived. */
   at: number;
@@ -69,11 +78,10 @@ export interface Reading {
    */
   kind: string;
   /**
-   * Set once this agency has revised its own magnitude, absent until then.
+   * Set once this agency has revised its own magnitude or depth, absent until then.
    *
-   * Only magnitude. Depth and epicentre are revised too and are not tracked, which is a real gap:
-   * a 40km event reassessed to 10km is a different event to anyone downstream. Tracking one thing
-   * honestly beat tracking four things vaguely, and the panel does show the current depth.
+   * The epicentre is revised too and is not tracked. It moves by a few kilometres on most revisions,
+   * which is not a fact worth a line of the panel, and the position on screen already shows it.
    */
   revision?: Revision;
   /**

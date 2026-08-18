@@ -172,15 +172,48 @@
    * the overflow test caught immediately.
    */
   @media (min-width: 768px) and (max-width: 1279px) {
+    /*
+     * The rail is capped and scrolls; the globe gets the rest.
+     *
+     * The rail row was plain `auto`, so it took whatever its content needed and the canvas got the
+     * remainder. On a 900 by 700 laptop that remainder was **153px**: the globe reduced to a strip by
+     * the controls describing it. Every screenshot of this band had been taken tall enough to hide it.
+     *
+     * Capping the rail rather than shrinking its row. Making the row `minmax(0, auto)` does not
+     * give a smaller row, it gives an overlapping one: the grid sizes it to min-content, the rows
+     * collapse, and the event list keeps its own height and spills onto the key hints.
+     *
+     * Scoped to this band and no further. Written as a bare `min-width: 768px` it also capped the
+     * desktop rail, where the whole point is that it runs the full height of the window: three
+     * tests went red on a rail that had become 45dvh tall on a 1280px screen.
+     */
+    .zone-rail {
+      max-height: 45dvh;
+      min-height: 0;
+      overflow-y: auto;
+      contain: paint;
+    }
+
     .rail {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
       align-items: start;
       gap: 1rem 2rem;
     }
+    /*
+     * A definite height, not a maximum.
+     *
+     * `max-height` is not a floor, so a constrained grid sized this row to min-content and the list
+     * spilled out of it. `height` makes the row honest about how much space the list is taking.
+     */
     .rail > section[aria-label="Recent earthquakes"] {
       grid-column: 1 / -1;
-      max-height: 26dvh;
+      height: 22dvh;
+    }
+
+    /* Its own row. It was landing in column one of an implicit row and colliding with the list. */
+    .rail > div:last-child {
+      grid-column: 1 / -1;
     }
   }
   .zone-canvas {

@@ -259,6 +259,26 @@ test("a shared link previews as something", async ({ page }) => {
   expect(Number(res.headers()["content-length"] ?? 0)).toBeGreaterThan(10_000);
 });
 
+test("the globe always gets a real share of the screen", async ({ page }) => {
+  /*
+   * The tablet band gave the rail an `auto` row and the canvas the remainder. On a 900 by 700 laptop
+   * the remainder was 153px: a globe reduced to a sliver by a strip of controls describing it. Every
+   * screenshot of that band had been taken tall enough to hide it.
+   */
+  await page.goto("/");
+  await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
+
+  for (const [w, h] of [[768, 640], [900, 700], [1279, 700], [1280, 820], [390, 844]] as const) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(500);
+    const share = await page.evaluate(() =>
+      (document.querySelector("canvas") as HTMLElement).getBoundingClientRect().height
+      / window.innerHeight);
+    // The desktop layout gives the globe nearly everything; the tablet band is the constrained one.
+    expect(share, `canvas share at ${w}x${h}`).toBeGreaterThanOrEqual(0.44);
+  }
+});
+
 test("nothing is painted pure black", async ({ page }) => {
   await page.goto("/");
   await waitForData(page);
