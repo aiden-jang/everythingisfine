@@ -488,6 +488,7 @@ export function App(): JSX.Element {
             quake={pinned}
             store={feed.store}
             filters={filters}
+            ramp={ramp}
             onClose={() => setSelected(null)}
             onFlyTo={(lon, lat, zoom) => flyTo.current(lon, lat, zoom)}
           />

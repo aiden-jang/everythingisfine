@@ -24,6 +24,19 @@ export interface Nearby {
   notable: { quake: Quake; km: number }[];
   /** Largest magnitude among them, or null when this event stands alone. */
   largest: number | null;
+  /**
+   * Every neighbour as an offset in milliseconds from the pinned event, negative for earlier.
+   *
+   * The panel could say how many neighbours there were and how far away, and never when. That is the
+   * one thing that decides what a pinned event *is*: an M5 with thirty larger events in the preceding
+   * hour is an aftershock, and the same M5 with thirty smaller ones after it is a mainshock. The app
+   * held every timestamp needed to tell those apart and showed neither.
+   */
+  sequence: { at: number; magnitude: number }[];
+  before: number;
+  after: number;
+  /** Offset of the largest neighbour, so the panel can say whether the big one already happened. */
+  largestAt: number | null;
 }
 
 export function findNearby(
@@ -39,14 +52,27 @@ export function findNearby(
     if (km <= NEARBY_KM) found.push({ quake: other, km });
   });
 
-  const notable = [...found]
-    .sort((a, b) => b.quake.primary.magnitude - a.quake.primary.magnitude)
-    .slice(0, 4);
+  const byMagnitude = [...found]
+    .sort((a, b) => b.quake.primary.magnitude - a.quake.primary.magnitude);
+  const notable = byMagnitude.slice(0, 4);
+  const biggest = byMagnitude[0];
+
+  const origin = quake.primary.time;
+  const sequence = found
+    .map(({ quake: other }) => ({
+      at: other.primary.time - origin,
+      magnitude: other.primary.magnitude,
+    }))
+    .sort((a, b) => a.at - b.at);
 
   return {
     count: found.length,
     notable,
-    largest: notable.length > 0 ? notable[0]!.quake.primary.magnitude : null,
+    largest: biggest ? biggest.quake.primary.magnitude : null,
+    sequence,
+    before: sequence.filter((e) => e.at < 0).length,
+    after: sequence.length - sequence.filter((e) => e.at < 0).length,
+    largestAt: biggest ? biggest.quake.primary.time - origin : null,
   };
 }
 

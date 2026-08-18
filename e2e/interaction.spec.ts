@@ -342,6 +342,52 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
   await expect(rail).not.toContainText("not quiet hours");
 });
 
+test("the sequence says whether the big one has already happened", async ({ page }) => {
+  /*
+   * The question anybody actually has when they click an earthquake in a swarm, and the one the panel
+   * could not answer: it said how many neighbours and how far, never when. An M4 with a larger event
+   * three hours behind it is an aftershock; the same M4 with smaller ones after it is a mainshock.
+   *
+   * Routed rather than waited on, for the same reason as the revision test: real sequences exist and
+   * cannot be scheduled.
+   */
+  const at = (mag: number, minutesAgo: number, id: string, dLat = 0) => ({
+    id,
+    properties: {
+      mag, place: `${id} near Ruteng, Indonesia`, time: Date.now() - minutesAgo * 60_000,
+      updated: 1, magType: "mww", type: "earthquake",
+    },
+    geometry: { coordinates: [120.5, -8.6 + dLat, 20] },
+  });
+
+  await page.route(/seismicportal\.eu/, (route) => route.abort());
+  await page.route(/all_hour\.geojson/, (route) => route.fulfill({ json: { features: [] } }));
+  await page.route(/all_day\.geojson/, (route) => route.fulfill({
+    json: {
+      features: [
+        at(6.0, 180, "mainshock"),
+        at(4.2, 150, "after1", 0.1),
+        at(4.1, 90, "after2", 0.2),
+        at(4.4, 30, "pinned", 0.3),
+      ],
+    },
+  }));
+
+  await page.goto("/#at=120,-8,1&m=4&w=24&s=usgs&r=thermal");
+
+  const row = page.getByRole("region", { name: "Recent earthquakes" })
+    .getByRole("button", { name: /pinned/ });
+  await expect(row).toBeVisible({ timeout: 25_000 });
+  await row.click();
+
+  const panel = page.locator(".zone-panel");
+  // Three neighbours, all earlier than the pinned event.
+  await expect(panel).toContainText("3 before · 0 after");
+  await expect(panel).toContainText("The largest nearby was M 6.0, 2.5h before this one.");
+  // One tick per neighbour plus the chrome marker for the pinned event.
+  await expect(panel.locator("[data-ramp] > div.relative > span")).toHaveCount(4);
+});
+
 test("a shared camera survives the entrance", async ({ page }) => {
   /*
    * Regression. The entrance named the default framing as its destination and runs after the

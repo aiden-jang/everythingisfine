@@ -118,6 +118,13 @@ Live seismicity from **USGS** (polled) and **EMSC** (WebSocket). Coastlines from
 public domain. Plate boundaries from **PB2002** (Bird, P., 2003, *An updated digital model of plate
 boundaries*, Geochemistry Geophysics Geosystems 4(3)), public domain, simplified to 0.15 degrees.
 
+## Sequences
+
+Pinning an event shows what happened around it on one axis: time. Every event within 150km appears as a
+tick placed against the pinned one, so you can see whether the largest has already been. It is stated
+as well as drawn, because "the largest nearby was M 4.9, 1.1h after it" is the fact somebody wants and
+a picture of it is not the same thing.
+
 ## Revisions
 
 An agency's first magnitude is automatic; a reviewed one arrives later and is often different. Rather
@@ -147,11 +154,9 @@ covered. USGS `all_day` has no such cap, so the claim holds as long as USGS deli
 maintenance would fail the build for reasons that are not the code's fault. Routing the feeds to the
 committed fixtures would fix this and has not been done.
 
-**The globe is a poor fit for very dense sequences even with clustering.** 400 events in the Flores
-Sea collapse to a handful of markers. The activity strip shows the *shape* of a sequence in time and
-hovering an hour shows which dots belong to it, which is most of what was missing, but both are
-hourly: you can see that three hundred events landed inside ninety minutes and you still cannot step
-through them one at a time.
+**You cannot walk a swarm event by event.** 400 events in the Flores Sea collapse to a handful of
+markers on the globe. Pinning one shows its whole sequence in time, every neighbour within 150km
+placed against it, so the shape is readable; what is not there is stepping through them one at a time.
 
 **Hovering an hour is pointer-only.** The strip's real job, setting the window, works from the
 keyboard; the link that dims the globe to one hour does not, and there is no discoverable keyboard
