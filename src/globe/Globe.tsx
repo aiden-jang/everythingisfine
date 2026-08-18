@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { matches } from "../data/filter";
 import { createGlobe } from "./scene";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 import { createReplay, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
@@ -125,6 +126,34 @@ export function Globe({
      */
     let focusFade = 0;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    /*
+     * The signature moment: the boundaries grow out of the earthquakes once the day has landed.
+     *
+     * Sequenced after the replay rather than alongside it. Three things moving at once was the
+     * previous opening, and the reveal only means anything if the dots have first had a moment to
+     * read as scattered.
+     */
+    let plateReveal = reducedMotion.matches ? 1 : 0;
+    let revealStarted = reducedMotion.matches;
+    globe.plates.reveal(plateReveal);
+
+    const startReveal = (): void => {
+      if (revealStarted) return;
+      revealStarted = true;
+      const points: { lon: number; lat: number }[] = [];
+      feed.store.forEach((quake) => {
+        if (matches(quake, live.current.filters, Date.now())) {
+          points.push({ lon: quake.primary.lon, lat: quake.primary.lat });
+        }
+      });
+      globe.plates.orderFrom(points);
+    };
+
+    /*
+     * If no data ever arrives there is no replay to finish, so nothing would ever reveal them.
+     * The boundaries are geography and belong on the globe regardless of whether a feed answered.
+     */
+    const revealFallback = window.setTimeout(startReveal, 8_000);
 
     const frame = (now: number): void => {
       /*
@@ -133,8 +162,8 @@ export function Globe({
        * The camera's is clamped at 50ms so a backgrounded tab does not lurch when it wakes. The
        * replay's is not: it is playing back a fixed span of history against the wall clock, and
        * clamping made it run at whatever fraction of real time the frame rate happened to hit. On a
-       * slow machine a seven-second entrance took twelve, which is the difference between an
-       * entrance and a wait.
+       * slow machine the replay ran to 12 seconds against a 7-second setting, which is the
+       * difference between an entrance and a wait. It is 2.8 seconds now and the ratio still holds.
        */
       const rawDt = (now - last) / 1000;
       const dt = Math.min(rawDt, 0.05);
@@ -167,6 +196,12 @@ export function Globe({
         );
         const at = replay.at();
         onReplayRef.current?.(replay.done() || at === null ? null : { at, revealed });
+        if (replay.done()) startReveal();
+      }
+
+      if (revealStarted && plateReveal < 1) {
+        plateReveal = Math.min(1, plateReveal + dt / 1.5);
+        globe.plates.reveal(plateReveal);
       }
 
       const focusTarget = live.current.focusHour === null ? 0 : 1;
@@ -193,7 +228,8 @@ export function Globe({
       globe.render();
       placeOverlays();
       onCameraRef.current?.(globe.controls.state());
-      if (moving || expanding || replaying || fading) requestAnimationFrame(frame);
+      const revealing = revealStarted && plateReveal < 1;
+      if (moving || expanding || replaying || fading || revealing) requestAnimationFrame(frame);
       else running = false;
     };
 
@@ -337,6 +373,7 @@ export function Globe({
     if (parent) ro.observe(parent);
 
     return () => {
+      window.clearTimeout(revealFallback);
       ro.disconnect();
       unsubscribe();
       detach();

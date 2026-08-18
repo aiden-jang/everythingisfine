@@ -53,3 +53,62 @@ export function buildPlates(): Float32Array {
   }
   return new Float32Array(out);
 }
+
+/**
+ * Reorders segments nearest-first from a set of points, for the entrance reveal.
+ *
+ * The reveal grows the boundaries outward from the earthquakes rather than fading them in or wiping
+ * across the globe, because a fade says nothing and a wipe has a direction that means nothing. Growing
+ * from the events is the claim the picture is making: the dots are where they are *because* the line
+ * is there, so the dots drawing the line is the sentence read out loud.
+ *
+ * Ordering plus a growing draw range, not a shader. Reveal by threshold would need a per-vertex
+ * attribute and a custom material for a line layer that otherwise needs neither; sorting 936 segments
+ * once and then moving `drawRange` gets the same picture out of code that already exists.
+ */
+export function orderByProximity(
+  positions: Float32Array,
+  points: readonly { lon: number; lat: number }[],
+): Float32Array {
+  const segments = positions.length / 6;
+  if (segments === 0 || points.length === 0) return positions;
+
+  const px = new Float32Array(points.length);
+  const py = new Float32Array(points.length);
+  const pz = new Float32Array(points.length);
+  for (let i = 0; i < points.length; i += 1) {
+    const [x, y, z] = toVec3(points[i]!.lon, points[i]!.lat, 1);
+    px[i] = x; py[i] = y; pz[i] = z;
+  }
+
+  // Squared chord length, never an angle: it is monotonic in the angle and costs no inverse trig
+  // across half a million pairs.
+  const cost = new Float32Array(segments);
+  for (let s = 0; s < segments; s += 1) {
+    const i = s * 6;
+    let mx = (positions[i]! + positions[i + 3]!) / 2;
+    let my = (positions[i + 1]! + positions[i + 4]!) / 2;
+    let mz = (positions[i + 2]! + positions[i + 5]!) / 2;
+    const len = Math.hypot(mx, my, mz) || 1;
+    mx /= len; my /= len; mz /= len;
+
+    let best = Infinity;
+    for (let e = 0; e < points.length; e += 1) {
+      const dx = mx - px[e]!;
+      const dy = my - py[e]!;
+      const dz = mz - pz[e]!;
+      const d2 = dx * dx + dy * dy + dz * dz;
+      if (d2 < best) best = d2;
+    }
+    cost[s] = best;
+  }
+
+  const order = Array.from({ length: segments }, (_, i) => i)
+    .sort((a, b) => cost[a]! - cost[b]!);
+
+  const out = new Float32Array(positions.length);
+  for (let n = 0; n < segments; n += 1) {
+    out.set(positions.subarray(order[n]! * 6, order[n]! * 6 + 6), n * 6);
+  }
+  return out;
+}
