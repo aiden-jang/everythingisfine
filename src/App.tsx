@@ -289,6 +289,11 @@ export function App(): JSX.Element {
             ["EMSC", `${snapshot.stats.readings.emsc}`],
             ["distinct", `${snapshot.stats.quakes}`],
             ["both", `${snapshot.stats.corroborated}`],
+            // Only once it has happened. A permanent "0 revised" is a slot in the header reserved
+            // for nothing, and this is the one stat that is interesting precisely because it moves.
+            ...(snapshot.stats.revised > 0
+              ? [["revised", `${snapshot.stats.revised}`] as const]
+              : []),
           ] as const).map(([k, v]) => (
             <span key={k} className="flex items-baseline gap-1.5">
               <span className="font-mono text-[13px] text-ink">{v}</span>

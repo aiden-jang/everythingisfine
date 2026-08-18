@@ -1204,6 +1204,58 @@ tick at the top of the column. And the readout printed a clock time, 05:51, whic
 boundary nobody chose rather than a fact about the hour; the buckets are anchored to now, so the
 readout is relative like the axis either side of it.
 
+## The number changed and the app said nothing
+
+An agency's first magnitude is automatic. A reviewed one arrives later and is often different: an
+initial M6.1 becoming M6.4 within the hour is ordinary. The store handled this correctly and silently.
+`existing.readings[at] = reading` replaced the old reading outright, so the number on screen changed,
+the marker resized and recoloured, and nothing anywhere said it had happened. DESIGN.md already
+requires a magnitude to carry its scale because a bare number implies a precision that does not exist;
+a revised number with no history implies a certainty that does not exist either.
+
+Three fields rather than a trail: what the agency first said, what it says now, and how many times it
+has changed. The reason revisions replace instead of appending is that a busy event updated all
+afternoon would grow an unbounded array inside a bounded store, and that reason still holds. The
+middle of a trail also answers nothing anybody asks.
+
+**The detail that decides whether any of this means anything:** both USGS feeds re-serve every event
+they hold, so the replace branch runs on every poll for every event whether anything moved or not.
+Counting arrivals there would have every earthquake on screen claiming twenty revisions by evening.
+Only a changed magnitude counts, and a redelivery of an already-revised reading keeps the history
+rather than dropping it.
+
+The `revised` stat is per event, and the reason is a bug the tests caught before it shipped. It first
+incremented per reading while eviction refunded per event, so an earthquake both agencies revised
+added two and gave one back: a counter that drifts upward for as long as the page is open, invisible
+in any single case. There is now a churn test that runs two hundred doubly-revised events through a
+ten-slot store and asserts the count cannot exceed the events held.
+
+Surfaced in three places, which is one requirement rather than three features. The panel says
+"USGS first said 6.1, now 6.4" directly under the magnitude, because it is a statement about that
+number and nowhere else would connect them. The header counts them, and only once there is one to
+count. And the list rows say "revised", because a count in the header with nothing to click is a
+statistic about an invisible set: you learn that three magnitudes changed and cannot find one of them.
+
+The row needs no `aria-label` for that word to be spoken. It is a button without one, so its
+accessible name is computed from its content, and the test asserts the accessible name rather than the
+text to prove that rather than assume it. The live-region announcement does carry the values, because
+a row can be pinned to find out what changed and an announcement has already gone by.
+
+## The first browser test that routes a feed instead of waiting on one
+
+Revisions are real and rare. An agency reviewing a magnitude an hour later is not something a test can
+wait for, so the panel reporting it would have shipped having never been looked at.
+
+USGS's parser reads each feature independently, which means one payload carrying the same identifier
+twice with two different magnitudes exercises exactly the ingest path a real revision takes. An hour
+of waiting compressed into one response, with EMSC aborted and the hourly feed emptied so nothing else
+can appear.
+
+This is also the shape of the fix for the open item above about browser tests staying out of CI: the
+reason they cannot run there is that they wait on two live agencies, and this one does not wait on
+either. It routes one endpoint rather than building the fixture harness the rest of them would need,
+so it is a demonstration and not the fix.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -1216,7 +1268,15 @@ Written last, and kept accurate rather than kept short.
 
 - **Browser tests are not in CI.** They wait on two real agencies, so a quiet planet or an agency
   doing maintenance would fail the build for reasons that are not the code's fault. Routing both
-  feeds to the committed fixtures would make them deterministic and CI-able. Not done.
+  feeds to the committed fixtures would make them deterministic and CI-able. One test now does
+  exactly that for one endpoint, which shows the shape of the fix without being it.
+
+- **Both gates are sensitive to a loaded machine, and neither says so when it fails.** The perf
+  budget failed at 13.96ms against 7.65ms quiet, with browsers still resident. Two browser tests
+  failed in a full run that took 6.7 minutes and passed in one that took 3.6. In both cases a real
+  failure and a busy laptop are indistinguishable from the output, which is the property a gate is
+  supposed to not have. A ratio against a calibration workload would fix the perf side; the browser
+  side wants the fixtures above, so that waiting on a live feed is not a timeout waiting to happen.
 
 - **GPU frame time has never been measured with a profiler.** The CPU budget is gated and recorded;
   the rendering side has only ever been judged by looking at it. Nothing has suggested a problem,

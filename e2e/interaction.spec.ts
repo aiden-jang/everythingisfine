@@ -272,6 +272,53 @@ test("holding an hour on the strip reads that hour, and lets go", async ({ page 
   await expect(readout).toHaveText(/^peak \d+ · /);
 });
 
+test("a revised magnitude says what the agency first said", async ({ page }) => {
+  /*
+   * The one test here that routes a feed instead of waiting on one, because revisions are real and
+   * rare: an agency reviewing an automatic magnitude an hour later is not something a test can wait
+   * for, and the panel that reports it would otherwise ship having never been looked at.
+   *
+   * The trick is that USGS's parser reads each feature independently, so one payload carrying the
+   * same identifier twice with two magnitudes exercises exactly the ingest path a real revision
+   * takes, an hour of waiting compressed into one response.
+   */
+  const feature = (mag: number, updated: number) => ({
+    id: "ak0219neksb",
+    properties: {
+      mag, place: "88 km SW of Adak, Alaska", time: Date.now() - 20 * 60_000,
+      updated, magType: "mww", type: "earthquake",
+    },
+    geometry: { coordinates: [-177.3, 51.2, 24.6] },
+  });
+
+  await page.route(/seismicportal\.eu/, (route) => route.abort());
+  await page.route(/all_hour\.geojson/, (route) =>
+    route.fulfill({ json: { features: [] } }));
+  await page.route(/all_day\.geojson/, (route) =>
+    route.fulfill({ json: { features: [feature(6.1, 1), feature(6.4, 2)] } }));
+
+  // Filtered to M6 and above so the routed event is the only thing that can be in the list.
+  await page.goto("/#at=-177,51,1&m=6&w=24&s=usgs&r=thermal");
+
+  const row = page.getByRole("region", { name: "Recent earthquakes" })
+    .getByRole("button", { name: /Adak/ });
+  await expect(row).toBeVisible({ timeout: 25_000 });
+  await row.click();
+
+  // The row says so too, so the header's count is reachable rather than a statistic about an
+  // invisible set, and the label carries the value rather than a dead-end word.
+  await expect(row).toContainText("revised");
+  // The row has no aria-label: its accessible name is computed from the content, so asserting the
+  // name is asserting that the word actually reaches a screen reader rather than only a sighted one.
+  await expect(row).toHaveAccessibleName(/revised/);
+
+  const panel = page.locator(".zone-panel");
+  await expect(panel).toContainText("USGS first said 6.1, now 6.4");
+  // The current value is what the headline and the marker use, not the first one.
+  await expect(panel.locator(".text-\\[30px\\]")).toContainText("6.4");
+  await expect(page.locator("header")).toContainText("revised");
+});
+
 test("a shared camera survives the entrance", async ({ page }) => {
   /*
    * Regression. The entrance named the default framing as its destination and runs after the

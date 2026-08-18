@@ -14,6 +14,30 @@
 export type SourceId = "usgs" | "emsc";
 
 /** One agency's account of one earthquake. */
+/**
+ * What an agency said before it changed its mind, attached by the store.
+ *
+ * Early magnitudes are automatic and get reviewed: an initial M6.1 becoming M6.4 an hour later is
+ * ordinary, not an error. The store used to replace a reading outright, which meant the number on
+ * screen silently changed and the marker silently resized, and the app said nothing. DESIGN.md
+ * already requires a magnitude to carry its scale because a bare number implies a precision that
+ * does not exist; a revised number with no history implies a certainty that does not exist either.
+ *
+ * Three fields rather than a trail. The store is bounded at fifty thousand events and the reason
+ * revisions replace instead of appending is that a busy event updated all afternoon would grow an
+ * unbounded array inside it. What somebody actually wants to know is what the agency first said,
+ * what it says now, and whether this has been going on: the middle of the trail answers none of
+ * those.
+ */
+export interface Revision {
+  /** The magnitude in this agency's first reading of the event. */
+  fromMagnitude: number;
+  /** How many times this agency has changed its own magnitude. Never counts a re-poll. */
+  count: number;
+  /** When the most recent change arrived. */
+  at: number;
+}
+
 export interface Reading {
   source: SourceId;
   /** The agency's own identifier. Unique within that source, meaningless across sources. */
@@ -44,6 +68,14 @@ export interface Reading {
    * mislabelling DESIGN.md section 10 exists to prevent. Kept, and named on screen.
    */
   kind: string;
+  /**
+   * Set once this agency has revised its own magnitude, absent until then.
+   *
+   * Only magnitude. Depth and epicentre are revised too and are not tracked, which is a real gap:
+   * a 40km event reassessed to 10km is a different event to anyone downstream. Tracking one thing
+   * honestly beat tracking four things vaguely, and the panel does show the current depth.
+   */
+  revision?: Revision;
   /**
    * When this reading reached us, epoch ms.
    *

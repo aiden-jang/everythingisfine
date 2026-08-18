@@ -32,6 +32,13 @@ export interface StoreStats {
    * on every announcement, which is fifty thousand comparisons a frame to display one number.
    */
   corroborated: number;
+  /**
+   * Events where at least one agency has changed its own magnitude.
+   *
+   * Counted as it happens, like `corroborated`, for the same reason: deriving it means walking every
+   * held event on every announcement to display one number.
+   */
+  revised: number;
   /** Earliest arrival still held. The honest left edge of the window. */
   since: number | null;
 }
@@ -89,6 +96,7 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
 
   const readingCounts: Record<SourceId, number> = { usgs: 0, emsc: 0 };
   let corroborated = 0;
+  let revised = 0;
   let arrivals = 0;
 
   const readingKey = (r: Reading): string => `${r.source}:${r.id}`;
@@ -116,6 +124,7 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
     byKey.delete(key);
     if (!quake) return;
     if (quake.readings.length > 1) corroborated -= 1;
+    if (quake.readings.some((r) => r.revision)) revised -= 1;
 
     for (const r of quake.readings) {
       byReadingId.delete(readingKey(r));
@@ -158,6 +167,37 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
         // A revision from an agency that already reported. Replace rather than append, or a busy
         // event that gets updated all afternoon grows an unbounded array inside a bounded store.
         const old = existing.readings[at]!;
+        /*
+         * A changed magnitude, not merely a redelivered one.
+         *
+         * USGS's day and hour feeds both re-serve every event they hold, so this branch runs on
+         * every poll for every event whether anything moved or not. Counting arrivals here would
+         * have every earthquake on screen claiming twenty revisions by evening, which is not a
+         * small inaccuracy: it would make the one honest signal in the feature meaningless.
+         */
+        let stored = reading;
+        if (old.magnitude !== reading.magnitude) {
+          /*
+           * Once per event, not once per agency, because eviction refunds it once per event.
+           *
+           * Incrementing per reading and decrementing per event is a slow leak: an earthquake both
+           * agencies revised added two and gave one back, so the counter drifted upward for as long
+           * as the page stayed open. The unit here is the event, matching "distinct" and "both" in
+           * the header beside it.
+           */
+          if (!existing.readings.some((r) => r.revision)) revised += 1;
+          stored = {
+            ...reading,
+            revision: {
+              fromMagnitude: old.revision?.fromMagnitude ?? old.magnitude,
+              count: (old.revision?.count ?? 0) + 1,
+              at: reading.receivedAt,
+            },
+          };
+        } else if (old.revision) {
+          // A redelivery of an already-revised reading keeps the history rather than dropping it.
+          stored = { ...reading, revision: old.revision };
+        }
         byReadingId.delete(readingKey(old));
         const oldBucket = bucketOf(old.time);
         if (oldBucket !== bucketOf(reading.time)) {
@@ -167,7 +207,7 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
             if (set.size === 0) buckets.delete(oldBucket);
           }
         }
-        existing.readings[at] = reading;
+        existing.readings[at] = stored;
       } else {
         existing.readings.push(reading);
         readingCounts[reading.source] += 1;
@@ -240,7 +280,7 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
           break;
         }
       }
-      return { quakes: count, readings: { ...readingCounts }, corroborated, since };
+      return { quakes: count, readings: { ...readingCounts }, corroborated, revised, since };
     },
     debugIndexSizes: () => ({
       byReadingId: byReadingId.size,
