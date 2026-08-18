@@ -463,6 +463,9 @@ are all visual ones.
 - **A link preview makes no claim it cannot keep.** The share image is the globe with its geography and
   no earthquakes, because a card is cached for days and a picture of one day's seismicity presented as
   now is unlabelled sample data.
+- **A pinned event the filters exclude says so.** The panel is kept, because losing a pin to a nudged
+  slider is worse than holding one, and it is labelled, because a full description beside an empty globe
+  is the app showing something it is simultaneously claiming is not there.
 - **An empty state says what it is waiting for, not what it lacks.** Before any feed answers, the rail
   reads "Asking USGS and EMSC for the last day." with no count, no header arithmetic and no strip
   readout, because a zero is a measurement and none had been taken. An empty list blames the filters
