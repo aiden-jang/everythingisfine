@@ -93,6 +93,14 @@ export function App(): JSX.Element {
    */
   const [missingShared, setMissingShared] = useState<string | null>(shared.event ?? null);
   /*
+   * Deliberately not in the permalink.
+   *
+   * Everything else the rail holds is a state somebody chose and would want to send. This one is
+   * where the pointer is, which lasts as long as the pointer is there, and a link that arrived with
+   * twenty-three of its twenty-four hours dimmed would look broken rather than shared.
+   */
+  const [focusHour, setFocusHour] = useState<number | null>(null);
+  /*
    * Both persisted, because both are accessibility settings and re-choosing one on every visit is
    * its own barrier. Read lazily so the first paint already has the right ramp rather than
    * flashing the default and correcting itself.
@@ -396,8 +404,9 @@ export function App(): JSX.Element {
           <Timeline
             bars={bars}
             ramp={ramp}
-            now={now}
             hours={hours}
+            focusHour={focusHour}
+            onFocusHourChange={setFocusHour}
             onHoursChange={(h) => setFilters((f) => ({ ...f, windowMs: h * 3_600_000 }))}
           />
 
@@ -439,6 +448,7 @@ export function App(): JSX.Element {
             filters={filters}
             selected={selected}
             ramp={ramp}
+            focusHour={focusHour}
             onSelect={setSelected}
             onReady={onReady}
             onCamera={(state) => { camera.current = state; }}
