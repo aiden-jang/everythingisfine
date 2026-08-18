@@ -531,6 +531,8 @@ export function App(): JSX.Element {
             store={feed.store}
             filters={filters}
             ramp={ramp}
+            excluded={!matches(pinned, filters, now)}
+            revision={snapshot.revision}
             onClose={() => setSelected(null)}
             onFlyTo={(lon, lat, zoom) => flyTo.current(lon, lat, zoom)}
           />

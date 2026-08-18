@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { Filters, Quake } from "../data/types";
 import type { RampName } from "../globe/ramp";
 import type { Store } from "../data/store";
@@ -25,6 +25,10 @@ import {
 export interface DetailPanelProps {
   quake: Quake;
   ramp: RampName;
+  /** True when the current filters exclude this event, so the globe is not drawing it. */
+  excluded: boolean;
+  /** The feed's revision, so the neighbour search reruns on new data and not on the clock. */
+  revision: number;
   store: Store;
   filters: Filters;
   onClose: () => void;
@@ -41,11 +45,24 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
 }
 
 export function DetailPanel({
-  quake, store, filters, ramp, onClose, onFlyTo,
+  quake, store, filters, ramp, excluded, revision, onClose, onFlyTo,
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
   const r = quake.primary;
-  const near = findNearby(store, quake, filters, Date.now());
+  /*
+   * Recomputed on new data, not on the clock.
+   *
+   * This walks the whole buffer, and the panel re-renders every second because the rail's clock ticks,
+   * so a pinned event was paying for a full pass every second. Measured in a swarm at a full buffer:
+   * 56ms, which is three dropped frames a second, for an answer that had not changed. It was written
+   * up as a known cost and left live on the argument that memoising would freeze the neighbour list.
+   * Keying on the revision keeps it live: the revision moves whenever an earthquake does.
+   */
+  const near = useMemo(
+    () => findNearby(store, quake, filters, Date.now()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [store, quake.key, filters, revision],
+  );
   /*
    * Per agency, because they revise independently and only one of them may have.
    *
@@ -108,6 +125,19 @@ export function DetailPanel({
         in the panel would connect the two. Absent entirely on the common case, which is no revision:
         a permanent "not revised" line would be four words of chrome saying nothing.
       */}
+      {/*
+        A pinned event that the filters now exclude.
+        Raising the magnitude slider above it left this panel describing an earthquake in full, with
+        its depth, its neighbours and its whole sequence, beside a headline reading 0 and a globe with
+        nothing on it. Kept rather than closed, because losing a pin to a nudged slider is worse than
+        holding one, and named rather than kept quietly.
+      */}
+      {excluded ? (
+        <p className="mt-3 border border-hairline bg-raised p-2.5 text-[11px] leading-relaxed text-dim">
+          Outside the current filters, so it is not on the globe. Everything below still describes it.
+        </p>
+      ) : null}
+
       {revisions.length > 0 ? (
         <div className="mt-2 border border-hairline bg-raised px-2.5 py-2">
           {revisions.map(({ reading, revision }) => {

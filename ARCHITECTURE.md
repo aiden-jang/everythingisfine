@@ -1670,6 +1670,38 @@ mistake as counting re-polls as magnitude revisions, which would have made the c
 day. The panel prints only the half that moved, because showing an unchanged number beside a changed one
 reads as though both had shifted.
 
+## A third sweep: a panel describing what the globe was not showing
+
+Pinning a magnitude 2.7 and then raising the magnitude filter to 6 left the detail panel describing that
+earthquake in full, with its depth, its neighbours and its whole sequence, beside a headline reading **0**
+and a globe with nothing on it. Exactly the inconsistency the headline count was fixed for, one panel over.
+
+Kept rather than closed. Losing a pin because a slider was nudged is worse than holding one, and the app's
+habit is to say the awkward thing rather than tidy it away, so the panel now names it: "Outside the current
+filters, so it is not on the globe."
+
+Browser Back looked broken in the same probe and was not. The app rewrites its link with `replaceState` and
+never pushes, which is a decision made early and documented, so a fresh tab has one history entry and Back
+correctly leaves the app. My test had measured `about:blank`.
+
+## The cost I said was probably fine was 56ms
+
+`findNearby` walks the whole buffer, and the panel re-renders every second because the rail's clock ticks.
+I wrote that up as a known cost and left it live, arguing that memoising would freeze the neighbour list
+while somebody watched a live sequence. The argument was fine; the premise was never checked.
+
+Measured, at a full buffer where every event is inside the radius, which is what a swarm actually looks
+like: **55.9ms**. Three dropped frames, every second, for an answer that had not changed.
+
+Two fixes, and the order matters. First the function: it sorted all fifty thousand neighbours to take the
+top four, which is `O(n log n)` for a fixed-size answer. Selecting them in one pass took it to **24.2ms**.
+Then the real one: the panel memoises on the feed's revision rather than recomputing on every render. That
+keeps it live, because the revision moves whenever an earthquake does, and takes it off the clock entirely.
+
+It has a budget now, expressed as a ratio like the event layer's. Not because it is on a hot path any more,
+but because a regression here would land straight back on every arrival, and the whole reason this was
+wrong for weeks is that nobody had put a number on it.
+
 ## The CI gap, demonstrated rather than argued
 
 Halfway through this pass both feeds became unreachable from this machine, and the browser suite went

@@ -544,6 +544,47 @@ test.describe("on a touch screen", () => {
   });
 });
 
+test("a pinned event the filters exclude says so", async ({ page }) => {
+  /*
+   * Raising the magnitude slider above a pinned event left the panel describing it in full, with its
+   * depth, its neighbours and its whole sequence, beside a headline reading 0 and a globe with nothing
+   * on it. The same inconsistency the headline count was fixed for, one panel over.
+   */
+  const at = (mag: number, id: string) => ({
+    id,
+    properties: {
+      mag, place: `${id} near Ruteng, Indonesia`, time: Date.now() - 30 * 60_000,
+      updated: 1, magType: "mww", type: "earthquake",
+    },
+    geometry: { coordinates: [120.5, -8.6, 20] },
+  });
+
+  await page.route(/seismicportal\.eu/, (route) => route.abort());
+  await page.route(/all_hour\.geojson/, (route) => route.fulfill({ json: { features: [] } }));
+  await page.route(/all_day\.geojson/, (route) =>
+    route.fulfill({ json: { features: [at(2.7, "small")] } }));
+
+  await page.goto("/#at=120,-8,1&m=2&w=24&s=usgs&r=thermal");
+  const row = page.getByRole("region", { name: "Recent earthquakes" })
+    .getByRole("button", { name: /small/ });
+  await expect(row).toBeVisible({ timeout: 25_000 });
+  await row.click();
+
+  const panel = page.locator(".zone-panel");
+  await expect(panel).toBeVisible();
+  await expect(panel).not.toContainText("Outside the current filters");
+
+  await page.locator("#mag").fill("6");
+  // Kept, because losing a pin to a nudged slider is worse than holding one. Named, because a full
+  // panel beside an empty globe is the app describing something it is not showing.
+  await expect(panel).toContainText("Outside the current filters");
+  await expect(panel).toContainText("M 2.7");
+  await expect(page.locator(".zone-rail .text-\\[38px\\]")).toHaveText("0");
+
+  await page.locator("#mag").fill("2");
+  await expect(panel).not.toContainText("Outside the current filters");
+});
+
 test("a shared camera survives the entrance", async ({ page }) => {
   /*
    * Regression. The entrance named the default framing as its destination and runs after the
