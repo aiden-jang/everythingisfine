@@ -849,6 +849,39 @@ cannot prove it is in the mode it claims to test is the reduced-motion mistake a
 
 ---
 
+## The thin panel was a content problem, not a width problem
+
+Measured at **81% empty**: ten lines in a 360 by 1187 space. Widening it would have made a wider
+empty panel. The cause was that it only ever said what one feed reported, and **only 50 of 786
+events have two readings**, so on 94% of events the project's entire subject was invisible.
+
+It now answers the questions somebody pinning an earthquake actually has, all from data already
+held: depth with its seismological class (shallow, intermediate, deep at the conventional 70km and
+300km boundaries, because that changes what an earthquake *is*), what else has happened within
+150km, the disagreement stated in units a person thinks in, and two buttons.
+
+**The nearby count is the best thing on the panel.** A magnitude 3 alone is a magnitude 3; the same
+event reading *"339 other events in this window, the largest M 5.4"* is one tremor in a swarm. The
+data was always there and nothing ever asked it.
+
+### The permalink had no way to be copied
+
+Built in phase D, and for a whole phase the URL updated silently while nothing on screen suggested
+it was worth copying. **A feature nobody can find is not shipped.** There is a Copy link button now.
+
+### The heading contradicted the numbers under it
+
+It read "The two agencies disagree" above `0.0 km apart`, `0.0 s apart`, `same magnitude`. Not a
+wording nit: agreement is the *common* case, since the measurement across 50 real matched pairs put
+the median separation at 0.0 km and 0.1 seconds, so the panel was calling almost every corroborated
+event a disagreement.
+
+The heading is now neutral and the sentence follows the data: *"They agree to the precision they
+publish"* or *"They place it 6.5 km and 1.6 s apart"*. Writing the caption before looking at the
+distribution is the same mistake as setting the association windows by reasoning.
+
+---
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
