@@ -119,6 +119,9 @@ export function createRingLayer(ramp: RampName = "thermal"): RingLayer {
     uniforms: { uRamp: { value: texture } },
     transparent: true,
     depthWrite: false,
+    // Same as the markers: the fronts carry their own facing test, so depth-testing them against
+    // the globe can only clip them where the sphere happens to curve past their own depth.
+    depthTest: false,
     blending: NormalBlending,
   });
 

@@ -924,6 +924,29 @@ control.
 
 ---
 
+## Markers were sliced flat near the limb
+
+Reported as dots being cut off at the bottom while orbiting. Reproduced by putting the Indonesian
+margin low on the globe: markers near the horizon rendered as D shapes with a clean straight edge.
+
+**A point sprite is rasterised as a screen-aligned square, and the whole square carries the single
+depth of its centre vertex. The sphere behind it does not.** Near the limb the surface curves away
+steeply, so pixels a few across from a marker's centre sit in front of an ocean surface much nearer
+the camera than the marker's own depth. Those fragments fail the depth test and vanish. The
+survivors end exactly where the two depths cross, which is a straight line through the dot.
+
+The fix is to stop depth-testing the data layers at all. The shader already discards the far
+hemisphere with `vFacing`, which asks the right question about a curved surface, so the depth test
+was never doing useful work here and was only adding the artefact. The wavefront rings had the same
+latent bug and got the same fix.
+
+This is the land fill's problem arrived at from the opposite direction: there, geometry chorded
+*inside* the sphere and the ocean poked through it; here, a flat sprite carried one depth across a
+region where the sphere's depth varied. Both are the same mistake, which is asking a depth buffer to
+adjudicate between a flat thing and a curved one.
+
+---
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
