@@ -26,7 +26,15 @@ export interface FeedSnapshot {
    * miss fronts or fire them twice.
    */
   arrived: Quake[];
-  /** True for the first announcement only: the daily seed, not live arrivals. */
+  /**
+   * True for the first announcement that actually carries events: the daily seed.
+   *
+   * Not "the first announcement". Announcements also fire on status changes, and a source going
+   * live always beats its own first batch of data, so the very first one is reliably empty. Keying
+   * off it meant `seeding` was spent before any event existed, and then the seed itself arrived
+   * looking like ordinary live traffic. That silently gave the seed's 227 events 227 wavefronts
+   * instead of one, and it is why the entrance replay never started.
+   */
   seeding: boolean;
 }
 
@@ -104,7 +112,8 @@ export function createFeed(capacity = 50_000): Feed {
     pending = requestAnimationFrame(() => {
       pending = 0;
       const s = snapshot();
-      announced = true;
+      // Only a delivery counts as having seeded. An empty status announcement leaves it unspent.
+      if (s.arrived.length > 0) announced = true;
       arrived = [];
       for (const fn of listeners) fn(s);
     });

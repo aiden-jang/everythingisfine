@@ -22,6 +22,15 @@ const quake = (id: string, magnitude: number): Quake => {
 };
 
 describe("which arrivals get a wavefront", () => {
+  it("is not spent by an announcement that carries no events", () => {
+    /*
+     * A source going live announces before its first batch lands, so the first announcement is
+     * reliably empty. If that consumes `seeding`, the actual seed arrives looking like live traffic
+     * and every one of its events gets a wavefront.
+     */
+    expect(frontsFor({ arrived: [], seeding: true })).toHaveLength(0);
+  });
+
   it("replays exactly one front for the daily seed, however large it is", () => {
     const arrived = Array.from({ length: 227 }, (_, i) => quake(`u${i}`, 3));
     const fronts = frontsFor({ arrived, seeding: true });
