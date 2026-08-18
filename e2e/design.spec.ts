@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { installFeeds } from "./feeds";
 
 /*
  * DESIGN.md section 13, as a test rather than as a list.
@@ -97,6 +98,7 @@ async function chromeHues(
 for (const bp of BREAKPOINTS) {
   test(`the chrome carries no hue at ${bp.name}`, async ({ page }) => {
     await page.setViewportSize({ width: bp.width, height: bp.height });
+    await installFeeds(page);
     await page.goto("/");
     await waitForData(page);
 
@@ -120,6 +122,7 @@ for (const bp of BREAKPOINTS) {
      * nothing asked the only question that matters here.
      */
     await page.setViewportSize({ width: bp.width, height: bp.height ?? 900 });
+    await installFeeds(page);
     await page.goto("/");
     await page.waitForTimeout(1_500);
     // A real wheel, not `scrollTo`: `overflow: hidden` still honours programmatic scrolling, so the
@@ -134,6 +137,7 @@ for (const bp of BREAKPOINTS) {
 
   test(`nothing overflows sideways at ${bp.name}`, async ({ page }) => {
     await page.setViewportSize({ width: bp.width, height: bp.height });
+    await installFeeds(page);
     await page.goto("/");
     await waitForData(page);
 
@@ -165,6 +169,7 @@ test("every control clears 44px where there is a finger", async ({ browser }) =>
     isMobile: true,
   });
   const page = await context.newPage();
+  await installFeeds(page);
   await page.goto("http://localhost:31600");
   await waitForData(page);
   expect(await page.evaluate(() => window.matchMedia("(pointer: coarse)").matches)).toBe(true);
@@ -196,6 +201,7 @@ test("every control clears 44px where there is a finger", async ({ browser }) =>
 });
 
 test("every number that updates has tabular figures", async ({ page }) => {
+  await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
 
@@ -223,6 +229,7 @@ test("no user-agent defaults left in the chrome", async ({ page }) => {
    * test above. Scrollbars were unstyled, invisible on macOS overlay scrollbars and a light channel
    * down the darkest element on Windows, which is how it survived being looked at.
    */
+  await installFeeds(page);
   await page.goto("/");
 
   const rules = await page.evaluate(() => {
@@ -245,6 +252,7 @@ test("no user-agent defaults left in the chrome", async ({ page }) => {
 test("a shared link previews as something", async ({ page }) => {
   // Permalinks are a headline feature and every one of them rendered as a bare URL in every client
   // it was pasted into.
+  await installFeeds(page);
   await page.goto("/");
   const meta = async (attr: string, value: string): Promise<string | null> =>
     page.locator(`meta[${attr}="${value}"]`).getAttribute("content");
@@ -265,6 +273,7 @@ test("the globe always gets a real share of the screen", async ({ page }) => {
    * the remainder was 153px: a globe reduced to a sliver by a strip of controls describing it. Every
    * screenshot of that band had been taken tall enough to hide it.
    */
+  await installFeeds(page);
   await page.goto("/");
   await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
 
@@ -280,6 +289,7 @@ test("the globe always gets a real share of the screen", async ({ page }) => {
 });
 
 test("nothing is painted pure black", async ({ page }) => {
+  await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
 
@@ -300,6 +310,7 @@ test("nothing is painted pure black", async ({ page }) => {
 });
 
 test("the colourblind ramp survives a reload", async ({ page }) => {
+  await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
 
