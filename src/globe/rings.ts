@@ -65,13 +65,14 @@ const SHADER = {
     }`,
   fragmentShader: /* glsl */ `
     uniform sampler2D uRamp;
+    uniform float uDim;
     varying float vRamp;
     varying float vFade;
     varying float vFacing;
 
     void main() {
       if (vFacing <= 0.0 || vFade <= 0.0) discard;
-      gl_FragColor = vec4(texture2D(uRamp, vec2(vRamp, 0.5)).rgb, vFade * smoothstep(0.0, 0.2, vFacing));
+      gl_FragColor = vec4(texture2D(uRamp, vec2(vRamp, 0.5)).rgb, uDim * vFade * smoothstep(0.0, 0.2, vFacing));
     }`,
 };
 
@@ -91,6 +92,14 @@ export interface RingLayer {
   step: (dt: number) => number;
   active: () => number;
   setRamp: (name: RampName) => void;
+  /**
+   * Pulls the fronts back while an hour is held on the activity strip.
+   *
+   * Without it, holding an hour five hours old left the brightest things on screen, the wavefronts,
+   * belonging to the current one: the whole globe faded to ghosts around three full-strength rings
+   * announcing the opposite of what the pointer was asking about.
+   */
+  setDim: (dim: number) => void;
   dispose: () => void;
 }
 
@@ -116,7 +125,7 @@ export function createRingLayer(ramp: RampName = "thermal"): RingLayer {
   let texture = rampTexture(ramp);
   const material = new ShaderMaterial({
     ...SHADER,
-    uniforms: { uRamp: { value: texture } },
+    uniforms: { uRamp: { value: texture }, uDim: { value: 1 } },
     transparent: true,
     depthWrite: false,
     // Same as the markers: the fronts carry their own facing test, so depth-testing them against
@@ -236,6 +245,9 @@ export function createRingLayer(ramp: RampName = "thermal"): RingLayer {
       return rings.length;
     },
 
+    setDim: (dim) => {
+      material.uniforms["uDim"]!.value = dim;
+    },
     setRamp: (name) => {
       texture.dispose();
       texture = rampTexture(name);

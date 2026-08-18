@@ -15,6 +15,15 @@ import type { RampName } from "./ramp";
  * filters and the detail panel sixty times a second to move a two-pixel outline.
  */
 
+/*
+ * How far back a marker outside the held hour is pushed.
+ *
+ * Not zero. Twenty-eight events in one hour mean very little without the day they sit inside, and
+ * the point of holding an hour is to see where in the pattern it falls, not to be handed twenty-
+ * eight dots on an empty sphere. Shared with the shader so the fronts and the markers fade together.
+ */
+export const FOCUS_DIM = 0.15;
+
 export interface GlobeProps {
   feed: Feed;
   filters: Filters;
@@ -33,10 +42,18 @@ export interface GlobeProps {
    * different questions and only one of them matches the label.
    */
   onReplay?: (state: { at: number; revealed: number } | null) => void;
+  /**
+   * The hour the pointer is holding on the activity strip, in whole hours before now, or null.
+   *
+   * Linked views: the strip already knows when things happened and the globe already knows where,
+   * and neither could answer the other's question. Hovering an hour dims everything outside it, so
+   * a swarm that reads as one blob resolves into the ninety minutes it actually happened in.
+   */
+  focusHour?: number | null;
 }
 
 export function Globe({
-  feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay,
+  feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay, focusHour = null,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
@@ -50,8 +67,8 @@ export function Globe({
    * tearing down the WebGL context, the 300,000-triangle globe and both feed subscriptions every
    * time somebody nudges a magnitude slider.
    */
-  const live = useRef({ filters, selected });
-  live.current = { filters, selected };
+  const live = useRef({ filters, selected, focusHour });
+  live.current = { filters, selected, focusHour };
   const onCameraRef = useRef(onCamera);
   onCameraRef.current = onCamera;
   const onReplayRef = useRef(onReplay);
@@ -145,7 +162,7 @@ export function Globe({
         replaying = true;
         globe.events.sync(
           feed.store, live.current.filters, Date.now(),
-          globe.controls.state().zoom, replay.at() ?? undefined,
+          globe.controls.state().zoom, replay.at() ?? undefined, live.current.focusHour,
         );
         const at = replay.at();
         onReplayRef.current?.(replay.done() || at === null ? null : { at, revealed });
@@ -156,7 +173,9 @@ export function Globe({
       const zoomNow = globe.controls.state().zoom;
       if (Math.abs(zoomNow - lastZoom) > 0.001) {
         lastZoom = zoomNow;
-        globe.events.sync(feed.store, live.current.filters, Date.now(), zoomNow);
+        globe.events.sync(
+          feed.store, live.current.filters, Date.now(), zoomNow, undefined, live.current.focusHour,
+        );
       }
       globe.render();
       placeOverlays();
@@ -186,8 +205,11 @@ export function Globe({
     const redraw = (): void => {
       globe.events.sync(
         feed.store, live.current.filters, Date.now(),
-        globe.controls.state().zoom, replay?.at() ?? undefined,
+        globe.controls.state().zoom, replay?.at() ?? undefined, live.current.focusHour,
       );
+      // Same veil as the markers get. Set on redraw rather than per frame: it only changes when the
+      // held hour does, and the frame loop is not the place to keep restating a constant.
+      globe.rings.setDim(live.current.focusHour === null ? 1 : FOCUS_DIM);
       globe.render();
       placeOverlays();
     };
@@ -315,10 +337,11 @@ export function Globe({
     };
   }, [feed, onReady, onSelect]);
 
-  // A filter move or a new selection redraws the existing scene rather than rebuilding it.
+  // A filter move, a new selection or a held hour redraws the existing scene rather than rebuilding
+  // it. Hover only ever changes whole hours, so this fires once per bar crossed, not per mouse move.
   useEffect(() => {
     redrawRef.current();
-  }, [filters, selected]);
+  }, [filters, selected, focusHour]);
 
   useEffect(() => {
     rampRef.current(ramp);

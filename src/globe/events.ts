@@ -66,6 +66,7 @@ const SHADER = {
     attribute float aMag;
     attribute float aCluster;
     attribute float aDepth;
+    attribute float aFocus;
     uniform float uPixelRatio;
     uniform float uBase;
     uniform float uScale;
@@ -75,10 +76,12 @@ const SHADER = {
     varying float vFacing;
     varying float vCluster;
     varying float vDepth;
+    varying float vFocus;
 
     void main() {
       vCluster = aCluster;
       vDepth = aDepth;
+      vFocus = aFocus;
       vec4 world = modelMatrix * vec4(position, 1.0);
       // The globe is a unit sphere at the origin, so the surface normal is the position itself.
       // A marker on the far side has its normal pointing away from the eye.
@@ -96,10 +99,12 @@ const SHADER = {
   fragmentShader: /* glsl */ `
     uniform sampler2D uRamp;
     uniform float uOpacity;
+    uniform float uFocusing;
     varying float vRamp;
     varying float vFacing;
     varying float vCluster;
     varying float vDepth;
+    varying float vFocus;
 
     void main() {
       // Discarded rather than depth-tested. The markers sit above the globe's surface, so a
@@ -132,6 +137,16 @@ const SHADER = {
         alpha *= smoothstep(hole - 0.05, hole + 0.02, d);
         if (alpha <= 0.0) discard;
       }
+
+      /*
+       * Hovering an hour on the activity strip holds that hour and pushes the rest back.
+       *
+       * Opacity, and nothing else. Hue is magnitude, size is magnitude, the hole is depth, and this
+       * is not a fourth encoding: it is a transient answer to "which of these happened then", gone
+       * the moment the pointer leaves. Dimming rather than hiding is the same choice the two filter
+       * tracks make, because an hour's events mean very little without the day around them.
+       */
+      alpha *= mix(1.0, mix(0.15, 1.0, vFocus), uFocusing);
 
       vec3 colour = texture2D(uRamp, vec2(vRamp, 0.5)).rgb;
 
@@ -179,6 +194,7 @@ export interface EventLayer {
    */
   sync: (
     store: Store, filters: Filters, now: number, zoom: number, revealUntil?: number,
+    focusHour?: number | null,
   ) => number;
   dispose: () => void;
 }
@@ -190,6 +206,8 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
   const magnitudes = new Float32Array(capacity);
   const clusters = new Float32Array(capacity);
   const depths = new Float32Array(capacity);
+  /** 1 when a marker holds an event inside the hovered hour, 0 otherwise. Only read while hovering. */
+  const focuses = new Float32Array(capacity);
   /** Reused between syncs. Rebuilding a Map per filter tick is the allocation the budget catches. */
   const cellFor = new Map<number, number>();
 
@@ -198,14 +216,17 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
   const magAttr = new BufferAttribute(magnitudes, 1);
   const clusterAttr = new BufferAttribute(clusters, 1);
   const depthAttr = new BufferAttribute(depths, 1);
+  const focusAttr = new BufferAttribute(focuses, 1);
   positionAttr.setUsage(35048 /* DynamicDrawUsage */);
   magAttr.setUsage(35048);
   clusterAttr.setUsage(35048);
   depthAttr.setUsage(35048);
+  focusAttr.setUsage(35048);
   geometry.setAttribute("position", positionAttr);
   geometry.setAttribute("aMag", magAttr);
   geometry.setAttribute("aCluster", clusterAttr);
   geometry.setAttribute("aDepth", depthAttr);
+  geometry.setAttribute("aFocus", focusAttr);
   geometry.setDrawRange(0, 0);
   // Never computed. The default bounding sphere pass walks every vertex, and with a draw range
   // that changes on every filter tick that is a full extra sweep of the buffer for nothing.
@@ -223,6 +244,7 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
       uSize: { value: 1 },
       uMagMin: { value: MAG_MIN },
       uOpacity: { value: 1 },
+      uFocusing: { value: 0 },
     },
     transparent: true,
     depthWrite: false,
@@ -279,8 +301,20 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
       material.uniforms["uSize"]!.value = Math.max(0.45, Math.min(1, px / REFERENCE_RADIUS_PX));
     },
 
-    sync: (store, filters, now, zoom = 3, revealUntil) => {
+    sync: (store, filters, now, zoom = 3, revealUntil, focusHour = null) => {
       const cell = cellSizeDeg(zoom);
+      /*
+       * Resolved on the CPU, per marker, rather than from an age attribute in the shader.
+       *
+       * A clustered marker stands for every event in its cell and those events do not share an
+       * hour, so an attribute carrying the representative's age would dim a cell that genuinely
+       * contains the hovered hour. The question "does this marker hold anything from that hour" can
+       * only be answered where the members are still visible, which is here.
+       */
+      const focusing = focusHour !== null;
+      material.uniforms["uFocusing"]!.value = focusing ? 1 : 0;
+      const focusLo = focusing ? now - (focusHour + 1) * 3_600_000 : 0;
+      const focusHi = focusing ? now - focusHour * 3_600_000 : 0;
       cellFor.clear();
       let n = 0;
 
@@ -304,6 +338,9 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
           const at = cellFor.get(key);
           if (at !== undefined) {
             clusters[at] = 1;
+            // Any member inside the hour lights the whole cell. The marker is standing for all of
+            // them, so it is in the hour if any of them is.
+            if (focusing && r.time >= focusLo && r.time < focusHi) focuses[at] = 1;
             // The cluster keeps the largest event's magnitude, so it keeps that event's depth too.
             // Averaging would draw a hole that belongs to no earthquake in the cell.
             if (r.magnitude > magnitudes[at]!) {
@@ -317,6 +354,7 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
           cellFor.set(key, n);
         }
         clusters[n] = 0;
+        focuses[n] = focusing && r.time >= focusLo && r.time < focusHi ? 1 : 0;
         // Inlined rather than calling toVec3, which returns a fresh three-element array. At fifty
         // thousand events that is fifty thousand short-lived arrays per filter tick, and the
         // allocation dominates the trigonometry it was hiding.
@@ -352,6 +390,8 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
       clusterAttr.needsUpdate = true;
       depthAttr.updateRanges = [{ start: 0, count: n }];
       depthAttr.needsUpdate = true;
+      focusAttr.updateRanges = [{ start: 0, count: n }];
+      focusAttr.needsUpdate = true;
       // Only the written span is uploaded. Handing the driver the whole 50k buffer to redraw 200
       // visible events is the difference between a filter that answers the slider and one that
       // stutters behind it.

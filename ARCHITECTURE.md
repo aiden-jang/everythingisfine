@@ -772,6 +772,14 @@ honest estimate: every slower sample is the code plus something else, and the so
 never the thing under test. Scheduler slices, GC pauses and frequency dips can only add. Three
 consecutive runs now read 6.26, 6.45 and 6.61ms.
 
+Fastest-of-40 fixes sampling noise and not sustained contention, which is a different thing and worth
+knowing about before it wastes somebody's afternoon. The gate failed at **13.96ms** immediately after
+a Playwright run, with eight chromium processes still resident; the same commit measured **7.65ms** on
+a quiet machine minutes later. Nothing had changed. Forty samples taken during sustained load are
+forty loaded samples, so the minimum rescues nothing. Making this portable would mean expressing the
+budget as a ratio against a calibration workload measured in the same process, which is the right fix
+and is not done. Until it is: run the perf gate on a machine that is not also running a browser.
+
 ---
 
 ## The interface was bad, and the measurements said why
@@ -1157,6 +1165,45 @@ one it was written for. Nothing on screen told you which of the two you had just
 keeps the axis and the thumb, the headline keeps the count and names the window, and the slider
 carries it for assistive tech in `aria-valuetext`.
 
+## Two views that each knew half the answer
+
+The strip knows when things happened, the globe knows where, and neither could be asked the other's
+question. The Flores Sea reads as one bright blob whether its four hundred events spread evenly over
+a day or landed inside ninety minutes, and the strip could show that shape without saying which dots
+on the globe it belonged to.
+
+Holding the pointer on an hour now dims everything outside it. Opacity and nothing else: hue is
+magnitude, size is magnitude, the hole is depth, and this is not a fourth encoding but a transient
+answer that ends when the pointer leaves. Dimming rather than hiding, at 0.15 rather than 0, for the
+same reason both filter tracks dim: twenty-eight events mean very little without the day around them,
+and the point of holding an hour is to see where in the pattern it falls.
+
+Three things about it were not obvious.
+
+**The hour has to be resolved on the CPU.** The natural implementation is an age attribute and a
+comparison in the shader, and it is wrong here: a clustered marker stands for every event in its
+cell and those events do not share an hour, so the representative's age would dim a cell that
+genuinely contains the hovered hour. "Does this marker hold anything from that hour" can only be
+answered where the members are still visible, which is inside the sync loop. That puts two
+comparisons and a buffer write on the hot path, so it is gated rather than assumed: 7.081ms against
+a 12ms budget at fifty thousand events, up from 6.537ms.
+
+**Both interactions live on one element.** The slider already covers the bars, so reading hover from
+the individual bars would mean the slider swallowing every pointer event meant for them. It carries
+both: dragging sets the window, moving across it holds an hour. Quantised to whole hours, so the
+globe re-syncs once per bar crossed rather than once per pixel.
+
+**The wavefronts had to come with it.** The first version dimmed the markers only, and holding an
+hour five hours old left the brightest things on screen, three full-strength rings, belonging to the
+current one. The globe faded to ghosts around an animation announcing the opposite of what the
+pointer was asking about.
+
+Two smaller corrections. The held column was marked with a lifted backdrop, which the bar itself
+covered: the only visible part was the few pixels of headroom above a peak, so it now takes a chrome
+tick at the top of the column. And the readout printed a clock time, 05:51, which is a bucket
+boundary nobody chose rather than a fact about the hour; the buckets are anchored to now, so the
+readout is relative like the axis either side of it.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -1179,9 +1226,16 @@ Written last, and kept accurate rather than kept short.
   rather than shipped as a worse version of itself.
 
 - **Dense sequences are legible but not readable.** 400 events in the Flores Sea still collapse to a
-  handful of markers on the globe. The activity strip answers the part of this that mattered most,
-  that a sequence has a shape in time, but it is hourly and global: it shows three hundred events
-  inside ninety minutes and does not let you step through them.
+  handful of markers on the globe. The activity strip and the hour hover answer most of what was
+  missing, that a sequence has a shape in time and that the shape belongs to specific dots, but both
+  are hourly: nothing steps through a sequence event by event.
+
+- **Holding an hour is pointer-only.** Hover has no keyboard or touch equivalent, so the link between
+  the strip and the globe is an enhancement rather than a feature. The strip's actual job, selecting
+  the window, is fully operable from the keyboard through the slider, and the accessible feed lists
+  every event with its time; but a keyboard user cannot ask "which of these happened at 05:00" the
+  way a pointer user can, and no amount of arrow-key cleverness would be discoverable enough to
+  count.
 
 - **No demo video.** The write-up asks for one and there is none, because recording it was not
   something this build could do.

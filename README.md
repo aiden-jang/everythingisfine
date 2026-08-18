@@ -138,9 +138,14 @@ maintenance would fail the build for reasons that are not the code's fault. Rout
 committed fixtures would fix this and has not been done.
 
 **The globe is a poor fit for very dense sequences even with clustering.** 400 events in the Flores
-Sea collapse to a handful of markers. The activity strip now shows the *shape* of a sequence in
-time, which is most of what was missing, but it is hourly and it is global: you can see that three
-hundred events landed inside ninety minutes and you still cannot step through them one at a time.
+Sea collapse to a handful of markers. The activity strip shows the *shape* of a sequence in time and
+hovering an hour shows which dots belong to it, which is most of what was missing, but both are
+hourly: you can see that three hundred events landed inside ninety minutes and you still cannot step
+through them one at a time.
+
+**Hovering an hour is pointer-only.** The strip's real job, setting the window, works from the
+keyboard; the link that dims the globe to one hour does not, and there is no discoverable keyboard
+gesture for it.
 
 **No demo video.** The write-up asks for one and there is none, because recording it is not
 something this build could do.

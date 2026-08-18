@@ -1,5 +1,4 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
-import { clock } from "./format";
 import { HOURS, peakCount, type Bar } from "./histogram";
 
 /*
@@ -21,7 +20,9 @@ export interface TimelineProps {
   ramp: RampName;
   /** Hours, 1 to 24. */
   hours: number;
-  now: number;
+  /** The hour the pointer is holding, in whole hours before now, or null. */
+  focusHour: number | null;
+  onFocusHourChange: (hoursAgo: number | null) => void;
   onHoursChange: (hours: number) => void;
 }
 
@@ -29,10 +30,22 @@ const STRIP_PX = 44;
 /* The tallest bar stops short of the strip, so a peak reads as a peak rather than as clipping. */
 const BAR_MAX_PX = 39;
 
-export function Timeline({ bars, ramp, hours, now, onHoursChange }: TimelineProps): JSX.Element {
+/*
+ * Relative, not a clock time.
+ *
+ * The buckets are anchored to `now`, so the hour five bars back ends at 05:51 rather than 05:00 and
+ * printing that reads as false precision about a bucket boundary nobody chose. The axis either side
+ * is already relative, so the readout matches it.
+ */
+const hoursAgo = (h: number): string => (h === 0 ? "this hour" : `${h}h ago`);
+
+export function Timeline({
+  bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange,
+}: TimelineProps): JSX.Element {
   const peak = peakCount(bars);
   const tallest = bars.find((b) => b.count === peak && peak > 0);
   const unobserved = bars.some((b) => !b.observed);
+  const held = focusHour === null ? null : bars.find((b) => b.hoursAgo === focusHour) ?? null;
 
   /*
    * Square root, not linear.
@@ -51,17 +64,34 @@ export function Timeline({ bars, ramp, hours, now, onHoursChange }: TimelineProp
     <div data-ramp>
       <div className="flex items-baseline justify-between gap-3">
         <label className="label" htmlFor="window">Activity</label>
+        {/*
+          The held hour replaces the peak while hovering. Both are readings of the same strip and
+          only one of them is being asked for; showing them together put two numbers side by side
+          with nothing to say which the pointer was over.
+        */}
         <span className="font-mono text-[10.5px] text-faint">
-          {peak > 0 && tallest
-            ? `peak ${peak} at ${clock(now - tallest.hoursAgo * 3_600_000)}`
-            : "nothing yet"}
+          {held
+            ? `${held.count} ${held.count === 1 ? "event" : "events"} · ${hoursAgo(held.hoursAgo)}`
+            : peak > 0 && tallest
+              ? `peak ${peak} · ${hoursAgo(tallest.hoursAgo)}`
+              : "nothing yet"}
         </span>
       </div>
 
       <div className="relative mt-2.5" style={{ height: `${STRIP_PX}px` }}>
         <div className="flex h-full items-end gap-px">
           {bars.map((bar) => (
-            <div key={bar.hoursAgo} className="flex h-full flex-1 items-end">
+            <div
+              key={bar.hoursAgo}
+              className={`flex h-full flex-1 items-end ${
+                // Chrome, not hue: the held hour is an interface state, and the fills beside it are
+                // data. Behind the bar so it reads as a backdrop rather than as a value.
+                // A tick at the top of the column plus a lifted backdrop. The backdrop alone was
+                // invisible: the bar fills most of the cell, so the only part of it anybody could
+                // have seen was the few pixels of headroom above a peak.
+                bar.hoursAgo === focusHour ? "border-t border-ink bg-raised" : "border-t border-transparent"
+              }`}
+            >
               {bar.observed ? (
                 <div
                   className="w-full"
@@ -97,6 +127,14 @@ export function Timeline({ bars, ramp, hours, now, onHoursChange }: TimelineProp
           style={{ width: `${((HOURS - hours) / HOURS) * 100}%` }}
         />
 
+        {/*
+          One element carries both interactions, because it is already covering the bars: dragging
+          sets the window, moving across it holds an hour. Reading hover from the individual bars
+          would mean the slider swallowing every pointer event that was supposed to reach them.
+
+          Whole hours only, so this fires once per bar crossed rather than once per pixel, and the
+          globe re-syncs at the rate the strip has bars.
+        */}
         <input
           id="window"
           type="range"
@@ -105,6 +143,15 @@ export function Timeline({ bars, ramp, hours, now, onHoursChange }: TimelineProp
           step={1}
           value={HOURS - hours}
           onChange={(e) => onHoursChange(HOURS - Number(e.target.value))}
+          onPointerMove={(e) => {
+            const box = e.currentTarget.getBoundingClientRect();
+            const at = Math.floor(((e.clientX - box.left) / box.width) * HOURS);
+            const next = HOURS - 1 - Math.max(0, Math.min(HOURS - 1, at));
+            if (next !== focusHour) onFocusHourChange(next);
+          }}
+          onPointerLeave={() => onFocusHourChange(null)}
+          // A touch drag sets the window and should not leave an hour held behind it.
+          onPointerUp={() => onFocusHourChange(null)}
           aria-valuetext={`Last ${hours} ${hours === 1 ? "hour" : "hours"}`}
           className="timeline-slider absolute inset-0 h-full w-full"
           aria-describedby="window-scale"

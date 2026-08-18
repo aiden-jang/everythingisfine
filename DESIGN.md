@@ -206,6 +206,22 @@ destination is ever added, and every such source costs a key, so they are out of
 
 ---
 
+### 3.5 Opacity is a state, not an encoding
+
+Hue is magnitude. Size is magnitude. The carved hole is depth. Opacity is the one channel left and it
+is deliberately **not** spent on a fourth quantity: it carries interface state only, and only while
+something is happening.
+
+- Holding an hour on the activity strip pushes everything outside it to 0.15, markers and wavefronts
+  together, and releases the moment the pointer leaves.
+- The two filter tracks dim their excluded ranges rather than removing them, so the scale stays whole.
+
+The rule is that nothing permanent is ever said with opacity. A viewer who looks away and back must
+see the same picture, and a faded marker has to mean "not what you are pointing at" rather than
+"less of something".
+
+---
+
 ## 4. The Globe Itself
 
 **Vector coastlines, not a satellite texture.** Natural Earth 110m, public domain, roughly 100KB
@@ -386,6 +402,9 @@ are all visual ones.
 - **An hour nobody watched is not a quiet hour.** The activity strip draws hours outside its
   coverage as blocks rather than as empty bars, because a zero-height bar is a measurement and this
   is an absence.
+- **Relative time stays relative.** The strip's buckets are anchored to now, so the hour five bars
+  back ends at 05:51 rather than 05:00. The readout says "5h ago" rather than printing a boundary
+  nobody chose, which would be false precision dressed as a clock.
 - **A deduplicated count is labelled as one.** If USGS and EMSC both reported an event, the counter
   shows distinct events, and the source breakdown shows the raw counts underneath.
 - **Magnitude carries its scale.** `M 5.2 (Mww, USGS)`, not a bare `5.2`. The two feeds do not

@@ -104,6 +104,26 @@ describe("update cost", () => {
     });
   }
 
+  it("holding an hour stays inside the same budget", () => {
+    /*
+     * The hover link resolves per marker on the CPU, because a clustered marker stands for events
+     * from several hours and only this loop can still see them. That puts two comparisons and a
+     * buffer write on the hot path, so it gets gated rather than assumed: an interaction that
+     * fires once per bar crossed cannot cost more than the filter it sits beside.
+     */
+    const store = fill(50_000);
+    const layer = createEventLayer(50_000);
+    const f = filters();
+    const now = 1_700_000_000_000;
+
+    for (let i = 0; i < 5; i += 1) layer.sync(store, f, now, NO_CLUSTER, undefined, 5);
+
+    const ms = fastestMs(() => layer.sync(store, f, now, NO_CLUSTER, undefined, 5), 40);
+    console.info(`[perf] sync 50000 events, hour held: ${ms.toFixed(3)}ms (budget ${BUDGET_MS[50_000]}ms)`);
+    expect(ms).toBeLessThan(BUDGET_MS[50_000]!);
+    layer.dispose();
+  });
+
   it("costs less when the filter excludes most events, not more", () => {
     const store = fill(50_000);
     const layer = createEventLayer(50_000);

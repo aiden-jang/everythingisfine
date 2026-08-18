@@ -249,6 +249,29 @@ test("the activity strip narrows the window and the headline follows", async ({ 
   await expect.poll(count, { timeout: 5_000 }).toBeGreaterThanOrEqual(whole);
 });
 
+test("holding an hour on the strip reads that hour, and lets go", async ({ page }) => {
+  /*
+   * The globe knows where and the strip knows when, and neither could answer the other's question.
+   * Hovering an hour dims everything outside it, which only WebGL can show, so what is asserted here
+   * is the half that is observable: the strip reports the hour under the pointer, and stops when the
+   * pointer leaves. The veil itself is gated by the perf test and looked at in a screenshot.
+   */
+  await page.goto("/");
+  await waitForData(page);
+
+  const strip = page.locator("[data-ramp]").filter({ has: page.locator("#window") });
+  const readout = strip.locator("span.font-mono").first();
+  await expect(readout).toHaveText(/^peak \d+ · /);
+
+  const box = (await page.locator("#window").boundingBox())!;
+  // Two thirds along, so it lands on an hour the seed covers rather than on the newest bar.
+  await page.mouse.move(box.x + box.width * 0.66, box.y + box.height / 2);
+  await expect(readout).toHaveText(/^\d+ events? · (this hour|\d+h ago)$/);
+
+  await page.mouse.move(box.x + box.width * 0.66, box.y - 120);
+  await expect(readout).toHaveText(/^peak \d+ · /);
+});
+
 test("a shared camera survives the entrance", async ({ page }) => {
   /*
    * Regression. The entrance named the default framing as its destination and runs after the
