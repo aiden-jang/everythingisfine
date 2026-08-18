@@ -280,8 +280,22 @@ failure, not a bug.
 
 ## 8. Motion
 
-**One entrance, then only data.** The globe rotates into its framing position once, the first events
-populate, the camera stops. After that the only thing moving on screen is the data.
+**One entrance, then only data. The entrance is the last day, played in.**
+
+The globe rotates into its framing position once while a full day of history arrives in the order it
+happened: events appear on their own timestamps, the larger ones send their fronts out as they land,
+the counter climbs to the total and the clock in the rail runs through the day. Then the camera
+stops and the only thing moving is the data.
+
+This replaced a camera swing over a static scatter, and the reason is that the wavefront is this
+product's signature and almost nobody ever saw one. Events arrive every few minutes, so somebody who
+opens the page, looks for ten seconds and leaves saw none of the motion the design is built around,
+while the app sat on a complete day of history and drew all of it at once, flat. Seven seconds, and
+by the end the viewer has already learned what an arrival looks like.
+
+It is a replay and the rail says so, with the replayed clock rather than the real one. Nothing is
+invented, reordered or retimed: the only thing being animated is *when the app chooses to draw*
+something it already has. Any interaction ends it, and `prefers-reduced-motion` skips it entirely.
 
 **No ambient rotation. No perpetual micro-loops on chrome.** This departs from the usual advice to
 give every active component an infinite loop, and the reason is specific: this product's entire

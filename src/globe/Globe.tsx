@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { createGlobe } from "./scene";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
+import { createReplay, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
 import type { Filters } from "../data/types";
 import { magnitude } from "../app/format";
 import type { RampName } from "./ramp";
@@ -24,10 +25,18 @@ export interface GlobeProps {
   onReady: (flyTo: (lon: number, lat: number, zoom?: number) => void) => void;
   /** Called as the camera moves, so the permalink can carry where somebody is looking. */
   onCamera?: (state: { lon: number; lat: number; zoom: number }) => void;
+  /**
+   * The replay clock and how many events have been revealed, or null once it is over.
+   *
+   * Events, not markers. The first version reported what the layer drew, which clustering collapses:
+   * a day of 789 events counted up to 105 under a heading reading EVENTS. The two numbers answer
+   * different questions and only one of them matches the label.
+   */
+  onReplay?: (state: { at: number; revealed: number } | null) => void;
 }
 
 export function Globe({
-  feed, filters, selected, ramp, onSelect, onReady, onCamera,
+  feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
@@ -45,6 +54,8 @@ export function Globe({
   live.current = { filters, selected };
   const onCameraRef = useRef(onCamera);
   onCameraRef.current = onCamera;
+  const onReplayRef = useRef(onReplay);
+  onReplayRef.current = onReplay;
 
   useEffect(() => {
     const el = canvas.current;
@@ -62,6 +73,8 @@ export function Globe({
       });
     }
 
+    // Read live rather than captured: somebody can turn reduced motion on while the page is open.
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     let hovered: string | null = null;
 
     /** Puts the pinned outline and the hover tooltip over whatever they are attached to. */
@@ -96,10 +109,48 @@ export function Globe({
     let lastZoom = globe.controls.state().zoom;
 
     const frame = (now: number): void => {
-      const dt = Math.min((now - last) / 1000, 0.05); // clamped, or a backgrounded tab lurches
+      /*
+       * Two deltas, deliberately.
+       *
+       * The camera's is clamped at 50ms so a backgrounded tab does not lurch when it wakes. The
+       * replay's is not: it is playing back a fixed span of history against the wall clock, and
+       * clamping made it run at whatever fraction of real time the frame rate happened to hit. On a
+       * slow machine a seven-second entrance took twelve, which is the difference between an
+       * entrance and a wait.
+       */
+      const rawDt = (now - last) / 1000;
+      const dt = Math.min(rawDt, 0.05);
       last = now;
       const moving = globe.controls.step(dt);
       globe.controls.apply();
+      /*
+       * The replay spawns the fronts it crosses, in the order they happened.
+       *
+       * Only above `REPLAY_FRONT_MIN_MAG`: a day holds several hundred events and a front for each
+       * would be noise. Above 4.5 a day yields fifteen to twenty-five worldwide, which lands as a
+       * rhythm rather than a firework.
+       */
+      let replaying = false;
+      if (replay && !replay.done()) {
+        const crossed = replay.step(rawDt);
+        if (crossed) {
+          feed.store.forEach((quake) => {
+            const t = quake.primary.time;
+            if (t <= crossed.from || t > crossed.to) return;
+            revealed += 1;
+            if (quake.primary.magnitude < REPLAY_FRONT_MIN_MAG) return;
+            globe.rings.spawn(quake.primary.lon, quake.primary.lat, quake.primary.magnitude);
+          });
+        }
+        replaying = true;
+        globe.events.sync(
+          feed.store, live.current.filters, Date.now(),
+          globe.controls.state().zoom, replay.at() ?? undefined,
+        );
+        const at = replay.at();
+        onReplayRef.current?.(replay.done() || at === null ? null : { at, revealed });
+      }
+
       const expanding = globe.rings.step(dt) > 0;
       // Clustering depends on zoom, so a zoom has to redraw the layer, not merely the camera.
       const zoomNow = globe.controls.state().zoom;
@@ -110,7 +161,7 @@ export function Globe({
       globe.render();
       placeOverlays();
       onCameraRef.current?.(globe.controls.state());
-      if (moving || expanding) requestAnimationFrame(frame);
+      if (moving || expanding || replaying) requestAnimationFrame(frame);
       else running = false;
     };
 
@@ -121,8 +172,22 @@ export function Globe({
       requestAnimationFrame(frame);
     };
 
+    /*
+     * The entrance replay.
+     *
+     * Held here rather than in React because it advances every frame and ends by itself; putting it
+     * in state would re-render the rail sixty times a second to move a clock the rail redraws once
+     * a second anyway.
+     */
+    let replay: Replay | null = null;
+    /** Events the replay has passed. Accumulated as it crosses them, never recounted. */
+    let revealed = 0;
+
     const redraw = (): void => {
-      globe.events.sync(feed.store, live.current.filters, Date.now(), globe.controls.state().zoom);
+      globe.events.sync(
+        feed.store, live.current.filters, Date.now(),
+        globe.controls.state().zoom, replay?.at() ?? undefined,
+      );
       globe.render();
       placeOverlays();
     };
@@ -135,7 +200,36 @@ export function Globe({
     };
 
     const redrawFromData = (snapshot: FeedSnapshot): void => {
-      globe.events.sync(feed.store, live.current.filters, Date.now(), globe.controls.state().zoom);
+      /*
+       * The replay is decided before anything is drawn.
+       *
+       * Syncing first and then starting it painted one frame of the entire day, which the replay
+       * then wiped and refilled: a flash of the answer before the question. Whatever else this
+       * entrance is, it cannot begin by showing the ending.
+       */
+      if (snapshot.seeding && snapshot.arrived.length > 0 && !replay && !reduced.matches) {
+        let oldest = Infinity;
+        feed.store.forEach((q) => { oldest = Math.min(oldest, q.primary.time); });
+        if (Number.isFinite(oldest)) {
+          replay = createReplay({ from: oldest, to: Date.now() });
+          revealed = 0;
+          /*
+           * Announced before the first frame, not after it.
+           *
+           * React otherwise renders one pass with the replay still null, so the rail printed the
+           * full held total beside an empty globe for a quarter of a second. The heading and the
+           * picture have to agree from the first frame, not from the second.
+           */
+          onReplayRef.current?.({ at: oldest, revealed: 0 });
+          wake();
+          return;
+        }
+      }
+
+      globe.events.sync(
+        feed.store, live.current.filters, Date.now(),
+        globe.controls.state().zoom, replay?.at() ?? undefined,
+      );
       // A front per arrival, except on the seed. See `frontsFor`.
       const fronts = frontsFor(snapshot);
       for (const quake of fronts) {
@@ -160,8 +254,17 @@ export function Globe({
      * Without the distance check, every time someone spins the globe and happens to release over an
      * earthquake, the detail panel opens on an event they were not looking at.
      */
+    /** Any deliberate interaction ends the replay: nobody should have to wait out a title card. */
+    const interrupt = (): void => {
+      if (!replay || replay.done()) return;
+      replay.skip();
+      onReplayRef.current?.(null);
+      redraw();
+    };
+
     let downAt: { x: number; y: number } | null = null;
     const onDown = (e: PointerEvent): void => {
+      interrupt();
       downAt = { x: e.clientX, y: e.clientY };
     };
     const onUp = (e: PointerEvent): void => {

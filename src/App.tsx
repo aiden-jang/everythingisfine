@@ -11,7 +11,7 @@ import { matches, windowStart } from "./data/filter";
 import type { Filters, SourceId } from "./data/types";
 import { PLAYBACK } from "./globe/rings";
 import {
-  SOURCE_NAMES, windowLabel,
+  clock, SOURCE_NAMES, windowLabel,
 } from "./app/format";
 
 /*
@@ -80,6 +80,8 @@ export function App(): JSX.Element {
     sources: new Set(shared.sources ?? [...DEFAULT_FILTERS.sources]),
   }));
   const [selected, setSelected] = useState<string | null>(null);
+  /** The entrance replay's clock and revealed count, or null when it is not running. */
+  const [replay, setReplay] = useState<{ at: number; revealed: number } | null>(null);
   /*
    * A shared event that is no longer in the window.
    *
@@ -300,14 +302,31 @@ export function App(): JSX.Element {
         <aside className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r">
           <div>
             <div className="label">Events</div>
+            {/*
+              During the replay this counts what is actually on the globe, climbing to the total as
+              the day plays in. The held total sat there unchanged while the globe filled beneath
+              it, which is a true number describing something other than the picture next to it.
+            */}
             <div className="mt-1.5 text-[38px] leading-none font-semibold">
-              {snapshot.stats.quakes.toLocaleString("en-GB")}
+              {(replay ? replay.revealed : snapshot.stats.quakes).toLocaleString("en-GB")}
             </div>
-            {/* The window states its own left edge. "last 24 hours" is a lie for the first 24. */}
-            <div className="mt-1.5 text-[11px] text-dim">
-              {windowLabel(now, filters.windowMs, snapshot.stats.since)}
-              {edge.complete ? "" : " · still filling"}
-            </div>
+            {/*
+              During the replay the rail shows the replayed clock, labelled, because the number
+              above it is counting up through a day that has already happened. Saying "since 22:35"
+              while the globe fills with yesterday's events would be the app describing one thing
+              and showing another.
+            */}
+            {replay ? (
+              <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
+                <span className="font-mono text-ink">{clock(replay.at)}</span>
+                <span className="text-faint">replaying the last day</span>
+              </div>
+            ) : (
+              <div className="mt-1.5 text-[11px] text-dim">
+                {windowLabel(now, filters.windowMs, snapshot.stats.since)}
+                {edge.complete ? "" : " · still filling"}
+              </div>
+            )}
           </div>
 
           <div>
@@ -382,6 +401,7 @@ export function App(): JSX.Element {
             onSelect={setSelected}
             onReady={onReady}
             onCamera={(state) => { camera.current = state; }}
+            onReplay={setReplay}
           />
         </main>
 

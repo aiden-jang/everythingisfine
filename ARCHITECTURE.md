@@ -947,6 +947,51 @@ adjudicate between a flat thing and a curved one.
 
 ---
 
+## The entrance is the last day, played in
+
+The wavefront is the signature and almost nobody ever saw one. Events arrive every few minutes, so a
+visitor who looks for ten seconds sees a static scatter and none of the motion the design is built
+around, while the app holds a complete day of history and draws all of it at once with its time
+dimension unused.
+
+The entrance now plays that day: events appear on their own timestamps, anything above M4.5 sends
+out a front as it lands, the counter climbs to the total and the rail shows the replayed clock. Seven
+seconds. Measured across a run: 47 events at 1s, 340 at 1.75s, 789 at 5.5s, with 22 fronts in flight.
+
+The reveal is a *filter*, not a rewrite: `sync` takes a `revealUntil` and holds back anything later.
+It is deliberately not a field on `Filters`, because a filter is a choice the viewer made and belongs
+in the permalink, while this is a few seconds of staging nobody should be able to link to.
+
+**Eased, not linear.** A linear sweep spends as long on the quiet hours as on a swarm, so it opens
+slowly and blurs through the interesting part. Front-loading fills the globe fast and lands the last
+events at roughly the speed real ones will.
+
+### Three bugs, and the second was already live
+
+**It ran at 12 seconds instead of 7.** It was advancing on the frame delta, which is clamped at 50ms
+so a backgrounded tab does not lurch when it wakes. Under that clamp a slow frame rate makes playback
+run at a fraction of real time. It uses unclamped wall clock now; the camera keeps the clamp.
+
+**`seeding` was being spent before any event existed.** It meant "the first announcement", and
+announcements also fire on status changes, so a source going live reliably beat its own first batch.
+The seed then arrived looking like ordinary live traffic. That was **already wrong before the replay
+existed**: it meant the daily seed's 227 events each got a wavefront instead of one between them,
+which is the fireworks display `frontsFor` was written to prevent. It now means "the first
+announcement carrying events", and a test pins it.
+
+**It flashed the whole day before playing it.** The sync ran before the replay was created, so one
+frame painted the ending and the replay then wiped and refilled it. The replay is decided before
+anything is drawn.
+
+### The counter was counting the wrong thing
+
+It reported what the layer drew, which clustering collapses: a day of 789 events counted up to 105
+under a heading reading EVENTS. Markers and events answer different questions and only one of them
+matches the label. It accumulates events as the replay crosses them now, in the same pass that spawns
+the fronts.
+
+---
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

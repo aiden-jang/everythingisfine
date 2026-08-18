@@ -133,8 +133,17 @@ export interface EventLayer {
    * and never while somebody is zooming.
    */
   setGlobeRadius: (px: number) => void;
-  /** Writes the visible subset into the buffers. Returns how many are drawn. */
-  sync: (store: Store, filters: Filters, now: number, zoom: number) => number;
+  /**
+   * Writes the visible subset into the buffers. Returns how many are drawn.
+   *
+   * `revealUntil` is the entrance replay: events with a later origin time are held back. It is a
+   * separate argument rather than another field on `Filters`, because it is not a filter. A filter
+   * is a choice the viewer made and belongs in the permalink; this is a few seconds of staging that
+   * nobody should be able to share a link to.
+   */
+  sync: (
+    store: Store, filters: Filters, now: number, zoom: number, revealUntil?: number,
+  ) => number;
   dispose: () => void;
 }
 
@@ -230,7 +239,7 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
       material.uniforms["uSize"]!.value = Math.max(0.45, Math.min(1, px / REFERENCE_RADIUS_PX));
     },
 
-    sync: (store, filters, now, zoom = 3) => {
+    sync: (store, filters, now, zoom = 3, revealUntil) => {
       const cell = cellSizeDeg(zoom);
       cellFor.clear();
       let n = 0;
@@ -240,6 +249,7 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
         if (!matches(quake, filters, now)) return;
 
         const r = quake.primary;
+        if (revealUntil !== undefined && r.time > revealUntil) return;
 
         /*
          * One marker per cell, carrying the largest event in it.
