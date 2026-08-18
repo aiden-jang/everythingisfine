@@ -50,6 +50,7 @@ export function Globe({
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
   const marker = useRef<HTMLDivElement>(null);
+  const hoverRing = useRef<HTMLDivElement>(null);
   const redrawRef = useRef<() => void>(() => {});
   const wakeRef = useRef<() => void>(() => {});
   const rampRef = useRef<(name: RampName) => void>(() => {});
@@ -104,7 +105,16 @@ export function Globe({
           `translate(-50%, ${offsetY === 0 ? "-50%" : "-100%"})`;
       };
       put(marker.current, live.current.selected, 0);
-      put(tooltip.current, hovered, -14);
+      /*
+       * Which dot the label is about.
+       *
+       * The tooltip named the event and nothing pointed at it. Among two hundred markers a label
+       * floating near the cursor is a guess, and the cursor is not on the marker: the hit test works
+       * geographically and accepts a near miss, which is what makes a 3px dot clickable at all and
+       * exactly what makes the label ambiguous without this.
+       */
+      put(hoverRing.current, hovered, 0);
+      put(tooltip.current, hovered, -18);
     };
 
     /*
@@ -417,6 +427,11 @@ export function Globe({
       <div
         ref={marker}
         className="pointer-events-none absolute top-0 left-0 size-6 rounded-full border-2 border-ink opacity-0 transition-opacity duration-150"
+      />
+      {/* Lighter than the selection ring, because hovering is not choosing. */}
+      <div
+        ref={hoverRing}
+        className="pointer-events-none absolute top-0 left-0 size-5 rounded-full border border-dim opacity-0 transition-opacity duration-100"
       />
       <div
         ref={tooltip}

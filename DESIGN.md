@@ -144,6 +144,16 @@ Geography dims; data does not. The land, graticule, plate boundaries and coastli
 the night side. The markers and wavefronts are drawn over it untouched, because an earthquake at 3am is
 not a smaller earthquake.
 
+### 3.1.2 One number may wear the ramp; sixty may not
+
+The magnitude ramp appears outside the canvas in exactly two places: the legend, which has to show the
+colours it is explaining, and the rail's largest-event line, which is a single value that has to be
+readable at a glance from across the panel. Both carry `data-ramp`.
+
+The sixty magnitudes in the event list are not coloured, and that is the same rule rather than an
+exception to it. One number is a focal point; sixty are a rainbow, and a rail that competes with the
+globe for hue defeats the reason the two-palette rule exists.
+
 ### 3.1.1 Defaults count as chrome
 
 The two-palette rule applies to anything the browser will paint, not only to elements the contract
@@ -476,6 +486,9 @@ are all visual ones.
 - **A link preview makes no claim it cannot keep.** The share image is the globe with its geography and
   no earthquakes, because a card is cached for days and a picture of one day's seismicity presented as
   now is unlabelled sample data.
+- **The largest event in the window is named, not buried.** The list is ordered by time, which is
+  right, and it means the one thing a person arrives wanting to know is forty rows down. The rail says
+  it in one line and clicking it goes there.
 - **A pinned event the filters exclude says so.** The panel is kept, because losing a pin to a nudged
   slider is worse than holding one, and it is labelled, because a full description beside an empty globe
   is the app showing something it is simultaneously claiming is not there.

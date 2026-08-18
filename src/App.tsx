@@ -8,13 +8,13 @@ import { MagnitudeFilter } from "./app/MagnitudeFilter";
 import { Timeline } from "./app/Timeline";
 import { countWithin, histogram } from "./app/histogram";
 import { decode, encode } from "./app/permalink";
-import type { RampName } from "./globe/ramp";
+import { rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import { PLAYBACK } from "./globe/rings";
 import {
-  clock, SOURCE_NAMES, windowLabel,
+  agoShort, clock, place, SOURCE_NAMES, windowLabel,
 } from "./app/format";
 
 /*
@@ -254,7 +254,7 @@ export function App(): JSX.Element {
    * twenty-four counters. The list above it sorts four hundred objects on the same trigger and that
    * has never been the frame's problem either.
    */
-  const bars = useMemo(
+  const { bars, strongest } = useMemo(
     () => histogram(feed.store.forEach, filters, now, snapshot.coveredSince),
     // `now` deliberately absent: it ticks every second and the bars only move on the hour. The
     // revision is what changes them, and the clock catches up the next time an event lands.
@@ -388,6 +388,50 @@ export function App(): JSX.Element {
               </>
             )}
           </div>
+
+          {/*
+            The one fact a person actually wants, which the list buries.
+            The list is newest first, so a magnitude 6 from eight hours ago sits forty rows down while
+            forty magnitude 2s sit above it. The rail had a single focal point, the count, and then a
+            wall of small grey text with the interesting thing hidden in it.
+          */}
+          {strongest && !replay ? (
+            <button
+              type="button"
+              onClick={() => {
+                setSelected(strongest.key);
+                flyTo.current(strongest.primary.lon, strongest.primary.lat, 1.9);
+              }}
+              className="-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2.5 border-t border-hairline px-1 pt-2.5 text-left transition-colors hover:bg-raised"
+            >
+              <span className="label shrink-0">Largest</span>
+              {/*
+                On the ramp, and marked as such.
+
+                The design contract caught this immediately, which is the contract working: a coloured
+                number in the rail is hue outside the canvas. It stays because the hue means exactly
+                what hue always means here, and the marker is what says so.
+
+                Why this one and not the sixty in the list below: one number is a focal point and
+                sixty are a rainbow. The list carries magnitude by position and figure, which is what
+                a list is for; this is a single value that has to be readable at a glance from across
+                the rail.
+              */}
+              <span
+                data-ramp
+                className="font-mono text-[15px] leading-none"
+                style={{ color: rampColorAt(ramp, (strongest.primary.magnitude - 1) / 6.5) }}
+              >
+                {strongest.primary.magnitude.toFixed(1)}
+              </span>
+              <span className="min-w-0 flex-1 truncate text-[11.5px] text-dim">
+                {place(strongest.primary.place)}
+              </span>
+              <span className="shrink-0 font-mono text-[10.5px] text-faint">
+                {agoShort(strongest.primary.time, now)}
+              </span>
+            </button>
+          ) : null}
 
           <div>
             {/* The legend and the filter, as one control: the track is the scale. */}

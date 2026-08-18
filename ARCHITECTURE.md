@@ -1784,6 +1784,28 @@ freeze at the moment they arrived while the earthquakes kept coming: a stale cla
 sitting beside a live one. Per frame is pointless, because the edge moves a quarter of a degree a
 minute.
 
+## Two interface gaps the terminator work made visible
+
+Having finally looked at the app rather than at its tests, two things stood out.
+
+**The hover tooltip named an earthquake and nothing pointed at it.** Among two hundred markers a label
+floating near the cursor is a guess, and the cursor is deliberately not on the marker: the hit test
+works geographically and accepts a near miss, which is what makes a 3px dot clickable at all and
+exactly what makes an unanchored label ambiguous. A ring now marks the dot the label is about, lighter
+than the selection ring because hovering is not choosing. The pointer cursor was already there.
+
+**The rail had one focal point and buried the interesting fact.** The event list is newest first, so a
+magnitude 6 from eight hours ago sits forty rows below forty magnitude 2s. "What was the biggest one"
+is the question a person actually arrives with, and it was the hardest thing in the panel to answer.
+
+It sits under the count now, coloured on the ramp, and clicking it pins and flies. Computed inside the
+histogram's existing walk rather than in a pass of its own, because that function already visits every
+event in the buffer and a second full walk to answer a one-line question would be the same mistake the
+neighbour search just had fixed.
+
+Extracting `agoShort` fell out of it: the compact form was inline in the event list, and a second copy
+in the rail is how "5h" and "21 hours" end up side by side in one panel, each correct on its own.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
