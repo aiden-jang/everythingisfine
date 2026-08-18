@@ -5,6 +5,8 @@ import { countByRegion } from "./app/regions";
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
+import { Timeline } from "./app/Timeline";
+import { countWithin, histogram } from "./app/histogram";
 import { decode, encode } from "./app/permalink";
 import type { RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
@@ -236,7 +238,33 @@ export function App(): JSX.Element {
     [filters, snapshot.revision],
   );
 
-  const edge = windowStart(now, filters.windowMs, snapshot.stats.since);
+  /*
+   * Rebuilt on every revision, and cheap enough to be.
+   *
+   * It walks the whole buffer, which is up to fifty thousand events, but only ever to add to
+   * twenty-four counters. The list above it sorts four hundred objects on the same trigger and that
+   * has never been the frame's problem either.
+   */
+  const bars = useMemo(
+    () => histogram(feed.store.forEach, filters, now, snapshot.coveredSince),
+    // `now` deliberately absent: it ticks every second and the bars only move on the hour. The
+    // revision is what changes them, and the clock catches up the next time an event lands.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filters.minMagnitude, filters.sources, snapshot.revision, snapshot.coveredSince],
+  );
+
+  const hours = Math.round(filters.windowMs / 3_600_000);
+  /*
+   * The headline counts what is on the globe, not what is in the buffer.
+   *
+   * It was `stats.quakes`, the held total, which every filter left untouched: dragging magnitude to
+   * 5.0 emptied the globe and the number beside it did not move. The comment on the replay below
+   * already calls that out as a true number describing something other than the picture next to it,
+   * and it was written about the replay while the same thing was permanently true of the filters.
+   */
+  const shown = countWithin(bars, hours);
+
+  const edge = windowStart(now, filters.windowMs, snapshot.coveredSince);
   const live = Object.values(snapshot.statuses).filter((s) => s.kind === "live").length;
 
   return (
@@ -308,7 +336,7 @@ export function App(): JSX.Element {
               it, which is a true number describing something other than the picture next to it.
             */}
             <div className="mt-1.5 text-[38px] leading-none font-semibold">
-              {(replay ? replay.revealed : snapshot.stats.quakes).toLocaleString("en-GB")}
+              {(replay ? replay.revealed : shown).toLocaleString("en-GB")}
             </div>
             {/*
               During the replay the rail shows the replayed clock, labelled, because the number
@@ -323,7 +351,7 @@ export function App(): JSX.Element {
               </div>
             ) : (
               <div className="mt-1.5 text-[11px] text-dim">
-                {windowLabel(now, filters.windowMs, snapshot.stats.since)}
+                {windowLabel(now, filters.windowMs, snapshot.coveredSince)}
                 {edge.complete ? "" : " · still filling"}
               </div>
             )}
@@ -359,6 +387,19 @@ export function App(): JSX.Element {
               ))}
             </div>
           </div>
+
+          {/*
+            The day, and the control for the window that was previously unreachable. Sits under the
+            magnitude filter because they are the same kind of thing: both say what is on the globe.
+            The globe answers "where" and cannot answer "when" at all, which is the gap this fills.
+          */}
+          <Timeline
+            bars={bars}
+            ramp={ramp}
+            now={now}
+            hours={hours}
+            onHoursChange={(h) => setFilters((f) => ({ ...f, windowMs: h * 3_600_000 }))}
+          />
 
           {regions.length > 0 ? (
             <div>

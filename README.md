@@ -125,16 +125,22 @@ boundaries*, Geochemistry Geophysics Geosystems 4(3)), public domain, simplified
 keyless feed carries. The detail panel lists every merged reading, so a wrong merge is visible
 rather than hidden, but it is a real limitation and not a rare one during a sequence.
 
-**The window cannot go back before you opened the page.** There is no backend, so time scrubbing was
-rejected rather than shipped as a worse version of itself.
+**The window cannot go back beyond the seed.** Both feeds seed 24 hours on their first request and
+there is no backend, so 24 hours is the hard edge and time scrubbing beyond it was rejected rather
+than shipped as a worse version of itself.
+
+**Coverage assumes the seed was complete.** EMSC's seeding request is capped at 600 events, so on an
+exceptionally busy day its half of the day is truncated and the app will still report the window as
+covered. USGS `all_day` has no such cap, so the claim holds as long as USGS delivered.
 
 **Browser tests are not in CI.** They wait on two real agencies, so a quiet planet or an agency doing
 maintenance would fail the build for reasons that are not the code's fault. Routing the feeds to the
 committed fixtures would fix this and has not been done.
 
 **The globe is a poor fit for very dense sequences even with clustering.** 400 events in the Flores
-Sea collapse to a handful of markers, which is legible and is still not the same as being able to
-read the sequence. A timeline would serve that better and is out of scope.
+Sea collapse to a handful of markers. The activity strip now shows the *shape* of a sequence in
+time, which is most of what was missing, but it is hourly and it is global: you can see that three
+hundred events landed inside ninety minutes and you still cannot step through them one at a time.
 
 **No demo video.** The write-up asks for one and there is none, because recording it is not
 something this build could do.

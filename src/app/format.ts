@@ -67,19 +67,19 @@ export const SOURCE_NAMES: Record<SourceId, string> = { usgs: "USGS", emsc: "EMS
 /**
  * The window's left edge, in words.
  *
- * With no backend the buffer starts when the page loads, so "last 24 hours" is false for the first
- * 24 hours. Until it genuinely fills, this says when the page opened instead. DESIGN.md treats the
- * difference as the one between a demo and a claim.
+ * Reads the coverage the sources brought, not the earliest arrival held. Until coverage reaches the
+ * requested window this says when it actually starts instead. DESIGN.md treats the difference as the
+ * one between a demo and a claim.
  */
 export function windowLabel(
-  now: number, windowMs: number, earliestArrival: number | null,
+  now: number, windowMs: number, coveredSince: number | null,
 ): string {
-  if (earliestArrival === null) return "nothing yet";
-  if (earliestArrival <= now - windowMs) {
+  if (coveredSince === null) return "nothing yet";
+  if (coveredSince <= now - windowMs) {
     const hours = Math.round(windowMs / 3_600_000);
     return `last ${hours} hour${hours === 1 ? "" : "s"}`;
   }
-  return `since ${clock(earliestArrival)}`;
+  return `since ${clock(coveredSince)}`;
 }
 
 /** Which agencies reported an event, for the panel's header line. */

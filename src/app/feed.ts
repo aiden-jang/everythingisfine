@@ -36,7 +36,26 @@ export interface FeedSnapshot {
    * instead of one, and it is why the entrance replay never started.
    */
   seeding: boolean;
+  /**
+   * The timestamp from which this page believes it has complete coverage, or null before the seed.
+   *
+   * Not the earliest arrival. Both sources seed a whole day in their first request, so every one of
+   * those events *arrives* at page open while *covering* the twenty-four hours before it. The rail
+   * read the earliest arrival and therefore said "still filling" permanently, on a buffer that was
+   * already full: a disclaimer written for the hourly seed this app had before the daily one, and
+   * left in place when the seed changed underneath it.
+   */
+  coveredSince: number | null;
 }
+
+/**
+ * How far back the seed reaches. Matches `all_day` at USGS and `SEED_HOURS` at EMSC.
+ *
+ * Optimistic in one case worth naming: EMSC's seed is capped at 600 events, so on an exceptionally
+ * busy day its half of the day is truncated. USGS `all_day` has no such cap, so a day is covered as
+ * long as USGS delivered, and both sources being down leaves this null.
+ */
+const SEED_MS = 24 * 3_600_000;
 
 /**
  * Which arrivals deserve a wavefront.
@@ -77,6 +96,7 @@ export function createFeed(capacity = 50_000): Feed {
   let revision = 0;
   let running = false;
   let announced = false;
+  let coveredSince: number | null = null;
   /*
    * Capped. The daily seed creates 227 quakes in one batch and a large aftershock sequence can
    * deliver dozens; holding them all to hand to a subscriber that only wants the newest would make
@@ -96,6 +116,7 @@ export function createFeed(capacity = 50_000): Feed {
     revision,
     arrived,
     seeding: !announced,
+    coveredSince,
   });
 
   /*
@@ -111,6 +132,10 @@ export function createFeed(capacity = 50_000): Feed {
     if (pending) return;
     pending = requestAnimationFrame(() => {
       pending = 0;
+      // Set before the snapshot, not after, so the announcement that carries the seed is also the
+      // one that reports the coverage it brought. A frame late here is a frame of "still filling"
+      // over a full buffer, which is the exact claim this is here to stop making.
+      if (coveredSince === null && arrived.length > 0) coveredSince = Date.now() - SEED_MS;
       const s = snapshot();
       // Only a delivery counts as having seeded. An empty status announcement leaves it unspent.
       if (s.arrived.length > 0) announced = true;

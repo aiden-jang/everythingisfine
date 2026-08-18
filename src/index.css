@@ -316,6 +316,52 @@
   }
 }
 
+/*
+ * The slider that runs along the activity strip.
+ *
+ * Same idea as `.ramp-slider` and a different thumb, because it is marking a different kind of
+ * thing. The magnitude thumb is a point on a continuous scale; this one is the boundary between the
+ * hours that count and the hours that do not, so it is a full-height rule rather than a handle.
+ */
+@layer components {
+  .timeline-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: ew-resize;
+  }
+
+  /* Split, never grouped: an unrecognised pseudo-element invalidates the whole selector list. */
+  .timeline-slider::-webkit-slider-runnable-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .timeline-slider::-moz-range-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .timeline-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 3px;
+    height: 44px;
+    border-radius: 0;
+    background: var(--color-ink);
+    box-shadow: 0 0 0 1.5px var(--color-deck);
+  }
+
+  .timeline-slider::-moz-range-thumb {
+    width: 3px;
+    height: 44px;
+    border: 0;
+    border-radius: 0;
+    background: var(--color-ink);
+    box-shadow: 0 0 0 1.5px var(--color-deck);
+  }
+}
+
 @media (pointer: coarse) {
   /*
    * Every control, not just the rail's.
