@@ -774,6 +774,56 @@ consecutive runs now read 6.26, 6.45 and 6.61ms.
 
 ---
 
+## The interface was bad, and the measurements said why
+
+Told bluntly that the UI was bad, I measured rather than argued. Three numbers settled it:
+
+- **48% of the rail was empty.** Not minimal: unfinished.
+- **8.5px was the most common type size in the whole interface.** Instrument type is small because
+  the panel is dense. This panel was half air. Small plus empty is not restraint, it is nothing.
+- **There was no legend.** The product encodes magnitude in hue, the two-palette rule exists to
+  protect that encoding, three documents argue about which ramp to use, and nothing on screen ever
+  said what the colours meant.
+
+The worst of it was not a taste problem. **The list of recent events already existed and was hidden
+from sighted users.** The screen-reader experience carried strictly more information than anything a
+person looking at the page could reach. That is an indefensible thing to have built, and it came
+from treating accessibility as a parallel deliverable instead of as the same one.
+
+So there is one list now, visible, still keyboard-navigable, still announcing through a live region,
+with the same content in the same order for everybody. The rail is 3% empty. Labels are 10px and
+rows are 12px. The legend exists and is built from the same table the shader samples, so it cannot
+drift from the data.
+
+**And the list was lying.** It was headed "newest first" and ordered by *arrival*, which is right
+for eviction and wrong for a list: after the daily seed lands, arrival order is whatever order two
+catalogues answered in, so it opened on events nineteen hours old. Sorted by origin time now.
+
+Place names are case-normalised for display. USGS writes "72 km E of Petropavlovsk-Kamchatsky";
+EMSC writes "OFF EAST COAST OF KAMCHATKA". Listed together the shouting one reads as an error. Case
+is not content, and the screen reader gets the same normalised string, so nothing differs between
+what is seen and what is heard.
+
+### The design contract caught five regressions in the redesign
+
+Which is exactly what it was built for, one phase earlier.
+
+Three were the legend painting the data ramp outside the canvas. That is a **correct** exception and
+it still had to be named: `data-legend` excludes one marked element rather than loosening the rule,
+because DESIGN.md's own principle is that an unstated exception becomes a precedent and the next one
+is a coloured button.
+
+One was a real layout bug: at tablet width the rail lies down into a strip, and the event list came
+with it, pushing the content **98px past the viewport**. A row of columns each holding a scrolling
+list is not a strip. The list now spans the strip's full width underneath it.
+
+One was a stale test. It compared `M 2.9` in the list against `M 2.9` in the panel, and the list had
+dropped the prefix. The data never changed. **A test that asserts formatting when it means to assert
+identity fails on every redesign and teaches people that redesigns break tests**, so it compares the
+number now.
+
+---
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

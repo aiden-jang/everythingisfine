@@ -45,6 +45,23 @@ export function depth(reading: Reading): string {
   return Number.isFinite(reading.depthKm) ? `${Math.round(reading.depthKm)} km` : "not given";
 }
 
+/**
+ * Place names, evened out for display only.
+ *
+ * USGS writes "72 km E of Petropavlovsk-Kamchatsky, Russia"; EMSC writes "OFF EAST COAST OF
+ * KAMCHATKA". Listed together the shouting one looks like an error, and the eye reads the case
+ * difference as meaning rather than as two organisations' house styles.
+ *
+ * Case is not content: this changes how a name is set, never what it says. The detail panel and the
+ * screen reader get the same normalised string, so nothing differs between what is seen and what is
+ * read aloud. Anything already mixed-case is left exactly as the agency wrote it.
+ */
+export function place(text: string): string {
+  if (text !== text.toUpperCase()) return text;
+  return text.toLowerCase().replace(/(^|[\s(,\-/])([a-z])/g, (_, lead: string, c: string) =>
+    lead + c.toUpperCase());
+}
+
 export const SOURCE_NAMES: Record<SourceId, string> = { usgs: "USGS", emsc: "EMSC" };
 
 /**

@@ -115,7 +115,16 @@ Active, selected and focused states are communicated by **brightness, weight and
 Focus ring: **Instrument at 2px with a 2px offset.** Roughly 11:1 against Deck, well past the 3:1
 that non-text contrast requires, and unmistakable for any data value.
 
-**The one named exception.** The atmospheric rim, `rgba(120,150,190,0.16)`, carries a trace of hue.
+**The second named exception: the legend.** The magnitude legend paints the ramp itself, outside
+the canvas, and it must. A legend that cannot show the colours it explains is not a legend. It is
+marked `data-legend` so the design-contract test excludes that one element rather than loosening the
+rule for everything, and so a third exception has to be argued for rather than slipped in.
+
+Worth recording that the legend did not exist until somebody called the interface bad: the product
+encoded magnitude in hue, three documents argued about which ramp to use, and nothing on screen ever
+said what the colours meant.
+
+**The first named exception.** The atmospheric rim, `rgba(120,150,190,0.16)`, carries a trace of hue.
 It is allowed because it sits on the silhouette where no marker is ever drawn, it never encodes a
 value, and a sphere without it looks like a flat disc. Naming the exception is the point: an
 unstated exception becomes a precedent, and the next one will be a blue button.

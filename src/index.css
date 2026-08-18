@@ -125,19 +125,29 @@
      name and costs the globe a third of its height. */
   .rail {
     display: flex;
+    min-height: 0;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.1rem;
   }
 
+  /*
+   * Tablet: the rail lies down into a strip, and the event list does not come with it.
+   *
+   * A row of five columns each holding a scrolling list is not a strip, it is a second page. The
+   * list is a tall thing and there is no height for it here, so it moves under the strip and gets
+   * its own band. Laying it out as a sixth sibling pushed the rail 98px past the viewport, which
+   * the overflow test caught immediately.
+   */
   @media (min-width: 768px) and (max-width: 1279px) {
     .rail {
-      flex-direction: row;
-      align-items: flex-start;
-      gap: 2rem;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      align-items: start;
+      gap: 1rem 2rem;
     }
-    .rail > * {
-      flex: 1 1 0;
-      min-width: 0;
+    .rail > section[aria-label="Recent earthquakes"] {
+      grid-column: 1 / -1;
+      max-height: 26dvh;
     }
   }
   .zone-canvas {
@@ -216,12 +226,12 @@
 }
 
 /*
- * The accessible feed: invisible, but not hidden.
+ * Content for assistive tech only.
  *
  * `display: none` and `visibility: hidden` both remove an element from the accessibility tree, so
- * neither works here. The clip technique keeps it in the tree and reachable by tab while taking no
- * space, and `focus-within` then gives it back to a sighted keyboard user rather than making them
- * tab into something they cannot see.
+ * neither works. The clip technique keeps it in the tree while taking no space. Used now only for
+ * the coordinates and the live region: the event list itself is visible to everyone, because
+ * hiding the most useful content in the app from the people who can see it was indefensible.
  */
 @layer components {
   .sr-only {
@@ -236,30 +246,18 @@
     border: 0;
   }
 
-  .sr-panel {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-  }
-
-  .sr-panel:focus-within {
-    position: static;
-    width: auto;
-    height: auto;
-    max-height: 40dvh;
-    overflow-y: auto;
-    clip-path: none;
-    padding: 0.75rem;
-    border: 1px solid var(--color-hairline);
-    background: var(--color-raised);
-  }
 }
 
+/*
+ * Section labels.
+ *
+ * Was 8.5px, which turned out to be the most common type size in the entire interface: not an
+ * instrument, just small. Instrument type is small because the panel is dense, and this panel was
+ * 48% empty. 10px with the same tracking reads at arm's length and still recedes behind the data.
+ */
 @utility label {
-  font-size: 8.5px;
-  letter-spacing: 0.16em;
+  font-size: 10px;
+  letter-spacing: 0.15em;
   color: var(--color-faint);
   text-transform: uppercase;
 }

@@ -38,7 +38,14 @@ test("a pinned selection survives a data refresh", async ({ page }) => {
 
   const panel = page.locator(".zone-panel");
   await expect(panel).toBeVisible();
-  const magnitude = (await panel.innerText()).match(/M \d+\.\d/)?.[0];
+  /*
+   * Compared as a number, not as a rendered string.
+   *
+   * This matched `M 2.9` against both, and broke when the list dropped the `M` prefix and kept it
+   * only in the panel. The data never changed. A test that asserts formatting when it means to
+   * assert identity fails on every redesign and teaches people that redesigns break tests.
+   */
+  const magnitude = (await panel.innerText()).match(/M (\d+\.\d)/)?.[1];
   expect(magnitude).toBeTruthy();
   expect(chosen).toContain(magnitude!);
 
@@ -62,7 +69,7 @@ test("a pinned selection survives a data refresh", async ({ page }) => {
 
   // The panel must still be open, on the same event, with the same reading.
   await expect(panel).toBeVisible();
-  await expect(panel).toContainText(magnitude!);
+  await expect(panel).toContainText(`M ${magnitude!}`);
 
   await page.keyboard.press("Escape");
   await expect(panel).toHaveCount(0);
@@ -197,6 +204,7 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   // The same earthquake, not merely some earthquake.
   expect(await fresh.locator(".zone-panel").innerText())
     .toContain(pinnedText.match(/M \d+\.\d/)![0]);
+
   await fresh.close();
 });
 

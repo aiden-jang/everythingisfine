@@ -2,14 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Globe } from "./globe/Globe";
 import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
-import { AccessibleFeed } from "./app/AccessibleFeed";
+import { EventList } from "./app/EventList";
+import { Legend } from "./app/Legend";
 import { decode, encode } from "./app/permalink";
 import type { RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
 import { PLAYBACK } from "./globe/rings";
 import {
-  ago, clock, coordinates, depth, magnitude, SOURCE_NAMES, windowLabel,
+  ago, clock, coordinates, depth, magnitude, place, SOURCE_NAMES, windowLabel,
 } from "./app/format";
 
 /*
@@ -34,10 +35,10 @@ function Row({ label, value, onClick }: {
   const body = (
     <>
       <span className="truncate">{label}</span>
-      <span className="ml-3 shrink-0 font-mono text-[10px] text-ink">{value}</span>
+      <span className="ml-3 shrink-0 font-mono text-[12px] text-ink">{value}</span>
     </>
   );
-  const shared = "flex w-full items-center justify-between border-t border-hairline py-1.5 text-[10.5px] text-dim";
+  const shared = "flex w-full items-center justify-between border-t border-hairline py-1.5 text-[12px] text-dim";
   return onClick
     ? <button type="button" onClick={onClick} className={`${shared} cursor-pointer text-left hover:text-ink`}>{body}</button>
     : <div className={shared}>{body}</div>;
@@ -215,10 +216,20 @@ export function App(): JSX.Element {
     });
   };
 
-  // The accessible feed shows what the globe shows, filtered identically and capped: a screen
-  // reader user navigating 50,000 list items would be worse served than one given the recent 60.
+  /*
+   * The list shows what the globe shows, filtered identically, **ordered by origin time**.
+   *
+   * The store hands events back in arrival order, which is the right thing for eviction and the
+   * wrong thing for a list headed "newest first". After the daily seed lands, arrival order is
+   * whatever order two catalogues happened to answer in, so the list opened on events nineteen
+   * hours old under a heading claiming recency. Sorting 400 candidates is nothing; the list is
+   * capped at 60 because navigating 50,000 rows would serve nobody.
+   */
   const recent = useMemo(
-    () => feed.store.latest(400).filter((q) => matches(q, filters, Date.now())).slice(0, 60),
+    () => feed.store.latest(400)
+      .filter((q) => matches(q, filters, Date.now()))
+      .sort((a, b) => b.primary.time - a.primary.time)
+      .slice(0, 60),
     [filters, snapshot.revision],
   );
 
@@ -227,69 +238,58 @@ export function App(): JSX.Element {
 
   return (
     <div className="frame">
-      <header className="flex items-center gap-4 border-b border-hairline bg-deck px-4 py-2.5">
-        <div className="text-[11px] font-semibold tracking-[0.18em]">FIRST MOTION</div>
-        <div className="ml-auto flex items-center gap-4">
-          <span className="text-[9.5px] tracking-[0.1em] text-faint">
-            WAVEFRONT &times;{PLAYBACK}
-          </span>
-          <span className="text-[9.5px] tracking-[0.1em] text-dim">
-            {live === 2 ? "BOTH FEEDS LIVE" : live === 1 ? "ONE FEED LIVE" : "CONNECTING"}
+      {/* The header used to hold a wordmark and two small words on a 1280px bar. It now carries
+          the arithmetic that makes the reconciliation visible without opening anything. */}
+      <header className="flex items-center gap-6 border-b border-hairline bg-deck px-5 py-3">
+        <div className="text-[13px] font-semibold tracking-[0.16em] whitespace-nowrap">
+          FIRST MOTION
+        </div>
+        <div className="hidden items-baseline gap-5 sm:flex">
+          {([
+            ["USGS", `${snapshot.stats.readings.usgs}`],
+            ["EMSC", `${snapshot.stats.readings.emsc}`],
+            ["distinct", `${snapshot.stats.quakes}`],
+            ["both", `${snapshot.stats.corroborated}`],
+          ] as const).map(([k, v]) => (
+            <span key={k} className="flex items-baseline gap-1.5">
+              <span className="font-mono text-[13px] text-ink">{v}</span>
+              <span className="text-[11px] text-faint">{k}</span>
+            </span>
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-4 whitespace-nowrap">
+          <span className="text-[11px] text-faint">wavefront &times;{PLAYBACK}</span>
+          <span className="flex items-center gap-2 text-[11px] text-dim">
+            <span
+              className={`inline-block size-[6px] rounded-full ${
+                live === 2 ? "bg-ink" : live === 1 ? "bg-dim" : "bg-faint"
+              }`}
+            />
+            {live === 2 ? "both feeds live" : live === 1 ? "one feed live" : "connecting"}
           </span>
         </div>
       </header>
 
       <div className="zones">
-        <aside className="zone-rail rail border-hairline bg-deck p-4 max-xl:border-b xl:border-r">
+        <aside className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r">
           <div>
             <div className="label">Events</div>
-            <div className="mt-1 text-[31px] leading-none font-semibold">
+            <div className="mt-1.5 text-[38px] leading-none font-semibold">
               {snapshot.stats.quakes.toLocaleString("en-GB")}
             </div>
             {/* The window states its own left edge. "last 24 hours" is a lie for the first 24. */}
-            <div className="mt-1 text-[9.5px] text-dim">
+            <div className="mt-1.5 text-[11px] text-dim">
               {windowLabel(now, filters.windowMs, snapshot.stats.since)}
-              {edge.complete ? "" : " (still filling)"}
+              {edge.complete ? "" : " · still filling"}
             </div>
           </div>
 
-          <div>
-            {(["usgs", "emsc"] as const).map((id) => {
-              const status = snapshot.statuses[id];
-              return (
-                <Row
-                  key={id}
-                  label={`${SOURCE_NAMES[id]} ${id === "usgs" ? "poll" : "push"}`}
-                  value={
-                    status.kind === "live" ? `${snapshot.stats.readings[id]}`
-                      : status.kind === "failing" ? "retrying" : "--"
-                  }
-                />
-              );
-            })}
-            {/* Deduplication is labelled, never hidden inside one total: the two raw counts sit
-                above, the distinct total below, and the overlap between them is named. */}
-            <Row label="distinct events" value={`${snapshot.stats.quakes}`} />
-            <Row label="both agencies" value={`${snapshot.stats.corroborated}`} />
-          </div>
-
-          <div>
-            <div className="label">Regions</div>
-            {regions.length === 0
-              ? <div className="border-t border-hairline py-1.5 text-[10.5px] text-faint">none in this window</div>
-              : regions.map(({ region, count }) => (
-                <Row
-                  key={region.name}
-                  label={region.name}
-                  value={`${count}`}
-                  onClick={() => flyTo.current(region.lon, region.lat, region.zoom)}
-                />
-              ))}
-          </div>
+          {/* What the colours mean. Missing entirely until somebody said the interface was bad. */}
+          <Legend ramp={ramp} />
 
           <div>
             <label className="label block" htmlFor="mag">
-              Magnitude {filters.minMagnitude.toFixed(1)}+
+              Showing M{filters.minMagnitude.toFixed(1)} and above
             </label>
             {/* No apply button: the globe answers the slider as it moves. */}
             <input
@@ -299,47 +299,60 @@ export function App(): JSX.Element {
               max="7"
               step="0.1"
               value={filters.minMagnitude}
-              className="slider mt-2"
+              className="slider mt-1"
               onChange={(e) => setFilters((f) => ({ ...f, minMagnitude: Number(e.target.value) }))}
             />
-            <div className="mt-3 flex gap-1.5">
-              {/* Colourblind-safe ramp, persisted. Labelled by what it does, not by its name. */}
-              <button
-                type="button"
-                onClick={() => setRamp((r) => (r === "thermal" ? "cividis" : "thermal"))}
-                aria-pressed={ramp === "cividis"}
-                className="label cursor-pointer border border-hairline px-2 py-1 text-ink transition-colors hover:bg-raised"
-              >
-                {ramp === "cividis" ? "Colourblind ramp on" : "Colourblind ramp off"}
-              </button>
-            </div>
-            <div className="mt-2 flex gap-1.5">
+            <div className="mt-1 flex flex-wrap gap-1.5">
               {(["usgs", "emsc"] as const).map((id) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => toggleSource(id)}
                   aria-pressed={filters.sources.has(id)}
-                  className={`label cursor-pointer border px-2 py-1 transition-colors ${
+                  className={`cursor-pointer border px-2.5 py-1 text-[11px] transition-colors ${
                     filters.sources.has(id)
                       ? "border-hairline bg-raised text-ink"
-                      : "border-hairline text-faint"
+                      : "border-hairline text-faint hover:text-dim"
                   }`}
                 >
                   {SOURCE_NAMES[id]}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setRamp((r) => (r === "thermal" ? "cividis" : "thermal"))}
+                aria-pressed={ramp === "cividis"}
+                className={`cursor-pointer border border-hairline px-2.5 py-1 text-[11px] transition-colors ${
+                  ramp === "cividis" ? "bg-raised text-ink" : "text-faint hover:text-dim"
+                }`}
+              >
+                Colourblind ramp {ramp === "cividis" ? "on" : "off"}
+              </button>
             </div>
           </div>
 
+          {regions.length > 0 ? (
+            <div>
+              <div className="label">Regions</div>
+              {regions.slice(0, 4).map(({ region, count }) => (
+                <Row
+                  key={region.name}
+                  label={region.name}
+                  value={`${count}`}
+                  onClick={() => flyTo.current(region.lon, region.lat, region.zoom)}
+                />
+              ))}
+            </div>
+          ) : null}
+
           {missingShared && !pinned && snapshot.stats.quakes > 0 ? (
-            <p className="border border-hairline bg-raised p-2 text-[10px] leading-relaxed text-dim">
+            <p className="border border-hairline bg-raised p-2.5 text-[11px] leading-relaxed text-dim">
               The event in this link is no longer in the window. The buffer holds the last day, and
               it starts when the page opens.
             </p>
           ) : null}
 
-          <AccessibleFeed
+          <EventList
             quakes={recent}
             selected={selected}
             onSelect={setSelected}
@@ -375,7 +388,7 @@ export function App(): JSX.Element {
               </button>
             </div>
             <div className="text-[23px] leading-none font-semibold">{magnitude(pinned.primary)}</div>
-            <div className="text-[11px] leading-snug text-dim">{pinned.primary.place}</div>
+            <div className="text-[12px] leading-snug text-dim">{place(pinned.primary.place)}</div>
             {pinned.primary.kind !== "earthquake" ? (
               // Named rather than drawn as an earthquake. A quarry blast is a real seismic event
               // and calling it something it is not would be the quiet kind of lie.

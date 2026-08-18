@@ -62,7 +62,16 @@ async function chromeHues(
     };
 
     for (const el of Array.from(document.querySelectorAll("*"))) {
+      /*
+       * Two exclusions, both named in DESIGN.md rather than assumed here.
+       *
+       * The canvas is where hue belongs. The legend is the one element outside it allowed to paint
+       * the ramp, because a legend that cannot show the colours it is explaining is not a legend.
+       * Excluding a specific marked element rather than loosening the threshold keeps every other
+       * pixel of chrome under the same rule.
+       */
       if (el.closest("canvas") || el.tagName === "CANVAS") continue;
+      if (el.closest("[data-legend]")) continue;
       const style = getComputedStyle(el);
       const props: [string, string][] = [
         ["color", style.color],
