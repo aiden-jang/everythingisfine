@@ -131,6 +131,14 @@ It is allowed because it sits on the silhouette where no marker is ever drawn, i
 value, and a sphere without it looks like a flat disc. Naming the exception is the point: an
 unstated exception becomes a precedent, and the next one will be a blue button.
 
+### 3.1.1 Defaults count as chrome
+
+The two-palette rule applies to anything the browser will paint, not only to elements the contract
+test can enumerate. `::selection` shipped unstyled for months and painted the platform's saturated
+blue, and scrollbars shipped unstyled and are invisible on macOS while drawing a light channel on
+Windows. Both are asserted by the design contract now. Anything a user agent styles by default is a
+decision that has been made without you.
+
 ### 3.2 Data ramps, where hue lives
 
 Two ramps ship. The viewer picks and the choice persists.
@@ -416,6 +424,10 @@ are all visual ones.
   is not a disclosure.
 - **Relative time is rounded honestly.** "2 minutes ago", not "2m 14s ago". False precision on an
   event whose origin time is itself an estimate.
+- **An empty state says what it is waiting for, not what it lacks.** Before any feed answers, the rail
+  reads "Asking USGS and EMSC for the last day." with no count, no header arithmetic and no strip
+  readout, because a zero is a measurement and none had been taken. An empty list blames the filters
+  only when there is something for them to exclude.
 - No placeholder names, no invented round numbers, no sample data unless it is labelled sample data.
 
 ---
@@ -428,14 +440,20 @@ Numbers, because an unenforced benchmark is quietly false within a month.
 GPU frame time measured there is noise. What actually regresses in code is the per-frame CPU work:
 buffer writes, filter predicates, projection maths. That is deterministic and can gate a build.
 
-| Events | CPU update per frame (CI, gating) | GPU frame p95 (reference machine, recorded) |
-|---|---|---|
-| 1,000 | under 1.0ms | 16.7ms, 60fps |
-| 10,000 | under 4.0ms | 16.7ms, 60fps |
-| 50,000 | under 12.0ms | 33.3ms, 30fps floor |
+**The CPU budget is a ratio, not milliseconds.** A millisecond threshold failed three times on
+unchanged code, at 13.96ms and 13.11ms against 6.8ms quiet, because it cannot tell a regression from
+a busy machine. The gate now measures a fixed reference workload in the same process and budgets the
+ratio. Eight saturated cores move the ratio 4.12 to 4.29 where the milliseconds move 6.8 to 7.3.
 
-The reference machine is named and dated wherever a GPU number is published. "60fps at 10k points"
-without the hardware attached is not a measurement.
+| Events | CPU update (CI, gating) | Measured quiet | GPU frame p95 (reference machine, recorded) |
+|---|---|---|---|
+| 1,000 | under 0.15 ref | 0.07 ref, 0.11ms | 16.7ms, 60fps |
+| 10,000 | under 1.05 ref | 0.69 ref, 1.13ms | 16.7ms, 60fps |
+| 50,000 | under 6.0 ref | 4.12 ref, 6.81ms | 33.3ms, 30fps floor |
+
+Milliseconds are still printed, because "fast enough for a human" is a real question a ratio cannot
+answer. The reference machine is named and dated wherever a GPU number is published. "60fps at 10k
+points" without the hardware attached is not a measurement.
 
 **Bundle: four numbers, not one.** The original single 200KB figure was written before three.js was
 measured, and three.js alone is 127KB gzipped. Under one number an app-code regression of 20KB reads

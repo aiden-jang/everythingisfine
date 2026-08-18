@@ -70,6 +70,9 @@ export const SOURCE_NAMES: Record<SourceId, string> = { usgs: "USGS", emsc: "EMS
  * Reads the coverage the sources brought, not the earliest arrival held. Until coverage reaches the
  * requested window this says when it actually starts instead. DESIGN.md treats the difference as the
  * one between a demo and a claim.
+ *
+ * The null case is unreachable from the rail, which shows what it is waiting on instead of a label
+ * for an absence, and is kept for any caller that has no such alternative.
  */
 export function windowLabel(
   now: number, windowMs: number, coveredSince: number | null,

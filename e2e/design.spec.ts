@@ -194,6 +194,32 @@ test("every number that updates has tabular figures", async ({ page }) => {
   expect(proportional).toEqual([]);
 });
 
+test("no user-agent defaults left in the chrome", async ({ page }) => {
+  /*
+   * The two that were. `::selection` was unstyled, so dragging across a place name painted the
+   * browser's saturated blue, in the one app whose chrome is achromatic by rule and enforced by the
+   * test above. Scrollbars were unstyled, invisible on macOS overlay scrollbars and a light channel
+   * down the darkest element on Windows, which is how it survived being looked at.
+   */
+  await page.goto("/");
+
+  const rules = await page.evaluate(() => {
+    const all: string[] = [];
+    for (const sheet of Array.from(document.styleSheets)) {
+      try {
+        for (const rule of Array.from(sheet.cssRules)) all.push(rule.cssText);
+      } catch { /* cross-origin sheet, none here */ }
+    }
+    return all.join("\n");
+  });
+
+  expect(rules).toContain("::selection");
+  expect(rules).toContain("scrollbar-color");
+
+  const scroller = page.locator(".zone-rail .overflow-y-auto").first();
+  await expect(scroller).toHaveCSS("scrollbar-width", "thin");
+});
+
 test("nothing is painted pure black", async ({ page }) => {
   await page.goto("/");
   await waitForData(page);

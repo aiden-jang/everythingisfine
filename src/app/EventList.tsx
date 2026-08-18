@@ -21,6 +21,8 @@ export interface EventListProps {
   /** Events at or above this magnitude are announced. Below it, they arrive silently. */
   announceAbove: number;
   onAnnounceAboveChange: (value: number) => void;
+  /** True before any feed has delivered, so an empty list is not blamed on the filters. */
+  waiting: boolean;
 }
 
 /** One event, as a sentence rather than a row of fields. */
@@ -39,7 +41,7 @@ function sentence(quake: Quake, now: number): string {
 }
 
 export function EventList({
-  quakes, selected, onSelect, announceAbove, onAnnounceAboveChange,
+  quakes, selected, onSelect, announceAbove, onAnnounceAboveChange, waiting,
 }: EventListProps): JSX.Element {
   const [cursor, setCursor] = useState(0);
   /*
@@ -128,6 +130,15 @@ export function EventList({
         />
       </details>
 
+      {quakes.length === 0 ? (
+        // Blaming the filters is only right when there is something for them to exclude. On arrival
+        // the list is empty because nothing has arrived, and saying otherwise sends someone to widen
+        // a filter that was never the problem.
+        <p className="mt-2 text-[12px] text-faint">
+          {waiting ? "Waiting for the first events." : "No events match the current filters."}
+        </p>
+      ) : null}
+
       {/* One tab stop, then arrows. Tabbing through sixty earthquakes to reach the next control
           would be its own accessibility failure. */}
       <ul className="mt-2 min-h-0 flex-1 overflow-y-auto pr-2" onKeyDown={onKeyDown}>
@@ -188,10 +199,6 @@ export function EventList({
           </li>
         ))}
       </ul>
-
-      {quakes.length === 0 ? (
-        <p className="mt-2 text-[12px] text-faint">No events match the current filters.</p>
-      ) : null}
 
       <div aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>
     </section>

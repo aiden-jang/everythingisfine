@@ -172,6 +172,7 @@ export interface EventLayer {
   object: Points;
   /** Swaps the entire data palette. One uniform, not fifty thousand rewrites. */
   setRamp: (name: RampName) => void;
+  setFocusFade: (value: number) => void;
   setPixelRatio: (ratio: number) => void;
   /**
    * Scales markers to the size of the globe on screen, not to the zoom.
@@ -292,6 +293,10 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
       texture = rampTexture(name);
       material.uniforms["uRamp"]!.value = texture;
     },
+    /** 0 shows every marker, 1 holds only the focused hour. Eased by the frame loop. */
+    setFocusFade: (value) => {
+      material.uniforms["uFocusing"]!.value = value;
+    },
     setPixelRatio: (ratio) => {
       material.uniforms["uPixelRatio"]!.value = ratio;
     },
@@ -312,7 +317,6 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
        * only be answered where the members are still visible, which is here.
        */
       const focusing = focusHour !== null;
-      material.uniforms["uFocusing"]!.value = focusing ? 1 : 0;
       const focusLo = focusing ? now - (focusHour + 1) * 3_600_000 : 0;
       const focusHi = focusing ? now - focusHour * 3_600_000 : 0;
       cellFor.clear();

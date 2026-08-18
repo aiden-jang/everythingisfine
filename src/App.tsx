@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Globe } from "./globe/Globe";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+const Globe = lazy(() => import("./globe/Globe").then((m) => ({ default: m.Globe })));
 import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { EventList } from "./app/EventList";
@@ -283,7 +283,9 @@ export function App(): JSX.Element {
         <div className="text-[13px] font-semibold tracking-[0.16em] whitespace-nowrap">
           FIRST MOTION
         </div>
-        <div className="hidden items-baseline gap-5 sm:flex">
+        {/* Four zeros are four numbers that mean nothing. Same call as the headline: the status on
+            the right already says what is happening while there is nothing to count. */}
+        <div className={`hidden items-baseline gap-5 ${snapshot.coveredSince === null ? "" : "sm:flex"}`}>
           {([
             ["USGS", `${snapshot.stats.readings.usgs}`],
             ["EMSC", `${snapshot.stats.readings.emsc}`],
@@ -344,29 +346,42 @@ export function App(): JSX.Element {
           <div>
             <div className="label">Events</div>
             {/*
-              During the replay this counts what is actually on the globe, climbing to the total as
-              the day plays in. The held total sat there unchanged while the globe filled beneath
-              it, which is a true number describing something other than the picture next to it.
+              Before any coverage exists there is no count to show, and a big 0 above "nothing yet ·
+              still filling" was two disclaimers stacked under a number that meant nothing. This says
+              what the app is doing instead, which is the only true thing available at that point.
             */}
-            <div className="mt-1.5 text-[38px] leading-none font-semibold">
-              {(replay ? replay.revealed : shown).toLocaleString("en-GB")}
-            </div>
-            {/*
-              During the replay the rail shows the replayed clock, labelled, because the number
-              above it is counting up through a day that has already happened. Saying "since 22:35"
-              while the globe fills with yesterday's events would be the app describing one thing
-              and showing another.
-            */}
-            {replay ? (
-              <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
-                <span className="font-mono text-ink">{clock(replay.at)}</span>
-                <span className="text-faint">replaying the last day</span>
+            {snapshot.coveredSince === null ? (
+              <div className="mt-2 max-w-[30ch] text-[14px] leading-snug text-dim">
+                Asking USGS and EMSC for the last day.
               </div>
             ) : (
-              <div className="mt-1.5 text-[11px] text-dim">
-                {windowLabel(now, filters.windowMs, snapshot.coveredSince)}
-                {edge.complete ? "" : " · still filling"}
-              </div>
+              <>
+                {/*
+                  During the replay this counts what is actually on the globe, climbing to the total
+                  as the day plays in. The held total sat there unchanged while the globe filled
+                  beneath it, which is a true number describing something other than the picture.
+                */}
+                <div className="mt-1.5 text-[38px] leading-none font-semibold">
+                  {(replay ? replay.revealed : shown).toLocaleString("en-GB")}
+                </div>
+                {/*
+                  During the replay the rail shows the replayed clock, labelled, because the number
+                  above it is counting up through a day that has already happened. Saying "since
+                  22:35" while the globe fills with yesterday's events would describe one thing and
+                  show another.
+                */}
+                {replay ? (
+                  <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
+                    <span className="font-mono text-ink">{clock(replay.at)}</span>
+                    <span className="text-faint">replaying the last day</span>
+                  </div>
+                ) : (
+                  <div className="mt-1.5 text-[11px] text-dim">
+                    {windowLabel(now, filters.windowMs, snapshot.coveredSince)}
+                    {edge.complete ? "" : " · still filling"}
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -389,10 +404,12 @@ export function App(): JSX.Element {
                   type="button"
                   onClick={() => toggleSource(id)}
                   aria-pressed={filters.sources.has(id)}
+                  // The active state had no hover at all, so the two most-pressed buttons in the
+                  // rail stopped acknowledging the pointer once on, which reads as disabled.
                   className={`flex-1 cursor-pointer border px-2.5 py-1.5 text-[11.5px] transition-colors ${
                     filters.sources.has(id)
-                      ? "border-hairline bg-raised text-ink"
-                      : "border-hairline text-faint hover:text-dim"
+                      ? "border-hairline bg-raised text-ink hover:border-faint"
+                      : "border-hairline text-faint hover:bg-raised hover:text-dim"
                   }`}
                 >
                   {SOURCE_NAMES[id]}
@@ -442,12 +459,16 @@ export function App(): JSX.Element {
             onSelect={setSelected}
             announceAbove={announceAbove}
             onAnnounceAboveChange={setAnnounceAbove}
+            waiting={snapshot.coveredSince === null}
           />
         </aside>
 
         {/* Hidden from assistive tech. The parallel accessible feed in step B is the real
             interface for a screen reader; the canvas is never it. */}
         <main className="zone-canvas bg-void" aria-hidden="true">
+          {/* Split out so the rail paints before three.js parses. The fallback is the void the globe
+              sits on, so nothing appears and is then replaced. */}
+          <Suspense fallback={null}>
           <Globe
             feed={feed}
             filters={filters}
@@ -459,6 +480,7 @@ export function App(): JSX.Element {
             onCamera={(state) => { camera.current = state; }}
             onReplay={setReplay}
           />
+          </Suspense>
         </main>
 
         {pinned ? (
