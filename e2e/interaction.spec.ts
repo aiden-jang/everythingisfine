@@ -86,7 +86,10 @@ test("the globe is operable with the canvas hidden", async ({ page }) => {
   // Not merely aria-hidden: actually invisible, so nothing can be passing by accident through the
   // canvas that a screen reader user would never have reached.
   await page.locator("canvas").evaluate((el) => { el.style.visibility = "hidden"; });
-  await expect(page.locator("main")).toHaveAttribute("aria-hidden", "true");
+  // On the canvas, not on the region around it: that region also holds the legend now, which is
+  // content and has to stay reachable.
+  await expect(page.locator("canvas")).toHaveAttribute("aria-hidden", "true");
+  await expect(page.locator("main")).not.toHaveAttribute("aria-hidden", "true");
 
   const feed = page.getByRole("region", { name: "Recent earthquakes" });
   const items = feed.getByRole("button");
@@ -431,10 +434,11 @@ test("the globe is operable from the keyboard, and the keys are written down", a
   await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
   await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
 
-  const rail = page.locator(".zone-rail");
-  await expect(rail).toContainText("orbit");
-  await expect(rail).toContainText("zoom");
-  await expect(rail).toContainText("reset");
+  // The hints moved onto the map, next to the thing the keys move.
+  const zones = page.locator(".zones");
+  await expect(zones).toContainText("orbit");
+  await expect(zones).toContainText("zoom");
+  await expect(zones).toContainText("reset");
 
   // After the entrance has landed. Pressing during the flight compounds off a moving target, which is
   // correct behaviour and makes the destination depend on when the key arrived.
@@ -461,7 +465,7 @@ test("the globe is operable from the keyboard, and the keys are written down", a
   // break every slider it sits next to.
   await page.locator("#mag").focus();
   await page.keyboard.press("ArrowRight");
-  await expect(page.locator(".zone-rail")).toContainText("Magnitude 2.1 and above");
+  await expect(page.locator(".zones")).toContainText("Magnitude 2.1 and above");
   expect(await page.evaluate(() => window.location.hash)).toMatch(/^#at=145,12,1&/);
 });
 

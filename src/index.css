@@ -108,6 +108,7 @@
 
   .zones {
     display: grid;
+    position: relative; /* the desktop panels are absolute against this */
     min-height: 0; /* or the canvas row refuses to shrink and the page grows a scrollbar */
     /* Phone: globe on top, rail becomes a sheet you scroll under it. A passive watchable
        visualization gets most of its shared links opened on a phone. */
@@ -122,16 +123,50 @@
     }
   }
 
+  /*
+   * Desktop: the globe fills the frame and the interface floats on it.
+   *
+   * The rail used to be a column beside the canvas, which meant the planet stopped at a hard vertical
+   * line 356px in and the app read as a dashboard with a globe component in it. Letting the globe run
+   * the full width and putting the panels over it makes the subject the surface everything else sits
+   * on, which is the difference between a page about earthquakes and a window onto them.
+   *
+   * The globe still centres in the whole frame rather than in the space left over, so it passes behind
+   * the rail rather than dodging it. That is the point: a planet that ends where a panel begins is a
+   * picture of a planet.
+   */
   @media (min-width: 1280px) {
     .zones {
       grid-template-rows: 1fr;
-      /* The panel column is `auto`, so it costs nothing until an event is pinned and the globe
-         does not get shoved sideways when one is. */
-      /* 356 rather than 320: the event list is the rail's main content now, and 320 left the
-         place names 167px wide, which cut anything longer than "Flores Region, Indonesia". The
-         globe has the width to spare. */
-      grid-template-columns: 356px minmax(0, 1fr) auto;
-      grid-template-areas: "rail canvas panel";
+      grid-template-columns: 1fr;
+      grid-template-areas: "canvas";
+    }
+
+    .zone-rail,
+    .zone-panel {
+      position: absolute;
+      z-index: 1;
+      top: 0;
+      bottom: 0;
+      /* Its own scroll container, since it no longer has a grid row to be bounded by. */
+      overflow-y: auto;
+      contain: paint;
+      /* Translucent over the globe, blurred so type stays readable against whatever is behind it.
+         `saturate` pulls the blurred data colours down: without it the ramp bleeds through as a wash
+         of orange behind the numbers, which is hue arriving in the chrome by the back door. */
+      background: color-mix(in srgb, var(--color-deck) 82%, transparent);
+      backdrop-filter: blur(18px) saturate(0.6);
+    }
+
+    .zone-rail {
+      left: 0;
+      /* Set by the resizer and remembered. The border lives on the handle, so it can light up. */
+      width: var(--rail-w, 356px);
+    }
+
+    .zone-panel {
+      right: 0;
+      border-left: 1px solid var(--color-hairline);
     }
   }
 

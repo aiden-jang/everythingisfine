@@ -340,6 +340,17 @@ must never blank the scene.
 
 ## 7. Layout
 
+**The globe is the surface, not a component.** At desktop the canvas fills the frame and the rail and
+panel float over it, translucent and blurred. The globe centres in the whole frame, so it continues
+behind the panels rather than stopping at them.
+
+**The legend belongs to the map.** It sits over the canvas beside the marks it explains, with the key
+hints. Below 1280px it returns to the rail, because a floating panel over a 60dvh globe covers the
+subject.
+
+**The rail edge is draggable and remembered**, by pointer and by arrow key. A fixed width is a guess
+about what somebody is doing, and it is wrong about half the time.
+
 Three zones: rail, canvas, detail panel. CSS Grid, never flexbox percentage maths.
 
 - **1280px and up:** rail left (320px), canvas centre (`1fr`), detail panel right (360px) when an

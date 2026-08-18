@@ -132,6 +132,8 @@ export interface LandGeometry {
   /** Triangle indices into `position`. Indexed, because subdivision shares every midpoint between
    *  two triangles and a soup would store each one twice. */
   index: Uint32Array;
+  /** How many triangles arrived wound the wrong way. Zero would mean the source became consistent. */
+  flipped: number;
   /** Line segment pairs for the coastline stroke. */
   coast: Float32Array;
   stats: {
@@ -202,9 +204,46 @@ export function buildLand(): LandGeometry {
     }
   }
 
+  /*
+   * Every triangle wound so its face points away from the centre.
+   *
+   * The land fill is drawn with `depthTest: false` and relies on back-face culling to hide the far
+   * hemisphere, which is the fix for the fill sagging into the ocean sphere. Culling only works if the
+   * winding is consistent, and it was not: earcut preserves the winding of the ring it is given, and
+   * Natural Earth's polygons are not all wound the same way.
+   *
+   * **1,559 of 303,360 triangles faced inward**, so their far-side copies survived culling and their
+   * near-side copies were removed. The symptom is landmasses from the other side of the planet showing
+   * faintly through the ocean, which looks like a transparency setting rather than like a bug.
+   */
+  const index = new Uint32Array(mesh.tris);
+  let flipped = 0;
+  for (let i = 0; i < index.length; i += 3) {
+    const a = index[i]! * 3;
+    const b = index[i + 1]! * 3;
+    const c = index[i + 2]! * 3;
+    const ux = position[b]! - position[a]!;
+    const uy = position[b + 1]! - position[a + 1]!;
+    const uz = position[b + 2]! - position[a + 2]!;
+    const vx = position[c]! - position[a]!;
+    const vy = position[c + 1]! - position[a + 1]!;
+    const vz = position[c + 2]! - position[a + 2]!;
+    const nx = uy * vz - uz * vy;
+    const ny = uz * vx - ux * vz;
+    const nz = ux * vy - uy * vx;
+    // The outward direction at a vertex on a unit sphere is the vertex itself.
+    if (nx * position[a]! + ny * position[a + 1]! + nz * position[a + 2]! < 0) {
+      const swap = index[i + 1]!;
+      index[i + 1] = index[i + 2]!;
+      index[i + 2] = swap;
+      flipped += 1;
+    }
+  }
+
   return {
     position,
-    index: new Uint32Array(mesh.tris),
+    index,
+    flipped,
     coast: new Float32Array(coast),
     stats: {
       vertices: count,
