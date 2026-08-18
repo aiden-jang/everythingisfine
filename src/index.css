@@ -269,10 +269,70 @@
  * and on a phone this is the difference between a control and a dare. Enforcing it globally would
  * have been the easy read of the rule and the wrong one.
  */
+/*
+ * The slider that runs along the magnitude ramp.
+ *
+ * The track is the legend, so this control paints none of its own: it is a transparent hit area
+ * with a thumb, sitting over the gradient. The thumb is `Instrument` with a dark ring, because it
+ * has to stay visible against every colour in both ramps, and brightness is the only channel the
+ * chrome is allowed to use.
+ */
+@layer components {
+  .ramp-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .ramp-slider::-webkit-slider-runnable-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .ramp-slider::-moz-range-track {
+    height: 100%;
+    background: transparent;
+  }
+
+  .ramp-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 4px;
+    height: 18px;
+    border-radius: 1px;
+    background: var(--color-ink);
+    box-shadow: 0 0 0 1.5px var(--color-void);
+  }
+
+  .ramp-slider::-moz-range-thumb {
+    width: 4px;
+    height: 18px;
+    border: 0;
+    border-radius: 1px;
+    background: var(--color-ink);
+    box-shadow: 0 0 0 1.5px var(--color-void);
+  }
+}
+
 @media (pointer: coarse) {
-  .zone-rail button,
-  .zone-panel button {
+  /*
+   * Every control, not just the rail's.
+   *
+   * The first version listed `.zone-rail button, .zone-panel button`, which is a list of the places
+   * that happened to have buttons when it was written. The header toggle and a `summary` were added
+   * later and were 27px and 17px on a phone. Naming regions instead of naming the thing is how a
+   * rule stops covering what it was written for.
+   */
+  button,
+  summary,
+  a[href] {
     min-height: 44px;
+  }
+
+  summary {
+    display: flex;
+    align-items: center;
   }
 }
 

@@ -4,7 +4,7 @@ import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
-import { Legend } from "./app/Legend";
+import { MagnitudeFilter } from "./app/MagnitudeFilter";
 import { decode, encode } from "./app/permalink";
 import type { RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
@@ -30,18 +30,37 @@ function useFeed(): FeedSnapshot {
   return snapshot;
 }
 
-function Row({ label, value, onClick }: {
-  label: string; value: string; onClick?: () => void;
+/*
+ * One row, used by both lists.
+ *
+ * The rail had three control idioms doing two jobs: bordered chips, borderless rows and bare
+ * sliders, arranged by when each was written rather than by what each does. Regions and recent
+ * events are the same gesture, click a thing and go to it, so they are the same row: a value on
+ * the left, a name, a figure on the right.
+ */
+function Row({ lead, label, trail, onClick }: {
+  lead?: string; label: string; trail: string; onClick?: () => void;
 }): JSX.Element {
   const body = (
     <>
-      <span className="truncate">{label}</span>
-      <span className="ml-3 shrink-0 font-mono text-[12px] text-ink">{value}</span>
+      {lead ? (
+        <span className="w-[34px] shrink-0 font-mono text-[12px] text-ink">{lead}</span>
+      ) : null}
+      <span className="min-w-0 flex-1 truncate text-[12px] text-dim">{label}</span>
+      <span className="shrink-0 font-mono text-[11px] text-faint">{trail}</span>
     </>
   );
-  const shared = "flex w-full items-center justify-between border-t border-hairline py-1.5 text-[12px] text-dim";
+  const shared = "flex w-full items-baseline gap-3 border-t border-hairline px-1 py-2 text-left";
   return onClick
-    ? <button type="button" onClick={onClick} className={`${shared} cursor-pointer text-left hover:text-ink`}>{body}</button>
+    ? (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`${shared} cursor-pointer transition-colors hover:bg-raised`}
+      >
+        {body}
+      </button>
+    )
     : <div className={shared}>{body}</div>;
 }
 
@@ -239,15 +258,40 @@ export function App(): JSX.Element {
             </span>
           ))}
         </div>
-        <div className="ml-auto flex items-center gap-4 whitespace-nowrap">
-          <span className="text-[11px] text-faint">wavefront &times;{PLAYBACK}</span>
-          <span className="flex items-center gap-2 text-[11px] text-dim">
+        {/*
+          Was `whitespace-nowrap`, which meant adding one button pushed the header 120px past a
+          phone viewport and 42px past a tablet: nowrap does not shrink, it overflows. The controls
+          stay and the two informational labels drop as room runs out, since a display toggle is
+          something to press and "wavefront x20" is something to read.
+        */}
+        <div className="ml-auto flex min-w-0 items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setRamp((r) => (r === "thermal" ? "cividis" : "thermal"))}
+            aria-pressed={ramp === "cividis"}
+            className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised ${
+              ramp === "cividis" ? "bg-raised text-ink" : "text-faint"
+            }`}
+          >
+            {/* The short label is not an abbreviation of the long one, it is the same words with
+                the ones a narrow screen cannot afford removed. */}
+            <span className="md:hidden">Ramp {ramp === "cividis" ? "CB" : "std"}</span>
+            <span className="hidden md:inline">
+              Colourblind ramp {ramp === "cividis" ? "on" : "off"}
+            </span>
+          </button>
+          <span className="hidden text-[11px] whitespace-nowrap text-faint lg:inline">
+            wavefront &times;{PLAYBACK}
+          </span>
+          <span className="flex items-center gap-2 text-[11px] whitespace-nowrap text-dim">
             <span
               className={`inline-block size-[6px] rounded-full ${
                 live === 2 ? "bg-ink" : live === 1 ? "bg-dim" : "bg-faint"
               }`}
             />
-            {live === 2 ? "both feeds live" : live === 1 ? "one feed live" : "connecting"}
+            <span className="hidden sm:inline">
+              {live === 2 ? "both feeds live" : live === 1 ? "one feed live" : "connecting"}
+            </span>
           </span>
         </div>
       </header>
@@ -266,32 +310,26 @@ export function App(): JSX.Element {
             </div>
           </div>
 
-          {/* What the colours mean. Missing entirely until somebody said the interface was bad. */}
-          <Legend ramp={ramp} />
-
           <div>
-            <label className="label block" htmlFor="mag">
-              Showing M{filters.minMagnitude.toFixed(1)} and above
-            </label>
-            {/* No apply button: the globe answers the slider as it moves. */}
-            <input
-              id="mag"
-              type="range"
-              min="0"
-              max="7"
-              step="0.1"
+            {/* The legend and the filter, as one control: the track is the scale. */}
+            <MagnitudeFilter
+              ramp={ramp}
               value={filters.minMagnitude}
-              className="slider mt-1"
-              onChange={(e) => setFilters((f) => ({ ...f, minMagnitude: Number(e.target.value) }))}
+              onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
             />
-            <div className="mt-1 flex flex-wrap gap-1.5">
+            {/*
+              Sources sit with the magnitude control because both answer "what is on the globe".
+              The colourblind ramp used to sit here too and does not belong: it answers "how is it
+              drawn", which is a display setting, so it moved to the header with the other two.
+            */}
+            <div className="mt-3 flex gap-1.5">
               {(["usgs", "emsc"] as const).map((id) => (
                 <button
                   key={id}
                   type="button"
                   onClick={() => toggleSource(id)}
                   aria-pressed={filters.sources.has(id)}
-                  className={`cursor-pointer border px-2.5 py-1 text-[11px] transition-colors ${
+                  className={`flex-1 cursor-pointer border px-2.5 py-1.5 text-[11.5px] transition-colors ${
                     filters.sources.has(id)
                       ? "border-hairline bg-raised text-ink"
                       : "border-hairline text-faint hover:text-dim"
@@ -300,16 +338,6 @@ export function App(): JSX.Element {
                   {SOURCE_NAMES[id]}
                 </button>
               ))}
-              <button
-                type="button"
-                onClick={() => setRamp((r) => (r === "thermal" ? "cividis" : "thermal"))}
-                aria-pressed={ramp === "cividis"}
-                className={`cursor-pointer border border-hairline px-2.5 py-1 text-[11px] transition-colors ${
-                  ramp === "cividis" ? "bg-raised text-ink" : "text-faint hover:text-dim"
-                }`}
-              >
-                Colourblind ramp {ramp === "cividis" ? "on" : "off"}
-              </button>
             </div>
           </div>
 
@@ -320,7 +348,7 @@ export function App(): JSX.Element {
                 <Row
                   key={region.name}
                   label={region.name}
-                  value={`${count}`}
+                  trail={`${count}`}
                   onClick={() => flyTo.current(region.lon, region.lat, region.zoom)}
                 />
               ))}
