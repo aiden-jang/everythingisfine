@@ -968,6 +968,9 @@ adjudicate between a flat thing and a curved one.
 
 ## The entrance is the last day, played in
 
+Later shortened to 2.8 seconds and made the first of two clauses; see the opening entry near the end
+of this file. What follows is why it exists at all.
+
 The wavefront is the signature and almost nobody ever saw one. Events arrive every few minutes, so a
 visitor who looks for ten seconds sees a static scatter and none of the motion the design is built
 around, while the app holds a complete day of history and draws all of it at once with its time
@@ -1357,6 +1360,64 @@ once entering the strip and once leaving. It is now eased over 130ms by the fram
 owns everything else that moves, with the fade driving the markers and the wavefronts from one value.
 Under `prefers-reduced-motion` it steps straight to the target rather than easing briefly, on the same
 reasoning as the entrance: a shortened version of a motion somebody asked not to see is still motion.
+
+## The opening: the dots draw the lines
+
+The old entrance was three things moving at once, and it filled the whole ten seconds: a camera
+flying in from 40 degrees while zooming, a day of seismicity replaying at 20x for seven seconds, and
+one wavefront. It was also, by then, partly redundant. The replay existed because nothing in the app
+said when anything happened; the activity strip now answers that permanently and more precisely.
+
+The app's one real insight is that earthquakes are not scattered, they trace plate edges. The
+boundaries were drawn from the first frame, so a viewer saw a pattern already explained and read it as
+a map. The opening now sequences it: the day lands, then the boundaries grow outward **from the
+earthquakes**, nearest segments first. The dots draw the lines.
+
+Growing from the events rather than fading in or wiping across, because a fade says nothing and a wipe
+has a direction that means nothing. Growing from the dots is the claim the picture is making.
+
+**Ordering plus a draw range, not a shader.** Reveal-by-threshold wants a per-vertex attribute and a
+custom material on a line layer that otherwise needs neither. Sorting 2,479 segments once by squared
+chord distance to the nearest event and then sliding `drawRange` gets the same picture out of code
+that already exists. Squared chord, never an angle: monotonic in the angle and no inverse trig across
+half a million pairs.
+
+## Building it wrong twice, and one wasted detour
+
+**The first version was too subtle to be a moment.** The boundaries are quiet chrome on purpose, so
+dim lines appearing over 1.5 seconds is a detail, not a revelation. A second `LineSegments` sharing
+the same buffer draws a brighter band at the growing end and settles behind itself, which is the same
+information with the revelation visible. Two draw calls, no shader, and the band is just a second draw
+range sliding along a buffer that is already sorted.
+
+**Then I wasted a detour comparing screenshots.** Three frames looked like the reveal was running
+*backwards*, so I went hunting for buffer corruption. It was not: a probe showed `drawRange` climbing
+monotonically to 4,958 of 4,958. What had happened is that I was reading 1px lines at 0.9 opacity
+across screenshots at different scales and reaching a different conclusion each time. The fix was to
+stop looking and write the test that settles it, which asserts the reordered buffer holds exactly the
+same multiset of segments as the original, so the settled picture is provably identical to the
+unordered one. Two minutes of test against twenty of squinting.
+
+One of those screenshots was also 320px tall because the viewport was 1100px wide, below the 1280
+breakpoint, so the rail was stacked above the canvas and had taken the height. Verifying a desktop
+layout in a tablet layout.
+
+## Shortening the replay moved something it was tuned against
+
+Seven seconds to 2.8, so the reveal has room. `REPLAY_FRONT_MIN_MAG` was picked at 4.5 to give roughly
+three fronts a second across a day's fifteen to twenty-five M4.5+ events, and cutting the duration
+without touching it doubled the rate to a firework. Raised to 5.0, where a day yields five to eight,
+which restores the tempo the number was chosen for. A quiet day with nothing above 5.0 still gets the
+single front every cold load fires.
+
+That is the kind of coupling worth writing down: the constant was not wrong, its denominator moved.
+
+**Not verified in a browser test.** The sequencing is eight lines in the frame loop and the draw range
+is not reachable from the DOM, so locking it would mean exporting the scene for a test to poke at. The
+ordering invariants are unit-tested and the sequence was checked by screenshot. Under
+`prefers-reduced-motion` the reveal is skipped entirely and the boundaries are simply present, on the
+same reasoning as the entrance: a shortened version of a motion somebody asked not to see is still
+motion.
 
 ## Open, and honestly so
 

@@ -7,7 +7,7 @@ import {
   buildLand, RADIUS_ATMOSPHERE, RADIUS_GRATICULE, RADIUS_SPHERE, type LandGeometry,
 } from "../geo/land";
 import { DEG, distanceKm, graticule } from "../geo/sphere";
-import { buildPlates } from "../geo/plates";
+import { buildPlates, orderByProximity } from "../geo/plates";
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
@@ -137,6 +137,11 @@ export interface Globe {
   controls: Controls;
   events: EventLayer;
   rings: RingLayer;
+  /** The entrance reveal: boundaries grow outward from the events rather than arriving with them. */
+  plates: {
+    orderFrom: (points: readonly { lon: number; lat: number }[]) => void;
+    reveal: (t: number) => void;
+  };
   /** Key of the drawn event nearest a client pixel, or null when the pointer is over nothing. */
   hitTest: (
     clientX: number, clientY: number, store: HitStore, filters: Filters, now: number,
@@ -215,13 +220,38 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    * place. Over the graticule too, because these are real geography and that is scaffolding.
    */
   const plateGeom = new BufferGeometry();
-  plateGeom.setAttribute("position", new BufferAttribute(buildPlates(), 3));
+  let plateData = buildPlates();
+  const plateAttr = new BufferAttribute(plateData, 3);
+  plateGeom.setAttribute("position", plateAttr);
+  const plateSegments = plateData.length / 6;
+  // Hidden until the entrance reveals them. The whole point is that the dots read as scattered
+  // first, which they cannot do with the explanation already on screen.
+  plateGeom.setDrawRange(0, 0);
   const plateLines = new LineSegments(
     plateGeom,
     new LineBasicMaterial({ color: COLOR_PLATES, transparent: true, opacity: 0.9 }),
   );
   plateLines.renderOrder = 3;
   spin.add(plateLines);
+
+  /*
+   * The leading edge of the reveal, brighter, sharing the same geometry.
+   *
+   * Fading the boundaries in was correct and did not land: they are quiet chrome by design, so a
+   * dim line appearing is a detail rather than a moment. A bright band travelling outward from the
+   * earthquakes and settling to resting weight behind itself is the same information with the
+   * revelation actually visible.
+   *
+   * Two draw calls over one buffer rather than a shader. The geometry is already sorted nearest-first,
+   * so "the band" is just a second draw range sliding along it.
+   */
+  const plateEdge = new LineSegments(
+    plateGeom.clone(),
+    new LineBasicMaterial({ color: 0x93a5c0, transparent: true, opacity: 0.95 }),
+  );
+  plateEdge.renderOrder = 3;
+  plateEdge.geometry.setDrawRange(0, 0);
+  spin.add(plateEdge);
 
   const coastGeom = new BufferGeometry();
   coastGeom.setAttribute("position", new BufferAttribute(land.coast, 3));
@@ -287,6 +317,27 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   return {
     resize,
     controls,
+    plates: {
+      /** Sorts the boundaries so the reveal grows outward from the events, then starts it hidden. */
+      orderFrom: (points: readonly { lon: number; lat: number }[]): void => {
+        if (points.length === 0) return;
+        plateData = orderByProximity(plateData, points);
+        plateAttr.array.set(plateData);
+        plateAttr.needsUpdate = true;
+        const edge = plateEdge.geometry.getAttribute("position");
+        (edge.array as Float32Array).set(plateData);
+        edge.needsUpdate = true;
+      },
+      /** 0 hides every boundary, 1 draws all of them, with a bright band at the growing end. */
+      reveal: (t: number): void => {
+        const clamped = Math.max(0, Math.min(1, t));
+        const drawn = Math.round(clamped * plateSegments);
+        const band = clamped >= 1 ? 0 : Math.round(plateSegments * 0.12);
+        const settled = Math.max(0, drawn - band);
+        plateGeom.setDrawRange(0, settled * 2);
+        plateEdge.geometry.setDrawRange(settled * 2, (drawn - settled) * 2);
+      },
+    },
     /*
      * What is under the pointer, answered geographically first and in pixels second.
      *

@@ -13,18 +13,27 @@
  *
  * It is a replay and it says so. Nothing here invents an event, reorders one, or changes a time:
  * the only thing being animated is *when the app chooses to draw* something it already has.
+ *
+ * Shortened from seven seconds to 2.8. At seven it was nearly the whole first ten seconds and it now
+ * shares them with the boundary reveal that follows it, which is the beat that carries the point. The
+ * activity strip also answers "when" permanently and precisely, so the replay no longer has to.
  */
 
 /** Long enough to read as a day passing, short enough that nobody waits through it twice. */
-export const REPLAY_SECONDS = 7;
+export const REPLAY_SECONDS = 2.8;
 
 /**
  * Fronts are spawned only above this magnitude during the replay.
  *
  * A day holds several hundred events and firing a front for each would be noise, not signal. Above
- * 4.5 a day yields something like fifteen to twenty-five worldwide, which lands as a rhythm.
+ * 4.5 a day yields fifteen to twenty-five worldwide.
+ *
+ * Raised from 4.5 when the replay went from seven seconds to 2.8. The threshold was chosen for a
+ * rhythm of roughly three fronts a second, and shortening the replay without moving it doubled that
+ * to a firework. Above 5.0 a day yields five to eight, which restores the tempo the number was picked
+ * for. A quiet day with nothing above 5.0 still gets the single front every cold load fires.
  */
-export const REPLAY_FRONT_MIN_MAG = 4.5;
+export const REPLAY_FRONT_MIN_MAG = 5;
 
 export interface Replay {
   /** Origin time the replay has reached, or null once it is over. */
