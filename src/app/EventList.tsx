@@ -94,11 +94,21 @@ export function EventList({
         <span className="font-mono text-[11px] text-faint">newest first</span>
       </div>
 
-      <label className="sr-only" htmlFor="announce">
-        Announce events at or above magnitude {announceAbove.toFixed(1)}
-      </label>
-      <div className="mt-2 flex items-center gap-2">
-        <span className="text-[11px] whitespace-nowrap text-dim">announce M{announceAbove.toFixed(1)}+</span>
+      {/*
+       * The announce threshold sits in a details, not beside the list as a second bare slider.
+       *
+       * Two identical-looking sliders one above the other, one filtering the globe and one setting
+       * a screen-reader threshold, read as one control with a duplicate. It is a setting rather
+       * than a filter, almost nobody changes it, and the people it matters most to reach it by
+       * keyboard either way.
+       */}
+      <details className="mt-1.5">
+        <summary className="cursor-pointer list-none text-[11px] text-faint hover:text-dim">
+          Announce at M{announceAbove.toFixed(1)} and above
+        </summary>
+        <label className="sr-only" htmlFor="announce">
+          Announce events at or above magnitude {announceAbove.toFixed(1)}
+        </label>
         <input
           id="announce"
           type="range"
@@ -109,7 +119,7 @@ export function EventList({
           className="slider"
           onChange={(e) => onAnnounceAboveChange(Number(e.target.value))}
         />
-      </div>
+      </details>
 
       {/* One tab stop, then arrows. Tabbing through sixty earthquakes to reach the next control
           would be its own accessibility failure. */}
@@ -123,7 +133,7 @@ export function EventList({
               aria-current={quake.key === selected ? "true" : undefined}
               onFocus={() => { cursorRef.current = i; setCursor(i); }}
               onClick={() => onSelect(quake.key === selected ? null : quake.key)}
-              className={`flex w-full cursor-pointer items-start gap-3 border-t border-hairline px-1 py-2.5 text-left transition-colors hover:bg-raised ${
+              className={`flex w-full cursor-pointer items-start gap-3 border-t border-hairline px-1 py-2 text-left transition-colors hover:bg-raised ${
                 quake.key === selected ? "bg-raised" : ""
               }`}
             >

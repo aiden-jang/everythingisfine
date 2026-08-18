@@ -882,6 +882,48 @@ distribution is the same mistake as setting the association windows by reasoning
 
 ---
 
+## The legend and the magnitude filter were the same control
+
+The rail had three control idioms doing two jobs, arranged by when each was written rather than by
+what each does: bordered chips, borderless rows, and two bare sliders that looked identical while
+one filtered the globe and the other set a screen-reader threshold.
+
+The fix that mattered was noticing the legend and the filter were always about the same quantity.
+One said what the colours mean, the other which of them to draw. **The slider now runs along the
+ramp**: the track is the scale, the thumb is the threshold, and the excluded range is dimmed in
+place rather than cut off, because a legend that changes length when you filter is no longer a
+scale. Neither half needs a label explaining the other, and a whole block left the rail.
+
+Everything else followed from grouping by function:
+
+- **The colourblind ramp toggle moved to the header.** It sat with the source filters and answers a
+  different question: sources are "what is on the globe", the ramp is "how is it drawn". Display
+  settings belong with the other display readouts.
+- **One row, used twice.** Regions and recent events are the same gesture, click a thing and go to
+  it, so they are the same row. Two idioms total now: chips for toggles, rows for lists.
+- **The announce threshold went into a `details`.** Two identical sliders stacked above each other
+  read as one control with a duplicate. It is a setting almost nobody changes, and the people it
+  matters to reach it by keyboard either way.
+
+### Adding one button broke the header at every width
+
+The right-hand group carried `whitespace-nowrap`, so the new toggle pushed the header **120px past a
+phone viewport and 42px past a tablet**. Nowrap does not shrink, it overflows. The controls now stay
+and the two informational labels drop as room runs out, because a toggle is something to press and
+"wavefront ×20" is something to read.
+
+### The touch-target rule named places instead of naming the thing
+
+It read `.zone-rail button, .zone-panel button`: a list of the places that happened to have buttons
+the day it was written. The header toggle and the new `summary` were added later and came in at 27px
+and 17px on a phone, and the rule sailed past both. It applies to `button, summary, a[href]` now.
+
+That is the same failure as the four other rules in this log that were true in a document and
+enforced nowhere. A rule scoped to today's markup expires quietly the first time somebody adds a
+control.
+
+---
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
