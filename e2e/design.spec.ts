@@ -127,6 +127,52 @@ for (const bp of BREAKPOINTS) {
   });
 }
 
+test("every control clears 44px where there is a finger", async ({ browser }) => {
+  /*
+   * Emulated with a real coarse pointer, not merely at a phone width.
+   *
+   * DESIGN.md asks for 44px *touch* targets, and the first version of this test asserted it at
+   * desktop width with a mouse. It failed on three controls, which was correct, and it was
+   * measuring the wrong thing: a mouse is precise and 44px buttons on a desktop rail are chunky
+   * for no benefit. The rule is scoped to `pointer: coarse` in CSS, so the test has to be too, or
+   * it is asserting something the design never claimed.
+   */
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    hasTouch: true,
+    isMobile: true,
+  });
+  const page = await context.newPage();
+  await page.goto("http://localhost:31600");
+  await waitForData(page);
+  expect(await page.evaluate(() => window.matchMedia("(pointer: coarse)").matches)).toBe(true);
+
+  /*
+   * The list shipped at 31px a row and the filter buttons at 27px: not merely cramped, in breach of
+   * the design system's own rule. Found by measuring after somebody said the list looked bad, which
+   * is not a process that scales, which is why it is a test now.
+   *
+   * The slider is exempt: its hit area is the 18px track, and browsers already give range inputs a
+   * generous invisible target that `getBoundingClientRect` does not report.
+   */
+  const small = await page.evaluate(() => {
+    const bad: { tag: string; height: number }[] = [];
+    for (const el of Array.from(document.querySelectorAll("button, a[href]"))) {
+      const box = el.getBoundingClientRect();
+      if (box.height === 0) continue;
+      if (box.height < 44) {
+        bad.push({
+          tag: `${el.tagName.toLowerCase()} "${(el.textContent ?? "").trim().slice(0, 28)}"`,
+          height: Math.round(box.height),
+        });
+      }
+    }
+    return bad;
+  });
+  expect(small).toEqual([]);
+  await context.close();
+});
+
 test("every number that updates has tabular figures", async ({ page }) => {
   await page.goto("/");
   await waitForData(page);

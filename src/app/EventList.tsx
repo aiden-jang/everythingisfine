@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { Quake } from "../data/types";
-import { ago, coordinates, depth, place, reportedBy } from "./format";
+import { ago, coordinates, depth, place, reportedBy, SOURCE_NAMES } from "./format";
 
 /*
  * The list of recent events. One list, for everybody.
@@ -123,25 +123,37 @@ export function EventList({
               aria-current={quake.key === selected ? "true" : undefined}
               onFocus={() => { cursorRef.current = i; setCursor(i); }}
               onClick={() => onSelect(quake.key === selected ? null : quake.key)}
-              className={`flex w-full cursor-pointer items-baseline gap-2 border-t border-hairline py-1.5 text-left transition-colors hover:bg-raised ${
+              className={`flex w-full cursor-pointer items-start gap-3 border-t border-hairline px-1 py-2.5 text-left transition-colors hover:bg-raised ${
                 quake.key === selected ? "bg-raised" : ""
               }`}
             >
-              <span className="w-[42px] shrink-0 font-mono text-[12px] text-ink">
+              {/*
+               * Two lines, not one.
+               *
+               * A single line measured 31px tall, against this design system's own 44px minimum
+               * touch target, and squeezed the place name into 167px so anything longer than
+               * "Flores Region, Indonesia" was cut off mid-word. Stacking clears the target, gives
+               * the name the full width, and has room for the detail that otherwise required
+               * pinning the event to see at all.
+               */}
+              <span className="w-[34px] shrink-0 pt-px font-mono text-[14px] leading-none text-ink">
                 {quake.primary.magnitude.toFixed(1)}
               </span>
-              <span className="min-w-0 flex-1 truncate text-[12px] text-dim">
-                {place(quake.primary.place)}
-              </span>
-              <span className="w-[46px] shrink-0 text-right font-mono text-[10.5px] text-faint">
-                {ago(quake.primary.time, now)
-                  .replace(" ago", "").replace(/ minutes?/, "m")
-                  .replace(/ hours?/, "h").replace(/ days?/, "d").replace("just now", "now")}
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[12.5px] leading-tight text-ink">
+                  {place(quake.primary.place)}
+                </span>
+                <span className="mt-1 block truncate font-mono text-[10.5px] leading-none text-faint">
+                  {ago(quake.primary.time, now)
+                    .replace(" ago", "").replace(/ minutes?/, "m")
+                    .replace(/ hours?/, "h").replace(/ days?/, "d")}
+                  {` · ${depth(quake.primary)}`}
+                  {` · ${quake.readings.map((r) => SOURCE_NAMES[r.source]).join(" ")}`}
+                </span>
               </span>
               {/* Read aloud, never shown: on screen the globe already says where. */}
               <span className="sr-only">
-                {`. ${coordinates(quake.primary)}, ${depth(quake.primary)} deep, `}
-                {`reported by ${reportedBy(quake)}.`}
+                {`. ${coordinates(quake.primary)}, reported by ${reportedBy(quake)}.`}
                 {quake.key === selected ? " Currently pinned." : ""}
               </span>
             </button>

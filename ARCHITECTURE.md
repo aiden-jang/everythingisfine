@@ -824,6 +824,31 @@ number now.
 
 ---
 
+## Cramped rows were a rule violation, not a taste problem
+
+Told the list rows were cramped, I measured rather than nudged padding. The rows were **31px tall
+against DESIGN.md section 7's own 44px minimum touch target**, and the place column was 167px, which
+cut anything longer than "Flores Region, Indonesia".
+
+Two lines fixed both: 51px rows, a 253px place column, **0 of 60 truncated** where names like "Near
+N Coast Of Papua, Indonesia" had been cut mid-word, and room on the second line for the depth and
+the reporting agencies, which previously required pinning the event to see at all. The rail went to
+356px because the list is its main content now.
+
+### The rule had been in the document since step 1 and nothing enforced it
+
+So it became a test, and the test immediately found two more breaches nobody had mentioned: the
+source filter buttons at 27px and the region rows at 31px. One complaint, three violations.
+
+**And the first version of that test was itself wrong.** It asserted 44px at desktop width with a
+mouse. DESIGN.md says *touch* targets. A mouse is precise and 44px buttons on a desktop rail are
+chunky for no benefit, so enforcing it globally would have been the easy read of the rule and the
+wrong one. The CSS is scoped to `pointer: coarse` and the test emulates a real coarse pointer,
+asserting `matchMedia("(pointer: coarse)")` before asserting anything else, because a test that
+cannot prove it is in the mode it claims to test is the reduced-motion mistake again.
+
+---
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
