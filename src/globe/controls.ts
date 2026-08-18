@@ -478,10 +478,20 @@ export function createControls(
       // Not shortened under reduced motion, skipped. A brief version of a motion somebody asked
       // not to see is still the motion.
       if (reduced.matches) return;
-      lon = framing.lon - ENTRANCE_DEG;
+      /*
+       * The destination is wherever the camera is already aimed, not the default framing.
+       *
+       * A permalink calls `flyTo` while the globe is being set up and `enter` runs after the first
+       * draw, so naming the framing here quietly discarded the shared camera: every link anybody
+       * sent opened on the default view at zoom 1, which is the one outcome a permalink exists to
+       * prevent. Nothing failed, which is why it survived: the entrance looked correct.
+       */
+      const to = target ?? { lon, lat, zoom };
+      lon = to.lon - ENTRANCE_DEG;
+      lat = to.lat;
       zoom = ENTRANCE_ZOOM;
       apply();
-      target = { lon: framing.lon, lat: framing.lat, zoom: 1 };
+      target = to;
     },
     project: (pLon, pLat) => {
       const phi = pLat * DEG;

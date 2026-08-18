@@ -105,6 +105,7 @@ Active, selected and focused states are communicated by **brightness, weight and
 | Sphere | `#0A101C` | The ocean face of the globe, a step above Void so the silhouette reads. |
 | Landmass | `#1E293F` | Continent fill. 1.31:1 against Sphere, and 1.57x darker than the ramp's floor so it can never read as an event. Was `#151D2E`, which measured 1.13:1: not restraint, invisibility. |
 | Coastline | `#31405D` | 1px land stroke. Raised further than the fill, because definition comes from edges and a brighter line adds crispness without adding mass. |
+| Plate boundary | `#3D4E6E` | Tectonic edges at 90%, deliberately brighter than the coastline. A coastline is orientation; a plate boundary is the explanation for why the earthquakes are in a line, and in a seismic map the explanation should not be the fainter mark. |
 | Graticule | `#243149` | Meridians and parallels at 38%. Deliberately left behind the land it sits under: it is scaffolding. |
 | Deck | `#0D1420` | Rail and panel background. |
 | Deck Raised | `#141C2B` | Detail panel, popovers, anything above the rail. |
@@ -409,7 +410,7 @@ for once and never move; application code and geometry are what drift, so they a
 | Chunk | Budget (gzip) | At step 2 |
 |---|---|---|
 | Application code | 60KB | 2.3KB |
-| Coastline geometry | 40KB | 26.5KB |
+| Coastline and plate geometry | 40KB | 36.8KB |
 | three.js | 135KB | 127.3KB |
 | React | 50KB | 45.7KB |
 

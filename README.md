@@ -112,6 +112,12 @@ permission, and the custom domain is created by Wrangler on first deploy.
 
 [DEPLOY.md](DEPLOY.md) has the whole picture, including what to do when it goes wrong.
 
+## Where the data comes from
+
+Live seismicity from **USGS** (polled) and **EMSC** (WebSocket). Coastlines from **Natural Earth**,
+public domain. Plate boundaries from **PB2002** (Bird, P., 2003, *An updated digital model of plate
+boundaries*, Geochemistry Geophysics Geosystems 4(3)), public domain, simplified to 0.15 degrees.
+
 ## What is wrong with it
 
 **Aftershocks can be swallowed.** Association uses time and distance, so a genuine aftershock within

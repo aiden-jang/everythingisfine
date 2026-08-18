@@ -4,3 +4,5 @@ dist
 *.local
 .vite
 .wrangler
+test-results
+playwright-report

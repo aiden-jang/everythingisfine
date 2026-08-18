@@ -127,7 +127,7 @@ export function createRingLayer(ramp: RampName = "thermal"): RingLayer {
 
   const object = new LineSegments(geometry, material);
   object.frustumCulled = false;
-  object.renderOrder = 5;
+  object.renderOrder = 6;
 
   // Scratch, reused across frames. Allocating a basis per ring per frame is the same mistake the
   // event layer's inlined projection exists to avoid.

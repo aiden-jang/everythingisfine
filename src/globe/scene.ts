@@ -7,6 +7,7 @@ import {
   buildLand, RADIUS_ATMOSPHERE, RADIUS_GRATICULE, RADIUS_SPHERE, type LandGeometry,
 } from "../geo/land";
 import { DEG, distanceKm, graticule } from "../geo/sphere";
+import { buildPlates } from "../geo/plates";
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
@@ -72,6 +73,18 @@ const COLOR_LAND = 0x1e293f;
 const COLOR_COAST = 0x31405d;
 /** The graticule keeps the old, dimmer value: it is scaffolding, and it should stay behind land. */
 const COLOR_GRATICULE = 0x243149;
+/*
+ * Plate boundaries, brighter than the coastline.
+ *
+ * The first pass gave them the coastline's colour at 62% and they were nearly invisible, which
+ * defeats the entire reason for adding them: a line you cannot see cannot explain the pattern of
+ * dots sitting on it.
+ *
+ * They outrank the coastline deliberately. A coastline is orientation, it tells you where you are
+ * looking. A plate boundary is the explanation, it tells you why the earthquakes are in a line. In
+ * a seismic map the explanation should not be the fainter mark.
+ */
+const COLOR_PLATES = 0x3d4e6e;
 const COLOR_RIM = new Color(0x7896be);
 
 /** Where the camera settles. The Ring of Fire is where the data lives, so it faces the viewer. */
@@ -193,10 +206,27 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   grat.renderOrder = 2;
   spin.add(grat);
 
+  /*
+   * Boundaries draw over the land, and that is the right way round.
+   *
+   * The instinct is to tuck them under the continents so the land reads as solid. That would hide
+   * the Himalayan front, the San Andreas and the Anatolian faults, which are the boundaries a
+   * viewer is most likely to recognise and the ones whose earthquakes are on land in the first
+   * place. Over the graticule too, because these are real geography and that is scaffolding.
+   */
+  const plateGeom = new BufferGeometry();
+  plateGeom.setAttribute("position", new BufferAttribute(buildPlates(), 3));
+  const plateLines = new LineSegments(
+    plateGeom,
+    new LineBasicMaterial({ color: COLOR_PLATES, transparent: true, opacity: 0.9 }),
+  );
+  plateLines.renderOrder = 3;
+  spin.add(plateLines);
+
   const coastGeom = new BufferGeometry();
   coastGeom.setAttribute("position", new BufferAttribute(land.coast, 3));
   const coast = new LineSegments(coastGeom, new LineBasicMaterial({ color: COLOR_COAST }));
-  coast.renderOrder = 3;
+  coast.renderOrder = 4;
   spin.add(coast);
 
   // The shell is only a container: it has to be wider than uOuter so the falloff is not clipped by
