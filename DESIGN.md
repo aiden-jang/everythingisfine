@@ -131,6 +131,19 @@ It is allowed because it sits on the silhouette where no marker is ever drawn, i
 value, and a sphere without it looks like a flat disc. Naming the exception is the point: an
 unstated exception becomes a precedent, and the next one will be a blue button.
 
+### 3.1.0 The globe is lit, and the light is a fact
+
+Day and night are drawn from the real subsolar point, computed from the clock. It is the one thing on
+the canvas that is neither chrome nor data, and it earns its place twice: it gives the sphere a form,
+so it reads as a planet rather than a disc, and it says *this minute* without a caption.
+
+Achromatic, like everything else outside the ramp. A warm daylight would put hue on the one surface the
+data is drawn against, which is the surface most in need of staying out of the way.
+
+Geography dims; data does not. The land, graticule, plate boundaries and coastlines darken together on
+the night side. The markers and wavefronts are drawn over it untouched, because an earthquake at 3am is
+not a smaller earthquake.
+
 ### 3.1.1 Defaults count as chrome
 
 The two-palette rule applies to anything the browser will paint, not only to elements the contract

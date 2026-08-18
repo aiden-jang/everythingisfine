@@ -49,6 +49,8 @@ export const RADIUS_GRATICULE = 1.003;
  * shell and it stops being a halo at the horizon and becomes a wash over the entire screen. The
  * two constants live one import apart rather than as unrelated numbers in two files.
  */
+/** Between the coastline and the markers: night dims the geography and never the data. */
+export const RADIUS_NIGHT = 1.0045;
 export const RADIUS_ATMOSPHERE = 1.3;
 
 type Ring = number[][];

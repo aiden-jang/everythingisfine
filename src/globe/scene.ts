@@ -1,13 +1,15 @@
 import {
-  AdditiveBlending, BackSide, BufferAttribute, BufferGeometry, Color, Group,
+  AdditiveBlending, BackSide, BufferAttribute, BufferGeometry, Color, FrontSide, Group,
   LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene,
-  ShaderMaterial, SphereGeometry, WebGLRenderer,
+  ShaderMaterial, SphereGeometry, Vector3, WebGLRenderer,
 } from "three";
 import {
-  buildLand, RADIUS_ATMOSPHERE, RADIUS_GRATICULE, RADIUS_SPHERE, type LandGeometry,
+  buildLand, RADIUS_ATMOSPHERE, RADIUS_GRATICULE, RADIUS_NIGHT, RADIUS_SPHERE,
+  type LandGeometry,
 } from "../geo/land";
 import { DEG, distanceKm, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
+import { subsolarPoint } from "../geo/sun";
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
@@ -259,6 +261,97 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   coast.renderOrder = 4;
   spin.add(coast);
 
+  /*
+   * Night, as a shell over the geography and under the data.
+   *
+   * The globe was a navy disc with outlines on it: correct, unlit, and reading as a diagram of Earth
+   * rather than as Earth. A terminator is the cheapest thing that fixes that, and it fixes it with a
+   * fact: the sun really is overhead somewhere right now, and half the earthquakes on screen are
+   * happening in the dark.
+   *
+   * One shell rather than a light on each layer. The land fill, the graticule, the plate boundaries
+   * and the coastlines all need to dim together or the night side looks like a rendering fault, and
+   * four shaders that must agree is four chances for them not to.
+   *
+   * Above the coastline and below the markers. An earthquake at 3am is not dimmer than one at noon,
+   * so the data layers are drawn after this and are untouched by it.
+   */
+  const nightGeom = new SphereGeometry(RADIUS_NIGHT, 96, 64);
+  const night = new Mesh(
+    nightGeom,
+    new ShaderMaterial({
+      vertexShader: /* glsl */ `
+        varying vec3 vNormal;
+        void main() {
+          vNormal = normalize((modelMatrix * vec4(position, 1.0)).xyz);
+          gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+        }`,
+      fragmentShader: /* glsl */ `
+        uniform vec3 uSun;
+        uniform vec3 uDayColor;
+        uniform float uDepth;
+        uniform float uLift;
+        varying vec3 vNormal;
+
+        void main() {
+          float sun = dot(normalize(vNormal), normalize(uSun));
+
+          /*
+           * Darkens one side and lifts the other, in one pass.
+           *
+           * Darkening alone made the globe dimmer rather than lit: the night side receded and the day
+           * side stayed exactly as flat as before, so the sphere still read as a disc with a shadow on
+           * it instead of as a ball with a sun somewhere.
+           *
+           * The two factors are deliberately disjoint. They meet at zero across the terminator, so
+           * nothing paints there at all: overlapping them puts a band of mid-grey along the edge,
+           * which reads as haze on the lens rather than as dawn.
+           *
+           * The real terminator is not a hard edge either. Refraction and the sun's own width spread
+           * civil twilight over about six degrees, and a hard line on a sphere this size looks like a
+           * clipping fault rather than like nightfall.
+           */
+          float night = smoothstep(0.10, -0.10, sun);
+          float day = smoothstep(0.10, 0.55, sun);
+          gl_FragColor = vec4(uDayColor * day, night * uDepth + day * uLift);
+        }`,
+      uniforms: {
+        uSun: { value: new Vector3(0, 0, 1) },
+        // Achromatic, like every other piece of chrome: a warm daylight would put hue on the one
+        // surface the data is drawn against.
+        uDayColor: { value: new Color(0x9fb0cc) },
+        // Deep enough to read as night, shallow enough that the coastlines survive it: the geography
+        // on the dark side still has to be legible, because half the events are sitting on it.
+        uDepth: { value: 0.38 },
+        uLift: { value: 0.11 },
+      },
+      transparent: true,
+      depthWrite: false,
+      depthTest: false,
+      side: FrontSide,
+    }),
+  );
+  night.renderOrder = 4.5;
+  spin.add(night);
+
+  const sunDir = new Vector3();
+  /*
+   * Recomputed per minute, not per frame and not once.
+   *
+   * Once is wrong for a page somebody leaves open: the terminator would freeze at the moment they
+   * opened it while the earthquakes kept arriving, which is a stale claim about the world sitting
+   * next to a live one. Per frame is pointless, since the edge moves a quarter of a degree a minute.
+   */
+  let sunMinute = -1;
+  const aimSun = (at: number): void => {
+    const { lon, lat } = subsolarPoint(at);
+    const phi = lat * (Math.PI / 180);
+    const lam = lon * (Math.PI / 180);
+    const c = Math.cos(phi);
+    sunDir.set(c * Math.sin(lam), Math.sin(phi), c * Math.cos(lam));
+    (night.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
+  };
+
   // The shell is only a container: it has to be wider than uOuter so the falloff is not clipped by
   // its own geometry, and beyond that its radius does not affect the picture.
   const rim = new Mesh(
@@ -391,7 +484,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     events,
     rings,
-    render: () => renderer.render(scene, camera),
+    render: () => {
+      const minute = Math.floor(Date.now() / 60_000);
+      if (minute !== sunMinute) {
+        sunMinute = minute;
+        aimSun(Date.now());
+      }
+      renderer.render(scene, camera);
+    },
     dispose: () => {
       events.dispose();
       rings.dispose();
