@@ -325,6 +325,15 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
    * nothing under two disclaimers stacked by two independently reasonable branches. Neither of them
    * was wrong on its own, which is why nobody had read the sentence they composed.
    */
+  // The socket has to be stubbed, not routed: EMSC pushes over a WebSocket and `page.route` never
+  // sees it, so one live event slipped in and the rail was no longer empty.
+  await page.addInitScript(() => {
+    class Dead {
+      addEventListener(): void {}
+      close(): void {}
+    }
+    (window as unknown as { WebSocket: unknown }).WebSocket = Dead;
+  });
   await page.route(/seismicportal\.eu/, (route) => route.abort());
   await page.route(/\.geojson/, async () => { /* held open, so coverage never arrives */ });
 
@@ -434,6 +443,12 @@ test("the globe is operable from the keyboard, and the keys are written down", a
   await expect(rail).toContainText("zoom");
   await expect(rail).toContainText("reset");
 
+  // After the entrance has landed. Pressing during the flight compounds off a moving target, which is
+  // correct behaviour and makes the destination depend on when the key arrived.
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 15_000 })
+    .toMatch(/^#at=140,20,1&/);
+
   await page.keyboard.press("ArrowRight");
   await expect
     .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
@@ -455,6 +470,77 @@ test("the globe is operable from the keyboard, and the keys are written down", a
   await page.keyboard.press("ArrowRight");
   await expect(page.locator(".zone-rail")).toContainText("Magnitude 2.1 and above");
   expect(await page.evaluate(() => window.location.hash)).toMatch(/^#at=145,12,1&/);
+});
+
+test("a dead feed says so, and does not claim a covered day", async ({ page }) => {
+  /*
+   * Two bugs in one state. DESIGN.md section 6 specifies a hairline notice naming the source and the
+   * retry, and `SourceStatus` has carried both since the first source was written; nothing ever read
+   * them, so the header said "one feed live" whether the other was connecting or refused.
+   *
+   * Worse, coverage was inferred from the first delivery that carried events. With the seed requests
+   * dead and two stray socket pushes arriving, the rail read "0 events, last 24 hours": a complete day
+   * claimed on the strength of two events it happened to be handed.
+   */
+  await page.route(/seismicportal\.eu/, (route) => route.abort());
+  await page.route(/\.geojson/, (route) => route.abort());
+  await page.goto("/");
+
+  const rail = page.locator(".zone-rail");
+  await expect(rail).toContainText("USGS is not answering", { timeout: 25_000 });
+  await expect(rail).toContainText("Retrying at");
+  await expect(rail).toContainText("The globe keeps what it has.");
+
+  // Nothing was fetched, so nothing is covered.
+  await expect(rail).not.toContainText("last 24 hours");
+  await expect(rail).toContainText("Asking USGS and EMSC for the last day.");
+});
+
+test.describe("on a touch screen", () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+
+  test("one finger orbits and two fingers zoom the globe", async ({ page }) => {
+    /*
+     * Touch had no coverage at all. The drag worked; the pinch was zooming the *document*, because
+     * the canvas was `touch-action: auto` and the browser claims a two-finger gesture before the
+     * pointer events reach the pinch handler that has been in controls.ts from the first version.
+     */
+    test.setTimeout(120_000);
+    await page.goto("/#at=140,20,1&m=2&w=24&s=usgs,emsc&r=thermal");
+    await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
+    await expect(page.locator("canvas")).toHaveCSS("touch-action", "none");
+    await page.waitForTimeout(9_000);
+
+    const box = (await page.locator("canvas").boundingBox())!;
+    const cx = box.x + box.width / 2;
+    const cy = box.y + box.height / 2;
+
+    await page.mouse.move(cx, cy);
+    await page.mouse.down();
+    await page.mouse.move(cx + 90, cy, { steps: 8 });
+    await page.mouse.up();
+    await expect
+      .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+      .not.toMatch(/^#at=140,/);
+
+    await page.evaluate(([x, y]) => {
+      const canvas = document.querySelector("canvas")!;
+      const send = (type: string, points: [number, number][]): void => {
+        points.forEach((p, i) => canvas.dispatchEvent(new PointerEvent(type, {
+          pointerId: i + 1, pointerType: "touch", clientX: p[0], clientY: p[1],
+          bubbles: true, isPrimary: i === 0,
+        })));
+      };
+      send("pointerdown", [[x - 40, y], [x + 40, y]]);
+      for (let k = 1; k <= 6; k += 1) send("pointermove", [[x - 40 - k * 12, y], [x + 40 + k * 12, y]]);
+      send("pointerup", [[x - 112, y], [x + 112, y]]);
+    }, [cx, cy]);
+
+    // Spread fingers, so the globe comes closer rather than the page getting bigger.
+    await expect
+      .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+      .toMatch(/,2\.\d&/);
+  });
 });
 
 test("a shared camera survives the entrance", async ({ page }) => {

@@ -11,6 +11,7 @@ import { decode, encode } from "./app/permalink";
 import type { RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, SourceId } from "./data/types";
+import type { SourceStatus } from "./sources/types";
 import { PLAYBACK } from "./globe/rings";
 import {
   clock, SOURCE_NAMES, windowLabel,
@@ -272,6 +273,9 @@ export function App(): JSX.Element {
    */
   const shown = countWithin(bars, hours);
 
+  const failing = (Object.entries(snapshot.statuses) as [SourceId, SourceStatus][])
+    .flatMap(([id, status]) => (status.kind === "failing" ? [[id, status] as const] : []));
+
   const edge = windowStart(now, filters.windowMs, snapshot.coveredSince);
   const live = Object.values(snapshot.statuses).filter((s) => s.kind === "live").length;
 
@@ -443,6 +447,24 @@ export function App(): JSX.Element {
                   onClick={() => flyTo.current(region.lon, region.lat, region.zoom)}
                 />
               ))}
+            </div>
+          ) : null}
+
+          {/*
+            DESIGN.md section 6: "A failing source degrades to a hairline notice in the rail naming the
+            source and the retry." Specified, and never built. `SourceStatus` has carried the reason
+            and the retry time since the first source was written, and the header said "one feed live"
+            whether the other was still connecting or had been refused for ten minutes.
+          */}
+          {failing.length > 0 ? (
+            <div className="border border-hairline bg-raised p-2.5 text-[11px] leading-relaxed text-dim">
+              {failing.map(([id, status]) => (
+                <div key={id}>
+                  <span className="text-ink">{SOURCE_NAMES[id]}</span> is not answering: {status.reason}.
+                  Retrying at {clock(status.retryAt)}.
+                </div>
+              ))}
+              <div className="mt-1 text-faint">The globe keeps what it has.</div>
             </div>
           ) : null}
 

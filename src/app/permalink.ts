@@ -39,9 +39,19 @@ const round = (value: number, places: number): number =>
  * sub-micron camera precision, and every number in this app is supposed to be honest about what it
  * knows. Two places is about 100 metres of camera position, which is far finer than anyone can aim.
  */
+/**
+ * Longitude into [-180, 180), because the camera's is not.
+ *
+ * `lon` accumulates: the spring takes the shortest way round, which means crossing the date line adds
+ * or subtracts a turn and nothing ever brings it back. Links were coming out as `at=499.37`, which
+ * decodes correctly, since `decode` has always normalised on the way in, and is nonsense to read and
+ * to send to somebody.
+ */
+const wrapLon = (lon: number): number => ((((lon + 180) % 360) + 360) % 360) - 180;
+
 export function encode(state: Permalink): string {
   const parts = [
-    `at=${round(state.lon, 2)},${round(state.lat, 2)},${round(state.zoom, 2)}`,
+    `at=${round(wrapLon(state.lon), 2)},${round(state.lat, 2)},${round(state.zoom, 2)}`,
     `m=${round(state.minMagnitude, 1)}`,
     `w=${Math.round(state.windowHours)}`,
     `s=${[...state.sources].sort().join(",")}`,

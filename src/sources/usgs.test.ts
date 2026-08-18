@@ -108,7 +108,7 @@ describe("polling behaviour specific to USGS", () => {
     });
     const source = createUsgsSource(runtime, "https://example.invalid/feed");
     const seen: number[] = [];
-    source.start({ onReadings: (b) => seen.push(...b.map((r) => r.magnitude)), onStatus: () => {} });
+    source.start({ onReadings: (b) => seen.push(...b.map((r) => r.magnitude)), onStatus: () => {} , onSeeded: () => {} });
 
     await runtime.flush();
     await runtime.advance(60_000);
@@ -134,7 +134,7 @@ describe("polling behaviour specific to USGS", () => {
       },
     });
     const source = createUsgsSource(runtime, "https://example.invalid/feed");
-    source.start({ onReadings: () => {}, onStatus: () => {} });
+    source.start({ onReadings: () => {}, onStatus: () => {} , onSeeded: () => {} });
     await runtime.flush();
 
     // A minute of empty globe on load would fail DESIGN.md section 8 outright.

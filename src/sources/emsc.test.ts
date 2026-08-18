@@ -136,7 +136,7 @@ describe("push-specific behaviour", () => {
     const runtime = makeRuntime("healthy");
     const source = createEmscSource(runtime, "wss://example.invalid/socket");
     let count = 0;
-    source.start({ onReadings: (b) => { count += b.length; }, onStatus: () => {} });
+    source.start({ onReadings: (b) => { count += b.length; }, onStatus: () => {} , onSeeded: () => {} });
     const socket = runtime.sockets[0]!;
     socket.emit("open", {});
 
@@ -158,7 +158,7 @@ describe("push-specific behaviour", () => {
     const runtime = makeRuntime("healthy");
     const source = createEmscSource(runtime, "wss://example.invalid/socket");
     const mags: number[] = [];
-    source.start({ onReadings: (b) => mags.push(...b.map((r) => r.magnitude)), onStatus: () => {} });
+    source.start({ onReadings: (b) => mags.push(...b.map((r) => r.magnitude)), onStatus: () => {} , onSeeded: () => {} });
     const socket = runtime.sockets[0]!;
     socket.emit("open", {});
 
@@ -181,7 +181,7 @@ describe("push-specific behaviour", () => {
     const runtime = makeRuntime("healthy");
     const source = createEmscSource(runtime, "wss://example.invalid/socket");
     const statuses: string[] = [];
-    source.start({ onReadings: () => {}, onStatus: (s) => statuses.push(s.kind) });
+    source.start({ onReadings: () => {}, onStatus: (s) => statuses.push(s.kind) , onSeeded: () => {} });
     runtime.sockets[0]!.emit("open", {});
     await runtime.flush();
 
@@ -212,12 +212,12 @@ describe("one real earthquake, two agencies", () => {
       respond: async () => ({ ok: true, status: 200, json: async () => pair.usgs }),
     });
     const usgs = createUsgsSource(usgsRuntime, "https://example.invalid/feed");
-    usgs.start({ onReadings: (b) => readings.push(...b), onStatus: () => {} });
+    usgs.start({ onReadings: (b) => readings.push(...b), onStatus: () => {} , onSeeded: () => {} });
     await usgsRuntime.flush();
 
     const emscRuntime = makeRuntime("healthy");
     const emsc = createEmscSource(emscRuntime, "wss://example.invalid/socket");
-    emsc.start({ onReadings: (b) => readings.push(...b), onStatus: () => {} });
+    emsc.start({ onReadings: (b) => readings.push(...b), onStatus: () => {} , onSeeded: () => {} });
     emscRuntime.sockets[0]!.emit("open", {});
     emscRuntime.sockets[0]!.emit("message", { data: FRAME });
     await emscRuntime.flush();

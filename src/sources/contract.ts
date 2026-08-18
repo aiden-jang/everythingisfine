@@ -142,6 +142,7 @@ export function describeSourceContract(subject: ContractSubject): void {
       source.start({
         onReadings: (batch) => readings.push(...batch),
         onStatus: (status) => statuses.push({ status, at: runtime.now() }),
+        onSeeded: () => {},
       });
       return { readings, statuses, kinds: () => statuses.map((s) => s.status.kind) };
     };

@@ -7,6 +7,27 @@
     <meta name="description" content="Earthquakes arriving live from two seismic feeds, on a globe that only moves when the data does." />
     <title>First Motion</title>
     <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+
+    <!--
+      Every shared permalink used to render as a bare URL. The link is a headline feature of this app
+      and it looked like nothing everywhere it was sent.
+
+      The preview is the globe with its geography and plate boundaries and no earthquakes on it,
+      captured from the app itself by a Playwright script rather than drawn by hand. Real events would
+      be better and would also be a lie: a card is cached for days, so it would show a specific day's
+      seismicity as if it were now. Section 10 forbids sample data that is not labelled as such, and a
+      preview claiming yesterday's earthquakes are today's is exactly that.
+    -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="First Motion" />
+    <meta property="og:title" content="First Motion" />
+    <meta property="og:description" content="Earthquakes arriving live from two seismic feeds, on a globe that only moves when the data does." />
+    <meta property="og:url" content="https://firstmotion.aidenjang.com/" />
+    <meta property="og:image" content="https://firstmotion.aidenjang.com/share.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="A dark globe showing coastlines and tectonic plate boundaries across the western Pacific." />
+    <meta name="twitter:card" content="summary_large_image" />
   </head>
   <body>
     <div id="root"></div>

@@ -146,9 +146,9 @@ rather than hidden, but it is a real limitation and not a rare one during a sequ
 there is no backend, so 24 hours is the hard edge and time scrubbing beyond it was rejected rather
 than shipped as a worse version of itself.
 
-**Coverage assumes the seed was complete.** EMSC's seeding request is capped at 600 events, so on an
-exceptionally busy day its half of the day is truncated and the app will still report the window as
-covered. USGS `all_day` has no such cap, so the claim holds as long as USGS delivered.
+**Browser tests need the feeds up.** Seven of them assert layout and colour and nothing about data,
+and they still fail on a quiet network because they wait for content that never arrives. Routing the
+feeds to fixtures would fix it and has not been done.
 
 **Browser tests are not in CI.** They wait on two real agencies, so a quiet planet or an agency doing
 maintenance would fail the build for reasons that are not the code's fault. Routing the feeds to the

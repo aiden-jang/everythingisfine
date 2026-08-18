@@ -147,6 +147,10 @@ export function Globe({
         }
       });
       globe.plates.orderFrom(points);
+      // Wakes the loop, which is the whole point and was missing. On a load where no feed ever
+      // answers there is nothing else moving, so the fallback set the flag and the frame that reads
+      // it never ran: the boundaries stayed hidden permanently, on exactly the load they matter most.
+      wakeRef.current();
     };
 
     /*
@@ -398,7 +402,16 @@ export function Globe({
 
   return (
     <div className="relative h-full w-full">
-      <canvas ref={canvas} className="block h-full w-full cursor-grab active:cursor-grabbing" />
+      {/*
+        `touch-action: none` so every gesture on the globe belongs to the globe.
+        It was `auto`, which lets the browser claim a pinch for page zoom before the pointer events
+        reach the pinch handler that has been sitting in controls.ts since the first version. A drag
+        happened to work; a pinch was zooming the document.
+      */}
+      <canvas
+        ref={canvas}
+        className="block h-full w-full touch-none cursor-grab active:cursor-grabbing"
+      />
       {/* Chrome, so achromatic: the selection is a ring of Instrument, never a coloured halo,
           because a coloured ring would be a hue that means nothing sitting next to hues that do. */}
       <div
