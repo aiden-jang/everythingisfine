@@ -28,6 +28,102 @@ const reading = (over: Partial<Reading> = {}): Reading => ({
   ...over,
 });
 
+describe("revisions", () => {
+  it("remembers what the agency first said", () => {
+    const store = createStore(100);
+    store.ingest(reading({ magnitude: 6.1 }));
+    const { quake } = store.ingest(reading({ magnitude: 6.4, receivedAt: 1_700_003_600_000 }));
+
+    expect(quake.primary.magnitude).toBe(6.4);
+    expect(quake.primary.revision).toEqual({
+      fromMagnitude: 6.1, count: 1, at: 1_700_003_600_000,
+    });
+    expect(store.stats().revised).toBe(1);
+  });
+
+  it("keeps the first value across a second revision, not the previous one", () => {
+    const store = createStore(100);
+    store.ingest(reading({ magnitude: 6.1 }));
+    store.ingest(reading({ magnitude: 6.2 }));
+    const { quake } = store.ingest(reading({ magnitude: 6.4 }));
+
+    // 6.1, not 6.2. What an agency first said is the fact worth keeping; the middle of the trail
+    // answers nothing anybody asks.
+    expect(quake.primary.revision).toMatchObject({ fromMagnitude: 6.1, count: 2 });
+    expect(store.stats().revised).toBe(1);
+  });
+
+  it("does not count a re-poll that changed nothing", () => {
+    /*
+     * The case that decides whether the feature means anything. Both USGS feeds re-serve every
+     * event they hold, so the replace branch runs on every poll; counting arrivals there would have
+     * every earthquake claiming twenty revisions by evening.
+     */
+    const store = createStore(100);
+    store.ingest(reading());
+    for (let i = 0; i < 20; i += 1) store.ingest(reading({ receivedAt: 1_700_000_020_000 + i }));
+
+    const { quake } = store.ingest(reading());
+    expect(quake.primary.revision).toBeUndefined();
+    expect(store.stats().revised).toBe(0);
+  });
+
+  it("keeps the history when an already-revised reading is redelivered", () => {
+    const store = createStore(100);
+    store.ingest(reading({ magnitude: 6.1 }));
+    store.ingest(reading({ magnitude: 6.4 }));
+    const { quake } = store.ingest(reading({ magnitude: 6.4, receivedAt: 1_700_007_200_000 }));
+
+    expect(quake.primary.revision).toMatchObject({ fromMagnitude: 6.1, count: 1 });
+    expect(store.stats().revised).toBe(1);
+  });
+
+  it("counts each agency's own change once, not the event twice", () => {
+    const store = createStore(100);
+    store.ingest(reading({ magnitude: 6.1 }));
+    store.ingest(reading({
+      source: "emsc", id: "e9", magnitude: 5.9, scale: "mb",
+      lon: 141.44, lat: 41.79, time: 1_700_000_008_000,
+    }));
+    store.ingest(reading({ magnitude: 6.4 }));
+    store.ingest(reading({
+      source: "emsc", id: "e9", magnitude: 6.2, scale: "mb",
+      lon: 141.44, lat: 41.79, time: 1_700_000_008_000,
+    }));
+
+    // One event, both agencies revised. The stat counts events, so it is 1.
+    expect(store.stats().revised).toBe(1);
+  });
+
+  it("does not drift upward as revised events churn through eviction", () => {
+    // The shape of the bug the test above found: an increment and a refund on different units drifts
+    // for as long as the page is open, and one event at a time never shows it.
+    const store = createStore(10);
+    for (let i = 0; i < 200; i += 1) {
+      const base = { id: `u${i}`, lon: (i % 170) - 85, lat: (i % 80) - 40, time: 1_700_000_000_000 + i * 60_000 };
+      store.ingest(reading({ ...base, magnitude: 5.0 }));
+      store.ingest(reading({ ...base, magnitude: 5.3 }));
+      store.ingest(reading({
+        ...base, source: "emsc", id: `e${i}`, magnitude: 4.8, scale: "mb", time: base.time + 5_000,
+      }));
+      store.ingest(reading({
+        ...base, source: "emsc", id: `e${i}`, magnitude: 5.1, scale: "mb", time: base.time + 5_000,
+      }));
+    }
+    expect(store.stats().revised).toBeLessThanOrEqual(store.stats().quakes);
+  });
+
+  it("gives the count back when a revised event is evicted", () => {
+    const store = createStore(1);
+    store.ingest(reading({ magnitude: 6.1 }));
+    store.ingest(reading({ magnitude: 6.4 }));
+    expect(store.stats().revised).toBe(1);
+
+    store.ingest(reading({ id: "z9", lon: 10, lat: 10, time: 1_600_000_000_000 }));
+    expect(store.stats().revised).toBe(0);
+  });
+});
+
 describe("association", () => {
   it("merges two agencies reporting one rupture", () => {
     const store = createStore(100);

@@ -43,6 +43,15 @@ export function DetailPanel({
   const [copied, setCopied] = useState(false);
   const r = quake.primary;
   const near = findNearby(store, quake, filters, Date.now());
+  /*
+   * Per agency, because they revise independently and only one of them may have.
+   *
+   * Narrowed to a tuple rather than filtered in the markup so the revision is non-optional by the
+   * time it is read: `revision!` inside a map is the kind of assertion that survives a refactor and
+   * then stops being true.
+   */
+  const revisions = quake.readings.flatMap((reading) =>
+    reading.revision ? [{ reading, revision: reading.revision }] : []);
   const klass = depthClass(r.depthKm);
 
   /*
@@ -89,6 +98,29 @@ export function DetailPanel({
       <div className="mt-1 text-[11.5px] text-faint">
         {clock(r.time)} · {ago(r.time, Date.now())}
       </div>
+
+      {/*
+        What the agencies first said, when they have since changed their minds.
+        Directly under the magnitude, because it is a statement about that number and nowhere else
+        in the panel would connect the two. Absent entirely on the common case, which is no revision:
+        a permanent "not revised" line would be four words of chrome saying nothing.
+      */}
+      {revisions.length > 0 ? (
+        <div className="mt-2 border border-hairline bg-raised px-2.5 py-2">
+          {revisions.map(({ reading, revision }) => (
+            <div key={reading.source} className="text-[11.5px] leading-relaxed text-dim">
+              <span className="text-ink">{SOURCE_NAMES[reading.source]}</span> first said{" "}
+              <span className="font-mono">{revision.fromMagnitude.toFixed(1)}</span>, now{" "}
+              <span className="font-mono">{reading.magnitude.toFixed(1)}</span>
+              {revision.count > 1 ? ` · ${revision.count} changes` : ""}
+            </div>
+          ))}
+          <div className="mt-1.5 text-[11px] leading-relaxed text-faint">
+            First estimates are automatic. A reviewed magnitude arriving later is the system working,
+            not an error.
+          </div>
+        </div>
+      ) : null}
 
       {r.kind !== "earthquake" ? (
         // Named rather than drawn as an earthquake. A quarry blast is a real seismic event and

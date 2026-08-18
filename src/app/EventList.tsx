@@ -27,8 +27,15 @@ export interface EventListProps {
 function sentence(quake: Quake, now: number): string {
   const r = quake.primary;
   const kind = r.kind === "earthquake" ? "earthquake" : r.kind;
+  const revised = quake.readings.flatMap((x) => (x.revision
+    ? [`${SOURCE_NAMES[x.source]} first reported ${x.revision.fromMagnitude.toFixed(1)}`]
+    : []));
   return `Magnitude ${r.magnitude.toFixed(1)} ${kind}, ${place(r.place)}, ${ago(r.time, now)}, `
-    + `${depth(r)} deep, reported by ${reportedBy(quake)}.`;
+    + `${depth(r)} deep, reported by ${reportedBy(quake)}.`
+    // The announcement carries the value, where the row carries only the word. A row can be pinned
+    // to find out what changed; an announcement has already gone by, so "revised" on its own in the
+    // live region would be a fact with no way left to follow it up.
+    + (revised.length > 0 ? ` Revised: ${revised.join(", ")}.` : "");
 }
 
 export function EventList({
@@ -159,6 +166,17 @@ export function EventList({
                     .replace(/ hours?/, "h").replace(/ days?/, "d")}
                   {` · ${depth(quake.primary)}`}
                   {` · ${quake.readings.map((r) => SOURCE_NAMES[r.source]).join(" ")}`}
+                  {/*
+                    Says which rows the header's "revised" count is about. A number in the header
+                    with nothing to click is a statistic about an invisible set: you learn that three
+                    magnitudes changed and cannot find one of them.
+
+                    A word rather than a mark, because it costs no new visual idiom, sits in the line
+                    that already carries the row's metadata, and needs no separate label: the row is
+                    a button with no `aria-label`, so its accessible name is computed from exactly
+                    this content and the word is spoken along with everything else in it.
+                  */}
+                  {quake.readings.some((r) => r.revision) ? " · revised" : ""}
                 </span>
               </span>
               {/* Read aloud, never shown: on screen the globe already says where. */}

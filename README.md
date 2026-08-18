@@ -118,6 +118,16 @@ Live seismicity from **USGS** (polled) and **EMSC** (WebSocket). Coastlines from
 public domain. Plate boundaries from **PB2002** (Bird, P., 2003, *An updated digital model of plate
 boundaries*, Geochemistry Geophysics Geosystems 4(3)), public domain, simplified to 0.15 degrees.
 
+## Revisions
+
+An agency's first magnitude is automatic; a reviewed one arrives later and is often different. Rather
+than swapping the number silently, the panel says what it first said, the row is marked, and the
+header counts how many events have changed. Only a changed magnitude counts as a revision, because
+both USGS feeds re-serve every event they hold on every poll.
+
+Only magnitude is tracked. Depth and epicentre are revised too and are not, which is a real gap: a
+40km event reassessed to 10km is a different event to anyone downstream.
+
 ## What is wrong with it
 
 **Aftershocks can be swallowed.** Association uses time and distance, so a genuine aftershock within

@@ -409,6 +409,11 @@ are all visual ones.
   shows distinct events, and the source breakdown shows the raw counts underneath.
 - **Magnitude carries its scale.** `M 5.2 (Mww, USGS)`, not a bare `5.2`. The two feeds do not
   always agree, and a bare number implies a precision that does not exist.
+- **A revised magnitude says what it was.** First estimates are automatic and get reviewed, so the
+  panel reads "USGS first said 6.1, now 6.4" rather than quietly showing the new number. Same rule as
+  the scale: a number that changed under the viewer without saying so claims a certainty it never had.
+  It appears on the row and in the header count too, because a statistic about a set nobody can reach
+  is not a disclosure.
 - **Relative time is rounded honestly.** "2 minutes ago", not "2m 14s ago". False precision on an
   event whose origin time is itself an estimate.
 - No placeholder names, no invented round numbers, no sample data unless it is labelled sample data.
