@@ -52,9 +52,26 @@ const SHORTLIST = 8;
  * identical picture would be the first thing to cut later anyway.
  */
 
+/*
+ * The globe's own palette, raised by measurement.
+ *
+ * Land against ocean was **1.13:1**, which is not restraint, it is invisibility: the continents were
+ * a suggestion and the coastline barely closed them. Every value here is bounded above by the
+ * darkest stop of the data ramp, because chrome that is brighter than the dimmest earthquake starts
+ * competing with the thing it is a backdrop for.
+ *
+ *   land  #1E293F   1.31:1 against ocean, still 1.57x darker than the ramp's floor
+ *   coast #31405D   1.40:1 against land, and the stroke does the defining
+ *
+ * The stroke was raised further than the fill on purpose. Definition comes from edges, and
+ * brightening a 1px line adds crispness without adding mass, where brightening the fill would put
+ * a large pale shape on screen and pull the eye off the data.
+ */
 const COLOR_SPHERE = 0x0a101c;
-const COLOR_LAND = 0x151d2e;
-const COLOR_COAST = 0x243149;
+const COLOR_LAND = 0x1e293f;
+const COLOR_COAST = 0x31405d;
+/** The graticule keeps the old, dimmer value: it is scaffolding, and it should stay behind land. */
+const COLOR_GRATICULE = 0x243149;
 const COLOR_RIM = new Color(0x7896be);
 
 /** Where the camera settles. The Ring of Fire is where the data lives, so it faces the viewer. */
@@ -171,7 +188,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   gratGeom.setAttribute("position", new BufferAttribute(graticule(15, RADIUS_GRATICULE), 3));
   const grat = new LineSegments(
     gratGeom,
-    new LineBasicMaterial({ color: COLOR_COAST, transparent: true, opacity: 0.4 }),
+    new LineBasicMaterial({ color: COLOR_GRATICULE, transparent: true, opacity: 0.38 }),
   );
   grat.renderOrder = 2;
   spin.add(grat);

@@ -992,6 +992,51 @@ the fronts.
 
 ---
 
+## The globe was invisible, measured
+
+Land against ocean was **1.13:1**. That is not restraint, it is invisibility: the continents were a
+suggestion and the coastline barely closed them.
+
+Every value is bounded above by the darkest stop of the data ramp, because chrome brighter than the
+dimmest earthquake starts competing with the thing it is a backdrop for. Land went to `#1E293F`,
+which is 1.31:1 against the ocean and still **1.57x darker than the ramp's floor**. The coastline
+went further, to `#31405D`, because definition comes from edges: brightening a 1px line adds
+crispness, while brightening the fill puts a large pale shape on screen and pulls the eye off the
+data. The graticule kept the old dimmer value and is now genuinely behind the land, which is what
+scaffolding should be.
+
+---
+
+## Depth took the one channel that was left
+
+Hue means magnitude and radius means magnitude. Inventing a second hue would break the rule the
+whole palette is built on, so depth uses shape: solid disc for shallow, ring for deep, and a hole
+opening between. The outer edge never moves.
+
+It earns its place because depth changes what an earthquake is, and because a subduction margin now
+draws its own cross-section: solid dots at the trench giving way to rings inland, which is the
+Wadati-Benioff zone appearing out of data that was already loaded. In the current buffer that is 739
+shallow, 49 intermediate and 3 deep, so it reads as a minority of markers rather than as noise.
+
+**A missing depth draws as shallow.** Depth is genuinely optional in both feeds. Neither shape is
+neutral, so the tie goes to the overwhelmingly more common case, and the detail panel still says
+"not given" rather than a number.
+
+**A cluster keeps the largest event's depth**, not an average. An averaged hole would belong to no
+earthquake in the cell.
+
+And the legend gained a row, because an encoding nobody can read is decoration. This one is
+especially easy to mistake for a rendering artefact: a marker with a hole in it looks like a bug
+until something says otherwise.
+
+### One self-inflicted wound
+
+The shader is a template literal, and I wrote a comment inside it using backticks around a variable
+name. That ended the string mid-comment and typechecked as a syntax error twenty lines further down,
+in code that was fine.
+
+---
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

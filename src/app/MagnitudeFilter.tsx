@@ -84,6 +84,35 @@ export function MagnitudeFilter({ ramp, value, onChange }: MagnitudeFilterProps)
         </span>
         <span>size shows it too</span>
       </div>
+
+      {/*
+        Depth, explained.
+        An encoding nobody can read is decoration, and this one is easy to mistake for a rendering
+        artefact: a marker with a hole in it looks like a bug until something says otherwise.
+      */}
+      <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+        <span className="flex items-baseline gap-1.5">
+          {[0, 0.55, 1].map((depth) => (
+            <span
+              key={depth}
+              className="inline-block rounded-full"
+              style={{
+                width: "12px",
+                height: "12px",
+                background: rampColorAt(ramp, 0.55),
+                // The same carve the shader makes: a hole opening to 0.30 of the sprite at depth.
+                mask: depth > 0.02
+                  ? `radial-gradient(circle, transparent ${depth * 30 * 2}%, #000 ${depth * 30 * 2 + 8}%)`
+                  : undefined,
+                WebkitMask: depth > 0.02
+                  ? `radial-gradient(circle, transparent ${depth * 30 * 2}%, #000 ${depth * 30 * 2 + 8}%)`
+                  : undefined,
+              }}
+            />
+          ))}
+        </span>
+        <span>solid is shallow, hollow is deep</span>
+      </div>
     </div>
   );
 }
