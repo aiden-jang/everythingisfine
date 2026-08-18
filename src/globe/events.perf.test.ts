@@ -20,7 +20,51 @@ import type { Filters, Reading } from "../data/types";
  * that cannot fail is that it is not a budget.
  */
 
-const BUDGET_MS: Record<number, number> = { 1_000: 1.0, 10_000: 4.0, 50_000: 12.0 };
+/*
+ * Budgets in reference units, not milliseconds.
+ *
+ * Absolute millisecond budgets failed three times on unchanged code: 13.96ms against 7.65ms quiet
+ * with browsers resident, and again at 13.11ms on another machine mid-session. Fastest-of-N removes
+ * sampling noise and does nothing about sustained load, because forty samples taken under load are
+ * forty loaded samples. A gate that cannot tell a regression from a busy laptop is not a gate.
+ *
+ * So the budget is a ratio against `referenceMs`, measured in the same process moments earlier.
+ * Both numbers move together when the machine is busy and the ratio does not, which is the property
+ * the absolute version never had. The milliseconds are still printed, because "is this fast enough
+ * for a human" is a real question that a ratio cannot answer.
+ */
+/*
+ * Calibrated, not guessed. Quiet measurements are 0.07, 0.71 and 4.10 reference units. Six saturated
+ * cores move the ratio to 4.61, a 13% drift, where the milliseconds moved 20% over the same run. So
+ * these sit about 45% above quiet: enough to absorb the drift that was actually observed, tight
+ * enough that a regression adding half again to the cost fails.
+ *
+ * The ratio is better than milliseconds and it is not immune. The worst case seen, browsers resident,
+ * was +82% in milliseconds, which is memory pressure rather than pure CPU contention, and no
+ * same-process reference fully cancels that.
+ */
+const BUDGET_REF: Record<number, number> = { 1_000: 0.15, 10_000: 1.05, 50_000: 6.0 };
+
+/**
+ * A fixed workload shaped like the thing being measured: trigonometry into a typed array.
+ *
+ * Shape matters. A pure arithmetic loop would be CPU-bound where `sync` is partly memory-bound, and
+ * the ratio would then drift with cache pressure rather than hold still. This does what the inner
+ * loop of `sync` does, so contention hits both the same way.
+ */
+function referenceMs(): number {
+  const out = new Float32Array(50_000 * 3);
+  return fastestMs(() => {
+    for (let i = 0; i < 50_000; i += 1) {
+      const phi = i * 0.0001;
+      const lam = i * 0.0002;
+      const c = Math.cos(phi);
+      out[i * 3] = c * Math.sin(lam);
+      out[i * 3 + 1] = Math.sin(phi);
+      out[i * 3 + 2] = c * Math.cos(lam);
+    }
+  }, 20);
+}
 
 /**
  * Zoomed past the clustering threshold, so every event is written individually.
@@ -86,7 +130,7 @@ function fastestMs(run: () => void, samples: number): number {
 
 describe("update cost", () => {
   for (const count of [1_000, 10_000, 50_000]) {
-    it(`writes ${count.toLocaleString("en-GB")} events within ${BUDGET_MS[count]}ms`, () => {
+    it(`writes ${count.toLocaleString("en-GB")} events within ${BUDGET_REF[count]} reference units`, () => {
       const store = fill(count);
       const layer = createEventLayer(count);
       const f = filters();
@@ -95,11 +139,16 @@ describe("update cost", () => {
       // Warm up, so the first measured sample is not paying for JIT.
       for (let i = 0; i < 5; i += 1) layer.sync(store, f, now, NO_CLUSTER);
 
+      const ref = referenceMs();
       const ms = fastestMs(() => layer.sync(store, f, now, NO_CLUSTER), 40);
-      console.info(`[perf] sync ${count} events: ${ms.toFixed(3)}ms (budget ${BUDGET_MS[count]}ms)`);
+      const units = ms / ref;
+      console.info(
+        `[perf] sync ${count} events: ${units.toFixed(2)} ref (budget ${BUDGET_REF[count]}), `
+        + `${ms.toFixed(3)}ms at ${ref.toFixed(3)}ms/ref`,
+      );
 
       expect(layer.sync(store, f, now, NO_CLUSTER)).toBe(count);
-      expect(ms).toBeLessThan(BUDGET_MS[count]!);
+      expect(units).toBeLessThan(BUDGET_REF[count]!);
       layer.dispose();
     });
   }
@@ -118,9 +167,10 @@ describe("update cost", () => {
 
     for (let i = 0; i < 5; i += 1) layer.sync(store, f, now, NO_CLUSTER, undefined, 5);
 
-    const ms = fastestMs(() => layer.sync(store, f, now, NO_CLUSTER, undefined, 5), 40);
-    console.info(`[perf] sync 50000 events, hour held: ${ms.toFixed(3)}ms (budget ${BUDGET_MS[50_000]}ms)`);
-    expect(ms).toBeLessThan(BUDGET_MS[50_000]!);
+    const ref = referenceMs();
+    const units = fastestMs(() => layer.sync(store, f, now, NO_CLUSTER, undefined, 5), 40) / ref;
+    console.info(`[perf] sync 50000 events, hour held: ${units.toFixed(2)} ref (budget ${BUDGET_REF[50_000]})`);
+    expect(units).toBeLessThan(BUDGET_REF[50_000]!);
     layer.dispose();
   });
 
@@ -184,18 +234,19 @@ describe("update cost with clustering on", () => {
     const CLUSTERED = 1;
 
     for (let i = 0; i < 5; i += 1) layer.sync(store, f, now, CLUSTERED);
+    const ref = referenceMs();
     const clustered = fastestMs(() => layer.sync(store, f, now, CLUSTERED), 25);
     const plain = fastestMs(() => layer.sync(store, f, now, NO_CLUSTER), 25);
     const drawn = layer.sync(store, f, now, CLUSTERED);
 
     console.info(
       `[perf] clustered 50,000 into ${drawn} markers: ${clustered.toFixed(3)}ms `
-      + `(unclustered ${plain.toFixed(3)}ms, budget ${BUDGET_MS[50_000]}ms)`,
+      + `(unclustered ${plain.toFixed(3)}ms, ${(clustered / ref).toFixed(2)} ref)`,
     );
 
     // The point of clustering is fewer markers, so this failing would mean the grid is not binning.
     expect(drawn).toBeLessThan(50_000 / 2);
-    expect(clustered).toBeLessThan(BUDGET_MS[50_000]!);
+    expect(clustered / ref).toBeLessThan(BUDGET_REF[50_000]!);
     layer.dispose();
   });
 

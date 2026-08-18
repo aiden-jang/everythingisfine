@@ -772,13 +772,24 @@ honest estimate: every slower sample is the code plus something else, and the so
 never the thing under test. Scheduler slices, GC pauses and frequency dips can only add. Three
 consecutive runs now read 6.26, 6.45 and 6.61ms.
 
-Fastest-of-40 fixes sampling noise and not sustained contention, which is a different thing and worth
-knowing about before it wastes somebody's afternoon. The gate failed at **13.96ms** immediately after
-a Playwright run, with eight chromium processes still resident; the same commit measured **7.65ms** on
-a quiet machine minutes later. Nothing had changed. Forty samples taken during sustained load are
-forty loaded samples, so the minimum rescues nothing. Making this portable would mean expressing the
-budget as a ratio against a calibration workload measured in the same process, which is the right fix
-and is not done. Until it is: run the perf gate on a machine that is not also running a browser.
+Fastest-of-40 fixes sampling noise and not sustained contention, which is a different thing. The gate
+failed at **13.96ms** immediately after a Playwright run with eight chromium processes resident, and
+again at **13.11ms** on another machine, against **6.8ms** quiet. Nothing had changed either time.
+Forty samples taken during sustained load are forty loaded samples, so the minimum rescues nothing.
+
+It now budgets a ratio. A fixed workload runs in the same process moments before the measurement and
+the assertion is on `sync / reference`, so contention that inflates one inflates the other. The
+reference does trigonometry into a typed array, deliberately shaped like the inner loop of `sync`: a
+pure arithmetic loop would be CPU-bound where `sync` is partly memory-bound, and the ratio would drift
+with cache pressure instead of holding still.
+
+Measured rather than assumed. Quiet: 4.09, 4.14, 4.10. Eight saturated cores: 4.22, 4.29, while the
+milliseconds went 6.53 to 7.28. Thresholds sit about 45% above quiet, which absorbs the drift actually
+observed and still fails a regression that adds half again to the cost.
+
+Not a complete fix, and worth saying so. The worst case seen was +82% in milliseconds with browsers
+resident, which is memory pressure rather than CPU contention, and no same-process reference cancels
+that. What the ratio buys is that ordinary background load stops looking like a regression.
 
 ---
 
@@ -1255,6 +1266,97 @@ This is also the shape of the fix for the open item above about browser tests st
 reason they cannot run there is that they wait on two live agencies, and this one does not wait on
 either. It routes one endpoint rather than building the fixture harness the rest of them would need,
 so it is a demonstration and not the fix.
+
+## The first two seconds were a hole, and three.js was why
+
+Measured on the production build, not the dev server, because dev-mode module loading inflates the
+first number by 1.5 seconds and would have made this a false finding.
+
+| | Before | After |
+|---|---|---|
+| Rail painted | 2091ms | **128ms** |
+| Canvas painted | 2091ms | 1434ms |
+| First list rows | 2781ms | 2062ms |
+| Headline populated | 2932ms | 2201ms |
+
+Nothing was slow. `App.tsx` imported `Globe`, which imports three.js, so the entry chunk could not
+execute until 231KB gzipped had arrived and parsed. A `lazy()` boundary around the canvas drops that
+to 60KB: React and the interface paint while three.js is still on the wire.
+
+Worth being precise about what this does not fix. The globe still cannot draw before three.js parses,
+so 1434ms is a floor set by the library. What changed is that the wait now happens behind a working
+interface rather than a blank page.
+
+## Four sentences nobody wrote
+
+At 128ms the rail read `Events 0` above `nothing yet · still filling`. Two disclaimers stacked under
+a number that meant nothing, composed by two independently reasonable branches: `windowLabel` returns
+"nothing yet" for null coverage, and the caller appends "still filling" when coverage is incomplete.
+Both correct, and nobody had read the sentence they made together.
+
+Writing the test that locks it turned up three more of the same kind, all only visible in a state
+that lasted two seconds:
+
+- The activity strip reported "nothing yet" beside the new sentence, saying the same thing twice.
+- Its caption explained that blocks are unobserved hours, at the moment when every hour was a block.
+- The event list said **"No events match the current filters"**, blaming filters for a feed that had
+  not answered. That one sends somebody to widen a filter that was never the problem.
+
+Then the screenshot showed two more. "Waiting for the first events." was pinned 450px below the
+heading it belonged to, because the list is `flex-1` and the message followed it. And the header
+carried `0 USGS 0 EMSC 0 distinct 0 both`, which is the headline's problem four more times.
+
+Six copy defects in one state, none of them a bug, none reachable by reading any single file. The
+state is now a sentence, a legend, an empty strip and a globe with its geography already drawn.
+
+## Two user-agent defaults, one of them ironic
+
+`::selection` was unstyled, so dragging across a place name painted the browser's default saturated
+blue: the most chromatic thing on screen, in the app whose central rule is that chrome carries no hue
+and which fails a build over any element above chroma 55. The rule was enforced on elements and never
+on pseudo-elements.
+
+Scrollbars were unstyled too. Measured gutter width is 0px on macOS, where overlay scrollbars fade in
+and out, which is exactly why it survived being looked at: on Windows and Linux Chrome it is a
+permanent light channel down the darkest element on the page. Both are now asserted by the design
+contract rather than fixed and forgotten.
+
+## Hover, and one item I had counted wrong
+
+Every button already had `cursor: pointer` and a 150ms colour transition. Three real gaps, of which
+one turned out not to be:
+
+- A source toggle in its **active** state had no hover rule at all, so the two most-pressed buttons in
+  the rail stopped acknowledging the pointer once switched on, which reads as becoming disabled.
+- Both sliders had `:active` thumb styles and nothing on approach. The magnitude thumb is 4px wide and
+  the window thumb 3px, which is precisely where confirmation before committing matters.
+- I had also listed the activity strip's bars. On implementing it, the column highlight and the
+  changed readout *are* the hover feedback. What is actually missing there is discoverability, which
+  is a different problem, and inventing an affordance for it would have been decoration.
+
+## The panel materialised, and the fix I did not ship
+
+The detail panel was `transition: all 0s, animation: none`, appearing in one frame on the interaction
+that happens most.
+
+The obvious fix is to animate the grid track so the globe slides instead of jumping. I did not, and
+the reasons are worth keeping: the third column is `auto`, so animating it means giving it explicit
+widths; the canvas then reflows every frame for the duration, re-rendering WebGL a dozen times; and
+because React unmounts the panel on close, the exit would be the panel vanishing and *then* the space
+closing, unless the panel is kept mounted through the transition with state that exists only to serve
+an animation.
+
+So the panel arrives on opacity and 10px of travel, and the layout still snaps. The stated problem was
+that it materialised, and it no longer does. The globe's jump is a viewport being resized, which is
+what it is.
+
+## The held-hour cut
+
+`setDim` wrote a uniform on redraw, so the planet cut between two brightness levels in one frame,
+once entering the strip and once leaving. It is now eased over 130ms by the frame loop, which already
+owns everything else that moves, with the fade driving the markers and the wavefronts from one value.
+Under `prefers-reduced-motion` it steps straight to the target rather than easing briefly, on the same
+reasoning as the entrance: a shortened version of a motion somebody asked not to see is still motion.
 
 ## Open, and honestly so
 

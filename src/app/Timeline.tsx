@@ -44,7 +44,8 @@ export function Timeline({
 }: TimelineProps): JSX.Element {
   const peak = peakCount(bars);
   const tallest = bars.find((b) => b.count === peak && peak > 0);
-  const unobserved = bars.some((b) => !b.observed);
+  const observed = bars.some((b) => b.observed);
+  const unobserved = observed && bars.some((b) => !b.observed);
   const held = focusHour === null ? null : bars.find((b) => b.hoursAgo === focusHour) ?? null;
 
   /*
@@ -74,7 +75,7 @@ export function Timeline({
             ? `${held.count} ${held.count === 1 ? "event" : "events"} · ${hoursAgo(held.hoursAgo)}`
             : peak > 0 && tallest
               ? `peak ${peak} · ${hoursAgo(tallest.hoursAgo)}`
-              : "nothing yet"}
+              : ""}
         </span>
       </div>
 
@@ -172,6 +173,8 @@ export function Timeline({
         <span>now</span>
       </div>
 
+      {/* Only once some hours are observed. A caveat about the blocks, at the moment the whole strip
+          is blocks, explains a state the sentence above the rail has already named. */}
       {unobserved ? (
         <p className="mt-2 text-[11px] leading-relaxed text-faint">
           Blocks are hours the buffer was not open for, not quiet hours.

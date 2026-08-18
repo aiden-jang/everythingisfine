@@ -319,6 +319,29 @@ test("a revised magnitude says what the agency first said", async ({ page }) => 
   await expect(page.locator("header")).toContainText("revised");
 });
 
+test("before any data lands, the rail says what it is waiting for", async ({ page }) => {
+  /*
+   * This state used to read "Events 0" over "nothing yet · still filling": a number that meant
+   * nothing under two disclaimers stacked by two independently reasonable branches. Neither of them
+   * was wrong on its own, which is why nobody had read the sentence they composed.
+   */
+  await page.route(/seismicportal\.eu/, (route) => route.abort());
+  await page.route(/\.geojson/, async () => { /* held open, so coverage never arrives */ });
+
+  await page.goto("/");
+  const rail = page.locator(".zone-rail");
+  await expect(rail).toContainText("Asking USGS and EMSC for the last day.");
+  await expect(rail).not.toContainText("nothing yet");
+  await expect(rail).not.toContainText("still filling");
+  // No headline either: an empty count is not a count.
+  await expect(rail.locator(".text-\\[38px\\]")).toHaveCount(0);
+  // Writing this test turned up two more of the same kind. The strip reported "nothing yet" beside
+  // the sentence, and the list blamed the filters for a feed that had not answered yet.
+  await expect(rail).toContainText("Waiting for the first events.");
+  await expect(rail).not.toContainText("No events match");
+  await expect(rail).not.toContainText("not quiet hours");
+});
+
 test("a shared camera survives the entrance", async ({ page }) => {
   /*
    * Regression. The entrance named the default framing as its destination and runs after the

@@ -15,15 +15,6 @@ import type { RampName } from "./ramp";
  * filters and the detail panel sixty times a second to move a two-pixel outline.
  */
 
-/*
- * How far back a marker outside the held hour is pushed.
- *
- * Not zero. Twenty-eight events in one hour mean very little without the day they sit inside, and
- * the point of holding an hour is to see where in the pattern it falls, not to be handed twenty-
- * eight dots on an empty sphere. Shared with the shader so the fronts and the markers fade together.
- */
-export const FOCUS_DIM = 0.15;
-
 export interface GlobeProps {
   feed: Feed;
   filters: Filters;
@@ -59,6 +50,7 @@ export function Globe({
   const tooltip = useRef<HTMLDivElement>(null);
   const marker = useRef<HTMLDivElement>(null);
   const redrawRef = useRef<() => void>(() => {});
+  const wakeRef = useRef<() => void>(() => {});
   const rampRef = useRef<(name: RampName) => void>(() => {});
   /*
    * Read from inside the frame loop, which outlives any single render.
@@ -124,6 +116,15 @@ export function Globe({
     let running = false;
     let last = 0;
     let lastZoom = globe.controls.state().zoom;
+    /*
+     * Held-hour dimming, eased rather than switched.
+     *
+     * Setting the uniform on redraw cut the whole planet between two brightness levels in one frame,
+     * once on entering the strip and once on leaving. Eased here rather than in CSS because the value
+     * is a shader uniform, and driven by the same loop that already owns every other moving thing.
+     */
+    let focusFade = 0;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     const frame = (now: number): void => {
       /*
@@ -168,6 +169,18 @@ export function Globe({
         onReplayRef.current?.(replay.done() || at === null ? null : { at, revealed });
       }
 
+      const focusTarget = live.current.focusHour === null ? 0 : 1;
+      let fading = false;
+      if (focusFade !== focusTarget) {
+        const step = reducedMotion.matches ? 1 : dt / 0.13;
+        focusFade = focusTarget > focusFade
+          ? Math.min(focusTarget, focusFade + step)
+          : Math.max(focusTarget, focusFade - step);
+        globe.events.setFocusFade(focusFade);
+        globe.rings.setDim(1 - 0.85 * focusFade);
+        fading = focusFade !== focusTarget;
+      }
+
       const expanding = globe.rings.step(dt) > 0;
       // Clustering depends on zoom, so a zoom has to redraw the layer, not merely the camera.
       const zoomNow = globe.controls.state().zoom;
@@ -180,7 +193,7 @@ export function Globe({
       globe.render();
       placeOverlays();
       onCameraRef.current?.(globe.controls.state());
-      if (moving || expanding || replaying) requestAnimationFrame(frame);
+      if (moving || expanding || replaying || fading) requestAnimationFrame(frame);
       else running = false;
     };
 
@@ -190,6 +203,7 @@ export function Globe({
       last = performance.now();
       requestAnimationFrame(frame);
     };
+    wakeRef.current = wake;
 
     /*
      * The entrance replay.
@@ -207,9 +221,6 @@ export function Globe({
         feed.store, live.current.filters, Date.now(),
         globe.controls.state().zoom, replay?.at() ?? undefined, live.current.focusHour,
       );
-      // Same veil as the markers get. Set on redraw rather than per frame: it only changes when the
-      // held hour does, and the frame loop is not the place to keep restating a constant.
-      globe.rings.setDim(live.current.focusHour === null ? 1 : FOCUS_DIM);
       globe.render();
       placeOverlays();
     };
@@ -341,6 +352,7 @@ export function Globe({
   // it. Hover only ever changes whole hours, so this fires once per bar crossed, not per mouse move.
   useEffect(() => {
     redrawRef.current();
+    wakeRef.current();
   }, [filters, selected, focusHour]);
 
   useEffect(() => {
