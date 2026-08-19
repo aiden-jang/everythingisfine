@@ -46,7 +46,7 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
     // Paints the magnitude ramp outside the canvas. See DESIGN.md 3.1.
     <div data-ramp className="mt-3">
       <div className="flex items-baseline justify-between gap-3">
-        <span className="label">Sequence</span>
+        <span className="text-[11px] text-faint">Sequence</span>
         <span className="font-mono text-[10.5px] text-faint">
           {nearby.before} before · {nearby.after} after
         </span>

@@ -78,7 +78,19 @@ export function Globe({
     const globe = createGlobe(el);
     globe.resize();
     globe.render();
-    onReady(globe.controls.flyTo);
+    /*
+     * Wrapped, because `flyTo` aims the camera and does not start the loop that moves it.
+     *
+     * On the globe this hid behind the wavefronts: something is usually animating, so the flight got
+     * carried along by a loop that was already running. With the feeds quiet and nothing expanding,
+     * clicking a region set a target that nothing ever integrated and the camera sat still.
+     */
+    onReady((toLon, toLat, toZoom) => {
+      globe.controls.flyTo(toLon, toLat, toZoom);
+      // Through the ref, not the closure: a shared link calls this during setup, before `wake` further
+      // down has been initialised, and a temporal dead zone here takes the whole canvas with it.
+      wakeRef.current();
+    });
 
     if (import.meta.env.DEV) {
       console.info("[globe] geometry", globe.stats);

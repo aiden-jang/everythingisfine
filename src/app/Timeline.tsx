@@ -64,7 +64,9 @@ export function Timeline({
     // excludes by name. See DESIGN.md 3.1.
     <div data-ramp>
       <div className="flex items-baseline justify-between gap-3">
-        <label className="label" htmlFor="window">Activity</label>
+        {/* Still a label, just no longer an uppercase badge: the slider below needs an accessible
+            name, and swapping the element for a span quietly took it away. */}
+        <label className="text-[11px] text-faint" htmlFor="window">Activity</label>
         {/*
           The held hour replaces the peak while hovering. Both are readings of the same strip and
           only one of them is being asked for; showing them together put two numbers side by side

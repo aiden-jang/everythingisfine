@@ -356,7 +356,7 @@ export function App(): JSX.Element {
     <div className="frame">
       {/* The header used to hold a wordmark and two small words on a 1280px bar. It now carries
           the arithmetic that makes the reconciliation visible without opening anything. */}
-      <header className="flex items-center gap-6 border-b border-hairline bg-deck px-5 py-3">
+      <header className="flex items-center gap-6 bg-deck px-5 py-3 xl:bg-transparent">
         <div className="text-[13px] font-semibold tracking-[0.16em] whitespace-nowrap">
           FIRST MOTION
         </div>
@@ -429,7 +429,14 @@ export function App(): JSX.Element {
       <div className="zones" style={{ "--rail-w": `${railWidth}px` } as React.CSSProperties}>
         <aside className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r">
           <div>
-            <div className="label">Events</div>
+            {/*
+              No "EVENTS" label above this.
+
+              Eleven small uppercase labels stacked down one rail is the thing that reads as dated: a
+              templated rhythm where every block wears a name badge. A 38px number over the words "last
+              24 hours" needs no heading, and the ones that survive are the ones naming something a
+              reader could not otherwise work out.
+            */}
             {/*
               Before any coverage exists there is no count to show, and a big 0 above "nothing yet ·
               still filling" was two disclaimers stacked under a number that meant nothing. This says
@@ -613,7 +620,7 @@ export function App(): JSX.Element {
             className="pointer-events-none absolute right-0 bottom-0 left-0 z-[1] flex flex-wrap items-end justify-end gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
           >
             {onMap ? (
-              <div className="pointer-events-auto order-1 w-full max-w-[300px] border border-hairline bg-deck/82 p-3 backdrop-blur-lg xl:order-2">
+              <div className="pointer-events-auto order-1 w-full max-w-[300px] bg-deck/70 p-3 backdrop-blur-xl xl:order-2">
                 {legend}
               </div>
             ) : null}

@@ -110,8 +110,6 @@ export function createControls(
   let zoom = 1;
   /** 0 globe, 1 map. Held here as well as in the scene, because the camera has to agree with it. */
   let morph = 0;
-  let panX = 0;
-  let panY = 0;
   let fit = 4;
 
   let vLon = 0;
@@ -208,10 +206,31 @@ export function createControls(
     ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
 
-    // Analytic against the unit sphere rather than against the ocean mesh: it cannot be thrown off
-    // by tessellation, and it still answers when the mesh is mid-rebuild.
     const o = raycaster.ray.origin;
     const d = raycaster.ray.direction;
+
+    /*
+     * On the map, the ray meets a plane rather than a ball.
+     *
+     * Raycasting the sphere still returns an answer here, which is worse than returning none: the
+     * cursor names whichever earthquake happens to sit under that point of a globe nobody is looking
+     * at. Hover appeared to work and pointed at the wrong event.
+     */
+    if (morph > 0.5) {
+      if (Math.abs(d.z) < 1e-6) return null;
+      const t = -o.z / d.z;
+      if (t < 0) return null;
+      const x = o.x + d.x * t;
+      const y = o.y + d.y * t;
+      if (Math.abs(y) > 1) return null;
+      return {
+        lon: ((((((x / MAP_HALF_WIDTH) * 180) + 180) % 360) + 360) % 360) - 180,
+        lat: y * 90,
+      };
+    }
+
+    // Analytic against the unit sphere rather than against the ocean mesh: it cannot be thrown off
+    // by tessellation, and it still answers when the mesh is mid-rebuild.
     const b = o.dot(d);
     const c = o.lengthSq() - 1;
     const disc = b * b - c;
@@ -243,16 +262,25 @@ export function createControls(
     const orbitZ = c * Math.cos(lam);
 
     if (morph > 0) {
-      // Straight out from the plane, over wherever the pan has reached.
-      const flatX = panX;
-      const flatY = panY;
+      /*
+       * The map has no pan of its own: longitude and latitude *are* the camera position here, exactly
+       * as on the globe, and the plane's x and y are just where those land.
+       *
+       * Holding a separate pan was the first version and it split the camera in two. Flying to a
+       * region set longitude, which the map ignored, so clicking Indonesia zoomed and went nowhere;
+       * dragging moved a pan the permalink had never heard of, so a shared map link came back to the
+       * middle of the Atlantic. One position, and every existing thing that moves the camera works in
+       * both views without knowing there are two.
+       */
+      const flatX = (lon / 180) * MAP_HALF_WIDTH;
+      const flatY = lat / 90;
       const flatZ = dist();
       camera.position.set(
         orbitX + (flatX - orbitX) * morph,
         orbitY + (flatY - orbitY) * morph,
         orbitZ + (flatZ - orbitZ) * morph,
       );
-      camera.lookAt(panX * morph, panY * morph, 0);
+      camera.lookAt(flatX * morph, flatY * morph, 0);
       camera.updateMatrixWorld();
       return;
     }
@@ -412,11 +440,21 @@ export function createControls(
      */
     const panBy = (dxPx: number, dyPx: number): void => {
       const perPixel = (2 * dist() * Math.tan((fovDeg / 2) * DEG)) / canvas.clientHeight;
-      panX -= dxPx * perPixel;
-      panY += dyPx * perPixel;
-      // Clamped to the map plus a margin, so it cannot be dragged into empty space and lost.
-      panX = Math.max(-MAP_HALF_WIDTH, Math.min(MAP_HALF_WIDTH, panX));
-      panY = Math.max(-1, Math.min(1, panY));
+      lon -= ((dxPx * perPixel) / MAP_HALF_WIDTH) * 180;
+      /*
+       * Vertically the map is a wall, horizontally it is a loop.
+       *
+       * There is nothing above 90 north to look at, so the clamp keeps the poles at the edge of the
+       * view rather than letting the map be dragged off into empty space. It accounts for how much of
+       * the world the view covers: zoomed out far enough to see the whole map, there is nowhere to go
+       * and latitude locks to the equator.
+       */
+      const halfView = dist() * Math.tan((fovDeg / 2) * DEG);
+      const room = Math.max(0, 1 - halfView) * 90;
+      lat = Math.max(-room, Math.min(room, lat + dyPx * perPixel * 90));
+      // Wrapped rather than clamped: the map repeats, and hitting a wall at the date line on a
+      // projection whose whole point is that it is continuous would be a strange place to stop.
+      lon = ((((lon + 180) % 360) + 360) % 360) - 180;
     };
 
     const onPointerMove = (e: PointerEvent): void => {
@@ -658,13 +696,32 @@ export function createControls(
       target = to;
     },
     project: (pLon, pLat) => {
+      const r = canvas.getBoundingClientRect();
+
+      /*
+       * On the map, project the point on the plane, not the point on the sphere.
+       *
+       * Everything that puts chrome over the canvas goes through here: the tooltip, the hover ring,
+       * the selection ring. Left on the sphere they were all placed where the event would have been on
+       * a globe nobody was looking at, which is why hover on the map appeared to do nothing.
+       */
+      if (morph > 0.5) {
+        let dLon = pLon - lon;
+        dLon -= Math.round(dLon / 360) * 360;
+        world.set(((lon + dLon) / 180) * MAP_HALF_WIDTH, pLat / 90, 0);
+        world.project(camera);
+        return {
+          x: r.left + ((world.x + 1) / 2) * r.width,
+          y: r.top + ((1 - world.y) / 2) * r.height,
+        };
+      }
+
       const phi = pLat * DEG;
       const lam = pLon * DEG;
       const c = Math.cos(phi);
       world.set(c * Math.sin(lam), Math.sin(phi), c * Math.cos(lam));
       // Behind the horizon: the surface normal at that point faces away from the eye.
       if (world.dot(camera.position.clone().sub(world)) <= 0) return null;
-      const r = canvas.getBoundingClientRect();
       world.project(camera);
       return {
         x: r.left + ((world.x + 1) / 2) * r.width,
