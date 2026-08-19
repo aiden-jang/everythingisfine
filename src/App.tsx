@@ -698,7 +698,15 @@ export function App(): JSX.Element {
             gets its height back for the things that are actually a list.
           */}
           <div
-            className="pointer-events-none absolute right-0 bottom-0 left-0 z-[1] flex flex-wrap items-end justify-end gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
+            /*
+              Stops where the pinned panel starts, the same way it stops where the rail starts.
+              It ran the full width before, which truncated the key hints under the panel and, once the
+              cross-section joined the band, hid a fifth of the section behind the event it was opened
+              from. Only at xl: below that the panel is a row of its own and nothing is over anything.
+            */
+            className={`pointer-events-none absolute bottom-0 left-0 z-[1] flex flex-wrap items-end justify-end gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)] ${
+              shownQuake && pinned ? "right-0 xl:right-[var(--panel-w)]" : "right-0"
+            }`}
           >
             {/*
               The section joins the bottom band as its own full-width line rather than as a new
@@ -708,7 +716,14 @@ export function App(): JSX.Element {
             */}
             {section ? (
               <div className="order-9 -mx-4 -mb-4 w-[calc(100%+2rem)] bg-deck/40 px-4 pt-3 pb-4 backdrop-blur-2xl backdrop-saturate-50">
-                <CrossSection data={section} ramp={ramp} onClose={() => setSectionLine(null)} />
+                <CrossSection
+                  data={section}
+                  ramp={ramp}
+                  store={feed.store}
+                  selected={selected}
+                  onSelect={setSelected}
+                  onClose={() => setSectionLine(null)}
+                />
               </div>
             ) : null}
             {onMap ? (

@@ -1997,6 +1997,35 @@ is that call twice. It hides on the globe: a great circle projects to a curve th
 a straight screen line between two projected points would be a wrong picture rather than a simplified
 one.
 
+**A mark in the section is an event, not a dot.** It shipped read-only for a version: it would put a
+magnitude 5 at 400km on screen and offer no way to find out what it was, while the same event was one
+click away in the list beside it. Clicking a mark pins it, clicking it again unpins, and the pinned and
+hovered marks are ringed achromatically for the reason every other ring here is. The hovered event takes
+the header's metadata line rather than getting a floating tooltip: a label following the cursor inside a
+120px band covers the marks either side of the one it is naming, and the section's own geometry is not
+what somebody is reading while pointing at a dot. The SVG stays out of the reading order, like the
+canvas, because the event list is already the accessible view of the same events and shares this panel's
+selection.
+
+**The bottom band stops where the pinned panel starts.** It ran to the right edge, which had been
+truncating the key hints under the panel since before the section existed and, once the section joined
+the band, hid a fifth of it behind the event it had been opened from. The panel's width is a variable
+now so the two agree.
+
+**Plate boundaries are ticked on the distance axis.** The section could show a slab and not say why one
+was there; a tick where the line crosses a plate edge turns the picture into a claim, because the
+earthquakes begin at the boundary and descend away from it. Found by sign change in the cross-track
+offset over the boundary vertices, which is the same `project` call the events already use, rather than
+by intersecting two great circles.
+
+The first version carried a guard against the far side of the planet, on the reasoning that the great
+circle through the two ends is a whole circle and boundaries cross it everywhere. That is true and the
+guard was dead: measured against a thousand short lines scattered over the globe it changed nothing,
+because a crossing whose distance along is inside the section is on the section by construction. It came
+out. What stayed is a guard against `atan2` breaking at the antipode of the start, where interpolating
+between one end at +20,000km and the other at -20,000km is not arithmetic about anything and lands at
+zero, which is inside the section and looks deliberate.
+
 **The section is in the link, and it brings the view with it.** Which projection somebody was using is
 deliberately not in the permalink: a link carries where they were looking, and the projection is a
 preference that would arrive as a surprise. A section is the exception and it is not that rule bending,
