@@ -36,6 +36,16 @@ const LAT_LIMIT = 85;
 const ZOOM_MIN = 0.75;
 const ZOOM_MAX = 3;
 
+/*
+ * The map's share of the framing distance, because the framing shot is a sphere's and the map is not.
+ *
+ * `fit` frames a 2-unit ball. The map is that ball unrolled to 4 by 2, so the same distance leaves the
+ * whole planet in frame with the poles and half the Pacific paying for it: at zoom 1 on a desktop
+ * that was 335 degrees of longitude and markers too small to aim at. Zooming the seismic band up to
+ * fill the frame is what zoom 1 should mean on either view.
+ */
+const MAP_FIT = 0.72;
+
 /** Flick decay. A third of a second of coasting reads as weight; longer reads as ice. */
 const MOMENTUM_TAU = 0.32;
 const MOMENTUM_FLOOR = 0.6; // deg/sec, below which it has stopped
@@ -143,7 +153,7 @@ export function createControls(
    * the screen. The floor states the actual requirement in one place instead.
    */
   const DIST_FLOOR = RADIUS_ATMOSPHERE + 0.12;
-  const dist = (): number => Math.max(DIST_FLOOR, fit / zoom);
+  const dist = (): number => Math.max(DIST_FLOOR, (fit * (1 - (1 - MAP_FIT) * morph)) / zoom);
 
   /**
    * Pixels per unit of projected height at the origin plane. The one constant the projection needs.
