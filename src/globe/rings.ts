@@ -113,15 +113,18 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
   const positions = new Float32Array(vertexCount * 3);
   const ramps = new Float32Array(vertexCount);
   const fades = new Float32Array(vertexCount);
+  const lonLats = new Float32Array(vertexCount * 2);
 
   const geometry = new BufferGeometry();
   const posAttr = new BufferAttribute(positions, 3);
   const rampAttr = new BufferAttribute(ramps, 1);
   const fadeAttr = new BufferAttribute(fades, 1);
-  for (const a of [posAttr, rampAttr, fadeAttr]) a.setUsage(35048 /* DynamicDrawUsage */);
+  const lonLatAttr = new BufferAttribute(lonLats, 2);
+  for (const a of [posAttr, rampAttr, fadeAttr, lonLatAttr]) a.setUsage(35048 /* DynamicDrawUsage */);
   geometry.setAttribute("position", posAttr);
   geometry.setAttribute("aRamp", rampAttr);
   geometry.setAttribute("aFade", fadeAttr);
+  geometry.setAttribute("aLonLat", lonLatAttr);
   geometry.setDrawRange(0, 0);
   geometry.boundingSphere = null;
 
@@ -194,9 +197,20 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
         const a = (step / SEGMENTS) * Math.PI * 2;
         const ca = Math.cos(a) * st;
         const sa = Math.sin(a) * st;
-        positions[w * 3] = cx[0]! * ct + ux[0]! * ca + vx[0]! * sa;
-        positions[w * 3 + 1] = cx[1]! * ct + ux[1]! * ca + vx[1]! * sa;
-        positions[w * 3 + 2] = cx[2]! * ct + ux[2]! * ca + vx[2]! * sa;
+        const px = cx[0]! * ct + ux[0]! * ca + vx[0]! * sa;
+        const py = cx[1]! * ct + ux[1]! * ca + vx[1]! * sa;
+        const pz = cx[2]! * ct + ux[2]! * ca + vx[2]! * sa;
+        positions[w * 3] = px;
+        positions[w * 3 + 1] = py;
+        positions[w * 3 + 2] = pz;
+        /*
+         * Derived here rather than carried, because a front has no source coordinates: it is a circle
+         * generated around an epicentre. Safe for the same reason the sphere shells are: the wrap only
+         * bites where a primitive interpolates across it, and a front crossing the date line is two
+         * degenerate segments at the edge rather than a band across the map.
+         */
+        lonLats[w * 2] = (Math.atan2(px, pz) * 180) / Math.PI;
+        lonLats[w * 2 + 1] = (Math.asin(py / (Math.hypot(px, py, pz) || 1)) * 180) / Math.PI;
         ramps[w] = rampAt;
         fades[w] = fade;
         w += 1;
@@ -242,6 +256,8 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
       posAttr.updateRanges = [{ start: 0, count: written * 3 }];
       rampAttr.updateRanges = spans;
       fadeAttr.updateRanges = spans;
+      lonLatAttr.updateRanges = [{ start: 0, count: written * 2 }];
+      lonLatAttr.needsUpdate = true;
       posAttr.needsUpdate = true;
       rampAttr.needsUpdate = true;
       fadeAttr.needsUpdate = true;

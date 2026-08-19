@@ -349,7 +349,9 @@ hints. Below 1280px it returns to the rail, because a floating panel over a 60dv
 subject.
 
 **Globe and map are one geometry, morphed.** The projection happens in the vertex shader from a single
-shared uniform, so the switch is the planet unwrapping rather than a cross-fade. The globe is the
+shared uniform, so the switch is the planet unwrapping rather than a cross-fade. Every layer carries the
+coordinates it was built from: deriving them back out of a position is wrong at the date line and
+undefined at the poles. The globe is the
 default because it is the honest one; the map exists because comparing two margins on a sphere means
 turning it.
 

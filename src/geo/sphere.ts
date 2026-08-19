@@ -77,10 +77,14 @@ export function spanDeg(aLon: number, aLat: number, bLon: number, bLat: number):
  * Present enough to give the sphere something to read against while it turns, quiet enough to
  * vanish once events are on it. Poles are skipped: a parallel at 90 degrees is a point.
  */
-export function graticule(stepDeg: number, radius: number): Float32Array {
+export function graticule(
+  stepDeg: number, radius: number,
+): { position: Float32Array; lonLat: Float32Array } {
   const out: number[] = [];
+  const ll: number[] = [];
   const push = (lon: number, lat: number): void => {
     out.push(...toVec3(lon, lat, radius));
+    ll.push(lon, lat);
   };
 
   for (let lat = -90 + stepDeg; lat <= 90 - stepDeg; lat += stepDeg) {
@@ -90,20 +94,16 @@ export function graticule(stepDeg: number, radius: number): Float32Array {
     }
   }
   /*
-   * Meridians stop three degrees short of each pole.
-   *
-   * At the pole itself the position is (0, +/-r, 0) and longitude is undefined: `atan2(0, 0)` returns
-   * zero, so on the flat map every meridian's polar endpoint collapses onto the prime meridian and
-   * draws a line right across the world. Twelve of them, fanning out from two points.
-   *
-   * On the globe the missing three degrees are a few pixels at a place where twelve lines converge
-   * and nobody can tell them apart anyway.
+   * Full length again. This stopped three degrees short of each pole for a while, because the map
+   * recovered longitude from the position and `atan2(0, 0)` at a pole returns zero, collapsing every
+   * meridian's endpoint onto the prime meridian. Longitude is carried explicitly now, so a pole vertex
+   * knows which meridian it belongs to.
    */
   for (let lon = -180; lon < 180; lon += stepDeg) {
-    for (let lat = -87; lat < 87; lat += 3) {
+    for (let lat = -90; lat < 90; lat += 3) {
       push(lon, lat);
       push(lon, lat + 3);
     }
   }
-  return new Float32Array(out);
+  return { position: new Float32Array(out), lonLat: new Float32Array(ll) };
 }

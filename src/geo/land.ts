@@ -132,12 +132,24 @@ export interface LandGeometry {
   /** Triangle indices into `position`. Indexed, because subdivision shares every midpoint between
    *  two triangles and a soup would store each one twice. */
   index: Uint32Array;
+  /**
+   * The longitude and latitude each vertex was triangulated in, per vertex.
+   *
+   * The flat map used to recover these from the sphere position with `atan2`, which is wrong in a way
+   * that only shows once something interpolates *between* two vertices. `densify` walks the shorter way
+   * round the date line and emits longitudes past 180; earcut triangulates happily in that space; and
+   * `atan2` then folds 180.5 back to -179.5, so a triangle that was two degrees wide is drawn spanning
+   * the world. Carrying the original values removes the guesswork rather than patching each symptom.
+   */
+  lonLat: Float32Array;
   /** How many triangles arrived wound the wrong way. Zero would mean the source became consistent. */
   flipped: number;
   /** How many were dropped for crossing the antimeridian. Slivers on the globe, a smear on the map. */
   spanning: number;
   /** Line segment pairs for the coastline stroke. */
   coast: Float32Array;
+  /** Lon/lat for each coastline vertex, in the same order as `coast`. */
+  coastLonLat: Float32Array;
   stats: {
     vertices: number;
     triangles: number;
@@ -154,6 +166,7 @@ export function buildLand(): LandGeometry {
   const verts: number[] = [];
   const tris: number[] = [];
   const coast: number[] = [];
+  const coastLonLat: number[] = [];
 
   for (const polygon of polygons) {
     const flat: number[] = [];
@@ -184,6 +197,7 @@ export function buildLand(): LandGeometry {
          */
         if (Math.abs(b[0]! - a[0]!) > 180) continue;
         coast.push(...toVec3(a[0]!, a[1]!, RADIUS_COAST), ...toVec3(b[0]!, b[1]!, RADIUS_COAST));
+        coastLonLat.push(a[0]!, a[1]!, b[0]!, b[1]!);
       }
     });
 
@@ -265,6 +279,7 @@ export function buildLand(): LandGeometry {
    * hundred pixels has a tiny per-pixel derivative. The test catches seam triangles when they are
    * small on screen, which is the globe, and misses them exactly when they are the problem.
    */
+  const lonLat = new Float32Array(mesh.verts);
   const index = new Uint32Array(mesh.tris);
   let flipped = 0;
   for (let i = 0; i < index.length; i += 3) {
@@ -292,9 +307,11 @@ export function buildLand(): LandGeometry {
   return {
     position,
     index,
+    lonLat,
     flipped,
     spanning,
     coast: new Float32Array(coast),
+    coastLonLat: new Float32Array(coastLonLat),
     stats: {
       vertices: count,
       triangles: index.length / 3,

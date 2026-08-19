@@ -215,6 +215,8 @@ export function createEventLayer(
   const magnitudes = new Float32Array(capacity);
   const clusters = new Float32Array(capacity);
   const depths = new Float32Array(capacity);
+  /** Written beside the positions: the map projects from these, not from the sphere point. */
+  const lonLats = new Float32Array(capacity * 2);
   /** 1 when a marker holds an event inside the hovered hour, 0 otherwise. Only read while hovering. */
   const focuses = new Float32Array(capacity);
   /** Reused between syncs. Rebuilding a Map per filter tick is the allocation the budget catches. */
@@ -225,16 +227,19 @@ export function createEventLayer(
   const magAttr = new BufferAttribute(magnitudes, 1);
   const clusterAttr = new BufferAttribute(clusters, 1);
   const depthAttr = new BufferAttribute(depths, 1);
+  const lonLatAttr = new BufferAttribute(lonLats, 2);
   const focusAttr = new BufferAttribute(focuses, 1);
   positionAttr.setUsage(35048 /* DynamicDrawUsage */);
   magAttr.setUsage(35048);
   clusterAttr.setUsage(35048);
   depthAttr.setUsage(35048);
+  lonLatAttr.setUsage(35048);
   focusAttr.setUsage(35048);
   geometry.setAttribute("position", positionAttr);
   geometry.setAttribute("aMag", magAttr);
   geometry.setAttribute("aCluster", clusterAttr);
   geometry.setAttribute("aDepth", depthAttr);
+  geometry.setAttribute("aLonLat", lonLatAttr);
   geometry.setAttribute("aFocus", focusAttr);
   geometry.setDrawRange(0, 0);
   // Never computed. The default bounding sphere pass walks every vertex, and with a draw range
@@ -384,6 +389,8 @@ export function createEventLayer(
         positions[i] = c * Math.sin(lam);
         positions[i + 1] = Math.sin(phi) * RADIUS_EVENTS;
         positions[i + 2] = c * Math.cos(lam);
+        lonLats[n * 2] = r.lon;
+        lonLats[n * 2 + 1] = r.lat;
         magnitudes[n] = r.magnitude;
         /*
          * A missing depth reads as shallow, and that is a choice rather than an oversight.
@@ -404,6 +411,8 @@ export function createEventLayer(
       clusterAttr.needsUpdate = true;
       depthAttr.updateRanges = [{ start: 0, count: n }];
       depthAttr.needsUpdate = true;
+      lonLatAttr.updateRanges = [{ start: 0, count: n * 2 }];
+      lonLatAttr.needsUpdate = true;
       focusAttr.updateRanges = [{ start: 0, count: n }];
       focusAttr.needsUpdate = true;
       // Only the written span is uploaded. Handing the driver the whole 50k buffer to redraw 200
