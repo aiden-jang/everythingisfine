@@ -739,3 +739,76 @@ test("the rail resizes in both directions, by pointer and by key", async ({ page
   expect(Number(await page.getByRole("separator", { name: "Regions height" })
     .getAttribute("aria-valuenow"))).toBe(keyed + 32);
 });
+
+/*
+ * Shift-drag on the map draws a cross-section.
+ *
+ * The gesture is the risk here, not the geometry, which has its own unit tests. It has to take the
+ * drag away from the camera without leaving a mode behind, and it has to read the same direction as
+ * the panel it opens: a line dragged east to west put the map's right-hand end at the panel's zero and
+ * nothing on screen said so.
+ */
+test("a line dragged across the map opens a section through it", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await installFeeds(page, { count: 400 });
+  await page.goto("/#at=140,36,2.6&m=2&w=24");
+  await waitForData(page);
+  await page.getByRole("button", { name: "Map" }).click();
+  await page.waitForTimeout(1400);
+
+  const section = page.getByText("Cross-section", { exact: true });
+  await expect(section).toHaveCount(0);
+  // The hint row says so, on the map only. A gesture nobody is told about is not shipped.
+  await expect(page.locator(".zone-canvas")).toContainText("shift-drag");
+
+  const box = (await page.locator("canvas").boundingBox())!;
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height * 0.42;
+  const before = page.url();
+
+  const drag = async (ax: number, ay: number, bx: number, by: number): Promise<void> => {
+    await page.keyboard.down("Shift");
+    await page.mouse.move(ax, ay);
+    await page.mouse.down();
+    await page.mouse.move(bx, by, { steps: 12 });
+    await page.mouse.up();
+    await page.keyboard.up("Shift");
+  };
+  // Both ends named, so the reversed drag is the same segment and not a different one that happens to
+  // be the same length.
+  const west = [cx - 200, cy + 100] as const;
+  const east = [cx + 200, cy - 80] as const;
+
+  await drag(...west, ...east);
+  await expect(section).toBeVisible();
+  const band = page.locator(".zone-canvas").getByText(/km long/);
+  await expect(band).toContainText(/km either side/);
+  // The camera did not move, which is the whole reason this listens in the capture phase.
+  expect(page.url()).toBe(before);
+
+  /*
+   * The same line dragged the other way reads the same way.
+   *
+   * Measured on where the marks land, not on the stated length, which is the same either way round
+   * and made the first version of this a tautology that survived deleting the normalisation.
+   */
+  const centroid = async (): Promise<number> => {
+    const xs = await page.locator(".zone-canvas svg circle[fill]").evaluateAll(
+      (nodes) => nodes.map((n) => Number(n.getAttribute("cx"))),
+    );
+    expect(xs.length).toBeGreaterThan(3);
+    return xs.reduce((a, b) => a + b, 0) / xs.length;
+  };
+  const eastward = await centroid();
+  await page.keyboard.press("Escape");
+  await expect(section).toHaveCount(0);
+  await drag(...east, ...west);
+  await expect(section).toBeVisible();
+  expect(await centroid()).toBeCloseTo(eastward, 0);
+
+  // A shift-click with no drag is the undo, rather than a zero-length section reporting nothing found.
+  await page.keyboard.down("Shift");
+  await page.mouse.click(cx, cy);
+  await page.keyboard.up("Shift");
+  await expect(section).toHaveCount(0);
+});
