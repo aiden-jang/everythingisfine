@@ -1997,8 +1997,22 @@ is that call twice. It hides on the globe: a great circle projects to a curve th
 a straight screen line between two projected points would be a wrong picture rather than a simplified
 one.
 
-The section is not in the permalink yet, which makes it the one piece of state somebody would want to
-send and cannot.
+**The section is in the link, and it brings the view with it.** Which projection somebody was using is
+deliberately not in the permalink: a link carries where they were looking, and the projection is a
+preference that would arrive as a surprise. A section is the exception and it is not that rule bending,
+because a section has nowhere to be drawn except the map. The link is not saying "use the map", it is
+naming a slice; opened on a globe the panel would describe a cut with no line anywhere. So a fragment
+holding `x=` arrives flat whatever the recipient's own preference says.
+
+Two things came out of writing it down. A line with both ends in the same place is dropped rather than
+restored, because its length is zero, nothing falls inside the corridor, and a panel reporting nothing
+found reads as a broken link rather than an edited one; the gesture cannot produce that, since a drag
+under twelve pixels is a dismissal, so it only ever arrives from a hand-typed URL.
+
+And `wrapLon` was not idempotent. The modulo form is exact in principle and not in floating point: it
+turns 145.8 into 145.79999999999995, which survives rounding on the way out and comes back through
+`decode` unrounded, so a section did not equal itself after a round trip. It returns a longitude that
+is already in range untouched now, which the camera's own field had quietly needed too.
 
 ## The map has no edges
 
