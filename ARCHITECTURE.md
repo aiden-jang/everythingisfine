@@ -1856,6 +1856,69 @@ same reason the camera got keys. The width is remembered.
 The drag listens on the window rather than the handle, because a pointer moving faster than layout
 leaves a 4px target behind and the drag would stop the moment the cursor overtook it.
 
+## The map, as one geometry
+
+The obvious build is two scenes: sphere positions in one, equirectangular in the other, cross-faded.
+It doubles every buffer, it doubles every place a layer can be forgotten, and the switch is a
+dissolve, which says nothing.
+
+There is one set of positions, on the sphere, and the plane is derived from them in the vertex shader:
+`asin` and `atan` recover latitude and longitude from a point, and the result is mixed with the sphere
+position by one uniform that every layer shares. A planet unwrapping into a map says what a projection
+*is*, which is the thing a flat map of earthquakes most needs its viewer to understand: Greenland is
+not that big and the poles are a lie.
+
+Sharing the uniform object rather than passing a number is what makes "did I wire that one up"
+unanswerable in the wrong direction. The stock materials learn it through `onBeforeCompile` rather
+than being rewritten as custom shaders, which would have been four more shaders to keep in step.
+`customProgramCacheKey` is not optional there: three.js caches programs by material key, and two
+materials differing only by an injected shader hash to the same key, so the second silently reuses the
+first one's program.
+
+The camera flies between orbiting a sphere and facing a plane on the same number as the geometry.
+Switching at the halfway point instead shows a frame of a flat map at an oblique angle, which looks
+like the projection has broken rather than like a projection. Drag becomes a pan past the halfway
+point, because a drag that is half a rotation and half a pan tracks neither.
+
+The facing tests fade out with the morph. A map has no far hemisphere, and the test that hides one on
+a globe would delete half the earthquakes on a map.
+
+## The antimeridian, and two wrong theories about it
+
+Flattening produced streaks across the map, and I was wrong about the cause twice.
+
+**The fragment-derivative trick does not work here.** The usual answer is to discard fragments whose
+longitude changes fast across a pixel. `fwidth` measures change *per pixel*, and a triangle stretched
+across nine hundred pixels has a tiny per-pixel derivative: the test catches seam triangles when they
+are small on screen, which is the globe, and misses them exactly when they are the problem. I shipped
+it, looked at the screenshot, and took it out again.
+
+**It was the poles, not the seam.** At a pole the position is `(0, ±r, 0)` and longitude does not
+exist: `atan2(0, 0)` returns zero. Every meridian's polar endpoint and every polar vertex of Antarctica
+therefore lands on the prime meridian, and each triangle or segment touching one stretches from there
+to wherever its other corners are. No span test catches that, because 170 degrees is not more than 180.
+
+Fixed where each layer is built: coastline segments crossing 180 are dropped, as the plate boundaries
+already dropped theirs; the graticule's meridians stop three degrees short of each pole; sphere
+geometries have their seam column and pole fans removed from the index buffer.
+
+**The land fill was a real bug, and dropping seam triangles after subdivision does not fix it.** A
+triangle from 179E to 179W is split into children through longitude zero, and each child spans just
+under 180 degrees: under any threshold that keeps Antarctica, which legitimately has triangles spanning
+120 degrees near the pole because a wide sweep of longitude down there is a short arc. The children
+pass and each draws a sliver across the map. Filtering before subdivision, in longitude and latitude
+where earcut worked, takes the worst remaining span from **123.6 degrees to 19.4**.
+
+**Still not finished, and now narrowed.** Thin lines still fan across the northern half of the map. My
+first two guesses were wrong and cost most of an afternoon: the fragment-derivative trick, and then the
+land fill, which turned out to be a real bug that was not this one. Hiding layers one at a time puts it
+in the **graticule**, and disabling the meridians alone leaves it, so it is the latitude circles. Those
+are horizontal lines of constant latitude and there is no reading of the projection where they come out
+diagonal, which means something upstream of my model of them is wrong.
+
+It is a visible defect on a view that ships behind a toggle. Recorded here at the point the evidence
+actually reaches, rather than guessed at a third time.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -1865,6 +1928,10 @@ Written last, and kept accurate rather than kept short.
   aftershock territory. No threshold separates them without dropping genuine matches. The detail
   panel lists every merged reading so a wrong merge is visible, which is the difference between a
   limitation and a lie, but it is a real limitation and not a rare one during a sequence.
+
+- **The flat map has a fill artefact at the poles.** A wedge across the top and a band along the
+  bottom, from the land fill, surviving a polar-vertex filter that should have removed them. Isolated
+  to the layer, not to the line of code.
 
 - **Browser tests still run against a dev server, not a build.** They no longer touch the network, so
   they can go in CI, but they exercise `pnpm dev` rather than `dist`. A bundler-only failure would not

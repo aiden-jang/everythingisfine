@@ -1,6 +1,7 @@
 import { Raycaster, Vector2, Vector3, type PerspectiveCamera } from "three";
 import { RADIUS_ATMOSPHERE } from "../geo/land";
 import { DEG } from "../geo/sphere";
+import { MAP_HALF_WIDTH } from "./morph";
 
 /*
  * Orbiting the globe.
@@ -91,6 +92,9 @@ export interface Controls {
   flyTo: (lon: number, lat: number, zoom?: number) => void;
   /** The one entrance. Does nothing at all under reduced motion, which is the correct nothing. */
   enter: () => void;
+  /** 0 globe, 1 map. Drag becomes a pan and the facing tests fade out as this reaches 1. */
+  setMorph: (t: number) => void;
+  morph: () => number;
   /** Screen position of a geographic point, or null when it is round the back. */
   project: (lon: number, lat: number) => { x: number; y: number } | null;
 }
@@ -104,6 +108,10 @@ export function createControls(
   let lon = framing.lon;
   let lat = framing.lat;
   let zoom = 1;
+  /** 0 globe, 1 map. Held here as well as in the scene, because the camera has to agree with it. */
+  let morph = 0;
+  let panX = 0;
+  let panY = 0;
   let fit = 4;
 
   let vLon = 0;
@@ -216,11 +224,40 @@ export function createControls(
     };
   };
 
+  /*
+   * The camera flies from orbiting a sphere to facing a plane, on the same number as the geometry.
+   *
+   * Sequencing it after the morph instead, or switching at the halfway point, both show a frame of a
+   * flattened map viewed from an oblique angle, which looks like the projection has broken rather
+   * than like a projection.
+   *
+   * The map camera keeps the same magnification model: `dist` is the framing distance over the zoom,
+   * so a notch of wheel means the same proportion of the way in on either view.
+   */
   const apply = (): void => {
     const phi = lat * DEG;
     const lam = lon * DEG;
     const c = Math.cos(phi) * dist();
-    camera.position.set(c * Math.sin(lam), Math.sin(phi) * dist(), c * Math.cos(lam));
+    const orbitX = c * Math.sin(lam);
+    const orbitY = Math.sin(phi) * dist();
+    const orbitZ = c * Math.cos(lam);
+
+    if (morph > 0) {
+      // Straight out from the plane, over wherever the pan has reached.
+      const flatX = panX;
+      const flatY = panY;
+      const flatZ = dist();
+      camera.position.set(
+        orbitX + (flatX - orbitX) * morph,
+        orbitY + (flatY - orbitY) * morph,
+        orbitZ + (flatZ - orbitZ) * morph,
+      );
+      camera.lookAt(panX * morph, panY * morph, 0);
+      camera.updateMatrixWorld();
+      return;
+    }
+
+    camera.position.set(orbitX, orbitY, orbitZ);
     camera.lookAt(0, 0, 0);
     // Not optional, and not a formality. `lookAt` writes the quaternion but leaves matrixWorld
     // stale until something renders, and `pick` raycasts through matrixWorld. Without this the
@@ -366,6 +403,22 @@ export function createControls(
       };
     };
 
+    /*
+     * On the map a drag moves the map, not the camera's longitude.
+     *
+     * Reusing the orbit path with the morph applied would spin a plane, which is the kind of thing
+     * that technically animates and means nothing. The switch is at the halfway point rather than
+     * blended, because a drag that is half a rotation and half a pan tracks neither.
+     */
+    const panBy = (dxPx: number, dyPx: number): void => {
+      const perPixel = (2 * dist() * Math.tan((fovDeg / 2) * DEG)) / canvas.clientHeight;
+      panX -= dxPx * perPixel;
+      panY += dyPx * perPixel;
+      // Clamped to the map plus a margin, so it cannot be dragged into empty space and lost.
+      panX = Math.max(-MAP_HALF_WIDTH, Math.min(MAP_HALF_WIDTH, panX));
+      panY = Math.max(-1, Math.min(1, panY));
+    };
+
     const onPointerMove = (e: PointerEvent): void => {
       const prev = pointers.get(e.pointerId);
       if (!prev) return;
@@ -379,6 +432,15 @@ export function createControls(
           pinchDist = now;
           onChange();
         }
+        return;
+      }
+
+      if (morph > 0.5) {
+        panBy(e.clientX - prev.x, e.clientY - prev.y);
+        vLon = 0;
+        vLat = 0;
+        apply();
+        onChange();
         return;
       }
 
@@ -609,6 +671,11 @@ export function createControls(
         y: r.top + ((1 - world.y) / 2) * r.height,
       };
     },
+    setMorph: (t) => {
+      morph = Math.max(0, Math.min(1, t));
+      apply();
+    },
+    morph: () => morph,
     state: () => ({ lon, lat, zoom }),
     setFit: (d) => {
       fit = d;

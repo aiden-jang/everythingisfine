@@ -127,6 +127,16 @@ export function App(): JSX.Element {
    * the app forgetting something it was told.
    */
   const onMap = useWide();
+  /*
+   * Not in the permalink, deliberately. A link carries where somebody was looking; which projection
+   * they happened to be using while looking is a preference, and one that would arrive as a surprise.
+   */
+  const [flat, setFlat] = useState(
+    () => localStorage.getItem("firstmotion.flat") === "1",
+  );
+  useEffect(() => {
+    localStorage.setItem("firstmotion.flat", flat ? "1" : "0");
+  }, [flat]);
   const [railWidth, setRailWidth] = useState<number>(
     () => Number(localStorage.getItem("firstmotion.rail")) || 356,
   );
@@ -379,6 +389,14 @@ export function App(): JSX.Element {
         <div className="ml-auto flex min-w-0 items-center gap-3">
           <button
             type="button"
+            onClick={() => setFlat((f) => !f)}
+            aria-pressed={flat}
+            className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink"
+          >
+            {flat ? "Globe" : "Map"}
+          </button>
+          <button
+            type="button"
             onClick={() => setRamp((r) => (r === "thermal" ? "cividis" : "thermal"))}
             aria-pressed={ramp === "cividis"}
             className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised ${
@@ -576,6 +594,7 @@ export function App(): JSX.Element {
             selected={selected}
             ramp={ramp}
             focusHour={focusHour}
+            flat={flat}
             onSelect={setSelected}
             onReady={onReady}
             onCamera={(state) => { camera.current = state; }}

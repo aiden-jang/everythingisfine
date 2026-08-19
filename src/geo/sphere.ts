@@ -89,8 +89,18 @@ export function graticule(stepDeg: number, radius: number): Float32Array {
       push(lon + 3, lat);
     }
   }
+  /*
+   * Meridians stop three degrees short of each pole.
+   *
+   * At the pole itself the position is (0, +/-r, 0) and longitude is undefined: `atan2(0, 0)` returns
+   * zero, so on the flat map every meridian's polar endpoint collapses onto the prime meridian and
+   * draws a line right across the world. Twelve of them, fanning out from two points.
+   *
+   * On the globe the missing three degrees are a few pixels at a place where twelve lines converge
+   * and nobody can tell them apart anyway.
+   */
   for (let lon = -180; lon < 180; lon += stepDeg) {
-    for (let lat = -90; lat < 90; lat += 3) {
+    for (let lat = -87; lat < 87; lat += 3) {
       push(lon, lat);
       push(lon, lat + 3);
     }

@@ -5,6 +5,7 @@ import { matches } from "../data/filter";
 import { DEG } from "../geo/sphere";
 import { MAG_MIN, rampPosition, rampTexture, type RampName } from "./ramp";
 import { cellKey, cellSizeDeg } from "./cluster";
+import { MORPH_GLSL } from "./morph";
 
 /*
  * Depth, as the one channel left.
@@ -63,6 +64,7 @@ const REFERENCE_RADIUS_PX = 300;
  */
 const SHADER = {
   vertexShader: /* glsl */ `
+    ${MORPH_GLSL}
     attribute float aMag;
     attribute float aCluster;
     attribute float aDepth;
@@ -86,14 +88,18 @@ const SHADER = {
       // The globe is a unit sphere at the origin, so the surface normal is the position itself.
       // A marker on the far side has its normal pointing away from the eye.
       vec3 normal = normalize(world.xyz);
-      vFacing = dot(normal, normalize(cameraPosition - world.xyz));
+      /*
+       * A map has no far side. The facing test is what hides the other hemisphere on a globe, and
+       * carried onto the plane it would delete half the earthquakes, so it fades out with the morph.
+       */
+      vFacing = mix(dot(normal, normalize(cameraPosition - world.xyz)), 1.0, uMorph);
 
       vRamp = clamp((aMag - uMagMin) / 6.5, 0.0, 1.0);
       // A collapsed marker is drawn slightly larger so its ring has somewhere to sit, but the fill
       // inside it still means exactly what every other fill means: the magnitude of an event.
       float radius = (uBase + uScale * sqrt(max(0.0, aMag - uMagMin))) * uSize + aCluster * 2.0;
 
-      gl_Position = projectionMatrix * viewMatrix * world;
+      gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position), 1.0);
       gl_PointSize = 2.0 * radius * uPixelRatio;
     }`,
   fragmentShader: /* glsl */ `
@@ -200,7 +206,9 @@ export interface EventLayer {
   dispose: () => void;
 }
 
-export function createEventLayer(capacity: number, ramp: RampName = "thermal"): EventLayer {
+export function createEventLayer(
+  capacity: number, ramp: RampName = "thermal", morph = { value: 0 },
+): EventLayer {
   // Allocated once at full capacity and never resized. Growing a buffer means a new allocation and
   // a new GPU upload at exactly the moment the app is busiest, which is when a burst arrives.
   const positions = new Float32Array(capacity * 3);
@@ -246,6 +254,8 @@ export function createEventLayer(capacity: number, ramp: RampName = "thermal"): 
       uMagMin: { value: MAG_MIN },
       uOpacity: { value: 1 },
       uFocusing: { value: 0 },
+      // The scene's, not a copy: markers have to flatten with the geography under them.
+      uMorph: morph,
     },
     transparent: true,
     depthWrite: false,

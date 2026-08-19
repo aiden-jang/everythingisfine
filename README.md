@@ -118,6 +118,13 @@ Live seismicity from **USGS** (polled) and **EMSC** (WebSocket). Coastlines from
 public domain. Plate boundaries from **PB2002** (Bird, P., 2003, *An updated digital model of plate
 boundaries*, Geochemistry Geophysics Geosystems 4(3)), public domain, simplified to 0.15 degrees.
 
+## Globe and map
+
+One geometry, projected in the vertex shader, so switching unwraps the planet rather than cross-fading
+two scenes. The globe is the default; the map is for comparing margins that a sphere makes you turn to
+see. Known artefact: thin lines fan across the northern half of the flat map, traced to the graticule's
+latitude circles and not yet fixed.
+
 ## Day and night
 
 The globe is lit from the real subsolar point, computed from the clock with NOAA's solar position

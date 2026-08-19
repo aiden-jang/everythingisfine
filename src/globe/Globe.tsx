@@ -34,6 +34,8 @@ export interface GlobeProps {
    * different questions and only one of them matches the label.
    */
   onReplay?: (state: { at: number; revealed: number } | null) => void;
+  /** false is the globe, true is the flat map. Eased, not switched. */
+  flat?: boolean;
   /**
    * The hour the pointer is holding on the activity strip, in whole hours before now, or null.
    *
@@ -46,6 +48,7 @@ export interface GlobeProps {
 
 export function Globe({
   feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay, focusHour = null,
+  flat = false,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
@@ -61,8 +64,8 @@ export function Globe({
    * tearing down the WebGL context, the 300,000-triangle globe and both feed subscriptions every
    * time somebody nudges a magnitude slider.
    */
-  const live = useRef({ filters, selected, focusHour });
-  live.current = { filters, selected, focusHour };
+  const live = useRef({ filters, selected, focusHour, flat });
+  live.current = { filters, selected, focusHour, flat };
   const onCameraRef = useRef(onCamera);
   onCameraRef.current = onCamera;
   const onReplayRef = useRef(onReplay);
@@ -143,6 +146,17 @@ export function Globe({
      * previous opening, and the reveal only means anything if the dots have first had a moment to
      * read as scattered.
      */
+    /*
+     * The unwrap, eased on the same loop as everything else.
+     *
+     * Long, at 1.1 seconds, because it is the one moment in the app that explains what a projection
+     * costs: Greenland swelling as it leaves the sphere is the whole argument for the globe being the
+     * default, and at 300ms nobody sees it happen.
+     */
+    let morph = flat ? 1 : 0;
+    globe.setMorph(morph);
+    globe.controls.setMorph(morph);
+
     let plateReveal = reducedMotion.matches ? 1 : 0;
     let revealStarted = reducedMotion.matches;
     globe.plates.reveal(plateReveal);
@@ -218,6 +232,16 @@ export function Globe({
         globe.plates.reveal(plateReveal);
       }
 
+      const morphTarget = live.current.flat ? 1 : 0;
+      let unwrapping = false;
+      if (morph !== morphTarget) {
+        const step = reducedMotion.matches ? 1 : dt / 1.1;
+        morph = morphTarget > morph ? Math.min(morphTarget, morph + step) : Math.max(morphTarget, morph - step);
+        globe.setMorph(morph);
+        globe.controls.setMorph(morph);
+        unwrapping = morph !== morphTarget;
+      }
+
       const focusTarget = live.current.focusHour === null ? 0 : 1;
       let fading = false;
       if (focusFade !== focusTarget) {
@@ -243,7 +267,9 @@ export function Globe({
       placeOverlays();
       onCameraRef.current?.(globe.controls.state());
       const revealing = revealStarted && plateReveal < 1;
-      if (moving || expanding || replaying || fading || revealing) requestAnimationFrame(frame);
+      if (moving || expanding || replaying || fading || revealing || unwrapping) {
+        requestAnimationFrame(frame);
+      }
       else running = false;
     };
 
@@ -404,7 +430,7 @@ export function Globe({
   useEffect(() => {
     redrawRef.current();
     wakeRef.current();
-  }, [filters, selected, focusHour]);
+  }, [filters, selected, focusHour, flat]);
 
   useEffect(() => {
     rampRef.current(ramp);

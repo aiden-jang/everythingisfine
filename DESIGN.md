@@ -348,6 +348,11 @@ behind the panels rather than stopping at them.
 hints. Below 1280px it returns to the rail, because a floating panel over a 60dvh globe covers the
 subject.
 
+**Globe and map are one geometry, morphed.** The projection happens in the vertex shader from a single
+shared uniform, so the switch is the planet unwrapping rather than a cross-fade. The globe is the
+default because it is the honest one; the map exists because comparing two margins on a sphere means
+turning it.
+
 **The rail edge is draggable and remembered**, by pointer and by arrow key. A fixed width is a guess
 about what somebody is doing, and it is wrong about half the time.
 

@@ -134,6 +134,8 @@ export interface LandGeometry {
   index: Uint32Array;
   /** How many triangles arrived wound the wrong way. Zero would mean the source became consistent. */
   flipped: number;
+  /** How many were dropped for crossing the antimeridian. Slivers on the globe, a smear on the map. */
+  spanning: number;
   /** Line segment pairs for the coastline stroke. */
   coast: Float32Array;
   stats: {
@@ -168,6 +170,19 @@ export function buildLand(): LandGeometry {
       for (let i = 0; i < closed.length; i += 1) {
         const a = closed[i]!;
         const b = closed[(i + 1) % closed.length]!;
+        /*
+         * Segments that cross the antimeridian are dropped, as the plate boundaries already drop
+         * theirs.
+         *
+         * On a globe such a segment is a short hop across the date line and looks right. Flattened it
+         * is a line the full width of the world, and Antarctica and eastern Russia drew a band across
+         * the map. The fragment-derivative trick that catches spanning *triangles* cannot catch these:
+         * a line one pixel wide has almost no derivative along its length however far it reaches.
+         *
+         * A dropped segment costs a one-pixel gap at 180 degrees on the globe, which is the cheapest
+         * thing on offer.
+         */
+        if (Math.abs(b[0]! - a[0]!) > 180) continue;
         coast.push(...toVec3(a[0]!, a[1]!, RADIUS_COAST), ...toVec3(b[0]!, b[1]!, RADIUS_COAST));
       }
     });
@@ -177,7 +192,30 @@ export function buildLand(): LandGeometry {
     for (const v of flat) verts.push(v);
   }
 
-  let mesh = { verts, tris };
+  /*
+   * Seam triangles are dropped here, in longitude and latitude, before anything subdivides them.
+   *
+   * Dropping them afterwards does not work, and the reason took a cropped screenshot to see. A
+   * triangle from 179E to 179W is split by subdivision into children through longitude zero, and each
+   * child spans just under 180 degrees: under any threshold that keeps Antarctica, which legitimately
+   * has triangles spanning 120 degrees near the pole because a wide sweep of longitude down there is a
+   * short arc. The children pass the filter and each one draws a sliver across the whole map.
+   *
+   * Before subdivision there is no such ambiguity: earcut works in longitude and latitude, so a
+   * triangle wider than half the world is crossing the date line and nothing else is.
+   */
+  const flatTris: number[] = [];
+  let spanning = 0;
+  for (let i = 0; i < tris.length; i += 3) {
+    const lons = [tris[i]!, tris[i + 1]!, tris[i + 2]!].map((v) => verts[v * 2]!);
+    if (Math.max(...lons) - Math.min(...lons) > 180) {
+      spanning += 1;
+      continue;
+    }
+    flatTris.push(tris[i]!, tris[i + 1]!, tris[i + 2]!);
+  }
+
+  let mesh = { verts, tris: flatTris };
   for (let i = 0; i < SUBDIVISIONS; i += 1) mesh = subdivide(mesh.verts, mesh.tris);
 
   const count = mesh.verts.length / 2;
@@ -216,6 +254,17 @@ export function buildLand(): LandGeometry {
    * near-side copies were removed. The symptom is landmasses from the other side of the planet showing
    * faintly through the ocean, which looks like a transparency setting rather than like a bug.
    */
+  /*
+   * Triangles that span the antimeridian are dropped, not drawn.
+   *
+   * On a globe they are slivers along the date line and invisible. Flattened, each one stretches the
+   * full width of the world and Antarctica smears across the map.
+   *
+   * The fragment-derivative trick that is usually reached for here does not work, and it took a
+   * screenshot to see why: `fwidth` measures change *per pixel*, and a triangle stretched across nine
+   * hundred pixels has a tiny per-pixel derivative. The test catches seam triangles when they are
+   * small on screen, which is the globe, and misses them exactly when they are the problem.
+   */
   const index = new Uint32Array(mesh.tris);
   let flipped = 0;
   for (let i = 0; i < index.length; i += 3) {
@@ -244,10 +293,11 @@ export function buildLand(): LandGeometry {
     position,
     index,
     flipped,
+    spanning,
     coast: new Float32Array(coast),
     stats: {
       vertices: count,
-      triangles: mesh.tris.length / 3,
+      triangles: index.length / 3,
       segments: coast.length / 6,
       maxEdgeDeg,
       maxPullIn: 1 - Math.cos((maxEdgeDeg / 2) * (Math.PI / 180)),
