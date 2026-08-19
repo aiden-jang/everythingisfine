@@ -29,11 +29,21 @@ const DENSIFY_DEG = 1.5;
  * landmass. The guess was wrong because it assumed something about the triangles earcut emits in a
  * continent's interior, and earcut makes no such promise.
  *
- * Three halves that to 15.6 degrees at four times the triangles. It is not raised further because
+ * Three brings it to 10.1 degrees at four times the triangles. It is not raised further because
  * the sag no longer causes holes at all (see the depth note in globe/scene.ts) and only pulls the
  * fill fractionally inside its own coastline, which the stroke covers.
  */
 const SUBDIVISIONS = 3;
+
+/**
+ * Widest a triangle may be, in degrees of longitude, before it is split rather than subdivided.
+ *
+ * Ninety rather than a hair under 180, so that three uniform passes leave the children of a split
+ * triangle no coarser than the ones the continents already produce. It is a margin, not a
+ * measurement: a 200-degree triangle drew a pale wash and streaks, and nothing said the threshold
+ * for that was exactly 180.
+ */
+const MAX_TRI_SPAN_DEG = 90;
 
 const R_SPHERE = 1;
 /** Flush with the sphere. Nothing is gained by lifting it: the fill is ordered, not depth-tested. */
@@ -201,8 +211,8 @@ export interface LandGeometry {
   lonLat: Float32Array;
   /** How many triangles arrived wound the wrong way. Zero would mean the source became consistent. */
   flipped: number;
-  /** How many were dropped for crossing the antimeridian. Slivers on the globe, a smear on the map. */
-  spanning: number;
+  /** How many triangles were bisected for being too wide to draw. Zero would mean no ring spans 180. */
+  split: number;
   /** Line segment pairs for the coastline stroke. */
   coast: Float32Array;
   /** Lon/lat for each coastline vertex, in the same order as `coast`. */
@@ -276,27 +286,83 @@ export function buildLand(): LandGeometry {
   }
 
   /*
-   * Seam triangles are dropped here, in longitude and latitude, before anything subdivides them.
+   * Wide triangles are split here, in longitude and latitude, before anything subdivides them.
    *
-   * Dropping them afterwards does not work, and the reason took a cropped screenshot to see. A
-   * triangle from 179E to 179W is split by subdivision into children through longitude zero, and each
-   * child spans just under 180 degrees: under any threshold that keeps Antarctica, which legitimately
-   * has triangles spanning 120 degrees near the pole because a wide sweep of longitude down there is a
-   * short arc. The children pass the filter and each one draws a sliver across the whole map.
+   * They used to be dropped, on the reasoning that earcut works in degrees so a triangle wider than
+   * half the world must be crossing the date line and nothing else is. That is false for exactly one
+   * polygon and it is the largest one. `unwrap` runs Eurasia past 180 on purpose so Chukotka stays
+   * attached, which leaves that ring spanning about 200 degrees from Portugal, and earcut fills a
+   * 200-degree polygon with some triangles that reach most of the way across it. Forty-four of them
+   * were real Asian interior, and deleting them cut chord-edged holes through Siberia: the fill and
+   * the coastline both absent inside a straight-sided wedge, on the one landmass big enough for it.
    *
-   * Before subdivision there is no such ambiguity: earcut works in longitude and latitude, so a
-   * triangle wider than half the world is crossing the date line and nothing else is.
+   * Nothing here needs dropping. Every ring is unwrapped into one continuous frame before earcut sees
+   * it, so no triangle's vertices straddle the seam; a wide triangle is wide because its polygon is,
+   * and it is honest geography. Keeping them as they came is not the answer either, and the render
+   * says so: a 200-degree triangle draws a pale wash and streaks across Asia. Split until nothing is
+   * wide and both problems go.
+   *
+   * Bisecting the widest edge rather than clipping against a meridian, because the midpoint of two
+   * longitudes in a continuous frame is their average and needs no case analysis, and because the
+   * uniform pass below is already the thing that turns flat triangles into a sphere.
+   *
+   * The split is adaptive, which leaves a T-junction where a split triangle meets an unsplit
+   * neighbour, and the note on `subdivide` is right that those show as hairlines on a flat fill. Not
+   * here: every vertex this introduces sits on the straight line between two existing ones in the
+   * frame the map is drawn in, so on the map the two sides coincide exactly. On the globe they differ
+   * by the sagitta of an edge already an order finer than `maxPullIn`, which is the gap the coastline
+   * stroke is there to cover.
    */
   const flatTris: number[] = [];
-  let spanning = 0;
-  for (let i = 0; i < tris.length; i += 3) {
-    const lons = [tris[i]!, tris[i + 1]!, tris[i + 2]!].map((v) => verts[v * 2]!);
-    if (Math.max(...lons) - Math.min(...lons) > 180) {
-      spanning += 1;
-      continue;
+  let split = 0;
+  const splitMids = new Map<number, number>();
+  const lonOf = (v: number): number => verts[v * 2]!;
+  /** Shared by pair, so two wide neighbours cut a common edge in the same place. */
+  const bisect = (i: number, j: number): number => {
+    const key = i < j ? i * 1e7 + j : j * 1e7 + i;
+    const hit = splitMids.get(key);
+    if (hit !== undefined) return hit;
+    const idx = verts.length / 2;
+    verts.push((verts[i * 2]! + verts[j * 2]!) / 2, (verts[i * 2 + 1]! + verts[j * 2 + 1]!) / 2);
+    splitMids.set(key, idx);
+    return idx;
+  };
+
+  /*
+   * Depth is a backstop, not a budget: 200 degrees needs three levels to clear 90 and the cap is
+   * eight. It exists so a degenerate triangle cannot recurse forever, and it emits rather than drops
+   * when it runs out, because a wash is a worse bug than a hole only until the hole is the one on
+   * screen.
+   */
+  const emit = (a: number, b: number, c: number, depth: number): void => {
+    const lons = [lonOf(a), lonOf(b), lonOf(c)];
+    if (Math.max(...lons) - Math.min(...lons) <= MAX_TRI_SPAN_DEG || depth === 0) {
+      flatTris.push(a, b, c);
+      return;
     }
-    flatTris.push(tris[i]!, tris[i + 1]!, tris[i + 2]!);
-  }
+    split += 1;
+    const ab = Math.abs(lonOf(a) - lonOf(b));
+    const bc = Math.abs(lonOf(b) - lonOf(c));
+    const ca = Math.abs(lonOf(c) - lonOf(a));
+    // Each child keeps the parent's winding, which the back-face cull below depends on.
+    if (ab >= bc && ab >= ca) {
+      const m = bisect(a, b);
+      emit(a, m, c, depth - 1);
+      emit(m, b, c, depth - 1);
+    }
+    else if (bc >= ca) {
+      const m = bisect(b, c);
+      emit(b, m, a, depth - 1);
+      emit(m, c, a, depth - 1);
+    }
+    else {
+      const m = bisect(c, a);
+      emit(c, m, b, depth - 1);
+      emit(m, a, b, depth - 1);
+    }
+  };
+
+  for (let i = 0; i < tris.length; i += 3) emit(tris[i]!, tris[i + 1]!, tris[i + 2]!, 8);
 
   let mesh = { verts, tris: flatTris };
   for (let i = 0; i < SUBDIVISIONS; i += 1) mesh = subdivide(mesh.verts, mesh.tris);
@@ -337,17 +403,6 @@ export function buildLand(): LandGeometry {
    * near-side copies were removed. The symptom is landmasses from the other side of the planet showing
    * faintly through the ocean, which looks like a transparency setting rather than like a bug.
    */
-  /*
-   * Triangles that span the antimeridian are dropped, not drawn.
-   *
-   * On a globe they are slivers along the date line and invisible. Flattened, each one stretches the
-   * full width of the world and Antarctica smears across the map.
-   *
-   * The fragment-derivative trick that is usually reached for here does not work, and it took a
-   * screenshot to see why: `fwidth` measures change *per pixel*, and a triangle stretched across nine
-   * hundred pixels has a tiny per-pixel derivative. The test catches seam triangles when they are
-   * small on screen, which is the globe, and misses them exactly when they are the problem.
-   */
   const lonLat = new Float32Array(mesh.verts);
   const index = new Uint32Array(mesh.tris);
   let flipped = 0;
@@ -378,7 +433,7 @@ export function buildLand(): LandGeometry {
     index,
     lonLat,
     flipped,
-    spanning,
+    split,
     coast: new Float32Array(coast),
     coastLonLat: new Float32Array(coastLonLat),
     stats: {
