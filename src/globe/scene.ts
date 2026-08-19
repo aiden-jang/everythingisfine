@@ -481,6 +481,25 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const rings = createRingLayer("thermal", morph);
   world.add(rings.object);
 
+  /*
+   * Nothing under `world` is culled against its own bounds, because its bounds are the wrong shape.
+   *
+   * Every layer here is projected in the vertex shader, so three.js measures the sphere the geometry
+   * was built as and never the plane it draws. Flat, a layer really occupies x from -2 to 2; its
+   * bounding sphere still says radius 1.3 at the group origin. Offset by a period to repeat the map,
+   * that sphere leaves a narrow frustum while the triangles it describes are still on screen, and the
+   * copy is thrown away before it is drawn.
+   *
+   * The symptom was the east half of a phone going void with its earthquakes still floating in it:
+   * `events` and `rings` already set this flag, so the markers survived the cull that took the ocean,
+   * the coastline and the graticule out from under them. `visibleCopies` was right and the renderer
+   * was discarding what it asked for, which is why the copy arithmetic looked innocent.
+   *
+   * One traverse over the finished graph rather than a flag at each `add`, so the reason is written
+   * once. Every layer is in place by this line, and one added below it would need the same treatment.
+   */
+  world.traverse((o) => { o.frustumCulled = false; });
+
   const controls = createControls(camera, canvas, FRAMING, FOV);
   let markerScale = (): number => 1;
 

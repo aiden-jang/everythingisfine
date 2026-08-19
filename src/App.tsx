@@ -480,7 +480,7 @@ export function App(): JSX.Element {
         } as React.CSSProperties}
       >
         <aside className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r">
-          <div>
+          <div data-rail="headline">
             {/*
               No "EVENTS" label above this.
 
@@ -542,6 +542,7 @@ export function App(): JSX.Element {
                 setSelected(strongest.key);
                 flyTo.current(strongest.primary.lon, strongest.primary.lat, 1.9);
               }}
+              data-rail="largest"
               className="-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2.5 border-t border-hairline px-1 pt-2.5 text-left transition-colors hover:bg-raised"
             >
               <span className="label shrink-0">Largest</span>
@@ -573,21 +574,23 @@ export function App(): JSX.Element {
             </button>
           ) : null}
 
-          {onMap ? null : <div>{legend}</div>}
+          {onMap ? null : <div data-rail="legend">{legend}</div>}
 
           {/*
             The day, and the control for the window that was previously unreachable. Sits under the
             magnitude filter because they are the same kind of thing: both say what is on the globe.
             The globe answers "where" and cannot answer "when" at all, which is the gap this fills.
           */}
-          <Timeline
-            bars={bars}
-            ramp={ramp}
-            hours={hours}
-            focusHour={focusHour}
-            onFocusHourChange={setFocusHour}
-            onHoursChange={(h) => setFilters((f) => ({ ...f, windowMs: h * 3_600_000 }))}
-          />
+          <div data-rail="activity">
+            <Timeline
+              bars={bars}
+              ramp={ramp}
+              hours={hours}
+              focusHour={focusHour}
+              onFocusHourChange={setFocusHour}
+              onHoursChange={(h) => setFilters((f) => ({ ...f, windowMs: h * 3_600_000 }))}
+            />
+          </div>
 
           {/*
             All twelve, in a box you can resize, rather than the top four and no way to the rest.
@@ -597,7 +600,7 @@ export function App(): JSX.Element {
             sized scrolling box shows the same four by default and admits the others exist.
           */}
           {regions.length > 0 ? (
-            <div className="relative">
+            <div data-rail="regions" className="relative">
               <div ref={regionsRef} className="rail-regions">
                 <div className="label">Regions</div>
                 {regions.map(({ region, count }) => (
@@ -629,7 +632,7 @@ export function App(): JSX.Element {
             whether the other was still connecting or had been refused for ten minutes.
           */}
           {failing.length > 0 ? (
-            <div className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
+            <div data-rail="notice" className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
               {failing.map(([id, status]) => (
                 <div key={id}>
                   <span className="text-ink">{SOURCE_NAMES[id]}</span> is not answering: {status.reason}.
@@ -641,7 +644,7 @@ export function App(): JSX.Element {
           ) : null}
 
           {missingShared && !pinned && snapshot.stats.quakes > 0 ? (
-            <p className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
+            <p data-rail="notice" className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
               The event in this link is no longer in the window. The buffer holds the last day, and
               it starts when the page opens.
             </p>
@@ -731,7 +734,7 @@ export function App(): JSX.Element {
                 {legend}
               </div>
             ) : null}
-            <div className="pointer-events-auto order-2 font-mono text-[10.5px] text-faint xl:order-1">
+            <div className="key-hints pointer-events-auto order-2 font-mono text-[10.5px] text-faint xl:order-1">
               {/*
                 What the keys do here, not what they did on the globe. Arrows orbit a sphere and pan a
                 map, and a hint row that says orbit while the drag pans is worse than no hint row.
