@@ -521,8 +521,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     // sides of a phone; fitting by width alone leaves it swimming on a desktop. Zoom is a
     // multiple of this, so a resize rescales the view without throwing away where you were.
     const limiting = Math.min(1, camera.aspect);
-    const fit = 1 / (FILL * Math.tan((FOV / 2) * DEG) * limiting);
-    controls.setFit(fit);
+    const byHeight = 1 / (FILL * Math.tan((FOV / 2) * DEG));
+    const fit = byHeight / limiting;
+    controls.setFit(fit, byHeight);
     // The globe's on-screen radius at the framing shot, which is what marker sizes scale against.
     const radiusPx = (height / 2) * (1 / (fit * Math.tan((FOV / 2) * DEG)));
     events.setGlobeRadius(radiusPx);
