@@ -258,6 +258,8 @@ export interface LandGeometry {
   flipped: number;
   /** How many triangles were bisected for being too wide to draw. Zero would mean no ring spans 180. */
   split: number;
+  /** How many were repeated across the seam. Zero would mean no ring is drawn outside its own copy. */
+  wrapped: number;
   /** Line segment pairs for the coastline stroke. */
   coast: Float32Array;
   /** Lon/lat for each coastline vertex, in the same order as `coast`. */
@@ -418,6 +420,42 @@ export function buildLand(): LandGeometry {
   let mesh = { verts, tris: flatTris };
   for (let i = 0; i < SUBDIVISIONS; i += 1) mesh = subdivide(mesh.verts, mesh.tris);
 
+  /*
+   * Whole triangles are repeated across the seam, so the mesh is periodic like the map that draws it.
+   *
+   * The flat map repeats by rendering the world again beside itself, one pass per copy, each pass
+   * painting over the last. `visibleCopies` says copy k covers a period centred on k and that those
+   * tile the line exactly, which is true of the ocean shell and false of this mesh: `unwrap` runs
+   * Eurasia out to 190 degrees so Chukotka stays attached, so the land poked ten degrees into the next
+   * copy's territory and that copy's opaque ocean painted over it on the following pass. The coastline
+   * survived, sitting at `RADIUS_COAST` in front of the ocean, which is why the eastern tip of Russia
+   * appeared as an outline around nothing.
+   *
+   * The tip is missing rather than misplaced: the mesh holds it only at +180, never at -180 where the
+   * neighbouring copy looks for it. Repeating the triangle at both is what makes the two agree.
+   *
+   * Whole triangles, never clipped, for the reason the copies exist at all: a triangle cut at the seam
+   * is a triangle that can tear. A duplicate is internally consistent, and on the globe it lands on
+   * exactly the sphere position it came from, where a flat fill hides it completely.
+   */
+  let wrapped = 0;
+  {
+    // The original triangles only. Appending to the array being walked reruns the duplicates, and a
+    // duplicate is out of range at the other edge by construction, so it qualifies to be copied back.
+    const original = mesh.tris.length;
+    for (let t = 0; t < original; t += 3) {
+      const vs = [mesh.tris[t]!, mesh.tris[t + 1]!, mesh.tris[t + 2]!];
+      const lons = vs.map((v) => mesh.verts[v * 2]!);
+      const turn = Math.max(...lons) > 180 ? -360 : Math.min(...lons) < -180 ? 360 : 0;
+      if (turn === 0) continue;
+      wrapped += 1;
+      for (const v of vs) {
+        mesh.tris.push(mesh.verts.length / 2);
+        mesh.verts.push(mesh.verts[v * 2]! + turn, mesh.verts[v * 2 + 1]!);
+      }
+    }
+  }
+
   const count = mesh.verts.length / 2;
   const position = new Float32Array(count * 3);
   for (let v = 0; v < count; v += 1) {
@@ -485,6 +523,7 @@ export function buildLand(): LandGeometry {
     lonLat,
     flipped,
     split,
+    wrapped,
     coast: new Float32Array(coast),
     coastLonLat: new Float32Array(coastLonLat),
     stats: {
