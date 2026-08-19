@@ -1,7 +1,7 @@
 import {
   AdditiveBlending, BackSide, BufferAttribute, BufferGeometry, Color, FrontSide, Group,
   LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene,
-  ShaderMaterial, SphereGeometry, Vector3, WebGLRenderer,
+  PlaneGeometry, ShaderMaterial, SphereGeometry, Vector3, WebGLRenderer,
 } from "three";
 import {
   buildLand, RADIUS_ATMOSPHERE, RADIUS_GRATICULE, RADIUS_NIGHT, RADIUS_SPHERE,
@@ -10,7 +10,9 @@ import {
 import { DEG, distanceKm, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
-import { attachLonLat, MORPH_GLSL, morphable, SPHERE_PHI_START } from "./morph";
+import {
+  attachLonLat, MAP_HALF_WIDTH, MORPH_GLSL, morphable, SPHERE_PHI_START, visibleCopies,
+} from "./morph";
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
@@ -169,8 +171,36 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    * With the geometry pinned to true coordinates those are all answered in degrees; with the world
    * spinning underneath, every one of them first needs undoing by a rotation.
    */
+  /*
+   * One group for everything with a location, so the map can be drawn more than once.
+   *
+   * The atmosphere stays outside it: it is a property of looking at a ball, not a thing at a place,
+   * and repeating it either side of a flat map would put a glowing edge in the middle of the ocean.
+   */
+  const world = new Group();
+  scene.add(world);
   const spin = new Group();
-  scene.add(spin);
+  world.add(spin);
+
+  /*
+   * A plain rectangle behind the flat map, in the ocean's own colour.
+   *
+   * A sphere cannot tile a straight edge at the pole: its top row is a fan of triangles whose apexes
+   * sit at each column's longitude, so flattened they leave a sawtooth along the top and bottom of the
+   * map. Cutting the polar caps out instead would put a hole at each pole on the globe, which is worse
+   * and more visible.
+   *
+   * The rectangle is the same colour as the ocean, so the sawtooth lands on it and disappears, and the
+   * map gets a defined edge rather than fading into the void.
+   */
+  const mapBase = new Mesh(
+    new PlaneGeometry(2 * MAP_HALF_WIDTH, 2),
+    new MeshBasicMaterial({ color: COLOR_SPHERE, transparent: true, opacity: 0 }),
+  );
+  mapBase.position.z = -0.02;
+  mapBase.renderOrder = -1;
+  mapBase.visible = false;
+  world.add(mapBase);
 
   /*
    * One uniform, shared by every layer. A morph where one thing stays behind is not a projection, it
@@ -405,9 +435,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   // Added to the scene root, not to `spin`: the globe group carries no transform, and hanging the
   // events off it would only invite someone to rotate one and not the other later.
   const events = createEventLayer(capacity, "thermal", morph);
-  scene.add(events.object);
+  world.add(events.object);
   const rings = createRingLayer("thermal", morph);
-  scene.add(rings.object);
+  world.add(rings.object);
 
   const controls = createControls(camera, canvas, FRAMING, FOV);
   let markerScale = (): number => 1;
@@ -532,7 +562,42 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         sunMinute = minute;
         aimSun(Date.now());
       }
-      renderer.render(scene, camera);
+
+      if (morph.value < 0.01) {
+        world.position.x = 0;
+        mapBase.visible = false;
+        renderer.render(scene, camera);
+        return;
+      }
+
+      mapBase.visible = true;
+      (mapBase.material as MeshBasicMaterial).opacity = morph.value;
+
+      /*
+       * The map repeats, by drawing the world again beside itself.
+       *
+       * The alternative is wrapping each vertex to the copy nearest the camera in the shader, which is
+       * cheaper and tears: the three corners of one triangle can land on different copies, and the
+       * result is the same band across the world this projection has already produced twice from other
+       * causes. A whole extra pass cannot tear, because every pass is internally consistent.
+       *
+       * Only the copies that intersect the view are drawn, which is two most of the time and one when
+       * zoomed in. Zoomed out far enough to see the whole map at once, the neighbours are off screen
+       * and this costs nothing.
+       */
+      const period = 2 * MAP_HALF_WIDTH;
+      const halfHeight = camera.position.z * Math.tan((FOV / 2) * (Math.PI / 180));
+      const { first, last } = visibleCopies(camera.position.x, halfHeight * camera.aspect);
+
+      renderer.autoClear = true;
+      for (let k = first; k <= last; k += 1) {
+        world.position.x = k * period;
+        renderer.render(scene, camera);
+        // Everything after the first pass paints on top of it rather than wiping it.
+        renderer.autoClear = false;
+      }
+      renderer.autoClear = true;
+      world.position.x = 0;
     },
     dispose: () => {
       events.dispose();

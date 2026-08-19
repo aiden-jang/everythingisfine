@@ -59,6 +59,34 @@ export const MORPH_GLSL = /* glsl */ `
 `;
 
 /**
+ * Which copies of the map intersect the view, as inclusive integer offsets.
+ *
+ * The flat map repeats, and it repeats by being drawn again rather than by wrapping vertices, so this
+ * decides how many passes a frame costs. Two most of the time, one when zoomed in far enough that no
+ * neighbour reaches the screen, three only when the whole world plus both edges is on screen.
+ *
+ * Extracted because it is the part that fails quietly: an off-by-one leaves a strip of void at one
+ * edge that looks like the end of the world rather than a missing draw call.
+ */
+export function visibleCopies(
+  cameraX: number, halfWidth: number,
+): { first: number; last: number } {
+  /*
+   * Which copy a point falls in, not how many periods away it is.
+   *
+   * Copy k covers [k * period - MAP_HALF_WIDTH, k * period + MAP_HALF_WIDTH], and those tile the line
+   * exactly, so the copy containing a point is the nearest multiple. Reaching for floor and ceil
+   * instead adds a copy at each end that is entirely off screen: correct, and a wasted pass over three
+   * hundred thousand triangles every frame.
+   */
+  const period = 2 * MAP_HALF_WIDTH;
+  return {
+    first: Math.round((cameraX - halfWidth) / period),
+    last: Math.round((cameraX + halfWidth) / period),
+  };
+}
+
+/**
  * Derives `aLonLat` for a sphere shell, from its texture coordinates rather than its positions.
  *
  * The shells are the only layers with no source coordinates to carry, and `atan2` fails them twice:
