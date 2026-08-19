@@ -160,13 +160,14 @@
 
     .zone-rail {
       left: 0;
+      border-right: 0;
       /* Set by the resizer and remembered. The border lives on the handle, so it can light up. */
       width: var(--rail-w, 356px);
     }
 
     .zone-panel {
       right: 0;
-      border-left: 1px solid var(--color-hairline);
+      border-left: 0;
     }
   }
 

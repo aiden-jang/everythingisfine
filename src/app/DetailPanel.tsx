@@ -228,7 +228,7 @@ export function DetailPanel({
       ) : null}
 
       <div className="mt-4">
-        <div className="label">Within {NEARBY_KM} km</div>
+        <span className="text-[11px] text-faint">Within {NEARBY_KM} km</span>
         {near.count === 0 ? (
           <p className="mt-2 text-[11.5px] text-faint">
             Nothing else in this window. On its own, so far.

@@ -10,7 +10,7 @@ import {
 import { DEG, distanceKm, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
-import { attachLonLat, dropSeamTriangles, MORPH_GLSL, morphable } from "./morph";
+import { attachLonLat, MORPH_GLSL, morphable, SPHERE_PHI_START } from "./morph";
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
@@ -179,8 +179,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    */
   const morph = { value: 0 };
 
-  const oceanGeom = new SphereGeometry(RADIUS_SPHERE, 96, 64);
-  dropSeamTriangles(oceanGeom);
+  const oceanGeom = new SphereGeometry(RADIUS_SPHERE, 96, 64, SPHERE_PHI_START);
   attachLonLat(oceanGeom);
   const ocean = new Mesh(
     oceanGeom,
@@ -302,8 +301,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    * Above the coastline and below the markers. An earthquake at 3am is not dimmer than one at noon,
    * so the data layers are drawn after this and are untouched by it.
    */
-  const nightGeom = new SphereGeometry(RADIUS_NIGHT, 96, 64);
-  dropSeamTriangles(nightGeom);
+  const nightGeom = new SphereGeometry(RADIUS_NIGHT, 96, 64, SPHERE_PHI_START);
   attachLonLat(nightGeom);
   const night = new Mesh(
     nightGeom,

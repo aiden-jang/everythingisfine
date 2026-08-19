@@ -71,10 +71,12 @@ export function Resizer({ width, min, max, onChange }: ResizerProps): JSX.Elemen
       }}
       // Wider than it looks: a 1px line is the correct visual weight and an unusable target, so the
       // hit area straddles the border and only the border is painted.
-      className="absolute inset-y-0 z-[2] hidden w-3 cursor-col-resize xl:block"
+      className="group absolute inset-y-0 z-[2] hidden w-3 cursor-col-resize xl:block"
       style={{ left: width - 6 }}
     >
-      <span className="pointer-events-none absolute inset-y-0 left-[6px] w-px bg-hairline transition-colors" />
+      {/* Barely there until reached for. A permanent rule down the middle of the window is the seam
+          the floating layout exists to remove, and an invisible handle is one nobody finds. */}
+      <span className="pointer-events-none absolute inset-y-0 left-[6px] w-px bg-hairline/40 transition-colors duration-150 group-hover:bg-dim group-focus-visible:bg-ink" />
     </div>
   );
 }

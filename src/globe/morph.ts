@@ -19,6 +19,16 @@ import type { BufferGeometry, Material, WebGLProgramParametersWithUniforms } fro
 /** Half-width of the map, in the same units as the globe's radius. Equirectangular is 2:1. */
 export const MAP_HALF_WIDTH = 2;
 
+/**
+ * Where a sphere shell starts its first column, so that u = 0 lands on 180 degrees west.
+ *
+ * Cutting the seam column out of the shells was the first answer, and it left a bright slit down the
+ * antimeridian on the globe: a gap in the ocean with the atmosphere glowing through it. Rotating the
+ * seam instead keeps every triangle and makes the texture coordinate a usable longitude, which the
+ * flat map needs and the globe never cared about.
+ */
+export const SPHERE_PHI_START = -Math.PI / 2;
+
 export const MORPH_GLSL = /* glsl */ `
   uniform float uMorph;
   attribute vec2 aLonLat;
@@ -49,46 +59,16 @@ export const MORPH_GLSL = /* glsl */ `
 `;
 
 /**
- * Removes the triangles that would stretch across the map, in place.
+ * Derives `aLonLat` for a sphere shell, from its texture coordinates rather than its positions.
  *
- * `SphereGeometry` duplicates its seam vertices at the same position, and `atan2` returns +pi for one
- * copy and -pi for the other, so the quad between them spans the whole world once flattened. The pole
- * fans do the same: every vertex sits at the same latitude and a different longitude.
+ * The shells are the only layers with no source coordinates to carry, and `atan2` fails them twice:
+ * the duplicated seam column reports -180 for one copy and +180 for the other, so the quad between
+ * them spans the world, and the pole rows have no longitude at all.
  *
- * Slivers along the date line and two points at the poles, on a globe. A band across the map, flat.
- */
-export function dropSeamTriangles(geometry: BufferGeometry): number {
-  const index = geometry.getIndex();
-  const position = geometry.getAttribute("position");
-  if (!index) return 0;
-
-  const lon = new Float32Array(position.count);
-  for (let v = 0; v < position.count; v += 1) {
-    lon[v] = Math.atan2(position.getX(v), position.getZ(v));
-  }
-
-  const kept: number[] = [];
-  let dropped = 0;
-  for (let i = 0; i < index.count; i += 3) {
-    const a = lon[index.getX(i)]!;
-    const b = lon[index.getX(i + 1)]!;
-    const c = lon[index.getX(i + 2)]!;
-    if (Math.max(a, b, c) - Math.min(a, b, c) > Math.PI) {
-      dropped += 1;
-      continue;
-    }
-    kept.push(index.getX(i), index.getX(i + 1), index.getX(i + 2));
-  }
-  geometry.setIndex(kept);
-  return dropped;
-}
-
-/**
- * Derives `aLonLat` for a geometry that was generated rather than built from coordinates.
- *
- * The sphere shells are the only layers with no source longitude to carry, and they are also the only
- * ones where deriving it is safe: a `SphereGeometry` has no edge that wraps the date line once its seam
- * column is gone, and its pole rows are gone too.
+ * The texture coordinate knows both. It runs 0 to 1 across the full turn, including a distinct value
+ * for each copy of the seam and for each column of the pole fan, which is exactly the information the
+ * position threw away. It only lines up with longitude because the shells are built with the seam
+ * rotated to the antimeridian; see `SPHERE_PHI_START`.
  */
 export function attachLonLat(geometry: BufferGeometry): void {
   const position = geometry.getAttribute("position");
@@ -96,23 +76,9 @@ export function attachLonLat(geometry: BufferGeometry): void {
   const out = new Float32Array(position.count * 2);
 
   for (let v = 0; v < position.count; v += 1) {
-    const x = position.getX(v);
     const y = position.getY(v);
-    const z = position.getZ(v);
-    const r = Math.hypot(x, y, z) || 1;
-    /*
-     * At a pole the position knows the latitude and not the longitude, and the texture coordinate
-     * knows both.
-     *
-     * `SphereGeometry` gives its pole rows a vertex per column, all at the same point, distinguished
-     * only by `u`. `atan2(0, 0)` returns zero for every one of them, so on the map the whole polar fan
-     * collapses onto the prime meridian and draws exactly the streak this attribute exists to prevent.
-     * The seam filter cannot see it either: those triangles all report a longitude span of zero.
-     */
-    const atPole = Math.abs(y) > 0.99999 * r;
-    out[v * 2] = atPole && uv
-      ? (uv.getX(v) - 0.5) * 360
-      : (Math.atan2(x, z) * 180) / Math.PI;
+    const r = Math.hypot(position.getX(v), y, position.getZ(v)) || 1;
+    out[v * 2] = (uv.getX(v) - 0.5) * 360;
     out[v * 2 + 1] = (Math.asin(y / r) * 180) / Math.PI;
   }
 
