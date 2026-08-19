@@ -2200,6 +2200,38 @@ Worth recording that the skill also confirmed things: sharp corners used consist
 number, one accent family reserved for data. Those were already right, and knowing which parts were
 already right is what made it obvious which part was not.
 
+## The void at the edge was not the arithmetic
+
+The east half of a phone went void with its earthquakes still floating in it: no ocean, no coastline,
+no graticule, and the markers that belong to that longitude drawn over nothing.
+
+`visibleCopies` was the obvious suspect, having been written as the part that fails quietly and given a
+test for exactly this symptom. It was innocent, and provably: at the camera and zoom that produced the
+void the arithmetic asks for two copies, and the coverage test sweeps that case. Reading the numbers
+back out of the rendered frame took a while precisely because they kept saying the copy was requested.
+
+It was requested and then discarded. Every layer here is projected in the vertex shader, so three.js
+measures the sphere the geometry was built as and never the plane it draws: flat, a layer really
+occupies x from -2 to 2, and its bounding sphere still says radius 1.3 at the group origin. Offset by a
+period to repeat the map, that sphere leaves a narrow frustum while the triangles it describes are
+still on screen, and the copy is culled before it is drawn. A wide window hid it, because a wide
+frustum still catches the stale sphere. A phone does not.
+
+The markers survived because `events` and `rings` had already turned frustum culling off, for their own
+reasons, long before there was a map to break. So the cull took the world out from under the data and
+left the data, which is what made it look like a projection bug rather than a renderer one.
+
+Turned off for everything under the group, in one traverse rather than at each `add`, so a layer added
+later cannot miss it. Correct bounds for both views were the alternative and were rejected: two shapes
+sharing one geometry have no honest bounding sphere smaller than the union, the union is most of the
+frustum anyway, and `visibleCopies` already limits the passes to copies that reach the screen. The
+culling was never buying anything here.
+
+**The lesson is about where the frame was measured.** It is reachable at any narrow viewport and it
+survived a design contract with a phone breakpoint in it, because nothing in that contract looks at the
+canvas. It was found by taking a screenshot on a phone-shaped window and noticing that the ocean
+stopped.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

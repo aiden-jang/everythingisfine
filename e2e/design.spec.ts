@@ -26,6 +26,15 @@ async function waitForData(page: Page): Promise<void> {
 const BREAKPOINTS = [
   { name: "phone", width: 375, height: 812 },
   { name: "tablet", width: 768, height: 1024 },
+  /*
+   * Landscape, because portrait was the only shape this band was ever measured in.
+   *
+   * The strip layout lives from 768 to 1279 and every sample of it was tall. Wide and short is the
+   * same band with a third of the height to give the strip, which is where it had quietly grown to
+   * half the viewport with the globe underneath paying for it, and it is also every half-screen
+   * desktop window.
+   */
+  { name: "tablet landscape", width: 1024, height: 768 },
   { name: "desktop", width: 1280, height: 820 },
 ] as const;
 

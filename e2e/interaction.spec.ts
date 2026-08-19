@@ -541,6 +541,21 @@ test.describe("on a touch screen", () => {
       .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
       .toMatch(/,2\.\d&/);
   });
+
+  test("the key hints are not offered to a device with no keys", async ({ page }) => {
+    /*
+     * Every entry names something touch cannot do: no arrow keys, no `+`, no `0`, no shift to hold and
+     * no escape to press. The row's own rule is that it describes what works in the current view, so
+     * on a phone the honest version of the list is empty rather than two wrapped lines of it.
+     *
+     * The desktop test above asserts the opposite, which is the pair that matters: hidden here has to
+     * mean "no keyboard", not "narrow".
+     */
+    await installFeeds(page, { silent: true });
+    await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
+    await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
+    await expect(page.locator(".key-hints")).toBeHidden();
+  });
 });
 
 test("a pinned event the filters exclude says so", async ({ page }) => {

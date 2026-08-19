@@ -408,10 +408,24 @@ Three zones: rail, canvas, detail panel. CSS Grid, never flexbox percentage math
 - **1280px and up:** rail left (320px), canvas centre (`1fr`), detail panel right (360px) when an
   event is pinned. The globe sits slightly left of optical centre so a pinned panel does not shove
   it sideways.
-- **768 to 1279px:** rail collapses to a top strip, detail panel becomes a right overlay.
+- **768 to 1279px:** rail collapses to a top strip, detail panel becomes a right overlay. The strip
+  takes a third of the height and no more, and the event list stands up inside it as its own column
+  rather than lying under it as a full-width band. Given the band, one event took a 973px row and
+  three of sixty were visible, with the strip's whole bottom-right corner empty: half the viewport
+  spent on chrome that was mostly not there. The three tall blocks each take a column and span it,
+  the short ones stack down the first, and the two that scroll show more of themselves for it.
 - **Below 768px:** single column. Globe takes the top `60dvh`, rail becomes a scrollable sheet
   beneath, detail panel becomes a bottom sheet. **Not optional.** A passive watchable visualization
   gets most of its shared links opened on a phone.
+
+**The band is measured wide as well as tall.** Every sample of the strip layout was portrait, and
+short and wide is the same band with a third of the height to give it, which is also every half-screen
+desktop window. It is a breakpoint in the contract now rather than a shape nobody looked at.
+
+**No key hints on a phone.** Every entry names something a touch-only device cannot do: no arrow keys,
+no `+`, no `0`, no shift to hold, no escape to press. The row's own rule is that it describes what
+works in the current view, which is why it says pan on the map and orbit on the globe, and the honest
+version of that list on a phone is empty. It was costing two wrapped lines over a 60dvh canvas.
 
 `100dvh`, never `100vh`. Touch targets 44px minimum. Horizontal scroll at any width is a build
 failure, not a bug.
