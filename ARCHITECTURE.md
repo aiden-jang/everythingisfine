@@ -1909,15 +1909,33 @@ under 180 degrees: under any threshold that keeps Antarctica, which legitimately
 pass and each draws a sliver across the map. Filtering before subdivision, in longitude and latitude
 where earcut worked, takes the worst remaining span from **123.6 degrees to 19.4**.
 
-**Still not finished, and now narrowed.** Thin lines still fan across the northern half of the map. My
-first two guesses were wrong and cost most of an afternoon: the fragment-derivative trick, and then the
-land fill, which turned out to be a real bug that was not this one. Hiding layers one at a time puts it
-in the **graticule**, and disabling the meridians alone leaves it, so it is the latitude circles. Those
-are horizontal lines of constant latitude and there is no reading of the projection where they come out
-diagonal, which means something upstream of my model of them is wrong.
+**The root cause was deriving a quantity that had already been thrown away.** `fmProject` recovered
+longitude from the sphere position with `atan2`. That looks equivalent to carrying it and is not, in a
+way that only appears once something interpolates *between* two vertices:
 
-It is a visible defect on a view that ships behind a toggle. Recorded here at the point the evidence
-actually reaches, rather than guessed at a third time.
+- Densifying walks the shorter way round the date line and emits longitudes past 180. Earcut
+  triangulates in that space quite happily. `atan2` then folds 180.5 back to -179.5, and a triangle two
+  degrees wide is drawn spanning the world.
+- At a pole longitude does not exist. `atan2(0, 0)` returns zero, so every meridian ending at a pole, and
+  every polar vertex of a sphere shell, is dragged onto the prime meridian. The seam filter cannot see
+  those either: they all report a longitude span of zero.
+
+Both are the same mistake. The fix is an `aLonLat` attribute carrying the coordinates each layer was
+actually built from, so the plane position is exactly what the triangulator worked in. That is one
+attribute on four static layers and two dynamic ones, and it deletes a class of bug rather than
+patching instances: the graticule's meridians reach the poles again, and the pre-subdivision seam
+filter is now the only guard that has to exist.
+
+Two things fell out of it. The sphere shells have no source coordinates, so they derive theirs, and
+their pole rows take longitude from the texture coordinate, which knows what the position does not. And
+the plate reveal reorders segments, so the attribute has to be reordered with them: otherwise every
+segment carries some other segment's geography, which is invisible on the globe and draws the map as
+noise.
+
+**The diagnosis before this one was wrong**, and the way I was reading evidence was why. Hiding one
+layer at a time and judging what changed is unreliable at these contrast levels; it produced two
+confident and contradictory answers. Rendering each layer *alone* settled it in a single run. That is
+the experiment to run first next time.
 
 ## Open, and honestly so
 
@@ -1928,10 +1946,6 @@ Written last, and kept accurate rather than kept short.
   aftershock territory. No threshold separates them without dropping genuine matches. The detail
   panel lists every merged reading so a wrong merge is visible, which is the difference between a
   limitation and a lie, but it is a real limitation and not a rare one during a sequence.
-
-- **The flat map has a fill artefact at the poles.** A wedge across the top and a band along the
-  bottom, from the land fill, surviving a polar-vertex filter that should have removed them. Isolated
-  to the layer, not to the line of code.
 
 - **Browser tests still run against a dev server, not a build.** They no longer touch the network, so
   they can go in CI, but they exercise `pnpm dev` rather than `dist`. A bundler-only failure would not

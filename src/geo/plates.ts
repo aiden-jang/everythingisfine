@@ -28,8 +28,9 @@ const WRAP_DEG = 170;
  * points 5 degrees apart cuts visibly inside the sphere, and the plate lines run long and straight
  * across open ocean where that is most obvious.
  */
-export function buildPlates(): Float32Array {
+export function buildPlates(): { position: Float32Array; lonLat: Float32Array } {
   const out: number[] = [];
+  const ll: number[] = [];
   const DENSIFY_DEG = 1.5;
 
   for (const line of plates as [number, number][][]) {
@@ -44,14 +45,19 @@ export function buildPlates(): Float32Array {
       for (let s = 0; s < steps; s += 1) {
         const t0 = s / steps;
         const t1 = (s + 1) / steps;
+        const lon0 = a[0] + (b[0] - a[0]) * t0;
+        const lat0 = a[1] + (b[1] - a[1]) * t0;
+        const lon1 = a[0] + (b[0] - a[0]) * t1;
+        const lat1 = a[1] + (b[1] - a[1]) * t1;
         out.push(
-          ...toVec3(a[0] + (b[0] - a[0]) * t0, a[1] + (b[1] - a[1]) * t0, RADIUS_PLATES),
-          ...toVec3(a[0] + (b[0] - a[0]) * t1, a[1] + (b[1] - a[1]) * t1, RADIUS_PLATES),
+          ...toVec3(lon0, lat0, RADIUS_PLATES),
+          ...toVec3(lon1, lat1, RADIUS_PLATES),
         );
+        ll.push(lon0, lat0, lon1, lat1);
       }
     }
   }
-  return new Float32Array(out);
+  return { position: new Float32Array(out), lonLat: new Float32Array(ll) };
 }
 
 /**
@@ -69,9 +75,10 @@ export function buildPlates(): Float32Array {
 export function orderByProximity(
   positions: Float32Array,
   points: readonly { lon: number; lat: number }[],
-): Float32Array {
+  lonLat?: Float32Array,
+): { position: Float32Array; lonLat: Float32Array | undefined } {
   const segments = positions.length / 6;
-  if (segments === 0 || points.length === 0) return positions;
+  if (segments === 0 || points.length === 0) return { position: positions, lonLat };
 
   const px = new Float32Array(points.length);
   const py = new Float32Array(points.length);
@@ -107,8 +114,12 @@ export function orderByProximity(
     .sort((a, b) => cost[a]! - cost[b]!);
 
   const out = new Float32Array(positions.length);
+  const outLl = lonLat ? new Float32Array(lonLat.length) : undefined;
   for (let n = 0; n < segments; n += 1) {
     out.set(positions.subarray(order[n]! * 6, order[n]! * 6 + 6), n * 6);
+    // Reordering the positions without reordering these would put every segment's geography on some
+    // other segment, which is invisible on the globe and draws the map as noise.
+    if (outLl && lonLat) outLl.set(lonLat.subarray(order[n]! * 4, order[n]! * 4 + 4), n * 4);
   }
-  return out;
+  return { position: out, lonLat: outLl };
 }

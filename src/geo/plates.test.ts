@@ -10,18 +10,18 @@ const segments = (a: Float32Array): string[] => {
 };
 
 describe("plate boundaries", () => {
-  const base = buildPlates();
+  const base = buildPlates().position;
 
   it("reorders without losing or duplicating a segment", () => {
     // The reveal is a growing draw range over a reordered buffer, so the settled picture is only
     // identical to the unordered one if this holds exactly.
-    const ordered = orderByProximity(base, [{ lon: 120, lat: -5 }, { lon: -70, lat: -30 }]);
+    const ordered = orderByProximity(base, [{ lon: 120, lat: -5 }, { lon: -70, lat: -30 }]).position;
     expect(ordered.length).toBe(base.length);
     expect([...segments(ordered)].sort()).toEqual([...segments(base)].sort());
   });
 
   it("puts segments nearest an event first", () => {
-    const ordered = orderByProximity(base, [{ lon: 120, lat: -5 }]);
+    const ordered = orderByProximity(base, [{ lon: 120, lat: -5 }]).position;
     const distanceOf = (i: number): number => {
       const mx = (ordered[i * 6]! + ordered[i * 6 + 3]!) / 2;
       const my = (ordered[i * 6 + 1]! + ordered[i * 6 + 4]!) / 2;
@@ -41,6 +41,6 @@ describe("plate boundaries", () => {
   });
 
   it("leaves the buffer alone when there is nothing to grow from", () => {
-    expect(orderByProximity(base, [])).toBe(base);
+    expect(orderByProximity(base, []).position).toBe(base);
   });
 });

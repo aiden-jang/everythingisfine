@@ -1,3 +1,4 @@
+import { BufferAttribute } from "three";
 import type { BufferGeometry, Material, WebGLProgramParametersWithUniforms } from "three";
 
 /*
@@ -20,17 +21,29 @@ export const MAP_HALF_WIDTH = 2;
 
 export const MORPH_GLSL = /* glsl */ `
   uniform float uMorph;
+  attribute vec2 aLonLat;
 
   vec3 fmProject(vec3 sphere) {
-    float r = length(sphere);
-    float lat = asin(clamp(sphere.y / r, -1.0, 1.0));
-    float lon = atan(sphere.x, sphere.z);
     /*
-     * The radius above the unit sphere becomes depth away from the plane, exaggerated, because the
-     * layers are separated by a thousandth of a radius and that is invisible once flattened. Order
-     * is mostly carried by renderOrder; this keeps the two agreeing rather than fighting.
+     * The plane comes from the attribute, not from the position.
+     *
+     * Recovering longitude with atan2 looks equivalent and is not, in a way that only appears once
+     * something interpolates between two vertices. Densifying walks the shorter way round the date
+     * line and emits longitudes past 180; earcut triangulates in that space quite happily; atan2 then
+     * folds 180.5 back to -179.5 and a triangle two degrees wide is drawn spanning the world. At a
+     * pole it is worse: longitude does not exist there, atan2(0, 0) returns zero, and every meridian
+     * ending at one is dragged onto the prime meridian.
+     *
+     * Both are the same mistake: deriving a quantity that was already known and had been thrown away.
+     *
+     * (No backticks in here. This is inside a template literal and one of them ends the shader.)
      */
-    vec3 plane = vec3(lon / 3.14159265 * ${MAP_HALF_WIDTH.toFixed(1)}, lat / 1.57079633, (r - 1.0) * 8.0);
+    float r = length(sphere);
+    vec3 plane = vec3(
+      aLonLat.x / 180.0 * ${MAP_HALF_WIDTH.toFixed(1)},
+      aLonLat.y / 90.0,
+      (r - 1.0) * 8.0
+    );
     return mix(sphere, plane, uMorph);
   }
 `;
@@ -68,6 +81,42 @@ export function dropSeamTriangles(geometry: BufferGeometry): number {
   }
   geometry.setIndex(kept);
   return dropped;
+}
+
+/**
+ * Derives `aLonLat` for a geometry that was generated rather than built from coordinates.
+ *
+ * The sphere shells are the only layers with no source longitude to carry, and they are also the only
+ * ones where deriving it is safe: a `SphereGeometry` has no edge that wraps the date line once its seam
+ * column is gone, and its pole rows are gone too.
+ */
+export function attachLonLat(geometry: BufferGeometry): void {
+  const position = geometry.getAttribute("position");
+  const uv = geometry.getAttribute("uv");
+  const out = new Float32Array(position.count * 2);
+
+  for (let v = 0; v < position.count; v += 1) {
+    const x = position.getX(v);
+    const y = position.getY(v);
+    const z = position.getZ(v);
+    const r = Math.hypot(x, y, z) || 1;
+    /*
+     * At a pole the position knows the latitude and not the longitude, and the texture coordinate
+     * knows both.
+     *
+     * `SphereGeometry` gives its pole rows a vertex per column, all at the same point, distinguished
+     * only by `u`. `atan2(0, 0)` returns zero for every one of them, so on the map the whole polar fan
+     * collapses onto the prime meridian and draws exactly the streak this attribute exists to prevent.
+     * The seam filter cannot see it either: those triangles all report a longitude span of zero.
+     */
+    const atPole = Math.abs(y) > 0.99999 * r;
+    out[v * 2] = atPole && uv
+      ? (uv.getX(v) - 0.5) * 360
+      : (Math.atan2(x, z) * 180) / Math.PI;
+    out[v * 2 + 1] = (Math.asin(y / r) * 180) / Math.PI;
+  }
+
+  geometry.setAttribute("aLonLat", new BufferAttribute(out, 2));
 }
 
 /**

@@ -10,7 +10,7 @@ import {
 import { DEG, distanceKm, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
-import { dropSeamTriangles, MORPH_GLSL, morphable } from "./morph";
+import { attachLonLat, dropSeamTriangles, MORPH_GLSL, morphable } from "./morph";
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
@@ -181,6 +181,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
   const oceanGeom = new SphereGeometry(RADIUS_SPHERE, 96, 64);
   dropSeamTriangles(oceanGeom);
+  attachLonLat(oceanGeom);
   const ocean = new Mesh(
     oceanGeom,
     new MeshBasicMaterial({ color: COLOR_SPHERE }),
@@ -208,6 +209,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const fillGeom = new BufferGeometry();
   fillGeom.setAttribute("position", new BufferAttribute(land.position, 3));
   fillGeom.setIndex(new BufferAttribute(land.index, 1));
+  fillGeom.setAttribute("aLonLat", new BufferAttribute(land.lonLat, 2));
   const fill = new Mesh(fillGeom, new MeshBasicMaterial({
     color: COLOR_LAND,
     depthTest: false,
@@ -218,7 +220,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   spin.add(fill);
 
   const gratGeom = new BufferGeometry();
-  gratGeom.setAttribute("position", new BufferAttribute(graticule(15, RADIUS_GRATICULE), 3));
+  const grid = graticule(15, RADIUS_GRATICULE);
+  gratGeom.setAttribute("position", new BufferAttribute(grid.position, 3));
+  gratGeom.setAttribute("aLonLat", new BufferAttribute(grid.lonLat, 2));
   const grat = new LineSegments(
     gratGeom,
     new LineBasicMaterial({ color: COLOR_GRATICULE, transparent: true, opacity: 0.38 }),
@@ -236,9 +240,13 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    * place. Over the graticule too, because these are real geography and that is scaffolding.
    */
   const plateGeom = new BufferGeometry();
-  let plateData = buildPlates();
+  const plateBuilt = buildPlates();
+  let plateData = plateBuilt.position;
+  let plateLonLat = plateBuilt.lonLat;
   const plateAttr = new BufferAttribute(plateData, 3);
+  const plateLlAttr = new BufferAttribute(plateLonLat, 2);
   plateGeom.setAttribute("position", plateAttr);
+  plateGeom.setAttribute("aLonLat", plateLlAttr);
   const plateSegments = plateData.length / 6;
   // Hidden until the entrance reveals them. The whole point is that the dots read as scattered
   // first, which they cannot do with the explanation already on screen.
@@ -273,6 +281,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
   const coastGeom = new BufferGeometry();
   coastGeom.setAttribute("position", new BufferAttribute(land.coast, 3));
+  coastGeom.setAttribute("aLonLat", new BufferAttribute(land.coastLonLat, 2));
   const coast = new LineSegments(coastGeom, new LineBasicMaterial({ color: COLOR_COAST }));
   morphable(coast.material, morph);
   coast.renderOrder = 4;
@@ -295,6 +304,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    */
   const nightGeom = new SphereGeometry(RADIUS_NIGHT, 96, 64);
   dropSeamTriangles(nightGeom);
+  attachLonLat(nightGeom);
   const night = new Mesh(
     nightGeom,
     new ShaderMaterial({
@@ -441,12 +451,19 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       /** Sorts the boundaries so the reveal grows outward from the events, then starts it hidden. */
       orderFrom: (points: readonly { lon: number; lat: number }[]): void => {
         if (points.length === 0) return;
-        plateData = orderByProximity(plateData, points);
+        const ordered = orderByProximity(plateData, points, plateLonLat);
+        plateData = ordered.position;
+        if (ordered.lonLat) plateLonLat = ordered.lonLat;
         plateAttr.array.set(plateData);
         plateAttr.needsUpdate = true;
+        plateLlAttr.array.set(plateLonLat);
+        plateLlAttr.needsUpdate = true;
         const edge = plateEdge.geometry.getAttribute("position");
         (edge.array as Float32Array).set(plateData);
         edge.needsUpdate = true;
+        const edgeLl = plateEdge.geometry.getAttribute("aLonLat");
+        (edgeLl.array as Float32Array).set(plateLonLat);
+        edgeLl.needsUpdate = true;
       },
       /** 0 hides every boundary, 1 draws all of them, with a bright band at the growing end. */
       reveal: (t: number): void => {

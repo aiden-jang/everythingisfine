@@ -122,8 +122,9 @@ boundaries*, Geochemistry Geophysics Geosystems 4(3)), public domain, simplified
 
 One geometry, projected in the vertex shader, so switching unwraps the planet rather than cross-fading
 two scenes. The globe is the default; the map is for comparing margins that a sphere makes you turn to
-see. Known artefact: thin lines fan across the northern half of the flat map, traced to the graticule's
-latitude circles and not yet fixed.
+see. Every layer carries the longitude and latitude it was built from, rather than recovering them
+from the sphere, because recovering them breaks wherever a shape crosses the date line or touches a
+pole.
 
 ## Day and night
 
