@@ -165,8 +165,33 @@ export function createControls(
    * the screen. The floor states the actual requirement in one place instead.
    */
   const DIST_FLOOR = RADIUS_ATMOSPHERE + 0.12;
-  const dist = (): number =>
-    Math.max(DIST_FLOOR, (fit + (heightFit * MAP_FIT - fit) * morph) / zoom);
+  const mapFit = (): number => heightFit * MAP_FIT;
+  const dist = (): number => Math.max(DIST_FLOOR, (fit + (mapFit() - fit) * morph) / zoom);
+
+  /*
+   * How far out you are allowed to go, which is not the same question on the two views.
+   *
+   * `ZOOM_MIN` keeps the globe from being lost, and a plane cannot be lost: it tiles, so east of the
+   * dateline is the next copy rather than an edge. The thing a map floor should protect is the whole
+   * world being reachable, and on anything narrower than a desktop the fixed floor did not reach it.
+   * A phone's map bottomed out at 155 degrees of longitude, so "see everywhere at once", which is the
+   * only reason to leave the globe, was the one thing the map could not do.
+   *
+   * So the map's floor is derived: the zoom at which the frame is exactly 360 degrees wide. Whichever
+   * of the two is further out wins, which keeps a very wide window from deriving a floor tighter than
+   * the default framing and clamping the camera on load.
+   *
+   * Interpolated on morph rather than switched at a threshold, and re-applied in `setMorph`, so
+   * leaving a zoomed-out map for the globe eases the camera up to the globe's floor across the
+   * unwrap instead of snapping on the next wheel notch.
+   */
+  const zoomFloor = (): number => {
+    const wholeWorld =
+      (mapFit() * Math.tan((fovDeg / 2) * DEG) * camera.aspect) / MAP_HALF_WIDTH;
+    return ZOOM_MIN + (Math.min(ZOOM_MIN, wholeWorld) - ZOOM_MIN) * morph;
+  };
+
+  const clampZoom = (v: number): number => Math.max(zoomFloor(), Math.min(ZOOM_MAX, v));
 
   /**
    * Pixels per unit of projected height at the origin plane. The one constant the projection needs.
@@ -358,7 +383,7 @@ export function createControls(
     aim({
       lon: base.lon + dLon,
       lat: clampLat(base.lat + dLat),
-      zoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, base.zoom * factor)),
+      zoom: clampZoom(base.zoom * factor),
     });
   };
 
@@ -378,7 +403,7 @@ export function createControls(
   const zoomAt = (factor: number, clientX: number, clientY: number): void => {
     const before = pick(clientX, clientY);
     const base = target ?? { lon, lat, zoom };
-    const nextZoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, base.zoom * factor));
+    const nextZoom = clampZoom(base.zoom * factor);
 
     const wasLon = lon;
     const wasLat = lat;
@@ -678,7 +703,7 @@ export function createControls(
   };
 
   function flyTo(toLon: number, toLat: number, toZoom = zoom): void {
-    const clamped = { lon: toLon, lat: clampLat(toLat), zoom: Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, toZoom)) };
+    const clamped = { lon: toLon, lat: clampLat(toLat), zoom: clampZoom(toZoom) };
     if (reduced.matches) {
       // Not eased, not shortened: arrived. A half-disabled motion setting is worse than none.
       ({ lon, lat, zoom } = clamped);
@@ -753,6 +778,10 @@ export function createControls(
     },
     setMorph: (t) => {
       morph = Math.max(0, Math.min(1, t));
+      // The floor moves with the morph, so a camera parked beyond the globe's has to be brought back
+      // as the map rolls up. The pending target too, or the spring drags it straight back out.
+      zoom = clampZoom(zoom);
+      if (target) target.zoom = clampZoom(target.zoom);
       apply();
     },
     morph: () => morph,
