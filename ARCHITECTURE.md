@@ -1883,6 +1883,37 @@ point, because a drag that is half a rotation and half a pan tracks neither.
 The facing tests fade out with the morph. A map has no far hemisphere, and the test that hides one on
 a globe would delete half the earthquakes on a map.
 
+## The map has no edges
+
+A flat map that stops at 180 puts the Pacific rim in two corners with a void between them, which is
+exactly the comparison the map exists to make. So the world repeats: pan east past Kamchatka and the
+Aleutians come round again.
+
+**Drawn again, not wrapped.** Offsetting each vertex by whichever copy it falls in is cheaper and it
+tears: the three corners of a triangle near the seam land on different copies and the triangle is
+stretched across the world. That is the same failure this projection has already produced twice from
+other causes, and it would come back the moment somebody panned. Repeating the *draw* cannot tear,
+because every copy is the same geometry seen from a different place.
+
+So the geography, the events and the wavefronts sit in one group, and the frame renders it once per
+visible copy with the group shifted by a period. `autoClear` is on for the first pass and off after,
+so the copies composite rather than erasing each other. The atmosphere is deliberately outside the
+group: it is a halo around a planet, and there is only one planet.
+
+`visibleCopies` decides the range, and it is the part that fails quietly. An off-by-one leaves a
+strip of void at one edge, which reads as the end of the world rather than as a missing draw call, so
+it is a pure function with a test that sweeps camera positions and zoom levels and asserts the drawn
+copies cover the view. Writing that test caught the first version drawing one wasteful copy off each
+end: the copy containing a point is the *nearest* multiple of the period, not `floor` and `ceil` of
+the edges. Two passes is the normal case, one when zoomed in, three only with the whole world plus
+both edges on screen.
+
+**The wrap made the poles visible.** Tiling put the top edge of one copy beside the top edge of the
+next, and a sphere's pole fan cannot tile a straight line: each triangle's apex sits at its own
+column's longitude, so the edge is a row of teeth. Rather than rebuild the shells with a squared-off
+pole row, a plane in the ocean colour sits behind the map. The teeth land on identical colour, and
+the map gains a defined edge it did not have before.
+
 ## The antimeridian, and two wrong theories about it
 
 Flattening produced streaks across the map, and I was wrong about the cause twice.

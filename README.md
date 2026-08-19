@@ -126,6 +126,10 @@ see. Every layer carries the longitude and latitude it was built from, rather th
 from the sphere, because recovering them breaks wherever a shape crosses the date line or touches a
 pole.
 
+The map has no edges: pan east past Kamchatka and the Aleutians come round again. The world is drawn
+once per copy that reaches the screen rather than wrapped per vertex, which cannot tear the triangles
+that straddle the seam.
+
 ## Day and night
 
 The globe is lit from the real subsolar point, computed from the clock with NOAA's solar position

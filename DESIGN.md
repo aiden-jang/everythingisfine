@@ -373,8 +373,9 @@ subject.
 **Globe and map are one geometry, morphed.** The projection happens in the vertex shader from a single
 shared uniform, so the switch is the planet unwrapping rather than a cross-fade. Every layer carries the
 coordinates it was built from: deriving them back out of a position is wrong at the date line and
-undefined at the poles. The globe is the
-default because it is the honest one; the map exists because comparing two margins on a sphere means
+undefined at the poles. **The map has no edges**, because a map that stops at 180 puts the Pacific rim
+in two corners with a void between them, and the Pacific rim is the thing worth looking at. The globe
+is the default because it is the honest one; the map exists because comparing two margins on a sphere means
 turning it.
 
 **The rail edge is draggable and remembered**, by pointer and by arrow key. A fixed width is a guess
