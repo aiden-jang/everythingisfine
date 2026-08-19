@@ -74,7 +74,15 @@ function Row({ lead, label, trail, onClick }: {
       <span className="shrink-0 font-mono text-[11px] text-faint">{trail}</span>
     </>
   );
-  const shared = "flex w-full items-baseline gap-3 border-t border-hairline px-1 py-2 text-left";
+  /*
+ * No rule under every row.
+ *
+ * Sixty rows each with a hairline beneath it is the densest possible way to say "these are separate",
+ * and it is the thing that makes a list look like a spreadsheet from 2009. The mono magnitude column
+ * already aligns them and the hover state already separates them; the rules were doing nothing the
+ * layout was not already doing, and were doing it sixty times.
+ */
+const shared = "flex w-full items-baseline gap-3 rounded-[2px] px-1.5 py-[7px] text-left";
   return onClick
     ? (
       <button
@@ -558,7 +566,7 @@ export function App(): JSX.Element {
             whether the other was still connecting or had been refused for ten minutes.
           */}
           {failing.length > 0 ? (
-            <div className="border border-hairline bg-raised p-2.5 text-[11px] leading-relaxed text-dim">
+            <div className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
               {failing.map(([id, status]) => (
                 <div key={id}>
                   <span className="text-ink">{SOURCE_NAMES[id]}</span> is not answering: {status.reason}.
@@ -570,7 +578,7 @@ export function App(): JSX.Element {
           ) : null}
 
           {missingShared && !pinned && snapshot.stats.quakes > 0 ? (
-            <p className="border border-hairline bg-raised p-2.5 text-[11px] leading-relaxed text-dim">
+            <p className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
               The event in this link is no longer in the window. The buffer holds the last day, and
               it starts when the page opens.
             </p>
@@ -627,7 +635,7 @@ export function App(): JSX.Element {
             <div className="pointer-events-auto order-2 font-mono text-[10.5px] text-faint xl:order-1">
               {([
                 ["arrows", "orbit"],
-                ["+ −", "zoom"],
+                ["+ -", "zoom"],
                 ["0", "reset"],
                 ["esc", "clear"],
               ] as const).map(([key, what]) => (
