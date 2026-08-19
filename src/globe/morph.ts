@@ -110,6 +110,29 @@ export function attachLonLat(geometry: BufferGeometry): void {
     out[v * 2 + 1] = (Math.asin(y / r) * 180) / Math.PI;
   }
 
+  /*
+   * The pole fans collapse, so the map gets a straight edge.
+   *
+   * A sphere ends in a fan of triangles meeting at a point, and a fan cannot tile a straight line:
+   * flattened, each apex sits at its own column's longitude and the gap between neighbouring apexes
+   * is a notch. Ninety-six of them along the top and bottom is a dashed line where the map should
+   * simply stop, and repeating the map put two of those edges next to each other.
+   *
+   * Pulling every apex back to the latitude of the ring below it makes each of those triangles
+   * zero-height on the map and leaves the shell ending in a line. The globe is untouched: this is an
+   * attribute the plane reads and the sphere position ignores. The cost is the last degree and a half
+   * of ocean tint at each pole, under the ice, where the land fill is drawn on top anyway.
+   */
+  let ring = 0;
+  for (let v = 0; v < position.count; v += 1) {
+    const lat = Math.abs(out[v * 2 + 1]!);
+    if (lat < 89.999 && lat > ring) ring = lat;
+  }
+  for (let v = 0; v < position.count; v += 1) {
+    const lat = out[v * 2 + 1]!;
+    if (Math.abs(lat) > ring) out[v * 2 + 1] = Math.sign(lat) * ring;
+  }
+
   geometry.setAttribute("aLonLat", new BufferAttribute(out, 2));
 }
 

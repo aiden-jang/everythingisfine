@@ -378,8 +378,17 @@ in two corners with a void between them, and the Pacific rim is the thing worth 
 is the default because it is the honest one; the map exists because comparing two margins on a sphere means
 turning it.
 
-**The rail edge is draggable and remembered**, by pointer and by arrow key. A fixed width is a guess
-about what somebody is doing, and it is wrong about half the time.
+**Both rail edges are draggable and remembered**, by pointer and by arrow key. A fixed size is a guess
+about what somebody is doing, and it is wrong about half the time. The width splitter trades the rail
+against the globe; the one under the regions trades the regions against the event list.
+
+**The chrome is the globe out of focus.** The header floats on the canvas rather than sitting on a bar
+above it, and the panels are 44% fill over a hard blur rather than a surface with the planet faintly
+behind. The saturation of the blur is pulled down to match, because a thinner fill lets more of the
+data ramp through and hue does not belong in the chrome.
+
+**The panel leaves the way it arrived.** A close that cuts where the open slid is not restraint, it is
+an unfinished transition.
 
 Three zones: rail, canvas, detail panel. CSS Grid, never flexbox percentage maths.
 

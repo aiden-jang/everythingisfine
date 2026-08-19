@@ -30,6 +30,10 @@
      and never encodes a value. Named because an unstated exception becomes a precedent. */
   --color-rim: rgb(120 150 190 / 0.16);
 
+  /* Declared, not measured: the desktop rail starts below the floating header, and a height read
+     back from the DOM would be a resize observer feeding a layout that one number states outright. */
+  --head-h: 46px;
+
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
 }
@@ -102,6 +106,7 @@
 @layer components {
   .frame {
     display: grid;
+    position: relative; /* the desktop header is absolute against this */
     height: 100dvh; /* never 100vh: the iOS Safari URL bar makes it jump */
     grid-template-rows: auto 1fr;
   }
@@ -142,20 +147,65 @@
       grid-template-areas: "canvas";
     }
 
+    /*
+     * The header floats on the planet rather than sitting on a bar above it.
+     *
+     * Removing its border left it on a strip of deck the same colour as the rail, which is still a
+     * band across the top: the planet started 44px down and the app read as a page with a globe in
+     * it. Taking it out of the grid lets the canvas run to the top of the window, which is the same
+     * argument the rail already won.
+     *
+     * Its height is declared rather than measured because the rail has to start below it, and a
+     * value read from the DOM would be a resize observer feeding a layout that a variable states
+     * outright.
+     */
+    .frame {
+      grid-template-rows: 1fr;
+    }
+
+    .zone-head {
+      position: absolute;
+      z-index: 2;
+      top: 0;
+      right: 0;
+      left: 0;
+      height: var(--head-h);
+      /* The bar is mostly empty, and an invisible strip that eats a drag is a dead zone across the
+         top of the map. The controls take their own clicks back. */
+      pointer-events: none;
+    }
+
+    .zone-head > * {
+      pointer-events: auto;
+    }
+
+    .zone-rail,
+    .zone-panel {
+      top: var(--head-h);
+    }
+
     .zone-rail,
     .zone-panel {
       position: absolute;
       z-index: 1;
-      top: 0;
       bottom: 0;
       /* Its own scroll container, since it no longer has a grid row to be bounded by. */
       overflow-y: auto;
       contain: paint;
-      /* Translucent over the globe, blurred so type stays readable against whatever is behind it.
-         `saturate` pulls the blurred data colours down: without it the ramp bleeds through as a wash
-         of orange behind the numbers, which is hue arriving in the chrome by the back door. */
-      background: color-mix(in srgb, var(--color-deck) 82%, transparent);
-      backdrop-filter: blur(18px) saturate(0.6);
+      /*
+       * Nearly nothing, blurred hard.
+       *
+       * 82% deck was a panel with the globe faintly behind it; the planet still stopped at a vertical
+       * line, just a softer one. At 44% it is the globe, out of focus, with type on it, and the seam
+       * the floating layout exists to remove is finally gone.
+       *
+       * The blur is what makes that legible rather than the fill, so it went up as the fill came down.
+       * `saturate` pulls the blurred data colours out: without it the ramp bleeds through as a wash of
+       * orange behind the numbers, which is hue arriving in the chrome by the back door, and halving
+       * the fill doubles how much of it gets through.
+       */
+      background: color-mix(in srgb, var(--color-deck) 44%, transparent);
+      backdrop-filter: blur(28px) saturate(0.45);
     }
 
     .zone-rail {
@@ -252,6 +302,24 @@
       grid-column: 1 / -1;
     }
   }
+  /*
+   * The regions box is sized, not truncated.
+   *
+   * Twelve regions in a rail that is already a scroll container is a block that pushes the event list
+   * off the bottom, and cutting it to four hides exactly the quiet regions worth noticing. A definite
+   * height with its own scroll shows the same four and keeps the rest reachable, and at desktop the
+   * height is a drag rather than a number somebody guessed.
+   *
+   * `contain: paint` for the same reason the event list has it: without it a scroll container's
+   * content still reaches the document's layout overflow.
+   */
+  .rail-regions {
+    height: var(--regions-h, 132px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    contain: paint;
+  }
+
   .zone-canvas {
     grid-area: canvas;
     min-width: 0;
@@ -263,30 +331,67 @@
 }
 
 /*
- * The pinned panel arrives, rather than existing.
+ * The pinned panel slides, both ways.
  *
- * It was a grid column appearing in one frame, on the interaction that happens most. Opacity and 8px
- * of travel, not a width animation: the column is `auto` and animating the track would slide the
- * globe smoothly but also reflow the canvas every frame for the duration, and would need the panel
- * kept mounted after closing to avoid an asymmetric exit. The layout still snaps; the panel no longer
- * materialises.
+ * It was a 160ms keyframe on entry and a cut on exit, because a conditionally mounted node cannot
+ * animate out: React removes it on the same frame and there is nothing left to transition. The panel
+ * stays mounted holding its last event now, so this is a transition rather than a keyframe, and
+ * `allow-discrete` is what lets `display` join it: the panel leaves the layout only after it has
+ * finished leaving the screen.
+ *
+ * Transform and opacity only. The column is `auto` and animating the track would reflow the canvas
+ * every frame for the duration, which is a smooth panel bought with a stuttering globe.
+ *
+ * The curve is an expo-out: almost all of the distance in the first third, then a long settle. A
+ * symmetric ease reads as a panel being moved, and this one reads as a panel arriving.
+ *
+ * Deliberately unlayered. Inside `@layer components` the closed `display: none` loses to the `flex`
+ * utility on the element, which lives in Tailwind's own layer, and the panel transitions its opacity
+ * to zero while still holding its column. Unlayered rules outrank every layer, which is the only
+ * place this one wins from.
  */
-@layer components {
+.zone-panel {
+  transition:
+    opacity 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    display 300ms allow-discrete;
+}
+
+.zone-panel[data-open="false"] {
+  display: none;
+  opacity: 0;
+  transform: translateX(28px);
+}
+
+/* The from-state for an element that has only just been rendered. Without it the panel starts at
+   its final position and only the exit would animate. */
+@starting-style {
+  .zone-panel[data-open="true"] {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+/* Below 1280 the panel is a full-width row, so it comes up rather than in from the right. */
+@media (max-width: 1279px) {
+  .zone-panel[data-open="false"] {
+    transform: translateY(28px);
+  }
+
+  @starting-style {
+    .zone-panel[data-open="true"] {
+      transform: translateY(28px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
   .zone-panel {
-    animation: panel-in 160ms cubic-bezier(0.2, 0, 0.2, 1);
+    transition: display 1ms allow-discrete;
   }
 
-  @keyframes panel-in {
-    from {
-      opacity: 0;
-      transform: translateX(10px);
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .zone-panel {
-      animation: none;
-    }
+  .zone-panel[data-open="false"] {
+    transform: none;
   }
 }
 

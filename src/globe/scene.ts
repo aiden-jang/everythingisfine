@@ -563,6 +563,17 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         aimSun(Date.now());
       }
 
+      /*
+       * The atmosphere belongs to the planet, so it leaves with it.
+       *
+       * It is the one layer deliberately outside the morph, being a halo rather than geography, and
+       * that left it sitting at the origin on the flat map: a soft blue disc a radius wide, reading as
+       * an empty sea across Russia and China. Fading it out with the morph, rather than hiding it at
+       * the end, because it has to be gone before the geography is flat enough to notice it.
+       */
+      (rim.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.42 * (1 - morph.value);
+      rim.visible = morph.value < 0.999;
+
       if (morph.value < 0.01) {
         world.position.x = 0;
         mapBase.visible = false;
