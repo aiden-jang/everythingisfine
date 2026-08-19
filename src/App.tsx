@@ -140,9 +140,13 @@ export function App(): JSX.Element {
   /*
    * Not in the permalink, deliberately. A link carries where somebody was looking; which projection
    * they happened to be using while looking is a preference, and one that would arrive as a surprise.
+   *
+   * A link carrying a cross-section is the exception, and it is not that rule bending: a section only
+   * exists on the map, so the link is not saying "use the map", it is naming a slice that has nowhere
+   * else to be drawn. Without this the panel would open over a globe with no line on it.
    */
   const [flat, setFlat] = useState(
-    () => localStorage.getItem("firstmotion.flat") === "1",
+    () => shared.section !== undefined || localStorage.getItem("firstmotion.flat") === "1",
   );
   useEffect(() => {
     localStorage.setItem("firstmotion.flat", flat ? "1" : "0");
@@ -167,7 +171,7 @@ export function App(): JSX.Element {
    * whole buffer, the panel re-renders every second because the rail ticks, and the answer only
    * changes when an earthquake does.
    */
-  const [sectionLine, setSectionLine] = useState<SectionLine | null>(null);
+  const [sectionLine, setSectionLine] = useState<SectionLine | null>(shared.section ?? null);
   /*
    * Both persisted, because both are accessibility settings and re-choosing one on every visit is
    * its own barrier. Read lazily so the first paint already has the right ramp rather than
@@ -212,6 +216,7 @@ export function App(): JSX.Element {
         sources: [...filters.sources],
         ramp,
         event: reading ? `${reading.source}:${reading.id}` : null,
+        section: sectionLine,
       });
       history.replaceState(null, "", `#${fragment}`);
     };
@@ -222,7 +227,7 @@ export function App(): JSX.Element {
       lastWritten.current = window.location.hash;
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [filters, selected, ramp]);
+  }, [filters, selected, ramp, sectionLine]);
 
   /*
    * Someone pasting a different link into an open tab.

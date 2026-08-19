@@ -1,5 +1,6 @@
 import type { SourceId } from "../data/types";
 import type { RampName } from "../globe/ramp";
+import type { SectionLine } from "./section";
 
 /*
  * "Look at this" as a link.
@@ -27,6 +28,16 @@ export interface Permalink {
   ramp: RampName;
   /** `source:id`, or null. Not our internal key. */
   event: string | null;
+  /**
+   * The two ends of the cross-section, or null.
+   *
+   * A section is the one thing in this app somebody makes rather than chooses, so it is the one most
+   * worth sending. It also carries its own view: a section only exists on the map, so a link holding
+   * one arrives on the map whatever the recipient was last looking at. That is not the projection
+   * preference travelling, which is deliberately left out; it is the link saying what it is a section
+   * of. Without it the panel would open over a globe with no line drawn on it.
+   */
+  section: SectionLine | null;
 }
 
 const round = (value: number, places: number): number =>
@@ -47,7 +58,13 @@ const round = (value: number, places: number): number =>
  * decodes correctly, since `decode` has always normalised on the way in, and is nonsense to read and
  * to send to somebody.
  */
-const wrapLon = (lon: number): number => ((((lon + 180) % 360) + 360) % 360) - 180;
+const wrapLon = (lon: number): number => {
+  // Untouched when it is already in range. The modulo form is exact in principle and not in floating
+  // point: it turns 145.8 into 145.79999999999995, which survives rounding on the way out and then
+  // comes back through `decode` unrounded, so a section did not equal itself after a round trip.
+  if (lon >= -180 && lon < 180) return lon;
+  return ((((lon + 180) % 360) + 360) % 360) - 180;
+};
 
 export function encode(state: Permalink): string {
   const parts = [
@@ -58,6 +75,13 @@ export function encode(state: Permalink): string {
     `r=${state.ramp}`,
   ];
   if (state.event) parts.push(`e=${state.event}`);
+  if (state.section) {
+    const { fromLon, fromLat, toLon, toLat } = state.section;
+    parts.push(
+      `x=${round(wrapLon(fromLon), 2)},${round(fromLat, 2)}`
+      + `,${round(wrapLon(toLon), 2)},${round(toLat, 2)}`,
+    );
+  }
   return parts.join("&");
 }
 
@@ -81,7 +105,7 @@ export function decode(fragment: string): Partial<Permalink> {
 
   const at = params.get("at")?.split(",").map(Number);
   if (at && at.length === 3 && at.every((n) => Number.isFinite(n))) {
-    out.lon = ((((at[0]! + 180) % 360) + 360) % 360) - 180;
+    out.lon = wrapLon(at[0]!);
     out.lat = clamp(at[1]!, -85, 85);
     out.zoom = clamp(at[2]!, 0.75, 3);
   }
@@ -105,6 +129,25 @@ export function decode(fragment: string): Partial<Permalink> {
 
   const e = params.get("e");
   if (e && /^(usgs|emsc):[\w.-]{1,64}$/.test(e)) out.event = e;
+
+  const x = params.get("x")?.split(",").map(Number);
+  if (x && x.length === 4 && x.every((n) => Number.isFinite(n))) {
+    const line = {
+      fromLon: wrapLon(x[0]!),
+      fromLat: clamp(x[1]!, -90, 90),
+      toLon: wrapLon(x[2]!),
+      toLat: clamp(x[3]!, -90, 90),
+    };
+    /*
+     * A line with both ends in the same place is dropped rather than restored.
+     *
+     * Its length is zero, so nothing falls inside the corridor and the panel opens to say it found
+     * nothing, which reads as a broken link rather than as an edited one. The gesture cannot produce
+     * this, since a drag under twelve pixels is treated as a dismissal, so it only arrives from a URL
+     * somebody has typed into.
+     */
+    if (line.fromLon !== line.toLon || line.fromLat !== line.toLat) out.section = line;
+  }
 
   return out;
 }

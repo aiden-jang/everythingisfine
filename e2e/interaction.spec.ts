@@ -781,10 +781,14 @@ test("a line dragged across the map opens a section through it", async ({ page }
 
   await drag(...west, ...east);
   await expect(section).toBeVisible();
+  // Into the link, which is written on a one-second interval rather than on every state change.
+  await expect.poll(() => page.url(), { timeout: 4000 }).toContain("x=");
   const band = page.locator(".zone-canvas").getByText(/km long/);
   await expect(band).toContainText(/km either side/);
-  // The camera did not move, which is the whole reason this listens in the capture phase.
-  expect(page.url()).toBe(before);
+  // The camera did not move, which is the whole reason this listens in the capture phase. Compared on
+  // the camera's own field, since the link has legitimately gained the section by now.
+  const at = (url: string): string => new URLSearchParams(url.split("#")[1]).get("at")!;
+  expect(at(page.url())).toBe(at(before));
 
   /*
    * The same line dragged the other way reads the same way.
@@ -811,4 +815,47 @@ test("a line dragged across the map opens a section through it", async ({ page }
   await page.mouse.click(cx, cy);
   await page.keyboard.up("Shift");
   await expect(section).toHaveCount(0);
+  expect(page.url()).not.toContain("x=");
+});
+
+/*
+ * A section survives being sent to somebody.
+ *
+ * It carries its own view, which no other field does: a section has nowhere to be drawn except the map,
+ * so a link holding one has to arrive on the map even though the projection is deliberately kept out
+ * of the permalink. Opened on the globe the panel would describe a slice with no line anywhere.
+ *
+ * Started from a fresh context with the map turned off in storage, since the interesting case is a
+ * recipient whose own preference disagrees with the link.
+ */
+test("a link carrying a section opens on the map with the line drawn", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1600, height: 900 } });
+  const page = await context.newPage();
+  try {
+    await installFeeds(page, { count: 400 });
+    await page.goto("http://localhost:31600");
+    await page.evaluate(() => localStorage.setItem("firstmotion.flat", "0"));
+
+    await page.goto(
+      "http://localhost:31600/#at=140,36,2.6&m=2&w=24&x=134.2,31.5,146.1,41.2",
+    );
+    await waitForData(page);
+
+    await expect(page.getByText("Cross-section", { exact: true })).toBeVisible();
+    // On the map, not on the globe: the toggle offers the way back rather than the way there.
+    await expect(page.getByRole("button", { name: "Globe" })).toBeVisible();
+    // And the line itself is on the canvas, not just the panel below it.
+    const drawn = page.locator(".zone-canvas svg line[stroke-dasharray]");
+    await expect(drawn).toHaveCount(1);
+    expect(Number(await drawn.getAttribute("x2"))).toBeGreaterThan(
+      Number(await drawn.getAttribute("x1")),
+    );
+
+    // Closing it takes it out of the link, so the next copy is not a section somebody dismissed.
+    await page.keyboard.press("Escape");
+    await expect(page.getByText("Cross-section", { exact: true })).toHaveCount(0);
+    await expect.poll(() => page.url()).not.toContain("x=");
+  } finally {
+    await context.close();
+  }
 });
