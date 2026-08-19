@@ -1937,6 +1937,28 @@ layer at a time and judging what changed is unreliable at these contrast levels;
 confident and contradictory answers. Rendering each layer *alone* settled it in a single run. That is
 the experiment to run first next time.
 
+## The dated look was eleven name badges
+
+Told the interface still read as old, I finally reached for the design skill in the environment rather
+than hand-rolling taste. The first honest finding is that it is **out of scope**: it is written for
+landing pages and portfolios and says so, and this is a data instrument. Most of it does not apply.
+
+Three of its rules do, and one of them was the answer. It has a mechanical check for "eyebrows", the
+small uppercase tracking labels above section headings, and calls it the most-violated rule it has:
+count them and compare against roughly one per three sections. This app had **eleven**. Each was
+defensible on its own. Together they were the templated rhythm that reads as dated.
+
+The other two: at high density it bans card containers, which is why the panel's notes are now a left
+rule and spacing rather than boxes; and it rations the middle dot to one per metadata line, which took
+"3m · 155 km · USGS EMSC" apart and turned two agency readings into aligned columns. That last one
+stopped being a formatting rule halfway through: two readings of one earthquake laid out in columns is
+a comparison you can scan, which is the project's whole subject, and as a concatenated string it was
+not.
+
+Worth recording that the skill also confirmed things: sharp corners used consistently, mono for every
+number, one accent family reserved for data. Those were already right, and knowing which parts were
+already right is what made it obvious which part was not.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

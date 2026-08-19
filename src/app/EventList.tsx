@@ -164,7 +164,7 @@ export function EventList({
               aria-current={quake.key === selected ? "true" : undefined}
               onFocus={() => { cursorRef.current = i; setCursor(i); }}
               onClick={() => onSelect(quake.key === selected ? null : quake.key)}
-              className={`flex w-full cursor-pointer items-start gap-3 border-t border-hairline px-1 py-2 text-left transition-colors hover:bg-raised ${
+              className={`flex w-full cursor-pointer items-start gap-3 rounded-[2px] px-1.5 py-[7px] text-left transition-colors hover:bg-raised ${
                 quake.key === selected ? "bg-raised" : ""
               }`}
             >
@@ -185,9 +185,18 @@ export function EventList({
                   {place(quake.primary.place)}
                 </span>
                 <span className="mt-1 block truncate font-mono text-[10.5px] leading-none text-faint">
+                  {/*
+                    One separator, not two. A metadata line reading "3m · 155 km · USGS EMSC" uses the
+                    middle dot as the answer to every relationship on the line; space is the other
+                    answer and it does not need to be read. Time and depth are both measurements of
+                    the event, so they keep the dot. The agencies are a different kind of fact, so
+                    they get distance instead.
+                  */}
                   {agoShort(quake.primary.time, now)}
                   {` · ${depth(quake.primary)}`}
-                  {` · ${quake.readings.map((r) => SOURCE_NAMES[r.source]).join(" ")}`}
+                  <span className="pl-3">
+                    {quake.readings.map((r) => SOURCE_NAMES[r.source]).join(" ")}
+                  </span>
                   {/*
                     Says which rows the header's "revised" count is about. A number in the header
                     with nothing to click is a statistic about an invisible set: you learn that three

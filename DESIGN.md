@@ -303,6 +303,28 @@ Body copy caps at 65 characters. There is very little body copy here and there s
 
 ---
 
+### 5.1 Labels are rationed, and so are separators
+
+An earlier version of this rail carried eleven small uppercase tracking labels, one above every block.
+Each was defensible alone and together they were the thing that made the interface look dated: a
+templated rhythm where every section wears a name badge. A 38px number above the words "last 24 hours"
+does not need a heading reading EVENTS.
+
+The rule is roughly one label per three blocks, and the survivors are the ones naming something a
+reader could not otherwise work out. Regions and Recent stay. Activity and Events went.
+
+The middle dot gets the same treatment: one per metadata line, not one between every pair of facts.
+Two dots on a line means the separator is answering every relationship on it, and space answers most
+of them without being read. Where three facts want comparing, they become columns instead, which is
+what turned two agency readings from a concatenated string into a comparison you can scan.
+
+**No rule under every row.** Sixty list rows each with a hairline beneath is the densest possible way
+to say "these are separate", and the mono magnitude column and the hover state were already saying it.
+At this density the panels lost their boxes too: a left rule and space carry a note without drawing a
+container around it.
+
+---
+
 ## 6. Components
 
 **Buttons and toggles.** Flat, hairline border, Deck Raised fill. Active state is a brightness lift

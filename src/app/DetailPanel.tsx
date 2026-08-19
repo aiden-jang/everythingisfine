@@ -133,13 +133,13 @@ export function DetailPanel({
         holding one, and named rather than kept quietly.
       */}
       {excluded ? (
-        <p className="mt-3 border border-hairline bg-raised p-2.5 text-[11px] leading-relaxed text-dim">
+        <p className="mt-3 border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
           Outside the current filters, so it is not on the globe. Everything below still describes it.
         </p>
       ) : null}
 
       {revisions.length > 0 ? (
-        <div className="mt-2 border border-hairline bg-raised px-2.5 py-2">
+        <div className="mt-2 border-l border-hairline pl-2.5">
           {revisions.map(({ reading, revision }) => {
             const magMoved = revision.fromMagnitude !== reading.magnitude;
             const depthMoved = revision.fromDepthKm !== null
@@ -180,7 +180,7 @@ export function DetailPanel({
       {r.kind !== "earthquake" ? (
         // Named rather than drawn as an earthquake. A quarry blast is a real seismic event and
         // calling it something it is not would be the quiet kind of lie.
-        <div className="mt-2 border border-hairline px-2 py-1 text-[11px] text-dim">
+        <div className="mt-2 border-l border-hairline pl-2.5 text-[11px] text-dim">
           recorded as a {r.kind}
         </div>
       ) : null}
@@ -205,7 +205,7 @@ export function DetailPanel({
            * seconds, so the panel was calling almost every corroborated event a disagreement.
            */}
           <div className="label">Both agencies reported this</div>
-          <div className="mt-2 border border-hairline bg-raised p-3">
+          <div className="mt-2 border-l border-hairline pl-3">
             <div className="text-[12px] leading-relaxed text-ink">
               {spread.km < 1 && spread.seconds < 1 && spread.mag < 0.05
                 ? "They agree to the precision they publish."
@@ -217,11 +217,22 @@ export function DetailPanel({
               does not move depending on which feed arrived first.
             </div>
           </div>
+          {/*
+            One dot, and columns for the rest. Three facts joined by two middle dots reads as a string
+            somebody concatenated; the same three aligned down the panel read as a comparison, which is
+            what two agencies reporting one earthquake actually is.
+          */}
           {quake.readings.map((reading, i) => (
-            <div key={i} className="mt-2 font-mono text-[11px] text-dim">
-              <span className="text-ink">{SOURCE_NAMES[reading.source]}</span>{" "}
-              M {reading.magnitude.toFixed(1)} {reading.scale} · {coordinates(reading)} ·{" "}
-              {clock(reading.time)}
+            <div
+              key={i}
+              className="mt-2 flex items-baseline gap-x-3 font-mono text-[11px] text-dim"
+            >
+              <span className="w-[40px] shrink-0 text-ink">{SOURCE_NAMES[reading.source]}</span>
+              <span className="w-[74px] shrink-0">
+                M {reading.magnitude.toFixed(1)} {reading.scale}
+              </span>
+              <span className="min-w-0 flex-1 truncate">{coordinates(reading)}</span>
+              <span className="shrink-0 text-faint">{clock(reading.time)}</span>
             </div>
           ))}
         </div>
@@ -245,7 +256,7 @@ export function DetailPanel({
             {near.notable.map(({ quake: other, km }) => (
               <div
                 key={other.key}
-                className="flex items-baseline gap-2 border-t border-hairline py-1.5"
+                className="flex items-baseline gap-2 py-1"
               >
                 <span className="w-[32px] shrink-0 font-mono text-[12px] text-ink">
                   {other.primary.magnitude.toFixed(1)}
