@@ -23,6 +23,8 @@ import {
  */
 
 export interface DetailPanelProps {
+  /** False while the panel is leaving. It stays mounted, holding its last event, to animate out. */
+  open: boolean;
   quake: Quake;
   ramp: RampName;
   /** True when the current filters exclude this event, so the globe is not drawing it. */
@@ -45,7 +47,7 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
 }
 
 export function DetailPanel({
-  quake, store, filters, ramp, excluded, revision, onClose, onFlyTo,
+  open, quake, store, filters, ramp, excluded, revision, onClose, onFlyTo,
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
   const r = quake.primary;
@@ -102,7 +104,13 @@ export function DetailPanel({
   };
 
   return (
-    <aside className="zone-panel flex w-[360px] flex-col overflow-y-auto border-l border-hairline bg-deck p-5 max-xl:w-full">
+    <aside
+      data-open={open}
+      // Out of the reading order the moment it starts leaving. `display: none` lands at the end of
+      // the transition, so for those 300ms it is still a real panel describing an event nobody pinned.
+      aria-hidden={!open}
+      className="zone-panel flex w-[360px] flex-col overflow-y-auto border-l border-hairline bg-deck p-5 max-xl:w-full"
+    >
       <div className="flex items-start justify-between">
         <div className="label">Pinned event</div>
         <button type="button" onClick={onClose} className="label cursor-pointer hover:text-ink">

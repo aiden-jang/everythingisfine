@@ -75,7 +75,10 @@ test("a pinned selection survives a data refresh", async ({ page }) => {
   await expect(panel).toContainText(`M ${magnitude!}`);
 
   await page.keyboard.press("Escape");
-  await expect(panel).toHaveCount(0);
+  // Not `toHaveCount(0)`: the panel stays mounted holding its last event so it can animate out, and
+  // lands on `display: none` at the end. Gone to a reader and gone to the layout is the contract; an
+  // unmount was only ever how it happened to be implemented.
+  await expect(panel).not.toBeVisible();
 });
 
 test("the globe is operable with the canvas hidden", async ({ page }) => {
@@ -674,4 +677,65 @@ test("a link naming an event that has aged out says so", async ({ page }) => {
   // why, which is the same honesty the window's left edge gets.
   await expect(page.locator(".zone-rail")).toContainText("no longer in the window");
   await expect(page.locator(".zone-panel")).toHaveCount(0);
+});
+
+/*
+ * Both edges of the rail are draggable, and both answer a keyboard.
+ *
+ * The width splitter shipped without coverage and the height one is new, and the failure they share
+ * is silent: a splitter whose pointer handler works and whose keys do nothing looks finished and is
+ * a control a keyboard user can see and cannot use. The width case also has to survive a reload,
+ * since the whole argument for it is that the app should stop guessing.
+ */
+test("the rail resizes in both directions, by pointer and by key", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await installFeeds(page, { count: 240 });
+  await page.goto("/");
+  await waitForData(page);
+
+  const height = page.getByRole("separator", { name: "Regions height" });
+  const before = Number(await height.getAttribute("aria-valuenow"));
+  const rows = page.locator(".rail-regions button");
+  const visibleRows = async (): Promise<number> => {
+    const box = await page.locator(".rail-regions").boundingBox();
+    let seen = 0;
+    for (const row of await rows.all()) {
+      const r = await row.boundingBox();
+      if (r && r.y + r.height <= box!.y + box!.height + 1) seen += 1;
+    }
+    return seen;
+  };
+  const shownBefore = await visibleRows();
+
+  const handle = await height.boundingBox();
+  await height.hover();
+  await page.mouse.down();
+  await page.mouse.move(handle!.x + 40, handle!.y + 120, { steps: 10 });
+  await page.mouse.up();
+
+  // The box grew, and it grew into more regions rather than more padding.
+  expect(Number(await height.getAttribute("aria-valuenow"))).toBeGreaterThan(before + 60);
+  expect(await visibleRows()).toBeGreaterThan(shownBefore);
+
+  // Arrow keys, not just a pointer. Shift is the coarse step.
+  await height.focus();
+  const keyed = Number(await height.getAttribute("aria-valuenow"));
+  await page.keyboard.press("ArrowUp");
+  expect(Number(await height.getAttribute("aria-valuenow"))).toBe(keyed - 16);
+  await page.keyboard.press("Shift+ArrowDown");
+  expect(Number(await height.getAttribute("aria-valuenow"))).toBe(keyed + 32);
+
+  const width = page.getByRole("separator", { name: "Rail width" });
+  await width.focus();
+  const wide = Number(await width.getAttribute("aria-valuenow"));
+  await page.keyboard.press("ArrowRight");
+  expect(Number(await width.getAttribute("aria-valuenow"))).toBe(wide + 16);
+
+  // Both are remembered. Re-choosing a size on every visit is its own barrier.
+  await page.reload();
+  await waitForData(page);
+  expect(Number(await page.getByRole("separator", { name: "Rail width" })
+    .getAttribute("aria-valuenow"))).toBe(wide + 16);
+  expect(Number(await page.getByRole("separator", { name: "Regions height" })
+    .getAttribute("aria-valuenow"))).toBe(keyed + 32);
 });

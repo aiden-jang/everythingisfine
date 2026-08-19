@@ -1,34 +1,45 @@
 import { useEffect, useRef } from "react";
 
 /*
- * The edge between the rail and the globe, draggable.
+ * A draggable edge, horizontal or vertical.
  *
- * Both sides genuinely want the space and which one wants it more depends on what somebody is doing:
- * reading the list wants a wide rail, watching a sequence wants none of one. A fixed 356px is a guess
- * that is wrong half the time, and it is a guess this app is in no position to make for someone.
+ * Both sides of every edge in this rail genuinely want the space and which one wants it more depends
+ * on what somebody is doing: reading the list wants a wide rail and a short region box, watching a
+ * sequence wants neither. A fixed size is a guess that is wrong half the time, and it is a guess this
+ * app is in no position to make for someone.
  *
- * A `separator` with `aria-valuenow`, not a bare div with a pointer handler. A splitter that only
- * answers a mouse is a control a keyboard user can see and cannot touch, which is the same gap the
- * globe had before the camera keys.
+ * One component for both axes rather than two nearly identical ones, because the accessible part is
+ * the part worth having once: a `separator` with `aria-valuenow` and arrow keys, not a bare div with
+ * a pointer handler. A splitter that only answers a mouse is a control a keyboard user can see and
+ * cannot touch, which is the same gap the globe had before the camera keys.
  */
 
 export interface ResizerProps {
-  width: number;
+  axis: "x" | "y";
+  label: string;
+  value: number;
   min: number;
   max: number;
-  onChange: (width: number) => void;
+  /** Turns a pointer position into a new value, since only the caller knows what it is measuring. */
+  measure: (event: PointerEvent) => number;
+  onChange: (value: number) => void;
+  className?: string;
+  style?: React.CSSProperties;
 }
 
-export function Resizer({ width, min, max, onChange }: ResizerProps): JSX.Element {
+export function Resizer({
+  axis, label, value, min, max, measure, onChange, className, style,
+}: ResizerProps): JSX.Element {
   const dragging = useRef(false);
-  const latest = useRef(onChange);
-  latest.current = onChange;
+  const latest = useRef({ measure, onChange });
+  latest.current = { measure, onChange };
 
   useEffect(() => {
     const onMove = (e: PointerEvent): void => {
       if (!dragging.current) return;
       e.preventDefault();
-      latest.current(Math.max(min, Math.min(max, e.clientX)));
+      const { measure: m, onChange: change } = latest.current;
+      change(Math.max(min, Math.min(max, m(e))));
     };
     const onUp = (): void => {
       dragging.current = false;
@@ -47,36 +58,45 @@ export function Resizer({ width, min, max, onChange }: ResizerProps): JSX.Elemen
     };
   }, [min, max]);
 
+  const horizontal = axis === "y";
+  const [less, more] = horizontal ? ["ArrowUp", "ArrowDown"] : ["ArrowLeft", "ArrowRight"];
+
   return (
     <div
       role="separator"
-      aria-label="Rail width"
-      aria-orientation="vertical"
-      aria-valuenow={Math.round(width)}
+      aria-label={label}
+      // The orientation of the separator, not of the drag: a splitter you move up and down is a
+      // horizontal line. Naming it after the gesture is the reading that feels right and is wrong.
+      aria-orientation={horizontal ? "horizontal" : "vertical"}
+      aria-valuenow={Math.round(value)}
       aria-valuemin={min}
       aria-valuemax={max}
       tabIndex={0}
       onPointerDown={(e) => {
         e.preventDefault();
         dragging.current = true;
-        document.body.style.cursor = "col-resize";
+        document.body.style.cursor = horizontal ? "row-resize" : "col-resize";
         document.body.style.userSelect = "none";
       }}
       onKeyDown={(e) => {
         const step = e.shiftKey ? 48 : 16;
-        if (e.key === "ArrowLeft") onChange(Math.max(min, width - step));
-        else if (e.key === "ArrowRight") onChange(Math.min(max, width + step));
+        if (e.key === less) onChange(Math.max(min, value - step));
+        else if (e.key === more) onChange(Math.min(max, value + step));
         else return;
         e.preventDefault();
       }}
       // Wider than it looks: a 1px line is the correct visual weight and an unusable target, so the
       // hit area straddles the border and only the border is painted.
-      className="group absolute inset-y-0 z-[2] hidden w-3 cursor-col-resize xl:block"
-      style={{ left: width - 6 }}
+      className={`group z-[2] ${horizontal ? "h-3 cursor-row-resize" : "w-3 cursor-col-resize"} ${className ?? ""}`}
+      style={style}
     >
-      {/* Barely there until reached for. A permanent rule down the middle of the window is the seam
-          the floating layout exists to remove, and an invisible handle is one nobody finds. */}
-      <span className="pointer-events-none absolute inset-y-0 left-[6px] w-px bg-hairline/40 transition-colors duration-150 group-hover:bg-dim group-focus-visible:bg-ink" />
+      {/* Barely there until reached for. A permanent rule through the interface is the seam the
+          floating layout exists to remove, and an invisible handle is one nobody finds. */}
+      <span
+        className={`pointer-events-none absolute bg-hairline/40 transition-colors duration-150 group-hover:bg-dim group-focus-visible:bg-ink ${
+          horizontal ? "inset-x-0 top-[6px] h-px" : "inset-y-0 left-[6px] w-px"
+        }`}
+      />
     </div>
   );
 }

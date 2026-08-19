@@ -151,6 +151,13 @@ export function App(): JSX.Element {
   useEffect(() => {
     localStorage.setItem("firstmotion.rail", String(railWidth));
   }, [railWidth]);
+  const [regionsHeight, setRegionsHeight] = useState<number>(
+    () => Number(localStorage.getItem("firstmotion.regions")) || 132,
+  );
+  useEffect(() => {
+    localStorage.setItem("firstmotion.regions", String(regionsHeight));
+  }, [regionsHeight]);
+  const regionsRef = useRef<HTMLDivElement>(null);
   /*
    * Both persisted, because both are accessibility settings and re-choosing one on every visit is
    * its own barrier. Read lazily so the first paint already has the right ramp rather than
@@ -258,6 +265,10 @@ export function App(): JSX.Element {
   }, [missingShared, snapshot.revision, snapshot.statuses.usgs.kind, snapshot.stats.quakes]);
 
   const pinned = selected ? feed.store.get(selected) : undefined;
+  // The panel outlives the pin by one exit transition; see where it is rendered.
+  const lastPinned = useRef(pinned);
+  if (pinned) lastPinned.current = pinned;
+  const shownQuake = pinned ?? lastPinned.current;
   useEffect(() => {
     // Only if it genuinely fell out of the buffer. A refresh must never clear the panel.
     if (selected && !feed.store.get(selected)) setSelected(null);
@@ -364,7 +375,7 @@ export function App(): JSX.Element {
     <div className="frame">
       {/* The header used to hold a wordmark and two small words on a 1280px bar. It now carries
           the arithmetic that makes the reconciliation visible without opening anything. */}
-      <header className="flex items-center gap-6 bg-deck px-5 py-3 xl:bg-transparent">
+      <header className="zone-head flex items-center gap-6 bg-deck px-5 py-3 xl:bg-transparent">
         <div className="text-[13px] font-semibold tracking-[0.16em] whitespace-nowrap">
           FIRST MOTION
         </div>
@@ -434,7 +445,13 @@ export function App(): JSX.Element {
         </div>
       </header>
 
-      <div className="zones" style={{ "--rail-w": `${railWidth}px` } as React.CSSProperties}>
+      <div
+        className="zones"
+        style={{
+          "--rail-w": `${railWidth}px`,
+          "--regions-h": `${regionsHeight}px`,
+        } as React.CSSProperties}
+      >
         <aside className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r">
           <div>
             {/*
@@ -545,17 +562,36 @@ export function App(): JSX.Element {
             onHoursChange={(h) => setFilters((f) => ({ ...f, windowMs: h * 3_600_000 }))}
           />
 
+          {/*
+            All twelve, in a box you can resize, rather than the top four and no way to the rest.
+
+            The truncation was the wrong half of the fix: a region with two events is exactly the one
+            somebody scanning for where today is quiet wants to see, and it was the one being cut. A
+            sized scrolling box shows the same four by default and admits the others exist.
+          */}
           {regions.length > 0 ? (
-            <div>
-              <div className="label">Regions</div>
-              {regions.slice(0, 4).map(({ region, count }) => (
-                <Row
-                  key={region.name}
-                  label={region.name}
-                  trail={`${count}`}
-                  onClick={() => flyTo.current(region.lon, region.lat, region.zoom)}
-                />
-              ))}
+            <div className="relative">
+              <div ref={regionsRef} className="rail-regions">
+                <div className="label">Regions</div>
+                {regions.map(({ region, count }) => (
+                  <Row
+                    key={region.name}
+                    label={region.name}
+                    trail={`${count}`}
+                    onClick={() => flyTo.current(region.lon, region.lat, region.zoom)}
+                  />
+                ))}
+              </div>
+              <Resizer
+                axis="y"
+                label="Regions height"
+                value={regionsHeight}
+                min={64}
+                max={360}
+                measure={(e) => e.clientY - (regionsRef.current?.getBoundingClientRect().top ?? 0)}
+                onChange={setRegionsHeight}
+                className="absolute inset-x-0 -bottom-2 hidden xl:block"
+              />
             </div>
           ) : null}
 
@@ -595,9 +631,17 @@ export function App(): JSX.Element {
 
         </aside>
 
-        {/* Hidden from assistive tech. The parallel accessible feed in step B is the real
-            interface for a screen reader; the canvas is never it. */}
-        <Resizer width={railWidth} min={264} max={620} onChange={setRailWidth} />
+        <Resizer
+          axis="x"
+          label="Rail width"
+          value={railWidth}
+          min={264}
+          max={620}
+          measure={(e) => e.clientX}
+          onChange={setRailWidth}
+          className="absolute inset-y-0 hidden xl:block"
+          style={{ left: railWidth - 6 }}
+        />
 
         <main className="zone-canvas relative bg-void">
           {/* Split out so the rail paints before three.js parses. The fallback is the void the globe
@@ -628,7 +672,7 @@ export function App(): JSX.Element {
             className="pointer-events-none absolute right-0 bottom-0 left-0 z-[1] flex flex-wrap items-end justify-end gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
           >
             {onMap ? (
-              <div className="pointer-events-auto order-1 w-full max-w-[300px] bg-deck/70 p-3 backdrop-blur-xl xl:order-2">
+              <div className="pointer-events-auto order-1 w-full max-w-[300px] bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50 xl:order-2">
                 {legend}
               </div>
             ) : null}
@@ -649,13 +693,21 @@ export function App(): JSX.Element {
           </div>
         </main>
 
-        {pinned ? (
+        {/*
+          Held past the unpin, so the panel can leave.
+
+          A conditional mount has no exit: React removes the node on the same frame the selection
+          clears, and a transition on a removed node never runs, so closing was a cut where opening
+          was a slide. Keeping the last one alive lets it animate out still saying what it said.
+        */}
+        {shownQuake ? (
           <DetailPanel
-            quake={pinned}
+            open={pinned !== undefined}
+            quake={shownQuake}
             store={feed.store}
             filters={filters}
             ramp={ramp}
-            excluded={!matches(pinned, filters, now)}
+            excluded={!matches(shownQuake, filters, now)}
             revision={snapshot.revision}
             onClose={() => setSelected(null)}
             onFlyTo={(lon, lat, zoom) => flyTo.current(lon, lat, zoom)}

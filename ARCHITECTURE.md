@@ -1883,6 +1883,73 @@ point, because a drag that is half a rotation and half a pan tracks neither.
 The facing tests fade out with the morph. A map has no far hemisphere, and the test that hides one on
 a globe would delete half the earthquakes on a map.
 
+## The chrome stopped being a layer over the picture
+
+Four things were still drawing a box around the subject, and each was a different excuse for the same
+line.
+
+**The header was a bar.** Removing its border left it on a strip of deck the same colour as the rail,
+which is still a band: the planet started 46px down. Taking it out of the grid and floating it lets
+the canvas run to the top of the window, which is the argument the rail had already won. Its height is
+a declared variable rather than a measured one, because the rail has to start below it and reading a
+height back from the DOM is a resize observer feeding a layout that one number states outright. The
+bar is `pointer-events: none` with the controls taking their own clicks back, since an invisible strip
+that eats a drag is a dead zone across the top of the map.
+
+**The panels were 82% opaque**, which is a panel with the globe faintly behind it rather than the
+globe with type on it. At 44% the seam is gone. The blur is what makes that legible rather than the
+fill, so it went up as the fill came down, and `saturate` had to come down with it: halving the fill
+doubles how much of the ramp bleeds through as a wash of orange behind the numbers, which is hue
+arriving in the chrome by the back door.
+
+**The atmosphere was a halo with no planet under it.** It is the one layer deliberately outside the
+morph, being a glow rather than geography, and that left it sitting at the origin on the flat map: a
+soft blue disc a radius across, reading as an empty sea over Russia and China. It fades out with the
+morph rather than being hidden at the end, because it has to be gone before the geography is flat
+enough to make it obvious.
+
+**The map's edges were dashed.** A sphere ends in a fan of triangles meeting at a point, and a fan
+cannot tile a straight line: flattened, each apex sits at its own column's longitude and the gap
+between neighbouring apexes is a notch, ninety-six of them along each edge. Repeating the map put two
+of those edges beside each other and made it obvious. Pulling every apex back to the latitude of the
+ring below it makes those triangles zero-height on the map, so the shell ends in a line. It is an
+attribute the plane reads and the sphere position ignores, so the globe is untouched. The cost is the
+last degree and a half of ocean tint at each pole, under ice the land fill draws over anyway.
+
+## The panel can leave
+
+Closing was a cut where opening was a slide, and the reason was structural rather than a missing
+curve: a conditionally mounted node cannot animate out. React removes it on the same frame the
+selection clears and there is nothing left to transition.
+
+So the panel outlives the pin. The last pinned event is held, the panel stays mounted with
+`data-open="false"`, and CSS does both directions: `@starting-style` supplies the from-state on
+arrival, and `transition-behavior: allow-discrete` lets `display` join the transition so the panel
+leaves the layout only after it has finished leaving the screen. Transform and opacity only, because
+the column is `auto` and animating the track would reflow the canvas every frame for the duration,
+which is a smooth panel bought with a stuttering globe.
+
+That block is deliberately unlayered. Inside `@layer components` the closed `display: none` loses to
+the `flex` utility on the element, which lives in Tailwind's own layer, and the panel fades to nothing
+while still holding its column. The browser test caught exactly that, because it asserts the panel is
+not visible rather than that it is unmounted.
+
+## Both edges of the rail are draggable
+
+The width splitter was one axis of a general problem: every edge in this rail has two sides that
+genuinely want the space, and which one wants it more depends on what somebody is doing. So there is
+one `separator` component for both axes rather than two nearly identical ones, since the part worth
+having once is the accessible part: `aria-valuenow`, arrow keys, shift for the coarse step. A splitter
+that only answers a mouse is a control a keyboard user can see and cannot touch.
+
+The horizontal one sits under the regions, which had been truncated to the top four with no way to the
+rest. That was the wrong half of the fix: a region with two events is exactly the one somebody
+scanning for where today is quiet wants to see, and it was the one being cut. All twelve are rendered
+into a sized scrolling box, which shows the same four by default and admits the others exist.
+
+`aria-orientation` describes the separator, not the drag. A splitter you move up and down is a
+horizontal line; naming it after the gesture is the reading that feels right and is wrong.
+
 ## The map has no edges
 
 A flat map that stops at 180 puts the Pacific rim in two corners with a void between them, which is
