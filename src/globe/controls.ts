@@ -43,6 +43,11 @@ const ZOOM_MAX = 3;
  * whole planet in frame with the poles and half the Pacific paying for it: at zoom 1 on a desktop
  * that was 335 degrees of longitude and markers too small to aim at. Zooming the seismic band up to
  * fill the frame is what zoom 1 should mean on either view.
+ *
+ * Measured against the height-only fit, never against `fit`. Fitting by the tighter dimension is
+ * correct for a ball and wrong for a plane that tiles: on a phone it framed the map's 4-unit width,
+ * which left the world as a strip across the middle with a third of the canvas empty above and below
+ * it. Cropping longitude costs nothing, because panning east wraps into the next copy.
  */
 const MAP_FIT = 0.72;
 
@@ -92,8 +97,14 @@ export interface Controls {
   step: (dt: number) => boolean;
   /** Writes the current orientation onto the camera. */
   apply: () => void;
-  /** The framing distance, recomputed on resize. Zoom is expressed relative to it. */
-  setFit: (distance: number) => void;
+  /**
+   * The framing distances, recomputed on resize. Zoom is expressed relative to them.
+   *
+   * Two, because the two views are fitted by different dimensions. `distance` fits the ball by
+   * whichever of width and height is tighter; `byHeight` ignores the width, which is what the map
+   * wants and why it cannot share the first number.
+   */
+  setFit: (distance: number, byHeight: number) => void;
   /** Geographic point under a client pixel, or null off the globe. Hover in step 9 needs this. */
   pick: (clientX: number, clientY: number) => { lon: number; lat: number } | null;
   /** The whole camera in three numbers. This is exactly what a permalink has to carry. */
@@ -121,6 +132,7 @@ export function createControls(
   /** 0 globe, 1 map. Held here as well as in the scene, because the camera has to agree with it. */
   let morph = 0;
   let fit = 4;
+  let heightFit = 4;
 
   let vLon = 0;
   let vLat = 0;
@@ -153,7 +165,8 @@ export function createControls(
    * the screen. The floor states the actual requirement in one place instead.
    */
   const DIST_FLOOR = RADIUS_ATMOSPHERE + 0.12;
-  const dist = (): number => Math.max(DIST_FLOOR, (fit * (1 - (1 - MAP_FIT) * morph)) / zoom);
+  const dist = (): number =>
+    Math.max(DIST_FLOOR, (fit + (heightFit * MAP_FIT - fit) * morph) / zoom);
 
   /**
    * Pixels per unit of projected height at the origin plane. The one constant the projection needs.
@@ -744,8 +757,9 @@ export function createControls(
     },
     morph: () => morph,
     state: () => ({ lon, lat, zoom }),
-    setFit: (d) => {
+    setFit: (d, byHeight) => {
       fit = d;
+      heightFit = byHeight;
       apply();
     },
   };
