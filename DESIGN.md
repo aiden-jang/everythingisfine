@@ -392,6 +392,10 @@ button is a mode to get stuck in, and the hint row on the map says so. It opens 
 the bottom of the canvas, pushing the legend and the key hints up: while a section is open it is the
 subject and they are chrome.
 
+**Every view of an event can be clicked.** A mark in the section pins the same event a row in the list
+or a dot on the globe would, and the pinned one is ringed in all three. A picture of events that cannot
+be touched is a screenshot.
+
 **A stated exaggeration, never a silent one.** Depth against distance is drawn 1:1 wherever the line is
 short enough, and where it is not the factor is printed beside the length. An unstated stretch is a
 lie about the dip of a slab, which is the one thing the picture is for.

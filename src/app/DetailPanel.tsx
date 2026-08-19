@@ -109,7 +109,7 @@ export function DetailPanel({
       // Out of the reading order the moment it starts leaving. `display: none` lands at the end of
       // the transition, so for those 300ms it is still a real panel describing an event nobody pinned.
       aria-hidden={!open}
-      className="zone-panel flex w-[360px] flex-col overflow-y-auto border-l border-hairline bg-deck p-5 max-xl:w-full"
+      className="zone-panel flex w-[var(--panel-w)] flex-col overflow-y-auto border-l border-hairline bg-deck p-5 max-xl:w-full"
     >
       <div className="flex items-start justify-between">
         <div className="label">Pinned event</div>

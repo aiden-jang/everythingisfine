@@ -129,7 +129,8 @@ pole.
 Shift-drag a line across the map for a cross-section, and the link carries it: distance along, depth down, drawn at 1:1 where
 it fits and with the vertical exaggeration printed where it does not. It is the only view that shows
 depth as structure rather than as a filled or hollow ring, and across a subduction zone the
-earthquakes draw the slab.
+earthquakes draw the slab. Plate boundaries are ticked along the distance axis, so the picture says why
+the slab is there, and any mark can be clicked to pin the event it stands for.
 
 The map has no edges: pan east past Kamchatka and the Aleutians come round again. The world is drawn
 once per copy that reaches the screen rather than wrapped per vertex, which cannot tear the triangles

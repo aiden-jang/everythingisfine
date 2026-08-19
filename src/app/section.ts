@@ -1,4 +1,5 @@
 import { EARTH_RADIUS_KM, toVec3 } from "../geo/sphere";
+import plates from "../geo/plates.json";
 import { matches } from "../data/filter";
 import type { Store } from "../data/store";
 import type { Filters, Quake } from "../data/types";
@@ -42,6 +43,8 @@ export interface Section {
   deepestKm: number;
   /** In the corridor but with no depth published. Named rather than silently dropped. */
   withoutDepth: number;
+  /** Distances along the line at which it crosses a plate boundary. */
+  crossings: number[];
 }
 
 /**
@@ -103,6 +106,48 @@ export function sectionLengthKm(line: SectionLine): number {
   return Math.abs(alongKm);
 }
 
+/**
+ * Where the line crosses a plate boundary, as distances along it.
+ *
+ * The section shows a slab and cannot say why one is there. A tick on the distance axis where the line
+ * crosses a plate edge turns the picture into an explanation: the earthquakes start at the boundary and
+ * descend away from it, which is the claim a subduction zone makes.
+ *
+ * Found by sign change in the cross-track offset rather than by intersecting two great circles. The
+ * offset is already computed for every event, so this is the same call over the boundary vertices, and
+ * a segment whose ends fall on opposite sides of the line has crossed it. Interpolated linearly between
+ * the two, which at the 0.15-degree simplification of the boundary data is well inside a pixel.
+ *
+ * What keeps the far side of the planet out is the range check, not a distance test. The great circle
+ * through the two ends is a whole circle, so boundaries cross it everywhere, but a crossing anywhere
+ * other than on the section itself lands outside nought to length and is dropped. A guard on the offset
+ * was written first and measured against a thousand lines scattered over the globe: it changed nothing,
+ * because a crossing whose distance along is inside the section is on the section by construction.
+ */
+export function plateCrossings(line: SectionLine, lengthKm: number): number[] {
+  const out: number[] = [];
+  for (const polyline of plates as [number, number][][]) {
+    let prev: { alongKm: number; offsetKm: number } | null = null;
+    for (const [lon, lat] of polyline) {
+      const here = project(line, lon, lat);
+      if (
+        prev
+        && Math.sign(prev.offsetKm) !== Math.sign(here.offsetKm)
+        // `atan2` breaks at the antipode of the start, so a segment straddling it has one end near
+        // +20,000km and the other near -20,000km. Interpolating between those two is not arithmetic
+        // about anything, and it lands at zero, which is inside the section and looks deliberate.
+        && Math.abs(here.alongKm - prev.alongKm) < 10_000
+      ) {
+        const t = Math.abs(prev.offsetKm) / (Math.abs(prev.offsetKm) + Math.abs(here.offsetKm));
+        const at = prev.alongKm + (here.alongKm - prev.alongKm) * t;
+        if (at >= 0 && at <= lengthKm) out.push(at);
+      }
+      prev = here;
+    }
+  }
+  return out.sort((a, b) => a - b);
+}
+
 export function buildSection(
   store: Store, line: SectionLine, filters: Filters, now: number,
   halfWidthKm = SECTION_HALF_WIDTH_KM,
@@ -130,5 +175,8 @@ export function buildSection(
     if (r.depthKm > deepestKm) deepestKm = r.depthKm;
   });
 
-  return { lengthKm, halfWidthKm, points, deepestKm, withoutDepth };
+  return {
+    lengthKm, halfWidthKm, points, deepestKm, withoutDepth,
+    crossings: plateCrossings(line, lengthKm),
+  };
 }

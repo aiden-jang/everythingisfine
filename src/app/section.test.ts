@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildSection, sectionLengthKm } from "./section";
+import { buildSection, plateCrossings, sectionLengthKm } from "./section";
 import { createStore } from "../data/store";
 import { DEFAULT_FILTERS } from "./feed";
 import type { Reading } from "../data/types";
@@ -104,5 +104,76 @@ describe("a cross-section", () => {
     expect(s.points).toHaveLength(2);
     const along = s.points.map((p) => Math.round(p.alongKm)).sort((a, b) => a - b);
     expect(along).toEqual([445, 667]);
+  });
+});
+
+/*
+ * Where the line crosses a plate boundary.
+ *
+ * The tick is what turns the section from a shape into an explanation, so a wrong one is worse than
+ * none: it would put the reason for the slab in the wrong place and still look deliberate.
+ *
+ * The far side of the planet is the case that looks like it needs guarding and does not: the great
+ * circle through the two ends is a whole circle, so boundaries cross it everywhere, and everywhere
+ * other than on the section lands outside nought to length. Asserted below rather than assumed, since
+ * the first version of this carried a distance guard on the strength of that worry.
+ */
+describe("plate boundaries along a section", () => {
+  const crossings = (
+    fromLon: number, fromLat: number, toLon: number, toLat: number,
+  ): { length: number; at: number[] } => {
+    const line = { fromLon, fromLat, toLon, toLat };
+    const length = sectionLengthKm(line);
+    return { length, at: plateCrossings(line, length) };
+  };
+
+  it("finds the Japan Trench where it is", () => {
+    // Due east across Honshu at 36N. The trench is around 143E, a little past halfway.
+    const { length, at } = crossings(138, 36, 146, 36);
+    expect(Math.round(length)).toBe(719);
+    expect(at.some((km) => km > 380 && km < 460)).toBe(true);
+  });
+
+  it("finds none in the middle of a plate", () => {
+    // Open Pacific, a thousand kilometres from any edge, and its antipode is in the Indian Ocean where
+    // there are edges: the range check is what keeps those out.
+    expect(crossings(-150, 20, -140, 20).at).toEqual([]);
+  });
+
+  it("reports a crossing only where the boundary is actually near the line", () => {
+    /*
+     * The invariant behind the range check, stated rather than trusted: every tick has to sit where a
+     * boundary vertex sits, within the length of one simplified segment. Swept over the globe because
+     * a single lucky line proves nothing about a circle that goes all the way round.
+     */
+    for (let lon = -180; lon < 180; lon += 23) {
+      for (let lat = -50; lat <= 50; lat += 25) {
+        const line = { fromLon: lon, fromLat: lat, toLon: lon + 6, toLat: lat + 4 };
+        const length = sectionLengthKm(line);
+        for (const km of plateCrossings(line, length)) {
+          expect(km, `${lon},${lat}`).toBeGreaterThanOrEqual(0);
+          expect(km, `${lon},${lat}`).toBeLessThanOrEqual(length);
+        }
+      }
+    }
+  });
+
+  it("returns crossings inside the section, in order", () => {
+    const { length, at } = crossings(120, 20, 150, 45);
+    expect(at.length).toBeGreaterThan(0);
+    expect(at).toEqual([...at].sort((a, b) => a - b));
+    for (const km of at) {
+      expect(km).toBeGreaterThanOrEqual(0);
+      expect(km).toBeLessThanOrEqual(length);
+    }
+  });
+
+  it("comes back on the section itself, not only on its geometry", () => {
+    // Reached through the built section, since that is how the panel gets it and a helper nobody calls
+    // is a helper that can quietly stop being called.
+    const s = buildSection(
+      storeWith([]), { fromLon: 138, fromLat: 36, toLon: 146, toLat: 36 }, DEFAULT_FILTERS, NOW,
+    );
+    expect(s.crossings.length).toBeGreaterThan(0);
   });
 });

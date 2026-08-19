@@ -33,6 +33,8 @@
   /* Declared, not measured: the desktop rail starts below the floating header, and a height read
      back from the DOM would be a resize observer feeding a layout that one number states outright. */
   --head-h: 46px;
+  /* The pinned panel's width, so the bottom band can stop where it starts rather than run under it. */
+  --panel-w: 360px;
 
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;

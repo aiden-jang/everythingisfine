@@ -859,3 +859,50 @@ test("a link carrying a section opens on the map with the line drawn", async ({ 
     await context.close();
   }
 });
+
+/*
+ * A mark in the section is an event, not a dot.
+ *
+ * The section shipped read-only for a version: it would put a magnitude 5 at 400km on screen and offer
+ * no way to find out what it was, while the same event was one click away in the list beside it. The
+ * other thing this covers is the layout consequence, since the panel it opens sits over the band the
+ * section is in, and the band ran the full width.
+ */
+test("a mark in the cross-section pins the event it stands for", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
+  await installFeeds(page, { count: 400 });
+  await page.goto("/#at=140,36,2.6&m=2&w=24&x=134.2,31.5,146.1,41.2");
+  await waitForData(page);
+
+  const band = page.locator(".zone-canvas");
+  await expect(band.getByText("Cross-section", { exact: true })).toBeVisible();
+  // The boundary the slab belongs to is marked, and the key for it only appears when it is.
+  await expect(band).toContainText("plate boundar");
+
+  const marks = band.locator("svg circle[fill]");
+  await expect(marks.first()).toBeVisible();
+
+  // Hovering names it in the header, in place of the section's own geometry.
+  await marks.nth(3).hover();
+  await expect(band).toContainText(/M \d\.\d · \d+ km/);
+
+  await marks.nth(3).click();
+  const panel = page.locator(".zone-panel");
+  await expect(panel).toBeVisible();
+  const pinned = (await panel.locator(".font-mono").first().textContent())!;
+
+  /*
+   * The band stops where the panel starts.
+   *
+   * It ran to the right edge, so opening an event from the section hid a fifth of the section behind
+   * it, and the key hints had been truncated the same way since before the section existed.
+   */
+  const bandBox = (await band.locator("svg").last().boundingBox())!;
+  const panelBox = (await panel.boundingBox())!;
+  expect(bandBox.x + bandBox.width).toBeLessThanOrEqual(panelBox.x + 1);
+
+  // Clicking the same mark again unpins, so the mark is a toggle like the rows in the list.
+  await marks.nth(3).click();
+  await expect(panel).not.toBeVisible();
+  expect(pinned).toMatch(/m[bl]|M[wc]/i);
+});
