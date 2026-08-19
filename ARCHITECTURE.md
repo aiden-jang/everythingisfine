@@ -2035,6 +2035,56 @@ layer at a time and judging what changed is unreliable at these contrast levels;
 confident and contradictory answers. Rendering each layer *alone* settled it in a single run. That is
 the experiment to run first next time.
 
+## The lines across Siberia were three bugs in a row
+
+Told there were still straight lines across the map, I isolated each layer by rendering it alone, and
+had to fix the method before it gave an answer. Screenshots of a WebGL canvas come back blank once the
+render loop idles, because the drawing buffer is cleared after compositing and nothing redraws it, so
+the first several isolation runs produced identical empty frames that looked like meaningful evidence.
+Holding the loop awake was the difference between a measurement and a wasted hour.
+
+**The terminator.** The night shell carried the sphere normal as a varying, and flattening stretches
+its triangles: each quad splits into two that interpolate differently, so a crease runs along every
+shared diagonal, and ninety-six columns of parallel creases read as long diagonal streaks. Longitude
+and latitude interpolate *exactly* on the map, because the map is the lon/lat plane, so the direction
+is rebuilt per fragment from the attribute every layer already carries. It is mixed with the
+interpolated normal rather than switched, since on the globe the interpolated one is the exact one and
+a hard swap partway through the morph would be a visible jump. The normal also moved to object space:
+nothing above it rotates, and the one thing the model matrix carries is the offset that repeats the
+map, which was moving the sun four world units on every copy but the middle one.
+
+**The backdrop was drawing over the geography.** Isolating the land fill produced a blank frame, which
+was not the land failing but the plane I had added behind the map. Three.js draws every opaque object
+before any transparent one and `renderOrder` only sorts within each of those two lists, so a
+transparent backdrop paints over everything regardless of its order. The only reason it had not was
+that the ocean shell happened to write depth in front of it. It is opaque now and fades from the void
+to the ocean by colour rather than alpha, which is the same picture out of a list where its order
+means something.
+
+**The wedges were a polygon that is not a polygon.** Three Natural Earth rings hold both +180 and
+-180, the largest being the 1,320-point Eurasia ring, which crosses the antimeridian exactly twice:
+out at 178.6E and back at 180W. Read literally that ring teleports across the world halfway round its
+own coastline, so it is self-intersecting in longitude and latitude, and earcut promises nothing about
+a polygon that is not simple. It emitted wedges a hundred and fifty degrees long and a quarter of a
+degree thick: no area to speak of, invisible on a globe where longitude is compressed at those
+latitudes, and a hairline across the ocean the moment the map existed. The seam filter caught the ones
+wider than half the world and had no reason to catch these.
+
+Unwrapping runs the coastline past 180 rather than jumping back, which is what the shape does. Two
+things fell out of it, both the same mistake one layer down from the original `atan2` one:
+
+- The shift has to be per polygon and it has to be recentred. Accumulating from wherever a ring starts
+  left Eurasia a full turn west, because that ring starts inside the Chukotka tip, and recentring each
+  ring on its own mean put a hole a turn away from the coastline containing it.
+- `midpoint` folds its answer back into plus or minus 180. Correct for two points on a sphere, and it
+  tore every subdivided triangle whose vertices had deliberately been put past 180. Subdivision uses a
+  plain average now, which is safe because the seam filter already guarantees nothing reaching it
+  spans half the world.
+
+The test is on the ring, not on the mesh, because the mesh cannot tell the difference: an ordinary
+earcut needle over Kazakhstan spans 16 degrees and one out of the date line spanned 19, so no threshold
+on triangle width separates a wedge from the triangulation working normally.
+
 ## The dated look was eleven name badges
 
 Told the interface still read as old, I finally reached for the design skill in the environment rather

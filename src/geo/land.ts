@@ -3,7 +3,7 @@ import { feature } from "topojson-client";
 import type { Topology, GeometryObject } from "topojson-specification";
 import type { Feature, FeatureCollection, MultiPolygon, Polygon } from "geojson";
 import topology from "world-atlas/land-110m.json";
-import { midpoint, spanDeg, toVec3 } from "./sphere";
+import { spanDeg, toVec3 } from "./sphere";
 
 /*
  * Natural Earth 110m, turned into two pieces of geometry: a filled land mesh and a coastline stroke.
@@ -62,7 +62,7 @@ type Ring = number[][];
  * members are a mix of Polygon and MultiPolygon. Both get flattened to the same shape here so that
  * nothing downstream has to care which one a given landmass happened to be.
  */
-function rings(): Ring[][] {
+export function rings(): Ring[][] {
   const topo = topology as unknown as Topology;
   const land = feature(topo, topo.objects.land as GeometryObject) as
     | Feature<Polygon | MultiPolygon>
@@ -75,6 +75,50 @@ function rings(): Ring[][] {
     else for (const p of f.geometry.coordinates) out.push(p as unknown as Ring[]);
   }
   return out;
+}
+
+/**
+ * Longitudes made continuous around a ring, so a landmass that crosses the date line stays one shape.
+ *
+ * Three rings in Natural Earth hold both +180 and -180, the largest being the 1,320-point Eurasia
+ * ring, which crosses the antimeridian exactly twice: out at 178.6E and back at 180W. Read literally
+ * it teleports across the world and back, which makes it self-intersecting in longitude and latitude,
+ * and earcut promises nothing about a polygon that is not simple. It emitted wedges a hundred and
+ * fifty degrees long fanning out of the date line across Siberia, each one a needle a quarter of a
+ * degree thick: no area worth seeing on a globe, a hairline across the ocean on a map. The seam
+ * filter caught the ones wider than half the world and had no reason to catch these.
+ *
+ * Unwrapping runs the coastline past 180 rather than jumping back, which is what the shape actually
+ * does. Everything downstream already handles it: `toVec3` takes 191 degrees the same as -169, the
+ * seam filter now sees a two-degree triangle where it saw a spanning one, and on the map the overshoot
+ * lands exactly where the repeated copy draws it, so the seam closes rather than opening a gap.
+ *
+ * The recentring is not optional. Unwrapping accumulates from wherever the ring happens to start, and
+ * this ring starts inside the Chukotka tip, which leaves the whole of Eurasia a full turn to the west:
+ * correct on a globe, and drawn into the neighbouring copy of the map.
+ */
+export function unwrap(ring: Ring): { ring: Ring; mean: number } {
+  const out: Ring = [ring[0]!];
+  let prev = ring[0]![0]!;
+  let sum = prev;
+  for (let i = 1; i < ring.length; i += 1) {
+    let lon = ring[i]![0]!;
+    // Nearest equivalent to the point before it, not the nearest to zero.
+    while (lon - prev > 180) lon -= 360;
+    while (lon - prev < -180) lon += 360;
+    out.push([lon, ring[i]![1]!]);
+    prev = lon;
+    sum += lon;
+  }
+  return { ring: out, mean: sum / out.length };
+}
+
+/** Whole turns to add so a ring's longitudes sit around the prime meridian rather than a turn away. */
+export function recentre(mean: number): number {
+  const turns = Math.round(mean / 360);
+  // Not `-turns * 360`: that gives negative zero for the common case, which is the same number and a
+  // different one to anything comparing identities.
+  return turns === 0 ? 0 : -turns * 360;
 }
 
 /** Insert points until no edge exceeds `DENSIFY_DEG`, so a straight edge becomes a curved one. */
@@ -111,7 +155,20 @@ function subdivide(verts: number[], tris: number[]): { verts: number[]; tris: nu
     const key = i < j ? i * 1e7 + j : j * 1e7 + i;
     const hit = cache.get(key);
     if (hit !== undefined) return hit;
-    const [lon, lat] = midpoint(verts[i * 2]!, verts[i * 2 + 1]!, verts[j * 2]!, verts[j * 2 + 1]!);
+    /*
+     * A plain average, not the seam-aware midpoint.
+     *
+     * That helper takes the short way round the date line and folds its answer back into plus or
+     * minus 180, which is right for two points on a sphere and wrong for a mesh being kept in one
+     * continuous frame: `unwrap` runs a coastline past 180 on purpose, and folding the midpoint of
+     * two vertices at 185 and 183 back to -175 tears the triangle across the whole world. That is
+     * the same mistake as recovering longitude with atan2, one layer down.
+     *
+     * Safe because every triangle reaching here spans less than half the world in that frame, which
+     * is what the seam filter above guarantees.
+     */
+    const lon = (verts[i * 2]! + verts[j * 2]!) / 2;
+    const lat = (verts[i * 2 + 1]! + verts[j * 2 + 1]!) / 2;
     const idx = verts.length / 2;
     verts.push(lon, lat);
     cache.set(key, idx);
@@ -172,11 +229,23 @@ export function buildLand(): LandGeometry {
     const flat: number[] = [];
     const holes: number[] = [];
     const base = verts.length / 2;
+    let polyShift = 0;
 
     polygon.forEach((raw, ringIndex) => {
       // GeoJSON closes every ring by repeating the first point. earcut treats that as a degenerate
       // edge, so it comes off before triangulation and goes back on for the stroke.
-      const closed = densify(raw.slice(0, -1));
+      const un = unwrap(raw.slice(0, -1) as Ring);
+      /*
+       * One shift for the whole polygon, taken from its outer ring.
+       *
+       * Recentring each ring on its own mean put a hole a full turn away from the coastline that
+       * contains it, and earcut duly stitched the two together with triangles three hundred and
+       * sixty degrees wide. A hole belongs to an outline; they have to be in the same frame.
+       */
+      if (ringIndex === 0) polyShift = recentre(un.mean);
+      const closed = densify(
+        polyShift === 0 ? un.ring : un.ring.map(([lon, lat]) => [lon! + polyShift, lat!]),
+      );
       if (ringIndex > 0) holes.push(flat.length / 2);
       for (const [lon, lat] of closed) flat.push(lon!, lat!);
 

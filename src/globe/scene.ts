@@ -74,6 +74,9 @@ const SHORTLIST = 8;
  * a large pale shape on screen and pull the eye off the data.
  */
 const COLOR_SPHERE = 0x0a101c;
+/** The map's backdrop fades between these two, so both are needed as objects rather than numbers. */
+const COLOR_VOID_C = new Color(0x070b14);
+const COLOR_SPHERE_C = new Color(COLOR_SPHERE);
 const COLOR_LAND = 0x1e293f;
 const COLOR_COAST = 0x31405d;
 /** The graticule keeps the old, dimmer value: it is scaffolding, and it should stay behind land. */
@@ -193,9 +196,20 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    * The rectangle is the same colour as the ocean, so the sawtooth lands on it and disappears, and the
    * map gets a defined edge rather than fading into the void.
    */
+  /*
+   * Opaque, and faded by its colour rather than its alpha.
+   *
+   * Three.js draws every opaque object before any transparent one, and `renderOrder` only sorts
+   * within each of those two lists. A transparent backdrop therefore paints *over* the geography no
+   * matter how low its order, and the only reason it did not was that the ocean shell happened to
+   * write depth in front of it. That is a backdrop held up by an unrelated layer's depth writes.
+   *
+   * Opaque puts it back in the list its order actually means something in. It cannot fade on alpha
+   * there, so it fades from the void to the ocean instead, which is the same picture.
+   */
   const mapBase = new Mesh(
     new PlaneGeometry(2 * MAP_HALF_WIDTH, 2),
-    new MeshBasicMaterial({ color: COLOR_SPHERE, transparent: true, opacity: 0 }),
+    new MeshBasicMaterial({ color: COLOR_VOID_C }),
   );
   mapBase.position.z = -0.02;
   mapBase.renderOrder = -1;
@@ -339,11 +353,17 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       vertexShader: /* glsl */ `
         ${MORPH_GLSL}
         varying vec3 vNormal;
+        varying vec2 vLonLat;
         void main() {
-          // The normal stays the sphere's, whatever the vertex is doing. Where the sun is depends on
-          // where a point is on Earth, not on where the projection has decided to draw it, so the
-          // terminator becomes a curve across the map for free rather than needing a second version.
-          vNormal = normalize((modelMatrix * vec4(position, 1.0)).xyz);
+          // Where the sun is depends on where a point is on Earth, not on where the projection has
+          // decided to draw it, so the shading direction is carried rather than derived from the
+          // vertex. Both forms travel: see the fragment shader for why one of them is not enough.
+          //
+          // Object space, not world space. Nothing above this rotates the sphere, and the one thing
+          // the model matrix does carry is the sideways offset that repeats the map, which would move
+          // the sun by four world units on every copy but the middle one.
+          vNormal = normalize(position);
+          vLonLat = aLonLat;
           gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position), 1.0);
         }`,
       fragmentShader: /* glsl */ `
@@ -351,10 +371,32 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         uniform vec3 uDayColor;
         uniform float uDepth;
         uniform float uLift;
+        uniform float uMorph;
         varying vec3 vNormal;
+        varying vec2 vLonLat;
 
         void main() {
-          float sun = dot(normalize(vNormal), normalize(uSun));
+          /*
+           * On the map the direction is rebuilt per fragment, not interpolated.
+           *
+           * A normal interpolated across a triangle is only right at its corners, and flattening
+           * stretches these triangles: each quad splits into two that interpolate differently, so a
+           * crease runs along every shared diagonal. Ninety-six columns of parallel creases read as
+           * long diagonal streaks across Russia and Europe, which is what this looked like.
+           *
+           * Longitude and latitude interpolate exactly on the map, because the map *is* the lon/lat
+           * plane, so rebuilding the direction from them per fragment has no error to accumulate.
+           * That also fixes the repeated copies, whose model matrix carries an offset the sphere
+           * normal was silently picking up.
+           *
+           * Mixed rather than switched. On the globe the interpolated normal is the exact one and the
+           * rebuilt one is not, and a hard swap partway through the morph would be a visible jump.
+           */
+          float lam = radians(vLonLat.x);
+          float phi = radians(vLonLat.y);
+          float c = cos(phi);
+          vec3 fromLonLat = vec3(c * sin(lam), sin(phi), c * cos(lam));
+          float sun = dot(normalize(mix(normalize(vNormal), fromLonLat, uMorph)), normalize(uSun));
 
           /*
            * Darkens one side and lifts the other, in one pass.
@@ -582,7 +624,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       }
 
       mapBase.visible = true;
-      (mapBase.material as MeshBasicMaterial).opacity = morph.value;
+      (mapBase.material as MeshBasicMaterial).color
+        .copy(COLOR_VOID_C).lerp(COLOR_SPHERE_C, morph.value);
 
       /*
        * The map repeats, by drawing the world again beside itself.
