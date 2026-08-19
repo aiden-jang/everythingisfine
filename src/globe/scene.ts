@@ -1,5 +1,5 @@
 import {
-  AdditiveBlending, BackSide, BufferAttribute, BufferGeometry, Color, FrontSide, Group,
+  AdditiveBlending, BackSide, BufferAttribute, BufferGeometry, Color, DoubleSide, FrontSide, Group,
   LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene,
   PlaneGeometry, ShaderMaterial, SphereGeometry, Vector3, WebGLRenderer,
 } from "three";
@@ -635,6 +635,28 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
        */
       (rim.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.42 * (1 - morph.value);
       rim.visible = morph.value < 0.999;
+
+      /*
+       * The fill is culled on the globe and not on the map.
+       *
+       * Culling is what hides the far hemisphere, since the fill does not depth test. A flat map has no
+       * far hemisphere, so there it only throws away whichever triangles the winding pass got wrong,
+       * and it got a family of them across Asia wrong: alternately wound, every other one culled, a
+       * hairline of ocean running from the Caspian to Sakhalin. None of it on the globe, where those
+       * same triangles face the camera edge-on and the gap closes to nothing.
+       *
+       * Deciding the winding in longitude and latitude instead was the first attempt and measured
+       * worse, 301 gaps against 126. Removing the mechanism beats hardening the test it depends on.
+       */
+      // Late, at 0.9: by then the shape is flat enough that there is no far side left to see
+      // through, so the switch cannot flash, and the hairlines only exist once it is flat.
+      const wantSide = morph.value > 0.9 ? DoubleSide : FrontSide;
+      const fillMaterial = fill.material as MeshBasicMaterial;
+      if (fillMaterial.side !== wantSide) {
+        fillMaterial.side = wantSide;
+        // `side` is part of the program cache key, so three.js needs telling it changed.
+        fillMaterial.needsUpdate = true;
+      }
 
       if (morph.value < 0.01) {
         world.position.x = 0;
