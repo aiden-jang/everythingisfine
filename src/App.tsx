@@ -7,6 +7,8 @@ import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
 import { Timeline } from "./app/Timeline";
 import { Resizer } from "./app/Resizer";
+import { CrossSection } from "./app/CrossSection";
+import { buildSection, type SectionLine } from "./app/section";
 import { countWithin, histogram } from "./app/histogram";
 import { decode, encode } from "./app/permalink";
 import { rampColorAt, type RampName } from "./globe/ramp";
@@ -159,6 +161,14 @@ export function App(): JSX.Element {
   }, [regionsHeight]);
   const regionsRef = useRef<HTMLDivElement>(null);
   /*
+   * The section line, and the section rebuilt from it.
+   *
+   * Keyed on the revision rather than the clock, for the reason the neighbour search is: it walks the
+   * whole buffer, the panel re-renders every second because the rail ticks, and the answer only
+   * changes when an earthquake does.
+   */
+  const [sectionLine, setSectionLine] = useState<SectionLine | null>(null);
+  /*
    * Both persisted, because both are accessibility settings and re-choosing one on every visit is
    * its own barrier. Read lazily so the first paint already has the right ramp rather than
    * flashing the default and correcting itself.
@@ -232,9 +242,17 @@ export function App(): JSX.Element {
 
   const now = Date.now();
   const regions = useMemo(
-    () => countByRegion(feed.store, filters, Date.now()).filter((r) => r.count > 0).slice(0, 6),
+    // No cap. It was six, from when four were rendered and the rest were unreachable; the box is
+    // sized and scrolls now, so cutting the list would be hiding the quiet regions worth noticing.
+    () => countByRegion(feed.store, filters, Date.now()).filter((r) => r.count > 0),
     // Recomputed when the data or the filter moves, which is exactly when the counts can change.
     [filters, snapshot.revision],
+  );
+
+  const section = useMemo(
+    () => (sectionLine ? buildSection(feed.store, sectionLine, filters, Date.now()) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [feed.store, sectionLine, filters, snapshot.revision],
   );
 
   /*
@@ -276,11 +294,15 @@ export function App(): JSX.Element {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") setSelected(null);
+      if (e.key !== "Escape") return;
+      // One thing at a time, innermost first. Escape closing the pin and the section together means
+      // one press can undo two decisions, and the section is the one somebody just drew.
+      if (sectionLine) setSectionLine(null);
+      else setSelected(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [sectionLine]);
 
   const toggleSource = (id: SourceId): void => {
     setFilters((f) => {
@@ -654,6 +676,8 @@ export function App(): JSX.Element {
             ramp={ramp}
             focusHour={focusHour}
             flat={flat}
+            section={sectionLine}
+            onSection={setSectionLine}
             onSelect={setSelected}
             onReady={onReady}
             onCamera={(state) => { camera.current = state; }}
@@ -671,16 +695,32 @@ export function App(): JSX.Element {
           <div
             className="pointer-events-none absolute right-0 bottom-0 left-0 z-[1] flex flex-wrap items-end justify-end gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
           >
+            {/*
+              The section joins the bottom band as its own full-width line rather than as a new
+              absolutely positioned box, and it goes last so it is flush with the bottom edge. Placed
+              first it floated in the middle of the canvas with map still visible underneath, which
+              read as the map having been cut in half.
+            */}
+            {section ? (
+              <div className="order-9 -mx-4 -mb-4 w-[calc(100%+2rem)] bg-deck/40 px-4 pt-3 pb-4 backdrop-blur-2xl backdrop-saturate-50">
+                <CrossSection data={section} ramp={ramp} onClose={() => setSectionLine(null)} />
+              </div>
+            ) : null}
             {onMap ? (
               <div className="pointer-events-auto order-1 w-full max-w-[300px] bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50 xl:order-2">
                 {legend}
               </div>
             ) : null}
             <div className="pointer-events-auto order-2 font-mono text-[10.5px] text-faint xl:order-1">
+              {/*
+                What the keys do here, not what they did on the globe. Arrows orbit a sphere and pan a
+                map, and a hint row that says orbit while the drag pans is worse than no hint row.
+              */}
               {([
-                ["arrows", "orbit"],
+                ["arrows", flat ? "pan" : "orbit"],
                 ["+ -", "zoom"],
                 ["0", "reset"],
+                ...(flat ? [["shift-drag", "section"] as const] : []),
                 ["esc", "clear"],
               ] as const).map(([key, what]) => (
                 <span key={key} className="mr-3 inline-flex items-baseline gap-1.5">

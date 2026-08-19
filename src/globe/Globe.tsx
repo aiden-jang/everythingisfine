@@ -6,6 +6,7 @@ import { createReplay, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
 import type { Filters } from "../data/types";
 import { magnitude } from "../app/format";
 import type { RampName } from "./ramp";
+import type { SectionLine } from "../app/section";
 
 /*
  * The canvas, and the smallest possible amount of React around it.
@@ -44,15 +45,26 @@ export interface GlobeProps {
    * a swarm that reads as one blob resolves into the ninety minutes it actually happened in.
    */
   focusHour?: number | null;
+  /** The section line, drawn over the map so a reader can see what the panel below is a slice of. */
+  section?: SectionLine | null;
+  /**
+   * A section drawn, or cleared by a shift-click that turned out not to be a drag.
+   *
+   * Map only, because picking two points on a sphere somebody is rotating is a guess and picking them
+   * on a map is a drag. The gesture is shift and drag: a plain drag already pans, and a modal "now
+   * draw a line" button would be a mode to get stuck in.
+   */
+  onSection?: (line: SectionLine | null) => void;
 }
 
 export function Globe({
   feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay, focusHour = null,
-  flat = false,
+  flat = false, section = null, onSection,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
   const marker = useRef<HTMLDivElement>(null);
+  const sectionLine = useRef<SVGSVGElement>(null);
   const hoverRing = useRef<HTMLDivElement>(null);
   const redrawRef = useRef<() => void>(() => {});
   const wakeRef = useRef<() => void>(() => {});
@@ -64,8 +76,12 @@ export function Globe({
    * tearing down the WebGL context, the 300,000-triangle globe and both feed subscriptions every
    * time somebody nudges a magnitude slider.
    */
-  const live = useRef({ filters, selected, focusHour, flat });
-  live.current = { filters, selected, focusHour, flat };
+  const live = useRef({ filters, selected, focusHour, flat, section });
+  live.current = { filters, selected, focusHour, flat, section };
+  const onSectionRef = useRef(onSection);
+  onSectionRef.current = onSection;
+  /** The line being dragged right now, which the frame loop draws in place of the committed one. */
+  const drag = useRef<SectionLine | null>(null);
   const onCameraRef = useRef(onCamera);
   onCameraRef.current = onCamera;
   const onReplayRef = useRef(onReplay);
@@ -119,6 +135,38 @@ export function Globe({
           `translate(${at.x - box.left}px, ${at.y - box.top + offsetY}px) ` +
           `translate(-50%, ${offsetY === 0 ? "-50%" : "-100%"})`;
       };
+      /*
+       * The section line, in SVG rather than in the scene.
+       *
+       * It is two points and a corridor, and putting it in three.js means a geometry, a material, an
+       * `aLonLat` attribute and a place in the render order for something that is chrome rather than
+       * geography. `project` already turns a coordinate into a screen position for the tooltip, so
+       * this is the same call twice.
+       */
+      const svg = sectionLine.current;
+      if (svg) {
+        const draft = drag.current;
+        // Map only. A great circle projects to a curve on a globe, and drawing it as a straight screen
+        // line between two projected points would be a wrong picture rather than a simplified one.
+        const line = globe.controls.morph() > 0.5 ? draft ?? live.current.section : null;
+        const a = line ? globe.controls.project(line.fromLon, line.fromLat) : null;
+        const b = line ? globe.controls.project(line.toLon, line.toLat) : null;
+        svg.style.opacity = a && b ? "1" : "0";
+        if (a && b) {
+          const path = svg.firstElementChild as SVGLineElement | null;
+          const cap1 = svg.children[1] as SVGCircleElement | null;
+          const cap2 = svg.children[2] as SVGCircleElement | null;
+          path?.setAttribute("x1", `${a.x - box.left}`);
+          path?.setAttribute("y1", `${a.y - box.top}`);
+          path?.setAttribute("x2", `${b.x - box.left}`);
+          path?.setAttribute("y2", `${b.y - box.top}`);
+          cap1?.setAttribute("cx", `${a.x - box.left}`);
+          cap1?.setAttribute("cy", `${a.y - box.top}`);
+          cap2?.setAttribute("cx", `${b.x - box.left}`);
+          cap2?.setAttribute("cy", `${b.y - box.top}`);
+        }
+      }
+
       put(marker.current, live.current.selected, 0);
       /*
        * Which dot the label is about.
@@ -285,6 +333,61 @@ export function Globe({
       else running = false;
     };
 
+    /*
+     * Shift and drag draws a section. Capture phase, so it takes the gesture before the camera does.
+     *
+     * `controls` listens on this same canvas for orbit and pan, and a listener registered in the
+     * capture phase on an element runs before that element's bubbling listeners whatever order they
+     * were added in. Stopping propagation here is therefore the whole of "this drag is not a pan",
+     * with no mode held anywhere and nothing for the camera to know about.
+     */
+    const onSectionDown = (e: PointerEvent): void => {
+      if (!e.shiftKey || globe.controls.morph() < 0.5 || !onSectionRef.current) return;
+      const start = globe.controls.pick(e.clientX, e.clientY);
+      if (!start) return;
+      e.preventDefault();
+      e.stopPropagation();
+
+      const move = (m: PointerEvent): void => {
+        const end = globe.controls.pick(m.clientX, m.clientY);
+        if (!end) return;
+        drag.current = {
+          fromLon: start.lon, fromLat: start.lat, toLon: end.lon, toLat: end.lat,
+        };
+        wakeRef.current();
+      };
+      const up = (u: PointerEvent): void => {
+        window.removeEventListener("pointermove", move);
+        window.removeEventListener("pointerup", up);
+        const line = drag.current;
+        drag.current = null;
+        /*
+         * A shift-click with no drag clears, rather than making a zero-length section.
+         *
+         * Its length would be zero, every event would be outside the corridor, and the panel would
+         * open to say nothing found. Treating it as a dismissal makes shift-click the undo for
+         * shift-drag, which is the guess somebody would make anyway.
+         */
+        const moved = line
+          && Math.hypot(u.clientX - e.clientX, u.clientY - e.clientY) > 12;
+        /*
+         * Stored left to right, whichever way it was dragged.
+         *
+         * The panel plots zero at its left edge, so a line dragged east to west put the map's right
+         * end on the panel's left and nothing on screen said so. Normalising here means the two
+         * pictures always read the same direction and neither has to explain itself.
+         */
+        const flip = moved && u.clientX < e.clientX;
+        onSectionRef.current?.(!moved ? null : flip
+          ? { fromLon: line.toLon, fromLat: line.toLat, toLon: line.fromLon, toLat: line.fromLat }
+          : line);
+        wakeRef.current();
+      };
+      window.addEventListener("pointermove", move);
+      window.addEventListener("pointerup", up);
+    };
+    el.addEventListener("pointerdown", onSectionDown, { capture: true });
+
     const wake = (): void => {
       if (running) return;
       running = true;
@@ -433,6 +536,7 @@ export function Globe({
       el.removeEventListener("pointerdown", onDown);
       el.removeEventListener("pointerup", onUp);
       el.removeEventListener("pointerleave", onLeave);
+      el.removeEventListener("pointerdown", onSectionDown, { capture: true });
       globe.dispose();
     };
   }, [feed, onReady, onSelect]);
@@ -476,6 +580,20 @@ export function Globe({
         ref={hoverRing}
         className="pointer-events-none absolute top-0 left-0 size-5 rounded-full border border-dim opacity-0 transition-opacity duration-100"
       />
+      {/*
+        The line, and a cap at each end. Achromatic like every other piece of chrome: the section's
+        own panel carries the ramp, and a coloured line on the map would be a hue meaning nothing
+        beside hues that mean magnitude.
+      */}
+      <svg
+        ref={sectionLine}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 h-full w-full opacity-0 transition-opacity duration-150"
+      >
+        <line stroke="currentColor" strokeWidth={1} className="text-ink" strokeDasharray="5 4" />
+        <circle r={3.5} fill="none" stroke="currentColor" strokeWidth={1} className="text-ink" />
+        <circle r={3.5} fill="none" stroke="currentColor" strokeWidth={1} className="text-ink" />
+      </svg>
       <div
         ref={tooltip}
         className="pointer-events-none absolute top-0 left-0 max-w-[260px] truncate border border-hairline bg-raised px-2 py-1 text-[10px] text-ink opacity-0"

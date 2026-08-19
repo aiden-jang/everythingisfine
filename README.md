@@ -126,6 +126,11 @@ see. Every layer carries the longitude and latitude it was built from, rather th
 from the sphere, because recovering them breaks wherever a shape crosses the date line or touches a
 pole.
 
+Shift-drag a line across the map for a cross-section: distance along, depth down, drawn at 1:1 where
+it fits and with the vertical exaggeration printed where it does not. It is the only view that shows
+depth as structure rather than as a filled or hollow ring, and across a subduction zone the
+earthquakes draw the slab.
+
 The map has no edges: pan east past Kamchatka and the Aleutians come round again. The world is drawn
 once per copy that reaches the screen rather than wrapped per vertex, which cannot tear the triangles
 that straddle the seam.

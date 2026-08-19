@@ -387,6 +387,15 @@ above it, and the panels are 44% fill over a hard blur rather than a surface wit
 behind. The saturation of the blur is pulled down to match, because a thinner fill lets more of the
 data ramp through and hue does not belong in the chrome.
 
+**The cross-section is the map's own view.** Shift-drag draws it, because a plain drag pans and a mode
+button is a mode to get stuck in, and the hint row on the map says so. It opens as a band flush with
+the bottom of the canvas, pushing the legend and the key hints up: while a section is open it is the
+subject and they are chrome.
+
+**A stated exaggeration, never a silent one.** Depth against distance is drawn 1:1 wherever the line is
+short enough, and where it is not the factor is printed beside the length. An unstated stretch is a
+lie about the dip of a slab, which is the one thing the picture is for.
+
 **The panel leaves the way it arrived.** A close that cuts where the open slid is not restraint, it is
 an unfinished transition.
 

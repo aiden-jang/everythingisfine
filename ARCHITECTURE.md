@@ -1950,6 +1950,56 @@ into a sized scrolling box, which shows the same four by default and admits the 
 `aria-orientation` describes the separator, not the drag. A splitter you move up and down is a
 horizontal line; naming it after the gesture is the reading that feels right and is wrong.
 
+## Depth, at last
+
+Every other view answers "where". Depth is the dimension the data has always carried and no picture
+could show: on a globe or a map it is a filled or hollow ring, which says shallow or deep and nothing
+about structure. Drawn against distance instead, the same events say what they are. A line across
+Japan puts the Pacific plate on screen diving west, because the earthquakes *are* the slab.
+
+This is the one thing the flat map does better than the globe, which is the argument for the map
+existing at all: picking two points on a sphere somebody is rotating is a guess, and picking them on a
+map is a drag.
+
+**The gesture is shift and drag, and it takes the drag away from the camera in the capture phase.**
+`controls` listens on the same canvas for orbit and pan, and a capture-phase listener on an element
+runs before that element's bubbling listeners whatever order they were added in. Stopping propagation
+there is the whole of "this drag is not a pan": no mode is held anywhere and the camera never learns
+about it. A modal "draw a line" button would have been a mode to get stuck in. A shift-click with no
+drag clears instead, because its length would be zero and the panel would open to say nothing found;
+making it the undo for shift-drag is the guess somebody would make anyway.
+
+**Along-track and cross-track by vector algebra, not bearings.** The bearing formulation needs an
+`atan2`, a difference of angles that has to be wrapped, and an `asin` whose sign has to be reasoned
+about. The vector form needs a cross product and two dot products and gets the sign of the offset for
+free. Both are exact; one is readable in six months. Events past either end are dropped rather than
+clamped, because clamping piles every event in the wider region onto the two edges as a vertical stack
+that reads like a fault.
+
+**1:1 where it fits, and the exaggeration printed where it does not.** A 3,700km line against 150km of
+depth is a band four pixels tall at true scale: correct, and a picture of nothing. Every geological
+section in print handles this by stretching the depth axis and saying by how much, because a stated
+exaggeration is something a reader can undo in their head and an unstated one is a lie about the dip.
+Sizing the box from the aspect ratio was the first attempt, and it made the panel's height a function
+of the line somebody dragged: a 200km section eight hundred pixels tall, a 4,000km one four. Fixing the
+width and clamping the height puts the whole distortion in one number worth printing.
+
+**Stored left to right, whichever way it was dragged.** The panel plots zero at its left edge, so a
+line dragged east to west put the map's right-hand end at the panel's zero and nothing said so.
+Normalising on commit means both pictures read the same direction and neither has to explain itself.
+The browser test for that started as a tautology: it compared the stated length, which is the same
+either way round, and survived deleting the normalisation. It compares where the marks land now.
+
+**The line is SVG, not scene geometry.** It is two points and a corridor, and putting it in three.js
+means a geometry, a material, an `aLonLat` attribute and a place in the render order for something
+that is chrome. `project` already turns a coordinate into a screen position for the tooltip, so this
+is that call twice. It hides on the globe: a great circle projects to a curve there, and drawing it as
+a straight screen line between two projected points would be a wrong picture rather than a simplified
+one.
+
+The section is not in the permalink yet, which makes it the one piece of state somebody would want to
+send and cannot.
+
 ## The map has no edges
 
 A flat map that stops at 180 puts the Pacific rim in two corners with a void between them, which is
