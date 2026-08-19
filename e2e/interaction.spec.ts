@@ -616,6 +616,40 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
     .toMatch(/^#at=120,-8\.6,1\.9&/);
 });
 
+test("the globe unwraps into a map and back", async ({ page }) => {
+  /*
+   * One geometry, projected in the vertex shader. Two scenes cross-faded would double every buffer and
+   * every place a layer can be forgotten, and the switch would be a dissolve, which says nothing. A
+   * planet unwrapping says what a projection *is*, which is the thing a flat map of earthquakes most
+   * needs its viewer to understand.
+   */
+  await installFeeds(page);
+  await page.goto("/");
+  await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first())
+    .toBeVisible({ timeout: 25_000 });
+  await page.waitForTimeout(6_000);
+
+  const toggle = page.getByRole("button", { name: /^(Map|Globe)$/ });
+  await expect(toggle).toHaveText("Map");
+  await expect(toggle).toHaveAttribute("aria-pressed", "false");
+
+  const globe = await page.locator("canvas").screenshot();
+  await toggle.click();
+  await expect(toggle).toHaveText("Globe");
+  await page.waitForTimeout(2_500);
+
+  const flat = await page.locator("canvas").screenshot();
+  expect(flat.equals(globe)).toBe(false);
+
+  // Remembered, because which projection somebody reads in is a preference, not a view.
+  expect(await page.evaluate(() => localStorage.getItem("firstmotion.flat"))).toBe("1");
+
+  await toggle.click();
+  await page.waitForTimeout(2_500);
+  await expect(toggle).toHaveText("Map");
+  expect(await page.evaluate(() => localStorage.getItem("firstmotion.flat"))).toBe("0");
+});
+
 test("a shared camera survives the entrance", async ({ page }) => {
   /*
    * Regression. The entrance named the default framing as its destination and runs after the

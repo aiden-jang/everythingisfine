@@ -1,6 +1,7 @@
 import { BufferAttribute, BufferGeometry, LineSegments, NormalBlending, ShaderMaterial } from "three";
 import { DEG, EARTH_RADIUS_KM } from "../geo/sphere";
 import { MAG_MIN, rampTexture, type RampName } from "./ramp";
+import { MORPH_GLSL } from "./morph";
 
 /*
  * The signature: a wavefront leaving the epicentre.
@@ -48,6 +49,7 @@ const RADIUS = 1.007;
 
 const SHADER = {
   vertexShader: /* glsl */ `
+    ${MORPH_GLSL}
     attribute float aRamp;
     attribute float aFade;
     varying float vRamp;
@@ -60,8 +62,9 @@ const SHADER = {
       vFade = aFade;
       // Interpolated across the segment, so a ring straddling the horizon is clipped exactly at
       // the limb rather than vanishing or showing through the planet all at once.
-      vFacing = dot(normalize(world.xyz), normalize(cameraPosition - world.xyz));
-      gl_Position = projectionMatrix * viewMatrix * world;
+      // Same as the markers: a map has no limb to be clipped at.
+      vFacing = mix(dot(normalize(world.xyz), normalize(cameraPosition - world.xyz)), 1.0, uMorph);
+      gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position), 1.0);
     }`,
   fragmentShader: /* glsl */ `
     uniform sampler2D uRamp;
@@ -103,7 +106,7 @@ export interface RingLayer {
   dispose: () => void;
 }
 
-export function createRingLayer(ramp: RampName = "thermal"): RingLayer {
+export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }): RingLayer {
   const rings: Ring[] = [];
 
   const vertexCount = MAX_RINGS * SEGMENTS * 2;
@@ -125,7 +128,7 @@ export function createRingLayer(ramp: RampName = "thermal"): RingLayer {
   let texture = rampTexture(ramp);
   const material = new ShaderMaterial({
     ...SHADER,
-    uniforms: { uRamp: { value: texture }, uDim: { value: 1 } },
+    uniforms: { uRamp: { value: texture }, uDim: { value: 1 }, uMorph: morph },
     transparent: true,
     depthWrite: false,
     // Same as the markers: the fronts carry their own facing test, so depth-testing them against

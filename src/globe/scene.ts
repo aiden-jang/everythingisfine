@@ -10,6 +10,7 @@ import {
 import { DEG, distanceKm, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
+import { dropSeamTriangles, MORPH_GLSL, morphable } from "./morph";
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
@@ -139,6 +140,7 @@ export interface Globe {
   controls: Controls;
   events: EventLayer;
   rings: RingLayer;
+  setMorph: (t: number) => void;
   /** The entrance reveal: boundaries grow outward from the events rather than arriving with them. */
   plates: {
     orderFrom: (points: readonly { lon: number; lat: number }[]) => void;
@@ -170,10 +172,20 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const spin = new Group();
   scene.add(spin);
 
+  /*
+   * One uniform, shared by every layer. A morph where one thing stays behind is not a projection, it
+   * is a bug wearing an animation, and sharing the object is what makes "did I wire that one up"
+   * unanswerable in the wrong direction.
+   */
+  const morph = { value: 0 };
+
+  const oceanGeom = new SphereGeometry(RADIUS_SPHERE, 96, 64);
+  dropSeamTriangles(oceanGeom);
   const ocean = new Mesh(
-    new SphereGeometry(RADIUS_SPHERE, 96, 64),
+    oceanGeom,
     new MeshBasicMaterial({ color: COLOR_SPHERE }),
   );
+  morphable(ocean.material, morph);
   ocean.renderOrder = 0;
   spin.add(ocean);
 
@@ -201,6 +213,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     depthTest: false,
     depthWrite: false,
   }));
+  morphable(fill.material, morph);
   fill.renderOrder = 1;
   spin.add(fill);
 
@@ -210,6 +223,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     gratGeom,
     new LineBasicMaterial({ color: COLOR_GRATICULE, transparent: true, opacity: 0.38 }),
   );
+  morphable(grat.material, morph);
   grat.renderOrder = 2;
   spin.add(grat);
 
@@ -233,6 +247,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     plateGeom,
     new LineBasicMaterial({ color: COLOR_PLATES, transparent: true, opacity: 0.9 }),
   );
+  morphable(plateLines.material, morph);
   plateLines.renderOrder = 3;
   spin.add(plateLines);
 
@@ -251,6 +266,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     plateGeom.clone(),
     new LineBasicMaterial({ color: 0x93a5c0, transparent: true, opacity: 0.95 }),
   );
+  morphable(plateEdge.material, morph);
   plateEdge.renderOrder = 3;
   plateEdge.geometry.setDrawRange(0, 0);
   spin.add(plateEdge);
@@ -258,6 +274,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const coastGeom = new BufferGeometry();
   coastGeom.setAttribute("position", new BufferAttribute(land.coast, 3));
   const coast = new LineSegments(coastGeom, new LineBasicMaterial({ color: COLOR_COAST }));
+  morphable(coast.material, morph);
   coast.renderOrder = 4;
   spin.add(coast);
 
@@ -277,14 +294,19 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    * so the data layers are drawn after this and are untouched by it.
    */
   const nightGeom = new SphereGeometry(RADIUS_NIGHT, 96, 64);
+  dropSeamTriangles(nightGeom);
   const night = new Mesh(
     nightGeom,
     new ShaderMaterial({
       vertexShader: /* glsl */ `
+        ${MORPH_GLSL}
         varying vec3 vNormal;
         void main() {
+          // The normal stays the sphere's, whatever the vertex is doing. Where the sun is depends on
+          // where a point is on Earth, not on where the projection has decided to draw it, so the
+          // terminator becomes a curve across the map for free rather than needing a second version.
           vNormal = normalize((modelMatrix * vec4(position, 1.0)).xyz);
-          gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+          gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position), 1.0);
         }`,
       fragmentShader: /* glsl */ `
         uniform vec3 uSun;
@@ -316,6 +338,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           gl_FragColor = vec4(uDayColor * day, night * uDepth + day * uLift);
         }`,
       uniforms: {
+        uMorph: morph,
         uSun: { value: new Vector3(0, 0, 1) },
         // Achromatic, like every other piece of chrome: a warm daylight would put hue on the one
         // surface the data is drawn against.
@@ -373,9 +396,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
   // Added to the scene root, not to `spin`: the globe group carries no transform, and hanging the
   // events off it would only invite someone to rotate one and not the other later.
-  const events = createEventLayer(capacity);
+  const events = createEventLayer(capacity, "thermal", morph);
   scene.add(events.object);
-  const rings = createRingLayer();
+  const rings = createRingLayer("thermal", morph);
   scene.add(rings.object);
 
   const controls = createControls(camera, canvas, FRAMING, FOV);
@@ -410,6 +433,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   return {
     resize,
     controls,
+    /** 0 is the globe, 1 is the flat map. Everything on the canvas reads the same value. */
+    setMorph: (t: number): void => {
+      morph.value = Math.max(0, Math.min(1, t));
+    },
     plates: {
       /** Sorts the boundaries so the reveal grows outward from the events, then starts it hidden. */
       orderFrom: (points: readonly { lon: number; lat: number }[]): void => {
