@@ -139,7 +139,19 @@ export interface FeedOptions {
   dead?: boolean;
   seed?: number;
   count?: number;
+  /**
+   * Makes EMSC's catalogue answer a full page, capped, reaching back only this many hours.
+   *
+   * The default fixture returns fewer rows than the seed limit, so EMSC vouches for the whole window
+   * and the truncated branch never runs. That is the common case and not the interesting one: the
+   * real endpoint returns its most recent 600 rows whatever `start` asks for, which at a month is
+   * about eighteen hours of them.
+   */
+  emscCappedHours?: number;
 }
+
+/** Matches `SEED_LIMIT` in `src/sources/emsc.ts`, which is what decides that a page was truncated. */
+const EMSC_SEED_LIMIT = 600;
 
 /**
  * Routes both feeds and stubs the socket. Call before `page.goto`.
@@ -149,7 +161,7 @@ export interface FeedOptions {
  * routed both HTTP endpoints to nothing.
  */
 export async function installFeeds(page: Page, options: FeedOptions = {}): Promise<void> {
-  const { usgs, empty, silent, dead, seed, count } = options;
+  const { usgs, empty, silent, dead, seed, count, emscCappedHours } = options;
 
   await page.addInitScript((isDead: boolean) => {
     class StubSocket {
@@ -223,6 +235,22 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
 
   await page.route(/seismicportal\.eu/, (route) => {
     const now = Date.now();
+    if (emscCappedHours !== undefined) {
+      /*
+       * Exactly a full page, spread evenly over the hours asked for.
+       *
+       * Full is what makes the source vouch for its oldest row rather than for the window, so the
+       * count has to be the limit and not merely large. The oldest row is pinned to the far end of
+       * the span so the reach the rail prints is the number this test passed in.
+       */
+      const capped = Array.from({ length: EMSC_SEED_LIMIT }, (_, i) => emscFeature({
+        ...quakes[i % Math.max(1, quakes.length)]!,
+        id: `cap${i}`,
+        ago: Math.round((i / (EMSC_SEED_LIMIT - 1)) * emscCappedHours * 3_600_000),
+      }, now));
+      route.fulfill({ json: { features: capped } });
+      return;
+    }
     route.fulfill({
       json: { features: quakes.filter((q) => q.both).map((q) => emscFeature(q, now)) },
     });

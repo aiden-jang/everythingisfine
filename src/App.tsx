@@ -19,7 +19,7 @@ import type { Filters, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import { PLAYBACK } from "./globe/rings";
 import {
-  agoShort, clock, place, SOURCE_NAMES, windowLabel,
+  agoShort, clock, place, reach, reachNote, SOURCE_NAMES, windowLabel,
 } from "./app/format";
 
 /**
@@ -504,6 +504,14 @@ export function App(): JSX.Element {
     .flatMap(([id, status]) => (status.kind === "failing" ? [[id, status] as const] : []));
 
   const edge = windowStart(now, filters.windowMs, snapshot.coveredSince);
+  /*
+   * Recomputed on the clock rather than memoised.
+   *
+   * It reads `now`, which ticks every second, and the whole point of the sentence is that the reach
+   * it names is a moving distance from the present. Memoising it against the revision would freeze
+   * "18h" at whatever it was when the last event landed.
+   */
+  const sourceNote = reachNote(snapshot.covered, now, filters.windowMs);
   const live = Object.values(snapshot.statuses).filter((s) => s.kind === "live").length;
 
   const legend = (
@@ -524,6 +532,16 @@ export function App(): JSX.Element {
                     type="button"
                     onClick={() => toggleSource(id)}
                     aria-pressed={filters.sources.has(id)}
+                    /*
+                      Named in full, because the reach beside the name is a bare number.
+                      "USGS 18h" announced as two tokens is a toggle and a quantity with nothing
+                      joining them. The visible label stays short; this is the same fact as a
+                      sentence.
+                    */
+                    aria-label={snapshot.coveredSince === null
+                      ? SOURCE_NAMES[id]
+                      : `${SOURCE_NAMES[id]}, backlog reaches `
+                        + `${reach(snapshot.covered[id], now, filters.windowMs)}`}
                     className={`flex-1 cursor-pointer border px-2.5 py-1.5 text-[11.5px] transition-colors ${
                       filters.sources.has(id)
                         ? "border-hairline bg-raised text-ink hover:border-faint"
@@ -531,9 +549,29 @@ export function App(): JSX.Element {
                     }`}
                   >
                     {SOURCE_NAMES[id]}
+                    {/*
+                      How far back this agency's backlog actually goes, on the agency's own button.
+                      The header prints a count per feed and the rail prints one left edge for the
+                      pair, so the one number nobody could get was how much of the window each of
+                      them is answering for. Not offered before the first seed: there is nothing to
+                      report and the rail above already says it is asking.
+                    */}
+                    {snapshot.coveredSince === null ? null : (
+                      <span className="ml-1.5 font-mono text-[10px] text-faint tabular-nums">
+                        {reach(snapshot.covered[id], now, filters.windowMs)}
+                      </span>
+                    )}
                   </button>
                 ))}
               </div>
+              {/*
+                Only when they disagree, in the same shape as the strip's note about unobserved
+                blocks. A permanent line explaining a discrepancy that is not on screen is how a
+                caveat stops being read.
+              */}
+              {sourceNote ? (
+                <p className="mt-2 text-[11px] leading-relaxed text-faint">{sourceNote}</p>
+              ) : null}
     </>
   );
 

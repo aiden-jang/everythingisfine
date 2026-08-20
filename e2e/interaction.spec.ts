@@ -1061,3 +1061,45 @@ test("the transport has a keyboard path, and the keys are written down", async (
   await page.keyboard.press("ArrowLeft");
   expect(paused - Number(await cursor.inputValue())).toBeGreaterThan(30);
 });
+
+test("the chrome says how far back each agency actually covers", async ({ page }) => {
+  /*
+   * EMSC's catalogue returns its most recent page whatever `start` asks for, so widening the window
+   * buys nothing from it: at a month USGS vouches for thirty days and EMSC for the last eighteen
+   * hours. The header went on printing a count per feed and a "both" count over the whole span, and
+   * nothing anywhere said where corroboration was even possible.
+   *
+   * Not scoped to the rail. The source toggles ride with the magnitude control, which floats onto the
+   * map at xl, so the assertion is on the fact rather than on where the fact currently sits.
+   */
+  await installFeeds(page, { count: 400, emscCappedHours: 6 });
+  await page.goto("/");
+  await waitForData(page);
+
+  const usgs = page.getByRole("button", { name: /^USGS, backlog/ });
+  const emsc = page.getByRole("button", { name: /^EMSC, backlog/ });
+  // USGS has no result cap, so a successful fetch of a feed vouches for the whole of it.
+  await expect(usgs).toContainText("24h");
+  // Six hours of a twenty-four hour window, which is the fixture's cap and not the window.
+  await expect(emsc).toContainText(/[56]h/);
+  await expect(page.locator(".zones")).toContainText(
+    "returns its most recent page whatever the window",
+  );
+  await expect(page.locator(".zones")).toContainText("Older events are USGS alone");
+
+  // Widening makes the gap wider, because EMSC's page does not grow with the window.
+  await page.locator(".zone-rail").getByRole("button", { name: "30d", exact: true }).click();
+  await expect(usgs).toContainText("30d");
+  await expect(emsc).toContainText(/[56]h/);
+});
+
+test("with both agencies covering the window, nothing is caveated", async ({ page }) => {
+  // The note has to be absent when the thing it explains is absent, or it stops being read.
+  await installFeeds(page, { count: 400 });
+  await page.goto("/");
+  await waitForData(page);
+
+  await expect(page.getByRole("button", { name: /^USGS, backlog/ })).toContainText("24h");
+  await expect(page.getByRole("button", { name: /^EMSC, backlog/ })).toContainText("24h");
+  await expect(page.locator(".zones")).not.toContainText("most recent page");
+});
