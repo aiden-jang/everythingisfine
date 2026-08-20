@@ -2920,6 +2920,29 @@ stub against a full bar is the fact being stated loudly rather than a rendering 
 percent keeps a real but tiny reach from rounding away to nothing at all, which would say "no backlog"
 about a feed that has one.
 
+## The same two bars, a second earlier
+
+The reach bars appeared once a feed had vouched for something, which meant the first second of the app
+said the dual-source architecture in prose and nothing else: "Asking USGS and EMSC for the last day."
+
+They are on screen from the first frame now, both tracks empty, each filling when its own feed answers.
+The headline says the app is asking two agencies; the tracks say which of them has replied. That is the
+project's thesis legible in the first second rather than a moment later, and it costs nothing, because
+the load state and the steady state are now one visual instead of a wait followed by a chart.
+
+**Three states, not two.** `reach` answers "no backlog" for a feed that has not delivered one, which
+describes a feed that refused exactly as it describes a feed still being waited for. Those resolve
+differently: one fixes itself and the other does not, and the whole point of drawing two bars is seeing
+which feed is carrying the window. So the words are "waiting", "no answer", or the reach.
+
+A feed that seeded and then lost its socket keeps its reach rather than reverting to a failure. The
+backlog it delivered is still real, and the failing notice in the rail already says the live half is
+gone.
+
+**No fake progress.** The obvious reading of "two fills on one hairline" is a progress bar, and there is
+nothing to be a fraction of: the size of a backlog is unknown until it arrives. So a track is empty or it
+carries a reach, and the fill means coverage rather than completion.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

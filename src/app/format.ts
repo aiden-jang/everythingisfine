@@ -227,3 +227,19 @@ export function reachFraction(from: number | null, now: number, windowMs: number
   const covered = now - from;
   return Math.max(0, Math.min(1, covered / windowMs));
 }
+
+/**
+ * What to print beside a feed's bar, across all three states it can be in.
+ *
+ * A feed that has answered has a reach. One that has not is either still being waited for or has
+ * refused, and those are different facts: the first resolves itself and the second does not. Saying
+ * "no backlog" for both, which `reach` alone does, would describe a feed that failed as one that
+ * simply had nothing, and the whole point of drawing two bars is that it is visible which feed is
+ * carrying the window.
+ */
+export function reachWords(
+  from: number | null, failing: boolean, now: number, windowMs: number,
+): string {
+  if (from !== null) return reach(from, now, windowMs);
+  return failing ? "no answer" : "waiting";
+}
