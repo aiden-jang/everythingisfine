@@ -7,6 +7,7 @@ import { depthClass, findNearby, NEARBY_KM } from "./nearby";
 import { Sequence } from "./Sequence";
 import { sectionThrough, type SectionLine } from "./section";
 import { arrivalFor, seconds } from "./arrival";
+import { daylight, solarClock, solarHour, sunElevation } from "../geo/sun";
 import { P_WAVE_KM_PER_S, S_WAVE_KM_PER_S } from "../geo/waves";
 import {
   ago, clock, coordinates, depth, magnitude, place, SOURCE_NAMES,
@@ -214,6 +215,22 @@ export function DetailPanel({
       <div className="mt-4">
         <Field label="Depth" value={klass ? `${depth(r)} · ${klass}` : depth(r)} />
         <Field label="Position" value={coordinates(r)} />
+        {/*
+          What the sky was doing there when it happened, which the terminator was already computing and
+          nothing read. An M6 at three in the morning, with everyone asleep and indoors, is a different
+          event from the same rupture at three in the afternoon.
+
+          Solar time, not clock time, and that is the keyless answer rather than a lazy one: civil time
+          needs timezone boundaries, which is a dataset, and this needs the sun, which is already here.
+          Labelled "solar" so nobody reads it as what a watch there would have said.
+
+          At the event's own origin, not at `now`. Computing it from the current clock would answer
+          "what is the sky doing there at this moment", which is a fact about nothing.
+        */}
+        <Field
+          label="Solar time"
+          value={`${solarClock(solarHour(r.lon, r.time))} · ${daylight(sunElevation(r.lon, r.lat, r.time))}`}
+        />
         <Field
           label="Reported by"
           value={quake.readings.map((x) => SOURCE_NAMES[x.source]).join(" + ")}

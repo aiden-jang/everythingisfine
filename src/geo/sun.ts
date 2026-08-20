@@ -70,3 +70,77 @@ export function subsolarPoint(at: number): Subsolar {
 
   return { lon: ((((lon + 180) % 360) + 360) % 360) - 180, lat: declination };
 }
+
+/*
+ * Two things the terminator already knew and nothing read.
+ *
+ * `subsolarPoint` is computed every minute to light the globe, and it answers "what was it like there,
+ * then" for free. An earthquake at three in the morning, when everyone is asleep and indoors, is a
+ * different event from the same rupture at three in the afternoon, and the app held the arithmetic to
+ * say so and never did.
+ *
+ * **Solar time rather than clock time, and that is the keyless answer rather than a lazy one.** Civil
+ * time needs timezone boundaries, which is a dataset or a service, and the project renders its first
+ * frame for anyone who clones it. Solar time needs the sun, which is already here. It is also the more
+ * honest quantity for the question: what matters is where the sun was, not which side of a political
+ * line the epicentre fell on.
+ */
+
+/**
+ * Local apparent solar time at a longitude, in hours from midnight.
+ *
+ * Noon is where the true sun crosses the meridian, so this is anchored on the subsolar longitude and
+ * every 15 degrees east of it is an hour later. Apparent rather than mean, because `subsolarPoint`
+ * already carries the equation of time and dropping it here would put this up to a quarter of an hour
+ * out for no reason.
+ */
+export function solarHour(lon: number, at: number): number {
+  const { lon: sub } = subsolarPoint(at);
+  let east = lon - sub;
+  // Wrapped, or a point either side of the antimeridian from the sun reads a day away from the truth.
+  east -= Math.round(east / 360) * 360;
+  const hour = 12 + east / 15;
+  return ((hour % 24) + 24) % 24;
+}
+
+/**
+ * How high the sun stood over a place at a moment, in degrees above the horizon.
+ *
+ * The zenith angle is the angular distance from the point to the subsolar point, so this is one
+ * spherical cosine and no more. Negative below the horizon, which is what makes the bands below
+ * possible without a sunrise calculation.
+ */
+export function sunElevation(lon: number, lat: number, at: number): number {
+  const sub = subsolarPoint(at);
+  const phi = lat * DEG;
+  const dec = sub.lat * DEG;
+  let east = lon - sub.lon;
+  east -= Math.round(east / 360) * 360;
+  const cosZenith =
+    Math.sin(phi) * Math.sin(dec) + Math.cos(phi) * Math.cos(dec) * Math.cos(east * DEG);
+  return Math.asin(Math.max(-1, Math.min(1, cosZenith))) / DEG;
+}
+
+/**
+ * Daylight, twilight or dark, on the conventional boundaries.
+ *
+ * Civil twilight is the sun within six degrees of the horizon, which is the same figure the night
+ * shader spreads its terminator over, so the words here and the band on the globe agree by
+ * construction rather than by coincidence.
+ *
+ * Derived from elevation rather than from the clock, because at high latitude three in the morning is
+ * broad daylight for months and a band read off the hour would say the opposite.
+ */
+export function daylight(elevationDeg: number): "daylight" | "twilight" | "dark" {
+  if (elevationDeg > 0) return "daylight";
+  if (elevationDeg > -6) return "twilight";
+  return "dark";
+}
+
+/** `03:12`, on a 24-hour clock, from an hour that may be fractional. */
+export function solarClock(hour: number): string {
+  const total = Math.round(((hour % 24) + 24) % 24 * 60);
+  // Rounding 23:59:40 up must give 00:00 rather than 24:00, which is not a time.
+  const m = total % 1440;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
