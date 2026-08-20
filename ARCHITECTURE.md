@@ -2943,6 +2943,45 @@ gone.
 nothing to be a fraction of: the size of a backlog is unknown until it arrives. So a track is empty or it
 carries a reach, and the fill means coverage rather than completion.
 
+## The count moved for three reasons and only one of them looked like anything
+
+The rail has a single focal point and it is the count. The entrance replay already climbs it, because the
+replay drives it a frame at a time, so that moment was solved by accident. A live arrival snapped it by
+one, and widening the window snapped it from 872 to 11,363: the largest single change of state the app
+makes, rendered as a flicker.
+
+**Only ever on a discrete change, and that is the constraint the whole thing turns on.** A rolling
+readout eases toward a target, so pointing one at a continuously moving source makes it a permanently
+*late* reading rather than a smooth one. The cursor drives this count frame by frame while it is parked
+or playing, and the replay does the same on the way in. In both cases the number has to be exactly what
+is drawn, so the hook is handed that fact rather than inferring it: from the value alone, a frame of a
+smooth drive and a discrete jump are indistinguishable.
+
+**The rate is solved, not chosen.** Time to land is `tau * ln(gap / 0.5)`, so the largest change in the
+app is about ten time constants. My first guess of 120ms measured at 1,194ms for that jump, which is a
+second of digits still turning: a readout arguing with itself. 55ms puts it at 547ms and a single arrival
+at 38ms, which is a snap, and that is correct too. Both numbers are assertions in the test rather than
+prose here, so it cannot drift back to a constant that feels right and measures wrong.
+
+**Rounded on the way out, never on the way through.** Rounding the state would quantise the approach into
+whole units, and any frame moving it less than half a unit would then move it not at all, which stalls
+the roll near its target forever.
+
+Reduced motion skips rather than shortens, the rule the camera and the entrance both follow. So does the
+first value it ever sees: easing up from zero on load would invent a count-up the data never did, and the
+entrance replay already owns that moment.
+
+## Why this and not the two items above it in the backlog
+
+Plate motion vectors and the quiet map were next, and both want data this repo does not have: Euler poles
+for the first, craton outlines for the second. Neither has a keyless source, so both mean committing
+figures written from memory into an app whose argument is that its numbers trace to something. Getting a
+pole slightly wrong does not look wrong; it looks like physics.
+
+This was picked over them deliberately. The worst case here is that the timing feels off, which is visible
+in a second and adjustable in one line, and the numbers behind it are derived rather than remembered.
+The other two stay unbuilt until somebody chooses to bring real data in.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
