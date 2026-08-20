@@ -2413,6 +2413,42 @@ a[href]`, whose own comment says that naming the places instead of naming the th
 stops covering what it was written for. It then did not cover the app's first text input. It now
 covers every input except a range, whose hit area is the eighteen-pixel track by design.
 
+## A scale bar that refuses to be one number
+
+The globe implies scale by being a globe: a sphere carries its own size and nobody tries to read a
+distance off one. A flat map invites exactly that reading and offered nothing to read against.
+
+**On equirectangular a horizontal bar is only true where it is drawn.** Meridians are evenly spaced,
+so a degree of longitude occupies the same pixels at sixty degrees north as at the equator while
+covering half the ground. A bar labelled "2,000 km" and left at that is wrong nearly everywhere, by up
+to a factor of eleven at the 85 degree limit this camera allows. So the label carries the latitude it
+was measured at, and the bar's pixel length changes as the view moves north and south while the round
+number stays put. Panning from the equator to 48 degrees stretches the same 2,000 km from 97 pixels to
+145. That is the projection's distortion shown rather than smoothed over, which is the same call as
+refusing to let Greenland's area read as a fact.
+
+A vertical bar would need no caveat at all, since latitude scale is constant here. It is not the bar
+anybody looks for on a map, so the horizontal one is drawn and told the truth about instead.
+
+**Measured at the view's centre, after measuring it at the bar's own screen row first.** The row
+looked more honest and is wrong twice. Zoomed out, the corner the bar sits in is void rather than map,
+so asking what latitude is under it returns nothing and the bar never appeared at all. And it was
+answering a question the label already answers: a bar that names its latitude is a legend entry, and
+where it happens to sit carries no claim. The centre is also the more useful of the two, being the
+middle of what somebody is looking at.
+
+**`> 0` was not the guard it looked like.** `Math.cos` of ninety degrees is 6.1e-17 rather than zero,
+so a pole-on view passed a positive-kilometres check and asked for a bar 1.5e14 pixels wide. The steps
+are spaced by factors of two and two and a half, so a real bar is never more than about 1.6 times off
+its target; being eight times off means the view is outside the table, and no scale is then the honest
+answer. Caught by a unit test written to assert the pole case returns nothing.
+
+**Two things about looking at it.** The bar rendered correctly for three rounds of screenshots while
+being invisible, because the canvas is full-bleed with the rail floating over it and the bar was
+placed at the container's own left edge, underneath the rail. And `xl:left-[calc(var(--rail-w)+1rem)]`
+silently did nothing, because `calc` requires whitespace around its `+`; a margin does the same job
+with no arithmetic to get wrong.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

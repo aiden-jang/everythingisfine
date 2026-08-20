@@ -7,6 +7,7 @@ import type { Filters } from "../data/types";
 import { magnitude } from "../app/format";
 import type { RampName } from "./ramp";
 import type { SectionLine } from "../app/section";
+import { distanceLabel, kmPerPixel, latitudeLabel, niceScale } from "./scale";
 
 /*
  * The canvas, and the smallest possible amount of React around it.
@@ -65,6 +66,16 @@ export interface GlobeProps {
   onSection?: (line: SectionLine | null) => void;
 }
 
+/** How far above the canvas floor the scale sits, clear of the key hints on the same line. */
+const SCALE_BOTTOM = 40;
+/*
+ * How long a bar aims to be before rounding to a number a reader can halve.
+ *
+ * Wide enough to read a length off and short enough to stay out of the hint strip beside it. The
+ * actual width is whatever the round kilometre figure works out to, never this.
+ */
+const SCALE_TARGET_PX = 110;
+
 export function Globe({
   feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay, focusHour = null,
   scrubAt = null, flat = false, section = null, onSection,
@@ -74,6 +85,9 @@ export function Globe({
   const marker = useRef<HTMLDivElement>(null);
   const sectionLine = useRef<SVGSVGElement>(null);
   const hoverRing = useRef<HTMLDivElement>(null);
+  const scaleBar = useRef<HTMLDivElement>(null);
+  const scaleRule = useRef<HTMLDivElement>(null);
+  const scaleText = useRef<HTMLSpanElement>(null);
   const redrawRef = useRef<() => void>(() => {});
   const wakeRef = useRef<() => void>(() => {});
   const rampRef = useRef<(name: RampName) => void>(() => {});
@@ -186,6 +200,32 @@ export function Globe({
        */
       put(hoverRing.current, hovered, 0);
       put(tooltip.current, hovered, -18);
+
+      /*
+       * The scale bar, quoted at the latitude in the middle of the view.
+       *
+       * Measured at the bar's own screen row first, which is wrong twice. Zoomed out, the corner the
+       * bar sits in is void rather than map, so asking what latitude is under it returns nothing and
+       * the bar never appeared at all. And it was solving a problem the label already solves: a bar
+       * that names its latitude is a legend entry, and its own position on screen carries no claim.
+       * The centre latitude is also the more useful of the two, being the middle of what somebody is
+       * looking at rather than the edge they are not.
+       */
+      const bar = scaleBar.current;
+      if (bar) {
+        const flat = globe.controls.morph() > 0.99;
+        const { lat } = globe.controls.state();
+        const drawn = flat
+          ? niceScale(kmPerPixel(globe.controls.degPerPx(), lat), SCALE_TARGET_PX)
+          : null;
+        // Hidden on the globe, which carries its own scale by being a ball, and hidden mid-morph,
+        // when a number read off a half-flattened projection would be a number about nothing.
+        bar.style.opacity = drawn ? "1" : "0";
+        if (drawn && scaleRule.current && scaleText.current) {
+          scaleRule.current.style.width = `${Math.round(drawn.px)}px`;
+          scaleText.current.textContent = `${distanceLabel(drawn.km)} at ${latitudeLabel(lat)}`;
+        }
+      }
     };
 
     /*
@@ -607,6 +647,38 @@ export function Globe({
         ref={hoverRing}
         className="pointer-events-none absolute top-0 left-0 size-5 rounded-full border border-dim opacity-0 transition-opacity duration-100"
       />
+      {/*
+        The scale, on the map only.
+
+        A ruler rather than a readout: the rule is the measurement and the text names it, which is why
+        the bar's width is what changes and the number stays round. Achromatic like every other piece
+        of chrome, and `aria-hidden` because the accessible feed gives distances in kilometres per
+        event already, and a ruler is a thing you hold against a picture.
+      */}
+      <div
+        ref={scaleBar}
+        data-scale
+        aria-hidden="true"
+        style={{ bottom: `${SCALE_BOTTOM}px` }}
+        /*
+          Offset past the rail, the same way the bottom band is.
+          The canvas is full-bleed and the rail floats over it, so a bar placed at the container's own
+          left edge is drawn underneath the rail: present, correct, and invisible, which is how it
+          passed a first look.
+        */
+        className="pointer-events-none absolute left-4 opacity-0 transition-opacity duration-200
+          xl:ml-[var(--rail-w)]"
+      >
+        <span ref={scaleText} className="block font-mono text-[10.5px] text-faint tabular-nums" />
+        {/*
+          Ticked at both ends, so the bar has a start and a finish. A bare line has neither, and the
+          eye measures from wherever it looks first.
+        */}
+        <div
+          ref={scaleRule}
+          className="mt-1 h-[5px] border-x border-b border-dim"
+        />
+      </div>
       {/*
         The line, and a cap at each end. Achromatic like every other piece of chrome: the section's
         own panel carries the ramp, and a coloured line on the map would be a hue meaning nothing
