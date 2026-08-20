@@ -165,10 +165,13 @@ describe("update cost", () => {
     const f = filters();
     const now = 1_700_000_000_000;
 
-    for (let i = 0; i < 5; i += 1) layer.sync(store, f, now, NO_CLUSTER, undefined, 5);
+    // One bucket of a 24-hour window, which is what the bare index 5 used to mean here.
+    const held = { from: now - 6 * 3_600_000, to: now - 5 * 3_600_000 };
+
+    for (let i = 0; i < 5; i += 1) layer.sync(store, f, now, NO_CLUSTER, undefined, held);
 
     const ref = referenceMs();
-    const units = fastestMs(() => layer.sync(store, f, now, NO_CLUSTER, undefined, 5), 40) / ref;
+    const units = fastestMs(() => layer.sync(store, f, now, NO_CLUSTER, undefined, held), 40) / ref;
     console.info(`[perf] sync 50000 events, hour held: ${units.toFixed(2)} ref (budget ${BUDGET_REF[50_000]})`);
     expect(units).toBeLessThan(BUDGET_REF[50_000]!);
     layer.dispose();

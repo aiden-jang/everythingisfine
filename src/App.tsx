@@ -556,6 +556,27 @@ export function App(): JSX.Element {
     [filters.minMagnitude, filters.sources, filters.windowMs, snapshot.revision],
   );
 
+  /*
+   * The held bucket as a span of time, converted once, here, where the bucket width lives.
+   *
+   * The event layer used to take the bucket's index and multiply it by an hour. That was the same thing
+   * while a day was the only window and wrong from the moment 7d and 30d shipped, because a bucket is
+   * `windowMs / 24`: at a month it is thirty hours, so every bar on the strip lit the same recent hour
+   * whichever one the pointer was on. `bucketMs` comes from the histogram that drew the bars, so the two
+   * cannot disagree about what a bar covers.
+   *
+   * The strip keeps the index, because comparing a bar to the held bar is what an index is for.
+   */
+  const focusSpan = useMemo(
+    () => (focusHour === null
+      ? null
+      : { from: now - (focusHour + 1) * bucketMs, to: now - focusHour * bucketMs }),
+    // `now` deliberately absent, for the reason the bars exclude it: it ticks every second, the buckets
+    // do not move with it, and re-deriving this per second would re-sync the marker layer per second.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [focusHour, bucketMs],
+  );
+
   const hours = Math.round(filters.windowMs / 3_600_000);
   /*
    * The headline counts what is on the globe, not what is in the buffer.
@@ -1148,7 +1169,7 @@ export function App(): JSX.Element {
             filters={filters}
             selected={selected}
             ramp={ramp}
-            focusHour={focusHour}
+            focus={focusSpan}
             scrubAt={view.at}
             flat={flat}
             section={sectionLine}

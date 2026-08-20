@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { matches } from "../data/filter";
 import { createGlobe } from "./scene";
+import type { FocusSpan } from "./events";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 import {
   createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay,
@@ -48,7 +49,13 @@ export interface GlobeProps {
    * and neither could answer the other's question. Hovering an hour dims everything outside it, so
    * a swarm that reads as one blob resolves into the ninety minutes it actually happened in.
    */
-  focusHour?: number | null;
+  /**
+   * The span of time the pointer is holding on the activity strip, or null.
+   *
+   * A span, not a bucket index. The strip knows how wide its buckets are; this does not, and when it
+   * assumed an hour it was right only at a 24-hour window. See `FocusSpan`.
+   */
+  focus?: FocusSpan | null;
   /**
    * Origin time the cursor stands at, or null for live.
    *
@@ -80,7 +87,7 @@ const SCALE_BOTTOM = 40;
 const SCALE_TARGET_PX = 110;
 
 export function Globe({
-  feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay, focusHour = null,
+  feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay, focus = null,
   scrubAt = null, flat = false, section = null, onSection,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -101,8 +108,8 @@ export function Globe({
    * tearing down the WebGL context, the 300,000-triangle globe and both feed subscriptions every
    * time somebody nudges a magnitude slider.
    */
-  const live = useRef({ filters, selected, focusHour, scrubAt, flat, section });
-  live.current = { filters, selected, focusHour, scrubAt, flat, section };
+  const live = useRef({ filters, selected, focus, scrubAt, flat, section });
+  live.current = { filters, selected, focus, scrubAt, flat, section };
   const onSectionRef = useRef(onSection);
   onSectionRef.current = onSection;
   /** The line being dragged right now, which the frame loop draws in place of the committed one. */
@@ -360,7 +367,7 @@ export function Globe({
         replaying = true;
         globe.events.sync(
           feed.store, live.current.filters, Date.now(),
-          globe.controls.state().zoom, replay.at() ?? undefined, live.current.focusHour,
+          globe.controls.state().zoom, replay.at() ?? undefined, live.current.focus,
         );
         const at = replay.at();
         onReplayRef.current?.(replay.done() || at === null ? null : { at, revealed });
@@ -382,7 +389,7 @@ export function Globe({
         unwrapping = morph !== morphTarget;
       }
 
-      const focusTarget = live.current.focusHour === null ? 0 : 1;
+      const focusTarget = live.current.focus === null ? 0 : 1;
       let fading = false;
       if (focusFade !== focusTarget) {
         const step = reducedMotion.matches ? 1 : dt / 0.13;
@@ -401,7 +408,7 @@ export function Globe({
         lastZoom = zoomNow;
         globe.events.sync(
           feed.store, live.current.filters, Date.now(), zoomNow, revealUntil(),
-          live.current.focusHour,
+          live.current.focus,
         );
       }
       globe.render();
@@ -501,7 +508,7 @@ export function Globe({
     const redraw = (): void => {
       globe.events.sync(
         feed.store, live.current.filters, Date.now(),
-        globe.controls.state().zoom, revealUntil(), live.current.focusHour,
+        globe.controls.state().zoom, revealUntil(), live.current.focus,
       );
       globe.render();
       placeOverlays();
@@ -564,7 +571,7 @@ export function Globe({
        */
       globe.events.sync(
         feed.store, live.current.filters, Date.now(),
-        globe.controls.state().zoom, revealUntil(), live.current.focusHour,
+        globe.controls.state().zoom, revealUntil(), live.current.focus,
       );
       // A front per arrival, except on the seed. See `frontsFor`.
       const fronts = frontsFor(snapshot);
@@ -658,7 +665,7 @@ export function Globe({
   useEffect(() => {
     redrawRef.current();
     wakeRef.current();
-  }, [filters, selected, focusHour, scrubAt, flat]);
+  }, [filters, selected, focus, scrubAt, flat]);
 
   useEffect(() => {
     rampRef.current(ramp);

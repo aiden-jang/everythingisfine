@@ -3190,6 +3190,36 @@ say the heading and the picture must agree from the first frame.
 That is the fifth of these in five changes, and the first one I caused. The class is unchanged: a constant
 or a phrase that was true when written, made false by something else moving, and silent about it.
 
+## An hour that was a bucket, until a bucket stopped being an hour
+
+Holding a bar on the activity strip lights the events it stands for. It lit the wrong ones at two of the
+three windows, and at the widest it lit nothing at all.
+
+The strip hands over the bar's **index**, and the marker layer turned that into a time range by
+multiplying by a hardcoded `3_600_000`. A bucket is `windowMs / 24`, so the two agree exactly at a
+24-hour window and nowhere else: seven hours at a week, thirty at a month. Hovering bar 5 of a 30-day
+strip asked for events five to six hours old instead of a hundred and fifty to a hundred and eighty, so
+every bar on the strip asked about the same recent hour whichever one the pointer was on. With one event
+per bucket, nothing at all falls in that hour, so the feature was not merely wrong at a month, it was
+silent.
+
+**The fix removes the units from the layer rather than correcting them.** It takes a span now. The strip
+knows how wide its own buckets are, because `bucketMs` comes from the histogram that drew the bars, and
+the marker layer has no business knowing. A conversion that happens once, where the width lives, cannot
+disagree with itself twice.
+
+The strip keeps the index for its own highlighting, which is correct: comparing a bar to the held bar is
+exactly what an index is for.
+
+**Why nothing caught it.** There is a browser test for holding a bucket, and it runs at the default
+window, where the hour and the bucket are the same number. The new test runs the same assertion at all
+three windows and reads `aFocus` off the geometry, so a bar that lights nothing fails instead of looking
+like a quiet hour. It also asserts that two different bars light two different events, which is the thing
+that was actually broken, rather than that one bar lights one event, which always worked.
+
+Sixth of these, and the same shape as the other five: a constant that was true when written, made false
+by something else moving, silent about it, and invisible in the state that existed at the time.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

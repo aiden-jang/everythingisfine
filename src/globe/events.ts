@@ -201,9 +201,27 @@ export interface EventLayer {
    */
   sync: (
     store: Store, filters: Filters, now: number, zoom: number, revealUntil?: number,
-    focusHour?: number | null,
+    focus?: FocusSpan | null,
   ) => number;
   dispose: () => void;
+}
+
+/**
+ * The slice of time the pointer is holding on the activity strip, as a span rather than an index.
+ *
+ * It used to take the bucket's index and multiply it by an hour. That was the same thing as the bucket
+ * while a day was the only window, and wrong the moment 7d and 30d shipped: a bucket is `windowMs / 24`,
+ * so at a month it is thirty hours, and every bar on the strip highlighted the same recent hour whichever
+ * one the pointer was on.
+ *
+ * A span cannot be wrong twice. The strip knows how wide its own buckets are and this layer has no
+ * business knowing, so the conversion happens once, where the width lives.
+ */
+export interface FocusSpan {
+  /** Oldest origin time in the held bucket, inclusive. */
+  from: number;
+  /** Newest, exclusive. */
+  to: number;
 }
 
 export function createEventLayer(
@@ -321,7 +339,7 @@ export function createEventLayer(
       material.uniforms["uSize"]!.value = Math.max(0.45, Math.min(1, px / REFERENCE_RADIUS_PX));
     },
 
-    sync: (store, filters, now, zoom = 3, revealUntil, focusHour = null) => {
+    sync: (store, filters, now, zoom = 3, revealUntil, focus = null) => {
       const cell = cellSizeDeg(zoom);
       /*
        * Resolved on the CPU, per marker, rather than from an age attribute in the shader.
@@ -331,9 +349,9 @@ export function createEventLayer(
        * contains the hovered hour. The question "does this marker hold anything from that hour" can
        * only be answered where the members are still visible, which is here.
        */
-      const focusing = focusHour !== null;
-      const focusLo = focusing ? now - (focusHour + 1) * 3_600_000 : 0;
-      const focusHi = focusing ? now - focusHour * 3_600_000 : 0;
+      const focusing = focus !== null && focus !== undefined;
+      const focusLo = focusing ? focus.from : 0;
+      const focusHi = focusing ? focus.to : 0;
       cellFor.clear();
       let n = 0;
 
