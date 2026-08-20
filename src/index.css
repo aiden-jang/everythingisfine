@@ -732,7 +732,13 @@
    */
   button,
   summary,
-  a[href] {
+  a[href],
+  /*
+   * Ranges excepted, and only ranges. Their hit area is the 18px track by design, and browsers
+   * already give them a generous invisible target the box model does not report. Every other input
+   * is a control with a finger on it, which is what this rule is about.
+   */
+  input:not([type="range"]) {
     min-height: 44px;
   }
 

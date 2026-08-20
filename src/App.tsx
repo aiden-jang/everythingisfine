@@ -2,6 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } fro
 const Globe = lazy(() => import("./globe/Globe").then((m) => ({ default: m.Globe })));
 import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
+import { PLACE_LIMIT, search, type Hit } from "./app/search";
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
@@ -116,6 +117,7 @@ export function App(): JSX.Element {
     sources: new Set(shared.sources ?? [...DEFAULT_FILTERS.sources]),
   }));
   const [selected, setSelected] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
   /** The entrance replay's clock and revealed count, or null when it is not running. */
   const [replay, setReplay] = useState<{ at: number; revealed: number } | null>(null);
   /*
@@ -415,7 +417,13 @@ export function App(): JSX.Element {
       if (e.key === "Escape") {
         // One thing at a time, innermost first. Escape closing the pin and the section together means
         // one press can undo two decisions, and the section is the one somebody just drew.
-        if (sectionLine) setSectionLine(null);
+        //
+        // The query is innermost of all while it has text: if somebody has just typed into a box,
+        // Escape means that box, and clearing their pin instead would be answering a different
+        // question. It is the one rung reachable while a field has focus, which is why it is above the
+        // guard below rather than below it.
+        if (query) setQuery("");
+        else if (sectionLine) setSectionLine(null);
         else if (scrub.at !== null) setScrub(LIVE);
         else setSelected(null);
         return;
@@ -438,7 +446,7 @@ export function App(): JSX.Element {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [sectionLine, scrub.at, filters.windowMs]);
+  }, [sectionLine, scrub.at, filters.windowMs, query]);
 
   const toggleSource = (id: SourceId): void => {
     setFilters((f) => {
@@ -482,6 +490,35 @@ export function App(): JSX.Element {
     [filters.minMagnitude, filters.sources, filters.windowMs, snapshot.revision,
       snapshot.coveredSince],
   );
+
+  /*
+   * Searched on the same triggers as the region counts, and for the same reason.
+   *
+   * It walks the buffer, so it belongs with the other walk rather than in a render. `now` is
+   * deliberately absent: a second passing does not change what matches a query, and depending on it
+   * would re-walk fifty thousand events once a second while somebody reads the results.
+   */
+  const results = useMemo(
+    () => search(query, feed.store, filters, Date.now()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [query, filters.minMagnitude, filters.sources, filters.windowMs, snapshot.revision],
+  );
+
+  /*
+   * One path to a result, so Enter and a click cannot drift apart.
+   *
+   * A region is a box and flies to its own framing; a place flies to its strongest event and pins it,
+   * so arriving explains itself rather than leaving somebody on a patch of ocean wondering which dot
+   * they came for.
+   */
+  const pick = (hit: Hit): void => {
+    if (hit.kind === "region") {
+      flyTo.current(hit.region.lon, hit.region.lat, hit.region.zoom);
+      return;
+    }
+    setSelected(hit.strongest.key);
+    flyTo.current(hit.strongest.primary.lon, hit.strongest.primary.lat, 2.2);
+  };
 
   const hours = Math.round(filters.windowMs / 3_600_000);
   /*
@@ -815,16 +852,105 @@ export function App(): JSX.Element {
           */}
           {regions.length > 0 ? (
             <div data-rail="regions" className="relative">
+              {/*
+                Somewhere to search, and the results stand in the region rows rather than beside them.
+                Four region rows were the entire navigation: a person who wants Japan had to either
+                find it among whichever four are showing or drag the globe until it appeared. Results
+                replacing the rows keeps the rail the same height and asks the same question the rows
+                already answer, with a filter on it.
+              */}
+              <div role="search" className="mb-1.5 flex items-baseline gap-2">
+                <label htmlFor="find" className="label shrink-0">Find</label>
+                <input
+                  id="find"
+                  /*
+                    Text, not search. `type="search"` brings a user-agent cancel button with
+                    user-agent styling into chrome whose rule is that it carries none, and the app
+                    already has a way to clear this: Escape, which is the innermost rung of the
+                    ladder while there is a query. `role="search"` on the wrapper is the part that
+                    was actually worth having.
+                  */
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  /*
+                    Enter takes the first result, which is the reflex everybody has in a search box.
+                    Without it the only way through was Tab, and a field that swallows Enter reads as
+                    a field that did not understand the query.
+                  */
+                  onKeyDown={(e) => {
+                    if (e.key !== "Enter") return;
+                    const first = results.hits[0];
+                    if (first) pick(first);
+                  }}
+                  placeholder="a region or a place"
+                  autoComplete="off"
+                  spellCheck={false}
+                  className="min-w-0 flex-1 border-b border-hairline bg-transparent pb-0.5
+                    text-[12px] text-ink placeholder:text-faint focus:border-faint focus:outline-none"
+                />
+              </div>
               <div ref={regionsRef} className="rail-regions">
-                <div className="label">Regions</div>
-                {regions.map(({ region, count }) => (
-                  <Row
-                    key={region.name}
-                    label={region.name}
-                    trail={`${count}`}
-                    onClick={() => flyTo.current(region.lon, region.lat, region.zoom)}
-                  />
-                ))}
+                {query ? (
+                  results.hits.length > 0 ? (
+                    <>
+                      {results.hits.map((hit) => (hit.kind === "region" ? (
+                        <Row
+                          key={`r:${hit.region.name}`}
+                          label={hit.region.name}
+                          trail={`${hit.count}`}
+                          onClick={() => pick(hit)}
+                        />
+                      ) : (
+                        /*
+                          The trail carries both numbers because either alone is misleading: a count
+                          with no size, or a size with no idea whether it stands for one event or
+                          three hundred.
+                        */
+                        <Row
+                          key={`p:${hit.name}`}
+                          label={hit.name}
+                          trail={`${hit.count} · M${hit.strongest.primary.magnitude.toFixed(1)}`}
+                          onClick={() => pick(hit)}
+                        />
+                      )))}
+                      {/*
+                        A cap that does not say so reads as "that is everything", which is the one
+                        thing it is not.
+                      */}
+                      {results.more > 0 ? (
+                        <p className="px-1.5 pt-1.5 text-[11px] leading-relaxed text-faint">
+                          {`${PLACE_LIMIT} of ${PLACE_LIMIT + results.more} places. `}
+                          Narrow the query to see the rest.
+                        </p>
+                      ) : null}
+                    </>
+                  ) : (
+                    /*
+                      Which of the two nothings this is.
+                      There is no gazetteer behind this and there cannot be one under the key
+                      constraint, so a real place with no seismicity looks exactly like a typo. Saying
+                      what was searched is the difference between a limit and a bug.
+                    */
+                    <p className="px-1.5 py-1 text-[11px] leading-relaxed text-faint">
+                      Nothing in the {hours >= 48 ? `${Math.round(hours / 24)} days` : `${hours} hours`}
+                      {" "}on screen. This searches the named regions and the places these two agencies
+                      put on the events it holds, not a map of the world.
+                    </p>
+                  )
+                ) : (
+                  <>
+                    <div className="label">Regions</div>
+                    {regions.map(({ region, count }) => (
+                      <Row
+                        key={region.name}
+                        label={region.name}
+                        trail={`${count}`}
+                        onClick={() => flyTo.current(region.lon, region.lat, region.zoom)}
+                      />
+                    ))}
+                  </>
+                )}
               </div>
               <Resizer
                 axis="y"

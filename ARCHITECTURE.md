@@ -2370,6 +2370,49 @@ pass; it is invisible at rest but the copy loop starts at `morph >= 0.01` while 
 depth clear along with the colour clear, so each copy's opaque geometry depth-tests against the
 previous copy's leftovers, which is harmless exactly while the copies are disjoint on screen.
 
+## Somewhere to search, over the only two things there are to search
+
+Four region rows were the whole of the navigation. Somebody who wants Japan had to either spot that
+"Japan & Kurils" was one of the four currently showing, or drag the globe until it appeared. The rail
+names regions by event count, so the four on offer change under you, which is the opposite of
+navigation.
+
+**There is no gazetteer, and there cannot be one.** Every geocoder needs a key and the constraint is
+that the repo renders its first frame for anyone who clones it. So this searches the eleven authored
+regions and the place strings the two agencies wrote on the events currently held, and nothing else.
+That is a real limit with a consequence that had to be designed rather than hidden: "Paris" finds
+nothing, because nothing has happened there, and with no gazetteer behind it a real place is
+indistinguishable from a typo. So the empty state says which of the two it is in, naming the window it
+searched and what it searched over. A search that answers a bare "no results" about a city that
+plainly exists reads as broken software rather than as a bounded index.
+
+**Regions rank above places because they work at zero.** A quiet Kamchatka is still somewhere to go
+and look; a place only exists here while an event of its name is in the buffer. That is also why a
+region row carries a count and a place row carries a count and a magnitude: they are different kinds
+of thing, and the trail shape is what says so without a second label.
+
+**Places are grouped, and the grouping does a second job.** Three hundred events in the Flores Sea is
+three hundred rows behind one name, so a place is one row with its count and its strongest. Grouping
+on the case-normalised name is what merges USGS's "Flores Sea" with EMSC's "FLORES SEA" into one row
+with a count of two rather than two rows of one, which is the same reconciliation problem this project
+is about, showing up in the navigation.
+
+**Ranked on position before size.** "Bridgetown" contains "ridge" and is not a ridge. Matching at a
+word start ranks above matching anywhere, so a magnitude 6.9 in Bridgetown still loses to a magnitude
+3.0 on the Carlsberg Ridge for the query "ridge". Without it the order is the store's iteration order,
+which is arrival order, which means nothing to a reader.
+
+**Two smaller decisions.** The results stand in the region rows rather than beside them, so the rail
+does not grow and the block goes on answering one question with a filter applied. And the field is
+`type="text"`, not `type="search"`: the search type brings a user-agent cancel button with user-agent
+styling into chrome whose rule is that it carries none, and Escape already clears the box as the
+innermost rung of the ladder.
+
+**The touch rule was named at places again.** The coarse-pointer minimum listed `button, summary,
+a[href]`, whose own comment says that naming the places instead of naming the thing is how a rule
+stops covering what it was written for. It then did not cover the app's first text input. It now
+covers every input except a range, whose hit area is the eighteen-pixel track by design.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

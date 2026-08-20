@@ -1103,3 +1103,61 @@ test("with both agencies covering the window, nothing is caveated", async ({ pag
   await expect(page.getByRole("button", { name: /^EMSC, backlog/ })).toContainText("24h");
   await expect(page.locator(".zones")).not.toContainText("most recent page");
 });
+
+test("the rail can be searched, and says what it cannot search", async ({ page }) => {
+  /*
+   * Four region rows were the entire navigation, so somebody who wanted Japan had to find it among
+   * whichever four were showing or drag the globe until it appeared.
+   *
+   * There is no gazetteer behind this and there cannot be one under the no-key constraint, so the
+   * half of this test that matters most is the empty state: a real place with no seismicity looks
+   * exactly like a typo unless the app says which it means.
+   */
+  await installFeeds(page, { count: 400 });
+  await page.goto("/");
+  await waitForData(page);
+  await page.waitForTimeout(4000);
+
+  const rail = page.locator('[data-rail="regions"]');
+  await expect(rail).toContainText("Regions");
+
+  // A region, which is authored navigation and is offered whether or not anything is happening in it.
+  await page.getByLabel("Find").fill("japan");
+  await expect(rail.getByRole("button", { name: /Japan & Kurils/ })).toBeVisible();
+  // The results stand in the region rows rather than beside them, so the rail keeps its height.
+  await expect(rail).not.toContainText("Regions");
+
+  // A place, from what an agency wrote on the events currently held, grouped rather than listed.
+  await page.getByLabel("Find").fill("flores");
+  const flores = rail.getByRole("button", { name: /Flores Sea/ });
+  await expect(flores).toBeVisible();
+  await expect(flores).toContainText(/\d+ · M\d\.\d/);
+
+  // Picking a place flies to its strongest event and pins it, so arriving explains itself.
+  await flores.click();
+  const panel = page.locator(".zone-panel");
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText(/Flores Sea/i);
+
+  // Which of the two nothings this is.
+  await page.getByLabel("Find").fill("paris");
+  await expect(rail).toContainText("not a map of the world");
+
+  // Escape is the innermost rung while there is a query, so it clears the box and not the pin.
+  await page.getByLabel("Find").press("Escape");
+  await expect(page.getByLabel("Find")).toHaveValue("");
+  await expect(rail).toContainText("Regions");
+  await expect(panel).toBeVisible();
+});
+
+test("enter takes the first result, so the box does not swallow the query", async ({ page }) => {
+  await installFeeds(page, { count: 400 });
+  await page.goto("/");
+  await waitForData(page);
+  await page.waitForTimeout(4000);
+
+  await page.getByLabel("Find").fill("flores");
+  await page.getByLabel("Find").press("Enter");
+  // The first hit for a place-only query is the place, which pins as well as flies.
+  await expect(page.locator(".zone-panel")).toContainText(/Flores Sea/i);
+});
