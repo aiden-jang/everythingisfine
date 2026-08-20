@@ -2,6 +2,9 @@ import type { SourceId } from "../data/types";
 import type { RampName } from "../globe/ramp";
 import type { SectionLine } from "./section";
 import { nearestWindow } from "./windows";
+// Data bounds, which happen to live in a rendering module. Restating them here as literals is exactly
+// what produced the bug their use fixes.
+import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 
 /*
  * "Look at this" as a link.
@@ -124,11 +127,31 @@ export function decode(fragment: string): Partial<Permalink> {
   if (at && at.length === 3 && at.every((n) => Number.isFinite(n))) {
     out.lon = wrapLon(at[0]!);
     out.lat = clamp(at[1]!, -85, 85);
-    out.zoom = clamp(at[2]!, 0.75, 3);
+    /*
+     * Sanity, and the camera does the rest.
+     *
+     * This clamped to the globe's 0.75, which is not the map's floor: the map derives its own from the
+     * zoom at which the frame is exactly 360 degrees wide, and that is 0.64 at desktop and 0.19 on a
+     * phone. So every fully zoomed-out map view shared as 0.75 and arrived up to four times tighter,
+     * losing "see everywhere at once", which is the only reason to leave the globe.
+     *
+     * The real bound is viewport-dependent and the decoder has no viewport. It also does not need one:
+     * `flyTo` runs every shared camera through `clampZoom` against the live frame. So this rejects
+     * nonsense and leaves the contextual limit to the one place that can know it.
+     */
+    out.zoom = clamp(at[2]!, 0.05, 3);
   }
 
   const m = Number(params.get("m"));
-  if (params.has("m") && Number.isFinite(m)) out.minMagnitude = clamp(m, 0, 7);
+  /*
+   * The bounds the slider actually has, not a pair of round numbers near them.
+   *
+   * This read `clamp(m, 0, 7)`. The control runs from `MAG_MIN` to `MAG_MAX`, which are 1 and 7.5, so a
+   * filter parked at the top of the scale shared as 7.5 and arrived as 7, and a link could ask for 0,
+   * which the slider cannot reach. Both are the sibling of the window bug above: a bound restated as a
+   * literal instead of read from the thing it is bounding.
+   */
+  if (params.has("m") && Number.isFinite(m)) out.minMagnitude = clamp(m, MAG_MIN, MAG_MAX);
 
   /*
    * Snapped to an offered window, not clamped to a day.

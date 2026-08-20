@@ -2478,8 +2478,11 @@ ring carries its own event's magnitude colour, which is why the row sits inside 
 subtree the hue rule exempts.
 
 **The constant is passed, not imported.** `PLAYBACK` lives in `globe/rings.ts` next to the physics it
-is derived from, and that module imports three. The legend is in the eager bundle while the canvas is
-behind a `lazy`, so importing the constant there would have pulled the renderer in for one number.
+is derived from, and that module imports three, so it is passed in rather than imported here.
+
+*Corrected later, in the entry about `geo/waves.ts`: the bundle half of that reasoning was wrong. This
+legend already imports `rampColorAt` from `globe/ramp`, which imports three, so the renderer was in the
+eager bundle either way. The boundary is still worth having and the reason given for it was not.*
 
 ## The way in was the least interesting moment in the buffer
 
@@ -2752,6 +2755,14 @@ workaround for a boundary in the wrong place: velocities are facts about rock, n
 are in `geo/waves.ts` now, with the playback multiplier, which the legend prints and which has no
 business living beside a shader either. The prop is gone, three consumers import the physics directly,
 and the ring layer re-exports rather than redefining so there is still one source for each number.
+
+**The bundle argument for it was wrong, and the split is still right.** `globe/ramp.ts` imports three for
+its `DataTexture`, and the legend imports `rampColorAt` from it, so three has been in the eager bundle the
+whole time and nothing I did here changed that. The boundary holds on its own terms: a velocity is a fact
+about rock and does not belong beside a shader. But the claim that moving it kept a renderer out of the
+eager bundle was never true, and a decision log is only worth reading if its reasons are checkable.
+Getting three out would mean splitting `ramp.ts` into its colour maths and its texture, which is unbuilt
+and unmeasured.
 
 ## The terminator already knew what time it was there
 
@@ -3059,6 +3070,31 @@ not ask for, which is the objection DESIGN.md makes to ambient rotation. It arri
 
 Unlike a window, an unreadable moment is dropped rather than snapped: 1970 and the year 5000 are both
 simply not what the link meant, and there is no nearest valid moment to move them to.
+
+## Two more bounds restated as literals, from the same audit
+
+The window bug had siblings, and they were found the same way: reading the decoder's clamps against the
+controls they are supposed to describe rather than against what looked reasonable when written.
+
+**Magnitude clamped to 0..7 while the slider runs 1 to 7.5.** So a filter parked at the top of the scale
+shared as 7.5 and arrived as 7, and a link could ask for 0, which no control can produce. It reads
+`MAG_MIN` and `MAG_MAX` now, which is the same fix as the window's: take the bound from the thing being
+bounded.
+
+**Zoom clamped to the globe's floor, which is not the map's.** The map derives its own from the zoom at
+which the frame is exactly 360 degrees wide, and that is 0.64 at desktop and 0.19 on a phone, both under
+the globe's 0.75. Every fully zoomed-out map view therefore shared as 0.75 and arrived up to four times
+tighter, losing "see everywhere at once", which the map's own notes call the only reason to leave the
+globe.
+
+That one is not fixed by widening the literal, because the real bound depends on the viewport and the
+decoder has no viewport. It does not need one: `flyTo` already runs every shared camera through
+`clampZoom` against the live frame. So the decoder rejects nonsense and the contextual limit stays in the
+one place that can know it.
+
+**Latitude was already right**, at the camera's own 85, and now has a test saying so. Three clamps
+audited, two wrong, and the one that was correct is the one that had been derived from a named constant
+rather than typed in.
 
 ## Open, and honestly so
 
