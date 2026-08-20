@@ -1,5 +1,6 @@
 import { P_WAVE_KM_PER_S, S_WAVE_KM_PER_S } from "../geo/waves";
 import type { Quake, Reading } from "../data/types";
+import { distanceKm } from "../geo/sphere";
 
 /*
  * When the shaking reached the nearest named place.
@@ -113,4 +114,35 @@ export function seconds(value: number): string {
   }
   const minutes = Math.round(value / 60);
   return `${minutes} minutes`;
+}
+
+export interface Separation {
+  km: number;
+  /** Seconds for a P wave to cross it, or null past the distance a constant velocity can describe. */
+  p: number | null;
+}
+
+/**
+ * Great-circle distance between two events, and how long the first one's P wave took to reach the
+ * second's ground.
+ *
+ * The panel already lists neighbours with their distances, but only inside 150km and only for whatever
+ * is pinned. This answers the same question for any two events on screen, which is the difference
+ * between a display and an instrument.
+ *
+ * **The distance is always given and the time is not.** Distance is geometry and true at any separation.
+ * A travel time over a constant crustal velocity stops being true well before the antipode, so it is
+ * refused past the same `MAX_KM` the arrival sentence uses rather than being quietly extrapolated. One
+ * cap, one reason, one place to change it.
+ *
+ * Depth is deliberately absent. The arrival sentence corrects for it because a wave leaves a hypocentre
+ * for a point on the surface, and the correction is worth a third on a deep event. Here both ends are
+ * hypocentres and the honest path between them is neither the surface arc nor the straight chord but a
+ * refracted ray, so the surface distance is reported as what it is and nothing is dressed up.
+ */
+export function between(
+  aLon: number, aLat: number, bLon: number, bLat: number,
+): Separation {
+  const km = distanceKm(aLon, aLat, bLon, bLat);
+  return { km, p: km <= MAX_KM ? km / P_WAVE_KM_PER_S : null };
 }

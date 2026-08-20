@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { arrivalFor, MAX_KM, parsePlace, pathKm, seconds } from "./arrival";
+import { arrivalFor, between, MAX_KM, parsePlace, pathKm, seconds } from "./arrival";
+import { distanceLabel } from "./format";
 import { P_WAVE_KM_PER_S, S_WAVE_KM_PER_S } from "../geo/waves";
 import type { Quake, Reading } from "../data/types";
 
@@ -138,5 +139,53 @@ describe("stating a duration no more precisely than it is known", () => {
   it("refuses a nonsense input rather than printing NaN at somebody", () => {
     expect(seconds(Number.NaN)).toBe("unknown");
     expect(seconds(-5)).toBe("unknown");
+  });
+});
+
+describe("measuring between two events", () => {
+  it("gives the great-circle distance, whatever the separation", () => {
+    // A quarter of the way round: distance is geometry and is true at any separation.
+    const quarter = between(0, 0, 90, 0);
+    expect(quarter.km).toBeCloseTo((Math.PI / 2) * 6371, 0);
+  });
+
+  it("times a P wave across a regional distance", () => {
+    const near = between(0, 0, 0, 3);
+    expect(near.km).toBeCloseTo(333.6, 1);
+    expect(near.p!).toBeCloseTo(near.km / P_WAVE_KM_PER_S, 9);
+  });
+
+  it("refuses a time past the distance a constant velocity can describe", () => {
+    /*
+     * The same cap and the same reason as the arrival sentence: further out the wave dives into faster
+     * mantle and a constant would read as measured while being wrong. Distance survives, time does not.
+     */
+    const far = between(0, 0, 90, 0);
+    expect(far.km).toBeGreaterThan(MAX_KM);
+    expect(far.p).toBeNull();
+  });
+
+  it("is symmetric, since a separation has no direction", () => {
+    const there = between(141, 41, 122, -6);
+    const back = between(122, -6, 141, 41);
+    expect(there.km).toBeCloseTo(back.km, 9);
+  });
+
+  it("is zero for one event against itself", () => {
+    const same = between(141.3, 41.8, 141.3, 41.8);
+    expect(same.km).toBeCloseTo(0, 9);
+    expect(same.p!).toBeCloseTo(0, 9);
+  });
+
+  it("crosses the antimeridian the short way", () => {
+    // 2 degrees apart, not 358. A haversine handles it, and this is the assertion that says so.
+    expect(between(179, 0, -179, 0).km).toBeCloseTo(222.4, 1);
+  });
+
+  it("reads out in whole kilometres, and metres when two epicentres nearly coincide", () => {
+    expect(distanceLabel(412.4)).toBe("412 km");
+    expect(distanceLabel(1834)).toBe("1,834 km");
+    expect(distanceLabel(0.4)).toBe("400 m");
+    expect(distanceLabel(Number.NaN)).toBe("unknown");
   });
 });

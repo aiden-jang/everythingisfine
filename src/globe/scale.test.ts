@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { distanceLabel, KM_PER_DEGREE, kmPerPixel, latitudeLabel, niceScale } from "./scale";
+import { KM_PER_DEGREE, kmPerPixel, latitudeLabel, niceScale } from "./scale";
+import { distanceLabel } from "../app/format";
 
 /*
  * The scale bar, whose only interesting property is that it refuses to be one number.

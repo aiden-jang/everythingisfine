@@ -4,10 +4,11 @@ import { createGlobe } from "./scene";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 import { createReplay, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
 import type { Filters } from "../data/types";
-import { magnitude } from "../app/format";
+import { distanceLabel, magnitude } from "../app/format";
+import { between, seconds } from "../app/arrival";
 import type { RampName } from "./ramp";
 import type { SectionLine } from "../app/section";
-import { distanceLabel, kmPerPixel, latitudeLabel, niceScale } from "./scale";
+import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
 
 /*
  * The canvas, and the smallest possible amount of React around it.
@@ -151,7 +152,36 @@ export function Globe({
         node.style.opacity = at ? "1" : "0";
         if (!at || !quake) return;
         if (node === tooltip.current) {
-          node.textContent = `${magnitude(quake.primary)} ${quake.primary.place}`;
+          /*
+           * Two events, measured, and no new state to do it with.
+           *
+           * The plan asked for a way to measure between two events. An event is already pinnable and
+           * another is already hoverable, so the pair exists whenever somebody has done both, and the
+           * instrument is those two facts read together rather than a mode with an entry and an exit.
+           *
+           * The place goes on its own line and the measurement on a second, mono and unclipped, because
+           * a place name is prose that may be truncated and a number is not.
+           */
+          const pinned = live.current.selected ? feed.store.get(live.current.selected) : undefined;
+          const pair = pinned && pinned.key !== quake.key
+            ? between(
+              pinned.primary.lon, pinned.primary.lat, quake.primary.lon, quake.primary.lat,
+            )
+            : null;
+          node.replaceChildren();
+          const name = document.createElement("div");
+          name.className = "truncate";
+          name.textContent = `${magnitude(quake.primary)} ${quake.primary.place}`;
+          node.append(name);
+          if (pair) {
+            const gap = document.createElement("div");
+            gap.className = "font-mono text-dim tabular-nums";
+            // Distance always, time only inside the range a constant crustal velocity can describe.
+            gap.textContent = pair.p === null
+              ? `${distanceLabel(pair.km)} from the pin`
+              : `${distanceLabel(pair.km)} from the pin · ${seconds(pair.p)}`;
+            node.append(gap);
+          }
         }
         node.style.transform =
           `translate(${at.x - box.left}px, ${at.y - box.top + offsetY}px) ` +
@@ -695,7 +725,11 @@ export function Globe({
       </svg>
       <div
         ref={tooltip}
-        className="pointer-events-none absolute top-0 left-0 max-w-[260px] truncate border border-hairline bg-raised px-2 py-1 text-[10px] text-ink opacity-0"
+        /*
+          `truncate` moved onto the name inside. It was on the box, which clips to one line, so the
+          measurement line existed and was never shown.
+        */
+        className="pointer-events-none absolute top-0 left-0 max-w-[260px] border border-hairline bg-raised px-2 py-1 text-[10px] leading-snug text-ink opacity-0"
       />
     </div>
   );

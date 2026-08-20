@@ -198,3 +198,16 @@ export function energyPercent(share: number): string {
   if (pct >= 99) return `${pct.toFixed(1)}%`;
   return `${Math.round(pct)}%`;
 }
+
+/**
+ * A ground distance in words. `412 km`, `1,834 km`, and metres below a kilometre.
+ *
+ * One of these, not two. The scale bar had its own and the pair measurement was about to add a second
+ * that differed only in rounding and a guard, which is how "500 m" and "0.5 km" end up in one app.
+ * Separated in thousands because a bar reading `10000 km` is a number nobody parses at a glance.
+ */
+export function distanceLabel(km: number): string {
+  if (!Number.isFinite(km) || km < 0) return "unknown";
+  if (km < 1) return `${Math.round(km * 1000)} m`;
+  return `${Math.round(km).toLocaleString("en-GB")} km`;
+}
