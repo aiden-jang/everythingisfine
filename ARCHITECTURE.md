@@ -2753,6 +2753,39 @@ are in `geo/waves.ts` now, with the playback multiplier, which the legend prints
 business living beside a shader either. The prop is gone, three consumers import the physics directly,
 and the ring layer re-exports rather than redefining so there is still one source for each number.
 
+## The terminator already knew what time it was there
+
+`subsolarPoint` is computed every minute to light the globe and it answers a second question for free:
+what the sky was doing over the epicentre when the rupture happened. An M6 at three in the morning, with
+everyone asleep and indoors, is a different event from the same rupture at three in the afternoon, and
+the app held the arithmetic to say so and never said it.
+
+**Solar time rather than clock time, and that is the keyless answer rather than a lazy one.** Civil time
+needs timezone boundaries, which is a dataset or a service, and this project renders its first frame for
+anyone who clones it. Solar time needs the sun, which is already here. It is also the better quantity for
+the question being asked: what matters is where the sun stood, not which side of a political line the
+epicentre fell on. Labelled "solar" so nobody reads it as what a watch there would have said.
+
+**Apparent, not mean.** `subsolarPoint` already carries the equation of time, which its own note says is
+worth up to a quarter of an hour, so anchoring on the true subsolar longitude costs nothing and dropping
+it would reintroduce an error the terminator had already paid to remove.
+
+**Daylight comes off elevation, never off the hour.** Inside the Arctic circle at midsummer, three in the
+morning is broad daylight for weeks, and a band read from the clock would say the exact opposite. The
+zenith angle is one spherical cosine from the subsolar point, so elevation is nearly free, and the
+twilight boundary is the same six degrees the night shader spreads its terminator over. The words in the
+panel and the band on the globe therefore agree by construction rather than by coincidence.
+
+**Computed at the event's own origin time, not at `now`.** The panel re-renders with the clock, so
+reading the current time would silently answer "what is the sky doing there at this moment", which is a
+fact about nothing.
+
+**A test whose geometry was wrong while the formula was right.** I asserted that ninety degrees of
+longitude from the subsolar point at the subsolar latitude is the horizon. It is `asin(sin squared dec)`,
+0.08 degrees in March and zero only at an equinox. On the equator a quarter turn of longitude really is a
+quarter turn of arc for any declination, which is the case worth asserting, and both versions are in the
+test so the next reader does not rediscover it.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
