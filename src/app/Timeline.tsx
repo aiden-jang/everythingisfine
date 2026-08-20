@@ -40,6 +40,8 @@ export interface TimelineProps {
   parked: boolean;
   playing: boolean;
   onScrub: (fraction: number) => void;
+  /** Moves the cursor by whole buckets, signed. The keyboard path to the transport. */
+  onStep: (buckets: number) => void;
   onPlayToggle: () => void;
   onLive: () => void;
   /** The cursor's clock, already formatted, for the readout beside the transport. */
@@ -87,7 +89,7 @@ const spanLabel = (hours: number): string =>
 
 export function Timeline({
   bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange, bucketMs, fetching,
-  cursor, parked, playing, onScrub, onPlayToggle, onLive, cursorLabel,
+  cursor, parked, playing, onScrub, onStep, onPlayToggle, onLive, cursorLabel,
 }: TimelineProps): JSX.Element {
   const peak = peakCount(bars);
   const tallest = bars.find((b) => b.count === peak && peak > 0);
@@ -246,6 +248,7 @@ export function Timeline({
           type="button"
           onClick={onPlayToggle}
           aria-label={playing ? "Pause" : "Play the window through"}
+          aria-keyshortcuts="Space"
           className="h-5 w-5 shrink-0 border border-hair text-[9px] leading-none text-dim
             hover:text-ink"
         >
@@ -258,8 +261,25 @@ export function Timeline({
           step={1}
           value={Math.round(cursor * 1000)}
           onChange={(e) => onScrub(Number(e.target.value) / 1000)}
+          /*
+           * Arrows step a bucket, not a thousandth of the window.
+           *
+           * The track is 0 to 1000 so a pointer drag is smooth, and that made one arrow press
+           * 1/1000th of the span: 86 seconds at a day, 43 minutes at a month. Neither corresponds
+           * to anything drawn on the strip above, so the cursor moved and the picture did not, at
+           * every width. A bucket is the smallest step the bars can show.
+           */
+          onKeyDown={(e) => {
+            const by = e.key === "ArrowRight" || e.key === "ArrowUp" ? 1
+              : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -1
+                : 0;
+            if (by === 0) return;
+            e.preventDefault();
+            onStep(by);
+          }}
           aria-label="Time in the window"
           aria-valuetext={cursorLabel ?? "Live"}
+          aria-keyshortcuts="Comma Period"
           className="scrub-slider flex-1"
         />
         {/*

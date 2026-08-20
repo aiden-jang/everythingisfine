@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { BUCKETS } from "./histogram";
 import {
-  atFraction, clamp, dragTo, fractionOf, LIVE, PLAY_SECONDS, step, togglePlay,
+  atFraction, clamp, dragTo, fractionOf, LIVE, nudge, PLAY_SECONDS, step, togglePlay,
 } from "./scrub";
 
 const HOUR = 3_600_000;
@@ -88,5 +89,69 @@ describe("a window that moves under the cursor", () => {
     const playing = { at: span.from, playing: true };
     const shifted = { from: span.from + 2 * HOUR, to: span.to };
     expect(clamp(playing, shifted)).toEqual({ at: shifted.from, playing: true });
+  });
+});
+
+describe("stepping by the keyboard", () => {
+  const bucket = (24 * HOUR) / BUCKETS;
+
+  it("steps back from live by one bar rather than jumping to the old edge", () => {
+    const s = nudge(LIVE, span, -1);
+    expect(s.at).toBe(span.to - bucket);
+    expect(s.playing).toBe(false);
+  });
+
+  it("has nothing to do stepping forward from live, since live is the right hand end", () => {
+    expect(nudge(LIVE, span, 1)).toEqual(LIVE);
+  });
+
+  it("moves by the bucket the strip is drawn in, so the picture moves with the cursor", () => {
+    const s = nudge(nudge(LIVE, span, -1), span, -1);
+    expect(s.at).toBe(span.to - 2 * bucket);
+  });
+
+  it("hands back to live on reaching the present rather than parking one bar short", () => {
+    const s = nudge({ at: span.to - bucket / 2, playing: false }, span, 1);
+    expect(s).toEqual(LIVE);
+  });
+
+  it("stops at the old edge instead of walking off it", () => {
+    const s = nudge({ at: span.from + bucket / 2, playing: false }, span, -1);
+    expect(s.at).toBe(span.from);
+  });
+
+  it("pauses, so a press is not fighting the play it left running", () => {
+    expect(nudge({ at: span.from, playing: true }, span, 1).playing).toBe(false);
+  });
+
+  it("survives a window with no width, which a cold load has", () => {
+    expect(nudge(LIVE, { from: span.to, to: span.to }, -1)).toEqual(LIVE);
+  });
+
+  it("comes back to live after stepping back and forward the same number of times", () => {
+    /*
+     * The window has moved on in between, which is the whole trap. Three steps back and three
+     * forward land on the `to` of three presses ago, and parking a second behind the present while
+     * drawing every event in the buffer is the app saying held about a picture that is live.
+     */
+    const later = { from: span.from + 4000, to: span.to + 4000 };
+    let s = nudge(LIVE, span, -1);
+    s = nudge(s, span, -1);
+    s = nudge(s, span, -1);
+    s = nudge(s, later, 1);
+    s = nudge(s, later, 1);
+    expect(s.at).not.toBeNull();
+    expect(nudge(s, later, 1)).toEqual(LIVE);
+  });
+
+  it("still takes one press per bar going forward, rather than skipping to live", () => {
+    const s = nudge({ at: span.to - 3 * bucket, playing: false }, span, 1);
+    expect(s.at).toBe(span.to - 2 * bucket);
+  });
+
+  it("crosses the window in exactly the number of bars the strip has", () => {
+    let s = nudge(LIVE, span, -1);
+    for (let i = 1; i < BUCKETS; i += 1) s = nudge(s, span, -1);
+    expect(s.at).toBe(span.from);
   });
 });

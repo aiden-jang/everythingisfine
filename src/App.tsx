@@ -6,7 +6,7 @@ import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
 import { Timeline } from "./app/Timeline";
-import { clamp as clampScrub, dragTo, fractionOf, LIVE, step as stepScrub, togglePlay,
+import { clamp as clampScrub, dragTo, fractionOf, LIVE, nudge, step as stepScrub, togglePlay,
   type Scrub } from "./app/scrub";
 import { Resizer } from "./app/Resizer";
 import { CrossSection } from "./app/CrossSection";
@@ -384,18 +384,61 @@ export function App(): JSX.Element {
     return () => window.clearInterval(id);
   }, [scrub.playing, filters.windowMs]);
 
+  /*
+   * Escape's ladder, and the transport's keys.
+   *
+   * The cursor and its play control shipped reachable by pointer only, against DESIGN.md's rule that
+   * the app is operable from the keyboard. Tab reaches both, but tabbing to a clock to move it one
+   * bucket is not a path anybody uses, and the hint strip did not admit either of them existed.
+   *
+   * `,` and `.` rather than the arrows. The arrows are the camera, in `globe/controls.ts`, and that
+   * is not a binding worth taking off them for this. These two are the scrub convention, they are
+   * free, and they can be printed in the hint strip without the strip lying: on the transport itself
+   * the arrows step a bucket too, where they are unambiguous because it has focus.
+   *
+   * Space and the step keys only while nothing is focused, the same one rule the camera keys use, so
+   * space keeps activating a focused button and the transport keeps its own arrows. Escape is not
+   * gated that way: it is an escape.
+   */
   useEffect(() => {
+    /*
+     * Read at the press, not captured.
+     *
+     * `to` is the wall clock, so a span closed over when the listener was armed is stale by however
+     * long the tab has been open. `playedAt` above has the same note for the same reason.
+     */
+    const spanNow = (): { from: number; to: number } => {
+      const at = Date.now();
+      return { from: at - filters.windowMs, to: at };
+    };
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key !== "Escape") return;
-      // One thing at a time, innermost first. Escape closing the pin and the section together means
-      // one press can undo two decisions, and the section is the one somebody just drew.
-      if (sectionLine) setSectionLine(null);
-      else if (scrub.at !== null) setScrub(LIVE);
-      else setSelected(null);
+      if (e.key === "Escape") {
+        // One thing at a time, innermost first. Escape closing the pin and the section together means
+        // one press can undo two decisions, and the section is the one somebody just drew.
+        if (sectionLine) setSectionLine(null);
+        else if (scrub.at !== null) setScrub(LIVE);
+        else setSelected(null);
+        return;
+      }
+      if (document.activeElement && document.activeElement !== document.body) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === " ") {
+        const live = spanNow();
+        setScrub((sc) => togglePlay(clampScrub(sc, live), live));
+      } else if (e.key === "," || e.key === ".") {
+        // No shift multiplier. Shift-comma is `<` on this layout and something else on the next, so
+        // a bigger step would be a key that exists on some keyboards and cannot be printed in the
+        // hint strip. One press is one bar; the window is twenty-four of them.
+        const live = spanNow();
+        setScrub((sc) => nudge(clampScrub(sc, live), live, e.key === "." ? 1 : -1));
+      } else return;
+      // Space scrolls a page, and this one is `overflow: hidden` for exactly that reason already.
+      // Preventing it here as well means the transport does not depend on that staying true.
+      e.preventDefault();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [sectionLine, scrub.at]);
+  }, [sectionLine, scrub.at, filters.windowMs]);
 
   const toggleSource = (id: SourceId): void => {
     setFilters((f) => {
@@ -718,6 +761,7 @@ export function App(): JSX.Element {
               parked={view.at !== null}
               playing={view.playing}
               onScrub={(f) => setScrub(dragTo(f, span))}
+              onStep={(buckets) => setScrub(nudge(view, span, buckets))}
               onPlayToggle={() => setScrub(togglePlay(view, span))}
               onLive={() => setScrub(LIVE)}
               cursorLabel={view.at === null ? null : clock(view.at)}
@@ -876,6 +920,8 @@ export function App(): JSX.Element {
                 ["arrows", flat ? "pan" : "orbit"],
                 ["+ -", "zoom"],
                 ["0", "reset"],
+                ["space", view.playing ? "pause" : "play"],
+                [", .", "step"],
                 ...(flat ? [["shift-drag", "section"] as const] : []),
                 ["esc", "clear"],
               ] as const).map(([key, what]) => (

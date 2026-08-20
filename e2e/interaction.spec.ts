@@ -992,3 +992,72 @@ test("playing advances the cursor against the wall clock", async ({ page }) => {
    */
   expect(later).toBeGreaterThan(early);
 });
+
+test("the transport has a keyboard path, and the keys are written down", async ({ page }) => {
+  /*
+   * The cursor and its play control shipped reachable by pointer only, which is the rule in
+   * DESIGN.md that the camera keys were added to satisfy and that this half of the interface then
+   * broke. Tab reaches both, but tabbing to a clock to move it one bar is not a path anybody uses.
+   */
+  await installFeeds(page, { count: 400 });
+  await page.goto("/");
+  await waitForData(page);
+  // Past the entrance, which drives the same reveal and would otherwise be the thing under test.
+  await page.waitForTimeout(4000);
+
+  const zones = page.locator(".zones");
+  await expect(zones).toContainText("play");
+  await expect(zones).toContainText("step");
+
+  const cursor = page.getByRole("slider", { name: "Time in the window" });
+  await expect(cursor).toHaveValue("1000");
+
+  /*
+   * A bar per press, and this is the assertion that says so.
+   *
+   * The track is 0 to 1000 so a drag is smooth, which made the native arrow step a thousandth of the
+   * window: three presses would read 997 here instead of 875. Neither of those thousandths
+   * corresponds to anything drawn on the strip above it.
+   */
+  await page.keyboard.press(",");
+  await page.keyboard.press(",");
+  await page.keyboard.press(",");
+  const three = Number(await cursor.inputValue());
+  expect(Math.abs(three - (1000 - 3 * (1000 / 24)))).toBeLessThan(3);
+  await expect(page.getByText("held", { exact: true })).toBeVisible();
+
+  // Forward the same number of times comes back to live, rather than parking a second behind the
+  // present with every event drawn and the headline still saying held.
+  await page.keyboard.press(".");
+  expect(Number(await cursor.inputValue())).toBeGreaterThan(three);
+  await page.keyboard.press(".");
+  await page.keyboard.press(".");
+  await expect(cursor).toHaveValue("1000");
+  await expect(page.getByText("held", { exact: true })).toBeHidden();
+
+  // Space is the play button. From live it starts at the old edge, so the cursor is somewhere it was
+  // not, and moving.
+  await page.keyboard.press(" ");
+  await page.waitForTimeout(700);
+  const playing = Number(await cursor.inputValue());
+  expect(playing).toBeLessThan(1000);
+  await page.waitForTimeout(1200);
+  expect(Number(await cursor.inputValue())).toBeGreaterThan(playing);
+
+  await page.keyboard.press(" ");
+  const paused = Number(await cursor.inputValue());
+  await page.waitForTimeout(1000);
+  // Within a unit, not equal: a parked cursor's fraction drifts as `to` moves under it, which is the
+  // window sliding rather than the cursor going anywhere.
+  expect(Math.abs(Number(await cursor.inputValue()) - paused)).toBeLessThan(2);
+
+  // A focused control keeps its own keys, the same one rule the camera keys follow.
+  await page.locator("#mag").focus();
+  await page.keyboard.press(",");
+  expect(Math.abs(Number(await cursor.inputValue()) - paused)).toBeLessThan(2);
+
+  // On the transport itself the arrows are the step, where there is no camera to confuse them with.
+  await cursor.focus();
+  await page.keyboard.press("ArrowLeft");
+  expect(paused - Number(await cursor.inputValue())).toBeGreaterThan(30);
+});
