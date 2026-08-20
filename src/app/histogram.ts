@@ -52,7 +52,26 @@ export interface Activity {
   strongest: Quake | null;
   /** How long one bar covers, so a caller can label the axis without redoing the division. */
   bucketMs: number;
+  /**
+   * The strongest event's share of all the energy released in the window, or null when nothing passes.
+   *
+   * Here for the same reason `strongest` is: this walk already visits every event, and the ratio wants
+   * a sum over all of them. It exists because magnitude is logarithmic and almost nobody carries that
+   * around: two points of magnitude is a thousandfold of energy, so one large event routinely accounts
+   * for better than 99 percent of a month, and a number that high is the fact doing the teaching.
+   */
+  energyShare: number | null;
 }
+
+/**
+ * Energy, proportional and not in joules.
+ *
+ * The Gutenberg-Richter relation is log E = 1.5M + 4.8 for joules, and the constant is dropped because
+ * every use of this is a ratio, where it cancels. Keeping it would put a figure like 4e9 joules on
+ * screen, which reads as a measurement of one earthquake's energy budget, and radiated seismic energy
+ * from a magnitude is an estimate with a wide error bar rather than a reading.
+ */
+export const energyOf = (magnitude: number): number => 10 ** (1.5 * magnitude);
 
 /**
  * Bars oldest first, so the array reads left to right as the axis does.
@@ -71,6 +90,11 @@ export function histogram(
   const counts = new Array<number>(BUCKETS).fill(0);
   const peaks = new Array<number | null>(BUCKETS).fill(null);
   let strongest: Quake | null = null;
+  let energyTotal = 0;
+  // The winner's magnitude, tracked beside it, because the share needs the number and not the event.
+  // Reading it back off `strongest` after the walk is also what TypeScript will not allow: it cannot
+  // see that the callback ran, so it narrows the variable to null and the dereference is an error.
+  let topMagnitude = Number.NEGATIVE_INFINITY;
 
   forEach((quake) => {
     if (!passesMagnitude(quake, filters.minMagnitude)) return;
@@ -91,7 +115,11 @@ export function histogram(
     counts[bucket] += 1;
     const m = quake.primary.magnitude;
     if (peaks[bucket] === null || m > peaks[bucket]!) peaks[bucket] = m;
-    if (strongest === null || m > strongest.primary.magnitude) strongest = quake;
+    if (strongest === null || m > strongest.primary.magnitude) {
+      strongest = quake;
+      topMagnitude = m;
+    }
+    energyTotal += energyOf(m);
   });
 
   const bars = Array.from({ length: BUCKETS }, (_, i) => {
@@ -113,7 +141,17 @@ export function histogram(
     };
   });
 
-  return { bars, strongest, bucketMs };
+  /*
+   * One division at the end, rather than a share maintained through the walk.
+   *
+   * The strongest event changes during the pass, so an incremental share would have to be recomputed
+   * every time it did. This cannot go out of step with the winner.
+   */
+  const energyShare = energyTotal > 0 && Number.isFinite(topMagnitude)
+    ? energyOf(topMagnitude) / energyTotal
+    : null;
+
+  return { bars, strongest, bucketMs, energyShare };
 }
 
 /** The tallest bar, for scaling. Zero when nothing passes, which callers must not divide by. */

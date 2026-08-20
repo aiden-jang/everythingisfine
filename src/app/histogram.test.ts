@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { BUCKETS, histogram, peakCount, totalIn } from "./histogram";
+import { BUCKETS, energyOf, histogram, peakCount, totalIn } from "./histogram";
+import { energyPercent } from "./format";
 import type { Filters, Quake, Reading } from "../data/types";
 
 const NOW = 1_700_000_000_000;
@@ -144,5 +145,88 @@ describe("the strongest event in the window", () => {
 
   it("is null when nothing is in the window", () => {
     expect(histogram(walk([]), filters(), NOW, null).strongest).toBeNull();
+  });
+});
+
+describe("the energy the window released", () => {
+  it("grows a thousandfold every two points of magnitude", () => {
+    // The relation the whole feature exists to make legible.
+    expect(energyOf(6) / energyOf(4)).toBeCloseTo(1000, 6);
+    expect(energyOf(5) / energyOf(4)).toBeCloseTo(31.62, 2);
+  });
+
+  it("gives one large event almost all of a busy window", () => {
+    /*
+     * The number that makes this worth printing. One M6.4 against four hundred events near M2.5: the
+     * big one is better than 99.9 percent of the energy, which is the log scale landing on a reader who
+     * has just scrolled a list of four hundred rows.
+     */
+    const many = Array.from({ length: 400 }, (_, i) =>
+      quake({ magnitude: 2.5, time: NOW - i * 60_000 }));
+    const big = quake({ magnitude: 6.4, time: NOW - HOUR });
+    const { energyShare } = histogram(walk([...many, big]), filters(), NOW, NOW - 24 * HOUR);
+    expect(energyShare!).toBeGreaterThan(0.999);
+  });
+
+  it("gives no dominant event only a modest share", () => {
+    // A window of similar magnitudes splits the energy, and the sentence is suppressed below a half
+    // for exactly this case: there is nothing to teach when nothing dominates.
+    const many = Array.from({ length: 400 }, (_, i) =>
+      quake({ magnitude: 2.5, time: NOW - i * 60_000 }));
+    const top = quake({ magnitude: 4, time: NOW - HOUR });
+    const { energyShare } = histogram(walk([...many, top]), filters(), NOW, NOW - 24 * HOUR);
+    expect(energyShare!).toBeLessThan(0.5);
+    expect(energyShare!).toBeGreaterThan(0.1);
+  });
+
+  it("is the whole of a window holding one event", () => {
+    const { energyShare } = histogram(
+      walk([quake({ magnitude: 5 })]), filters(), NOW, NOW - 24 * HOUR,
+    );
+    expect(energyShare!).toBeCloseTo(1, 9);
+  });
+
+  it("is null when nothing passes, rather than a zero to divide by", () => {
+    expect(histogram(walk([]), filters(), NOW, NOW - 24 * HOUR).energyShare).toBeNull();
+    expect(histogram(
+      walk([quake({ magnitude: 3 })]), filters({ minMagnitude: 9 }), NOW, NOW - 24 * HOUR,
+    ).energyShare).toBeNull();
+  });
+
+  it("tracks the share of the same event it calls strongest", () => {
+    // The winner changes during the walk, so these two have to come from one source or they drift.
+    const qs = [
+      quake({ magnitude: 3 }), quake({ magnitude: 6.1 }), quake({ magnitude: 4 }),
+    ];
+    const out = histogram(walk(qs), filters(), NOW, NOW - 24 * HOUR);
+    expect(out.strongest!.primary.magnitude).toBe(6.1);
+    expect(out.energyShare!).toBeCloseTo(
+      energyOf(6.1) / (energyOf(3) + energyOf(6.1) + energyOf(4)), 9,
+    );
+  });
+
+  it("counts only what the filters admit, so the share describes the picture", () => {
+    const qs = [quake({ magnitude: 6.4 }), quake({ magnitude: 1.5 })];
+    // The 1.5 is below the floor, so it is neither drawn nor counted against the total.
+    const out = histogram(walk(qs), filters({ minMagnitude: 2 }), NOW, NOW - 24 * HOUR);
+    expect(out.energyShare!).toBeCloseTo(1, 9);
+  });
+});
+
+describe("stating that share honestly", () => {
+  it("refuses to round 99.94 up to a whole truth it does not have", () => {
+    // The remainder is not nothing, it is four hundred events.
+    expect(energyPercent(0.9994)).toBe("over 99.9%");
+    expect(energyPercent(0.99999)).toBe("over 99.9%");
+  });
+
+  it("keeps a decimal only while it is doing work", () => {
+    expect(energyPercent(0.994)).toBe("99.4%");
+    expect(energyPercent(0.31)).toBe("31%");
+  });
+
+  it("says none rather than printing a nonsense percentage", () => {
+    expect(energyPercent(0)).toBe("none");
+    expect(energyPercent(Number.NaN)).toBe("none");
   });
 });
