@@ -2648,6 +2648,27 @@ has now, so the next change to what a front draws cannot break it for the wrong 
 The legend sentence changed with the mark, and so did the comment on its glyph: two concentric circles
 were drawn there to suggest expansion, and they are now literally the two fronts.
 
+## The app never said what it was called
+
+`First Motion` is a term of art. It is the initial polarity of a P arrival, which is a fine name for
+this app and a meaningless one to anybody who has not read a seismogram, and nothing anywhere in the
+interface said so.
+
+It could not have been written until the previous change. First motion is a property of the P arrival,
+and before the second ring there was no P wave anywhere on screen for the name to point at, so a
+definition would have been trivia sitting next to marks that had nothing to do with it. Now the legend
+names that front two lines above, and the explanation is a footnote to something the reader is looking
+at.
+
+Which is also why it is indented under the rings row with no glyph of its own. It is the one line in
+the legend that explains a word rather than a mark, and giving it a swatch would make it a sixth thing
+to hunt for on the map.
+
+**The arrival state was the other candidate and lost.** "Asking USGS and EMSC for the last day" is on
+screen exactly when a first-time viewer is waiting with nothing to do, which is better timing than the
+legend will ever have. It is also on screen only then: the explanation would be available once, to
+people who happened to be watching a cold load, and never again to anybody who wondered later.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

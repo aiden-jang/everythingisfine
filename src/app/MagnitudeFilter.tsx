@@ -169,6 +169,24 @@ export function MagnitudeFilter(
           a quake is measured.
         </span>
       </div>
+
+      {/*
+        What the app is called, and why.
+
+        The one line here that explains a word rather than a mark, which is why it is indented under
+        the rings rather than given a glyph of its own: it is a footnote to the P-wave named above it,
+        not a sixth thing to look for on the map.
+
+        It could only be written once that P front existed. Before the second ring there was nothing on
+        screen for the name to point at, and a definition with no referent is trivia. The arrival state
+        in the rail was the other candidate, and it is better timed and worse placed: it is on screen
+        only while a cold load is waiting, so the explanation would be available exactly once and never
+        again to anybody who wanted it later.
+      */}
+      <p className="mt-1.5 pl-[23px] text-[11px] leading-relaxed text-faint">
+        First motion is a seismogram term: which way the ground jumps as that P wave lands, and enough
+        of them together give the direction the fault slipped.
+      </p>
     </div>
   );
 }
