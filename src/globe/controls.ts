@@ -118,6 +118,14 @@ export interface Controls {
   morph: () => number;
   /** Screen position of a geographic point, or null when it is round the back. */
   project: (lon: number, lat: number) => { x: number; y: number } | null;
+  /**
+   * Degrees of the map covered by one screen pixel. Only meaningful once flat.
+   *
+   * Equal in both axes, because the projection puts 90 degrees in a world unit either way, and it is
+   * degrees rather than kilometres because turning it into a distance needs a latitude and this does
+   * not have an opinion about which one. See `scale.ts`.
+   */
+  degPerPx: () => number;
 }
 
 export function createControls(
@@ -786,6 +794,9 @@ export function createControls(
     },
     morph: () => morph,
     state: () => ({ lon, lat, zoom }),
+    // The visible height at distance d is 2 d tan(fov/2), which is what `focalPx` is the reciprocal
+    // half of, so a pixel is d/focalPx world units and a world unit is 90 degrees.
+    degPerPx: () => (90 * dist()) / focalPx(),
     setFit: (d, byHeight) => {
       fit = d;
       heightFit = byHeight;

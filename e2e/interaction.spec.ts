@@ -1161,3 +1161,55 @@ test("enter takes the first result, so the box does not swallow the query", asyn
   // The first hit for a place-only query is the place, which pins as well as flies.
   await expect(page.locator(".zone-panel")).toContainText(/Flores Sea/i);
 });
+
+test("the map carries a scale, and it names the latitude it is true at", async ({ page }) => {
+  /*
+   * The globe implies scale by being a globe and the flat map gave nothing to read a distance
+   * against. The interesting half is that on equirectangular a horizontal bar is only true where it
+   * is drawn: meridians are evenly spaced, so the same pixels cover half the ground at sixty degrees
+   * as at the equator. A bar labelled "2,000 km" with no latitude on it would be wrong nearly
+   * everywhere.
+   */
+  await installFeeds(page, { count: 200, silent: false });
+  await page.goto("/#at=140,0,0.9&m=6");
+  await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
+  await page.waitForTimeout(4000);
+
+  const scale = page.locator("[data-scale]");
+  /*
+   * Asserted on opacity, not on visibility. The bar fades rather than unmounting, so it keeps its box
+   * and Playwright rightly calls an `opacity: 0` element visible; the opacity is the mechanism.
+   */
+  const shown = () => page.evaluate(() => getComputedStyle(
+    document.querySelector("[data-scale]")!,
+  ).opacity);
+  // Nothing on the globe: a ball carries its own size and nobody reads a distance off one.
+  expect(await shown()).toBe("0");
+
+  await page.getByRole("button", { name: "Map" }).click();
+  await expect.poll(shown, { timeout: 10_000 }).toBe("1");
+  await expect(scale).toContainText(/^[\d,]+ km at 0°$/);
+  // The rule, by its own hook. Matching on the text instead found the Globe's root div, whose text
+  // contains the label too, and measured the selection ring inside it: equal every time, for nothing.
+  const ruleWidth = () => page.evaluate(() => document
+    .querySelector("[data-scale] > div")?.getBoundingClientRect().width ?? 0);
+  const atEquator = await ruleWidth();
+  expect(atEquator).toBeGreaterThan(20);
+
+  /*
+   * North, and the bar has to change. The camera keys only fire while nothing has focus, which the
+   * Map button still had, so the blur is the part that makes this test test anything.
+   */
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  for (let i = 0; i < 6; i += 1) await page.keyboard.press("ArrowUp");
+  await page.waitForTimeout(1200);
+
+  await expect(scale).toContainText(/km at \d+°N$/);
+  const atLatitude = await ruleWidth();
+  /*
+   * Longer, for the same round number of kilometres: north of the equator this projection stretches
+   * east-west, so a fixed distance takes more pixels. If this ever comes back equal, the `cos` has
+   * been dropped and the bar is quoting an equatorial measurement over Alaska.
+   */
+  expect(atLatitude).toBeGreaterThan(atEquator + 5);
+});
