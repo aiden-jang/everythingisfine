@@ -1,5 +1,5 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
-import { HOURS, peakCount, type Bar } from "./histogram";
+import { peakCount, type Bar } from "./histogram";
 
 /*
  * The day as a strip, and the control that selects part of it.
@@ -9,21 +9,31 @@ import { HOURS, peakCount, type Bar } from "./histogram";
  * window. Hours outside it dim in place rather than disappear, so the day stays whole and you can
  * see what has been cut instead of inferring it.
  *
- * The slider's value is the **left edge**, not the length. Sliding right shrinks the window, which
- * is the only mapping where the thumb is where it looks like it is. A slider whose value counted
- * hours would have to run backwards to stay spatially truthful, and the last control in this app
- * that inverted a direction to be clever took three attempts to get right.
+ * The window is named, not dragged.
+ *
+ * It used to be a slider on this strip whose value was the window's left edge, which meant the strip
+ * showed a day and the globe showed whatever part of it the thumb had kept: the two views disagreeing
+ * by construction. It also fixed the bucket at an hour, and a month of hourly bars is seven hundred
+ * and twenty of them in two hundred pixels.
+ *
+ * Three buttons instead, and the strip is always exactly the window. That frees the strip of one of
+ * the three gestures it was carrying, so hovering a bar can belong to the bar rather than to a slider
+ * lying over the top of them all.
  */
 
 export interface TimelineProps {
   bars: Bar[];
   ramp: RampName;
-  /** Hours, 1 to 24. */
+  /** How long the window is, in hours. */
   hours: number;
-  /** The hour the pointer is holding, in whole hours before now, or null. */
+  /** The bucket the pointer is holding, in whole buckets before now, or null. */
   focusHour: number | null;
-  onFocusHourChange: (hoursAgo: number | null) => void;
+  onFocusHourChange: (bucketsAgo: number | null) => void;
   onHoursChange: (hours: number) => void;
+  /** How long one bar covers, for the readout and the axis. */
+  bucketMs: number;
+  /** True while a wider backlog is still arriving, so the strip can say so rather than look empty. */
+  fetching: boolean;
   /** Where the cursor sits across the strip, 0 at the old edge and 1 at now. Live reads as 1. */
   cursor: number;
   /** True when the cursor is standing somewhere rather than following the present. */
@@ -47,17 +57,43 @@ const BAR_MAX_PX = 39;
  * printing that reads as false precision about a bucket boundary nobody chose. The axis either side
  * is already relative, so the readout matches it.
  */
-const hoursAgo = (h: number): string => (h === 0 ? "this hour" : `${h}h ago`);
+const HOUR_MS = 3_600_000;
+
+/** The windows on offer, and the only lengths the strip is ever asked to divide. */
+export const WINDOWS = [
+  { hours: 24, label: "24h" },
+  { hours: 7 * 24, label: "7d" },
+  { hours: 30 * 24, label: "30d" },
+] as const;
+
+/**
+ * How long ago a bucket was, in the coarsest unit that does not lie about the bucket's own width.
+ *
+ * A thirty-hour bucket described as "30h ago" reads as a precise moment thirty hours back, when it is
+ * a day and a bit wide. Naming it in days at that size says roughly the right thing, and saying
+ * roughly the right thing about a bucket is the honest option when the bucket is roughly that wide.
+ */
+const bucketAgo = (bucketsAgo: number, bucketMs: number): string => {
+  if (bucketsAgo === 0) return "latest";
+  const ms = bucketsAgo * bucketMs;
+  if (bucketMs >= 24 * HOUR_MS) return `${Math.round(ms / (24 * HOUR_MS))}d ago`;
+  const h = Math.round(ms / HOUR_MS);
+  return h >= 48 ? `${Math.round(h / 24)}d ago` : `${h}h ago`;
+};
+
+/** The axis's left edge. The right is always now. */
+const spanLabel = (hours: number): string =>
+  (hours >= 48 ? `${Math.round(hours / 24)}d ago` : `${hours}h ago`);
 
 export function Timeline({
-  bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange,
+  bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange, bucketMs, fetching,
   cursor, parked, playing, onScrub, onPlayToggle, onLive, cursorLabel,
 }: TimelineProps): JSX.Element {
   const peak = peakCount(bars);
   const tallest = bars.find((b) => b.count === peak && peak > 0);
   const observed = bars.some((b) => b.observed);
   const unobserved = observed && bars.some((b) => !b.observed);
-  const held = focusHour === null ? null : bars.find((b) => b.hoursAgo === focusHour) ?? null;
+  const held = focusHour === null ? null : bars.find((b) => b.bucketsAgo === focusHour) ?? null;
 
   /*
    * Square root, not linear.
@@ -77,33 +113,62 @@ export function Timeline({
       <div className="flex items-baseline justify-between gap-3">
         {/* Still a label, just no longer an uppercase badge: the slider below needs an accessible
             name, and swapping the element for a span quietly took it away. */}
-        <label className="text-[11px] text-faint" htmlFor="window">Activity</label>
+        {/*
+          Buttons, not a label for a slider that no longer exists. The group names itself by what its
+          options are, which is what makes the word "Activity" beside them redundant rather than
+          missing.
+        */}
+        <div className="flex items-center gap-1" role="group" aria-label="Window">
+          {WINDOWS.map((w) => (
+            <button
+              key={w.hours}
+              type="button"
+              onClick={() => onHoursChange(w.hours)}
+              aria-pressed={hours === w.hours}
+              className={`border px-1.5 py-0.5 font-mono text-[10.5px] ${
+                hours === w.hours
+                  ? "border-hair bg-raised text-ink"
+                  : "border-transparent text-faint hover:text-dim"
+              }`}
+            >
+              {w.label}
+            </button>
+          ))}
+        </div>
         {/*
           The held hour replaces the peak while hovering. Both are readings of the same strip and
           only one of them is being asked for; showing them together put two numbers side by side
           with nothing to say which the pointer was over.
         */}
         <span className="font-mono text-[10.5px] text-faint">
-          {held
-            ? `${held.count} ${held.count === 1 ? "event" : "events"} · ${hoursAgo(held.hoursAgo)}`
-            : peak > 0 && tallest
-              ? `peak ${peak} · ${hoursAgo(tallest.hoursAgo)}`
-              : ""}
+          {fetching
+            ? "fetching the backlog"
+            : held
+              ? `${held.count} ${held.count === 1 ? "event" : "events"} · `
+                + `${bucketAgo(held.bucketsAgo, bucketMs)}`
+              : peak > 0 && tallest
+                ? `peak ${peak} · ${bucketAgo(tallest.bucketsAgo, bucketMs)}`
+                : ""}
         </span>
       </div>
 
-      <div className="relative mt-2.5" style={{ height: `${STRIP_PX}px` }}>
+      <div
+        className="relative mt-2.5"
+        style={{ height: `${STRIP_PX}px` }}
+        onPointerLeave={() => onFocusHourChange(null)}
+      >
         <div className="flex h-full items-end gap-px">
           {bars.map((bar) => (
             <div
-              key={bar.hoursAgo}
+              key={bar.bucketsAgo}
+              onPointerEnter={() => onFocusHourChange(bar.bucketsAgo)}
               className={`flex h-full flex-1 items-end ${
                 // Chrome, not hue: the held hour is an interface state, and the fills beside it are
                 // data. Behind the bar so it reads as a backdrop rather than as a value.
                 // A tick at the top of the column plus a lifted backdrop. The backdrop alone was
                 // invisible: the bar fills most of the cell, so the only part of it anybody could
                 // have seen was the few pixels of headroom above a peak.
-                bar.hoursAgo === focusHour ? "border-t border-ink bg-raised" : "border-t border-transparent"
+                bar.bucketsAgo === focusHour ? "border-t border-ink bg-raised" : "border-t border-transparent"
               }`}
             >
               {bar.observed ? (
@@ -152,45 +217,6 @@ export function Timeline({
           />
         ) : null}
 
-        {/*
-          The excluded hours, dimmed in place. Not interactive: the slider under it is.
-          Heavier than the magnitude track's veil, because these bars are saturated fills rather
-          than a gradient, and at 78% they came through muddy rather than off.
-        */}
-        <div
-          className="pointer-events-none absolute inset-y-0 left-0 bg-deck/88"
-          style={{ width: `${((HOURS - hours) / HOURS) * 100}%` }}
-        />
-
-        {/*
-          One element carries both interactions, because it is already covering the bars: dragging
-          sets the window, moving across it holds an hour. Reading hover from the individual bars
-          would mean the slider swallowing every pointer event that was supposed to reach them.
-
-          Whole hours only, so this fires once per bar crossed rather than once per pixel, and the
-          globe re-syncs at the rate the strip has bars.
-        */}
-        <input
-          id="window"
-          type="range"
-          min={0}
-          max={HOURS - 1}
-          step={1}
-          value={HOURS - hours}
-          onChange={(e) => onHoursChange(HOURS - Number(e.target.value))}
-          onPointerMove={(e) => {
-            const box = e.currentTarget.getBoundingClientRect();
-            const at = Math.floor(((e.clientX - box.left) / box.width) * HOURS);
-            const next = HOURS - 1 - Math.max(0, Math.min(HOURS - 1, at));
-            if (next !== focusHour) onFocusHourChange(next);
-          }}
-          onPointerLeave={() => onFocusHourChange(null)}
-          // A touch drag sets the window and should not leave an hour held behind it.
-          onPointerUp={() => onFocusHourChange(null)}
-          aria-valuetext={`Last ${hours} ${hours === 1 ? "hour" : "hours"}`}
-          className="timeline-slider absolute inset-0 h-full w-full"
-          aria-describedby="window-scale"
-        />
       </div>
 
       <div
@@ -203,7 +229,7 @@ export function Timeline({
           one rail, and nothing to tell you which one you had just changed. The thumb marks the
           window here, the count names it there, and a screen reader gets it from `aria-valuetext`.
         */}
-        <span>24h ago</span>
+        <span>{spanLabel(hours)}</span>
         <span>now</span>
       </div>
 
