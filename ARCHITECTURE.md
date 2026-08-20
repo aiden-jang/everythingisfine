@@ -2449,6 +2449,38 @@ placed at the container's own left edge, underneath the rail. And `xl:left-[calc
 silently did nothing, because `calc` requires whitespace around its `+`; a margin does the same job
 with no arithmetic to get wrong.
 
+## The signature had nothing saying what it was
+
+The wavefront rings are the thing this design is built around, and the legend explained the ramp, the
+size encoding, the depth carve and the plate boundaries while saying nothing at all about them.
+
+They are also the mark that needs it most, and for a reason the other four do not have: every other
+encoding belongs to a dot that sits still and can be studied. A ring appears when an event lands,
+expands for about fifteen seconds and is gone. A first time viewer gets one look at it, cannot go back
+for a second, and had nothing anywhere to check it against.
+
+**A sentence rather than a label, because the multiplier is part of what the mark is.** "Plate
+boundaries" works in two words; a ring cannot, because a front crossing the map at twenty times real
+speed with nothing saying so would be the only dishonest mark on screen. So the legend reads *a ring
+is the P-wave front leaving a new epicentre, sped up x20 or it would not appear to move*, which is
+what it is, what the number is a multiplier of, and why the number exists.
+
+**The header's "wavefront x20" came out.** It was a bare figure with nothing to attach it to, and the
+legend now prints the same number in the one place it means something. Two identical figures in one
+viewport with only one of them explained is exactly the trap the activity axis fell into when it
+carried "last N hours" beside a headline printing the same phrase. It was `hidden lg:inline`, so on
+anything narrower than a laptop there had never been a persistent readout to lose, and the header
+comment about running out of horizontal room got its wish as a side effect.
+
+**Two circles, not one.** The glyph fades outward because that is what the mark does, and a single
+outline would read as the hollow deep marker two rows above it. On the ramp, like the markers, since a
+ring carries its own event's magnitude colour, which is why the row sits inside the `data-ramp`
+subtree the hue rule exempts.
+
+**The constant is passed, not imported.** `PLAYBACK` lives in `globe/rings.ts` next to the physics it
+is derived from, and that module imports three. The legend is in the eager bundle while the canvas is
+behind a `lazy`, so importing the constant there would have pulled the renderer in for one number.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

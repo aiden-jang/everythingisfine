@@ -558,6 +558,7 @@ export function App(): JSX.Element {
                 ramp={ramp}
                 value={filters.minMagnitude}
                 onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
+                playback={PLAYBACK}
               />
               {/*
                 Sources sit with the magnitude control because both answer "what is on the globe".
@@ -643,8 +644,14 @@ export function App(): JSX.Element {
         {/*
           Was `whitespace-nowrap`, which meant adding one button pushed the header 120px past a
           phone viewport and 42px past a tablet: nowrap does not shrink, it overflows. The controls
-          stay and the two informational labels drop as room runs out, since a display toggle is
-          something to press and "wavefront x20" is something to read.
+          stay and the informational labels drop as room runs out, since a display toggle is
+          something to press and a status line is something to read.
+
+          "wavefront x20" used to sit here, and the legend now says the same number inside the
+          sentence that explains what it is a multiplier *of*. Two identical figures in one viewport
+          with only one of them meaning anything is the trap the activity axis already fell into. It
+          was also `hidden lg:inline`, so on anything smaller than a laptop there was never a
+          persistent readout to lose.
         */}
         <div className="ml-auto flex min-w-0 items-center gap-3">
           <button
@@ -670,9 +677,6 @@ export function App(): JSX.Element {
               Colourblind ramp {ramp === "cividis" ? "on" : "off"}
             </span>
           </button>
-          <span className="hidden text-[11px] whitespace-nowrap text-faint lg:inline">
-            wavefront &times;{PLAYBACK}
-          </span>
           <span className="flex items-center gap-2 text-[11px] whitespace-nowrap text-dim">
             <span
               className={`inline-block size-[6px] rounded-full ${
