@@ -1232,6 +1232,9 @@ test("the legend says what a ring is, since nothing else did", async ({ page }) 
   // The gap is the reason there are two, so the sentence has to carry it and not just name them.
   await expect(zones).toContainText("how distance to a quake is measured");
   await expect(zones).toContainText("×20");
+  // The app never said what its own name meant, and the name is a term of art. It sits beside the
+  // P-wave because before that front existed there was nothing on screen for it to point at.
+  await expect(zones).toContainText("First motion is a seismogram term");
 
   /*
    * Once, not twice. The header carried a bare "wavefront ×20" that the sentence now states in the
