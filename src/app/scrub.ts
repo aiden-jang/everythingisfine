@@ -1,3 +1,5 @@
+import { BUCKETS } from "./histogram";
+
 /*
  * The window, as somewhere you can stand rather than only a total.
  *
@@ -111,4 +113,40 @@ export function clamp(scrub: Scrub, span: Span): Scrub {
   if (scrub.at >= span.to) return LIVE;
   if (scrub.at < span.from) return { at: span.from, playing: scrub.playing };
   return scrub;
+}
+
+/**
+ * Steps the cursor by whole buckets.
+ *
+ * A bucket rather than a fixed span, because the bucket is the unit the strip is drawn in and the
+ * readout names. A key that moved the cursor by an hour would be a twenty-fourth of a day and a
+ * seven-hundred-and-twentieth of a month, so one press would mean two different things depending on
+ * a control somewhere else. Reading `BUCKETS` keeps the two in step by construction.
+ *
+ * No snapping to a boundary. The buckets are anchored to `now`, which moves continuously, so a grid
+ * to snap onto slides out from under the cursor between one press and the next.
+ *
+ * From live, back is one bucket before the present, and forward has nothing to do: live is already
+ * the right hand end. Jumping to the old edge is the other reading and it is what play does.
+ *
+ * A step forward that lands anywhere in the last bucket hands back to live, rather than only one
+ * that overshoots `to`. The last bucket is the bucket ending now, so a cursor inside it reveals
+ * everything and differs from live in one respect: an event arriving while you watch would not
+ * appear. Without this, three steps back and three forward parked on the `to` of three presses ago,
+ * which the wall clock has since moved past, and the app read as exactly live while saying held.
+ *
+ * Always pauses, for the reason `dragTo` does.
+ */
+export function nudge(scrub: Scrub, span: Span, buckets: number): Scrub {
+  const width = span.to - span.from;
+  if (width <= 0) return LIVE;
+  const bucket = width / BUCKETS;
+  if (scrub.at === null) {
+    if (buckets >= 0) return LIVE;
+    return { at: span.to - bucket * -buckets, playing: false };
+  }
+  const next = scrub.at + bucket * buckets;
+  if (next >= span.to) return LIVE;
+  if (buckets > 0 && next > span.to - bucket) return LIVE;
+  return { at: Math.max(span.from, next), playing: false };
 }

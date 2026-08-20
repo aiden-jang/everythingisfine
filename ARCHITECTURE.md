@@ -2232,6 +2232,34 @@ survived a design contract with a phone breakpoint in it, because nothing in tha
 canvas. It was found by taking a screenshot on a phone-shaped window and noticing that the ocean
 stopped.
 
+## The transport shipped pointer-only
+
+The cursor and its play control had no key bound to them, three entries after the one above that says
+a documented shortcut nobody can see is a secret. Tab reaches both, so this was never inoperable, but
+tabbing to a clock to move it one bar is not a path anybody uses, and the hint strip did not admit
+either control existed.
+
+**The arrows were not available, and taking them would have been the wrong trade.** The obvious
+binding is left and right, and left and right are the camera. Rebinding by mode, so they scrub while
+parked and orbit while live, gives one key two meanings decided by state somewhere else, and the hint
+strip's own rule is that a row claiming a key that does something else is worse than no row. So `,`
+and `.`, which are the scrub convention, are free, and can be printed without the strip lying. Space
+plays. Both go through the same "only while nothing is focused" rule the camera keys use, so a focused
+button keeps space and a focused slider keeps its arrows.
+
+**On the transport itself the arrows are the step, and that was the actual bug.** The track is 0 to
+1000 so a drag is smooth, which made one arrow press a thousandth of the window: 86 seconds at a day,
+43 minutes at a month. Neither corresponds to anything drawn on the strip above it, so the cursor
+moved and the picture did not, at every width. A bucket is the smallest step the bars can show, and
+the step reads `BUCKETS` from the histogram rather than restating 24, so the two cannot drift.
+
+**A defect the test found, not the implementation.** Three steps back and three forward parked on the
+`to` of three presses ago. The wall clock has moved since, so the cursor read as exactly live, drew
+every event in the buffer, and the headline went on saying held. The rule that fixes it is that the
+last bucket is the bucket ending now: a step forward that lands anywhere inside it hands back to live,
+rather than only one that overshoots. Stepping still costs one press per bar, which is the thing that
+made the naive version of that fix wrong.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
