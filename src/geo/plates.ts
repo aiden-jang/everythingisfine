@@ -28,17 +28,26 @@ const WRAP_DEG = 170;
  * points 5 degrees apart cuts visibly inside the sphere, and the plate lines run long and straight
  * across open ocean where that is most obvious.
  */
-export function buildPlates(): { position: Float32Array; lonLat: Float32Array } {
+export function buildPlates(
+  lines: readonly (readonly (readonly [number, number])[])[] = plates as [number, number][][],
+): { position: Float32Array; lonLat: Float32Array } {
   const out: number[] = [];
   const ll: number[] = [];
   const DENSIFY_DEG = 1.5;
 
-  for (const line of plates as [number, number][][]) {
+  for (const line of lines) {
     for (let i = 0; i < line.length - 1; i += 1) {
       const a = line[i]!;
       const b = line[i + 1]!;
-      // A boundary that leaves at +180 and re-enters at -180 is one line in the source data, and
-      // joining those two points draws a chord straight through the planet.
+      /*
+       * A boundary that leaves at +180 and re-enters at -180 is one line in the source data, and
+       * joining those two points draws a chord straight through the planet.
+       *
+       * No step in the committed simplification reaches this: the widest is 18.3 degrees, measured.
+       * It stays because the data is a build artefact of a simplification that could be re-run at a
+       * coarser tolerance, and a guard that is dead for one input is not dead. `plates.test.ts` feeds
+       * it a crossing directly so it is exercised rather than merely present.
+       */
       if (Math.abs(b[0] - a[0]) > WRAP_DEG) continue;
 
       const steps = Math.max(1, Math.ceil(spanDeg(a[0], a[1], b[0], b[1]) / DENSIFY_DEG));

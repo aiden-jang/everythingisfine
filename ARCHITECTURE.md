@@ -2982,6 +2982,44 @@ This was picked over them deliberately. The worst case here is that the timing f
 in a second and adjustable in one line, and the numbers behind it are derived rather than remembered.
 The other two stay unbuilt until somebody chooses to bring real data in.
 
+## A seam audit that found nothing, and the two things it corrected on the way
+
+The land mesh was wrong at the antimeridian three times, and its test file says outright that it "had a
+real problem to fix, rather than a precaution". The plate boundaries and the graticule cross the same
+line and run into the same poles, and between them had no geometry test at all: `plates.test.ts` covered
+the reveal ordering and nothing else, and the graticule had no test of any kind.
+
+**All three are correct.** That is the result, and it is worth as much as a fix would have been, because
+the alternative was believing it.
+
+- **Plates.** 2,479 segments, every vertex on its sphere, every `aLonLat` agreeing with its position, no
+  segment spanning more than 1.6 degrees of arc, no NaN. The widest longitude gap in the data is 18.3
+  degrees at latitude 85.8, which is 1.34 degrees of *arc*, so the densifier is right to leave it as one
+  segment: sag depends on arc and not on longitude, and splitting polar segments on longitude would cost
+  twelve times the vertices for nothing.
+- **Graticule.** Meridians reach both poles, parallels stop at 75, nothing spans more than three degrees
+  in either axis. The antimeridian is drawn once and not twice, which is a deliberate asymmetry: on the
+  globe -180 and +180 are one line, and on the map the repeats put the next copy's -180 exactly where this
+  copy's +180 is.
+- **Markers.** A point has no geometry to be wrong at a seam. The grid deciding whether two are one does,
+  and the Ring of Fire crosses 180 twice, at Tonga and along the Aleutians.
+
+**Two corrections, both mine, both mid-audit.** I measured two events either side of the date line landing
+in different cells and read it as the bug. It is not: two events either side of *any* cell edge land in
+different cells, because that is what a grid is. The measurement that actually settles it is the merge rate
+of a fixed-separation pair slid across a region, which came out at 90.0 percent straddling 180 against 90.0
+percent mid-Pacific. And a figure of "85 positions where the seam splits a pair that merges elsewhere" was
+meaningless, because it compared two different cell-edge phases.
+
+The one genuinely seam-specific thing is that 360 degrees is not a whole number of widened cells, so the
+band at the antimeridian is a runt: 3.344 degrees against 3.365 at latitude -18. Six parts in a thousand.
+It has an assertion now, not because it matters but so that a change to the widening cannot make it matter.
+
+**`buildPlates` takes its data as an argument now.** No step in the committed simplification comes within
+150 degrees of the wrap guard, so the guard was untestable and looked dead. It is not dead: the JSON is a
+build artefact of a simplification that could be re-run at a coarser tolerance. It is fed a crossing
+directly now, because a precaution nothing exercises is a precaution somebody deletes.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
