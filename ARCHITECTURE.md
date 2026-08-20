@@ -2580,44 +2580,37 @@ only relocate the problem: composing an image per link needs something running, 
 which reverses the no-`main` decision the entire zero-invocation deployment rests on. So the backlog
 line asking for one is asking to reopen that, and it should be reopened deliberately or not at all.
 
-## The thesis was commented, not drawn
+## The thesis is 4 pixels wide, and that is the whole finding
 
 Two agencies report one earthquake and place it tens of kilometres apart. That is what this project is
-about, it is why the reconciliation code exists, and it is the write-up topic. On screen it was a
-sentence you had to pin an event to reach: the panel says "they place it 41.2 km and 6.8 s apart" and
-lists both readings, and the map drew one marker and said nothing at all.
+about and the map drew one marker and said nothing: the disagreement lived in the panel, as a sentence
+you reached by pinning and then reading. Twice I tried to put it on the map, and the second attempt is
+what finally produced the number that says neither can work.
 
-So each corroborated event now gets a hairline between its two epicentres. A margin full of short ties
-is two catalogues that broadly agree; a long one is a disagreement worth opening.
+**First, a hairline per corroborated event, in the scene.** A `LineSegments` layer beside the markers,
+drawn only where the two readings fall in different clustering cells, on the argument that the rule
+deciding whether two events are one marker should decide whether their disagreement can be seen. It
+worked: 76 ties in the buffer at zoom 2.8, correctly wired, and completely invisible. 15km of
+disagreement is **2.7 pixels** at this camera's tightest zoom, the markers are four times that across,
+and the ties were drawn under them. Not a tuning problem. Covered by construction.
 
-**Drawn only when the two ends are separately resolvable, and that is the design rather than a
-performance dodge.** Below the clustering threshold two readings 30km apart fall in one cell and the
-map collapses them to a single marker, so a line between them would be shorter than the dot sitting on
-top of it: a mark asserting a distinction the picture is not making. The rule is therefore the
-clustering rule itself, reused. Two readings are worth joining exactly when they land in different
-cells, which is exactly when the map is already drawing them as two places. Above the threshold the
-cell size is zero, nothing is binned, and every pair qualifies.
+**Then a ring and a tie for one event at a time,** in SVG over the canvas, on the argument that a ring
+is a fixed 16px whatever the separation, so two rings 4px apart still read as two rings and the mark
+stops depending on the distance it describes. Measured: tie 4.1px, ring 16px, both on screen, both
+opaque. And it reads as a scribble on the dot. A ring four times larger than the offset it is meant to
+resolve is concentric, and concentric rings say "decoration", not "two places".
 
-Reusing `cellKey` also inherits the fix that widens longitude cells by `1/cos(lat)`, so a pair
-resolves at the same ground separation in the Aleutians as at the equator. Getting that wrong would
-have made the disagreement invisible in the far north, which is where USGS reports most densely.
+**The measurement that was available before either attempt.** Real separations run 10 to 135km. At
+0.08 degrees per pixel, the tightest this camera goes, that is 2 to 24 pixels, against markers of 10 to
+20. So a mark at map scale can only work for the top of the range, and the median is smaller than the
+dot it would have to escape. Both attempts were reasoning about visibility in the abstract when the
+pixel arithmetic was one division away, and both were removed.
 
-**Achromatic, for the reason the section line is.** Hue inside the canvas means magnitude. A coloured
-tie would be a hue meaning something new, and the markers at each end already carry the magnitude.
-Over the night shell because this is data, under the markers because the dots are the thing and this is
-the relation between them.
-
-**One call, not four.** `events.sync` had four call sites in `Globe.tsx`, and a second layer synced
-beside it at each of them is four chances for the two to disagree about what is on screen, plus a fifth
-the day somebody adds one. That is the same failure as a rule that names the places instead of naming
-the thing, which this codebase has already paid for twice. So the scene exposes `syncMarks`, both
-layers take the same arguments because they answer the same question, and the event layer's own return
-value passes straight through so the wrapper is a drop-in everywhere including where callers read it.
-
-**Unverified visually.** The selection rule is unit-tested and the geometry follows the plate layer's
-pattern exactly, but nothing has rendered this. The weight, the opacity and the exact tone are reasoned
-rather than seen, and the last visual feature written blind had three faults a single render would have
-caught.
+**What the finding actually implies.** A 15km fact cannot be drawn at map scale, so if it is to be
+drawn it needs its own scale: an inset in the panel with the two epicentres and a stated separation, the
+spatial counterpart of the sequence strip that already sits there for time. That is a labelled zoom,
+which is honest in the way exaggerating a line on the map would not be. Not built. The panel's sentence
+is still the only place the disagreement is stated, and it may well be the right medium for it.
 
 ## Open, and honestly so
 

@@ -18,7 +18,6 @@ import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
 import { createEventLayer, type EventLayer } from "./events";
 import { createRingLayer, type RingLayer } from "./rings";
-import { createDisagreeLayer } from "./disagree";
 
 /** Only the part of the store hit testing needs, so this file does not depend on the whole model. */
 export interface HitStore {
@@ -146,15 +145,6 @@ export interface Globe {
   controls: Controls;
   events: EventLayer;
   rings: RingLayer;
-  /**
-   * Both mark layers, from one call.
-   *
-   * `events.sync` had four call sites, and a second layer synced beside it at each of them is four
-   * chances for the two to disagree about what is on screen, plus a fifth the day somebody adds one.
-   * The layers take the same arguments because they answer the same question, so the fan-out belongs
-   * here rather than in the caller.
-   */
-  syncMarks: EventLayer["sync"];
   setMorph: (t: number) => void;
   /** The entrance reveal: boundaries grow outward from the events rather than arriving with them. */
   plates: {
@@ -512,13 +502,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   world.add(rings.object);
 
   /*
-   * Where two agencies disagree, joined. See `disagree.ts` for why it is a hairline and why it is
-   * only drawn when the two ends are separately resolvable.
-   */
-  const disagree = createDisagreeLayer(morph);
-  world.add(disagree.object);
-
-  /*
    * Nothing under `world` is culled against its own bounds, because its bounds are the wrong shape.
    *
    * Every layer here is projected in the vertex shader, so three.js measures the sphere the geometry
@@ -655,13 +638,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     events,
     rings,
-    syncMarks: (store, filters, now, zoom, revealUntil, focusHour) => {
-      // The event layer's own return value passes straight through: callers read it, and a wrapper
-      // that swallowed it would make this a drop-in replacement everywhere except where it mattered.
-      const drawn = events.sync(store, filters, now, zoom, revealUntil, focusHour);
-      disagree.sync(store, filters, now, zoom, revealUntil);
-      return drawn;
-    },
     render: () => {
       const minute = Math.floor(Date.now() / 60_000);
       if (minute !== sunMinute) {
@@ -742,7 +718,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     dispose: () => {
       events.dispose();
       rings.dispose();
-      disagree.dispose();
       scene.traverse((o) => {
         if (o instanceof Mesh || o instanceof LineSegments) {
           o.geometry.dispose();
