@@ -2786,6 +2786,49 @@ longitude from the subsolar point at the subsolar latitude is the horizon. It is
 quarter turn of arc for any declination, which is the case worth asserting, and both versions are in the
 test so the next reader does not rediscover it.
 
+## A dial that is worth drawing because it shows nothing
+
+Almost everything anybody counts has a time of day in it: traffic, births, crime, power draw, calls to a
+helpdesk. Earthquakes do not. The Earth does not know what time it is, and a dial that comes out flat
+says so more convincingly than a sentence claiming it, because the reader watches the null result fail
+to appear.
+
+**Local solar time, which is why it was built second.** A real diurnal signal would be sun-driven, so
+binning on UTC would smear it across every longitude and flatten it by construction: the dial would come
+out flat whether or not anything was there, which is the one outcome that would make it worthless. The
+solar time work of the previous item exists for this.
+
+**Two numbers computed before the chart, and both changed it.**
+
+The first was cost. A solar hour per event means `subsolarPoint` per event, and the buffer holds 50,000.
+Measured at 10.8ms, which is the same order as the histogram walk already running on those triggers, so
+it needs no cache. It needs no cache in a stronger sense too: caching by UTC minute measured 14.1ms,
+*slower*, because at a month's window almost every event falls in a minute of its own and the map is
+pure overhead. The obvious optimisation was a pessimisation and only the benchmark said so.
+
+The second was the scatter, and it decided what the radius means. Counting 400 events into 24 bins gives
+17 apiece and a Poisson width of 4, which is 25 percent; at a month it is 4.5 percent. So two things
+follow. The expected scatter is drawn as a band, because bars wobbling by a quarter look exactly like a
+signal to anybody not holding that arithmetic, and a narrow window then announces its own weakness by
+having a wide band. And the radius carries the departure in sigmas rather than the count, because from
+zero a month's 4.5 percent variation is under two pixels on a forty pixel bar: the dial would read as a
+smooth ring whether the data were flat or carried a ten percent signal. A chart that cannot show the
+thing it is denying is decoration.
+
+**No verdict.** `Sequence.tsx` refuses to call an event an aftershock because the judgement is the
+reader's, and here the same restraint has a statistical trap behind it: across 24 bins roughly one will
+stray past two sigma by luck alone, so an app declaring "no signal" off that threshold would be wrong
+about a third of the time. It draws the bars and the band.
+
+**Behind a disclosure**, because the payload is interesting once and is not something anybody monitors,
+and the rail's permanent space belongs to what changes. Under the activity strip, since both answer
+"when" and neither answers it the other's way: elapsed time there, time of day here.
+
+**A filename that would have broken on a case-sensitive disk.** `diurnal.ts` beside `Diurnal.tsx`
+differs only in casing, which macOS tolerates and CI would not. The house convention was already the
+answer and I had walked past it: the pure module is named for the computation and the component for the
+artefact, as in `histogram.ts` with `Timeline.tsx` and `nearby.ts` with `Sequence.tsx`. It is `Dial.tsx`.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
