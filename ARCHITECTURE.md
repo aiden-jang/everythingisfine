@@ -2335,6 +2335,41 @@ no coverage at all, in the project whose entire argument is that it says what it
 about 8MB on a static host with no Worker in front of it, so raising the cap is a bandwidth decision
 and not a correctness one, and the measurement above is what a decision on it should be made from.
 
+## Looking for an artifact that is not there any more
+
+The backlog carried a note about faint axis-aligned rectangles on the flat map, at the seams between
+the repeated copies, blamed on the per-copy render passes rather than on the geometry. It is the only
+entry here that ends in nothing being changed, which is why it is worth writing down: a decision log
+where every investigation produced a fix is a log with the failures edited out.
+
+Eleven captures, at 0, 90 and 180 degrees, at two zooms, and at six delays through the globe-to-map
+morph. `Date.now` frozen for all of them, because the subsolar point comes off the wall clock and two
+shots minutes apart are otherwise two different pictures. Then the shell isolated properly: the same
+frame rendered again with `night.visible = false` and the two differenced, so what is measured is the
+shell's own contribution and nothing else.
+
+Nothing. No straight step in that difference, vertical or horizontal, at any of those views, including
+at the date line where the copy boundary actually falls. What does show up, and what I suspect the
+original note was:
+
+- Full-height vertical lines at regular spacing, 67px at zoom 0.75 and 90px at zoom 1. That is the
+  15 degree graticule.
+- A hard-looking right edge to the day wash, which is `smoothstep(0.10, 0.55, sun)` reaching zero.
+  On ocean rows it falls from 24.5 to 13.7 over 24 pixels. Smooth in value and not in slope, so it
+  reads as an edge while being the ramp this file already argues about twice.
+- Horizontal edges at the top and bottom of the map, which are the map's boundary against the void.
+
+I did see a 50px dark band at the date line once, and it went away when the shell was hidden, so it
+was the shell. It has not reappeared in ten attempts at the same URL and zoom. One unreproducible
+sighting is not enough to refactor the hot render path against, so it is recorded and left.
+
+**Two real per-copy faults turned up on the way, and neither of them is a rectangle.** `rim` hangs off
+`scene` rather than `world`, so it does not travel with the copies and is additively blended once per
+pass; it is invisible at rest but the copy loop starts at `morph >= 0.01` while the rim survives to
+0.999, so it brightens in place for almost the whole transition. And `autoClear = false` drops the
+depth clear along with the colour clear, so each copy's opaque geometry depth-tests against the
+previous copy's leftovers, which is harmless exactly while the copies are disjoint on screen.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
