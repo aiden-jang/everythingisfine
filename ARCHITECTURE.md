@@ -3020,6 +3020,46 @@ It has an assertion now, not because it matters but so that a change to the wide
 build artefact of a simplification that could be re-run at a coarser tolerance. It is fed a crossing
 directly now, because a precaution nothing exercises is a precaution somebody deletes.
 
+## A link that threw away the month it was pointing at
+
+Looking for the cursor in the permalink turned up something worse next to it. The decoder read
+`clamp(w, 1, 24)`, which was correct while a day was the only window and silently wrong from the moment
+7d and 30d shipped: a link to a month arrived as a day. Not refused, not widened, not mentioned. That is
+the worst of the three possible outcomes, in the feature this file's own header calls the highest-leverage
+item in the source doc.
+
+Nothing caught it because the permalink tests asserted the two directions separately and never a round
+trip through a window other than a day. There is one now, over all three.
+
+**Snapped to an offered window rather than clamped to a wider bound.** The rule at the top of `decode`
+says a link must not leave the app in a state it has no other way to reach, and a 100-hour window is
+exactly that: it works arithmetically, the strip divides it happily, and the window buttons would show
+nothing selected with no way back to what the link asked for. Nearest in log space, because these are
+multiples and not an interval: 100 hours is 4.2 days and 0.6 weeks, and linear distance would call the
+day nearer when proportionally the week is.
+
+`WINDOWS` moved out of `Timeline.tsx` to make that possible. It lived beside the buttons, so the decoder
+had no way to know what a valid window was, which is how it came to hardcode one.
+
+## And the cursor, which is what I went in for
+
+The camera travelled in a link and the clock did not, so "look at this" could say where and never when.
+That became a real gap when the largest-event row started parking the cursor: the app's best entry point
+put you at a moment and then produced a link that discarded it.
+
+**Absolute, not an offset from now.** The thing being shared is a moment, not a distance from whenever
+the recipient opens it. The cost is that it can fall outside their window, which is the cost `event`
+already pays, so it is paid the same way: restored when it fits, and said out loud when it does not.
+`clampScrub` was already turning an out-of-range cursor into live, so the degradation existed and was
+silent; the notice is what makes it honest.
+
+**Seconds, and no playing state.** A cursor is read off a strip 24 buckets wide, so millisecond digits in
+a URL are a claim nobody can read. And a link that arrives already playing is motion the recipient did
+not ask for, which is the objection DESIGN.md makes to ambient rotation. It arrives held.
+
+Unlike a window, an unreadable moment is dropped rather than snapped: 1970 and the year 5000 are both
+simply not what the link meant, and there is no nearest valid moment to move them to.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

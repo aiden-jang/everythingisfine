@@ -1,6 +1,7 @@
 import type { SourceId } from "../data/types";
 import type { RampName } from "../globe/ramp";
 import type { SectionLine } from "./section";
+import { nearestWindow } from "./windows";
 
 /*
  * "Look at this" as a link.
@@ -38,6 +39,19 @@ export interface Permalink {
    * of. Without it the panel would open over a globe with no line drawn on it.
    */
   section: SectionLine | null;
+  /**
+   * The moment the cursor was standing at, in epoch milliseconds, or null for live.
+   *
+   * The camera travelled and the clock did not, so "look at this" could say where and never when. That
+   * gap became obvious once the largest-event row started parking the cursor: the app's best entry point
+   * put you at a moment and produced a link that threw it away.
+   *
+   * Absolute rather than an offset back from now, because the thing being shared is a moment and not a
+   * distance from whenever the recipient happens to open it. The cost is that it can fall out of the
+   * window, which is the same cost `event` already pays and is handled the same way: restored if it
+   * fits, and said out loud if it does not.
+   */
+  cursor: number | null;
 }
 
 const round = (value: number, places: number): number =>
@@ -75,6 +89,9 @@ export function encode(state: Permalink): string {
     `r=${state.ramp}`,
   ];
   if (state.event) parts.push(`e=${state.event}`);
+  // Seconds, not milliseconds. A cursor is read off a strip 24 buckets wide, so a shared moment is
+  // meaningful to about a minute and three digits of false precision in a URL is three too many.
+  if (state.cursor !== null) parts.push(`c=${Math.round(state.cursor / 1000)}`);
   if (state.section) {
     const { fromLon, fromLat, toLon, toLat } = state.section;
     parts.push(
@@ -113,8 +130,17 @@ export function decode(fragment: string): Partial<Permalink> {
   const m = Number(params.get("m"));
   if (params.has("m") && Number.isFinite(m)) out.minMagnitude = clamp(m, 0, 7);
 
+  /*
+   * Snapped to an offered window, not clamped to a day.
+   *
+   * This read `clamp(w, 1, 24)`, which was right while a day was the only choice and wrong from the
+   * moment 7d and 30d shipped: a link to a month arrived as a day, and nothing said so, which is the
+   * worst of the three possible outcomes. Snapping rather than merely widening the clamp follows the
+   * rule at the top of this function, that a link must not put the app in a state it has no other way
+   * to reach, and a 100-hour window is one: the window group would show nothing selected.
+   */
   const w = Number(params.get("w"));
-  if (params.has("w") && Number.isFinite(w)) out.windowHours = clamp(Math.round(w), 1, 24);
+  if (params.has("w") && Number.isFinite(w)) out.windowHours = nearestWindow(w);
 
   const s = params.get("s");
   if (s !== null) {
@@ -129,6 +155,17 @@ export function decode(fragment: string): Partial<Permalink> {
 
   const e = params.get("e");
   if (e && /^(usgs|emsc):[\w.-]{1,64}$/.test(e)) out.event = e;
+
+  /*
+   * Range-checked, not clamped. A cursor is a moment, and there is no nearest valid moment to move an
+   * unreadable one to: 1970 and the year 5000 are both simply not what the link meant, so they are
+   * dropped the way an unreadable camera is. Whether a well-formed moment is still inside the window is
+   * a different question, and one only the app with a buffer in front of it can answer.
+   */
+  const c = Number(params.get("c"));
+  if (params.has("c") && Number.isFinite(c) && c > 1_000_000_000 && c < 100_000_000_000) {
+    out.cursor = c * 1000;
+  }
 
   const x = params.get("x")?.split(",").map(Number);
   if (x && x.length === 4 && x.every((n) => Number.isFinite(n))) {

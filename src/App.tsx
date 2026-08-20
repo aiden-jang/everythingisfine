@@ -131,7 +131,16 @@ export function App(): JSX.Element {
    * missing and no way to tell that from an empty day. The camera and the section are views; this is
    * a hand on a control.
    */
-  const [scrub, setScrub] = useState<Scrub>(LIVE);
+  /*
+   * A shared moment, held rather than played.
+   *
+   * `clampScrub` on the way out already turns a cursor the window has slid past into live, so a link
+   * opened days later degrades to the present on its own rather than pointing at nothing. Whether that
+   * happened is worth saying, which is what `staleCursor` below is for.
+   */
+  const [scrub, setScrub] = useState<Scrub>(
+    shared.cursor === undefined ? LIVE : { at: shared.cursor, playing: false },
+  );
   /*
    * The revision a wider backlog was asked at, or null.
    *
@@ -241,6 +250,14 @@ export function App(): JSX.Element {
         ramp,
         event: reading ? `${reading.source}:${reading.id}` : null,
         section: sectionLine,
+        /*
+          The moment, not the playing state.
+
+          A link that arrives already running would be motion the recipient did not ask for, which is
+          the same objection DESIGN.md makes to ambient rotation. It arrives held, and pressing play is
+          theirs.
+        */
+        cursor: scrub.at,
       });
       history.replaceState(null, "", `#${fragment}`);
     };
@@ -566,6 +583,21 @@ export function App(): JSX.Element {
 
   const failing = (Object.entries(snapshot.statuses) as [SourceId, SourceStatus][])
     .flatMap(([id, status]) => (status.kind === "failing" ? [[id, status] as const] : []));
+
+  /*
+   * A shared cursor the window cannot hold.
+   *
+   * The link carried a moment, the clamp quietly moved it to live, and without this the recipient sees
+   * the present and no reason why. Same failure and same answer as a shared event that has aged out,
+   * which already has a notice a few lines below this one.
+   *
+   * Read off `scrub` against `view`, so it says so only while the two disagree: once the cursor is
+   * moved by hand the link's moment is no longer what is being looked at and the notice has nothing to
+   * explain.
+   */
+  const staleCursor = shared.cursor !== undefined
+    && scrub.at === shared.cursor
+    && view.at === null;
 
   const edge = windowStart(now, filters.windowMs, snapshot.coveredSince);
   /*
@@ -1067,6 +1099,12 @@ export function App(): JSX.Element {
               ))}
               <div className="mt-1 text-faint">The globe keeps what it has.</div>
             </div>
+          ) : null}
+
+          {staleCursor ? (
+            <p data-rail="notice" className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
+              The moment in this link is older than the window, so this is the present instead.
+            </p>
           ) : null}
 
           {missingShared && !pinned && snapshot.stats.quakes > 0 ? (

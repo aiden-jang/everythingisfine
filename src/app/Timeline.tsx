@@ -1,5 +1,6 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { peakCount, type Bar } from "./histogram";
+import { WINDOWS } from "./windows";
 
 /*
  * The day as a strip, and the control that selects part of it.
@@ -76,13 +77,6 @@ const BAR_MAX_PX = 39;
  * is already relative, so the readout matches it.
  */
 const HOUR_MS = 3_600_000;
-
-/** The windows on offer, and the only lengths the strip is ever asked to divide. */
-export const WINDOWS = [
-  { hours: 24, label: "24h" },
-  { hours: 7 * 24, label: "7d" },
-  { hours: 30 * 24, label: "30d" },
-] as const;
 
 /**
  * How long ago a bucket was, in the coarsest unit that does not lie about the bucket's own width.
