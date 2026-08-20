@@ -20,6 +20,27 @@ import type { BufferGeometry, Material, WebGLProgramParametersWithUniforms } fro
 export const MAP_HALF_WIDTH = 2;
 
 /**
+ * How much of a layer's radial lift survives on the flat map.
+ *
+ * On the globe the lifts are radial, so a layer stays over the piece of ground it belongs to however
+ * the camera moves. Flattened they become a shift straight at the camera, and a perspective camera
+ * magnifies whatever is nearer: the coastline sat 0.032 units in front of the fill and was drawn about
+ * one percent larger than it, so it crept outward from its own shoreline, by nothing at the centre of
+ * the frame and by seven pixels at the edge at zoom 2. Measured, and it doubled with zoom, which is
+ * the signature of parallax rather than of geometry.
+ *
+ * The markers were worse, sitting further out again at 0.048, while `project` places their hover ring
+ * and tooltip at zero. On a seismic map the dots being off the coast they belong to is the one error
+ * that matters.
+ *
+ * So the lift shrinks to the least that still orders the layers. It is only ever asked to keep the
+ * line layers off the ocean plane, and 0.0002 between neighbours is a few hundred depth-buffer steps
+ * at these distances, while leaving the worst-case drift under half a pixel. The 8 it replaces had no
+ * note attached and nothing needed it.
+ */
+const MAP_LAYER_LIFT = 0.2;
+
+/**
  * Where a sphere shell starts its first column, so that u = 0 lands on 180 degrees west.
  *
  * Cutting the seam column out of the shells was the first answer, and it left a bright slit down the
@@ -52,7 +73,7 @@ export const MORPH_GLSL = /* glsl */ `
     vec3 plane = vec3(
       aLonLat.x / 180.0 * ${MAP_HALF_WIDTH.toFixed(1)},
       aLonLat.y / 90.0,
-      (r - 1.0) * 8.0
+      (r - 1.0) * ${MAP_LAYER_LIFT.toFixed(1)}
     );
     return mix(sphere, plane, uMorph);
   }
