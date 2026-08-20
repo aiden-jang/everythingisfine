@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { decode, encode, type Permalink } from "./permalink";
+import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 
 const state: Permalink = {
   lon: 145, lat: 12, zoom: 1, minMagnitude: 2, windowHours: 24,
@@ -197,5 +198,49 @@ describe("the moment, which the camera never carried", () => {
      * objection DESIGN.md makes to ambient rotation. It arrives held.
      */
     expect(encode({ ...state, cursor: at })).not.toMatch(/p=|play/);
+  });
+});
+
+describe("bounds read from the controls rather than restated", () => {
+  it("carries the top of the magnitude scale, which it used to shave", () => {
+    /*
+     * The clamp read 0..7 while the slider runs MAG_MIN to MAG_MAX, 1 to 7.5. A filter parked at the top
+     * of the scale shared as 7.5 and arrived as 7: the sibling of the window bug, and the same cause, a
+     * bound written as a literal instead of read from the thing it bounds.
+     */
+    expect(MAG_MAX).toBe(7.5);
+    expect(decode(encode({ ...state, minMagnitude: MAG_MAX })).minMagnitude).toBe(MAG_MAX);
+  });
+
+  it("refuses a threshold below the floor the slider has", () => {
+    // A link must not put the app where no control can. The slider cannot go under MAG_MIN.
+    expect(decode("m=0").minMagnitude).toBe(MAG_MIN);
+    expect(decode("m=-5").minMagnitude).toBe(MAG_MIN);
+    expect(decode("m=99").minMagnitude).toBe(MAG_MAX);
+  });
+
+  it("carries a map zoomed out past the globe's floor", () => {
+    /*
+     * The map derives its own floor from the zoom at which the frame is 360 degrees wide: 0.64 at
+     * desktop and 0.19 on a phone, both under the globe's 0.75. Clamping to 0.75 here made every fully
+     * zoomed-out map view arrive up to four times tighter than it was shared.
+     */
+    for (const zoom of [0.19, 0.31, 0.64]) {
+      expect(decode(encode({ ...state, zoom })).zoom).toBeCloseTo(zoom, 6);
+    }
+  });
+
+  it("still refuses a zoom that is nonsense rather than merely small", () => {
+    // The contextual limit belongs to `clampZoom`, which runs against a live viewport. This only has to
+    // stop the camera ending up inside the planet or a million radii away.
+    expect(decode("at=0,0,0").zoom).toBe(0.05);
+    expect(decode("at=0,0,-4").zoom).toBe(0.05);
+    expect(decode("at=0,0,1e9").zoom).toBe(3);
+  });
+
+  it("clamps latitude to the limit the camera actually has", () => {
+    // This one was already right, and is asserted so it stays that way: LAT_LIMIT is 85.
+    expect(decode("at=0,89,1").lat).toBe(85);
+    expect(decode("at=0,-89,1").lat).toBe(-85);
   });
 });
