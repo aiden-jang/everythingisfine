@@ -2706,6 +2706,53 @@ one thing a cumulative plot exists to make unsayable. Building those two-points-
 cannot be asked about it without a DOM. One `NaN` voids an entire `points` string rather than one
 vertex of it, so a finiteness check over both lines stands in for looking at the plot.
 
+## When it reached the nearest place with a name
+
+A marker says an earthquake happened at a point. It does not say the point is 7km from a town that felt
+it two seconds later, and that second fact is the one that makes an event something which happened to
+people rather than a dot in a margin.
+
+**The obvious build was the wrong one.** Arrival times need a place and a distance, so the instinct is
+an authored list of cities with coordinates, like `REGIONS`. That means writing latitudes from memory
+and then making confident claims about real towns from them, and a tenth of a degree of drift is 11km,
+which is two seconds of an answer that reads as measured. USGS already writes "38 km NW of Stanton,
+Texas" on every event, so the settlement and its distance arrive with the data. All five events in a
+sample hour matched that form. Nothing here is authored, so nothing here can be quietly wrong about a
+real place.
+
+An event whose agencies named only a region gets no sentence. EMSC writes Flynn regions and USGS writes
+some of its own, and a region has no distance in it; deriving one from a centroid would be the authored
+coordinate straight back again.
+
+**The path is the hypotenuse, which is the part worth getting right.** The published distance is
+epicentral, measured across the surface, and the wave leaves from depth. A 45km-deep event 40km away is
+60km of rock, so ignoring depth understates the arrival by a third on exactly the deep events where it
+matters most. A missing depth counts as the surface, which follows the decision the event layer already
+made and documented for its markers.
+
+**Capped at 700km rather than approximated past it.** Constant velocity holds while the path stays in
+the crust and upper mantle. Further out the wave dives into faster material and arrives before six
+kilometres a second would say, so the number would read as measured and be wrong. The distance is to the
+nearest named settlement, so nothing common approaches the cap: it is a backstop, not a limit anybody
+meets.
+
+**Whole seconds, and "under a second" rather than zero.** The distance is published to the kilometre,
+which is already 0.17 seconds of the answer, and the origin time it is measured from is an agency's
+estimate. A decimal would be precision the inputs cannot support, and the app's own `ago` note says as
+much about relative times.
+
+## The file boundary that a prop had been papering over
+
+Adding arrival times meant the panel needed the wave velocities, which lived in `globe/rings.ts` next to
+the ring rate they derive. That module imports three, and the panel is in the eager bundle behind a
+`lazy` canvas, so the import dragged a renderer in for two floats.
+
+The legend had hit this before and taken the multiplier as a prop to dodge it. That worked, and it was a
+workaround for a boundary in the wrong place: velocities are facts about rock, not about rendering. They
+are in `geo/waves.ts` now, with the playback multiplier, which the legend prints and which has no
+business living beside a shader either. The prop is gone, three consumers import the physics directly,
+and the ring layer re-exports rather than redefining so there is still one source for each number.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

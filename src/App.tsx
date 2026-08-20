@@ -18,7 +18,6 @@ import { rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
-import { PLAYBACK } from "./globe/rings";
 import {
   ago, agoShort, clock, place, reach, reachNote, SOURCE_NAMES, windowLabel,
 } from "./app/format";
@@ -558,7 +557,6 @@ export function App(): JSX.Element {
                 ramp={ramp}
                 value={filters.minMagnitude}
                 onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
-                playback={PLAYBACK}
               />
               {/*
                 Sources sit with the magnitude control because both answer "what is on the globe".

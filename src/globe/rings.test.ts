@@ -1,8 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   createRingLayer, MAX_DEG, PLAYBACK, P_WAVE_KM_PER_S, RATE_DEG_PER_S, RING_LIFETIME_S,
-  S_MAX_DEG, S_OVER_P, S_WAVE_KM_PER_S, TRUE_RATE_DEG_PER_S,
+  S_MAX_DEG, S_OVER_P, TRUE_RATE_DEG_PER_S,
 } from "./rings";
+import { S_WAVE_KM_PER_S } from "../geo/waves";
 import { EARTH_RADIUS_KM } from "../geo/sphere";
 
 /*
