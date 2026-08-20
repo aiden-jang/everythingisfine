@@ -50,6 +50,19 @@ export interface FeedSnapshot {
    * only EMSC can be truncated. The earliest of what they report is the honest left edge.
    */
   coveredSince: number | null;
+  /**
+   * The same fact per agency, because the earliest of the two hides the disagreement.
+   *
+   * `coveredSince` is a min, which is the right left edge for the strip and the wrong number to show
+   * beside two feeds: it takes whichever reached furthest and lets the other stand behind it. EMSC's
+   * catalogue returns its most recent page whatever window is asked for, so at a month USGS vouches
+   * for thirty days and EMSC for the last eighteen hours, and the header went on printing a "both"
+   * count over the whole span with nothing saying where corroboration was even possible.
+   *
+   * Null for a source that has not reported a backlog, which is not the same as one that reported a
+   * short one.
+   */
+  covered: Record<SourceId, number | null>;
 }
 
 
@@ -124,6 +137,7 @@ export function createFeed(capacity = 50_000): Feed {
   let running = false;
   let announced = false;
   let coveredSince: number | null = null;
+  const covered: Record<SourceId, number | null> = { usgs: null, emsc: null };
   /*
    * Capped. The daily seed creates 227 quakes in one batch and a large aftershock sequence can
    * deliver dozens; holding them all to hand to a subscriber that only wants the newest would make
@@ -153,6 +167,7 @@ export function createFeed(capacity = 50_000): Feed {
     arrived,
     seeding: !announced,
     coveredSince,
+    covered: { ...covered },
   });
 
   /*
@@ -199,9 +214,12 @@ export function createFeed(capacity = 50_000): Feed {
           announce();
         },
         // The earliest any source can vouch for. A second seed reaching further back widens it;
-        // one reaching less far does not narrow what the first already fetched.
+        // one reaching less far does not narrow what the first already fetched. Per source on the
+        // same rule, so a window change that re-seeds cannot make an agency's reach go backwards.
         onSeeded: (from) => {
           coveredSince = coveredSince === null ? from : Math.min(coveredSince, from);
+          const held = covered[source.id];
+          covered[source.id] = held === null ? from : Math.min(held, from);
           announce();
         },
       });

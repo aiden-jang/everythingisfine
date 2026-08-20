@@ -108,3 +108,77 @@ export function agoShort(then: number, now: number): string {
 export function reportedBy(quake: Quake): string {
   return quake.readings.map((r) => SOURCE_NAMES[r.source]).join(" and ");
 }
+
+/**
+ * A window length in the space a chip has. `24h`, `7d`, `30d`.
+ *
+ * Same threshold as the strip's own axis, so 48 hours reads as days in both places rather than as
+ * hours in one and days in the other.
+ */
+export function compactSpan(ms: number): string {
+  const h = Math.round(ms / 3_600_000);
+  return h >= 48 ? `${Math.round(h / 24)}d` : `${h}h`;
+}
+
+/**
+ * How far back one agency's backlog reaches, for the label under its own button.
+ *
+ * Three states, and the third is the one that was missing. A source that vouches for the whole window
+ * shows the window; one that vouches for less shows how much less; one that has fetched no backlog at
+ * all says so rather than showing a zero, because no backlog and a backlog of nothing are different
+ * facts and only one of them is the source's fault.
+ */
+export function reach(from: number | null, now: number, windowMs: number): string {
+  if (from === null) return "no backlog";
+  if (from <= now - windowMs) return compactSpan(windowMs);
+  return agoShort(from, now);
+}
+
+/**
+ * The sentence that stops `USGS 30d · EMSC 18h` reading as a bug.
+ *
+ * Null when every agency vouches for the whole window, which is the common case at a day and the
+ * reason this is not a permanent line in the rail. Written the same way as the strip's note about
+ * unobserved blocks: it appears exactly when the thing it explains is on screen.
+ *
+ * Truncated and missing are separate clauses, because they are separate facts with separate causes.
+ * A source that returned a short page was capped by the endpoint; a source that returned nothing
+ * failed, and it has its own notice elsewhere saying so. One sentence covering both would pin the
+ * cap on a feed that never got as far as being capped.
+ *
+ * The mechanism is stated without the row limit in it. The number lives in the source module, and a
+ * second copy here is a number that goes stale in the place nobody thinks to check.
+ */
+export function reachNote(
+  covered: Record<SourceId, number | null>, now: number, windowMs: number,
+): string | null {
+  const ids = Object.keys(covered) as SourceId[];
+  const edge = now - windowMs;
+  // Before the first seed lands nothing has reached anywhere, and the rail is already saying that it
+  // is asking. A note about short backlogs on top of that describes a state nobody is in yet.
+  if (ids.every((id) => covered[id] === null)) return null;
+
+  const truncated = ids.filter((id) => covered[id] !== null && covered[id]! > edge);
+  const missing = ids.filter((id) => covered[id] === null);
+  if (truncated.length === 0 && missing.length === 0) return null;
+
+  const named = (list: SourceId[]): string => list.map((id) => SOURCE_NAMES[id]).join(" and ");
+  const parts: string[] = [];
+
+  if (truncated.length > 0) {
+    // The furthest back any truncated source got. Naming the shallowest would understate what is held.
+    const deepest = Math.min(...truncated.map((id) => covered[id]!));
+    parts.push(truncated.length === 1
+      ? `${named(truncated)} returns its most recent page whatever the window, so it reaches only as `
+        + `far back as ${agoShort(deepest, now)}.`
+      : `${named(truncated)} return their most recent page whatever the window, so they reach only `
+        + `as far back as ${agoShort(deepest, now)}.`);
+  }
+  if (missing.length > 0) {
+    parts.push(`${named(missing)} ${missing.length === 1 ? "has" : "have"} returned no backlog.`);
+  }
+
+  const full = ids.filter((id) => !truncated.includes(id) && !missing.includes(id));
+  if (full.length > 0) parts.push(`Older events are ${named(full)} alone.`);
+  return parts.join(" ");
+}

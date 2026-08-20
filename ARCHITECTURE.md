@@ -2260,6 +2260,40 @@ last bucket is the bucket ending now: a step forward that lands anywhere inside 
 rather than only one that overshoots. Stepping still costs one press per bar, which is the thing that
 made the naive version of that fix wrong.
 
+## Each feed's reach, which only one number was ever reported for
+
+`coveredSince` is the earliest either agency will vouch for, which is the right left edge for the
+strip and the wrong number to show beside two feeds: it takes whichever reached furthest and lets the
+other stand behind it. The header printed a count per feed and a `both` count over the whole span,
+and nothing said where corroboration was even possible.
+
+**Checked against the live endpoint rather than reasoned about, and it is worse than I had recorded.**
+`fdsnws/event/1/query?limit=600&start=...` returns the same most recent 600 rows at 24 hours, 7 days
+and 30 days: on the day I measured it, oldest 2026-08-19T09:36Z against a 2026-08-20T03:02Z newest,
+about eighteen hours. Widening the window buys nothing at all from EMSC. Raising the limit is still
+not on: the endpoint has never documented a maximum and a wrong guess is a 400 that removes the seed
+entirely.
+
+The honesty machinery was already right and simply not being asked. A full page makes the source vouch
+only as far as its oldest row, so the truncation was reported correctly and then averaged away by the
+`Math.min`. The fix is a per-source copy of the same value, on the same widen-only rule, so a window
+change that re-seeds cannot make an agency's reach go backwards.
+
+**The label is on the agency's own button, and the sentence only appears when they disagree.** A
+permanent line explaining a discrepancy that is not on screen is how a caveat stops being read, so
+this follows the strip's note about unobserved blocks. Both get an `aria-label` carrying the same fact
+as a sentence, because `USGS 18h` announced as two tokens is a toggle and a quantity with nothing
+joining them.
+
+**Truncated and missing are separate clauses.** A source that returned a short page was capped; one
+that returned nothing failed, and it has its own notice elsewhere. The first draft had a single
+sentence over both, which pinned EMSC's cap on a feed that never got as far as being capped.
+
+**The fixtures could not reach the interesting branch.** The default browser fixture returns fewer
+rows than the seed limit, so EMSC vouched for the whole window and the truncated path never ran in a
+test. `emscCappedHours` answers with exactly a full page over a span the test names, which is the
+state the real endpoint is in every day.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
