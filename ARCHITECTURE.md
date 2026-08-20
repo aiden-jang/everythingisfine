@@ -2580,6 +2580,45 @@ only relocate the problem: composing an image per link needs something running, 
 which reverses the no-`main` decision the entire zero-invocation deployment rests on. So the backlog
 line asking for one is asking to reopen that, and it should be reopened deliberately or not at all.
 
+## The thesis was commented, not drawn
+
+Two agencies report one earthquake and place it tens of kilometres apart. That is what this project is
+about, it is why the reconciliation code exists, and it is the write-up topic. On screen it was a
+sentence you had to pin an event to reach: the panel says "they place it 41.2 km and 6.8 s apart" and
+lists both readings, and the map drew one marker and said nothing at all.
+
+So each corroborated event now gets a hairline between its two epicentres. A margin full of short ties
+is two catalogues that broadly agree; a long one is a disagreement worth opening.
+
+**Drawn only when the two ends are separately resolvable, and that is the design rather than a
+performance dodge.** Below the clustering threshold two readings 30km apart fall in one cell and the
+map collapses them to a single marker, so a line between them would be shorter than the dot sitting on
+top of it: a mark asserting a distinction the picture is not making. The rule is therefore the
+clustering rule itself, reused. Two readings are worth joining exactly when they land in different
+cells, which is exactly when the map is already drawing them as two places. Above the threshold the
+cell size is zero, nothing is binned, and every pair qualifies.
+
+Reusing `cellKey` also inherits the fix that widens longitude cells by `1/cos(lat)`, so a pair
+resolves at the same ground separation in the Aleutians as at the equator. Getting that wrong would
+have made the disagreement invisible in the far north, which is where USGS reports most densely.
+
+**Achromatic, for the reason the section line is.** Hue inside the canvas means magnitude. A coloured
+tie would be a hue meaning something new, and the markers at each end already carry the magnitude.
+Over the night shell because this is data, under the markers because the dots are the thing and this is
+the relation between them.
+
+**One call, not four.** `events.sync` had four call sites in `Globe.tsx`, and a second layer synced
+beside it at each of them is four chances for the two to disagree about what is on screen, plus a fifth
+the day somebody adds one. That is the same failure as a rule that names the places instead of naming
+the thing, which this codebase has already paid for twice. So the scene exposes `syncMarks`, both
+layers take the same arguments because they answer the same question, and the event layer's own return
+value passes straight through so the wrapper is a drop-in everywhere including where callers read it.
+
+**Unverified visually.** The selection rule is unit-tested and the geometry follows the plate layer's
+pattern exactly, but nothing has rendered this. The weight, the opacity and the exact tone are reasoned
+rather than seen, and the last visual feature written blind had three faults a single render would have
+caught.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

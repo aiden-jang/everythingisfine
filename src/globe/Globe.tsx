@@ -326,7 +326,7 @@ export function Globe({
           });
         }
         replaying = true;
-        globe.events.sync(
+        globe.syncMarks(
           feed.store, live.current.filters, Date.now(),
           globe.controls.state().zoom, replay.at() ?? undefined, live.current.focusHour,
         );
@@ -367,7 +367,7 @@ export function Globe({
       const zoomNow = globe.controls.state().zoom;
       if (Math.abs(zoomNow - lastZoom) > 0.001) {
         lastZoom = zoomNow;
-        globe.events.sync(
+        globe.syncMarks(
           feed.store, live.current.filters, Date.now(), zoomNow, revealUntil(),
           live.current.focusHour,
         );
@@ -467,7 +467,7 @@ export function Globe({
       replay?.at() ?? live.current.scrubAt ?? undefined;
 
     const redraw = (): void => {
-      globe.events.sync(
+      globe.syncMarks(
         feed.store, live.current.filters, Date.now(),
         globe.controls.state().zoom, revealUntil(), live.current.focusHour,
       );
@@ -517,7 +517,7 @@ export function Globe({
        * loop instead, and the loop only re-syncs on a zoom change, so a live arrival while parked
        * mid-window revealed the whole window until something else moved.
        */
-      globe.events.sync(
+      globe.syncMarks(
         feed.store, live.current.filters, Date.now(),
         globe.controls.state().zoom, revealUntil(), live.current.focusHour,
       );
