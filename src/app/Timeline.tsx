@@ -24,6 +24,16 @@ export interface TimelineProps {
   focusHour: number | null;
   onFocusHourChange: (hoursAgo: number | null) => void;
   onHoursChange: (hours: number) => void;
+  /** Where the cursor sits across the strip, 0 at the old edge and 1 at now. Live reads as 1. */
+  cursor: number;
+  /** True when the cursor is standing somewhere rather than following the present. */
+  parked: boolean;
+  playing: boolean;
+  onScrub: (fraction: number) => void;
+  onPlayToggle: () => void;
+  onLive: () => void;
+  /** The cursor's clock, already formatted, for the readout beside the transport. */
+  cursorLabel: string | null;
 }
 
 const STRIP_PX = 44;
@@ -41,6 +51,7 @@ const hoursAgo = (h: number): string => (h === 0 ? "this hour" : `${h}h ago`);
 
 export function Timeline({
   bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange,
+  cursor, parked, playing, onScrub, onPlayToggle, onLive, cursorLabel,
 }: TimelineProps): JSX.Element {
   const peak = peakCount(bars);
   const tallest = bars.find((b) => b.count === peak && peak > 0);
@@ -121,6 +132,27 @@ export function Timeline({
         </div>
 
         {/*
+          Everything after the cursor, veiled.
+
+          The globe is already only drawing up to the cursor, and a strip that went on showing the
+          whole day beside it would be the two views disagreeing about what time it is. Lighter than
+          the window veil below, because these hours are coming rather than excluded.
+        */}
+        {parked ? (
+          <div
+            className="pointer-events-none absolute inset-y-0 right-0 bg-deck/62"
+            style={{ width: `${(1 - cursor) * 100}%` }}
+          />
+        ) : null}
+        {/* The cursor itself, on top of its own veil so the line reads as the edge of the fill. */}
+        {parked ? (
+          <div
+            className="pointer-events-none absolute inset-y-0 w-px bg-ink"
+            style={{ left: `${cursor * 100}%` }}
+          />
+        ) : null}
+
+        {/*
           The excluded hours, dimmed in place. Not interactive: the slider under it is.
           Heavier than the magnitude track's veil, because these bars are saturated fills rather
           than a gradient, and at 78% they came through muddy rather than off.
@@ -173,6 +205,54 @@ export function Timeline({
         */}
         <span>24h ago</span>
         <span>now</span>
+      </div>
+
+      {/*
+        The transport, on its own track rather than on the strip.
+
+        The strip already carries two gestures: dragging sets the window, moving across it holds an
+        hour. A third on the same forty-four pixels would be three meanings for one drag, and the one
+        that lost would be whichever the pointer happened not to mean. So the cursor gets its own
+        line, aligned to the same width so it reads against the bars above it.
+      */}
+      <div className="mt-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onPlayToggle}
+          aria-label={playing ? "Pause" : "Play the window through"}
+          className="h-5 w-5 shrink-0 border border-hair text-[9px] leading-none text-dim
+            hover:text-ink"
+        >
+          {playing ? "❚❚" : "▶"}
+        </button>
+        <input
+          type="range"
+          min={0}
+          max={1000}
+          step={1}
+          value={Math.round(cursor * 1000)}
+          onChange={(e) => onScrub(Number(e.target.value) / 1000)}
+          aria-label="Time in the window"
+          aria-valuetext={cursorLabel ?? "Live"}
+          className="scrub-slider flex-1"
+        />
+        {/*
+          Reads "live" rather than a clock when it is live, because null is not a time. The button is
+          only offered when there is something to come back from.
+        */}
+        {parked ? (
+          <button
+            type="button"
+            onClick={onLive}
+            // The clock is already the headline's job, and printing it twice in one rail gave two
+            // readings of one number with nothing to say which was which.
+            className="shrink-0 font-mono text-[10.5px] text-dim hover:text-ink"
+          >
+            go live
+          </button>
+        ) : (
+          <span className="shrink-0 font-mono text-[10.5px] text-faint">live</span>
+        )}
       </div>
 
       {/* Only once some hours are observed. A caveat about the blocks, at the moment the whole strip

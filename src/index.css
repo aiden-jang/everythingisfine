@@ -620,6 +620,59 @@
  * hours that count and the hours that do not, so it is a full-height rule rather than a handle.
  */
 @layer components {
+  /*
+   * The transport track, which is a control rather than an overlay.
+   *
+   * `.timeline-slider` is invisible on purpose: it lies over the histogram and the bars are its
+   * scale, so its thumb is a 44px edge cutting the strip. This one has nothing underneath it, so it
+   * draws its own track, and reusing the other class put a 44px thumb in a 16px row, which read as
+   * an empty box rather than as a slider.
+   */
+  .scrub-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: ew-resize;
+    height: 16px;
+  }
+
+  /* Split, never grouped: an unrecognised pseudo-element invalidates the whole selector list. */
+  .scrub-slider::-webkit-slider-runnable-track {
+    height: 2px;
+    background: var(--color-hairline);
+  }
+
+  .scrub-slider::-moz-range-track {
+    height: 2px;
+    background: var(--color-hairline);
+  }
+
+  .scrub-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 3px;
+    height: 12px;
+    margin-top: -5px;
+    border-radius: 0;
+    background: var(--color-dim);
+  }
+
+  .scrub-slider::-moz-range-thumb {
+    width: 3px;
+    height: 12px;
+    border: 0;
+    border-radius: 0;
+    background: var(--color-dim);
+  }
+
+  .scrub-slider:hover::-webkit-slider-thumb {
+    background: var(--color-ink);
+  }
+
+  .scrub-slider:hover::-moz-range-thumb {
+    background: var(--color-ink);
+  }
+
   .timeline-slider {
     -webkit-appearance: none;
     appearance: none;

@@ -45,6 +45,14 @@ export interface GlobeProps {
    * a swarm that reads as one blob resolves into the ninety minutes it actually happened in.
    */
   focusHour?: number | null;
+  /**
+   * Origin time the cursor stands at, or null for live.
+   *
+   * The same lever the entrance replay pulls, handed to the viewer. `null` means no limit rather than
+   * "the present", so a live arrival still appears; pinning it to now would stop the app being live
+   * while looking exactly like it was.
+   */
+  scrubAt?: number | null;
   /** The section line, drawn over the map so a reader can see what the panel below is a slice of. */
   section?: SectionLine | null;
   /**
@@ -59,7 +67,7 @@ export interface GlobeProps {
 
 export function Globe({
   feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay, focusHour = null,
-  flat = false, section = null, onSection,
+  scrubAt = null, flat = false, section = null, onSection,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
@@ -76,8 +84,8 @@ export function Globe({
    * tearing down the WebGL context, the 300,000-triangle globe and both feed subscriptions every
    * time somebody nudges a magnitude slider.
    */
-  const live = useRef({ filters, selected, focusHour, flat, section });
-  live.current = { filters, selected, focusHour, flat, section };
+  const live = useRef({ filters, selected, focusHour, scrubAt, flat, section });
+  live.current = { filters, selected, focusHour, scrubAt, flat, section };
   const onSectionRef = useRef(onSection);
   onSectionRef.current = onSection;
   /** The line being dragged right now, which the frame loop draws in place of the committed one. */
@@ -320,7 +328,8 @@ export function Globe({
       if (Math.abs(zoomNow - lastZoom) > 0.001) {
         lastZoom = zoomNow;
         globe.events.sync(
-          feed.store, live.current.filters, Date.now(), zoomNow, undefined, live.current.focusHour,
+          feed.store, live.current.filters, Date.now(), zoomNow, revealUntil(),
+          live.current.focusHour,
         );
       }
       globe.render();
@@ -407,10 +416,20 @@ export function Globe({
     /** Events the replay has passed. Accumulated as it crosses them, never recounted. */
     let revealed = 0;
 
+    /*
+     * The entrance wins while it is running, and the cursor takes over after.
+     *
+     * Both drive the same `revealUntil`, so one of them has to be chosen rather than combined. The
+     * entrance is 2.8 seconds long and any interaction skips it, so this is only ever ambiguous for
+     * as long as somebody has not touched anything.
+     */
+    const revealUntil = (): number | undefined =>
+      replay?.at() ?? live.current.scrubAt ?? undefined;
+
     const redraw = (): void => {
       globe.events.sync(
         feed.store, live.current.filters, Date.now(),
-        globe.controls.state().zoom, replay?.at() ?? undefined, live.current.focusHour,
+        globe.controls.state().zoom, revealUntil(), live.current.focusHour,
       );
       globe.render();
       placeOverlays();
@@ -450,9 +469,17 @@ export function Globe({
         }
       }
 
+      /*
+       * Carries the cursor and the held hour, because an arrival is not a reason to abandon either.
+       *
+       * This used to pass neither, and got away with it: the branch below calls `redraw` when nothing
+       * spawned a front, which put them straight back. On the frames that did spawn one it woke the
+       * loop instead, and the loop only re-syncs on a zoom change, so a live arrival while parked
+       * mid-window revealed the whole window until something else moved.
+       */
       globe.events.sync(
         feed.store, live.current.filters, Date.now(),
-        globe.controls.state().zoom, replay?.at() ?? undefined,
+        globe.controls.state().zoom, revealUntil(), live.current.focusHour,
       );
       // A front per arrival, except on the seed. See `frontsFor`.
       const fronts = frontsFor(snapshot);
@@ -546,7 +573,7 @@ export function Globe({
   useEffect(() => {
     redrawRef.current();
     wakeRef.current();
-  }, [filters, selected, focusHour, flat]);
+  }, [filters, selected, focusHour, scrubAt, flat]);
 
   useEffect(() => {
     rampRef.current(ramp);

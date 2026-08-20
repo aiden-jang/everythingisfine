@@ -6,6 +6,8 @@ import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
 import { Timeline } from "./app/Timeline";
+import { clamp as clampScrub, dragTo, fractionOf, LIVE, step as stepScrub, togglePlay,
+  type Scrub } from "./app/scrub";
 import { Resizer } from "./app/Resizer";
 import { CrossSection } from "./app/CrossSection";
 import { buildSection, type SectionLine } from "./app/section";
@@ -116,6 +118,15 @@ export function App(): JSX.Element {
   const [selected, setSelected] = useState<string | null>(null);
   /** The entrance replay's clock and revealed count, or null when it is not running. */
   const [replay, setReplay] = useState<{ at: number; revealed: number } | null>(null);
+  /*
+   * Where the viewer is standing in the window, and whether it is running.
+   *
+   * Not in the permalink. A link carries where somebody was looking, and a cursor mid-playback is a
+   * moment in a gesture rather than a view: shared, it would arrive as a globe with most of its day
+   * missing and no way to tell that from an empty day. The camera and the section are views; this is
+   * a hand on a control.
+   */
+  const [scrub, setScrub] = useState<Scrub>(LIVE);
   /*
    * A shared event that is no longer in the window.
    *
@@ -246,6 +257,42 @@ export function App(): JSX.Element {
   }, []);
 
   const now = Date.now();
+  /*
+   * The window the cursor moves in.
+   *
+   * `to` is the wall clock, so this slides out from under a parked cursor the whole time. Both the
+   * clock and the clamp are handed it fresh for that reason rather than remembering one.
+   */
+  const span = { from: now - filters.windowMs, to: now };
+  /*
+   * Clamped on the way out rather than written back.
+   *
+   * A cursor the window has slid past has to read as live, and correcting the state from a render is
+   * not allowed. Every reader downstream goes through this, so the stale value behind it never
+   * reaches anything.
+   */
+  const view = clampScrub(scrub, span);
+  /*
+   * What is actually on the globe while the cursor is parked.
+   *
+   * The held total sitting unchanged above a globe drawing half of it is a true number describing
+   * something other than the picture, which is the thing the replay's own count was added to stop.
+   * The cursor is the replay made steerable, so it inherits the rule.
+   *
+   * Walked rather than derived from the bars. The bars are whole hours and the cursor is continuous,
+   * so reading it off them would be right only twenty-four times a day. One pass over a buffer this
+   * size costs less than the render it is feeding.
+   */
+  const revealedNow = ((): number | null => {
+    if (view.at === null) return null;
+    const limit = view.at;
+    let n = 0;
+    feed.store.forEach((quake) => {
+      if (quake.primary.time > limit) return;
+      if (matches(quake, filters, now)) n += 1;
+    });
+    return n;
+  })();
   const regions = useMemo(
     // No cap. It was six, from when four were rendered and the rest were unreachable; the box is
     // sized and scrolls now, so cutting the list would be hiding the quiet regions worth noticing.
@@ -297,17 +344,49 @@ export function App(): JSX.Element {
     if (selected && !feed.store.get(selected)) setSelected(null);
   }, [selected, snapshot.revision]);
 
+  /*
+   * Twenty ticks a second, not one per frame.
+   *
+   * Every tick re-renders the rail and re-syncs the event layer, which is the same work the entrance
+   * replay does per frame and the reason that one is only 2.8 seconds long. A cursor is read, not
+   * animated: twenty is smooth enough to follow and a third of the cost of sixty.
+   *
+   * Stepped by measured time, never by the interval it was asked for. Passing a flat 50ms makes the
+   * playback speed a function of how often the timer actually fires, and each tick here drags a React
+   * render and a full re-sync behind it, so it fires late and a twelve second window took past
+   * fourteen. `replay.ts` has the same note for the same reason: this plays a fixed span against the
+   * wall clock, so the wall clock is what it has to read.
+   *
+   * Deliberately not clamped. A tab left in the background wakes up and finds the cursor has caught
+   * the present, which is exactly what happened while nobody was watching.
+   */
+  const playedAt = useRef(0);
+  useEffect(() => {
+    if (!scrub.playing) return undefined;
+    playedAt.current = performance.now();
+    const id = window.setInterval(() => {
+      const tick = performance.now();
+      const dt = (tick - playedAt.current) / 1000;
+      playedAt.current = tick;
+      // Fresh: `to` has moved since the interval was armed.
+      const at = Date.now();
+      setScrub((s) => stepScrub(s, { from: at - filters.windowMs, to: at }, dt));
+    }, 50);
+    return () => window.clearInterval(id);
+  }, [scrub.playing, filters.windowMs]);
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (e.key !== "Escape") return;
       // One thing at a time, innermost first. Escape closing the pin and the section together means
       // one press can undo two decisions, and the section is the one somebody just drew.
       if (sectionLine) setSectionLine(null);
+      else if (scrub.at !== null) setScrub(LIVE);
       else setSelected(null);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [sectionLine]);
+  }, [sectionLine, scrub.at]);
 
   const toggleSource = (id: SourceId): void => {
     setFilters((f) => {
@@ -506,7 +585,9 @@ export function App(): JSX.Element {
                   beneath it, which is a true number describing something other than the picture.
                 */}
                 <div className="mt-1.5 text-[38px] leading-none font-semibold">
-                  {(replay ? replay.revealed : shown).toLocaleString("en-GB")}
+                  {(replay
+                    ? replay.revealed
+                    : revealedNow ?? shown).toLocaleString("en-GB")}
                 </div>
                 {/*
                   During the replay the rail shows the replayed clock, labelled, because the number
@@ -518,6 +599,18 @@ export function App(): JSX.Element {
                   <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
                     <span className="font-mono text-ink">{clock(replay.at)}</span>
                     <span className="text-faint">replaying the last day</span>
+                  </div>
+                ) : view.at !== null ? (
+                  /*
+                   * The cursor's own clock, in the replay's shape rather than the window label's.
+                   *
+                   * "Last 24 hours" above a count of half of them would be describing the window
+                   * while the number describes the picture. Both lines answer the cursor here, and
+                   * the word says which of the two states this is.
+                   */
+                  <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
+                    <span className="font-mono text-ink">{clock(view.at)}</span>
+                    <span className="text-faint">{view.playing ? "playing" : "held"}</span>
                   </div>
                 ) : (
                   <div className="mt-1.5 text-[11px] text-dim">
@@ -589,6 +682,13 @@ export function App(): JSX.Element {
               focusHour={focusHour}
               onFocusHourChange={setFocusHour}
               onHoursChange={(h) => setFilters((f) => ({ ...f, windowMs: h * 3_600_000 }))}
+              cursor={fractionOf(view, span)}
+              parked={view.at !== null}
+              playing={view.playing}
+              onScrub={(f) => setScrub(dragTo(f, span))}
+              onPlayToggle={() => setScrub(togglePlay(view, span))}
+              onLive={() => setScrub(LIVE)}
+              cursorLabel={view.at === null ? null : clock(view.at)}
             />
           </div>
 
@@ -683,6 +783,7 @@ export function App(): JSX.Element {
             selected={selected}
             ramp={ramp}
             focusHour={focusHour}
+            scrubAt={view.at}
             flat={flat}
             section={sectionLine}
             onSection={setSectionLine}

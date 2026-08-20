@@ -4,8 +4,9 @@ import { installFeeds } from "./feeds";
 /*
  * The claims that only a browser can settle.
  *
- * Four of them, and each is here because the alternative would have been to assert it in a unit
- * test where the thing under test is absent, or to claim it from reading the code.
+ * Each is here because the alternative would have been to assert it in a unit test where the thing
+ * under test is absent, or to claim it from reading the code. Deliberately not counted here: it said
+ * four for most of the time it has held twenty-odd, which is what a number in a comment does.
  */
 
 /** The rail's event count is the app's own signal that both feeds have answered. */
@@ -920,4 +921,62 @@ test("a mark in the cross-section pins the event it stands for", async ({ page }
   await marks.nth(3).click();
   await expect(panel).not.toBeVisible();
   expect(pinned).toMatch(/m[bl]|M[wc]/i);
+});
+
+/*
+ * The cursor, which only a browser can settle: the reveal limit reaches the event layer through a
+ * ref the frame loop reads, and a unit test has neither the loop nor the layer.
+ */
+test("holding the cursor part way through draws part of the window", async ({ page }) => {
+  await installFeeds(page, { count: 400 });
+  await page.goto("/");
+  const live = await waitForData(page);
+  // Past the entrance, which drives the same reveal and would be the thing under test otherwise.
+  await page.waitForTimeout(4000);
+
+  await page.getByRole("slider", { name: "Time in the window" }).fill("400");
+  await page.waitForTimeout(700);
+
+  const held = Number(
+    (await page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first().innerText())
+      .replace(/,/g, ""),
+  );
+  // Fewer than the whole window and more than none: forty percent of a day is a real count, and
+  // both of the ways this breaks land on one of those two edges.
+  expect(held).toBeLessThan(live);
+  expect(held).toBeGreaterThan(0);
+  // The headline says which state it is in rather than going on claiming the window's total.
+  await expect(page.getByText("held", { exact: true })).toBeVisible();
+
+  // Escape gives it back, and the count returns to what it was.
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(600);
+  await expect(page.getByText("held", { exact: true })).toBeHidden();
+});
+
+test("playing advances the cursor against the wall clock", async ({ page }) => {
+  await installFeeds(page, { count: 400 });
+  await page.goto("/");
+  await waitForData(page);
+  await page.waitForTimeout(4000);
+
+  await page.getByRole("button", { name: "Play the window through" }).click();
+  await page.waitForTimeout(800);
+  const early = Number(
+    (await page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first().innerText())
+      .replace(/,/g, ""),
+  );
+  await page.waitForTimeout(2200);
+  const later = Number(
+    (await page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first().innerText())
+      .replace(/,/g, ""),
+  );
+
+  /*
+   * Two readings, not one, because the first version of this stepped by the interval it asked for
+   * rather than by the time that passed. Every tick drags a render and a re-sync behind it, so the
+   * timer fired late and a twelve second window took over fourteen. A single reading would have
+   * passed that.
+   */
+  expect(later).toBeGreaterThan(early);
 });
