@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compactSpan, reach, reachNote } from "./format";
+import { compactSpan, reach, reachFraction, reachNote } from "./format";
 
 /*
  * The reach labels, which exist because two feeds do not cover the same span.
@@ -80,5 +80,33 @@ describe("the note under the pair", () => {
     const note = reachNote({ usgs: now - 2 * HOUR, emsc: now - 18 * HOUR }, now, MONTH);
     expect(note).toContain("18h");
     expect(note).not.toContain("2h");
+  });
+});
+
+describe("the reach as a fraction of the window", () => {
+  it("is the whole axis for a feed that covers the whole window", () => {
+    expect(reachFraction(now - DAY, now, DAY)).toBeCloseTo(1, 9);
+  });
+
+  it("is the proportion the words cannot give", () => {
+    /*
+     * The reason the bars exist beside the durations. "6h" against "30d" is a fortieth, and arriving at
+     * that from two words is arithmetic the reader should not have to do.
+     */
+    expect(reachFraction(now - 18 * HOUR, now, MONTH)).toBeCloseTo(0.025, 4);
+    expect(reachFraction(now - 18 * HOUR, now, DAY)).toBeCloseTo(0.75, 4);
+  });
+
+  it("is nothing for a feed that fetched no backlog", () => {
+    // Distinct from a short one, and drawn as nothing rather than as a sliver.
+    expect(reachFraction(null, now, DAY)).toBe(0);
+  });
+
+  it("never exceeds the axis, however far back a feed vouches", () => {
+    expect(reachFraction(now - 10 * MONTH, now, DAY)).toBe(1);
+  });
+
+  it("refuses a window with no width rather than dividing by it", () => {
+    expect(reachFraction(now - DAY, now, 0)).toBe(0);
   });
 });
