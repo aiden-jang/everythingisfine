@@ -2549,6 +2549,37 @@ otherwise a north-south trench yields a bearing of 180 and reads top to bottom w
 reads left to right. The epsilon in that check is load-bearing: `sin` of 180 degrees is 1.2e-16, not
 zero, so the exactly-north-south case only comes out right on purpose.
 
+## The card, and the one thing about it that cannot be fixed
+
+The backlog says links unfurl as nothing. They have unfurled as something since the preview shipped, so
+the premise was stale, and two real faults were behind it anyway.
+
+**The card was a screenshot, not a card.** An unlabelled dark circle. In a feed the image is a
+thumbnail and it has to say which app this is, whatever the client does with the title underneath. It
+is now composed: the globe bled off the right edge, the wordmark, a rule, one line, and the two agency
+names along the bottom. The line is deliberately not `og:description`, because that description is
+printed directly under the image in most clients and repeating it spends the card's only sentence on
+something the reader is already reading.
+
+**And it could not be rebuilt.** `index.html` had claimed since the preview landed that the card was
+"captured from the app itself by a Playwright script". That script was never committed. The palette
+moved twice afterwards and the globe's geometry was rewritten entirely, and nobody could tell whether
+the card still matched, because regenerating it meant reconstructing the script from the comment
+describing it. It is committed now as `pnpm card`, and it asks the running app for its own colour
+tokens rather than restating them, so the card cannot drift from the palette even silently.
+
+Still no earthquakes on it, for the original reason: a card is cached for days by every client that
+fetches it, so real events would show one day's seismicity as if it were now, and DESIGN.md section 10
+forbids exactly that. The empty globe is the one version of this picture that cannot go out of date.
+The filter does the emptying, at `m=7.5`, rather than a flag existing only to make this image.
+
+**A card per share is not available at any price here, and the reason is worth writing down.**
+Permalinks are fragment-encoded, and a fragment is never sent to a server. Nothing serving this page
+can know which view was shared, whatever it is willing to compute. Moving the state into the path would
+only relocate the problem: composing an image per link needs something running, which means a Worker,
+which reverses the no-`main` decision the entire zero-invocation deployment rests on. So the backlog
+line asking for one is asking to reopen that, and it should be reopened deliberately or not at all.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
