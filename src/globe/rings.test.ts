@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createRingLayer, MAX_DEG, PLAYBACK, P_WAVE_KM_PER_S, RATE_DEG_PER_S, RING_LIFETIME_S,
-  TRUE_RATE_DEG_PER_S,
+  S_MAX_DEG, S_OVER_P, S_WAVE_KM_PER_S, TRUE_RATE_DEG_PER_S,
 } from "./rings";
 import { EARTH_RADIUS_KM } from "../geo/sphere";
 
@@ -121,7 +121,16 @@ describe("the ring layer", () => {
     // this, and a burst that did would be a worse thing to crash on than to under-draw.
     expect(layer.active()).toBeLessThanOrEqual(64);
     layer.step(0.1);
-    expect(layer.object.geometry.drawRange.count).toBeLessThanOrEqual(64 * 96 * 2);
+    /*
+     * Against the buffer it actually has, not against a restatement of how big that should be.
+     *
+     * This read `64 * 96 * 2`, which is the front count times the segments times two vertices, and it
+     * quietly encoded "one circle per front" as well. Adding the S front made it fail while nothing
+     * had overrun anything: the assertion had stopped describing the invariant and started describing
+     * an implementation detail that changed.
+     */
+    const room = layer.object.geometry.getAttribute("position").count;
+    expect(layer.object.geometry.drawRange.count).toBeLessThanOrEqual(room);
     layer.dispose();
   });
 
@@ -135,6 +144,57 @@ describe("the ring layer", () => {
 
     expect(early).toBeGreaterThan(late);
     expect(late).toBeGreaterThan(0);
+    layer.dispose();
+  });
+});
+
+describe("the S front, and the gap that measures distance", () => {
+  it("derives both rates from velocities rather than restating them", () => {
+    expect(S_OVER_P).toBeCloseTo(S_WAVE_KM_PER_S / P_WAVE_KM_PER_S, 12);
+    // The ordinary crustal ratio, near the root three an elastic solid with Poisson 0.25 gives.
+    expect(S_OVER_P).toBeCloseTo(0.5833, 4);
+    expect(1 / S_OVER_P).toBeCloseTo(Math.sqrt(3), 1);
+  });
+
+  it("keeps the S front behind the P front at every moment of the life", () => {
+    // Not merely at the end: an S front that ever led would be the arrival order inverted.
+    for (const t of [0.01, 0.5, 0.25, 0.9, 0.99]) {
+      const p = t * MAX_DEG;
+      expect(p * S_OVER_P).toBeLessThan(p);
+    }
+  });
+
+  it("opens a gap wide enough to read, which is the whole reason for it", () => {
+    /*
+     * The number that decided this was worth building, computed before it was. At the end of a front's
+     * life the P ring is at 17 degrees and the S at 9.9, a gap of 7.1 degrees of arc. At the default
+     * framing the globe projects to about 392px of radius, so a degree is 6.8px and the gap is some
+     * 48px. The previous attempt at drawing the two agencies' disagreement failed at 4px, so this is
+     * the check that says this one is a different proposition.
+     */
+    const gapDeg = MAX_DEG - MAX_DEG * S_OVER_P;
+    expect(gapDeg).toBeCloseTo(7.083, 3);
+    const pxPerDeg = (392 * Math.PI) / 180;
+    expect(gapDeg * pxPerDeg).toBeGreaterThan(40);
+  });
+
+  it("ends both fronts together, so a lone ring is never left expanding", () => {
+    // The S front is cut short on purpose: one event is one mark, and a circle outliving its partner
+    // by eleven seconds reads as a new earthquake rather than as the tail of an old one.
+    expect(S_MAX_DEG).toBeCloseTo(MAX_DEG * S_OVER_P, 12);
+    expect(S_MAX_DEG).toBeLessThan(MAX_DEG);
+  });
+
+  it("draws two circles per front, and stays inside the buffer at the cap", () => {
+    const layer = createRingLayer();
+    layer.spawn(0, 0, 5);
+    layer.step(0.1);
+    const one = layer.object.geometry.drawRange.count;
+    layer.spawn(40, 10, 5);
+    layer.step(0.1);
+    // Two fronts, four circles. The buffer was sized for the pair rather than for the ring, because
+    // one sized for the ring silently draws half of them.
+    expect(layer.object.geometry.drawRange.count).toBe(one * 2);
     layer.dispose();
   });
 });

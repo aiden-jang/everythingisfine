@@ -149,8 +149,8 @@ export function MagnitudeFilter(
       */}
       <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
         {/*
-          Two circles, fading outward, because that is what the mark does. One circle would read as
-          the hollow deep marker two rows above it. On the ramp like the markers, since a ring
+          Two circles, which is now literally what is drawn rather than a suggestion of expansion:
+          the outer one is the P front and the inner the S. On the ramp like the markers, since a ring
           carries its own event's magnitude colour.
         */}
         <span className="relative mt-[3px] inline-block size-[13px] shrink-0">
@@ -164,8 +164,9 @@ export function MagnitudeFilter(
           />
         </span>
         <span>
-          a ring is the P-wave front leaving a new epicentre, sped up &times;{playback} or it would
-          not appear to move
+          two rings leave each new epicentre, the P-wave and the slower S behind it, sped up
+          &times;{playback} or they would not appear to move. The gap between them is how distance to
+          a quake is measured.
         </span>
       </div>
     </div>
