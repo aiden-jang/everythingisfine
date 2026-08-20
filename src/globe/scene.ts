@@ -412,8 +412,17 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
            * The real terminator is not a hard edge either. Refraction and the sun's own width spread
            * civil twilight over about six degrees, and a hard line on a sphere this size looks like a
            * clipping fault rather than like nightfall.
+           *
+           * Wider than any of that, and deliberately. On the globe the band wraps a curve and reads as
+           * one; flattened it runs almost straight across Eurasia, and a narrow ramp there was read as
+           * a wedge with a corner missing rather than as evening. Twenty-three degrees of arc is four
+           * times physical, and is where no single edge along it is legible as a boundary.
+           *
+           * Only the night side widens. The day ramp is already broad and asymmetric on purpose, and
+           * the two still meet at 0.10 where both are zero, which is what keeps a band of mid-grey off
+           * the terminator.
            */
-          float night = smoothstep(0.10, -0.10, sun);
+          float night = smoothstep(0.10, -0.30, sun);
           float day = smoothstep(0.10, 0.55, sun);
           gl_FragColor = vec4(uDayColor * day, night * uDepth + day * uLift);
         }`,
@@ -423,9 +432,20 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         // Achromatic, like every other piece of chrome: a warm daylight would put hue on the one
         // surface the data is drawn against.
         uDayColor: { value: new Color(0x9fb0cc) },
-        // Deep enough to read as night, shallow enough that the coastlines survive it: the geography
-        // on the dark side still has to be legible, because half the events are sitting on it.
-        uDepth: { value: 0.38 },
+        /*
+         * Deep enough to read as night, shallow enough that the geography survives it.
+         *
+         * 0.38 did not clear the second bar, and the measurement is the argument: land in shadow
+         * against ocean in daylight came out at 1.084:1, under the 1.13 this palette already threw out
+         * once as invisibility. Land against ocean is 1.31:1 by design, so at 0.38 the lighting was the
+         * stronger edge of the two and the shading out-contrasted the thing it was shading.
+         *
+         * 0.26 brings the swing across the terminator to roughly 1.5:1. Still above 1.31, so the two
+         * are nearer comparable than ordered, and going lower means a night that stops reading as
+         * night. The wider ramp above is what removes the edge; this only stops the dark side
+         * swallowing the coastline.
+         */
+        uDepth: { value: 0.26 },
         uLift: { value: 0.11 },
       },
       transparent: true,
