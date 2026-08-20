@@ -190,7 +190,18 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
 
   const quakes = empty ? [] : day(seed, count);
 
-  await page.route(/all_day\.geojson/, (route) => {
+  /*
+   * Every backlog, not just the daily one.
+   *
+   * The window control can ask for `all_week` or `all_month`, and a pattern that only caught
+   * `all_day` let those two straight out to USGS: a suite that had been made independent of the real
+   * agencies quietly started pulling a live week down the moment a test clicked 7d.
+   *
+   * All three answer with the same fixture day. What the seeding path is being tested on is which URL
+   * it asks for and what it does with the reply, and a fixture that grew with the window would only
+   * make the counts harder to reason about.
+   */
+  await page.route(/all_(day|week|month)\.geojson/, (route) => {
     const now = Date.now();
     route.fulfill({
       json: { features: usgs ?? quakes.map((q) => usgsFeature(q, now)) },
