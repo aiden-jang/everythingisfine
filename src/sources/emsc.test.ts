@@ -4,7 +4,7 @@ import captured from "./fixtures/emsc-socket-frames.json";
 import {
   createFakeRuntime, describeSourceContract, type FakeRuntime, type FakeSocket,
 } from "./contract";
-import { createEmscSource, parseEmscFrame } from "./emsc";
+import { createEmscSource, parseEmscFrame, SEED_LIMIT } from "./emsc";
 import { createUsgsSource } from "./usgs";
 import { createStore } from "../data/store";
 import { DISTANCE_LIMIT_KM, TIME_WINDOW_MS } from "../data/reconcile";
@@ -268,5 +268,125 @@ describe("one real earthquake, two agencies", () => {
 
     usgs.stop();
     expect(usgsRuntime.pendingTimers()).toBe(0);
+  });
+});
+
+/*
+ * The coverage claim, which nothing checked.
+ *
+ * `onSeeded` is how the strip knows which hours the buffer was open for, and every test in this file
+ * passed it an empty function. So the one branch that decides whether the app claims a month or
+ * eighteen hours of it had no test at all, in a project whose whole argument is that it says what it
+ * does not know.
+ *
+ * Sound for a measured reason rather than an assumed one: the portal's own ceiling is 20,000 rows,
+ * thirty-three times `SEED_LIMIT`, so ours is always the binding limit and a short page is a short
+ * catalogue. `emsc.live.test.ts` keeps that checked against the real endpoint.
+ */
+describe("how far back a seed says it reaches", () => {
+  const HOUR = 3_600_000;
+
+  /** A catalogue page of `count` events, newest first, one minute apart, as FDSN answers it. */
+  const page = (count: number, now: number, opts: { parseable?: boolean } = {}) => ({
+    features: Array.from({ length: count }, (_, i) => ({
+      properties: opts.parseable === false
+        ? { unid: `bad${i}` }
+        : {
+          unid: `e${i}`,
+          lat: 10,
+          lon: 20,
+          mag: 4,
+          magtype: "mb",
+          time: new Date(now - i * 60_000).toISOString(),
+          lastupdate: new Date(now - i * 60_000).toISOString(),
+        },
+    })),
+  });
+
+  /** Runs one seed against a catalogue response and hands back what it vouched for. */
+  const seedWith = async (
+    body: unknown, seedHours: number,
+  ): Promise<{ covered: number | null; now: number }> => {
+    const sockets: FakeSocket[] = [];
+    const runtime = createFakeRuntime({
+      onSocket: (socket) => sockets.push(socket),
+      respond: async () => new Response(JSON.stringify(body), { status: 200 }),
+    }) as SocketRuntime;
+    runtime.sockets = sockets;
+    const source = createEmscSource(
+      runtime, { socket: "wss://example.invalid/socket", catalogue: "https://example.invalid/query" },
+      seedHours,
+    );
+    let covered: number | null = null;
+    source.start({
+      onReadings: () => {},
+      onStatus: () => {},
+      onSeeded: (from) => { covered = from; },
+    });
+    await runtime.flush();
+    await runtime.flush();
+    source.stop();
+    return { covered, now: runtime.now() };
+  };
+
+  it("vouches for the whole span when the page came back short of the limit", async () => {
+    // 40 events over a month is a short catalogue, not a truncated page, because the limit is 600.
+    const { covered, now } = await seedWith(page(40, 1_700_000_000_000), 30 * 24);
+    expect(covered).toBe(now - 30 * 24 * HOUR);
+  });
+
+  it("vouches only as far as its oldest row when the page came back full", async () => {
+    const at = 1_700_000_000_000;
+    const { covered } = await seedWith(page(SEED_LIMIT, at), 30 * 24);
+    // The oldest of 600 rows a minute apart, which is ten hours rather than the thirty days asked for.
+    expect(covered).toBe(at - (SEED_LIMIT - 1) * 60_000);
+    expect(covered).toBeGreaterThan(at - 30 * 24 * HOUR);
+  });
+
+  it("vouches for nothing when a full page yielded no events at all", async () => {
+    /*
+     * The one combination where falling back to the whole span is exactly wrong: the page was cut
+     * short *and* there is no way to know where, so claiming the month is claiming it on zero
+     * events. It used to do precisely that.
+     */
+    const { covered } = await seedWith(
+      page(SEED_LIMIT, 1_700_000_000_000, { parseable: false }), 30 * 24,
+    );
+    expect(covered).toBeNull();
+  });
+
+  it("reads the edge off the page, not off what survived deduplication", async () => {
+    /*
+     * A socket push arriving before the seed lands removes that event from the delivered batch. If
+     * the edge were read off the delivery, one duplicate at the old end of a truncated page would
+     * move the coverage claim forwards in time and quietly over-claim.
+     */
+    const at = 1_700_000_000_000;
+    const sockets: FakeSocket[] = [];
+    const body = page(SEED_LIMIT, at);
+    const runtime = createFakeRuntime({
+      onSocket: (socket) => sockets.push(socket),
+      respond: async () => new Response(JSON.stringify(body), { status: 200 }),
+    }) as SocketRuntime;
+    runtime.sockets = sockets;
+    const source = createEmscSource(
+      runtime, { socket: "wss://example.invalid/socket", catalogue: "https://example.invalid/query" },
+      30 * 24,
+    );
+    let covered: number | null = null;
+    source.start({
+      onReadings: () => {},
+      onStatus: () => {},
+      onSeeded: (from) => { covered = from; },
+    });
+    // The oldest row on the page, pushed over the socket first, so the seed treats it as already seen.
+    sockets[0]!.emit("open", {});
+    sockets[0]!.emit("message", { data: JSON.stringify({
+      action: "create", data: body.features[SEED_LIMIT - 1],
+    }) });
+    await runtime.flush();
+    await runtime.flush();
+    source.stop();
+    expect(covered).toBe(at - (SEED_LIMIT - 1) * 60_000);
   });
 });

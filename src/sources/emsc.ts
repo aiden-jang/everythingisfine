@@ -43,7 +43,7 @@ const SEED_HOURS = 24;
  * only as far as its oldest row when a page comes back full, so a truncated month reports itself as a
  * short backlog and the strip marks the rest unobserved rather than drawing it as quiet.
  */
-const SEED_LIMIT = 600;
+export const SEED_LIMIT = 600;
 
 const BACKOFF_BASE_MS = 2_000;
 const BACKOFF_CAP_MS = 60_000;
@@ -252,10 +252,19 @@ export function createEmscSource(
       if (!handlers || !Array.isArray(payload?.features)) return;
 
       const readings: Reading[] = [];
+      /*
+       * Tracked over the page, not over what was delivered from it.
+       *
+       * Coverage is a claim about what the catalogue answered, and the delivered list is that minus
+       * whatever the socket had already pushed. Reading the edge off the delivery would let a single
+       * duplicate at the far end of a truncated page move the claim forwards in time.
+       */
+      let oldestOnPage = Infinity;
       for (const feature of payload.features) {
         // Wrapped in the socket's envelope so there is exactly one parser for both transports.
         const parsed = parseEmscFrame({ action: "create", data: feature }, runtime.now());
         if (!parsed) continue;
+        oldestOnPage = Math.min(oldestOnPage, parsed.reading.time);
         // Remembered, so the socket does not re-announce an event the seed already delivered.
         if (seen.get(parsed.reading.id) === parsed.revision) continue;
         remember(parsed.reading.id, parsed.revision);
@@ -268,12 +277,23 @@ export function createEmscSource(
        * The request is capped at SEED_LIMIT results, so on a busy day it returns the most recent 600
        * events and stops. Claiming 24 hours then would be claiming a backlog that was truncated on
        * the way out of the server, so a full page vouches only as far as its oldest event.
+       *
+       * A short page vouches for everything it asked for, and that is sound for a measured reason
+       * rather than an assumed one: the portal's own ceiling is 20,000 rows, so `SEED_LIMIT` is
+       * always the binding limit and a page under it is a genuinely short catalogue rather than a
+       * quietly truncated one. `emsc.live.test.ts` is where that stays checked.
        */
-      const full = Array.isArray(payload.features) && payload.features.length >= SEED_LIMIT;
-      const oldest = readings.reduce((min, r) => Math.min(min, r.time), Infinity);
-      handlers.onSeeded(
-        full && Number.isFinite(oldest) ? oldest : runtime.now() - seedHours * 3_600_000,
-      );
+      const full = payload.features.length >= SEED_LIMIT;
+      /*
+       * A truncated page nothing could be parsed out of vouches for nothing.
+       *
+       * It used to fall through to the full span, which is the one combination where that fallback is
+       * exactly wrong: the page was cut short *and* the app has no idea where, so claiming the whole
+       * window is claiming a month on the strength of zero events. Skipping leaves EMSC with no
+       * coverage of its own, which is the true statement, and USGS still reports its own.
+       */
+      if (full && !Number.isFinite(oldestOnPage)) return;
+      handlers.onSeeded(full ? oldestOnPage : runtime.now() - seedHours * 3_600_000);
     } catch {
       // Optional by design. The socket is the source; this was a head start.
     }

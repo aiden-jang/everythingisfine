@@ -2294,6 +2294,47 @@ rows than the seed limit, so EMSC vouched for the whole window and the truncated
 test. `emscCappedHours` answers with exactly a full page over a span the test names, which is the
 state the real endpoint is in every day.
 
+## The coverage claim, finally measured instead of argued
+
+A seed page that comes back under the row limit is read as the complete catalogue for the span it
+asked for, so at a month it vouches for thirty days. The argument was that this is still honest,
+because a short page is everything the endpoint held for the query. It was never checked, and it was
+resting on two undocumented properties of somebody else's server.
+
+**Both hold, and one of them nearly does not.** The portal accepts a `limit` of 40,000 without
+complaint, so the premise that a larger request is a 400 is simply false. But it has a ceiling of its
+own at exactly 20,000: thirty days returns 14,958, sixty days returns 20,000, and ninety days returns
+20,000 with byte-identical oldest rows. So "fewer rows than I asked for" does not mean complete in
+general. It means complete *here*, because `SEED_LIMIT` is 600 and the ceiling is thirty-three times
+that, so ours is always the binding limit. The claim is sound for a reason that is not the reason I
+would have given.
+
+**Ordering is the other one.** A full page vouches only as far as its oldest row, which is the
+coverage edge only if truncation cuts the old end. A `limit=5` query over thirty days returns the
+newest five, so it does. Had it ever been ascending, the same code would have vouched for the whole
+month while holding the five oldest events in it: not a subtly wrong number, the exact inverse of one.
+
+Both are now assertions in `emsc.live.test.ts`, which is where a fact about somebody else's server
+belongs. Neither is promised, and if either moves the app claims coverage it does not have while
+looking exactly as it does now.
+
+**Two bugs found by writing the tests the claim never had.** `onSeeded` was an empty function in every
+single test in `emsc.test.ts`, so the branch deciding between "a month" and "eighteen hours of it" had
+no coverage at all, in the project whose entire argument is that it says what it does not know.
+
+- A truncated page that nothing could be parsed out of fell through to vouching for the whole span.
+  That is the one combination where the fallback is exactly inverted: the page was cut short *and*
+  there is no way to know where, so it claimed a month on the strength of zero events. It now vouches
+  for nothing, and USGS still reports its own.
+
+- The edge was read off the delivered batch rather than off the page. The delivery is the page minus
+  whatever the socket had already pushed, so a single duplicate at the old end of a truncated page
+  moved the claim forwards in time.
+
+**What is deliberately not changed here.** The 600 stands. Thirty days of EMSC is 14,958 events and
+about 8MB on a static host with no Worker in front of it, so raising the cap is a bandwidth decision
+and not a correctness one, and the measurement above is what a decision on it should be made from.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
