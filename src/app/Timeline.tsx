@@ -262,6 +262,11 @@ export function Timeline({
         made visible rather than described.
 
         Anchored right, because coverage reaches back from now, which is the direction the axis runs.
+
+        On screen from the first frame, both tracks empty, each filling when its own feed answers. That
+        is the same architecture legible in the first second rather than a moment later: the headline says
+        the app is asking two agencies and these say which of them has replied. It also means the load
+        state and the steady state are one visual instead of a spinner and then a chart.
       */}
       {reaches.length > 0 ? (
         <div className="mt-2.5">

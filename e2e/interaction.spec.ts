@@ -367,6 +367,26 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
   await expect(rail).toContainText("Waiting for the first events.");
   await expect(rail).not.toContainText("No events match");
   await expect(rail).not.toContainText("not quiet hours");
+
+  /*
+   * Both tracks on screen from the first frame, empty, and saying which state they are in.
+   *
+   * The sentence above says the app is asking two agencies. These say which of them has replied, which
+   * is the same architecture legible in the first second rather than a moment later, and it is the one
+   * thing that state could not previously show.
+   */
+  const activity = page.locator('[data-rail="activity"]');
+  await expect(activity).toContainText("USGS");
+  await expect(activity).toContainText("EMSC");
+  // "waiting", not "no backlog": a feed still being waited for resolves itself and a refused one does
+  // not, and this fixture never answers rather than refusing.
+  expect(await activity.locator("text=waiting").count()).toBe(2);
+  await expect(activity).not.toContainText("no answer");
+  // Nothing drawn on either track until a feed vouches for something.
+  const filled = await page.evaluate(() => Array
+    .from(document.querySelectorAll('[data-rail="activity"] .relative > span'))
+    .filter((el) => el.getBoundingClientRect().width > 0.5).length);
+  expect(filled).toBe(0);
 });
 
 test("the sequence says whether the big one has already happened", async ({ page }) => {

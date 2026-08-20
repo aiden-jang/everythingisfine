@@ -21,8 +21,8 @@ import { matches, windowStart } from "./data/filter";
 import type { Filters, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import {
-  ago, agoShort, clock, energyPercent, place, reach, reachFraction, reachNote, SOURCE_NAMES,
-  windowLabel,
+  ago, agoShort, clock, energyPercent, place, reachFraction, reachNote, reachWords,
+  SOURCE_NAMES, windowLabel,
 } from "./app/format";
 
 /**
@@ -888,14 +888,23 @@ export function App(): JSX.Element {
               onLive={() => setScrub(LIVE)}
               cursorLabel={view.at === null ? null : clock(view.at)}
               /*
-                Empty until a seed lands. Two bars at zero under an axis is a picture of a bug, and the
-                rail above already says it is asking.
+                Present from the first frame, empty, and filling as each feed answers.
+
+                This is the dual-source architecture legible in the first second: the headline says the
+                app is asking two agencies, and these say which of them has replied. An empty track that
+                fills is also the same shape the reach bars take a moment later, so the load state and
+                the steady state are one visual rather than two.
               */
-              reaches={snapshot.coveredSince === null ? [] : (["usgs", "emsc"] as const).map((id) => ({
+              reaches={(["usgs", "emsc"] as const).map((id) => ({
                 id,
                 label: SOURCE_NAMES[id],
                 fraction: reachFraction(snapshot.covered[id], now, filters.windowMs),
-                words: reach(snapshot.covered[id], now, filters.windowMs),
+                words: reachWords(
+                  snapshot.covered[id],
+                  snapshot.statuses[id].kind === "failing",
+                  now,
+                  filters.windowMs,
+                ),
               }))}
               reachNote={sourceNote}
             />

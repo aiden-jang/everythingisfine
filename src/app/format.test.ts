@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compactSpan, reach, reachFraction, reachNote } from "./format";
+import { compactSpan, reach, reachFraction, reachNote, reachWords } from "./format";
 
 /*
  * The reach labels, which exist because two feeds do not cover the same span.
@@ -108,5 +108,27 @@ describe("the reach as a fraction of the window", () => {
 
   it("refuses a window with no width rather than dividing by it", () => {
     expect(reachFraction(now - DAY, now, 0)).toBe(0);
+  });
+});
+
+describe("what a feed's bar says while it is still arriving", () => {
+  it("gives the reach once the feed has answered", () => {
+    expect(reachWords(now - 18 * HOUR, false, now, DAY)).toBe("18h");
+    expect(reachWords(now - DAY, false, now, DAY)).toBe("24h");
+  });
+
+  it("distinguishes not yet from refused, which resolve differently", () => {
+    /*
+     * `reach` alone answers "no backlog" for both, which describes a feed that failed as one that
+     * happened to have nothing. The first fixes itself and the second does not, and the point of two
+     * bars is seeing which feed is carrying the window.
+     */
+    expect(reachWords(null, false, now, DAY)).toBe("waiting");
+    expect(reachWords(null, true, now, DAY)).toBe("no answer");
+  });
+
+  it("prefers a reach it has over a failure it also has", () => {
+    // A feed can seed and then lose its socket. The backlog it delivered is still real.
+    expect(reachWords(now - 6 * HOUR, true, now, DAY)).toBe("6h");
   });
 });
