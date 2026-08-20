@@ -23,6 +23,30 @@
 export const REPLAY_SECONDS = 2.8;
 
 /**
+ * The most history the entrance will play, however much is held.
+ *
+ * It used to play from the oldest event in the buffer, which was the same thing as a day while a day was
+ * the only window. A link can now open at a month, and a month played in 2.8 seconds fires 215 fronts at
+ * 77 a second, measured against the real feed, where `REPLAY_FRONT_MIN_MAG` was chosen for roughly three
+ * and this file calls six a firework. `MAX_RINGS` is 64, so most of them were dropped unseen anyway.
+ *
+ * A day is not an arbitrary rescue: it is what this module is named for and what the rail says out loud
+ * while it runs. At a wider window the older events are simply already drawn when it starts, which is
+ * true to the claim being made, since the entrance is about showing what the globe *does* and not about
+ * inventorying what it holds.
+ */
+export const REPLAY_SPAN_MS = 24 * 3_600_000;
+
+/**
+ * Where the entrance should start, given the oldest thing held.
+ *
+ * The later of the two: never before the buffer begins, and never further back than a day.
+ */
+export function replayFrom(oldest: number, now: number): number {
+  return Math.max(oldest, now - REPLAY_SPAN_MS);
+}
+
+/**
  * Fronts are spawned only above this magnitude during the replay.
  *
  * A day holds several hundred events and firing a front for each would be noise, not signal. Above

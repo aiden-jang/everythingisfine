@@ -3161,6 +3161,35 @@ is how a fault this loud stayed quiet: it is the one part of the app that is inv
 using it. The rule is a pure function now, tested directly, which is the most that can be checked without
 a screen reader in the loop.
 
+## Fixing the window clamp armed a firework
+
+Last change let a link carry a 7d or 30d window, which had been silently flattened to a day since those
+windows shipped. That was the right fix and it made a latent bug reachable, which is worth writing down as
+plainly as the fix was: the entrance replay played from the oldest event in the buffer, and while a day
+was the only window that phrase meant "a day ago".
+
+Measured against the real month feed rather than reasoned about. Thirty days holds 215 events at magnitude
+5 or above, and the entrance plays in 2.8 seconds, so a link opening at a month fired **77 fronts a
+second**. `REPLAY_FRONT_MIN_MAG` is documented as chosen for a rhythm of roughly three a second, by a
+comment that calls six "a firework". `MAX_RINGS` is 64, so most of them were dropped before anyone could
+have seen them, which is the only reason this would have looked merely wrong rather than broken.
+
+**The replay reaches back a day, whatever is held.** Not an arbitrary rescue: a day is what the module is
+named for and what the rail says out loud while it runs, and that label was hardcoded, so at a month it
+was also lying. At a wider window the older events are simply already drawn when the entrance starts,
+which is true to the claim being made, since the entrance is about showing what the globe *does* rather
+than inventorying what it holds. A day's window is unaffected, because there the buffer's oldest event is
+already the later of the two.
+
+**And the count had to be primed, which is the same fault in the other direction.** `revealed` counts what
+the replay crosses. With the start clamped, everything older than a day is on screen from the first frame,
+so leaving the counter at zero would have printed 285 in the rail beside a globe holding eleven thousand.
+The first-frame announcement had the same two stale values in it, on a line whose own comment exists to
+say the heading and the picture must agree from the first frame.
+
+That is the fifth of these in five changes, and the first one I caused. The class is unchanged: a constant
+or a phrase that was true when written, made false by something else moving, and silent about it.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

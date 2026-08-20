@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createReplay, REPLAY_SECONDS } from "./replay";
+import { createReplay, REPLAY_SECONDS, replayFrom, REPLAY_SPAN_MS } from "./replay";
 
 const FROM = 1_700_000_000_000;
 const TO = FROM + 24 * 3_600_000;
@@ -59,5 +59,46 @@ describe("the entrance replay", () => {
     const replay = createReplay({ from: TO, to: TO });
     expect(replay.done()).toBe(true);
     expect(replay.at()).toBeNull();
+  });
+});
+
+describe("how far back the entrance reaches", () => {
+  const now = 1_700_000_000_000;
+  const HOUR = 3_600_000;
+
+  it("plays the whole buffer when the buffer is under a day", () => {
+    // The ordinary case, and the one that must not change: a day's window seeds about a day.
+    expect(replayFrom(now - 20 * HOUR, now)).toBe(now - 20 * HOUR);
+    expect(replayFrom(now - HOUR, now)).toBe(now - HOUR);
+  });
+
+  it("plays a day and no more when a month is held", () => {
+    /*
+     * It played from the oldest event held, which was the same thing as a day while a day was the only
+     * window. Measured against the real month feed: 215 events at M5 or above, fired over 2.8 seconds,
+     * is 77 fronts a second where `REPLAY_FRONT_MIN_MAG` was chosen for roughly three and this file calls
+     * six a firework. `MAX_RINGS` is 64, so most of them were dropped unseen.
+     */
+    expect(replayFrom(now - 30 * 24 * HOUR, now)).toBe(now - REPLAY_SPAN_MS);
+    expect(replayFrom(now - 7 * 24 * HOUR, now)).toBe(now - REPLAY_SPAN_MS);
+  });
+
+  it("reaches back exactly a day, which is what the rail says while it runs", () => {
+    expect(REPLAY_SPAN_MS).toBe(24 * HOUR);
+  });
+
+  it("keeps the front rate inside the tempo it was tuned for, at any window", () => {
+    /*
+     * The property rather than the instance. A day yields about a dozen events at M5+, so the rate holds
+     * wherever the buffer starts, and the clamp is what makes that true of a month as well.
+     */
+    const perSecond = (spanMs: number): number => {
+      const played = now - replayFrom(now - spanMs, now);
+      // Twelve M5+ events a day, measured, spread evenly for the purposes of a rate.
+      return (12 * (played / (24 * HOUR))) / 2.8;
+    };
+    for (const days of [1, 7, 30]) {
+      expect(perSecond(days * 24 * HOUR)).toBeLessThan(6);
+    }
   });
 });

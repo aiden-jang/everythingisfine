@@ -2,7 +2,9 @@ import { useEffect, useRef } from "react";
 import { matches } from "../data/filter";
 import { createGlobe } from "./scene";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
-import { createReplay, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
+import {
+  createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay,
+} from "../app/replay";
 import type { Filters } from "../data/types";
 import { distanceLabel, magnitude } from "../app/format";
 import { between, seconds } from "../app/arrival";
@@ -524,8 +526,19 @@ export function Globe({
         let oldest = Infinity;
         feed.store.forEach((q) => { oldest = Math.min(oldest, q.primary.time); });
         if (Number.isFinite(oldest)) {
-          replay = createReplay({ from: oldest, to: Date.now() });
+          const startedAt = Date.now();
+          const from = replayFrom(oldest, startedAt);
+          replay = createReplay({ from, to: startedAt });
+          /*
+           * Primed with what is already on screen, not zero.
+           *
+           * The replay only ever plays the last day, so at a wider window everything older than that is
+           * drawn from the first frame. `revealed` counts what the replay crosses, so starting it at zero
+           * would print 285 in the rail beside a globe holding eleven thousand. That is the same fault
+           * the note below this one is about, in the other direction.
+           */
           revealed = 0;
+          feed.store.forEach((q) => { if (q.primary.time <= from) revealed += 1; });
           /*
            * Announced before the first frame, not after it.
            *
@@ -533,7 +546,9 @@ export function Globe({
            * full held total beside an empty globe for a quarter of a second. The heading and the
            * picture have to agree from the first frame, not from the second.
            */
-          onReplayRef.current?.({ at: oldest, revealed: 0 });
+          // The clamped start and the primed count, not the buffer's oldest and zero: this line exists
+          // so the heading and the picture agree on the first frame, and it has to agree with them.
+          onReplayRef.current?.({ at: from, revealed });
           wake();
           return;
         }
