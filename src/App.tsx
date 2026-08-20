@@ -3,6 +3,7 @@ const Globe = lazy(() => import("./globe/Globe").then((m) => ({ default: m.Globe
 import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { PLACE_LIMIT, search, type Hit } from "./app/search";
+import { useRolling } from "./app/roll";
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
@@ -553,6 +554,16 @@ export function App(): JSX.Element {
    */
   const shown = totalIn(bars);
 
+  /*
+   * The count on the headline, and whether it is ours to animate.
+   *
+   * Driven frame by frame during the replay and while the cursor is parked, and a discrete jump
+   * otherwise. `useRolling` is handed that distinction rather than inferring it, because inferring it
+   * means guessing from the value alone and the two cases look identical from there.
+   */
+  const driven = replay !== null || view.at !== null;
+  const headline = useRolling(replay ? replay.revealed : revealedNow ?? shown, !driven);
+
   const failing = (Object.entries(snapshot.statuses) as [SourceId, SourceStatus][])
     .flatMap(([id, status]) => (status.kind === "failing" ? [[id, status] as const] : []));
 
@@ -709,10 +720,18 @@ export function App(): JSX.Element {
                   as the day plays in. The held total sat there unchanged while the globe filled
                   beneath it, which is a true number describing something other than the picture.
                 */}
-                <div className="mt-1.5 text-[38px] leading-none font-semibold">
-                  {(replay
-                    ? replay.revealed
-                    : revealedNow ?? shown).toLocaleString("en-GB")}
+                {/*
+                  Rolled, but only when the change is a discrete one.
+
+                  The count moves for three reasons and only one of them looked like anything. The
+                  entrance replay already climbs it a frame at a time, and so does the cursor while it is
+                  parked or playing; in both cases the number has to be exactly what is drawn, so easing
+                  would make it a late copy of something already correct. What was left snapping was a
+                  live arrival and, far more visibly, a window change from 872 to 11,363 rendered as a
+                  flicker. See `roll.ts` for why the rate is a solved time constant.
+                */}
+                <div className="mt-1.5 text-[38px] leading-none font-semibold tabular-nums">
+                  {headline.toLocaleString("en-GB")}
                 </div>
                 {/*
                   During the replay the rail shows the replayed clock, labelled, because the number
