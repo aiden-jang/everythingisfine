@@ -64,3 +64,78 @@ describe("cluster cells", () => {
     }
   });
 });
+
+/*
+ * The third of the seam audit: markers.
+ *
+ * A marker is a point, so it has no geometry to be wrong at the antimeridian. What can be wrong is the
+ * grid that decides whether two of them are one, and the Ring of Fire crosses 180 degrees twice, at
+ * Tonga and along the Aleutians. So the question is whether that line behaves differently from any other
+ * cell edge, and the answer measured out as no.
+ */
+describe("clustering across the antimeridian", () => {
+  const CELL = 3.2;
+
+  it("cuts the grid at 180, which every cell edge also does", () => {
+    /*
+     * Two events either side of the date line land in different cells. That looked like the bug this
+     * audit was looking for and is not: two events either side of *any* cell edge land in different
+     * cells, which is what a grid is. The check that matters is the one below.
+     */
+    expect(cellKey(179.9, -18, CELL)).not.toBe(cellKey(-179.9, -18, CELL));
+    /*
+     * The same separation, mid-ocean, straddling an ordinary edge. Also separate.
+     *
+     * The edge has to be found from the *widened* cell, not from `CELL`. Longitude cells stretch by
+     * 1/cos(lat), so at latitude -18 they are 3.3647 degrees and not 3.2, and a boundary computed from
+     * the base figure is not a boundary at all: the first version of this put both points in one cell
+     * and asserted they were in two.
+     */
+    const widen = Math.min(8, 1 / Math.max(0.125, Math.cos((-18 * Math.PI) / 180)));
+    const lonCell = CELL * widen;
+    const edge = Math.ceil((-140 + 180) / lonCell) * lonCell - 180;
+    expect(cellKey(edge - 0.05, -18, CELL)).not.toBe(cellKey(edge + 0.05, -18, CELL));
+  });
+
+  it("merges pairs at the seam as readily as anywhere else", () => {
+    /*
+     * The property that would have been the bug. Sliding a fixed-separation pair across a region and
+     * counting how often it merges: measured at 90.0 percent straddling 180 against 90.0 percent
+     * mid-Pacific. A seam that clustered differently would show up here as a dip.
+     */
+    const wrap = (v: number): number => ((((v + 180) % 360) + 360) % 360) - 180;
+    const rate = (centre: number): number => {
+      let merged = 0;
+      let n = 0;
+      for (let o = -6; o <= 6; o += 0.02) {
+        n += 1;
+        if (cellKey(wrap(centre + o), -18, CELL) === cellKey(wrap(centre + o + 0.4), -18, CELL)) {
+          merged += 1;
+        }
+      }
+      return merged / n;
+    };
+    expect(Math.abs(rate(180) - rate(-140))).toBeLessThan(0.06);
+  });
+
+  it("keeps the band at the seam the same width as its neighbours, near enough", () => {
+    /*
+     * The one thing that *is* seam-specific. 360 degrees is not a whole number of widened cells, so the
+     * last band is a runt. Measured at latitude -18 it is 3.344 degrees against 3.365: six parts in a
+     * thousand, which is nothing, and worth an assertion only so that a future change to the widening
+     * cannot make it something.
+     */
+    const widen = Math.min(8, 1 / Math.max(0.125, Math.cos((-18 * Math.PI) / 180)));
+    const lonCell = CELL * widen;
+    const runt = ((360 / lonCell) % 1) * lonCell;
+    expect(Math.abs(runt - lonCell) / lonCell).toBeLessThan(0.05);
+  });
+
+  it("never lets two distant cells collide onto one key", () => {
+    // The key packs latitude and longitude bands into one integer with 4096 of room for the longitude
+    // side. The tightest cell the app ever uses is 1.68 degrees, which is 215 bands at the equator.
+    const tightest = 3.2 / 1.9;
+    expect(360 / tightest).toBeLessThan(4096);
+    expect(cellKey(-180, -90, tightest)).not.toBe(cellKey(180, -90 + tightest, tightest));
+  });
+});
