@@ -13,6 +13,8 @@ import { Resizer } from "./app/Resizer";
 import { CrossSection } from "./app/CrossSection";
 import { buildSection, type SectionLine } from "./app/section";
 import { histogram, totalIn } from "./app/histogram";
+import { diurnal } from "./app/diurnal";
+import { Dial } from "./app/Dial";
 import { decode, encode } from "./app/permalink";
 import { rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
@@ -519,6 +521,20 @@ export function App(): JSX.Element {
     flyTo.current(hit.strongest.primary.lon, hit.strongest.primary.lat, 2.2);
   };
 
+  /*
+   * Folded onto the clock, on the same triggers as the strip beside it.
+   *
+   * A full walk with a solar-time calculation per event, measured at 10.8ms for a 50,000 event buffer,
+   * which is the same order as the histogram walk that already runs here. `now` is deliberately absent
+   * from the deps for the reason the histogram gives: it ticks every second and the bins move on the
+   * data, not on the clock.
+   */
+  const clockBins = useMemo(
+    () => diurnal(feed.store.forEach, filters, Date.now()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filters.minMagnitude, filters.sources, filters.windowMs, snapshot.revision],
+  );
+
   const hours = Math.round(filters.windowMs / 3_600_000);
   /*
    * The headline counts what is on the globe, not what is in the buffer.
@@ -825,6 +841,21 @@ export function App(): JSX.Element {
               </span>
             </button>
           ) : null}
+
+          {/*
+            The same window, folded onto the clock.
+
+            Under the activity strip because both answer "when" and neither answers it the other's way:
+            the strip is elapsed time and this is time of day, and the interesting thing about this one
+            is that it has nothing in it. Behind a disclosure for that reason, and next to the strip so
+            the two readings of one word sit together.
+          */}
+          <details data-rail="diurnal" className="mt-3">
+            <summary className="cursor-pointer list-none text-[11px] text-faint hover:text-dim">
+              Time of day
+            </summary>
+            <Dial counts={clockBins} />
+          </details>
 
           {onMap ? null : <div data-rail="legend">{legend}</div>}
 
