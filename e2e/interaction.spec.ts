@@ -693,12 +693,12 @@ test("the globe unwraps into a map and back", async ({ page }) => {
   expect(flat.equals(globe)).toBe(false);
 
   // Remembered, because which projection somebody reads in is a preference, not a view.
-  expect(await page.evaluate(() => localStorage.getItem("firstmotion.flat"))).toBe("1");
+  expect(await page.evaluate(() => localStorage.getItem("eif.flat"))).toBe("1");
 
   await toggle.click();
   await page.waitForTimeout(2_500);
   await expect(toggle).toHaveText("Map");
-  expect(await page.evaluate(() => localStorage.getItem("firstmotion.flat"))).toBe("0");
+  expect(await page.evaluate(() => localStorage.getItem("eif.flat"))).toBe("0");
 });
 
 test("a shared camera survives the entrance", async ({ page }) => {
@@ -882,7 +882,7 @@ test("a link carrying a section opens on the map with the line drawn", async ({ 
   try {
     await installFeeds(page, { count: 400 });
     await page.goto("http://localhost:31600");
-    await page.evaluate(() => localStorage.setItem("firstmotion.flat", "0"));
+    await page.evaluate(() => localStorage.setItem("eif.flat", "0"));
 
     await page.goto(
       "http://localhost:31600/#at=140,36,2.6&m=2&w=24&x=134.2,31.5,146.1,41.2",

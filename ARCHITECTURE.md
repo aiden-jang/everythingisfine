@@ -3260,6 +3260,79 @@ back at a month and spent a minute fetching a five-megabyte feed, which is a sta
 day and lasts long enough to read at a month. Every fix that widens what is reachable makes the next one
 visible.
 
+## Everything Is Fine
+
+The app is called Everything Is Fine. It was called First Motion, after the initial polarity of a P-wave
+arrival, which is a good name for a seismic instrument and cannot carry hurricanes, wildfires, floods and
+an aurora. The scope decision came first and the name followed it; both are recorded in `PLAN.local.md`
+section I, including the recommendation they overruled.
+
+The joke is deadpan and it plays *against* the chrome rather than with it. A hue-free instrument laying
+out counts in tabular figures, under a headline saying everything is fine, is funnier than any amount of
+colour would be. That is also the discipline it imposes: the app has to stay austere for the name to
+work, so the name is now an argument against the layer menu section I warned about.
+
+**"FINE" on a phone.** The wordmark is half again as long as the one it replaces, and this header's own
+notes record a single extra button pushing it 120 pixels past a phone viewport. So it is "FINE" below `md`
+and the full sentence above it, which is a layout fix and the better joke at that size.
+
+**Ten string literals became one prefix, because the rename had a consequence nobody would have chosen.**
+Preferences were keyed `firstmotion.rail`, `firstmotion.ramp` and so on, written out at each of the ten
+places one is read or written. Renaming those keys silently returns every returning viewer's rail width,
+projection, ramp and announce threshold to defaults, because the new keys are simply absent. `stored`
+reads the new key, falls back to the old one once, and writes the new one on the way past, so a
+preference migrates the first time its owner opens the page. It also swallows the exception private
+browsing throws, which the ten inline calls did not: a preference that cannot be saved is not worth
+taking a page down for.
+
+**One feature died in the rename, and it should.** The legend carried "First motion is a seismogram term:
+which way the ground jumps as that P wave lands", added a few changes ago because nothing in the app said
+what its own name meant. With the name gone that line explains nothing, and a fact kept only because it
+was once load-bearing is trivia. It is removed. The two-ring sentence above it stays, because the P and S
+fronts are still drawn and the gap between them still measures distance.
+
+**The share card is now wrong and cannot be fixed from here.** `public/share.png` has the old wordmark
+baked into it. `pnpm card` regenerates it and needs a browser.
+
+## The aurora, and the line that decides every layer after it
+
+First layer that is not an earthquake, and chosen first because it is the only one that is not more dots.
+It is a field, so it draws as light rather than as another marker competing with the ones already there.
+
+**The hue question, settled: light gets colour, marks get shapes.** The rule was never "no hue in the
+canvas". The atmospheric rim is already blue and the day wash already pale blue-grey, because both are
+illumination. An aurora is illumination too, so it joins those rather than the magnitude ramp, and the
+rule survives exactly as written: no *mark* carries a hue that is not a magnitude. That draws the line for
+everything queued behind it. Hurricanes, floods and wildfires are marks, so they stay achromatic and
+differ by shape, which matters most for wildfires, whose obvious orange *is* the ramp.
+
+**Drawn inside the night shader, not beside it.** That shader already computes how dark a point is, from
+the real subsolar position, so the aurora is multiplied by the number that already exists. Not a stylistic
+choice: an aurora is there in daylight and you cannot see it, and drawing it anyway would be the same kind
+of unstated claim as a wavefront moving at a speed nothing prints. It also means the layer arrives with its
+explanation already on screen, which is the rule `PLAN.local.md` now holds every new layer to.
+
+**The gain is measured, not chosen.** Probability is multiplied by three before clamping, because an
+ordinary active evening peaked at 28 out of 100 and dividing by the model's nominal maximum would have
+drawn every real night as almost nothing. The legend states the peak for the same reason: a quiet sky is
+genuinely faint, and a faint wash with nothing saying so is indistinguishable from a layer that failed.
+
+**Not a `GeoEventSource`, and that is the whole cost of going beyond earthquakes done cheaply.** That
+contract is built around readings a second agency might dispute. A probability field has no identity to
+reconcile, no magnitude and no depth. Section I says the store is the earthquake-shaped part and the
+sources are not, and the way to keep that true is to not push a field through a reconciler. It is fetched
+beside the feeds, held in one piece of state, and handed to the scene as a texture.
+
+Ten minutes rather than the model's five: the grid is 900kB and an oval does not move far in that time.
+
+**Two things I walked into.** A backtick inside the GLSL comment ended the shader's template literal, which
+`morph.ts` warns about in as many words. And the texture is RGBA rather than a single red channel, four
+times the bytes for 260kB, because `ramp.ts` already proves that exact path works here and a one-channel
+texture brings row-alignment rules that are only interesting when they are wrong.
+
+**Unverified:** whether the field reads as smooth or as a one-degree mosaic at high zoom. `LinearFilter` is
+the mitigation and the wash looks diffuse at framing distance, but I have not looked at it magnified.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

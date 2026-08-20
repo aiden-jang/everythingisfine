@@ -271,3 +271,23 @@ export function corroborationNote(
     + `${overlap.both.toLocaleString("en-GB")} of ${overlap.events.toLocaleString("en-GB")} events `
     + `(${pct}%) were reported by both.`;
 }
+
+/**
+ * What the green wash is, and how much of it there is tonight.
+ *
+ * The rule this app now holds every new layer to is that none ships without the thing that explains it.
+ * The aurora's explanation is already on screen: it appears where the terminator has decided it is dark,
+ * because that is the only place an aurora is visible, and the terminator is computed from the real
+ * subsolar point rather than styled.
+ *
+ * The peak is stated because a quiet night is genuinely faint, and a faint wash with nothing saying so is
+ * indistinguishable from a layer that failed to load. It is a forecast and says so: NOAA publishes a
+ * predicted oval for a stamped minute, not an observation.
+ */
+export function auroraNote(peak: number, forecastAt: number, now: number): string {
+  const strength = peak >= 40 ? "strong" : peak >= 15 ? "active" : "quiet";
+  const age = Math.max(0, Math.round((now - forecastAt) / 60_000));
+  const when = age < 1 ? "for this minute" : `forecast ${age} minute${age === 1 ? "" : "s"} ago`;
+  return `the green is the aurora, only where it is dark enough to see it. `
+    + `${strength} tonight, peaking at ${Math.round(peak)}% chance, ${when}.`;
+}

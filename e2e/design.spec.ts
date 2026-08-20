@@ -266,7 +266,7 @@ test("a shared link previews as something", async ({ page }) => {
   const meta = async (attr: string, value: string): Promise<string | null> =>
     page.locator(`meta[${attr}="${value}"]`).getAttribute("content");
 
-  expect(await meta("property", "og:title")).toBe("First Motion");
+  expect(await meta("property", "og:title")).toBe("Everything Is Fine");
   expect(await meta("property", "og:image")).toMatch(/^https:\/\/.+\/share\.png$/);
   expect(await meta("property", "og:image:alt")).toBeTruthy();
   expect(await meta("name", "twitter:card")).toBe("summary_large_image");
