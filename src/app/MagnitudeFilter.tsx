@@ -17,11 +17,21 @@ export interface MagnitudeFilterProps {
   ramp: RampName;
   value: number;
   onChange: (value: number) => void;
+  /**
+   * The wavefront playback multiplier, passed rather than imported.
+   *
+   * It lives in `globe/rings.ts` beside the physics it is derived from, and that module imports
+   * three. This legend is in the eager bundle while the canvas is behind a `lazy`, so importing the
+   * constant here would drag the renderer in with it for the sake of one number.
+   */
+  playback: number;
 }
 
 const TICKS = [MAG_MIN, 3, 5, MAG_MAX];
 
-export function MagnitudeFilter({ ramp, value, onChange }: MagnitudeFilterProps): JSX.Element {
+export function MagnitudeFilter(
+  { ramp, value, onChange, playback }: MagnitudeFilterProps,
+): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
   // Where the threshold sits along the scale, as a percentage of the track.
   const cut = Math.max(0, Math.min(100, ((value - MAG_MIN) / (MAG_MAX - MAG_MIN)) * 100));
@@ -122,6 +132,41 @@ export function MagnitudeFilter({ ramp, value, onChange }: MagnitudeFilterProps)
       <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
         <span className="inline-block h-px w-[38px] shrink-0 bg-plate opacity-90" />
         <span>plate boundaries</span>
+      </div>
+
+      {/*
+        The rings, which are the signature of the whole design and were the one mark nothing named.
+        Every other encoding here is a property of a dot somebody can stare at; a ring appears when an
+        event arrives, expands for fifteen seconds and is gone, so a first time viewer gets one look at
+        it and no second chance to work out what it was.
+
+        A sentence rather than a label, because unlike "plate boundaries" it cannot be named in two
+        words: the multiplier is part of what the mark *is*, and a wavefront moving at twenty times
+        real speed with nothing saying so would be the one dishonest thing on screen.
+
+        `items-start`, since this is the only row that wraps, and a glyph centred against two lines
+        floats between them.
+      */}
+      <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+        {/*
+          Two circles, fading outward, because that is what the mark does. One circle would read as
+          the hollow deep marker two rows above it. On the ramp like the markers, since a ring
+          carries its own event's magnitude colour.
+        */}
+        <span className="relative mt-[3px] inline-block size-[13px] shrink-0">
+          <span
+            className="absolute inset-[3.5px] rounded-full border"
+            style={{ borderColor: rampColorAt(ramp, 0.55) }}
+          />
+          <span
+            className="absolute inset-0 rounded-full border opacity-45"
+            style={{ borderColor: rampColorAt(ramp, 0.55) }}
+          />
+        </span>
+        <span>
+          a ring is the P-wave front leaving a new epicentre, sped up &times;{playback} or it would
+          not appear to move
+        </span>
       </div>
     </div>
   );

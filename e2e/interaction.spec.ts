@@ -1213,3 +1213,28 @@ test("the map carries a scale, and it names the latitude it is true at", async (
    */
   expect(atLatitude).toBeGreaterThan(atEquator + 5);
 });
+
+test("the legend says what a ring is, since nothing else did", async ({ page }) => {
+  /*
+   * The rings are the signature of the design and were the one mark with no explanation anywhere.
+   * Every other encoding belongs to a dot somebody can stare at; a ring appears when an event lands,
+   * expands for fifteen seconds and is gone, so a first time viewer gets exactly one look at it.
+   *
+   * The multiplier is part of the claim rather than a footnote to it: a front moving at twenty times
+   * real speed with nothing saying so would be the only dishonest mark on screen.
+   */
+  await installFeeds(page, { count: 200 });
+  await page.goto("/");
+  await waitForData(page);
+
+  const zones = page.locator(".zones");
+  await expect(zones).toContainText("a ring is the P-wave front leaving a new epicentre");
+  await expect(zones).toContainText("×20");
+
+  /*
+   * Once, not twice. The header carried a bare "wavefront ×20" that the sentence now states in the
+   * one place it means something, and two identical figures in one viewport with only one of them
+   * explained is the trap the activity axis already fell into.
+   */
+  expect(await zones.evaluate((el) => (el.textContent ?? "").split("×20").length - 1)).toBe(1);
+});
