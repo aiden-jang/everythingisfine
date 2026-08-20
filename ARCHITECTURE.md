@@ -2858,6 +2858,37 @@ The top magnitude is tracked beside the winning event rather than read back off 
 also the only thing TypeScript permits: it cannot see that the callback ran, so it narrows the variable to
 `null` and the dereference is an error rather than a risk.
 
+## Measuring between two events, with nothing added to do it
+
+The panel lists neighbours with their distances, inside 150km, for whatever is pinned. What it could not
+answer is how far apart any two events on screen are, which is the difference between a display and an
+instrument.
+
+**No mode, no second selection, no state.** An event is already pinnable and another is already
+hoverable, so the pair exists the moment somebody has done both. The measurement is those two facts read
+together. The alternative was a measure mode with an entry, an exit, a second selection to hold and a way
+to see which of two things was selected, all to express a relationship the app was already one
+subtraction away from.
+
+**Distance always, time only inside the cap.** Distance is geometry and true at any separation. A travel
+time over a constant crustal velocity stops being true well before the antipode, so it is refused past
+the same `MAX_KM` the arrival sentence uses. One cap, one reason, one place to change it.
+
+**Depth is deliberately absent, having been deliberately present next door.** The arrival sentence
+corrects for it because a wave leaves a hypocentre for a point on the surface and the correction is worth
+a third on a deep event. Between two events both ends are hypocentres, and the honest path is neither the
+surface arc nor the straight chord but a refracted ray, so the surface distance is reported as exactly
+what it is.
+
+**The tooltip was clipping the line before it was written.** `truncate` sat on the tooltip box, which
+means one line, so a second line would have existed and never shown. It has moved onto the place name
+inside, which is the thing that actually wants truncating: a place name is prose and a measurement is not.
+
+**And a formatter that was about to exist twice.** `globe/scale.ts` had `distanceLabel` for the scale bar
+and this needed the same words, differing only in rounding and a guard, which is how "500 m" and "0.5 km"
+end up in one app. There is one now, in `format.ts`, whose whole job is turning data into words, and the
+scale bar reads it from there.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

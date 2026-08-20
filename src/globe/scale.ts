@@ -81,12 +81,6 @@ export function kmPerPixel(degPerPx: number, lat: number): number {
   return degPerPx * KM_PER_DEGREE * Math.cos((lat * Math.PI) / 180);
 }
 
-/** `500 km`, or metres below one, because "0.5 km" is not a thing anybody writes. */
-export function distanceLabel(km: number): string {
-  if (km >= 1) return `${km.toLocaleString("en-GB")} km`;
-  return `${Math.round(km * 1000)} m`;
-}
-
 /**
  * `38°N`, and a bare `0°` at the equator, where neither hemisphere is true.
  *

@@ -345,6 +345,17 @@ export function DetailPanel({
         )}
       </div>
 
+      {/*
+        The one thing telling anybody the measurement exists.
+
+        Measuring between two events reuses the pin and the hover rather than adding a mode, which is
+        the right trade and leaves it with nothing to advertise: the hint strip is for keys and this is
+        not a key. So the panel says it, while an event is pinned, which is exactly when it is true.
+      */}
+      <p className="mt-4 text-[11px] leading-relaxed text-faint">
+        Hover another event to measure from this one.
+      </p>
+
       <div className="mt-5 flex gap-2 pb-1">
         <button
           type="button"
