@@ -64,8 +64,23 @@ export interface Store {
   findByReading: (source: SourceId, id: string) => Quake | undefined;
   /** Every quake, oldest arrival first. */
   forEach: (fn: (quake: Quake) => void) => void;
-  /** Up to `n` most recently arrived, newest first. For the recency-ordered accessible feed. */
+  /**
+   * Up to `n` most recently *arrived*, in reverse arrival order.
+   *
+   * Arrival order, which is not time order and is nobody's idea of "recent". A seed delivers a whole
+   * window at once in whatever order the agency listed it, and USGS lists newest first, so the last
+   * thing to arrive from a month's seed is the oldest event in it. Anything wanting recency wants
+   * `newest`.
+   */
   latest: (n: number) => Quake[];
+  /**
+   * Up to `n` newest by origin time, newest first, optionally filtered before selection.
+   *
+   * The filter is taken rather than applied afterwards because selecting first and filtering second
+   * cannot be made correct: it returns however many of the top `n` happen to pass, which is fewer than
+   * `n` and sometimes none.
+   */
+  newest: (n: number, keep?: (quake: Quake) => boolean) => Quake[];
   stats: () => StoreStats;
   size: () => number;
   capacity: number;
@@ -274,6 +289,30 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
         if (!key) continue;
         const q = byKey.get(key);
         if (q) out.push(q);
+      }
+      return out;
+    },
+    /*
+     * Selection, not a sort, for the reason `nearby.ts` gives about its own four: sorting the buffer to
+     * take sixty is O(n log n) for a fixed-size answer, and the buffer is up to fifty thousand events on
+     * every revision. One pass with a bounded insert is O(n) and touches sixty objects.
+     */
+    newest: (n, keep) => {
+      const out: Quake[] = [];
+      if (n <= 0) return out;
+      for (let i = 0; i < count; i += 1) {
+        const key = slots[(head + i) % capacity];
+        if (!key) continue;
+        const q = byKey.get(key);
+        if (!q) continue;
+        if (keep && !keep(q)) continue;
+        const t = q.primary.time;
+        // Full and older than the worst kept: the common case once the list is warm.
+        if (out.length === n && t <= out[out.length - 1]!.primary.time) continue;
+        let at = out.findIndex((o) => t > o.primary.time);
+        if (at === -1) at = out.length;
+        out.splice(at, 0, q);
+        if (out.length > n) out.pop();
       }
       return out;
     },

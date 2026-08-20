@@ -368,3 +368,78 @@ describe("the long session", () => {
     expect(growthMb).toBeLessThan(5);
   });
 });
+
+describe("newest by origin, which arrival order is not", () => {
+  /*
+   * The bug this exists for: the recent list pooled the 400 most recently *arrived* and sorted those.
+   * That was enough while a day's seed was three hundred events. USGS lists a feed newest first, so the
+   * last four hundred to arrive from a month's seed are its four hundred oldest, and at a 30-day window
+   * the list showed events 28.8 days old under a heading reading "newest first". Measured against the
+   * live month feed: 10,976 events, and the sixty rows on screen spanned 28.8 to 28.9 days old where
+   * they should have spanned the last 7.4 hours.
+   */
+  const seed = (store: ReturnType<typeof createStore>, count: number, now: number): void => {
+    // Newest first, exactly as the agency lists it and therefore as the app ingests it.
+    for (let i = 0; i < count; i += 1) {
+      store.ingest(reading({ id: `u${i}`, time: now - i * 60_000 }));
+    }
+  };
+
+  it("returns the newest by origin, not the last to arrive", () => {
+    const now = 1_700_000_000_000;
+    const store = createStore(5000);
+    seed(store, 1000, now);
+
+    const got = store.newest(5).map((q) => q.primary.time);
+    expect(got).toEqual([now, now - 60_000, now - 120_000, now - 180_000, now - 240_000]);
+    // And the old answer, kept here so the difference is on the record rather than in a comment.
+    expect(store.latest(5)[0]!.primary.time).toBe(now - 999 * 60_000);
+  });
+
+  it("hands them back newest first", () => {
+    const now = 1_700_000_000_000;
+    const store = createStore(500);
+    seed(store, 200, now);
+    const times = store.newest(20).map((q) => q.primary.time);
+    for (let i = 1; i < times.length; i += 1) expect(times[i]!).toBeLessThan(times[i - 1]!);
+  });
+
+  it("filters before selecting, because doing it after cannot be made correct", () => {
+    /*
+     * Selecting sixty and then filtering returns however many of those sixty happen to pass, which is
+     * fewer than sixty and sometimes none. Here every recent event is excluded, so a correct answer has
+     * to reach past them into the older ones.
+     */
+    const now = 1_700_000_000_000;
+    const store = createStore(500);
+    for (let i = 0; i < 100; i += 1) {
+      store.ingest(reading({ id: `u${i}`, time: now - i * 60_000, magnitude: i < 50 ? 2 : 6 }));
+    }
+    const big = store.newest(10, (q) => q.primary.magnitude >= 5);
+    expect(big).toHaveLength(10);
+    expect(big.every((q) => q.primary.magnitude >= 5)).toBe(true);
+    // The newest passing event is the 51st, an hour older than the newest event overall.
+    expect(big[0]!.primary.time).toBe(now - 50 * 60_000);
+  });
+
+  it("asks for none and gets none, rather than everything", () => {
+    const store = createStore(100);
+    seed(store, 10, 1_700_000_000_000);
+    expect(store.newest(0)).toEqual([]);
+  });
+
+  it("returns what it has when asked for more than it holds", () => {
+    const store = createStore(100);
+    seed(store, 7, 1_700_000_000_000);
+    expect(store.newest(60)).toHaveLength(7);
+  });
+
+  it("prefers the newer of two events at the same instant, and keeps both", () => {
+    // Ties must not drop one: a busy second is ordinary and two events can share a timestamp.
+    const now = 1_700_000_000_000;
+    const store = createStore(100);
+    store.ingest(reading({ id: "a", time: now }));
+    store.ingest(reading({ id: "b", time: now }));
+    expect(store.newest(2)).toHaveLength(2);
+  });
+});
