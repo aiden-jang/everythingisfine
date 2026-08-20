@@ -11,7 +11,7 @@ import { clamp as clampScrub, dragTo, fractionOf, LIVE, step as stepScrub, toggl
 import { Resizer } from "./app/Resizer";
 import { CrossSection } from "./app/CrossSection";
 import { buildSection, type SectionLine } from "./app/section";
-import { countWithin, histogram } from "./app/histogram";
+import { histogram, totalIn } from "./app/histogram";
 import { decode, encode } from "./app/permalink";
 import { rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
@@ -127,6 +127,14 @@ export function App(): JSX.Element {
    * a hand on a control.
    */
   const [scrub, setScrub] = useState<Scrub>(LIVE);
+  /*
+   * The revision a wider backlog was asked at, or null.
+   *
+   * Derived into `fetching` rather than cleared by an effect: the request is answered by events
+   * landing, and events landing is exactly what bumps the revision. A boolean plus a subscription to
+   * turn it off would be the same fact stored twice, with the two able to disagree.
+   */
+  const [pendingRev, setPendingRev] = useState<number | null>(null);
   /*
    * A shared event that is no longer in the window.
    *
@@ -271,6 +279,7 @@ export function App(): JSX.Element {
    * not allowed. Every reader downstream goes through this, so the stale value behind it never
    * reaches anything.
    */
+  const fetching = pendingRev !== null && snapshot.revision === pendingRev;
   const view = clampScrub(scrub, span);
   /*
    * What is actually on the globe while the cursor is parked.
@@ -421,12 +430,14 @@ export function App(): JSX.Element {
    * twenty-four counters. The list above it sorts four hundred objects on the same trigger and that
    * has never been the frame's problem either.
    */
-  const { bars, strongest } = useMemo(
+  const { bars, strongest, bucketMs } = useMemo(
     () => histogram(feed.store.forEach, filters, now, snapshot.coveredSince),
-    // `now` deliberately absent: it ticks every second and the bars only move on the hour. The
+    // `now` deliberately absent: it ticks every second and the bars only move on the bucket. The
     // revision is what changes them, and the clock catches up the next time an event lands.
+    // `windowMs` is present because it decides the bucket, so changing it reshapes every bar.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filters.minMagnitude, filters.sources, snapshot.revision, snapshot.coveredSince],
+    [filters.minMagnitude, filters.sources, filters.windowMs, snapshot.revision,
+      snapshot.coveredSince],
   );
 
   const hours = Math.round(filters.windowMs / 3_600_000);
@@ -438,7 +449,13 @@ export function App(): JSX.Element {
    * already calls that out as a true number describing something other than the picture next to it,
    * and it was written about the replay while the same thing was permanently true of the filters.
    */
-  const shown = countWithin(bars, hours);
+  /*
+   * The strip spans exactly the window now, so its total is the window's total.
+   *
+   * It used to select hours out of a day-long strip, which is why this took a count. One number from
+   * one walk, and the strip and the headline cannot disagree because there is only one of them.
+   */
+  const shown = totalIn(bars);
 
   const failing = (Object.entries(snapshot.statuses) as [SourceId, SourceStatus][])
     .flatMap(([id, status]) => (status.kind === "failing" ? [[id, status] as const] : []));
@@ -681,7 +698,22 @@ export function App(): JSX.Element {
               hours={hours}
               focusHour={focusHour}
               onFocusHourChange={setFocusHour}
-              onHoursChange={(h) => setFilters((f) => ({ ...f, windowMs: h * 3_600_000 }))}
+              onHoursChange={(h) => {
+                const windowMs = h * 3_600_000;
+                setFilters((f) => ({ ...f, windowMs }));
+                /*
+                 * The cursor goes live, because it was a fraction of a window that no longer exists.
+                 *
+                 * `clamp` would keep it inside the new span, which is right for a window sliding under
+                 * a parked cursor and wrong here: 40% through a day and 40% through a month are not
+                 * the same moment, and silently keeping the number would move the viewer in time
+                 * without them touching the cursor.
+                 */
+                setScrub(LIVE);
+                if (feed.setWindow(windowMs)) setPendingRev(snapshot.revision);
+              }}
+              bucketMs={bucketMs}
+              fetching={fetching}
               cursor={fractionOf(view, span)}
               parked={view.at !== null}
               playing={view.playing}

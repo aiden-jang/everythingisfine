@@ -31,6 +31,23 @@ export const USGS_HOUR_FEED = FEED("all_hour");
  */
 export const USGS_DAY_FEED = FEED("all_day");
 
+/**
+ * Which backlog to ask for, given how far back the viewer wants to see.
+ *
+ * Measured, because the month is not free: the day is 0.23MB, the week 1.5MB and the month 7.4MB.
+ * The 2.5+ month is 1.5MB for the same span and was rejected for the same reason the 2.5+ day was.
+ * The magnitude floor belongs to the viewer's filter, not to the fetch, and a month whose floor is
+ * baked in at 2.5 would leave the slider below that saying something untrue about what it holds.
+ *
+ * The cost lands on a click rather than on a page load, which is what makes it acceptable to take.
+ */
+export const usgsSeedFor = (windowMs: number): string => {
+  const days = windowMs / 86_400_000;
+  if (days > 7) return FEED("all_month");
+  if (days > 1) return FEED("all_week");
+  return USGS_DAY_FEED;
+};
+
 /** USGS republishes about once a minute, so asking faster only costs bandwidth. */
 const INTERVAL_MS = 60_000;
 const BACKOFF_BASE_MS = 5_000;
@@ -133,6 +150,9 @@ export function createUsgsSource(
   // A bare string means "poll this and do not seed", which is what every test wants.
   const pollUrl = typeof urls === "string" ? urls : urls.poll ?? USGS_HOUR_FEED;
   const seedUrl = typeof urls === "string" ? null : urls.seed ?? USGS_DAY_FEED;
+  /** How far back the chosen seed reaches, read off the feed's own name so the two cannot drift. */
+  const seedMs = (seedUrl?.includes("all_month") ? 30 : seedUrl?.includes("all_week") ? 7 : 1)
+    * 86_400_000;
   let seeded = false;
   let handlers: SourceHandlers | null = null;
   let timer: number | null = null;
@@ -217,7 +237,15 @@ export function createUsgsSource(
 
     if (failure === null) {
       // The day feed has no result cap, so a successful fetch of it vouches for the whole day.
-      if (!seeded && target === seedUrl) handlers.onSeeded(runtime.now() - 24 * 3_600_000);
+      /*
+       * The span the seed asked for, not a day.
+       *
+       * Hardcoded at a day while the only seed was the daily one, and choosing a month then left the
+       * app drawing a month while vouching for the last twenty-four hours of it: twenty-nine days of
+       * the strip marked as time the buffer was never open for, under a globe covered in the events
+       * from them.
+       */
+      if (!seeded && target === seedUrl) handlers.onSeeded(runtime.now() - seedMs);
       seeded = true;
       emit(payload);
       if (!handlers) return;

@@ -80,6 +80,11 @@ export function windowLabel(
   if (coveredSince === null) return "nothing yet";
   if (coveredSince <= now - windowMs) {
     const hours = Math.round(windowMs / 3_600_000);
+    // "Last 720 hours" is arithmetically fine and nobody reads a month that way.
+    if (hours >= 48) {
+      const days = Math.round(hours / 24);
+      return `last ${days} day${days === 1 ? "" : "s"}`;
+    }
     return `last ${hours} hour${hours === 1 ? "" : "s"}`;
   }
   return `since ${clock(coveredSince)}`;

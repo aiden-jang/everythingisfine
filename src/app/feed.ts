@@ -1,7 +1,7 @@
 import { createStore, type Store, type StoreStats } from "../data/store";
 import type { Filters, Quake, SourceId } from "../data/types";
 import { createEmscSource } from "../sources/emsc";
-import { createUsgsSource } from "../sources/usgs";
+import { createUsgsSource, usgsSeedFor } from "../sources/usgs";
 import { browserRuntime, type GeoEventSource, type SourceStatus } from "../sources/types";
 
 /*
@@ -96,6 +96,15 @@ export interface Feed {
   stop: () => void;
   subscribe: (fn: (snapshot: FeedSnapshot) => void) => () => void;
   snapshot: () => FeedSnapshot;
+  /**
+   * Asks the sources for a wider backlog, if this window needs one.
+   *
+   * Widening only. The store holds what it has fetched and the window filter decides what is drawn, so
+   * narrowing needs no request and throwing the extra away would mean paying for it again on the way
+   * back out. Returns whether anything was actually refetched, which is what a caller shows a
+   * loading state for.
+   */
+  setWindow: (windowMs: number) => boolean;
 }
 
 export const DEFAULT_FILTERS: Filters = {
@@ -123,10 +132,19 @@ export function createFeed(capacity = 50_000): Feed {
   const ARRIVAL_LIMIT = 64;
   let arrived: Quake[] = [];
 
-  const sources: GeoEventSource[] = [
-    createUsgsSource(browserRuntime),
-    createEmscSource(browserRuntime),
+  /*
+   * How far back the current pair was built to fetch. Compared against, never inferred from data.
+   *
+   * The store's contents cannot answer this: a quiet week and a truncated week hold the same number of
+   * events, and `coveredSince` already means something else, namely how far back a source will vouch
+   * for rather than how far back it was asked.
+   */
+  let seededMs = DEFAULT_FILTERS.windowMs;
+  const build = (windowMs: number): GeoEventSource[] => [
+    createUsgsSource(browserRuntime, { seed: usgsSeedFor(windowMs) }),
+    createEmscSource(browserRuntime, {}, windowMs / 3_600_000),
   ];
+  let sources: GeoEventSource[] = build(seededMs);
 
   const snapshot = (): FeedSnapshot => ({
     stats: store.stats(),
@@ -158,6 +176,38 @@ export function createFeed(capacity = 50_000): Feed {
     });
   };
 
+  /*
+   * Hands the current pair of sources the same three handlers.
+   *
+   * Extracted because a window change swaps the sources under a running feed and the wiring is the
+   * only thing that has to be identical across that swap. Inline in `start`, the re-seed path would
+   * have been a second copy of it, which is the shape a divergence starts in.
+   */
+  const wire = (): void => {
+    for (const source of sources) {
+      source.start({
+        onReadings: (batch) => {
+          for (const reading of batch) {
+            const result = store.ingest(reading);
+            if (result.isNew && arrived.length < ARRIVAL_LIMIT) arrived.push(result.quake);
+          }
+          revision += 1;
+          announce();
+        },
+        onStatus: (status) => {
+          statuses[source.id] = status;
+          announce();
+        },
+        // The earliest any source can vouch for. A second seed reaching further back widens it;
+        // one reaching less far does not narrow what the first already fetched.
+        onSeeded: (from) => {
+          coveredSince = coveredSince === null ? from : Math.min(coveredSince, from);
+          announce();
+        },
+      });
+    }
+  };
+
   return {
     store,
     snapshot,
@@ -168,28 +218,29 @@ export function createFeed(capacity = 50_000): Feed {
     start: () => {
       if (running) return;
       running = true;
-      for (const source of sources) {
-        source.start({
-          onReadings: (batch) => {
-            for (const reading of batch) {
-              const result = store.ingest(reading);
-              if (result.isNew && arrived.length < ARRIVAL_LIMIT) arrived.push(result.quake);
-            }
-            revision += 1;
-            announce();
-          },
-          onStatus: (status) => {
-            statuses[source.id] = status;
-            announce();
-          },
-          // The earliest any source can vouch for. A second seed reaching further back widens it;
-          // one reaching less far does not narrow what the first already fetched.
-          onSeeded: (from) => {
-            coveredSince = coveredSince === null ? from : Math.min(coveredSince, from);
-            announce();
-          },
-        });
+      wire();
+    },
+    setWindow: (windowMs) => {
+      // Only ever wider. See the note on the interface.
+      if (windowMs <= seededMs) return false;
+      seededMs = windowMs;
+      const next = build(windowMs);
+      if (running) {
+        for (const source of sources) source.stop();
+        sources = next;
+        /*
+         * Spent again, so the wider backlog counts as a seed.
+         *
+         * `frontsFor` fires one wavefront for a seed and up to three for live traffic, and a re-seed
+         * looks exactly like live traffic from here: a batch of events the store has never seen. Left
+         * unspent, choosing a wider window let off three fronts for earthquakes that happened a
+         * fortnight ago.
+         */
+        announced = false;
+        wire();
       }
+      else sources = next;
+      return true;
     },
     stop: () => {
       running = false;

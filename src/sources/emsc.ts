@@ -34,6 +34,15 @@ export const EMSC_CATALOGUE = "https://www.seismicportal.eu/fdsnws/event/1/query
 
 /** Matches the USGS daily seed, so the two agencies cover the same window on the first frame. */
 const SEED_HOURS = 24;
+/*
+ * Held at 600 whatever the window, and the coverage report is what makes that honest.
+ *
+ * A wider window asks FDSN for a wider `start` but not for more rows, so a week or a month comes back
+ * truncated to the most recent 600 events. Raising it would be guessing at a limit this endpoint has
+ * never stated, and being wrong is a 400 that takes the seed out entirely. `onSeeded` already vouches
+ * only as far as its oldest row when a page comes back full, so a truncated month reports itself as a
+ * short backlog and the strip marks the rest unobserved rather than drawing it as quiet.
+ */
 const SEED_LIMIT = 600;
 
 const BACKOFF_BASE_MS = 2_000;
@@ -161,6 +170,8 @@ export interface EmscUrls {
 export function createEmscSource(
   runtime: Runtime,
   urls: string | EmscUrls = {},
+  /** How far back the seed asks. Defaults to the day the socket's own backlog was written against. */
+  seedHours: number = SEED_HOURS,
 ): GeoEventSource {
   const url = typeof urls === "string" ? urls : urls.socket ?? EMSC_SOCKET;
   const catalogue = typeof urls === "string" ? null : urls.catalogue ?? EMSC_CATALOGUE;
@@ -232,7 +243,7 @@ export function createEmscSource(
    */
   const seed = async (): Promise<void> => {
     if (!catalogue) return;
-    const since = new Date(runtime.now() - SEED_HOURS * 3_600_000).toISOString().slice(0, 19);
+    const since = new Date(runtime.now() - seedHours * 3_600_000).toISOString().slice(0, 19);
     const query = `${catalogue}?limit=${SEED_LIMIT}&format=json&start=${since}`;
     try {
       const res = await runtime.fetch(query);
@@ -261,7 +272,7 @@ export function createEmscSource(
       const full = Array.isArray(payload.features) && payload.features.length >= SEED_LIMIT;
       const oldest = readings.reduce((min, r) => Math.min(min, r.time), Infinity);
       handlers.onSeeded(
-        full && Number.isFinite(oldest) ? oldest : runtime.now() - SEED_HOURS * 3_600_000,
+        full && Number.isFinite(oldest) ? oldest : runtime.now() - seedHours * 3_600_000,
       );
     } catch {
       // Optional by design. The socket is the source; this was a head start.
