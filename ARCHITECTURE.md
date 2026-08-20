@@ -2669,6 +2669,43 @@ screen exactly when a first-time viewer is waiting with nothing to do, which is 
 legend will ever have. It is also on screen only then: the explanation would be available once, to
 people who happened to be watching a cold load, and never again to anybody who wondered later.
 
+## Omori's law, drawn without being fitted
+
+Aftershock rate decays as one over the time since the mainshock, so the cumulative count is a
+logarithm: steep, then almost flat. The sequence strip already held every neighbour as a tick in time,
+which put the app one curve away from showing whether a real sequence does that. A swarm climbs in a
+straight line, and that is the more interesting outcome of the two.
+
+**A reference curve and never a fit, and this file decided that before I did.** `Sequence.tsx` already
+refuses to call an event an aftershock, on the grounds that the judgement depends on things no keyless
+feed carries. A fitted exponent would be the same overreach with a decimal point on it: `p` from a
+dozen arrivals is governed by noise, and printing it would be analysis in the sense of looking like
+analysis. So the law is drawn at its textbook exponent of 1, with `c` stated at six minutes, scaled to
+finish on the observed total. What is compared is where the events bunch, not how many there were,
+because productivity is not the question.
+
+**Cumulative rather than a rate.** A rate needs bins, bin width is a free parameter nobody chose, and
+at these counts the choice decides the answer. A cumulative curve has no bins: it is the data, and the
+comparison is one shape against another.
+
+**The separation was computed before the plot was drawn.** Over a twelve hour span the law is 86 percent
+complete at the halfway mark, against 50 for a straight line, which is ten pixels of daylight in a 28
+pixel plot, and a third of the height even at a two hour span. That is an assertion in `omori.test.ts`
+rather than a sentence here, because the previous item that skipped this step was built twice and
+thrown away twice.
+
+**Its own strip, sharing only the x axis.** The ticks already use height for magnitude; a count drawn
+in the same box would be a second meaning on one axis with nothing to say which height a reader is
+looking at. Stacked, the bunching in the ticks and the steepness in the curve are the same fact twice,
+which is what makes them worth putting next to each other.
+
+**A staircase, and the doubling is tested rather than trusted.** The count does not change between
+arrivals, so a line sloping through the gap would claim events at times nothing happened, which is the
+one thing a cumulative plot exists to make unsayable. Building those two-points-per-step lives in
+`omori.ts` rather than in the component, because it is the part that can be wrong and a component
+cannot be asked about it without a DOM. One `NaN` voids an entire `points` string rather than one
+vertex of it, so a finiteness check over both lines stands in for looking at the plot.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
