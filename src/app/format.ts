@@ -182,3 +182,19 @@ export function reachNote(
   if (full.length > 0) parts.push(`Older events are ${named(full)} alone.`);
   return parts.join(" ");
 }
+
+/**
+ * A share of released energy, as a percentage that never rounds to a whole truth it does not have.
+ *
+ * One large event in a busy month comes out at 99.94 percent, and "100%" would be a different and false
+ * claim: the rest of the catalogue is not nothing, it is four thousand events. So anything above 99.9
+ * prints as "over 99.9%" rather than rounding up, and the ordinary range keeps one decimal only while it
+ * is doing work.
+ */
+export function energyPercent(share: number): string {
+  if (!Number.isFinite(share) || share <= 0) return "none";
+  const pct = share * 100;
+  if (pct > 99.9) return "over 99.9%";
+  if (pct >= 99) return `${pct.toFixed(1)}%`;
+  return `${Math.round(pct)}%`;
+}

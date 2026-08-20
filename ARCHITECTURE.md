@@ -2829,6 +2829,35 @@ differs only in casing, which macOS tolerates and CI would not. The house conven
 answer and I had walked past it: the pure module is named for the computation and the component for the
 artefact, as in `histogram.ts` with `Timeline.tsx` and `nearby.ts` with `Sequence.tsx`. It is `Dial.tsx`.
 
+## What that magnitude actually meant
+
+The rail has named the largest event in the window for a long time and the number said nothing to anybody
+who does not already know what a magnitude is. Magnitude is logarithmic, two points of it is a
+thousandfold of energy, and almost nobody carries that around.
+
+**The comparison is against everything else on screen, because that is where the log scale lands.** One
+M6.4 against four hundred events near M2.5 is better than 99.9 percent of the energy released in the
+window. A reader who has just scrolled a list of four hundred rows and is told that one line of it is
+99.9 percent of the energy has learned the scale in a way no worked example does.
+
+The sentence is suppressed below a half share. A window with no dominant event splits its energy, the
+number comes out near a third, and there is nothing to teach: the fact only teaches when it is extreme.
+
+**Proportional energy, not joules.** The Gutenberg-Richter relation is log E = 1.5M + 4.8 for joules, and
+the constant is dropped because every use here is a ratio, where it cancels. Keeping it would print
+something like 4e9 joules, which reads as a measurement of one earthquake's energy budget when radiated
+energy from a magnitude is an estimate with a wide error bar.
+
+**99.94 does not print as 100.** The remainder is not nothing, it is four hundred events, so anything past
+99.9 reads "over 99.9%" rather than rounding to a whole truth the number does not have. A decimal is kept
+only while it is doing work, and below 99 it rounds to whole percent.
+
+**Carried by the walk that already found the winner.** `histogram` visits every event on every revision,
+and the share needs a sum over all of them, so a separate pass would be a second sweep for one division.
+The top magnitude is tracked beside the winning event rather than read back off it afterwards, which is
+also the only thing TypeScript permits: it cannot see that the callback ran, so it narrows the variable to
+`null` and the dereference is an error rather than a risk.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

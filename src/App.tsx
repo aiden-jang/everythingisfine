@@ -21,7 +21,7 @@ import { matches, windowStart } from "./data/filter";
 import type { Filters, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import {
-  ago, agoShort, clock, place, reach, reachNote, SOURCE_NAMES, windowLabel,
+  ago, agoShort, clock, energyPercent, place, reach, reachNote, SOURCE_NAMES, windowLabel,
 } from "./app/format";
 
 /**
@@ -482,7 +482,7 @@ export function App(): JSX.Element {
    * twenty-four counters. The list above it sorts four hundred objects on the same trigger and that
    * has never been the frame's problem either.
    */
-  const { bars, strongest, bucketMs } = useMemo(
+  const { bars, strongest, bucketMs, energyShare } = useMemo(
     () => histogram(feed.store.forEach, filters, now, snapshot.coveredSince),
     // `now` deliberately absent: it ticks every second and the bars only move on the bucket. The
     // revision is what changes them, and the clock catches up the next time an event lands.
@@ -840,6 +840,26 @@ export function App(): JSX.Element {
                 {agoShort(strongest.primary.time, now)}
               </span>
             </button>
+          ) : null}
+
+          {/*
+            What that magnitude actually means, once.
+
+            Magnitude is logarithmic and almost nobody carries that around: two points is a thousandfold
+            of energy, so one large event routinely accounts for better than 99 percent of a month while
+            sitting in a list of thousands. The share is the fact that teaches it, and the clause after
+            it is there because a number that high reads as a bug otherwise.
+
+            Outside the button, because it is a statement about the window rather than a thing to press,
+            and pressing it should not fly anywhere.
+          */}
+          {strongest && !replay && energyShare !== null && energyShare > 0.5 ? (
+            <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+              That one event is{" "}
+              <span className="text-dim tabular-nums">{energyPercent(energyShare)}</span> of the energy
+              released in the window. Magnitude is logarithmic: two points of it is a thousand times the
+              energy.
+            </p>
           ) : null}
 
           {/*
