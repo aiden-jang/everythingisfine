@@ -6,6 +6,8 @@ import { distanceKm } from "../geo/sphere";
 import { depthClass, findNearby, NEARBY_KM } from "./nearby";
 import { Sequence } from "./Sequence";
 import { sectionThrough, type SectionLine } from "./section";
+import { arrivalFor, seconds } from "./arrival";
+import { P_WAVE_KM_PER_S, S_WAVE_KM_PER_S } from "../geo/waves";
 import {
   ago, clock, coordinates, depth, magnitude, place, SOURCE_NAMES,
 } from "./format";
@@ -93,6 +95,12 @@ export function DetailPanel({
    * near each other. Stated in the units a person thinks in, and only when there is genuinely a
    * second reading to disagree with.
    */
+  /*
+   * Recomputed with the event rather than memoised: it is a regex and two divisions, where everything
+   * else this panel derives walks the buffer.
+   */
+  const arrival = arrivalFor(quake);
+
   const [a, b] = quake.readings;
   const spread = a && b
     ? {
@@ -211,6 +219,34 @@ export function DetailPanel({
           value={quake.readings.map((x) => SOURCE_NAMES[x.source]).join(" + ")}
         />
       </div>
+
+      {/*
+        When it reached the nearest place with a name on it.
+
+        A marker says an earthquake happened at a point. It does not say the point is 7km from a town
+        that felt it two seconds later, and that is the fact that makes this something which happened
+        to people rather than a dot in a margin.
+
+        The distance and the town are the agency's own words, parsed out of "38 km NW of Stanton,
+        Texas". Nothing is authored, which is the whole design: a list of cities with coordinates
+        written from memory would make confident claims about real towns from latitudes that could be
+        a tenth of a degree out, and a tenth of a degree is two seconds of an answer that reads as
+        measured. Absent for an event whose agencies named only a region, because a region has no
+        distance to give and a centroid would be that same invention.
+      */}
+      {arrival ? (
+        <div className="mt-4">
+          <p className="text-[11.5px] leading-relaxed text-dim">
+            {arrival.place} is {arrival.km} km away. The first shake arrived about{" "}
+            <span className="text-ink">{seconds(arrival.p)}</span> after the rupture, and the stronger
+            S wave about {seconds(arrival.gap)} behind it.
+          </p>
+          <p className="mt-2 text-[11px] leading-relaxed text-faint">
+            Timed straight through the crust at {P_WAVE_KM_PER_S} and {S_WAVE_KM_PER_S} km/s, over the
+            distance corrected for depth. Not a modelled travel time.
+          </p>
+        </div>
+      ) : null}
 
       {spread ? (
         <div className="mt-4">

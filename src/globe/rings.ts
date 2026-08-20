@@ -1,5 +1,6 @@
 import { BufferAttribute, BufferGeometry, LineSegments, NormalBlending, ShaderMaterial } from "three";
 import { DEG, EARTH_RADIUS_KM } from "../geo/sphere";
+import { PLAYBACK, P_WAVE_KM_PER_S, S_OVER_P } from "../geo/waves";
 import { MAG_MIN, rampTexture, type RampName } from "./ramp";
 import { MORPH_GLSL } from "./morph";
 
@@ -12,30 +13,6 @@ import { MORPH_GLSL } from "./morph";
  * this far.
  */
 
-/** P-wave through continental crust. The number everything else here is derived from. */
-export const P_WAVE_KM_PER_S = 6;
-
-/**
- * S-wave through the same crust, and the reason there are two rings rather than one.
- *
- * The gap between a P arrival and an S arrival is how distance to an epicentre is measured. It is the
- * first thing a seismogram is read for and it was the one piece of physics this app carried the
- * machinery for and never drew: one ring said "energy is spreading", which is true and is not the
- * interesting part. Two rings pulling apart say how far away you are.
- *
- * 3.5 against 6 is the ordinary crustal ratio, near the square root of three that an elastic solid
- * with a Poisson ratio of a quarter gives, so it is the textbook figure rather than a tuned one.
- */
-export const S_WAVE_KM_PER_S = 3.5;
-
-/**
- * How far behind the P front the S front sits, as a fraction. Derived, never typed in.
- *
- * Both fronts are drawn against the same clock, so the S radius is the P radius times this. Writing
- * 0.583 directly is how it survives a change to either velocity without anyone noticing.
- */
-export const S_OVER_P = S_WAVE_KM_PER_S / P_WAVE_KM_PER_S;
-
 /**
  * Degrees of arc the front covers per real second. Derived, never typed in.
  *
@@ -44,18 +21,10 @@ export const S_OVER_P = S_WAVE_KM_PER_S / P_WAVE_KM_PER_S;
  */
 export const TRUE_RATE_DEG_PER_S = (P_WAVE_KM_PER_S / EARTH_RADIUS_KM) / DEG;
 
-/**
- * Playback multiplier, printed in the rail rather than hidden.
- *
- * At true rate the front advances 0.054 deg/s, which on a 400px globe is **0.16 pixels per second**.
- * A mock built at true rate proved it reads as a still image, and an imperceptible wavefront fails
- * section 8's requirement that the first frame after load has a ring expanding. Real rate would have
- * been honest and useless at once. Stating the multiplier keeps both, which is what section 10 asks
- * of every number on screen.
- */
-export const PLAYBACK = 20;
-
 export const RATE_DEG_PER_S = TRUE_RATE_DEG_PER_S * PLAYBACK;
+
+// Re-exported, not redefined: `rings.test.ts` and the layer both read them and there is one source.
+export { PLAYBACK, P_WAVE_KM_PER_S, S_OVER_P } from "../geo/waves";
 
 /** Where the front fades out. Roughly 1900km of real ground, and about 15.7 seconds on screen. */
 export const MAX_DEG = 17;

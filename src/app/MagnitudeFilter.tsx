@@ -1,4 +1,5 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
+import { PLAYBACK } from "../geo/waves";
 
 /*
  * The legend and the magnitude filter, which were two blocks and are one control.
@@ -17,21 +18,11 @@ export interface MagnitudeFilterProps {
   ramp: RampName;
   value: number;
   onChange: (value: number) => void;
-  /**
-   * The wavefront playback multiplier, passed rather than imported.
-   *
-   * It lives in `globe/rings.ts` beside the physics it is derived from, and that module imports
-   * three. This legend is in the eager bundle while the canvas is behind a `lazy`, so importing the
-   * constant here would drag the renderer in with it for the sake of one number.
-   */
-  playback: number;
 }
 
 const TICKS = [MAG_MIN, 3, 5, MAG_MAX];
 
-export function MagnitudeFilter(
-  { ramp, value, onChange, playback }: MagnitudeFilterProps,
-): JSX.Element {
+export function MagnitudeFilter({ ramp, value, onChange }: MagnitudeFilterProps): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
   // Where the threshold sits along the scale, as a percentage of the track.
   const cut = Math.max(0, Math.min(100, ((value - MAG_MIN) / (MAG_MAX - MAG_MIN)) * 100));
@@ -165,7 +156,7 @@ export function MagnitudeFilter(
         </span>
         <span>
           two rings leave each new epicentre, the P-wave and the slower S behind it, sped up
-          &times;{playback} or they would not appear to move. The gap between them is how distance to
+          &times;{PLAYBACK} or they would not appear to move. The gap between them is how distance to
           a quake is measured.
         </span>
       </div>
