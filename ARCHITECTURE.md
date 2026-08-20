@@ -3220,6 +3220,46 @@ that was actually broken, rather than that one bar lights one event, which alway
 Sixth of these, and the same shape as the other five: a constant that was true when written, made false
 by something else moving, silent about it, and invisible in the state that existed at the time.
 
+## The header's `both` count had the wrong denominator by fifty-five times
+
+The header prints four bare numbers, and one of them is `both`: how many events came from both agencies.
+A bare count invites the nearest total as its denominator, and the nearest total is the window's.
+
+Measured against the live feeds. EMSC's seed reaches back 20.6 hours whatever window is asked for, so at
+thirty days corroboration reads as **0.9 percent** of 10,976 events, and inside the span both agencies
+actually looked at it is **49.5 percent** of 202. The subject of this entire project is two agencies
+reporting one earthquake, and its own headline number was understating that by a factor of fifty-five.
+
+F's original note said as much and I only fixed half of it: the reach bars explain that the feeds cover
+different spans, and nothing said what that does to the count sitting in the header.
+
+**The rate is stated where it is true**, under the bars that show the asymmetry, with the denominator in
+it: "Both feeds only overlap for the last 21h. Inside it, 100 of 202 events (50%) were reported by both."
+The header keeps its raw count, which is not wrong, only unqualified.
+
+**The overlap is the later of the two edges, not the earlier.** `coveredSince` is a min, because that is
+the honest left edge of what the app holds at all. A corroboration rate needs the opposite: neither agency
+can confirm the other outside the span where both were looking.
+
+Suppressed when the overlap is the whole window, because then the header's count already has the right
+denominator beside it and this would be one fact printed twice. Reported when it is zero, because two
+agencies watching the same hours and matching nothing is the interesting failure rather than an absence.
+
+## And a claim about a window that had not arrived
+
+Found by looking at the running app rather than by reading. At a thirty-day window with only the hourly
+poll in, the rail printed "That one event is 86% of the energy released in the window" directly beneath
+"Asking USGS and EMSC for the last day": a share of thirty days computed from one hour of it.
+
+The share is a fact about a window, and until the backlog lands there is no window to have a share of. It
+waits for `edge.complete` now, which is the same flag the headline beside it already uses to say "still
+filling", so the app knew and this block was not asking.
+
+Worth recording how it surfaced. The tab had `w=720` in its hash from an earlier click, so reloading came
+back at a month and spent a minute fetching a five-megabyte feed, which is a state that barely exists at a
+day and lasts long enough to read at a month. Every fix that widens what is reachable makes the next one
+visible.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

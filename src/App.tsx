@@ -22,8 +22,8 @@ import { matches, windowStart } from "./data/filter";
 import type { Filters, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import {
-  ago, agoShort, clock, energyPercent, place, reachFraction, reachNote, reachWords,
-  SOURCE_NAMES, windowLabel,
+  ago, agoShort, clock, corroborationNote, energyPercent, place, reachFraction, reachNote,
+  reachWords, SOURCE_NAMES, windowLabel,
 } from "./app/format";
 
 /**
@@ -503,14 +503,25 @@ export function App(): JSX.Element {
    * twenty-four counters. The list above it walks the same buffer on the same trigger and that has
    * never been the frame's problem either.
    */
-  const { bars, strongest, bucketMs, energyShare } = useMemo(
-    () => histogram(feed.store.forEach, filters, now, snapshot.coveredSince),
+  /*
+   * Where both feeds were looking, which is the later of their two edges and not the earlier.
+   *
+   * `coveredSince` is the min, because that is the honest left edge of what the app holds at all. A
+   * corroboration rate needs the opposite: the span where *both* agencies had eyes on, since neither can
+   * confirm the other outside it.
+   */
+  const overlapFrom = snapshot.covered.usgs !== null && snapshot.covered.emsc !== null
+    ? Math.max(snapshot.covered.usgs, snapshot.covered.emsc)
+    : null;
+
+  const { bars, strongest, bucketMs, energyShare, overlap } = useMemo(
+    () => histogram(feed.store.forEach, filters, now, snapshot.coveredSince, overlapFrom),
     // `now` deliberately absent: it ticks every second and the bars only move on the bucket. The
     // revision is what changes them, and the clock catches up the next time an event lands.
     // `windowMs` is present because it decides the bucket, so changing it reshapes every bar.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [filters.minMagnitude, filters.sources, filters.windowMs, snapshot.revision,
-      snapshot.coveredSince],
+      snapshot.coveredSince, overlapFrom],
   );
 
   /*
@@ -899,7 +910,17 @@ export function App(): JSX.Element {
             Outside the button, because it is a statement about the window rather than a thing to press,
             and pressing it should not fly anywhere.
           */}
-          {strongest && !replay && energyShare !== null && energyShare > 0.5 ? (
+          {/*
+            Held back until the window is actually covered.
+
+            The share is a fact about a window, and until the backlog has landed there is no window to
+            have a share of. Caught live: at a month, with only the hourly poll in, the rail printed "that
+            one event is 86% of the energy released in the window" directly under "Asking USGS and EMSC
+            for the last day", which is a claim about thirty days computed from one hour of it. The
+            headline beside it already says "still filling" in that state, so the machinery to know was
+            there and this was not asking.
+          */}
+          {strongest && !replay && edge.complete && energyShare !== null && energyShare > 0.5 ? (
             <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
               That one event is{" "}
               <span className="text-dim tabular-nums">{energyPercent(energyShare)}</span> of the energy
@@ -980,7 +1001,14 @@ export function App(): JSX.Element {
                   filters.windowMs,
                 ),
               }))}
-              reachNote={sourceNote}
+              /*
+                Both footnotes to the bars, in the order they are read: what the bars are, then what the
+                header's `both` count means once you know they differ.
+              */
+              notes={[
+                sourceNote,
+                corroborationNote(overlap, overlapFrom, now, filters.windowMs),
+              ].filter((n): n is string => n !== null)}
             />
           </div>
 

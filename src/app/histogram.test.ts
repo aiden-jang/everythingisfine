@@ -230,3 +230,40 @@ describe("stating that share honestly", () => {
     expect(energyPercent(Number.NaN)).toBe("none");
   });
 });
+
+describe("corroboration inside the span both feeds cover", () => {
+  const both = (id: string, time: number): Quake => {
+    const usgs: Reading = { ...quake({ id: `u${id}`, time }).primary, source: "usgs" };
+    const emsc: Reading = { ...usgs, source: "emsc", id: `e${id}` };
+    return { key: `k${id}`, readings: [usgs, emsc], primary: usgs };
+  };
+
+  it("counts only what falls inside the overlap", () => {
+    const overlapFrom = NOW - 3 * HOUR;
+    const qs = [
+      both("a", NOW - HOUR), both("b", NOW - 2 * HOUR),
+      // Older than the overlap: corroborated, and not corroboration this can claim.
+      both("c", NOW - 10 * HOUR),
+      quake({ id: "solo", time: NOW - HOUR }),
+    ];
+    const out = histogram(walk(qs), filters(), NOW, NOW - 24 * HOUR, overlapFrom);
+    expect(out.overlap).toEqual({ events: 3, both: 2 });
+  });
+
+  it("is null when the feeds do not overlap, which is not a rate of zero", () => {
+    const out = histogram(walk([quake()]), filters(), NOW, NOW - 24 * HOUR, null);
+    expect(out.overlap).toBeNull();
+  });
+
+  it("counts an event as corroborated by having more than one reading, not by source names", () => {
+    // The store keeps at most one reading per source, so more than one reading is more than one agency.
+    const out = histogram(walk([both("a", NOW - HOUR)]), filters(), NOW, NOW - 24 * HOUR, NOW - HOUR);
+    expect(out.overlap).toEqual({ events: 1, both: 1 });
+  });
+
+  it("respects the filters, so the rate describes what is on screen", () => {
+    const qs = [both("a", NOW - HOUR)];
+    const out = histogram(walk(qs), filters({ minMagnitude: 9 }), NOW, NOW - 24 * HOUR, NOW - HOUR);
+    expect(out.overlap).toEqual({ events: 0, both: 0 });
+  });
+});
