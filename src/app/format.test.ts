@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { compactSpan, reach, reachFraction, reachNote, reachWords } from "./format";
+import {
+  compactSpan, corroborationNote, reach, reachFraction, reachNote, reachWords,
+} from "./format";
 
 /*
  * The reach labels, which exist because two feeds do not cover the same span.
@@ -130,5 +132,53 @@ describe("what a feed's bar says while it is still arriving", () => {
   it("prefers a reach it has over a failure it also has", () => {
     // A feed can seed and then lose its socket. The backlog it delivered is still real.
     expect(reachWords(now - 6 * HOUR, true, now, DAY)).toBe("6h");
+  });
+});
+
+describe("stating the corroboration rate where it is true", () => {
+  const overlap = { events: 202, both: 100 };
+
+  it("gives the rate against the span both feeds cover, not the window", () => {
+    /*
+     * The number this exists for, measured against the live feeds. A `both` count of about a hundred
+     * reads as 0.9 percent of a 30-day window and is 49.5 percent of the 21 hours EMSC actually reaches.
+     * The project's subject is two agencies reporting one earthquake and its own headline was
+     * understating it fifty-five fold.
+     */
+    const note = corroborationNote(overlap, now - 21 * HOUR, now, MONTH)!;
+    expect(note).toContain("21h");
+    expect(note).toContain("100 of 202");
+    expect(note).toContain("50%");
+  });
+
+  it("says nothing when the overlap is the whole window", () => {
+    // Then the header's bare count already has the right denominator beside it, and this would be the
+    // same fact printed twice.
+    expect(corroborationNote(overlap, now - DAY, now, DAY)).toBeNull();
+    // Within a whisker counts as the whole thing: a feed seeding a second late is not an asymmetry.
+    expect(corroborationNote(overlap, now - DAY * 0.99, now, DAY)).toBeNull();
+  });
+
+  it("says nothing when there is no overlap to report", () => {
+    // Distinct from a rate of zero, which would be a claim about two feeds that did overlap.
+    expect(corroborationNote(null, null, now, MONTH)).toBeNull();
+    expect(corroborationNote(overlap, null, now, MONTH)).toBeNull();
+  });
+
+  it("says nothing about an overlap holding no events", () => {
+    expect(corroborationNote({ events: 0, both: 0 }, now - HOUR, now, MONTH)).toBeNull();
+  });
+
+  it("reports an honest zero when the feeds overlap and never agree", () => {
+    // Worth saying: two agencies looking at the same hours and matching nothing is the interesting
+    // failure, not an absence of data.
+    const note = corroborationNote({ events: 40, both: 0 }, now - 3 * HOUR, now, MONTH)!;
+    expect(note).toContain("0 of 40");
+    expect(note).toContain("0%");
+  });
+
+  it("separates thousands, because these counts get large at a month", () => {
+    const note = corroborationNote({ events: 2400, both: 1100 }, now - 12 * HOUR, now, MONTH)!;
+    expect(note).toContain("1,100 of 2,400");
   });
 });

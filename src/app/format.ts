@@ -243,3 +243,31 @@ export function reachWords(
   if (from !== null) return reach(from, now, windowMs);
   return failing ? "no answer" : "waiting";
 }
+
+/**
+ * The corroboration rate, stated where it is true rather than left to be inferred.
+ *
+ * The header prints a bare `both` count and a bare count takes the window's total as its denominator.
+ * Two agencies can only agree where both of them were looking, so the honest denominator is the span
+ * they share, and at a wide window those two numbers are nothing like each other: 0.9 percent of a
+ * 30-day window against 49.5 percent of the 21 hours EMSC reaches, measured against the live feeds.
+ *
+ * Null when there is nothing to report: no overlap, or an overlap holding nothing. Null also when the
+ * overlap is the whole window, because then the header's count already has the right denominator beside
+ * it and this would be the same fact printed twice.
+ */
+export function corroborationNote(
+  overlap: { events: number; both: number } | null,
+  overlapFrom: number | null,
+  now: number,
+  windowMs: number,
+): string | null {
+  if (overlap === null || overlapFrom === null || overlap.events === 0) return null;
+  const covered = now - overlapFrom;
+  // Within a whisker of the whole window: nothing to explain, and the header is already right.
+  if (covered >= windowMs * 0.98) return null;
+  const pct = Math.round((overlap.both / overlap.events) * 100);
+  return `Both feeds only overlap for the last ${compactSpan(covered)}. Inside it, `
+    + `${overlap.both.toLocaleString("en-GB")} of ${overlap.events.toLocaleString("en-GB")} events `
+    + `(${pct}%) were reported by both.`;
+}

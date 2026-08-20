@@ -57,12 +57,14 @@ export interface TimelineProps {
    */
   reaches: readonly { id: string; label: string; fraction: number; words: string }[];
   /**
-   * Why the bars differ, when they do. Null when they do not.
+   * What the bars mean, when they need saying. Empty when they do not.
    *
-   * Moved here from beside the source buttons, which is where it was written and two blocks from the
-   * thing it explains. A caveat about an asymmetry belongs under the picture of the asymmetry.
+   * A list rather than one string per sentence, because these are all footnotes to the same picture and
+   * the alternative is a new prop each time the bars have something else to admit. Moved here from
+   * beside the source buttons, which is where the first one was written and two blocks from the thing it
+   * explains: a caveat about an asymmetry belongs under the picture of the asymmetry.
    */
-  reachNote: string | null;
+  notes: readonly string[];
 }
 
 const STRIP_PX = 44;
@@ -100,7 +102,7 @@ const spanLabel = (hours: number): string =>
 export function Timeline({
   bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange, bucketMs, fetching,
   cursor, parked, playing, onScrub, onStep, onPlayToggle, onLive, cursorLabel, reaches,
-  reachNote,
+  notes,
 }: TimelineProps): JSX.Element {
   const peak = peakCount(bars);
   const tallest = bars.find((b) => b.count === peak && peak > 0);
@@ -278,9 +280,9 @@ export function Timeline({
               </span>
             </div>
           ))}
-          {reachNote ? (
-            <p className="mt-2 text-[11px] leading-relaxed text-faint">{reachNote}</p>
-          ) : null}
+          {notes.map((note) => (
+            <p key={note} className="mt-2 text-[11px] leading-relaxed text-faint">{note}</p>
+          ))}
         </div>
       ) : null}
 

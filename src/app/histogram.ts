@@ -61,6 +61,18 @@ export interface Activity {
    * for better than 99 percent of a month, and a number that high is the fact doing the teaching.
    */
   energyShare: number | null;
+  /**
+   * Events inside the span both feeds cover, and how many of them both feeds reported.
+   *
+   * The header prints a bare `both` count, and a bare count invites the window's total as its
+   * denominator. At a month that is a lie by a factor of fifty-five: measured against the live feeds,
+   * corroboration reads as 0.9 percent of a 30-day window and is 49.5 percent inside the 21 hours EMSC
+   * actually reaches. The project's whole subject is two agencies reporting one earthquake, and its own
+   * headline number was understating it by that much.
+   *
+   * Null when the two feeds have no overlap to speak of, which is a different statement from zero.
+   */
+  overlap: { events: number; both: number } | null;
 }
 
 /**
@@ -85,6 +97,8 @@ export function histogram(
   filters: Filters,
   now: number,
   since: number | null,
+  /** Start of the span both feeds vouch for, or null when they do not overlap. */
+  overlapFrom: number | null = null,
 ): Activity {
   const bucketMs = Math.max(1, filters.windowMs / BUCKETS);
   const counts = new Array<number>(BUCKETS).fill(0);
@@ -95,6 +109,9 @@ export function histogram(
   // Reading it back off `strongest` after the walk is also what TypeScript will not allow: it cannot
   // see that the callback ran, so it narrows the variable to null and the dereference is an error.
   let topMagnitude = Number.NEGATIVE_INFINITY;
+  // Counted in the walk that is already happening, like the energy share beside it.
+  let inOverlap = 0;
+  let bothInOverlap = 0;
 
   forEach((quake) => {
     if (!passesMagnitude(quake, filters.minMagnitude)) return;
@@ -120,6 +137,11 @@ export function histogram(
       topMagnitude = m;
     }
     energyTotal += energyOf(m);
+    if (overlapFrom !== null && quake.primary.time >= overlapFrom) {
+      inOverlap += 1;
+      // More than one reading means more than one agency: the store keeps at most one per source.
+      if (quake.readings.length > 1) bothInOverlap += 1;
+    }
   });
 
   const bars = Array.from({ length: BUCKETS }, (_, i) => {
@@ -151,7 +173,13 @@ export function histogram(
     ? energyOf(topMagnitude) / energyTotal
     : null;
 
-  return { bars, strongest, bucketMs, energyShare };
+  return {
+    bars,
+    strongest,
+    bucketMs,
+    energyShare,
+    overlap: overlapFrom === null ? null : { events: inOverlap, both: bothInOverlap },
+  };
 }
 
 /** The tallest bar, for scaling. Zero when nothing passes, which callers must not divide by. */
