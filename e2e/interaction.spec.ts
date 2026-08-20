@@ -1238,3 +1238,104 @@ test("the legend says what a ring is, since nothing else did", async ({ page }) 
    */
   expect(await zones.evaluate((el) => (el.textContent ?? "").split("×20").length - 1)).toBe(1);
 });
+
+test("the largest event is a way in, in time as well as in space", async ({ page }) => {
+  /*
+   * The app opens on the present, which at a wide window is the least interesting moment it holds:
+   * whatever is happening this minute is an M2 somewhere, and the one worth looking at was hours or
+   * days ago. The rail already named it and flew to it, and left the cursor live, so arriving showed
+   * the end state of the whole window with the event buried in it.
+   *
+   * Built from exact features rather than the plausible day, because the whole point is an event old
+   * enough that going to it moves the clock. A fixture whose strongest event happened four minutes
+   * ago would pass every assertion below while testing nothing.
+   */
+  const now = Date.now();
+  const features = [
+    ...Array.from({ length: 40 }, (_, i) => ({
+      id: `recent${i}`,
+      properties: {
+        mag: 2 + (i % 12) / 10,
+        place: `Off Honshu ${i}`,
+        time: now - i * 4 * 60_000,
+        updated: now - i * 4 * 60_000,
+        magType: "ml",
+        type: "earthquake",
+      },
+      geometry: { coordinates: [141 + (i % 7) * 0.3, 38 - (i % 5) * 0.4, 30] },
+    })),
+    {
+      id: "thebig",
+      properties: {
+        mag: 6.4,
+        place: "Flores Sea",
+        // Twenty hours back, so parking the cursor there is a visible move and not a rounding.
+        time: now - 20 * 3_600_000,
+        updated: now - 20 * 3_600_000,
+        magType: "mww",
+        type: "earthquake",
+      },
+      geometry: { coordinates: [122.4, -6.2, 45] },
+    },
+    /*
+     * Aftershocks, inside the 150km the panel calls a neighbourhood and after the main shock.
+     *
+     * The first version of this fixture put the big one alone in the Flores Sea with everything else
+     * off Honshu, and the panel correctly answered "on its own, so far". An event with no sequence
+     * cannot demonstrate arriving at one.
+     */
+    ...Array.from({ length: 15 }, (_, i) => ({
+      id: `after${i}`,
+      properties: {
+        mag: 3 + (i % 9) / 10,
+        place: "Flores Sea",
+        time: now - 20 * 3_600_000 + (i + 1) * 6 * 60_000,
+        updated: now - 20 * 3_600_000 + (i + 1) * 6 * 60_000,
+        magType: "ml",
+        type: "earthquake",
+      },
+      geometry: { coordinates: [122.4 + (i % 5) * 0.12, -6.2 - (i % 4) * 0.1, 40] },
+    })),
+  ];
+  await installFeeds(page, { usgs: features });
+  await page.goto("/");
+  await waitForData(page);
+  await page.waitForTimeout(4000);
+
+  const live = Number(
+    (await page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first().innerText())
+      .replace(/,/g, ""),
+  );
+
+  const largest = page.locator('[data-rail="largest"]');
+  await expect(largest).toContainText("6.4");
+  await largest.click();
+  await page.waitForTimeout(900);
+
+  // Space: the panel opens on the event it named.
+  const panel = page.locator(".zone-panel");
+  await expect(panel).toContainText("M 6.4");
+  // With its sequence, which is the half of this the plan asked for by name.
+  await expect(panel).toContainText("Sequence");
+
+  // Time: the window is held at that moment rather than at the present.
+  await expect(page.getByText("held", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "go live" })).toBeVisible();
+  /*
+   * And the globe is drawing that moment, not the end state. Twenty hours back of this fixture is the
+   * big one and nothing else, against forty-one events live, so a count that had not moved would mean
+   * the cursor was decoration.
+   */
+  const held = Number(
+    (await page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first().innerText())
+      .replace(/,/g, ""),
+  );
+  expect(held).toBeLessThan(live);
+  expect(held).toBeGreaterThan(0);
+
+  // Escape gives the present back and keeps the pin: one rung at a time, innermost first.
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(700);
+  await expect(page.getByText("held", { exact: true })).toBeHidden();
+  await expect(panel).toContainText("M 6.4");
+});

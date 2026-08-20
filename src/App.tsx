@@ -20,7 +20,7 @@ import type { Filters, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import { PLAYBACK } from "./globe/rings";
 import {
-  agoShort, clock, place, reach, reachNote, SOURCE_NAMES, windowLabel,
+  ago, agoShort, clock, place, reach, reachNote, SOURCE_NAMES, windowLabel,
 } from "./app/format";
 
 /**
@@ -770,10 +770,32 @@ export function App(): JSX.Element {
           {strongest && !replay ? (
             <button
               type="button"
+              /*
+                An entry point that is not "now".
+                The app opens on the present, which at a month is the least interesting moment in the
+                buffer: whatever is happening this minute is an M2 somewhere, and the M6 worth looking
+                at was eleven days ago. This row already named it and flew to it, and left the cursor
+                live, so arriving showed the end state of the whole window with the event buried in
+                thirty days of everything else.
+                So it moves in time as well as in space. The cursor parks at the event's own origin,
+                which is the moment it was the newest thing on Earth, and the sequence strip in the
+                panel then shows what came next while the globe has not drawn it yet. Pressing play
+                from there is the aftershock sequence arriving.
+              */
               onClick={() => {
                 setSelected(strongest.key);
                 flyTo.current(strongest.primary.lon, strongest.primary.lat, 1.9);
+                // Through `clamp`, so an event that is already the most recent thing held hands back
+                // to live rather than parking a moment behind the present.
+                setScrub(clampScrub({ at: strongest.primary.time, playing: false }, span));
               }}
+              /*
+                Named in full, because the row is four fragments and a click that moves the clock has
+                to say so before it is pressed rather than after.
+              */
+              aria-label={`Largest: magnitude ${strongest.primary.magnitude.toFixed(1)}, `
+                + `${place(strongest.primary.place)}, ${ago(strongest.primary.time, now)}. `
+                + "Go there and hold the window at that moment."}
               data-rail="largest"
               className="-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2.5 border-t border-hairline px-1 pt-2.5 text-left transition-colors hover:bg-raised"
             >

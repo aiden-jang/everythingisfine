@@ -2481,6 +2481,38 @@ subtree the hue rule exempts.
 is derived from, and that module imports three. The legend is in the eager bundle while the canvas is
 behind a `lazy`, so importing the constant there would have pulled the renderer in for one number.
 
+## The way in was the least interesting moment in the buffer
+
+The app opens on the present, and at a wide window the present is the worst moment it holds. Whatever
+is happening this minute is an M2 somewhere; the M6 worth looking at was hours or days ago. The rail
+had named the largest event in the window for a while and flying to it was already wired, but it left
+the cursor live, so arriving showed the end state of the whole window with the event buried in it and
+its sequence already over.
+
+So the row moves in time as well as in space. It parks the cursor at the event's own origin, which is
+the moment that event was the newest thing on Earth. The globe then draws that moment, the headline
+counts what is drawn and says "held", the panel opens on the event, and the sequence strip shows what
+came next while the globe has not drawn it yet. Pressing play from there is the aftershock sequence
+arriving, which is the one thing a static map of a month cannot show.
+
+**Through `clamp`, not straight into state.** An event that is already the most recent thing held would
+otherwise park the cursor a few seconds behind the present, which is the exact failure the cursor's own
+notes warn about: a live app that has quietly stopped being one. `clamp` hands that case back to live.
+
+**The row says what it does before it is pressed.** It is four fragments, a label, a magnitude, a place
+and an age, and a click that moves the clock cannot be discovered only by noticing the clock moved. The
+accessible name is the whole sentence, including "hold the window at that moment".
+
+**The panel goes on answering its own question.** It says fifteen other events are within 150km "in
+this window" while the globe draws nine, and those two are not in conflict: one is scoped to the window
+and says so, the other to the cursor and says so. Here it is the point rather than a tolerance, because
+what the panel is telling you is what you have not seen yet.
+
+**A fixture that could not have failed.** The first version put the big event alone in the Flores Sea
+with every other event off Honshu, so the panel correctly answered "on its own, so far" and there was
+no sequence to arrive at. An event with no neighbours cannot demonstrate landing on a sequence, and the
+test only found this because it asserted the sequence rather than the pin.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
