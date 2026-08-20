@@ -11,6 +11,7 @@ import { distanceLabel, magnitude } from "../app/format";
 import { between, seconds } from "../app/arrival";
 import type { RampName } from "./ramp";
 import type { SectionLine } from "../app/section";
+import type { Aurora } from "../sources/aurora";
 import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
 
 /*
@@ -56,6 +57,8 @@ export interface GlobeProps {
    * assumed an hour it was right only at a 24-hour window. See `FocusSpan`.
    */
   focus?: FocusSpan | null;
+  /** Tonight's aurora, or null while it has not arrived or has failed to. */
+  aurora?: Aurora | null;
   /**
    * Origin time the cursor stands at, or null for live.
    *
@@ -87,7 +90,7 @@ const SCALE_BOTTOM = 40;
 const SCALE_TARGET_PX = 110;
 
 export function Globe({
-  feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay, focus = null,
+  feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay, focus = null, aurora = null,
   scrubAt = null, flat = false, section = null, onSection,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -101,6 +104,7 @@ export function Globe({
   const redrawRef = useRef<() => void>(() => {});
   const wakeRef = useRef<() => void>(() => {});
   const rampRef = useRef<(name: RampName) => void>(() => {});
+  const auroraRef = useRef<(next: Aurora | null) => void>(() => {});
   /*
    * Read from inside the frame loop, which outlives any single render.
    *
@@ -514,6 +518,7 @@ export function Globe({
       placeOverlays();
     };
     redrawRef.current = redraw;
+    auroraRef.current = (grid) => { globe.setAurora(grid); };
     rampRef.current = (name) => {
       // Both layers, or a wavefront would stay warm while its own marker turned blue.
       globe.events.setRamp(name);
@@ -670,6 +675,17 @@ export function Globe({
   useEffect(() => {
     rampRef.current(ramp);
   }, [ramp]);
+
+  /*
+   * Handed to the scene rather than held in it, and redrawn once when it lands.
+   *
+   * The loop stops itself when nothing is moving, so a grid arriving during an idle minute has to ask for
+   * a frame or it sits in a texture nobody samples until the next drag.
+   */
+  useEffect(() => {
+    auroraRef.current(aurora);
+    redrawRef.current();
+  }, [aurora]);
 
   return (
     <div className="relative h-full w-full">

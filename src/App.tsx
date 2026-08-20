@@ -4,6 +4,8 @@ import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { PLACE_LIMIT, search, type Hit } from "./app/search";
 import { useRolling } from "./app/roll";
+import { store, stored } from "./app/stored";
+import { fetchAurora, type Aurora } from "./sources/aurora";
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
@@ -166,6 +168,27 @@ export function App(): JSX.Element {
    */
   const [focusHour, setFocusHour] = useState<number | null>(null);
   /*
+   * Tonight's aurora, fetched beside the seismic feeds rather than through them.
+   *
+   * Not a `GeoEventSource`: that contract is built around readings that a second agency might dispute,
+   * and a probability field has no identity to reconcile and no magnitude to carry. Forcing it through
+   * would be the mistake section I names, where the store is the earthquake-shaped part and the sources
+   * are not.
+   *
+   * Ten minutes, not the model's five. The grid is 900kB and the oval does not move far in that time, so
+   * halving the traffic costs a resolution nobody is reading off a wash of light.
+   */
+  const [aurora, setAurora] = useState<Aurora | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const load = (): void => {
+      void fetchAurora().then((next) => { if (alive && next) setAurora(next); });
+    };
+    load();
+    const id = window.setInterval(load, 10 * 60_000);
+    return () => { alive = false; window.clearInterval(id); };
+  }, []);
+  /*
    * Remembered, because a width somebody chose is a preference and re-choosing it on every visit is
    * the app forgetting something it was told.
    */
@@ -179,22 +202,22 @@ export function App(): JSX.Element {
    * else to be drawn. Without this the panel would open over a globe with no line on it.
    */
   const [flat, setFlat] = useState(
-    () => shared.section !== undefined || localStorage.getItem("firstmotion.flat") === "1",
+    () => shared.section !== undefined || stored("flat") === "1",
   );
   useEffect(() => {
-    localStorage.setItem("firstmotion.flat", flat ? "1" : "0");
+    store("flat", flat ? "1" : "0");
   }, [flat]);
   const [railWidth, setRailWidth] = useState<number>(
-    () => Number(localStorage.getItem("firstmotion.rail")) || 356,
+    () => Number(stored("rail")) || 356,
   );
   useEffect(() => {
-    localStorage.setItem("firstmotion.rail", String(railWidth));
+    store("rail", String(railWidth));
   }, [railWidth]);
   const [regionsHeight, setRegionsHeight] = useState<number>(
-    () => Number(localStorage.getItem("firstmotion.regions")) || 132,
+    () => Number(stored("regions")) || 132,
   );
   useEffect(() => {
-    localStorage.setItem("firstmotion.regions", String(regionsHeight));
+    store("regions", String(regionsHeight));
   }, [regionsHeight]);
   const regionsRef = useRef<HTMLDivElement>(null);
   /*
@@ -211,14 +234,14 @@ export function App(): JSX.Element {
    * flashing the default and correcting itself.
    */
   const [ramp, setRamp] = useState<RampName>(
-    () => shared.ramp ?? (localStorage.getItem("firstmotion.ramp") as RampName | null) ?? "thermal",
+    () => shared.ramp ?? (stored("ramp") as RampName | null) ?? "thermal",
   );
   const [announceAbove, setAnnounceAbove] = useState<number>(
-    () => Number(localStorage.getItem("firstmotion.announceAbove") ?? "4.5"),
+    () => Number(stored("announceAbove") ?? "4.5"),
   );
-  useEffect(() => { localStorage.setItem("firstmotion.ramp", ramp); }, [ramp]);
+  useEffect(() => { store("ramp", ramp); }, [ramp]);
   useEffect(() => {
-    localStorage.setItem("firstmotion.announceAbove", String(announceAbove));
+    store("announceAbove", String(announceAbove));
   }, [announceAbove]);
   const flyTo = useRef<(lon: number, lat: number, zoom?: number) => void>(() => {});
   const lastWritten = useRef<string>(window.location.hash);
@@ -651,6 +674,7 @@ export function App(): JSX.Element {
                 ramp={ramp}
                 value={filters.minMagnitude}
                 onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
+                aurora={aurora}
               />
               {/*
                 Sources sit with the magnitude control because both answer "what is on the globe".
@@ -682,7 +706,15 @@ export function App(): JSX.Element {
           the arithmetic that makes the reconciliation visible without opening anything. */}
       <header className="zone-head flex items-center gap-6 bg-deck px-5 py-3 xl:bg-transparent">
         <div className="text-[13px] font-semibold tracking-[0.16em] whitespace-nowrap">
-          FIRST MOTION
+          {/*
+            "FINE" on a phone, and the full sentence from `md` up.
+
+            Not only a layout dodge, though it is that too: the header's own note records one extra
+            button pushing it 120px past a phone viewport, and this wordmark is half again as long as the
+            one it replaces. It is also the better joke at that size.
+          */}
+          <span className="md:hidden">FINE</span>
+          <span className="hidden md:inline">EVERYTHING IS FINE</span>
         </div>
         {/* Four zeros are four numbers that mean nothing. Same call as the headline: the status on
             the right already says what is happening while there is nothing to count. */}
@@ -1198,6 +1230,7 @@ export function App(): JSX.Element {
             selected={selected}
             ramp={ramp}
             focus={focusSpan}
+            aurora={aurora}
             scrubAt={view.at}
             flat={flat}
             section={sectionLine}

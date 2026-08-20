@@ -18,6 +18,8 @@ import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
 import { createEventLayer, type EventLayer } from "./events";
 import { createRingLayer, type RingLayer } from "./rings";
+import { auroraTexture, writeAurora } from "./auroraTexture";
+import type { Aurora } from "../sources/aurora";
 
 /** Only the part of the store hit testing needs, so this file does not depend on the whole model. */
 export interface HitStore {
@@ -145,6 +147,8 @@ export interface Globe {
   controls: Controls;
   events: EventLayer;
   rings: RingLayer;
+  /** Hands over an aurora grid, or null to draw no sky at all. */
+  setAurora: (grid: Aurora | null) => void;
   setMorph: (t: number) => void;
   /** The entrance reveal: boundaries grow outward from the events rather than arriving with them. */
   plates: {
@@ -345,6 +349,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    * Above the coastline and below the markers. An earthquake at 3am is not dimmer than one at noon,
    * so the data layers are drawn after this and are untouched by it.
    */
+  const aurora = auroraTexture();
   const nightGeom = new SphereGeometry(RADIUS_NIGHT, 96, 64, SPHERE_PHI_START);
   attachLonLat(nightGeom);
   const night = new Mesh(
@@ -372,6 +377,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         uniform float uDepth;
         uniform float uLift;
         uniform float uMorph;
+        uniform sampler2D uAurora;
+        uniform float uAuroraOn;
+        uniform vec3 uAuroraColor;
         varying vec3 vNormal;
         varying vec2 vLonLat;
 
@@ -424,7 +432,31 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
            */
           float night = smoothstep(0.10, -0.30, sun);
           float day = smoothstep(0.10, 0.55, sun);
-          gl_FragColor = vec4(uDayColor * day, night * uDepth + day * uLift);
+
+          /*
+           * The aurora, in the one shader that already knows where night is.
+           *
+           * (No backticks in here. This is inside a template literal and one of them ends the shader,
+           * which the morph module warns about in as many words and I walked into anyway.)
+           *
+           * Multiplied by the night factor, so it cannot appear over a daylit hemisphere. Not a
+           * stylistic choice: an aurora is there in daylight and you cannot see it, and drawing it
+           * anyway would be the same class of claim as a wavefront moving at a speed nothing states.
+           *
+           * The fract wraps longitude, because the model counts 0 to 359 east and this carries -180 to
+           * 180. Rebasing the grid on the way in would have been a second place to get the seam wrong.
+           *
+           * The gain of 3 is measured rather than picked: an ordinary active evening peaked at 28 of 100,
+           * so a third of the scale is what a lively sky actually reads, and dividing by the model's
+           * nominal maximum would have drawn every real night as almost nothing.
+           */
+          vec2 auv = vec2(fract(vLonLat.x / 360.0), (vLonLat.y + 90.0) / 180.0);
+          float glow = clamp(texture2D(uAurora, auv).r * 3.0, 0.0, 1.0) * night * uAuroraOn;
+
+          gl_FragColor = vec4(
+            uDayColor * day + uAuroraColor * glow,
+            night * uDepth + day * uLift + glow * 0.30
+          );
         }`,
       uniforms: {
         uMorph: morph,
@@ -447,6 +479,19 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
          */
         uDepth: { value: 0.26 },
         uLift: { value: 0.11 },
+        uAurora: { value: aurora },
+        // Off until a grid lands, so a failed or slow fetch draws nothing rather than a black sky.
+        uAuroraOn: { value: 0 },
+        /*
+         * The one hue in this app that is not a magnitude, and it is admitted as light rather than as a
+         * mark. The atmospheric rim is already blue and the day wash already pale blue, because both are
+         * illumination; an aurora joins those. Every layer after this one is a mark and stays achromatic,
+         * distinguished by shape, which matters most for wildfires, whose obvious orange is the ramp.
+         *
+         * Desaturated well below a real 557nm green, because it sits behind markers that carry meaning
+         * and must not compete with them.
+         */
+        uAuroraColor: { value: new Color(0x7fc9a6) },
       },
       transparent: true,
       depthWrite: false,
@@ -638,6 +683,15 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     events,
     rings,
+    setAurora: (grid) => {
+      const material = night.material as ShaderMaterial;
+      if (grid === null) {
+        material.uniforms["uAuroraOn"]!.value = 0;
+        return;
+      }
+      writeAurora(aurora, grid);
+      material.uniforms["uAuroraOn"]!.value = 1;
+    },
     render: () => {
       const minute = Math.floor(Date.now() / 60_000);
       if (minute !== sunMinute) {

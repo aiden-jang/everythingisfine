@@ -1,5 +1,6 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { PLAYBACK } from "../geo/waves";
+import { auroraNote } from "./format";
 
 /*
  * The legend and the magnitude filter, which were two blocks and are one control.
@@ -18,11 +19,15 @@ export interface MagnitudeFilterProps {
   ramp: RampName;
   value: number;
   onChange: (value: number) => void;
+  /** Tonight's aurora, for the one line that explains it. Null when there is none to explain. */
+  aurora: { peak: number; forecastAt: number } | null;
 }
 
 const TICKS = [MAG_MIN, 3, 5, MAG_MAX];
 
-export function MagnitudeFilter({ ramp, value, onChange }: MagnitudeFilterProps): JSX.Element {
+export function MagnitudeFilter(
+  { ramp, value, onChange, aurora }: MagnitudeFilterProps,
+): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
   // Where the threshold sits along the scale, as a percentage of the track.
   const cut = Math.max(0, Math.min(100, ((value - MAG_MIN) / (MAG_MAX - MAG_MIN)) * 100));
@@ -138,6 +143,20 @@ export function MagnitudeFilter({ ramp, value, onChange }: MagnitudeFilterProps)
         `items-start`, since this is the only row that wraps, and a glyph centred against two lines
         floats between them.
       */}
+      {/*
+        The sky, when there is any. Below the marks rather than among them, because it is light and they
+        are data: the swatch is a wash instead of a glyph for the same reason.
+      */}
+      {aurora ? (
+        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+          <span
+            className="mt-[3px] inline-block h-[9px] w-[13px] shrink-0 rounded-[2px]"
+            style={{ background: "linear-gradient(180deg, #7fc9a6 0%, rgba(127,201,166,0) 100%)" }}
+          />
+          <span>{auroraNote(aurora.peak, aurora.forecastAt, Date.now())}</span>
+        </div>
+      ) : null}
+
       <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
         {/*
           Two circles, which is now literally what is drawn rather than a suggestion of expansion:
@@ -161,23 +180,6 @@ export function MagnitudeFilter({ ramp, value, onChange }: MagnitudeFilterProps)
         </span>
       </div>
 
-      {/*
-        What the app is called, and why.
-
-        The one line here that explains a word rather than a mark, which is why it is indented under
-        the rings rather than given a glyph of its own: it is a footnote to the P-wave named above it,
-        not a sixth thing to look for on the map.
-
-        It could only be written once that P front existed. Before the second ring there was nothing on
-        screen for the name to point at, and a definition with no referent is trivia. The arrival state
-        in the rail was the other candidate, and it is better timed and worse placed: it is on screen
-        only while a cold load is waiting, so the explanation would be available exactly once and never
-        again to anybody who wanted it later.
-      */}
-      <p className="mt-1.5 pl-[23px] text-[11px] leading-relaxed text-faint">
-        First motion is a seismogram term: which way the ground jumps as that P wave lands, and enough
-        of them together give the direction the fault slipped.
-      </p>
     </div>
   );
 }
