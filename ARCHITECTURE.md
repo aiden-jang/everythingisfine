@@ -3128,6 +3128,39 @@ hour further back.
 `latest` stays, with its documentation rewritten to say what it actually orders by. It is arrival order,
 which is the right thing for eviction and nobody's idea of "recent".
 
+## The one interface that speaks was announcing the backlog
+
+The live region announced anything above the viewer's threshold that it had not already seen in the list,
+and read "I have not seen this" as "this just happened". Those are different claims and the second was
+false twice over.
+
+**On every cold load.** The list goes from empty to sixty events at once and every one of them is unseen,
+so a screen reader was told "3 new earthquakes above magnitude 4.5" about a backlog hours old. This is the
+exact mistake the wavefront layer has a named guard against, and its comment says so in as many words: the
+seed creates hundreds of quakes at once and none of them just happened. The canvas knew. The interface
+that talks did not, which is the wrong way round for the two of them to differ.
+
+**And whenever the magnitude filter is lowered.** That admits events which were always held and never
+listed, and they arrive looking exactly as unseen as a genuine arrival does.
+
+**So news is decided by the clock, not by what has been on screen.** An earthquake reported forty minutes
+ago is not news whatever the interface happens to have been showing, and one reported two minutes ago is
+news even on the first frame after a load. That single condition covers both failures, where a flag for
+"this is the first delivery" would have covered only the first and needed a second flag for the filter.
+
+The window is thirty minutes and the trade is explicit. Agencies publish within a few minutes for
+anything large and up to fifteen or so for the rest, so the window has to be wider than the delay or real
+arrivals go unannounced; it is far short of a seed, whose events run to hours and days. An event published
+unusually late therefore passes in silence, which is the recoverable direction. The other one floods
+somebody's screen reader every time they open the page.
+
+The seen set stays, because a re-render is not an event.
+
+**Nothing in the browser suite touched this.** The live region has no test at all, in either suite, which
+is how a fault this loud stayed quiet: it is the one part of the app that is invisible to anybody not
+using it. The rule is a pure function now, tested directly, which is the most that can be checked without
+a screen reader in the loop.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Quake } from "../data/types";
 import { ago, agoShort, coordinates, depth, place, reportedBy, SOURCE_NAMES } from "./format";
+import { newsIn } from "./announce";
 
 /*
  * The list of recent events. One list, for everybody.
@@ -58,16 +59,18 @@ export function EventList({
   const [announcement, setAnnouncement] = useState("");
 
   /*
-   * The live region, gated by magnitude.
+   * The live region, gated by magnitude and by the clock.
    *
-   * A busy feed delivers hundreds of events an hour, and announcing all of them floods a screen
-   * reader until the person closes the page. The threshold is the viewer's and the default is
-   * deliberately high: silence that can be lowered is recoverable, an unusable page is not.
+   * A busy feed delivers hundreds of events an hour, and announcing all of them floods a screen reader
+   * until the person closes the page. The threshold is the viewer's and the default is deliberately
+   * high: silence that can be lowered is recoverable, an unusable page is not.
+   *
+   * The clock is the other half, and see `announce.ts` for why: an event being new to this list is not
+   * the same as it being new, and reading the difference as news announced the whole backlog on every
+   * cold load.
    */
   useEffect(() => {
-    const fresh = quakes.filter(
-      (q) => q.primary.magnitude >= announceAbove && !announced.current.has(q.key),
-    );
+    const fresh = newsIn(quakes, announced.current, announceAbove, Date.now());
     for (const q of quakes) announced.current.add(q.key);
     if (announced.current.size > 4000) announced.current = new Set(quakes.map((q) => q.key));
     if (fresh.length === 0) return;
