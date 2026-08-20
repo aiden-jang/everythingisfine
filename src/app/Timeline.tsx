@@ -46,6 +46,22 @@ export interface TimelineProps {
   onLive: () => void;
   /** The cursor's clock, already formatted, for the readout beside the transport. */
   cursorLabel: string | null;
+  /**
+   * How far back each feed can vouch, as a fraction of the window and a duration in words.
+   *
+   * Drawn here rather than beside the source buttons because this strip's axis already *is* the
+   * window, labelled at both ends, and the blocks on it already mean "not covered". A bar needs an
+   * axis to be read against, and inventing a second one two blocks away would be the same span
+   * measured twice.
+   */
+  reaches: readonly { id: string; label: string; fraction: number; words: string }[];
+  /**
+   * Why the bars differ, when they do. Null when they do not.
+   *
+   * Moved here from beside the source buttons, which is where it was written and two blocks from the
+   * thing it explains. A caveat about an asymmetry belongs under the picture of the asymmetry.
+   */
+  reachNote: string | null;
 }
 
 const STRIP_PX = 44;
@@ -89,7 +105,8 @@ const spanLabel = (hours: number): string =>
 
 export function Timeline({
   bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange, bucketMs, fetching,
-  cursor, parked, playing, onScrub, onStep, onPlayToggle, onLive, cursorLabel,
+  cursor, parked, playing, onScrub, onStep, onPlayToggle, onLive, cursorLabel, reaches,
+  reachNote,
 }: TimelineProps): JSX.Element {
   const peak = peakCount(bars);
   const tallest = bars.find((b) => b.count === peak && peak > 0);
@@ -234,6 +251,39 @@ export function Timeline({
         <span>{spanLabel(hours)}</span>
         <span>now</span>
       </div>
+
+      {/*
+        How far back each feed reaches, against the axis directly above it.
+
+        The header prints a count per agency and this strip marks the hours nothing covered, and between
+        them there was no way to see that at a month USGS vouches for thirty days while EMSC vouches for
+        the last eighteen hours. The catalogue returns its most recent page whatever is asked of it, so
+        widening the window widens one bar and not the other, and that is the dual-source architecture
+        made visible rather than described.
+
+        Anchored right, because coverage reaches back from now, which is the direction the axis runs.
+      */}
+      {reaches.length > 0 ? (
+        <div className="mt-2.5">
+          {reaches.map((r) => (
+            <div key={r.id} className="flex items-center gap-2">
+              <span className="w-[34px] shrink-0 font-mono text-[10px] text-faint">{r.label}</span>
+              <span className="relative h-[3px] min-w-0 flex-1 bg-raised">
+                <span
+                  className="absolute inset-y-0 right-0 bg-dim"
+                  style={{ width: `${Math.max(r.fraction > 0 ? 1 : 0, r.fraction * 100)}%` }}
+                />
+              </span>
+              <span className="w-[38px] shrink-0 text-right font-mono text-[10px] text-faint tabular-nums">
+                {r.words}
+              </span>
+            </div>
+          ))}
+          {reachNote ? (
+            <p className="mt-2 text-[11px] leading-relaxed text-faint">{reachNote}</p>
+          ) : null}
+        </div>
+      ) : null}
 
       {/*
         The transport, on its own track rather than on the strip.

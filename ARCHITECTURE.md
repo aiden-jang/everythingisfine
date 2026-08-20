@@ -2889,6 +2889,37 @@ and this needed the same words, differing only in rounding and a guard, which is
 end up in one app. There is one now, in `format.ts`, whose whole job is turning data into words, and the
 scale bar reads it from there.
 
+## The dual-source architecture, as two bars instead of two numbers
+
+The source toggles have carried each feed's reach as a duration since the EMSC debt was paid: "USGS 24h"
+and "EMSC 6h". That is the right fact and the wrong form. Reading "6h" against "30d" and arriving at a
+fortieth is arithmetic the reader has to do, and a fortieth drawn against a full bar is instant.
+
+So each feed's reach is a fill on a hairline, and the fills are anchored right because coverage reaches
+back from now. Widening the window widens one bar and leaves the other where it was, because the
+catalogue returns its most recent page whatever is asked of it, and that is the dual-source architecture
+made visible rather than described.
+
+**Drawn under the activity strip, not under the buttons where the numbers were.** A bar needs an axis to
+be read against, and that strip's axis already *is* the window, labelled at both ends, with blocks on it
+that already mean "not covered". Putting a second axis two blocks away would be the same span measured
+twice.
+
+**Which is also why the durations came off the buttons.** With the bars carrying the words *and* the
+proportion *and* an axis, the chips beside the toggle labels were the same span printed twice in one
+rail, which is precisely the fault this file recorded when the activity axis carried "last N hours"
+beside a headline printing it. The toggles are toggles now, and their `aria-label` went back to the
+source name because the strip states the reach in text of its own.
+
+**The caveat moved with the picture.** "EMSC returns its most recent page whatever the window" was
+written beside the buttons, two blocks from the asymmetry it explains. It sits under the bars now.
+
+**The pre-check that mattered.** At a month, eighteen hours is a fortieth of the axis, which on a 316px
+rail strip is eight pixels. That is small enough to be worth checking and large enough to read, and the
+stub against a full bar is the fact being stated loudly rather than a rendering failure. A minimum of one
+percent keeps a real but tiny reach from rounding away to nothing at all, which would say "no backlog"
+about a feed that has one.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

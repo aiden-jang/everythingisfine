@@ -21,7 +21,8 @@ import { matches, windowStart } from "./data/filter";
 import type { Filters, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import {
-  ago, agoShort, clock, energyPercent, place, reach, reachNote, SOURCE_NAMES, windowLabel,
+  ago, agoShort, clock, energyPercent, place, reach, reachFraction, reachNote, SOURCE_NAMES,
+  windowLabel,
 } from "./app/format";
 
 /**
@@ -584,16 +585,6 @@ export function App(): JSX.Element {
                     type="button"
                     onClick={() => toggleSource(id)}
                     aria-pressed={filters.sources.has(id)}
-                    /*
-                      Named in full, because the reach beside the name is a bare number.
-                      "USGS 18h" announced as two tokens is a toggle and a quantity with nothing
-                      joining them. The visible label stays short; this is the same fact as a
-                      sentence.
-                    */
-                    aria-label={snapshot.coveredSince === null
-                      ? SOURCE_NAMES[id]
-                      : `${SOURCE_NAMES[id]}, backlog reaches `
-                        + `${reach(snapshot.covered[id], now, filters.windowMs)}`}
                     className={`flex-1 cursor-pointer border px-2.5 py-1.5 text-[11.5px] transition-colors ${
                       filters.sources.has(id)
                         ? "border-hairline bg-raised text-ink hover:border-faint"
@@ -601,29 +592,10 @@ export function App(): JSX.Element {
                     }`}
                   >
                     {SOURCE_NAMES[id]}
-                    {/*
-                      How far back this agency's backlog actually goes, on the agency's own button.
-                      The header prints a count per feed and the rail prints one left edge for the
-                      pair, so the one number nobody could get was how much of the window each of
-                      them is answering for. Not offered before the first seed: there is nothing to
-                      report and the rail above already says it is asking.
-                    */}
-                    {snapshot.coveredSince === null ? null : (
-                      <span className="ml-1.5 font-mono text-[10px] text-faint tabular-nums">
-                        {reach(snapshot.covered[id], now, filters.windowMs)}
-                      </span>
-                    )}
                   </button>
                 ))}
               </div>
-              {/*
-                Only when they disagree, in the same shape as the strip's note about unobserved
-                blocks. A permanent line explaining a discrepancy that is not on screen is how a
-                caveat stops being read.
-              */}
-              {sourceNote ? (
-                <p className="mt-2 text-[11px] leading-relaxed text-faint">{sourceNote}</p>
-              ) : null}
+
     </>
   );
 
@@ -915,6 +887,17 @@ export function App(): JSX.Element {
               onPlayToggle={() => setScrub(togglePlay(view, span))}
               onLive={() => setScrub(LIVE)}
               cursorLabel={view.at === null ? null : clock(view.at)}
+              /*
+                Empty until a seed lands. Two bars at zero under an axis is a picture of a bug, and the
+                rail above already says it is asking.
+              */
+              reaches={snapshot.coveredSince === null ? [] : (["usgs", "emsc"] as const).map((id) => ({
+                id,
+                label: SOURCE_NAMES[id],
+                fraction: reachFraction(snapshot.covered[id], now, filters.windowMs),
+                words: reach(snapshot.covered[id], now, filters.windowMs),
+              }))}
+              reachNote={sourceNote}
             />
           </div>
 

@@ -211,3 +211,19 @@ export function distanceLabel(km: number): string {
   if (km < 1) return `${Math.round(km * 1000)} m`;
   return `${Math.round(km).toLocaleString("en-GB")} km`;
 }
+
+/**
+ * How much of the window a source's backlog actually covers, as a fraction of it.
+ *
+ * The words beside this say "24h" and "6h", which is the duration. This is the proportion, and the two
+ * are not the same fact: reading "6h" against "30d" and arriving at a fortieth is arithmetic the reader
+ * should not have to do, and a fortieth drawn against a full bar is instant.
+ *
+ * Zero for a source that fetched no backlog, which is a different thing from one that fetched a short
+ * one and is drawn as nothing rather than as a sliver.
+ */
+export function reachFraction(from: number | null, now: number, windowMs: number): number {
+  if (from === null || windowMs <= 0) return 0;
+  const covered = now - from;
+  return Math.max(0, Math.min(1, covered / windowMs));
+}

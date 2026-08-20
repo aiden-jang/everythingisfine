@@ -1076,21 +1076,39 @@ test("the chrome says how far back each agency actually covers", async ({ page }
   await page.goto("/");
   await waitForData(page);
 
-  const usgs = page.getByRole("button", { name: /^USGS, backlog/ });
-  const emsc = page.getByRole("button", { name: /^EMSC, backlog/ });
+  /*
+   * On the activity strip, against its own axis, rather than on the source toggles.
+   *
+   * The buttons carried the durations first and the strip now carries them with the axis they have to
+   * be read against, which is the same span measured twice if both stay. So the toggles are toggles.
+   */
+  const activity = page.locator('[data-rail="activity"]');
   // USGS has no result cap, so a successful fetch of a feed vouches for the whole of it.
-  await expect(usgs).toContainText("24h");
+  await expect(activity).toContainText("24h");
   // Six hours of a twenty-four hour window, which is the fixture's cap and not the window.
-  await expect(emsc).toContainText(/[56]h/);
-  await expect(page.locator(".zones")).toContainText(
-    "returns its most recent page whatever the window",
-  );
-  await expect(page.locator(".zones")).toContainText("Older events are USGS alone");
+  await expect(activity).toContainText(/[56]h/);
+  await expect(activity).toContainText("returns its most recent page whatever the window");
+  await expect(activity).toContainText("Older events are USGS alone");
 
-  // Widening makes the gap wider, because EMSC's page does not grow with the window.
+  /*
+   * The bar has to be a fraction of the axis, not merely present. Widening the window widens USGS's
+   * bar and leaves EMSC's where it was, because the catalogue returns its most recent page whatever it
+   * is asked for, and that difference in width is the whole point of drawing them.
+   */
+  const emscWidth = async (): Promise<number> => page.evaluate(() => {
+    const rows = Array.from(document.querySelectorAll('[data-rail="activity"] .relative'));
+    const row = rows.find((el) => el.parentElement?.textContent?.startsWith("EMSC"));
+    const fill = row?.firstElementChild as HTMLElement | undefined;
+    const track = row?.getBoundingClientRect().width ?? 1;
+    return (fill?.getBoundingClientRect().width ?? 0) / track;
+  });
+  const atDay = await emscWidth();
+  expect(atDay).toBeGreaterThan(0.15);
+
   await page.locator(".zone-rail").getByRole("button", { name: "30d", exact: true }).click();
-  await expect(usgs).toContainText("30d");
-  await expect(emsc).toContainText(/[56]h/);
+  await expect(activity).toContainText("30d");
+  // A thirtieth of the axis it was, or thereabouts: the stub is the fact being stated loudly.
+  await expect.poll(emscWidth, { timeout: 8_000 }).toBeLessThan(atDay / 3);
 });
 
 test("with both agencies covering the window, nothing is caveated", async ({ page }) => {
@@ -1099,8 +1117,10 @@ test("with both agencies covering the window, nothing is caveated", async ({ pag
   await page.goto("/");
   await waitForData(page);
 
-  await expect(page.getByRole("button", { name: /^USGS, backlog/ })).toContainText("24h");
-  await expect(page.getByRole("button", { name: /^EMSC, backlog/ })).toContainText("24h");
+  const activity = page.locator('[data-rail="activity"]');
+  // Both bars full, and no caveat, because there is no asymmetry to caveat.
+  await expect(activity).toContainText("USGS");
+  await expect(activity).toContainText("EMSC");
   await expect(page.locator(".zones")).not.toContainText("most recent page");
 });
 
