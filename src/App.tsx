@@ -480,17 +480,19 @@ export function App(): JSX.Element {
   /*
    * The list shows what the globe shows, filtered identically, **ordered by origin time**.
    *
-   * The store hands events back in arrival order, which is the right thing for eviction and the
-   * wrong thing for a list headed "newest first". After the daily seed lands, arrival order is
-   * whatever order two catalogues happened to answer in, so the list opened on events nineteen
-   * hours old under a heading claiming recency. Sorting 400 candidates is nothing; the list is
-   * capped at 60 because navigating 50,000 rows would serve nobody.
+   * The store hands events back in arrival order, which is the right thing for eviction and the wrong
+   * thing for a list headed "newest first". This was fixed once by sorting a pool of the 400 most
+   * recently arrived, which was enough while a day's seed was three hundred events and silently wrong
+   * from the moment a month's became eleven thousand: USGS lists a feed newest first, so the last 400 to
+   * arrive from a month are its four hundred *oldest*, and the list showed events 28.8 days old under a
+   * heading claiming recency.
+   *
+   * So the store selects by origin time instead, and takes the filter so that filtering cannot happen
+   * after a cap has already thrown the answer away. Sixty because navigating fifty thousand rows would
+   * serve nobody.
    */
   const recent = useMemo(
-    () => feed.store.latest(400)
-      .filter((q) => matches(q, filters, Date.now()))
-      .sort((a, b) => b.primary.time - a.primary.time)
-      .slice(0, 60),
+    () => feed.store.newest(60, (q) => matches(q, filters, Date.now())),
     [filters, snapshot.revision],
   );
 
@@ -498,8 +500,8 @@ export function App(): JSX.Element {
    * Rebuilt on every revision, and cheap enough to be.
    *
    * It walks the whole buffer, which is up to fifty thousand events, but only ever to add to
-   * twenty-four counters. The list above it sorts four hundred objects on the same trigger and that
-   * has never been the frame's problem either.
+   * twenty-four counters. The list above it walks the same buffer on the same trigger and that has
+   * never been the frame's problem either.
    */
   const { bars, strongest, bucketMs, energyShare } = useMemo(
     () => histogram(feed.store.forEach, filters, now, snapshot.coveredSince),

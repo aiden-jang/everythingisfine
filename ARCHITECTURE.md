@@ -3096,6 +3096,38 @@ one place that can know it.
 audited, two wrong, and the one that was correct is the one that had been derived from a named constant
 rather than typed in.
 
+## "Newest first" was showing events 29 days old
+
+The recent list pools candidates from the store and shows the sixty newest. It pooled the 400 most
+recently *arrived* and sorted those by origin time, which is itself a fix for an earlier version of the
+same bug: the file's own note records the list once opening on events nineteen hours old.
+
+The fix was the sort, and the pool was left at 400. That was sound while a day's seed was three hundred
+events, because the pool then covered the whole window. A month's seed is 10,976, and USGS lists a feed
+**newest first**, so the last four hundred events to arrive from it are its four hundred *oldest*.
+
+Measured against the live month feed rather than reasoned about. At a 30-day window the sixty rows under
+a heading reading "newest first" spanned **28.8 to 28.9 days old**, where the true newest sixty spanned
+the last 7.4 hours. The hourly poll pushes a dozen genuinely recent events in behind the seed, so the top
+of the list looked plausible and then fell off a cliff, which is why nobody caught it by looking.
+
+**The same class as the permalink clamps, and the third one this week.** A bound that was correct when
+written, invalidated by a later change elsewhere, silent about it, and only visible in the state that
+shipped afterwards. The day window never showed it. The one that shipped later did.
+
+**The store selects instead, and takes the filter.** `newest(n, keep)` walks the ring once and keeps a
+bounded insertion of the best n by origin time, which is the idiom `nearby.ts` already uses for its four
+notable neighbours and for the same reason: sorting the buffer to take sixty is O(n log n) for a
+fixed-size answer, and the buffer is fifty thousand events on every revision.
+
+The filter is an argument rather than something applied to the result, because filtering after a cap
+cannot be made correct: it returns however many of the top sixty happen to pass, which is fewer than
+sixty and sometimes none. There is a test where every recent event is excluded and the right answer is an
+hour further back.
+
+`latest` stays, with its documentation rewritten to say what it actually orders by. It is arrival order,
+which is the right thing for eviction and nobody's idea of "recent".
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
