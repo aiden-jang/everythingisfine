@@ -37,6 +37,71 @@ export interface Nearby {
   after: number;
   /** Offset of the largest neighbour, so the panel can say whether the big one already happened. */
   largestAt: number | null;
+  /**
+   * Which way the local seismicity runs, as a bearing in [0, 180), or null when it does not run.
+   *
+   * Here so that a cross-section can be offered without asking anybody to guess an orientation.
+   * Earthquakes at a subduction zone lie along the trench, so the long axis of the local scatter *is*
+   * the trench strike, and the section worth drawing is the one across it. A fixed east-west slice
+   * would be right at Japan and useless along the Aleutians.
+   *
+   * Null when there is no trend to speak of: too few neighbours to fit, or a scatter round enough
+   * that its long axis is noise. Both are honest answers and neither is a reason to refuse a section.
+   */
+  trendDeg: number | null;
+}
+
+/** Below this many neighbours a long axis is fitted to noise. */
+const TREND_MIN_POINTS = 5;
+/**
+ * How elongated a scatter has to be before its long axis means anything.
+ *
+ * A trench is strongly elongated, commonly three to one or more. A round cluster is one to one, and
+ * its principal axis is whichever way the noise fell, which would send the section off at an angle
+ * that looks deliberate and is not. 1.5 is comfortably above round and well below any real margin.
+ */
+const TREND_MIN_RATIO = 1.5;
+
+/**
+ * The long axis of a scatter, from the sums of its second moments.
+ *
+ * Split out from the walk that accumulates them so it can be read and tested as the arithmetic it is.
+ * Degrees are scaled by `cos(lat)` on the way in, so east and north are comparable distances and the
+ * axis is not pulled toward east at high latitude.
+ *
+ * Returned as a bearing rather than a maths angle, and modulo 180 rather than 360, because a line has
+ * an orientation and no direction: a trench running north-east runs south-west just as truly.
+ */
+export function trendFrom(
+  n: number, sx: number, sy: number, sxx: number, syy: number, sxy: number,
+): number | null {
+  if (n < TREND_MIN_POINTS) return null;
+  // About the centroid, not about the pinned event: the event sits somewhere on the trend, and
+  // measuring spread from a point off the centre inflates whichever axis it is offset along.
+  const cxx = sxx / n - (sx / n) ** 2;
+  const cyy = syy / n - (sy / n) ** 2;
+  const cxy = sxy / n - (sx / n) * (sy / n);
+
+  const mean = (cxx + cyy) / 2;
+  const diff = Math.sqrt(((cxx - cyy) / 2) ** 2 + cxy ** 2);
+  const major = mean + diff;
+  const minor = mean - diff;
+  if (major <= 0) return null;
+  /*
+   * The minor axis floored at zero rather than trusted.
+   *
+   * A perfectly straight line of events has a minor axis of exactly zero, and the subtraction that
+   * produces it can land a rounding step below, so a `< 0` rejection would throw out the single
+   * clearest trend this can be handed. Zero then means maximally elongated, which is what it is, and
+   * the ratio test is skipped rather than dividing by it.
+   */
+  const spread = Math.max(0, minor);
+  if (spread > 0 && major / spread < TREND_MIN_RATIO) return null;
+
+  // Maths angle of the long axis, counterclockwise from east, then turned into a compass bearing.
+  const phi = 0.5 * Math.atan2(2 * cxy, cxx - cyy);
+  const bearing = 90 - (phi * 180) / Math.PI;
+  return ((bearing % 180) + 180) % 180;
 }
 
 export function findNearby(
@@ -44,12 +109,37 @@ export function findNearby(
 ): Nearby {
   const found: { quake: Quake; km: number }[] = [];
   const { lon, lat } = quake.primary;
+  /*
+   * Second moments accumulated inside the walk that is already happening.
+   *
+   * A separate pass to fit the trend would be a second sweep of the buffer for one angle, and this
+   * function's own note records the 56ms the panel used to pay for exactly that kind of extra work.
+   */
+  const scale = Math.cos((lat * Math.PI) / 180);
+  let n = 0;
+  let sx = 0;
+  let sy = 0;
+  let sxx = 0;
+  let syy = 0;
+  let sxy = 0;
 
   store.forEach((other) => {
     if (other.key === quake.key) return;
     if (!matches(other, filters, now)) return;
     const km = distanceKm(lon, lat, other.primary.lon, other.primary.lat);
-    if (km <= NEARBY_KM) found.push({ quake: other, km });
+    if (km > NEARBY_KM) return;
+    found.push({ quake: other, km });
+    // Wrapped, so a neighbourhood straddling the date line is not measured as 360 degrees wide.
+    let dLon = other.primary.lon - lon;
+    dLon -= Math.round(dLon / 360) * 360;
+    const x = dLon * scale;
+    const y = other.primary.lat - lat;
+    n += 1;
+    sx += x;
+    sy += y;
+    sxx += x * x;
+    syy += y * y;
+    sxy += x * y;
   });
 
   /*
@@ -86,6 +176,7 @@ export function findNearby(
     before: sequence.filter((e) => e.at < 0).length,
     after: sequence.length - sequence.filter((e) => e.at < 0).length,
     largestAt: biggest ? biggest.quake.primary.time - origin : null,
+    trendDeg: trendFrom(n, sx, sy, sxx, syy, sxy),
   };
 }
 

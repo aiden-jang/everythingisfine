@@ -1339,3 +1339,34 @@ test("the largest event is a way in, in time as well as in space", async ({ page
   await expect(page.getByText("held", { exact: true })).toBeHidden();
   await expect(panel).toContainText("M 6.4");
 });
+
+test("a section can be opened from the panel, not only by a gesture", async ({ page }) => {
+  /*
+   * `CrossSection` was reachable by shift-dragging the map and by nothing else. That is
+   * undiscoverable with a mouse, since nothing but one line of the hint strip mentions it, and
+   * outright impossible on a touch screen, where there is no shift to hold. The panel's own note
+   * about the permalink already says a feature nobody can find is not shipped, and this was the same
+   * fault in the one view that shows the dimension a map cannot.
+   */
+  await installFeeds(page, { count: 400 });
+  await page.goto("/");
+  await waitForData(page);
+  await page.waitForTimeout(4000);
+
+  // From the largest, which is in a margin and so has a trend to cut across.
+  await page.locator('[data-rail="largest"]').click();
+  const panel = page.locator(".zone-panel");
+  await expect(panel).toBeVisible();
+
+  await panel.getByRole("button", { name: "Slice here" }).click();
+  await page.waitForTimeout(1200);
+
+  // A section only exists on the map, so taking it goes there rather than opening over a globe with
+  // no line on it. Same reasoning a shared link carrying a section already follows.
+  await expect(page.getByRole("button", { name: "Globe" })).toBeVisible();
+  await expect(page.locator(".zones")).toContainText(/Cross-section|Section/);
+  // And it is in the permalink, so the slice somebody found this way is shareable.
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+    .toMatch(/[&#]x=/);
+});

@@ -2513,6 +2513,42 @@ with every other event off Honshu, so the panel correctly answered "on its own, 
 no sequence to arrive at. An event with no neighbours cannot demonstrate landing on a sequence, and the
 test only found this because it asserted the sequence rather than the pin.
 
+## The one view that shows depth was behind a gesture nobody would find
+
+`CrossSection` draws the dimension neither the globe nor the map can: depth against distance, which is
+where the Pacific plate stops being a colour on a marker and becomes a sheet diving west at forty-five
+degrees. It was reachable by shift-dragging the map and by nothing else. Undiscoverable with a mouse,
+since one line of the hint strip was the only mention of it anywhere, and outright impossible on a
+touch screen, where there is no shift to hold. The panel's own comment about the permalink already
+says a feature nobody can find is not shipped; this was the same fault in the more valuable feature.
+
+**The orientation is the whole thing, so it is measured rather than assumed.** A section offered from
+a button has to choose its own direction, and for a slab there is exactly one right answer: across the
+trench. Earthquakes at a subduction zone lie along the trench, so the long axis of the local scatter
+*is* the strike, and the slice worth drawing is perpendicular to it. A fixed east-west section would
+have been right at Japan and useless along the Aleutians, and offering a useless section is worse than
+offering none.
+
+So `findNearby` now fits that axis, by accumulating second moments inside the walk it was already
+doing. A separate pass for one angle is the shape of the 56ms regression its own comment records.
+Measured about the centroid rather than about the pinned event, since the event sits somewhere on the
+trend and measuring spread from a point off centre inflates whichever axis the offset lay along.
+
+**It declines to answer twice, and both refusals matter.** Under five neighbours there is nothing to
+fit. A scatter rounder than three to two has a long axis that is only where the noise fell, and using
+it would send the section off at an angle that looks deliberate and is not. Both fall back to west-east,
+which is not a guess dressed up as a measurement: when there is no long axis every orientation is
+equally arbitrary, so the tie is broken by the direction the section is read in.
+
+**Two floating-point traps, both found by tests rather than by looking.** A perfectly straight line of
+events has a minor axis of exactly zero and the subtraction that produces it can land a rounding step
+below, so rejecting a negative minor axis throws away the single clearest trend there is; it is floored
+at zero instead, which reads as maximally elongated, which is what it is. And the reading direction is
+normalised so every section runs west to east, or south to north when it runs neither, because
+otherwise a north-south trench yields a bearing of 180 and reads top to bottom while its neighbour
+reads left to right. The epsilon in that check is load-bearing: `sin` of 180 degrees is 1.2e-16, not
+zero, so the exactly-north-south case only comes out right on purpose.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

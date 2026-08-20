@@ -5,6 +5,7 @@ import type { Store } from "../data/store";
 import { distanceKm } from "../geo/sphere";
 import { depthClass, findNearby, NEARBY_KM } from "./nearby";
 import { Sequence } from "./Sequence";
+import { sectionThrough, type SectionLine } from "./section";
 import {
   ago, clock, coordinates, depth, magnitude, place, SOURCE_NAMES,
 } from "./format";
@@ -35,6 +36,15 @@ export interface DetailPanelProps {
   filters: Filters;
   onClose: () => void;
   onFlyTo: (lon: number, lat: number, zoom?: number) => void;
+  /**
+   * Opens a cross-section through this event, across the local trend.
+   *
+   * The section was reachable by shift-dragging the map and by nothing else, which is undiscoverable
+   * on a mouse and impossible on a touch screen, where there is no shift to hold. The panel's own note
+   * about the permalink says a feature nobody can find is not shipped; this was the same fault in the
+   * one view that shows the dimension the map cannot.
+   */
+  onSection: (line: SectionLine) => void;
 }
 
 function Field({ label, value }: { label: string; value: string }): JSX.Element {
@@ -47,7 +57,7 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
 }
 
 export function DetailPanel({
-  open, quake, store, filters, ramp, excluded, revision, onClose, onFlyTo,
+  open, quake, store, filters, ramp, excluded, revision, onClose, onFlyTo, onSection,
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
   const r = quake.primary;
@@ -295,6 +305,19 @@ export function DetailPanel({
           and nothing on screen ever suggested it was worth copying. A feature nobody can find is
           not shipped.
         */}
+        {/*
+          Offered whichever view is showing, because taking it switches to the map.
+          A section only exists on the map, so this is not the button deciding the projection: it is
+          naming a slice that has nowhere else to be drawn, which is the same reasoning a shared link
+          carrying a section already follows.
+        */}
+        <button
+          type="button"
+          onClick={() => onSection(sectionThrough(r.lon, r.lat, near.trendDeg))}
+          className="cursor-pointer border border-hairline px-3 py-2 text-[11.5px] text-dim transition-colors hover:bg-raised hover:text-ink"
+        >
+          Slice here
+        </button>
         <button
           type="button"
           onClick={() => void copyLink()}

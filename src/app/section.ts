@@ -57,6 +57,74 @@ export interface Section {
 export const SECTION_HALF_WIDTH_KM = 200;
 
 /**
+ * How long a section offered from the panel is, end to end.
+ *
+ * A shift-drag picks its own length. This one has to pick for you, and the thing it is picking for is
+ * a slab: 300km either side of the epicentre reaches from the trench across the arc and down to the
+ * deep events behind it, which is the shape the section exists to show. Longer starts collecting the
+ * next margin, which the 200km corridor was already sized to avoid.
+ */
+export const SECTION_DEFAULT_KM = 600;
+
+/** Kilometres in a degree of latitude, from the mean radius. Same figure the scale bar uses. */
+const KM_PER_DEGREE = (Math.PI * EARTH_RADIUS_KM) / 180;
+
+/**
+ * A section through a point, across the local trend rather than along it.
+ *
+ * The orientation is the whole value of this. Earthquakes at a subduction zone lie along the trench,
+ * so slicing *across* that line is what puts the slab on screen and slicing along it is a smear of
+ * everything at once. `trendDeg` is the trend measured from the events themselves, so the section is
+ * perpendicular to it.
+ *
+ * A null trend falls back to west-to-east, which is not a guess dressed up as a measurement: when the
+ * scatter has no long axis, every orientation is equally arbitrary, and west to east is the one that
+ * matches the direction the cross-section is read in.
+ */
+export function sectionThrough(
+  lon: number, lat: number, trendDeg: number | null, lengthKm = SECTION_DEFAULT_KM,
+): SectionLine {
+  // Across the trend, not along it. A null trend leaves this at 90, which is due east.
+  const bearing = ((trendDeg ?? 0) + 90) * (Math.PI / 180);
+  const halfDeg = lengthKm / 2 / KM_PER_DEGREE;
+  const dLat = halfDeg * Math.cos(bearing);
+  /*
+   * East-west degrees stretch by 1/cos(lat), and the guard is not decoration: at 85 degrees the
+   * factor is 11, and at the pole it is infinite. Clamped so a section offered from a polar event is
+   * short rather than infinitely wide.
+   */
+  const scale = Math.max(0.02, Math.cos((lat * Math.PI) / 180));
+  const dLon = (halfDeg * Math.sin(bearing)) / scale;
+
+  /*
+   * Always read west to east, and south to north when it is neither.
+   *
+   * The cross-section plots distance along the line from its first end, so which end is first decides
+   * which way the picture reads. Left to the bearing arithmetic that is an accident: a north-south
+   * trench yields a bearing of 180 and a section that reads top to bottom, while an east-west one
+   * reads left to right, so two neighbouring margins would be drawn in opposite directions with
+   * nothing saying so.
+   *
+   * The epsilon is doing real work. `sin` of 180 degrees is 1.2e-16 rather than 0, so a test for a
+   * negative east component never fires on the exactly-north-south case and it keeps the arbitrary
+   * direction the arithmetic happened to produce.
+   */
+  const EPS = 1e-9;
+  const flip = dLon < -EPS || (Math.abs(dLon) <= EPS && dLat < 0);
+  const eastward = flip ? -dLon : dLon;
+  const northward = flip ? -dLat : dLat;
+
+  const wrap = (v: number): number => ((((v + 180) % 360) + 360) % 360) - 180;
+  const clampLat = (v: number): number => Math.max(-90, Math.min(90, v));
+  return {
+    fromLon: wrap(lon - eastward),
+    fromLat: clampLat(lat - northward),
+    toLon: wrap(lon + eastward),
+    toLat: clampLat(lat + northward),
+  };
+}
+
+/**
  * Along-track and cross-track distance, by vector algebra rather than by bearings.
  *
  * The bearing formulation needs an `atan2`, a difference of angles that has to be wrapped, and an
