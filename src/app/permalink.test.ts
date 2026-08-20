@@ -3,7 +3,7 @@ import { decode, encode, type Permalink } from "./permalink";
 
 const state: Permalink = {
   lon: 145, lat: 12, zoom: 1, minMagnitude: 2, windowHours: 24,
-  sources: ["usgs", "emsc"], ramp: "thermal", event: null, section: null,
+  sources: ["usgs", "emsc"], ramp: "thermal", event: null, section: null, cursor: null,
 };
 
 describe("longitude on the way out", () => {
@@ -12,7 +12,7 @@ describe("longitude on the way out", () => {
     // nothing takes it off again. Links were coming out as at=499.37.
     const at = (lon: number): string => encode({
       lon, lat: 20, zoom: 1, minMagnitude: 2, windowHours: 24,
-      sources: ["usgs"], ramp: "thermal", event: null, section: null,
+      sources: ["usgs"], ramp: "thermal", event: null, section: null, cursor: null,
     }).split("&")[0]!;
 
     expect(at(499.37)).toBe("at=139.37,20,1");
@@ -129,5 +129,73 @@ describe("a cross-section in the link", () => {
   it("clamps a latitude off the end of the world", () => {
     expect(decode("x=0,-400,10,400").section)
       .toEqual({ fromLon: 0, fromLat: -90, toLon: 10, toLat: 90 });
+  });
+});
+
+describe("the window, which was silently thrown away", () => {
+  it("carries a week and a month, which it used to flatten to a day", () => {
+    /*
+     * The bug this describes: the decoder clamped `w` to 1..24, which was right while a day was the
+     * only choice and wrong from the moment 7d and 30d shipped. A link to a month arrived as a day and
+     * nothing said so, which is the worst of the three possible outcomes and the reason a round trip is
+     * asserted here rather than each direction separately.
+     */
+    for (const windowHours of [24, 168, 720]) {
+      expect(decode(encode({ ...state, windowHours })).windowHours).toBe(windowHours);
+    }
+  });
+
+  it("snaps a window nobody can select to the nearest one they can", () => {
+    /*
+     * The rule at the top of `decode`: a link must not leave the app in a state it has no other way to
+     * reach. A 100-hour window works arithmetically and would leave the window buttons showing nothing
+     * selected, with no way back to whatever the link asked for.
+     */
+    expect(decode("w=100").windowHours).toBe(168);
+    expect(decode("w=1").windowHours).toBe(24);
+    expect(decode("w=100000").windowHours).toBe(720);
+  });
+
+  it("drops a window that is not a number at all", () => {
+    expect(decode("w=soon").windowHours).toBeUndefined();
+  });
+});
+
+describe("the moment, which the camera never carried", () => {
+  const at = 1_700_000_000_000;
+
+  it("round-trips a cursor", () => {
+    expect(decode(encode({ ...state, cursor: at })).cursor).toBe(at);
+  });
+
+  it("says nothing at all when the view is live", () => {
+    // Absent rather than an explicit null, so a live link is the short one it was before this existed.
+    expect(encode({ ...state, cursor: null })).not.toContain("c=");
+    expect(decode(encode({ ...state, cursor: null })).cursor).toBeUndefined();
+  });
+
+  it("keeps seconds and drops the rest, because a strip is 24 buckets wide", () => {
+    // Three digits of millisecond precision in a URL is three digits of a claim nobody can read.
+    expect(decode(encode({ ...state, cursor: at + 400 })).cursor).toBe(at);
+    expect(encode({ ...state, cursor: at })).toContain("c=1700000000");
+  });
+
+  it("drops a moment that is not one, rather than clamping to a nearby year", () => {
+    /*
+     * Unlike a window, there is no nearest valid moment: 1970 and the year 5000 are both simply not
+     * what the link meant, so they go the way an unreadable camera goes.
+     */
+    expect(decode("c=0").cursor).toBeUndefined();
+    expect(decode("c=-5").cursor).toBeUndefined();
+    expect(decode("c=99999999999999").cursor).toBeUndefined();
+    expect(decode("c=yesterday").cursor).toBeUndefined();
+  });
+
+  it("does not carry whether it was playing", () => {
+    /*
+     * A link that arrives already running is motion the recipient did not ask for, which is the same
+     * objection DESIGN.md makes to ambient rotation. It arrives held.
+     */
+    expect(encode({ ...state, cursor: at })).not.toMatch(/p=|play/);
   });
 });
