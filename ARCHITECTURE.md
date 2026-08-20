@@ -2612,6 +2612,42 @@ spatial counterpart of the sequence strip that already sits there for time. That
 which is honest in the way exaggerating a line on the map would not be. Not built. The panel's sentence
 is still the only place the disagreement is stated, and it may well be the right medium for it.
 
+## The second front, and the gap that is the actual measurement
+
+One ring said "energy is spreading from here", which is true and is the uninteresting half. The gap
+between a P arrival and an S arrival is how distance to an epicentre is measured: it is the first thing
+a seismogram is read for, this app is named after the P arrival, and it carried the machinery for the
+whole thing and drew one circle.
+
+So each front is two circles now, on one clock. `S_WAVE_KM_PER_S` is 3.5 against the P's 6, which is
+the ordinary crustal ratio and close to the root three an elastic solid with a Poisson ratio of a
+quarter gives, so it is the textbook figure rather than a tuned one. `S_OVER_P` is derived from the two
+velocities rather than written as 0.583, for the reason the P rate is derived: a constant typed in is a
+constant that survives a change to its inputs without anyone noticing.
+
+**The visibility was computed before anything was built, which is new here.** At the end of a front's
+life the P ring is at 17 degrees and the S at 9.9, a gap of 7.08 degrees of arc. The globe projects to
+roughly 392px of radius at the default framing, so a degree is 6.8px and the gap is about 48px, and
+some 37px even on the whole-world map. The item immediately before this one died at 4px after being
+built twice, so the division came first this time and is now an assertion rather than a paragraph.
+
+**Both fronts end together, and the S is cut short to make that true.** It is still travelling when the
+P reaches `MAX_DEG`. Letting it run its own course leaves a lone circle expanding for eleven seconds
+with nothing to be the second half of, which reads as a new earthquake rather than as the tail of an
+old one. One event is one mark.
+
+The S circle is drawn lighter, and that is grouping rather than physics: an S arrival is usually the
+larger of the two on a seismogram. Two circles of equal weight leaving one point read as two
+earthquakes in the same place, which is the opposite of the thing being shown.
+
+**A test that had stopped describing its own invariant.** The capacity check read `64 * 96 * 2`, which
+is fronts times segments times vertices, and in doing so also encoded "one circle per front". Adding
+the second front made it fail while nothing had overrun anything. It asks the geometry how much room it
+has now, so the next change to what a front draws cannot break it for the wrong reason.
+
+The legend sentence changed with the mark, and so did the comment on its glyph: two concentric circles
+were drawn there to suggest expansion, and they are now literally the two fronts.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

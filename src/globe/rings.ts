@@ -16,6 +16,27 @@ import { MORPH_GLSL } from "./morph";
 export const P_WAVE_KM_PER_S = 6;
 
 /**
+ * S-wave through the same crust, and the reason there are two rings rather than one.
+ *
+ * The gap between a P arrival and an S arrival is how distance to an epicentre is measured. It is the
+ * first thing a seismogram is read for and it was the one piece of physics this app carried the
+ * machinery for and never drew: one ring said "energy is spreading", which is true and is not the
+ * interesting part. Two rings pulling apart say how far away you are.
+ *
+ * 3.5 against 6 is the ordinary crustal ratio, near the square root of three that an elastic solid
+ * with a Poisson ratio of a quarter gives, so it is the textbook figure rather than a tuned one.
+ */
+export const S_WAVE_KM_PER_S = 3.5;
+
+/**
+ * How far behind the P front the S front sits, as a fraction. Derived, never typed in.
+ *
+ * Both fronts are drawn against the same clock, so the S radius is the P radius times this. Writing
+ * 0.583 directly is how it survives a change to either velocity without anyone noticing.
+ */
+export const S_OVER_P = S_WAVE_KM_PER_S / P_WAVE_KM_PER_S;
+
+/**
  * Degrees of arc the front covers per real second. Derived, never typed in.
  *
  * 6 km/s over a 6371km radius is 0.054 deg/s, and writing that constant directly is how it survives
@@ -38,6 +59,16 @@ export const RATE_DEG_PER_S = TRUE_RATE_DEG_PER_S * PLAYBACK;
 
 /** Where the front fades out. Roughly 1900km of real ground, and about 15.7 seconds on screen. */
 export const MAX_DEG = 17;
+
+/**
+ * Both fronts end together, when the P front reaches `MAX_DEG`.
+ *
+ * The S front is still travelling at that point and cutting it short is the deliberate choice: one
+ * event is one mark, and letting the S ring outlive the P by eleven seconds leaves a lone circle
+ * expanding with nothing to be the second half of, which reads as a new earthquake rather than as the
+ * tail of an old one. So the pair shares a lifetime and the S front is simply where it has got to.
+ */
+export const S_MAX_DEG = MAX_DEG * S_OVER_P;
 
 export const RING_LIFETIME_S = MAX_DEG / RATE_DEG_PER_S;
 
@@ -109,7 +140,9 @@ export interface RingLayer {
 export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }): RingLayer {
   const rings: Ring[] = [];
 
-  const vertexCount = MAX_RINGS * SEGMENTS * 2;
+  // Two circles per front, so twice the room. Sized for the pair rather than the ring, because a
+  // buffer sized for one and asked for two silently draws half the fronts.
+  const vertexCount = MAX_RINGS * SEGMENTS * 2 * 2;
   const positions = new Float32Array(vertexCount * 3);
   const ramps = new Float32Array(vertexCount);
   const fades = new Float32Array(vertexCount);
@@ -247,7 +280,20 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
         }
         // Linear fade. An eased one would make the front look like it was decelerating, and the
         // whole point of the derived rate is that it is not.
-        writeCircle(written, ring.lon, ring.lat, deg * DEG, ring.ramp, 1 - deg / MAX_DEG);
+        const fade = 1 - deg / MAX_DEG;
+        writeCircle(written, ring.lon, ring.lat, deg * DEG, ring.ramp, fade);
+        written += SEGMENTS * 2;
+        /*
+         * The S front, behind it, on the same clock and the same fade.
+         *
+         * Lighter, and that is a grouping decision rather than a claim about amplitude: an S arrival
+         * is usually the larger one on a seismogram. Two circles of equal weight expanding from one
+         * point read as two earthquakes in the same place, and the whole point is that they are one
+         * event whose two arrivals are separating.
+         */
+        writeCircle(
+          written, ring.lon, ring.lat, deg * S_OVER_P * DEG, ring.ramp, fade * 0.7,
+        );
         written += SEGMENTS * 2;
       }
 

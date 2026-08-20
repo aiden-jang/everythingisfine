@@ -1228,7 +1228,9 @@ test("the legend says what a ring is, since nothing else did", async ({ page }) 
   await waitForData(page);
 
   const zones = page.locator(".zones");
-  await expect(zones).toContainText("a ring is the P-wave front leaving a new epicentre");
+  await expect(zones).toContainText("two rings leave each new epicentre");
+  // The gap is the reason there are two, so the sentence has to carry it and not just name them.
+  await expect(zones).toContainText("how distance to a quake is measured");
   await expect(zones).toContainText("×20");
 
   /*
