@@ -1143,6 +1143,16 @@ export function App(): JSX.Element {
             revision={snapshot.revision}
             onClose={() => setSelected(null)}
             onFlyTo={(lon, lat, zoom) => flyTo.current(lon, lat, zoom)}
+            /*
+              A section has nowhere to be drawn but the map, so taking this goes there.
+              Same reasoning as a shared link that carries one, which already forces the map on
+              arrival rather than opening the panel over a globe with no line on it.
+            */
+            onSection={(line) => {
+              setSectionLine(line);
+              setFlat(true);
+              flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 1.6);
+            }}
           />
         ) : null}
       </div>
