@@ -225,12 +225,16 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   await fresh.close();
 });
 
-test("the activity strip narrows the window and the headline follows", async ({ page }) => {
+test("the window buttons move the data and the headline follows", async ({ page }) => {
   /*
-   * Three claims that only exist together in a browser: the strip is a control, the control
+   * Three claims that only exist together in a browser: the window is a control, the control
    * reaches the data, and the headline counts what is on the globe rather than what is in the
    * buffer. The last one is the reason this test exists. The number was the held total, so every
    * filter in the app moved the picture and left the biggest number in the rail sitting still.
+   *
+   * Widening rather than narrowing, since the window became three named lengths. Narrowing below a
+   * day is no longer offered: a slider that picked any of twenty-four hours was also what fixed the
+   * strip's bucket at an hour, which is what put a ceiling on the window at a day.
    */
   await installFeeds(page);
   await page.goto("/");
@@ -253,41 +257,49 @@ test("the activity strip narrows the window and the headline follows", async ({ 
     return stable;
   }, { timeout: 30_000, intervals: [1_500] }).toBe(true);
 
-  // Value is the window's left edge in hours-ago, so 20 leaves the last four hours.
-  await page.locator("#window").fill("20");
-  await expect(page.getByText("last 4 hours")).toBeVisible();
-  expect(await count()).toBeLessThan(whole);
+  /*
+   * A week reaches further back than a day, so it can only hold more. The fixture is a day wide, so
+   * the count need not grow, but the label and the permalink both have to follow the button.
+   */
+  await page.getByRole("button", { name: "7d", exact: true }).click();
+  await expect(page.getByText("last 7 days")).toBeVisible();
+  expect(await count()).toBeGreaterThanOrEqual(whole);
 
   await expect.poll(async () => page.evaluate(() => window.location.hash), { timeout: 5_000 })
-    .toMatch(/&w=4&/);
+    .toMatch(/&w=168&/);
 
-  // Back to the whole day. Greater-or-equal, not equal: the feeds are live and this is a test, not
-  // a freeze frame.
-  await page.locator("#window").fill("0");
-  await expect.poll(count, { timeout: 5_000 }).toBeGreaterThanOrEqual(whole);
+  // Back to the day. Narrowing refetches nothing, so this is the filter alone doing the work.
+  await page.getByRole("button", { name: "24h", exact: true }).click();
+  await expect(page.getByText("last 24 hours")).toBeVisible();
+  await expect.poll(count, { timeout: 5_000 }).toBeLessThanOrEqual(whole);
 });
 
-test("holding an hour on the strip reads that hour, and lets go", async ({ page }) => {
+test("holding a bucket on the strip reads it, and lets go", async ({ page }) => {
   /*
    * The globe knows where and the strip knows when, and neither could answer the other's question.
-   * Hovering an hour dims everything outside it, which only WebGL can show, so what is asserted here
-   * is the half that is observable: the strip reports the hour under the pointer, and stops when the
+   * Hovering a bucket dims everything outside it, which only WebGL can show, so what is asserted here
+   * is the half that is observable: the strip reports the bucket under the pointer, and stops when the
    * pointer leaves. The veil itself is gated by the perf test and looked at in a screenshot.
+   *
+   * Hovered on the bar rather than through a slider lying over the bars. The strip used to carry the
+   * window control as well, and reading hover off the individual bars then meant the slider swallowing
+   * every pointer event meant for them. The window moved to buttons, so the bars own their own hover.
    */
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
 
-  const strip = page.locator("[data-ramp]").filter({ has: page.locator("#window") });
+  const strip = page.locator("[data-ramp]").filter({ has: page.locator(".gap-px") });
   const readout = strip.locator("span.font-mono").first();
   await expect(readout).toHaveText(/^peak \d+ · /);
 
-  const box = (await page.locator("#window").boundingBox())!;
-  // Two thirds along, so it lands on an hour the seed covers rather than on the newest bar.
-  await page.mouse.move(box.x + box.width * 0.66, box.y + box.height / 2);
-  await expect(readout).toHaveText(/^\d+ events? · (this hour|\d+h ago)$/);
+  // Two thirds along, so it lands on a bucket the seed covers rather than on the newest bar.
+  const bars = strip.locator(".gap-px > div");
+  await bars.nth(Math.floor((await bars.count()) * 0.66)).hover();
+  await expect(readout).toHaveText(/^\d+ events? · (latest|\d+[hd] ago)$/);
 
-  await page.mouse.move(box.x + box.width * 0.66, box.y - 120);
+  // Off the strip entirely, which is what releases it.
+  await page.locator(".zone-rail [data-rail=\"headline\"]").hover();
   await expect(readout).toHaveText(/^peak \d+ · /);
 });
 
