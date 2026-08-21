@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   compactSpan, corroborationNote, floodNote, reach, reachFraction, reachNote, reachWords,
-  theOf, wildfireNote,
+  farSideNote, theOf, wildfireNote,
 } from "./format";
 
 /*
@@ -257,5 +257,34 @@ describe("the article a country name needs", () => {
       .toBe("Zambia, The Democratic Republic of Congo");
     expect(theOf("The Democratic Republic of Congo, Angola"))
       .toBe("The Democratic Republic of Congo, Angola");
+  });
+});
+
+describe("the far-side sentence", () => {
+  const len = (arc: number): number => 2 * Math.PI * 6371 * Math.abs(Math.sin((arc * Math.PI) / 180));
+
+  it("states the widest front and names the pair that proves it is closing", () => {
+    const note = farSideNote([30, 60, 90, 120, 150], len, { lon: -40, lat: -38 });
+    expect(note).toContain("40,030 km of front");
+    expect(note).toContain("the 150-degree arc is the same length as the 30");
+  });
+
+  it("names where the front closes, in hemispheres rather than signs", () => {
+    expect(farSideNote([30, 150], len, { lon: -40, lat: -38 })).toContain("38.00 S 40.00 W");
+  });
+
+  it("refuses to put a time on it, and says why in the same breath", () => {
+    /*
+     * The one claim this figure must not make. Minutes on these arcs would be the teleseismic path
+     * through the mantle that arrival.ts already declined by capping at 700km.
+     */
+    const note = farSideNote([30, 60, 90, 120, 150], len, { lon: 0, lat: 0 });
+    expect(note).toContain("No time is drawn");
+    expect(note).not.toMatch(/\d+\s*(min|minute|second|s\b)/);
+  });
+
+  it("reads the widest off the arcs it was given rather than assuming 90 is among them", () => {
+    const note = farSideNote([30, 60], len, { lon: 0, lat: 0 });
+    expect(note).toContain(`${Math.round(len(60)).toLocaleString("en")} km of front`);
   });
 });

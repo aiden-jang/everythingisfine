@@ -4,13 +4,14 @@ import type { RampName } from "../globe/ramp";
 import type { Store } from "../data/store";
 import { distanceKm } from "../geo/sphere";
 import { depthClass, findNearby, NEARBY_KM } from "./nearby";
+import { antipodeOf, FRONT_ARCS, frontLengthKm } from "../geo/antipode";
 import { Sequence } from "./Sequence";
 import { sectionThrough, type SectionLine } from "./section";
 import { arrivalFor, seconds } from "./arrival";
 import { daylight, solarClock, solarHour, sunElevation } from "../geo/sun";
 import { P_WAVE_KM_PER_S, S_WAVE_KM_PER_S } from "../geo/waves";
 import {
-  ago, clock, coordinates, depth, magnitude, place, SOURCE_NAMES,
+  ago, clock, coordinates, depth, farSideNote, magnitude, place, SOURCE_NAMES,
 } from "./format";
 
 /*
@@ -48,6 +49,9 @@ export interface DetailPanelProps {
    * one view that shows the dimension the map cannot.
    */
   onSection: (line: SectionLine) => void;
+  /** Whether this event's far side is currently drawn, and the toggle for it. */
+  farSide: boolean;
+  onFarSide: (on: boolean) => void;
 }
 
 function Field({ label, value }: { label: string; value: string }): JSX.Element {
@@ -61,6 +65,7 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
 
 export function DetailPanel({
   open, quake, store, filters, ramp, excluded, revision, onClose, onFlyTo, onSection,
+  farSide, onFarSide,
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
   const r = quake.primary;
@@ -356,6 +361,17 @@ export function DetailPanel({
         Hover another event to measure from this one.
       </p>
 
+      {/*
+        The figure's own sentence, present exactly while the figure is.
+        In the panel rather than the legend because the legend describes what is always on the globe, and
+        this is five arcs somebody asked for a moment ago about one specific epicentre.
+      */}
+      {farSide ? (
+        <p className="mt-3 border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
+          {farSideNote(FRONT_ARCS, frontLengthKm, antipodeOf(r.lon, r.lat))}
+        </p>
+      ) : null}
+
       <div className="mt-5 flex gap-2 pb-1">
         <button
           type="button"
@@ -381,6 +397,27 @@ export function DetailPanel({
           className="cursor-pointer border border-hairline px-3 py-2 text-[11.5px] text-dim transition-colors hover:bg-raised hover:text-ink"
         >
           Slice here
+        </button>
+        {/*
+          The far side, offered rather than drawn.
+
+          Five circles spanning the planet is not something to hand somebody who clicked an event to
+          read its depth, which is why this is a button and not a consequence of selection. It is a
+          figure about the shape of the Earth and it claims no timing: the live rings fade at 17
+          degrees, 9.4% of the way, and the far side is 55 minutes of real travel that this app has
+          always refused to model. See `geo/antipode.ts`.
+        */}
+        <button
+          type="button"
+          aria-pressed={farSide}
+          onClick={() => onFarSide(!farSide)}
+          className={`cursor-pointer border px-3 py-2 text-[11.5px] transition-colors ${
+            farSide
+              ? "border-faint bg-raised text-ink"
+              : "border-hairline text-dim hover:bg-raised hover:text-ink"
+          }`}
+        >
+          Far side
         </button>
         <button
           type="button"

@@ -1,3 +1,4 @@
+import { antipodeCross, antipodeOf, FRONT_ARCS, smallCircle } from "../geo/antipode";
 import type { Mark } from "../globe/marks";
 import { flame, spiral, volcano, waves } from "../globe/shapes";
 import type { Cyclone } from "../sources/cyclones";
@@ -21,10 +22,32 @@ export interface Happening {
   volcanoes: readonly Volcano[];
   fires: readonly Wildfire[];
   floods: readonly Flood[];
+  /**
+   * The event whose far side is being traced, or null.
+   *
+   * Asked for explicitly from the panel rather than drawn on every selection: it is five circles across
+   * the whole planet, and putting that behind an ordinary click would ambush anybody who only wanted to
+   * read a magnitude.
+   */
+  farSide?: { lon: number; lat: number } | null;
 }
 
-export function marksFor({ cyclones, volcanoes, fires, floods }: Happening): Mark[] {
+export function marksFor(
+  { cyclones, volcanoes, fires, floods, farSide = null }: Happening,
+): Mark[] {
   const out: Mark[] = [];
+  /*
+   * Unanchored, all of it. These are arcs at fixed distances on the real sphere, so they scale with the
+   * coastline like the storm tracks do - a 90-degree circle held at a constant size on screen would be
+   * the one thing this figure cannot afford, since its whole point is how big the front gets.
+   */
+  if (farSide) {
+    for (const arc of FRONT_ARCS) {
+      out.push({ points: smallCircle(farSide.lon, farSide.lat, arc) });
+    }
+    const far = antipodeOf(farSide.lon, farSide.lat);
+    for (const stroke of antipodeCross(far.lon, far.lat)) out.push({ points: stroke });
+  }
   for (const storm of cyclones) {
     // The track carries no anchor: it is measured geography and scales with the coastline, not with the
     // symbol standing on its head.

@@ -3597,6 +3597,47 @@ in for the two that are composed at runtime and so cannot appear as literals.
 needed purging - but "wrangler said it uploaded" and "the internet is serving it" are different claims, and
 a social card is the one asset where the difference is visible to everyone.
 
+## The far side, as a figure rather than an animation
+
+Item 3 asked to show that wavefronts reconverge opposite the epicentre. Costing the obvious build first is
+what decided the shape of it: the live rings fade at **17 degrees of arc, 9.4% of the way** to the antipode,
+and carrying one to 180 at the stated x20 playback would take **166.8 seconds** of screen time against the
+15.75 it lives now - or 55.6 minutes of real travel on a surface path. There is no version of this that is
+an extension of the existing animation.
+
+**So it claims no time at all.** Every number in `geo/antipode.ts` is spherical geometry with no velocity
+in it: the front is `2 pi R sin(theta)`, which is 20,015 km at both 30 and 150 degrees, 40,030 at the great
+circle - exactly twice - and zero where it closes. That is not a workaround, it is the honest version.
+Putting minutes on those arcs would need the teleseismic path through the mantle that `arrival.ts` already
+declined by capping arrival times at 700km rather than pretending a crustal speed holds across the planet.
+The panel sentence says "No time is drawn" out loud, and a test asserts the string contains no time unit,
+because that is the one claim this figure must never drift into making.
+
+Computed before any code, the way items 1 and 4 were, and asserted rather than hoped: the 30-and-150 pair
+being identical is the whole argument, so it is a test rather than a comment.
+
+**Drawn through the marks layer, with no new rendering.** Small circles are lon/lat polylines, so the layer
+built for storm tracks took them as-is - seam handling, densifying and all. Deliberately **unanchored**: a
+90-degree circle held at constant screen size would be this figure's argument thrown away, since how big
+the front gets is the point. The circles are built by walking 360 degrees of bearing with the
+destination-point formula, not by drawing an ellipse around a centre, which is why a 90-degree circle
+centred on the equator genuinely reaches both poles - there is a test for that too.
+
+**Offered, not triggered.** Five arcs across the planet is not something to hand somebody who clicked an
+event to read its depth, so it is a panel button beside "Slice here". Two smaller decisions came out of
+looking at it: the figure is gated on its event still being **selected**, because with the panel dismissed
+the arcs would otherwise sit there with no explanation and no visible way to remove them - which both
+closes a trap and keeps the standing rule that the sentence is present exactly whenever the figure is. And
+turning it on pulls the camera to 0.9, since a viewer zoomed into a margin would see one arc crossing the
+screen with no indication it belonged to a circle.
+
+**Verified:** the geometry, by fifteen tests including arc-distance invariance, closure, the pole crossing
+and the antipode being pi*R away; the arcs rendering and the sentence reading back its real numbers, by
+screenshot; the selection gate, by watching the figure vanish when its event was deselected. **Not
+verified visually:** the closing itself at the far side. Driving the camera across the planet needed
+synthetic key events that the control's own animation kept coalescing, and after several attempts that was
+not worth more of the session than the fifteen assertions already cover.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

@@ -35,8 +35,18 @@ export function clock(at: number): string {
 
 /** `41.82 N 141.31 E`. Signed decimals read as coordinates; hemispheres read as places. */
 export function coordinates(reading: Reading): string {
-  const ns = `${Math.abs(reading.lat).toFixed(2)} ${reading.lat >= 0 ? "N" : "S"}`;
-  const ew = `${Math.abs(reading.lon).toFixed(2)} ${reading.lon >= 0 ? "E" : "W"}`;
+  return latLon(reading.lon, reading.lat);
+}
+
+/**
+ * The same thing for a point that is not an event.
+ *
+ * Split out for the far-side figure, whose antipode is a position and not a reading. A second hemisphere
+ * formatter beside this one is how `distanceLabel` ended up written twice.
+ */
+export function latLon(lon: number, lat: number): string {
+  const ns = `${Math.abs(lat).toFixed(2)} ${lat >= 0 ? "N" : "S"}`;
+  const ew = `${Math.abs(lon).toFixed(2)} ${lon >= 0 ? "E" : "W"}`;
   return `${ns} ${ew}`;
 }
 
@@ -406,4 +416,30 @@ export function floodNote(count: number, countries: number): string | null {
   return `the waves are floods running now, ${count} of them${where}. `
     + `Nothing here rates them: every flood in this feed is filed as magnitude zero, so the mark says `
     + `where and not how bad.`;
+}
+
+/**
+ * The far-side figure, explained where it is drawn.
+ *
+ * Every number in it is spherical geometry and none of it is a time, which is the point of the last
+ * sentence. The live rings fade at 17 degrees of arc and a surface path to the far side is 55 minutes,
+ * so a figure that put minutes on these arcs would be claiming the teleseismic path through the mantle
+ * that `arrival.ts` already refused by capping arrivals at 700km.
+ *
+ * The 30-and-150 pair is the whole argument and it is stated as one clause: the same length of front,
+ * because by 150 it is closing rather than growing.
+ */
+export function farSideNote(
+  arcs: readonly number[], lengthOf: (arcDeg: number) => number,
+  far: { lon: number; lat: number },
+): string {
+  const widest = Math.max(...arcs.map(lengthOf));
+  const first = arcs[0]!;
+  const last = arcs[arcs.length - 1]!;
+  const km = (v: number): string => `${Math.round(v).toLocaleString("en")} km`;
+  return `The arcs are where the front would be at ${arcs.join(", ")} degrees from here. `
+    + `It is widest on the great circle, ${km(widest)} of front, and the ${last}-degree arc is the same `
+    + `length as the ${first} because by then it is closing rather than growing. It closes to the point `
+    + `marked at ${latLon(far.lon, far.lat)}. No time is drawn: the wavefronts above fade at 17 degrees, `
+    + `and the far side is most of an hour away.`;
 }

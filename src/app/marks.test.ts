@@ -70,3 +70,39 @@ describe("what gets a shape", () => {
     expect(glyph!.anchor).toEqual({ lon: 150, lat: 10 });
   });
 });
+
+describe("the far-side figure", () => {
+  it("draws nothing until an event is traced", () => {
+    expect(marksFor({ ...nothing, farSide: null })).toEqual([]);
+    expect(marksFor(nothing)).toEqual([]);
+  });
+
+  it("is five arcs and a two-stroke cross", () => {
+    expect(marksFor({ ...nothing, farSide: { lon: 140, lat: 38 } })).toHaveLength(5 + 2);
+  });
+
+  it("anchors none of it, because the point is how big the front gets", () => {
+    /*
+     * A 90-degree circle held at a constant size on screen would be the one thing this figure cannot
+     * afford: it is 40,030 km of front, and shrinking it to a glyph is the argument thrown away.
+     */
+    for (const m of marksFor({ ...nothing, farSide: { lon: 140, lat: 38 } })) {
+      expect(m.anchor).toBeUndefined();
+    }
+  });
+
+  it("puts the cross on the far side and not on the epicentre", () => {
+    const marks = marksFor({ ...nothing, farSide: { lon: 140, lat: 38 } });
+    const cross = marks.slice(-2).flatMap((m) => m.points);
+    // 140E 38N flips to 40W 38S.
+    expect(cross.every((p) => p.lat < 0)).toBe(true);
+    expect(cross.every((p) => p.lon < 0)).toBe(true);
+  });
+
+  it("draws beside the live layers rather than instead of them", () => {
+    const marks = marksFor({
+      ...nothing, volcanoes: [mountain()], farSide: { lon: 140, lat: 38 },
+    });
+    expect(marks).toHaveLength(1 + 5 + 2);
+  });
+});
