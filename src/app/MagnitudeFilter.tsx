@@ -48,6 +48,13 @@ export interface MagnitudeFilterProps {
   depth: { shallow: number; intermediate: number; deep: number; unknown: number; total: number };
   motionOn: boolean;
   onMotion: (on: boolean) => void;
+  /**
+   * Any further controls, rendered above the key rather than below it.
+   *
+   * A slot rather than more props, because what goes here is a control and this component's job is to
+   * keep the controls together and above the prose. The source toggles are the only occupant today.
+   */
+  children?: JSX.Element;
   /** Whether the key below the scale is open. Held outside so it survives a reload. */
   keyOpen: boolean;
   onKeyOpen: (open: boolean) => void;
@@ -73,7 +80,7 @@ function path(points: readonly { lon: number; lat: number }[]): string {
 export function MagnitudeFilter(
   {
     ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince,
-    fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, motion, motionOn, onMotion, depth, sound,
+    fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, motion, motionOn, onMotion, depth, sound, children,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -120,6 +127,8 @@ export function MagnitudeFilter(
           <span key={t}>{i === TICKS.length - 1 ? `${t}+` : t.toFixed(1)}</span>
         ))}
       </div>
+
+      {children}
 
       {/*
         Everything below the scale is explanation, and it folds away.
