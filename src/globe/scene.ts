@@ -19,6 +19,8 @@ import { createControls, type Controls } from "./controls";
 import { createEventLayer, type EventLayer } from "./events";
 import { createRingLayer, type RingLayer } from "./rings";
 import { auroraTexture, writeAurora } from "./auroraTexture";
+import { createCycloneLayer } from "./cyclones";
+import type { Cyclone } from "../sources/cyclones";
 import type { Aurora } from "../sources/aurora";
 
 /** Only the part of the store hit testing needs, so this file does not depend on the whole model. */
@@ -149,6 +151,8 @@ export interface Globe {
   rings: RingLayer;
   /** Hands over an aurora grid, or null to draw no sky at all. */
   setAurora: (grid: Aurora | null) => void;
+  /** Hands over the storms happening now. An empty list draws nothing. */
+  setCyclones: (storms: readonly Cyclone[]) => void;
   setMorph: (t: number) => void;
   /** The entrance reveal: boundaries grow outward from the events rather than arriving with them. */
   plates: {
@@ -502,6 +506,13 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   night.renderOrder = 4.5;
   spin.add(night);
 
+  /*
+   * Storms, over the boundaries and under the markers, like the rest of the explanatory geography.
+   * On `spin` rather than `world` so it travels with the map's copies. See `cyclones.ts`.
+   */
+  const cyclones = createCycloneLayer(morph);
+  spin.add(cyclones.object);
+
   const sunDir = new Vector3();
   /*
    * Recomputed per minute, not per frame and not once.
@@ -683,6 +694,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     events,
     rings,
+    setCyclones: (storms) => { cyclones.set(storms); },
     setAurora: (grid) => {
       const material = night.material as ShaderMaterial;
       if (grid === null) {
@@ -772,6 +784,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     dispose: () => {
       events.dispose();
       rings.dispose();
+      cyclones.dispose();
       scene.traverse((o) => {
         if (o instanceof Mesh || o instanceof LineSegments) {
           o.geometry.dispose();

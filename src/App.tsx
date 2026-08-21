@@ -6,6 +6,7 @@ import { PLACE_LIMIT, search, type Hit } from "./app/search";
 import { useRolling } from "./app/roll";
 import { store, stored } from "./app/stored";
 import { fetchAurora, type Aurora } from "./sources/aurora";
+import { fetchCyclones, type Cyclone } from "./sources/cyclones";
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
@@ -179,10 +180,28 @@ export function App(): JSX.Element {
    * halving the traffic costs a resolution nobody is reading off a wash of light.
    */
   const [aurora, setAurora] = useState<Aurora | null>(null);
+  /*
+   * The storms happening now. Three of the ninety-nine GDACS lists, and their tracks.
+   *
+   * Beside the aurora rather than through it: they share a refresh interval and nothing else. A cyclone is
+   * a mark with a position and a history, and a probability field is light, and the only thing they have
+   * in common is that neither is a reading two agencies might dispute.
+   */
+  const [cyclones, setCyclones] = useState<readonly Cyclone[]>([]);
   useEffect(() => {
     let alive = true;
     const load = (): void => {
       void fetchAurora().then((next) => { if (alive && next) setAurora(next); });
+    };
+    load();
+    const id = window.setInterval(load, 10 * 60_000);
+    return () => { alive = false; window.clearInterval(id); };
+  }, []);
+
+  useEffect(() => {
+    let alive = true;
+    const load = (): void => {
+      void fetchCyclones().then((next) => { if (alive) setCyclones(next); });
     };
     load();
     const id = window.setInterval(load, 10 * 60_000);
@@ -675,6 +694,7 @@ export function App(): JSX.Element {
                 value={filters.minMagnitude}
                 onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
                 aurora={aurora}
+                cyclones={cyclones}
               />
               {/*
                 Sources sit with the magnitude control because both answer "what is on the globe".
@@ -1231,6 +1251,7 @@ export function App(): JSX.Element {
             ramp={ramp}
             focus={focusSpan}
             aurora={aurora}
+            cyclones={cyclones}
             scrubAt={view.at}
             flat={flat}
             section={sectionLine}

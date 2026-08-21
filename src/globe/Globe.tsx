@@ -12,6 +12,7 @@ import { between, seconds } from "../app/arrival";
 import type { RampName } from "./ramp";
 import type { SectionLine } from "../app/section";
 import type { Aurora } from "../sources/aurora";
+import type { Cyclone } from "../sources/cyclones";
 import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
 
 /*
@@ -59,6 +60,8 @@ export interface GlobeProps {
   focus?: FocusSpan | null;
   /** Tonight's aurora, or null while it has not arrived or has failed to. */
   aurora?: Aurora | null;
+  /** The storms happening now, tracks included. */
+  cyclones?: readonly Cyclone[];
   /**
    * Origin time the cursor stands at, or null for live.
    *
@@ -90,7 +93,7 @@ const SCALE_BOTTOM = 40;
 const SCALE_TARGET_PX = 110;
 
 export function Globe({
-  feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay, focus = null, aurora = null,
+  feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay, focus = null, aurora = null, cyclones = [],
   scrubAt = null, flat = false, section = null, onSection,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -105,6 +108,7 @@ export function Globe({
   const wakeRef = useRef<() => void>(() => {});
   const rampRef = useRef<(name: RampName) => void>(() => {});
   const auroraRef = useRef<(next: Aurora | null) => void>(() => {});
+  const cycloneRef = useRef<(next: readonly Cyclone[]) => void>(() => {});
   /*
    * Read from inside the frame loop, which outlives any single render.
    *
@@ -112,8 +116,8 @@ export function Globe({
    * tearing down the WebGL context, the 300,000-triangle globe and both feed subscriptions every
    * time somebody nudges a magnitude slider.
    */
-  const live = useRef({ filters, selected, focus, scrubAt, flat, section });
-  live.current = { filters, selected, focus, scrubAt, flat, section };
+  const live = useRef({ filters, selected, focus, scrubAt, flat, section, aurora, cyclones });
+  live.current = { filters, selected, focus, scrubAt, flat, section, aurora, cyclones };
   const onSectionRef = useRef(onSection);
   onSectionRef.current = onSection;
   /** The line being dragged right now, which the frame loop draws in place of the committed one. */
@@ -519,6 +523,17 @@ export function Globe({
     };
     redrawRef.current = redraw;
     auroraRef.current = (grid) => { globe.setAurora(grid); };
+    cycloneRef.current = (storms) => { globe.setCyclones(storms); };
+    /*
+     * Pushed once at setup, not only when the data next changes.
+     *
+     * The effects below fire on their own dependencies, so a scene built *after* a fetch has already
+     * landed never hears about it: the array has not changed, so nothing re-runs, and the layer stays
+     * empty while the legend beside it describes four storms. That is not only a hot-reload artefact.
+     * Any remount of this component has the same hole in it.
+     */
+    auroraRef.current(live.current.aurora);
+    cycloneRef.current(live.current.cyclones);
     rampRef.current = (name) => {
       // Both layers, or a wavefront would stay warm while its own marker turned blue.
       globe.events.setRamp(name);
@@ -686,6 +701,12 @@ export function Globe({
     auroraRef.current(aurora);
     redrawRef.current();
   }, [aurora]);
+
+  // Same route and the same reason: the loop is asleep when a ten-minute fetch lands.
+  useEffect(() => {
+    cycloneRef.current(cyclones);
+    redrawRef.current();
+  }, [cyclones]);
 
   return (
     <div className="relative h-full w-full">
