@@ -12,6 +12,7 @@ import { fetchWildfires, summarise, FEED_CAP, type Wildfire } from "./sources/wi
 import { countries, fetchFloods, type Flood } from "./sources/floods";
 import { marksFor } from "./app/marks";
 import { drawStill, stillMoment, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
+import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
 import {
   loadBoundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE, type Segment,
@@ -532,6 +533,62 @@ export function App(): JSX.Element {
     [filters, snapshot.revision],
   );
 
+  /*
+   * The tour. An index into the stops, or null when it is not running.
+   *
+   * The stops are recomputed from live counts, so they are captured when the tour starts rather than read
+   * per tick: a new arrival mid-tour must not reorder the route under the camera. Not persisted and not in
+   * the permalink - it is a thing happening now, not a preference or a view.
+   */
+  const stops = useMemo(() => tourStops(regions), [regions]);
+  const [tourAt, setTourAt] = useState<number | null>(null);
+  /*
+   * The tour's own control, excluded from the end-on-interaction listener below.
+   *
+   * Without this, pressing Stop with a mouse is a race: `pointerdown` ends the tour, and then the click
+   * handler reads whichever value of `tourAt` React has committed by that instant - the stale one stops
+   * it and the fresh one starts it again. It resolved benignly every time it was tried, which is the
+   * worst way for a race to behave. Operating the tour is not reaching for the globe.
+   */
+  const tourButton = useRef<HTMLButtonElement>(null);
+  const route = useRef<ReturnType<typeof tourStops>>([]);
+  const stopTour = useCallback(() => { setTourAt(null); }, []);
+  const startTour = useCallback(() => {
+    if (stops.length === 0) return;
+    route.current = stops;
+    setTourAt(0);
+  }, [stops]);
+  /*
+   * Advances the tour, and ends it on any interaction.
+   *
+   * "Any interaction ends it" is the entrance replay's rule and it is what keeps this on the right side of
+   * DESIGN.md 13: motion the viewer did not ask for stops the moment they reach for the controls. Capture
+   * phase, because a click on a rail button must end the tour as well as do its own job.
+   */
+  useEffect(() => {
+    if (tourAt === null) return undefined;
+    const stop = route.current[tourAt];
+    if (!stop) { setTourAt(null); return undefined; }
+    flyTo.current(stop.lon, stop.lat, stop.zoom);
+    const next = window.setTimeout(() => {
+      setTourAt((at) => (at === null || at + 1 >= route.current.length ? null : at + 1));
+    }, TOUR_DWELL_MS);
+    const end = (event: Event): void => {
+      if (tourButton.current?.contains(event.target as Node)) return;
+      setTourAt(null);
+    };
+    window.addEventListener("pointerdown", end, { capture: true });
+    window.addEventListener("wheel", end, { capture: true, passive: true });
+    window.addEventListener("keydown", end, { capture: true });
+    return () => {
+      window.clearTimeout(next);
+      window.removeEventListener("pointerdown", end, { capture: true });
+      window.removeEventListener("wheel", end, { capture: true });
+      window.removeEventListener("keydown", end, { capture: true });
+    };
+  }, [tourAt]);
+  const touring = tourAt !== null ? route.current[tourAt] ?? null : null;
+
   const section = useMemo(
     () => (sectionLine ? buildSection(feed.store, sectionLine, filters, Date.now()) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1010,6 +1067,24 @@ export function App(): JSX.Element {
             earthquake and this one shares a framing, and the panel is only open when something is
             pinned. A view-level action belongs in the view-level strip.
           */}
+          {/*
+            Offered only when there is somewhere to go. With an empty window the tour would be a camera
+            flying around a planet with nothing on it, which is exactly the motion-that-means-nothing the
+            design bans.
+          */}
+          {stops.length > 0 ? (
+            <button
+              ref={tourButton}
+              type="button"
+              onClick={() => (tourAt === null ? startTour() : stopTour())}
+              aria-pressed={tourAt !== null}
+              className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
+                tourAt !== null ? "bg-raised text-ink" : "text-faint"
+              }`}
+            >
+              {tourAt !== null ? "Stop" : "Tour"}
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={saveStill}
@@ -1083,7 +1158,25 @@ export function App(): JSX.Element {
                   22:35" while the globe fills with yesterday's events would describe one thing and
                   show another.
                 */}
-                {replay ? (
+                {/*
+                  The tour narrates here, in the replay's own slot and shape.
+
+                  This line is not decoration, it is the thing that makes the camera movement legal under
+                  DESIGN.md 13: the ban is on motion that means nothing, so every stop says where it is and
+                  how much is there while the camera is sitting on it. Take the words away and this
+                  becomes the screensaver the rule exists to prevent.
+                */}
+                {touring ? (
+                  <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
+                    <span className="font-mono text-ink tabular-nums">
+                      {tourAt !== null ? tourAt + 1 : 0}/{route.current.length}
+                    </span>
+                    <span className="text-faint">
+                      {tourLabel(touring, tourAt ?? 0, route.current.length)
+                        .replace(/^\d+ of \d+ · /, "")}
+                    </span>
+                  </div>
+                ) : replay ? (
                   <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
                     <span className="font-mono text-ink">{clock(replay.at)}</span>
                     <span className="text-faint">replaying the last day</span>
