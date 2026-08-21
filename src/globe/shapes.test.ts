@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { spiral, volcano } from "./shapes";
+import { flame, spiral, volcano, waves } from "./shapes";
 
 const width = (p: readonly { lon: number }[]): number =>
   Math.max(...p.map((q) => q.lon)) - Math.min(...p.map((q) => q.lon));
@@ -42,5 +42,53 @@ describe("the volcano is a triangle standing on its point", () => {
 
   it("stays a triangle in Iceland", () => {
     expect(width(volcano(0, 64, 1.6))).toBeGreaterThan(width(volcano(0, 0, 1.6)) * 2);
+  });
+});
+
+describe("the wildfire flame", () => {
+  it("stands on the point too, so a coastal fire is on land", () => {
+    const p = flame(-52.7, -15.1, 1.2);
+    expect(Math.min(...p.map((q) => q.lat))).toBeCloseTo(-15.1, 6);
+  });
+
+  it("leans, so it is a flame and not a leaf", () => {
+    const p = flame(0, 0, 1.2);
+    const tip = p.reduce((a, b) => (b.lat > a.lat ? b : a));
+    expect(tip.lon).toBeGreaterThan(0);
+  });
+
+  it("closes its outline", () => {
+    const p = flame(0, 0);
+    expect(p[0]).toEqual(p[p.length - 1]);
+  });
+
+  it("is the same size whatever is burning, because size belongs to the ramp", () => {
+    expect(width(flame(0, 0))).toBeCloseTo(width(flame(30, 0)), 6);
+  });
+});
+
+describe("the flood waves", () => {
+  it("is three separate strokes, not one path with connectors drawn", () => {
+    const rows = waves(100, 18);
+    expect(rows).toHaveLength(3);
+    for (const row of rows) expect(row.length).toBeGreaterThan(4);
+  });
+
+  it("stacks the rows upward from the point", () => {
+    const rows = waves(0, 0, 1.4);
+    const mid = (r: readonly { lat: number }[]): number =>
+      r.reduce((s, p) => s + p.lat, 0) / r.length;
+    expect(mid(rows[1]!)).toBeGreaterThan(mid(rows[0]!));
+    expect(mid(rows[2]!)).toBeGreaterThan(mid(rows[1]!));
+  });
+
+  it("waves, rather than ruling three straight lines", () => {
+    const row = waves(0, 0, 1.4)[0]!;
+    const lats = row.map((p) => p.lat);
+    expect(Math.max(...lats) - Math.min(...lats)).toBeGreaterThan(0.3);
+  });
+
+  it("stretches in longitude away from the equator like everything else", () => {
+    expect(width(waves(0, 64)[0]!)).toBeGreaterThan(width(waves(0, 0)[0]!) * 2);
   });
 });

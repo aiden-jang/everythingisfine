@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  compactSpan, corroborationNote, reach, reachFraction, reachNote, reachWords,
+  compactSpan, corroborationNote, floodNote, reach, reachFraction, reachNote, reachWords,
+  wildfireNote,
 } from "./format";
 
 /*
@@ -180,5 +181,55 @@ describe("stating the corroboration rate where it is true", () => {
   it("separates thousands, because these counts get large at a month", () => {
     const note = corroborationNote({ events: 2400, both: 1100 }, now - 12 * HOUR, now, MONTH)!;
     expect(note).toContain("1,100 of 2,400");
+  });
+});
+
+describe("the fire sentence, which has to admit its own count is a floor", () => {
+  it("says the count, the area and how long it has been burning", () => {
+    const note = wildfireNote({ count: 42, km2: 16203, medianDays: 9, leader: "Angola" }, 100)!;
+    expect(note).toContain("42 of them");
+    expect(note).toContain("16,203 square kilometres");
+    expect(note).toContain("9 days at the median");
+  });
+
+  it("adds the caveat only when the cap is actually in play", () => {
+    const under = wildfireNote({ count: 42, km2: 100, medianDays: 9, leader: "Angola" }, 100)!;
+    expect(under).not.toContain("floor");
+    const at = wildfireNote({ count: 100, km2: 100, medianDays: 9, leader: "Angola" }, 100)!;
+    expect(at).toContain("stops at 100");
+    expect(at).toContain("Angola alone has more");
+    expect(at).toContain("floor");
+  });
+
+  it("names the country by burned area, since the mark count is the truncated thing", () => {
+    const note = wildfireNote({ count: 100, km2: 1, medianDays: 1, leader: "Australia" }, 100)!;
+    expect(note).toContain("Australia alone");
+  });
+
+  it("says nothing at all when nothing is burning", () => {
+    expect(wildfireNote({ count: 0, km2: 0, medianDays: null, leader: null }, 100)).toBeNull();
+  });
+
+  it("drops the duration rather than printing a null day count", () => {
+    const note = wildfireNote({ count: 3, km2: 9, medianDays: null, leader: "Brazil" }, 100)!;
+    expect(note).not.toContain("median");
+    expect(note).toContain("3 of them");
+  });
+});
+
+describe("the flood sentence, which declines to rate anything", () => {
+  it("says how many and where, and that there is no severity to give", () => {
+    const note = floodNote(19, 19)!;
+    expect(note).toContain("19 of them");
+    expect(note).toContain("across 19 countries");
+    expect(note).toContain("magnitude zero");
+  });
+
+  it("does not say across one country", () => {
+    expect(floodNote(1, 1)!).not.toContain("across");
+  });
+
+  it("says nothing when nothing is flooded", () => {
+    expect(floodNote(0, 0)).toBeNull();
   });
 });

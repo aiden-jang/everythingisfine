@@ -17,8 +17,15 @@ import type { Point } from "./shapes";
 
 /** Above the plate boundaries these things sit on, below the land that contains them. */
 const RADIUS = 1.004;
-/** Segments held. Four hundred marks of a hundred and fifty segments is far past any real day. */
-const CAPACITY = 6000;
+/**
+ * Segments held.
+ *
+ * Sized against the worst day the feeds can produce rather than against today: GDACS caps each list at
+ * 100, so the ceiling is 100 flames at ~10 segments, 100 floods at three strokes of twelve, 23 volcano
+ * triangles and a season's worth of storm track, which lands near 5,100. Doubled from there, because the
+ * failure mode of guessing low is marks silently missing from the far end of the list.
+ */
+const CAPACITY = 12000;
 /** Longest leg before it is split, so a chord does not cut inside the globe. */
 const DENSIFY_DEG = 1.5;
 /** Beyond this a leg is a wrap across the antimeridian, not a mark crossing it. */

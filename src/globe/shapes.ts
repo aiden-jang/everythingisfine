@@ -50,3 +50,44 @@ export function volcano(lon: number, lat: number, radiusDeg = 1.6): Point[] {
     { lon: lon - w, lat },
   ];
 }
+
+/**
+ * A wildfire: a flame, leaning, standing on the point like the volcano does.
+ *
+ * Leaning because a symmetrical one reads as a leaf. Fixed size rather than scaled by burned area: size
+ * belongs to the magnitude ramp, and at true scale the largest fire on Earth is a fifth of a degree
+ * across, which is nothing. The hectares go in words instead.
+ */
+export function flame(lon: number, lat: number, radiusDeg = 1.2): Point[] {
+  const stretch = stretchAt(lat);
+  const at = (x: number, y: number): Point =>
+    ({ lon: lon + x * radiusDeg * stretch, lat: lat + y * radiusDeg });
+  return [
+    at(-0.55, 0), at(-0.8, 0.5), at(-0.35, 1.05), at(0.15, 1.85),
+    at(0.5, 1.1), at(0.8, 0.5), at(0.55, 0), at(-0.55, 0),
+  ];
+}
+
+const WAVE_ROWS = 3;
+const WAVE_STEPS = 12;
+
+/**
+ * A flood: the wavy lines cartography draws for water, which no other mark here could be mistaken for.
+ *
+ * Three separate strokes rather than one path, because a single polyline would have to travel from the end
+ * of one row to the start of the next and that connector would be drawn. Same phase on every row, since
+ * alternating them reads as noise rather than as water.
+ */
+export function waves(lon: number, lat: number, radiusDeg = 1.4): Point[][] {
+  const stretch = stretchAt(lat);
+  return Array.from({ length: WAVE_ROWS }, (_, row) => {
+    const y = lat + row * radiusDeg * 0.5;
+    return Array.from({ length: WAVE_STEPS + 1 }, (_, i) => {
+      const t = (i / WAVE_STEPS) * 2 - 1;
+      return {
+        lon: lon + t * radiusDeg * stretch,
+        lat: y + Math.sin((i / WAVE_STEPS) * Math.PI * 4) * radiusDeg * 0.16,
+      };
+    });
+  });
+}

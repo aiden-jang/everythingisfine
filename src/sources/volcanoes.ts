@@ -1,3 +1,5 @@
+import { events, fetchList, listUrl, parseUtc } from "./gdacs";
+
 /*
  * Volcanoes with an eruption episode on record, which is not the same as volcanoes erupting now.
  *
@@ -18,8 +20,6 @@
  * that ended two hundred days ago describes a concern nobody has any more.
  */
 
-const LIST = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH"
-  + "?eventlist=VO&alertlevel=Green;Orange;Red";
 
 export interface Volcano {
   id: string;
@@ -31,34 +31,10 @@ export interface Volcano {
   endedAt: number | null;
 }
 
-interface Feature {
-  geometry?: { coordinates?: unknown };
-  properties?: Record<string, unknown>;
-}
-
-/**
- * A GDACS timestamp, which arrives without a zone and is UTC.
- *
- * `Date.parse` on "2026-08-11T21:25:00" is read as local time by the platform, which moves every one of
- * these by the viewer's offset and would have a volcano in New Zealand erupting half a day out.
- */
-function parseUtc(value: unknown): number | null {
-  if (typeof value !== "string" || value === "") return null;
-  const stamp = Date.parse(/(Z|[+-]\d\d:?\d\d)$/.test(value) ? value : `${value}Z`);
-  return Number.isFinite(stamp) ? stamp : null;
-}
-
 export function parseVolcanoes(payload: unknown): Volcano[] {
-  const features = (payload as { features?: unknown })?.features;
-  if (!Array.isArray(features)) return [];
   const out: Volcano[] = [];
   const seen = new Set<string>();
-  for (const raw of features as Feature[]) {
-    const p = raw.properties;
-    const coords = raw.geometry?.coordinates;
-    if (!p || !Array.isArray(coords) || coords.length < 2) continue;
-    const [lon, lat] = coords as [unknown, unknown];
-    if (typeof lon !== "number" || typeof lat !== "number") continue;
+  for (const { lon, lat, props: p } of events(payload)) {
     const name = String(p["eventname"] ?? "unnamed");
     /*
      * One triangle per volcano, not per episode. The list carries Mayon three times and Kanlaon four,
@@ -93,11 +69,5 @@ export function newestEpisode(volcanoes: readonly Volcano[]): number | null {
 export async function fetchVolcanoes(
   get: (url: string) => Promise<Response> = fetch,
 ): Promise<Volcano[]> {
-  try {
-    const res = await get(LIST);
-    if (!res.ok) return [];
-    return parseVolcanoes(await res.json());
-  } catch {
-    return [];
-  }
+  return fetchList(listUrl("VO"), parseVolcanoes, get);
 }
