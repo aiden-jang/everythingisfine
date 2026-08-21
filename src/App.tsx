@@ -232,15 +232,6 @@ export function App(): JSX.Element {
     const id = window.setInterval(load, 10 * 60_000);
     return () => { alive = false; window.clearInterval(id); };
   }, []);
-  /*
-   * Shaped here, once, rather than inside the frame loop.
-   *
-   * Two arrays that each change every ten minutes at most, against a loop that runs at sixty frames a
-   * second when anything is moving.
-   */
-  const marks = useMemo(
-    () => marksFor({ cyclones, volcanoes, fires, floods }), [cyclones, volcanoes, fires, floods],
-  );
   /** Computed here rather than in the legend, so the sentence is a render of a number and not a scan. */
   const fireSummary = useMemo(() => summarise(fires), [fires]);
   /*
@@ -301,6 +292,15 @@ export function App(): JSX.Element {
    * unfolding it on every visit is the app forgetting what it was told. Stored as the closed state so the
    * absence of the key reads as the default rather than as a choice.
    */
+  /*
+   * The event whose far side is drawn, held as an id rather than a flag.
+   *
+   * An id, so selecting a different event drops the figure instead of silently re-pointing it at the new
+   * one: five circles that stayed put while the selection moved would be drawing the wrong epicentre's
+   * geometry with nothing on screen saying so. Not persisted and not in the permalink - it is a thing
+   * somebody is looking at right now, not a preference and not a view.
+   */
+  const [farSideOf, setFarSideOf] = useState<string | null>(null);
   const [keyOpen, setKeyOpen] = useState<boolean>(() => stored("legendKey") !== "0");
   useEffect(() => { store("legendKey", keyOpen ? "1" : "0"); }, [keyOpen]);
   useEffect(() => { store("ramp", ramp); }, [ramp]);
@@ -457,6 +457,26 @@ export function App(): JSX.Element {
   const lastPinned = useRef(pinned);
   if (pinned) lastPinned.current = pinned;
   const shownQuake = pinned ?? lastPinned.current;
+  /*
+   * Every mark that is not an earthquake, shaped once here rather than inside the frame loop.
+   *
+   * Below the selection rather than up with the fetches, because the far-side figure is one of these and
+   * it needs the traced event's position. Keyed on the id: if the id no longer resolves - the event aged
+   * out of the ring buffer while its figure was up - the figure goes with it rather than staying drawn
+   * around an epicentre the app can no longer name.
+   *
+   * Gated on the figure's event still being the selected one, which closes a trap rather than adding a
+   * rule: the toggle lives in the panel, so with the panel dismissed the arcs would have stayed on screen
+   * with no explanation beside them and no visible way to turn them off. It also keeps this app's standing
+   * rule intact - the sentence is present exactly whenever the figure is. Reselecting the same event
+   * brings it back, since nothing has been forgotten, only hidden.
+   */
+  const traced = farSideOf && farSideOf === selected ? feed.store.get(farSideOf) : undefined;
+  const farSide = traced ? { lon: traced.primary.lon, lat: traced.primary.lat } : null;
+  const marks = useMemo(
+    () => marksFor({ cyclones, volcanoes, fires, floods, farSide }),
+    [cyclones, volcanoes, fires, floods, farSide?.lon, farSide?.lat],
+  );
   useEffect(() => {
     // Only if it genuinely fell out of the buffer. A refresh must never clear the panel.
     if (selected && !feed.store.get(selected)) setSelected(null);
@@ -1408,6 +1428,16 @@ export function App(): JSX.Element {
               setSectionLine(line);
               setFlat(true);
               flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 1.6);
+            }}
+            farSide={farSideOf === shownQuake.key}
+            /*
+              Pulls the camera out to 0.9 when it goes on, because the figure is 40,000km across at its
+              widest and a viewer zoomed into a margin would have a single arc crossing the screen with
+              no indication it was part of a circle.
+            */
+            onFarSide={(on) => {
+              setFarSideOf(on ? shownQuake.key : null);
+              if (on) flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 0.9);
             }}
           />
         ) : null}
