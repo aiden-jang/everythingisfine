@@ -4079,6 +4079,30 @@ the window at every one. Panel-open was verified at 375 in the previous turn (fo
 inside); **at 768 and above, panel-open is unverified**, because the dev feed stopped delivering events on
 that tab and a check with no panel on screen proves nothing about the panel.
 
+## A test sitting exactly on its own ceiling
+
+`the globe unwraps into a map and back` was failing with the projection toggle reading `""`, which looks
+like a broken header and was nothing of the kind. Three things settled it, in order of how much they
+narrowed it down:
+
+- Driven by hand in a browser, the sequence is fine: Map, Globe, Map, with `eif.flat` correct each time
+  and the canvas still there. So the app was not breaking.
+- `pageerror` and `console` were both silent through a passing run, so nothing was throwing.
+- A **passing** run measured **45.5 seconds** against the default 45s budget.
+
+It was being killed mid-assertion, and `toHaveText` reporting `""` was the header seen through a page that
+had stopped. Three runs after raising the budget: **43.4s, 49.7s, 55.4s** - two of which would have failed
+at the default. The variance straddles the ceiling, which is why it looked intermittent and personal.
+
+The cost is real rather than wasteful: an entrance to wait out, two morphs, and **two WebGL canvas
+screenshots**, which are the expensive part. Same call as the two-page shared-link test - when a test
+legitimately does twice the work, the budget is what moves, not the assertions.
+
+**A correction to the previous entry.** I reported this failure as "proved not mine" after stashing my
+changes, and that proof was weaker than stated: the stash covered only the working tree, so everything
+committed earlier in the session was still in play. The conclusion happened to be right - it is a budget,
+not a regression - but the evidence given for it was not.
+
 ## The stillness helper, and knowing when to stop using it
 
 `cameraStill` was written to replace fixed waits, and it ran a clean 60/60. Trying to tidy it made three
