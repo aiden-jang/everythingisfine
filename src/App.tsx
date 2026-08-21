@@ -1079,7 +1079,17 @@ export function App(): JSX.Element {
           was also `hidden lg:inline`, so on anything smaller than a laptop there was never a
           persistent readout to lose.
         */}
-        <div className="ml-auto flex min-w-0 items-center gap-3">
+        {/*
+          Wraps on a narrow screen, because this row grew by three buttons.
+
+          It held Map and the ramp toggle; Sound, Tour and Still joined it, and at 375px the last of them
+          was clipped off the right edge rather than scrolling into reach - an unreachable control, and
+          horizontal scroll would have been a build failure under DESIGN.md 11 anyway. Wrapping costs a
+          second header row on a phone, which is the cheaper loss than a button nobody can press.
+          `gap-y-2` so the two rows do not touch, and `justify-end` so the wrapped row stays right-aligned
+          with the one above it.
+        */}
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-2">
           <button
             type="button"
             onClick={() => setFlat((f) => !f)}

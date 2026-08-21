@@ -121,12 +121,26 @@
        visualization gets most of its shared links opened on a phone. */
     grid-template-rows: 60dvh 1fr;
     grid-template-areas: "canvas" "rail";
+    /*
+     * One column, stated rather than left implicit.
+     *
+     * `.zone-panel` names a `panel` area that only exists at 1280px and up, and a grid item naming an
+     * area that is not in the template gets auto-placed. With no columns declared, "auto-placed" meant
+     * the browser inventing them: at 375px the grid measured 218px + 0 + 219px = **437px**, so opening
+     * an event on a phone pushed the panel, the rail's headline and the header's last button off the
+     * right of the screen. Declaring one column forces the panel into an implicit *row* underneath
+     * instead, which is what "single column" already promised.
+     */
+    grid-template-columns: 1fr;
   }
 
   @media (min-width: 768px) {
     .zones {
       grid-template-rows: auto 1fr;
       grid-template-areas: "rail" "canvas";
+      /* Same reason as above: the panel has no area here either, so it stacks rather than inventing
+         a column beside the canvas. */
+      grid-template-columns: 1fr;
     }
   }
 
