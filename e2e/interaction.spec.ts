@@ -1415,3 +1415,37 @@ test("a section can be opened from the panel, not only by a gesture", async ({ p
     .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
     .toMatch(/[&#]x=/);
 });
+
+test("the key folds away and the controls do not go with it", async ({ page }) => {
+  /*
+   * Five layers made the legend seven paragraphs, and over the map that is a wall in front of the thing
+   * it describes. The risk in folding it is folding the wrong half: the slider and the source buttons are
+   * how you change what is on the globe, and they have to survive the fold.
+   */
+  await installFeeds(page);
+  await page.goto("/");
+  await waitForData(page);
+
+  const key = page.getByText("What the marks mean").first();
+  const explanation = page.getByText("size shows it too").first();
+  const slider = page.locator("#mag");
+  const usgs = page.getByRole("button", { name: "USGS" }).first();
+
+  // Open by default: the app's argument is that no layer ships without the sentence explaining it, so
+  // shipping it shut would hide that from anyone who never finds the toggle.
+  await expect(explanation).toBeVisible();
+
+  await key.click();
+  await expect(explanation).toBeHidden();
+  await expect(slider).toBeVisible();
+  await expect(usgs).toBeVisible();
+
+  // Remembered, because a panel somebody folded away is a preference.
+  await page.reload();
+  await waitForData(page);
+  await expect(page.getByText("size shows it too").first()).toBeHidden();
+  await expect(page.locator("#mag")).toBeVisible();
+
+  await page.getByText("What the marks mean").first().click();
+  await expect(page.getByText("size shows it too").first()).toBeVisible();
+});

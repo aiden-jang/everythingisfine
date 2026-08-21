@@ -35,6 +35,9 @@ export interface MagnitudeFilterProps {
   fireCap: number;
   floods: number;
   floodCountries: number;
+  /** Whether the key below the scale is open. Held outside so it survives a reload. */
+  keyOpen: boolean;
+  onKeyOpen: (open: boolean) => void;
 }
 
 const TICKS = [MAG_MIN, 3, 5, MAG_MAX];
@@ -57,7 +60,7 @@ function path(points: readonly { lon: number; lat: number }[]): string {
 export function MagnitudeFilter(
   {
     ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince,
-    fires, fireCap, floods, floodCountries,
+    fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -104,6 +107,30 @@ export function MagnitudeFilter(
           <span key={t}>{i === TICKS.length - 1 ? `${t}+` : t.toFixed(1)}</span>
         ))}
       </div>
+
+      {/*
+        Everything below the scale is explanation, and it folds away.
+
+        The split is control against commentary: the slider, the ticks and the source buttons are how you
+        change what is on the globe, and the rest is what the marks mean. Five layers' worth of that is
+        seven paragraphs, which over the map is a wall in front of the thing it describes.
+
+        **Open by default**, and only remembered once somebody closes it. This app's whole argument is
+        that no layer ships without the sentence that explains it, so shipping it folded shut would be
+        hiding the argument from everyone who never finds the toggle. The viewer gets to dismiss it; the
+        app does not get to pre-dismiss it for them.
+
+        Controlled rather than left to the browser, because the state is persisted. `preventDefault` on
+        the summary stops the native toggle so React owns `open` - React 18 does not listen for `toggle`,
+        so reading the browser's own state back is not an option here.
+      */}
+      <details className="mt-2.5" open={keyOpen}>
+        <summary
+          className="cursor-pointer list-none text-[11px] text-faint hover:text-dim"
+          onClick={(e) => { e.preventDefault(); onKeyOpen(!keyOpen); }}
+        >
+          What the marks mean
+        </summary>
 
       {/* Size carries the same value, so a colourblind viewer and a small screen both still read it. */}
       <div className="mt-2.5 flex items-center gap-2.5 text-[11px] text-faint">
@@ -268,6 +295,7 @@ export function MagnitudeFilter(
           a quake is measured.
         </span>
       </div>
+      </details>
 
     </div>
   );
