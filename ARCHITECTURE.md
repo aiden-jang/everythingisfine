@@ -4147,6 +4147,30 @@ mutually within the 150km radius, so this walks the swarm; in a loose cluster it
 near the event now pinned. That is the honest behaviour of "what is near what I am looking at" rather than
 a fixed playlist, and it is the same set the panel is already describing.
 
+## Running the suite against what actually ships
+
+The browser tests had exercised `pnpm dev` for their whole life, and the gap that leaves is specific: a
+dynamic import that resolves in dev and splits wrong in a build, or a Tailwind arbitrary class that works in
+dev and is purged from production CSS. Both of those categories arrived in this project recently - two
+`await import()` calls and a batch of `[calc(...)]` classes - so the gap stopped being theoretical and
+started being a live risk on a deployed site.
+
+`EIF_BUILD=1` swaps the web server for `pnpm build && pnpm preview`, with `preview` pinned to the port the
+suite already targets. **Nothing was broken**, which is the answer that costs the least and is worth having
+rather than assuming: the whole design suite passes against `dist` at all four breakpoints, so the arbitrary
+classes survive purging, and the plate-motion toggle flips and prints its sentence in a production build,
+so the dynamic import resolves.
+
+Worth recording about the chunking: `plateMotion.json` has no chunk of its own. Vite folds it into the
+`land` chunk that the globe already loads, so `loadMotion()` resolves from cache rather than fetching. The
+point of making it dynamic still stands - it is out of the bundle that paints the first frame - but it is
+not a separate request, and a comment claiming one would be wrong.
+
+**Not verified by hand:** the panel's boundary distance in a build. Its `plates.json` import is the same
+module `geo/plates.ts` imports statically, and the boundaries render in the build, so the data is present -
+but the field itself went unchecked because the live feed stopped answering in that tab and no event could
+be pinned.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -4157,9 +4181,16 @@ Written last, and kept accurate rather than kept short.
   panel lists every merged reading so a wrong merge is visible, which is the difference between a
   limitation and a lie, but it is a real limitation and not a rare one during a sequence.
 
-- **Browser tests still run against a dev server, not a build.** They no longer touch the network, so
-  they can go in CI, but they exercise `pnpm dev` rather than `dist`. A bundler-only failure would not
-  be caught by them.
+- ~~**Browser tests still run against a dev server, not a build.**~~ **Closed on 2026-08-21**, though the
+  capability is what closed rather than every test having been run that way. `EIF_BUILD=1 pnpm test:e2e`
+  (or `pnpm test:e2e:build`) builds and serves `dist` instead of booting `pnpm dev`. Twenty-six cases have
+  been run against it - the whole design suite plus three interaction cases - and all passed. The full
+  interaction suite against a build has not been run yet.
+
+  Opt-in rather than default because a build is slower than a dev boot and this is already the slow gate.
+  `reuseExistingServer` is **off** in build mode deliberately: with it on, a dev server left on the port
+  gets silently reused and the run tests dev while reporting that it tested the build, which is worse than
+  not running it at all.
 
 - ~~**Both gates are sensitive to a loaded machine, and neither says so when it fails.**~~ **Closed on
   2026-08-21, and it had been half-closed for a while without this entry noticing.** The perf side took

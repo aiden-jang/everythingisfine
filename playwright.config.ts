@@ -13,6 +13,8 @@ import { defineConfig } from "@playwright/test";
  * The dev server is started by Playwright rather than assumed, so a failing run means the app is
  * broken rather than that somebody forgot to run `pnpm dev`.
  */
+const againstBuild = process.env["EIF_BUILD"] === "1";
+
 export default defineConfig({
   testDir: "./e2e",
   /*
@@ -43,10 +45,23 @@ export default defineConfig({
    * is the one thing a retry is legitimately for. A logic failure fails twice.
    */
   retries: 1,
+  /*
+   * Against `dist` when asked, against `pnpm dev` by default.
+   *
+   * The suite exercised the dev server for its whole life, which meant a bundler-only failure could not
+   * be caught by it: a dynamic import that resolves in dev and splits wrong in a build, or a Tailwind
+   * arbitrary class that survives dev and is purged from production CSS. Both of those shipped this
+   * project recently, so the gap stopped being theoretical.
+   *
+   * Opt-in rather than the default because a build is slower than a dev boot and the suite is already the
+   * slow gate. `reuseExistingServer` is off in build mode on purpose: with it on, a dev server left
+   * running on the port would be silently reused and the run would test dev while claiming to test the
+   * build, which is worse than not running it.
+   */
   webServer: {
-    command: "pnpm dev",
+    command: againstBuild ? "pnpm build && pnpm preview" : "pnpm dev",
     url: "http://localhost:31600",
-    reuseExistingServer: true,
-    timeout: 60_000,
+    reuseExistingServer: !againstBuild,
+    timeout: againstBuild ? 120_000 : 60_000,
   },
 });
