@@ -4193,15 +4193,52 @@ Numbers and their conditions are in the closed item above. Two things worth keep
   notice; at 120fps the worst frame measured is 77% of it. Nothing here is a problem today, and that is a
   different statement from "nothing has suggested a problem".
 
+## The third axis nobody had measured
+
+The known false positive - an aftershock folded into its mainshock - was written down as unfixable, and
+the reasoning was sound as far as it went: in **time** and **distance** the two populations really do
+overlap, so no threshold on either separates them without dropping genuine pairs. The gap was that
+association only ever used those two axes. Two agencies describing one rupture also agree about its
+**size**, and an aftershock does not.
+
+Measured the same way the original windows were, on two independent samples:
+
+|                    | pairs | median | p90  | max  |
+|--------------------|-------|--------|------|------|
+| M2.5+, 24 hours    | 50    | 0.00   | 0.20 | 0.40 |
+| M6+, 120 days      | 47    | 0.00   | 0.00 | 0.10 |
+
+**The obvious objection was the one worth checking.** `mb` saturates around 6.5 while `Mww` does not, so
+a magnitude window could in principle split a great earthquake into two markers - far worse than the bug
+being fixed, and on the most important event. The second sample says it does not happen: above M6 both
+agencies publish Mw or Mww and the pairs agree to 0.1, M7.8 and M7.7 included. The worst disagreement
+anywhere in 97 pairs is 0.40, and it is on *small* events, where the scales differ most.
+
+So the limit is one magnitude unit: two and a half times the headroom over the worst pair observed, and
+below the ~1.2 units Bath's law puts between a mainshock and its *largest* aftershock. Re-run against the
+same day of real data, it changes nothing that was working - **50 of 53 USGS events match an EMSC
+counterpart either way** - which is the point. It removes candidates rather than matches.
+
+**Two things it is not.** It is not a fix: a doublet within one unit still merges, and that needs waveform
+data. And it is not demonstrated catching a live false positive, because there was not one to catch -
+zero same-agency pairs fell inside the windows in that 24 hours, which is consistent with the tightened
+windows having already made it rare.
+
+`sameEvent` also had **no direct test** before this, only the store's behaviour around it, which is the
+wrong place to find out that the project's central decision has changed. It has twelve now, and the
+measurements are written into them rather than into a comment beside them.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
 
-- **Aftershocks can be swallowed.** Association uses time and distance, and the two populations
-  genuinely overlap: real matched pairs reach 16.7 seconds and 135km, which is squarely inside
-  aftershock territory. No threshold separates them without dropping genuine matches. The detail
-  panel lists every merged reading so a wrong merge is visible, which is the difference between a
-  limitation and a lie, but it is a real limitation and not a rare one during a sequence.
+- **Aftershocks can still be swallowed, but only the close ones now.** Association used time and
+  distance, and in those two dimensions the populations genuinely do overlap - real matched pairs reach
+  16.7 seconds and 135km, squarely inside aftershock territory. **Magnitude is a third axis and it does
+  separate them**, which this entry had not tested: 97 measured cross-agency pairs disagree by at most
+  0.40, so a one-unit window costs nothing, while most aftershocks sit further than that below their
+  mainshock. What remains is a doublet within one magnitude unit, which needs waveform data no keyless
+  feed carries. The detail panel still lists every merged reading, so a wrong merge stays visible.
 
 - ~~**Browser tests still run against a dev server, not a build.**~~ **Closed on 2026-08-21**, though the
   capability is what closed rather than every test having been run that way. `EIF_BUILD=1 pnpm test:e2e`

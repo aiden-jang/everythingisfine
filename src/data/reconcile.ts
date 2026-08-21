@@ -35,20 +35,60 @@ import type { Reading, SourceId } from "./types";
 export const TIME_WINDOW_MS = 30_000;
 export const DISTANCE_LIMIT_KM = 150;
 
+/*
+ * The third axis, and the one that was missing.
+ *
+ * The note above concluded that no threshold separates a genuine cross-agency pair from a mainshock and
+ * its aftershock. That was true of the two axes it measured: in time and distance the populations really
+ * do overlap. Magnitude is a different axis, and two agencies describing **one** rupture agree about its
+ * size to a degree the aftershock case cannot imitate.
+ *
+ * Measured the same way the windows above were, on two independent samples:
+ *
+ *                            pairs   median   p90    max
+ *   M2.5+, 24 hours            50     0.00    0.20   0.40
+ *   M6+, 120 days              47     0.00    0.00   0.10
+ *
+ * The worst disagreement anywhere in 97 genuine pairs is **0.40**, and it is on small events, where the
+ * scales differ most. The obvious objection - that `mb` saturates while `Mww` does not, so a great
+ * earthquake would be split into two markers, which would be far worse than the bug being fixed - does
+ * not survive the second sample: at M6 and above both agencies report Mw or Mww and the pairs agree to
+ * 0.1, M7.8 and M7.7 included.
+ *
+ * So one magnitude unit costs nothing on the true population, with two and a half times the headroom
+ * over the worst pair observed, and sits below the ~1.2 units that Bath's law puts between a mainshock
+ * and its *largest* aftershock - most aftershocks being much further down than that.
+ *
+ * **It is a partial guard and not a fix.** An aftershock within one magnitude unit of its mainshock, a
+ * doublet, still merges. What it removes is the common case, and it does so without narrowing the
+ * windows that were already measured to be right.
+ */
+export const MAGNITUDE_LIMIT = 1.0;
+
 /**
  * True when two readings plausibly describe one earthquake.
  *
- * **Known false positive.** A large event's immediate aftershocks can fall inside both windows, so
- * a genuine aftershock arriving within a minute and 200km of the mainshock will be folded into it.
- * Separating those needs waveform data, which no keyless feed carries. The interface never claims
- * otherwise: the detail panel shows every reading it merged, so a merge that looks wrong is visible
- * rather than hidden behind a single number.
+ * **Known false positive, now narrowed.** A large event's immediate aftershocks can fall inside the time
+ * and distance windows, so an aftershock arriving seconds later and nearby was folded into the mainshock.
+ * The magnitude window above removes the common case: an aftershock more than one unit below its
+ * mainshock is no longer a candidate. A doublet within one unit still merges, and separating *that* needs
+ * waveform data no keyless feed carries. The interface never claims otherwise: the detail panel shows
+ * every reading it merged, so a merge that looks wrong is visible rather than hidden behind one number.
  */
 export function sameEvent(a: Reading, b: Reading): boolean {
   // Same agency, same identifier is an identity, not a guess: it is a revision of one record.
   if (a.source === b.source) return a.id === b.id;
   if (Math.abs(a.time - b.time) > TIME_WINDOW_MS) return false;
-  return distanceKm(a.lon, a.lat, b.lon, b.lat) <= DISTANCE_LIMIT_KM;
+  if (distanceKm(a.lon, a.lat, b.lon, b.lat) > DISTANCE_LIMIT_KM) return false;
+  /*
+   * A missing magnitude does not split an event.
+   *
+   * An early reading sometimes arrives without one, and refusing to associate it would draw two markers
+   * on one rupture until the revision landed - trading a rare wrong merge for a common wrong split, which
+   * is the worse of the two on a globe where a marker means an earthquake.
+   */
+  if (!Number.isFinite(a.magnitude) || !Number.isFinite(b.magnitude)) return true;
+  return Math.abs(a.magnitude - b.magnitude) <= MAGNITUDE_LIMIT;
 }
 
 /**
