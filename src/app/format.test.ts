@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   compactSpan, corroborationNote, floodNote, reach, reachFraction, reachNote, reachWords,
-  farSideNote, theOf, wildfireNote,
+  farSideNote, motionNote, theOf, wildfireNote,
 } from "./format";
 
 /*
@@ -286,5 +286,26 @@ describe("the far-side sentence", () => {
   it("reads the widest off the arcs it was given rather than assuming 90 is among them", () => {
     const note = farSideNote([30, 60], len, { lon: 0, lat: 0 });
     expect(note).toContain(`${Math.round(len(60)).toLocaleString("en")} km of front`);
+  });
+});
+
+describe("the plate-motion sentence", () => {
+  it("says the word that stops the arrows meaning something else", () => {
+    // Read as absolute motion over the mantle these would be wrong everywhere, and an arrow cannot
+    // carry the word "relative" by itself.
+    expect(motionNote({ arrows: 231, fastest: 227.2, converging: 90 }))
+      .toContain("one side relative to the other");
+  });
+
+  it("gives the angle its reading, since nobody would look for it", () => {
+    const note = motionNote({ arrows: 231, fastest: 227.2, converging: 90 });
+    expect(note).toContain("Across a line is opening, into it is closing, along it is sliding");
+  });
+
+  it("states the counts and puts the fastest rate in human terms", () => {
+    const note = motionNote({ arrows: 231, fastest: 227.2, converging: 90 });
+    expect(note).toContain("90 of the 231 are closing");
+    expect(note).toContain("227 mm a year");
+    expect(note).toContain("a metre every four years");
   });
 });

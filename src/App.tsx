@@ -11,6 +11,7 @@ import { fetchVolcanoes, newestEpisode, type Volcano } from "./sources/volcanoes
 import { fetchWildfires, summarise, FEED_CAP, type Wildfire } from "./sources/wildfires";
 import { countries, fetchFloods, type Flood } from "./sources/floods";
 import { marksFor } from "./app/marks";
+import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
@@ -303,6 +304,28 @@ export function App(): JSX.Element {
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
   const [keyOpen, setKeyOpen] = useState<boolean>(() => stored("legendKey") !== "0");
   useEffect(() => { store("legendKey", keyOpen ? "1" : "0"); }, [keyOpen]);
+  /*
+   * The plate-motion arrows, persisted like the other view preferences and deliberately not in the
+   * permalink: it is a reading of static geography, so a link that carried it would be sharing a setting
+   * rather than sharing anything anybody is looking at. Off unless it has been asked for once.
+   */
+  const [motionOn, setMotionOn] = useState<boolean>(() => stored("motion") === "1");
+  useEffect(() => { store("motion", motionOn ? "1" : "0"); }, [motionOn]);
+  /*
+   * The samples themselves, fetched on first use rather than imported.
+   *
+   * 7.1kB of static table behind a toggle that is off by default has no business in the bundle that has
+   * to paint the first frame. Held here because both the globe and the legend's sentence need it, and a
+   * failed import leaves the array empty, which draws nothing and says nothing rather than throwing.
+   */
+  const [motionData, setMotionData] = useState<readonly MotionSample[]>([]);
+  useEffect(() => {
+    if (!motionOn || motionData.length > 0) return;
+    let alive = true;
+    void loadMotion().then((next) => { if (alive) setMotionData(next); }).catch(() => {});
+    return () => { alive = false; };
+  }, [motionOn, motionData.length]);
+  const motion = motionOn && motionData.length > 0 ? summariseMotion(motionData) : null;
   useEffect(() => { store("ramp", ramp); }, [ramp]);
   useEffect(() => {
     store("announceAbove", String(announceAbove));
@@ -474,8 +497,10 @@ export function App(): JSX.Element {
   const traced = farSideOf && farSideOf === selected ? feed.store.get(farSideOf) : undefined;
   const farSide = traced ? { lon: traced.primary.lon, lat: traced.primary.lat } : null;
   const marks = useMemo(
-    () => marksFor({ cyclones, volcanoes, fires, floods, farSide }),
-    [cyclones, volcanoes, fires, floods, farSide?.lon, farSide?.lat],
+    () => marksFor({
+      cyclones, volcanoes, fires, floods, farSide, motion: motionOn ? motionData : [],
+    }),
+    [cyclones, volcanoes, fires, floods, farSide?.lon, farSide?.lat, motionOn, motionData],
   );
   useEffect(() => {
     // Only if it genuinely fell out of the buffer. A refresh must never clear the panel.
@@ -768,6 +793,9 @@ export function App(): JSX.Element {
                 floodCountries={countries(floods)}
                 keyOpen={keyOpen}
                 onKeyOpen={setKeyOpen}
+                motion={motion}
+                motionOn={motionOn}
+                onMotion={setMotionOn}
               />
               {/*
                 Sources sit with the magnitude control because both answer "what is on the globe".

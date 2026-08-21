@@ -1,4 +1,5 @@
 import { antipodeCross, antipodeOf, FRONT_ARCS, smallCircle } from "../geo/antipode";
+import { motionArrow, type MotionSample } from "../geo/plateMotion";
 import type { Mark } from "../globe/marks";
 import { flame, spiral, volcano, waves } from "../globe/shapes";
 import type { Cyclone } from "../sources/cyclones";
@@ -30,12 +31,26 @@ export interface Happening {
    * read a magnitude.
    */
   farSide?: { lon: number; lat: number } | null;
+  /**
+   * The plate-motion samples to draw, empty for none.
+   *
+   * The samples rather than a flag, so this stays a pure function of its input and the 7.1kB table is
+   * loaded by whoever turned the toggle on rather than by importing this file.
+   */
+  motion?: readonly MotionSample[];
 }
 
 export function marksFor(
-  { cyclones, volcanoes, fires, floods, farSide = null }: Happening,
+  { cyclones, volcanoes, fires, floods, farSide = null, motion = [] }: Happening,
 ): Mark[] {
   const out: Mark[] = [];
+  /*
+   * Unanchored, like the far-side arcs: an arrow's length is its speed, so holding it at a constant size
+   * on screen would delete the only quantity it carries.
+   */
+  for (const [lon, lat, azimuth, rate] of motion) {
+    for (const stroke of motionArrow(lon, lat, azimuth, rate)) out.push({ points: stroke });
+  }
   /*
    * Unanchored, all of it. These are arcs at fixed distances on the real sphere, so they scale with the
    * coastline like the storm tracks do - a 90-degree circle held at a constant size on screen would be

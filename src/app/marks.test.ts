@@ -106,3 +106,38 @@ describe("the far-side figure", () => {
     expect(marks).toHaveLength(1 + 5 + 2);
   });
 });
+
+describe("the plate-motion arrows", () => {
+  const sample = (over: Partial<Record<number, unknown>> = {}): never =>
+    [0, 0, 90, 100, -1, "SUB"].map((v, i) => over[i] ?? v) as never;
+
+  it("draws nothing when the toggle is off", () => {
+    expect(marksFor({ ...nothing, motion: [] })).toEqual([]);
+    expect(marksFor(nothing)).toEqual([]);
+  });
+
+  it("is three strokes per arrow", () => {
+    expect(marksFor({ ...nothing, motion: [sample()] })).toHaveLength(3);
+    expect(marksFor({ ...nothing, motion: [sample(), sample({ 0: 40 })] })).toHaveLength(6);
+  });
+
+  it("anchors none of them, because an arrow's length is its speed", () => {
+    // Held at a constant size on screen, the only quantity these carry would be deleted.
+    for (const m of marksFor({ ...nothing, motion: [sample()] })) {
+      expect(m.anchor).toBeUndefined();
+    }
+  });
+
+  it("draws a faster boundary longer than a slower one", () => {
+    const spanOf = (rate: number): number => {
+      const [shaft] = marksFor({ ...nothing, motion: [sample({ 3: rate })] });
+      const [tail, tip] = shaft!.points;
+      return Math.abs(tip!.lon - tail!.lon);
+    };
+    expect(spanOf(230)).toBeGreaterThan(spanOf(20));
+  });
+
+  it("draws beside the live layers rather than instead of them", () => {
+    expect(marksFor({ ...nothing, volcanoes: [mountain()], motion: [sample()] })).toHaveLength(1 + 3);
+  });
+});
