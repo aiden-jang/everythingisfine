@@ -23,7 +23,9 @@
  *
  * It writes `public/share.png` at the 1200x630 the meta tags promise.
  */
-import { chromium } from "playwright";
+// `@playwright/test`, not `playwright`: the bare package is not a dependency here, so the import this
+// script shipped with threw ERR_MODULE_NOT_FOUND and `pnpm card` had never actually run.
+import { chromium } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
@@ -40,6 +42,25 @@ const BASE = process.env.CARD_BASE ?? "http://localhost:31600";
  * than a flag that only exists to make this picture.
  */
 const VIEW = "#at=105,18,1.05&m=7.5&r=thermal";
+
+/*
+ * Every feed blocked, rather than filtered.
+ *
+ * `m=7.5` empties the globe of earthquake *markers* and nothing else, and two things turned out to be
+ * outside it. Storms, volcanoes, fires, floods and the aurora ignore the magnitude filter entirely -
+ * correctly, a fire has no magnitude - so once those layers shipped, a card cached for days would have
+ * carried one afternoon's hundred wildfires as if they were now. And the wavefront rings are not
+ * magnitude-filtered either: the first card built after the new layers had three orange rings on it at
+ * `m=7.5`, one moment's seismicity, which is the exact thing the paragraph above exists to prevent.
+ *
+ * Blocked at the network rather than behind a new switch in the app, because the alternative is exactly
+ * the "flag that only exists to make this picture" that was refused for the magnitude. No data, no
+ * marks; the app is unmodified and does the honest thing with an empty response, which is the same thing
+ * it does for a viewer whose network ate the request. `m=7.5` stays as the second lock.
+ */
+const FEEDS = [
+  "earthquake.usgs.gov", "www.seismicportal.eu", "www.gdacs.org", "services.swpc.noaa.gov",
+];
 
 const card = (globe, tokens) => `<!doctype html>
 <html><head><meta charset="utf-8" /><style>
@@ -90,22 +111,44 @@ const card = (globe, tokens) => `<!doctype html>
       image in most clients, so repeating it here spends the card's only line saying a thing the
       viewer is already reading.
     -->
-    <div class="line">Earthquakes, as they are reported, by two agencies that disagree.</div>
+    <div class="line">Earthquakes, storms, volcanoes, fires and floods, as they are reported.</div>
   </div>
-  <div class="feeds">USGS &middot; EMSC</div>
+  <div class="feeds">USGS &middot; EMSC &middot; GDACS &middot; NOAA</div>
 </body></html>`;
 
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 1000, height: 1000 } });
+  await page.route("**/*", (route) => {
+    const url = route.request().url();
+    if (FEEDS.some((host) => url.includes(host))) return route.abort();
+    return route.continue();
+  });
+  // EMSC arrives over a WebSocket, which `route` does not see. Without this a single live arrival in
+  // the wait below puts a wavefront ring on a card that will be cached for days.
+  await page.routeWebSocket("**/*", (ws) => ws.close());
   await page.goto(`${BASE}/${VIEW}`, { waitUntil: "load" });
   await page.waitForSelector("canvas", { timeout: 30_000 });
   /*
-   * Long enough for the entrance to land and the plate boundaries to finish growing in. The entrance
-   * is 2.8s and the boundaries reveal after it, and a card caught mid-reveal has half a tectonic map
-   * on it.
+   * Long enough for the plate boundaries to finish growing in.
+   *
+   * This number is coupled to the feeds being blocked and has to move with it. The boundary reveal
+   * normally starts when the entrance replay finishes, and with no feed answering there is no replay,
+   * so it starts on its 8s fallback in `Globe.tsx` and then takes 1.5s to grow. Seven seconds was
+   * right while the earthquake feeds still loaded and would now produce a card with no tectonics on
+   * it at all.
    */
-  await page.waitForTimeout(7000);
+  await page.waitForTimeout(11_000);
+
+  /*
+   * The key hints, hidden for the shot.
+   *
+   * `locator.screenshot()` clips the page to the element's box rather than isolating the element, so
+   * anything overlaid on the canvas inside that box lands in the image - and the hint row did, putting
+   * "arrows orbit + - zoom" across the bottom of the globe on a social card. Hidden here rather than in
+   * the app, because it is the right thing on screen and wrong only in a photograph of it.
+   */
+  await page.addStyleTag({ content: ".key-hints { display: none !important; }" });
 
   // The palette, asked of the app rather than copied here, so the card cannot drift from it.
   const tokens = await page.evaluate(() => {
