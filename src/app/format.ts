@@ -528,3 +528,21 @@ export function depthNote(bands: {
   return `${parts.join(", ")}. Deep events sit inside a descending slab, so a margin only resolves `
     + `into rings when enough of them land.`;
 }
+
+/**
+ * What the sound is, and the two things it is not.
+ *
+ * Both disclosures are load-bearing. It is **not a recording**: ground motion is below hearing, under
+ * about 10 Hz, so every audible rendering is a transposition - the same admission the wavefronts make by
+ * printing their x20 multiplier instead of hiding it. And **loudness is not energy**: three points of
+ * magnitude is thirty thousand times the energy, which no speaker can express, so the gain is compressed
+ * and saying so is the difference between a scale and a decoration.
+ *
+ * The pitch direction is worth one clause because it is derived rather than chosen: a larger rupture
+ * radiates a lower corner frequency, so bigger really is lower.
+ */
+export function soundNote(above: number): string {
+  return `one tone per arrival above M${above.toFixed(1)}, lower for bigger, which is the direction a `
+    + `real rupture goes. It is not a recording: ground motion is below hearing, under about 10 Hz. And `
+    + `loudness is not energy, because three points of magnitude is thirty thousand times as much of it.`;
+}

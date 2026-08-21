@@ -3832,6 +3832,46 @@ claim about what a viewer would see with the number saying whether they could.
 The bands moved to `data/depth.ts` on the `geo/waves.ts` precedent: they are facts about earthquakes, the
 legend needs them, and the legend must not import a module that drags three.js into the first paint.
 
+## Sound, with the rule written first
+
+The last gated item, and the only one gated on an absence: DESIGN.md said nothing about audio, so anything
+built into that silence would have set the rule by accident. **12b was written before any code**, and the
+feature is what fell out of it.
+
+The test section 8 applies to motion applies harder to sound, because audio cannot be looked away from. So:
+no drone, no ambient bed, no click or hover feedback, nothing at all on a quiet globe. One earthquake, one
+tone.
+
+**It follows `newsIn`.** A cold load admits sixty events at once and none of them just happened; the live
+region already learned that and decides news by the clock rather than by what it has seen. Sound reuses
+that exact predicate rather than a second implementation, which is what makes a seeded backlog physically
+unable to sound. It reuses the announce threshold too, instead of adding a slider - "tell me about events
+above this" is one idea, and the rail already has the control.
+
+**The mapping is derived, not composed.** Pitch falls as magnitude rises, because a larger rupture radiates
+a lower corner frequency; duration grows, because a larger rupture lasts longer. Geometric in frequency,
+since pitch is perceived logarithmically and a linear interpolation would spend most of the audible range
+on the top of the magnitude scale where almost no events are. Loudness is the one channel that cannot be
+honest - three points of magnitude is thirty thousand times the energy - so gain is compressed and the
+legend admits it rather than implying a scale.
+
+**Two disclosures, both load-bearing.** It is not a recording: real ground motion is below hearing, under
+about 10 Hz, so any audible rendering is a transposition - the same admission the wavefronts make by
+printing their x20 multiplier. And loudness is not energy. A tone offered as the sound of an earthquake
+would be the one outright falsehood in this app, so the sentence leads with what it is not.
+
+**The context is built on the press.** An `AudioContext` created without a gesture starts suspended and
+every later tone is dropped silently, which is the failure where the toggle reads on and nothing is ever
+heard. Closed again when switched off, because a suspended context is still a device handle. Three voices
+maximum, loudest kept: a swarm can deliver a dozen arrivals in one poll, and a dozen tones is a noise.
+
+**Verified in the browser.** A full cold load with the backlog seeded produced **zero tones and zero audio
+contexts**; enabling created exactly one; the disclosure is on screen whenever sound is. Then the real
+module was driven through a real `AudioContext` with five simultaneous magnitudes and played **110, 151 and
+209 Hz** for M7.5, M6.0 and M4.5 - three voices, loudest first, lower for bigger, matching `toneHz` exactly.
+The first attempt played nothing, and the reason was the hidden-tab guard doing its job: the preview pane
+reports `document.hidden`, so the check had to be overridden to hear anything at all.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
