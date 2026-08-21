@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { depthClass, findNearby, NEARBY_KM } from "./nearby";
+import { NEARBY_KM, depthClass, findNearby, stepsFrom } from "./nearby";
 import { createStore } from "../data/store";
 import type { Filters, Reading } from "../data/types";
 
@@ -111,5 +111,51 @@ describe("the sequence around a pinned event", () => {
     const near = findNearby(store, pinned, filters, NOW);
     expect(near.sequence).toEqual([]);
     expect(near.largestAt).toBeNull();
+  });
+});
+
+describe("stepping through a sequence", () => {
+  const seq = (...entries: [string, number, number][]) =>
+    entries.map(([key, at, magnitude]) => ({ key, at, magnitude }));
+
+  it("takes the nearest event on each side in time, not the nearest in the list", () => {
+    const { earlier, later } = stepsFrom(seq(
+      ["far-past", -9_000, 5.1], ["just-before", -60, 2.4],
+      ["just-after", 120, 3.3], ["far-future", 9_000, 6.0],
+    ));
+    expect(earlier).toEqual({ key: "just-before", magnitude: 2.4 });
+    expect(later).toEqual({ key: "just-after", magnitude: 3.3 });
+  });
+
+  it("has no earlier when this event opened the sequence", () => {
+    const { earlier, later } = stepsFrom(seq(["after", 300, 4.0]));
+    expect(earlier).toBeNull();
+    expect(later).toEqual({ key: "after", magnitude: 4.0 });
+  });
+
+  it("has no later when this event closed it", () => {
+    const { earlier, later } = stepsFrom(seq(["before", -300, 4.0]));
+    expect(later).toBeNull();
+    expect(earlier).toEqual({ key: "before", magnitude: 4.0 });
+  });
+
+  it("has neither when the event stands alone", () => {
+    expect(stepsFrom([])).toEqual({ earlier: null, later: null });
+  });
+
+  it("refuses to call a neighbour sharing this instant earlier or later", () => {
+    /*
+     * An offset of zero is a neighbour at the same origin time. Putting it on one side would be
+     * inventing an order the data does not have, so it is simply not a step.
+     */
+    expect(stepsFrom(seq(["same-instant", 0, 5.0]))).toEqual({ earlier: null, later: null });
+  });
+
+  it("does not care what order the list arrives in", () => {
+    const forwards = stepsFrom(seq(["a", -100, 1], ["b", -10, 2], ["c", 10, 3], ["d", 100, 4]));
+    const backwards = stepsFrom(seq(["d", 100, 4], ["c", 10, 3], ["b", -10, 2], ["a", -100, 1]));
+    expect(forwards).toEqual(backwards);
+    expect(forwards.earlier!.key).toBe("b");
+    expect(forwards.later!.key).toBe("c");
   });
 });

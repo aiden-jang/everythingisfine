@@ -303,6 +303,36 @@ test("an hour can be held from the keyboard, and let go", async ({ page }) => {
   await expect(readout).toHaveText(/^peak \d+ · /);
 });
 
+test("a swarm can be walked one event at a time", async ({ page }) => {
+  /*
+   * The other half of the sequence strip. It could draw three hundred neighbours in time order and there
+   * was no way to visit one: you could read the shape of a swarm and not step through it. This asserts
+   * the step actually re-pins, which is the whole feature - the strip itself is gated by the perf test.
+   */
+  await installFeeds(page, { count: 200 });
+  await page.goto("/");
+  await waitForData(page);
+
+  // Into the densest region, where a pinned event certainly has neighbours either side of it in time.
+  await page.getByRole("button", { name: /Indonesia|Flores/ }).first().click();
+  const row = page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first();
+  await row.click();
+
+  const panel = page.locator(".zone-panel");
+  await expect(panel).toBeVisible();
+  const first = await panel.innerText();
+
+  // Labelled with the neighbour's magnitude, because the useful question in a swarm is how big it was.
+  const step = panel.getByRole("button", { name: /(previous|next) event in this sequence/ }).first();
+  await expect(step).toBeVisible();
+  await step.click();
+
+  // A different event, still a panel: the pin moved rather than the panel closing or reloading.
+  await expect(panel).toBeVisible();
+  await expect.poll(async () => (await panel.innerText()) !== first, { timeout: 8_000 }).toBe(true);
+  await expect(panel).toContainText(/M \d+\.\d/);
+});
+
 test("the window buttons move the data and the headline follows", async ({ page }) => {
   /*
    * Three claims that only exist together in a browser: the window is a control, the control

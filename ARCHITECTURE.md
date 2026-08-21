@@ -4125,6 +4125,28 @@ The helper stayed at the version that was green; the tidy-up was reverted rather
 is the one about thresholds: a settle test needs a threshold set by what a viewer or a screenshot can
 resolve, not by how small a float can get.
 
+## Walking a swarm, which was one field away
+
+The sequence strip has shown every neighbour of a pinned event in time order for a while, and the panel
+listed the four largest by magnitude. Neither could be visited. The gap was smaller than it looked:
+`findNearby` already walked every neighbour, built the sequence and sorted it by time - it just mapped away
+the identity, keeping `at` and `magnitude`. Carrying `key` costs one field on a list that was already being
+built.
+
+**Nearest in time, not nearest in space.** A sequence is a thing that unfolds, so "the next one" means the
+next one to happen. An offset of exactly zero is a neighbour sharing this event's instant and is
+deliberately neither step: calling it earlier or later would be inventing an order the data does not have,
+and there is a test for that.
+
+**Labelled with the magnitude, not "previous" and "next".** The useful question inside a swarm is how big
+the next one was, so the buttons read `<- M2.4` and `M3.3 ->`. Hidden rather than disabled at either end of
+a sequence, because a dead control is a question a viewer has to answer.
+
+Stepping re-pins, which re-centres the neighbourhood on the new event. In a tight swarm every member is
+mutually within the 150km radius, so this walks the swarm; in a loose cluster it drifts toward whatever is
+near the event now pinned. That is the honest behaviour of "what is near what I am looking at" rather than
+a fixed playlist, and it is the same set the panel is already describing.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -4161,10 +4183,12 @@ Written last, and kept accurate rather than kept short.
 - **The window cannot go back before the page opened.** No backend, so time scrubbing was rejected
   rather than shipped as a worse version of itself.
 
-- **Dense sequences are readable now, and still not steppable.** 400 events in the Flores Sea collapse
-  to a handful of markers on the globe, and the sequence strip in the panel shows every one of them in
-  time. What is still missing is per-event navigation inside a swarm: you can see 301 neighbours and
-  read their shape, and you cannot walk them one at a time.
+- ~~**Dense sequences are readable now, and still not steppable.**~~ **Closed on 2026-08-21.** The strip
+  could draw three hundred neighbours in time order and there was no way to visit one, because the
+  offsets carried *when* each happened and nothing said *which event* it was. `sequence` now carries the
+  key - one field on a list `findNearby` already builds and sorts - and the panel has two steps to the
+  events immediately before and after this one. The largest-neighbour rows became buttons in the same
+  pass: they had named the four events most worth looking at and left you to find them in a rail of sixty.
 
 - ~~**Holding an hour is pointer-only.**~~ **Closed on 2026-08-21.** The bars are real buttons now, so
   focus is the hold: one tab stop for the strip on a roving `tabIndex`, arrows walk the day, Escape lets

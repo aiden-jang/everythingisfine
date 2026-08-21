@@ -3,7 +3,7 @@ import type { Filters, Quake } from "../data/types";
 import type { RampName } from "../globe/ramp";
 import type { Store } from "../data/store";
 import { distanceKm } from "../geo/sphere";
-import { depthClass, findNearby, NEARBY_KM } from "./nearby";
+import { depthClass, findNearby, NEARBY_KM, stepsFrom } from "./nearby";
 import { antipodeOf, FRONT_ARCS, frontLengthKm } from "../geo/antipode";
 import { Sequence } from "./Sequence";
 import { sectionThrough, type SectionLine } from "./section";
@@ -54,6 +54,8 @@ export interface DetailPanelProps {
   onFarSide: (on: boolean) => void;
   /** Km to the nearest plate boundary, or null until the boundary file has loaded. */
   boundaryKm: number | null;
+  /** Pins another event. The panel is how you walk a swarm, so it needs to be able to move the pin. */
+  onSelect: (key: string) => void;
 }
 
 function Field({ label, value }: { label: string; value: string }): JSX.Element {
@@ -67,7 +69,7 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
 
 export function DetailPanel({
   open, quake, store, filters, ramp, excluded, revision, onClose, onFlyTo, onSection,
-  farSide, onFarSide, boundaryKm,
+  farSide, onFarSide, boundaryKm, onSelect,
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
   const r = quake.primary;
@@ -342,10 +344,19 @@ export function DetailPanel({
                 : ""}
               .
             </p>
+            {/*
+              The largest neighbours, and now a way to get to them.
+
+              They were listed and unreachable: the panel named the four events most worth looking at and
+              left you to find them in a rail of sixty. Pinning from here is the same gesture the rail's
+              own rows use.
+            */}
             {near.notable.map(({ quake: other, km }) => (
-              <div
+              <button
                 key={other.key}
-                className="flex items-baseline gap-2 py-1"
+                type="button"
+                onClick={() => onSelect(other.key)}
+                className="-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left transition-colors hover:bg-raised"
               >
                 <span className="w-[32px] shrink-0 font-mono text-[12px] text-ink">
                   {other.primary.magnitude.toFixed(1)}
@@ -356,9 +367,48 @@ export function DetailPanel({
                 <span className="shrink-0 font-mono text-[10.5px] text-faint">
                   {Math.round(km)} km
                 </span>
-              </div>
+              </button>
             ))}
             <Sequence nearby={near} magnitude={r.magnitude} ramp={ramp} />
+            {/*
+              Walking the sequence, which was the missing half of it.
+
+              The strip drew three hundred neighbours in time order and could not be stepped through: you
+              could read the shape of a swarm and not visit it. These two go to the events immediately
+              before and after this one, so a sequence can be followed the way it happened.
+
+              Labelled with the neighbour's magnitude rather than "previous" and "next", because the
+              useful question in a swarm is how big the next one was. Hidden entirely when this event
+              stands alone at either end, rather than shown disabled: a dead control is a question.
+            */}
+            {(() => {
+              const { earlier, later } = stepsFrom(near.sequence);
+              if (!earlier && !later) return null;
+              return (
+                <div className="mt-2.5 flex gap-2">
+                  {earlier ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelect(earlier.key)}
+                      aria-label={`Go to the previous event in this sequence, magnitude ${earlier.magnitude.toFixed(1)}`}
+                      className="flex-1 cursor-pointer border border-hairline px-2 py-1.5 font-mono text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
+                    >
+                      &larr; M{earlier.magnitude.toFixed(1)}
+                    </button>
+                  ) : null}
+                  {later ? (
+                    <button
+                      type="button"
+                      onClick={() => onSelect(later.key)}
+                      aria-label={`Go to the next event in this sequence, magnitude ${later.magnitude.toFixed(1)}`}
+                      className="flex-1 cursor-pointer border border-hairline px-2 py-1.5 font-mono text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
+                    >
+                      M{later.magnitude.toFixed(1)} &rarr;
+                    </button>
+                  ) : null}
+                </div>
+              );
+            })()}
           </>
         )}
       </div>
