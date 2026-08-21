@@ -19,7 +19,7 @@ import { createControls, type Controls } from "./controls";
 import { createEventLayer, type EventLayer } from "./events";
 import { createRingLayer, type RingLayer } from "./rings";
 import { auroraTexture, writeAurora } from "./auroraTexture";
-import { createMarkLayer, type Polyline } from "./marks";
+import { createMarkLayer, type Mark } from "./marks";
 import type { Aurora } from "../sources/aurora";
 
 /** Only the part of the store hit testing needs, so this file does not depend on the whole model. */
@@ -151,7 +151,9 @@ export interface Globe {
   /** Hands over an aurora grid, or null to draw no sky at all. */
   setAurora: (grid: Aurora | null) => void;
   /** Hands over every non-earthquake mark as polylines. An empty list draws nothing. */
-  setMarks: (shapes: readonly Polyline[]) => void;
+  setMarks: (marks: readonly Mark[]) => void;
+  /** The camera's zoom, so the glyphs hold their size on screen the way the markers do. */
+  setMarkZoom: (zoom: number) => void;
   setMorph: (t: number) => void;
   /** The entrance reveal: boundaries grow outward from the events rather than arriving with them. */
   plates: {
@@ -693,7 +695,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     events,
     rings,
-    setMarks: (shapes) => { marks.set(shapes); },
+    setMarks: (next) => { marks.set(next); },
+    setMarkZoom: (zoom) => { marks.setZoom(zoom); },
     setAurora: (grid) => {
       const material = night.material as ShaderMaterial;
       if (grid === null) {

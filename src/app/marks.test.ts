@@ -39,14 +39,16 @@ describe("what gets a shape", () => {
     const marks = marksFor({ ...nothing, floods: [flood()] });
     expect(marks).toHaveLength(3);
     // Spread, not pushed: a nested array would reach the layer as one shape of three points.
-    for (const m of marks) expect(m.length).toBeGreaterThan(4);
+    for (const m of marks) expect(m.points.length).toBeGreaterThan(4);
+    // All three on the same anchor, so they scale as one glyph and do not drift apart.
+    for (const m of marks) expect(m.anchor).toEqual({ lon: 100.6, lat: 18.7 });
   });
 
   it("puts the triangle on the mountain and the flame on the fire", () => {
     const [tri] = marksFor({ ...nothing, volcanoes: [mountain()] });
-    expect(Math.min(...tri!.map((p) => p.lat))).toBeCloseTo(37.7, 6);
+    expect(Math.min(...tri!.points.map((p) => p.lat))).toBeCloseTo(37.7, 6);
     const [lick] = marksFor({ ...nothing, fires: [fire()] });
-    expect(Math.min(...lick!.map((p) => p.lat))).toBeCloseTo(-12, 6);
+    expect(Math.min(...lick!.points.map((p) => p.lat))).toBeCloseTo(-12, 6);
   });
 
   it("draws every layer together rather than one winning", () => {
@@ -57,5 +59,14 @@ describe("what gets a shape", () => {
 
   it("is nothing when nothing is happening", () => {
     expect(marksFor(nothing)).toEqual([]);
+  });
+
+  it("anchors a glyph and leaves a track unanchored, which is what decides scaling", () => {
+    const marks = marksFor({ ...nothing, cyclones: [
+      storm({ track: [{ lon: 155, lat: 8 }, { lon: 148, lat: 14 }] }),
+    ] });
+    const [track, glyph] = marks;
+    expect(track!.anchor).toBeUndefined();
+    expect(glyph!.anchor).toEqual({ lon: 150, lat: 10 });
   });
 });

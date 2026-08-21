@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   compactSpan, corroborationNote, floodNote, reach, reachFraction, reachNote, reachWords,
-  wildfireNote,
+  theOf, wildfireNote,
 } from "./format";
 
 /*
@@ -231,5 +231,31 @@ describe("the flood sentence, which declines to rate anything", () => {
 
   it("says nothing when nothing is flooded", () => {
     expect(floodNote(0, 0)).toBeNull();
+  });
+});
+
+describe("the article a country name needs", () => {
+  it("leaves a proper-noun name alone", () => {
+    expect(theOf("Angola")).toBe("Angola");
+    expect(theOf("Brazil")).toBe("Brazil");
+    expect(theOf("Australia")).toBe("Australia");
+  });
+
+  it("gives one to a name headed by a common noun", () => {
+    expect(theOf("Russian Federation")).toBe("the Russian Federation");
+    expect(theOf("United States")).toBe("the United States");
+    expect(theOf("Philippines")).toBe("the Philippines");
+  });
+
+  it("does not double one GDACS already wrote", () => {
+    expect(theOf("The Democratic Republic of Congo")).toBe("The Democratic Republic of Congo");
+  });
+
+  it("reads the head of a composite name, not the whole of it", () => {
+    // A Republic appears in this one, and Zambia is what heads it.
+    expect(theOf("Zambia, The Democratic Republic of Congo"))
+      .toBe("Zambia, The Democratic Republic of Congo");
+    expect(theOf("The Democratic Republic of Congo, Angola"))
+      .toBe("The Democratic Republic of Congo, Angola");
   });
 });

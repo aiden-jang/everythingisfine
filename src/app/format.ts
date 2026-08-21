@@ -353,6 +353,26 @@ export function volcanoNote(count: number, newest: number | null, now: number): 
  * The duration is the fact this layer brings that no other mark here can: an earthquake is an instant and
  * a fire is a fortnight.
  */
+/*
+ * "Russian Federation alone has more than that" is missing a word, and which countries need it is not a
+ * judgement call: a name headed by a common noun takes the article and a proper-noun name does not.
+ * Angola, Brazil, Australia; the Russian Federation, the Philippines, the United States.
+ *
+ * GDACS already capitalises "The Democratic Republic of Congo", so the check for one is first.
+ */
+const COMMON_NOUN_HEADS = [
+  "federation", "republic", "kingdom", "states", "islands", "emirates",
+  "netherlands", "philippines", "gambia", "bahamas", "maldives", "comoros",
+];
+
+export function theOf(country: string): string {
+  // The head only. "Zambia, The Democratic Republic of Congo" is headed by Zambia and takes nothing,
+  // even though a Republic appears later in it.
+  const head = (country.split(",")[0] ?? "").trim().toLowerCase();
+  if (head.startsWith("the ")) return country;
+  return COMMON_NOUN_HEADS.some((w) => head.includes(w)) ? `the ${country}` : country;
+}
+
 export function wildfireNote(
   fire: { count: number; km2: number; medianDays: number | null; leader: string | null },
   cap: number,
@@ -362,7 +382,8 @@ export function wildfireNote(
     ? ""
     : `, burning ${fire.medianDays} day${fire.medianDays === 1 ? "" : "s"} at the median`;
   const floor = fire.count >= cap
-    ? ` The feed stops at ${cap} and ${fire.leader ?? "one country"} alone has more than that, so the `
+    ? ` The feed stops at ${cap} and ${fire.leader === null ? "one country" : theOf(fire.leader)} `
+      + `alone has more than that, so the `
       + `count is a floor: every mark is real, their number is not the world's.`
     : "";
   return `the flames are forest fires burning now, ${fire.count} of them, `

@@ -1,4 +1,5 @@
-import { flame, spiral, volcano, waves, type Point } from "../globe/shapes";
+import type { Mark } from "../globe/marks";
+import { flame, spiral, volcano, waves } from "../globe/shapes";
 import type { Cyclone } from "../sources/cyclones";
 import type { Flood } from "../sources/floods";
 import type { Volcano } from "../sources/volcanoes";
@@ -22,18 +23,22 @@ export interface Happening {
   floods: readonly Flood[];
 }
 
-export function marksFor(
-  { cyclones, volcanoes, fires, floods }: Happening,
-): readonly (readonly Point[])[] {
-  const out: (readonly Point[])[] = [];
-  // A cyclone is where it has been plus where it is; the others are a mark on one place.
+export function marksFor({ cyclones, volcanoes, fires, floods }: Happening): Mark[] {
+  const out: Mark[] = [];
   for (const storm of cyclones) {
-    if (storm.track.length > 1) out.push(storm.track);
-    out.push(spiral(storm.lon, storm.lat));
+    // The track carries no anchor: it is measured geography and scales with the coastline, not with the
+    // symbol standing on its head.
+    if (storm.track.length > 1) out.push({ points: storm.track });
+    out.push({ points: spiral(storm.lon, storm.lat), anchor: at(storm) });
   }
-  for (const v of volcanoes) out.push(volcano(v.lon, v.lat));
-  for (const f of fires) out.push(flame(f.lon, f.lat));
-  // Three strokes each, which is why this one spreads rather than pushes.
-  for (const f of floods) out.push(...waves(f.lon, f.lat));
+  for (const v of volcanoes) out.push({ points: volcano(v.lon, v.lat), anchor: at(v) });
+  for (const f of fires) out.push({ points: flame(f.lon, f.lat), anchor: at(f) });
+  // Three strokes each, all anchored on the same point so they scale as one glyph.
+  for (const f of floods) {
+    for (const row of waves(f.lon, f.lat)) out.push({ points: row, anchor: at(f) });
+  }
   return out;
 }
+
+const at = (p: { lon: number; lat: number }): { lon: number; lat: number } =>
+  ({ lon: p.lon, lat: p.lat });

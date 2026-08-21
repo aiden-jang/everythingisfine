@@ -3502,9 +3502,33 @@ passed unchanged, which is the only evidence that a refactor of a parser was saf
 triangles and a season of storm track lands near 5,100 segments against a buffer of 6,000. Raised to
 12,000: the failure mode of guessing low is marks silently missing from the far end of the list.
 
-**Unverified:** how five layers look together at framing distance. 100 flames, 19 flood glyphs, 23
-triangles, storm tracks and the aurora over the earthquake field is the densest this globe has ever been,
-and I have not looked at it.
+## Looking at it found the bug that measuring could not
+
+Five layers together, at the framing the app opens on, and four of them were invisible.
+
+The glyphs were sized in **degrees**, on the argument written into `shapes.ts` that they are things on the
+ground and should grow and shrink with the coastline. At the default zoom that makes a flame about five
+pixels of thin achromatic line, so the globe showed nothing while the legend beside it described a hundred
+fires, thirteen floods, sixteen volcanoes and four storms. Zoomed in to 3.2 they were obvious, which is why
+every check up to that point had passed - I had only ever looked at them close up.
+
+This is the same failure as the empty cyclone layer, arrived at from the other direction: not a handoff
+that never fired, but a size that was only ever right where I happened to be standing. And the app had
+already answered the question, in `events.ts`: markers hold a constant **pixel** size across zoom, because
+zooming a dense margin should separate marks rather than magnify them. A symbol standing for a fire belongs
+on that side of the line. The original reasoning is now recorded in `marks.ts` as falsified rather than
+quietly deleted.
+
+So a glyph scales as `REFERENCE_ZOOM / zoom`, clamped to [0.6, 6], rebuilt only when the factor moves more
+than 8% so a wheel gesture costs a few rebuilds rather than one per frame. A **cyclone track keeps scaling
+with the coastline**, because it is measured geography rather than a symbol - which is what `Mark.anchor`
+distinguishes: present means "this is a glyph, scale it about this point", absent means "this is a place,
+draw it as given". The anchor also keeps a flood's three strokes moving as one glyph instead of drifting
+apart, and latitude is clamped so six times a flame near the pole cannot be drawn past it.
+
+**Still unverified:** the legend is now five paragraphs and covers more of the globe's right side than it
+used to. That is a layout consequence of the layer count, not a bug, and the rail is resizable, but nobody
+has decided whether it is acceptable.
 
 ## Open, and honestly so
 
