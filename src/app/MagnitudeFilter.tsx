@@ -1,6 +1,8 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { PLAYBACK } from "../geo/waves";
-import { auroraNote, cycloneNote, floodNote, motionNote, volcanoNote, wildfireNote } from "./format";
+import {
+  auroraNote, cycloneNote, depthNote, floodNote, motionNote, volcanoNote, wildfireNote,
+} from "./format";
 import { category } from "../sources/cyclones";
 import { flame, spiral, volcano, waves } from "../globe/shapes";
 
@@ -40,6 +42,8 @@ export interface MagnitudeFilterProps {
    * Passed in rather than read here, so the legend never pulls the table into the eager bundle.
    */
   motion: { arrows: number; fastest: number; converging: number } | null;
+  /** How many events are in each depth band, so the row counts rather than promises. */
+  depth: { shallow: number; intermediate: number; deep: number; unknown: number; total: number };
   motionOn: boolean;
   onMotion: (on: boolean) => void;
   /** Whether the key below the scale is open. Held outside so it survives a reload. */
@@ -67,7 +71,7 @@ function path(points: readonly { lon: number; lat: number }[]): string {
 export function MagnitudeFilter(
   {
     ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince,
-    fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, motion, motionOn, onMotion,
+    fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, motion, motionOn, onMotion, depth,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -185,6 +189,20 @@ export function MagnitudeFilter(
         </span>
         <span>solid is shallow, hollow is deep</span>
       </div>
+
+      {/*
+        And how many of each are actually here.
+
+        The row above says what the hole means; this says whether there is anything to read. The
+        encoding's whole payoff is a subduction margin resolving into rings inland, and on a typical day
+        one event out of seventy-nine is deep enough to be a ring. A count is the honest version of that
+        promise. See `data/depth.ts`.
+      */}
+      {depthNote(depth) ? (
+        <div className="mt-1.5 pl-[23px] text-[11px] leading-relaxed text-faint">
+          {depthNote(depth)}
+        </div>
+      ) : null}
 
       {/*
         The plate boundaries need naming too. An unexplained line on a data visualisation is a

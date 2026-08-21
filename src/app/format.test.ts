@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   compactSpan, corroborationNote, floodNote, reach, reachFraction, reachNote, reachWords,
-  boundaryNote, farSideNote, motionNote, quietNote, theOf, wildfireNote,
+  boundaryNote, depthNote, farSideNote, motionNote, quietNote, theOf, wildfireNote,
 } from "./format";
 
 /*
@@ -348,5 +348,38 @@ describe("the negative-space sentence", () => {
 
   it("has nothing to say about an empty window", () => {
     expect(quietNote(0, 0, 100, 0.094)).toBeNull();
+  });
+});
+
+describe("the depth sentence, which counts instead of promising", () => {
+  it("says how many are in each band", () => {
+    const note = depthNote({ shallow: 70, intermediate: 8, deep: 1, unknown: 0, total: 79 })!;
+    expect(note).toContain("70 above 70 km");
+    expect(note).toContain("8 between 70 and 300");
+    expect(note).toContain("1 below 300");
+  });
+
+  it("always states the deep count, even when it is zero", () => {
+    /*
+     * The whole point of the row. The encoding's payoff is a margin resolving into rings, and on a
+     * typical day one event of seventy-nine is deep enough to be one, so "0 below 300" is the useful
+     * reading rather than an omission.
+     */
+    expect(depthNote({ shallow: 40, intermediate: 0, deep: 0, unknown: 0, total: 40 })!)
+      .toContain("0 below 300");
+  });
+
+  it("drops the intermediate clause when there are none, rather than printing a zero for it", () => {
+    const note = depthNote({ shallow: 40, intermediate: 0, deep: 2, unknown: 0, total: 42 })!;
+    expect(note).not.toContain("between 70 and 300");
+  });
+
+  it("reports a missing depth rather than folding it into shallow", () => {
+    expect(depthNote({ shallow: 4, intermediate: 0, deep: 0, unknown: 3, total: 7 })!)
+      .toContain("3 with no depth given");
+  });
+
+  it("says nothing for an empty window", () => {
+    expect(depthNote({ shallow: 0, intermediate: 0, deep: 0, unknown: 0, total: 0 })).toBeNull();
   });
 });

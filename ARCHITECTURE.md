@@ -3798,6 +3798,40 @@ it without restarting, a keydown ends it, a wheel ends it, and a press on the gl
 absent entirely on an empty window - confirmed by accident when a hot reload emptied the store - because a
 tour of a planet with nothing on it is exactly the motion the rule bans.
 
+## Two rulings, and the gap they turned up
+
+Items 5 and 18 both wanted the descending slab more visible. Both are refused, and neither refusal is a
+design opinion.
+
+**A depth ramp (18) was never a toggle.** The ramp track *is* the magnitude filter here - the slider runs
+along it, which is the one idea that made the legend and the control the same object - so repointing that
+ramp at depth puts a magnitude control on a depth scale. It is a rebuild of the signature control, not a
+mode. And it would spend hue on a reading the app already has: the marker hole is continuous in depth
+already, `hole = 0.30 * vDepth`, so a margin resolves from discs to rings without any colour.
+
+**Real depth (5) is erasure, not a trade.** 700km is 11% of the Earth's radius, so an event drawn at its
+true depth sits *inside* an opaque globe and does not appear. The spatial reading it wanted already exists
+in the cross-section, which is an actual depth section. I also measured the dip as a possible number
+instead, and refused that too: regressing depth on distance across a week of M2+ gives r-squared of 0.02 to
+0.12 and puts **Tonga at a negative dip** on 14 events - Tonga being one of the steepest slabs on Earth.
+A fitted figure from that is the same overreach `Sequence.tsx` refuses when it declines to fit an Omori
+exponent to a dozen arrivals.
+
+**What the measuring actually found was a claim in our own code.** `events.ts` said a diving plate "reads on
+the globe as solid dots at the trench giving way to rings inland ... that is the Wadati-Benioff zone." The
+encoding does that. A typical day does not supply it: in 24 hours of M2+, **1 event of 79 is below 300km**,
+one ring on the whole planet, with 8 more intermediate. Over seven days it is 14 of 704 and a margin starts
+to show. So the pattern is real at the right window and absent at the default one, and the comment promised
+it unconditionally.
+
+Fixed the way this app fixes that kind of thing: the comment now carries the counts, and the legend states
+them live - "70 above 70 km, 8 between 70 and 300, 0 below 300" - so a viewer knows whether there is a slab
+to look for instead of being told to expect one. Same move as the corroboration note, which replaced a
+claim about what a viewer would see with the number saying whether they could.
+
+The bands moved to `data/depth.ts` on the `geo/waves.ts` precedent: they are facts about earthquakes, the
+legend needs them, and the legend must not import a module that drags three.js into the first paint.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
