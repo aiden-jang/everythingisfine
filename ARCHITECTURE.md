@@ -3937,6 +3937,28 @@ rendered at 2x, and that was the whole of the effect.
 **Verified at 375x812:** one 375px column, no horizontal scroll, every button clearing 44px, key hints
 correctly absent, and all four panel actions plus every header control inside the viewport.
 
+## The tablet, where the header wrap turned out to have a price
+
+The mobile fix touched the 768px media block, so that breakpoint had to be checked too, and it showed what
+`flex-wrap` costs when the row is merely *tight* rather than overflowing. At 768x1024 the five controls
+wrapped into **four rows** - a 150px bar over a tablet's canvas - because the header's count strip was
+taking about 380px of it. Wrapping had stopped a button being unreachable and replaced it with a header
+three times too tall.
+
+Wrapping stays as the backstop, and the crowding is fixed at the source, following the header's own
+existing precedents rather than inventing one: the count strip now waits for `xl` instead of appearing from
+`sm`, and the ramp's long label waits for `lg` instead of `md`. The rail carries the same counts, so the
+strip is the half to drop - which is the call the wordmark ("FINE" on a phone) and the ramp label already
+made.
+
+**Verified across all three:** 768 is a single 50px header row with the rail's four columns intact; 1280
+keeps its 46px header *with* the counts and every control, ending 20px short of the edge; 375 is unchanged,
+since the strip was already hidden and the short ramp label already applied there.
+
+**The wider point, twice over now.** Both of the last two turns found layout faults, and neither was in a
+feature. `flex-wrap` is a fix for overflow and a disguise for crowding, and the difference only shows at a
+width nobody had opened.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

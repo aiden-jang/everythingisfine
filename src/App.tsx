@@ -1049,7 +1049,15 @@ export function App(): JSX.Element {
         </div>
         {/* Four zeros are four numbers that mean nothing. Same call as the headline: the status on
             the right already says what is happening while there is nothing to count. */}
-        <div className={`hidden items-baseline gap-5 ${snapshot.coveredSince === null ? "" : "sm:flex"}`}>
+        {/*
+          The counts wait for a wide screen now, not a small one.
+
+          They appeared from `sm` up, which was fine when the header held two controls. With Sound, Tour
+          and Still added they took ~380px of a 768px header and forced the control group to wrap into
+          **four rows**, a 150px-tall bar over a tablet's canvas. The rail carries the same counts, so
+          this is the half to drop - the same call the wordmark and the ramp label already make.
+        */}
+        <div className={`hidden items-baseline gap-5 ${snapshot.coveredSince === null ? "" : "xl:flex"}`}>
           {([
             ["USGS", `${snapshot.stats.readings.usgs}`],
             ["EMSC", `${snapshot.stats.readings.emsc}`],
@@ -1108,8 +1116,10 @@ export function App(): JSX.Element {
           >
             {/* The short label is not an abbreviation of the long one, it is the same words with
                 the ones a narrow screen cannot afford removed. */}
-            <span className="md:hidden">Ramp {ramp === "cividis" ? "CB" : "std"}</span>
-            <span className="hidden md:inline">
+            {/* Short form up to `lg`, not `md`: at 768 the long label is 140px of a header that now has
+                five controls in it. */}
+            <span className="lg:hidden">Ramp {ramp === "cividis" ? "CB" : "std"}</span>
+            <span className="hidden lg:inline">
               Colourblind ramp {ramp === "cividis" ? "on" : "off"}
             </span>
           </button>
