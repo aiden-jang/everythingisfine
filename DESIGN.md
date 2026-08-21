@@ -464,6 +464,23 @@ claim is "this is happening right now". A pulsing chrome element is motion that 
 the moment a viewer sees motion that means nothing, all the other motion becomes suspect. Idle
 chrome is what makes a moving arc read as real.
 
+**Ruling: the ban is on motion that means nothing, not on requested motion with a destination.**
+Written because the tour needed it and the working notes had paraphrased this rule as covering
+rotation "even when a person starts it", which is not what the two paragraphs above say. What section
+13 bans is *ambient* rotation, and the reason given here is meaning, not movement. A camera move is
+therefore allowed only where it clears the bar the rule already sets, and the tour clears it on five
+counts, every one of them a requirement rather than an argument:
+
+- It is asked for. Nothing moves until the viewer presses it.
+- Every stop is a real place with a live count, and **the rail names both while the camera is there**.
+  Take the words away and this is a screensaver, which is what the rule exists to prevent.
+- The stops come from live data, so a quiet margin is not on the route. There is no fixed slideshow.
+- It ends. Six stops, then stillness, like the entrance's two clauses.
+- **Any interaction kills it**, which is the entrance replay's own rule.
+
+`prefers-reduced-motion` needs no special case: `flyTo` is already instant under it, so the tour
+degrades by itself into cuts with dwells and no camera travel, which is the correct nothing.
+
 - Camera: orbit with damping and momentum, zoom toward the cursor rather than the screen centre,
   clamped so the globe cannot be entered or lost. Double-click returns to the framing shot.
 - **Every camera input goes through the spring.** The wheel used to assign zoom straight onto the

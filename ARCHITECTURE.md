@@ -3765,6 +3765,39 @@ earthquake, this one shares a framing, and the panel only exists while something
 token, 34% of the globe area differing from it - so the drawing-buffer hazard is genuinely handled and not
 merely avoided in theory. Caption read back as "Live - 2026-08-21 04:09 UTC" and "M2.0+ - last 24h".
 
+## The tour, and reading the rule instead of the paraphrase
+
+Item 19 was gated behind a DESIGN.md ruling, and the working notes described the obstacle as a ban on
+rotation "even when a person starts it". Going and reading the rule showed that is not what it says.
+Section 13 bans "**Ambient** globe rotation", and section 8 gives the reason: a pulsing element is "motion
+that means nothing, and the moment a viewer sees motion that means nothing, all the other motion becomes
+suspect."
+
+**The bar is meaning, not movement.** So the ruling was not an exemption from the rule, it was applying the
+test the rule already states - and it turned into five requirements the tour has to meet: it is asked for;
+every stop is a real place whose name and live count the rail shows **while the camera is there**; the
+stops come from live counts so a quiet margin is not on the route; it ends after six; and any interaction
+kills it. Strip the narration and this becomes the screensaver the rule exists to prevent, which is why
+the label is not decoration. The ruling is now written into DESIGN.md next to the rule, so the next person
+does not have to re-derive it.
+
+**No authored stops were needed.** `REGIONS` already exists for the rail to fly to, and the order comes
+from live counts, so the route is wherever today's earthquakes actually are, busiest first. Ties break on
+name so the route does not reshuffle between renders. `prefers-reduced-motion` needed no special case at
+all: `flyTo` is already instant under it, so the tour degrades into cuts with dwells and no travel.
+
+**A race in the Stop button, found by reasoning and then reproduced.** The end-on-interaction listener
+catches `pointerdown` anywhere, so pressing Stop with a mouse fired pointerdown - ending the tour - and
+then the click handler read whichever `tourAt` React had committed by that instant. Stale stops it; fresh
+restarts it. It landed on "stopped" every time it was tried, which is the worst way for a race to behave.
+The listener now ignores events inside the tour's own button, which is also the more honest rule: operating
+the tour is not reaching for the globe.
+
+**Verified in the browser**, all four paths: a full mouse press starts it, a full mouse press on Stop stops
+it without restarting, a keydown ends it, a wheel ends it, and a press on the globe ends it. The button is
+absent entirely on an empty window - confirmed by accident when a hot reload emptied the store - because a
+tour of a planet with nothing on it is exactly the motion the rule bans.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
