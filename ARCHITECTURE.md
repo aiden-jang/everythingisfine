@@ -3959,6 +3959,34 @@ since the strip was already hidden and the short ramp label already applied ther
 feature. `flex-wrap` is a fix for overflow and a disguise for crowding, and the difference only shows at a
 width nobody had opened.
 
+## The contract was already written, and asleep
+
+Three layout faults in three turns, all found by hand, so the next question was whether they should have
+been caught. `e2e/design.spec.ts` already sweeps four breakpoints - 375, 768, 1024x768 landscape and 1280 -
+asserting at each that the page does not scroll and that nothing overflows sideways. Reading it changed what
+this turn was about.
+
+**The 375px grid blowout was inside that contract.** The sideways test takes the maximum `right` of every
+element and requires it to be within one pixel of the window; at 375 that maximum was **381**. It would have
+failed. It did not fail because the suite is skipped, so the check has been dormant while the exact class of
+bug it covers shipped three times. An encoded contract that never runs is not a contract, and that is a
+call for the repo's owner rather than something to route around.
+
+**The legend regression was outside it, and that is a real hole.** The slider sat at **-104px**, above the
+top of the window. Nothing scrolled and nothing overflowed sideways, so both existing tests passed
+truthfully. Neither of them asks whether a control is *reachable*.
+
+So the invariant is now written down: at each breakpoint, every button, link, summary and input must have
+its box inside the viewport - **or** have a scrolling ancestor, because the rail below 768px is deliberately
+a sheet whose lower half is off screen and that is not the same fault at all. That distinction is the whole
+reason the check could not be a naive bounds test.
+
+**Hand-verified at five shapes**, since the spec stays unrun: 375x812, 768x1024, 1024x768, 1279x700 with the
+legend key open, and 1280x720 - zero unreachable controls at every one, and the widest-element check inside
+the window at every one. Panel-open was verified at 375 in the previous turn (four actions, two lines, all
+inside); **at 768 and above, panel-open is unverified**, because the dev feed stopped delivering events on
+that tab and a check with no panel on screen proves nothing about the panel.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

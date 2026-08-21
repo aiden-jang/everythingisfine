@@ -160,6 +160,56 @@ for (const bp of BREAKPOINTS) {
     expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.inner);
     expect(overflow.widest).toBeLessThanOrEqual(overflow.inner + 1);
   });
+
+  test(`every control is reachable at ${bp.name}`, async ({ page }) => {
+    /*
+     * The invariant the other two tests in this file do not ask.
+     *
+     * "Nothing overflows sideways" catches a box past the right edge, and "the page does not scroll"
+     * catches a document taller than the window. Neither catches a control sitting *above* the top of
+     * the viewport with nothing scrollable around it, which is how the legend broke: seven added rows
+     * pushed the panel to 845px inside a 720px window, the bottom band's top went to -157, and the
+     * magnitude slider - the app's primary control - sat 104px off the top of the screen. Nothing
+     * scrolled, nothing overflowed sideways, and both tests passed.
+     *
+     * A control is reachable if its box is inside the viewport **or** some ancestor scrolls, because
+     * the rail below 768px is deliberately a sheet you scroll: its lower half is off screen by design
+     * and that is not the same fault at all.
+     */
+    await page.setViewportSize({ width: bp.width, height: bp.height });
+    await installFeeds(page);
+    await page.goto("/");
+    await waitForData(page);
+    // Long enough for the entrance to settle, or the band is measured mid-animation.
+    await page.waitForTimeout(1_000);
+
+    const unreachable = await page.evaluate(() => {
+      const scrollable = (el: Element): boolean => {
+        for (let node: Element | null = el; node; node = node.parentElement) {
+          const overflow = getComputedStyle(node).overflowY;
+          if ((overflow === "auto" || overflow === "scroll")
+            && node.scrollHeight > node.clientHeight + 1) return true;
+        }
+        return false;
+      };
+      const bad: { tag: string; text: string; top: number; bottom: number }[] = [];
+      for (const el of Array.from(
+        document.querySelectorAll("button, a[href], summary, input:not([type=hidden])"),
+      )) {
+        const box = el.getBoundingClientRect();
+        if (box.height === 0 || box.width === 0) continue;
+        const inside = box.top >= -1 && box.bottom <= window.innerHeight + 1
+          && box.left >= -1 && box.right <= window.innerWidth + 1;
+        if (inside || scrollable(el)) continue;
+        bad.push({
+          tag: `${el.tagName.toLowerCase()} "${(el.textContent ?? "").trim().slice(0, 24)}"`,
+          text: el.id, top: Math.round(box.top), bottom: Math.round(box.bottom),
+        });
+      }
+      return bad;
+    });
+    expect(unreachable).toEqual([]);
+  });
 }
 
 test("every control clears 44px where there is a finger", async ({ browser }) => {
