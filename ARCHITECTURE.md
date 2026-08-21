@@ -4228,6 +4228,25 @@ windows having already made it rare.
 wrong place to find out that the project's central decision has changed. It has twelve now, and the
 measurements are written into them rather than into a comment beside them.
 
+## The gate that skipped itself, and the summary line that said so
+
+Every unit run this session reported `670 passed | 1 skipped`, and I read that skip as noise for a dozen
+turns. It is the heap test - `it.skipIf(!globalThis.gc)` - and it only runs when node is started with
+`--expose-gc`, which `pnpm test` does not do and `pnpm test:heap` does.
+
+CI was already right: it runs `pnpm test:heap`. **`pnpm check` was not.** It ran `typecheck && test && build`,
+so the one command a person runs before pushing reported success while the gate that guards against the app
+leaking over a long session sat out. Local and CI disagreed about what "all tests" meant, and the local one
+was the weaker of the two - which is the wrong way round for a pre-push check. `check` now runs `test:heap`,
+which costs about six seconds and makes the two agree.
+
+Run, because a gate nobody has run is a gate with an unknown answer: **four hours of synthetic ingest grew
+1.40MB** against a 5MB ceiling. Comfortable, and worth having the number rather than the pass.
+
+The test itself was already built to be honest about this - its own comment explains that `skipIf` was
+chosen over an early return precisely so a run that did not measure says so in the summary instead of
+reporting green. It worked exactly as designed. The failure was mine, in reading the line it prints.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
