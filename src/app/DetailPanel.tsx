@@ -385,7 +385,13 @@ export function DetailPanel({
         </p>
       ) : null}
 
-      <div className="mt-5 flex gap-2 pb-1">
+      {/*
+        Wraps, because this row gained a fourth button.
+        Fly here, Slice here and Copy link fit a phone at `nowrap`; adding Far side pushed the last two
+        past the right edge, where a clipped button is an action that does not exist. Wrapping costs a
+        second line on a narrow panel and nothing at all on a wide one.
+      */}
+      <div className="mt-5 flex flex-wrap gap-2 pb-1">
         <button
           type="button"
           onClick={() => onFlyTo(r.lon, r.lat, 2.2)}

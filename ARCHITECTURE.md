@@ -3905,6 +3905,38 @@ the key toggle all inside the viewport, with no horizontal scroll.
 globe, which is where the layers are. The legend was verified by reading its sentences, which is not the
 same as measuring the box they are in.
 
+## A phone, which nothing this session had been checked on
+
+Everything built today was verified at desktop width. DESIGN.md 11 has a mobile contract - single column,
+globe on the top 60dvh, 44px touch targets, and horizontal scroll at any width declared a build failure -
+and none of the session's new controls had been measured against it. Emulated at 375x812 with a coarse
+pointer, three things came out, and two of them were mine.
+
+**The grid invented columns.** `.zone-panel` names a `panel` area that only exists at 1280px and up, and
+below that a grid item naming a missing area is auto-placed. The base `.zones` rule declared rows and areas
+but **no columns**, so the browser made them: at 375px the grid measured **218 + 0 + 219 = 437px**. Opening
+an event on a phone pushed the panel, the rail's headline and the header's last button off the right of the
+screen. One declared column fixes it, and the panel stacks into an implicit row underneath instead - which
+is what "single column" already promised. Pre-existing, and today's work made it visible by giving people
+more reasons to open the panel.
+
+**The header outgrew the phone, and that is mine.** It held Map and the ramp toggle; Sound, Tour and Still
+joined it this session, and at 375px the last was clipped rather than scrolling into reach. It now wraps,
+which costs a second header row on a phone and is the cheaper loss than a control nobody can press.
+
+**The panel's action row, also mine.** Fly here, Slice here and Copy link fit at `nowrap`; adding Far side
+pushed the last two past the right edge, where a clipped button is an action that does not exist. It wraps
+now, to two lines on a phone and one everywhere else.
+
+**Two non-bugs, both nearly "fixed".** The wordmark reads "FINE" on a phone, which looked like truncation
+and is a deliberate `md:hidden` pair written during the rename. And the glyphs looked oversized against a
+small globe, which would have been the viewport mistake `events.ts` documents for markers - measured
+instead: a flame is 19.5px on a 382px globe, **5.1%**, against 4.4% on desktop. The mobile screenshot is
+rendered at 2x, and that was the whole of the effect.
+
+**Verified at 375x812:** one 375px column, no horizontal scroll, every button clearing 44px, key hints
+correctly absent, and all four panel actions plus every header control inside the viewport.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
