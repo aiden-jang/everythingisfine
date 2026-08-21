@@ -23,6 +23,25 @@ interface Camera { lon: number; lat: number; zoom: number; morph: number }
  * value easing toward a target that a test must not read halfway through. It keeps one helper honest for
  * both, since a screenshot taken mid-unwrap is neither a globe nor a map.
  */
+/**
+ * Whether this run is against `dist` rather than the dev server.
+ *
+ * A handful of tests reach for `window.__globe` and `window.__feed`, which `Globe.tsx` exposes only under
+ * `import.meta.env.DEV`. That is the right call - a production bundle should not carry a debug surface -
+ * and it means those tests cannot run against a build *by construction*, not because anything is broken.
+ * Running the whole suite with `EIF_BUILD=1` before this existed failed seven tests with
+ * `Cannot read properties of undefined (reading 'store')`, which reads like a bug and is a contract.
+ *
+ * Skipped rather than silently passed, for the reason the heap test gives for `skipIf` over an early
+ * return: a run that did not check something should say so in the summary.
+ */
+const AGAINST_BUILD = process.env["EIF_BUILD"] === "1";
+
+/** Call at the top of a test that needs the DEV-only hooks. */
+function needsDevHooks(): void {
+  test.skip(AGAINST_BUILD, "reads window.__globe / __feed, which a production build does not expose");
+}
+
 const cameraNow = (page: Page): Promise<Camera> => page.evaluate(() => {
   const globe = (window as unknown as {
     __globe: { state: () => Omit<Camera, "morph">; morph: () => number };
@@ -77,6 +96,7 @@ test("the first frame is already live", async ({ page }) => {
 });
 
 test("a pinned selection survives a data refresh", async ({ page }) => {
+  needsDevHooks();
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
@@ -172,6 +192,7 @@ test("the globe is operable with the canvas hidden", async ({ page }) => {
  * which is the worst possible outcome, so the emulation is asserted before anything else is.
  */
 test("with reduced motion, there is no entrance and flying is instant", async ({ browser }) => {
+  needsDevHooks();
   const context = await browser.newContext({ reducedMotion: "reduce" });
   const page = await context.newPage();
   try {
@@ -216,6 +237,7 @@ test("with reduced motion, there is no entrance and flying is instant", async ({
  * The spring is now sliced, so the destination is exact whatever the frame rate.
  */
 test("the entrance settles exactly on the framing shot", async ({ page }) => {
+  needsDevHooks();
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
@@ -541,6 +563,7 @@ test("the sequence says whether the big one has already happened", async ({ page
 });
 
 test("notches compound off where the camera is heading", async ({ page }) => {
+  needsDevHooks();
   /*
    * Wheel zoom used to assign `zoom` straight onto the camera: one notch moved 14% in a single frame
    * while every `flyTo` in the app went through a spring. It now sets a target instead.
@@ -645,6 +668,7 @@ test.describe("on a touch screen", () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
 
   test("one finger orbits and two fingers zoom the globe", async ({ page }) => {
+    needsDevHooks();
     /*
      * Touch had no coverage at all. The drag worked; the pinch was zooming the *document*, because
      * the canvas was `touch-action: auto` and the browser claims a two-finger gesture before the
@@ -783,6 +807,7 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
 });
 
 test("the globe unwraps into a map and back", async ({ page }) => {
+  needsDevHooks();
   /*
    * Double the budget, because this test costs about a full one.
    *
@@ -1015,6 +1040,7 @@ test("a line dragged across the map opens a section through it", async ({ page }
  * recipient whose own preference disagrees with the link.
  */
 test("a link carrying a section opens on the map with the line drawn", async ({ browser }) => {
+  needsDevHooks();
   const context = await browser.newContext({ viewport: { width: 1600, height: 900 } });
   const page = await context.newPage();
   try {

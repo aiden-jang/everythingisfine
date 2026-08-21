@@ -4247,6 +4247,29 @@ The test itself was already built to be honest about this - its own comment expl
 chosen over an early return precisely so a run that did not measure says so in the summary instead of
 reporting green. It worked exactly as designed. The failure was mine, in reading the line it prints.
 
+## Both suites, end to end, and what the build mode was actually for
+
+The session had changed the reconciliation core, the activity strip, the detail panel, `nearby` and a good
+deal of test infrastructure, each verified on its own and never together. Together, on a quiet machine:
+**62 passed, nothing failed, nothing flaky, 7.7 minutes** - about half the 14.7 minutes the same suite took
+before the blind waits came out of it.
+
+Then the same suite against `dist`, which had never been done, and it earned its keep immediately: **seven
+failures that do not happen in dev**. Not a bundler fault, which is what I was watching for - the opposite.
+Those tests read `window.__globe` and `window.__feed`, and `Globe.tsx` exposes them only under
+`import.meta.env.DEV`. A production bundle should not carry a debug surface, so those tests cannot run
+against a build *by construction*.
+
+`Cannot read properties of undefined (reading 'store')` is what a contract looks like when nothing states
+it. It states it now: `needsDevHooks()` skips those seven in build mode and the summary says **55 passed,
+7 skipped**. That is the same principle the heap test argues for in its own comment, arrived at from the
+other direction - a run that did not check something has to say so, or it is indistinguishable from a run
+that checked and was happy.
+
+So the two commands mean different things on purpose, and both are honest about which: `pnpm test:e2e`
+covers 62 including the instrumented ones, `pnpm test:e2e:build` covers the 55 that a shipped bundle can
+answer for.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -4269,6 +4292,13 @@ Written last, and kept accurate rather than kept short.
   `reuseExistingServer` is **off** in build mode deliberately: with it on, a dev server left on the port
   gets silently reused and the run tests dev while reporting that it tested the build, which is worse than
   not running it at all.
+
+  **Seven tests cannot run against a build, and now say so.** They read `window.__globe` and
+  `window.__feed`, which `Globe.tsx` exposes only under `import.meta.env.DEV` - correctly, since a
+  production bundle should not carry a debug surface. Against `dist` they failed with
+  `Cannot read properties of undefined (reading 'store')`, which reads like a bug and is a contract.
+  `needsDevHooks()` skips them in build mode, so the summary reads **55 passed, 7 skipped** rather than
+  green-with-a-hole or red-for-the-wrong-reason. Full suite in dev: **62 passed**.
 
 - ~~**Both gates are sensitive to a loaded machine, and neither says so when it fails.**~~ **Closed on
   2026-08-21, and it had been half-closed for a while without this entry noticing.** The perf side took
