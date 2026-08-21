@@ -14,6 +14,7 @@ import { marksFor } from "./app/marks";
 import { depthBands } from "./data/depth";
 import { drawStill, stillMoment, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
+import { createSiren, type Siren } from "./app/sound";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
 import {
   loadBoundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE, type Segment,
@@ -362,6 +363,32 @@ export function App(): JSX.Element {
     boundaryCache.current.set(quake.key, km);
     return km;
   }, [segments]);
+  /*
+   * Sound, off until asked for.
+   *
+   * The context is built on the press that enables it and not before: an `AudioContext` created without a
+   * user gesture starts suspended, and every later tone is dropped silently - the toggle reads on and
+   * nothing is ever heard. Closed again when switched off rather than left running, since a suspended
+   * context is still a device handle.
+   */
+  const [sound, setSound] = useState(false);
+  const siren = useRef<Siren | null>(null);
+  useEffect(() => {
+    if (!sound) {
+      siren.current?.close();
+      siren.current = null;
+      return undefined;
+    }
+    try { siren.current = createSiren(); } catch { siren.current = null; }
+    return () => { siren.current?.close(); siren.current = null; };
+  }, [sound]);
+  /*
+   * Follows the live region's own definition of news, so a cold load can never be audible: sixty seeded
+   * events are all unseen and none of them just happened. See `announce.ts`.
+   */
+  const onNews = useCallback((magnitudes: number[]) => {
+    siren.current?.play(magnitudes);
+  }, []);
   const [motionData, setMotionData] = useState<readonly MotionSample[]>([]);
   useEffect(() => {
     if (!motionOn || motionData.length > 0) return;
@@ -970,6 +997,7 @@ export function App(): JSX.Element {
                 onKeyOpen={setKeyOpen}
                 motion={motion}
                 depth={depth}
+                sound={sound ? announceAbove : null}
                 motionOn={motionOn}
                 onMotion={setMotionOn}
               />
@@ -1076,6 +1104,20 @@ export function App(): JSX.Element {
             earthquake and this one shares a framing, and the panel is only open when something is
             pinned. A view-level action belongs in the view-level strip.
           */}
+          {/*
+            Sound. No slider of its own: it follows the announce threshold, because "tell me about events
+            above this" is one idea and the rail already has the control for it. See DESIGN.md 12b.
+          */}
+          <button
+            type="button"
+            onClick={() => setSound((on) => !on)}
+            aria-pressed={sound}
+            className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
+              sound ? "bg-raised text-ink" : "text-faint"
+            }`}
+          >
+            {sound ? "Sound on" : "Sound off"}
+          </button>
           {/*
             Offered only when there is somewhere to go. With an empty window the tour would be a camera
             flying around a planet with nothing on it, which is exactly the motion-that-means-nothing the
@@ -1562,6 +1604,7 @@ export function App(): JSX.Element {
             onSelect={setSelected}
             announceAbove={announceAbove}
             onAnnounceAboveChange={setAnnounceAbove}
+            onNews={onNews}
             waiting={snapshot.coveredSince === null}
           />
 

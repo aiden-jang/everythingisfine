@@ -664,6 +664,36 @@ every source past the second. The app is the landing page.
 
 ---
 
+## 12b. Sound
+
+Written before any audio existed, because this document said nothing about it and a feature built into
+that silence would have set the rule by accident.
+
+**Sound is an event channel, never an ambience.** The same test section 8 applies to motion applies here
+and harder: a tone that means nothing makes every other tone suspect, and audio cannot be looked away
+from. So there is no drone, no ambient bed, no interface feedback on hover or click, and nothing at all
+happens on a quiet globe. One earthquake arriving is one sound.
+
+**It follows `newsIn`, not the store.** A cold load admits sixty events at once and none of them just
+happened; the live region already learned that the hard way and decides news by the clock. Sound reuses
+that exact predicate rather than a new one, so a seed can never be audible. It also reuses the announce
+threshold instead of adding a second slider: "tell me about events above this" is one idea.
+
+**Off by default, and it must be.** Autoplay policy requires a gesture, which happens to agree with the
+right design. It is silent until asked, one press to stop, and it never carries information the marker and
+the list do not already carry, so nothing is lost by leaving it off. Silent while the tab is hidden: a
+background tab making noise is a bug in any app.
+
+**The transposition is stated, like the wavefront multiplier.** Real ground motion is below hearing - under
+about 10 Hz - so any audible rendering is a transposition and not a recording, exactly as the wavefronts
+are sped up x20 and say so. The mapping is derived rather than composed: **lower pitch for larger**, which
+is the direction real ruptures go as their corner frequency drops, and longer, because bigger ruptures last
+longer. Loudness is the one thing that cannot be honest - three points of magnitude is thirty thousand
+times the energy and no speaker can say that - so gain is compressed and the legend admits it.
+
+**Banned in audio:** a drone or ambient pad, click and hover feedback, a sound on any interface action, a
+looping bed under the globe, and any tone presented as what an earthquake sounds like.
+
 ## 13. Banned
 
 - Ambient globe rotation, and perpetual loops on any chrome element.

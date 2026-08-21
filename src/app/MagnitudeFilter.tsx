@@ -1,7 +1,7 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { PLAYBACK } from "../geo/waves";
 import {
-  auroraNote, cycloneNote, depthNote, floodNote, motionNote, volcanoNote, wildfireNote,
+  auroraNote, cycloneNote, depthNote, floodNote, motionNote, soundNote, volcanoNote, wildfireNote,
 } from "./format";
 import { category } from "../sources/cyclones";
 import { flame, spiral, volcano, waves } from "../globe/shapes";
@@ -42,6 +42,8 @@ export interface MagnitudeFilterProps {
    * Passed in rather than read here, so the legend never pulls the table into the eager bundle.
    */
   motion: { arrows: number; fastest: number; converging: number } | null;
+  /** The announce threshold the sound follows, or null when sound is off. */
+  sound: number | null;
   /** How many events are in each depth band, so the row counts rather than promises. */
   depth: { shallow: number; intermediate: number; deep: number; unknown: number; total: number };
   motionOn: boolean;
@@ -71,7 +73,7 @@ function path(points: readonly { lon: number; lat: number }[]): string {
 export function MagnitudeFilter(
   {
     ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince,
-    fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, motion, motionOn, onMotion, depth,
+    fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, motion, motionOn, onMotion, depth, sound,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -307,6 +309,23 @@ export function MagnitudeFilter(
             ))}
           </svg>
           <span>{floodNote(floods, floodCountries)}</span>
+        </div>
+      ) : null}
+
+      {/*
+        The sound, only while it is on, and it leads with what it is not.
+
+        A tone presented as what an earthquake sounds like would be the one outright falsehood in this
+        app - real ground motion is below hearing - so the sentence says so before it says anything else.
+        See DESIGN.md 12b.
+      */}
+      {sound !== null ? (
+        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+          <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+            <path d="M -8 0 L -3 0 L 2 -7 L 2 7 L -3 0 M 5 -4 Q 8 0 5 4" fill="none"
+              stroke="currentColor" strokeWidth={1.5} className="text-dim" />
+          </svg>
+          <span>{soundNote(sound)}</span>
         </div>
       ) : null}
 

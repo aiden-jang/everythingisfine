@@ -21,6 +21,14 @@ export interface EventListProps {
   onSelect: (key: string | null) => void;
   /** Events at or above this magnitude are announced. Below it, they arrive silently. */
   announceAbove: number;
+  /**
+   * The events that genuinely just arrived, for anything else that wants them.
+   *
+   * Handed out from here rather than recomputed elsewhere, because `newsIn` is the one place that knows
+   * an event being new to a list is not the same as it being new, and a second implementation of that
+   * would be a second chance to announce a whole cold-load backlog.
+   */
+  onNews?: (magnitudes: number[]) => void;
   onAnnounceAboveChange: (value: number) => void;
   /** True before any feed has delivered, so an empty list is not blamed on the filters. */
   waiting: boolean;
@@ -42,7 +50,7 @@ function sentence(quake: Quake, now: number): string {
 }
 
 export function EventList({
-  quakes, selected, onSelect, announceAbove, onAnnounceAboveChange, waiting,
+  quakes, selected, onSelect, announceAbove, onAnnounceAboveChange, onNews, waiting,
 }: EventListProps): JSX.Element {
   const [cursor, setCursor] = useState(0);
   /*
@@ -74,6 +82,7 @@ export function EventList({
     for (const q of quakes) announced.current.add(q.key);
     if (announced.current.size > 4000) announced.current = new Set(quakes.map((q) => q.key));
     if (fresh.length === 0) return;
+    onNews?.(fresh.map((q) => q.primary.magnitude));
     const now = Date.now();
     setAnnouncement(
       fresh.length === 1
@@ -81,7 +90,7 @@ export function EventList({
         : `${fresh.length} new earthquakes above magnitude ${announceAbove.toFixed(1)}. Largest: `
           + sentence([...fresh].sort((a, b) => b.primary.magnitude - a.primary.magnitude)[0]!, now),
     );
-  }, [quakes, announceAbove]);
+  }, [quakes, announceAbove, onNews]);
 
   const focusAt = (index: number): void => {
     const next = Math.max(0, Math.min(quakes.length - 1, index));

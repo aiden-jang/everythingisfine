@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   compactSpan, corroborationNote, floodNote, reach, reachFraction, reachNote, reachWords,
-  boundaryNote, depthNote, farSideNote, motionNote, quietNote, theOf, wildfireNote,
+  boundaryNote, depthNote, farSideNote, motionNote, quietNote, soundNote, theOf,
+  wildfireNote,
 } from "./format";
 
 /*
@@ -381,5 +382,32 @@ describe("the depth sentence, which counts instead of promising", () => {
 
   it("says nothing for an empty window", () => {
     expect(depthNote({ shallow: 0, intermediate: 0, deep: 0, unknown: 0, total: 0 })).toBeNull();
+  });
+});
+
+describe("the sound sentence", () => {
+  it("says it is not a recording, before anything else about it", () => {
+    /*
+     * The one outright falsehood this app could tell. Ground motion is below hearing, so a tone offered
+     * as the sound of an earthquake would be invention presented as data.
+     */
+    const note = soundNote(4.5);
+    expect(note).toContain("not a recording");
+    expect(note).toContain("below hearing");
+  });
+
+  it("admits that loudness is not energy", () => {
+    expect(soundNote(4.5)).toContain("loudness is not energy");
+    expect(soundNote(4.5)).toContain("thirty thousand times");
+  });
+
+  it("gives the pitch direction its reason, since it is derived and not chosen", () => {
+    expect(soundNote(4.5)).toContain("lower for bigger");
+    expect(soundNote(4.5)).toContain("direction a real rupture goes");
+  });
+
+  it("names the threshold it follows, which is the announce one", () => {
+    expect(soundNote(4.5)).toContain("above M4.5");
+    expect(soundNote(2)).toContain("above M2.0");
   });
 });
