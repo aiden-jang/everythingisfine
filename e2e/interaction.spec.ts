@@ -16,6 +16,53 @@ async function waitForData(page: Page): Promise<number> {
   return Number((await counter.innerText()).replace(/,/g, ""));
 }
 
+interface Camera { lon: number; lat: number; zoom: number; morph: number }
+
+/*
+ * `morph` is sampled alongside the camera because the projection unwrap is the same kind of thing: a
+ * value easing toward a target that a test must not read halfway through. It keeps one helper honest for
+ * both, since a screenshot taken mid-unwrap is neither a globe nor a map.
+ */
+const cameraNow = (page: Page): Promise<Camera> => page.evaluate(() => {
+  const globe = (window as unknown as {
+    __globe: { state: () => Omit<Camera, "morph">; morph: () => number };
+  }).__globe;
+  return { ...globe.state(), morph: globe.morph() };
+});
+
+/**
+ * Waits for the camera to stop moving, and returns where it stopped.
+ *
+ * Every camera assertion used to be written as "is it at the target yet, within N seconds", which asks
+ * two questions at once and answers neither when it fails. The entrance spring is the clearest case: its
+ * poll allowed ten seconds, and on a machine busy with other workers the run failed with
+ * `Timeout 10000ms exceeded while waiting on the predicate` and `Received: false` - no indication of
+ * whether the camera was still travelling, had stopped somewhere wrong, or had never started.
+ *
+ * So the two questions are separated. This one waits for **motion to stop**, however long the machine
+ * takes about it, by sampling until two consecutive readings agree. Then the test asserts where it came
+ * to rest, which is the actual claim. A slow machine now makes the suite slower instead of red, and a
+ * camera that settles in the wrong place fails with the position it settled at.
+ */
+async function cameraStill(page: Page): Promise<Camera> {
+  let last: Camera | null = null;
+  await expect.poll(async () => {
+    const now = await cameraNow(page);
+    const previous = last;
+    last = now;
+    if (previous === null) return Number.POSITIVE_INFINITY;
+    return Math.max(
+      Math.abs(now.lon - previous.lon),
+      Math.abs(now.lat - previous.lat),
+      Math.abs(now.zoom - previous.zoom),
+      Math.abs(now.morph - previous.morph),
+    );
+    // Generous on purpose: the ceiling is here to catch a spring that never settles, not to time a
+    // machine. Reported as a movement-per-sample so a failure says how fast it was still going.
+  }, { timeout: 60_000, intervals: [250] }).toBeLessThan(1e-4);
+  return last!;
+}
+
 test("the first frame is already live", async ({ page }) => {
   await installFeeds(page);
   await page.goto("/");
@@ -173,12 +220,10 @@ test("the entrance settles exactly on the framing shot", async ({ page }) => {
   await page.goto("/");
   await waitForData(page);
 
-  const lon = (): Promise<number> => page.evaluate(
-    () => (window as unknown as { __globe: { state: () => { lon: number } } }).__globe.state().lon,
-  );
-  await expect.poll(async () => Math.abs((await lon()) - 145) < 0.001, {
-    timeout: 10_000,
-  }).toBe(true);
+  // Wait for the spring to stop, then assert where it stopped. Those are two different claims and
+  // only the second one is what this test is about.
+  const resting = await cameraStill(page);
+  expect(resting.lon).toBeCloseTo(145, 3);
 });
 
 /*
@@ -189,6 +234,12 @@ test("the entrance settles exactly on the framing shot", async ({ page }) => {
  * asserts the link names the event the way the agency does, and that a fresh page finds it again.
  */
 test("a shared link restores the view on a fresh page", async ({ page }) => {
+  /*
+   * Twice the budget, because this test does twice the work: it opens a second page with its own
+   * fixtures and its own WebGL globe. It exhausted the default 45s on a machine already running another
+   * worker, which is the test's own cost rather than a claim about the app.
+   */
+  test.setTimeout(90_000);
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
@@ -448,12 +499,16 @@ test("notches compound off where the camera is heading", async ({ page }) => {
   await installFeeds(page, { silent: true });
   await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
   await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
-  await page.waitForTimeout(2_000);
+  // The entrance has to finish before the wheel means anything: a notch delivered mid-flight is added
+  // to a camera that is still moving, and the resting zoom is then whatever the two happened to sum to.
+  // This replaces a flat two-second wait, which was the same assumption with no way to be sure of it.
+  await cameraStill(page);
 
   await page.mouse.move(900, 450);
   await page.mouse.wheel(0, -240);
   await page.mouse.wheel(0, -240);
 
+  await cameraStill(page);
   // exp(0.264) twice is 1.696, and zoom is written to two places.
   await expect
     .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
@@ -542,7 +597,9 @@ test.describe("on a touch screen", () => {
     await page.goto("/#at=140,20,1&m=2&w=24&s=usgs,emsc&r=thermal");
     await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
     await expect(page.locator("canvas")).toHaveCSS("touch-action", "none");
-    await page.waitForTimeout(9_000);
+    // Was a flat nine seconds. A drag delivered while the entrance is still flying is added to a moving
+    // camera, so the test has to wait for stillness - and now waits exactly that long, not nine seconds.
+    await cameraStill(page);
 
     const box = (await page.locator("canvas").boundingBox())!;
     const cx = box.x + box.width / 2;
@@ -678,7 +735,7 @@ test("the globe unwraps into a map and back", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first())
     .toBeVisible({ timeout: 25_000 });
-  await page.waitForTimeout(6_000);
+  await cameraStill(page);
 
   const toggle = page.getByRole("button", { name: /^(Map|Globe)$/ });
   await expect(toggle).toHaveText("Map");
@@ -687,7 +744,9 @@ test("the globe unwraps into a map and back", async ({ page }) => {
   const globe = await page.locator("canvas").screenshot();
   await toggle.click();
   await expect(toggle).toHaveText("Globe");
-  await page.waitForTimeout(2_500);
+  // The unwrap, not the camera, and `cameraStill` samples both: a screenshot taken partway through is
+  // neither projection and would compare unequal for the wrong reason.
+  await cameraStill(page);
 
   const flat = await page.locator("canvas").screenshot();
   expect(flat.equals(globe)).toBe(false);
@@ -696,7 +755,7 @@ test("the globe unwraps into a map and back", async ({ page }) => {
   expect(await page.evaluate(() => localStorage.getItem("eif.flat"))).toBe("1");
 
   await toggle.click();
-  await page.waitForTimeout(2_500);
+  await cameraStill(page);
   await expect(toggle).toHaveText("Map");
   expect(await page.evaluate(() => localStorage.getItem("eif.flat"))).toBe("0");
 });

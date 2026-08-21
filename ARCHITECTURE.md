@@ -4017,7 +4017,36 @@ feature work, run with the port freed so the old commit served its own app - the
 comparison was worthless because `reuseExistingServer: true` had pointed an old worktree's tests at the
 current server. So this predates the session; the layout work merely made it visible.
 
-**Two failures in the full run afterwards are load, not faults.** `the entrance settles exactly on the
+## Asking one question at a time, and the suite went green
+
+The camera assertions were all written as "is it at the target yet, within N seconds", which asks two
+questions and answers neither on failure. The entrance was the clearest case: a ten-second poll that
+reported `Timeout 10000ms exceeded while waiting on the predicate` and `Received: false` - no way to tell
+whether the camera was still travelling, had stopped somewhere wrong, or had never started.
+
+So the questions are separated. `cameraStill` waits for **motion to stop** by sampling until two
+consecutive readings agree, with a ceiling that exists to catch a spring that never settles rather than to
+time a machine, and it reports movement-per-sample so a real failure says how fast it was still going. The
+test then asserts where it came to rest, which is the actual claim. A slow machine makes the suite slower
+instead of red.
+
+**It samples `morph` alongside lon/lat/zoom**, because the projection unwrap is the same kind of value
+easing toward a target, and a screenshot taken partway through is neither a globe nor a map.
+
+**Four blind waits went with it** - 9s before a drag, 6s before reading the projection toggle, and two
+2.5s waits around the unwrap screenshots. Twenty and a half seconds of guessing, replaced by waiting for
+the thing itself. On a quiet machine that is faster, not slower: the full suite went from 14.7 minutes to
+**11.6**.
+
+The two-page shared-link test got double the budget instead, because it genuinely does double the work -
+a second page with its own fixtures and its own WebGL globe - and exhausting 45s of that is the test's own
+cost, not a claim about the app.
+
+**Result: 60 passed, nothing failed, nothing flaky.** The four flaky-then-passing tests and the two
+timing failures from the previous run are all gone, which is the evidence that they were the polls and not
+the app.
+
+**Two failures in the earlier run were load, not faults.** `the entrance settles exactly on the
 framing shot` and `a shared link restores the view on a fresh page` both pass in isolation, and the config
 already records the same thing happening at four workers: the entrance spring takes longer than its poll
 allows on a saturated machine. Four more tests were flaky-then-passing in the same run, which is the same
