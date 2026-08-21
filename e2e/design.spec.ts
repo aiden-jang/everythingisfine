@@ -184,11 +184,23 @@ for (const bp of BREAKPOINTS) {
     await page.waitForTimeout(1_000);
 
     const unreachable = await page.evaluate(() => {
+      /*
+       * A scrolling ancestor only counts if it is itself on screen.
+       *
+       * The first version of this check passed any control with a scrollable ancestor, and running the
+       * suite proved that exemption too generous: Playwright reported `done scrolling` followed by
+       * `element is outside of the viewport` on a rail row, which is precisely a container that scrolls
+       * and whose own box is out of reach. Scrolling a box nobody can see does not make its contents
+       * reachable.
+       */
       const scrollable = (el: Element): boolean => {
         for (let node: Element | null = el; node; node = node.parentElement) {
           const overflow = getComputedStyle(node).overflowY;
-          if ((overflow === "auto" || overflow === "scroll")
-            && node.scrollHeight > node.clientHeight + 1) return true;
+          if ((overflow !== "auto" && overflow !== "scroll")
+            || node.scrollHeight <= node.clientHeight + 1) continue;
+          const box = node.getBoundingClientRect();
+          if (box.top < window.innerHeight && box.bottom > 0
+            && box.left < window.innerWidth && box.right > 0) return true;
         }
         return false;
       };

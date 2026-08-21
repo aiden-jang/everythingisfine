@@ -3981,7 +3981,37 @@ its box inside the viewport - **or** have a scrolling ancestor, because the rail
 a sheet whose lower half is off screen and that is not the same fault at all. That distinction is the whole
 reason the check could not be a naive bounds test.
 
-**Hand-verified at five shapes**, since the spec stays unrun: 375x812, 768x1024, 1024x768, 1279x700 with the
+**Then it was run.** 55 passed, 4 failed, 1 flaky, 13.3 minutes - and it earned its keep four ways.
+
+**One failure was a stale expectation of my own making.** `the legend says what a ring is` asserted the
+legend contains "First motion is a seismogram term". That sentence existed to explain the app's own name
+while the app was called First Motion; the rename to Everything Is Fine removed the name, so the sentence
+explained nothing and was deleted with it. **The rename commit edited other strings in this same file and
+missed that one**, and because the suite was not running, a stale assertion sat there green-until-executed
+for the rest of the session. Fixed, and it passes.
+
+**Three failures are pre-existing, and that was proved rather than assumed.** All three click a row in the
+rail's recent list, and all three report the same thing: `done scrolling`, then `element is outside of the
+viewport`, retrying until timeout. The first attempt to date them was worthless - `reuseExistingServer: true`
+meant a worktree at an older commit ran its tests against the *current* server on 31600. With the port freed
+so the old commit served itself, the same test failed identically at `24a8fc4`, before the legend cap, the
+one-column grid and the header wrap. Localised, not fixed: something about the rail's scroller leaves a row
+that Playwright can scroll to and still not see.
+
+**The flaky one is infrastructure.** `the colourblind ramp survives a reload` died on `Protocol error
+(Runtime.callFunctionOn): Internal server error, session closed` - a browser process lost under two
+concurrent WebGL workers, which the config's own comment already warns about at four.
+
+**And it corrected the check written the turn before.** The new reachability case exempted any control with
+a scrollable ancestor. Playwright's `done scrolling / element is outside of the viewport` is exactly that
+exemption being wrong: a container can scroll and still be somewhere nobody can see. The rule now requires
+the scrolling ancestor's own box to intersect the viewport. Four cases, first execution, all passing.
+
+One process note worth keeping: the full run was piped through `tail -45`, so only the closing summary was
+ever written and the per-test lines and four failure bodies were destroyed. `test-results/*/error-context.md`
+had all of it. Do not filter a long run's output on the way to a file.
+
+**Hand-verified at five shapes** before any of that, while the spec was still unrun: 375x812, 768x1024, 1024x768, 1279x700 with the
 legend key open, and 1280x720 - zero unreachable controls at every one, and the widest-element check inside
 the window at every one. Panel-open was verified at 375 in the previous turn (four actions, two lines, all
 inside); **at 768 and above, panel-open is unverified**, because the dev feed stopped delivering events on
