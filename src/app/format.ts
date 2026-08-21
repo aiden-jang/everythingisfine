@@ -505,3 +505,26 @@ export function quietNote(
     + `${(bandShare * 100).toFixed(1)}% of the surface: at least ${times.toFixed(1)} times the `
     + `seismicity per square kilometre, and the rest of the planet had the day off.`;
 }
+
+/**
+ * What the holes in the markers add up to, for the depth row of the legend.
+ *
+ * A count rather than a promise. The encoding carves a hole in proportion to depth, and the reading it
+ * exists for - a subduction margin resolving into rings inland - needs deep events to be present at all.
+ * In a typical 24-hour window one event of seventy-nine is below 300km. So this says how many are there,
+ * and a viewer who sees "1 below 300 km" knows not to go looking for a slab today.
+ *
+ * `unknown` is reported rather than folded into shallow, because a missing depth and a depth of zero are
+ * different facts and only one of them is the agency's fault.
+ */
+export function depthNote(bands: {
+  shallow: number; intermediate: number; deep: number; unknown: number; total: number;
+}): string | null {
+  if (bands.total === 0) return null;
+  const parts = [`${bands.shallow} above 70 km`];
+  if (bands.intermediate > 0) parts.push(`${bands.intermediate} between 70 and 300`);
+  parts.push(`${bands.deep} below 300`);
+  if (bands.unknown > 0) parts.push(`${bands.unknown} with no depth given`);
+  return `${parts.join(", ")}. Deep events sit inside a descending slab, so a margin only resolves `
+    + `into rings when enough of them land.`;
+}

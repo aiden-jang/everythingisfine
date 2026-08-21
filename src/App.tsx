@@ -11,6 +11,7 @@ import { fetchVolcanoes, newestEpisode, type Volcano } from "./sources/volcanoes
 import { fetchWildfires, summarise, FEED_CAP, type Wildfire } from "./sources/wildfires";
 import { countries, fetchFloods, type Flood } from "./sources/floods";
 import { marksFor } from "./app/marks";
+import { depthBands } from "./data/depth";
 import { drawStill, stillMoment, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
@@ -241,6 +242,13 @@ export function App(): JSX.Element {
   }, []);
   /** Computed here rather than in the legend, so the sentence is a render of a number and not a scan. */
   const fireSummary = useMemo(() => summarise(fires), [fires]);
+  /*
+   * The depth bands, on the store revision rather than the clock: the rail re-renders every second and
+   * these counts only move when an earthquake does.
+   */
+  const depth = useMemo(
+    () => depthBands(feed.store, filters, Date.now()), [filters, snapshot.revision],
+  );
   /*
    * Remembered, because a width somebody chose is a preference and re-choosing it on every visit is
    * the app forgetting something it was told.
@@ -961,6 +969,7 @@ export function App(): JSX.Element {
                 keyOpen={keyOpen}
                 onKeyOpen={setKeyOpen}
                 motion={motion}
+                depth={depth}
                 motionOn={motionOn}
                 onMotion={setMotionOn}
               />

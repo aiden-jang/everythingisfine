@@ -16,12 +16,16 @@ import { MORPH_GLSL } from "./morph";
  *
  * It is worth encoding because depth changes what an earthquake *is*. Shallow events do the damage;
  * events below 300km happen inside a descending slab and are felt far more weakly for their size.
- * Along a subduction margin the depth rises with distance from the trench, so a plate diving under
- * another one now reads on the globe as solid dots at the trench giving way to rings inland. That is
- * the Wadati-Benioff zone, and it was in the data the whole time with nothing drawing it.
+ *
+ * **This comment used to promise more than the data delivers.** It said a plate diving under another one
+ * "reads on the globe as solid dots at the trench giving way to rings inland ... the Wadati-Benioff zone".
+ * The encoding does that; a typical day does not supply it. Counted: in 24 hours of M2+, **1 event of 79
+ * is below 300km** - one ring on the planet - and 8 more are intermediate. At seven days it is 14 of 704
+ * and a margin begins to show. The pattern is real at the right window and invisible at the default one,
+ * so the legend now states the counts rather than describing a picture that is usually not there. The
+ * bands moved to `data/depth.ts`, which the legend can import without dragging three.js with it.
  */
-const DEPTH_SHALLOW_KM = 70;
-const DEPTH_DEEP_KM = 300;
+import { DEPTH_DEEP_KM, DEPTH_SHALLOW_KM } from "../data/depth";
 
 /*
  * Fifty thousand earthquakes, drawn once.
