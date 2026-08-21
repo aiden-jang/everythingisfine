@@ -12,6 +12,9 @@ import { fetchWildfires, summarise, FEED_CAP, type Wildfire } from "./sources/wi
 import { countries, fetchFloods, type Flood } from "./sources/floods";
 import { marksFor } from "./app/marks";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
+import {
+  loadBoundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE, type Segment,
+} from "./geo/boundaryDistance";
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
@@ -27,10 +30,10 @@ import { Dial } from "./app/Dial";
 import { decode, encode } from "./app/permalink";
 import { rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
-import type { Filters, SourceId } from "./data/types";
+import type { Filters, Quake, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import {
-  ago, agoShort, clock, corroborationNote, energyPercent, place, reachFraction, reachNote,
+  ago, agoShort, clock, corroborationNote, energyPercent, place, quietNote, reachFraction, reachNote,
   reachWords, SOURCE_NAMES, windowLabel,
 } from "./app/format";
 
@@ -318,6 +321,36 @@ export function App(): JSX.Element {
    * to paint the first frame. Held here because both the globe and the legend's sentence need it, and a
    * failed import leaves the array empty, which draws nothing and says nothing rather than throwing.
    */
+  /*
+   * The plate boundary geometry, for measuring how far each event is from an edge.
+   *
+   * Loaded once on mount rather than behind a toggle, unlike the motion table: every event in the panel
+   * gets a distance, so this is not optional the way arrows are. Still a dynamic import, because 28kB of
+   * coastline-grade geometry does not belong in the bundle that paints the first frame.
+   */
+  const [segments, setSegments] = useState<readonly Segment[]>([]);
+  useEffect(() => {
+    let alive = true;
+    void loadBoundarySegments().then((next) => { if (alive) setSegments(next); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  /*
+   * Memoised per event key, not per render.
+   *
+   * One distance is 1,631 segment tests, which is nothing; every event in a thirty-day window against
+   * every segment is a million of them, on a rail that re-renders once a second because the clock ticks.
+   * An epicentre never moves, so the answer is cached against the key forever.
+   */
+  const boundaryCache = useRef(new Map<string, number>());
+  const boundaryKmOf = useCallback((quake: Quake): number | null => {
+    if (segments.length === 0) return null;
+    const cached = boundaryCache.current.get(quake.key);
+    if (cached !== undefined) return cached;
+    const km = nearestBoundaryKm(quake.primary.lon, quake.primary.lat, segments);
+    if (km === null) return null;
+    boundaryCache.current.set(quake.key, km);
+    return km;
+  }, [segments]);
   const [motionData, setMotionData] = useState<readonly MotionSample[]>([]);
   useEffect(() => {
     if (!motionOn || motionData.length > 0) return;
@@ -496,6 +529,26 @@ export function App(): JSX.Element {
    */
   const traced = farSideOf && farSideOf === selected ? feed.store.get(farSideOf) : undefined;
   const farSide = traced ? { lon: traced.primary.lon, lat: traced.primary.lat } : null;
+  /*
+   * How concentrated the window is along the plate edges.
+   *
+   * Keyed on the store revision, not the clock: the rail re-renders every second and this answer only
+   * changes when an earthquake does. The band and its area share are the measured constants from
+   * `boundaryDistance.ts` - 100km covers 9.4% of the surface, computed on a cos-weighted grid so the
+   * figure means area rather than a count of cells.
+   */
+  const quiet = useMemo(() => {
+    if (segments.length === 0) return null;
+    let near = 0;
+    let total = 0;
+    feed.store.forEach((quake) => {
+      if (!matches(quake, filters, Date.now())) return;
+      total += 1;
+      const km = boundaryKmOf(quake);
+      if (km !== null && km <= QUIET_BAND_KM) near += 1;
+    });
+    return quietNote(near, total, QUIET_BAND_KM, QUIET_BAND_SHARE);
+  }, [snapshot.revision, filters, segments, boundaryKmOf]);
   const marks = useMemo(
     () => marksFor({
       cyclones, volcanoes, fires, floods, farSide, motion: motionOn ? motionData : [],
@@ -1073,6 +1126,17 @@ export function App(): JSX.Element {
             headline beside it already says "still filling" in that state, so the machinery to know was
             there and this was not asking.
           */}
+          {/*
+            The negative space, measured.
+
+            Item 8 wanted the cratons lit, which is a claim about geological time this app cannot make with
+            a thirty-day buffer. What survives is the same shape of fact as a ratio, and it belongs here
+            beside the energy line because both are one sentence about the whole window rather than about
+            any event in it.
+          */}
+          {!replay && quiet ? (
+            <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{quiet}</p>
+          ) : null}
           {strongest && !replay && edge.complete && energyShare !== null && energyShare > 0.5 ? (
             <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
               That one event is{" "}
@@ -1457,6 +1521,7 @@ export function App(): JSX.Element {
               setFlat(true);
               flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 1.6);
             }}
+            boundaryKm={boundaryKmOf(shownQuake)}
             farSide={farSideOf === shownQuake.key}
             /*
               Pulls the camera out to 0.9 when it goes on, because the figure is 40,000km across at its
