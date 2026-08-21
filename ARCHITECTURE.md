@@ -3727,6 +3727,44 @@ An earlier measurement pass had the same class of error from the other direction
 mistakes, all of them "close enough on a sphere is not close enough", and none of them visible without a
 number to check against.
 
+## The still, and the stamp that makes it not a screenshot
+
+Item 20's state half already travelled: the permalink carries the camera and the cursor. This is the image
+half, and the interesting part is not the encoding.
+
+**A still of live data outlives the data.** `make-card.mjs` learned that with a share card cached for days;
+a still is the same problem shared by hand, with no cache to blame. So every one carries the moment it is
+of, and it takes that moment from **the cursor, not the clock** - a still of a view parked two hours back
+is a picture of two hours ago, and stamping it "now" would be the image lying about itself. Absolute time
+with its date, never "18 minutes ago", which ages into a lie the instant the file is saved. UTC, so a still
+crossing a timezone still means one moment.
+
+**Captured in the same tick, deliberately.** The renderer is created without `preserveDrawingBuffer`, so
+the buffer is gone once the browser composites and a late `toDataURL` returns nothing. The alternative was
+turning that flag on, which taxes every frame of every session to serve a button almost nobody presses.
+Instead `onCapture` hands out a function that renders and returns the canvas, and the caller must
+`drawImage` it before yielding - the compose is synchronous and only the encoding is not.
+
+**Composed, not grabbed.** Two reasons, both from the code as it stands: the globe's context is
+`alpha: true` with a zero clear alpha, so a bare capture is a globe on transparency that viewers paint
+black or checkerboard; and the chrome that explains the globe is DOM over the canvas, so it is not in the
+capture at all. Letterboxed rather than cropped, because cropping a globe to a wider frame cuts the limb
+off and the shape of the planet is what every reader orients on.
+
+**A caption bug worth recording.** The first version described the window with `windowLabel`, which
+qualifies itself by what the agencies have vouched for - and it printed **"nothing yet"** across a still
+showing a full day of earthquakes, because `coveredSince` stays null until a source reports its seed. The
+caption describes the filter that produced the picture, and that filter is 24 hours whatever any agency has
+confirmed. Coverage is a live fact about the app and has no business stamped on an image, so it says
+"last 24h" from `filters.windowMs` and nothing about coverage at all.
+
+In the header strip beside the ramp toggle, not in the panel next to "Copy link": that button shares an
+earthquake, this one shares a framing, and the panel only exists while something is pinned.
+
+**Verified in the browser**: the composed frame is 1600x900, fully opaque, background exactly the `void`
+token, 34% of the globe area differing from it - so the drawing-buffer hazard is genuinely handled and not
+merely avoided in theory. Caption read back as "Live - 2026-08-21 04:09 UTC" and "M2.0+ - last 24h".
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

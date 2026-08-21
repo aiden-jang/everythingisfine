@@ -11,6 +11,7 @@ import { fetchVolcanoes, newestEpisode, type Volcano } from "./sources/volcanoes
 import { fetchWildfires, summarise, FEED_CAP, type Wildfire } from "./sources/wildfires";
 import { countries, fetchFloods, type Flood } from "./sources/floods";
 import { marksFor } from "./app/marks";
+import { drawStill, stillMoment, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
 import {
   loadBoundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE, type Segment,
@@ -33,7 +34,8 @@ import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import {
-  ago, agoShort, clock, corroborationNote, energyPercent, place, quietNote, reachFraction, reachNote,
+  ago, agoShort, clock, compactSpan, corroborationNote, energyPercent, place, quietNote,
+  reachFraction, reachNote,
   reachWords, SOURCE_NAMES, windowLabel,
 } from "./app/format";
 
@@ -368,6 +370,13 @@ export function App(): JSX.Element {
   const camera = useRef<{ lon: number; lat: number; zoom: number }>(
     { lon: shared.lon ?? 145, lat: shared.lat ?? 12, zoom: shared.zoom ?? 1 },
   );
+  /*
+   * The still's capture handle. Must be called and read synchronously; see `Globe.onCapture`.
+   */
+  const capture = useRef<() => HTMLCanvasElement | null>(() => null);
+  const onCapture = useCallback((fn: () => HTMLCanvasElement | null) => {
+    capture.current = fn;
+  }, []);
   const onReady = useCallback((fn: typeof flyTo.current) => {
     flyTo.current = fn;
     // A shared camera arrives rather than flies. Somebody following a link wanted the view in it,
@@ -446,6 +455,54 @@ export function App(): JSX.Element {
    */
   const fetching = pendingRev !== null && snapshot.revision === pendingRev;
   const view = clampScrub(scrub, span);
+  /*
+   * Writes the still.
+   *
+   * Everything between the capture and the `drawImage` has to stay synchronous, because the globe's
+   * drawing buffer is gone the moment the browser composites. So the compose happens first and the
+   * asynchronous part - encoding and handing over the file - only starts once the pixels are safely on
+   * another canvas.
+   */
+  const [saving, setSaving] = useState(false);
+  const saveStill = useCallback(() => {
+    const source = capture.current();
+    if (!source) return;
+    const frame = document.createElement("canvas");
+    frame.width = STILL_WIDTH;
+    frame.height = STILL_HEIGHT;
+    const ctx = frame.getContext("2d");
+    if (!ctx) return;
+    const style = getComputedStyle(document.documentElement);
+    const token = (name: string): string => style.getPropertyValue(`--color-${name}`).trim();
+    drawStill(ctx, source, source.width, source.height, {
+      moment: stillMoment(view.at, Date.now()),
+      /*
+       * The requested window, not the covered one.
+       *
+       * `windowLabel` qualifies itself by what the agencies have vouched for, which is right in the rail
+       * and wrong here: it printed "nothing yet" onto a still showing a full day of earthquakes, because
+       * `coveredSince` is null until a source reports its seed. The caption describes the filter that
+       * produced the picture, and that filter is 24 hours whatever any agency has confirmed. Coverage is
+       * a live fact about the app and has no business stamped on an image.
+       */
+      filter: `M${filters.minMagnitude.toFixed(1)}+ · last ${compactSpan(filters.windowMs)}`,
+      host: window.location.host,
+    }, { background: token("void"), ink: token("ink"), faint: token("faint") });
+
+    setSaving(true);
+    frame.toBlob((blob) => {
+      setSaving(false);
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      // The moment in the filename, so a folder of these is sortable and none of them are ambiguous.
+      a.download = `everything-is-fine-${new Date(view.at ?? Date.now()).toISOString()
+        .replace(/[:.]/g, "-").slice(0, 19)}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, "image/png");
+  }, [filters.minMagnitude, filters.windowMs, view.at]);
   /*
    * What is actually on the globe while the cursor is parked.
    *
@@ -946,6 +1003,21 @@ export function App(): JSX.Element {
               Colourblind ramp {ramp === "cividis" ? "on" : "off"}
             </span>
           </button>
+          {/*
+            The still, beside the other things that describe the whole view rather than one event.
+
+            Not in the panel with "Copy link", even though both are sharing: that button shares an
+            earthquake and this one shares a framing, and the panel is only open when something is
+            pinned. A view-level action belongs in the view-level strip.
+          */}
+          <button
+            type="button"
+            onClick={saveStill}
+            disabled={saving}
+            className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink disabled:cursor-default"
+          >
+            {saving ? "Saving…" : "Still"}
+          </button>
           <span className="flex items-center gap-2 text-[11px] whitespace-nowrap text-dim">
             <span
               className={`inline-block size-[6px] rounded-full ${
@@ -1423,6 +1495,7 @@ export function App(): JSX.Element {
             onSection={setSectionLine}
             onSelect={setSelected}
             onReady={onReady}
+            onCapture={onCapture}
             onCamera={(state) => { camera.current = state; }}
             onReplay={setReplay}
           />
