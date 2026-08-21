@@ -4171,6 +4171,28 @@ module `geo/plates.ts` imports statically, and the boundaries render in the buil
 but the field itself went unchecked because the live feed stopped answering in that tab and no event could
 be pinned.
 
+## Measuring the GPU, and why the loop had to be worked around
+
+The rendering side had never been measured, and the reason turned out to be structural rather than
+neglect: **the frame loop sleeps whenever nothing is moving**, which is the design, so there are no frames
+to instrument unless something is animating. `EXT_disjoint_timer_query_webgl2` is available in this browser
+on this machine, and `canvas.getContext("webgl2")` hands back the app's own context - so the instrument was
+never the problem.
+
+Waking the loop from outside was. Synthetic wheel, key, pointerdown and drag events all produced **zero**
+`requestAnimationFrame` calls, so the patched-rAF approach had nothing to wrap. Rather than fight the event
+plumbing, `__drawOnce` was added beside the DEV-only hooks the browser tests already use: it calls the same
+`render` the loop calls, so what it costs is what a frame costs, and it can be driven as fast as the
+measurement wants.
+
+Numbers and their conditions are in the closed item above. Two things worth keeping separate from them:
+
+- **The harness stays**, for the reason the share-card generator does. A measurement nobody can repeat is a
+  number that quietly stops being true, and this one took several attempts to obtain.
+- **The 120Hz figure is the interesting one.** At 60fps this is a quarter of the budget and nobody will ever
+  notice; at 120fps the worst frame measured is 77% of it. Nothing here is a problem today, and that is a
+  different statement from "nothing has suggested a problem".
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -4207,9 +4229,18 @@ Written last, and kept accurate rather than kept short.
   known-limitations list is the section a reader trusts most, which makes a stale entry in it worse than
   no entry at all.
 
-- **GPU frame time has never been measured with a profiler.** The CPU budget is gated and recorded;
-  the rendering side has only ever been judged by looking at it. Nothing has suggested a problem,
-  and "nothing has suggested a problem" is not a measurement.
+- ~~**GPU frame time has never been measured with a profiler.**~~ **Measured on 2026-08-21**, and the
+  answer is comfortable at 60Hz and not especially comfortable at 120Hz. On an M1 Pro through
+  ANGLE/Metal at **2560x1440** (device pixel ratio 2), with 95 events in the window, a full scene draw
+  costs a **median of 2.0 to 5.1ms and a maximum of 6.4ms** across passes. Against a 60fps budget of
+  16.7ms that is a quarter to a third; against a 120fps budget of **8.3ms the maximum is 77%**, which is
+  the number worth keeping in view.
+
+  **Conditions, because they matter more than the figure.** One machine, one resolution, one event count,
+  and drawn back-to-back by `__drawOnce` rather than once per vsync - so the GPU pipelines differently
+  than it would in a real frame loop, and these are a lower bound on a busy frame rather than a
+  simulation of one. Still measured rather than asserted, which is what this entry was complaining about.
+  Not gated: a threshold on a single machine's timings would be a budget that only means something here.
 
 - **The window cannot go back before the page opened.** No backend, so time scrubbing was rejected
   rather than shipped as a worse version of itself.

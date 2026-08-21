@@ -170,6 +170,19 @@ export function Globe({
       console.info("[globe] geometry", globe.stats);
       Object.assign(window, {
         __globe: globe.controls, __feed: feed, __events: globe.events, __rings: globe.rings,
+        /*
+         * One full scene draw, on demand.
+         *
+         * Added to measure GPU frame time, which ARCHITECTURE.md had listed as never measured. The
+         * frame loop cannot be sampled from outside: it sleeps whenever nothing is moving - which is
+         * the whole design - so there are no frames to instrument unless something is animating, and
+         * synthetic wheel and pointer events do not wake it. A hook that draws exactly one frame is
+         * measurable and honest: it is the same `render` the loop calls, so what it costs is what a
+         * frame costs.
+         *
+         * `DEV` only, beside the hooks the browser tests already use.
+         */
+        __drawOnce: () => { globe.render(); },
       });
     }
 
