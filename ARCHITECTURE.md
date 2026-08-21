@@ -3990,7 +3990,40 @@ explained nothing and was deleted with it. **The rename commit edited other stri
 missed that one**, and because the suite was not running, a stale assertion sat there green-until-executed
 for the rest of the session. Fixed, and it passes.
 
-**Three failures are pre-existing, and that was proved rather than assumed.** All three click a row in the
+## The rail's list collapsed to nothing, and took three tests with it
+
+The three click failures came down to arithmetic, once the geometry was measured in the failing state
+rather than reasoned about. With one event held on a 720px window:
+
+- `ul`, the list's scrollport: **height 0**, scrollHeight 44
+- `section[aria-label="Recent earthquakes"]`: **height 0**
+- `.zone-rail`: a **674px box around 752px** of content, so scrollable by 78px
+- the only row: top **806**, which is 86px below the window
+
+The rail is a column that scrolls when its content does not fit, and the list is `flex-1` so it takes what
+is left over. When there is nothing left over, `flex-1` correctly resolves to **zero**, and `min-h-0` let
+it go all the way there. The row then sat outside a zero-height box, past the rail's own scrollable extent,
+and 78px of scroll could never close an 86px gap. That is precisely Playwright's `done scrolling` followed
+by `element is outside of the viewport`, forever.
+
+The fix is a floor: the section keeps `min-h-[8.25rem]`, three rows, instead of `min-h-0`. `min-h-0` is
+still what lets a scrollport shrink below its content - it just must not shrink to nothing. Honouring the
+floor makes the rail scroll further, which is the correct trade: a list of three rows you can scroll beats
+a list of zero rows you cannot reach. Re-probed: the section is 132px, the scrollport 85px, and all three
+tests pass.
+
+**It was worth dating first.** The same test fails identically at `6e1ba7f`, before any of this session's
+feature work, run with the port freed so the old commit served its own app - the first attempt at that
+comparison was worthless because `reuseExistingServer: true` had pointed an old worktree's tests at the
+current server. So this predates the session; the layout work merely made it visible.
+
+**Two failures in the full run afterwards are load, not faults.** `the entrance settles exactly on the
+framing shot` and `a shared link restores the view on a fresh page` both pass in isolation, and the config
+already records the same thing happening at four workers: the entrance spring takes longer than its poll
+allows on a saturated machine. Four more tests were flaky-then-passing in the same run, which is the same
+story.
+
+**Three failures were pre-existing, and that was proved rather than assumed.** All three click a row in the
 rail's recent list, and all three report the same thing: `done scrolling`, then `element is outside of the
 viewport`, retrying until timeout. The first attempt to date them was worthless - `reuseExistingServer: true`
 meant a worktree at an older commit ran its tests against the *current* server on 31600. With the port freed
