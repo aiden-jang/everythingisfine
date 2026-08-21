@@ -109,7 +109,20 @@ export function EventList({
   const now = Date.now();
 
   return (
-    <section aria-label="Recent earthquakes" className="flex min-h-0 flex-1 flex-col">
+    /*
+      A floor under the list, because `flex-1` gives zero when there is nothing left to give.
+      The rail scrolls when its content exceeds the window, and in that state `flex-1` resolved this
+      section to **height 0**: the rows hung outside a zero-height box, below the rail's own scrollable
+      extent, so nothing could bring them into view. Measured on a 720px window with one event held -
+      the rail was a 674px box around 752px of content, scrollable by 78px, and the only row sat 86px
+      past the bottom edge. Three tests had been failing on exactly that arithmetic.
+      `min-h-0` is still what lets the scrollport shrink below its content; it just must not shrink to
+      nothing. Three rows is the floor, and if honouring it makes the rail scroll, the rail scrolls.
+    */
+    <section
+      aria-label="Recent earthquakes"
+      className="flex min-h-[8.25rem] flex-1 flex-col"
+    >
       <div className="flex items-baseline justify-between">
         <h2 className="label">Recent</h2>
         <span className="font-mono text-[11px] text-faint">newest first</span>
