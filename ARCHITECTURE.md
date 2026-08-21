@@ -3382,6 +3382,51 @@ Both layers are now pushed once at setup from the `live` ref that already exists
 as well as on change. The lesson is the one this session keeps relearning: a handoff that only fires on
 change is a handoff that assumes it fired first.
 
+## Volcanoes, and the layer that has to admit it is not live
+
+The feed has no "erupting now" in it. GDACS lists 23 volcano events and flags **zero** of them
+`iscurrent`; `severity` is 0.0 and `severitytext` empty for every one; the newest episode ended 9 days ago
+(Etna), then 15 (Fuego), then 36, and the tail runs past 200. Within the last 7 days: none. The
+Smithsonian's weekly report is the feed that would answer this and it fails CORS, so with no Worker there
+is no honest live volcano layer to be had at all.
+
+So the layer presents what it has, and the legend leads with the age rather than burying it: *"the
+triangles are volcanoes with a logged eruption episode, 23 of them. The newest ended 9 days ago, so none of
+this is erupting this minute."* Every other layer here is live and a viewer is entitled to assume this one
+is too. What survives dropping the currency claim is the better fact anyway, and it is the one the plan
+asked for: they land along the plate boundaries already drawn, which is the same argument the earthquakes
+make from the other side. **Alert level is deliberately unread** - an Orange on a 200-day-old episode
+describes a concern nobody currently has.
+
+**One triangle per mountain, not per episode.** The list carries Mayon three times and Kanlaon four, one
+row per episode, and drawn as published that is four marks on one volcano reading as four volcanoes. Keyed
+on name and position, because position is part of the identity: two mountains sharing a name are not a
+merge. **Fetched once, not on the ten-minute clock** the aurora and the storms run on - polling a two-year
+archive for changes it does not have is traffic spent to learn nothing.
+
+**Zoneless stamps.** GDACS writes `2026-08-11T21:25:00` with no zone and means UTC; the platform reads that
+as local time. Left alone every episode moves by the viewer's offset. `"Z"` is appended when no zone is
+present, and a volcano with no readable date at all is kept rather than dropped, because it is still a
+volcano - it just does not get to set the "newest" line.
+
+## One layer for everything that is not an earthquake
+
+Volcanoes made this the third non-earthquake phenomenon with wildfires and floods queued behind, so the
+cyclone layer was generalised before the fourth arrived rather than after. `globe/marks.ts` draws polylines
+in longitude and latitude and knows nothing about storms or mountains; `globe/shapes.ts` holds the glyphs
+(`spiral`, `volcano`) and knows nothing about feeds; `app/marks.ts` is the one place that knows both and
+turns what is happening into what is drawn. The scene's `setCyclones` became `setMarks`.
+
+Four near-identical `LineSegments` layers would be four places to fix the same antimeridian bug, and this
+app has already paid for that lesson once in the land mesh. The layer tests written against the cyclone
+version were ported rather than dropped - clearing, buffer bounds, finite positions, seam behaviour - which
+is what made the move safe to make; they were always the layer's tests and not the cyclone's.
+
+The triangle sits **on** its point rather than centred on it, because centred puts half of every coastal
+volcano in the sea, and most of them are coastal. The legend draws both glyphs from the same generators the
+globe uses, with latitude negated because SVG counts y downward and the globe counts it up - without that
+the volcano points at the ground, which is a different symbol.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

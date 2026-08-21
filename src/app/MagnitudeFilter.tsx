@@ -1,8 +1,8 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { PLAYBACK } from "../geo/waves";
-import { auroraNote, cycloneNote } from "./format";
+import { auroraNote, cycloneNote, volcanoNote } from "./format";
 import { category } from "../sources/cyclones";
-import { spiral } from "../globe/cyclones";
+import { spiral, volcano } from "../globe/shapes";
 
 /*
  * The legend and the magnitude filter, which were two blocks and are one control.
@@ -25,17 +25,29 @@ export interface MagnitudeFilterProps {
   aurora: { peak: number; forecastAt: number } | null;
   /** The storms running now, for the same reason: no layer without the thing that explains it. */
   cyclones: readonly { name: string; peakKmh: number | null }[];
+  /** How many volcanoes are drawn. */
+  volcanoes: number;
+  /** When the newest of their eruption episodes ended, which the line has to admit is not now. */
+  volcanoesSince: number | null;
 }
 
 const TICKS = [MAG_MIN, 3, 5, MAG_MAX];
 
-/** The legend's spiral, from the same generator the globe draws, so the two cannot drift apart. */
-const SPIRAL_PATH = spiral(0, 0, 9)
-  .map((p, i) => `${i === 0 ? "M" : "L"} ${p.lon.toFixed(2)} ${p.lat.toFixed(2)}`)
-  .join(" ");
+const SPIRAL_PATH = path(spiral(0, 0, 9));
+const VOLCANO_PATH = path(volcano(0, -3, 6));
+
+/**
+ * The legend's glyphs, from the same generators the globe draws, so the two cannot drift apart.
+ *
+ * Latitude negated because SVG counts y downward and the globe counts it up. Without that the volcano
+ * points at the ground, which is a different symbol.
+ */
+function path(points: readonly { lon: number; lat: number }[]): string {
+  return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.lon.toFixed(2)} ${(-p.lat).toFixed(2)}`).join(" ");
+}
 
 export function MagnitudeFilter(
-  { ramp, value, onChange, aurora, cyclones }: MagnitudeFilterProps,
+  { ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
   // Where the threshold sits along the scale, as a percentage of the track.
@@ -164,6 +176,21 @@ export function MagnitudeFilter(
               className="text-dim" />
           </svg>
           <span>{cycloneNote(cyclones, category)}</span>
+        </div>
+      ) : null}
+
+      {/*
+        Volcanoes, on the same rule: a triangle, which is what the map draws and cannot be read as a
+        magnitude dot. Under the storms because it is the one layer here that is not live, and the line
+        beside it says so.
+      */}
+      {volcanoes > 0 ? (
+        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+          <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+            <path d={VOLCANO_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
+              className="text-dim" />
+          </svg>
+          <span>{volcanoNote(volcanoes, volcanoesSince, Date.now())}</span>
         </div>
       ) : null}
 

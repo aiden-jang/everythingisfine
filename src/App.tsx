@@ -7,6 +7,8 @@ import { useRolling } from "./app/roll";
 import { store, stored } from "./app/stored";
 import { fetchAurora, type Aurora } from "./sources/aurora";
 import { fetchCyclones, type Cyclone } from "./sources/cyclones";
+import { fetchVolcanoes, newestEpisode, type Volcano } from "./sources/volcanoes";
+import { marksFor } from "./app/marks";
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
@@ -198,15 +200,32 @@ export function App(): JSX.Element {
     return () => { alive = false; window.clearInterval(id); };
   }, []);
 
+  /*
+   * Volcanoes with a logged eruption episode. Fetched once, not on the ten-minute clock the others run on.
+   *
+   * Once because the newest episode in the list is weeks old, not minutes: GDACS flags none of them
+   * current, and polling a two-year archive every ten minutes is traffic spent to learn nothing. The
+   * layer earns its place on the boundaries it sits along rather than on being live, and the legend says
+   * so instead of implying otherwise.
+   */
+  const [volcanoes, setVolcanoes] = useState<readonly Volcano[]>([]);
   useEffect(() => {
     let alive = true;
     const load = (): void => {
       void fetchCyclones().then((next) => { if (alive) setCyclones(next); });
     };
     load();
+    void fetchVolcanoes().then((next) => { if (alive) setVolcanoes(next); });
     const id = window.setInterval(load, 10 * 60_000);
     return () => { alive = false; window.clearInterval(id); };
   }, []);
+  /*
+   * Shaped here, once, rather than inside the frame loop.
+   *
+   * Two arrays that each change every ten minutes at most, against a loop that runs at sixty frames a
+   * second when anything is moving.
+   */
+  const marks = useMemo(() => marksFor(cyclones, volcanoes), [cyclones, volcanoes]);
   /*
    * Remembered, because a width somebody chose is a preference and re-choosing it on every visit is
    * the app forgetting something it was told.
@@ -695,6 +714,8 @@ export function App(): JSX.Element {
                 onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
                 aurora={aurora}
                 cyclones={cyclones}
+                volcanoes={volcanoes.length}
+                volcanoesSince={newestEpisode(volcanoes)}
               />
               {/*
                 Sources sit with the magnitude control because both answer "what is on the globe".
@@ -1251,7 +1272,7 @@ export function App(): JSX.Element {
             ramp={ramp}
             focus={focusSpan}
             aurora={aurora}
-            cyclones={cyclones}
+            marks={marks}
             scrubAt={view.at}
             flat={flat}
             section={sectionLine}

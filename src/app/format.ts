@@ -316,3 +316,27 @@ export function cycloneNote(
   return `the spirals are storms, trailing where they have been. ${count}, and none of them `
     + `on the equator: the spin that starts one is zero there.${named}`;
 }
+
+/**
+ * What the triangles are, and the one thing that has to be said out loud about them.
+ *
+ * Every other layer here is live, and a viewer is entitled to assume this one is too. It is not: GDACS
+ * flags none of these current, and the newest episode in the list is usually weeks old. So the sentence
+ * leads with the age rather than burying it, because a triangle that looks live and is not would be the
+ * app lying quietly.
+ *
+ * What is left when currency goes is the better fact anyway: they land on the plate boundaries the globe
+ * already draws, which is the same argument the earthquakes make from the other side.
+ */
+export function volcanoNote(count: number, newest: number | null, now: number): string | null {
+  if (count === 0) return null;
+  const days = newest === null ? null : Math.max(0, Math.round((now - newest) / 86_400_000));
+  const when = days === null
+    ? "Undated"
+    : days === 0
+      ? "The newest episode ended today"
+      : `The newest ended ${days} day${days === 1 ? "" : "s"} ago`;
+  return `the triangles are volcanoes with a logged eruption episode, ${count} of them. `
+    + `${when}, so none of this is erupting this minute. They sit along the same lines the `
+    + `earthquakes do, which is the whole of why either happens.`;
+}
