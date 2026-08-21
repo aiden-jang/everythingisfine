@@ -1,6 +1,6 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { PLAYBACK } from "../geo/waves";
-import { auroraNote, cycloneNote, floodNote, volcanoNote, wildfireNote } from "./format";
+import { auroraNote, cycloneNote, floodNote, motionNote, volcanoNote, wildfireNote } from "./format";
 import { category } from "../sources/cyclones";
 import { flame, spiral, volcano, waves } from "../globe/shapes";
 
@@ -35,6 +35,13 @@ export interface MagnitudeFilterProps {
   fireCap: number;
   floods: number;
   floodCountries: number;
+  /**
+   * The arrows' own numbers, or null while the table is still loading or switched off.
+   * Passed in rather than read here, so the legend never pulls the table into the eager bundle.
+   */
+  motion: { arrows: number; fastest: number; converging: number } | null;
+  motionOn: boolean;
+  onMotion: (on: boolean) => void;
   /** Whether the key below the scale is open. Held outside so it survives a reload. */
   keyOpen: boolean;
   onKeyOpen: (open: boolean) => void;
@@ -60,7 +67,7 @@ function path(points: readonly { lon: number; lat: number }[]): string {
 export function MagnitudeFilter(
   {
     ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince,
-    fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen,
+    fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, motion, motionOn, onMotion,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -183,11 +190,37 @@ export function MagnitudeFilter(
         The plate boundaries need naming too. An unexplained line on a data visualisation is a
         question mark, and somebody could reasonably read these as a second data layer rather than
         as the geography the events are following.
+
+        The motion toggle hangs off this row rather than getting its own, because it is a second reading
+        of these exact lines and not another layer. Off by default: 231 arrows is a mark in every margin
+        on the planet, which is worth asking for and not worth being given.
       */}
       <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
         <span className="inline-block h-px w-[38px] shrink-0 bg-plate opacity-90" />
         <span>plate boundaries</span>
+        <button
+          type="button"
+          aria-pressed={motionOn}
+          onClick={() => onMotion(!motionOn)}
+          className={`ml-auto cursor-pointer border px-2 py-1 text-[10.5px] transition-colors ${
+            motionOn
+              ? "border-faint bg-raised text-ink"
+              : "border-hairline text-faint hover:bg-raised hover:text-dim"
+          }`}
+        >
+          motion
+        </button>
       </div>
+
+      {motion ? (
+        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+          <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+            <path d="M -7 6 L 5 -6 M 5 -6 L -1 -6 M 5 -6 L 5 0" fill="none" stroke="currentColor"
+              strokeWidth={1.6} className="text-dim" />
+          </svg>
+          <span>{motionNote(motion)}</span>
+        </div>
+      ) : null}
 
       {/*
         The rings, which are the signature of the whole design and were the one mark nothing named.

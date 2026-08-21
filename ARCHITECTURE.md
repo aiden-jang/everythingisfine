@@ -3638,6 +3638,46 @@ verified visually:** the closing itself at the far side. Driving the camera acro
 synthetic key events that the control's own animation kept coalescing, and after several attempts that was
 not worth more of the session than the fifteen assertions already cover.
 
+## Plate motion, from Bird's own numbers rather than from memory
+
+The instinct for item 6 was Euler poles: a small table of rotation axes and one line of spherical algebra
+per point. Two things killed that. It would have meant **writing pole coordinates from memory**, which is
+the sin `arrival.ts` refused when it declined to keep a city list - and the app's boundary file is
+`[lon, lat]` lines with no plate identity in them, so there would have been nothing to say which plate a
+point belongs to and therefore nothing to apply a pole to.
+
+PB2002's step file makes all of it unnecessary. Every one of its **5,819 steps** already carries the
+relative velocity of the plate on one side with respect to the other, its azimuth, the divergent component
+and a boundary class. So `tools/make-plate-motion.mjs` samples and rounds, and has no other opinions: the
+velocities are published measurements. **260,483 km** of boundary, 231 arrows at 800km spacing, 101 of them
+closing, fastest **227 mm/a**.
+
+**The spacing was measured, not picked.** 500km gives 415 arrows, 800 gives 231, 1200 gives 133. 231 is the
+one that still resolves a single ridge as a row of arrows rather than as three, at about 7kB.
+
+**The angle is the whole feature and it came free.** Because these are relative velocities, an arrow's
+angle against its own boundary *is* the regime: across the mid-Atlantic ridge the arrows run east-west
+across a north-south line, and at the Peru-Chile trench they point into the continent. Both confirmed by
+looking. Nothing computes that reading - it is what Bird's azimuths do once drawn - but the legend has to
+say the word **relative**, because read as absolute motion over the mantle every arrow would be wrong, and
+an arrow cannot carry that word itself.
+
+**Rooted, like the markers.** Rates run 0.3 to 263 mm/a, and linear scaling would draw the median 30 mm/a
+boundary at a fiftieth of the longest arrow, which is not a mark. Square-rooted it lands near a third, and
+a test pins that ratio rather than trusting it.
+
+**The arrows are walked, not offset.** Adding degrees to a longitude points the wrong way everywhere but
+the equator - wrong by a factor of two at 60 north - so the shaft uses the destination-point formula, the
+same one the far-side circles walk. There is a test asserting an arrow covers the same ground at 0, 60 and
+-45 degrees of latitude.
+
+**And the table stays out of the eager bundle.** The first working version imported the JSON in
+`app/marks.ts`, which App imports at the top level, putting 7.1kB of static table in the bundle that has to
+paint the first frame to serve a toggle that is off. That is precisely the mistake `waves.ts` exists to have
+undone. `loadMotion()` is a dynamic import and `marksFor` takes the samples as an argument, which also
+leaves it a pure function testable with two rows instead of 231. Verified by grep: the eager chunk contains
+none of Bird's class names.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

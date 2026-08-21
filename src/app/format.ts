@@ -443,3 +443,22 @@ export function farSideNote(
     + `marked at ${latLon(far.lon, far.lat)}. No time is drawn: the wavefronts above fade at 17 degrees, `
     + `and the far side is most of an hour away.`;
 }
+
+/**
+ * What the arrows are, and the word without which they mean something else.
+ *
+ * **Relative.** Each arrow is the plate on one side of that boundary moving with respect to the plate on
+ * the other, which is what PB2002 publishes; read as absolute motion over the mantle it would be wrong
+ * everywhere. An arrow cannot carry that word, so the sentence has to.
+ *
+ * The angle is the reading worth pointing out, because it is free and nobody would look for it: across
+ * the line means opening, into it means closing, along it means sliding.
+ */
+export function motionNote(
+  motion: { arrows: number; fastest: number; converging: number },
+): string {
+  return `the arrows are how fast the plates are moving, one side relative to the other, sampled every `
+    + `800km. Across a line is opening, into it is closing, along it is sliding. ${motion.converging} of `
+    + `the ${motion.arrows} are closing, and the fastest runs at ${Math.round(motion.fastest)} mm a year, `
+    + `which is a metre every four years.`;
+}
