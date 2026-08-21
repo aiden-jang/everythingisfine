@@ -754,6 +754,20 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
 
 test("the globe unwraps into a map and back", async ({ page }) => {
   /*
+   * Double the budget, because this test costs about a full one.
+   *
+   * It was failing with the projection toggle reading `""`, which looks like a broken header and was the
+   * test being killed mid-assertion: a passing run measures **45.5s** against the default 45s, so it sat
+   * exactly on its own ceiling and flipped with the weather. Nothing was erroring - `pageerror` and
+   * `console` were both silent through a passing run, and the same sequence driven by hand in a browser
+   * goes Map, Globe, Map with the projection stored correctly each time.
+   *
+   * The cost is real rather than wasteful: an entrance to wait out, two 2.5s morphs, and **two WebGL
+   * canvas screenshots**, which are the expensive part. Same call as the two-page shared-link test - when
+   * a test legitimately does twice the work, the budget is what should move, not the assertions.
+   */
+  test.setTimeout(90_000);
+  /*
    * One geometry, projected in the vertex shader. Two scenes cross-faded would double every buffer and
    * every place a layer can be forgotten, and the switch would be a dissolve, which says nothing. A
    * planet unwrapping says what a projection *is*, which is the thing a flat map of earthquakes most
