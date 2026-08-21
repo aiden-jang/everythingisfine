@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { peakCount, type Bar } from "./histogram";
 import { WINDOWS } from "./windows";
@@ -111,6 +112,30 @@ export function Timeline({
   const held = focusHour === null ? null : bars.find((b) => b.bucketsAgo === focusHour) ?? null;
 
   /*
+   * The bars are real buttons, so holding an hour is not a mouse-only gesture.
+   *
+   * This was on the open-limitations list as an enhancement rather than a feature: hover had no
+   * keyboard or touch equivalent, so a keyboard user could not ask "which of these happened at 05:00"
+   * the way a pointer user could. That entry also rejected the obvious fix - "no amount of arrow-key
+   * cleverness would be discoverable enough to count" - and it was right about cleverness. A focusable
+   * group is not cleverness: it is the pattern, it shows a focus ring where the hold is, and on a touch
+   * screen a tap does what a tap looks like it should do.
+   *
+   * **Focus is the hold**, so there is no second state to keep in step with the pointer's. One tab stop
+   * for the whole strip on a roving `tabIndex`, the same shape `EventList` uses, because twenty-four tab
+   * stops in front of the rest of the rail would be a worse barrier than the one this removes.
+   *
+   * `STRIP_PX` is 44, which is exactly the touch-target minimum, so this costs no layout at all.
+   */
+  const [barAt, setBarAt] = useState(0);
+  const barRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const focusBar = (index: number): void => {
+    const next = Math.max(0, Math.min(bars.length - 1, index));
+    setBarAt(next);
+    barRefs.current[next]?.focus();
+  };
+
+  /*
    * Square root, not linear.
    *
    * Counts across a day run from 0 to several hundred once a sequence starts, and linear height
@@ -172,12 +197,45 @@ export function Timeline({
         style={{ height: `${STRIP_PX}px` }}
         onPointerLeave={() => onFocusHourChange(null)}
       >
-        <div className="flex h-full items-end gap-px">
-          {bars.map((bar) => (
-            <div
+        <div
+          role="group"
+          aria-label="Activity by hour"
+          className="flex h-full items-end gap-px"
+          onKeyDown={(e) => {
+            const step = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+            if (step !== 0) { e.preventDefault(); focusBar(barAt + step); return; }
+            if (e.key === "Home") { e.preventDefault(); focusBar(0); return; }
+            if (e.key === "End") { e.preventDefault(); focusBar(bars.length - 1); return; }
+            // Let go without leaving the strip, which a pointer does by moving away and a keyboard
+            // otherwise could not do at all.
+            if (e.key === "Escape") onFocusHourChange(null);
+          }}
+          /*
+            Released when focus leaves the strip entirely, not when it moves between bars: `relatedTarget`
+            is the element gaining focus, and without this check every arrow press would clear the hold it
+            had just set.
+          */
+          onBlur={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) onFocusHourChange(null);
+          }}
+        >
+          {bars.map((bar, i) => (
+            <button
               key={bar.bucketsAgo}
+              ref={(node) => { barRefs.current[i] = node; }}
+              type="button"
+              tabIndex={i === barAt ? 0 : -1}
+              /*
+                The same words the readout uses, so the two cannot drift apart, and an hour the buffer
+                never covered says so rather than reading as a quiet hour.
+              */
+              aria-label={bar.observed
+                ? `${bar.count} ${bar.count === 1 ? "event" : "events"}, `
+                  + `${bucketAgo(bar.bucketsAgo, bucketMs)}`
+                : `Not covered, ${bucketAgo(bar.bucketsAgo, bucketMs)}`}
+              onFocus={() => { setBarAt(i); onFocusHourChange(bar.bucketsAgo); }}
               onPointerEnter={() => onFocusHourChange(bar.bucketsAgo)}
-              className={`flex h-full flex-1 items-end ${
+              className={`flex h-full flex-1 cursor-pointer items-end ${
                 // Chrome, not hue: the held hour is an interface state, and the fills beside it are
                 // data. Behind the bar so it reads as a backdrop rather than as a value.
                 // A tick at the top of the column plus a lifted backdrop. The backdrop alone was
@@ -207,7 +265,7 @@ export function Timeline({
                  */
                 <div className="h-full w-full bg-raised" />
               )}
-            </div>
+            </button>
           ))}
         </div>
 

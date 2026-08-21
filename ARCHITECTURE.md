@@ -4079,6 +4079,28 @@ the window at every one. Panel-open was verified at 375 in the previous turn (fo
 inside); **at 768 and above, panel-open is unverified**, because the dev feed stopped delivering events on
 that tab and a check with no panel on screen proves nothing about the panel.
 
+## The stillness helper, and knowing when to stop using it
+
+`cameraStill` was written to replace fixed waits, and it ran a clean 60/60. Trying to tidy it made three
+things clear, one of which cost most of a session.
+
+**Its ceiling was incoherent and its threshold was wrong.** A 60s poll inside a 45s test budget means a
+slow settle dies as an opaque `Test timeout` rather than failing here with the number it was seeing. But
+lowering the ceiling to 20s turned that latent problem into failures, because the threshold was **1e-4 per
+sample** against exponentially eased springs: the delta shrinks geometrically and never reaches zero, so
+1e-4 is many time constants past the point where the camera has visibly stopped. It passed at 60s for that
+reason alone, not because 60s was right.
+
+**And it is the wrong tool for some of what it replaced.** "Wait until the camera stops so I can assert
+where it stopped" is a real question. "Wait until the picture has changed enough to screenshot" is not the
+same question, and the projection-unwrap test only needs the second - a stillness threshold tight enough to
+mean *finished* is reached long after the projection has visibly changed. That test's flat waits are back,
+with the reason written next to them.
+
+The helper stayed at the version that was green; the tidy-up was reverted rather than defended. The lesson
+is the one about thresholds: a settle test needs a threshold set by what a viewer or a screenshot can
+resolve, not by how small a float can get.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -4120,12 +4142,14 @@ Written last, and kept accurate rather than kept short.
   time. What is still missing is per-event navigation inside a swarm: you can see 301 neighbours and
   read their shape, and you cannot walk them one at a time.
 
-- **Holding an hour is pointer-only.** Hover has no keyboard or touch equivalent, so the link between
-  the strip and the globe is an enhancement rather than a feature. The strip's actual job, selecting
-  the window, is fully operable from the keyboard through the slider, and the accessible feed lists
-  every event with its time; but a keyboard user cannot ask "which of these happened at 05:00" the
-  way a pointer user can, and no amount of arrow-key cleverness would be discoverable enough to
-  count.
+- ~~**Holding an hour is pointer-only.**~~ **Closed on 2026-08-21.** The bars are real buttons now, so
+  focus is the hold: one tab stop for the strip on a roving `tabIndex`, arrows walk the day, Escape lets
+  go, and a tap does what a tap looks like it should do. This entry rejected the obvious fix - "no amount
+  of arrow-key cleverness would be discoverable enough to count" - and it was right about cleverness. A
+  focusable group is not cleverness, it is the pattern: the focus ring shows where the hold is, and the
+  readout beside the strip already said what was held. `STRIP_PX` was already 44, exactly the touch-target
+  minimum, so it cost no layout. `aria-label` reuses the readout's own words, and an hour the buffer never
+  covered says "Not covered" rather than reading as a quiet hour.
 
 - **No demo video.** The write-up asks for one and there is none, because recording it was not
   something this build could do.

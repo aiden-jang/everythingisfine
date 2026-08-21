@@ -276,6 +276,33 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   await fresh.close();
 });
 
+test("an hour can be held from the keyboard, and let go", async ({ page }) => {
+  /*
+   * The pointer half of this is above. This is the half that was on the open-limitations list: hover had
+   * no keyboard equivalent, so a keyboard user could not ask which hour an event landed in, and the link
+   * between the strip and the globe was an enhancement rather than a feature.
+   */
+  await installFeeds(page);
+  await page.goto("/");
+  await waitForData(page);
+
+  const strip = page.locator("[data-ramp]").filter({ has: page.locator(".gap-px") });
+  const readout = strip.locator("span.font-mono").first();
+  const bars = strip.locator(".gap-px > button");
+  await expect(readout).toHaveText(/^peak \d+ · /);
+
+  // One tab stop for twenty-four bars, or the strip would be a wall in front of the rest of the rail.
+  expect(await bars.evaluateAll((all) => all.filter((b) => b.tabIndex === 0).length)).toBe(1);
+
+  // Focus is the hold: no click, and no second state to keep in step with the pointer's.
+  await bars.nth(Math.floor((await bars.count()) * 0.66)).focus();
+  await expect(readout).toHaveText(/^\d+ events? · (latest|\d+[hd] ago)$/);
+
+  // Escape lets go without leaving the strip, which a pointer does by moving away.
+  await page.keyboard.press("Escape");
+  await expect(readout).toHaveText(/^peak \d+ · /);
+});
+
 test("the window buttons move the data and the headline follows", async ({ page }) => {
   /*
    * Three claims that only exist together in a browser: the window is a control, the control
@@ -345,7 +372,8 @@ test("holding a bucket on the strip reads it, and lets go", async ({ page }) => 
   await expect(readout).toHaveText(/^peak \d+ · /);
 
   // Two thirds along, so it lands on a bucket the seed covers rather than on the newest bar.
-  const bars = strip.locator(".gap-px > div");
+  // `button`, not `div`: the bars became real buttons when holding an hour stopped being mouse-only.
+  const bars = strip.locator(".gap-px > button");
   await bars.nth(Math.floor((await bars.count()) * 0.66)).hover();
   await expect(readout).toHaveText(/^\d+ events? · (latest|\d+[hd] ago)$/);
 
@@ -744,9 +772,16 @@ test("the globe unwraps into a map and back", async ({ page }) => {
   const globe = await page.locator("canvas").screenshot();
   await toggle.click();
   await expect(toggle).toHaveText("Globe");
-  // The unwrap, not the camera, and `cameraStill` samples both: a screenshot taken partway through is
-  // neither projection and would compare unequal for the wrong reason.
-  await cameraStill(page);
+  /*
+   * A flat wait here, deliberately, where the camera assertions use `cameraStill`.
+   *
+   * The morph is an exponential ease, so its per-sample delta creeps toward zero and a stillness
+   * threshold tight enough to mean "finished" is reached many time constants after the projection has
+   * visibly changed. `cameraStill` is the right tool for "the camera arrived somewhere and I want to
+   * assert where"; it is the wrong tool for "the picture has changed enough to screenshot". This test
+   * only needs the second, and 2.5s against a 1.1s morph is twice over.
+   */
+  await page.waitForTimeout(2_500);
 
   const flat = await page.locator("canvas").screenshot();
   expect(flat.equals(globe)).toBe(false);
@@ -755,7 +790,7 @@ test("the globe unwraps into a map and back", async ({ page }) => {
   expect(await page.evaluate(() => localStorage.getItem("eif.flat"))).toBe("1");
 
   await toggle.click();
-  await cameraStill(page);
+  await page.waitForTimeout(2_500);
   await expect(toggle).toHaveText("Map");
   expect(await page.evaluate(() => localStorage.getItem("eif.flat"))).toBe("0");
 });
