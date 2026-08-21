@@ -3552,6 +3552,51 @@ available; `preventDefault` on the summary stops the native toggle and React own
 **Unverified:** nothing about this. Checked in the browser - it folds, the slider and both source buttons
 survive it, the choice persists across a reload, and the summary is still keyboard-reachable.
 
+## The share card had never been runnable, and then it lied
+
+Regenerating the card for the rename turned up three faults in a row, each hidden behind the one before.
+
+**`pnpm card` had never run.** `make-card.mjs` imported `playwright`, which is not a dependency here -
+only `@playwright/test` is - so it failed with `ERR_MODULE_NOT_FOUND` every time. The file's own opening
+paragraph complains that the previous card could not be rebuilt because its script was never committed;
+the committed replacement could not be rebuilt either.
+
+**`m=7.5` stopped meaning "an empty globe".** The script's rule is that no real events go on a card,
+because clients cache it for days and yesterday's seismicity presented as now is the unlabelled-sample-data
+lie DESIGN.md section 10 forbids. It enforced that by setting the magnitude filter above every earthquake -
+which the new layers ignore entirely, correctly, since a fire has no magnitude. The first card built after
+this week's work had a hundred wildfires and a minute-old aurora forecast on it.
+
+**And the rings are not magnitude-filtered either.** With the hazard feeds blocked, the card still came out
+with three orange wavefront rings on it at `m=7.5`: one moment's earthquakes, exactly what the rule exists
+to prevent. So every feed is now blocked at the network - including the EMSC **WebSocket**, which
+`page.route` does not see and which needs `routeWebSocket` or a single live arrival lands a ring on an image
+cached for days. Blocked rather than switched off in the app, because a flag existing only to make this
+picture is what the magnitude trick was chosen over in the first place.
+
+Two couplings fell out of that and are written down where they will be read. The wait went from 7s to 11s:
+the boundary reveal normally starts when the entrance replay finishes, and with no feed answering there is
+no replay, so it starts on its 8s fallback in `Globe.tsx` and takes 1.5s to grow - 7s would now produce a
+card with no tectonics on it. And `locator.screenshot()` **clips the page to an element's box rather than
+isolating the element**, so the key-hint row overlaid on the canvas was being photographed onto the card:
+"arrows orbit + - zoom" across the bottom of a social preview. Hidden with an injected style for the shot,
+because it is right on screen and wrong only in a picture of it.
+
+The card's line now names what the app actually shows - earthquakes, storms, volcanoes, fires and floods -
+and the footer credits GDACS and NOAA beside USGS and EMSC.
+
+## Deployed, and what the edge did with it
+
+Live at `everythingisfine.aidenjang.com`, verified rather than assumed: the title, `og:image`, and four of
+the five new sentences read back out of the served bundle, with `theOf`'s word list and `legendKey` standing
+in for the two that are composed at runtime and so cannot appear as literals.
+
+**The first check found a stale card.** The plain URL returned the old 132,780-byte image with
+`cf-cache-status: HIT` while a cache-busted request returned the new 163,250. Assets are served
+`max-age=0, must-revalidate`, and the edge revalidated on its own within a couple of minutes, so nothing
+needed purging - but "wrangler said it uploaded" and "the internet is serving it" are different claims, and
+a social card is the one asset where the difference is visible to everyone.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
