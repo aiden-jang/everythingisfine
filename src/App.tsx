@@ -1782,6 +1782,7 @@ export function App(): JSX.Element {
               flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 1.6);
             }}
             boundaryKm={boundaryKmOf(shownQuake)}
+            onSelect={setSelected}
             farSide={farSideOf === shownQuake.key}
             /*
               Pulls the camera out to 0.9 when it goes on, because the figure is 40,000km across at its

@@ -32,7 +32,14 @@ export interface Nearby {
    * hour is an aftershock, and the same M5 with thirty smaller ones after it is a mainshock. The app
    * held every timestamp needed to tell those apart and showed neither.
    */
-  sequence: { at: number; magnitude: number }[];
+  /*
+   * `key` so the swarm can be walked, not only read.
+   *
+   * The strip could draw three hundred neighbours in time order and there was no way to step to one:
+   * the offsets carried when each happened and nothing said which event it was. Carrying the key costs
+   * one field on a list this function already builds and sorts.
+   */
+  sequence: { key: string; at: number; magnitude: number }[];
   before: number;
   after: number;
   /** Offset of the largest neighbour, so the panel can say whether the big one already happened. */
@@ -163,6 +170,7 @@ export function findNearby(
   // Already in arrival order from the store's walk, which is not origin order, so this sort stays.
   const sequence = found
     .map(({ quake: other }) => ({
+      key: other.key,
       at: other.primary.time - origin,
       magnitude: other.primary.magnitude,
     }))
@@ -192,4 +200,36 @@ export function depthClass(depthKm: number): string | null {
   if (depthKm < 70) return "shallow";
   if (depthKm < 300) return "intermediate";
   return "deep";
+}
+
+/**
+ * The neighbours immediately either side of the pinned event in time.
+ *
+ * The two steps a person actually wants in a swarm: what happened just before this, and what happened
+ * just after. Nearest-in-time rather than nearest-in-space, because a sequence is a thing that unfolds -
+ * "the next one" means the next one to happen.
+ *
+ * Ties at the same instant resolve to whichever the sort put first, which is arbitrary and harmless: two
+ * events sharing an origin time are two events, and stepping visits both.
+ */
+export function stepsFrom(
+  sequence: readonly { key: string; at: number; magnitude: number }[],
+): { earlier: { key: string; magnitude: number } | null; later: { key: string; magnitude: number } | null } {
+  let earlier: { key: string; magnitude: number } | null = null;
+  let later: { key: string; magnitude: number } | null = null;
+  let earlierAt = -Infinity;
+  let laterAt = Infinity;
+  for (const entry of sequence) {
+    // Strictly one side or the other. An offset of zero is a neighbour sharing this event's instant,
+    // and calling it "earlier" or "later" would be inventing an order the data does not have.
+    if (entry.at < 0 && entry.at > earlierAt) {
+      earlierAt = entry.at;
+      earlier = { key: entry.key, magnitude: entry.magnitude };
+    }
+    if (entry.at > 0 && entry.at < laterAt) {
+      laterAt = entry.at;
+      later = { key: entry.key, magnitude: entry.magnitude };
+    }
+  }
+  return { earlier, later };
 }
