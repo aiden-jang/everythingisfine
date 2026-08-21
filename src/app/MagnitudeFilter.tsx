@@ -1,8 +1,8 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { PLAYBACK } from "../geo/waves";
-import { auroraNote, cycloneNote, volcanoNote } from "./format";
+import { auroraNote, cycloneNote, floodNote, volcanoNote, wildfireNote } from "./format";
 import { category } from "../sources/cyclones";
-import { spiral, volcano } from "../globe/shapes";
+import { flame, spiral, volcano, waves } from "../globe/shapes";
 
 /*
  * The legend and the magnitude filter, which were two blocks and are one control.
@@ -29,12 +29,20 @@ export interface MagnitudeFilterProps {
   volcanoes: number;
   /** When the newest of their eruption episodes ended, which the line has to admit is not now. */
   volcanoesSince: number | null;
+  /** The fires burning, already summarised, because the caveat needs the leader and the median. */
+  fires: { count: number; km2: number; medianDays: number | null; leader: string | null };
+  /** Where the feed stops, which is the difference between this count and a census. */
+  fireCap: number;
+  floods: number;
+  floodCountries: number;
 }
 
 const TICKS = [MAG_MIN, 3, 5, MAG_MAX];
 
 const SPIRAL_PATH = path(spiral(0, 0, 9));
 const VOLCANO_PATH = path(volcano(0, -3, 6));
+const FLAME_PATH = path(flame(0, -8, 5));
+const WAVE_PATHS = waves(0, -4, 4).map(path);
 
 /**
  * The legend's glyphs, from the same generators the globe draws, so the two cannot drift apart.
@@ -47,7 +55,10 @@ function path(points: readonly { lon: number; lat: number }[]): string {
 }
 
 export function MagnitudeFilter(
-  { ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince }: MagnitudeFilterProps,
+  {
+    ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince,
+    fires, fireCap, floods, floodCountries,
+  }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
   // Where the threshold sits along the scale, as a percentage of the track.
@@ -191,6 +202,33 @@ export function MagnitudeFilter(
               className="text-dim" />
           </svg>
           <span>{volcanoNote(volcanoes, volcanoesSince, Date.now())}</span>
+        </div>
+      ) : null}
+
+      {/*
+        Fires and floods, same rule again: a flame and the wavy lines water gets, both achromatic. The two
+        sentences beside them carry the honesty each feed needs - the fire count is a floor and the flood
+        severity does not exist - because a glyph cannot caveat itself.
+      */}
+      {fires.count > 0 ? (
+        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+          <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+            <path d={FLAME_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
+              className="text-dim" />
+          </svg>
+          <span>{wildfireNote(fires, fireCap)}</span>
+        </div>
+      ) : null}
+
+      {floods > 0 ? (
+        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+          <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+            {WAVE_PATHS.map((d) => (
+              <path key={d} d={d} fill="none" stroke="currentColor" strokeWidth={1.4}
+                className="text-dim" />
+            ))}
+          </svg>
+          <span>{floodNote(floods, floodCountries)}</span>
         </div>
       ) : null}
 

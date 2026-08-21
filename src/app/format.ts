@@ -340,3 +340,49 @@ export function volcanoNote(count: number, newest: number | null, now: number): 
     + `${when}, so none of this is erupting this minute. They sit along the same lines the `
     + `earthquakes do, which is the whole of why either happens.`;
 }
+
+/**
+ * What the flames are, and the one caveat that cannot be left out.
+ *
+ * Every number here is real and the count is not the world's. GDACS caps its list at 100 and cannot be
+ * paged past it, and a request for Angola alone comes back with a full hundred, so the global response is a
+ * slice of thousands. The geography in it is right - late August is the southern African burning season -
+ * but the number of marks is a floor, and a map that showed a hundred fires without saying so would be
+ * claiming a census it does not have.
+ *
+ * The duration is the fact this layer brings that no other mark here can: an earthquake is an instant and
+ * a fire is a fortnight.
+ */
+export function wildfireNote(
+  fire: { count: number; km2: number; medianDays: number | null; leader: string | null },
+  cap: number,
+): string | null {
+  if (fire.count === 0) return null;
+  const burning = fire.medianDays === null
+    ? ""
+    : `, burning ${fire.medianDays} day${fire.medianDays === 1 ? "" : "s"} at the median`;
+  const floor = fire.count >= cap
+    ? ` The feed stops at ${cap} and ${fire.leader ?? "one country"} alone has more than that, so the `
+      + `count is a floor: every mark is real, their number is not the world's.`
+    : "";
+  return `the flames are forest fires burning now, ${fire.count} of them, `
+    + `${fire.km2.toLocaleString("en")} square kilometres alight${burning}.${floor}`;
+}
+
+/**
+ * What the waves are, and what they decline to say.
+ *
+ * The cap is not in play here: floods spread thin, no more than three to a country, and a single-country
+ * request returns ten where the same request for fires returns a hundred. So this count is the count.
+ *
+ * There is nothing to rank them by. GDACS files every flood in the list as `severity: 0.0`, "Magnitude 0",
+ * so the mark says where and refuses to imply how bad - which for a flood is the number a reader most
+ * wants and the one nobody keyless has.
+ */
+export function floodNote(count: number, countries: number): string | null {
+  if (count === 0) return null;
+  const where = countries > 1 ? ` across ${countries} countries` : "";
+  return `the waves are floods running now, ${count} of them${where}. `
+    + `Nothing here rates them: every flood in this feed is filed as magnitude zero, so the mark says `
+    + `where and not how bad.`;
+}

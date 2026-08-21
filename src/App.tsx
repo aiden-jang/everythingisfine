@@ -8,6 +8,8 @@ import { store, stored } from "./app/stored";
 import { fetchAurora, type Aurora } from "./sources/aurora";
 import { fetchCyclones, type Cyclone } from "./sources/cyclones";
 import { fetchVolcanoes, newestEpisode, type Volcano } from "./sources/volcanoes";
+import { fetchWildfires, summarise, FEED_CAP, type Wildfire } from "./sources/wildfires";
+import { countries, fetchFloods, type Flood } from "./sources/floods";
 import { marksFor } from "./app/marks";
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
@@ -209,10 +211,21 @@ export function App(): JSX.Element {
    * so instead of implying otherwise.
    */
   const [volcanoes, setVolcanoes] = useState<readonly Volcano[]>([]);
+  /*
+   * Fires and floods, both live and both on the storms' clock.
+   *
+   * Live is measured, not assumed: all hundred fires are flagged current with today's end date, and 19 of
+   * the hundred floods ended within three days while the other 81 are up to a year old. The 81 are why
+   * both parsers filter on `iscurrent` rather than drawing what arrives.
+   */
+  const [fires, setFires] = useState<readonly Wildfire[]>([]);
+  const [floods, setFloods] = useState<readonly Flood[]>([]);
   useEffect(() => {
     let alive = true;
     const load = (): void => {
       void fetchCyclones().then((next) => { if (alive) setCyclones(next); });
+      void fetchWildfires().then((next) => { if (alive) setFires(next); });
+      void fetchFloods().then((next) => { if (alive) setFloods(next); });
     };
     load();
     void fetchVolcanoes().then((next) => { if (alive) setVolcanoes(next); });
@@ -225,7 +238,11 @@ export function App(): JSX.Element {
    * Two arrays that each change every ten minutes at most, against a loop that runs at sixty frames a
    * second when anything is moving.
    */
-  const marks = useMemo(() => marksFor(cyclones, volcanoes), [cyclones, volcanoes]);
+  const marks = useMemo(
+    () => marksFor({ cyclones, volcanoes, fires, floods }), [cyclones, volcanoes, fires, floods],
+  );
+  /** Computed here rather than in the legend, so the sentence is a render of a number and not a scan. */
+  const fireSummary = useMemo(() => summarise(fires), [fires]);
   /*
    * Remembered, because a width somebody chose is a preference and re-choosing it on every visit is
    * the app forgetting something it was told.
@@ -716,6 +733,10 @@ export function App(): JSX.Element {
                 cyclones={cyclones}
                 volcanoes={volcanoes.length}
                 volcanoesSince={newestEpisode(volcanoes)}
+                fires={fireSummary}
+                fireCap={FEED_CAP}
+                floods={floods.length}
+                floodCountries={countries(floods)}
               />
               {/*
                 Sources sit with the magnitude control because both answer "what is on the globe".

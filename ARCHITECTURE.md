@@ -3427,6 +3427,85 @@ volcano in the sea, and most of them are coastal. The legend draws both glyphs f
 globe uses, with latitude negated because SVG counts y downward and the globe counts it up - without that
 the volcano points at the ground, which is a different symbol.
 
+## The cap in the middle of the hazard feed
+
+GDACS stops at 100 features and there is no way past it. `limit`, `pagesize`, `count` and `page` are all
+ignored and all return exactly 100. What settled it: `country=` **is** honoured, and Angola on its own
+returns a full hundred wildfires. So the global wildfire response is a truncated slice of thousands, not a
+census.
+
+Two consequences, both structural. **One request per type**, because `eventlist=EQ;TC;FL;VO;DR;WF` returns
+100 *total* - measured at 69 wildfires, 25 earthquakes, 4 cyclones and 2 floods - which would silently drop
+every volcano and 98% of the floods. And the cap has to be checked per layer rather than assumed away:
+volcanoes are 23 and floods spread across 68 countries at no more than three each, so both are complete;
+wildfires are not.
+
+## Wildfires, live and countable only to a floor
+
+The unusual combination here is live, complete in its dates, and incomplete in its count.
+
+Live is not in doubt: all 100 are flagged `iscurrent`, every `todate` is today, and the burns run 3 to 15
+days with a median of 9. **That duration is what this layer brings that nothing else on the globe does.** An
+earthquake is an instant; a fire is a fortnight. Burned area is real too, in hectares, 1,539 to 147,397,
+with 16,203 km² alight in total.
+
+The count is the problem, and the alternative was worse. Filtering to Orange;Red gives a *complete* set of
+14 - and **all 14 are stale**, ages 3 to 207 days, median 22. So the two properties I wanted sit on
+opposite sides of the same switch: the unfiltered set is live and truncated, the filtered set is complete
+and dead. Live wins, because a stale fire layer is the volcano problem again and this feed does not need to
+have it twice.
+
+So the legend states the floor outright: *"100 of them, 16,203 square kilometres alight, burning 9 days at
+the median. The feed stops at 100 and Angola alone has more than that, so the count is a floor: every mark
+is real, their number is not the world's."* The caveat clause only renders when `count >= FEED_CAP`, so it
+is a fact about this response rather than boilerplate. The country it names is ranked **by burned area, not
+by event count** - ranking by count would name whichever country the cap happened to favour.
+
+I considered aggregating to one flame per country to dodge the false density and rejected it: the `country`
+field carries composites like "Zambia, The Democratic Republic of Congo" alongside single-country rows, so
+13 "countries" is not 13 countries, and the reduction would have been my invention sitting on top of a
+truncation. Disclosing the truncation is honest; hiding it behind an aggregate is not. The geography in the
+slice is right anyway - Angola, Zambia, the Congo and Siberia genuinely dominate the world's fire count in
+late August.
+
+**Area is not encoded in size.** Size belongs to the magnitude ramp, and at true scale the largest fire on
+Earth is a fifth of a degree across, which is invisible. The hectares go in words.
+
+## Floods, and the number that does not exist
+
+Straightforward for once: 19 of the 100 are current and every one of those ended within three days; the
+other 81 run to 359 days old. Filtered on `iscurrent` like the cyclones, and for the same reason - drawn
+whole it would be a flood archive wearing the present tense.
+
+What the layer refuses to do is rate them. GDACS files **every** flood in the list as `severity: 0.0`,
+"Magnitude 0", so there is nothing to rank by, and the legend says so rather than leaving a reader to assume
+the marks are sized or sorted by anything: *"the mark says where and not how bad."* For a flood, severity is
+the number a reader most wants and the one nobody keyless has.
+
+## Four outlines, no hue
+
+The mark vocabulary is now closed: **spiral** storm, **triangle** volcano, **flame** fire, **three wavy
+lines** flood, all achromatic, with colour still meaning magnitude and nothing else. That is the aurora's
+rule - light gets colour, marks get shapes - holding across five layers, which is what it was written for.
+
+The flame leans, because a symmetrical one reads as a leaf. It stands on its point like the triangle, for
+the same coastal reason. A flood is three *separate* strokes rather than one path, because a single
+polyline would have to travel from the end of one row to the start of the next and that connector would be
+drawn; `waves()` therefore returns `Point[][]` and `marksFor` spreads it.
+
+`app/marks.ts` took a `Happening` object rather than growing to four positional arguments, and the shared
+GDACS envelope reading - zoneless dates, coordinate validation, the `iscurrent` string, the failing fetch -
+moved into `sources/gdacs.ts` at the third copy. `volcanoes.ts` was migrated onto it and its eleven tests
+passed unchanged, which is the only evidence that a refactor of a parser was safe.
+
+**Capacity was re-derived rather than left.** 100 flames, 100 floods at three strokes of twelve, 23
+triangles and a season of storm track lands near 5,100 segments against a buffer of 6,000. Raised to
+12,000: the failure mode of guessing low is marks silently missing from the far end of the list.
+
+**Unverified:** how five layers look together at framing distance. 100 flames, 19 flood glyphs, 23
+triangles, storm tracks and the aurora over the earthquake field is the densest this globe has ever been,
+and I have not looked at it.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
