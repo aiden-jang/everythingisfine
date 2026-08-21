@@ -294,6 +294,15 @@ export function App(): JSX.Element {
   const [announceAbove, setAnnounceAbove] = useState<number>(
     () => Number(stored("announceAbove") ?? "4.5"),
   );
+  /*
+   * The legend's key, open unless somebody has closed it.
+   *
+   * Persisted for the reason the rail width is: a panel somebody folded away is a preference, and
+   * unfolding it on every visit is the app forgetting what it was told. Stored as the closed state so the
+   * absence of the key reads as the default rather than as a choice.
+   */
+  const [keyOpen, setKeyOpen] = useState<boolean>(() => stored("legendKey") !== "0");
+  useEffect(() => { store("legendKey", keyOpen ? "1" : "0"); }, [keyOpen]);
   useEffect(() => { store("ramp", ramp); }, [ramp]);
   useEffect(() => {
     store("announceAbove", String(announceAbove));
@@ -737,6 +746,8 @@ export function App(): JSX.Element {
                 fireCap={FEED_CAP}
                 floods={floods.length}
                 floodCountries={countries(floods)}
+                keyOpen={keyOpen}
+                onKeyOpen={setKeyOpen}
               />
               {/*
                 Sources sit with the magnitude control because both answer "what is on the globe".

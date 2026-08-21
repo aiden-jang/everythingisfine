@@ -3526,9 +3526,31 @@ distinguishes: present means "this is a glyph, scale it about this point", absen
 draw it as given". The anchor also keeps a flood's three strokes moving as one glyph instead of drifting
 apart, and latitude is clamped so six times a flame near the pole cannot be drawn past it.
 
-**Still unverified:** the legend is now five paragraphs and covers more of the globe's right side than it
-used to. That is a layout consequence of the layer count, not a bug, and the rail is resizable, but nobody
-has decided whether it is acceptable.
+## The key folds, and the controls do not fold with it
+
+Five layers made the legend seven paragraphs, which over the map is a wall in front of the thing it
+describes. Collapsed, the box is the ramp, one line of summary and the two source buttons, and the whole
+globe is visible behind it.
+
+**The split is control against commentary.** The slider, the ticks and the source toggles are how you
+change what is on the globe and they stay; everything below the scale is what the marks mean and it folds.
+Getting that boundary wrong is the only real risk here - folding the slider away with the prose would make
+the app less usable in exchange for a cleaner screenshot - so the e2e case asserts the controls are still
+visible with the key shut, not merely that the key shuts.
+
+**Open by default, remembered only once closed.** This app's argument is that no layer ships without the
+sentence that explains it, so shipping it folded would hide that argument from everyone who never finds the
+toggle. The viewer may dismiss it; the app does not get to pre-dismiss it for them. Persisted as the closed
+state, so an absent key reads as the default rather than as a choice.
+
+`<details>`/`<summary>` because the app already has that idiom in two places and `index.css` already gives
+`summary` its 44px on a coarse pointer - a hand-rolled div with a click handler would have needed the
+keyboard behaviour and the touch target written again. Controlled rather than native, because the state is
+persisted and **React 18 does not listen for `toggle`**, so reading the browser's own open state back is not
+available; `preventDefault` on the summary stops the native toggle and React owns `open`.
+
+**Unverified:** nothing about this. Checked in the browser - it folds, the slider and both source buttons
+survive it, the choice persists across a reload, and the summary is still keyboard-reachable.
 
 ## Open, and honestly so
 
