@@ -3872,6 +3872,39 @@ module was driven through a real `AudioContext` with five simultaneous magnitude
 The first attempt played nothing, and the reason was the hidden-tab guard doing its job: the preview pane
 reports `document.hidden`, so the check had to be overridden to hear anything at all.
 
+## The legend grew past the screen, one row at a time
+
+Deploying the session's work and then looking at the live site at **1280x720** - an ordinary laptop - found
+a regression nothing had flagged. The legend panel had reached **845px in a 720px viewport**. Nothing in
+the ancestor chain had a max-height or an overflow, so the bottom band's top sat at **-157** and the
+**magnitude slider was 104px above the top of the window**: the app's primary control, off screen and
+unreachable, with no scrollbar anywhere to hint at it.
+
+No single change did this. The storm, volcano, fire, flood, motion, depth and sound rows each added a few
+lines to the same box, and the collapsible key - added exactly because the legend was getting long - hid
+the problem by being the mitigation everyone remembered instead of a cap.
+
+**Two mistakes fixing it, both worth writing down.**
+
+First, the cap silently did nothing: `max-h-[calc(100dvh-4.5rem)]` is invalid CSS, because calc needs
+whitespace around the `-` or `-4.5rem` parses as a negative number and the declaration is dropped. This
+repo has a note about `xl:left-[calc(var(--rail-w)+1rem)]` failing the same way, and I walked straight back
+into it. Tailwind arbitrary values need underscores: `calc(100dvh_-_4.5rem)`. It was caught by measuring
+`getComputedStyle(...).maxHeight` and finding `none`, not by looking - the panel is tall enough that a
+screenshot of the broken and fixed versions look similar at a glance.
+
+Second, capping the height moved the *source toggles* off the fold. They sat at the bottom of the panel,
+below seven paragraphs of prose, so the fix turned one unreachable control into another. They are now
+passed into `MagnitudeFilter` as a child rendered above the folding key, which makes true the split the
+fold already claimed: **all the controls above all the commentary**, and only the explanation scrolls.
+
+Verified at 1280x720 with the key open: capped at 648px, scrolling, and the slider, both source buttons and
+the key toggle all inside the viewport, with no horizontal scroll.
+
+**The lesson is about where the check goes.** Every layer this session was verified by looking at the
+globe, which is where the layers are. The legend was verified by reading its sentences, which is not the
+same as measuring the box they are in.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

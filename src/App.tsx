@@ -1000,9 +1000,14 @@ export function App(): JSX.Element {
                 sound={sound ? announceAbove : null}
                 motionOn={motionOn}
                 onMotion={setMotionOn}
-              />
+              >
               {/*
                 Sources sit with the magnitude control because both answer "what is on the globe".
+
+                Passed in as a child so they land *above* the folding key. Once the panel gained a
+                max-height they were at the bottom of a scrolling column and off the fold at 1280x720 -
+                a control the viewer had to scroll prose to reach. All the controls are above all the
+                commentary now, which is the split the fold already claimed to make.
               */}
               <div className="mt-3 flex gap-1.5">
                 {(["usgs", "emsc"] as const).map((id) => (
@@ -1021,6 +1026,7 @@ export function App(): JSX.Element {
                   </button>
                 ))}
               </div>
+              </MagnitudeFilter>
 
     </>
   );
@@ -1683,7 +1689,23 @@ export function App(): JSX.Element {
               </div>
             ) : null}
             {onMap ? (
-              <div className="pointer-events-auto order-1 w-full max-w-[300px] bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50 xl:order-2">
+              /*
+                Capped and scrolling, because the legend outgrew the screen.
+                Measured at 1280x720, a very ordinary laptop: the panel had reached 845px in a 720px
+                viewport, so the bottom band's top sat at -157 and the **magnitude slider was 104px above
+                the top of the window** - the app's primary control, unreachable, with nothing in the
+                ancestor chain having a max-height or an overflow to catch it. Adding the storm, volcano,
+                fire, flood, motion, depth and sound rows did that a row at a time and no single one of
+                them looked like the culprit.
+                The control is at the top of this panel and the prose below it, so capping here keeps the
+                slider and the ramp in view and scrolls the explanation, which is the right half to lose.
+                `dvh` and not `vh`, per DESIGN.md 11. And underscores in the `calc`, because CSS needs
+                whitespace around the `-` or `-4.5rem` parses as a negative number and the whole
+                declaration is dropped - which is the trap `xl:left-[calc(var(--rail-w)+1rem)]` fell into
+                once already, and which I walked straight back into here: the first version of this cap
+                silently did nothing and the panel was still 806px tall.
+              */
+              <div className="pointer-events-auto order-1 max-h-[calc(100dvh_-_4.5rem)] w-full max-w-[300px] overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50 xl:order-2">
                 {legend}
               </div>
             ) : null}
