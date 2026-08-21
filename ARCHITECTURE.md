@@ -3678,6 +3678,55 @@ undone. `loadMotion()` is a dynamic import and `marksFor` takes the samples as a
 leaves it a pure function testable with two rows instead of 231. Verified by grep: the eager chunk contains
 none of Bird's class names.
 
+## The quiet map, cut down to what thirty days can say
+
+Item 8 wanted the belts dimmed and the cratons lit, because the negative space is the story. Read literally
+that is a claim about geological time, and this app holds at most thirty days in a ring buffer with no
+backend. Inverting a single window would have lit up half the Ring of Fire, because most active belt cells
+have no earthquake today either - the map would have looked like an insight and been an artefact of the
+window length.
+
+So the claim was cut, not faked. **Not which places are quiet, but how far each earthquake is from an
+edge.** Measured before building, against a real day of USGS M2+ and the boundary file already shipped:
+median **93 km**, half within 100 km, and that band is 9.4% of the surface. On the live feed with EMSC
+included it reads 73% inside the band, a concentration of **7.8x**.
+
+That ratio is published as a **floor**, and that is not hedging. A dense network finds magnitude 2 events
+under Oklahoma while nobody at all is listening in the middle of the Pacific, so the catalogue over-counts
+the interiors, which pushes the ratio down. The truth is above whatever the sentence prints.
+
+**The tail is the feature.** The four furthest that day were Pahala in Hawaii at 3,557 km, Massac in
+Kentucky at 2,136, Falls City in Texas at 1,203, and a magnitude 5.2 south of Dunhuang at 1,070: a hotspot,
+a failed rift, an oilfield and the inside of a plateau. Every one of those names comes from the agency's own
+text, so the panel states a distance and lets the name do the rest - the app never has to claim "hotspot".
+
+**Not drawn on the markers, on purpose.** The obvious move is to ring the intraplate events, and item 10
+already tried ringing markers twice and removed it twice: hairlines vanished under 10-20px discs, and an
+offset ring read as a concentric scribble. Colour and size are magnitude and fill is depth, so the marker
+has no channel left. This is a field in the panel and a sentence in the rail instead.
+
+## The chord that cut through the planet
+
+The first version of `nearestBoundaryKm` took the nearest point on the **chord** joining a segment's ends,
+which is a line through the inside of the Earth. A 10-degree segment sags 24 km below the surface at its
+midpoint, so a point sitting exactly on that stretch of ridge was reported 24 km off it.
+
+On the real file it would never have shown: its vertices average 139 km apart, where the sag is 0.4 km and
+hides behind the kilometre rounding forever. It surfaced because the test was built on a deliberately
+coarse 10-degree line, and the comment sitting above the function claimed the two methods "differ by
+centimetres" - **wrong by five orders of magnitude, written by me in the same commit.** It now measures
+cross-track distance to the great circle, clamped to the endpoints, which is exact at any segment length.
+
+A second wrong expectation in the same test file, worth keeping written down: I asserted that a point one
+degree of latitude from a boundary running along 5N was 111.2 km from it. It is 119.7. **A line of constant
+latitude is not a great circle** - the arc joining 5N,0E to 5N,20E bulges to 5.078N at the halfway meridian.
+The code was right and the test was naive, so the test now pins the bulge on purpose.
+
+An earlier measurement pass had the same class of error from the other direction: distance to the nearest
+*vertex* rather than the nearest segment put the within-50km share at 11% where the truth was 32%. Three
+mistakes, all of them "close enough on a sphere is not close enough", and none of them visible without a
+number to check against.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

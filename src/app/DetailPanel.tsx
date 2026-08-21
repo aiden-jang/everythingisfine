@@ -11,7 +11,7 @@ import { arrivalFor, seconds } from "./arrival";
 import { daylight, solarClock, solarHour, sunElevation } from "../geo/sun";
 import { P_WAVE_KM_PER_S, S_WAVE_KM_PER_S } from "../geo/waves";
 import {
-  ago, clock, coordinates, depth, farSideNote, magnitude, place, SOURCE_NAMES,
+  ago, boundaryNote, clock, coordinates, depth, farSideNote, magnitude, place, SOURCE_NAMES,
 } from "./format";
 
 /*
@@ -52,6 +52,8 @@ export interface DetailPanelProps {
   /** Whether this event's far side is currently drawn, and the toggle for it. */
   farSide: boolean;
   onFarSide: (on: boolean) => void;
+  /** Km to the nearest plate boundary, or null until the boundary file has loaded. */
+  boundaryKm: number | null;
 }
 
 function Field({ label, value }: { label: string; value: string }): JSX.Element {
@@ -65,7 +67,7 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
 
 export function DetailPanel({
   open, quake, store, filters, ramp, excluded, revision, onClose, onFlyTo, onSection,
-  farSide, onFarSide,
+  farSide, onFarSide, boundaryKm,
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
   const r = quake.primary;
@@ -220,6 +222,17 @@ export function DetailPanel({
       <div className="mt-4">
         <Field label="Depth" value={klass ? `${depth(r)} · ${klass}` : depth(r)} />
         <Field label="Position" value={coordinates(r)} />
+        {/*
+          Where it sits relative to the plate edges.
+
+          With the coordinates rather than in prose, because it is the same kind of fact: a position,
+          read against the geography the globe already draws. On its own it turns the place name into an
+          explanation - "3,557 km from the nearest plate boundary" under Pahala, Hawaii is the hotspot,
+          without the app ever having to claim one.
+        */}
+        {boundaryNote(boundaryKm) ? (
+          <Field label="Boundary" value={boundaryNote(boundaryKm)!} />
+        ) : null}
         {/*
           What the sky was doing there when it happened, which the terminator was already computing and
           nothing read. An M6 at three in the morning, with everyone asleep and indoors, is a different

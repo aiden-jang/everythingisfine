@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   compactSpan, corroborationNote, floodNote, reach, reachFraction, reachNote, reachWords,
-  farSideNote, motionNote, theOf, wildfireNote,
+  boundaryNote, farSideNote, motionNote, quietNote, theOf, wildfireNote,
 } from "./format";
 
 /*
@@ -307,5 +307,46 @@ describe("the plate-motion sentence", () => {
     expect(note).toContain("90 of the 231 are closing");
     expect(note).toContain("227 mm a year");
     expect(note).toContain("a metre every four years");
+  });
+});
+
+describe("where an event sits relative to the plate edges", () => {
+  it("says so plainly when it is on one, rather than printing a round zero", () => {
+    expect(boundaryNote(0)).toBe("on it");
+    expect(boundaryNote(24)).toBe("on it");
+  });
+
+  it("gives a distance once it is off the line", () => {
+    expect(boundaryNote(93)).toBe("93 km away");
+  });
+
+  it("groups the thousands, because the interesting ones are four digits", () => {
+    // Pahala, Hawaii, the day this was measured.
+    expect(boundaryNote(3557)).toBe("3,557 km away");
+  });
+
+  it("says nothing at all until the boundary file has loaded", () => {
+    expect(boundaryNote(null)).toBeNull();
+  });
+});
+
+describe("the negative-space sentence", () => {
+  it("states the share, the band, and the concentration as a floor", () => {
+    const note = quietNote(41, 81, 100, 0.094)!;
+    expect(note).toContain("51% of them are within 100 km");
+    expect(note).toContain("9.4% of the surface");
+    expect(note).toContain("at least 5.4 times");
+  });
+
+  it("says at least, because the catalogue over-counts the interiors", () => {
+    /*
+     * Not hedging. A dense network finds M2 under Oklahoma and nobody is listening mid-Pacific, so the
+     * intraplate count is inflated and this ratio is pushed down. The truth is above whatever it prints.
+     */
+    expect(quietNote(41, 81, 100, 0.094)!).toContain("at least");
+  });
+
+  it("has nothing to say about an empty window", () => {
+    expect(quietNote(0, 0, 100, 0.094)).toBeNull();
   });
 });

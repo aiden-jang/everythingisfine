@@ -462,3 +462,46 @@ export function motionNote(
     + `the ${motion.arrows} are closing, and the fastest runs at ${Math.round(motion.fastest)} mm a year, `
     + `which is a metre every four years.`;
 }
+
+/**
+ * Where an event sits relative to the plate edges, for the panel.
+ *
+ * The distance alone is the whole feature: next to a place name the agency already wrote, a boundary
+ * 3,557 km away under Pahala, Hawaii tells the hotspot story to anyone who thinks about it, and the app
+ * never has to claim anything about hotspots. Close enough and it says "on it" rather than printing a
+ * suspiciously round zero.
+ *
+ * The bands are stated where they are because the measured median for a real day was 93 km: half of
+ * everything lands inside the first band, so a scale that started at 500 km would call almost every
+ * earthquake on Earth "near".
+ */
+export function boundaryNote(km: number | null): string | null {
+  if (km === null) return null;
+  // Compact, because its only consumer is a field labelled "Boundary": spelling out "from the nearest
+  // plate boundary" there said the word twice and wrapped the value onto a second line.
+  if (km < 25) return "on it";
+  return `${Math.round(km).toLocaleString("en")} km away`;
+}
+
+/**
+ * The negative space, as the one sentence this data can carry.
+ *
+ * Not "the cratons are quiet", which is a claim about hundreds of millions of years against a buffer
+ * holding at most thirty days. What is left is still the same shape of fact: the events cluster on a small
+ * part of the surface, and the ratio says how hard.
+ *
+ * The concentration is stated as a floor rather than a figure, and that is not hedging. A dense network
+ * finds magnitude 2 events under Oklahoma while nobody is listening in the middle of the Pacific, so the
+ * catalogue over-counts the interiors, which pushes this ratio **down**. The true concentration is higher
+ * than whatever this says.
+ */
+export function quietNote(
+  near: number, total: number, bandKm: number, bandShare: number,
+): string | null {
+  if (total === 0) return null;
+  const share = near / total;
+  const times = share / bandShare;
+  return `${Math.round(share * 100)}% of them are within ${bandKm} km of a plate boundary, which is `
+    + `${(bandShare * 100).toFixed(1)}% of the surface: at least ${times.toFixed(1)} times the `
+    + `seismicity per square kilometre, and the rest of the planet had the day off.`;
+}
