@@ -1272,9 +1272,14 @@ test("the legend says what a ring is, since nothing else did", async ({ page }) 
   // The gap is the reason there are two, so the sentence has to carry it and not just name them.
   await expect(zones).toContainText("how distance to a quake is measured");
   await expect(zones).toContainText("×20");
-  // The app never said what its own name meant, and the name is a term of art. It sits beside the
-  // P-wave because before that front existed there was nothing on screen for it to point at.
-  await expect(zones).toContainText("First motion is a seismogram term");
+  /*
+   * The "first motion is a seismogram term" sentence used to be asserted here and is gone on purpose.
+   * It existed to explain the app's own name while the app was called First Motion; the rename to
+   * Everything Is Fine removed the name, so the sentence explained nothing and went with it. That
+   * commit updated other strings in this file and missed this one, and the suite was not being run, so
+   * a stale expectation sat here green-until-executed. See ARCHITECTURE.md, "The contract was already
+   * written, and asleep".
+   */
 
   /*
    * Once, not twice. The header carried a bare "wavefront ×20" that the sentence now states in the
