@@ -32,6 +32,15 @@ export interface GlobeProps {
   onSelect: (key: string | null) => void;
   /** Handed a fly function once, so the rail can send the camera to a region. */
   onReady: (flyTo: (lon: number, lat: number, zoom?: number) => void) => void;
+  /**
+   * Hands out a function that renders and returns the canvas, for the still.
+   *
+   * The canvas itself rather than a data URL, because the context is created without
+   * `preserveDrawingBuffer` - the buffer is gone the moment the browser composites, so a capture has to
+   * draw and be read **in the same tick**. Turning that flag on instead would cost every frame of every
+   * session to serve a button almost nobody presses. The caller must use it synchronously.
+   */
+  onCapture?: (capture: () => HTMLCanvasElement | null) => void;
   /** Called as the camera moves, so the permalink can carry where somebody is looking. */
   onCamera?: (state: { lon: number; lat: number; zoom: number }) => void;
   /**
@@ -93,7 +102,8 @@ const SCALE_BOTTOM = 40;
 const SCALE_TARGET_PX = 110;
 
 export function Globe({
-  feed, filters, selected, ramp, onSelect, onReady, onCamera, onReplay, focus = null, aurora = null, marks = [],
+  feed, filters, selected, ramp, onSelect, onReady, onCapture, onCamera, onReplay,
+  focus = null, aurora = null, marks = [],
   scrubAt = null, flat = false, section = null, onSection,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -146,6 +156,14 @@ export function Globe({
       // Through the ref, not the closure: a shared link calls this during setup, before `wake` further
       // down has been initialised, and a temporal dead zone here takes the whole canvas with it.
       wakeRef.current();
+    });
+
+    onCapture?.(() => {
+      const el2 = canvas.current;
+      if (!el2) return null;
+      // Drawn again right here, so the pixels exist when the caller reads them on the next line.
+      globe.render();
+      return el2;
     });
 
     if (import.meta.env.DEV) {
