@@ -1,6 +1,8 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { PLAYBACK } from "../geo/waves";
-import { auroraNote } from "./format";
+import { auroraNote, cycloneNote } from "./format";
+import { category } from "../sources/cyclones";
+import { spiral } from "../globe/cyclones";
 
 /*
  * The legend and the magnitude filter, which were two blocks and are one control.
@@ -21,12 +23,19 @@ export interface MagnitudeFilterProps {
   onChange: (value: number) => void;
   /** Tonight's aurora, for the one line that explains it. Null when there is none to explain. */
   aurora: { peak: number; forecastAt: number } | null;
+  /** The storms running now, for the same reason: no layer without the thing that explains it. */
+  cyclones: readonly { name: string; peakKmh: number | null }[];
 }
 
 const TICKS = [MAG_MIN, 3, 5, MAG_MAX];
 
+/** The legend's spiral, from the same generator the globe draws, so the two cannot drift apart. */
+const SPIRAL_PATH = spiral(0, 0, 9)
+  .map((p, i) => `${i === 0 ? "M" : "L"} ${p.lon.toFixed(2)} ${p.lat.toFixed(2)}`)
+  .join(" ");
+
 export function MagnitudeFilter(
-  { ramp, value, onChange, aurora }: MagnitudeFilterProps,
+  { ramp, value, onChange, aurora, cyclones }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
   // Where the threshold sits along the scale, as a percentage of the track.
@@ -143,6 +152,21 @@ export function MagnitudeFilter(
         `items-start`, since this is the only row that wraps, and a glyph centred against two lines
         floats between them.
       */}
+      {/*
+        Storms, when there are any. A spiral for a swatch, because the mark is a spiral: the rule settled
+        with the aurora is that light gets colour and marks get shapes, so this one is shape all the way
+        down to its own legend entry.
+      */}
+      {cyclones.length > 0 ? (
+        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+          <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+            <path d={SPIRAL_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
+              className="text-dim" />
+          </svg>
+          <span>{cycloneNote(cyclones, category)}</span>
+        </div>
+      ) : null}
+
       {/*
         The sky, when there is any. Below the marks rather than among them, because it is light and they
         are data: the swatch is a wash instead of a glyph for the same reason.

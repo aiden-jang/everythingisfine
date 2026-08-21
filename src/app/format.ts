@@ -291,3 +291,28 @@ export function auroraNote(peak: number, forecastAt: number, now: number): strin
   return `the green is the aurora, only where it is dark enough to see it. `
     + `${strength} tonight, peaking at ${Math.round(peak)}% chance, ${when}.`;
 }
+
+/**
+ * What the spirals are, and the fact the tracks make visible.
+ *
+ * The explanation is the track itself: every storm forms in the bands either side of the equator and
+ * bends away from it, because the Coriolis force that lets one spin up is zero on the line. A dot could
+ * not have said that and a line does not have to.
+ *
+ * Names the strongest of them by peak wind, from GDACS's number and a scale stated here, because their own
+ * label describes a different moment: a storm measured at 259 km/h is filed under "Tropical Storm".
+ */
+export function cycloneNote(
+  storms: readonly { name: string; peakKmh: number | null }[],
+  categoryOf: (kmh: number | null) => string | null,
+): string | null {
+  if (storms.length === 0) return null;
+  const count = `${storms.length} tropical cyclone${storms.length === 1 ? "" : "s"} running`;
+  const strongest = [...storms].sort((a, b) => (b.peakKmh ?? 0) - (a.peakKmh ?? 0))[0]!;
+  const named = strongest.peakKmh === null
+    ? ""
+    : ` Strongest is ${strongest.name} at ${Math.round(strongest.peakKmh)} km/h`
+      + `${categoryOf(strongest.peakKmh) ? `, ${categoryOf(strongest.peakKmh)}` : ""} at its peak.`;
+  return `the spirals are storms, trailing where they have been. ${count}, and none of them `
+    + `on the equator: the spin that starts one is zero there.${named}`;
+}
