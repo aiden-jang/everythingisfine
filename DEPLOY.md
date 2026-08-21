@@ -1,4 +1,4 @@
-# Deploying First Motion
+# Deploying Everything Is Fine
 
 Merging to `main` deploys. Nothing else does, and nothing needs to be run by hand.
 
@@ -35,7 +35,7 @@ unreachable, and a CI run that quietly skips its own memory gate is worse than o
 it. `test:heap` runs Node with `--expose-gc` so the gate cannot skip. If it is ever seen as
 `skipped` in a CI log, that log is not enforcing what it appears to.
 
-**`concurrency: deploy-firstmotion` with `cancel-in-progress: false`.** Two merges landing close
+**`concurrency: deploy-everythingisfine` with `cancel-in-progress: false`.** Two merges landing close
 together would otherwise race, and the loser could be the *newer* build. Queued rather than
 cancelled, so the last merge is the last deploy.
 
@@ -58,7 +58,7 @@ Create the token at Cloudflare → My Profile → API Tokens, and add it under r
 Settings → Secrets and variables → Actions. **The token is never written into a file in this repo**,
 and nothing in the build reads it except the deploy action.
 
-The custom domain `firstmotion.aidenjang.com` is declared in `wrangler.toml` as a route with
+The custom domain `everythingisfine.aidenjang.com` is declared in `wrangler.toml` as a route with
 `custom_domain = true`. Wrangler creates and attaches it on the first deploy, provided the zone is in
 the same Cloudflare account as the token. It does not need to be set up by hand beforehand.
 

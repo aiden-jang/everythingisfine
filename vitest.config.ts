@@ -11,7 +11,7 @@ import { defineConfig } from "vitest/config";
  * Gated on an environment variable rather than a CLI filter, so the default run cannot include
  * these by accident from a stray path argument.
  */
-const includeLive = process.env["FIRSTMOTION_LIVE"] === "1";
+const includeLive = process.env["EIF_LIVE"] === "1";
 
 export default defineConfig({
   test: {
