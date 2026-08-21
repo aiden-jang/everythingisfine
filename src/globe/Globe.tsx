@@ -12,7 +12,7 @@ import { between, seconds } from "../app/arrival";
 import type { RampName } from "./ramp";
 import type { SectionLine } from "../app/section";
 import type { Aurora } from "../sources/aurora";
-import type { Polyline } from "./marks";
+import type { Mark } from "./marks";
 import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
 
 /*
@@ -61,7 +61,7 @@ export interface GlobeProps {
   /** Tonight's aurora, or null while it has not arrived or has failed to. */
   aurora?: Aurora | null;
   /** Every mark that is not an earthquake, already shaped: storm tracks, spirals, volcano triangles. */
-  marks?: readonly Polyline[];
+  marks?: readonly Mark[];
   /**
    * Origin time the cursor stands at, or null for live.
    *
@@ -108,7 +108,7 @@ export function Globe({
   const wakeRef = useRef<() => void>(() => {});
   const rampRef = useRef<(name: RampName) => void>(() => {});
   const auroraRef = useRef<(next: Aurora | null) => void>(() => {});
-  const markRef = useRef<(next: readonly Polyline[]) => void>(() => {});
+  const markRef = useRef<(next: readonly Mark[]) => void>(() => {});
   /*
    * Read from inside the frame loop, which outlives any single render.
    *
@@ -414,6 +414,8 @@ export function Globe({
       const zoomNow = globe.controls.state().zoom;
       if (Math.abs(zoomNow - lastZoom) > 0.001) {
         lastZoom = zoomNow;
+        // Cheap: the layer decides for itself whether the change is worth a rebuild.
+        globe.setMarkZoom(zoomNow);
         globe.events.sync(
           feed.store, live.current.filters, Date.now(), zoomNow, revealUntil(),
           live.current.focus,
@@ -523,7 +525,10 @@ export function Globe({
     };
     redrawRef.current = redraw;
     auroraRef.current = (grid) => { globe.setAurora(grid); };
-    markRef.current = (shapes) => { globe.setMarks(shapes); };
+    markRef.current = (next) => { globe.setMarks(next); };
+    // The glyph scale is a function of zoom, so it has to be right before the first frame and not only
+    // after somebody moves the camera.
+    globe.setMarkZoom(globe.controls.state().zoom);
     /*
      * Pushed once at setup, not only when the data next changes.
      *

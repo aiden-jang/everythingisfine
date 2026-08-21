@@ -13,6 +13,14 @@ import type { Point } from "./shapes";
  * It knows nothing about storms or volcanoes. It draws polylines in longitude and latitude, achromatic,
  * above the boundaries they sit on and below the markers that carry meaning. What shape a phenomenon gets
  * is decided in `shapes.ts`, and which shapes exist is decided in `app/marks.ts`.
+ *
+ * **A glyph holds its size on screen; a track does not.** The glyphs were built in degrees on the argument
+ * that they are things on the ground, and looking at the result killed that argument: at the framing the
+ * app opens on, a flame is five pixels of thin grey line and a hundred fires are invisible under a legend
+ * describing them. The markers settled this question long ago for the same reason - constant pixel size,
+ * so zooming separates marks rather than magnifying them - and a symbol that stands for a fire belongs on
+ * that side of it. A cyclone track is not a symbol, it is measured geography, so it scales with the
+ * coastline it is drawn against. That is what `anchor` distinguishes.
  */
 
 /** Above the plate boundaries these things sit on, below the land that contains them. */
@@ -33,9 +41,40 @@ const WRAP_DEG = 170;
 
 export type Polyline = readonly Point[];
 
+/**
+ * One drawn thing, and whether it is a symbol or a place.
+ *
+ * `anchor` is the point the glyph stands on, and its presence is what marks the shape as a symbol to be
+ * held at a constant size on screen. A shape without one is geography and is drawn exactly as given.
+ */
+export interface Mark {
+  points: Polyline;
+  anchor?: Point;
+}
+
+/**
+ * The zoom the glyph sizes in `shapes.ts` are tuned for.
+ *
+ * Chosen by looking: at 2.5 the flames and the flood waves read as what they are without crowding the
+ * markers. Everything else is that size divided by how far in the camera has come.
+ */
+const REFERENCE_ZOOM = 2.5;
+/** Clamped, because the zoom range runs to 0.05 and 50x a flame is a continent with a tip on it. */
+const MIN_SCALE = 0.6;
+const MAX_SCALE = 6;
+/** Rebuilds only past this much change, so a wheel gesture is a few rebuilds and not one per frame. */
+const SCALE_STEP = 0.08;
+
+export function scaleFor(zoom: number): number {
+  if (!Number.isFinite(zoom) || zoom <= 0) return 1;
+  return Math.max(MIN_SCALE, Math.min(MAX_SCALE, REFERENCE_ZOOM / zoom));
+}
+
 export interface MarkLayer {
   object: LineSegments;
-  set: (shapes: readonly Polyline[]) => void;
+  set: (marks: readonly Mark[]) => void;
+  /** The camera moved. Rebuilds only when the glyph scale has moved enough to see. */
+  setZoom: (zoom: number) => void;
   dispose: () => void;
 }
 
@@ -78,11 +117,24 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
     written += 1;
   };
 
-  return {
-    object,
-    set: (shapes) => {
+  let held: readonly Mark[] = [];
+  let scale = 1;
+
+  const build = (): void => {
       written = 0;
-      for (const shape of shapes) {
+      for (const mark of held) {
+        /*
+         * Scaled about its own anchor, so the glyph grows where it stands rather than drifting off the
+         * thing it marks. Latitude clamped: six times a flame at 88 degrees would put its tip past the
+         * pole, where the projection is still happy to draw it somewhere wrong.
+         */
+        const { anchor } = mark;
+        const shape = anchor === undefined || scale === 1
+          ? mark.points
+          : mark.points.map((p) => ({
+            lon: anchor.lon + (p.lon - anchor.lon) * scale,
+            lat: Math.max(-89.9, Math.min(89.9, anchor.lat + (p.lat - anchor.lat) * scale)),
+          }));
         for (let i = 1; i < shape.length; i += 1) {
           const a = shape[i - 1]!;
           const b = shape[i]!;
@@ -104,6 +156,16 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
       geometry.setDrawRange(0, written * 2);
       posAttr.needsUpdate = true;
       llAttr.needsUpdate = true;
+  };
+
+  return {
+    object,
+    set: (marks) => { held = marks; build(); },
+    setZoom: (zoom) => {
+      const next = scaleFor(zoom);
+      if (Math.abs(next - scale) < SCALE_STEP * scale) return;
+      scale = next;
+      build();
     },
     dispose: () => {
       geometry.dispose();
