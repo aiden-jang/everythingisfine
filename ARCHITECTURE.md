@@ -4093,12 +4093,20 @@ Written last, and kept accurate rather than kept short.
   they can go in CI, but they exercise `pnpm dev` rather than `dist`. A bundler-only failure would not
   be caught by them.
 
-- **Both gates are sensitive to a loaded machine, and neither says so when it fails.** The perf
-  budget failed at 13.96ms against 7.65ms quiet, with browsers still resident. Two browser tests
-  failed in a full run that took 6.7 minutes and passed in one that took 3.6. In both cases a real
-  failure and a busy laptop are indistinguishable from the output, which is the property a gate is
-  supposed to not have. A ratio against a calibration workload would fix the perf side; the browser
-  side wants the fixtures above, so that waiting on a live feed is not a timeout waiting to happen.
+- ~~**Both gates are sensitive to a loaded machine, and neither says so when it fails.**~~ **Closed on
+  2026-08-21, and it had been half-closed for a while without this entry noticing.** The perf side took
+  its own advice: `events.perf.test.ts` measures a reference workload in the same process and budgets a
+  *ratio* against it, so `13.96ms` on a busy laptop and `7.65ms` on a quiet one both read as the same
+  number of reference units. The browser side got the fixtures it asked for, and then the last of the
+  load sensitivity turned out to be the polls rather than the feeds: every camera assertion waited a
+  fixed number of seconds for the spring to arrive, so a slow machine was indistinguishable from a
+  broken one. Those now wait for motion to *stop* and then assert where it stopped, and four blind
+  timeouts went with them. The full suite: **60 passed, nothing flaky, and three minutes faster.**
+
+  Kept rather than deleted, because the shape of the mistake is worth remembering: this bullet was
+  correct when written, both halves were fixed by later work, and nothing brought the two together. A
+  known-limitations list is the section a reader trusts most, which makes a stale entry in it worse than
+  no entry at all.
 
 - **GPU frame time has never been measured with a profiler.** The CPU budget is gated and recorded;
   the rendering side has only ever been judged by looking at it. Nothing has suggested a problem,

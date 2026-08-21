@@ -1,9 +1,13 @@
-# First Motion
+# Everything Is Fine
 
-> Earthquakes arriving live from two seismic agencies, on a globe that only moves when the data does.
+> Everything happening to the planet right now, on a globe that only moves when the data does:
+> earthquakes from two agencies that disagree, storms, volcanoes, wildfires, floods and the aurora.
 
-Named after the seismology term for the initial polarity of a P-wave arrival: the very first thing
-an instrument records when a wave reaches it.
+Earthquakes are still the centre of it - they are the only layer two agencies argue about, and the
+reconciliation of those two accounts is the thing the app is really for. Everything else is drawn
+around them, achromatic and by shape, so colour never stops meaning magnitude.
+
+Live at <https://everythingisfine.aidenjang.com>.
 
 ```bash
 pnpm install

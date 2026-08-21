@@ -33,7 +33,7 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     concurrency:
-      group: deploy-firstmotion
+      group: deploy-everythingisfine
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v5
