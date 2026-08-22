@@ -14,6 +14,7 @@ import { marksFor } from "./app/marks";
 import { depthBands } from "./data/depth";
 import { drawStill, stillMoment, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
 import { findSubject, MarkCard } from "./app/MarkCard";
+import { dayRange, fetchArchive } from "./sources/archive";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
@@ -33,7 +34,7 @@ import { histogram, totalIn } from "./app/histogram";
 import { diurnal } from "./app/diurnal";
 import { Dial } from "./app/Dial";
 import { decode, encode } from "./app/permalink";
-import { rampColorAt, type RampName } from "./globe/ramp";
+import { MAG_MIN, rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
@@ -242,6 +243,26 @@ export function App(): JSX.Element {
     const id = window.setInterval(load, 10 * 60_000);
     return () => { alive = false; window.clearInterval(id); };
   }, []);
+  /*
+   * Declared here, above every memo that calls it.
+   *
+   * It was defined next to `now`, two hundred lines below the first `useMemo` that uses it, and a `const`
+   * in a temporal dead zone is a runtime error rather than a type error - so `tsc` passed, the build
+   * passed, and the page rendered nothing at all. `Globe.tsx` has a note about the same trap taking the
+   * whole canvas with it.
+   */
+  /*
+   * The same clock, as a stable function, for the memos that filter.
+   *
+   * They read the time inline rather than depending on `now`, deliberately: `now` changes on every
+   * render, so listing it as a dependency would recompute a fifty-thousand-event sweep every second.
+   * They key on `snapshot.revision` instead - and `showArchive` bumps the revision, so entering or
+   * leaving an archive recomputes all of them exactly once.
+   *
+   * Reading the archive from the feed rather than closing over it keeps this identity stable, which is
+   * the property the dependency arrays are relying on.
+   */
+  const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
   /** Computed here rather than in the legend, so the sentence is a render of a number and not a scan. */
   const fireSummary = useMemo(() => summarise(fires), [fires]);
   /*
@@ -249,7 +270,7 @@ export function App(): JSX.Element {
    * these counts only move when an earthquake does.
    */
   const depth = useMemo(
-    () => depthBands(feed.store, filters, Date.now()), [filters, snapshot.revision],
+    () => depthBands(feed.store, filters, clockAt()), [filters, snapshot.revision],
   );
   /*
    * Remembered, because a width somebody chose is a preference and re-choosing it on every visit is
@@ -326,6 +347,42 @@ export function App(): JSX.Element {
    * being clicked simply stops having a card rather than freezing the last one.
    */
   const [markId, setMarkId] = useState<string | null>(null);
+  /*
+   * An archived day, or null for live. The span itself lives on the feed snapshot; this is the request.
+   *
+   * ARCHITECTURE.md recorded this as impossible without a backend, which was wrong - both agencies take
+   * an arbitrary `starttime` and `endtime` keylessly. What the note was right about is the danger: a
+   * scrubber that quietly makes "this is happening right now" false is the version worth refusing. So
+   * loading a day stops the live sources, replaces the set, and every claim of liveness in the chrome
+   * reads `snapshot.archive` and stands down. One button returns.
+   */
+  const [archiveDay, setArchiveDay] = useState("");
+  const [archiveBusy, setArchiveBusy] = useState(false);
+  const [archiveNote, setArchiveNote] = useState<string | null>(null);
+  const loadArchive = useCallback(async (iso: string) => {
+    const span = dayRange(iso);
+    if (!span) return;
+    setArchiveBusy(true);
+    setArchiveNote(null);
+    const got = await fetchArchive(span.from, span.to, MAG_MIN);
+    feed.showArchive(span, got.readings);
+    const said = (["usgs", "emsc"] as const).map((id) => {
+      const answer = got.answered[id];
+      if (!answer) return `${SOURCE_NAMES[id]} did not answer`;
+      return `${SOURCE_NAMES[id]} ${answer.count}${answer.truncated ? " (truncated)" : ""}`;
+    });
+    setArchiveNote(said.join(" · "));
+    setArchiveBusy(false);
+    setSelected(null);
+    setMarkId(null);
+  }, []);
+  const backToLive = useCallback(() => {
+    setArchiveDay("");
+    setArchiveNote(null);
+    setSelected(null);
+    setMarkId(null);
+    feed.resumeLive();
+  }, []);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
   const [keyOpen, setKeyOpen] = useState<boolean>(() => stored("legendKey") !== "0");
   useEffect(() => { store("legendKey", keyOpen ? "1" : "0"); }, [keyOpen]);
@@ -484,7 +541,21 @@ export function App(): JSX.Element {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
-  const now = Date.now();
+  /*
+   * The clock everything filters against, which is not always the wall clock.
+   *
+   * In archive mode it is the **end of the archived day**. Every window, strip, dial and count in this
+   * app is defined as "the last N hours before now", so with the wall clock an archived day filtered to
+   * nothing: the store held 702 events from July and the headline read 0. Substituting the span's end
+   * makes "the last 24 hours" mean the last 24 hours *of that day*, which is exactly what was fetched,
+   * and every derived reading follows without a second code path.
+   *
+   * The cost is that relative labels - "3h ago" - become relative to that day rather than to today,
+   * which is honest inside a mode whose banner says the date and "nothing here is arriving now", and
+   * would be a plain falsehood without it. That banner is load-bearing, not decoration.
+   */
+  const now = snapshot.archive ? snapshot.archive.to : Date.now();
+
   /*
    * The window the cursor moves in.
    *
@@ -521,7 +592,7 @@ export function App(): JSX.Element {
     const style = getComputedStyle(document.documentElement);
     const token = (name: string): string => style.getPropertyValue(`--color-${name}`).trim();
     drawStill(ctx, source, source.width, source.height, {
-      moment: stillMoment(view.at, Date.now()),
+      moment: stillMoment(view.at, clockAt()),
       /*
        * The requested window, not the covered one.
        *
@@ -573,7 +644,7 @@ export function App(): JSX.Element {
   const regions = useMemo(
     // No cap. It was six, from when four were rendered and the rest were unreachable; the box is
     // sized and scrolls now, so cutting the list would be hiding the quiet regions worth noticing.
-    () => countByRegion(feed.store, filters, Date.now()).filter((r) => r.count > 0),
+    () => countByRegion(feed.store, filters, clockAt()).filter((r) => r.count > 0),
     // Recomputed when the data or the filter moves, which is exactly when the counts can change.
     [filters, snapshot.revision],
   );
@@ -635,7 +706,7 @@ export function App(): JSX.Element {
   const touring = tourAt !== null ? route.current[tourAt] ?? null : null;
 
   const section = useMemo(
-    () => (sectionLine ? buildSection(feed.store, sectionLine, filters, Date.now()) : null),
+    () => (sectionLine ? buildSection(feed.store, sectionLine, filters, clockAt()) : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [feed.store, sectionLine, filters, snapshot.revision],
   );
@@ -701,7 +772,7 @@ export function App(): JSX.Element {
     let near = 0;
     let total = 0;
     feed.store.forEach((quake) => {
-      if (!matches(quake, filters, Date.now())) return;
+      if (!matches(quake, filters, clockAt())) return;
       total += 1;
       const km = boundaryKmOf(quake);
       if (km !== null && km <= QUIET_BAND_KM) near += 1;
@@ -855,7 +926,7 @@ export function App(): JSX.Element {
    * serve nobody.
    */
   const recent = useMemo(
-    () => feed.store.newest(60, (q) => matches(q, filters, Date.now())),
+    () => feed.store.newest(60, (q) => matches(q, filters, clockAt())),
     [filters, snapshot.revision],
   );
 
@@ -895,7 +966,7 @@ export function App(): JSX.Element {
    * would re-walk fifty thousand events once a second while somebody reads the results.
    */
   const results = useMemo(
-    () => search(query, feed.store, filters, Date.now()),
+    () => search(query, feed.store, filters, clockAt()),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [query, filters.minMagnitude, filters.sources, filters.windowMs, snapshot.revision],
   );
@@ -925,7 +996,7 @@ export function App(): JSX.Element {
    * data, not on the clock.
    */
   const clockBins = useMemo(
-    () => diurnal(feed.store.forEach, filters, Date.now()),
+    () => diurnal(feed.store.forEach, filters, clockAt()),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [filters.minMagnitude, filters.sources, filters.windowMs, snapshot.revision],
   );
@@ -1202,11 +1273,20 @@ export function App(): JSX.Element {
           <span className="flex items-center gap-2 text-[11px] whitespace-nowrap text-dim">
             <span
               className={`inline-block size-[6px] rounded-full ${
-                live === 2 ? "bg-ink" : live === 1 ? "bg-dim" : "bg-faint"
+                snapshot.archive ? "bg-faint" : live === 2 ? "bg-ink" : live === 1 ? "bg-dim" : "bg-faint"
               }`}
             />
             <span className="hidden sm:inline">
-              {live === 2 ? "both feeds live" : live === 1 ? "one feed live" : "connecting"}
+              {/*
+                While an archived day is on screen this says the day, not the feeds.
+
+                The whole risk in this feature is a chrome that goes on saying "both feeds live" over a
+                globe showing last March. The status is read from the snapshot, so there is one place
+                that decides whether this app is claiming to be live.
+              */}
+              {snapshot.archive
+                ? new Date(snapshot.archive.from).toISOString().slice(0, 10)
+                : live === 2 ? "both feeds live" : live === 1 ? "one feed live" : "connecting"}
             </span>
           </span>
         </div>
@@ -1439,7 +1519,60 @@ export function App(): JSX.Element {
             magnitude filter because they are the same kind of thing: both say what is on the globe.
             The globe answers "where" and cannot answer "when" at all, which is the gap this fills.
           */}
+          {/*
+            A day that has already happened, next to the controls that say "when".
+
+            Under the strip rather than in the header, because it belongs with the window buttons: those
+            choose how much of the recent past to show, and this chooses a different past entirely. In the
+            header it would have read as a view option beside the projection toggle.
+
+            The banner is not decoration. It is the one thing standing between this feature and the
+            version the design notes refused - a globe showing last March while the interface says live -
+            so it states the day, what each agency actually answered, and how to get back, and it is the
+            widest thing in the rail while it is up.
+          */}
           <div data-rail="activity">
+            {snapshot.archive ? (
+              <div className="mb-3 border border-faint bg-raised p-2.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="label">Archive</span>
+                  <button
+                    type="button"
+                    onClick={backToLive}
+                    className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink"
+                  >
+                    back to live
+                  </button>
+                </div>
+                <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink">
+                  {new Date(snapshot.archive.from).toISOString().slice(0, 10)}, all day UTC. Nothing here
+                  is arriving now.
+                </p>
+                {archiveNote ? (
+                  <p className="mt-1 font-mono text-[10.5px] leading-relaxed text-faint">{archiveNote}</p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="mb-3 flex items-center gap-1.5">
+                <label className="label shrink-0" htmlFor="archive-day">Go to a day</label>
+                <input
+                  id="archive-day"
+                  type="date"
+                  value={archiveDay}
+                  max={new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)}
+                  onChange={(e) => setArchiveDay(e.target.value)}
+                  className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[11px] text-dim"
+                />
+                <button
+                  type="button"
+                  disabled={!archiveDay || archiveBusy}
+                  onClick={() => void loadArchive(archiveDay)}
+                  className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:cursor-default disabled:text-faint"
+                >
+                  {archiveBusy ? "…" : "go"}
+                </button>
+              </div>
+            )}
             <Timeline
               bars={bars}
               ramp={ramp}

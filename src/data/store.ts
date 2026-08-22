@@ -53,6 +53,15 @@ export interface Ingested {
 
 export interface Store {
   ingest: (reading: Reading) => Ingested;
+  /**
+   * Empties it, keeping the allocation.
+   *
+   * For switching between live and an archived day, which are two different sets of events that must
+   * never be mixed: an archive showing yesterday plus whatever the socket pushed while you read it
+   * would be a day that never happened. The ring itself is reused rather than reallocated, because the
+   * capacity is the thing the four-hour heap test is about.
+   */
+  clear: () => void;
   get: (key: string) => Quake | undefined;
   /**
    * The quake an agency's own identifier belongs to.
@@ -263,6 +272,21 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
     return { quake, isNew: true, corroborated: false };
   };
 
+  const clear = (): void => {
+    slots.fill(null);
+    head = 0;
+    count = 0;
+    byKey.clear();
+    byReadingId.clear();
+    buckets.clear();
+    readingCounts.usgs = 0;
+    readingCounts.emsc = 0;
+    corroborated = 0;
+    revised = 0;
+    // `arrivals` deliberately keeps counting: it is how many events this page has ever seen arrive,
+    // which is a fact about the session rather than about the current contents.
+  };
+
   const forEach = (fn: (quake: Quake) => void): void => {
     for (let i = 0; i < count; i += 1) {
       const key = slots[(head + i) % capacity];
@@ -274,6 +298,7 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
 
   return {
     ingest,
+    clear,
     forEach,
     capacity,
     get: (key) => byKey.get(key),
