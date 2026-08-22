@@ -4705,6 +4705,34 @@ Two of my own probes were wrong before the app was: I read the cursor off the ca
 handler styles the canvas, and I matched the magnitude with `/M\d/` when the tooltip renders "M 2.4" with a
 space. Both looked like product failures for a minute.
 
+## The word pass, measured on what stays on screen
+
+"Fewer words" is not a count of the copy, it is a count of the copy that is *visible*. Everything in the
+legend is a folded row now, so what a reader actually faces is the eight heads plus the notes line, and
+three of those held half of it.
+
+| head | was | now |
+|---|---|---|
+| notes | 31 | **19** |
+| rings | 24 | **14** |
+| fire | 20 | **10** |
+| aurora, volcano, flood, depth, cyclone | 59 | 59 |
+| **always visible** | **134** | **102** |
+
+A 24% cut, and **nothing was deleted**. The fire head lost its area and its median days to the body behind
+the disclosure it already had, which took one comma becoming a full stop, since `splitNote` breaks at the
+first sentence. The rings head lost the playback multiplier and what the gap measures the same way.
+
+The notes line is the one place words actually went. It restated the band and the percentage that the ON
+EDGE and BAND cells already print, then closed with "the rest of the planet had the day off": 31 words to
+carry one ratio. It reads as a note on the cells above it now, which is what a NOTES row is for. The
+flourish moved to the still, where the deadpan is the entire job and there is nothing else on the image to
+carry it, and a test asserts it does not creep back into the rail.
+
+**The hover ring grew for glyphs.** 20px is a ring around a marker, whose dot runs 3 to 15px. A spiral, a
+triangle or a flame is already that size, so the same circle landed *on* the glyph rather than around it
+and read as part of the drawing. 34px for a mark, unchanged for an earthquake.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

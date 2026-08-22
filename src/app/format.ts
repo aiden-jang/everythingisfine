@@ -396,7 +396,7 @@ export function wildfireNote(
       + `alone has more than that, so the `
       + `count is a floor: every mark is real, their number is not the world's.`
     : "";
-  return `the flames are forest fires burning now, ${fire.count} of them, `
+  return `the flames are forest fires burning now, ${fire.count} of them. `
     + `${fire.km2.toLocaleString("en")} square kilometres alight${burning}.${floor}`;
 }
 
@@ -500,9 +500,15 @@ export function quietNote(
 ): string | null {
   const parts = quietParts(near, total, bandShare);
   if (parts === null) return null;
-  return `${bandKm} km of a plate boundary is ${(bandShare * 100).toFixed(1)}% of the surface, so `
-    + `that is at least ${parts.times.toFixed(1)} times the seismicity per square kilometre. `
-    + "The rest of the planet had the day off.";
+  /*
+   * Written as a note on the cells above it, which is what a NOTES row is.
+   *
+   * It used to restate the band and the percentage that ON EDGE and BAND already print, then close with
+   * "the rest of the planet had the day off" - 31 words to carry one ratio. The flourish moved to the
+   * still, where the deadpan is the whole job and there is nothing else on the image to carry it.
+   */
+  return `That ${bandKm} km band is ${(bandShare * 100).toFixed(1)}% of the surface, so at least `
+    + `${parts.times.toFixed(1)} times the seismicity per square kilometre.`;
 }
 
 /**
