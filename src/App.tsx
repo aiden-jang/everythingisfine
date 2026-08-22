@@ -367,7 +367,12 @@ export function App(): JSX.Element {
    * is read. Resolved back to the thing itself at render, so a mark that has aged out of its feed since
    * being clicked simply stops having a card rather than freezing the last one.
    */
-  const [markId, setMarkId] = useState<string | null>(null);
+  /*
+   * A shared mark, unless the link also names a day: an archived day withholds the five layers, so the id
+   * would resolve to nothing and the card would never open. The card appears when the feed carrying it
+   * arrives rather than at first paint, which is the same way a shared earthquake behaves.
+   */
+  const [markId, setMarkId] = useState<string | null>(shared.day ? null : shared.mark ?? null);
   /*
    * An archived day, or null for live. The span itself lives on the feed snapshot; this is the request.
    *
@@ -543,6 +548,8 @@ export function App(): JSX.Element {
         day: snapshot.archive
           ? new Date(snapshot.archive.from).toISOString().slice(0, 10)
           : null,
+        // The selected storm, fire, flood or volcano, by the agency's own id.
+        mark: markId,
         section: sectionLine,
         /*
           The moment, not the playing state.
@@ -568,7 +575,7 @@ export function App(): JSX.Element {
      * until some other dependency happened to change - which is the bug this whole field exists to fix,
      * one layer down.
      */
-  }, [filters, selected, ramp, sectionLine, snapshot.archive]);
+  }, [filters, selected, ramp, sectionLine, snapshot.archive, markId]);
 
   /*
    * Someone pasting a different link into an open tab.
@@ -1851,6 +1858,7 @@ export function App(): JSX.Element {
                           <button
                             key={row.id}
                             type="button"
+                            data-hazard-row={row.id}
                             /*
                               Selects and flies, which is what a row in this rail has always meant. It
                               opens the same card the glyph does, from the same id, so the list and the
