@@ -51,15 +51,24 @@ export function captionLines(caption: StillCaption): [string, string, string] {
 /**
  * The moment, as the caption states it.
  *
- * "Live" only when the cursor is not holding a moment. Anything else is written as an absolute time with
- * its date, because a still is looked at later by definition and "18 minutes ago" ages into a lie the
- * instant the image is saved.
+ * "Live" only when the cursor is not holding a moment *and* the app is actually live. Anything else is
+ * written as an absolute time with its date, because a still is looked at later by definition and "18
+ * minutes ago" ages into a lie the instant the image is saved.
+ *
+ * **The archive branch exists because this said "Live" about a day in July.** The clock was made
+ * archive-aware when that mode shipped, so the stamp was right and the word in front of it was a flat
+ * falsehood - on the one artefact in this app designed to be looked at away from the app, where nothing
+ * else is around to correct it. An archived still names the day and never the word.
  */
-export function stillMoment(cursor: number | null, now: number, live = "Live"): string {
+export function stillMoment(
+  cursor: number | null, now: number, archived = false, live = "Live",
+): string {
   const at = cursor ?? now;
   const iso = new Date(at).toISOString();
   const stamp = `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;
-  return cursor === null ? `${live} · ${stamp}` : `Held at ${stamp}`;
+  // A held moment already names its own time, so it needs no word either way.
+  if (cursor !== null) return `Held at ${stamp}`;
+  return archived ? `Archived day · ${iso.slice(0, 10)}` : `${live} · ${stamp}`;
 }
 
 /**

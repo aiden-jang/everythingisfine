@@ -263,8 +263,28 @@ export function App(): JSX.Element {
    * the property the dependency arrays are relying on.
    */
   const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
+  /*
+   * The other five layers, withheld while an archived day is on screen.
+   *
+   * They are fetched live and unconditionally, so an archived July drew **today's** storms, fires, floods,
+   * volcanoes and aurora over July's earthquakes - the same "day that never happened" the archive stops
+   * the socket to prevent. Closing that door on one feed and leaving it open for five was the bug.
+   *
+   * Withheld rather than backdated, because there is nothing to backdate to: GDACS's hazard lists are
+   * flagged current rather than queryable by date, and the aurora is a forecast for the next minutes. No
+   * keyless feed here can say what was burning on a Tuesday in July. So the archive is an earthquake
+   * archive, which is what its banner says.
+   */
+  const archived = snapshot.archive !== null;
+  const onGlobe = {
+    cyclones: archived ? [] : cyclones,
+    volcanoes: archived ? [] : volcanoes,
+    fires: archived ? [] : fires,
+    floods: archived ? [] : floods,
+    aurora: archived ? null : aurora,
+  };
   /** Computed here rather than in the legend, so the sentence is a render of a number and not a scan. */
-  const fireSummary = useMemo(() => summarise(fires), [fires]);
+  const fireSummary = useMemo(() => summarise(onGlobe.fires), [onGlobe.fires]);
   /*
    * The depth bands, on the store revision rather than the clock: the rail re-renders every second and
    * these counts only move when an earthquake does.
@@ -616,7 +636,7 @@ export function App(): JSX.Element {
     const style = getComputedStyle(document.documentElement);
     const token = (name: string): string => style.getPropertyValue(`--color-${name}`).trim();
     drawStill(ctx, source, source.width, source.height, {
-      moment: stillMoment(view.at, clockAt()),
+      moment: stillMoment(view.at, clockAt(), feed.snapshot().archive !== null),
       /*
        * The requested window, not the covered one.
        *
@@ -810,7 +830,7 @@ export function App(): JSX.Element {
    * built from a snapshot would keep describing a storm the feed had dropped. If it is gone, so is the
    * card.
    */
-  const markSubject = findSubject(markId, { cyclones, volcanoes, fires, floods });
+  const markSubject = findSubject(markId, onGlobe);
   /*
    * Pinning an earthquake from anywhere clears the mark card.
    *
@@ -824,9 +844,10 @@ export function App(): JSX.Element {
   }, []);
   const marks = useMemo(
     () => marksFor({
-      cyclones, volcanoes, fires, floods, farSide, motion: motionOn ? motionData : [],
+      ...onGlobe, farSide, motion: motionOn ? motionData : [],
     }),
-    [cyclones, volcanoes, fires, floods, farSide?.lon, farSide?.lat, motionOn, motionData],
+    [onGlobe.cyclones, onGlobe.volcanoes, onGlobe.fires, onGlobe.floods,
+      farSide?.lon, farSide?.lat, motionOn, motionData],
   );
   useEffect(() => {
     // Only if it genuinely fell out of the buffer. A refresh must never clear the panel.
@@ -1109,14 +1130,14 @@ export function App(): JSX.Element {
                 ramp={ramp}
                 value={filters.minMagnitude}
                 onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
-                aurora={aurora}
-                cyclones={cyclones}
-                volcanoes={volcanoes.length}
+                aurora={onGlobe.aurora}
+                cyclones={onGlobe.cyclones}
+                volcanoes={onGlobe.volcanoes.length}
                 volcanoesSince={newestEpisode(volcanoes)}
                 fires={fireSummary}
                 fireCap={FEED_CAP}
-                floods={floods.length}
-                floodCountries={countries(floods)}
+                floods={onGlobe.floods.length}
+                floodCountries={countries(onGlobe.floods)}
                 keyOpen={keyOpen}
                 onKeyOpen={setKeyOpen}
                 motion={motion}
@@ -1572,6 +1593,14 @@ export function App(): JSX.Element {
                   {new Date(snapshot.archive.from).toISOString().slice(0, 10)}, all day UTC. Nothing here
                   is arriving now.
                 </p>
+                {/*
+                  Said out loud, because absence is the one thing a viewer cannot notice. Earthquakes have
+                  a queryable history and the hazard feeds do not, so this is an earthquake archive.
+                */}
+                <p className="mt-1 text-[11px] leading-relaxed text-faint">
+                  Earthquakes only: storms, fires, floods, volcanoes and the aurora are live feeds with no
+                  history to ask for.
+                </p>
                 {archiveNote ? (
                   <p className="mt-1 font-mono text-[10.5px] leading-relaxed text-faint">{archiveNote}</p>
                 ) : null}
@@ -1844,7 +1873,7 @@ export function App(): JSX.Element {
             selected={selected}
             ramp={ramp}
             focus={focusSpan}
-            aurora={aurora}
+            aurora={onGlobe.aurora}
             marks={marks}
             scrubAt={view.at}
             flat={flat}
