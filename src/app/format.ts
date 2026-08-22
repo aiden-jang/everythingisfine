@@ -561,3 +561,27 @@ export function soundNote(above: number): string {
     + `real rupture goes. It is not a recording: ground motion is below hearing, under about 10 Hz. And `
     + `loudness is not energy, because three points of magnitude is thirty thousand times as much of it.`;
 }
+
+/**
+ * A layer's note, split into the line a key needs and the reasoning behind it.
+ *
+ * Six layers each had a paragraph and all six were expanded at once, which made the legend the tallest
+ * wall of prose in the app. A drawing's key is glyphs against short names, with the reasoning available
+ * rather than always shown.
+ *
+ * No copy was rewritten to get this. Every note already opens with exactly the line a key wants - "the
+ * spirals are storms, trailing where they have been", "the waves are floods running now, 9 of them
+ * across 9 countries" - because each was written to lead with what the glyph is. So the split is the
+ * first sentence, and the layer rule in PLAN.local.md still holds: the explanation arrives with the
+ * layer, one press away rather than filling the rail.
+ *
+ * Split on a full stop followed by whitespace, so the decimals and percentages inside these sentences
+ * are not sentence ends. A note with nothing after the first stop returns a null rest, and the row
+ * renders flat: a disclosure with nothing behind it is a control that lies about having more to say.
+ */
+export function splitNote(note: string): { head: string; rest: string | null } {
+  const at = note.search(/\.\s/);
+  if (at === -1) return { head: note, rest: null };
+  const rest = note.slice(at + 1).trim();
+  return { head: note.slice(0, at + 1), rest: rest.length > 0 ? rest : null };
+}
