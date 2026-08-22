@@ -12,7 +12,7 @@ import { fetchWildfires, summarise, FEED_CAP, type Wildfire } from "./sources/wi
 import { countries, fetchFloods, type Flood } from "./sources/floods";
 import { marksFor } from "./app/marks";
 import { depthBands } from "./data/depth";
-import { drawStill, stillMoment, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
+import { drawStill, stillMoment, verdictLine, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
 import { findSubject, MarkCard } from "./app/MarkCard";
 import { hazardCount, hazardGroups } from "./app/hazards";
 import { dayRange, fetchArchive } from "./sources/archive";
@@ -629,6 +629,17 @@ export function App(): JSX.Element {
    * another canvas.
    */
   const [saving, setSaving] = useState(false);
+  /*
+   * The counts, read at the moment of capture rather than depended upon.
+   *
+   * Listing them in the callback's dependencies is not available: `headline` is declared several hundred
+   * lines below this, so naming it in the array is a use-before-declaration rather than a closure. And
+   * leaving them out is what produced a poster with a blank evidence line, computed from the first
+   * render's empty planet. Same mirror `Globe.tsx` keeps for `live`, and for the same reason: a still
+   * should state what is on screen when the button is pressed, not what was on screen when this callback
+   * was last rebuilt.
+   */
+  const stillCounts = useRef({ quakes: 0, cyclones: 0, fires: 0, firesCapped: false, floods: 0 });
   const saveStill = useCallback(() => {
     const source = capture.current();
     if (!source) return;
@@ -641,6 +652,14 @@ export function App(): JSX.Element {
     const token = (name: string): string => style.getPropertyValue(`--color-${name}`).trim();
     drawStill(ctx, source, source.width, source.height, {
       moment: stillMoment(view.at, clockAt(), feed.snapshot().archive !== null),
+      /*
+       * The evidence, from the gated set rather than the raw feeds.
+       *
+       * `onGlobe` is what is actually drawn, so an archived day states its earthquakes and claims no
+       * storms - the layers are withheld on that path, and a still that counted them would be describing
+       * a different picture than the one above the caption.
+       */
+      verdict: verdictLine(stillCounts.current),
       /*
        * The requested window, not the covered one.
        *
@@ -1111,6 +1130,21 @@ export function App(): JSX.Element {
    */
   const driven = replay !== null || view.at !== null;
   const headline = useRolling(replay ? replay.revealed : revealedNow ?? shown, !driven);
+  /*
+   * Mirrored for the still, right where the count it needs finally exists.
+   *
+   * `headline` rather than the raw total, so the number stamped on the image is the number that was on
+   * screen: while the entrance is replaying or the cursor is parked, the rolled value is what the globe
+   * is actually showing, and a poster claiming the window total over a half-drawn planet is the same lie
+   * the replay counter was added to stop.
+   */
+  stillCounts.current = {
+    quakes: headline,
+    cyclones: onGlobe.cyclones.length,
+    fires: fireSummary.count,
+    firesCapped: fireSummary.count >= FEED_CAP,
+    floods: onGlobe.floods.length,
+  };
 
   const failing = (Object.entries(snapshot.statuses) as [SourceId, SourceStatus][])
     .flatMap(([id, status]) => (status.kind === "failing" ? [[id, status] as const] : []));
@@ -1786,7 +1820,16 @@ export function App(): JSX.Element {
               */}
               {regions.length > 0 ? (
                 <>
-              <div role="search" className="mb-1.5 flex items-baseline gap-2">
+              {/*
+                Label above the field from the phone up to the desktop rail, beside it only where the
+                column is wide enough to spare the room.
+
+                Third instance of one mistake: a label sharing a row with the value it names takes its
+                width first. In the 768px strip this column is ~180px, the label took what it needed, and
+                the field was left with 87px for a placeholder that measures 134 - so it read "a region
+                or a pla". The other two were the day field and the largest-event row.
+              */}
+              <div role="search" className="mb-1.5 flex flex-col gap-1 xl:flex-row xl:items-baseline xl:gap-2">
                 <label htmlFor="find" className="label shrink-0">Find</label>
                 <input
                   id="find"

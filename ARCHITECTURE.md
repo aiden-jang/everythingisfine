@@ -4620,6 +4620,57 @@ the browser gate's load sensitivity was closed is **too strong**: waiting for mo
 assertions, and these five have some other timing dependency that a 7x-loaded machine still finds. Recorded
 rather than fixed, because the cheap tell is real: a 7x runtime is the signal, not the failure list.
 
+The **heap gate belongs on that list too**. It failed once during this pass and then passed 722 of 722 on an
+immediate re-run with nothing changed between them. Its budget is an absolute 5MB of drift, which is exactly
+the shape the CPU gate abandoned when a millisecond threshold failed three times on unchanged code: an
+absolute number cannot tell a regression from a busy machine. The CPU gate's own fix - measure a reference
+workload in the same process and budget the ratio against it - is available here and has not been applied.
+
+## The poster had a setup and no punchline
+
+The still is the only thing this app makes that gets looked at somewhere else. Its caption was three
+things: the words EVERYTHING IS FINE, a timestamp, and a URL. The claim, the time, and where to buy
+tickets. Nothing on it said what was actually happening, so the deadpan had nothing to be deadpan *about*
+and the image read as a title card rather than a joke.
+
+    EVERYTHING IS FINE
+    120 earthquakes. 5 cyclones. 100+ fires. 15 floods.
+    Live · 2026-08-22 19:50 UTC        M2.0+ · last 24h
+
+One line. Every number was already in the snapshot; none of it was new work, it had simply never been said.
+
+**Two things the line refuses to say, both for reasons this app already argues.**
+
+*Volcanoes are left out entirely*, even though triangles are visible on the globe above the caption. GDACS
+flags none of them current and the newest episode is usually weeks old, which is why `volcanoNote` leads
+with the age rather than the count. A poster stamped "Live" is the worst possible place to let a triangle
+pass as an eruption, so every number on this line is a right-now number.
+
+*Fires take a `+` when the feed is capped.* The wildfire feed stops at 100 and one country can fill it
+alone, so a flat "100 fires" would state a floor as a total on the one surface where nothing is around to
+correct it.
+
+**It shipped blank the first time, and only looking at the artefact found it.** The evidence line came out
+empty because `saveStill`'s dependency array was the filter and the cursor: complete while the caption said
+only what the picture was *of*, and wrong the moment it also said what was *in* it. The callback closed over
+the first render and computed a verdict from an empty planet. Nothing failed - a blank line reads as a
+design choice.
+
+The obvious fix is not available: `headline` is declared several hundred lines below `saveStill`, so naming
+it in the dependency array is a use-before-declaration, and tsc says so. So the counts are a latest-value
+ref mirror assigned during render, the same pattern `Globe.tsx` keeps for `live` and for the same reason. It
+is also the more correct answer: a still should state what is on screen when the button is pressed, not what
+was on screen when the callback was last rebuilt.
+
+It mirrors `headline` rather than the raw window total, because while the entrance is replaying or the cursor
+is parked the rolled value is what the globe is actually drawing, and a poster claiming the window total over
+a half-drawn planet is the lie the replay counter was added to stop.
+
+**Not added to the app itself, against my own stated plan.** The intention was the verdict in the title block
+too, and it is redundant there: the header already says EVERYTHING IS FINE, the title block already carries
+the count, and the hazard list already totals the other four layers. In the app the evidence is on screen
+already. The still is the only place it travels alone, which is the only place the line earns its words.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
