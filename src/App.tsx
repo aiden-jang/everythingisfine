@@ -424,8 +424,34 @@ export function App(): JSX.Element {
     feed.resumeLive();
   }, []);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
-  const [keyOpen, setKeyOpen] = useState<boolean>(() => stored("legendKey") !== "0");
-  useEffect(() => { store("legendKey", keyOpen ? "1" : "0"); }, [keyOpen]);
+  /*
+   * The key starts open where there is room for it, and folded on a phone.
+   *
+   * Measured on a 375x812 screen: the rail is a 240px window onto 1,403px of content, and the key was
+   * **448px of it** - a third of the rail, and 3.4 times the height of the list of earthquakes that are
+   * actually happening. A key is read once; the events are why the page is open.
+   *
+   * A stored answer always wins, in both directions, because somebody who folded it away or opened it
+   * up has said what they want and a width is not an argument against that. This only decides the first
+   * visit. Read once at mount rather than on resize for the same reason: re-deciding it when a window
+   * changes size would overrule a choice the person had already made.
+   */
+  const [keyOpen, setKeyOpen] = useState<boolean>(() => {
+    const saved = stored("legendKey");
+    if (saved !== null) return saved !== "0";
+    return window.matchMedia("(min-width: 768px)").matches;
+  });
+  /*
+   * Written on the press, not in an effect on the value.
+   *
+   * As an effect it fired on mount and persisted the width-derived default, so a phone's first visit
+   * saved "closed" as though somebody had chosen it - and the comment above, promising a stored answer
+   * always wins, would have been describing its own footprint. Only a real toggle is a choice.
+   */
+  const changeKeyOpen = useCallback((next: boolean) => {
+    setKeyOpen(next);
+    store("legendKey", next ? "1" : "0");
+  }, []);
   /*
    * The plate-motion arrows, persisted like the other view preferences and deliberately not in the
    * permalink: it is a reading of static geography, so a link that carried it would be sharing a setting
@@ -1191,7 +1217,7 @@ export function App(): JSX.Element {
                 floods={onGlobe.floods.length}
                 floodCountries={countries(onGlobe.floods)}
                 keyOpen={keyOpen}
-                onKeyOpen={setKeyOpen}
+                onKeyOpen={changeKeyOpen}
                 motion={motion}
                 depth={depth}
                 sound={sound ? announceAbove : null}
