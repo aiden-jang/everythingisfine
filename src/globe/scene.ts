@@ -76,14 +76,32 @@ const SHORTLIST = 8;
  * brightening a 1px line adds crispness without adding mass, where brightening the fill would put
  * a large pale shape on screen and pull the eye off the data.
  */
-const COLOR_SPHERE = 0x0a101c;
-/** The map's backdrop fades between these two, so both are needed as objects rather than numbers. */
-const COLOR_VOID_C = new Color(0x070b14);
+/*
+ * The geography, taken bluer for the drafting-sheet direction.
+ *
+ * Every one of these is the old colour's chroma multiplied by 1.6 at **held luminance**, solved rather
+ * than eyeballed, so the relative order the paragraph above argues for survives the change exactly:
+ * sphere, then land, then graticule, then coast, then plates. Hue is banded to slate, with green kept
+ * roughly halfway between red and blue, because letting green collapse onto red produced a violet
+ * coastline at the same luminance and chroma.
+ *
+ * These are canvas, so the chrome's chroma ceiling of 55 does not apply and these run to 78. The
+ * `--color-coast` and `--color-plate` tokens in `index.css` deliberately do **not** follow: the cross
+ * section paints text with them, that text is chrome, and 70 would fail the ceiling. Chrome quoting the
+ * drawing approximates it; it does not match it.
+ */
+const COLOR_SPHERE = 0x031120;
+/*
+ * The map's backdrop fades between these two, so both are needed as objects rather than numbers.
+ * Kept equal to `--color-void` by hand. They are two copies of one decision and the palette pass
+ * moved the CSS one first, which left the canvas fading to a ground the page no longer painted.
+ */
+const COLOR_VOID_C = new Color(0x050b16);
 const COLOR_SPHERE_C = new Color(COLOR_SPHERE);
-const COLOR_LAND = 0x1e293f;
-const COLOR_COAST = 0x31405d;
-/** The graticule keeps the old, dimmer value: it is scaffolding, and it should stay behind land. */
-const COLOR_GRATICULE = 0x243149;
+const COLOR_LAND = 0x112a46;
+const COLOR_COAST = 0x1b4361;
+/** The graticule stays dimmer than land: it is scaffolding, and it should stay behind it. */
+const COLOR_GRATICULE = 0x13334e;
 /*
  * Plate boundaries, brighter than the coastline.
  *
@@ -95,7 +113,7 @@ const COLOR_GRATICULE = 0x243149;
  * looking. A plate boundary is the explanation, it tells you why the earthquakes are in a line. In
  * a seismic map the explanation should not be the fainter mark.
  */
-const COLOR_PLATES = 0x3d4e6e;
+const COLOR_PLATES = 0x265174;
 const COLOR_RIM = new Color(0x7896be);
 
 /** Where the camera settles. The Ring of Fire is where the data lives, so it faces the viewer. */

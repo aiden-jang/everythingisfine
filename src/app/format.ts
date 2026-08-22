@@ -498,12 +498,27 @@ export function boundaryNote(km: number | null): string | null {
 export function quietNote(
   near: number, total: number, bandKm: number, bandShare: number,
 ): string | null {
+  const parts = quietParts(near, total, bandShare);
+  if (parts === null) return null;
+  return `${bandKm} km of a plate boundary is ${(bandShare * 100).toFixed(1)}% of the surface, so `
+    + `that is at least ${parts.times.toFixed(1)} times the seismicity per square kilometre. `
+    + "The rest of the planet had the day off.";
+}
+
+/**
+ * The same fact, split so the title block can carry the number and the note can keep the argument.
+ *
+ * A drafting sheet puts values in framed cells and reasoning in a notes line. The percentage was
+ * previously buried at the head of a sentence, where it was the one part of that sentence a reader
+ * actually scanned for, and the four sentences stacked above the first control were what made the rail
+ * read as something to be read rather than operated.
+ */
+export function quietParts(
+  near: number, total: number, bandShare: number,
+): { percent: number; times: number } | null {
   if (total === 0) return null;
   const share = near / total;
-  const times = share / bandShare;
-  return `${Math.round(share * 100)}% of them are within ${bandKm} km of a plate boundary, which is `
-    + `${(bandShare * 100).toFixed(1)}% of the surface: at least ${times.toFixed(1)} times the `
-    + `seismicity per square kilometre, and the rest of the planet had the day off.`;
+  return { percent: Math.round(share * 100), times: share / bandShare };
 }
 
 /**
