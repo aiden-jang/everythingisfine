@@ -359,6 +359,14 @@ export function App(): JSX.Element {
   const [archiveDay, setArchiveDay] = useState("");
   const [archiveBusy, setArchiveBusy] = useState(false);
   const [archiveNote, setArchiveNote] = useState<string | null>(null);
+  /*
+   * A link carrying `d=` arrives in that day rather than live.
+   *
+   * Fired once on mount, after the live feed has started: `showArchive` stops the sources itself, so the
+   * ordering costs one wasted seed request and buys not having a second startup path. Racing it ahead of
+   * the feed would mean the live sources starting *after* the archive loaded and quietly refilling it.
+   */
+  const arrivedOnADay = useRef(false);
   const loadArchive = useCallback(async (iso: string) => {
     const span = dayRange(iso);
     if (!span) return;
@@ -376,6 +384,12 @@ export function App(): JSX.Element {
     setSelected(null);
     setMarkId(null);
   }, []);
+  useEffect(() => {
+    if (!shared.day || arrivedOnADay.current) return;
+    arrivedOnADay.current = true;
+    setArchiveDay(shared.day);
+    void loadArchive(shared.day);
+  }, [loadArchive]);
   const backToLive = useCallback(() => {
     setArchiveDay("");
     setArchiveNote(null);
@@ -504,6 +518,10 @@ export function App(): JSX.Element {
         sources: [...filters.sources],
         ramp,
         event: reading ? `${reading.source}:${reading.id}` : null,
+        // The archived day, so the link stops claiming live the moment the app does.
+        day: snapshot.archive
+          ? new Date(snapshot.archive.from).toISOString().slice(0, 10)
+          : null,
         section: sectionLine,
         /*
           The moment, not the playing state.
@@ -523,7 +541,13 @@ export function App(): JSX.Element {
       lastWritten.current = window.location.hash;
     }, 1000);
     return () => window.clearInterval(timer);
-  }, [filters, selected, ramp, sectionLine]);
+    /*
+     * `snapshot.archive` is a dependency because `write` closes over it, and the interval below keeps
+     * calling the closure it was created with. Without it, entering an archive left the link saying live
+     * until some other dependency happened to change - which is the bug this whole field exists to fix,
+     * one layer down.
+     */
+  }, [filters, selected, ramp, sectionLine, snapshot.archive]);
 
   /*
    * Someone pasting a different link into an open tab.

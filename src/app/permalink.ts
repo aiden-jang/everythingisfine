@@ -55,6 +55,17 @@ export interface Permalink {
    * fits, and said out loud if it does not.
    */
   cursor: number | null;
+  /**
+   * The archived day being shown, as `YYYY-MM-DD`, or null when this is live.
+   *
+   * Shipping the archive without this left the link describing a view the app was no longer in: you could
+   * load a day in July and the URL still said live. This document argues throughout that a link says
+   * where *and when*, and an archived day is the strongest "when" the app has.
+   *
+   * The day rather than the span, because the span is derived from it and a URL carrying both could
+   * disagree with itself. Midnight to midnight UTC, so a shared day is the same day everywhere.
+   */
+  day: string | null;
 }
 
 const round = (value: number, places: number): number =>
@@ -95,6 +106,7 @@ export function encode(state: Permalink): string {
   // Seconds, not milliseconds. A cursor is read off a strip 24 buckets wide, so a shared moment is
   // meaningful to about a minute and three digits of false precision in a URL is three too many.
   if (state.cursor !== null) parts.push(`c=${Math.round(state.cursor / 1000)}`);
+  if (state.day) parts.push(`d=${state.day}`);
   if (state.section) {
     const { fromLon, fromLat, toLon, toLat } = state.section;
     parts.push(
@@ -164,6 +176,21 @@ export function decode(fragment: string): Partial<Permalink> {
    */
   const w = Number(params.get("w"));
   if (params.has("w") && Number.isFinite(w)) out.windowHours = nearestWindow(w);
+
+  /*
+   * A day, only if it is a day.
+   *
+   * Validated as a real calendar date rather than pattern-matched: `2026-02-31` matches the shape and is
+   * not a date, and `Date.parse` would quietly roll it into March. A future day is rejected too - there
+   * is nothing to fetch - which follows the rule at the top of this function that a link must not put
+   * the app in a state it has no other way to reach.
+   */
+  const day = params.get("d");
+  if (day !== null && /^\d{4}-\d{2}-\d{2}$/.test(day)) {
+    const at = Date.parse(`${day}T00:00:00Z`);
+    if (Number.isFinite(at) && new Date(at).toISOString().slice(0, 10) === day
+      && at < Date.now()) out.day = day;
+  }
 
   const s = params.get("s");
   if (s !== null) {
