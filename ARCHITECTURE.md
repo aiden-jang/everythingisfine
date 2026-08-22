@@ -4550,6 +4550,13 @@ One bug of mine there: BAND rendered ungated, so before any data landed the bloc
 beside "Asking USGS and EMSC for the last day", which is a unit for a measurement nobody had taken. Both
 cells are gated together now, since the band is the percentage's unit and means nothing alone.
 
+**The frame came down to a hairline.** Drawn in `faint` it was heavier than every other line in the rail
+and read as the loudest thing in a column it is only there to organise: the eye went to the border rather
+than to the count inside it. At `--color-hairline` it matches the weight of the rules it sits among, and one
+value draws the frame and the cell dividers both, because the 1px grid gap shows the container through. The
+corner ticks stayed one step above at `faint` rather than dropping with it, since a tick at the frame's own
+weight marks nothing, and `dim` against a hairline was a ten-to-one jump.
+
 **The legend wall, measured.** Six layers each printed a full paragraph, all expanded at once. Collapsed to
 key rows the block is **267px against 1,419px**, an 81% cut, and 1,419 is not an estimate: it is the same
 rows with every disclosure forced open, which is exactly what the old legend was.

@@ -792,21 +792,27 @@
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 1px;
-    background: var(--color-faint);
-    border: 1px solid var(--color-faint);
+    /* Hairline, the same rule weight as everything else in the rail. At `faint` the frame was heavier
+       than every other line here and read as the loudest thing in a column it is only supposed to
+       organise. The 1px gap shows this background through, so one value draws the frame and the
+       dividers both. */
+    background: var(--color-hairline);
+    border: 1px solid var(--color-hairline);
     position: relative;
   }
   .titleblock > * { background: var(--color-deck); }
 
   /* Corner ticks. Not decoration: they mark the block as a frame rather than a box, which is what
-     says the cells belong to one another. */
+     says the cells belong to one another. Kept one step above the frame rather than dropped with it,
+     because a tick at the frame's own weight marks nothing - but `dim` against a hairline was a
+     ten-to-one jump, so this is `faint`. */
   .titleblock::before,
   .titleblock::after {
     content: "";
     position: absolute;
     width: 5px;
     height: 5px;
-    border: 1px solid var(--color-dim);
+    border: 1px solid var(--color-faint);
     pointer-events: none;
   }
   .titleblock::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
