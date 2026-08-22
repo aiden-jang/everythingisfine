@@ -50,6 +50,15 @@ export type Polyline = readonly Point[];
 export interface Mark {
   points: Polyline;
   anchor?: Point;
+  /**
+   * What this mark is, for picking. `kind:id`, or absent for geometry nothing can be clicked.
+   *
+   * The five layers added this session were inert: five kinds of mark on the globe carrying real
+   * measurements - a storm's peak wind, a fire's burned area - and no way to ask any of them a question,
+   * while the earthquakes beside them opened a panel. An anchor is already where the mark *is*; this says
+   * which thing it is, which is the only missing half of picking one.
+   */
+  id?: string;
 }
 
 /**
@@ -172,4 +181,33 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
       material.dispose();
     },
   };
+}
+
+/**
+ * The id of the anchored mark nearest a screen point, or null.
+ *
+ * Screen space rather than geographic, and the same shape as the marker hit test in `scene.ts`: project
+ * each candidate and measure in pixels, because a pointer is a pixel and a degree is not a constant
+ * number of them. Ranked by pixel distance, so the mark under the pointer wins rather than whichever the
+ * list reached first.
+ */
+export function pickMark(
+  marks: readonly Mark[],
+  at: { x: number; y: number },
+  project: (lon: number, lat: number) => { x: number; y: number } | null,
+  slopPx: number,
+): string | null {
+  let best: string | null = null;
+  let bestD = Infinity;
+  for (const mark of marks) {
+    if (!mark.anchor || mark.id === undefined) continue;
+    const on = project(mark.anchor.lon, mark.anchor.lat);
+    // Null means round the back of the globe, which is not clickable however near the pointer looks.
+    if (!on) continue;
+    const d = Math.hypot(on.x - at.x, on.y - at.y);
+    if (d > slopPx || d >= bestD) continue;
+    bestD = d;
+    best = mark.id;
+  }
+  return best;
 }
