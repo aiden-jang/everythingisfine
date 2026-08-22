@@ -4838,6 +4838,36 @@ archive note, corrected tense in the legend, and no aurora row.
 does end at the archived day's end - but it reads as now, and the only reason it stays is that the archive
 banner directly beneath it states the day and says nothing is arriving. A second statement would be words.
 
+## Two things the archived layers broke, both about tense
+
+Drawing storms, fires, floods and volcanoes on a past day made copy false that had been safe for as long as
+the archive withheld those layers. Found by opening the app on 2026-05-15 and reading it, not by a test.
+
+**The mark card was still saying "now".** The legend sentences got the tense treatment when the feature
+landed, and the card did not: "Tropical cyclone, running now", "Forest fire burning now", "Flood running
+now" - on the one surface somebody opens *because* they want the detail. All four take the flag now, and the
+volcano's refusal holds in both tenses, "not erupting now" and "not erupting then", because that is the
+claim the layer must never make either way. The rows are untouched and a test says so: a measurement is a
+measurement whichever day it is from.
+
+The layer sentence had the same crack one level down. "so none of this is erupting this minute" is a claim
+about *now* printed over a picture of *then*.
+
+**The still named the wrong day, and that is the copy that leaves the app.** `dayRange` returns an
+**exclusive** end - `from + 86400000`, the next midnight - and `clockAt()` hands back that end, so a still of
+2026-05-15 captioned itself **"Archived day · 2026-05-16"** while the rail beside it said the 15th. Two
+places, one day, two answers, and the wrong one on the only artefact designed to be looked at away from the
+app. It takes `archive.from` now.
+
+The test for it went on the span rather than on the caption, because the fault is the shape of the span: any
+future reader deriving a date from `to` gets the next day. Pinning `from`/`to` as 05-15/05-16 says that out
+loud where the next person will meet it.
+
+**One thing that needed no work and is worth recording.** The still's verdict line already counts from the
+gated `onGlobe` set, so an archived still states that day's evidence with no archive-specific code:
+"100 earthquakes. 20 fires. 1 flood." over "Archived day · 2026-05-15". The two features met correctly
+because both were built against what is drawn rather than against what is live.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

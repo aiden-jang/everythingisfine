@@ -331,7 +331,7 @@ export function MagnitudeFilter(
       */}
       {volcanoes > 0 ? (
         <KeyRow
-          note={volcanoNote(volcanoes, volcanoesSince, Date.now())}
+          note={volcanoNote(volcanoes, volcanoesSince, Date.now(), archived)}
           glyph={<svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
             <path d={VOLCANO_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
               className="text-dim" />

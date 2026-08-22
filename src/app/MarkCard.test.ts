@@ -94,3 +94,36 @@ describe("what each card says", () => {
     expect(stormCard.lines.map((l) => l.label)).toEqual(["Position"]);
   });
 });
+
+describe("an archived day changes the tense, not the facts", () => {
+  it("stops saying now about a day that has already happened", () => {
+    /*
+     * These notes were written when the archive withheld the four layers, so "running now" could not be
+     * wrong. A past day draws them now, and the card is where somebody goes for the detail.
+     */
+    expect(linesFor(findSubject("cyclone:TC1", data)!, NOW, true).note)
+      .toBe("Tropical cyclone, running that day.");
+    expect(linesFor(findSubject("fire:WF1", data)!, NOW, true).note)
+      .toBe("Forest fire burning that day.");
+    expect(linesFor(findSubject("flood:FL1", data)!, NOW, true).note)
+      .toBe("Flood running that day. This feed does not rate them.");
+  });
+
+  it("keeps the volcano's refusal in both tenses, because that is the claim it must never make", () => {
+    expect(linesFor(findSubject("volcano:VO1", data)!, NOW, false).note).toContain("Not erupting now");
+    expect(linesFor(findSubject("volcano:VO1", data)!, NOW, true).note).toContain("Not erupting then");
+  });
+
+  it("leaves live copy exactly as it was", () => {
+    for (const id of ["cyclone:TC1", "fire:WF1", "flood:FL1"]) {
+      expect(linesFor(findSubject(id, data)!, NOW).note).toContain("now");
+    }
+  });
+
+  it("does not touch the rows, which are measurements either way", () => {
+    const live = linesFor(findSubject("fire:WF1", data)!, NOW);
+    const past = linesFor(findSubject("fire:WF1", data)!, NOW, true);
+    expect(past.lines).toEqual(live.lines);
+    expect(past.title).toBe(live.title);
+  });
+});

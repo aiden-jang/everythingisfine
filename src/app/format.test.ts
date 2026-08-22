@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   compactSpan, corroborationNote, floodNote, reach, reachFraction, reachNote, reachWords,
   boundaryNote, depthNote, farSideNote, motionNote, quietNote, soundNote, theOf,
-  wildfireNote, quietParts,
+  wildfireNote, quietParts, cycloneNote, volcanoNote,
 } from "./format";
 
 /*
@@ -430,5 +430,33 @@ describe("the sound sentence", () => {
   it("names the threshold it follows, which is the announce one", () => {
     expect(soundNote(4.5)).toContain("above M4.5");
     expect(soundNote(2)).toContain("above M2.0");
+  });
+});
+
+describe("the layer sentences on an archived day", () => {
+  it("stops claiming now about a day that has already happened", () => {
+    const storms = [{ name: "Fabio", peakKmh: 120 }];
+    const cat = (): string | null => null;
+    expect(cycloneNote(storms, cat, true)).toContain("1 tropical cyclone that day");
+    expect(cycloneNote(storms, cat)).toContain("1 tropical cyclone running");
+
+    const fire = { count: 20, km2: 400, medianDays: 3, leader: "Spain" };
+    expect(wildfireNote(fire, 100, true)).toContain("that burned that day");
+    expect(wildfireNote(fire, 100)).toContain("burning now");
+
+    expect(floodNote(4, 4, true)).toContain("floods that day");
+    expect(floodNote(4, 4)).toContain("floods running now");
+
+    expect(volcanoNote(3, Date.parse("2026-05-01T00:00:00Z"), Date.parse("2026-05-15T00:00:00Z"), true))
+      .toContain("was erupting then");
+    expect(volcanoNote(3, Date.parse("2026-05-01T00:00:00Z"), Date.parse("2026-05-15T00:00:00Z")))
+      .toContain("is erupting this minute");
+  });
+
+  it("suppresses the fire floor on an archived day, because that cap is the live feed's", () => {
+    // GDACS stops at 100; the archive is a different upstream with a cap of ours that is never hit.
+    const capped = { count: 100, km2: 900, medianDays: 4, leader: "Spain" };
+    expect(wildfireNote(capped, 100)).toContain("count is a floor");
+    expect(wildfireNote(capped, 100, true)).not.toContain("count is a floor");
   });
 });

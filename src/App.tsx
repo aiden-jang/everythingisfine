@@ -714,7 +714,16 @@ export function App(): JSX.Element {
     const style = getComputedStyle(document.documentElement);
     const token = (name: string): string => style.getPropertyValue(`--color-${name}`).trim();
     drawStill(ctx, source, source.width, source.height, {
-      moment: stillMoment(view.at, clockAt(), feed.snapshot().archive !== null),
+      /*
+        The day's start, not the clock.
+        `clockAt()` hands back `archive.to`, and `dayRange` makes that *exclusive* - `from + 86400000`,
+        which is the next day's midnight. So a still of 2026-05-15 was captioned "Archived day
+        2026-05-16" while the rail beside it said the 15th: two places, one day, two answers, and the
+        wrong one on the only artefact that leaves the app.
+      */
+      moment: stillMoment(
+        view.at, feed.snapshot().archive?.from ?? clockAt(), feed.snapshot().archive !== null,
+      ),
       /*
        * The evidence, from the gated set rather than the raw feeds.
        *
@@ -2242,6 +2251,7 @@ export function App(): JSX.Element {
           <MarkCard
             found={markSubject}
             now={now}
+            archived={archived}
             onClose={() => setMarkId(null)}
             onFlyTo={(lon, lat, zoom) => flyTo.current(lon, lat, zoom)}
           />
