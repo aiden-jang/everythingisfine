@@ -315,9 +315,18 @@ export function auroraNote(peak: number, forecastAt: number, now: number): strin
 export function cycloneNote(
   storms: readonly { name: string; peakKmh: number | null }[],
   categoryOf: (kmh: number | null) => string | null,
+  archived = false,
 ): string | null {
   if (storms.length === 0) return null;
-  const count = `${storms.length} tropical cyclone${storms.length === 1 ? "" : "s"} running`;
+  /*
+   * Tense, not decoration.
+   *
+   * These sentences said "running now" and "burning now", which is the one thing an archived day makes
+   * false. The archive used to withhold these layers entirely so the copy was never wrong; now that a past
+   * day draws them, the words have to move with the data or the app is claiming today about last July.
+   */
+  const count = `${storms.length} tropical cyclone${storms.length === 1 ? "" : "s"} `
+    + `${archived ? "that day" : "running"}`;
   const strongest = [...storms].sort((a, b) => (b.peakKmh ?? 0) - (a.peakKmh ?? 0))[0]!;
   const named = strongest.peakKmh === null
     ? ""
@@ -386,17 +395,20 @@ export function theOf(country: string): string {
 export function wildfireNote(
   fire: { count: number; km2: number; medianDays: number | null; leader: string | null },
   cap: number,
+  archived = false,
 ): string | null {
   if (fire.count === 0) return null;
   const burning = fire.medianDays === null
     ? ""
     : `, burning ${fire.medianDays} day${fire.medianDays === 1 ? "" : "s"} at the median`;
-  const floor = fire.count >= cap
+  // The cap is a fact about the live feed. The archive is a different upstream with room to spare.
+  const floor = !archived && fire.count >= cap
     ? ` The feed stops at ${cap} and ${fire.leader === null ? "one country" : theOf(fire.leader)} `
       + `alone has more than that, so the `
       + `count is a floor: every mark is real, their number is not the world's.`
     : "";
-  return `the flames are forest fires burning now, ${fire.count} of them. `
+  return `the flames are forest fires ${archived ? "that burned that day" : "burning now"}, `
+    + `${fire.count} of them. `
     + `${fire.km2.toLocaleString("en")} square kilometres alight${burning}.${floor}`;
 }
 
@@ -410,10 +422,10 @@ export function wildfireNote(
  * so the mark says where and refuses to imply how bad - which for a flood is the number a reader most
  * wants and the one nobody keyless has.
  */
-export function floodNote(count: number, countries: number): string | null {
+export function floodNote(count: number, countries: number, archived = false): string | null {
   if (count === 0) return null;
   const where = countries > 1 ? ` across ${countries} countries` : "";
-  return `the waves are floods running now, ${count} of them${where}. `
+  return `the waves are floods ${archived ? "that day" : "running now"}, ${count} of them${where}. `
     + `Nothing here rates them: every flood in this feed is filed as magnitude zero, so the mark says `
     + `where and not how bad.`;
 }

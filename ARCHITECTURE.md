@@ -4784,6 +4784,60 @@ became `summary` elements this session, and I had assumed the universal `:focus-
 Walking the tab order found **37 focus stops and no element without a ring**. The assumption held; it is
 measured now.
 
+## An archived day carries all five layers, from a different upstream
+
+The archive shipped earthquakes only, and the rail said so: "storms, fires, floods, volcanoes and the aurora
+are live feeds with no history to ask for." True of the feeds the app had, false as a claim, and it left an
+app named for everything the Earth is doing showing a quarter of it on every day but today.
+
+**GDACS cannot do this, and it looked like it could.** Its event list takes `fromdate`/`todate`, and one
+storm came back for a day in July, which is where I stopped the first time and told the user this was
+buildable. It was not: the filter runs over the *current* event pool, not an archive.
+
+- a year-wide query returns the same 15 fires as no filter at all
+- 2026-05-15 returns **nothing** for storms, fires and floods, while 2024-08-01 returns two fires
+- `eventlist=VO` with dates answers **204 No Content**
+- the separate `ARCHIVE` path ignores the dates and hands back today's list, one row stamped `iscurrent: true`
+
+What looks like history is a handful of long-running current events overlapping the date asked for. Drawing
+it would put one storm on a day that had many and nothing at all on most days: the unlabelled-sample-data
+lie section 10 forbids by name, and the same trap EONET was rejected for the first time round.
+
+**NASA EONET v3 is a real archive**, and the app's own notes had ruled EONET out for the opposite problem.
+`status=open` does not mean active, which made it wrong for a *live* layer; history is where its dates stop
+being a trap and become the point. Measured: `start`/`end` honoured (six events for 2024-08-01, thirty-four
+for 2026-05-15, disjoint sets), 14-24kB per day, Point geometries, `closed` and `magnitudeValue` on every
+event, keyless, `access-control-allow-origin: *`. **v2.1 is unusable** - it ignores the range and returns
+18.5MB, which timed out at 30s.
+
+**It is not a rival dataset.** EONET's sources for these categories are IRWIN and **GDACS itself**, so an
+archived day is the live layer's own provider plus a second one, held historically by NASA. Global rather
+than the US bias the IRWIN name suggests: 17 North America, 7 Asia, 4 Oceania, 3 Africa on a sample day.
+
+**Four things the mapping had to get right.**
+
+*Units.* JTWC publishes storm wind in knots and IRWIN publishes area in acres; the app states km/h and
+hectares. A storm reading 35 anywhere is knots passed through raw, and a test asserts 80kt is 148km/h.
+
+*Tracks are clipped to the day.* A storm's geometry is 11 to 25 samples over its life, so an unclipped track
+would show on an archived Tuesday where the hurricane went on Friday. The position is the last sample inside
+the window and the peak is the peak inside it, which is what the live layer's number also means.
+
+*Tense.* The layer sentences said "running now" and "burning now" - the one thing a past day makes false.
+The archive used to withhold these layers so the copy was never wrong; now it reads "the flames are forest
+fires **that burned that day**". The wildfire feed's hard cap of 100 is a fact about GDACS, so the "count is
+a floor" caveat is suppressed on an archived day where the cap is ours and never hit.
+
+*The aurora stays withheld, permanently.* NOAA publishes a predicted oval for a stamped minute. A forecast
+has no past to ask for, so that clause in the rail was right all along and now says so on its own.
+
+Verified in the browser on 2026-05-15: 20 fires and a flood drawn, `USGS 221 · EMSC 29 · EONET 21` in the
+archive note, corrected tense in the legend, and no aurora row.
+
+**Left standing:** the headline still reads "last 24 hours" on an archived day. It is not wrong - the window
+does end at the archived day's end - but it reads as now, and the only reason it stays is that the archive
+banner directly beneath it states the day and says nothing is arriving. A second statement would be words.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
