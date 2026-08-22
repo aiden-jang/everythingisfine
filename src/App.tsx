@@ -20,7 +20,7 @@ import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
 import {
-  loadBoundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE, type Segment,
+  boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE,
 } from "./geo/boundaryDistance";
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
@@ -443,16 +443,12 @@ export function App(): JSX.Element {
   /*
    * The plate boundary geometry, for measuring how far each event is from an edge.
    *
-   * Loaded once on mount rather than behind a toggle, unlike the motion table: every event in the panel
-   * gets a distance, so this is not optional the way arrows are. Still a dynamic import, because 28kB of
-   * coastline-grade geometry does not belong in the bundle that paints the first frame.
+   * Not optional the way the motion arrows are - every event in the panel gets a distance - and not
+   * deferred either, because the globe draws these same boundaries on the first frame. It used to be a
+   * promise and two renders, the first of which had no distances in it, to defer a file the build had
+   * already decided was first-paint geometry.
    */
-  const [segments, setSegments] = useState<readonly Segment[]>([]);
-  useEffect(() => {
-    let alive = true;
-    void loadBoundarySegments().then((next) => { if (alive) setSegments(next); }).catch(() => {});
-    return () => { alive = false; };
-  }, []);
+  const segments = useMemo(() => boundarySegments(), []);
   /*
    * Memoised per event key, not per render.
    *

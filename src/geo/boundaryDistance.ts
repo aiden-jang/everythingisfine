@@ -1,3 +1,4 @@
+import plates from "./plates.json";
 import { EARTH_RADIUS_KM } from "./sphere";
 
 /*
@@ -114,10 +115,17 @@ export function nearestBoundaryKm(
   return best * EARTH_RADIUS_KM;
 }
 
-/** Fetched on first use, for the reason `plateMotion.ts` is: 28kB has no business in the first paint. */
-export async function loadBoundarySegments(): Promise<Segment[]> {
-  const module = await import("./plates.json");
-  return toSegments(module.default as [number, number][][]);
+/**
+ * The shipped boundary file, prepared for the hot loop.
+ *
+ * Static, and deliberately so. This was `await import("./plates.json")` with a comment about 28kB having
+ * no business in the first paint, which was a claim the build had never agreed with: `scene.ts` draws the
+ * same boundaries on the first frame, so the file is first-paint data by definition and was in the
+ * preloaded chunk either way. The dynamic form bought a promise, a render with no distances in it, and a
+ * comment that read as a measurement. The 1,872 vertices flatten in well under a millisecond.
+ */
+export function boundarySegments(): Segment[] {
+  return toSegments(plates as [number, number][][]);
 }
 
 /**

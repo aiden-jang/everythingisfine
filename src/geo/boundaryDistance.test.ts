@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nearestBoundaryKm, toSegments, type Segment } from "./boundaryDistance";
+import { boundarySegments, nearestBoundaryKm, toSegments, type Segment } from "./boundaryDistance";
 import { distanceKm } from "./sphere";
 
 /** A single straight run of "boundary" along the equator, 20 degrees long. */
@@ -84,9 +84,8 @@ describe("preparing the segments", () => {
 });
 
 describe("against the real boundary file", () => {
-  it("puts a known intraplate event thousands of km out and a trench event on the line", async () => {
-    const { loadBoundarySegments } = await import("./boundaryDistance");
-    const real = await loadBoundarySegments();
+  it("puts a known intraplate event thousands of km out and a trench event on the line", () => {
+    const real = boundarySegments();
     expect(real.length).toBeGreaterThan(1000);
     // Pahala, Hawaii: a hotspot in the middle of the Pacific plate, the textbook intraplate case.
     expect(nearestBoundaryKm(-155.47, 19.2, real)!).toBeGreaterThan(3000);
