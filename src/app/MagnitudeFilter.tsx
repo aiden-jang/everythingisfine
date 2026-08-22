@@ -19,19 +19,25 @@ import { flame, spiral, volcano, waves } from "../globe/shapes";
  * a keyboard path being invented for it, and it matches the two disclosures the rail already uses.
  */
 function KeyRow(
-  { glyph, note }: { glyph: ReactNode; note: string | null },
+  { glyph, note }: { glyph?: ReactNode; note: string | null },
 ): ReactElement | null {
   // Takes the null the note functions already return for an empty layer, rather than making each
   // caller prove non-null a second time next to the count it is already gated on.
   if (note === null) return null;
   const { head, rest } = splitNote(note);
   const line = "flex items-start gap-2.5 text-[11px] leading-relaxed text-faint";
+  /*
+   * A row with no glyph belongs to the row above it - the depth counts under "solid is shallow, hollow
+   * is deep" - so it takes the same indent the reasoning does and lines up under that row's text
+   * rather than under its swatch.
+   */
+  const indent = glyph === undefined ? "pl-[23px]" : "";
   if (rest === null) {
-    return <div className={`mt-2 ${line}`}>{glyph}<span>{head}</span></div>;
+    return <div className={`mt-2 ${line} ${indent}`}>{glyph}<span>{head}</span></div>;
   }
   return (
     <details className="mt-2">
-      <summary className={`${line} cursor-pointer list-none hover:text-dim`}>
+      <summary className={`${line} ${indent} cursor-pointer list-none hover:text-dim`}>
         {glyph}
         <span>{head}</span>
       </summary>
@@ -244,11 +250,12 @@ export function MagnitudeFilter(
         one event out of seventy-nine is deep enough to be a ring. A count is the honest version of that
         promise. See `data/depth.ts`.
       */}
-      {depthNote(depth) ? (
-        <div className="mt-1.5 pl-[23px] text-[11px] leading-relaxed text-faint">
-          {depthNote(depth)}
-        </div>
-      ) : null}
+      {/*
+        The counts stay, the reasoning folds. Same treatment as the six layer rows below, because this
+        was the one paragraph left among them: the sentence that opens with "66 above 70 km, 54 between
+        70 and 300" is the part anybody reads, and the slab explanation behind it is two more lines.
+      */}
+      <KeyRow note={depthNote(depth)} />
 
       {/*
         The plate boundaries need naming too. An unexplained line on a data visualisation is a

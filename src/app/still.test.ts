@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { captionLines, stillMoment, STILL_HEIGHT, STILL_WIDTH } from "./still";
+import { captionLines, stillMoment, STILL_HEIGHT, STILL_WIDTH, verdictLine} from "./still";
 
 const NOW = Date.parse("2026-08-21T04:12:30Z");
 
@@ -39,21 +39,62 @@ describe("what the still says it is of", () => {
 });
 
 describe("the caption", () => {
-  it("is the wordmark, the moment, then the filter and where it came from", () => {
+  it("is the wordmark, the evidence, the moment, then the filter and where it came from", () => {
     const lines = captionLines({
       moment: "Live · 2026-08-21 04:12 UTC",
+      verdict: "120 earthquakes. 4 cyclones.",
       filter: "M2.0+ · last 24h",
       host: "everythingisfine.aidenjang.com",
     });
     expect(lines[0]).toBe("EVERYTHING IS FINE");
-    expect(lines[1]).toBe("Live · 2026-08-21 04:12 UTC");
-    expect(lines[2]).toBe("M2.0+ · last 24h · everythingisfine.aidenjang.com");
+    expect(lines[1]).toBe("120 earthquakes. 4 cyclones.");
+    expect(lines[2]).toBe("Live · 2026-08-21 04:12 UTC");
+    expect(lines[3]).toBe("M2.0+ · last 24h · everythingisfine.aidenjang.com");
   });
 
   it("carries the filter, so an empty ocean is not read as a quiet ocean", () => {
     // A still taken at M6+ shows almost nothing. Without the threshold on it, that reads as a calm day.
-    const lines = captionLines({ moment: "x", filter: "M6.0+ · last 24h", host: "h" });
-    expect(lines[2]).toContain("M6.0+");
+    const lines = captionLines({ moment: "x", verdict: null, filter: "M6.0+ · last 24h", host: "h" });
+    expect(lines[3]).toContain("M6.0+");
+  });
+});
+
+describe("the verdict, which is the half the poster was missing", () => {
+  const base = { quakes: 0, cyclones: 0, fires: 0, firesCapped: false, floods: 0 };
+
+  it("states every layer that has something, in the order the app names them", () => {
+    expect(verdictLine({ quakes: 120, cyclones: 4, fires: 87, firesCapped: false, floods: 9 }))
+      .toBe("120 earthquakes. 4 cyclones. 87 fires. 9 floods.");
+  });
+
+  it("leaves out what is not there, because a zero is not a fact worth a poster", () => {
+    expect(verdictLine({ ...base, quakes: 120 })).toBe("120 earthquakes.");
+    expect(verdictLine({ ...base, quakes: 120, floods: 2 })).toBe("120 earthquakes. 2 floods.");
+  });
+
+  it("marks the fire count as a floor when the feed is capped", () => {
+    /*
+     * The feed stops at 100 and one country can fill it on its own, so a flat "100 fires" would state a
+     * floor as a total on the one surface with nothing around to correct it.
+     */
+    expect(verdictLine({ ...base, fires: 100, firesCapped: true })).toBe("100+ fires.");
+    expect(verdictLine({ ...base, fires: 100, firesCapped: false })).toBe("100 fires.");
+  });
+
+  it("says nothing about volcanoes, because none of them are current", () => {
+    // GDACS flags no volcano current and the newest episode is usually weeks old. A line stamped "Live"
+    // is the worst place to let a triangle pass as an eruption, so every number here is a now number.
+    const line = verdictLine({ quakes: 5, cyclones: 1, fires: 3, firesCapped: false, floods: 1 })!;
+    expect(line).not.toMatch(/volcano/i);
+  });
+
+  it("counts one of a thing as one", () => {
+    expect(verdictLine({ ...base, quakes: 1, cyclones: 1, fires: 1, floods: 1 }))
+      .toBe("1 earthquake. 1 cyclone. 1 fire. 1 flood.");
+  });
+
+  it("has nothing to say about an empty planet rather than writing the word nothing", () => {
+    expect(verdictLine(base)).toBeNull();
   });
 });
 

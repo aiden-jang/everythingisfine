@@ -21,6 +21,8 @@
 export interface StillCaption {
   /** What the image is of, from the cursor rather than the clock. */
   moment: string;
+  /** The evidence for the title, from `verdictLine`. Null when the planet really has nothing on it. */
+  verdict: string | null;
   /** The filter, so nobody reads an empty ocean as a quiet ocean. */
   filter: string;
   /** Where it came from, so the still carries its own provenance. */
@@ -36,7 +38,13 @@ export interface StillTheme {
 /** Fixed output, so a still does not change size with the window it was taken from. */
 export const STILL_WIDTH = 1600;
 export const STILL_HEIGHT = 900;
-const CAPTION_H = 92;
+/*
+ * 118 rather than 92, for the verdict line.
+ *
+ * The band grew by one 26px row and the globe above it lost the same, which is the right way round: the
+ * globe is 798px of an 808px frame either way, and the line is the reason anybody would share the image.
+ */
+const CAPTION_H = 118;
 
 /**
  * The caption's three lines of text, in the order they are drawn.
@@ -44,8 +52,56 @@ const CAPTION_H = 92;
  * Separated from the drawing so it can be asserted without a canvas: what a still claims is the part
  * worth testing, and `fillText` is not.
  */
-export function captionLines(caption: StillCaption): [string, string, string] {
-  return ["EVERYTHING IS FINE", caption.moment, `${caption.filter} · ${caption.host}`];
+export function captionLines(
+  caption: StillCaption,
+): [string, string | null, string, string] {
+  return [
+    "EVERYTHING IS FINE",
+    caption.verdict,
+    caption.moment,
+    `${caption.filter} · ${caption.host}`,
+  ];
+}
+
+/**
+ * The evidence for the title.
+ *
+ * This is the only artefact the app makes that gets looked at somewhere else, and it used to carry the
+ * claim, a timestamp and a URL: the setup, the time, and where to buy tickets. Nothing on it said what was
+ * actually happening, so the deadpan had nothing to be deadpan *about* and the image read as a title card.
+ * Every number here is already in the snapshot; none of it is new work, it was simply never said.
+ *
+ * **Two things this refuses to say, both for reasons the app already argues elsewhere.**
+ *
+ * Volcanoes are left out entirely. GDACS flags none of them current and the newest episode is usually
+ * weeks old, so `volcanoNote` leads with the age rather than the count precisely so a triangle cannot pass
+ * as an eruption. A poster stamped with a timestamp is the worst possible place to imply currency, and
+ * "16 volcanoes" beside "Live" would do exactly that. Every number on this line is a right-now number.
+ *
+ * Fires take a `+` when the feed is capped. The wildfire feed stops at 100 and one country alone can fill
+ * it, so a flat "100 fires" would be the app stating a floor as a total on the one surface where nothing
+ * is around to correct it.
+ */
+export function verdictLine(n: {
+  quakes: number;
+  cyclones: number;
+  fires: number;
+  firesCapped: boolean;
+  floods: number;
+}): string | null {
+  const plural = (count: number, word: string): string =>
+    `${count} ${word}${count === 1 ? "" : "s"}`;
+  const parts: string[] = [];
+  if (n.quakes > 0) parts.push(plural(n.quakes, "earthquake"));
+  if (n.cyclones > 0) parts.push(plural(n.cyclones, "cyclone"));
+  // The floor marker goes on the number, not in a caveat: there is no room for a caveat here.
+  if (n.fires > 0) {
+    parts.push(`${n.fires}${n.firesCapped ? "+" : ""} fire${n.fires === 1 ? "" : "s"}`);
+  }
+  if (n.floods > 0) parts.push(plural(n.floods, "flood"));
+  // Nothing at all is a real state, and an empty line is better than the word "nothing" on a poster.
+  if (parts.length === 0) return null;
+  return `${parts.join(". ")}.`;
 }
 
 /**
@@ -95,7 +151,7 @@ export function drawStill(
   const h = globeHeight * scale;
   ctx.drawImage(globe, (STILL_WIDTH - w) / 2, (frameH - h) / 2, w, h);
 
-  const [mark, moment, provenance] = captionLines(caption);
+  const [mark, verdict, moment, provenance] = captionLines(caption);
   const baseline = frameH + 34;
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = theme.ink;
@@ -103,9 +159,17 @@ export function drawStill(
   ctx.letterSpacing = "0.16em";
   ctx.fillText(mark, 56, baseline);
   ctx.letterSpacing = "0px";
+  /*
+   * The verdict in ink rather than faint, and directly under the title.
+   *
+   * It is the half of the joke the image was missing, so it gets the weight the claim gets. The stamp and
+   * the provenance stay faint underneath: they are what the picture is of, not what it says.
+   */
+  ctx.font = "16px ui-monospace, SFMono-Regular, Menlo, monospace";
+  if (verdict !== null) ctx.fillText(verdict, 56, baseline + 27);
   ctx.font = "15px ui-monospace, SFMono-Regular, Menlo, monospace";
   ctx.fillStyle = theme.faint;
-  ctx.fillText(moment, 56, baseline + 26);
+  ctx.fillText(moment, 56, baseline + 54);
   const width = ctx.measureText(provenance).width;
-  ctx.fillText(provenance, STILL_WIDTH - 56 - width, baseline + 26);
+  ctx.fillText(provenance, STILL_WIDTH - 56 - width, baseline + 54);
 }
