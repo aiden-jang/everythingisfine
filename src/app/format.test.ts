@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   compactSpan, corroborationNote, floodNote, reach, reachFraction, reachNote, reachWords,
   boundaryNote, depthNote, farSideNote, motionNote, quietNote, soundNote, theOf,
-  wildfireNote,
+  wildfireNote, quietParts,
 } from "./format";
 
 /*
@@ -332,11 +332,25 @@ describe("where an event sits relative to the plate edges", () => {
 });
 
 describe("the negative-space sentence", () => {
-  it("states the share, the band, and the concentration as a floor", () => {
+  it("states the band, the surface share, and the concentration as a floor", () => {
     const note = quietNote(41, 81, 100, 0.094)!;
-    expect(note).toContain("51% of them are within 100 km");
+    expect(note).toContain("100 km of a plate boundary");
     expect(note).toContain("9.4% of the surface");
     expect(note).toContain("at least 5.4 times");
+  });
+
+  it("leaves the percentage to the title block, which is where it is now read", () => {
+    // Split deliberately: the value goes in a framed cell, the argument stays in the notes row. The
+    // sentence must not carry the number as well, or the rail states it twice.
+    const parts = quietParts(41, 81, 0.094)!;
+    expect(parts.percent).toBe(51);
+    expect(parts.times).toBeCloseTo(5.38, 2);
+    expect(quietNote(41, 81, 100, 0.094)!).not.toContain("51%");
+  });
+
+  it("has nothing to say about an empty window", () => {
+    expect(quietParts(0, 0, 0.094)).toBeNull();
+    expect(quietNote(0, 0, 100, 0.094)).toBeNull();
   });
 
   it("says at least, because the catalogue over-counts the interiors", () => {

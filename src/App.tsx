@@ -40,7 +40,7 @@ import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import {
-  ago, agoShort, clock, compactSpan, corroborationNote, energyPercent, place, quietNote,
+  ago, agoShort, clock, compactSpan, corroborationNote, energyPercent, place, quietNote, quietParts,
   reachFraction, reachNote,
   reachWords, SOURCE_NAMES, windowLabel,
 } from "./app/format";
@@ -815,8 +815,12 @@ export function App(): JSX.Element {
    * `boundaryDistance.ts` - 100km covers 9.4% of the surface, computed on a cos-weighted grid so the
    * figure means area rather than a count of cells.
    */
-  const quiet = useMemo(() => {
-    if (segments.length === 0) return null;
+  const quiet = useMemo((): {
+    note: string | null; parts: { percent: number; times: number } | null;
+  } => {
+    // Vestigial now that the boundary file is a static import, kept so an empty file degrades to
+    // "no cell, no note" rather than a percentage of nothing.
+    if (segments.length === 0) return { note: null, parts: null };
     let near = 0;
     let total = 0;
     feed.store.forEach((quake) => {
@@ -825,7 +829,10 @@ export function App(): JSX.Element {
       const km = boundaryKmOf(quake);
       if (km !== null && km <= QUIET_BAND_KM) near += 1;
     });
-    return quietNote(near, total, QUIET_BAND_KM, QUIET_BAND_SHARE);
+    return {
+      note: quietNote(near, total, QUIET_BAND_KM, QUIET_BAND_SHARE),
+      parts: quietParts(near, total, QUIET_BAND_SHARE),
+    };
   }, [snapshot.revision, filters, segments, boundaryKmOf]);
   /*
    * The clicked mark, resolved from the arrays that are already held.
@@ -1356,7 +1363,14 @@ export function App(): JSX.Element {
         } as React.CSSProperties}
       >
         <aside className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r">
-          <div data-rail="headline">
+          {/*
+            The title block, which is where the four stacked prose blocks went.
+
+            Count, window and largest are values, so they sit in framed cells the way a drawing sheet
+            carries them. The reasoning that used to be three more paragraphs is one NOTES row below.
+          */}
+          <div className="titleblock">
+          <div className="tb-cell tb-wide" data-rail="headline">
             {/*
               No "EVENTS" label above this.
 
@@ -1481,7 +1495,7 @@ export function App(): JSX.Element {
                 + `${place(strongest.primary.place)}, ${ago(strongest.primary.time, now)}. `
                 + "Go there and hold the window at that moment."}
               data-rail="largest"
-              className="-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2.5 border-t border-hairline px-1 pt-2.5 text-left transition-colors hover:bg-raised"
+              className="tb-cell tb-wide cursor-pointer flex-row items-baseline gap-2.5 text-left transition-colors hover:bg-raised"
             >
               <span className="label shrink-0">Largest</span>
               {/*
@@ -1511,6 +1525,28 @@ export function App(): JSX.Element {
               </span>
             </button>
           ) : null}
+          {/*
+            Both cells or neither. The band is the percentage's unit, so on its own it frames a
+            measurement nobody took: before any data lands the block was showing "BAND 100 km" beside
+            "Asking USGS and EMSC for the last day".
+          */}
+          {!replay && quiet.parts !== null ? (
+            <>
+              <div className="tb-cell">
+                <span className="label">On edge</span>
+                <span className="font-mono text-[13px] tabular-nums text-ink">
+                  {quiet.parts.percent}%
+                </span>
+              </div>
+              <div className="tb-cell">
+                <span className="label">Band</span>
+                <span className="font-mono text-[13px] tabular-nums text-dim">
+                  {QUIET_BAND_KM} km
+                </span>
+              </div>
+            </>
+          ) : null}
+          </div>
 
           {/*
             What that magnitude actually means, once.
@@ -1541,8 +1577,11 @@ export function App(): JSX.Element {
             beside the energy line because both are one sentence about the whole window rather than about
             any event in it.
           */}
-          {!replay && quiet ? (
-            <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{quiet}</p>
+          {!replay && quiet.note ? (
+            <div className="tb-notes">
+              <span className="label">Notes</span>
+              <p className="text-[11px] leading-relaxed text-faint">{quiet.note}</p>
+            </div>
           ) : null}
           {strongest && !replay && edge.complete && energyShare !== null && energyShare > 0.5 ? (
             <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
