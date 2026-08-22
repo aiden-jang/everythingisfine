@@ -316,19 +316,40 @@
          truncates rather than wrapping. The legend wraps gracefully, so it gives up the room. */
       grid-template-columns:
         minmax(0, 1.13fr) minmax(0, 0.78fr) minmax(0, 0.94fr) minmax(0, 1.15fr);
+      /*
+       * Every cell named, and named after what is actually in it.
+       *
+       * The title block replaced two separate blocks here, and because the rules below match direct
+       * children the old `headline` and `largest` selectors stopped matching anything: both the block
+       * and its notes fell to `grid-area: auto`, auto-placed into column one, and pushed `activity` to
+       * 349px inside a strip 348px tall. The whole activity strip went below the fold, and the
+       * reachability test did not catch it because this rail scrolls, so "reachable" was still true.
+       *
+       * `when` is new rather than moved: the time-of-day disclosure had never been named at all and had
+       * been auto-placing since it was added, which was survivable only because it is 17px tall.
+       */
+      /*
+       * Notes run the full width at the bottom, which is where a drawing sheet puts them anyway.
+       *
+       * In column one they were 125px of prose three words to a line, and they pushed the activity
+       * strip past the bottom of a strip this short. Spanning the sheet they are two lines and the
+       * column above them gets that height back.
+       */
       grid-template-areas:
-        "headline regions legend list"
-        "largest  regions legend list"
-        "activity regions legend list";
-      /* The short blocks take what they need and the last takes the rest, so the columns beside them
-         have a definite height to fill. */
-      grid-template-rows: auto auto 1fr;
+        "title    regions legend list"
+        "when     regions legend list"
+        "activity regions legend list"
+        "notes    notes   notes  notes";
+      /* The short blocks take what they need, then the list takes the rest, then notes take what
+         they need again. */
+      grid-template-rows: auto auto 1fr auto;
       align-items: start;
       gap: 0.7rem 2rem;
     }
 
-    .rail > [data-rail="headline"] { grid-area: headline; }
-    .rail > [data-rail="largest"] { grid-area: largest; }
+    .rail > .titleblock { grid-area: title; }
+    .rail > .tb-notes { grid-area: notes; }
+    .rail > [data-rail="diurnal"] { grid-area: when; }
     .rail > [data-rail="activity"] { grid-area: activity; }
     .rail > [data-rail="legend"] { grid-area: legend; }
     .rail > [data-rail="regions"] { grid-area: regions; }

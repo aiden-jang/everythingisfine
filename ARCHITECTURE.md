@@ -4573,6 +4573,53 @@ instead of filling the rail, and `details` was chosen over a button with state p
 keyboard-reachable without inventing a path for it. The interaction suite's two legend tests pass unchanged,
 including the one that reads what a ring is.
 
+## The polish pass, and the layout the title block broke
+
+Auditing the blueprint pass at 375, 768 and 1024 rather than only at the width it was designed on, which
+found a regression I had shipped two steps earlier and the suite had not.
+
+**The strip grid names its cells, and mine were not among them.** The 768-1279 rail is a four-column grid
+with `grid-template-areas`, and the rules that place them match *direct children*: `.rail > [data-rail=
+"headline"]`. The title block wrapped headline and largest inside itself, so both selectors stopped matching
+anything, both the block and its notes fell to `grid-area: auto`, and they auto-placed into column one. The
+activity strip, still pinned to its named area in the last row, was pushed to **349px inside a strip 348px
+tall**: the histogram, the day field and the transport all went below the fold.
+
+Nothing failed. The reachability test allows a scrollable ancestor and this rail scrolls, so "reachable" was
+still true; the globe still got its share of the screen. This is the same lesson the strip grid already
+carries in a comment - an unnamed block auto-places and makes the strip taller - and I walked into it from
+the one direction the comment did not describe, by renaming the children rather than adding one.
+
+Naming the new cells moved activity to 389, which was worse: four rows in one column. What actually fixed it
+was moving the notes out of that column entirely, to a row spanning all four, which is where a drawing sheet
+puts notes anyway. In a 110px column they were 125px of prose three or four words to a line; spanning the
+sheet they are two lines. Activity came back to **245**, inside the fold.
+
+**Two labels that were starving the values they name.** Both had the same shape and neither was visible at
+desktop width.
+
+The largest-event row was label, magnitude, place and age on one baseline, so at 768 the place got what was
+left after three fixed-width siblings: "Flores Sea" rendered as **"Flor…"**, and the place name is the whole
+point of the row. It is label-over-value now, the same shape the cells beside it already used, so the name
+gets the full width at every size.
+
+The day field was `Go to a day`, an input, and `go` on one row. The input took what was left, which at 768
+was **60px**: a date field showing "mm / d" and a calendar icon, unreadable and under the touch minimum. A
+native date input's width floor is set by its own locale, so the label moved to its own line and the field
+took the row.
+
+**The phone header was an L.** The control group wraps to two rows at 375, which is a decision defended in
+place - a second row costs less than a button nobody can press - but `items-center` then floated the
+wordmark between those two rows, diagonally opposite an orphaned "Still". Scoped to `max-md`, where the wrap
+actually happens, so every wider header keeps the centring it was designed with.
+
+**A note on the suite, because the numbers looked alarming.** One full interaction run reported 5 failures
+in **41.9 minutes**, against 5.8 for the same suite an hour earlier. All five passed in isolation, and a
+re-run passed **39 of 39 in 6.0 minutes**. Load average on the machine was 12.7. So the entry above claiming
+the browser gate's load sensitivity was closed is **too strong**: waiting for motion to stop fixed the camera
+assertions, and these five have some other timing dependency that a 7x-loaded machine still finds. Recorded
+rather than fixed, because the cheap tell is real: a 7x runtime is the signal, not the failure list.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
