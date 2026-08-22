@@ -59,6 +59,14 @@ export interface Mark {
    * which thing it is, which is the only missing half of picking one.
    */
   id?: string;
+  /**
+   * What the hover tooltip says about this mark.
+   *
+   * The label lives on the mark rather than being looked up by the globe, because the globe knows about
+   * polylines and anchors and deliberately nothing about cyclones. Absent wherever `id` is absent: unlabelled
+   * geometry is not hoverable for the same reason it is not clickable.
+   */
+  label?: string;
 }
 
 /**

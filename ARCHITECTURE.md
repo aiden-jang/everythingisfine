@@ -4671,6 +4671,40 @@ too, and it is redundant there: the header already says EVERYTHING IS FINE, the 
 the count, and the hazard list already totals the other four layers. In the app the evidence is on screen
 already. The still is the only place it travels alone, which is the only place the line earns its words.
 
+## Hover, on the four layers that never had it
+
+Clicking worked on all five layers. Hovering worked on one. So the storms, volcanoes, fires and floods had
+no feedback of any kind, including **no pointer cursor**, which means nothing on screen said a spiral or a
+triangle could be pressed at all. That gap arrived with mark picking: the click path was taught about marks
+and `onMove` was not.
+
+`hovered` is tagged now, `{ kind, id }` rather than a bare string, because a quake key and a mark id are
+different namespaces that both contain colons - the same reason the app keeps them as separate selections
+instead of one field that could be either.
+
+**The label rides on the mark.** `Mark` gained an optional `label`, set where the marks are built, because
+this file knows about polylines and anchors and has no business knowing what a cyclone is. One `locate`
+resolves either namespace to a position and a label, so the ring and the tooltip stopped caring which layer
+they are pointing at. Every label follows the rule its own legend row follows: a storm gets GDACS's wind
+number and never their word for it, a fire gets area in the legend's unit, a flood gets **no measure at all**
+because every flood in that feed is filed as magnitude zero, and a volcano gets no date because the one
+thing that has to be said about a volcano is a sentence rather than a tooltip.
+
+**The distance line stops at the kilometres for a mark.** With an earthquake pinned, hovering another shows
+the gap and the P-wave arrival time. Those seconds are a wave travelling through crust between two
+epicentres, so a cyclone has no arrival time at an earthquake: a mark gets the distance and nothing else.
+Printing the seconds there would have been a measurement of something that does not happen, and the pair
+code would have produced one happily.
+
+**Verified by pointing at things.** A DEV-only `__marks` hook was needed to do it: the hazard feeds are live
+even when the agencies are stubbed, so no test can hard-code where a storm is. Volcano gives
+"Mayon · Philippines", fire gives "Russian Federation · 102 km²", flood gives "India", all with a pointer
+cursor, and an earthquake still gives "M 2.4 Near The East Coast Of Honshu, Japan".
+
+Two of my own probes were wrong before the app was: I read the cursor off the canvas's parent when the
+handler styles the canvas, and I matched the magnitude with `/M\d/` when the tooltip renders "M 2.4" with a
+space. Both looked like product failures for a minute.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

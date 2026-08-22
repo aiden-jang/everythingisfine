@@ -6,7 +6,7 @@ import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 import {
   createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay,
 } from "../app/replay";
-import type { Filters } from "../data/types";
+import type { Filters, Quake } from "../data/types";
 import { distanceLabel, magnitude } from "../app/format";
 import { between, seconds } from "../app/arrival";
 import type { RampName } from "./ramp";
@@ -173,6 +173,12 @@ export function Globe({
       Object.assign(window, {
         __globe: globe.controls, __feed: feed, __events: globe.events, __rings: globe.rings,
         /*
+         * The pickable marks, so a browser test can point at a storm without knowing where storms are.
+         * The hazard feeds are live even when the agencies are stubbed, so their positions are not
+         * fixtures and cannot be hard-coded into a test.
+         */
+        __marks: () => live.current.marks.filter((m) => m.id !== undefined),
+        /*
          * One full scene draw, on demand.
          *
          * Added to measure GPU frame time, which ARCHITECTURE.md had listed as never measured. The
@@ -190,17 +196,52 @@ export function Globe({
 
     // Read live rather than captured: somebody can turn reduced motion on while the page is open.
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let hovered: string | null = null;
+    /*
+     * What the pointer is over, which is no longer only an earthquake.
+     *
+     * Clicking already worked on all five layers; hovering worked on one. That left the other four with no
+     * feedback of any kind, including no pointer cursor, so nothing on screen said a spiral or a triangle
+     * could be pressed at all. Tagged rather than a bare string because a quake key and a mark id are
+     * different namespaces that both contain colons, and the app keeps them as separate selections for the
+     * same reason.
+     */
+    let hovered: { kind: "quake" | "mark"; id: string } | null = null;
 
     /** Puts the pinned outline and the hover tooltip over whatever they are attached to. */
     const placeOverlays = (): void => {
       const box = el.getBoundingClientRect();
-      const put = (node: HTMLDivElement | null, key: string | null, offsetY: number): void => {
+      /*
+       * Where a hover target is and what it is called.
+       *
+       * One resolver for both namespaces, so the overlays do not care which layer they are pointing at.
+       * A mark's label rides on the mark itself: this file knows about polylines and anchors and has no
+       * business knowing what a cyclone is.
+       */
+      const locate = (
+        t: { kind: "quake" | "mark"; id: string },
+      ): { lon: number; lat: number; label: string; quake: Quake | null } | null => {
+        if (t.kind === "quake") {
+          const q = feed.store.get(t.id);
+          if (!q) return null;
+          return {
+            lon: q.primary.lon, lat: q.primary.lat,
+            label: `${magnitude(q.primary)} ${q.primary.place}`, quake: q,
+          };
+        }
+        const mark = live.current.marks.find((m) => m.id === t.id && m.anchor !== undefined);
+        if (!mark?.anchor || mark.label === undefined) return null;
+        return { lon: mark.anchor.lon, lat: mark.anchor.lat, label: mark.label, quake: null };
+      };
+      const put = (
+        node: HTMLDivElement | null,
+        target: { kind: "quake" | "mark"; id: string } | null,
+        offsetY: number,
+      ): void => {
         if (!node) return;
-        const quake = key ? feed.store.get(key) : undefined;
-        const at = quake ? globe.controls.project(quake.primary.lon, quake.primary.lat) : null;
+        const found = target ? locate(target) : null;
+        const at = found ? globe.controls.project(found.lon, found.lat) : null;
         node.style.opacity = at ? "1" : "0";
-        if (!at || !quake) return;
+        if (!at || !found) return;
         if (node === tooltip.current) {
           /*
            * Two events, measured, and no new state to do it with.
@@ -213,23 +254,27 @@ export function Globe({
            * a place name is prose that may be truncated and a number is not.
            */
           const pinned = live.current.selected ? feed.store.get(live.current.selected) : undefined;
-          const pair = pinned && pinned.key !== quake.key
-            ? between(
-              pinned.primary.lon, pinned.primary.lat, quake.primary.lon, quake.primary.lat,
-            )
+          const pair = pinned && pinned.key !== found.quake?.key
+            ? between(pinned.primary.lon, pinned.primary.lat, found.lon, found.lat)
             : null;
           node.replaceChildren();
           const name = document.createElement("div");
           name.className = "truncate";
-          name.textContent = `${magnitude(quake.primary)} ${quake.primary.place}`;
+          name.textContent = found.label;
           node.append(name);
           if (pair) {
             const gap = document.createElement("div");
             gap.className = "font-mono text-dim tabular-nums";
-            // Distance always, time only inside the range a constant crustal velocity can describe.
-            gap.textContent = pair.p === null
-              ? `${distanceLabel(pair.km)} from the pin`
-              : `${distanceLabel(pair.km)} from the pin · ${seconds(pair.p)}`;
+            /*
+             * Distance always, arrival time only between two earthquakes.
+             *
+             * The seconds are a P-wave travelling through crust from one epicentre to another. A cyclone
+             * has no arrival time at an earthquake, so a mark gets the kilometres and nothing else -
+             * printing seconds there would be a measurement of something that does not happen.
+             */
+            gap.textContent = pair.p !== null && found.quake !== null
+              ? `${distanceLabel(pair.km)} from the pin · ${seconds(pair.p)}`
+              : `${distanceLabel(pair.km)} from the pin`;
             node.append(gap);
           }
         }
@@ -269,7 +314,11 @@ export function Globe({
         }
       }
 
-      put(marker.current, live.current.selected, 0);
+      put(
+        marker.current,
+        live.current.selected === null ? null : { kind: "quake", id: live.current.selected },
+        0,
+      );
       /*
        * Which dot the label is about.
        *
@@ -641,10 +690,20 @@ export function Globe({
     };
 
     const onMove = (e: PointerEvent): void => {
-      const key = globe.hitTest(e.clientX, e.clientY, feed.store, live.current.filters, Date.now());
-      if (key !== hovered) {
-        hovered = key;
-        el.style.cursor = key ? "pointer" : "";
+      /*
+       * Earthquakes first, then the other four, which is the same order the click already uses: the ramp
+       * belongs to earthquakes and so does the pointer when both are under it.
+       */
+      const quake = globe.hitTest(e.clientX, e.clientY, feed.store, live.current.filters, Date.now());
+      const next: { kind: "quake" | "mark"; id: string } | null = quake !== null
+        ? { kind: "quake", id: quake }
+        : ((): { kind: "mark"; id: string } | null => {
+          const mark = globe.hitMark(e.clientX, e.clientY);
+          return mark === null ? null : { kind: "mark", id: mark };
+        })();
+      if (next?.id !== hovered?.id || next?.kind !== hovered?.kind) {
+        hovered = next;
+        el.style.cursor = next ? "pointer" : "";
       }
       placeOverlays();
     };
