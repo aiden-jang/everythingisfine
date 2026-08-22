@@ -4748,8 +4748,25 @@ this order:
 | recent earthquakes | **132** |
 
 A key that is read once was a third of the rail and **3.4 times the height of the list of earthquakes that
-are actually happening**. So the key now starts folded below 768px and open above it: legend 448 to 129,
-rail content 1,403 to 1,110, and the 293px goes to the blocks somebody came to act on.
+are actually happening**. So the key starts folded unless the rail runs the full height of the window.
+
+**The threshold was wrong the first time, and wrong in the instructive direction.** `min-width: 768px`
+reads as "fold it on phones, open it where there is room", and the 768-1279 band is where there is *least*
+room: the rail is 34dvh there, 348px on a 1024-tall screen, and the key measured **719px** in it. That is
+2.1 times the visible height, worse than the phone's 1.9. The first fix therefore left the worst case in
+the app untouched while looking like a fix, and only measuring the other breakpoints caught it.
+
+The rail stops being a strip at 1280, so that is the line. Measured after:
+
+| width | legend | rail content | visible |
+|---|---|---|---|
+| 375 | 448 → **129** | 1,403 → **1,110** | 240 |
+| 768 | 719 → **144** | 898 → **565** | 348 |
+| 1024 | → **129** | → **553** | 261 |
+| 1440 | unchanged | 945 | 854 |
+
+At 1440 the legend is not in the rail at all - it floats over the canvas with its own space - which is the
+same fact from the other side: the key is only open where something can afford it.
 
 **A stored answer wins in both directions**, because somebody who folded it away or opened it up has said
 what they want and a screen width is not an argument against that. The width only decides a first visit,
