@@ -4868,6 +4868,42 @@ gated `onGlobe` set, so an archived still states that day's evidence with no arc
 "100 earthquakes. 20 fires. 1 flood." over "Archived day · 2026-05-15". The two features met correctly
 because both were built against what is drawn rather than against what is live.
 
+## The bluer globe cost the colourblind ramp, and luminance could not see it
+
+Found by opening two states I had changed and never looked at: the flat map, and the colourblind ramp. The
+map was fine. The colourblind ramp was not, and the reason is a hole in my own measurement.
+
+When the geography went bluer I held luminance exactly and reported mark-versus-ground contrast as
+**unchanged to a hundredth**, which was true and incomplete. Contrast is a luminance ratio. Moving the
+geography toward blue moved it toward the half of the wheel cividis lives in, so **perceptual** distance
+fell while contrast did not move at all:
+
+| mark vs ground | before | after |
+|---|---|---|
+| cividis 2nd stop vs plate lines | 12.0 dE | **9.3 dE** |
+| cividis low stop vs land | 16.3 dE | **12.6 dE** |
+| cividis low stop vs sphere | 24.8 dE | 22.5 dE |
+
+Under about 10 dE two colours stop separating, so the second stop against the plate lines crossed the line.
+The thermal ramp is warm and loses nothing; two of its pairs actually improved. No test caught this, and no
+test could have: the chroma ceiling passes at 53, the contrast gate is a luminance ratio, and the only
+symptom is that small marks are harder to pick out.
+
+**So the geography follows the ramp.** `setGeography(ramp)` swaps the five materials between the blueprint
+palette and the pre-blueprint neutral one, called from the same place the mark layers are re-ramped, so a
+toggle and a cold load with the preference stored both get it - checked separately, because a returning
+viewer never presses the button.
+
+This is DESIGN.md section 3's argument running in the only direction left. That section says chrome must
+survive *both* ramps, and read as "therefore no hue" it was over-strict: the real constraint is a ceiling,
+which is what let the blueprint palette in. What is left once the ceiling is not the binding constraint is
+the harder half of the same sentence, and it does not resolve to one palette. **The two ramps do not want
+the same chrome.**
+
+**The lesson is about the instrument, not the colour.** I measured the thing I had a number for. Holding
+luminance was the right move and proving it held was worth doing, but reporting "unchanged to plus or minus
+0.00" invited the reading that nothing had changed, when what I had shown was that *one axis* had not moved.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

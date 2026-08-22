@@ -7,6 +7,7 @@ import {
   buildLand, RADIUS_ATMOSPHERE, RADIUS_GRATICULE, RADIUS_NIGHT, RADIUS_SPHERE,
   type LandGeometry,
 } from "../geo/land";
+import type { RampName } from "./ramp";
 import { DEG, distanceKm, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
@@ -114,6 +115,30 @@ const COLOR_GRATICULE = 0x13334e;
  * a seismic map the explanation should not be the fainter mark.
  */
 const COLOR_PLATES = 0x265174;
+
+/*
+ * The neutral geography, for the colourblind ramp.
+ *
+ * These are the pre-blueprint values, and they are kept because the bluer palette costs the *accessibility*
+ * ramp something the default ramp does not pay. Holding luminance when the geography went bluer kept
+ * mark-versus-ground contrast identical to a hundredth - and luminance was the wrong thing to measure alone.
+ * Moving the geography toward blue moved it toward the half of the wheel cividis lives in, so perceptual
+ * distance fell even though contrast did not:
+ *
+ *   cividis 2nd stop vs plate lines   12.0 dE -> 9.3 dE   (under ~10 is where colours stop separating)
+ *   cividis low stop vs land          16.3 dE -> 12.6 dE
+ *
+ * The thermal ramp is warm and loses nothing, so it keeps the blue. This is DESIGN.md section 3's argument
+ * running in the only direction left once the ceiling is no longer the binding constraint: chrome has to
+ * survive *both* ramps, and the two ramps do not want the same chrome.
+ */
+const NEUTRAL = {
+  sphere: 0x0a101c, land: 0x1e293f, graticule: 0x243149, coast: 0x31405d, plates: 0x3d4e6e,
+} as const;
+const BLUEPRINT = {
+  sphere: COLOR_SPHERE, land: COLOR_LAND, graticule: COLOR_GRATICULE,
+  coast: COLOR_COAST, plates: COLOR_PLATES,
+} as const;
 const COLOR_RIM = new Color(0x7896be);
 
 /** Where the camera settles. The Ring of Fire is where the data lives, so it faces the viewer. */
@@ -170,6 +195,8 @@ export interface Globe {
   setAurora: (grid: Aurora | null) => void;
   /** Hands over every non-earthquake mark as polylines. An empty list draws nothing. */
   setMarks: (marks: readonly Mark[]) => void;
+  /** Picks the geography palette the given ramp needs. See `NEUTRAL` in this file. */
+  setGeography: (ramp: RampName) => void;
   /** The camera's zoom, so the glyphs hold their size on screen the way the markers do. */
   setMarkZoom: (zoom: number) => void;
   setMorph: (t: number) => void;
@@ -632,6 +659,22 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   return {
     resize,
     controls,
+    /**
+     * Swaps the geography between the blue palette and the neutral one.
+     *
+     * Called with the ramp rather than a palette name, because there is exactly one reason to choose and
+     * it is which ramp the marks are drawn from. See `NEUTRAL` for the measurement.
+     */
+    setGeography: (ramp: RampName): void => {
+      const palette = ramp === "cividis" ? NEUTRAL : BLUEPRINT;
+      (ocean.material as MeshBasicMaterial).color.setHex(palette.sphere);
+      (fill.material as MeshBasicMaterial).color.setHex(palette.land);
+      (grat.material as LineBasicMaterial).color.setHex(palette.graticule);
+      (plateLines.material as LineBasicMaterial).color.setHex(palette.plates);
+      (coast.material as LineBasicMaterial).color.setHex(palette.coast);
+      // The map's backdrop fades to the sphere colour, so it has to move with it.
+      COLOR_SPHERE_C.setHex(palette.sphere);
+    },
     /** 0 is the globe, 1 is the flat map. Everything on the canvas reads the same value. */
     setMorph: (t: number): void => {
       morph.value = Math.max(0, Math.min(1, t));

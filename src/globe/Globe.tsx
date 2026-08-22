@@ -637,6 +637,12 @@ export function Globe({
       // Both layers, or a wavefront would stay warm while its own marker turned blue.
       globe.events.setRamp(name);
       globe.rings.setRamp(name);
+      /*
+       * And the geography, which the colourblind ramp needs greyer than the blueprint palette.
+       * Measured: cividis's second stop sits 9.3 dE from the blue plate lines and 12.0 from the neutral
+       * ones, and under about 10 two colours stop separating. See `NEUTRAL` in `scene.ts`.
+       */
+      globe.setGeography(name);
       redraw();
     };
 
