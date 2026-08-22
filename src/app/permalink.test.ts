@@ -4,7 +4,7 @@ import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 
 const state: Permalink = {
   lon: 145, lat: 12, zoom: 1, minMagnitude: 2, windowHours: 24,
-  sources: ["usgs", "emsc"], ramp: "thermal", event: null, section: null, cursor: null,
+  sources: ["usgs", "emsc"], ramp: "thermal", event: null, section: null, cursor: null, day: null,
 };
 
 describe("longitude on the way out", () => {
@@ -13,7 +13,7 @@ describe("longitude on the way out", () => {
     // nothing takes it off again. Links were coming out as at=499.37.
     const at = (lon: number): string => encode({
       lon, lat: 20, zoom: 1, minMagnitude: 2, windowHours: 24,
-      sources: ["usgs"], ramp: "thermal", event: null, section: null, cursor: null,
+      sources: ["usgs"], ramp: "thermal", event: null, section: null, cursor: null, day: null,
     }).split("&")[0]!;
 
     expect(at(499.37)).toBe("at=139.37,20,1");
@@ -242,5 +242,40 @@ describe("bounds read from the controls rather than restated", () => {
     // This one was already right, and is asserted so it stays that way: LAT_LIMIT is 85.
     expect(decode("at=0,89,1").lat).toBe(85);
     expect(decode("at=0,-89,1").lat).toBe(-85);
+  });
+});
+
+describe("an archived day in the link", () => {
+  it("travels, so a link stops claiming live the moment the app does", () => {
+    expect(encode({ ...state, day: "2026-07-04" })).toContain("d=2026-07-04");
+    expect(encode({ ...state, day: null })).not.toContain("d=");
+  });
+
+  it("comes back out", () => {
+    expect(decode("#at=1,2,1&d=2026-07-04").day).toBe("2026-07-04");
+    expect(decode("#at=1,2,1").day).toBeUndefined();
+  });
+
+  it("refuses a date that only looks like one", () => {
+    /*
+     * `2026-02-31` matches the shape and is not a date; `Date.parse` would roll it into March and the
+     * app would show a day nobody asked for.
+     */
+    expect(decode("#d=2026-02-31").day).toBeUndefined();
+    expect(decode("#d=2026-13-01").day).toBeUndefined();
+    expect(decode("#d=04-07-2026").day).toBeUndefined();
+    expect(decode("#d=yesterday").day).toBeUndefined();
+  });
+
+  it("refuses a future day, because there is nothing to fetch", () => {
+    const ahead = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
+    expect(decode(`#d=${ahead}`).day).toBeUndefined();
+  });
+
+  it("survives a round trip beside a cursor, which is the other half of when", () => {
+    const link = encode({ ...state, day: "2026-07-04", cursor: Date.parse("2026-07-04T09:30:00Z") });
+    const back = decode(`#${link}`);
+    expect(back.day).toBe("2026-07-04");
+    expect(back.cursor).toBe(Date.parse("2026-07-04T09:30:00Z"));
   });
 });

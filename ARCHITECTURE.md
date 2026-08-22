@@ -4347,6 +4347,21 @@ exactly midnight to midnight; the header shows the date instead of the feed stat
 largest-event row all describe that day; and "back to live" clears it and re-seeds. The day even replays on
 entry, which was not designed and is the right behaviour.
 
+**And then the link had to say so.** Shipping the mode without touching the permalink left the URL
+describing a view the app was no longer in - you could load a day in July and the address bar still said
+live. This document argues throughout that a link says where *and* when, and an archived day is the
+strongest "when" the app has, so `d=YYYY-MM-DD` now travels with it. A link carrying one arrives in that
+day rather than live; leaving drops the key.
+
+The day rather than the span, because the span is derived and a URL carrying both could disagree with
+itself. Validated as a real calendar date rather than pattern-matched: **`2026-02-31` matches the shape and
+is not a date**, and `Date.parse` would have rolled it silently into March. A future day is refused too,
+because there is nothing to fetch - the same rule the decoder already applies to a 100-hour window.
+
+One bug in the wiring, and it was the same mistake one layer down: `write` closes over the snapshot and the
+interval keeps calling the closure it was created with, so entering an archive left the link saying live
+until some unrelated dependency happened to change. `snapshot.archive` is a dependency now.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
