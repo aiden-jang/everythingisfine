@@ -4387,6 +4387,37 @@ The pattern in both is worth naming: a mode is only as isolated as its least-gua
 guarded one is never the one that bites. The earthquake feed got a designed stop; the five that mattered
 just as much got nothing, because they were never part of the sentence I was thinking about.
 
+## The five layers, as a list you can reach
+
+Making the marks clickable gave them a pointer and nothing else. There was no list of storms or fires
+anywhere in the chrome, so a keyboard user could not reach a single one of them, and nobody could browse
+them - the earthquakes have had the rail's own list since the beginning. Same argument the activity strip's
+bars won when holding an hour stopped being mouse-only, and I had just re-created the gap one layer over.
+
+**Ordered by the question each layer invites.** Storms by peak wind, fires by burned area, floods and
+volcanoes by recency - because "how bad", "how big" and "how recent" are what those feeds are about, and an
+alphabetical list of a hundred fires answers none of them. Floods carry no measure column at all, because
+this feed files every one as magnitude zero and a rank would imply a severity that does not exist.
+
+Rows use `kind:id`, the same identity the globe picks by, so the list and the glyph cannot disagree about
+what a thing is - clicking either opens the same card. Built from the gated `onGlobe` set rather than the
+raw feeds, so an archived day withholds the list along with the layers instead of offering rows that point
+at nothing.
+
+**Two placement bugs, both about conditionals I did not read.**
+
+The rationale comment went in front of `<div data-rail="regions">`, inside a ternary, which makes two
+sibling expressions where JSX allows one - ten cascading syntax errors from a comment. It lives inside the
+block now.
+
+Then the list rendered nowhere, while the legend beside it happily described four storms. The regions column
+is gated on `regions.length > 0`, so putting the hazard list inside it quietly tied the five layers to the
+earthquake feed: with USGS and EMSC still answering, the storms were on the globe and the list of them was
+not in the DOM. The column opens for either kind of thing now, and the search box and region rows keep
+their own gate. Placement inside that column is still deliberate - the 768-1279px strip is a four-column
+grid with every cell named, and an unnamed sixth block would auto-place into a new row and make the strip
+taller, which is what the "globe always gets a real share of the screen" test exists to catch.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

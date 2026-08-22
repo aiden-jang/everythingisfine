@@ -14,6 +14,7 @@ import { marksFor } from "./app/marks";
 import { depthBands } from "./data/depth";
 import { drawStill, stillMoment, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
 import { findSubject, MarkCard } from "./app/MarkCard";
+import { hazardCount, hazardGroups } from "./app/hazards";
 import { dayRange, fetchArchive } from "./sources/archive";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
@@ -830,6 +831,13 @@ export function App(): JSX.Element {
    * built from a snapshot would keep describing a storm the feed had dropped. If it is gone, so is the
    * card.
    */
+  /*
+   * The list is built from `onGlobe`, not from the raw feeds, so it holds exactly what is drawn: in an
+   * archived day the layers are withheld and the list goes with them rather than offering rows that
+   * point at nothing.
+   */
+  const hazards = useMemo(() => hazardGroups(onGlobe),
+    [onGlobe.cyclones, onGlobe.volcanoes, onGlobe.fires, onGlobe.floods]);
   const markSubject = findSubject(markId, onGlobe);
   /*
    * Pinning an earthquake from anywhere clears the mark card.
@@ -1693,7 +1701,13 @@ export function App(): JSX.Element {
             somebody scanning for where today is quiet wants to see, and it was the one being cut. A
             sized scrolling box shows the same four by default and admits the others exist.
           */}
-          {regions.length > 0 ? (
+          {/*
+            Open when there is either kind of thing to list.
+            It was gated on the region rows alone, which quietly tied the hazard list to the earthquake
+            feed: with USGS and EMSC still answering, the storms and fires were on the globe and the list
+            of them was not in the DOM at all. The five layers do not depend on the two agencies.
+          */}
+          {regions.length > 0 || hazards.length > 0 ? (
             <div data-rail="regions" className="relative">
               {/*
                 Somewhere to search, and the results stand in the region rows rather than beside them.
@@ -1702,6 +1716,8 @@ export function App(): JSX.Element {
                 replacing the rows keeps the rail the same height and asks the same question the rows
                 already answer, with a filter on it.
               */}
+              {regions.length > 0 ? (
+                <>
               <div role="search" className="mb-1.5 flex items-baseline gap-2">
                 <label htmlFor="find" className="label shrink-0">Find</label>
                 <input
@@ -1805,6 +1821,65 @@ export function App(): JSX.Element {
                 onChange={setRegionsHeight}
                 className="absolute inset-x-0 -bottom-2 hidden xl:block"
               />
+                </>
+              ) : null}
+
+              {/*
+                The five layers as a list, in the column that already answers "where should I look".
+
+                Inside the regions block rather than as a rail block of its own: the strip layout between
+                768 and 1279px is a four-column grid with every cell named, and an unnamed sixth block
+                would auto-place into a new row and make the strip taller - which the design test about
+                the globe keeping a real share of the screen exists to catch. This column already scrolls.
+
+                Behind a disclosure, closed by default.
+
+                A hundred and thirty rows expanded under the region list would bury everything below it,
+                and the count in the summary is the part most people want: "133 marks" answers the
+                question without opening anything. Same idiom as "Time of day" and the legend's key.
+              */}
+              {hazards.length > 0 ? (
+                <details className="mt-3">
+                  <summary className="cursor-pointer list-none text-[11px] text-faint hover:text-dim">
+                    Storms, fires, floods and volcanoes ({hazardCount(hazards)})
+                  </summary>
+                  <div className="mt-1.5 max-h-[240px] overflow-y-auto pr-1">
+                    {hazards.map((group) => (
+                      <div key={group.kind} className="mt-1.5 first:mt-0">
+                        <div className="label">{group.label}</div>
+                        {group.rows.map((row) => (
+                          <button
+                            key={row.id}
+                            type="button"
+                            /*
+                              Selects and flies, which is what a row in this rail has always meant. It
+                              opens the same card the glyph does, from the same id, so the list and the
+                              globe cannot disagree about what a thing is.
+                            */
+                            onClick={() => {
+                              setSelected(null);
+                              setMarkId(row.id);
+                              flyTo.current(row.lon, row.lat, 2.2);
+                            }}
+                            className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left transition-colors hover:bg-raised ${
+                              markId === row.id ? "bg-raised" : ""
+                            }`}
+                          >
+                            <span className="min-w-0 flex-1 truncate text-[11.5px] text-dim">
+                              {row.name}
+                            </span>
+                            {row.measure ? (
+                              <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
+                                {row.measure}
+                              </span>
+                            ) : null}
+                          </button>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              ) : null}
             </div>
           ) : null}
 
