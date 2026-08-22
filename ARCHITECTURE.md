@@ -4418,6 +4418,27 @@ their own gate. Placement inside that column is still deliberate - the 768-1279p
 grid with every cell named, and an unnamed sixth block would auto-place into a new row and make the strip
 taller, which is what the "globe always gets a real share of the screen" test exists to catch.
 
+## The link finally carries which storm
+
+The link already said where, when, which earthquake, which slice and which moment. It did not say which
+storm, because mark selection arrived after the link did - the same gap the archived day had, two features
+apart. "Look at this cyclone" is exactly the kind of thing somebody sends, and until now the recipient got
+the globe and had to hunt.
+
+`k=cyclone:1001305`, the agency's own id, the way `e=` carries the agency's earthquake id. Validated on the
+**kind** and not on the whole string, because the id half belongs to GDACS and this app has no business
+guessing its shape - which also means an id containing colons survives, since the split takes the first one
+only. An unknown kind is dropped at the boundary rather than handed on to resolve to nothing.
+
+A mark that has since dropped out of its feed simply has no card. That is deliberate: the alternative is a
+link that resurrects a storm which has blown out, and `findSubject` already returns null for exactly this.
+Nothing in the chrome opens either - the rail's disclosure stays closed, because the link should restore a
+view, not rearrange somebody's panels.
+
+**A day and a mark cannot both be honoured.** An archived day withholds the five layers, so `k=` is ignored
+when `d=` is present rather than resolving to an empty card. The link the app then writes has no `k=` at
+all, so what you copy back out matches what you are looking at.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

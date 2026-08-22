@@ -66,6 +66,18 @@ export interface Permalink {
    * disagree with itself. Midnight to midnight UTC, so a shared day is the same day everywhere.
    */
   day: string | null;
+  /**
+   * The selected non-earthquake mark as `kind:id`, or null.
+   *
+   * The link already carried which earthquake, which day, which slice and which moment, and not which
+   * storm - a gap that arrived with mark selection and is the same one the day had. "Look at this
+   * cyclone" is exactly the kind of thing somebody sends.
+   *
+   * The agencies' own identifiers, like `e=`, so it means something on another machine. A mark that has
+   * since dropped out of its feed simply has no card, which `findSubject` already handles: the alternative
+   * is a link that resurrects a storm that has blown out.
+   */
+  mark: string | null;
 }
 
 const round = (value: number, places: number): number =>
@@ -107,6 +119,7 @@ export function encode(state: Permalink): string {
   // meaningful to about a minute and three digits of false precision in a URL is three too many.
   if (state.cursor !== null) parts.push(`c=${Math.round(state.cursor / 1000)}`);
   if (state.day) parts.push(`d=${state.day}`);
+  if (state.mark) parts.push(`k=${state.mark}`);
   if (state.section) {
     const { fromLon, fromLat, toLon, toLat } = state.section;
     parts.push(
@@ -191,6 +204,16 @@ export function decode(fragment: string): Partial<Permalink> {
     if (Number.isFinite(at) && new Date(at).toISOString().slice(0, 10) === day
       && at < Date.now()) out.day = day;
   }
+
+  /*
+   * A mark, only if it names a layer this app draws.
+   *
+   * Validated on the kind rather than accepted whole, because the id half is an agency's and this app has
+   * no business guessing its shape. An unknown kind is dropped rather than passed to `findSubject` to come
+   * back null, so a hand-edited link fails at the boundary instead of silently doing nothing.
+   */
+  const mark = params.get("k");
+  if (mark !== null && /^(cyclone|volcano|fire|flood):.+/.test(mark)) out.mark = mark;
 
   const s = params.get("s");
   if (s !== null) {

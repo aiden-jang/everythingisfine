@@ -4,7 +4,7 @@ import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 
 const state: Permalink = {
   lon: 145, lat: 12, zoom: 1, minMagnitude: 2, windowHours: 24,
-  sources: ["usgs", "emsc"], ramp: "thermal", event: null, section: null, cursor: null, day: null,
+  sources: ["usgs", "emsc"], ramp: "thermal", event: null, section: null, cursor: null, day: null, mark: null,
 };
 
 describe("longitude on the way out", () => {
@@ -13,7 +13,7 @@ describe("longitude on the way out", () => {
     // nothing takes it off again. Links were coming out as at=499.37.
     const at = (lon: number): string => encode({
       lon, lat: 20, zoom: 1, minMagnitude: 2, windowHours: 24,
-      sources: ["usgs"], ramp: "thermal", event: null, section: null, cursor: null, day: null,
+      sources: ["usgs"], ramp: "thermal", event: null, section: null, cursor: null, day: null, mark: null,
     }).split("&")[0]!;
 
     expect(at(499.37)).toBe("at=139.37,20,1");
@@ -277,5 +277,34 @@ describe("an archived day in the link", () => {
     const back = decode(`#${link}`);
     expect(back.day).toBe("2026-07-04");
     expect(back.cursor).toBe(Date.parse("2026-07-04T09:30:00Z"));
+  });
+});
+
+describe("a shared mark", () => {
+  it("carries the kind and the agency's id", () => {
+    const link = encode({ ...state, mark: "cyclone:1000234" });
+    expect(link).toContain("k=cyclone:1000234");
+    expect(decode(link).mark).toBe("cyclone:1000234");
+  });
+
+  it("survives ids that contain a colon, since the id half is not ours", () => {
+    expect(decode("k=volcano:Etna:15.0,37.7").mark).toBe("volcano:Etna:15.0,37.7");
+  });
+
+  it("keeps every layer this app draws", () => {
+    for (const kind of ["cyclone", "volcano", "fire", "flood"]) {
+      expect(decode(`k=${kind}:7`).mark).toBe(`${kind}:7`);
+    }
+  });
+
+  it("drops a kind this app does not draw, rather than passing it on to resolve to nothing", () => {
+    expect(decode("k=asteroid:7").mark).toBeUndefined();
+    expect(decode("k=cyclone").mark).toBeUndefined();
+    expect(decode("k=cyclone:").mark).toBeUndefined();
+    expect(decode("k=").mark).toBeUndefined();
+  });
+
+  it("leaves the key out entirely when nothing is selected", () => {
+    expect(encode({ ...state, mark: null })).not.toContain("k=");
   });
 });
