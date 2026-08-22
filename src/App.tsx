@@ -425,11 +425,17 @@ export function App(): JSX.Element {
   }, []);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
   /*
-   * The key starts open where there is room for it, and folded on a phone.
+   * The key starts open only where the rail runs the full height of the window.
    *
-   * Measured on a 375x812 screen: the rail is a 240px window onto 1,403px of content, and the key was
-   * **448px of it** - a third of the rail, and 3.4 times the height of the list of earthquakes that are
-   * actually happening. A key is read once; the events are why the page is open.
+   * 1280, not 768, and the first attempt at this got it wrong in an instructive way. A phone's rail is a
+   * 240px window onto 1,403px of content and the key was **448px of it**, so folding it there was
+   * obvious. But the 768-1279 strip is 34dvh - 348px on a 1024-tall screen - and the key measures
+   * **719px** in it: 2.1 times the visible height, which is worse than the phone's 1.9. Picking
+   * `min-width: 768px` therefore left the worst case in the app untouched while looking like a fix.
+   *
+   * The real question is not screen width, it is whether the rail has room, and the rail only stops
+   * being a strip at 1280 where it runs the full height. A key is read once; the events are why the
+   * page is open.
    *
    * A stored answer always wins, in both directions, because somebody who folded it away or opened it
    * up has said what they want and a width is not an argument against that. This only decides the first
@@ -439,7 +445,7 @@ export function App(): JSX.Element {
   const [keyOpen, setKeyOpen] = useState<boolean>(() => {
     const saved = stored("legendKey");
     if (saved !== null) return saved !== "0";
-    return window.matchMedia("(min-width: 768px)").matches;
+    return window.matchMedia("(min-width: 1280px)").matches;
   });
   /*
    * Written on the press, not in an effect on the value.
