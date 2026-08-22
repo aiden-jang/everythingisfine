@@ -4507,6 +4507,65 @@ built output: five chunks on load with no `plateMotion` among them, and `plateMo
 resource timeline only after the arrows toggle - with the legend then reading "101 of the 231 are closing,
 and the fastest runs at 227 mm a year", so the chunk is feeding real data and not just arriving.
 
+## The blueprint pass, and where the prose went
+
+Three steps, gated on screenshots, after the request for something simpler and cooler and "kinda like a
+blueprint". The two halves of that turned out to be one move: a drafting sheet does not stack paragraphs
+down a column, it frames values and annotates the drawing.
+
+**The rule was a ceiling, not an absence.** `design.spec.ts` enforces chroma, meaning
+`max(rgb) - min(rgb)`, at or under 55 on every painted element outside the canvas and the legend. Measured
+live, the palette was 8 colours topping out at 37, and the blue sat entirely in the dim tones while the ink
+a reader actually looks at, `#e8edf5`, used 1,111 times, measured **13**. That is why the app read grey. The
+ink is `#d6e4f7` now at 33, body `#9fb4d0` at 49, and `faint` `#6f80a4` at 53. A true cyanotype cyan
+measures **125** and would need the rule changed rather than used, which is why this pass is drafting
+annotation and not a literal blueprint.
+
+`faint` was at contrast **2.97** against the deck, which fails AA for normal text, and it is what "REGIONS",
+"GO TO A DAY" and "24h ago" are painted in. It is 4.69 now. That was luck rather than intent, and it is the
+most concrete thing the palette step bought.
+
+**The geography moved hue without moving luminance.** Every globe colour is its old chroma times 1.6 at held
+luminance, solved rather than picked, so the order `scene.ts` argues for survives exactly: sphere, land,
+graticule, coast, plates. Hue is banded to slate, because letting green collapse onto red produced a violet
+coastline at the same chroma. Holding luminance is what makes this safe: mark-versus-ground contrast is
+**unchanged to plus or minus 0.00** on every pair, including the colourblind ramp's blue low end, because
+luminance is what decides separation. Worth recording separately: cividis's lowest stop over land sits at
+**1.08**, so the smallest magnitudes in that ramp were already near-invisible before any of this.
+
+Two bugs from the palette step, both found by looking rather than by a test. `COLOR_VOID_C` in the shader
+still held `0x070b14` after `--color-void` moved, so the canvas faded to a ground the page no longer
+painted: two copies of one decision, and only one of them got changed. And `--color-coast` and
+`--color-plate` are read as *chrome* text by the cross section, where the new canvas values would measure 70
+and 78 and fail the ceiling, so those tokens deliberately do not follow. Chrome quoting the drawing
+approximates it.
+
+**The title block.** Four rail blocks with zero controls, 166px of sentences above the first thing anyone
+could touch, are now one framed unit: count, largest, then ON EDGE and BAND as labelled cells, with the
+argument moved to a NOTES row. `quietNote` split into `quietParts` plus a sentence so the percentage sits in
+the cell and the reasoning stays in the note, rather than the rail stating the number twice. The existing
+unit test caught that split on the first run, which is the test doing its job.
+
+One bug of mine there: BAND rendered ungated, so before any data landed the block framed "BAND 100 km"
+beside "Asking USGS and EMSC for the last day", which is a unit for a measurement nobody had taken. Both
+cells are gated together now, since the band is the percentage's unit and means nothing alone.
+
+**The legend wall, measured.** Six layers each printed a full paragraph, all expanded at once. Collapsed to
+key rows the block is **267px against 1,419px**, an 81% cut, and 1,419 is not an estimate: it is the same
+rows with every disclosure forced open, which is exactly what the old legend was.
+
+No copy was rewritten to get that. Every note already opened with the line a key wants, because each was
+written to lead with what its glyph is, so `splitNote` takes the first sentence and the rest becomes the
+body. The split is on a full stop followed by whitespace, so the decimals and percentages these sentences
+are full of are not read as sentence ends. A note with nothing after the first stop renders flat, because a
+disclosure with nothing behind it is a control that lies about having more to say.
+
+This is the one place the pass touches a stated rule rather than a stated reason. PLAN.local.md says no
+layer ships without the thing that explains it. The explanation still ships with the layer, one press away
+instead of filling the rail, and `details` was chosen over a button with state precisely so the row stays
+keyboard-reachable without inventing a path for it. The interaction suite's two legend tests pass unchanged,
+including the one that reads what a ring is.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

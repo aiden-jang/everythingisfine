@@ -1,10 +1,45 @@
+import type { ReactElement, ReactNode } from "react";
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { PLAYBACK } from "../geo/waves";
 import {
-  auroraNote, cycloneNote, depthNote, floodNote, motionNote, soundNote, volcanoNote, wildfireNote,
+  auroraNote, cycloneNote, depthNote, floodNote, motionNote, soundNote, splitNote, volcanoNote,
+  wildfireNote,
 } from "./format";
 import { category } from "../sources/cyclones";
 import { flame, spiral, volcano, waves } from "../globe/shapes";
+
+/*
+ * One row of the key: a glyph, the line that names it, and the reasoning one press away.
+ *
+ * Every layer used to print its whole paragraph at once, six of them stacked, and the legend became the
+ * tallest block of prose on screen. `splitNote` takes the first sentence because that is already the
+ * line a key wants, so this changed the container and not a word of the copy.
+ *
+ * `details` rather than a button and state: it is natively focusable, so the row stays reachable without
+ * a keyboard path being invented for it, and it matches the two disclosures the rail already uses.
+ */
+function KeyRow(
+  { glyph, note }: { glyph: ReactNode; note: string | null },
+): ReactElement | null {
+  // Takes the null the note functions already return for an empty layer, rather than making each
+  // caller prove non-null a second time next to the count it is already gated on.
+  if (note === null) return null;
+  const { head, rest } = splitNote(note);
+  const line = "flex items-start gap-2.5 text-[11px] leading-relaxed text-faint";
+  if (rest === null) {
+    return <div className={`mt-2 ${line}`}>{glyph}<span>{head}</span></div>;
+  }
+  return (
+    <details className="mt-2">
+      <summary className={`${line} cursor-pointer list-none hover:text-dim`}>
+        {glyph}
+        <span>{head}</span>
+      </summary>
+      {/* Indented past the glyph so the reasoning reads as belonging to the row it opened from. */}
+      <p className="mt-1 pl-[23px] text-[11px] leading-relaxed text-faint">{rest}</p>
+    </details>
+  );
+}
 
 /*
  * The legend and the magnitude filter, which were two blocks and are one control.
@@ -270,13 +305,13 @@ export function MagnitudeFilter(
         down to its own legend entry.
       */}
       {cyclones.length > 0 ? (
-        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-          <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+        <KeyRow
+          note={cycloneNote(cyclones, category)}
+          glyph={<svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
             <path d={SPIRAL_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
               className="text-dim" />
-          </svg>
-          <span>{cycloneNote(cyclones, category)}</span>
-        </div>
+          </svg>}
+        />
       ) : null}
 
       {/*
@@ -285,13 +320,13 @@ export function MagnitudeFilter(
         beside it says so.
       */}
       {volcanoes > 0 ? (
-        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-          <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+        <KeyRow
+          note={volcanoNote(volcanoes, volcanoesSince, Date.now())}
+          glyph={<svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
             <path d={VOLCANO_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
               className="text-dim" />
-          </svg>
-          <span>{volcanoNote(volcanoes, volcanoesSince, Date.now())}</span>
-        </div>
+          </svg>}
+        />
       ) : null}
 
       {/*
@@ -300,25 +335,27 @@ export function MagnitudeFilter(
         severity does not exist - because a glyph cannot caveat itself.
       */}
       {fires.count > 0 ? (
-        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-          <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+        <KeyRow
+          note={wildfireNote(fires, fireCap)}
+          glyph={<svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
             <path d={FLAME_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
               className="text-dim" />
-          </svg>
-          <span>{wildfireNote(fires, fireCap)}</span>
-        </div>
+          </svg>}
+        />
       ) : null}
 
       {floods > 0 ? (
-        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-          <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-            {WAVE_PATHS.map((d) => (
-              <path key={d} d={d} fill="none" stroke="currentColor" strokeWidth={1.4}
-                className="text-dim" />
-            ))}
-          </svg>
-          <span>{floodNote(floods, floodCountries)}</span>
-        </div>
+        <KeyRow
+          note={floodNote(floods, floodCountries)}
+          glyph={
+            <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+              {WAVE_PATHS.map((d) => (
+                <path key={d} d={d} fill="none" stroke="currentColor" strokeWidth={1.4}
+                  className="text-dim" />
+              ))}
+            </svg>
+          }
+        />
       ) : null}
 
       {/*
@@ -329,13 +366,15 @@ export function MagnitudeFilter(
         See DESIGN.md 12b.
       */}
       {sound !== null ? (
-        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-          <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-            <path d="M -8 0 L -3 0 L 2 -7 L 2 7 L -3 0 M 5 -4 Q 8 0 5 4" fill="none"
-              stroke="currentColor" strokeWidth={1.5} className="text-dim" />
-          </svg>
-          <span>{soundNote(sound)}</span>
-        </div>
+        <KeyRow
+          note={soundNote(sound)}
+          glyph={
+            <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+              <path d="M -8 0 L -3 0 L 2 -7 L 2 7 L -3 0 M 5 -4 Q 8 0 5 4" fill="none"
+                stroke="currentColor" strokeWidth={1.5} className="text-dim" />
+            </svg>
+          }
+        />
       ) : null}
 
       {/*
@@ -343,37 +382,44 @@ export function MagnitudeFilter(
         are data: the swatch is a wash instead of a glyph for the same reason.
       */}
       {aurora ? (
-        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-          <span
-            className="mt-[3px] inline-block h-[9px] w-[13px] shrink-0 rounded-[2px]"
-            style={{ background: "linear-gradient(180deg, #7fc9a6 0%, rgba(127,201,166,0) 100%)" }}
-          />
-          <span>{auroraNote(aurora.peak, aurora.forecastAt, Date.now())}</span>
-        </div>
+        <KeyRow
+          note={auroraNote(aurora.peak, aurora.forecastAt, Date.now())}
+          glyph={
+            <span
+              className="mt-[3px] inline-block h-[9px] w-[13px] shrink-0 rounded-[2px]"
+              style={{ background: "linear-gradient(180deg, #7fc9a6 0%, rgba(127,201,166,0) 100%)" }}
+            />
+          }
+        />
       ) : null}
 
-      <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-        {/*
-          Two circles, which is now literally what is drawn rather than a suggestion of expansion:
-          the outer one is the P front and the inner the S. On the ramp like the markers, since a ring
-          carries its own event's magnitude colour.
-        */}
-        <span className="relative mt-[3px] inline-block size-[13px] shrink-0">
-          <span
-            className="absolute inset-[3.5px] rounded-full border"
-            style={{ borderColor: rampColorAt(ramp, 0.55) }}
-          />
-          <span
-            className="absolute inset-0 rounded-full border opacity-45"
-            style={{ borderColor: rampColorAt(ramp, 0.55) }}
-          />
-        </span>
-        <span>
-          two rings leave each new epicentre, the P-wave and the slower S behind it, sped up
-          &times;{PLAYBACK} or they would not appear to move. The gap between them is how distance to
-          a quake is measured.
-        </span>
-      </div>
+      {/*
+        The rings, the one row whose words were JSX rather than a note, so that it could interpolate the
+        playback multiplier. A template string carries that just as well and lets this row take the same
+        shape as the other five.
+      */}
+      <KeyRow
+        note={"two rings leave each new epicentre, the P-wave and the slower S behind it, sped up "
+          + `\u00d7${PLAYBACK} or they would not appear to move. The gap between them is how distance `
+          + "to a quake is measured."}
+        glyph={
+          /*
+            Two circles, which is literally what is drawn rather than a suggestion of expansion: the
+            outer one is the P front and the inner the S. On the ramp like the markers, since a ring
+            carries its own event's magnitude colour.
+          */
+          <span className="relative mt-[3px] inline-block size-[13px] shrink-0">
+            <span
+              className="absolute inset-[3.5px] rounded-full border"
+              style={{ borderColor: rampColorAt(ramp, 0.55) }}
+            />
+            <span
+              className="absolute inset-0 rounded-full border opacity-45"
+              style={{ borderColor: rampColorAt(ramp, 0.55) }}
+            />
+          </span>
+        }
+      />
       </details>
 
     </div>
