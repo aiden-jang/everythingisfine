@@ -622,12 +622,19 @@ measured, and three.js alone is 127KB gzipped. Under one number an app-code regr
 as 10% drift; against the thing that actually changed it is a third of the budget. Vendors are paid
 for once and never move; application code and geometry are what drift, so they are watched apart.
 
-| Chunk | Budget (gzip) | At step 2 |
-|---|---|---|
-| Application code | 60KB | 2.3KB |
-| Coastline and plate geometry | 40KB | 36.8KB |
-| three.js | 135KB | 127.3KB |
-| React | 50KB | 45.7KB |
+| Chunk | Budget (gzip) | At step 2 | Now |
+|---|---|---|---|
+| Application code | 60KB | 2.3KB | 33KB |
+| Coastline and plate geometry | 40KB | 36.8KB | 39KB |
+| three.js | 135KB | 127.3KB | 124KB |
+| React | 50KB | 45.7KB | 44KB |
+| Plate motion, fetched on toggle | not counted | in geometry | 2KB |
+
+The geometry line reached **42KB and was over budget** before the motion table was split out of it, and
+nobody knew, because "At step 2" was measured once and never measured again. A budget column that is not
+re-read is a decoration. The motion chunk is listed separately and deliberately not counted against
+geometry: it is fetched only if the arrows are switched on, so charging it to the first paint would make
+the number describe a load that does not happen.
 
 If application code ever genuinely needs more than 60KB, the 40KB sitting in React is the lever:
 nothing here uses React beyond components and effects, so `preact/compat` reclaims most of it. That

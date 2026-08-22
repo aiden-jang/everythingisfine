@@ -4467,6 +4467,46 @@ and seven skipped for the dev hooks they need. That had only ever been run three
 `boundaryDistance.ts` and statically by `section.ts` and `plates.ts`, so the dynamic import buys nothing
 and all 28K sits in the main chunk regardless. The code implies a laziness it does not have.
 
+## Two dynamic imports that never deferred anything
+
+The build had been saying this out loud for a while:
+
+    plates.json is dynamically imported by boundaryDistance.ts but also statically imported by
+    section.ts, plates.ts, dynamic import will not move module into another chunk.
+
+The cause was one line of `manualChunks`: everything under `/src/geo/` was assigned to a `land` chunk, and
+**a manual chunk assignment overrides dynamic-import splitting**. That rule exists for a good reason -
+section 11 wants geometry measured on its own budget line rather than hidden inside a total - so a decision
+about *measurement* had quietly become a decision about *loading*.
+
+Two files were affected and they needed opposite fixes, which is the whole point of looking rather than
+applying one rule to both.
+
+**`plates.json` should never have been lazy.** Its comment claimed 28kB had no business in the first paint,
+but `scene.ts` calls `buildPlates()` while building the scene, so the same file is drawn on the first frame.
+It was in the preloaded chunk either way. The dynamic form bought a promise, an extra render with no
+distances in it, and a comment that read like a measurement. It is a static import now and
+`loadBoundarySegments` is `boundarySegments`, synchronous: 1,872 vertices flatten in well under a
+millisecond, and the panel has its distance on the first render instead of the second.
+
+**`plateMotion.json` should have been lazy and was not.** It is imported only by `await import()`, behind
+the arrows toggle, and its comment said "as its own chunk" twice. It was in `land`, and `land` is
+modulepreloaded, so every visitor fetched 7kB of arrow data whether or not they ever asked for arrows. It is
+excluded from the grouping by name now, which is enough for Rollup to give it the chunk it always claimed.
+
+The payoff is measured, not asserted:
+
+| | before | after |
+|---|---|---|
+| `land`, gzip, preloaded | 42KB | **39KB** |
+| `plateMotion`, gzip | in `land` | **2KB, on toggle** |
+
+Which also means the geometry budget was **over its 40KB line at 42KB** and nothing had noticed, because
+the number in DESIGN.md was recorded once at step 2 and never taken again. Confirmed at runtime against the
+built output: five chunks on load with no `plateMotion` among them, and `plateMotion-*.js` appearing in the
+resource timeline only after the arrows toggle - with the legend then reading "101 of the 231 are closing,
+and the fastest runs at 227 mm a year", so the chunk is feeding real data and not just arriving.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
