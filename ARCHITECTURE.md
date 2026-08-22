@@ -4362,6 +4362,31 @@ One bug in the wiring, and it was the same mistake one layer down: `write` close
 interval keeps calling the closure it was created with, so entering an archive left the link saying live
 until some unrelated dependency happened to change. `snapshot.archive` is a dependency now.
 
+## Closing the door on one feed and leaving it open for five
+
+The archive stops the earthquake sources so a socket push cannot land in a day that already happened. Two
+things went on claiming the present anyway, and both were mine, from the two turns that built this.
+
+**The other five layers were still live.** Storms, volcanoes, fires, floods and the aurora are fetched
+unconditionally, so an archived day in July drew **today's** hazards over July's earthquakes - precisely the
+day-that-never-happened the socket is stopped to prevent, arriving through five doors nobody had shut. They
+are withheld now rather than backdated, because there is nothing to backdate to: GDACS's hazard lists are
+flagged *current* rather than queryable by date, and the aurora is a forecast for the next few minutes. No
+keyless feed here can say what was burning on a Tuesday in July.
+
+That makes this an *earthquake* archive, and the banner says so - because absence is the one thing a viewer
+cannot notice. A globe with no storms on it looks like a calm day, not like a layer that was withheld.
+
+**And the still said "Live" about a day in July.** When the archive shipped, the clock behind the caption was
+made archive-aware, so the stamp was correct and the word in front of it was a flat falsehood - on the one
+artefact in this app designed to be looked at away from the app, with nothing around it to correct the
+claim. `stillMoment` now takes whether the app is archived and names the day instead. A *held* moment needs
+no word either way, which is why that branch was already honest and stays untouched.
+
+The pattern in both is worth naming: a mode is only as isolated as its least-guarded input, and the
+guarded one is never the one that bites. The earthquake feed got a designed stop; the five that mattered
+just as much got nothing, because they were never part of the sentence I was thinking about.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

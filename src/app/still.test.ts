@@ -62,3 +62,28 @@ describe("the frame", () => {
     expect([STILL_WIDTH, STILL_HEIGHT]).toEqual([1600, 900]);
   });
 });
+
+describe("a still taken while an archived day is on screen", () => {
+  it("names the day instead of saying Live", () => {
+    /*
+     * The falsehood this exists to stop. The clock was made archive-aware when that mode shipped, so the
+     * stamp was correct and the word in front of it was not - on the one artefact designed to be looked
+     * at away from the app, where nothing is around to correct it.
+     */
+    const dayEnd = Date.parse("2026-07-05T00:00:00Z");
+    expect(stillMoment(null, dayEnd, true)).toBe("Archived day · 2026-07-05");
+    expect(stillMoment(null, dayEnd, true)).not.toContain("Live");
+  });
+
+  it("still says Live when the app actually is", () => {
+    expect(stillMoment(null, NOW, false)).toBe("Live · 2026-08-21 04:12 UTC");
+    // The flag defaults to live, so every existing caller keeps its behaviour.
+    expect(stillMoment(null, NOW)).toBe("Live · 2026-08-21 04:12 UTC");
+  });
+
+  it("needs no word either way once a moment is held", () => {
+    const held = Date.parse("2026-07-04T09:30:00Z");
+    expect(stillMoment(held, NOW, true)).toBe("Held at 2026-07-04 09:30 UTC");
+    expect(stillMoment(held, NOW, false)).toBe("Held at 2026-07-04 09:30 UTC");
+  });
+});
