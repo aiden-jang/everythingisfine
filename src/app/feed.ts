@@ -1,5 +1,5 @@
 import { createStore, type Store, type StoreStats } from "../data/store";
-import type { Filters, Quake, SourceId } from "../data/types";
+import type { Filters, Quake, Reading, SourceId } from "../data/types";
 import { createEmscSource } from "../sources/emsc";
 import { createUsgsSource, usgsSeedFor } from "../sources/usgs";
 import { browserRuntime, type GeoEventSource, type SourceStatus } from "../sources/types";
@@ -14,6 +14,15 @@ import { browserRuntime, type GeoEventSource, type SourceStatus } from "../sourc
  */
 
 export interface FeedSnapshot {
+  /**
+   * The archived span being shown, or null when this is live.
+   *
+   * On the snapshot rather than in App state so that **nothing can read the store without also being
+   * able to see that it is not live.** Every count, every status line and every "arriving now" in the
+   * chrome comes from here, and the one way to ship the bad version of this feature is to let some of
+   * them go on saying live while the globe shows last March.
+   */
+  archive: { from: number; to: number } | null;
   stats: StoreStats;
   statuses: Record<SourceId, SourceStatus>;
   /** Bumped on every ingest, so a subscriber can tell "nothing changed" from "same total". */
@@ -118,6 +127,20 @@ export interface Feed {
    * loading state for.
    */
   setWindow: (windowMs: number) => boolean;
+  /**
+   * Replaces everything with an archived span, and stops listening to the present.
+   *
+   * The sources are stopped rather than filtered, because a socket push arriving while an archived day
+   * is on screen would put a live event into a set of events from last month - a day that never
+   * happened. Coverage is set to the span that was asked for, so the strip marks the whole of it
+   * observed instead of reporting a backlog it did not fetch.
+   *
+   * Announced as a seed, which it is: hundreds of events at once, none of which just happened, so no
+   * wavefronts and no announcements. That machinery already exists for the daily seed.
+   */
+  showArchive: (span: { from: number; to: number }, readings: readonly Reading[]) => void;
+  /** Back to now: empties the archive and restarts the sources from scratch. */
+  resumeLive: () => void;
 }
 
 export const DEFAULT_FILTERS: Filters = {
@@ -159,8 +182,10 @@ export function createFeed(capacity = 50_000): Feed {
     createEmscSource(browserRuntime, {}, windowMs / 3_600_000),
   ];
   let sources: GeoEventSource[] = build(seededMs);
+  let archive: { from: number; to: number } | null = null;
 
   const snapshot = (): FeedSnapshot => ({
+    archive,
     stats: store.stats(),
     statuses: { ...statuses },
     revision,
@@ -179,6 +204,21 @@ export function createFeed(capacity = 50_000): Feed {
    * readout and a stutter.
    */
   let pending = 0;
+  /*
+   * Delivered now, not on the next frame.
+   *
+   * `announce` coalesces through `requestAnimationFrame` because arrivals are bursty and a poll can
+   * deliver a whole hour at once. A mode change is neither: it happens once, because somebody pressed
+   * something. Deferring it to the frame clock made it depend on the page being painted at all - a
+   * hidden tab never fires rAF, so an archived day loaded and no subscriber ever heard - and it is the
+   * one update that must land whether or not anything is being drawn.
+   */
+  const announceNow = (): void => {
+    const s = snapshot();
+    if (s.arrived.length > 0) announced = true;
+    arrived = [];
+    for (const fn of listeners) fn(s);
+  };
   const announce = (): void => {
     if (pending) return;
     pending = requestAnimationFrame(() => {
@@ -259,6 +299,53 @@ export function createFeed(capacity = 50_000): Feed {
       }
       else sources = next;
       return true;
+    },
+    showArchive: (span, readings) => {
+      // The present is switched off first, so nothing can arrive between the clear and the load.
+      for (const source of sources) source.stop();
+      running = false;
+      store.clear();
+      arrived = [];
+      /*
+       * Unspent, so this counts as a seed rather than as live traffic.
+       *
+       * Identical reasoning to the re-seed in `setWindow`: a batch the store has never seen looks
+       * exactly like live arrivals from here, and a day of archived events would otherwise let off
+       * wavefronts and announce itself to a screen reader as news. `announce` spends it again on
+       * delivery.
+       */
+      announced = false;
+      archive = span;
+      for (const reading of readings) store.ingest(reading);
+      /*
+       * Coverage is the span requested, not the earliest row returned.
+       *
+       * The live path infers coverage from what a source vouches for, because a truncated catalogue
+       * page must not claim a whole day. Here the request itself names both ends, so the honest claim
+       * is what was asked for - and whether the answer was truncated is reported separately, beside
+       * the counts, where it belongs.
+       */
+      coveredSince = span.from;
+      covered.usgs = span.from;
+      covered.emsc = span.from;
+      revision += 1;
+      announceNow();
+    },
+    resumeLive: () => {
+      archive = null;
+      store.clear();
+      arrived = [];
+      announced = false;
+      coveredSince = null;
+      covered.usgs = null;
+      covered.emsc = null;
+      revision += 1;
+      // Rebuilt rather than restarted: a stopped source has spent its seed, and the live view needs
+      // a fresh backlog rather than only whatever arrives next.
+      sources = build(seededMs);
+      running = true;
+      wire();
+      announceNow();
     },
     stop: () => {
       running = false;

@@ -4305,6 +4305,48 @@ instantly and was measuring nothing: the browser pane had collapsed the canvas t
 position projected to within a few pixels of every other and any click "hit" the nearest mark on the
 planet. A hit test is only as meaningful as the viewport it is measured in.
 
+## An archived day, built as a mode rather than a slider
+
+The limitation said this needed a backend. It did not: `earthquake.usgs.gov/fdsnws/event/1/query` and
+`seismicportal.eu/fdsnws/event/1/query` both take an arbitrary span, keylessly, with
+`access-control-allow-origin: *` - the same endpoints this project has been using for its seeds all along,
+asked a different question. What the note was right about is what makes this dangerous: **a globe showing
+last March while the interface says "both feeds live" is worse than not having the feature.**
+
+So the guard is structural rather than a caption. `FeedSnapshot.archive` carries the span, which means
+nothing can read the store without also being able to see that it is not live, and `showArchive` **stops
+the sources** rather than filtering them - a socket push landing during an archived day would be a day that
+never happened. Coverage is set to the span requested, because unlike a truncated catalogue page the
+request itself names both ends. It announces as a *seed*, so a day of events is one wavefront rather than
+six hundred, reusing the machinery the daily seed already needed.
+
+**One substitution did most of the work.** Every window, strip, dial and count here is "the last N hours
+before now", so the clock became `archive.to` when archived: "the last 24 hours" then means the last 24
+hours *of that day*, which is exactly what was fetched. Without it the store held 600 events from July and
+the headline read 0. The cost is that relative labels become relative to that day, which is honest inside a
+mode whose banner says the date and "nothing here is arriving now" - that banner is load-bearing.
+
+**Three bugs found while building it, all mine.**
+
+`announce` coalesces through `requestAnimationFrame` because arrivals are bursty. A mode change is not
+bursty, it happens because somebody pressed something - and deferring it to the frame clock made it depend
+on the page being painted, so in a throttled tab the day loaded and no subscriber ever heard. It delivers
+synchronously now.
+
+The filtering memos read the clock **inline** rather than depending on `now`, deliberately: `now` changes
+every render and listing it would recompute a fifty-thousand-event sweep every second. So substituting the
+variable changed nothing until those call sites were routed through a stable `clockAt()` - which works
+because `showArchive` bumps the revision the memos already key on.
+
+And `clockAt` was declared two hundred lines below its first use. A `const` in a temporal dead zone is a
+runtime error, not a type error, so `tsc` passed, the build passed, and the page rendered **nothing at
+all**. `Globe.tsx` already carries a note about the same trap taking the whole canvas with it.
+
+**Verified in the browser**: 2026-07-04 loads 600 distinct events from 303 USGS and 399 EMSC rows, spanning
+exactly midnight to midnight; the header shows the date instead of the feed status; the strip, regions and
+largest-event row all describe that day; and "back to live" clears it and re-seeds. The day even replays on
+entry, which was not designed and is the right behaviour.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -4363,8 +4405,12 @@ Written last, and kept accurate rather than kept short.
   simulation of one. Still measured rather than asserted, which is what this entry was complaining about.
   Not gated: a threshold on a single machine's timings would be a budget that only means something here.
 
-- **The window cannot go back before the page opened.** No backend, so time scrubbing was rejected
-  rather than shipped as a worse version of itself.
+- ~~**The window cannot go back before the page opened.**~~ **Built on 2026-08-21, and the reason given
+  here was wrong.** It was attributed to having no backend; both agencies expose FDSN event endpoints that
+  take an arbitrary `starttime` and `endtime`, keylessly, CORS-open. The blocker was never the backend, it
+  was that nobody had asked them for anything but the last day. What this note was *right* about is the
+  shape: a scrubber that quietly makes "this is happening right now" false is the version worth refusing.
+  So it is a mode, not a slider - see below.
 
 - ~~**Dense sequences are readable now, and still not steppable.**~~ **Closed on 2026-08-21.** The strip
   could draw three hundred neighbours in time order and there was no way to visit one, because the
