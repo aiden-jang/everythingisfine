@@ -16,6 +16,7 @@ import { drawStill, stillMoment, verdictLine, STILL_HEIGHT, STILL_WIDTH } from "
 import { findSubject, MarkCard } from "./app/MarkCard";
 import { hazardCount, hazardGroups } from "./app/hazards";
 import { dayRange, fetchArchive } from "./sources/archive";
+import { fetchHistory, type History } from "./sources/history";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
@@ -277,11 +278,29 @@ export function App(): JSX.Element {
    * archive, which is what its banner says.
    */
   const archived = snapshot.archive !== null;
+  /*
+   * The archived day's storms, fires, floods and volcanoes.
+   *
+   * Held apart from the live arrays rather than pushed into them, because they come from a different
+   * upstream with a different unit and must not be mistaken for the live layers by anything downstream.
+   * `onGlobe` picks between the two, which is the one place that decision belongs.
+   */
+  const [archiveHazards, setArchiveHazards] = useState<History | null>(null);
+  /*
+   * What is actually drawn: the live feeds, or an archived day's four layers.
+   *
+   * The aurora has no archived branch and never will. NOAA publishes a *forecast* for a stamped minute, so
+   * there is no past oval to ask for, and drawing tonight's over last July would be the one falsehood this
+   * whole mode was built to avoid.
+   *
+   * An empty array when a day is loading or the archive did not answer, which draws nothing and says
+   * nothing rather than leaving today's storms over a picture of July.
+   */
   const onGlobe = {
-    cyclones: archived ? [] : cyclones,
-    volcanoes: archived ? [] : volcanoes,
-    fires: archived ? [] : fires,
-    floods: archived ? [] : floods,
+    cyclones: archived ? archiveHazards?.cyclones ?? [] : cyclones,
+    volcanoes: archived ? archiveHazards?.volcanoes ?? [] : volcanoes,
+    fires: archived ? archiveHazards?.fires ?? [] : fires,
+    floods: archived ? archiveHazards?.floods ?? [] : floods,
     aurora: archived ? null : aurora,
   };
   /** Computed here rather than in the legend, so the sentence is a render of a number and not a scan. */
@@ -398,13 +417,24 @@ export function App(): JSX.Element {
     if (!span) return;
     setArchiveBusy(true);
     setArchiveNote(null);
-    const got = await fetchArchive(span.from, span.to, MAG_MIN);
+    setArchiveHazards(null);
+    // Together: the earthquake archive and the hazard archive are different hosts and neither waits.
+    const [got, hazards] = await Promise.all([
+      fetchArchive(span.from, span.to, MAG_MIN),
+      fetchHistory(span.from, span.to),
+    ]);
     feed.showArchive(span, got.readings);
+    setArchiveHazards(hazards);
     const said = (["usgs", "emsc"] as const).map((id) => {
       const answer = got.answered[id];
       if (!answer) return `${SOURCE_NAMES[id]} did not answer`;
       return `${SOURCE_NAMES[id]} ${answer.count}${answer.truncated ? " (truncated)" : ""}`;
     });
+    if (hazards.answered) {
+      const n = hazards.cyclones.length + hazards.fires.length
+        + hazards.floods.length + hazards.volcanoes.length;
+      said.push(`EONET ${n}`);
+    } else said.push("EONET did not answer");
     setArchiveNote(said.join(" · "));
     setArchiveBusy(false);
     setSelected(null);
@@ -419,6 +449,7 @@ export function App(): JSX.Element {
   const backToLive = useCallback(() => {
     setArchiveDay("");
     setArchiveNote(null);
+    setArchiveHazards(null);
     setSelected(null);
     setMarkId(null);
     feed.resumeLive();
@@ -1224,6 +1255,7 @@ export function App(): JSX.Element {
                 floodCountries={countries(onGlobe.floods)}
                 keyOpen={keyOpen}
                 onKeyOpen={changeKeyOpen}
+                archived={archived}
                 motion={motion}
                 depth={depth}
                 sound={sound ? announceAbove : null}
@@ -1726,12 +1758,16 @@ export function App(): JSX.Element {
                   is arriving now.
                 </p>
                 {/*
-                  Said out loud, because absence is the one thing a viewer cannot notice. Earthquakes have
-                  a queryable history and the hazard feeds do not, so this is an earthquake archive.
+                  Said out loud, because absence is the one thing a viewer cannot notice.
+
+                  This used to read "earthquakes only", which was true of the feeds the app had and false
+                  as a claim: GDACS holds no history but NASA's EONET does, so the four layers arrive from
+                  a different upstream on an archived day. What is genuinely absent is the aurora, and that
+                  one is permanent - a forecast for a stamped minute has no past to ask for.
                 */}
                 <p className="mt-1 text-[11px] leading-relaxed text-faint">
-                  Earthquakes only: storms, fires, floods, volcanoes and the aurora are live feeds with no
-                  history to ask for.
+                  Storms, fires, floods and volcanoes come from NASA rather than the live feeds. No aurora:
+                  it is a forecast, so there is no past to ask for.
                 </p>
                 {archiveNote ? (
                   <p className="mt-1 font-mono text-[10.5px] leading-relaxed text-faint">{archiveNote}</p>

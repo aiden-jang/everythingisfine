@@ -99,6 +99,8 @@ export interface MagnitudeFilterProps {
   /** Whether the key below the scale is open. Held outside so it survives a reload. */
   keyOpen: boolean;
   onKeyOpen: (open: boolean) => void;
+  /** True on an archived day, which changes the tense of every layer sentence. */
+  archived?: boolean;
 }
 
 const TICKS = [MAG_MIN, 3, 5, MAG_MAX];
@@ -121,7 +123,8 @@ function path(points: readonly { lon: number; lat: number }[]): string {
 export function MagnitudeFilter(
   {
     ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince,
-    fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, motion, motionOn, onMotion, depth, sound, children,
+    fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
+    motion, motionOn, onMotion, depth, sound, children,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -313,7 +316,7 @@ export function MagnitudeFilter(
       */}
       {cyclones.length > 0 ? (
         <KeyRow
-          note={cycloneNote(cyclones, category)}
+          note={cycloneNote(cyclones, category, archived)}
           glyph={<svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
             <path d={SPIRAL_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
               className="text-dim" />
@@ -343,7 +346,7 @@ export function MagnitudeFilter(
       */}
       {fires.count > 0 ? (
         <KeyRow
-          note={wildfireNote(fires, fireCap)}
+          note={wildfireNote(fires, fireCap, archived)}
           glyph={<svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
             <path d={FLAME_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
               className="text-dim" />
@@ -353,7 +356,7 @@ export function MagnitudeFilter(
 
       {floods > 0 ? (
         <KeyRow
-          note={floodNote(floods, floodCountries)}
+          note={floodNote(floods, floodCountries, archived)}
           glyph={
             <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
               {WAVE_PATHS.map((d) => (
