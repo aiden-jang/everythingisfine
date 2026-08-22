@@ -278,6 +278,18 @@ export function Globe({
             node.append(gap);
           }
         }
+        /*
+         * The ring grows for a glyph.
+         *
+         * 20px is a ring around a marker, whose dot runs 3 to 15px. A spiral, a triangle or a flame is
+         * the size of that ring already, so the same circle landed *on* the glyph instead of around it
+         * and read as part of the drawing rather than as a highlight.
+         */
+        if (node === hoverRing.current) {
+          const glyph = target?.kind === "mark";
+          node.style.width = glyph ? "34px" : "";
+          node.style.height = glyph ? "34px" : "";
+        }
         node.style.transform =
           `translate(${at.x - box.left}px, ${at.y - box.top + offsetY}px) ` +
           `translate(-50%, ${offsetY === 0 ? "-50%" : "-100%"})`;

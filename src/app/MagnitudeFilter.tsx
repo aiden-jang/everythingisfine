@@ -406,9 +406,10 @@ export function MagnitudeFilter(
         shape as the other five.
       */}
       <KeyRow
-        note={"two rings leave each new epicentre, the P-wave and the slower S behind it, sped up "
-          + `\u00d7${PLAYBACK} or they would not appear to move. The gap between them is how distance `
-          + "to a quake is measured."}
+        // The pair is the head; why they are sped up and what the gap measures are the body.
+        note={"two rings leave each new epicentre, the P-wave and the slower S behind it. "
+          + `Sped up \u00d7${PLAYBACK} or they would not appear to move, and the gap between them is `
+          + "how distance to a quake is measured."}
         glyph={
           /*
             Two circles, which is literally what is drawn rather than a suggestion of expansion: the

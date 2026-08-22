@@ -334,7 +334,7 @@ describe("where an event sits relative to the plate edges", () => {
 describe("the negative-space sentence", () => {
   it("states the band, the surface share, and the concentration as a floor", () => {
     const note = quietNote(41, 81, 100, 0.094)!;
-    expect(note).toContain("100 km of a plate boundary");
+    expect(note).toContain("That 100 km band");
     expect(note).toContain("9.4% of the surface");
     expect(note).toContain("at least 5.4 times");
   });
@@ -351,6 +351,13 @@ describe("the negative-space sentence", () => {
   it("has nothing to say about an empty window", () => {
     expect(quietParts(0, 0, 0.094)).toBeNull();
     expect(quietNote(0, 0, 100, 0.094)).toBeNull();
+  });
+
+  it("leaves the flourish to the still, which is the only place it earns its words", () => {
+    // "the rest of the planet had the day off" is eight words of voice in a rail that already prints the
+    // band and the percentage in framed cells. The poster carries the deadpan now.
+    expect(quietNote(41, 81, 100, 0.094)!).not.toMatch(/day off/);
+    expect(quietNote(41, 81, 100, 0.094)!.split(/\s+/).length).toBeLessThan(20);
   });
 
   it("says at least, because the catalogue over-counts the interiors", () => {
