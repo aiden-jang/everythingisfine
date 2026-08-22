@@ -347,7 +347,9 @@ export function cycloneNote(
  * What is left when currency goes is the better fact anyway: they land on the plate boundaries the globe
  * already draws, which is the same argument the earthquakes make from the other side.
  */
-export function volcanoNote(count: number, newest: number | null, now: number): string | null {
+export function volcanoNote(
+  count: number, newest: number | null, now: number, archived = false,
+): string | null {
   if (count === 0) return null;
   const days = newest === null ? null : Math.max(0, Math.round((now - newest) / 86_400_000));
   const when = days === null
@@ -356,8 +358,9 @@ export function volcanoNote(count: number, newest: number | null, now: number): 
       ? "The newest episode ended today"
       : `The newest ended ${days} day${days === 1 ? "" : "s"} ago`;
   return `the triangles are volcanoes with a logged eruption episode, ${count} of them. `
-    + `${when}, so none of this is erupting this minute. They sit along the same lines the `
-    + `earthquakes do, which is the whole of why either happens.`;
+    // "this minute" is a claim about now, which is the wrong clock over a picture of a past day.
+    + `${when}, so none of this ${archived ? "was erupting then" : "is erupting this minute"}. `
+    + `They sit along the same lines the earthquakes do, which is the whole of why either happens.`;
 }
 
 /**

@@ -96,3 +96,22 @@ describe("the day a date names", () => {
     expect(dayRange("")).toBeNull();
   });
 });
+
+describe("the day's end is exclusive, which has bitten once", () => {
+  it("ends at the next midnight rather than at 23:59", () => {
+    const span = dayRange("2026-05-15")!;
+    expect(new Date(span.from).toISOString()).toBe("2026-05-15T00:00:00.000Z");
+    expect(new Date(span.to).toISOString()).toBe("2026-05-16T00:00:00.000Z");
+  });
+
+  it("so anything labelling a day must use `from`", () => {
+    /*
+     * The still captioned itself from `to` and named 2026-05-16 over a picture of the 15th, while the
+     * rail beside it said the 15th. Pinned here because the fault is in the shape of the span, not in
+     * the caption: any future reader deriving a date from `to` gets the next day.
+     */
+    const span = dayRange("2026-05-15")!;
+    expect(new Date(span.to).toISOString().slice(0, 10)).toBe("2026-05-16");
+    expect(new Date(span.from).toISOString().slice(0, 10)).toBe("2026-05-15");
+  });
+});

@@ -60,14 +60,23 @@ export function findSubject(
 
 interface Line { label: string; value: string }
 
-/** The rows for a subject, as facts. Split out from the markup so it can be asserted without a DOM. */
-export function linesFor(found: MarkSubject, now: number): { title: string; note: string; lines: Line[] } {
+/**
+ * The rows for a subject, as facts. Split out from the markup so it can be asserted without a DOM.
+ *
+ * `archived` moves the tense, for the reason the layer sentences needed it too: these notes read "running
+ * now" and "burning now", which was safe only while an archived day withheld the four layers entirely.
+ * Now that a past day draws them, a card opened on 2026-05-15 was calling a fire that ended in May a fire
+ * burning this minute - on the one surface a reader opens *because* they want the detail.
+ */
+export function linesFor(
+  found: MarkSubject, now: number, archived = false,
+): { title: string; note: string; lines: Line[] } {
   if (found.kind === "cyclone") {
     const c = found.subject;
     const rank = category(c.peakKmh);
     return {
       title: c.name,
-      note: "Tropical cyclone, running now.",
+      note: `Tropical cyclone, running ${archived ? "that day" : "now"}.`,
       lines: [
         { label: "Position", value: latLon(c.lon, c.lat) },
         ...(c.peakKmh === null ? [] : [{
@@ -84,8 +93,11 @@ export function linesFor(found: MarkSubject, now: number): { title: string; note
     const v = found.subject;
     return {
       title: v.name,
-      // The one thing this layer must never imply. See `volcanoes.ts`.
-      note: "Volcano with a logged eruption episode. Not erupting now.",
+      /*
+        The second sentence is the one thing this layer must never imply, and it holds either way: not
+        erupting now on a live day, not erupting then on an archived one. See `volcanoes.ts`.
+      */
+      note: `Volcano with a logged eruption episode. Not erupting ${archived ? "then" : "now"}.`,
       lines: [
         ...(v.country ? [{ label: "Country", value: v.country }] : []),
         { label: "Position", value: latLon(v.lon, v.lat) },
@@ -100,7 +112,7 @@ export function linesFor(found: MarkSubject, now: number): { title: string; note
       : null;
     return {
       title: f.country || "Forest fire",
-      note: "Forest fire burning now.",
+      note: `Forest fire burning ${archived ? "that day" : "now"}.`,
       lines: [
         { label: "Position", value: latLon(f.lon, f.lat) },
         ...(f.hectares === null ? [] : [{
@@ -116,7 +128,7 @@ export function linesFor(found: MarkSubject, now: number): { title: string; note
   return {
     title: f.country || "Flood",
     // GDACS files every flood as magnitude zero, so there is nothing to rate it by. See `floods.ts`.
-    note: "Flood running now. This feed does not rate them.",
+    note: `Flood running ${archived ? "that day" : "now"}. This feed does not rate them.`,
     lines: [
       { label: "Position", value: latLon(f.lon, f.lat) },
       ...(f.startedAt === null ? [] : [{ label: "Since", value: ago(f.startedAt, now) }]),
@@ -127,12 +139,14 @@ export function linesFor(found: MarkSubject, now: number): { title: string; note
 export interface MarkCardProps {
   found: MarkSubject;
   now: number;
+  /** True on an archived day, so the card describes then rather than now. */
+  archived?: boolean;
   onClose: () => void;
   onFlyTo: (lon: number, lat: number, zoom?: number) => void;
 }
 
-export function MarkCard({ found, now, onClose, onFlyTo }: MarkCardProps): JSX.Element {
-  const { title, note, lines } = linesFor(found, now);
+export function MarkCard({ found, now, archived = false, onClose, onFlyTo }: MarkCardProps): JSX.Element {
+  const { title, note, lines } = linesFor(found, now, archived);
   const where = found.subject;
   return (
     <aside className="zone-panel panel border-hairline bg-deck p-5 max-xl:border-t xl:border-l">
