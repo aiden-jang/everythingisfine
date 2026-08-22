@@ -4439,6 +4439,34 @@ view, not rearrange somebody's panels.
 when `d=` is present rather than resolving to an empty card. The link the app then writes has no `k=` at
 all, so what you copy back out matches what you are looking at.
 
+## The failure that cost a suite run to read
+
+A background run reported four interaction failures and one design flake. All five pass, in isolation and
+in two full clean runs - the run had started against a spec file about a hundred and thirty lines shorter
+than the one on disk, so its line numbers pointed at tests that had since moved. The lesson is about the
+report, not the tests: a stale run is indistinguishable from a real regression unless you check that the
+line numbers still land where the names do.
+
+The flake was worth something though. It read:
+
+    expect(locator).not.toHaveText(expected) failed ... Error: element(s) not found
+
+Forty-five seconds of nothing, then a message about the counter, when what had actually happened is that
+the page was gone - `not.toHaveText` against an element that does not exist waits out its whole timeout
+and then reports the absence as if it were the assertion. Diagnosing that cost two full suite runs.
+
+`waitForData` now asserts the rail is attached first, on a short timeout, and both specs import the one
+copy instead of each keeping its own. A dead page fails in twelve seconds saying "the rail never rendered:
+the page probably threw on load" - verified by pointing it at `about:blank`, because a diagnostic nobody has
+seen fail is a diagnostic nobody knows works.
+
+The same run finally covered what it was built for: all sixty-two tests against `dist`, fifty-five passing
+and seven skipped for the dev hooks they need. That had only ever been run three cases deep.
+
+**Left standing, measured, not fixed here:** `plates.json` is imported dynamically by
+`boundaryDistance.ts` and statically by `section.ts` and `plates.ts`, so the dynamic import buys nothing
+and all 28K sits in the main chunk regardless. The code implies a laziness it does not have.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

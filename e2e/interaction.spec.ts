@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, waitForData } from "./feeds";
 
 /*
  * The claims that only a browser can settle.
@@ -10,12 +10,6 @@ import { installFeeds } from "./feeds";
  */
 
 /** The rail's event count is the app's own signal that both feeds have answered. */
-async function waitForData(page: Page): Promise<number> {
-  const counter = page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first();
-  await expect(counter).not.toHaveText("0", { timeout: 30_000 });
-  return Number((await counter.innerText()).replace(/,/g, ""));
-}
-
 interface Camera { lon: number; lat: number; zoom: number; morph: number }
 
 /*

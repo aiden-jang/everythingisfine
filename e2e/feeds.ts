@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 /*
  * Both feeds, served from the test.
@@ -255,4 +255,22 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
       json: { features: quakes.filter((q) => q.both).map((q) => emscFeature(q, now)) },
     });
   });
+}
+
+/**
+ * Waits for the rail's counter to leave zero, which is the app's own "data has landed" signal.
+ *
+ * The rail is asserted first, on a short timeout, because `not.toHaveText` against an element that does
+ * not exist spends the full thirty seconds and then reports "element(s) not found" - which is what a page
+ * that threw on load looks like, and reads nothing like it. Diagnosing one instance cost a whole suite
+ * run. A page that died now fails in a second, saying so.
+ */
+export async function waitForData(page: Page): Promise<number> {
+  const rail = page.locator(".zone-rail");
+  await expect(rail, "the rail never rendered: the page probably threw on load")
+    .toBeAttached({ timeout: 10_000 });
+  const counter = rail.locator("div").filter({ hasText: /^\d[\d,]*$/ }).first();
+  await expect(counter, "the rail's counter never left zero: no data arrived")
+    .not.toHaveText("0", { timeout: 30_000 });
+  return Number((await counter.innerText()).replace(/,/g, ""));
 }

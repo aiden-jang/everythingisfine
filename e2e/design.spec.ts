@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, waitForData } from "./feeds";
 
 /*
  * DESIGN.md section 13, as a test rather than as a list.
@@ -17,11 +17,6 @@ import { installFeeds } from "./feeds";
  * expressed as assertions are expressed as assertions, and the ones that genuinely need eyes are
  * named at the bottom rather than pretended away.
  */
-
-async function waitForData(page: Page): Promise<void> {
-  const counter = page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first();
-  await expect(counter).not.toHaveText("0", { timeout: 30_000 });
-}
 
 const BREAKPOINTS = [
   { name: "phone", width: 375, height: 812 },
