@@ -10,21 +10,28 @@
 @import "@fontsource-variable/geist-mono/wght.css";
 
 @theme {
-  /* Chrome. Achromatic on purpose.
+  /* Chrome. Blue on purpose, and bounded on purpose.
      The default magnitude ramp is warm and the colourblind-safe ramp runs blue to yellow; between
-     them they occupy most of the wheel. Hue-free chrome is the only choice that survives both, which
-     is why this is a constraint rather than a preference. See DESIGN.md section 3. */
-  --color-void: #070b14;
+     them they occupy most of the wheel, so chrome that competes with either one is unreadable. The
+     constraint that follows from that is a *ceiling*, not the absence of hue: chroma, meaning
+     max(rgb) - min(rgb), stays at or under 55, which `design.spec.ts` enforces on every painted
+     element outside the canvas and the legend.
+     This palette used to sit at 37 and read grey, because the blue was all in the dim tones while
+     the ink you actually read measured 13. The blue is in the ink now and every value still clears
+     the ceiling: 33, 49 and 53 against 55. See DESIGN.md section 3. */
+  --color-void: #050b16;
   --color-sphere: #0a101c;
   --color-land: #1e293f;
   --color-coast: #31405d;
   --color-plate: #3d4e6e;
-  --color-deck: #0d1420;
-  --color-raised: #141c2b;
+  --color-deck: #0a1322;
+  --color-raised: #101d33;
   --color-hairline: rgb(148 163 184 / 0.14);
-  --color-ink: #e8edf5;
-  --color-dim: #8a96ac;
-  --color-faint: #55617a;
+  --color-ink: #d6e4f7;
+  --color-dim: #9fb4d0;
+  /* Raised from #55617a, which measured 2.97 against the deck and failed AA for normal text. This
+     is 4.69, so the least important labels became readable as a side effect of the palette. */
+  --color-faint: #6f80a4;
 
   /* The one named exception, per DESIGN.md 3.1: it sits on the silhouette where no marker is drawn
      and never encodes a value. Named because an unstated exception becomes a precedent. */
