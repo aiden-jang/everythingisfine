@@ -4270,6 +4270,41 @@ So the two commands mean different things on purpose, and both are honest about 
 covers 62 including the instrumented ones, `pnpm test:e2e:build` covers the 55 that a shipped bundle can
 answer for.
 
+## The five layers can be asked questions now
+
+Adding storms, volcanoes, fires, floods and the aurora left an asymmetry I did not notice while building
+them: **every one of those marks was inert.** Clicking an earthquake opens a panel with depth, neighbours,
+arrival times and distance to a plate boundary. Clicking a cyclone did nothing at all - while the app held,
+unused, that it was SAUDEL-26 with a 222 km/h peak and a 17-point track. The legend could only ever speak
+about the whole set: "4 tropical cyclones running", "100 fires, 9,124 square kilometres".
+
+**Picking reuses what the markers already do.** `controls.project` turns a position into a screen point, so
+a mark is picked the way a marker is: project the candidates, measure in pixels, take the nearest. The only
+missing piece was identity - a `Mark` had an `anchor` saying where it is and nothing saying which thing it
+was - so `Mark.id` carries `kind:id` and the layer keeps the list it used to flatten into buffers and
+forget. Earthquakes are tested first and win ties, which is the hue budget expressed as pointer priority.
+
+The slop is 18px against the markers' much tighter radius, because these are **outlines**: the middle of a
+spiral or a triangle is empty, and demanding the pointer land on a stroke would make them feel broken.
+
+**A separate card, not the earthquake panel.** That panel is built around a reading two agencies dispute -
+depth, sequence, corroboration, arrival times - and none of those exist for a wildfire. Reshaping it to
+hold both would make it worse at the thing it is good at. The card takes the same grid slot, so only one
+answer is ever on screen.
+
+**Every row is a fact the feed carries, and absent otherwise.** A storm with no wind reading shows no wind
+row rather than a dash; a flood says outright that this feed does not rate them, because it files every one
+as magnitude zero; a volcano leads with "Not erupting now", which is the one thing that layer must never
+imply. Subjects are resolved at render from the arrays already held, so a mark dropped by a ten-minute
+refresh loses its card rather than freezing the last one - there is a test for that, and for an id
+containing colons, which a naive split would have broken.
+
+**Verified in the browser, and the first attempt was worthless.** A click on a flood's exact projected
+position produced its card; a click on empty ocean cleared it. The run before that appeared to succeed
+instantly and was measuring nothing: the browser pane had collapsed the canvas to **40x0 pixels**, so every
+position projected to within a few pixels of every other and any click "hit" the nearest mark on the
+planet. A hit test is only as meaningful as the viewport it is measured in.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

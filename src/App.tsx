@@ -13,6 +13,7 @@ import { countries, fetchFloods, type Flood } from "./sources/floods";
 import { marksFor } from "./app/marks";
 import { depthBands } from "./data/depth";
 import { drawStill, stillMoment, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
+import { findSubject, MarkCard } from "./app/MarkCard";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
@@ -316,6 +317,15 @@ export function App(): JSX.Element {
    * geometry with nothing on screen saying so. Not persisted and not in the permalink - it is a thing
    * somebody is looking at right now, not a preference and not a view.
    */
+  /*
+   * The non-earthquake mark being asked about, as `kind:id`, or null.
+   *
+   * Held beside the pinned earthquake rather than folded into it: they are picked from the same click but
+   * they are different things, and one selection that could be either would need unpacking everywhere it
+   * is read. Resolved back to the thing itself at render, so a mark that has aged out of its feed since
+   * being clicked simply stops having a card rather than freezing the last one.
+   */
+  const [markId, setMarkId] = useState<string | null>(null);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
   const [keyOpen, setKeyOpen] = useState<boolean>(() => stored("legendKey") !== "0");
   useEffect(() => { store("legendKey", keyOpen ? "1" : "0"); }, [keyOpen]);
@@ -698,6 +708,25 @@ export function App(): JSX.Element {
     });
     return quietNote(near, total, QUIET_BAND_KM, QUIET_BAND_SHARE);
   }, [snapshot.revision, filters, segments, boundaryKmOf]);
+  /*
+   * The clicked mark, resolved from the arrays that are already held.
+   *
+   * Looked up at render rather than captured on click: the feeds refresh every ten minutes, and a card
+   * built from a snapshot would keep describing a storm the feed had dropped. If it is gone, so is the
+   * card.
+   */
+  const markSubject = findSubject(markId, { cyclones, volcanoes, fires, floods });
+  /*
+   * Pinning an earthquake from anywhere clears the mark card.
+   *
+   * The globe's own click already does this, but the rail's rows, the largest-event row and the panel's
+   * sequence steps all call `setSelected` directly, and any of them leaving a storm's card on screen
+   * beside a newly pinned earthquake would be two answers to one question.
+   */
+  const selectQuake = useCallback((key: string | null) => {
+    setMarkId(null);
+    setSelected(key);
+  }, []);
   const marks = useMemo(
     () => marksFor({
       cyclones, volcanoes, fires, floods, farSide, motion: motionOn ? motionData : [],
@@ -1627,7 +1656,7 @@ export function App(): JSX.Element {
           <EventList
             quakes={recent}
             selected={selected}
-            onSelect={setSelected}
+            onSelect={selectQuake}
             announceAbove={announceAbove}
             onAnnounceAboveChange={setAnnounceAbove}
             onNews={onNews}
@@ -1664,9 +1693,10 @@ export function App(): JSX.Element {
             flat={flat}
             section={sectionLine}
             onSection={setSectionLine}
-            onSelect={setSelected}
+            onSelect={selectQuake}
             onReady={onReady}
             onCapture={onCapture}
+            onSelectMark={setMarkId}
             onCamera={(state) => { camera.current = state; }}
             onReplay={setReplay}
           />
@@ -1703,7 +1733,7 @@ export function App(): JSX.Element {
                   ramp={ramp}
                   store={feed.store}
                   selected={selected}
-                  onSelect={setSelected}
+                  onSelect={selectQuake}
                   onClose={() => setSectionLine(null)}
                 />
               </div>
@@ -1760,7 +1790,21 @@ export function App(): JSX.Element {
           clears, and a transition on a removed node never runs, so closing was a cut where opening
           was a slide. Keeping the last one alive lets it animate out still saying what it said.
         */}
-        {shownQuake ? (
+        {/*
+          The mark card takes the panel's place when a mark is what was clicked.
+
+          One zone, not two: the layout has a slot for "the thing being asked about", and two panels
+          racing for it would be two things claiming to be the answer. Picking an earthquake clears the
+          mark and vice versa, so only one of these can be true at a time.
+        */}
+        {markSubject ? (
+          <MarkCard
+            found={markSubject}
+            now={now}
+            onClose={() => setMarkId(null)}
+            onFlyTo={(lon, lat, zoom) => flyTo.current(lon, lat, zoom)}
+          />
+        ) : shownQuake ? (
           <DetailPanel
             open={pinned !== undefined}
             quake={shownQuake}
@@ -1782,7 +1826,7 @@ export function App(): JSX.Element {
               flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 1.6);
             }}
             boundaryKm={boundaryKmOf(shownQuake)}
-            onSelect={setSelected}
+            onSelect={selectQuake}
             farSide={farSideOf === shownQuake.key}
             /*
               Pulls the camera out to 0.9 when it goes on, because the figure is 40,000km across at its

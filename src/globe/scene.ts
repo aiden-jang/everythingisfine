@@ -19,7 +19,7 @@ import { createControls, type Controls } from "./controls";
 import { createEventLayer, type EventLayer } from "./events";
 import { createRingLayer, type RingLayer } from "./rings";
 import { auroraTexture, writeAurora } from "./auroraTexture";
-import { createMarkLayer, type Mark } from "./marks";
+import { createMarkLayer, pickMark, type Mark } from "./marks";
 import type { Aurora } from "../sources/aurora";
 
 /** Only the part of the store hit testing needs, so this file does not depend on the whole model. */
@@ -164,6 +164,8 @@ export interface Globe {
   hitTest: (
     clientX: number, clientY: number, store: HitStore, filters: Filters, now: number,
   ) => string | null;
+  /** The `kind:id` of the non-earthquake mark under the pointer, or null. */
+  hitMark: (clientX: number, clientY: number) => string | null;
   stats: LandGeometry["stats"];
 }
 
@@ -513,6 +515,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    */
   const marks = createMarkLayer(morph);
   spin.add(marks.object);
+  // Kept for picking as well as drawing: the layer flattens them into buffers and forgets which was which.
+  let heldMarks: readonly Mark[] = [];
 
   const sunDir = new Vector3();
   /*
@@ -693,9 +697,17 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       }
       return bestKey;
     },
+    /*
+     * Marks are picked by their anchor, at a slop the glyphs are drawn at.
+     *
+     * Wider than the marker slop because these are outlines rather than filled discs: the middle of a
+     * spiral or a triangle is mostly empty, so requiring the pointer to land on a stroke would make them
+     * feel broken. The anchor is the point the glyph stands on, which is what a person is aiming at.
+     */
+    hitMark: (clientX, clientY) => pickMark(heldMarks, { x: clientX, y: clientY }, controls.project, 18),
     events,
     rings,
-    setMarks: (next) => { marks.set(next); },
+    setMarks: (next) => { heldMarks = next; marks.set(next); },
     setMarkZoom: (zoom) => { marks.setZoom(zoom); },
     setAurora: (grid) => {
       const material = night.material as ShaderMaterial;

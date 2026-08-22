@@ -41,6 +41,8 @@ export interface GlobeProps {
    * session to serve a button almost nobody presses. The caller must use it synchronously.
    */
   onCapture?: (capture: () => HTMLCanvasElement | null) => void;
+  /** A non-earthquake mark was picked, or null when a click hit neither. */
+  onSelectMark?: (id: string | null) => void;
   /** Called as the camera moves, so the permalink can carry where somebody is looking. */
   onCamera?: (state: { lon: number; lat: number; zoom: number }) => void;
   /**
@@ -102,7 +104,7 @@ const SCALE_BOTTOM = 40;
 const SCALE_TARGET_PX = 110;
 
 export function Globe({
-  feed, filters, selected, ramp, onSelect, onReady, onCapture, onCamera, onReplay,
+  feed, filters, selected, ramp, onSelect, onReady, onCapture, onSelectMark, onCamera, onReplay,
   focus = null, aurora = null, marks = [],
   scrubAt = null, flat = false, section = null, onSection,
 }: GlobeProps): JSX.Element {
@@ -671,7 +673,22 @@ export function Globe({
       const travelled = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
       downAt = null;
       if (travelled > 5) return;
-      onSelect(globe.hitTest(e.clientX, e.clientY, feed.store, live.current.filters, Date.now()));
+      /*
+       * Earthquakes first, then the other marks.
+       *
+       * The order is the hue budget in interaction form: the ramp belongs to earthquakes and so does the
+       * pointer when both are under it. A click that hits neither clears both selections, which is what
+       * clicking empty ocean has always meant.
+       */
+      const quake = globe.hitTest(e.clientX, e.clientY, feed.store, live.current.filters, Date.now());
+      if (quake) {
+        onSelect(quake);
+        onSelectMark?.(null);
+        return;
+      }
+      const mark = globe.hitMark(e.clientX, e.clientY);
+      onSelectMark?.(mark);
+      if (!mark) onSelect(null);
     };
     const onLeave = (): void => {
       hovered = null;

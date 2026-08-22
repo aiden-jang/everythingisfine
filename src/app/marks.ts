@@ -65,15 +65,21 @@ export function marksFor(
   }
   for (const storm of cyclones) {
     // The track carries no anchor: it is measured geography and scales with the coastline, not with the
-    // symbol standing on its head.
+    // symbol standing on its head. It is not pickable either - the spiral is the thing you point at.
     if (storm.track.length > 1) out.push({ points: storm.track });
-    out.push({ points: spiral(storm.lon, storm.lat), anchor: at(storm) });
+    out.push({ points: spiral(storm.lon, storm.lat), anchor: at(storm), id: `cyclone:${storm.id}` });
   }
-  for (const v of volcanoes) out.push({ points: volcano(v.lon, v.lat), anchor: at(v) });
-  for (const f of fires) out.push({ points: flame(f.lon, f.lat), anchor: at(f) });
-  // Three strokes each, all anchored on the same point so they scale as one glyph.
+  for (const v of volcanoes) {
+    out.push({ points: volcano(v.lon, v.lat), anchor: at(v), id: `volcano:${v.id}` });
+  }
+  for (const f of fires) {
+    out.push({ points: flame(f.lon, f.lat), anchor: at(f), id: `fire:${f.id}` });
+  }
+  // Three strokes each, all sharing one anchor and one id, so a flood is one mark and not three.
   for (const f of floods) {
-    for (const row of waves(f.lon, f.lat)) out.push({ points: row, anchor: at(f) });
+    for (const row of waves(f.lon, f.lat)) {
+      out.push({ points: row, anchor: at(f), id: `flood:${f.id}` });
+    }
   }
   return out;
 }
