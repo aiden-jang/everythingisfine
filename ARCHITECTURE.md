@@ -4733,6 +4733,40 @@ carry it, and a test asserts it does not creep back into the rail.
 triangle or a flame is already that size, so the same circle landed *on* the glyph rather than around it
 and read as part of the drawing. 34px for a mark, unchanged for an earthquake.
 
+## The key was the biggest thing on the smallest screen
+
+An audit at 375, the breakpoint that had had the least attention. The page does not scroll and nothing
+overflows sideways, but the rail is a **240px window onto 1,403px of content**, and the blocks came out in
+this order:
+
+| block | height |
+|---|---|
+| legend | **448** |
+| activity | 234 |
+| regions | 207 |
+| title block | 191 |
+| recent earthquakes | **132** |
+
+A key that is read once was a third of the rail and **3.4 times the height of the list of earthquakes that
+are actually happening**. So the key now starts folded below 768px and open above it: legend 448 to 129,
+rail content 1,403 to 1,110, and the 293px goes to the blocks somebody came to act on.
+
+**A stored answer wins in both directions**, because somebody who folded it away or opened it up has said
+what they want and a screen width is not an argument against that. The width only decides a first visit,
+and it is read once at mount rather than on resize, since re-deciding on a window resize would overrule a
+choice already made.
+
+**The write moved from an effect to the press.** As `useEffect(..., [keyOpen])` it fired on mount and
+persisted the width-derived default, so a phone's first visit saved "closed" as though it had been chosen,
+and the paragraph above promising that a stored answer wins would have been describing its own footprint.
+Verified by assertion rather than by reading it: the phone starts folded with **nothing in storage**, a real
+press writes `1`, and that survives a reload.
+
+**Also checked and found correct, which is worth recording because it was an assumption.** Seven legend rows
+became `summary` elements this session, and I had assumed the universal `:focus-visible` rule covered them.
+Walking the tab order found **37 focus stops and no element without a ring**. The assumption held; it is
+measured now.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
