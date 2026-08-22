@@ -1199,7 +1199,19 @@ export function App(): JSX.Element {
       {/* The header used to hold a wordmark and two small words on a 1280px bar. It now carries
           the arithmetic that makes the reconciliation visible without opening anything. */}
       <header className="zone-head flex items-center gap-6 bg-deck px-5 py-3 xl:bg-transparent">
-        <div className="text-[13px] font-semibold tracking-[0.16em] whitespace-nowrap">
+        <div
+          /*
+            Aligned to the first row of controls, not to the middle of them.
+
+            The control group wraps to two rows on a phone, which is a decision the note below defends,
+            and `items-center` on the header then floated this wordmark between those two rows: an
+            L-shape with "Still" orphaned diagonally opposite it. Scoped to `max-md` because that is
+            exactly where the wrap happens, so every wider header keeps the centring it was designed
+            with. `pt-1` matches the buttons' own top padding, so the two sit on one line rather than
+            merely starting at the same pixel.
+          */
+          className="text-[13px] font-semibold tracking-[0.16em] whitespace-nowrap max-md:self-start max-md:pt-1"
+        >
           {/*
             "FINE" on a phone, and the full sentence from `md` up.
 
@@ -1495,9 +1507,15 @@ export function App(): JSX.Element {
                 + `${place(strongest.primary.place)}, ${ago(strongest.primary.time, now)}. `
                 + "Go there and hold the window at that moment."}
               data-rail="largest"
-              className="tb-cell tb-wide cursor-pointer flex-row items-baseline gap-2.5 text-left transition-colors hover:bg-raised"
+              className="tb-cell tb-wide cursor-pointer text-left transition-colors hover:bg-raised"
             >
-              <span className="label shrink-0">Largest</span>
+              <span className="flex items-baseline justify-between gap-2">
+                <span className="label">Largest</span>
+                <span className="shrink-0 font-mono text-[10.5px] text-faint">
+                  {agoShort(strongest.primary.time, now)}
+                </span>
+              </span>
+              <span className="flex items-baseline gap-2">
               {/*
                 On the ramp, and marked as such.
 
@@ -1520,8 +1538,6 @@ export function App(): JSX.Element {
               <span className="min-w-0 flex-1 truncate text-[11.5px] text-dim">
                 {place(strongest.primary.place)}
               </span>
-              <span className="shrink-0 font-mono text-[10.5px] text-faint">
-                {agoShort(strongest.primary.time, now)}
               </span>
             </button>
           ) : null}
@@ -1656,8 +1672,17 @@ export function App(): JSX.Element {
                 ) : null}
               </div>
             ) : (
-              <div className="mb-3 flex items-center gap-1.5">
-                <label className="label shrink-0" htmlFor="archive-day">Go to a day</label>
+              /*
+                Label above rather than beside the field.
+
+                Side by side, the label and the "go" button took the fixed width and the date field got
+                what was left, which in the 768px strip was 60px: a date input showing "mm / d" and a
+                calendar icon, too narrow to read and under the touch minimum. A native date field has
+                a floor its own locale sets, so it gets the row and the label gets its own line.
+              */
+              <div className="mb-3">
+                <label className="label" htmlFor="archive-day">Go to a day</label>
+                <div className="mt-1 flex items-center gap-1.5">
                 <input
                   id="archive-day"
                   type="date"
@@ -1674,6 +1699,7 @@ export function App(): JSX.Element {
                 >
                   {archiveBusy ? "…" : "go"}
                 </button>
+                </div>
               </div>
             )}
             <Timeline
