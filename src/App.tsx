@@ -1458,18 +1458,30 @@ export function App(): JSX.Element {
                 snapshot.archive ? "bg-faint" : live === 2 ? "bg-ink" : live === 1 ? "bg-dim" : "bg-faint"
               }`}
             />
-            <span className="hidden sm:inline">
-              {/*
-                While an archived day is on screen this says the day, not the feeds.
+            {/*
+              While an archived day is on screen this says the day, not the feeds.
 
-                The whole risk in this feature is a chrome that goes on saying "both feeds live" over a
-                globe showing last March. The status is read from the snapshot, so there is one place
-                that decides whether this app is claiming to be live.
-              */}
-              {snapshot.archive
-                ? new Date(snapshot.archive.from).toISOString().slice(0, 10)
-                : live === 2 ? "both feeds live" : live === 1 ? "one feed live" : "connecting"}
-            </span>
+              The whole risk in this feature is a chrome that goes on saying "both feeds live" over a
+              globe showing last March. The status is read from the snapshot, so there is one place that
+              decides whether this app is claiming to be live.
+
+              **The two halves hide differently, and that asymmetry is the point.** Both used to sit
+              behind `hidden sm:inline` for header width, which meant a phone showed a globe of last May
+              with a faint dot and no words - the same failure the paragraph above is about, with nothing
+              on screen to argue with. A status that says "everything is normal" is reassurance and can
+              be dropped when space is tight, because the dot carries it. One that says "this is not what
+              you think" is a correction, and absence is its failure mode. So the date always shows and
+              the live phrase is the only part that folds.
+            */}
+            {snapshot.archive ? (
+              <span className="font-mono">
+                {new Date(snapshot.archive.from).toISOString().slice(0, 10)}
+              </span>
+            ) : (
+              <span className="hidden sm:inline">
+                {live === 2 ? "both feeds live" : live === 1 ? "one feed live" : "connecting"}
+              </span>
+            )}
           </span>
         </div>
       </header>
