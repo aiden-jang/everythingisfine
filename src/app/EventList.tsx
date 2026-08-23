@@ -32,6 +32,14 @@ export interface EventListProps {
   onAnnounceAboveChange: (value: number) => void;
   /** True before any feed has delivered, so an empty list is not blamed on the filters. */
   waiting: boolean;
+  /**
+   * The clock every age in this list is measured against.
+   *
+   * Passed in rather than read here, because on an archived day it is the end of that day and not the
+   * present. Reading `Date.now()` put "99d" on every row of a picture of 2026-05-15 while the title
+   * block beside it said "13h": one archived day, two clocks, disagreeing on screen at the same time.
+   */
+  now: number;
 }
 
 /** One event, as a sentence rather than a row of fields. */
@@ -50,7 +58,7 @@ function sentence(quake: Quake, now: number): string {
 }
 
 export function EventList({
-  quakes, selected, onSelect, announceAbove, onAnnounceAboveChange, onNews, waiting,
+  quakes, selected, onSelect, announceAbove, onAnnounceAboveChange, onNews, waiting, now,
 }: EventListProps): JSX.Element {
   const [cursor, setCursor] = useState(0);
   /*
@@ -78,17 +86,24 @@ export function EventList({
    * cold load.
    */
   useEffect(() => {
+    /*
+      The real clock here, deliberately, and not the archived one.
+      This decides what genuinely just *arrived*, which only happens while live: an archived day has
+      stopped its sources, so nothing is new and this path is dormant. It also stays out of the
+      dependency list below, because the displayed clock ticks every second and an announcement effect
+      that reran at 1Hz would be doing `newsIn` sixty times a minute to answer "nothing arrived".
+    */
     const fresh = newsIn(quakes, announced.current, announceAbove, Date.now());
     for (const q of quakes) announced.current.add(q.key);
     if (announced.current.size > 4000) announced.current = new Set(quakes.map((q) => q.key));
     if (fresh.length === 0) return;
     onNews?.(fresh.map((q) => q.primary.magnitude));
-    const now = Date.now();
+    const spoken = Date.now();
     setAnnouncement(
       fresh.length === 1
-        ? sentence(fresh[0]!, now)
+        ? sentence(fresh[0]!, spoken)
         : `${fresh.length} new earthquakes above magnitude ${announceAbove.toFixed(1)}. Largest: `
-          + sentence([...fresh].sort((a, b) => b.primary.magnitude - a.primary.magnitude)[0]!, now),
+          + sentence([...fresh].sort((a, b) => b.primary.magnitude - a.primary.magnitude)[0]!, spoken),
     );
   }, [quakes, announceAbove, onNews]);
 
@@ -105,8 +120,6 @@ export function EventList({
     else if (e.key === "Home") { e.preventDefault(); focusAt(0); }
     else if (e.key === "End") { e.preventDefault(); focusAt(quakes.length - 1); }
   };
-
-  const now = Date.now();
 
   return (
     /*
