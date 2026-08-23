@@ -4904,6 +4904,31 @@ the same chrome.**
 luminance was the right move and proving it held was worth doing, but reporting "unchanged to plus or minus
 0.00" invited the reading that nothing had changed, when what I had shown was that *one axis* had not moved.
 
+## A phone showed an archived day and said nothing about it
+
+Auditing states rather than widths this time: the cross-section on both ramps, and an archived day at 375.
+The section is healthy, and the token divergence recorded above reads as nothing in practice. The phone was
+not healthy.
+
+The header's status is one span, and it was **entirely** behind `hidden sm:inline` for header width. Below
+640px an archived day was a faint dot and no words: a globe of last May with nothing on screen saying so
+until you scrolled the rail past the fold to reach the banner. The comment directly above that span already
+names this exact risk - "a chrome that goes on saying both feeds live over a globe showing last March" - and
+the phone case is the same failure with less to argue with, because there is no wrong sentence to catch, only
+an absent one.
+
+**The two halves hide differently now, and the asymmetry is the whole point.** A status that says
+"everything is normal" is reassurance, and the dot carries it, so the live phrase still folds on a phone. A
+status that says "this is not what you think" is a correction, and absence is its failure mode, so the date
+always shows. Ten characters on the header's second row, which was carrying one button and empty space.
+
+**The test I wrote for it was wrong first.** `expect(head).not.toContainText("feeds live")` passed at 1440
+and failed at 375, which reads exactly like the bug being present on a phone. It is not: `toContainText`
+reads `textContent`, which sees straight through `display: none`, so it was asserting on a phrase nobody
+could see. Rewritten against `innerText`. Worth recording because the failure pointed at the app and the
+fault was in the instrument - the third time this session, after the cursor read off the wrong element and
+the magnitude regex that did not allow for a space.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
