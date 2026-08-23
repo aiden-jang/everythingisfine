@@ -2123,6 +2123,7 @@ export function App(): JSX.Element {
             onAnnounceAboveChange={setAnnounceAbove}
             onNews={onNews}
             waiting={snapshot.coveredSince === null}
+            now={now}
           />
 
         </aside>
@@ -2276,6 +2277,7 @@ export function App(): JSX.Element {
             ramp={ramp}
             excluded={!matches(shownQuake, filters, now)}
             revision={snapshot.revision}
+            now={now}
             onClose={() => setSelected(null)}
             onFlyTo={(lon, lat, zoom) => flyTo.current(lon, lat, zoom)}
             /*

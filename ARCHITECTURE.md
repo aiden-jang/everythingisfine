@@ -4929,6 +4929,39 @@ could see. Rewritten against `innerText`. Worth recording because the failure po
 fault was in the instrument - the third time this session, after the cursor read off the wrong element and
 the magnitude regex that did not allow for a space.
 
+## One archived day, two clocks, both on screen
+
+The tense fixes went to the copy. The *clocks* were still wrong, and the app was showing both answers at
+once: the title block said **"Largest 13h"** while every row beneath it said **"99d"** and the panel said
+**"99 days ago"** - one archived day, measured from its own end in one place and from today in another.
+
+When archive mode shipped, eight `Date.now()` call sites in `App.tsx` were rewired to `clockAt()`. Those
+were the *filtering* sites, and the display sites in `EventList` and `DetailPanel` were never touched
+because they read the clock themselves rather than taking one. Both take `now` now.
+
+**The neighbour search was the worse half.** `findNearby(store, quake, filters, Date.now())` filters
+against the window ending at the clock it is given, so a pinned archived event was having its sequence
+computed against a present it has nothing to do with. Nothing looked broken, which is why it lasted: an
+empty or wrong neighbour list reads as a quiet day.
+
+**Announcements keep the real clock, deliberately.** `newsIn` decides what genuinely just *arrived*, which
+only happens while live - an archived day has stopped its sources. It also stays out of the effect's
+dependency list, because the displayed clock ticks at 1Hz and an announcement effect rerunning every second
+would be doing a full pass to answer "nothing arrived". The nearby memo keeps its existing
+`exhaustive-deps` exemption for the same reason, and that is now written down beside it so the next reader
+does not "fix" it: entering or leaving an archived day moves the revision anyway, since the store is
+cleared and refilled.
+
+**The bug was invisible under the test harness, and that is the part worth keeping.** `installFeeds` routes
+`/seismicportal\.eu|\.geojson/`. The archive's USGS URL is `fdsnws/event/1/query?format=geojson` - no
+literal `.geojson` - so it **misses the stub and hits the real network**, while the EMSC archive URL
+`seismicportal.eu/fdsnws/...` **is** caught. So every stubbed archive test was mixing real events from the
+archived day with fixtures dated near now, and the newest fixture sat at the top of the list reading "1h".
+Two clocks agreeing on the wrong answer looks exactly like one clock being right.
+
+It only showed with nothing stubbed at all. Worth remembering when the next archive assertion is written:
+under `installFeeds`, an archived day is half real.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

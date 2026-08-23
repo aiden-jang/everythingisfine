@@ -36,6 +36,15 @@ export interface DetailPanelProps {
   excluded: boolean;
   /** The feed's revision, so the neighbour search reruns on new data and not on the clock. */
   revision: number;
+  /**
+   * The clock this panel measures against: the end of an archived day, or the present.
+   *
+   * Read from `Date.now()` before, in two places, which put "99 days ago" on an event from a picture of
+   * 2026-05-15 while the title block said "13h" about the same day. It also fed the neighbour search a
+   * window ending today, so the sequence for an archived event was being filtered against a present it
+   * has nothing to do with.
+   */
+  now: number;
   store: Store;
   filters: Filters;
   onClose: () => void;
@@ -68,7 +77,7 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
 }
 
 export function DetailPanel({
-  open, quake, store, filters, ramp, excluded, revision, onClose, onFlyTo, onSection,
+  open, quake, store, filters, ramp, excluded, revision, now, onClose, onFlyTo, onSection,
   farSide, onFarSide, boundaryKm, onSelect,
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
@@ -81,9 +90,13 @@ export function DetailPanel({
    * 56ms, which is three dropped frames a second, for an answer that had not changed. It was written
    * up as a known cost and left live on the argument that memoising would freeze the neighbour list.
    * Keying on the revision keeps it live: the revision moves whenever an earthquake does.
+   *
+   * `now` is read inside and deliberately not a dependency, for that same reason: it ticks every second
+   * and would undo the whole point. Entering or leaving an archived day moves the revision anyway, since
+   * the store is cleared and refilled, so the clock that matters is always the one this recomputed with.
    */
   const near = useMemo(
-    () => findNearby(store, quake, filters, Date.now()),
+    () => findNearby(store, quake, filters, now),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [store, quake.key, filters, revision],
   );
@@ -152,7 +165,7 @@ export function DetailPanel({
       </div>
       <div className="mt-2 text-[13px] leading-snug text-dim">{place(r.place)}</div>
       <div className="mt-1 text-[11.5px] text-faint">
-        {clock(r.time)} · {ago(r.time, Date.now())}
+        {clock(r.time)} · {ago(r.time, now)}
       </div>
 
       {/*
