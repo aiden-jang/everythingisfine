@@ -5221,6 +5221,46 @@ did cost three wrong guesses about the store's own API - `syntheticReadings` tak
 `Ingested` exposes `isNew` rather than `revised`, `StoreStats` has no `arrivals` - which is the same lesson
 as the probe faults one rung down: read the signature, do not assume it.
 
+## Days worth seeing, which is the archive finally having a door
+
+The archive could draw any day since the catalogues begin and its entry point was a blank `mm/dd/yyyy`
+field: it asked for a date the viewer already knew, which almost nobody does. The largest feature in the app
+was also the least reachable, so everything the app is good at was stuck on whatever Tuesday it is.
+
+**Nothing new was built to make these days extraordinary.** Seven rows in a disclosure, each loading through
+the `loadArchive` path that already existed. What they unlock was already there. On 2011-03-11:
+
+| | a normal day | Tōhoku |
+|---|---|---|
+| events | 48 | **685** |
+| largest | M6.7 | **M9.1**, "2011 Great Tohoku Earthquake" |
+| on edge, within 100km of a boundary | 29% | **65%** |
+| busiest hour | 11 | **51** |
+| energy in one event | - | **97%** |
+| revised by an agency | 0 | **1** |
+
+The activity strip is a wall instead of a flat line, 539 of the 685 fall in Japan & Kurils, the aftershocks
+stack visibly along the trench, and the two-agency reconciliation - the centre of this whole app - fires on
+the largest earthquake in its catalogue.
+
+**Every row was measured before it was written**, and `notableDays.live.test.ts` re-checks each magnitude
+against USGS so a wrong label fails rather than sits there. A curated list is an assertion about somebody
+else's data, and the failure mode is a label that is quietly wrong: the right day at the wrong magnitude
+looks fine in a screenshot.
+
+**Loma Prieta is not on the list, and that is the trap this feature is built around.** It is remembered as 17
+October 1989 and struck at 00:04 UTC on the **18th**; asking for the 17th returns an M6.3 in Papua New
+Guinea. A famous date is usually the local one, and the archive is a UTC day. Dropped rather than labelled
+with a date nobody would recognise, and a unit test pins its absence so it cannot come back from memory.
+
+Ordered largest first, because the two M9.1s are the reason to open it. Closed by default, because it is a
+way in and not a menu: the field above stays the answer for anyone who arrived with a date in mind.
+
+**Two probe faults again, in one test.** `button[aria-label*='magnitude']` also matches the largest-event
+row, so the first click hit the wrong control; and the assertion read any date-shaped string out of the page
+body, which matched the list's own rows. Together they reported a successful load that had not happened.
+Scoped to the disclosure and asserted on the archive banner instead.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
