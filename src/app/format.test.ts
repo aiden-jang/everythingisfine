@@ -450,6 +450,17 @@ describe("the layer sentences on an archived day", () => {
       .toContain("was erupting then");
     expect(volcanoNote(3, Date.parse("2026-05-01T00:00:00Z"), Date.parse("2026-05-15T00:00:00Z")))
       .toContain("is erupting this minute");
+
+    /*
+     * The distance, not only the tense. The two assertions above pass whichever clock the day count was
+     * measured against, which is how "ended 101 days ago, so none of this was erupting then" survived:
+     * the flag switched the verb and the caller was still handing the function `Date.now()`.
+     */
+    const day = Date.parse("2026-05-15T00:00:00Z");
+    expect(volcanoNote(3, day - 3 * 86_400_000, day, true)).toContain("3 days earlier");
+    expect(volcanoNote(3, day - 3 * 86_400_000, day)).toContain("3 days ago");
+    expect(volcanoNote(3, day, day, true)).toContain("ended that day");
+    expect(volcanoNote(3, day, day)).toContain("ended today");
   });
 
   it("suppresses the fire floor on an archived day, because that cap is the live feed's", () => {

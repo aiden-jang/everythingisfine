@@ -74,6 +74,8 @@ export interface MagnitudeFilterProps {
   volcanoesSince: number | null;
   /** The fires burning, already summarised, because the caveat needs the leader and the median. */
   fires: { count: number; km2: number; medianDays: number | null; leader: string | null };
+  /** The clock the notes date themselves against: the archived day's end, or this minute. */
+  now: number;
   /** Where the feed stops, which is the difference between this count and a census. */
   fireCap: number;
   floods: number;
@@ -122,7 +124,7 @@ function path(points: readonly { lon: number; lat: number }[]): string {
 
 export function MagnitudeFilter(
   {
-    ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince,
+    ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince, now,
     fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
     motion, motionOn, onMotion, depth, sound, children,
   }: MagnitudeFilterProps,
@@ -331,7 +333,7 @@ export function MagnitudeFilter(
       */}
       {volcanoes > 0 ? (
         <KeyRow
-          note={volcanoNote(volcanoes, volcanoesSince, Date.now(), archived)}
+          note={volcanoNote(volcanoes, volcanoesSince, now, archived)}
           glyph={<svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
             <path d={VOLCANO_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
               className="text-dim" />
