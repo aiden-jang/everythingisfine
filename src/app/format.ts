@@ -446,7 +446,7 @@ export function wildfireNote(
     : "";
   return `the flames are forest fires, ${fire.count} of them. `
     + `${archived ? "They burned that day" : "Burning now"}, `
-    + `${fire.km2.toLocaleString("en")} square kilometres alight${burning}.${floor}`;
+    + `${fire.km2.toLocaleString("en-GB")} square kilometres alight${burning}.${floor}`;
 }
 
 /**
@@ -591,10 +591,19 @@ export function depthNote(bands: {
   shallow: number; intermediate: number; deep: number; unknown: number; total: number;
 }): string | null {
   if (bands.total === 0) return null;
-  const parts = [`${bands.shallow} above 70 km`];
-  if (bands.intermediate > 0) parts.push(`${bands.intermediate} between 70 and 300`);
-  parts.push(`${bands.deep} below 300`);
-  if (bands.unknown > 0) parts.push(`${bands.unknown} with no depth given`);
+  /*
+   * Grouped, because a month of a busy margin runs into four figures.
+   *
+   * Every other count this app prints goes through `toLocaleString`; these four did not, so a thirty-day
+   * window put "1188 above 70 km" in the key beside a headline reading "1,188". The hazard counts a few
+   * functions up are left alone deliberately: their feeds cap them in the tens, so grouping them would be
+   * a separator that can never appear.
+   */
+  const n = (v: number): string => v.toLocaleString("en-GB");
+  const parts = [`${n(bands.shallow)} above 70 km`];
+  if (bands.intermediate > 0) parts.push(`${n(bands.intermediate)} between 70 and 300`);
+  parts.push(`${n(bands.deep)} below 300`);
+  if (bands.unknown > 0) parts.push(`${n(bands.unknown)} with no depth given`);
   return `${parts.join(", ")}. Deep events sit inside a descending slab, so a margin only resolves `
     + `into rings when enough of them land.`;
 }

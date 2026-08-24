@@ -92,8 +92,8 @@ function useFeed(): FeedSnapshot {
  * events are the same gesture, click a thing and go to it, so they are the same row: a value on
  * the left, a name, a figure on the right.
  */
-function Row({ lead, label, trail, onClick }: {
-  lead?: string; label: string; trail: string; onClick?: () => void;
+function Row({ lead, label, trail, share, onClick }: {
+  lead?: string; label: string; trail: string; share?: number; onClick?: () => void;
 }): JSX.Element {
   const body = (
     <>
@@ -102,6 +102,12 @@ function Row({ lead, label, trail, onClick }: {
       ) : null}
       <span className="min-w-0 flex-1 truncate text-[12px] text-dim">{label}</span>
       <span className="shrink-0 font-mono text-[10.5px] text-faint">{trail}</span>
+      {share === undefined || share <= 0 ? null : (
+        <span aria-hidden className="pointer-events-none absolute inset-x-1.5 bottom-[3px]">
+          {/* A floor of 2%, so a region with one event is a mark rather than nothing. */}
+          <span className="block h-px bg-dim" style={{ width: `${Math.max(2, share * 100)}%` }} />
+        </span>
+      )}
     </>
   );
   /*
@@ -112,7 +118,24 @@ function Row({ lead, label, trail, onClick }: {
  * already aligns them and the hover state already separates them; the rules were doing nothing the
  * layout was not already doing, and were doing it sixty times.
  */
-const shared = "flex w-full items-baseline gap-3 rounded-[2px] px-1.5 py-[7px] text-left";
+/*
+ * A share, drawn with no track under it.
+ *
+ * Four right-aligned counts made the region list a table of figures when the thing worth seeing is the
+ * distribution: 117 against 46 against 31 is a shape, and reading it off three numbers is work the
+ * drawing could do. The `trail` keeps the exact figure, so the bar adds a reading rather than replacing
+ * one, and it is `aria-hidden` because the count is already in the row for anyone listening.
+ *
+ * **Normalised to the largest, not to a total, because there is no total.** `countByRegion` increments
+ * every region that contains a point and the regions overlap, so the counts can sum past the number of
+ * events on screen. A percentage-of-total bar would have been arithmetic nobody could reproduce.
+ *
+ * No track, which is what keeps the note above true. A hairline under all eleven rows is the uniform
+ * rule this component refuses by name; a fill with nothing behind it is ragged down the left, so it
+ * reads as a chart rather than as somebody's spreadsheet. A region with nothing in it draws no line at
+ * all, which is the honest amount of ink for zero.
+ */
+const shared = "relative flex w-full items-baseline gap-3 rounded-[2px] px-1.5 py-[7px] text-left";
   return onClick
     ? (
       <button
@@ -890,6 +913,8 @@ export function App(): JSX.Element {
    * the permalink - it is a thing happening now, not a preference or a view.
    */
   const stops = useMemo(() => tourStops(regions), [regions]);
+  /** The head of the region list, which is what every share bar in it is a share of. */
+  const busiest = regions[0]?.count ?? 0;
   const [tourAt, setTourAt] = useState<number | null>(null);
   /*
    * The tour's own control, excluded from the end-on-interaction listener below.
@@ -1498,9 +1523,22 @@ export function App(): JSX.Element {
               <span className="text-[11px] text-faint">{k}</span>
             </span>
           ))}
-          <span className="text-[11px] text-faint tabular-nums">
-            USGS {snapshot.stats.readings.usgs.toLocaleString("en-GB")}
-            {" · EMSC "}{snapshot.stats.readings.emsc.toLocaleString("en-GB")} readings
+          {/*
+            Figures in mono, words in sans, which is what the pair beside this already does.
+
+            I wrote this line yesterday and set the whole thing in sans, so the one provenance line in the
+            header disagreed with the two labelled figures 20px to its left. The mono spans sit on the mono
+            step rather than the sans one: 10.5 beside 11 is the optical match the rest of the chrome uses,
+            because mono digits read larger than sans text at the same pixel size.
+          */}
+          <span className="text-[11px] text-faint">
+            USGS <span className="font-mono text-[10.5px] tabular-nums">
+              {snapshot.stats.readings.usgs.toLocaleString("en-GB")}
+            </span>
+            {" · EMSC "}
+            <span className="font-mono text-[10.5px] tabular-nums">
+              {snapshot.stats.readings.emsc.toLocaleString("en-GB")}
+            </span> readings
           </span>
         </div>
         {/*
@@ -2322,7 +2360,9 @@ export function App(): JSX.Element {
                       <Row
                         key={region.name}
                         label={region.name}
-                        trail={`${count}`}
+                        trail={count.toLocaleString("en-GB")}
+                        // Sorted largest first by `countByRegion`, so the head of the list is the scale.
+                        share={busiest > 0 ? count / busiest : 0}
                         onClick={() => flyTo.current(region.lon, region.lat, region.zoom)}
                       />
                     ))}
