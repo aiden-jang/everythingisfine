@@ -595,9 +595,26 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           vec2 auv = vec2(fract(vLonLat.x / 360.0), (vLonLat.y + 90.0) / 180.0);
           float glow = clamp(texture2D(uAurora, auv).r * 3.0, 0.0, 1.0) * night * uAuroraOn;
 
+          /*
+           * A quarter of a level of noise, because the alpha here is a very shallow ramp.
+           *
+           * This overlay fades across a whole hemisphere, so its alpha changes by less than 1/255 over
+           * tens of pixels and the 8-bit framebuffer quantises it into flat steps. Over a coastline
+           * nobody notices; over the middle of Eurasia, which is the largest uniform area on the globe,
+           * the steps read as evenly spaced vertical seams - reported three times as lines or gaps
+           * across Russia, China and Mongolia. It only resolves at a 2x pixel ratio, which is why every
+           * screenshot taken at 1x said the fill was fine.
+           *
+           * Dither rather than more geometry: the sphere was tried at 256 segments and the seams
+           * survived, because interpolation was never the problem. A hash of the pixel coordinate
+           * scatters the rounding either side of the true value, which is what turns a step into a
+           * gradient at no cost per frame.
+           */
+          float grain = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
+          float dither = (grain - 0.5) / 255.0;
           gl_FragColor = vec4(
             uDayColor * day + uAuroraColor * glow,
-            night * uDepth + day * uLift + glow * 0.30
+            night * uDepth + day * uLift + glow * 0.30 + dither
           );
         }`,
       uniforms: {
