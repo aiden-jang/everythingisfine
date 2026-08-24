@@ -2235,8 +2235,21 @@ export function App(): JSX.Element {
                   placeholder="a region or a place"
                   autoComplete="off"
                   spellCheck={false}
-                  className="min-w-0 flex-1 border-b border-hairline bg-transparent pb-0.5
-                    text-[12px] text-ink placeholder:text-faint focus:border-faint focus:outline-none"
+                  /*
+                    The same box as the day field, and the same focus ring as everything else.
+
+                    Two text inputs sat in this rail wearing different clothes: that one a hairline box,
+                    this one a bottom border, which is two conventions for one kind of control within a
+                    few hundred pixels. Worse, this field replaced the global focus outline with a border
+                    tint - `outline: none` and a colour shift a keyboard user has to hunt for - so the two
+                    also disagreed about what "focused" looks like. Nothing in the notes above defended
+                    either choice, so both go.
+
+                    Font and size stay different on purpose. A day is a formatted number and reads in mono;
+                    a place name is prose and does not.
+                  */
+                  className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1
+                    text-[12px] text-ink placeholder:text-faint"
                 />
               </div>
               <div ref={regionsRef} className="rail-regions">

@@ -245,6 +245,28 @@
       right: 0;
       border-left: 0;
     }
+
+    /*
+     * The count stays while you read the evidence.
+     *
+     * This rail is a scroll container, and the title block was the first thing to leave it: scrolling to
+     * the event list took the number the whole app exists to report off the screen, so the answer and the
+     * evidence for it could not be looked at together. Pinned only here, because this is the one layout
+     * where the rail is a tall column of its own - on a phone it is a sheet under the globe and the whole
+     * page scrolls, and in the tablet strip it is a grid cell with nothing to scroll past.
+     *
+     * The cells were already opaque `deck` against a 44% rail, so pinning changes no colour. What it does
+     * change is those 1px dividers: the frame is drawn by letting a translucent hairline show through the
+     * grid gaps, and translucent lines over moving content flicker. Compositing the same hairline over an
+     * opaque deck keeps the drawing identical and stops the content behind it showing through.
+     */
+    .zone-rail > .titleblock {
+      position: sticky;
+      top: 0;
+      /* Above later siblings, which paint over a same-index sticky element by document order. */
+      z-index: 2;
+      background: linear-gradient(var(--color-hairline), var(--color-hairline)), var(--color-deck);
+    }
   }
 
   .zone-rail {
