@@ -812,6 +812,43 @@
    * The 1px grid gap does the dividing rather than a border on each cell, because borders double up
    * where two cells meet and the doubled line is visible at this weight.
    */
+  /*
+   * A disclosure that looks like one.
+   *
+   * Every summary in this app carried `list-none`, which took the browser's marker away and left a
+   * sentence-case line sitting exactly where a section heading sits. The rail's two label systems are
+   * actually consistent - tracked caps name a section, sentence case names something you can open - but
+   * with no marker the second was unreadable: "Time of day" read as a heading whose contents had failed
+   * to render, and "Days worth seeing" read as the label for the window buttons under it.
+   *
+   * Drawn from two borders rather than set as a glyph, so it is a hairline at any pixel ratio and takes
+   * its colour from the line it sits in. No new value, so the chroma ceiling is inherited rather than
+   * argued about.
+   */
+  .disclose {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .disclose::before {
+    content: "";
+    flex: none;
+    width: 4px;
+    height: 4px;
+    border-right: 1px solid currentColor;
+    border-bottom: 1px solid currentColor;
+    /* Right when shut, down when open: the one convention a reader never has to be taught. */
+    transform: rotate(-45deg);
+    transition: transform 140ms ease-out;
+  }
+
+  details[open] > .disclose::before {
+    transform: rotate(45deg);
+  }
+
   .titleblock {
     display: grid;
     grid-template-columns: 1fr auto;

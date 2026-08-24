@@ -1850,7 +1850,7 @@ export function App(): JSX.Element {
             the two readings of one word sit together.
           */}
           <details data-rail="diurnal" className="mt-3">
-            <summary className="cursor-pointer list-none text-[11px] text-faint hover:text-dim">
+            <summary className="disclose text-[11px] text-faint hover:text-dim">
               Time of day
             </summary>
             <Dial counts={clockBins} />
@@ -1979,7 +1979,7 @@ export function App(): JSX.Element {
                   above stays the answer for somebody who came with a date already in mind.
                 */}
                 <details className="mt-2">
-                  <summary className="cursor-pointer list-none text-[11px] text-faint hover:text-dim">
+                  <summary className="disclose text-[11px] text-faint hover:text-dim">
                     Days worth seeing
                   </summary>
                   <div className="mt-1">
@@ -2021,6 +2021,16 @@ export function App(): JSX.Element {
                     <p className="mt-1.5 text-[10.5px] leading-relaxed text-faint">{NOTABLE_NOTE}</p>
                   </div>
                 </details>
+            {/*
+              The seam between choosing a day and reading one.
+
+              This block holds three jobs at one indent - pick a past day, pick the window, read and
+              scrub time - and the middle one starts with a row of buttons directly beneath a closed
+              disclosure. Proximity was the only relationship on offer, so "Days worth seeing" read as
+              the label for 24h/7d/30d: two unrelated controls glued into one by a 12px gap. A rule
+              costs one line and says which side of it a control belongs to.
+            */}
+            <hr className="my-3.5 border-t border-hairline" />
             <Timeline
               bars={bars}
               archived={archived}
@@ -2238,7 +2248,7 @@ export function App(): JSX.Element {
               */}
               {hazards.length > 0 ? (
                 <details className="mt-3">
-                  <summary className="cursor-pointer list-none text-[11px] text-faint hover:text-dim">
+                  <summary className="disclose text-[11px] text-faint hover:text-dim">
                     Storms, fires, floods and volcanoes ({hazardCount(hazards)})
                   </summary>
                   <div className="mt-1.5 max-h-[240px] overflow-y-auto pr-1">
