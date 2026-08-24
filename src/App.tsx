@@ -155,9 +155,11 @@ export function App(): JSX.Element {
   /*
    * A shared moment, held rather than played.
    *
-   * `clampScrub` on the way out already turns a cursor the window has slid past into live, so a link
-   * opened days later degrades to the present on its own rather than pointing at nothing. Whether that
-   * happened is worth saying, which is what `staleCursor` below is for.
+   * `clampScrub` on the way out already refuses a cursor the window cannot hold, so a link opened days
+   * later degrades on its own rather than pointing at nothing. It refuses in two directions, which is
+   * the part this comment used to get wrong: ahead of the window releases to live, and older than the
+   * window pins to the oldest moment the buffer still has. Either way the viewer is looking at a
+   * different moment than they were sent, so `staleCursor` below says which one happened.
    */
   const [scrub, setScrub] = useState<Scrub>(
     shared.cursor === undefined ? LIVE : { at: shared.cursor, playing: false },
@@ -642,7 +644,15 @@ export function App(): JSX.Element {
           the same objection DESIGN.md makes to ambient rotation. It arrives held, and pressing play is
           theirs.
         */
-        cursor: scrub.at,
+        /*
+         * The moment being shown, not the one that was asked for.
+         *
+         * `scrub` keeps the link's original value so the notice above can tell it was refused, and
+         * writing that value back out made the link advertise a moment the app was not drawing - so
+         * re-sharing propagated it. What you copy out matches what you are looking at, which is the same
+         * rule the archived day and the mark key already follow.
+         */
+        cursor: view.at,
       });
       history.replaceState(null, "", `#${fragment}`);
     };
@@ -1257,9 +1267,18 @@ export function App(): JSX.Element {
    * moved by hand the link's moment is no longer what is being looked at and the notice has nothing to
    * explain.
    */
+  /*
+   * Both ways the clamp can refuse a moment, not just one.
+   *
+   * This tested `view.at === null`, which is only the *future* branch: `clamp` sends a moment at or past
+   * the window's end to live, and a moment **older** than the window to `span.from` - still held, just at
+   * a different time than the link asked for. The second is the common case, since any link shared longer
+   * ago than the window falls into it, and it was the silent one: the recipient saw "held" at a moment
+   * nobody sent them. Comparing against the shared value covers both.
+   */
   const staleCursor = shared.cursor !== undefined
     && scrub.at === shared.cursor
-    && view.at === null;
+    && view.at !== shared.cursor;
 
   const edge = windowStart(now, filters.windowMs, snapshot.coveredSince);
   /*
@@ -2200,7 +2219,14 @@ export function App(): JSX.Element {
 
           {staleCursor ? (
             <p data-rail="notice" className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
-              The moment in this link is older than the window, so this is the present instead.
+              {/*
+                Two refusals, two sentences, because "this is the present instead" is false when the clamp
+                pinned the cursor to the buffer's oldest edge rather than releasing it to live.
+              */}
+              {view.at === null
+                ? "The moment in this link is outside the window, so this is the present instead."
+                : "The moment in this link is older than the window, so this is the oldest moment the "
+                  + "buffer still holds."}
             </p>
           ) : null}
 
