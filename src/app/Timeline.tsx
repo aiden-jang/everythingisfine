@@ -374,11 +374,26 @@ export function Timeline({
         state and the steady state are one visual instead of a spinner and then a chart.
       */}
       {reaches.length > 0 ? (
-        <div className="mt-2.5">
+        /*
+          Tight to the axis, because these measure it.
+          The axis, the two coverage rules and the transport all sat 8 to 10px apart, so four lines read
+          as four peers when they are one scale, two annotations of it, and a control. Grouping by gap
+          costs nothing and does what the weight change alone could not.
+        */
+        <div className="mt-1">
           {reaches.map((r) => (
             <div key={r.id} className="flex items-center gap-2">
               <span className="w-[34px] shrink-0 font-mono text-[10px] text-faint">{r.label}</span>
-              <span className="relative h-[3px] min-w-0 flex-1 bg-raised">
+              {/*
+                A rule, not a track, because this one cannot be dragged.
+
+                Three horizontal lines used to sit in a row here - USGS coverage, EMSC coverage and the
+                cursor - at one weight and with no cue for which of them answers a pointer. The two that
+                do not were the *heavier* pair: 3px on a filled `raised` track against the transport's 2px
+                hairline, so the readouts looked more like controls than the control did. Weight now says
+                what is touchable, which leaves the thumb below as the only track-shaped thing in the rail.
+              */}
+              <span className="relative h-px min-w-0 flex-1 bg-hairline">
                 <span
                   className="absolute inset-y-0 right-0 bg-dim"
                   style={{ width: `${Math.max(r.fraction > 0 ? 1 : 0, r.fraction * 100)}%` }}
@@ -403,7 +418,7 @@ export function Timeline({
         that lost would be whichever the pointer happened not to mean. So the cursor gets its own
         line, aligned to the same width so it reads against the bars above it.
       */}
-      <div className="mt-2 flex items-center gap-2">
+      <div className="mt-4 flex items-center gap-2">
         <button
           type="button"
           onClick={onPlayToggle}
