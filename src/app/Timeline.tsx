@@ -383,7 +383,7 @@ export function Timeline({
         <div className="mt-1">
           {reaches.map((r) => (
             <div key={r.id} className="flex items-center gap-2">
-              <span className="w-[34px] shrink-0 font-mono text-[10px] text-faint">{r.label}</span>
+              <span className="w-[34px] shrink-0 font-mono text-[10.5px] text-faint">{r.label}</span>
               {/*
                 A rule, not a track, because this one cannot be dragged.
 
@@ -399,7 +399,7 @@ export function Timeline({
                   style={{ width: `${Math.max(r.fraction > 0 ? 1 : 0, r.fraction * 100)}%` }}
                 />
               </span>
-              <span className="w-[38px] shrink-0 text-right font-mono text-[10px] text-faint tabular-nums">
+              <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] text-faint tabular-nums">
                 {r.words}
               </span>
             </div>
@@ -424,7 +424,7 @@ export function Timeline({
           onClick={onPlayToggle}
           aria-label={playing ? "Pause" : "Play the window through"}
           aria-keyshortcuts="Space"
-          className="h-5 w-5 shrink-0 border border-hair text-[9px] leading-none text-dim
+          className="h-5 w-5 shrink-0 border border-hair text-[9.5px] leading-none text-dim
             hover:text-ink"
         >
           {playing ? "❚❚" : "▶"}

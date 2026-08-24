@@ -150,7 +150,7 @@ export function EventList({
     >
       <div className="flex items-baseline justify-between">
         <h2 className="label">Recent</h2>
-        <span className="font-mono text-[11px] text-faint">newest first</span>
+        <span className="font-mono text-[10.5px] text-faint">newest first</span>
       </div>
 
       {/*
@@ -236,7 +236,7 @@ export function EventList({
                 {quake.primary.magnitude.toFixed(1)}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[12.5px] leading-tight text-ink">
+                <span className="block truncate text-[12px] leading-tight text-ink">
                   {place(quake.primary.place)}
                 </span>
                 <span className="mt-1 block truncate font-mono text-[10.5px] leading-none text-faint">

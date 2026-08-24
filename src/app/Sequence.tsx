@@ -164,7 +164,7 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
       {nearby.largest !== null && nearby.largestAt !== null && nearby.largest > magnitude ? (
         // Stated, not interpreted. "Larger, and it already happened" is the fact; whether that makes
         // this an aftershock is the reader's call and depends on things no keyless feed carries.
-        <p className="mt-2 text-[11.5px] leading-relaxed text-dim">
+        <p className="mt-2 text-[11px] leading-relaxed text-dim">
           The largest nearby was M {nearby.largest.toFixed(1)},{" "}
           {nearby.largestAt < 0
             ? `${span(nearby.largestAt)} before this one`

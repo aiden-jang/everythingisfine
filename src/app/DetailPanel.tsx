@@ -72,7 +72,7 @@ export interface DetailPanelProps {
 function Field({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div className="flex items-baseline justify-between gap-3 border-t border-hairline py-2">
-      <span className="text-[11.5px] text-dim">{label}</span>
+      <span className="text-[11px] text-dim">{label}</span>
       <span className="font-mono text-[12px] text-ink">{value}</span>
     </div>
   );
@@ -166,7 +166,7 @@ export function DetailPanel({
         <span className="font-mono text-[12px] text-faint">{r.scale}</span>
       </div>
       <div className="mt-2 text-[13px] leading-snug text-dim">{place(r.place)}</div>
-      <div className="mt-1 text-[11.5px] text-faint">
+      <div className="mt-1 text-[11px] text-faint">
         {clock(r.time)} · {ago(r.time, now, archived)}
       </div>
 
@@ -197,7 +197,7 @@ export function DetailPanel({
               && Number.isFinite(reading.depthKm)
               && revision.fromDepthKm !== reading.depthKm;
             return (
-              <div key={reading.source} className="text-[11.5px] leading-relaxed text-dim">
+              <div key={reading.source} className="text-[11px] leading-relaxed text-dim">
                 <span className="text-ink">{SOURCE_NAMES[reading.source]}</span> first said{" "}
                 {/* Only what actually moved. A revision usually touches one of the two, and printing
                     an unchanged number beside a changed one reads as though both had shifted. */}
@@ -288,7 +288,7 @@ export function DetailPanel({
       */}
       {arrival ? (
         <div className="mt-4">
-          <p className="text-[11.5px] leading-relaxed text-dim">
+          <p className="text-[11px] leading-relaxed text-dim">
             {arrival.place} is {arrival.km} km away. The first shake arrived about{" "}
             <span className="text-ink">{seconds(arrival.p)}</span> after the rupture, and the stronger
             S wave about {seconds(arrival.gap)} behind it.
@@ -331,7 +331,7 @@ export function DetailPanel({
           {quake.readings.map((reading, i) => (
             <div
               key={i}
-              className="mt-2 flex items-baseline gap-x-3 font-mono text-[11px] text-dim"
+              className="mt-2 flex items-baseline gap-x-3 font-mono text-[10.5px] text-dim"
             >
               <span className="w-[40px] shrink-0 text-ink">{SOURCE_NAMES[reading.source]}</span>
               <span className="w-[74px] shrink-0">
@@ -347,12 +347,12 @@ export function DetailPanel({
       <div className="mt-4">
         <span className="text-[11px] text-faint">Within {NEARBY_KM} km</span>
         {near.count === 0 ? (
-          <p className="mt-2 text-[11.5px] text-faint">
+          <p className="mt-2 text-[11px] text-faint">
             Nothing else in this window. On its own, so far.
           </p>
         ) : (
           <>
-            <p className="mt-2 text-[11.5px] leading-relaxed text-dim">
+            <p className="mt-2 text-[11px] leading-relaxed text-dim">
               {near.count} other event{near.count === 1 ? "" : "s"} in this window
               {near.largest !== null && near.largest > r.magnitude
                 ? `, the largest M ${near.largest.toFixed(1)}`
@@ -376,7 +376,7 @@ export function DetailPanel({
                 <span className="w-[32px] shrink-0 font-mono text-[12px] text-ink">
                   {other.primary.magnitude.toFixed(1)}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-[11.5px] text-dim">
+                <span className="min-w-0 flex-1 truncate text-[11px] text-dim">
                   {place(other.primary.place)}
                 </span>
                 <span className="shrink-0 font-mono text-[10.5px] text-faint">
@@ -406,7 +406,7 @@ export function DetailPanel({
                       type="button"
                       onClick={() => onSelect(earlier.key)}
                       aria-label={`Go to the previous event in this sequence, magnitude ${earlier.magnitude.toFixed(1)}`}
-                      className="flex-1 cursor-pointer border border-hairline px-2 py-1.5 font-mono text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
+                      className="flex-1 cursor-pointer border border-hairline px-2 py-1.5 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink"
                     >
                       &larr; M{earlier.magnitude.toFixed(1)}
                     </button>
@@ -416,7 +416,7 @@ export function DetailPanel({
                       type="button"
                       onClick={() => onSelect(later.key)}
                       aria-label={`Go to the next event in this sequence, magnitude ${later.magnitude.toFixed(1)}`}
-                      className="flex-1 cursor-pointer border border-hairline px-2 py-1.5 font-mono text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
+                      className="flex-1 cursor-pointer border border-hairline px-2 py-1.5 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink"
                     >
                       M{later.magnitude.toFixed(1)} &rarr;
                     </button>
@@ -460,7 +460,7 @@ export function DetailPanel({
         <button
           type="button"
           onClick={() => onFlyTo(r.lon, r.lat, 2.2)}
-          className="cursor-pointer border border-hairline px-3 py-2 text-[11.5px] text-dim transition-colors hover:bg-raised hover:text-ink"
+          className="cursor-pointer border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
         >
           Fly here
         </button>
@@ -478,7 +478,7 @@ export function DetailPanel({
         <button
           type="button"
           onClick={() => onSection(sectionThrough(r.lon, r.lat, near.trendDeg))}
-          className="cursor-pointer border border-hairline px-3 py-2 text-[11.5px] text-dim transition-colors hover:bg-raised hover:text-ink"
+          className="cursor-pointer border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
         >
           Slice here
         </button>
@@ -495,7 +495,7 @@ export function DetailPanel({
           type="button"
           aria-pressed={farSide}
           onClick={() => onFarSide(!farSide)}
-          className={`cursor-pointer border px-3 py-2 text-[11.5px] transition-colors ${
+          className={`cursor-pointer border px-3 py-2 text-[11px] transition-colors ${
             farSide
               ? "border-faint bg-raised text-ink"
               : "border-hairline text-dim hover:bg-raised hover:text-ink"
@@ -506,7 +506,7 @@ export function DetailPanel({
         <button
           type="button"
           onClick={() => void copyLink()}
-          className="cursor-pointer border border-hairline px-3 py-2 text-[11.5px] text-dim transition-colors hover:bg-raised hover:text-ink"
+          className="cursor-pointer border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
         >
           {copied ? "Link copied" : "Copy link"}
         </button>

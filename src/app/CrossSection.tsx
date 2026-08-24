@@ -111,7 +111,7 @@ export function CrossSection({
           {withoutDepth > 0 ? (
             // Named rather than dropped. A section is a claim about depth, so events with no depth
             // published are the one omission a reader has to be told about.
-            <span className="text-[10.5px] text-faint">
+            <span className="text-[11px] text-faint">
               {withoutDepth} without a published depth
             </span>
           ) : null}
@@ -126,7 +126,7 @@ export function CrossSection({
       </div>
 
       {points.length === 0 ? (
-        <p className="max-w-[52ch] text-[11.5px] leading-relaxed text-dim">
+        <p className="max-w-[52ch] text-[11px] leading-relaxed text-dim">
           Nothing inside this corridor in the current window. Margins are where the depth is: try a
           line across a plate boundary, at right angles to it.
         </p>
