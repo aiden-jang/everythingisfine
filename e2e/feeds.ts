@@ -270,6 +270,22 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
    * The fixtures are dated **inside the requested day** rather than near now, because that is the whole
    * point: an archived day whose events are dated today cannot tell a correct clock from a broken one.
    */
+  /*
+   * The count method, which is a different method on the same service.
+   *
+   * The route below matches `query`, so `count` went straight past it to the real agency - the same leak
+   * that had archived-day tests running on live events for months. The number is derived from the day so
+   * it is stable per date and different between dates, which is what the list is there to show.
+   */
+  await page.route(/fdsnws\/event\/1\/count/, (route) => {
+    const url = new URL(route.request().url());
+    const day = (url.searchParams.get("starttime") ?? "").slice(0, 10);
+    const year = Number(day.slice(0, 4)) || 2000;
+    // Thin in 1960 and busy now, because that contrast is the reading being tested.
+    const count = Math.max(4, Math.round((year - 1955) * 9.5));
+    route.fulfill({ json: { count, maxAllowed: 20_000 } });
+  });
+
   await page.route(/fdsnws\/event\/1\/query/, async (route) => {
     const url = new URL(route.request().url());
     const start = Date.parse(`${url.searchParams.get("starttime") ?? ""}`);

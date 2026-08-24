@@ -23,6 +23,8 @@ import { parseEmscFrame } from "./emsc";
  */
 
 const USGS_QUERY = "https://earthquake.usgs.gov/fdsnws/event/1/query";
+/** Same service, different method: `count` answers with a number instead of a payload. */
+const USGS_COUNT = "https://earthquake.usgs.gov/fdsnws/event/1/count";
 const EMSC_QUERY = "https://www.seismicportal.eu/fdsnws/event/1/query";
 
 /**
@@ -100,6 +102,33 @@ export async function fetchArchive(
   } catch { /* as above */ }
 
   return { from, to, readings, answered };
+}
+
+/**
+ * How many events a day holds, without fetching them.
+ *
+ * FDSN has a `count` method beside `query` that answers `{"count":684}` in forty bytes, so asking about
+ * twelve days costs less than one day's events. Keyless and `access-control-allow-origin: *`, measured.
+ *
+ * `MAG_MIN` is the caller's business: this is the same threshold the archive loads at, so the number is
+ * what the day would actually draw rather than a different census.
+ *
+ * Null rather than zero when the request fails, because a day with nothing in it and a day nobody could
+ * ask about are the distinction this app keeps everywhere else.
+ */
+export async function countForDay(
+  iso: string, minMagnitude: number, get: typeof fetch = fetch,
+): Promise<number | null> {
+  try {
+    const url = `${USGS_COUNT}?format=geojson&starttime=${iso}T00:00:00`
+      + `&endtime=${iso}T23:59:59&minmagnitude=${minMagnitude}`;
+    const response = await get(url);
+    if (!response.ok) return null;
+    const body = (await response.json()) as { count?: unknown };
+    return typeof body.count === "number" ? body.count : null;
+  } catch {
+    return null;
+  }
 }
 
 /** The 24 hours ending at midnight after the chosen day, in UTC so a shared link means one day. */
