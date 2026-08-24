@@ -5468,6 +5468,20 @@ Written last, and kept accurate rather than kept short.
   three times on unchanged code, and its own fix - a ratio against a reference workload in the same
   process - has not been applied here.
 
+  **Rewritten on 2026-08-24, and the fix this entry prescribed was the wrong one.** Measured first: the
+  heap number is 1.40MB on fourteen consecutive runs, alone and inside the full suite, varying by under
+  0.01. It is not load-sensitive, because retained bytes do not scale with contention the way milliseconds
+  do - so a same-process reference would have divided a stable measurement by a noisier one and called the
+  result robustness. Note also that `test:heap` is the script that runs **all 769 tests**, so "the heap gate
+  failed once" never implied this assertion was what failed.
+
+  What was actually wrong was the precondition. "Warm up past capacity first" pushed thirty minutes, which
+  is 450 readings into 2,000 slots, so the 1.41MB being budgeted was mostly the ring filling for the first
+  time. Fill it properly - now asserted with `store.size() === store.capacity` rather than described in a
+  comment - and twelve further hours cost **0.044 to 0.085MB**. The budget is 0.5MB over 16,151 ingests,
+  about 32 bytes of retention each against the old 325, and it was checked by making it fail: retaining one
+  small object per ingest costs 149 bytes each and 2.302MB, which this catches and 5MB did not.
+
 - ~~**GPU frame time has never been measured with a profiler.**~~ **Measured on 2026-08-21**, and the
   answer is comfortable at 60Hz and not especially comfortable at 120Hz. On an M1 Pro through
   ANGLE/Metal at **2560x1440** (device pixel ratio 2), with 95 events in the window, a full scene draw
