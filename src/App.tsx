@@ -306,6 +306,30 @@ export function App(): JSX.Element {
     ? new Date(snapshot.archive.from).toISOString().slice(0, 10)
     : null;
   /*
+   * The newest day the archive accepts, which is yesterday.
+   *
+   * Today is not offered because a day still in progress is what the live view already is, and the
+   * banner claims "all day UTC" about whatever it loads. Read by the date field's `max` and by the
+   * stepper's ceiling, so the two cannot disagree about where the archive ends.
+   */
+  const newestDay = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  /*
+   * The two days either side of the loaded one, named rather than implied.
+   *
+   * The archive could reach any day and, once inside one, could only leave: the date field lives in the
+   * live branch of this panel, so seeing 12 March meant going back to live, retyping a date and pressing
+   * go. That is the wrong shape for what this app is good at, because a sequence does not stop at
+   * midnight UTC - the aftershocks of Tōhoku keep arriving into the next day, and the day after a
+   * mainshock is the most interesting neighbour any day has.
+   *
+   * Both buttons carry the date they lead to instead of "previous" and "next". A viewer on 2011-03-11
+   * reads "2011-03-12" and knows what they are about to load, which a direction word cannot say.
+   */
+  const neighbours = snapshot.archive === null ? null : {
+    prev: new Date(snapshot.archive.from - 86_400_000).toISOString().slice(0, 10),
+    next: new Date(snapshot.archive.from + 86_400_000).toISOString().slice(0, 10),
+  };
+  /*
    * The archived day's storms, fires, floods and volcanoes.
    *
    * Held apart from the live arrays rather than pushed into them, because they come from a different
@@ -472,6 +496,20 @@ export function App(): JSX.Element {
     arrivedOnADay.current = true;
     setArchiveDay(shared.day);
     void loadArchive(shared.day);
+  }, [loadArchive]);
+  /*
+   * A day either side, loaded the same way any other day is.
+   *
+   * Reads the span from the feed rather than closing over the rendered day, so this stays a callback with
+   * one dependency and cannot go stale between a step and the answer landing. `archive.from` is midnight
+   * UTC, so a day is exactly 86,400,000ms with no zone to get wrong.
+   */
+  const stepDay = useCallback((days: number) => {
+    const archive = feed.snapshot().archive;
+    if (archive === null) return;
+    const iso = new Date(archive.from + days * 86_400_000).toISOString().slice(0, 10);
+    setArchiveDay(iso);
+    void loadArchive(iso);
   }, [loadArchive]);
   const backToLive = useCallback(() => {
     setArchiveDay("");
@@ -1855,6 +1893,33 @@ export function App(): JSX.Element {
                   is arriving now.
                 </p>
                 {/*
+                  The neighbours, under the day they are neighbours of.
+
+                  Disabled while a day is in flight, because two overlapping archive loads would race and
+                  the second answer is not necessarily the second request. The forward button also stops
+                  at yesterday, which is the same ceiling the date field has: past it is the live view.
+                */}
+                {neighbours ? (
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={archiveBusy}
+                      onClick={() => stepDay(-1)}
+                      className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink disabled:cursor-default disabled:text-faint"
+                    >
+                      ‹ {neighbours.prev}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={archiveBusy || neighbours.next > newestDay}
+                      onClick={() => stepDay(1)}
+                      className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink disabled:cursor-default disabled:text-faint"
+                    >
+                      {neighbours.next} ›
+                    </button>
+                  </div>
+                ) : null}
+                {/*
                   Said out loud, because absence is the one thing a viewer cannot notice.
 
                   This used to read "earthquakes only", which was true of the feeds the app had and false
@@ -1886,7 +1951,7 @@ export function App(): JSX.Element {
                   id="archive-day"
                   type="date"
                   value={archiveDay}
-                  max={new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)}
+                  max={newestDay}
                   onChange={(e) => setArchiveDay(e.target.value)}
                   className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[11px] text-dim"
                 />
