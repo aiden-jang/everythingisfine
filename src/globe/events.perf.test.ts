@@ -43,7 +43,24 @@ import type { Filters, Reading } from "../data/types";
  * was +82% in milliseconds, which is memory pressure rather than pure CPU contention, and no
  * same-process reference fully cancels that.
  */
-const BUDGET_REF: Record<number, number> = { 1_000: 0.15, 10_000: 1.05, 50_000: 6.0 };
+const BUDGET_REF: Record<number, number> = { 1_000: 0.15, 10_000: 1.05, 50_000: 7.0 };
+
+/*
+ * The held-hour variant gets its own number, because it was borrowing one that did not describe it.
+ *
+ * It reused `BUDGET_REF[50_000]` while doing strictly more work than the plain sync it shares that entry
+ * with, so it shipped with the least headroom of any case here and was the first to cry wolf. Measured on
+ * a quiet machine over four runs: plain 50k is 4.99 to 5.18 reference units, held is 5.24 to 5.35.
+ *
+ * **Both budgets moved from 6.0 to 7.0, which is a threshold problem rather than a regression.** Failures
+ * came in at 6.02 and 6.49 on a laptop with four dev servers resident, and both passed 8 of 8 in
+ * isolation. A ratio against a same-process reference cancels most load and the note above already admits
+ * it "is not immune": the workload is partly memory-bound and the reference is compute-bound, so
+ * contention does not scale them identically. At 6.0 the noise band overlapped the threshold. At 7.0
+ * there is 30% headroom over the quiet figure, which still catches the kind of regression this exists for
+ * - an algorithmic change, not a 5% drift - without failing on a machine doing ordinary work.
+ */
+const BUDGET_REF_HELD = 7.0;
 
 /**
  * A fixed workload shaped like the thing being measured: trigonometry into a typed array.
@@ -172,8 +189,8 @@ describe("update cost", () => {
 
     const ref = referenceMs();
     const units = fastestMs(() => layer.sync(store, f, now, NO_CLUSTER, undefined, held), 40) / ref;
-    console.info(`[perf] sync 50000 events, hour held: ${units.toFixed(2)} ref (budget ${BUDGET_REF[50_000]})`);
-    expect(units).toBeLessThan(BUDGET_REF[50_000]!);
+    console.info(`[perf] sync 50000 events, hour held: ${units.toFixed(2)} ref (budget ${BUDGET_REF_HELD})`);
+    expect(units).toBeLessThan(BUDGET_REF_HELD);
     layer.dispose();
   });
 
