@@ -1302,6 +1302,15 @@ export function App(): JSX.Element {
                 cyclones={onGlobe.cyclones}
                 volcanoes={onGlobe.volcanoes.length}
                 volcanoesSince={newestEpisode(volcanoes)}
+                /*
+                  The archived day's clock, not this minute's.
+                  `volcanoNote` counts the days since the newest eruption episode ended, and its
+                  `archived` flag only swapped the tense clause: the number itself came from
+                  `Date.now()`, so a picture of 2026-05-15 read "ended 99 days ago, so none of this was
+                  erupting then". `EventList` and `DetailPanel` both carry a comment about fixing this
+                  same fault; the key was the third place and nothing brought the three together.
+                */
+                now={now}
                 fires={fireSummary}
                 fireCap={FEED_CAP}
                 floods={onGlobe.floods.length}

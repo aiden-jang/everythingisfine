@@ -377,11 +377,17 @@ export function volcanoNote(
 ): string | null {
   if (count === 0) return null;
   const days = newest === null ? null : Math.max(0, Math.round((now - newest) / 86_400_000));
+  /*
+   * "Today" and "ago" are both spoken from now, which is not where an archived day is read from.
+   * The clock is already the archived one, so the words have to match it: an episode that ended
+   * inside the loaded day ended *that* day, and one before it ended so many days *earlier*.
+   */
+  const plural = days === 1 ? "" : "s";
   const when = days === null
     ? "Undated"
     : days === 0
-      ? "The newest episode ended today"
-      : `The newest ended ${days} day${days === 1 ? "" : "s"} ago`;
+      ? `The newest episode ended ${archived ? "that day" : "today"}`
+      : `The newest ended ${days} day${plural} ${archived ? "earlier" : "ago"}`;
   return `the triangles are volcanoes with a logged eruption episode, ${count} of them. `
     // "this minute" is a claim about now, which is the wrong clock over a picture of a past day.
     + `${when}, so none of this ${archived ? "was erupting then" : "is erupting this minute"}. `

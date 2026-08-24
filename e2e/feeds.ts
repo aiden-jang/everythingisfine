@@ -410,6 +410,13 @@ async function installHazards(page: Page): Promise<void> {
             categories: [{ id: "wildfires" }], geometry: [point(-116, 43, 1200, "acres")] },
           { id: "EONET_F3", title: "Flood in Fixtureland 9", closed: at,
             categories: [{ id: "floods" }], geometry: [point(100, 14)] },
+          /*
+           * Volcanoes were the category this fixture left out, and the only one whose note does date
+           * arithmetic - "the newest ended N days ago". So the archived volcano line was the one
+           * reading that no browser test could see, and it was measuring N from today.
+           */
+          { id: "EONET_F4", title: "Fixture Volcano", closed: at,
+            categories: [{ id: "volcanoes" }], geometry: [point(-155, 19)] },
         ],
       },
     });
