@@ -278,18 +278,6 @@ export function Globe({
             node.append(gap);
           }
         }
-        /*
-         * The ring grows for a glyph.
-         *
-         * 20px is a ring around a marker, whose dot runs 3 to 15px. A spiral, a triangle or a flame is
-         * the size of that ring already, so the same circle landed *on* the glyph instead of around it
-         * and read as part of the drawing rather than as a highlight.
-         */
-        if (node === hoverRing.current) {
-          const glyph = target?.kind === "mark";
-          node.style.width = glyph ? "34px" : "";
-          node.style.height = glyph ? "34px" : "";
-        }
         node.style.transform =
           `translate(${at.x - box.left}px, ${at.y - box.top + offsetY}px) ` +
           `translate(-50%, ${offsetY === 0 ? "-50%" : "-100%"})`;
@@ -339,7 +327,14 @@ export function Globe({
        * geographically and accepts a near miss, which is what makes a 3px dot clickable at all and
        * exactly what makes the label ambiguous without this.
        */
-      put(hoverRing.current, hovered, 0);
+      /*
+       * The ring is the earthquakes' highlight only.
+       *
+       * It was grown to 34px for glyphs, which was the wrong answer to the right observation: a circle
+       * round a spiral reads as part of the drawing. The glyph now brightens itself in the mark layer,
+       * so the ring goes back to being what it always was - the thing that says *which dot*.
+       */
+      put(hoverRing.current, hovered?.kind === "quake" ? hovered : null, 0);
       put(tooltip.current, hovered, -18);
 
       /*
@@ -722,6 +717,15 @@ export function Globe({
       if (next?.id !== hovered?.id || next?.kind !== hovered?.kind) {
         hovered = next;
         el.style.cursor = next ? "pointer" : "";
+        /*
+         * A mark is highlighted by its own shape; an earthquake keeps the ring.
+         *
+         * A dot has no shape to brighten - the ring *is* its highlight - while a spiral, a triangle, a
+         * flame and the flood's waves all do, and a circle drawn round them said nothing the shape was
+         * not already saying better.
+         */
+        globe.setMarkHover(next?.kind === "mark" ? next.id : null);
+        redraw();
       }
       placeOverlays();
     };
@@ -769,6 +773,8 @@ export function Globe({
     };
     const onLeave = (): void => {
       hovered = null;
+      globe.setMarkHover(null);
+      redraw();
       placeOverlays();
     };
 
