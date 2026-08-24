@@ -163,6 +163,8 @@ const EMSC_SEED_LIMIT = 600;
 export async function installFeeds(page: Page, options: FeedOptions = {}): Promise<void> {
   const { usgs, empty, silent, dead, seed, count, emscCappedHours } = options;
 
+  await installHazards(page);
+
   await page.addInitScript((isDead: boolean) => {
     class StubSocket {
       private readonly listeners = new Map<string, ((e: unknown) => void)[]>();
@@ -313,6 +315,107 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
  * that threw on load looks like, and reads nothing like it. Diagnosing one instance cost a whole suite
  * run. A page that died now fails in a second, saying so.
  */
+/*
+ * The hazard feeds, stubbed because they were never stubbed and nobody had measured the cost.
+ *
+ * A fallback spy that only sees requests every `installFeeds` route declined counted **14 to gdacs.org
+ * and 2 to services.swpc.noaa.gov on a single test**, plus EONET on any archived day. Across the
+ * sixty-two browser tests that is roughly a thousand calls to GDACS per suite run, for data **no test
+ * asserts on** - a grep for the layer sentences across both specs returns nothing. Every browser test was
+ * therefore depending on two third-party services being up and fast, which is a plausible share of the
+ * flakiness and the runtime that has been put down to machine load.
+ *
+ * Small fixed sets rather than empty responses: the layers still draw, so screenshots taken for visual
+ * review keep showing a spiral, a triangle, a flame and waves, and they draw the *same* ones every run.
+ */
+const hazardEvent = (type: string, id: number, lon: number, lat: number, extra: object = {}) => ({
+  type: "Feature",
+  geometry: { type: "Point", coordinates: [lon, lat] },
+  properties: {
+    eventtype: type, eventid: id, eventname: "", country: "Fixtureland",
+    fromdate: new Date(Date.now() - 6 * 86_400_000).toISOString(),
+    todate: new Date(Date.now() + 2 * 86_400_000).toISOString(),
+    iscurrent: "true", alertlevel: "Green", severitydata: { severity: 0 },
+    ...extra,
+  },
+});
+
+async function installHazards(page: Page): Promise<void> {
+  await page.route(/gdacsapi\/api\/events\/geteventlist/, (route) => {
+    const type = new URL(route.request().url()).searchParams.get("eventlist") ?? "";
+    const rows: Record<string, unknown[]> = {
+      TC: [hazardEvent("TC", 9001, 132, 14, {
+        eventname: "FIXTURE", severitydata: { severity: 185 },
+      })],
+      VO: [hazardEvent("VO", 9002, 15.0, 37.7, { eventname: "Fixture Volcano" })],
+      WF: [hazardEvent("WF", 9003, 121.5, -8.2, { severitydata: { severity: 4200 } })],
+      FL: [hazardEvent("FL", 9004, 100.5, 13.7)],
+    };
+    route.fulfill({ json: { type: "FeatureCollection", features: rows[type] ?? [] } });
+  });
+
+  // The storm track, which is a separate call per storm. One short line, so a spiral gets a tail.
+  await page.route(/gdacsapi\/api\/polygons\/getgeometry/, (route) => {
+    route.fulfill({
+      json: {
+        type: "FeatureCollection",
+        features: [{
+          type: "Feature",
+          properties: { Class: "Line" },
+          geometry: { type: "LineString", coordinates: [[128, 11], [130, 12], [132, 14]] },
+        }],
+      },
+    });
+  });
+
+  /*
+   * The whole grid, because `parseOvation` refuses anything else.
+   *
+   * It checks `rows.length === AURORA_LON * AURORA_LAT` and returns null on a mismatch, so a sparse
+   * patch parses to nothing and the aurora silently disappears - which is what the first version of this
+   * fixture did. The key is `Forecast Time`, not `Observation Time`; the wrong one falls back to the
+   * fetch clock rather than failing, which is exactly the kind of quiet pass worth not writing.
+   */
+  await page.route(/ovation_aurora_latest\.json/, (route) => {
+    const coordinates: [number, number, number][] = [];
+    for (let lat = -90; lat <= 90; lat += 1) {
+      for (let lon = 0; lon < 360; lon += 1) {
+        // A band over the auroral oval in both hemispheres, and nothing anywhere else.
+        const band = Math.abs(Math.abs(lat) - 68) <= 3;
+        coordinates.push([lon, lat, band ? 30 : 0]);
+      }
+    }
+    route.fulfill({ json: { "Forecast Time": new Date().toISOString(), coordinates } });
+  });
+
+  /*
+   * EONET, for archived days. Dated inside the requested range for the reason the earthquake archive is:
+   * a past day whose events are stamped today cannot tell a correct clock from a broken one.
+   */
+  await page.route(/eonet\.gsfc\.nasa\.gov/, (route) => {
+    const url = new URL(route.request().url());
+    const start = Date.parse(`${url.searchParams.get("start") ?? ""}T00:00:00Z`);
+    const at = new Date(Number.isFinite(start) ? start + 43_200_000 : Date.now()).toISOString();
+    const point = (lon: number, lat: number, value?: number, unit?: string): unknown => ({
+      date: at, type: "Point", coordinates: [lon, lat],
+      ...(value === undefined ? {} : { magnitudeValue: value, magnitudeUnit: unit }),
+    });
+    route.fulfill({
+      json: {
+        events: [
+          { id: "EONET_F1", title: "Tropical Storm Fixture", closed: at,
+            categories: [{ id: "severeStorms" }],
+            geometry: [point(130, 12, 40, "kts"), point(132, 14, 55, "kts")] },
+          { id: "EONET_F2", title: "FIXTURE Wildfire, Owyhee, Idaho", closed: at,
+            categories: [{ id: "wildfires" }], geometry: [point(-116, 43, 1200, "acres")] },
+          { id: "EONET_F3", title: "Flood in Fixtureland 9", closed: at,
+            categories: [{ id: "floods" }], geometry: [point(100, 14)] },
+        ],
+      },
+    });
+  });
+}
+
 export async function waitForData(page: Page): Promise<number> {
   const rail = page.locator(".zone-rail");
   await expect(rail, "the rail never rendered: the page probably threw on load")
