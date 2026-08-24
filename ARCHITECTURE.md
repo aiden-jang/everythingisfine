@@ -5277,6 +5277,59 @@ row, so the first click hit the wrong control; and the assertion read any date-s
 body, which matched the list's own rows. Together they reported a successful load that had not happened.
 Scoped to the disclosure and asserted on the archive banner instead.
 
+## Auditing the feature I had just shipped
+
+Two findings, one real and one my own probe again.
+
+**The list vanished the moment a day loaded.** It lived inside the archive block's not-archived branch, so
+going from Valdivia to Tōhoku meant pressing "back to live", waiting for the live feeds to seed, reopening
+the disclosure and picking again - clumsy for the one thing the list exists to make easy. Lifted out of the
+branch: it renders in both states, `loadArchive` replaces a loaded day as readily as it loads the first, and
+the disclosure stays open across the load so a hop is one click. Verified 1960 to 2011 directly.
+
+Once it persisted, it needed to say **where you are**. The row for the day on screen takes `bg-raised` the
+way a hazard row marks the selected mark, and `aria-current` so the tint is not carrying it alone. Asserted
+in all three states: nothing marked while live, exactly one marked on a day, nothing again after "back to
+live".
+
+**The other finding was mine.** I measured the twelve new rows at 375px and got twelve under 44px, which
+reads as a touch-target breach. It is not: the rule is scoped to `pointer: coarse` deliberately - a mouse is
+precise and 44px rows on a desktop rail are chunky for no benefit - and Playwright's default pointer is fine.
+In a real coarse-pointer context every row is **exactly 44px**, because that rule names `button` rather than
+listing the regions that happened to have buttons when it was written. Its own comment says why: "naming
+regions instead of naming the thing is how a rule stops covering what it was written for." Twelve rows added
+months later inherited it without anyone touching the CSS, which is that decision paying out.
+
+Worth noting the shipped touch test could not have caught a real breach here either, and for a defensible
+reason: it skips zero-height boxes, and the disclosure is closed by default. A test that opened every
+disclosure first would be a different test; this one is measuring the default view, which is the right thing
+for it to measure.
+
+## The credit, and the one rule it had to obey
+
+"made by aiden jang" at the foot of the rail, linking to aidenjang.com, in the wording and lowercase the
+other apps here use - `mrrp` renders the same string and `auth` keeps the canonical URL.
+
+**An unstyled `a` would have failed this app's own test.** The user-agent link colour is a saturated blue,
+and chrome here is held under a chroma ceiling of 55 with `design.spec.ts` enforcing it on every painted
+element outside the canvas. So the link borrows `faint` and an underline rather than inheriting anything:
+measured at **chroma 53**, underlined, opening in a new tab. The same trap `::selection` and the scrollbars
+were caught by, which is why that test exists.
+
+Last in the rail, below the event list, so it is a footer rather than a claim on the reading order. It sits
+below the fold on a tall rail and the reachability rule covers that case by design: a control inside a
+scroller whose own box is on screen is reachable.
+
+**And the finger test caught it, which is the part worth writing down.** The coarse-pointer rule sets
+`min-height: 44px` on `a[href]`, and **`min-height` has no effect on a non-replaced inline element** - so it
+slid straight off an inline `a` and the link measured **14px** on a phone. The CSS looked like it covered the
+case and could not. `inline-flex` makes the box one the property can reach: 16px under a mouse, exactly 44px
+under a finger, verified in both contexts.
+
+Two rules earned their keep on one four-word link. The chroma ceiling stopped it shipping in user-agent blue,
+and the touch minimum stopped it shipping as a 14px target - and the second was a fault no reading of the
+stylesheet would have found, because the rule naming `a[href]` was already there.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

@@ -299,6 +299,10 @@ export function App(): JSX.Element {
    * archive, which is what its banner says.
    */
   const archived = snapshot.archive !== null;
+  /** The archived day as the notable list writes it, so a row can say it is the one on screen. */
+  const loadedDay = snapshot.archive
+    ? new Date(snapshot.archive.from).toISOString().slice(0, 10)
+    : null;
   /*
    * The archived day's storms, fires, floods and volcanoes.
    *
@@ -1858,8 +1862,17 @@ export function App(): JSX.Element {
                   {archiveBusy ? "…" : "go"}
                 </button>
                 </div>
+              </div>
+            )}
                 {/*
                   Days worth seeing, because a blank date field asks for a date nobody knows.
+
+                  Outside the archived/live branch on purpose. Inside it, the list vanished the moment a
+                  day loaded, so going from Valdivia to Tōhoku meant "back to live", waiting for the live
+                  feeds to seed, reopening this and picking again - clumsy for the one thing the list
+                  exists to make easy. `loadArchive` replaces a loaded day as readily as it loads the
+                  first, so hopping is a click.
+
                   Behind a disclosure and closed by default: it is a way in, not a menu, and the field
                   above stays the answer for somebody who came with a date already in mind.
                 */}
@@ -1879,7 +1892,16 @@ export function App(): JSX.Element {
                         */
                         onClick={() => { setArchiveDay(d.day); void loadArchive(d.day); }}
                         aria-label={`${d.what}, magnitude ${d.magnitude}, ${d.day}`}
-                        className="-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left transition-colors hover:bg-raised disabled:cursor-default"
+                        /*
+                          Marks the day on screen, the way the hazard rows mark the selected mark.
+                          Worth having only since the list stopped vanishing when a day loads: a list you
+                          can hop around in should say where you are, and `aria-current` says it to a
+                          screen reader rather than leaving the tint to carry it alone.
+                        */
+                        aria-current={loadedDay === d.day ? "true" : undefined}
+                        className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left transition-colors hover:bg-raised disabled:cursor-default ${
+                          loadedDay === d.day ? "bg-raised" : ""
+                        }`}
                       >
                         <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
                           {d.day}
@@ -1897,8 +1919,6 @@ export function App(): JSX.Element {
                     <p className="mt-1.5 text-[10.5px] leading-relaxed text-faint">{NOTABLE_NOTE}</p>
                   </div>
                 </details>
-              </div>
-            )}
             <Timeline
               bars={bars}
               archived={archived}
@@ -2203,6 +2223,30 @@ export function App(): JSX.Element {
             archived={archived}
           />
 
+          {/*
+            The credit, last in the rail and styled rather than left to the browser.
+            An unstyled `a` takes the user-agent link colour, which is a saturated blue in the one app
+            whose chrome is held under a chroma ceiling and tested for it - so it borrows `faint` and an
+            underline, the way the other apps here do it.
+          */}
+          <p className="mt-4 pt-1 text-[10.5px] text-faint">
+            made by{" "}
+            <a
+              href="https://www.aidenjang.com"
+              target="_blank"
+              rel="noreferrer"
+              /*
+                `inline-flex`, not inline, so the coarse-pointer rule can reach it.
+                `min-height` has no effect on a non-replaced inline element, so the 44px touch minimum
+                slid straight off an inline `a` and the finger test caught it at 14px. The test was right
+                twice over: a 14px link in a footer is exactly the "control or a dare" distinction that
+                rule was written about.
+              */
+              className="inline-flex items-center text-faint underline decoration-from-font underline-offset-2 transition-colors hover:text-dim"
+            >
+              aiden jang
+            </a>
+          </p>
         </aside>
 
         <Resizer
