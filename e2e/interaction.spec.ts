@@ -988,8 +988,15 @@ test("a line dragged across the map opens a section through it", async ({ page }
   await expect(section).toBeVisible();
   // Into the link, which is written on a one-second interval rather than on every state change.
   await expect.poll(() => page.url(), { timeout: 4000 }).toContain("x=");
-  const band = page.locator(".zone-canvas").getByText(/km long/);
-  await expect(band).toContainText(/km either side/);
+  /*
+    Found by the corridor width, not by the length.
+
+    This looked for "km long", which the header stopped printing when the length moved to being read off
+    the axis below the plot instead of twice in one panel. The width and the vertical scale are the two
+    facts nothing else in the panel states, so they are what identifies it.
+  */
+  const band = page.locator(".zone-canvas").getByText(/km either side/);
+  await expect(band).toContainText(/1:1|vertical/);
   // The camera did not move, which is the whole reason this listens in the capture phase. Compared on
   // the camera's own field, since the link has legitimately gained the section by now.
   const at = (url: string): string => new URLSearchParams(url.split("#")[1]).get("at")!;
