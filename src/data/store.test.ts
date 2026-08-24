@@ -344,7 +344,37 @@ describe("the long session", () => {
    * measured anything. That is the polish doc's "unenforced benchmark is quietly false within a
    * month" in miniature. Skipping puts it in the summary, where a run that did not measure says so.
    */
-  it.skipIf(!(globalThis as { gc?: () => void }).gc)("holds heap flat", () => {
+  /*
+   * The warm-up was too short, so this measured the ring filling rather than the ring holding.
+   *
+   * "Warm up past capacity first" pushed thirty minutes, which at one reading every four seconds is
+   * **450 readings into 2,000 slots**. The ring was a quarter full when `before` was taken, so the 1.41MB
+   * it went on to report was mostly the first fill: a one-time cost, measured against a 5MB budget, and
+   * therefore a gate that would have passed a store retaining 325 bytes of garbage per ingest.
+   *
+   * Measured, which is how the shape came out. With the old warm-up the first four hours cost 1.406MB and
+   * the next four cost **0.026MB**, two per cent of it. Fill the ring properly first and twelve further
+   * hours cost **0.044 to 0.085MB** across eight runs, with individual phases sometimes negative as gc
+   * reclaims more than the phase added. That is a fixed-size buffer behaving like one.
+   *
+   * **Absolute, not a ratio, and that is the opposite of what the CPU gate needed.** `events.perf.test.ts`
+   * budgets reference units because milliseconds legitimately scale with machine load, so an absolute
+   * threshold there is measuring the laptop. Retained bytes do not scale with contention: this number was
+   * 1.40MB on fourteen consecutive runs, alone and inside the full suite, varying by less than 0.01. A
+   * same-process reference would divide a stable measurement by a noisier one and call the result
+   * robustness. What this gate needed was not a different denominator but a correct precondition, and the
+   * precondition is now asserted rather than described.
+   *
+   * Twelve hours rather than four, because gc granularity shows up as a step of about 0.04MB and three
+   * phases average over it. That is **16,151 ingests**, so the 0.5MB budget is about 32 bytes of retention
+   * per ingest against the old gate's 325, and it sits six times above the worst steady-state reading.
+   *
+   * Checked by making it fail, because a budget nobody has seen fail is a budget nobody has tested.
+   * Retaining one three-field object per ingest - the shape of a real leak, holding what should have been
+   * evicted - costs **149 bytes each and 2.302MB in total**: over this budget by 4.6x, and comfortably
+   * under the one it replaces.
+   */
+  it.skipIf(!(globalThis as { gc?: () => void }).gc)("holds heap flat once the ring is full", () => {
     const gc = (globalThis as { gc?: () => void }).gc!;
     const store = createStore(2_000);
     const start = 1_700_000_000_000;
@@ -354,18 +384,24 @@ describe("the long session", () => {
       })) store.ingest(r);
     };
 
-    push(30 * 60 * 1000, 3); // warm up past capacity first
+    push(4 * 60 * 60 * 1000, 3);
+    // The precondition, asserted. A warm-up that stops filling the ring makes the rest of this a
+    // measurement of something else, and that is exactly how it went wrong before.
+    expect(store.size()).toBe(store.capacity);
+
     gc();
     const before = process.memoryUsage().heapUsed;
     push(4 * 60 * 60 * 1000, 11);
+    push(4 * 60 * 60 * 1000, 23);
+    push(4 * 60 * 60 * 1000, 31);
     gc();
     const after = process.memoryUsage().heapUsed;
 
     const growthMb = (after - before) / 1024 / 1024;
     // Printed rather than merely asserted: a threshold that passes tells you nothing about how
     // much headroom it passed by, and that margin is the number worth watching over time.
-    console.info(`[heap] four hours grew ${growthMb.toFixed(2)}MB`);
-    expect(growthMb).toBeLessThan(5);
+    console.info(`[heap] twelve hours past capacity grew ${growthMb.toFixed(3)}MB`);
+    expect(growthMb).toBeLessThan(0.5);
   });
 });
 
