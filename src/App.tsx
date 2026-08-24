@@ -477,6 +477,8 @@ export function App(): JSX.Element {
    * reads `snapshot.archive` and stands down. One button returns.
    */
   const [archiveDay, setArchiveDay] = useState("");
+  /** Phone only: the three secondary header toggles, folded so the row fits one line. */
+  const [moreOpen, setMoreOpen] = useState(false);
   /*
    * Why a complete date was refused, or null while one is still being typed.
    *
@@ -1615,7 +1617,7 @@ export function App(): JSX.Element {
             type="button"
             onClick={() => setSound((on) => !on)}
             aria-pressed={sound}
-            className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
+            className={`${moreOpen ? "" : "max-md:hidden"} shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
               sound ? "bg-raised text-ink" : "text-faint"
             }`}
           >
@@ -1632,7 +1634,7 @@ export function App(): JSX.Element {
               type="button"
               onClick={() => (tourAt === null ? startTour() : stopTour())}
               aria-pressed={tourAt !== null}
-              className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
+              className={`${moreOpen ? "" : "max-md:hidden"} shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
                 tourAt !== null ? "bg-raised text-ink" : "text-faint"
               }`}
             >
@@ -1643,9 +1645,29 @@ export function App(): JSX.Element {
             type="button"
             onClick={saveStill}
             disabled={saving}
-            className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink disabled:cursor-default"
+            className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink disabled:cursor-default ${moreOpen ? "" : "max-md:hidden"}`}
           >
             {saving ? "Saving…" : "Still"}
+          </button>
+          {/*
+            The three above fold away on a phone, behind this.
+
+            Measured: five controls want 419px of a 390px header, so the row wrapped and left "Still" plus
+            the status dot alone on a second line with the rest empty - 120px of an 844pt viewport for one
+            button and a dot. The note on the wrap defends it against the alternative it was weighed
+            against, which was clipping a control out of reach; this is the third option neither considered.
+            Map and the ramp stay out of the fold: one is the projection, the other is an accessibility
+            control, and neither should cost a tap.
+
+            Nothing is clipped and nothing is unreachable. The row fits, and the rest is one tap away.
+          */}
+          <button
+            type="button"
+            onClick={() => setMoreOpen((o) => !o)}
+            aria-expanded={moreOpen}
+            className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink md:hidden"
+          >
+            {moreOpen ? "less" : "more"}
           </button>
           <span className="flex items-center gap-2 text-[11px] whitespace-nowrap text-dim">
             <span
