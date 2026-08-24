@@ -1904,7 +1904,7 @@ export function App(): JSX.Element {
             is that it has nothing in it. Behind a disclosure for that reason, and next to the strip so
             the two readings of one word sit together.
           */}
-          <details data-rail="diurnal" className="mt-3">
+          <details data-rail="diurnal">
             <summary className="disclose text-[11px] text-faint hover:text-dim">
               Time of day
             </summary>

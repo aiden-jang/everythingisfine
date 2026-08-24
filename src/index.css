@@ -290,11 +290,34 @@
   /* The rail stacks in the two layouts where it owns a column, and lies down in the one where it
      owns a row. Stacked in a 768px-wide band it is 267px tall, which is a column wearing a strip's
      name and costs the globe a third of its height. */
+  /*
+   * Three groups, spaced like three groups.
+   *
+   * One `gap` for seven children was the half of this I expected. Measured, the gaps were 25.6, 29.6,
+   * 17.6, 17.6, 17.6 and 33.6px, because three of the children carry their own margin - so the spacing
+   * was not uniform, it was **actively wrong**: the largest interior gap sat between the notes and
+   * "Time of day", pushing two parts of the same idea further apart than the whole time section is from
+   * the whole place section.
+   *
+   * The rail answers three questions in order - what happened, when, and where - so the gap is now the
+   * within-group value and the three group openers take the difference. 12px inside, 28px between.
+   *
+   * Only where the rail is a column. Between 768 and 1279 it lies down into a grid whose cells are
+   * placed by area with their own `gap`, and a margin on a grid item there moves the cell rather than
+   * the rhythm.
+   */
   .rail {
     display: flex;
     min-height: 0;
     flex-direction: column;
-    gap: 1.1rem;
+    gap: 0.625rem;
+  }
+
+  @media (max-width: 767px), (min-width: 1280px) {
+    .rail > [data-rail="diurnal"],
+    .rail > [data-rail="regions"] {
+      margin-top: 1.125rem;
+    }
   }
 
   /*
@@ -917,6 +940,7 @@
     grid-template-columns: auto 1fr;
     gap: 0.5rem;
     align-items: start;
-    margin-top: 0.5rem;
+    /* Part of the title block's group rather than a section of its own. */
+    margin-top: 0.125rem;
   }
 }
