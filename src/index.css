@@ -25,8 +25,8 @@
   /* Read by the cross-section's swatches, and kept equal to `NEUTRAL` in `scene.ts` on purpose: those
      are the colours the globe draws on the colourblind ramp, so the swatch matches the line exactly
      there and as closely as the chroma ceiling allows on the default one. */
-  --color-coast: #31405d;
-  --color-plate: #3d4e6e;
+  --color-coast: #555663;
+  --color-plate: #737491;
   --color-deck: #0a1322;
   --color-raised: #101d33;
   --color-hairline: rgb(148 163 184 / 0.14);

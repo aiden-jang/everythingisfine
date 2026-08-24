@@ -323,8 +323,9 @@ export function auroraNote(peak: number, forecastAt: number, now: number): strin
   const strength = peak >= 40 ? "strong" : peak >= 15 ? "active" : "quiet";
   const age = Math.max(0, Math.round((now - forecastAt) / 60_000));
   const when = age < 1 ? "for this minute" : `forecast ${age} minute${age === 1 ? "" : "s"} ago`;
-  return `the green is the aurora, only where it is dark enough to see it. `
-    + `${strength} tonight, peaking at ${Math.round(peak)}% chance, ${when}.`;
+  return `the green is the aurora. `
+    + `Only where it is dark enough to see it, ${strength} tonight, peaking at `
+    + `${Math.round(peak)}% chance, ${when}.`;
 }
 
 /**
@@ -357,8 +358,9 @@ export function cycloneNote(
     ? ""
     : ` Strongest is ${strongest.name} at ${Math.round(strongest.peakKmh)} km/h`
       + `${categoryOf(strongest.peakKmh) ? `, ${categoryOf(strongest.peakKmh)}` : ""} at its peak.`;
-  return `the spirals are storms, trailing where they have been. ${count}, and none of them `
-    + `on the equator: the spin that starts one is zero there.${named}`;
+  return `the spirals are storms, ${count}. `
+    + `The tail behind each is where it has been, and none of them are on the equator: the spin that `
+    + `starts one is zero there.${named}`;
 }
 
 /**
@@ -388,7 +390,8 @@ export function volcanoNote(
     : days === 0
       ? `The newest episode ended ${archived ? "that day" : "today"}`
       : `The newest ended ${days} day${plural} ${archived ? "earlier" : "ago"}`;
-  return `the triangles are volcanoes with a logged eruption episode, ${count} of them. `
+  return `the triangles are volcanoes, ${count} of them. `
+    + `Each has a logged eruption episode. `
     // "this minute" is a claim about now, which is the wrong clock over a picture of a past day.
     + `${when}, so none of this ${archived ? "was erupting then" : "is erupting this minute"}. `
     + `They sit along the same lines the earthquakes do, which is the whole of why either happens.`;
@@ -441,8 +444,8 @@ export function wildfireNote(
       + `alone has more than that, so the `
       + `count is a floor: every mark is real, their number is not the world's.`
     : "";
-  return `the flames are forest fires ${archived ? "that burned that day" : "burning now"}, `
-    + `${fire.count} of them. `
+  return `the flames are forest fires, ${fire.count} of them. `
+    + `${archived ? "They burned that day" : "Burning now"}, `
     + `${fire.km2.toLocaleString("en")} square kilometres alight${burning}.${floor}`;
 }
 
@@ -459,9 +462,9 @@ export function wildfireNote(
 export function floodNote(count: number, countries: number, archived = false): string | null {
   if (count === 0) return null;
   const where = countries > 1 ? ` across ${countries} countries` : "";
-  return `the waves are floods ${archived ? "that day" : "running now"}, ${count} of them${where}. `
-    + `Nothing here rates them: every flood in this feed is filed as magnitude zero, so the mark says `
-    + `where and not how bad.`;
+  return `the waves are floods, ${count} of them${where}. `
+    + `${archived ? "They ran that day" : "Running now"}, and nothing here rates them: every flood in `
+    + `this feed is filed as magnitude zero, so the mark says where and not how bad.`;
 }
 
 /**
@@ -630,6 +633,15 @@ export function soundNote(above: number): string {
  * Split on a full stop followed by whitespace, so the decimals and percentages inside these sentences
  * are not sentence ends. A note with nothing after the first stop returns a null rest, and the row
  * renders flat: a disclosure with nothing behind it is a control that lies about having more to say.
+ */
+/*
+ * The first sentence is the whole row when the key is shut, which is a budget rather than a formality.
+ *
+ * `KeyRow` shows `head` collapsed and hides `rest` behind the disclosure, so a first sentence carrying its
+ * own qualifier makes a nine-row key nine two-line paragraphs: a wall down the side of the globe, which is
+ * what the key is supposed to be read *against*. Five of the notes did exactly that. Each one now names the
+ * mark and its count and stops, and everything that was after the comma moved past the full stop, where the
+ * disclosure was already waiting to put it.
  */
 export function splitNote(note: string): { head: string; rest: string | null } {
   const at = note.search(/\.\s/);
