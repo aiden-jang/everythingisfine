@@ -1391,7 +1391,17 @@ export function App(): JSX.Element {
                 a control the viewer had to scroll prose to reach. All the controls are above all the
                 commentary now, which is the split the fold already claimed to make.
               */}
-              <div className="mt-3 flex gap-1.5">
+              {/*
+                Two toggles with nothing naming them.
+
+                The window buttons in the strip carry `role="group"` and a name; these carried neither, so
+                a screen reader met two unexplained pressed-states and a sighted reader met two of the
+                largest elements in the panel with no label at all. The slider above says what it filters
+                in its own label, and now so does this.
+              */}
+              <div className="mt-3">
+              <span className="label block">Feeds</span>
+              <div role="group" aria-label="Feeds" className="mt-1 flex gap-1.5">
                 {(["usgs", "emsc"] as const).map((id) => (
                   <button
                     key={id}
@@ -1407,6 +1417,7 @@ export function App(): JSX.Element {
                     {SOURCE_NAMES[id]}
                   </button>
                 ))}
+              </div>
               </div>
               </MagnitudeFilter>
 

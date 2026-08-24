@@ -177,6 +177,17 @@ export function MagnitudeFilter(
       {children}
 
       {/*
+        The split, drawn.
+
+        The note below already names it - "control against commentary" - and nothing on screen said so:
+        the source buttons sat 10px above the commentary's summary with the same gap that separates the
+        slider from its ticks, so the panel read as one undifferentiated stack of six things. Same fault
+        and same fix as the day controls in the rail, where a row of buttons directly beneath a closed
+        disclosure made the two look like one control.
+      */}
+      <hr className="mt-3.5 border-t border-hairline" />
+
+      {/*
         Everything below the scale is explanation, and it folds away.
 
         The split is control against commentary: the slider, the ticks and the source buttons are how you
