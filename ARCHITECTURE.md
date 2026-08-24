@@ -5131,6 +5131,38 @@ Archived days withhold these feeds by design, so it stays out of their way. Veri
 four dead says "No feed answered for any layer, so none are drawn", the aurora alone says "No answer for the
 aurora: absent here does not mean absent", and a healthy run says nothing.
 
+## A rotated phone, and six probes that were wrong before the app was
+
+Three shapes nothing had ever measured: a phone turned sideways (812x375), a short laptop (1280x600) and a
+very short window (1024x420). Every sample of this app had been upright or wide, and 812 crosses into the
+strip band, so a rotated phone gets the four-column layout in **375px of height**.
+
+All three hold. Nothing overflows sideways, the page does not scroll, no control is unreachable, and the
+canvas keeps 53% at both short shapes and 100% at the laptop. **Phone landscape is a shipped breakpoint
+now**, so the four per-breakpoint guards cover it: the suite is 27 tests rather than 23.
+
+**The interesting part is that my probe accused the app twice and was wrong both times.**
+
+First it reported six unreachable controls at 1280x600 because it took `el.closest("[data-rail]")` as the
+scrolling ancestor. That returns the *regions block*, which sits below the fold itself, so a row inside it
+looked stranded while the rail that scrolls to it was on screen the whole time.
+
+Fixing that to walk for a genuinely scrollable ancestor still reported them, because it stopped at the
+**nearest** one - `.rail-regions`, whose own box is at y 660-792, entirely below a 600px viewport. The outer
+`.zone-rail` scrolls that block into view, which `scrollIntoView` confirmed by moving the row from 675 to
+307. Reachable all along.
+
+The shipped design-suite check gets this right, and the difference is one keyword: it `continue`s past a
+scrollable-but-offscreen ancestor and keeps walking, so **any** on-screen scrollable ancestor counts. Its
+comment explains why the exemption must not be too generous; what it does not say, and now this does, is
+that it must not be too *narrow* either. Both failure modes live in that loop.
+
+**Six instrument faults this session**, which is the number worth remembering: the cursor read off the wrong
+element, a magnitude regex that disallowed a space, `toContainText` seeing through `display: none`,
+`getComputedStyle().font` returning empty, `saveAs("/dev/null")`, and now two versions of one reachability
+walk. Every one of them pointed at the app. The rule that has earned its place: **when a probe accuses the
+code, check the probe first.**
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
