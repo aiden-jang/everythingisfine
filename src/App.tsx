@@ -1816,25 +1816,29 @@ export function App(): JSX.Element {
             </button>
           ) : null}
           {/*
-            Both cells or neither. The band is the percentage's unit, so on its own it frames a
-            measurement nobody took: before any data lands the block was showing "BAND 100 km" beside
-            "Asking USGS and EMSC for the last day".
+            One cell, because it was always one fact.
+
+            The note this replaces had already worked out the relationship - "the band is the
+            percentage's unit, so on its own it frames a measurement nobody took" - and then rendered the
+            unit as a labelled cell of its own, beside the reading, at the same weight. Three cells in
+            this block held four facts of apparently equal standing, and one of them was a constant
+            nobody measured. `QUIET_BAND_KM` is not a control; it is the width the percentage is a
+            percentage *of*, so it now reads as part of the sentence the percentage is making.
+
+            The figure keeps the mono and the ink because it is the reading. The qualifier is body text
+            in `dim`, which is the same division the largest-event row makes between its magnitude and
+            its place.
           */}
           {!replay && quiet.parts !== null ? (
-            <>
-              <div className="tb-cell">
-                <span className="label">On edge</span>
+            <div className="tb-cell tb-wide">
+              <span className="label">On edge</span>
+              <span className="flex items-baseline gap-1.5">
                 <span className="font-mono text-[13px] tabular-nums text-ink">
                   {quiet.parts.percent}%
                 </span>
-              </div>
-              <div className="tb-cell">
-                <span className="label">Band</span>
-                <span className="font-mono text-[13px] tabular-nums text-dim">
-                  {QUIET_BAND_KM} km
-                </span>
-              </div>
-            </>
+                <span className="text-[11px] text-dim">within {QUIET_BAND_KM} km</span>
+              </span>
+            </div>
           ) : null}
           </div>
 
