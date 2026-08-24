@@ -281,6 +281,24 @@
       min-height: 0;
       overflow-y: auto;
       overscroll-behavior: contain;
+      /*
+       * The top and bottom edges fade rather than cut.
+       *
+       * On a phone this sheet scrolls under the globe, and a line of prose sliced horizontally against
+       * the planet reads as a rendering fault rather than as more text below. Twelve pixels is one line's
+       * descender: enough to turn a cut into a fade, not enough to hide a row.
+       *
+       * Phone only. From 1280 up this rail is a frosted panel with `backdrop-filter`, and a mask there
+       * would fade the panel's own background off its edge and put the mask in the way of the blur; the
+       * top of that layout is covered by the pinned title block anyway.
+       */
+      mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        #000 12px,
+        #000 calc(100% - 12px),
+        transparent 100%
+      );
       /* Same reason as the event list: a scroll container's content reaches the document's layout
          overflow unless containment says it cannot, and on a phone this box is the one that scrolls. */
       contain: paint;

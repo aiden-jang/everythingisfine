@@ -1166,6 +1166,17 @@ export function App(): JSX.Element {
         // hint strip. One press is one bar; the window is twenty-four of them.
         const live = spanNow();
         setScrub((sc) => nudge(clampScrub(sc, live), live, e.key === "." ? 1 : -1));
+      } else if (e.key === "[" || e.key === "]") {
+        /*
+         * Days, where the comma and the full stop do buckets.
+         *
+         * No mode check here: `stepDay` reads the feed and returns when no archived day is loaded, so
+         * this is inert on the live view by construction rather than by a condition that could drift
+         * from the one in the button. The ceiling is `loadArchive`'s, so `]` on yesterday does nothing
+         * rather than loading a day that has not finished.
+         */
+        e.preventDefault();
+        stepDay(e.key === "]" ? 1 : -1);
       } else return;
       // Space scrolls a page, and this one is `overflow: hidden` for exactly that reason already.
       // Preventing it here as well means the transport does not depend on that staying true.
@@ -1173,7 +1184,7 @@ export function App(): JSX.Element {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [sectionLine, scrub.at, filters.windowMs, query]);
+  }, [sectionLine, scrub.at, filters.windowMs, query, stepDay]);
 
   const toggleSource = (id: SourceId): void => {
     setFilters((f) => {
@@ -2638,6 +2649,9 @@ export function App(): JSX.Element {
                 ["0", "reset"],
                 ["space", view.playing ? "pause" : "play"],
                 [", .", "step"],
+                // Only on a loaded day, because the keys do nothing on the live view and a hint row
+                // that names an inert key is worse than one that is short.
+                ...(archived ? [["[ ]", "day"] as const] : []),
                 ...(flat ? [["shift-drag", "section"] as const] : []),
                 ["esc", "clear"],
               ] as const).map(([key, what]) => (
