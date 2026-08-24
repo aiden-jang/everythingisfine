@@ -5395,6 +5395,15 @@ flood's three wave strokes light up together, which is what a flood is.
 brighten, so for a marker the ring *is* the highlight - the thing that says which dot among two hundred.
 Verified both ways: ring opacity 0 on a glyph, 1 on an epicentre.
 
+Checked afterwards on the states the change could have broken, since it added a second object to the scene.
+It works on the flat map as well as the globe - the brightest pixel around a hovered spiral goes from 334 to
+430 on the globe and 353 to 430 on the map - and across every visible mark the gain is 96, 117 and 133.
+
+Every one of them peaks at the same 430, which is the point: the highlight is an opaque constant, so the
+day-night wash cannot eat it, and the **gain is largest where the surroundings are dimmest**. A fire in the
+dark gains more than a cyclone in daylight. That is the opposite of the failure I went looking for, which was
+the wash washing the highlight out.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
