@@ -1451,23 +1451,46 @@ export function App(): JSX.Element {
           **four rows**, a 150px-tall bar over a tablet's canvas. The rail carries the same counts, so
           this is the half to drop - the same call the wordmark and the ramp label already make.
         */}
+        {/*
+          Four numbers, no grammar, and the wrong frame of reference.
+
+          They read "160 USGS 37 EMSC 160 distinct 37 both": value before label, four times, so the eye
+          takes a number and then goes hunting for what it counted. Two of the labels were jargon
+          fragments - "distinct" and "both" are the ends of sentences nobody wrote.
+
+          **And they ignore the filters, which is the part that actually misleads.** These are ingest
+          totals. Set the magnitude filter to 4 and the headline reads 5 while this row still says 160:
+          two numbers a factor of thirty apart in one viewport, with nothing to say they answer different
+          questions. The headline's own note forbids exactly this - "a true number describing something
+          other than the picture" - and it was written about a counter that was wrong for a few seconds
+          during the replay, while this one is wrong for as long as a filter is set.
+
+          So the labels now say whose number it is. The globe's count is in the title block under "last 24
+          hours"; this row is what the agencies sent, whatever is drawn, and "reported" says so. The
+          per-agency figures are readings rather than events - one event seen twice is two readings - and
+          they move to the end as provenance, which is the question they answer.
+        */}
         <div className={`hidden items-baseline gap-5 ${snapshot.coveredSince === null ? "" : "xl:flex"}`}>
           {([
-            ["USGS", `${snapshot.stats.readings.usgs}`],
-            ["EMSC", `${snapshot.stats.readings.emsc}`],
-            ["distinct", `${snapshot.stats.quakes}`],
-            ["both", `${snapshot.stats.corroborated}`],
+            // Grouped like the readings beside them: "1600 reported" next to "USGS 1,600" was one row
+            // formatting the same kind of number two ways.
+            ["reported", snapshot.stats.quakes.toLocaleString("en-GB")],
+            ["seen by both", snapshot.stats.corroborated.toLocaleString("en-GB")],
             // Only once it has happened. A permanent "0 revised" is a slot in the header reserved
             // for nothing, and this is the one stat that is interesting precisely because it moves.
             ...(snapshot.stats.revised > 0
-              ? [["revised", `${snapshot.stats.revised}`] as const]
+              ? [["revised", snapshot.stats.revised.toLocaleString("en-GB")] as const]
               : []),
           ] as const).map(([k, v]) => (
             <span key={k} className="flex items-baseline gap-1.5">
-              <span className="font-mono text-[13px] text-ink">{v}</span>
+              <span className="font-mono text-[13px] text-ink tabular-nums">{v}</span>
               <span className="text-[11px] text-faint">{k}</span>
             </span>
           ))}
+          <span className="text-[11px] text-faint tabular-nums">
+            USGS {snapshot.stats.readings.usgs.toLocaleString("en-GB")}
+            {" · EMSC "}{snapshot.stats.readings.emsc.toLocaleString("en-GB")} readings
+          </span>
         </div>
         {/*
           Was `whitespace-nowrap`, which meant adding one button pushed the header 120px past a
