@@ -113,6 +113,28 @@ const bucketAgo = (bucketsAgo: number, bucketMs: number): string => {
   return h >= 48 ? `${Math.round(h / 24)}d ago` : `${h}h ago`;
 };
 
+/**
+ * What one bucket is, named the same way `bucketAgo` names a distance.
+ *
+ * `BUCKETS` is fixed at 24 and the window is 24h, 7d or 30d, so a bucket is an hour on exactly one of
+ * the three and seven or thirty hours on the others. Two strings in this file said "hours" flatly - the
+ * caveat under the strip and the strip's own accessible name - which made both of them wrong on two
+ * windows out of three, directly under a helper whose comment explains that a bucket is not an hour.
+ *
+ * Rounding to days above 24 hours is `bucketAgo`'s rule rather than a new one: thirty hours called a day
+ * is roughly right about something that is roughly that wide, which is the honest reading when the
+ * alternative is "30-hour spans" in a sentence a viewer is meant to absorb in passing.
+ */
+const bucketUnit = (bucketMs: number): { one: string; many: string } => {
+  const h = Math.round(bucketMs / HOUR_MS);
+  if (h <= 1) return { one: "hour", many: "hours" };
+  if (bucketMs >= 24 * HOUR_MS) {
+    const d = Math.round(bucketMs / (24 * HOUR_MS));
+    return d <= 1 ? { one: "day", many: "days" } : { one: `${d}-day span`, many: `${d}-day spans` };
+  }
+  return { one: `${h}-hour span`, many: `${h}-hour spans` };
+};
+
 /** The axis's left edge. The right is always now. */
 const spanLabel = (hours: number): string =>
   (hours >= 48 ? `${Math.round(hours / 24)}d ago` : `${hours}h ago`);
@@ -127,6 +149,7 @@ export function Timeline({
   const observed = bars.some((b) => b.observed);
   const unobserved = observed && bars.some((b) => !b.observed);
   const held = focusHour === null ? null : bars.find((b) => b.bucketsAgo === focusHour) ?? null;
+  const unit = bucketUnit(bucketMs);
 
   /*
    * The bars are real buttons, so holding an hour is not a mouse-only gesture.
@@ -227,7 +250,7 @@ export function Timeline({
       >
         <div
           role="group"
-          aria-label="Activity by hour"
+          aria-label={`Activity by ${unit.one}`}
           className="flex h-full items-end gap-px"
           onKeyDown={(e) => {
             const step = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
@@ -447,7 +470,7 @@ export function Timeline({
           is blocks, explains a state the sentence above the rail has already named. */}
       {unobserved ? (
         <p className="mt-2 text-[11px] leading-relaxed text-faint">
-          Blocks are hours the buffer was not open for, not quiet hours.
+          Blocks are {unit.many} the buffer was not open for, not quiet ones.
         </p>
       ) : null}
     </div>
