@@ -5050,6 +5050,46 @@ until some feed has vouched for the window.
 Asserted in all three states rather than the interesting one: silent feeds say nothing, a populated window
 says "peak 13 · 17h ago", and an empty one says it is empty.
 
+## A thousand requests a run, for data no test looked at
+
+The accessibility layer first, since it had never been examined and its clock changed two turns ago. It is
+sound: no unlabelled controls, no image without alt text, the canvas correctly `aria-hidden` with the rail
+carrying its content, and the announcement reads "Magnitude 6.4 earthquake, Flores Sea, just now, 10 km
+deep, reported by USGS." An archived day announces **nothing**, which verifies the decision to leave
+`newsIn` on the real clock rather than merely arguing it: `newsIn` gates on `now - eventTime` inside a news
+window, and archived events are months outside it.
+
+Then the measurement that mattered. A known limitation written last turn said EONET was "the only outbound
+host a stubbed run still reaches". That was measured with a spy patterned on the three hosts I expected to
+see, which is the third time this session that measuring only what I had a number for produced a confident
+wrong answer.
+
+Patterned on everything external instead:
+
+| host | requests, one test |
+|---|---|
+| www.gdacs.org | **14** |
+| services.swpc.noaa.gov | **2** |
+
+Roughly a thousand GDACS calls per suite run, across sixty-two tests, for data **no test asserts on** - a
+grep for the layer sentences across both specs returns nothing. Every browser test was depending on two
+third-party services being up and fast, which is a plausible share of the flakiness and runtime that has
+been put down to machine load.
+
+**Fixtures rather than empty responses.** The layers still draw - one storm with a track, one volcano, one
+fire, one flood, an aurora band - so screenshots taken for visual review keep showing a spiral, a triangle,
+a flame and waves, and show the *same* ones every run. EONET is stubbed too, dated inside the requested
+range for the reason the earthquake archive is.
+
+**The aurora fixture failed silently first, which is the shape worth remembering.** `parseOvation` checks
+`rows.length === AURORA_LON * AURORA_LAT` and returns null on a mismatch, so a sparse 72-row patch parsed to
+nothing and the layer simply was not there - no error, no failing test, just an absent legend row. The
+fixture builds all 65,160 rows now. Its timestamp key was wrong too (`Observation Time` for `Forecast
+Time`), which falls back to the fetch clock rather than failing: another quiet pass.
+
+Verified by the spy seeing **nothing leave**, and the suites are green and slightly faster: design 2.3m,
+interaction 5.7m.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -5153,10 +5193,12 @@ Written last, and kept accurate rather than kept short.
   against a ceiling of 55. Measured at **dE 6.5**, and **0.0** on the colourblind ramp, where the canvas
   uses those same neutral values. 6.5 is the floor the rule allows, not a slip.
 
-- **EONET is not stubbed in the browser harness.** The agencies are, including the archive as of this
-  session, so an archived-day test is deterministic for earthquakes and live for the four hazard layers.
-  It is the only outbound host a stubbed run still reaches, which means a hazard-layer assertion on an
-  archived day is testing NASA's uptime along with the app.
+- ~~**EONET is not stubbed in the browser harness.**~~ **Closed, and the entry was wrong about the
+  scale.** It named EONET as "the only outbound host a stubbed run still reaches", which was measured with
+  a spy patterned on the three hosts I expected. Patterning it on *everything* external found **14 requests
+  to gdacs.org and 2 to services.swpc.noaa.gov on a single test** - roughly a thousand GDACS calls per
+  suite run - for data **no test asserts on**: a grep for the layer sentences across both specs returns
+  nothing. All four hazard hosts are stubbed now and a spy sees nothing leave.
 
 - **No demo video.** The write-up asks for one and there is none, because recording it was not
   something this build could do.
