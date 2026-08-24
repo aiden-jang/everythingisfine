@@ -443,3 +443,72 @@ describe("newest by origin, which arrival order is not", () => {
     expect(store.newest(2)).toHaveLength(2);
   });
 });
+
+describe("clearing the store, which archive mode leans on entirely", () => {
+  /*
+   * Untested until now, on the newest and most consequential method here: `showArchive` calls it and
+   * then loads a past day, so anything it forgets is stale state a viewer reads as that day's data.
+   * Asserted through the public surface rather than the private fields, because a field this misses is
+   * only a bug if something can still see it.
+   */
+  const fill = (store: ReturnType<typeof createStore>, start: number): void => {
+    for (const r of syntheticReadings({
+      start, durationMs: 3 * 3_600_000, everySeconds: 600, corroboration: 0.5, seed: 7,
+    })) store.ingest(r);
+  };
+  const filled = (): ReturnType<typeof createStore> => {
+    const store = createStore(64);
+    fill(store, 1_700_000_000_000);
+    store.ingest(reading({ source: "usgs", id: "a1" }));
+    return store;
+  };
+
+  it("empties everything a reader can reach", () => {
+    const store = filled();
+    expect(store.size()).toBeGreaterThan(0);
+    const before = store.stats();
+    expect(before.readings.usgs).toBeGreaterThan(0);
+
+    store.clear();
+
+    expect(store.size()).toBe(0);
+    expect(store.newest(10)).toEqual([]);
+    expect(store.latest(10)).toEqual([]);
+    const seen: unknown[] = [];
+    store.forEach((q) => seen.push(q));
+    expect(seen).toEqual([]);
+    const after = store.stats();
+    expect(after.readings).toEqual({ usgs: 0, emsc: 0 });
+    expect(after.quakes).toBe(0);
+    expect(after.corroborated).toBe(0);
+    expect(after.revised).toBe(0);
+  });
+
+  it("forgets the identifiers, so a repeat arrival is new rather than a revision", () => {
+    const store = filled();
+    store.clear();
+    expect(store.findByReading("usgs", "a1")).toBeUndefined();
+    // `isNew` is the observable: a store that still held the identifier would join, not create.
+    const again = store.ingest(reading({ source: "usgs", id: "a1" }));
+    expect(again.isNew).toBe(true);
+    expect(store.size()).toBe(1);
+  });
+
+  it("reports no coverage once empty, because it is holding nothing to vouch for", () => {
+    // `since` is the honest left edge of the window, and an empty store has no edge.
+    const store = filled();
+    expect(store.stats().since).not.toBeNull();
+    store.clear();
+    expect(store.stats().since).toBeNull();
+  });
+
+  it("leaves a cleared store usable, not merely empty", () => {
+    const store = filled();
+    store.clear();
+    fill(store, 1_700_100_000_000);
+    expect(store.size()).toBeGreaterThan(0);
+    expect(store.newest(5).length).toBeGreaterThan(0);
+    // The ring must start from a clean head, not from wherever the previous fill left it.
+    expect(store.newest(50).length).toBe(store.size());
+  });
+});
