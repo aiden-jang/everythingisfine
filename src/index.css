@@ -22,6 +22,9 @@
   --color-void: #050b16;
   --color-sphere: #0a101c;
   --color-land: #1e293f;
+  /* Read by the cross-section's swatches, and kept equal to `NEUTRAL` in `scene.ts` on purpose: those
+     are the colours the globe draws on the colourblind ramp, so the swatch matches the line exactly
+     there and as closely as the chroma ceiling allows on the default one. */
   --color-coast: #31405d;
   --color-plate: #3d4e6e;
   --color-deck: #0a1322;
