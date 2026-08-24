@@ -36,6 +36,7 @@ import { buildSection, type SectionLine } from "./app/section";
 import { histogram, totalIn } from "./app/histogram";
 import { diurnal } from "./app/diurnal";
 import { Dial } from "./app/Dial";
+import { DAY_LENGTH, isArchivableDay, isRealDay, typedDay } from "./app/day";
 import { decode, encode } from "./app/permalink";
 import { MAG_MIN, rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
@@ -453,6 +454,18 @@ export function App(): JSX.Element {
    * reads `snapshot.archive` and stands down. One button returns.
    */
   const [archiveDay, setArchiveDay] = useState("");
+  /*
+   * Why a complete date was refused, or null while one is still being typed.
+   *
+   * Only once ten characters are in: complaining at "2011-0" would be scolding somebody mid-word.
+   */
+  const dayFault = archiveDay.length < DAY_LENGTH
+    ? null
+    : !isRealDay(archiveDay)
+      ? `${archiveDay} is not a date.`
+      : !isArchivableDay(archiveDay, Date.now())
+        ? "That day has not finished yet. The archive draws whole UTC days, so today is the live view."
+        : null;
   const [archiveBusy, setArchiveBusy] = useState(false);
   const [archiveNote, setArchiveNote] = useState<string | null>(null);
   /*
@@ -465,7 +478,15 @@ export function App(): JSX.Element {
   const arrivedOnADay = useRef(false);
   const loadArchive = useCallback(async (iso: string) => {
     const span = dayRange(iso);
-    if (!span) return;
+    /*
+     * The ceiling lives here now, because this is what every path calls.
+     *
+     * It used to be the date field's `max` attribute, which is to say it was enforced by the browser on
+     * exactly one of the four ways a day gets loaded - typed, pasted in a link, picked from the notable
+     * list, or stepped to from a neighbour. Replacing that field with a text input would have removed the
+     * only guard the typed path had.
+     */
+    if (!span || !isArchivableDay(iso, Date.now())) return;
     setArchiveBusy(true);
     setArchiveNote(null);
     setArchiveHazards(null);
@@ -1947,23 +1968,61 @@ export function App(): JSX.Element {
               <div className="mb-3">
                 <label className="label" htmlFor="archive-day">Go to a day</label>
                 <div className="mt-1 flex items-center gap-1.5">
+                {/*
+                  A field in the same hand as everything around it.
+
+                  `type="date"` was the one browser widget left in the rail: a platform calendar button, a
+                  locale-dependent order, and a `mm/dd/yyyy` prompt asking for a format this app never
+                  prints. Every date on screen here is ISO, so the field now asks for what the app shows
+                  and a day can be copied out of the notable list and pasted straight in.
+
+                  The native picker is a real loss on a touch screen, and the notable list is the answer to
+                  it: that is the way in, and this field is documented as being for somebody who arrived
+                  with a date in mind. What they lose is a calendar grid; what they gain is a field that
+                  takes the string the rest of the interface hands them.
+                */}
                 <input
                   id="archive-day"
-                  type="date"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="YYYY-MM-DD"
+                  aria-describedby={dayFault ? "archive-day-fault" : undefined}
                   value={archiveDay}
-                  max={newestDay}
-                  onChange={(e) => setArchiveDay(e.target.value)}
-                  className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[11px] text-dim"
+                  // Digits in, hyphens ours. See `typedDay`.
+                  onChange={(e) => setArchiveDay(typedDay(e.target.value))}
+                  onKeyDown={(e) => {
+                    // Enter is what a text field promises and a date picker did not have to.
+                    if (e.key === "Enter" && !archiveBusy && isArchivableDay(archiveDay, Date.now())) {
+                      e.preventDefault();
+                      void loadArchive(archiveDay);
+                    }
+                  }}
+                  className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[11px] text-dim placeholder:text-faint"
                 />
                 <button
                   type="button"
-                  disabled={!archiveDay || archiveBusy}
+                  disabled={archiveBusy || !isArchivableDay(archiveDay, Date.now())}
                   onClick={() => void loadArchive(archiveDay)}
                   className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:cursor-default disabled:text-faint"
                 >
                   {archiveBusy ? "…" : "go"}
                 </button>
                 </div>
+                {/*
+                  Said where it was caused, because the note that would have said it cannot be seen here.
+
+                  `archiveNote` renders inside the archived banner, which is the other branch of this
+                  ternary: a day refused while live would have set a message nobody could read, and a
+                  disabled "go" with no reason is the same silence the filters used to keep. Derived rather
+                  than stored, so it cannot outlive the value that caused it.
+                */}
+                {dayFault ? (
+                  <p id="archive-day-fault" className="mt-1 text-[10.5px] leading-relaxed text-faint">
+                    {dayFault}
+                  </p>
+                ) : null}
               </div>
             )}
                 {/*

@@ -1,6 +1,7 @@
 import type { SourceId } from "../data/types";
 import type { RampName } from "../globe/ramp";
 import type { SectionLine } from "./section";
+import { isArchivableDay } from "./day";
 import { nearestWindow } from "./windows";
 // Data bounds, which happen to live in a rendering module. Restating them here as literals is exactly
 // what produced the bug their use fixes.
@@ -198,12 +199,10 @@ export function decode(fragment: string): Partial<Permalink> {
    * is nothing to fetch - which follows the rule at the top of this function that a link must not put
    * the app in a state it has no other way to reach.
    */
+  // Asked rather than repeated: this was the second copy of the rule and the field in the rail was
+  // relying on a browser attribute for the third. See `day.ts`.
   const day = params.get("d");
-  if (day !== null && /^\d{4}-\d{2}-\d{2}$/.test(day)) {
-    const at = Date.parse(`${day}T00:00:00Z`);
-    if (Number.isFinite(at) && new Date(at).toISOString().slice(0, 10) === day
-      && at < Date.now()) out.day = day;
-  }
+  if (day !== null && isArchivableDay(day, Date.now())) out.day = day;
 
   /*
    * A mark, only if it names a layer this app draws.
