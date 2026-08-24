@@ -33,6 +33,15 @@ export interface EventListProps {
   /** True before any feed has delivered, so an empty list is not blamed on the filters. */
   waiting: boolean;
   /**
+   * How many events the span holds before any filter is applied.
+   *
+   * Zero and "excluded by the filters" are different facts and read identically without this: an
+   * archived 1960s day where both agencies answered nothing showed "No events match the current
+   * filters", which sends a viewer to widen a control that was never the problem. The day stepper made
+   * those days one click apart, so the wrong sentence went from rare to easy to reach.
+   */
+  reported: number;
+  /**
    * The clock every age in this list is measured against.
    *
    * Passed in rather than read here, because on an archived day it is the end of that day and not the
@@ -60,7 +69,7 @@ function sentence(quake: Quake, now: number, archived = false): string {
 }
 
 export function EventList({
-  quakes, selected, onSelect, announceAbove, onAnnounceAboveChange, onNews, waiting, now,
+  quakes, selected, onSelect, announceAbove, onAnnounceAboveChange, onNews, waiting, reported, now,
   archived = false,
 }: EventListProps): JSX.Element {
   const [cursor, setCursor] = useState(0);
@@ -173,10 +182,15 @@ export function EventList({
 
       {quakes.length === 0 ? (
         // Blaming the filters is only right when there is something for them to exclude. On arrival
-        // the list is empty because nothing has arrived, and saying otherwise sends someone to widen
-        // a filter that was never the problem.
+        // the list is empty because nothing has arrived, and a span that reported nothing has nothing
+        // to exclude either; saying otherwise sends someone to widen a filter that was never the
+        // problem. Three states, three sentences, and only the last one is about the controls.
         <p className="mt-2 text-[12px] text-faint">
-          {waiting ? "Waiting for the first events." : "No events match the current filters."}
+          {waiting
+            ? "Waiting for the first events."
+            : reported === 0
+              ? `Nothing was reported ${archived ? "on this day" : "in this window"}.`
+              : "No events match the current filters."}
         </p>
       ) : null}
 

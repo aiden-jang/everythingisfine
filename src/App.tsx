@@ -2337,6 +2337,12 @@ export function App(): JSX.Element {
             onAnnounceAboveChange={setAnnounceAbove}
             onNews={onNews}
             waiting={snapshot.coveredSince === null}
+            /*
+              Whether the filters are even in a position to be blamed.
+              Unfiltered on purpose: deselecting both sources is a filter and should be blamed, while a
+              day that reported nothing at all should not be. See the note beside the empty state.
+            */
+            reported={snapshot.stats.quakes}
             now={now}
             archived={archived}
           />
