@@ -194,7 +194,7 @@ export function MagnitudeFilter(
       */}
       <details className="mt-2.5" open={keyOpen}>
         <summary
-          className="cursor-pointer list-none text-[11px] text-faint hover:text-dim"
+          className="disclose text-[11px] text-faint hover:text-dim"
           onClick={(e) => { e.preventDefault(); onKeyOpen(!keyOpen); }}
         >
           What the marks mean

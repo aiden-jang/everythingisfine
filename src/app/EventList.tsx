@@ -162,7 +162,7 @@ export function EventList({
        * keyboard either way.
        */}
       <details className="mt-1.5">
-        <summary className="cursor-pointer list-none text-[11px] text-faint hover:text-dim">
+        <summary className="disclose text-[11px] text-faint hover:text-dim">
           Announce at M{announceAbove.toFixed(1)} and above
         </summary>
         <label className="sr-only" htmlFor="announce">
