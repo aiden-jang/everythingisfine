@@ -4987,6 +4987,45 @@ The pattern across the whole archive thread: **a label that names the present is
 them has to be found separately.** The copy, the ages, the neighbour window, the axis and the transport were
 five different places holding the same assumption, and each was invisible until the one before it was fixed.
 
+## Closing the hole in the harness that hid the clock bug
+
+The tour first, since it had never been opened: it survived the title block restructure intact. The
+narration replaces the window label in the wide cell - "2/6 Japan & Kurils · 30 events" - the counter
+advances, the block height stays at 191px so nothing jumps, and stopping restores "last 24 hours". That
+narration is what makes the camera movement legal under the motion rule, and it is doing its job.
+
+Then the actual work: **archive tests were reaching the real agencies.** `installFeeds` routed
+`all_(day|week|month).geojson`, `all_hour.geojson` and the `seismicportal.eu` host. The archive asks
+`earthquake.usgs.gov/fdsnws/event/1/query?format=geojson`, which contains no literal `.geojson`, so USGS
+archive requests **missed every pattern** while the EMSC one was caught by the host rule. Every archived-day
+test ran on real events from that day mixed with fixtures dated near now, the newest fixture sat at the top
+of the list, and that is exactly how a wrong clock read "1h ago" and hid for two turns.
+
+One route on `/fdsnws\/event\/1\/query/` closes it, and two details matter more than the pattern:
+
+**It is registered last, and it hands back what is not its business.** Playwright checks routes in reverse
+registration order, so the broad `seismicportal.eu` rule would otherwise keep catching the EMSC archive
+query; placed first, the fix silently does nothing for one of the two agencies, which is the same half-real
+state it was written to remove.
+
+Registering it last then broke a different test, and the reason is worth keeping: **EMSC's live seed uses
+the same endpoint.** `seismicportal.eu/fdsnws/event/1/query?limit=600&format=json&start=...` is the seed;
+the archive asks the same path with `starttime` and `endtime`. Claiming every `fdsnws` request replaced the
+capped seed fixtures that "the chrome says how far back each agency actually covers" depends on, and it went
+red. The route now falls back unless both archive parameters are present and span a real range. A pattern
+matched on the path was never going to be enough when two different features share it.
+
+**The fixtures are dated inside the requested day**, spread from `starttime` to `endtime`, not near now.
+That is the whole point: an archived day whose events are dated today cannot tell a correct clock from a
+broken one. Verified by routing everything at the agencies through a spy: the only outbound host left is
+`eonet.gsfc.nasa.gov`, which is the hazard archive and stubbed by nothing.
+
+**Left as it is, deliberately.** With the newest fixture sitting exactly on the day's end, the top row reads
+"just now" - `ago` returns that under 45 seconds, and on an archived day the word does double duty. It is
+wrong for the last 45 seconds of an archived day, which is 0.05% of it, and correcting it means threading an
+`archived` flag through `ago`, `agoShort` and every call site in the rail, the panel and the cards. That is
+disproportionate to the window it fixes, so it is recorded rather than done.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
