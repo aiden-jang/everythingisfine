@@ -16,7 +16,7 @@ import { drawStill, stillMoment, verdictLine, STILL_HEIGHT, STILL_WIDTH } from "
 import { findSubject, MarkCard } from "./app/MarkCard";
 import { hazardCount, hazardGroups } from "./app/hazards";
 import { dayRange, fetchArchive } from "./sources/archive";
-import { NOTABLE_DAYS } from "./app/notableDays";
+import { NOTABLE_DAYS, NOTABLE_NOTE } from "./app/notableDays";
 import { fetchHistory, type History } from "./sources/history";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
@@ -1890,6 +1890,11 @@ export function App(): JSX.Element {
                         </span>
                       </button>
                     ))}
+                    {/*
+                      Required, not decoration: 1960 returns six events against Tōhoku's 685, and
+                      without this a reader takes a true number as a claim about the planet.
+                    */}
+                    <p className="mt-1.5 text-[10.5px] leading-relaxed text-faint">{NOTABLE_NOTE}</p>
                   </div>
                 </details>
               </div>

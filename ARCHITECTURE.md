@@ -5248,10 +5248,26 @@ against USGS so a wrong label fails rather than sits there. A curated list is an
 else's data, and the failure mode is a label that is quietly wrong: the right day at the wrong magnitude
 looks fine in a screenshot.
 
-**Loma Prieta is not on the list, and that is the trap this feature is built around.** It is remembered as 17
-October 1989 and struck at 00:04 UTC on the **18th**; asking for the 17th returns an M6.3 in Papua New
-Guinea. A famous date is usually the local one, and the archive is a UTC day. Dropped rather than labelled
-with a date nobody would recognise, and a unit test pins its absence so it cannot come back from memory.
+**Loma Prieta is the trap this feature is built around, and it is recoverable.** It is remembered as 17
+October 1989 and catalogued at 00:04 UTC on the **18th**: asking for the 17th returns an M6.3 in Papua New
+Guinea, and asking for the 18th returns **292 events under USGS's own name for it**. So it is on the list
+under the 18th, which is the day the archive actually loads, with the banner saying "all day UTC" beside it.
+Good Friday 1964 is the same story - 27 March locally, 03:36 UTC on the 28th. Both wrong dates are pinned
+absent and both right ones pinned present, because the wrong one is what memory reaches for.
+
+**Twelve days now, and the five added ones were each measured first.** Valdivia 1960 at M9.5, Prince William
+Sound 1964 at M9.2, Maule 2010 at M8.8, Sea of Okhotsk 2013 at M8.3, Loma Prieta 1989 at M6.9. The live test
+runs one case per row, so all twelve labels are checked against the catalogue rather than trusted.
+
+Okhotsk earns its place on something other than size: it is **598 km deep**, and it is the only day here that
+gives the depth encoding anything to draw. Solid is shallow and hollow is deep, and on a normal day the
+legend reads "0 below 300" - that encoding has almost never had a subject. On this day it reads **9 below
+300**, and one event is 99.5% of the window's energy.
+
+**The two oldest rows needed a sentence, and that is the app's own rule rather than a nicety.** 1960 returns
+**six events** at M2.5+ against Tōhoku's 685. Both numbers are true and the pair invites a false inference,
+so the list carries one line: "Older days hold fewer events: the networks were smaller, not the planet
+quieter." Nothing ships without the thing that explains it, and a sparse day is no exception.
 
 Ordered largest first, because the two M9.1s are the reason to open it. Closed by default, because it is a
 way in and not a menu: the field above stays the answer for anyone who arrived with a date in mind.
