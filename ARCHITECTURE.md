@@ -5330,6 +5330,56 @@ Two rules earned their keep on one four-word link. The chroma ceiling stopped it
 and the touch minimum stopped it shipping as a 14px target - and the second was a fault no reading of the
 stylesheet would have found, because the rule naming `a[href]` was already there.
 
+## The graticule was never behind the land
+
+Reported from the app: orbiting north leaves part of Russia looking unfilled, with bare lines through it.
+Correct, and the cause is not the fill.
+
+**The mesh is fine.** A point-in-triangle test over the fill's own `aLonLat` covers central Siberia, Yakutia,
+Chukotka and Taymyr, and reading pixels in a polar view gives 25,50,79 over Siberia against 3,17,32 over the
+Arctic Ocean. Land renders as land.
+
+What crosses it is the **graticule**, which DESIGN.md says is "deliberately left behind the land it sits
+under: it is scaffolding". It was not. It sits at radius 1.003, outside the ocean shell, so its near half
+passes the depth test - and the land fill writes **no depth at all**, which is a deliberate decision argued
+in place: triangulation sag reaches 0.037 radii, so a lifted shell cannot be sized reliably, and turning the
+depth test off removes the question. Nothing could occlude the graticule, so it drew over the continents.
+
+Invisible at the equator, where a 38% line over land is a whisper. Glaring from a polar orbit, where two
+dozen meridians converge into a starburst across Siberia.
+
+**`renderOrder` alone could not fix it**, and this file already had the answer one layer up: three.js draws
+every opaque object before any transparent one, so a transparent graticule paints after the fill however low
+its order - exactly why the map backdrop is opaque. So the graticule fades by **colour** now instead of
+alpha, pre-blended at its old 38% against the ocean it is henceforth only ever seen over, computed from the
+palette rather than written down so the two ramps cannot drift. Its far half is still occluded by the
+ocean's depth, because a line has no facing to cull.
+
+A scan along the 66th parallel across Siberia now returns fourteen values all within two units of each
+other - a day-wash gradient, not stripes.
+
+**And the probe was wrong first, for the ninth time.** The coverage test walked `lonLat` in threes and
+reported the Sahara, Australia, Amazonia and Greenland uncovered. The fill is an **indexed** geometry -
+subdivision shares midpoints between neighbours, so three consecutive vertices are not a triangle. Its own
+comment says so. Read through `index`, all eleven points pass.
+
+## Hovering a shape with a shape
+
+The mark hover drew a circle, grown to 34px so it would enclose a glyph. That was the wrong answer to the
+right observation: a ring round a spiral reads as part of the drawing, and it argues with the rule the whole
+layer is built on - marks are told apart by **shape**, so the thing that says "this one" should speak the
+same language.
+
+The hovered glyph is now redrawn in ink over itself, from the same tessellation the dim one uses, so the
+highlight traces exactly the path of the mark rather than an approximation of it. Its own buffers and object,
+because the marks share one geometry and one colour: brightening one glyph inside that soup would need a
+per-vertex attribute and a shader to read it, for one line of feedback. Highlighting by `kind:id` means a
+flood's three wave strokes light up together, which is what a flood is.
+
+**Earthquakes keep the ring**, and that is the distinction rather than an exception: a dot has no shape to
+brighten, so for a marker the ring *is* the highlight - the thing that says which dot among two hundred.
+Verified both ways: ring opacity 0 on a glyph, 1 on an epicentre.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

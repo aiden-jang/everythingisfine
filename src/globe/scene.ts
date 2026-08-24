@@ -142,6 +142,21 @@ const COLOR_PLATES = 0x265174;
 const NEUTRAL = {
   sphere: 0x0a101c, land: 0x1e293f, graticule: 0x243149, coast: 0x31405d, plates: 0x3d4e6e,
 } as const;
+
+/**
+ * The graticule as an opaque colour: its old 38% over the ocean it is drawn on.
+ *
+ * It stopped being able to fade on alpha when it moved in front of the land in draw order, so the fade
+ * moved into the colour. Computed rather than written down, so the two palettes cannot drift apart.
+ */
+const GRATICULE_ON = (palette: { sphere: number; graticule: number }): number => {
+  const mix = (shift: number): number => {
+    const line = (palette.graticule >> shift) & 0xff;
+    const sea = (palette.sphere >> shift) & 0xff;
+    return Math.round(line * 0.38 + sea * 0.62) & 0xff;
+  };
+  return (mix(16) << 16) | (mix(8) << 8) | mix(0);
+};
 const BLUEPRINT = {
   sphere: COLOR_SPHERE, land: COLOR_LAND, graticule: COLOR_GRATICULE,
   coast: COLOR_COAST, plates: COLOR_PLATES,
@@ -206,6 +221,8 @@ export interface Globe {
   setGeography: (ramp: RampName) => void;
   /** The camera's zoom, so the glyphs hold their size on screen the way the markers do. */
   setMarkZoom: (zoom: number) => void;
+  /** The `kind:id` under the pointer, or null: its glyph is redrawn bright over itself. */
+  setMarkHover: (id: string | null) => void;
   setMorph: (t: number) => void;
   /** The entrance reveal: boundaries grow outward from the events rather than arriving with them. */
   plates: {
@@ -329,12 +346,29 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const grid = graticule(15, RADIUS_GRATICULE);
   gratGeom.setAttribute("position", new BufferAttribute(grid.position, 3));
   gratGeom.setAttribute("aLonLat", new BufferAttribute(grid.lonLat, 2));
-  const grat = new LineSegments(
-    gratGeom,
-    new LineBasicMaterial({ color: COLOR_GRATICULE, transparent: true, opacity: 0.38 }),
-  );
+  /*
+   * Opaque and drawn before the land, which is the only way it can end up behind it.
+   *
+   * DESIGN.md says the graticule is "deliberately left behind the land it sits under: it is
+   * scaffolding", and it was not. It sits at 1.003, outside the ocean shell, so its near half passes
+   * the depth test - and the land fill writes no depth at all, by the decision argued above. Nothing
+   * could occlude it, so it drew *over* the continents.
+   *
+   * Invisible at the equator, where a 38% line over land is a whisper. Glaring from a polar orbit,
+   * where two dozen meridians converge into a starburst across Siberia and the land reads as unfilled
+   * with bare lines through it. Reported from the app, which is how it was found.
+   *
+   * `renderOrder` alone cannot fix it: three.js draws every opaque object before any transparent one,
+   * so a transparent graticule paints after the fill however low its order - the same trap the map
+   * backdrop above is opaque to avoid. So this fades by colour instead of by alpha, pre-blended against
+   * the ocean it is now only ever seen over, and `setGeography` keeps that blend in step with the
+   * palette. The far half is still occluded by the ocean's depth, because a line has no facing to cull.
+   */
+  const grat = new LineSegments(gratGeom, new LineBasicMaterial({
+    color: GRATICULE_ON({ sphere: COLOR_SPHERE, graticule: COLOR_GRATICULE }),
+  }));
   morphable(grat.material, morph);
-  grat.renderOrder = 2;
+  grat.renderOrder = 0.5;
   spin.add(grat);
 
   /*
@@ -567,6 +601,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    */
   const marks = createMarkLayer(morph);
   spin.add(marks.object);
+  spin.add(marks.highlight);
   // Kept for picking as well as drawing: the layer flattens them into buffers and forgets which was which.
   let heldMarks: readonly Mark[] = [];
 
@@ -676,7 +711,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       const palette = ramp === "cividis" ? NEUTRAL : BLUEPRINT;
       (ocean.material as MeshBasicMaterial).color.setHex(palette.sphere);
       (fill.material as MeshBasicMaterial).color.setHex(palette.land);
-      (grat.material as LineBasicMaterial).color.setHex(palette.graticule);
+      (grat.material as LineBasicMaterial).color.setHex(GRATICULE_ON(palette));
       (plateLines.material as LineBasicMaterial).color.setHex(palette.plates);
       (coast.material as LineBasicMaterial).color.setHex(palette.coast);
       // The map's backdrop fades to the sphere colour, so it has to move with it.
@@ -777,6 +812,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     rings,
     setMarks: (next) => { heldMarks = next; marks.set(next); },
     setMarkZoom: (zoom) => { marks.setZoom(zoom); },
+    setMarkHover: (id) => { marks.setHovered(id); },
     setAurora: (grid) => {
       const material = night.material as ShaderMaterial;
       if (grid === null) {

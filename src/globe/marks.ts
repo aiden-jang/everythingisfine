@@ -34,6 +34,13 @@ const RADIUS = 1.004;
  * failure mode of guessing low is marks silently missing from the far end of the list.
  */
 const CAPACITY = 12000;
+/*
+ * One glyph's worth of segments, with room to spare.
+ *
+ * A flood is three strokes sharing an id and a densified spiral is the longest single shape, which comes
+ * to well under a hundred segments at any zoom. 512 is a guard, not a budget.
+ */
+const HIGHLIGHT_CAPACITY = 512;
 /** Longest leg before it is split, so a chord does not cut inside the globe. */
 const DENSIFY_DEG = 1.5;
 /** Beyond this a leg is a wrap across the antimeridian, not a mark crossing it. */
@@ -89,7 +96,16 @@ export function scaleFor(zoom: number): number {
 
 export interface MarkLayer {
   object: LineSegments;
+  /**
+   * The hovered glyph, redrawn bright over the top of itself.
+   *
+   * A separate object because the marks live in one geometry with one colour: brightening a single glyph
+   * inside a soup would mean a per-vertex attribute and a shader that reads it, for one line of feedback.
+   */
+  highlight: LineSegments;
   set: (marks: readonly Mark[]) => void;
+  /** The `kind:id` under the pointer, or null. Highlights every stroke sharing that id. */
+  setHovered: (id: string | null) => void;
   /** The camera moved. Rebuilds only when the glyph scale has moved enough to see. */
   setZoom: (zoom: number) => void;
   dispose: () => void;
@@ -109,6 +125,29 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
   morphable(material, morph);
   const object = new LineSegments(geometry, material);
   object.renderOrder = 3.5;
+
+  /*
+   * The hover highlight: the glyph's own shape, in ink, over itself.
+   *
+   * A ring around a spiral was generic and argued with the app's own rule - marks are told apart by
+   * shape, so the thing that says "this one" should speak the same language. Reported from the app.
+   *
+   * Its own buffers, sized for one glyph rather than the whole layer: a flood is three strokes sharing
+   * an id, and a densified spiral is the largest single shape here.
+   */
+  const hotPositions = new Float32Array(HIGHLIGHT_CAPACITY * 6);
+  const hotLonLats = new Float32Array(HIGHLIGHT_CAPACITY * 4);
+  const hotGeometry = new BufferGeometry();
+  const hotPosAttr = new BufferAttribute(hotPositions, 3);
+  const hotLlAttr = new BufferAttribute(hotLonLats, 2);
+  hotGeometry.setAttribute("position", hotPosAttr);
+  hotGeometry.setAttribute("aLonLat", hotLlAttr);
+  hotGeometry.setDrawRange(0, 0);
+  const hotMaterial = new LineBasicMaterial({ color: 0xd6e4f7 });
+  morphable(hotMaterial, morph);
+  const highlight = new LineSegments(hotGeometry, hotMaterial);
+  // Above the marks it sits on, below the markers and their rings.
+  highlight.renderOrder = 3.6;
 
   let written = 0;
   const put = (aLon: number, aLat: number, bLon: number, bLat: number): void => {
@@ -134,12 +173,37 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
     written += 1;
   };
 
+  let hotWritten = 0;
+  const putHot = (aLon: number, aLat: number, bLon: number, bLat: number): void => {
+    if (hotWritten >= HIGHLIGHT_CAPACITY) return;
+    const i = hotWritten * 6;
+    const j = hotWritten * 4;
+    const pa = aLat * DEG;
+    const la = aLon * DEG;
+    const ca = Math.cos(pa) * RADIUS;
+    hotPositions[i] = ca * Math.sin(la);
+    hotPositions[i + 1] = Math.sin(pa) * RADIUS;
+    hotPositions[i + 2] = ca * Math.cos(la);
+    const pb = bLat * DEG;
+    const lb = bLon * DEG;
+    const cb = Math.cos(pb) * RADIUS;
+    hotPositions[i + 3] = cb * Math.sin(lb);
+    hotPositions[i + 4] = Math.sin(pb) * RADIUS;
+    hotPositions[i + 5] = cb * Math.cos(lb);
+    hotLonLats[j] = aLon;
+    hotLonLats[j + 1] = aLat;
+    hotLonLats[j + 2] = bLon;
+    hotLonLats[j + 3] = bLat;
+    hotWritten += 1;
+  };
+
   let held: readonly Mark[] = [];
+  let hovered: string | null = null;
   let scale = 1;
 
-  const build = (): void => {
-      written = 0;
-      for (const mark of held) {
+  /** One tessellation, written wherever it is told. The highlight must trace the same path as the mark. */
+  const emit = (marks: readonly Mark[], write: typeof put): void => {
+      for (const mark of marks) {
         /*
          * Scaled about its own anchor, so the glyph grows where it stands rather than drifting off the
          * thing it marks. Latitude clamped: six times a flame at 88 degrees would put its tip past the
@@ -163,21 +227,41 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
           for (let step = 0; step < steps; step += 1) {
             const t0 = step / steps;
             const t1 = (step + 1) / steps;
-            put(
+            write(
               a.lon + (b.lon - a.lon) * t0, a.lat + (b.lat - a.lat) * t0,
               a.lon + (b.lon - a.lon) * t1, a.lat + (b.lat - a.lat) * t1,
             );
           }
         }
       }
-      geometry.setDrawRange(0, written * 2);
-      posAttr.needsUpdate = true;
-      llAttr.needsUpdate = true;
+  };
+
+  const build = (): void => {
+    written = 0;
+    emit(held, put);
+    geometry.setDrawRange(0, written * 2);
+    posAttr.needsUpdate = true;
+    llAttr.needsUpdate = true;
+    buildHot();
+  };
+
+  const buildHot = (): void => {
+    hotWritten = 0;
+    if (hovered !== null) emit(held.filter((m) => m.id === hovered), putHot);
+    hotGeometry.setDrawRange(0, hotWritten * 2);
+    hotPosAttr.needsUpdate = true;
+    hotLlAttr.needsUpdate = true;
   };
 
   return {
     object,
+    highlight,
     set: (marks) => { held = marks; build(); },
+    setHovered: (id) => {
+      if (id === hovered) return;
+      hovered = id;
+      buildHot();
+    },
     setZoom: (zoom) => {
       const next = scaleFor(zoom);
       if (Math.abs(next - scale) < SCALE_STEP * scale) return;
@@ -187,6 +271,8 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
     dispose: () => {
       geometry.dispose();
       material.dispose();
+      hotGeometry.dispose();
+      hotMaterial.dispose();
     },
   };
 }
