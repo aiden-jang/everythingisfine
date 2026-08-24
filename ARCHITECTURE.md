@@ -5090,6 +5090,47 @@ Time`), which falls back to the fetch clock rather than failing: another quiet p
 Verified by the spy seeing **nothing leave**, and the suites are green and slightly faster: design 2.3m,
 interaction 5.7m.
 
+## A dead hazard feed looked exactly like a quiet planet
+
+A systematic sweep first, since the lesson of the last three turns is that I keep instrumenting my
+hypothesis instead of the system. Console output across ten reachable states - pinned event, far side, map,
+section, colourblind, globe, 30d, empty filter, tour, archived day, still - gave **zero errors, zero page
+errors, zero failed requests**. Seven warnings, all WebGL driver messages. The one real GL error,
+`glTexStorage2D: Texture is immutable`, appears exactly once per context whether the aurora is present,
+refused, or every mark layer is off, so it is renderer initialisation and not app data. Chased and dropped.
+
+Then the sweep asked a better question than I had. With all four hazard hosts refused: **zero marks, zero
+legend rows, no hazard list, and the app says nothing at all**, while the header still reads "both feeds
+live" - which is true, since that is the two earthquake agencies. But a viewer cannot tell "no storms today"
+from "we could not ask", and this app states that distinction everywhere else: the archive prints "did not
+answer", `History.answered` keeps "nothing happened" apart from "nobody answered", a dead earthquake feed
+says so. The five live layers were the one place it did not.
+
+The cause was one line in `fetchList`, which documented itself as "failing to an empty list rather than into
+the app". True, and the empty list is indistinguishable from a quiet one.
+
+**Reported through a callback rather than by returning a pair.** The data shape is consumed by memos and
+state right through the app, and a status channel has no business changing any of that. Five fetches take an
+optional `onAnswer`; nothing downstream moved.
+
+**Three decisions in it worth keeping.**
+
+*Optimistic until told otherwise.* A page that opened by listing feeds it had not asked yet would be crying
+wolf, so every layer starts answered and a later successful poll clears a failure - a blip does not leave a
+stale complaint on screen.
+
+*A storm without its track is still a storm.* The cyclone fetch reports on the **list** request, because the
+per-storm track call already fails softly by design, and a missing tail is not a dead feed.
+
+*A null aurora grid counts as no answer.* `parseOvation` returns null for a payload that arrived and was
+unusable, and from the viewer's side that is the same fact: the sky is missing, and not because it is quiet.
+
+The line sits beside NOTES rather than in the legend, because the legend's rows are the very things that
+vanish when a feed dies: an explanation of an absent layer cannot live inside the layer's own absent row.
+Archived days withhold these feeds by design, so it stays out of their way. Verified in three states: all
+four dead says "No feed answered for any layer, so none are drawn", the aurora alone says "No answer for the
+aurora: absent here does not mean absent", and a healthy run says nothing.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

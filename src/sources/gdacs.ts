@@ -84,15 +84,35 @@ export function isCurrent(props: Record<string, unknown>): boolean {
   return String(props["iscurrent"]).toLowerCase() === "true";
 }
 
-/** One fetch, one type, failing to an empty list rather than into the app. */
+/**
+ * One fetch, one type, failing to an empty list rather than into the app.
+ *
+ * `onAnswer` exists because that sentence was the whole problem. An empty list and a dead feed drew the
+ * same globe and said the same nothing, so with GDACS down a viewer read "no storms today" off a page
+ * that had never been able to ask. Every other absence in this app is stated - the archive prints "did not
+ * answer", `History.answered` keeps "nothing happened" apart from "nobody answered", a dead earthquake
+ * feed says so - and the four live hazard layers were the one place it was not.
+ *
+ * Reported through a callback rather than by returning a pair, deliberately: the data shape is consumed by
+ * memos and state all through the app, and a status channel has no business changing any of that.
+ */
 export async function fetchList<T>(
-  url: string, parse: (payload: unknown) => T[], get: (url: string) => Promise<Response>,
+  url: string,
+  parse: (payload: unknown) => T[],
+  get: (url: string) => Promise<Response>,
+  onAnswer?: (ok: boolean) => void,
 ): Promise<T[]> {
   try {
     const res = await get(url);
-    if (!res.ok) return [];
-    return parse(await res.json());
+    if (!res.ok) {
+      onAnswer?.(false);
+      return [];
+    }
+    const rows = parse(await res.json());
+    onAnswer?.(true);
+    return rows;
   } catch {
+    onAnswer?.(false);
     return [];
   }
 }

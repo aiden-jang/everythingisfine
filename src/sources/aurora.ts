@@ -91,12 +91,24 @@ export function auroraAt(aurora: Aurora, lon: number, lat: number): number {
  */
 export async function fetchAurora(
   get: (url: string) => Promise<Response> = fetch,
+  onAnswer?: (ok: boolean) => void,
 ): Promise<Aurora | null> {
   try {
     const res = await get(AURORA_URL);
-    if (!res.ok) return null;
-    return parseOvation(await res.json());
+    if (!res.ok) {
+      onAnswer?.(false);
+      return null;
+    }
+    const grid = parseOvation(await res.json());
+    /*
+     * A null grid counts as no answer. It means the payload was there and unusable - a short row count
+     * or a bad tuple - and from the viewer's side that is the same fact: the sky is missing and it is
+     * not because the sky is quiet.
+     */
+    onAnswer?.(grid !== null);
+    return grid;
   } catch {
+    onAnswer?.(false);
     return null;
   }
 }

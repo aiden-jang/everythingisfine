@@ -143,11 +143,20 @@ export function category(kmh: number | null): string | null {
  */
 export async function fetchCyclones(
   get: (url: string) => Promise<Response> = fetch,
+  onAnswer?: (ok: boolean) => void,
 ): Promise<Cyclone[]> {
   try {
     const res = await get(LIST);
-    if (!res.ok) return [];
+    if (!res.ok) {
+      onAnswer?.(false);
+      return [];
+    }
     const current = parseCycloneList(await res.json());
+    /*
+     * The list answered, which is what this reports. A storm whose *track* request fails is still a
+     * storm and still drawn where it is, per the catch below, so a missing tail is not a dead feed.
+     */
+    onAnswer?.(true);
     return await Promise.all(current.map(async (storm) => {
       const episode = (storm as unknown as { episode?: string }).episode ?? "";
       try {
@@ -162,6 +171,7 @@ export async function fetchCyclones(
       }
     }));
   } catch {
+    onAnswer?.(false);
     return [];
   }
 }

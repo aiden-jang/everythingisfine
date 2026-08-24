@@ -618,3 +618,31 @@ export function splitNote(note: string): { head: string; rest: string | null } {
   const rest = note.slice(at + 1).trim();
   return { head: note.slice(0, at + 1), rest: rest.length > 0 ? rest : null };
 }
+
+/**
+ * The layers that could not be asked, named so absence is not read as calm.
+ *
+ * Every other absence in this app is stated: the archive prints "did not answer", `History.answered`
+ * keeps "nothing happened" apart from "nobody answered", and a dead earthquake feed says so. The four
+ * live hazard layers plus the aurora were the one place where a dead host and a quiet planet drew the
+ * same globe and said the same nothing.
+ *
+ * Null while everything answered, because a line reading "all feeds fine" is the reassurance this app
+ * spends no words on. Only the failures are worth a sentence.
+ */
+export function silentFeeds(answered: {
+  cyclones: boolean; volcanoes: boolean; fires: boolean; floods: boolean; aurora: boolean;
+}): string | null {
+  const names: [keyof typeof answered, string][] = [
+    ["cyclones", "storms"], ["fires", "fires"], ["floods", "floods"],
+    ["volcanoes", "volcanoes"], ["aurora", "the aurora"],
+  ];
+  const missing = names.filter(([key]) => !answered[key]).map(([, label]) => label);
+  if (missing.length === 0) return null;
+  // All five is one fact about the network, not five facts about layers.
+  if (missing.length === names.length) return "No feed answered for any layer, so none are drawn.";
+  const listed = missing.length === 1
+    ? missing[0]!
+    : `${missing.slice(0, -1).join(", ")} and ${missing[missing.length - 1]!}`;
+  return `No answer for ${listed}: absent here does not mean absent.`;
+}

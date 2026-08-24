@@ -47,6 +47,7 @@ export function countries(floods: readonly Flood[]): number {
 
 export async function fetchFloods(
   get: (url: string) => Promise<Response> = fetch,
+  onAnswer?: (ok: boolean) => void,
 ): Promise<Flood[]> {
-  return fetchList(listUrl("FL"), parseFloods, get);
+  return fetchList(listUrl("FL"), parseFloods, get, onAnswer);
 }
