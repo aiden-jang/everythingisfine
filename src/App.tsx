@@ -1561,7 +1561,16 @@ export function App(): JSX.Element {
             */}
             {snapshot.coveredSince === null ? (
               <div className="mt-2 max-w-[30ch] text-[14px] leading-snug text-dim">
-                Asking USGS and EMSC for the last day.
+                {/*
+                  Which day, when the day is not today.
+                  `archive` and `coveredSince` are both set by the same success handler, so a page
+                  opened straight at a past day - every link in the notable-days list - looks live
+                  until the answer lands, and this line said "the last day" about 2011. The request
+                  knows better than the answer does: `archiveDay` is set before the fetch starts.
+                */}
+                {archiveBusy && archiveDay
+                  ? `Asking USGS and EMSC for ${archiveDay}.`
+                  : "Asking USGS and EMSC for the last day."}
               </div>
             ) : (
               <>
@@ -2232,8 +2241,17 @@ export function App(): JSX.Element {
 
           {missingShared && !pinned && snapshot.stats.quakes > 0 ? (
             <p data-rail="notice" className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
-              The event in this link is no longer in the window. The buffer holds the last day, and
-              it starts when the page opens.
+              {/*
+                An archived day is not a rolling buffer, and this sentence described one.
+                "No longer in the window" and "starts when the page opens" are both about a day that
+                slides, so on a loaded past day the notice explained a mechanism that was not running:
+                the event was never in that day rather than having fallen out of it.
+              */}
+              {archived
+                ? `The event in this link is not in ${loadedDay ?? "this day"}. `
+                  + "The whole day is loaded, so this is not a gap in coverage."
+                : "The event in this link is no longer in the window. The buffer holds the last day, "
+                  + "and it starts when the page opens."}
             </p>
           ) : null}
 
