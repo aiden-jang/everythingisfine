@@ -100,9 +100,18 @@ const SHORTLIST = 8;
  * was mush. It also put the two apart by nothing: plate boundaries are data and coastlines are reference,
  * and at 1.24 the data was not the louder of the two.
  *
- * The fill stays quiet and the lines take the range, which is what a blueprint does with a plan: coastline
- * is **2.0** above land, so the three read as three. Land against sea is untouched at 1.31 on purpose -
- * once the outline carries the shape, brightening the fill would only take contrast back from the marks.
+ * The fill stays quiet and the lines take the range, which is what a blueprint does with a plan.
+ *
+ * **Land against sea was left at 1.31 and that was the wrong call, reported three times.** The reasoning
+ * was that once the outline carries the shape the fill can stay dark - true at a coastline, useless in the
+ * middle of Eurasia, which is the largest interior on the planet and has no coastline in view at all. So
+ * the fill read as unfilled: reports came in as "empty lines across Russia", then "unfilled spots across
+ * China", then "the gap against Mongolia and China", and each time the geometry was innocent - painting
+ * the fill red proves it is solid there. It was a contrast problem wearing a geometry problem's clothes.
+ *
+ * Land is now **1.50** above sea, which costs coastline 2.01 -> 1.75 and plates 2.52 -> 2.20 against it.
+ * Every ratio in the picture is smaller and the picture is more legible, because the one that was wrong
+ * was load-bearing: an interior that reads as ocean makes every line crossing it read as a crack.
  *
  * **Plates were pulled back from 1.6 above the coastline to 1.26, reported from the app.** At 1.6 they sat
  * 3.21 above the land, and Asia's interior boundaries - Eurasia against India, Amur, Okhotsk - form closed
@@ -139,7 +148,7 @@ const COLOR_SPHERE = 0x031120;
  */
 const COLOR_VOID_C = new Color(0x050b16);
 const COLOR_SPHERE_C = new Color(COLOR_SPHERE);
-const COLOR_LAND = 0x112a46;
+const COLOR_LAND = 0x153456;
 const COLOR_COAST = 0x245b83;
 /** The graticule stays dimmer than land: it is scaffolding, and it should stay behind it. */
 const COLOR_GRATICULE = 0x13334e;
@@ -180,7 +189,7 @@ const COLOR_PLATES = 0x316a97;
  * a line nobody is drawing.
  */
 const NEUTRAL = {
-  sphere: 0x0a101c, land: 0x1e293f, graticule: 0x243149, coast: 0x555663, plates: 0x646478,
+  sphere: 0x0a101c, land: 0x25334e, graticule: 0x243149, coast: 0x555663, plates: 0x646478,
 } as const;
 
 /**
