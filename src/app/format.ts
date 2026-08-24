@@ -85,9 +85,21 @@ export const SOURCE_NAMES: Record<SourceId, string> = { usgs: "USGS", emsc: "EMS
  * for an absence, and is kept for any caller that has no such alternative.
  */
 export function windowLabel(
-  now: number, windowMs: number, coveredSince: number | null,
+  now: number, windowMs: number, coveredSince: number | null, archived = false,
 ): string {
   if (coveredSince === null) return "nothing yet";
+  /*
+   * An archived day is not "the last 24 hours", it is that day.
+   *
+   * The last holdout after the archive work: the header states the date, the still says "Archived day",
+   * and every age is measured from that day's end, while this line went on describing a span relative to
+   * now. Three words rather than the date, because the date is already on the header and in the banner
+   * beside this, and a fourth copy is words for their own sake.
+   *
+   * Always true, not a convenience: the window buttons are 24h, 7d and 30d, and the archived span is
+   * exactly one day, so every option covers the whole of it.
+   */
+  if (archived) return "the whole day";
   if (coveredSince <= now - windowMs) {
     const hours = Math.round(windowMs / 3_600_000);
     // "Last 720 hours" is arithmetically fine and nobody reads a month that way.

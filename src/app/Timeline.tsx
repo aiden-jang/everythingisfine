@@ -49,6 +49,14 @@ export interface TimelineProps {
   /** The cursor's clock, already formatted, for the readout beside the transport. */
   cursorLabel: string | null;
   /**
+   * True on an archived day, which has no right-hand edge called "now".
+   *
+   * The axis said "now" and the transport said "live" over a picture of a finished day. Both are the
+   * same mistake the layer sentences and the ages made: a label describing the present printed against
+   * a past span. The archived day's right edge is the end of that day.
+   */
+  archived?: boolean;
+  /**
    * How far back each feed can vouch, as a fraction of the window and a duration in words.
    *
    * Drawn here rather than beside the source buttons because this strip's axis already *is* the
@@ -103,7 +111,7 @@ const spanLabel = (hours: number): string =>
 export function Timeline({
   bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange, bucketMs, fetching,
   cursor, parked, playing, onScrub, onStep, onPlayToggle, onLive, cursorLabel, reaches,
-  notes,
+  notes, archived = false,
 }: TimelineProps): JSX.Element {
   const peak = peakCount(bars);
   const tallest = bars.find((b) => b.count === peak && peak > 0);
@@ -302,8 +310,8 @@ export function Timeline({
           one rail, and nothing to tell you which one you had just changed. The thumb marks the
           window here, the count names it there, and a screen reader gets it from `aria-valuetext`.
         */}
-        <span>{spanLabel(hours)}</span>
-        <span>now</span>
+        <span>{archived ? "day start" : spanLabel(hours)}</span>
+        <span>{archived ? "day end" : "now"}</span>
       </div>
 
       {/*
@@ -394,6 +402,9 @@ export function Timeline({
         {/*
           Reads "live" rather than a clock when it is live, because null is not a time. The button is
           only offered when there is something to come back from.
+
+          On an archived day there is no live edge to be at, so the unparked state says where the cursor
+          actually is - the end of the day it is showing - rather than claiming to be live.
         */}
         {parked ? (
           <button
@@ -406,7 +417,9 @@ export function Timeline({
             go live
           </button>
         ) : (
-          <span className="shrink-0 font-mono text-[10.5px] text-faint">live</span>
+          <span className="shrink-0 font-mono text-[10.5px] text-faint">
+            {archived ? "day end" : "live"}
+          </span>
         )}
       </div>
 

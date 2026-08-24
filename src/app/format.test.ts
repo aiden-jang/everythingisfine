@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   compactSpan, corroborationNote, floodNote, reach, reachFraction, reachNote, reachWords,
   boundaryNote, depthNote, farSideNote, motionNote, quietNote, soundNote, theOf,
-  wildfireNote, quietParts, cycloneNote, volcanoNote,
+  wildfireNote, quietParts, cycloneNote, volcanoNote, windowLabel,
 } from "./format";
 
 /*
@@ -458,5 +458,27 @@ describe("the layer sentences on an archived day", () => {
     const capped = { count: 100, km2: 900, medianDays: 4, leader: "Spain" };
     expect(wildfireNote(capped, 100)).toContain("count is a floor");
     expect(wildfireNote(capped, 100, true)).not.toContain("count is a floor");
+  });
+});
+
+describe("the window label on an archived day", () => {
+  const NOW = Date.parse("2026-05-16T00:00:00Z");
+  const COVERED = Date.parse("2026-05-15T00:00:00Z");
+
+  it("names the day's span rather than a distance from now", () => {
+    expect(windowLabel(NOW, 86_400_000, COVERED, true)).toBe("the whole day");
+    expect(windowLabel(NOW, 86_400_000, COVERED)).toBe("last 24 hours");
+  });
+
+  it("says the same thing at every window, because they all cover the day", () => {
+    // 24h, 7d and 30d are the only options and the archived span is one day.
+    for (const ms of [86_400_000, 7 * 86_400_000, 30 * 86_400_000]) {
+      expect(windowLabel(NOW, ms, COVERED, true)).toBe("the whole day");
+    }
+  });
+
+  it("still says nothing yet before anything has landed", () => {
+    // Coverage is a fact about the fetch, not about which day is on screen.
+    expect(windowLabel(NOW, 86_400_000, null, true)).toBe("nothing yet");
   });
 });

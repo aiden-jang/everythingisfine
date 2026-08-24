@@ -4962,6 +4962,31 @@ Two clocks agreeing on the wrong answer looks exactly like one clock being right
 It only showed with nothing stubbed at all. Worth remembering when the next archive assertion is written:
 under `installFeeds`, an archived day is half real.
 
+## Sweeping the last "now" out of an archived day
+
+Three holdouts, each found by fixing the one above it and looking at the screenshot again.
+
+**The headline said "last 24 hours" about 2026-05-15.** Left twice on the argument that the banner beneath
+it names the day, which was true and stopped being sufficient once the header, the still and every age had
+been taught the archived day's language: it was the only line still describing a distance from now. It says
+**"the whole day"** - three words rather than a fourth copy of the date, and always accurate rather than
+conveniently so, because the window buttons are 24h, 7d and 30d and the archived span is exactly one day,
+so every option covers the whole of it.
+
+**The activity strip's axis said "24h ago … now".** It reads "day start … day end".
+
+**The transport said "live".** The unparked cursor sits at the right-hand edge of the span, and on an
+archived day that edge is the end of that day, not the present. Also "day end".
+
+**Then I checked what was left rather than assuming.** Three uses of "now" and "live" survive on an archived
+day and all three are correct: "Nothing here is arriving now" is a true statement about the present and the
+banner's whole job, "back to live" is an action, and "the live feeds" is a noun. Worth writing down so the
+next sweep does not clean up the ones that were right.
+
+The pattern across the whole archive thread: **a label that names the present is a claim, and every one of
+them has to be found separately.** The copy, the ages, the neighbour window, the axis and the transport were
+five different places holding the same assumption, and each was invisible until the one before it was fixed.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
