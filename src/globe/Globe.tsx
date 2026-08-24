@@ -931,11 +931,16 @@ export function Globe({
       >
         {/*
           The corridor first, so the centre line and its caps paint over it rather than under.
-          Hairline and undashed: the dashes belong to the line you drew, and two more dashed lines
-          beside it would read as three sections rather than one with a width.
+          Undashed: the dashes belong to the line you drew, and two more dashed lines beside it would
+          read as three sections rather than one with a width.
+
+          `coast` rather than `hairline`. Every other rule in this app is a hairline and this one was too,
+          which made it consistent and too quiet to do its job: the corridor exists to answer "why is that
+          quake not in the plot", and an edge you have to hunt for cannot answer it. One step up the same
+          achromatic ladder, still well under the centre line's `ink`.
         */}
-        <line stroke="currentColor" strokeWidth={1} className="text-hairline" />
-        <line stroke="currentColor" strokeWidth={1} className="text-hairline" />
+        <line stroke="currentColor" strokeWidth={1} className="text-coast" />
+        <line stroke="currentColor" strokeWidth={1} className="text-coast" />
         <line stroke="currentColor" strokeWidth={1} className="text-ink" strokeDasharray="5 4" />
         <circle r={3.5} fill="none" stroke="currentColor" strokeWidth={1} className="text-ink" />
         <circle r={3.5} fill="none" stroke="currentColor" strokeWidth={1} className="text-ink" />
