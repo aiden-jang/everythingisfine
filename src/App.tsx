@@ -101,7 +101,7 @@ function Row({ lead, label, trail, onClick }: {
         <span className="w-[34px] shrink-0 font-mono text-[12px] text-ink">{lead}</span>
       ) : null}
       <span className="min-w-0 flex-1 truncate text-[12px] text-dim">{label}</span>
-      <span className="shrink-0 font-mono text-[11px] text-faint">{trail}</span>
+      <span className="shrink-0 font-mono text-[10.5px] text-faint">{trail}</span>
     </>
   );
   /*
@@ -1398,7 +1398,7 @@ export function App(): JSX.Element {
                     type="button"
                     onClick={() => toggleSource(id)}
                     aria-pressed={filters.sources.has(id)}
-                    className={`flex-1 cursor-pointer border px-2.5 py-1.5 text-[11.5px] transition-colors ${
+                    className={`flex-1 cursor-pointer border px-2.5 py-1.5 text-[11px] transition-colors ${
                       filters.sources.has(id)
                         ? "border-hairline bg-raised text-ink hover:border-faint"
                         : "border-hairline text-faint hover:bg-raised hover:text-dim"
@@ -1793,12 +1793,12 @@ export function App(): JSX.Element {
               */}
               <span
                 data-ramp
-                className="font-mono text-[15px] leading-none"
+                className="font-mono text-[14px] leading-none"
                 style={{ color: rampColorAt(ramp, (strongest.primary.magnitude - 1) / 6.5) }}
               >
                 {strongest.primary.magnitude.toFixed(1)}
               </span>
-              <span className="min-w-0 flex-1 truncate text-[11.5px] text-dim">
+              <span className="min-w-0 flex-1 truncate text-[11px] text-dim">
                 {place(strongest.primary.place)}
               </span>
               </span>
@@ -1932,7 +1932,7 @@ export function App(): JSX.Element {
                     back to live
                   </button>
                 </div>
-                <p className="mt-1.5 text-[11.5px] leading-relaxed text-ink">
+                <p className="mt-1.5 text-[11px] leading-relaxed text-ink">
                   {new Date(snapshot.archive.from).toISOString().slice(0, 10)}, all day UTC. Nothing here
                   is arriving now.
                 </p>
@@ -2022,7 +2022,7 @@ export function App(): JSX.Element {
                       void loadArchive(archiveDay);
                     }
                   }}
-                  className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[11px] text-dim placeholder:text-faint"
+                  className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[10.5px] text-dim placeholder:text-faint"
                 />
                 <button
                   type="button"
@@ -2042,7 +2042,7 @@ export function App(): JSX.Element {
                   than stored, so it cannot outlive the value that caused it.
                 */}
                 {dayFault ? (
-                  <p id="archive-day-fault" className="mt-1 text-[10.5px] leading-relaxed text-faint">
+                  <p id="archive-day-fault" className="mt-1 text-[11px] leading-relaxed text-faint">
                     {dayFault}
                   </p>
                 ) : null}
@@ -2090,7 +2090,7 @@ export function App(): JSX.Element {
                         <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
                           {d.day}
                         </span>
-                        <span className="min-w-0 flex-1 truncate text-[11.5px] text-dim">{d.what}</span>
+                        <span className="min-w-0 flex-1 truncate text-[11px] text-dim">{d.what}</span>
                         <span className="shrink-0 font-mono text-[10.5px] text-dim tabular-nums">
                           M{d.magnitude.toFixed(1)}
                         </span>
@@ -2100,7 +2100,7 @@ export function App(): JSX.Element {
                       Required, not decoration: 1960 returns six events against Tōhoku's 685, and
                       without this a reader takes a true number as a claim about the planet.
                     */}
-                    <p className="mt-1.5 text-[10.5px] leading-relaxed text-faint">{NOTABLE_NOTE}</p>
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{NOTABLE_NOTE}</p>
                   </div>
                 </details>
             {/*
@@ -2369,7 +2369,7 @@ export function App(): JSX.Element {
                               markId === row.id ? "bg-raised" : ""
                             }`}
                           >
-                            <span className="min-w-0 flex-1 truncate text-[11.5px] text-dim">
+                            <span className="min-w-0 flex-1 truncate text-[11px] text-dim">
                               {row.name}
                             </span>
                             {row.measure ? (
@@ -2458,7 +2458,7 @@ export function App(): JSX.Element {
             whose chrome is held under a chroma ceiling and tested for it - so it borrows `faint` and an
             underline, the way the other apps here do it.
           */}
-          <p className="mt-4 pt-1 text-[10.5px] text-faint">
+          <p className="mt-4 pt-1 text-[11px] text-faint">
             made by{" "}
             <a
               href="https://www.aidenjang.com"

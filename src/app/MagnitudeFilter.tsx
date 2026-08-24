@@ -278,7 +278,7 @@ export function MagnitudeFilter(
           type="button"
           aria-pressed={motionOn}
           onClick={() => onMotion(!motionOn)}
-          className={`ml-auto cursor-pointer border px-2 py-1 text-[10.5px] transition-colors ${
+          className={`ml-auto cursor-pointer border px-2 py-1 text-[11px] transition-colors ${
             motionOn
               ? "border-faint bg-raised text-ink"
               : "border-hairline text-faint hover:bg-raised hover:text-dim"

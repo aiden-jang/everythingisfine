@@ -155,13 +155,13 @@ export function MarkCard({ found, now, archived = false, onClose, onFlyTo }: Mar
         <button
           type="button"
           onClick={onClose}
-          className="cursor-pointer font-mono text-[11px] text-faint transition-colors hover:text-ink"
+          className="cursor-pointer font-mono text-[10.5px] text-faint transition-colors hover:text-ink"
         >
           esc
         </button>
       </div>
       <h2 className="mt-2 text-[22px] leading-tight text-ink">{title}</h2>
-      <p className="mt-1.5 text-[11.5px] leading-relaxed text-faint">{note}</p>
+      <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{note}</p>
 
       <dl className="mt-4">
         {lines.map(({ label, value }) => (
@@ -176,7 +176,7 @@ export function MarkCard({ found, now, archived = false, onClose, onFlyTo }: Mar
         <button
           type="button"
           onClick={() => onFlyTo(where.lon, where.lat, 2.2)}
-          className="cursor-pointer border border-hairline px-3 py-2 text-[11.5px] text-dim transition-colors hover:bg-raised hover:text-ink"
+          className="cursor-pointer border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
         >
           Fly here
         </button>
