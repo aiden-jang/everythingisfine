@@ -1643,7 +1643,7 @@ export function App(): JSX.Element {
                 to say so before it is pressed rather than after.
               */
               aria-label={`Largest: magnitude ${strongest.primary.magnitude.toFixed(1)}, `
-                + `${place(strongest.primary.place)}, ${ago(strongest.primary.time, now)}. `
+                + `${place(strongest.primary.place)}, ${ago(strongest.primary.time, now, archived)}. `
                 + "Go there and hold the window at that moment."}
               data-rail="largest"
               className="tb-cell tb-wide cursor-pointer text-left transition-colors hover:bg-raised"
@@ -1651,7 +1651,7 @@ export function App(): JSX.Element {
               <span className="flex items-baseline justify-between gap-2">
                 <span className="label">Largest</span>
                 <span className="shrink-0 font-mono text-[10.5px] text-faint">
-                  {agoShort(strongest.primary.time, now)}
+                  {agoShort(strongest.primary.time, now, archived)}
                 </span>
               </span>
               <span className="flex items-baseline gap-2">
@@ -2160,6 +2160,7 @@ export function App(): JSX.Element {
             onNews={onNews}
             waiting={snapshot.coveredSince === null}
             now={now}
+            archived={archived}
           />
 
         </aside>
@@ -2314,6 +2315,7 @@ export function App(): JSX.Element {
             excluded={!matches(shownQuake, filters, now)}
             revision={snapshot.revision}
             now={now}
+            archived={archived}
             onClose={() => setSelected(null)}
             onFlyTo={(lon, lat, zoom) => flyTo.current(lon, lat, zoom)}
             /*

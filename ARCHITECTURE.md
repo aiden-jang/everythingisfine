@@ -5163,6 +5163,37 @@ element, a magnitude regex that disallowed a space, `toContainText` seeing throu
 walk. Every one of them pointed at the app. The rule that has earned its place: **when a probe accuses the
 code, check the probe first.**
 
+## The deferral that rested on the wrong denominator
+
+`ago` returns "just now" under 45 seconds, and on an archived day that word claims the present about a
+finished one. I deferred it twice, both times on the same arithmetic: 45 seconds is 0.05% of a day, so
+threading an `archived` flag through `ago`, `agoShort` and their call sites was disproportionate.
+
+The denominator was wrong. Nobody reads a uniformly sampled second of an archived day; they read the **top
+row**, which is the newest event, and the gap from a day's end to its newest event is exponential rather
+than uniform:
+
+| events that day | top row says "just now" |
+|---|---|
+| 60 | 3.1% |
+| 200 | **9.9%** |
+| 400 | **18.8%** |
+
+At this app's rates that is one archived day in five to one in ten showing a false present tense on its
+most-read line, not one in two thousand. The cost estimate had not changed; it had never been right.
+
+So it is done: "at the day's end", and "end" in the short form, reusing the words the activity strip and
+transport already use for that edge rather than inventing a third phrase for one boundary. The flag reaches
+the rail row, its screen-reader sentence, the largest-event row, the detail panel and the mark card, and
+every longer gap is asserted byte-identical in both modes so the change cannot leak into live copy.
+
+**The live half of the check was worthless first.** It asserted "just now" appears on a live day, against a
+generated day whose newest event is minutes old - a 45-second window the fixture could not produce. Green
+would have meant nothing and red meant nothing either. It injects a brand-new event now.
+
+The lesson is narrower than the six probe faults and worth keeping separate from them: a deferral is a
+measurement too, and this one was never checked.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -5255,11 +5286,13 @@ Written last, and kept accurate rather than kept short.
   minimum, so it cost no layout. `aria-label` reuses the readout's own words, and an hour the buffer never
   covered says "Not covered" rather than reading as a quiet hour.
 
-- **"just now" on an archived day.** `ago` returns it under 45 seconds, and on a past day the word does
-  double duty: an event in the last 45 seconds of an archived day reads as the present. Correcting it means
-  threading an `archived` flag through `ago`, `agoShort` and every call site in the rail, the panel and the
-  cards, which is disproportionate to 0.05% of a day. Recorded rather than done, and the fixtures now sit
-  exactly on the boundary so it is visible whenever anybody looks.
+- ~~**"just now" on an archived day.**~~ **Closed, and the reason it stayed open twice was an arithmetic
+  mistake.** It was deferred as "0.05% of a day", which is 45 seconds as a fraction of 86,400 - the wrong
+  quantity. The row that gets read is the **newest** one, at the top of the rail, and the gap between a
+  day's end and its newest event is exponential: at 200 events a day the top row reads "just now"
+  **9.9%** of the time and at 400 events **18.8%**. Two orders of magnitude from the number that justified
+  leaving it. It reads "at the day's end" now, and "end" in the short form, matching the words the activity
+  strip and the transport already use for that edge.
 
 - **The cross-section's swatches are close, not exact, on the default ramp.** They are painted from
   `--color-coast` and `--color-plate`, which chrome cannot set to the blue canvas values - chroma 70 and 78

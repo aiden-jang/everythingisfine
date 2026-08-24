@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   compactSpan, corroborationNote, floodNote, reach, reachFraction, reachNote, reachWords,
   boundaryNote, depthNote, farSideNote, motionNote, quietNote, soundNote, theOf,
-  wildfireNote, quietParts, cycloneNote, volcanoNote, windowLabel,
-} from "./format";
+  wildfireNote, quietParts, cycloneNote, volcanoNote, windowLabel, ago, agoShort} from "./format";
 
 /*
  * The reach labels, which exist because two feeds do not cover the same span.
@@ -480,5 +479,32 @@ describe("the window label on an archived day", () => {
   it("still says nothing yet before anything has landed", () => {
     // Coverage is a fact about the fetch, not about which day is on screen.
     expect(windowLabel(NOW, 86_400_000, null, true)).toBe("nothing yet");
+  });
+});
+
+describe("ago on a finished day", () => {
+  const END = Date.parse("2026-05-16T00:00:00Z");
+
+  it("names the day's end rather than the present", () => {
+    /*
+     * Deferred twice as 0.05% of a day, which was the wrong quantity: the row that gets read is the
+     * newest one, and the gap from a day's end to its newest event is exponential. At 200 events a day
+     * the top row says this 10% of the time, and at 400 nearly 19%.
+     */
+    const twenty = END - 20_000;
+    expect(ago(twenty, END, true)).toBe("at the day's end");
+    expect(ago(twenty, END)).toBe("just now");
+    expect(agoShort(twenty, END, true)).toBe("end");
+    expect(agoShort(twenty, END)).toBe("just now");
+  });
+
+  it("leaves every longer gap exactly as it was", () => {
+    for (const [gap, live] of [
+      [5 * 60_000, "5 minutes ago"], [3 * 3_600_000, "3 hours ago"], [2 * 86_400_000, "2 days ago"],
+    ] as const) {
+      expect(ago(END - gap, END, true)).toBe(live);
+      expect(ago(END - gap, END)).toBe(live);
+    }
+    expect(agoShort(END - 5 * 60_000, END, true)).toBe("5m");
   });
 });

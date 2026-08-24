@@ -101,7 +101,7 @@ export function linesFor(
       lines: [
         ...(v.country ? [{ label: "Country", value: v.country }] : []),
         { label: "Position", value: latLon(v.lon, v.lat) },
-        ...(v.endedAt === null ? [] : [{ label: "Episode ended", value: ago(v.endedAt, now) }]),
+        ...(v.endedAt === null ? [] : [{ label: "Episode ended", value: ago(v.endedAt, now, archived) }]),
       ],
     };
   }
@@ -131,7 +131,7 @@ export function linesFor(
     note: `Flood running ${archived ? "that day" : "now"}. This feed does not rate them.`,
     lines: [
       { label: "Position", value: latLon(f.lon, f.lat) },
-      ...(f.startedAt === null ? [] : [{ label: "Since", value: ago(f.startedAt, now) }]),
+      ...(f.startedAt === null ? [] : [{ label: "Since", value: ago(f.startedAt, now, archived) }]),
     ],
   };
 }

@@ -45,6 +45,8 @@ export interface DetailPanelProps {
    * has nothing to do with.
    */
   now: number;
+  /** True on an archived day, so ages name that day's end rather than the present. */
+  archived?: boolean;
   store: Store;
   filters: Filters;
   onClose: () => void;
@@ -77,7 +79,7 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
 }
 
 export function DetailPanel({
-  open, quake, store, filters, ramp, excluded, revision, now, onClose, onFlyTo, onSection,
+  open, quake, store, filters, ramp, excluded, revision, now, archived = false, onClose, onFlyTo, onSection,
   farSide, onFarSide, boundaryKm, onSelect,
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
@@ -165,7 +167,7 @@ export function DetailPanel({
       </div>
       <div className="mt-2 text-[13px] leading-snug text-dim">{place(r.place)}</div>
       <div className="mt-1 text-[11.5px] text-faint">
-        {clock(r.time)} · {ago(r.time, now)}
+        {clock(r.time)} · {ago(r.time, now, archived)}
       </div>
 
       {/*

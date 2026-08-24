@@ -17,9 +17,21 @@ export function magnitude(reading: Reading): string {
  * "2 minutes ago", never "2m 14s ago". Origin time is itself an agency's estimate, so second-level
  * precision on top of it is precision the number does not have.
  */
-export function ago(then: number, now: number): string {
+export function ago(then: number, now: number, archived = false): string {
   const s = Math.max(0, Math.round((now - then) / 1000));
-  if (s < 45) return "just now";
+  /*
+   * "just now" is the last thing in this app that claimed the present about a finished day.
+   *
+   * It was deferred twice as disproportionate on the grounds that 45 seconds is 0.05% of a day. That is
+   * the wrong quantity: the row that gets read is the **newest** one, at the top of the rail, and the gap
+   * between the day's end and its newest event is exponential. At this app's rates the top row of an
+   * archived day reads "just now" **10% of the time at 200 events and 19% at 400** - not one in two
+   * thousand.
+   *
+   * "the day's end" rather than a clock time, matching the words the activity strip and the transport
+   * already use for that edge.
+   */
+  if (s < 45) return archived ? "at the day's end" : "just now";
   const m = Math.round(s / 60);
   if (m < 60) return `${m} minute${m === 1 ? "" : "s"} ago`;
   const h = Math.round(m / 60);
@@ -118,8 +130,9 @@ export function windowLabel(
  * Extracted when the rail's largest-event row needed it too. Two copies of a string transform is how
  * "5h" and "21 hours" end up side by side in one panel, each correct on its own.
  */
-export function agoShort(then: number, now: number): string {
-  return ago(then, now)
+export function agoShort(then: number, now: number, archived = false): string {
+  return ago(then, now, archived)
+    .replace("at the day's end", "end")
     .replace(" ago", "")
     .replace(/ minutes?/, "m")
     .replace(/ hours?/, "h")
