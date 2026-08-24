@@ -36,6 +36,15 @@ export interface TimelineProps {
   bucketMs: number;
   /** True while a wider backlog is still arriving, so the strip can say so rather than look empty. */
   fetching: boolean;
+  /**
+   * True before any feed has vouched for the window, so an empty strip is not blamed on the filters.
+   *
+   * The same distinction the rail already draws between "Waiting for the first events" and "No events
+   * match the current filters". `fetching` is not it: that is a pending *window change*, so at first
+   * paint it is false while the strip is genuinely empty, and the readout would have claimed nothing
+   * matched when in fact nothing had arrived.
+   */
+  waiting: boolean;
   /** Where the cursor sits across the strip, 0 at the old edge and 1 at now. Live reads as 1. */
   cursor: number;
   /** True when the cursor is standing somewhere rather than following the present. */
@@ -109,7 +118,7 @@ const spanLabel = (hours: number): string =>
   (hours >= 48 ? `${Math.round(hours / 24)}d ago` : `${hours}h ago`);
 
 export function Timeline({
-  bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange, bucketMs, fetching,
+  bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange, bucketMs, fetching, waiting,
   cursor, parked, playing, onScrub, onStep, onPlayToggle, onLive, cursorLabel, reaches,
   notes, archived = false,
 }: TimelineProps): JSX.Element {
@@ -196,7 +205,18 @@ export function Timeline({
                 + `${bucketAgo(held.bucketsAgo, bucketMs)}`
               : peak > 0 && tallest
                 ? `peak ${peak} · ${bucketAgo(tallest.bucketsAgo, bucketMs)}`
-                : ""}
+                /*
+                  An empty window says so, in the slot the peak was using.
+
+                  With nothing passing the filter every bucket draws its 1px floor, so the strip becomes
+                  a row of twenty-four slivers under an axis: a frame around nothing, which reads as a
+                  rendering fault rather than as zero. The rail says "No events match the current filters"
+                  forty pixels below, and this is the same fact about the same window, so it costs a line
+                  that was already blank.
+                */
+                : waiting
+                  ? ""
+                  : "nothing in this window"}
         </span>
       </div>
 
