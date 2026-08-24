@@ -16,6 +16,7 @@ import { drawStill, stillMoment, verdictLine, STILL_HEIGHT, STILL_WIDTH } from "
 import { findSubject, MarkCard } from "./app/MarkCard";
 import { hazardCount, hazardGroups } from "./app/hazards";
 import { dayRange, fetchArchive } from "./sources/archive";
+import { NOTABLE_DAYS } from "./app/notableDays";
 import { fetchHistory, type History } from "./sources/history";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
@@ -1857,6 +1858,40 @@ export function App(): JSX.Element {
                   {archiveBusy ? "…" : "go"}
                 </button>
                 </div>
+                {/*
+                  Days worth seeing, because a blank date field asks for a date nobody knows.
+                  Behind a disclosure and closed by default: it is a way in, not a menu, and the field
+                  above stays the answer for somebody who came with a date already in mind.
+                */}
+                <details className="mt-2">
+                  <summary className="cursor-pointer list-none text-[11px] text-faint hover:text-dim">
+                    Days worth seeing
+                  </summary>
+                  <div className="mt-1">
+                    {NOTABLE_DAYS.map((d) => (
+                      <button
+                        key={d.day}
+                        type="button"
+                        disabled={archiveBusy}
+                        /*
+                          Sets the field as well as loading, so the control that says which day is on
+                          screen agrees with the day on screen.
+                        */
+                        onClick={() => { setArchiveDay(d.day); void loadArchive(d.day); }}
+                        aria-label={`${d.what}, magnitude ${d.magnitude}, ${d.day}`}
+                        className="-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left transition-colors hover:bg-raised disabled:cursor-default"
+                      >
+                        <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
+                          {d.day}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-[11.5px] text-dim">{d.what}</span>
+                        <span className="shrink-0 font-mono text-[10.5px] text-dim tabular-nums">
+                          M{d.magnitude.toFixed(1)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </details>
               </div>
             )}
             <Timeline
