@@ -10,7 +10,7 @@ import type { Filters, Quake } from "../data/types";
 import { distanceLabel, magnitude } from "../app/format";
 import { between, seconds } from "../app/arrival";
 import type { RampName } from "./ramp";
-import type { SectionLine } from "../app/section";
+import { sectionEdges, type SectionLine } from "../app/section";
 import type { Aurora } from "../sources/aurora";
 import type { Mark } from "./marks";
 import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
@@ -299,14 +299,29 @@ export function Globe({
         const a = line ? globe.controls.project(line.fromLon, line.fromLat) : null;
         const b = line ? globe.controls.project(line.toLon, line.toLat) : null;
         svg.style.opacity = a && b ? "1" : "0";
-        if (a && b) {
-          const path = svg.firstElementChild as SVGLineElement | null;
-          const cap1 = svg.children[1] as SVGCircleElement | null;
-          const cap2 = svg.children[2] as SVGCircleElement | null;
-          path?.setAttribute("x1", `${a.x - box.left}`);
-          path?.setAttribute("y1", `${a.y - box.top}`);
-          path?.setAttribute("x2", `${b.x - box.left}`);
-          path?.setAttribute("y2", `${b.y - box.top}`);
+        if (a && b && line) {
+          const span = (i: number, p: { x: number; y: number }, q: { x: number; y: number }): void => {
+            const el = svg.children[i] as SVGLineElement | undefined;
+            el?.setAttribute("x1", `${p.x - box.left}`);
+            el?.setAttribute("y1", `${p.y - box.top}`);
+            el?.setAttribute("x2", `${q.x - box.left}`);
+            el?.setAttribute("y2", `${q.y - box.top}`);
+          };
+          /*
+           * The corridor, projected end by end rather than offset in screen space.
+           *
+           * A fixed pixel offset either side would be right at the equator and wrong everywhere else,
+           * since a degree of longitude is not a constant number of kilometres. `sectionEdges` does it
+           * on the sphere, and these four points project the same way the two ends already do.
+           */
+          sectionEdges(line).forEach((edge, i) => {
+            const p = globe.controls.project(edge.fromLon, edge.fromLat);
+            const q = globe.controls.project(edge.toLon, edge.toLat);
+            if (p && q) span(i, p, q);
+          });
+          span(2, a, b);
+          const cap1 = svg.children[3] as SVGCircleElement | null;
+          const cap2 = svg.children[4] as SVGCircleElement | null;
           cap1?.setAttribute("cx", `${a.x - box.left}`);
           cap1?.setAttribute("cy", `${a.y - box.top}`);
           cap2?.setAttribute("cx", `${b.x - box.left}`);
@@ -914,6 +929,13 @@ export function Globe({
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 h-full w-full opacity-0 transition-opacity duration-150"
       >
+        {/*
+          The corridor first, so the centre line and its caps paint over it rather than under.
+          Hairline and undashed: the dashes belong to the line you drew, and two more dashed lines
+          beside it would read as three sections rather than one with a width.
+        */}
+        <line stroke="currentColor" strokeWidth={1} className="text-hairline" />
+        <line stroke="currentColor" strokeWidth={1} className="text-hairline" />
         <line stroke="currentColor" strokeWidth={1} className="text-ink" strokeDasharray="5 4" />
         <circle r={3.5} fill="none" stroke="currentColor" strokeWidth={1} className="text-ink" />
         <circle r={3.5} fill="none" stroke="currentColor" strokeWidth={1} className="text-ink" />

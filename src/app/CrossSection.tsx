@@ -99,8 +99,16 @@ export function CrossSection({
             {depth(hoveredReading)} · {place(hoveredReading.place)}
           </span>
         ) : (
+          /*
+            The length is on the axis below, so it is not up here as well.
+
+            This printed "1,438 km long" while the axis under the plot printed "1,438 km" at its right
+            end: the same figure twice in one panel, which is the exact fault the activity strip already
+            fixed and wrote down - "the axis, and only the axis". What is left is the pair of facts
+            nothing else states.
+          */
           <span className="font-mono text-[10.5px] text-faint">
-            {Math.round(lengthKm).toLocaleString("en-GB")} km long · {SECTION_HALF_WIDTH_KM} km either
+            {SECTION_HALF_WIDTH_KM} km either
             side ·{" "}
             {exaggeration < 1.05 && exaggeration > 0.95
               ? "1:1"
