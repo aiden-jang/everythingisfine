@@ -1582,7 +1582,7 @@ export function App(): JSX.Element {
                   </div>
                 ) : (
                   <div className="mt-1.5 text-[11px] text-dim">
-                    {windowLabel(now, filters.windowMs, snapshot.coveredSince)}
+                    {windowLabel(now, filters.windowMs, snapshot.coveredSince, archived)}
                     {edge.complete ? "" : " · still filling"}
                   </div>
                 )}
@@ -1827,6 +1827,7 @@ export function App(): JSX.Element {
             )}
             <Timeline
               bars={bars}
+              archived={archived}
               ramp={ramp}
               hours={hours}
               focusHour={focusHour}
