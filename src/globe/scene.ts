@@ -101,9 +101,19 @@ const SHORTLIST = 8;
  * and at 1.24 the data was not the louder of the two.
  *
  * The fill stays quiet and the lines take the range, which is what a blueprint does with a plan: coastline
- * is now **2.0** above land and plates **1.6** above coastline, so the three read as three. Land against
- * sea is untouched at 1.31 on purpose - once the outline carries the shape, brightening the fill would
- * only take contrast back from the marks.
+ * is **2.0** above land, so the three read as three. Land against sea is untouched at 1.31 on purpose -
+ * once the outline carries the shape, brightening the fill would only take contrast back from the marks.
+ *
+ * **Plates were pulled back from 1.6 above the coastline to 1.26, reported from the app.** At 1.6 they sat
+ * 3.21 above the land, and Asia's interior boundaries - Eurasia against India, Amur, Okhotsk - form closed
+ * polygons across the middle of a continent. Bright lines across a dark fill do not read as boundaries
+ * there, they read as cracks in it: the report was "unfilled spots, like thin lines, across China". Over
+ * ocean the brightening was the fix; over land it invented a defect.
+ *
+ * Not reverted to the value they had, which was **darker than the coastline is now**: data under
+ * reference, and the two within 1.15 of each other, which is the mush this whole comment exists to
+ * undo. So they sit at the quietest value that still reads as the louder line - 2.52 above land against
+ * 3.21 - and the ordering the picture depends on survives.
  *
  * Both palettes moved to the same luminances and kept their own hues, so the invariant that makes `NEUTRAL`
  * safe for the cividis ramp still holds: measured after the change, coast is 0.0950 against 0.0949 and
@@ -144,7 +154,7 @@ const COLOR_GRATICULE = 0x13334e;
  * looking. A plate boundary is the explanation, it tells you why the earthquakes are in a line. In
  * a seismic map the explanation should not be the fainter mark.
  */
-const COLOR_PLATES = 0x3a7bb0;
+const COLOR_PLATES = 0x316a97;
 
 /*
  * The neutral geography, for the colourblind ramp.
@@ -170,7 +180,7 @@ const COLOR_PLATES = 0x3a7bb0;
  * a line nobody is drawing.
  */
 const NEUTRAL = {
-  sphere: 0x0a101c, land: 0x1e293f, graticule: 0x243149, coast: 0x555663, plates: 0x737491,
+  sphere: 0x0a101c, land: 0x1e293f, graticule: 0x243149, coast: 0x555663, plates: 0x646478,
 } as const;
 
 /**
