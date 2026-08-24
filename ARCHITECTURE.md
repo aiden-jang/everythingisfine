@@ -5065,8 +5065,10 @@ Written last, and kept accurate rather than kept short.
 - ~~**Browser tests still run against a dev server, not a build.**~~ **Closed on 2026-08-21**, though the
   capability is what closed rather than every test having been run that way. `EIF_BUILD=1 pnpm test:e2e`
   (or `pnpm test:e2e:build`) builds and serves `dist` instead of booting `pnpm dev`. Twenty-six cases have
-  been run against it - the whole design suite plus three interaction cases - and all passed. The full
-  interaction suite against a build has not been run yet.
+  been run against it - the whole design suite plus three interaction cases - and all passed. **The full
+  suite has since been run that way: 55 passed, 7 skipped.** This sentence used to end "the full
+  interaction suite against a build has not been run yet", which stopped being true and stayed here
+  anyway - the same fault the bullet below is kept to remember.
 
   Opt-in rather than default because a build is slower than a dev boot and this is already the slow gate.
   `reuseExistingServer` is **off** in build mode deliberately: with it on, a dev server left on the port
@@ -5094,6 +5096,15 @@ Written last, and kept accurate rather than kept short.
   correct when written, both halves were fixed by later work, and nothing brought the two together. A
   known-limitations list is the section a reader trusts most, which makes a stale entry in it worse than
   no entry at all.
+
+  **And "closed" was too strong, which this bullet then repeated about itself.** One later run reported
+  five interaction failures in **41.9 minutes** against 5.8 for the same suite an hour earlier, all five
+  passing in isolation and 39 of 39 on a re-run; the heap gate failed once and passed 747 of 747
+  immediately after. So the camera assertions were fixed and the sensitivity was not eliminated: what is
+  actually closed is the *diagnosis*, because a 7x runtime is now the tell. The heap gate still budgets an
+  absolute 5MB of drift, which is the shape the CPU gate abandoned when a millisecond threshold failed
+  three times on unchanged code, and its own fix - a ratio against a reference workload in the same
+  process - has not been applied here.
 
 - ~~**GPU frame time has never been measured with a profiler.**~~ **Measured on 2026-08-21**, and the
   answer is comfortable at 60Hz and not especially comfortable at 120Hz. On an M1 Pro through
@@ -5130,6 +5141,22 @@ Written last, and kept accurate rather than kept short.
   readout beside the strip already said what was held. `STRIP_PX` was already 44, exactly the touch-target
   minimum, so it cost no layout. `aria-label` reuses the readout's own words, and an hour the buffer never
   covered says "Not covered" rather than reading as a quiet hour.
+
+- **"just now" on an archived day.** `ago` returns it under 45 seconds, and on a past day the word does
+  double duty: an event in the last 45 seconds of an archived day reads as the present. Correcting it means
+  threading an `archived` flag through `ago`, `agoShort` and every call site in the rail, the panel and the
+  cards, which is disproportionate to 0.05% of a day. Recorded rather than done, and the fixtures now sit
+  exactly on the boundary so it is visible whenever anybody looks.
+
+- **The cross-section's swatches are close, not exact, on the default ramp.** They are painted from
+  `--color-coast` and `--color-plate`, which chrome cannot set to the blue canvas values - chroma 70 and 78
+  against a ceiling of 55. Measured at **dE 6.5**, and **0.0** on the colourblind ramp, where the canvas
+  uses those same neutral values. 6.5 is the floor the rule allows, not a slip.
+
+- **EONET is not stubbed in the browser harness.** The agencies are, including the archive as of this
+  session, so an archived-day test is deterministic for earthquakes and live for the four hazard layers.
+  It is the only outbound host a stubbed run still reaches, which means a hazard-layer assertion on an
+  archived day is testing NASA's uptime along with the app.
 
 - **No demo video.** The write-up asks for one and there is none, because recording it was not
   something this build could do.

@@ -132,6 +132,13 @@ const COLOR_PLATES = 0x265174;
  * running in the only direction left once the ceiling is no longer the binding constraint: chrome has to
  * survive *both* ramps, and the two ramps do not want the same chrome.
  */
+/*
+ * These are also the values `--color-coast` and `--color-plate` still hold in `index.css`, which is why
+ * the cross-section's swatches match the drawn lines **exactly** on this ramp and to dE 6.5 on the other.
+ * Chrome cannot hold the blue values at all - coast is chroma 70 and plates 78, against a ceiling of 55 -
+ * so 6.5 is the floor there, not a slip. Keep the two in step: change one and the swatch starts describing
+ * a line nobody is drawing.
+ */
 const NEUTRAL = {
   sphere: 0x0a101c, land: 0x1e293f, graticule: 0x243149, coast: 0x31405d, plates: 0x3d4e6e,
 } as const;
