@@ -91,6 +91,36 @@ const SHORTLIST = 8;
  * section paints text with them, that text is chrome, and 70 would fail the ceiling. Chrome quoting the
  * drawing approximates it; it does not match it.
  */
+/*
+ * The linework carries the drawing, which it could not at the values these started on.
+ *
+ * Measured before changing anything: land against sea was **1.31**, coastline against land **1.40**, and
+ * plate boundaries against coastline **1.24**. One fill and three line types inside a 1.3-to-1.8 band, so
+ * the globe had an edge and a silhouette and nothing in between - Australia read, and the interior of Asia
+ * was mush. It also put the two apart by nothing: plate boundaries are data and coastlines are reference,
+ * and at 1.24 the data was not the louder of the two.
+ *
+ * The fill stays quiet and the lines take the range, which is what a blueprint does with a plan: coastline
+ * is now **2.0** above land and plates **1.6** above coastline, so the three read as three. Land against
+ * sea is untouched at 1.31 on purpose - once the outline carries the shape, brightening the fill would
+ * only take contrast back from the marks.
+ *
+ * Both palettes moved to the same luminances and kept their own hues, so the invariant that makes `NEUTRAL`
+ * safe for the cividis ramp still holds: measured after the change, coast is 0.0950 against 0.0949 and
+ * plates 0.1820 against 0.1818.
+ *
+ * `NEUTRAL` was re-picked rather than scaled, and its chroma fell from 49 to 14 and 30. Scaling it in
+ * proportion put the coastline **9.7 dE** from cividis's second stop, below the 12.0 this project already
+ * recorded as too close - so brightening it in place would have fixed the mush and reintroduced the exact
+ * regression that mush was traded for. The search that replaced it holds the luminance, caps chroma at 52
+ * because `--color-coast` and `--color-plate` mirror these two outside the canvas under DESIGN.md 3.1, and
+ * maximises the distance to every ramp stop: the nearest is now **18** and both were within 14 of it before.
+ *
+ * Twice the optimiser had to be argued with rather than obeyed. Unconstrained, "furthest from a
+ * blue-to-yellow ramp" is green, and constrained only to `b >= g >= r` it is teal - both correct answers to
+ * the question asked and wrong answers for a blue-grey drawing. The constraint that fixed it says what the
+ * palette actually is: blue, by at least 12 of it.
+ */
 const COLOR_SPHERE = 0x031120;
 /*
  * The map's backdrop fades between these two, so both are needed as objects rather than numbers.
@@ -100,7 +130,7 @@ const COLOR_SPHERE = 0x031120;
 const COLOR_VOID_C = new Color(0x050b16);
 const COLOR_SPHERE_C = new Color(COLOR_SPHERE);
 const COLOR_LAND = 0x112a46;
-const COLOR_COAST = 0x1b4361;
+const COLOR_COAST = 0x245b83;
 /** The graticule stays dimmer than land: it is scaffolding, and it should stay behind it. */
 const COLOR_GRATICULE = 0x13334e;
 /*
@@ -114,7 +144,7 @@ const COLOR_GRATICULE = 0x13334e;
  * looking. A plate boundary is the explanation, it tells you why the earthquakes are in a line. In
  * a seismic map the explanation should not be the fainter mark.
  */
-const COLOR_PLATES = 0x265174;
+const COLOR_PLATES = 0x3a7bb0;
 
 /*
  * The neutral geography, for the colourblind ramp.
@@ -140,7 +170,7 @@ const COLOR_PLATES = 0x265174;
  * a line nobody is drawing.
  */
 const NEUTRAL = {
-  sphere: 0x0a101c, land: 0x1e293f, graticule: 0x243149, coast: 0x31405d, plates: 0x3d4e6e,
+  sphere: 0x0a101c, land: 0x1e293f, graticule: 0x243149, coast: 0x555663, plates: 0x737491,
 } as const;
 
 /**

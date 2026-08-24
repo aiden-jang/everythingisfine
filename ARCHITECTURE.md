@@ -4618,7 +4618,14 @@ in **41.9 minutes**, against 5.8 for the same suite an hour earlier. All five pa
 re-run passed **39 of 39 in 6.0 minutes**. Load average on the machine was 12.7. So the entry above claiming
 the browser gate's load sensitivity was closed is **too strong**: waiting for motion to stop fixed the camera
 assertions, and these five have some other timing dependency that a 7x-loaded machine still finds. Recorded
-rather than fixed, because the cheap tell is real: a 7x runtime is the signal, not the failure list.
+rather than fixed, because the cheap tell is real: an elevated runtime is the signal, not the failure list.
+
+**And 7x was the wrong number, measured on 2026-08-24.** A run of 13.5 minutes - **2.2x** the 6.2 baseline,
+nowhere near 7x - failed two cases (`the globe is operable from the keyboard` and `the rail resizes in both
+directions`), and both passed in **1.1 minutes** run on their own. So 7x was one observation written down as a
+threshold, and the honest reading is that any runtime meaningfully above baseline invalidates a failure list.
+The machine was hosting a dev server and being polled for progress during the run, which is the ordinary state
+of this laptop rather than an unusual load.
 
 The **heap gate belongs on that list too**. It failed once during this pass and then passed 722 of 722 on an
 immediate re-run with nothing changed between them. Its budget is an absolute 5MB of drift, which is exactly
@@ -5455,7 +5462,8 @@ Written last, and kept accurate rather than kept short.
   five interaction failures in **41.9 minutes** against 5.8 for the same suite an hour earlier, all five
   passing in isolation and 39 of 39 on a re-run; the heap gate failed once and passed 747 of 747
   immediately after. So the camera assertions were fixed and the sensitivity was not eliminated: what is
-  actually closed is the *diagnosis*, because a 7x runtime is now the tell. The heap gate still budgets an
+  actually closed is the *diagnosis*, because an elevated runtime is the tell - though not 7x, which was one
+  observation mistaken for a threshold: a **2.2x** run on 2026-08-24 failed two cases that passed in isolation. The heap gate still budgets an
   absolute 5MB of drift, which is the shape the CPU gate abandoned when a millisecond threshold failed
   three times on unchanged code, and its own fix - a ratio against a reference workload in the same
   process - has not been applied here.

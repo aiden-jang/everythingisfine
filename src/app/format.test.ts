@@ -440,11 +440,16 @@ describe("the layer sentences on an archived day", () => {
     expect(cycloneNote(storms, cat)).toContain("1 tropical cyclone running");
 
     const fire = { count: 20, km2: 400, medianDays: 3, leader: "Spain" };
-    expect(wildfireNote(fire, 100, true)).toContain("that burned that day");
-    expect(wildfireNote(fire, 100)).toContain("burning now");
+    /*
+     * The tense moved past the full stop when the legend heads were shortened, and it is the tense
+     * these assertions are for. "the flames are forest fires burning now, 20 of them" became "the
+     * flames are forest fires, 20 of them. Burning now, ..." - same distinction, second sentence.
+     */
+    expect(wildfireNote(fire, 100, true)).toContain("They burned that day");
+    expect(wildfireNote(fire, 100)).toContain("Burning now");
 
-    expect(floodNote(4, 4, true)).toContain("floods that day");
-    expect(floodNote(4, 4)).toContain("floods running now");
+    expect(floodNote(4, 4, true)).toContain("They ran that day");
+    expect(floodNote(4, 4)).toContain("Running now");
 
     expect(volcanoNote(3, Date.parse("2026-05-01T00:00:00Z"), Date.parse("2026-05-15T00:00:00Z"), true))
       .toContain("was erupting then");
