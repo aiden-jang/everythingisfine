@@ -255,6 +255,54 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
       json: { features: quakes.filter((q) => q.both).map((q) => emscFeature(q, now)) },
     });
   });
+  /*
+   * The archive, which was reaching the real internet for months without anybody noticing.
+   *
+   * The routes above catch `all_day.geojson` and `seismicportal.eu`. The archive asks
+   * `earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=...`, which contains no literal
+   * `.geojson`, so **USGS archive requests missed every pattern and went out to the real agency** while
+   * the EMSC archive request was caught by the host pattern below. Every archived-day test was therefore
+   * running on real events from that day mixed with fixtures dated near now - and the newest fixture sat
+   * at the top of the list, which is exactly how a wrong clock read "1h ago" and hid a bug for two turns.
+   *
+   * The fixtures are dated **inside the requested day** rather than near now, because that is the whole
+   * point: an archived day whose events are dated today cannot tell a correct clock from a broken one.
+   */
+  await page.route(/fdsnws\/event\/1\/query/, async (route) => {
+    const url = new URL(route.request().url());
+    const start = Date.parse(`${url.searchParams.get("starttime") ?? ""}`);
+    const end = Date.parse(`${url.searchParams.get("endtime") ?? ""}`);
+    /*
+     * Only an archive query, handed back to the routes above otherwise.
+     *
+     * EMSC's *live* seed uses this same endpoint - `?limit=600&format=json&start=...` - so claiming every
+     * `fdsnws` request replaced the capped seed fixtures the reach test depends on, and that test went
+     * red. `starttime`/`endtime` are the archive's parameters; the live seed says `start`.
+     */
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+      await route.fallback();
+      return;
+    }
+    const span = { from: start, to: end };
+    // Spread across the day, oldest first, so the newest sits just inside its end.
+    const spread = quakes.map((q, i) => ({
+      ...q,
+      id: `arc${i}`,
+      ago: Math.round(((quakes.length - 1 - i) / Math.max(1, quakes.length - 1)) * (span.to - span.from)),
+    }));
+    const emsc = /seismicportal/.test(url.host);
+    route.fulfill({
+      json: emsc
+        ? { features: spread.map((q) => emscFeature(q, span.to)) }
+        : { features: spread.map((q) => usgsFeature(q, span.to)) },
+    });
+  });
+
+  /*
+   * Registered last on purpose: Playwright checks routes in reverse registration order, so the broad
+   * `seismicportal.eu` host pattern above would otherwise keep catching the EMSC archive query.
+   */
+
 }
 
 /**
