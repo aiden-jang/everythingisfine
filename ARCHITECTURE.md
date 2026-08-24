@@ -5356,7 +5356,22 @@ palette rather than written down so the two ramps cannot drift. Its far half is 
 ocean's depth, because a line has no facing to cull.
 
 A scan along the 66th parallel across Siberia now returns fourteen values all within two units of each
-other - a day-wash gradient, not stripes.
+other - a day-wash gradient, not stripes. Verified on both projections: over open ocean the brightest pixel
+in a window around each meridian sits **25 above the row median on the globe and 22 on the map**, and on a
+meridian crossing a continent the on-line and off-line readings differ by **3 out of about 150**, which is
+the fill winning.
+
+**A dual treatment was built and then deleted, and the reason is the instrument.** Sampling one rounded
+pixel per meridian said the map had lost its graticule entirely - twice, including once after the map's
+original settings had been restored exactly, which should have been the tell. A meridian on the flat map is a
+**one-pixel vertical line**, and a single rounded sample misses it; on the globe the same line is curved and
+wider in screen space, so it was found there. Taking the brightest pixel in a window instead found it on both
+at once.
+
+By then the graticule had grown a per-projection treatment - opaque and early on the globe, transparent and
+late on the map - to work around a problem that did not exist. Measured properly, the single treatment gives
+the map a lift of 22 against the dual version's 23. So the machinery is gone: one arrangement, both
+projections, and the simpler code is also the one the evidence supports.
 
 **And the probe was wrong first, for the ninth time.** The coverage test walked `lonLat` in threes and
 reported the Sahara, Australia, Amazonia and Greenland uncovered. The fill is an **indexed** geometry -
