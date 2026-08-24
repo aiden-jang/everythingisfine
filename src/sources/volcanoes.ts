@@ -68,6 +68,7 @@ export function newestEpisode(volcanoes: readonly Volcano[]): number | null {
 
 export async function fetchVolcanoes(
   get: (url: string) => Promise<Response> = fetch,
+  onAnswer?: (ok: boolean) => void,
 ): Promise<Volcano[]> {
-  return fetchList(listUrl("VO"), parseVolcanoes, get);
+  return fetchList(listUrl("VO"), parseVolcanoes, get, onAnswer);
 }

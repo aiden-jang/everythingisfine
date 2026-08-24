@@ -84,6 +84,7 @@ export const FEED_CAP = 100;
 
 export async function fetchWildfires(
   get: (url: string) => Promise<Response> = fetch,
+  onAnswer?: (ok: boolean) => void,
 ): Promise<Wildfire[]> {
-  return fetchList(listUrl("WF"), parseWildfires, get);
+  return fetchList(listUrl("WF"), parseWildfires, get, onAnswer);
 }

@@ -41,7 +41,7 @@ import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import {
-  ago, agoShort, clock, compactSpan, corroborationNote, energyPercent, place, quietNote, quietParts,
+  ago, agoShort, clock, compactSpan, corroborationNote, energyPercent, place, quietNote, quietParts, silentFeeds,
   reachFraction, reachNote,
   reachWords, SOURCE_NAMES, windowLabel,
 } from "./app/format";
@@ -205,10 +205,28 @@ export function App(): JSX.Element {
    * in common is that neither is a reading two agencies might dispute.
    */
   const [cyclones, setCyclones] = useState<readonly Cyclone[]>([]);
+  /*
+   * Which of the five layers actually answered.
+   *
+   * Optimistic until told otherwise: before the first request nothing has failed, and a page that opens
+   * by listing feeds it has not asked yet would be crying wolf. A layer flips to false only when its own
+   * fetch reports a failure, and back to true when a later poll succeeds - so a blip clears itself
+   * instead of leaving a stale complaint on screen.
+   */
+  const [answered, setAnswered] = useState({
+    cyclones: true, volcanoes: true, fires: true, floods: true, aurora: true,
+  });
+  const answerFor = useCallback(
+    (layer: keyof typeof answered) => (ok: boolean): void => {
+      setAnswered((was) => (was[layer] === ok ? was : { ...was, [layer]: ok }));
+    },
+    [],
+  );
   useEffect(() => {
     let alive = true;
     const load = (): void => {
-      void fetchAurora().then((next) => { if (alive && next) setAurora(next); });
+      void fetchAurora(fetch, answerFor("aurora"))
+        .then((next) => { if (alive && next) setAurora(next); });
     };
     load();
     const id = window.setInterval(load, 10 * 60_000);
@@ -236,12 +254,14 @@ export function App(): JSX.Element {
   useEffect(() => {
     let alive = true;
     const load = (): void => {
-      void fetchCyclones().then((next) => { if (alive) setCyclones(next); });
-      void fetchWildfires().then((next) => { if (alive) setFires(next); });
-      void fetchFloods().then((next) => { if (alive) setFloods(next); });
+      void fetchCyclones(fetch, answerFor("cyclones"))
+        .then((next) => { if (alive) setCyclones(next); });
+      void fetchWildfires(fetch, answerFor("fires")).then((next) => { if (alive) setFires(next); });
+      void fetchFloods(fetch, answerFor("floods")).then((next) => { if (alive) setFloods(next); });
     };
     load();
-    void fetchVolcanoes().then((next) => { if (alive) setVolcanoes(next); });
+    void fetchVolcanoes(fetch, answerFor("volcanoes"))
+      .then((next) => { if (alive) setVolcanoes(next); });
     const id = window.setInterval(load, 10 * 60_000);
     return () => { alive = false; window.clearInterval(id); };
   }, []);
@@ -1716,6 +1736,20 @@ export function App(): JSX.Element {
             <div className="tb-notes">
               <span className="label">Notes</span>
               <p className="text-[11px] leading-relaxed text-faint">{quiet.note}</p>
+            </div>
+          ) : null}
+          {/*
+            The layers that could not be asked.
+
+            Beside the notes rather than in the legend, because it is a statement about the window like the
+            others here, and because the legend's rows are the very things that vanish when a feed dies -
+            an explanation of an absent layer cannot live inside the layer's own absent row. Archived days
+            withhold these feeds by design, so this stays out of their way.
+          */}
+          {!archived && silentFeeds(answered) ? (
+            <div className="tb-notes">
+              <span className="label">Feeds</span>
+              <p className="text-[11px] leading-relaxed text-faint">{silentFeeds(answered)}</p>
             </div>
           ) : null}
           {strongest && !replay && edge.complete && energyShare !== null && energyShare > 0.5 ? (
