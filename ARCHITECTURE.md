@@ -5026,6 +5026,30 @@ wrong for the last 45 seconds of an archived day, which is 0.05% of it, and corr
 `archived` flag through `ago`, `agoShort` and every call site in the rail, the panel and the cards. That is
 disproportionate to the window it fixes, so it is recorded rather than done.
 
+## The strip framed nothing and did not say so
+
+The magnitude filter goes to 7.5+, which any viewer can reach in one drag, and on a normal day nothing
+passes it. Most of the app handles that well: the title block collapses to the count and its window label,
+the notes row and the largest-event row disappear because they have nothing to state, and the rail says
+"No events match the current filters."
+
+The activity strip did not. Every bucket draws a 1px floor when its count is zero, so the strip became
+twenty-four slivers under an axis labelled "24h ago … now": a frame around nothing, which reads as a
+rendering fault rather than as zero. The peak readout beside it was an **empty string**.
+
+It says **"nothing in this window"** there now, which costs a line that was already blank and is the same
+fact the rail states forty pixels below.
+
+**The first version of it was wrong, and the app already knew why.** `fetching` is the only other state in
+that readout, and it means a pending *window change* - not the first load. So at first paint `fetching` is
+false while the strip is genuinely empty, and the message would have claimed nothing **matched** when in
+fact nothing had **arrived**. The rail has drawn that distinction since it was built: "Waiting for the first
+events" against "No events match the current filters". The readout takes `waiting` now and stays silent
+until some feed has vouched for the window.
+
+Asserted in all three states rather than the interesting one: silent feeds say nothing, a populated window
+says "peak 13 · 17h ago", and an empty one says it is empty.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.

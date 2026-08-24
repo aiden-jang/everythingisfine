@@ -1848,6 +1848,7 @@ export function App(): JSX.Element {
               }}
               bucketMs={bucketMs}
               fetching={fetching}
+              waiting={snapshot.coveredSince === null}
               cursor={fractionOf(view, span)}
               parked={view.at !== null}
               playing={view.playing}
