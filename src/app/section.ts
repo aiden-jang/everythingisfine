@@ -1,4 +1,4 @@
-import { EARTH_RADIUS_KM, toVec3 } from "../geo/sphere";
+import { DEG, EARTH_RADIUS_KM, toVec3 } from "../geo/sphere";
 import plates from "../geo/plates.json";
 import { matches } from "../data/filter";
 import type { Store } from "../data/store";
@@ -122,6 +122,51 @@ export function sectionThrough(
     toLon: wrap(lon + eastward),
     toLat: clampLat(lat + northward),
   };
+}
+
+/**
+ * The two edges of the corridor, as lines that can be drawn beside the centre.
+ *
+ * The panel prints "200 km either side" and the map drew a dashed centre line and two caps, so the
+ * width was a number with nothing corroborating it: an event just outside the corridor looked exactly
+ * like one just inside, and there was no way to see why a nearby quake was missing from the plot or
+ * whether redrawing wider would catch it. The overlay's own comment called it "two points and a
+ * corridor" while drawing only the two points.
+ *
+ * The same normal `project` already builds. A point at cross-track angle t off the great circle is
+ * `v cos t + n sin t`, which is the inverse of the `asin` below rather than new trigonometry, so the
+ * edges are exact on the sphere instead of a screen-space approximation that would skew with latitude.
+ */
+export function sectionEdges(
+  line: SectionLine, halfWidthKm = SECTION_HALF_WIDTH_KM,
+): [SectionLine, SectionLine] {
+  const a = toVec3(line.fromLon, line.fromLat, 1);
+  const b = toVec3(line.toLon, line.toLat, 1);
+  let nx = a[1] * b[2] - a[2] * b[1];
+  let ny = a[2] * b[0] - a[0] * b[2];
+  let nz = a[0] * b[1] - a[1] * b[0];
+  const nLen = Math.hypot(nx, ny, nz) || 1;
+  nx /= nLen; ny /= nLen; nz /= nLen;
+
+  const t = halfWidthKm / EARTH_RADIUS_KM;
+  const cos = Math.cos(t);
+  const sin = Math.sin(t);
+  const shift = (v: readonly [number, number, number], side: number): [number, number] => {
+    const x = v[0] * cos + nx * side * sin;
+    const y = v[1] * cos + ny * side * sin;
+    const z = v[2] * cos + nz * side * sin;
+    const r = Math.hypot(x, y, z) || 1;
+    return [
+      Math.atan2(x / r, z / r) / DEG,
+      Math.asin(Math.max(-1, Math.min(1, y / r))) / DEG,
+    ];
+  };
+  const edge = (side: number): SectionLine => {
+    const [fromLon, fromLat] = shift(a, side);
+    const [toLon, toLat] = shift(b, side);
+    return { fromLon, fromLat, toLon, toLat };
+  };
+  return [edge(1), edge(-1)];
 }
 
 /**
