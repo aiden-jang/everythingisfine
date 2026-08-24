@@ -15,7 +15,7 @@ import { depthBands } from "./data/depth";
 import { drawStill, stillMoment, verdictLine, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
 import { findSubject, MarkCard } from "./app/MarkCard";
 import { hazardCount, hazardGroups } from "./app/hazards";
-import { dayRange, fetchArchive } from "./sources/archive";
+import { countForDay, dayRange, fetchArchive } from "./sources/archive";
 import { NOTABLE_DAYS, NOTABLE_NOTE } from "./app/notableDays";
 import { fetchHistory, type History } from "./sources/history";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
@@ -479,6 +479,27 @@ export function App(): JSX.Element {
   const [archiveDay, setArchiveDay] = useState("");
   /** Phone only: the three secondary header toggles, folded so the row fits one line. */
   const [moreOpen, setMoreOpen] = useState(false);
+  /*
+   * How many events each notable day holds, so the list carries the comparison it exists to make.
+   *
+   * The list named twelve days by magnitude, which is the one number that does *not* separate them: two
+   * M9.1s sit next to an M9.5 and read as equivalent. The count is the fact worth seeing - 1960-05-22 is
+   * an M9.5 with **6 events** and 2011-03-11 is an M9.1 with **684** - and `NOTABLE_NOTE` directly below
+   * already explains why, so the number lands next to its own caveat instead of implying a quiet planet.
+   *
+   * Fetched when the list is opened, not on load: twelve requests for a panel nobody has looked at is
+   * twelve requests too many, and `count` answers in forty bytes so opening it costs less than one day.
+   */
+  const [dayCounts, setDayCounts] = useState<Record<string, number | null>>({});
+  const countsAsked = useRef(false);
+  const askCounts = useCallback(() => {
+    if (countsAsked.current) return;
+    countsAsked.current = true;
+    void Promise.all(NOTABLE_DAYS.map(async (d) => {
+      const n = await countForDay(d.day, MAG_MIN);
+      setDayCounts((prev) => ({ ...prev, [d.day]: n }));
+    }));
+  }, []);
   /*
    * Why a complete date was refused, or null while one is still being typed.
    *
@@ -2146,7 +2167,10 @@ export function App(): JSX.Element {
                   Behind a disclosure and closed by default: it is a way in, not a menu, and the field
                   above stays the answer for somebody who came with a date already in mind.
                 */}
-                <details className="mt-2">
+                <details
+                  className="mt-2"
+                  onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) askCounts(); }}
+                >
                   <summary className="disclose text-[11px] text-faint hover:text-dim">
                     Days worth seeing
                   </summary>
@@ -2161,7 +2185,10 @@ export function App(): JSX.Element {
                           screen agrees with the day on screen.
                         */
                         onClick={() => { setArchiveDay(d.day); void loadArchive(d.day); }}
-                        aria-label={`${d.what}, magnitude ${d.magnitude}, ${d.day}`}
+                        aria-label={`${d.what}, magnitude ${d.magnitude}, ${d.day}`
+                          + (typeof dayCounts[d.day] === "number"
+                            ? `, ${dayCounts[d.day]!.toLocaleString("en-GB")} events`
+                            : "")}
                         /*
                           Marks the day on screen, the way the hazard rows mark the selected mark.
                           Worth having only since the list stopped vanishing when a day loads: a list you
@@ -2179,6 +2206,15 @@ export function App(): JSX.Element {
                         <span className="min-w-0 flex-1 truncate text-[11px] text-dim">{d.what}</span>
                         <span className="shrink-0 font-mono text-[10.5px] text-dim tabular-nums">
                           M{d.magnitude.toFixed(1)}
+                        </span>
+                        {/*
+                          Blank until it answers, and blank if it never does. A dash or a zero here would
+                          be a claim about the day rather than about the request.
+                        */}
+                        <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] text-faint tabular-nums">
+                          {dayCounts[d.day] === undefined || dayCounts[d.day] === null
+                            ? ""
+                            : dayCounts[d.day]!.toLocaleString("en-GB")}
                         </span>
                       </button>
                     ))}
