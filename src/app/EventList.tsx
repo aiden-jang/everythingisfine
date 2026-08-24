@@ -40,16 +40,18 @@ export interface EventListProps {
    * block beside it said "13h": one archived day, two clocks, disagreeing on screen at the same time.
    */
   now: number;
+  /** True on an archived day, so "just now" does not describe a finished one. */
+  archived?: boolean;
 }
 
 /** One event, as a sentence rather than a row of fields. */
-function sentence(quake: Quake, now: number): string {
+function sentence(quake: Quake, now: number, archived = false): string {
   const r = quake.primary;
   const kind = r.kind === "earthquake" ? "earthquake" : r.kind;
   const revised = quake.readings.flatMap((x) => (x.revision
     ? [`${SOURCE_NAMES[x.source]} first reported ${x.revision.fromMagnitude.toFixed(1)}`]
     : []));
-  return `Magnitude ${r.magnitude.toFixed(1)} ${kind}, ${place(r.place)}, ${ago(r.time, now)}, `
+  return `Magnitude ${r.magnitude.toFixed(1)} ${kind}, ${place(r.place)}, ${ago(r.time, now, archived)}, `
     + `${depth(r)} deep, reported by ${reportedBy(quake)}.`
     // The announcement carries the value, where the row carries only the word. A row can be pinned
     // to find out what changed; an announcement has already gone by, so "revised" on its own in the
@@ -59,6 +61,7 @@ function sentence(quake: Quake, now: number): string {
 
 export function EventList({
   quakes, selected, onSelect, announceAbove, onAnnounceAboveChange, onNews, waiting, now,
+  archived = false,
 }: EventListProps): JSX.Element {
   const [cursor, setCursor] = useState(0);
   /*
@@ -230,7 +233,7 @@ export function EventList({
                     the event, so they keep the dot. The agencies are a different kind of fact, so
                     they get distance instead.
                   */}
-                  {agoShort(quake.primary.time, now)}
+                  {agoShort(quake.primary.time, now, archived)}
                   {` · ${depth(quake.primary)}`}
                   <span className="pl-3">
                     {quake.readings.map((r) => SOURCE_NAMES[r.source]).join(" ")}
