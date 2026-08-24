@@ -5194,6 +5194,33 @@ would have meant nothing and red meant nothing either. It injects a brand-new ev
 The lesson is narrower than the six probe faults and worth keeping separate from them: a deferral is a
 measurement too, and this one was never checked.
 
+## The one load-bearing method with no test
+
+A code read rather than another behavioural sweep, since everything reachable has now been exercised.
+`store.clear()` is the newest method in the most stateful file here and `showArchive` rests on it entirely:
+it clears, then loads a past day, so anything it forgets is stale state a viewer reads as that day's data.
+It had **no test**, among twenty-seven for the same store.
+
+It is correct. Every mutable field is reset - slots, head, count, both indexes, the bucket map, the per-source
+reading counts, corroborated, revised - and `arrivals` deliberately survives as a fact about the session
+rather than the contents.
+
+Asserted through the public surface rather than the fields, because a field this missed would only be a bug
+if something could still see it: `size`, `newest`, `latest`, `forEach`, `stats`, `findByReading`, and a refill
+afterwards to prove the ring starts from a clean head rather than wherever the last fill left it.
+
+**One assertion earned its place beyond coverage.** `stats().since` goes null, and that is what makes an
+archived day's loading state correct: `since` drives `coveredSince`, which drives "Waiting for the first
+events" and the `waiting` gate added to the activity strip's readout a few entries above. Without it a fresh
+archive load would inherit the previous day's coverage and the strip would say "nothing in this window"
+about a window it had not finished fetching. Two features, built separately, meeting on one field that
+nothing had tested.
+
+**No defect found, and the honest framing is that this turn bought coverage rather than a fix.** Writing it
+did cost three wrong guesses about the store's own API - `syntheticReadings` takes an options object,
+`Ingested` exposes `isNew` rather than `revised`, `StoreStats` has no `arrivals` - which is the same lesson
+as the probe faults one rung down: read the signature, do not assume it.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
