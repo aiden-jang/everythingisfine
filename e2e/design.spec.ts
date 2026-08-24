@@ -30,6 +30,16 @@ const BREAKPOINTS = [
    * desktop window.
    */
   { name: "tablet landscape", width: 1024, height: 768 },
+  /*
+   * A rotated phone, which is a real device state and the shortest shape anybody actually holds.
+   *
+   * The argument above applies one size down and harder: 812 crosses into the strip band, so a phone
+   * turned sideways gets the four-column layout in **375px of height** - the strip takes a third of it
+   * and the globe keeps the rest. Every sample of this app had been upright or wide, and audited across
+   * this shape, a short laptop and a very short window it holds: nothing overflows, nothing scrolls the
+   * page, no control is unreachable, and the canvas keeps 53%.
+   */
+  { name: "phone landscape", width: 812, height: 375 },
   { name: "desktop", width: 1280, height: 820 },
 ] as const;
 
