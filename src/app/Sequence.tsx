@@ -78,8 +78,22 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
     <div data-ramp className="mt-3">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-[11px] text-faint">Sequence</span>
+        {/*
+          A side with nothing on it is not printed, because the axis already says so.
+
+          This read "3 before · 0 after" while the axis below rendered "this event" on the right, which
+          is what an empty side looks like there. Two ways of saying the same nothing, a strip apart. The
+          count itself earns its place - ticks can be counted at three and cannot at three hundred, so it
+          says what the drawing cannot - but a zero is the one value the drawing states perfectly well.
+
+          The same rule the header keeps for revisions: "a permanent 0 revised is a slot reserved for
+          nothing".
+        */}
         <span className="font-mono text-[10.5px] text-faint">
-          {nearby.before} before · {nearby.after} after
+          {[
+            nearby.before > 0 ? `${nearby.before} before` : null,
+            nearby.after > 0 ? `${nearby.after} after` : null,
+          ].filter((part) => part !== null).join(" · ")}
         </span>
       </div>
 
