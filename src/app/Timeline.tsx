@@ -207,7 +207,10 @@ export function Timeline({
               aria-pressed={hours === w.hours}
               className={`border px-1.5 py-0.5 font-mono text-[10.5px] ${
                 hours === w.hours
-                  ? "border-hair bg-raised text-ink"
+                  // `border-hair` was a token that does not exist, so this fell back to `currentColor`
+                  // and drew an `ink` border - the brightest edge in the app, by accident. `faint` is
+                  // what a pressed control wears in the panel and the key.
+                  ? "border-faint bg-raised text-ink"
                   : "border-transparent text-faint hover:text-dim"
               }`}
             >
@@ -424,7 +427,10 @@ export function Timeline({
           onClick={onPlayToggle}
           aria-label={playing ? "Pause" : "Play the window through"}
           aria-keyshortcuts="Space"
-          className="h-5 w-5 shrink-0 border border-hair text-[9.5px] leading-none text-dim
+          // Same missing token, and the same accident: a `dim` edge on a control whose neighbours are
+          // all hairline. The glyph sits on the sans body step: it is a symbol rather than a figure, so
+          // the mono step it briefly borrowed was the wrong one.
+          className="h-5 w-5 shrink-0 border border-hairline text-[11px] leading-none text-dim
             hover:text-ink"
         >
           {playing ? "❚❚" : "▶"}
