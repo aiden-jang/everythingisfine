@@ -528,10 +528,27 @@ export function DetailPanel({
         >
           Far side
         </button>
+        {/*
+          A seam, because the fourth button is not the same kind of thing as the first three.
+
+          Fly here, Slice here and Far side all move the camera: press one and the globe answers. Copy
+          link puts the view on your clipboard and changes nothing on screen. Four identical bordered
+          buttons in a row said those were four of a kind, and the one that leaves the app was the one
+          least like the others.
+
+          Pushed apart rather than fenced off. A separator was tried and it dangles: this row wraps, and a
+          divider that lands at the end of a line is an orphan pointing at nothing. `ml-auto` reads as the
+          same break in both layouts - hard right when all four share a line, and alone on its own line
+          when they do not - and it adds no element that can end up in the wrong place.
+
+          Not a wrapper either: the note above bought this row's wrapping with a real fix, and nesting the
+          first three as one group would spend it, pushing them past the edge of a phone as one
+          unsplittable item.
+        */}
         <button
           type="button"
           onClick={() => void copyLink()}
-          className="cursor-pointer border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
+          className="ml-auto cursor-pointer border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
         >
           {copied ? "Link copied" : "Copy link"}
         </button>
