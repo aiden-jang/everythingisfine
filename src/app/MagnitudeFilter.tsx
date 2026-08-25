@@ -2,6 +2,9 @@ import type { ReactElement, ReactNode } from "react";
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { PLAYBACK } from "../geo/waves";
 import {
+  SLAB_FROM, SLAB_MIN_DEPTH_KM, SLAB_MIN_MAGNITUDE, SLAB_TO,
+} from "../geo/slab";
+import {
   auroraNote, cycloneNote, depthNote, floodNote, motionNote, soundNote, splitNote, volcanoNote,
   wildfireNote,
 } from "./format";
@@ -94,6 +97,11 @@ export interface MagnitudeFilterProps {
   /** Whether earthquakes are drawn at their own depth. Null hides the control, on the flat map. */
   sinkOn: boolean | null;
   onSink: (on: boolean) => void;
+  /** Whether five years of deep seismicity are drawn. Null hides the control, on the flat map. */
+  slabOn: boolean | null;
+  onSlab: (on: boolean) => void;
+  /** How many points arrived, so the row counts rather than promises. 0 while it is still loading. */
+  slabCount: number;
   /**
    * Any further controls, rendered above the key rather than below it.
    *
@@ -129,7 +137,7 @@ export function MagnitudeFilter(
   {
     ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince, now,
     fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
-    motion, motionOn, onMotion, sinkOn, onSink, depth, sound, children,
+    motion, motionOn, onMotion, sinkOn, onSink, slabOn, onSlab, slabCount, depth, sound, children,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -347,6 +355,47 @@ export function MagnitudeFilter(
           </svg>
           <span>{motionNote(motion)}</span>
         </div>
+      ) : null}
+
+      {/*
+        The slab gets its own row rather than hanging off the boundaries, and that is the honest place
+        for it. The motion arrows are a second reading of a line already drawn; this is a second
+        population of events - older, differently thresholded, and not from today - which is exactly the
+        thing a viewer must not mistake for the marks beside it.
+
+        So the row states its own terms: how many, how deep, how big, and over what years. A layer that
+        looks like data and is not has to say so in its own sentence, and the count is the part that
+        proves it arrived rather than promising it will.
+      */}
+      {slabOn === null ? null : (
+        <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+          <span
+            className="inline-block size-[7px] shrink-0 rounded-full"
+            style={{ background: "var(--color-plate)" }}
+          />
+          <span>the deep ones, over five years</span>
+          <button
+            type="button"
+            aria-pressed={slabOn}
+            onClick={() => onSlab(!slabOn)}
+            className={`ml-auto cursor-pointer border px-2 py-1 text-[11px] transition-colors ${
+              slabOn
+                ? "border-faint bg-raised text-ink"
+                : "border-hairline text-faint hover:bg-raised hover:text-dim"
+            }`}
+          >
+            slab
+          </button>
+        </div>
+      )}
+
+      {slabOn && slabCount > 0 ? (
+        <KeyRow
+          note={`${slabCount.toLocaleString("en")} events below ${SLAB_MIN_DEPTH_KM} km, `
+            + `M${SLAB_MIN_MAGNITUDE} and up, ${SLAB_FROM} to ${SLAB_TO}. Nothing that deep happens `
+            + `outside a subducting plate, so this is where the plates went. Not today's earthquakes, `
+            + `which is why they carry no colour.`}
+        />
       ) : null}
 
       {/*

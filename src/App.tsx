@@ -21,6 +21,7 @@ import { fetchHistory, type History } from "./sources/history";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
+import { loadSlab, type SlabPoint } from "./geo/slab";
 import {
   boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE,
 } from "./geo/boundaryDistance";
@@ -641,6 +642,16 @@ export function App(): JSX.Element {
   const [sinkOn, setSinkOn] = useState<boolean>(() => stored("depthSink") !== "0");
   useEffect(() => { store("depthSink", sinkOn ? "1" : "0"); }, [sinkOn]);
   /*
+   * The slab, off until asked for, like the motion arrows and for the same two reasons.
+   *
+   * It is 37kB of static table that nothing on the first frame needs, and it is 1,583 marks on a globe
+   * that is meant to be showing today. What it buys is the thing the depth sink cannot buy on its own: a
+   * real day carries two events below 300km, so the geometry is right and the sample is far too thin to
+   * be a shape. Five years of them is the shape.
+   */
+  const [slabOn, setSlabOn] = useState<boolean>(() => stored("slab") === "1");
+  useEffect(() => { store("slab", slabOn ? "1" : "0"); }, [slabOn]);
+  /*
    * The samples themselves, fetched on first use rather than imported.
    *
    * 7.1kB of static table behind a toggle that is off by default has no business in the bundle that has
@@ -706,6 +717,15 @@ export function App(): JSX.Element {
     void loadMotion().then((next) => { if (alive) setMotionData(next); }).catch(() => {});
     return () => { alive = false; };
   }, [motionOn, motionData.length]);
+  // Same shape as the arrows above: fetched once on first use, and a failed import leaves it empty,
+  // which draws nothing and says nothing rather than throwing.
+  const [slabData, setSlabData] = useState<readonly SlabPoint[]>([]);
+  useEffect(() => {
+    if (!slabOn || slabData.length > 0) return;
+    let alive = true;
+    void loadSlab().then((next) => { if (alive) setSlabData(next); }).catch(() => {});
+    return () => { alive = false; };
+  }, [slabOn, slabData.length]);
   const motion = motionOn && motionData.length > 0 ? summariseMotion(motionData) : null;
   useEffect(() => { store("ramp", ramp); }, [ramp]);
   useEffect(() => {
@@ -1456,6 +1476,9 @@ export function App(): JSX.Element {
                 onMotion={setMotionOn}
                 sinkOn={flat ? null : sinkOn}
                 onSink={setSinkOn}
+                slabOn={flat ? null : slabOn}
+                onSlab={setSlabOn}
+                slabCount={slabData.length}
               >
               {/*
                 Sources sit with the magnitude control because both answer "what is on the globe".
@@ -2675,6 +2698,7 @@ export function App(): JSX.Element {
             scrubAt={view.at}
             flat={flat}
             depthSink={sinkOn}
+            slab={slabOn && slabData.length > 0 ? slabData : null}
             section={sectionLine}
             onSection={setSectionLine}
             onSelect={selectQuake}

@@ -19,6 +19,8 @@ import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
 import { createEventLayer, type EventLayer, markerRadiusPx, sinkFraction } from "./events";
 import { createRingLayer, type RingLayer } from "./rings";
+import { createSlabLayer } from "./slab";
+import type { SlabPoint } from "../geo/slab";
 import { auroraTexture, writeAurora } from "./auroraTexture";
 import { createMarkLayer, pickMark, type Mark } from "./marks";
 import type { Aurora } from "../sources/aurora";
@@ -403,7 +405,14 @@ export interface Globe {
   controls: Controls;
   events: EventLayer;
   rings: RingLayer;
-  /** Hands over an aurora grid, or null to draw no sky at all. */
+  /**
+   * Hands over the committed deep-seismicity table, or null to draw none of it.
+   *
+   * Set once and then left: it is not a reading that refreshes, so there is no sync for it and nothing
+   * in `Filters` applies. Fades rather than switching, like everything else here.
+   */
+  setSlab: (points: readonly SlabPoint[] | null) => void;
+    /** Hands over an aurora grid, or null to draw no sky at all. */
   setAurora: (grid: Aurora | null) => void;
   /** Hands over every non-earthquake mark as polylines. An empty list draws nothing. */
   setMarks: (marks: readonly Mark[]) => void;
@@ -852,6 +861,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   /** 0 surface, 1 hypocentre. Read by the hit test, written by the setter below. */
   let sink = 0;
 
+  /** Whether the slab table has been handed over, so the morph fade knows there is anything to fade. */
+  let slabOn = false;
+
   let sunMinute = -1;
   const aimSun = (at: number): void => {
     const { lon, lat } = subsolarPoint(at);
@@ -915,6 +927,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   world.add(events.object);
   const rings = createRingLayer("thermal", morph);
   world.add(rings.object);
+  const slab = createSlabLayer(morph);
+  world.add(slab.object);
 
   /*
    * Nothing under `world` is culled against its own bounds, because its bounds are the wrong shape.
@@ -949,6 +963,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     renderer.setSize(width, height, false);
     // Marker sizes are in CSS pixels, so the shader needs the ratio the renderer actually used.
     events.setPixelRatio(dpr);
+    slab.setPixelRatio(dpr);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
@@ -1090,6 +1105,15 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     setMarks: (next) => { heldMarks = next; marks.set(next); },
     setMarkZoom: (zoom) => { marks.setZoom(zoom); },
     setMarkHover: (id) => { marks.setHovered(id); },
+    setSlab: (points) => {
+      if (points === null) {
+        slab.setOpacity(0);
+        return;
+      }
+      slab.set(points);
+      slabOn = true;
+      slab.setOpacity(1 - morph.value);
+    },
     setAurora: (grid) => {
       const material = night.material as ShaderMaterial;
       if (grid === null) {
@@ -1125,6 +1149,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
        */
       (stars.material as ShaderMaterial).uniforms["uOpacity"]!.value = 1 - morph.value;
       stars.visible = morph.value < 0.999;
+      /*
+       * Gone by the time the map is flat, and this one is not only for consistency.
+       *
+       * Flattened, every point in the slab collapses onto the epicentre it sits under, so 1,583 dots
+       * pile into the same arcs the live events already draw and the layer stops saying anything at all.
+       * Depth is the only reason it exists.
+       */
+      if (slabOn) slab.setOpacity(1 - morph.value);
 
       /*
        * The fill is culled on the globe and not on the map.
@@ -1187,6 +1219,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     dispose: () => {
       events.dispose();
+      slab.dispose();
       rings.dispose();
       marks.dispose();
       scene.traverse((o) => {

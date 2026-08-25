@@ -12,6 +12,7 @@ import { between, seconds } from "../app/arrival";
 import type { RampName } from "./ramp";
 import { sectionEdges, type SectionLine } from "../app/section";
 import type { Aurora } from "../sources/aurora";
+import type { SlabPoint } from "../geo/slab";
 import type { Mark } from "./marks";
 import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
 
@@ -64,6 +65,13 @@ export interface GlobeProps {
    */
   depthSink?: boolean;
   /**
+   * Five years of deep seismicity, or null to draw none.
+   *
+   * Handed in already loaded rather than fetched here, so the chunk is pulled by whoever pressed the
+   * toggle and this component stays a renderer. Same route the aurora and the marks take.
+   */
+  slab?: readonly SlabPoint[] | null;
+  /**
    * The hour the pointer is holding on the activity strip, in whole hours before now, or null.
    *
    * Linked views: the strip already knows when things happened and the globe already knows where,
@@ -114,7 +122,7 @@ const SCALE_TARGET_PX = 110;
 export function Globe({
   feed, filters, selected, ramp, onSelect, onReady, onCapture, onSelectMark, onCamera, onReplay,
   focus = null, aurora = null, marks = [],
-  scrubAt = null, flat = false, depthSink = false, section = null, onSection,
+  scrubAt = null, flat = false, depthSink = false, slab = null, section = null, onSection,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
@@ -128,6 +136,7 @@ export function Globe({
   const wakeRef = useRef<() => void>(() => {});
   const rampRef = useRef<(name: RampName) => void>(() => {});
   const sinkRef = useRef<(on: boolean) => void>(() => {});
+  const slabRef = useRef<(points: readonly SlabPoint[] | null) => void>(() => {});
   const auroraRef = useRef<(next: Aurora | null) => void>(() => {});
   const markRef = useRef<(next: readonly Mark[]) => void>(() => {});
   /*
@@ -137,8 +146,8 @@ export function Globe({
    * tearing down the WebGL context, the 300,000-triangle globe and both feed subscriptions every
    * time somebody nudges a magnitude slider.
    */
-  const live = useRef({ filters, selected, focus, scrubAt, flat, depthSink, section, aurora, marks });
-  live.current = { filters, selected, focus, scrubAt, flat, depthSink, section, aurora, marks };
+  const live = useRef({ filters, selected, focus, scrubAt, flat, depthSink, slab, section, aurora, marks });
+  live.current = { filters, selected, focus, scrubAt, flat, depthSink, slab, section, aurora, marks };
   const onSectionRef = useRef(onSection);
   onSectionRef.current = onSection;
   /** The line being dragged right now, which the frame loop draws in place of the committed one. */
@@ -672,6 +681,11 @@ export function Globe({
       globe.setDepthSink(on);
       redraw();
     };
+    slabRef.current = (points) => {
+      globe.setSlab(points);
+      redraw();
+    };
+    globe.setSlab(live.current.slab ?? null);
     globe.setDepthSink(live.current.depthSink);
     rampRef.current = (name) => {
       // Both layers, or a wavefront would stay warm while its own marker turned blue.
@@ -875,6 +889,11 @@ export function Globe({
   useEffect(() => {
     sinkRef.current(depthSink);
   }, [depthSink]);
+
+  // Same route and the same reason as the marks: the loop is asleep when a lazy chunk lands.
+  useEffect(() => {
+    slabRef.current(slab ?? null);
+  }, [slab]);
 
   /*
    * Handed to the scene rather than held in it, and redrawn once when it lands.
