@@ -100,7 +100,8 @@ describe("the verdict, which is the half the poster was missing", () => {
 
 describe("the frame", () => {
   it("is a fixed size, so a still does not vary with the window it came from", () => {
-    expect([STILL_WIDTH, STILL_HEIGHT]).toEqual([1600, 900]);
+    // Square, because the subject is a sphere. See the note on the constants.
+    expect([STILL_WIDTH, STILL_HEIGHT]).toEqual([1200, 1200]);
   });
 });
 

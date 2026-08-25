@@ -39,9 +39,16 @@ export interface StillTheme {
   ramp: RampName;
 }
 
-/** Fixed output, so a still does not change size with the window it was taken from. */
-export const STILL_WIDTH = 1600;
-export const STILL_HEIGHT = 900;
+/*
+ * Fixed output, so a still does not change size with the window it was taken from - and square, because
+ * the subject is a circle.
+ *
+ * It was 16:9, and a sphere in a 16:9 frame cannot be both large and whole: measured on the old frame the
+ * globe filled **46% of the width**, with the rest dark on either side. Widening the sphere to fill that
+ * would have cropped its poles. The frame was the thing in the way, so the frame changed.
+ */
+export const STILL_WIDTH = 1200;
+export const STILL_HEIGHT = 1200;
 /*
  * 118 rather than 92, for the verdict line.
  *
@@ -149,11 +156,35 @@ export function drawStill(
   ctx.fillStyle = theme.background;
   ctx.fillRect(0, 0, STILL_WIDTH, STILL_HEIGHT);
 
+  /*
+   * Cropped to the frame, not letterboxed into it.
+   *
+   * What is being scaled is the whole app canvas, and the globe sits in the middle of it with dark to
+   * spare - so fitting the canvas fitted its margins too and then added more. Taking a centred window of
+   * the canvas at the frame's own shape throws away the emptiness instead of paying to keep it, which is
+   * the whole of the gain here: the same sphere goes from 46% of the width to about 85%.
+   *
+   * Never cropped below the shorter side of the canvas, because that is the most the globe can span: the
+   * sphere is centred and fits the smaller dimension, so a window at least that big on both axes cannot
+   * clip it. A portrait canvas - a phone - cannot satisfy that at this frame's shape, and there the old
+   * behaviour is right, so it falls back to fitting rather than cutting the poles off a phone's still.
+   */
   const frameH = STILL_HEIGHT - CAPTION_H;
-  const scale = Math.min(STILL_WIDTH / globeWidth, frameH / globeHeight);
-  const w = globeWidth * scale;
-  const h = globeHeight * scale;
-  ctx.drawImage(globe, (STILL_WIDTH - w) / 2, (frameH - h) / 2, w, h);
+  const frameAspect = STILL_WIDTH / frameH;
+  const shortest = Math.min(globeWidth, globeHeight);
+  let sw = globeWidth;
+  let sh = globeHeight;
+  if (globeWidth / globeHeight > frameAspect) sw = globeHeight * frameAspect;
+  else sh = globeWidth / frameAspect;
+
+  if (sw >= shortest && sh >= shortest) {
+    ctx.drawImage(globe, (globeWidth - sw) / 2, (globeHeight - sh) / 2, sw, sh, 0, 0, STILL_WIDTH, frameH);
+  } else {
+    const scale = Math.min(STILL_WIDTH / globeWidth, frameH / globeHeight);
+    const w = globeWidth * scale;
+    const h = globeHeight * scale;
+    ctx.drawImage(globe, (STILL_WIDTH - w) / 2, (frameH - h) / 2, w, h);
+  }
 
   const [mark, verdict, moment, provenance] = captionLines(caption);
   const baseline = frameH + 34;
