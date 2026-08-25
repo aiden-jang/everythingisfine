@@ -937,6 +937,35 @@
       linear-gradient(var(--color-ink), var(--color-ink)) 100% 100% / 1px 7px no-repeat;
   }
 
+  /*
+   * The archive banner, stamped the way the title block is.
+   *
+   * It wore a full `faint` border, which made it the heaviest frame in the rail - heavier than the
+   * headline block it sits under, and drawn in the weight this app now reserves for a pressed control.
+   * Its prominence is not decoration though: it is the one thing standing between an archived day and a
+   * chrome that looks live, so it cannot simply drop to a hairline and disappear.
+   *
+   * So it borrows the device the title block already uses to say "this is a frame and it matters": a
+   * hairline edge with ticked corners. Lighter line, louder mark, and one vocabulary instead of two.
+   */
+  .stamp {
+    position: relative;
+    border: 1px solid var(--color-hairline);
+  }
+
+  .stamp::before,
+  .stamp::after {
+    content: "";
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border: 1px solid var(--color-faint);
+    pointer-events: none;
+  }
+
+  .stamp::before { top: -1px; left: -1px; border-right: 0; border-bottom: 0; }
+  .stamp::after { bottom: -1px; right: -1px; border-left: 0; border-top: 0; }
+
   .titleblock {
     display: grid;
     grid-template-columns: 1fr auto;

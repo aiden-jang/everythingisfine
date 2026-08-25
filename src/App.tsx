@@ -2060,7 +2060,7 @@ export function App(): JSX.Element {
           */}
           <div data-rail="activity">
             {snapshot.archive ? (
-              <div className="mb-3 border border-faint bg-raised p-2.5">
+              <div className="stamp mb-3 bg-raised p-2.5">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className="label">Archive</span>
                   <button
