@@ -100,14 +100,23 @@ export function verdictLine(n: {
   firesCapped: boolean;
   floods: number;
 }): string | null {
+  /*
+   * Grouped, because a poster is the one place the number is read rather than glanced at.
+   *
+   * Caught by exporting one: a busy day printed "6000 earthquakes" while every figure in the rail
+   * beside it read "6,000". The image is the artefact that leaves the app and gets looked at on its
+   * own, so it is the last place that should be formatting a thousand differently from the interface
+   * that produced it.
+   */
+  const group = (count: number): string => count.toLocaleString("en-GB");
   const plural = (count: number, word: string): string =>
-    `${count} ${word}${count === 1 ? "" : "s"}`;
+    `${group(count)} ${word}${count === 1 ? "" : "s"}`;
   const parts: string[] = [];
   if (n.quakes > 0) parts.push(plural(n.quakes, "earthquake"));
   if (n.cyclones > 0) parts.push(plural(n.cyclones, "cyclone"));
   // The floor marker goes on the number, not in a caveat: there is no room for a caveat here.
   if (n.fires > 0) {
-    parts.push(`${n.fires}${n.firesCapped ? "+" : ""} fire${n.fires === 1 ? "" : "s"}`);
+    parts.push(`${group(n.fires)}${n.firesCapped ? "+" : ""} fire${n.fires === 1 ? "" : "s"}`);
   }
   if (n.floods > 0) parts.push(plural(n.floods, "flood"));
   // Nothing at all is a real state, and an empty line is better than the word "nothing" on a poster.
