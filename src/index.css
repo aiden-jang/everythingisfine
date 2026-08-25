@@ -374,6 +374,25 @@
       min-height: 0;
       overflow-y: auto;
       contain: paint;
+      /*
+       * The same fade the phone gets, for the same reason and a worse case.
+       *
+       * This band is a fixed 34dvh with four columns scrolling inside it, so its bottom edge cuts
+       * whatever happens to be there - measured at 1024x768 it sliced "GO TO A DAY" through the middle
+       * of the letters and cut the recent list mid-row. On the phone that edge meets the globe; here it
+       * meets four columns at once, so it is four sliced lines rather than one.
+       *
+       * The mask was written for the phone and scoped to `max-width: 767px`, which is why this layout
+       * never got it. It applies here for the same reason it applied there, and not above 1280 where the
+       * rail is a frosted panel whose own background the mask would erode.
+       */
+      mask-image: linear-gradient(
+        to bottom,
+        transparent 0,
+        #000 12px,
+        #000 calc(100% - 12px),
+        transparent 100%
+      );
     }
 
     .rail {
