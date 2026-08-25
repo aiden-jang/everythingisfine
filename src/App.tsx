@@ -1468,9 +1468,20 @@ export function App(): JSX.Element {
                     type="button"
                     onClick={() => toggleSource(id)}
                     aria-pressed={filters.sources.has(id)}
-                    className={`flex-1 cursor-pointer border px-2.5 py-1.5 text-[11px] transition-colors ${
+                    /*
+                      Sized to their labels rather than to the panel.
+
+                      `flex-1` gave each of them half the key's width, which made two secondary filters
+                      the largest, heaviest objects in a panel whose subject is what the marks mean. They
+                      out-weighed the magnitude slider above them and every row of the key below.
+
+                      Pressed is `border-faint`, which is what a pressed control wears in the detail panel
+                      and on the window buttons. This one had it on hover instead, so the state you were
+                      about to enter looked like the state you were in.
+                    */
+                    className={`cursor-pointer border px-2.5 py-1 text-[11px] transition-colors ${
                       filters.sources.has(id)
-                        ? "border-hairline bg-raised text-ink hover:border-faint"
+                        ? "border-faint bg-raised text-ink"
                         : "border-hairline text-faint hover:bg-raised hover:text-dim"
                     }`}
                   >
