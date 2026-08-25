@@ -155,6 +155,37 @@
   }
 
   /*
+   * Below 1280 the panel floats over the layout instead of taking a row in it.
+   *
+   * It used to be auto-placed into a third implicit row, and that cost twice. Measured on a 390px
+   * phone with a mark open: `60dvh` canvas + rail + panel came to 868px in a 776px box, so the last
+   * field was cut through its glyphs and everything under it was unreachable - no ancestor scrolls,
+   * so it was clipped rather than scrolled off. And the rail, being a scroll container, has an
+   * automatic minimum of zero, so the `1fr` track gave way first: 1694px of content squeezed into a
+   * 41px letterbox showing the top edge of one word.
+   *
+   * Same shape as the implicit-column bug noted above, and the same answer the desktop already uses:
+   * a panel that overlays is a panel the grid does not have to find room for. So the rows stay
+   * `canvas rail` at every width, and the sheet bounds itself and scrolls its own overflow.
+   */
+  @media (max-width: 1279px) {
+    .zone-panel {
+      position: absolute;
+      z-index: 1;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      /* Bounded so a long card scrolls rather than growing past the fold, and so some of the map
+         stays visible behind it: a sheet that covers everything is a page, and `esc` is the only
+         way back. */
+      max-height: min(70dvh, 100%);
+      overflow-y: auto;
+      /* It is opaque, so nothing outside it needs repainting when it scrolls. */
+      contain: paint;
+    }
+  }
+
+  /*
    * Desktop: the globe fills the frame and the interface floats on it.
    *
    * The rail used to be a column beside the canvas, which meant the planet stopped at a hard vertical
