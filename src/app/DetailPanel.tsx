@@ -69,9 +69,22 @@ export interface DetailPanelProps {
   onSelect: (key: string) => void;
 }
 
+/*
+ * No rule under every row, which is the rule the rail already keeps.
+ *
+ * `Row` in the rail refuses this by name - "sixty rows each with a hairline beneath it is the densest
+ * possible way to say these are separate, and it is the thing that makes a list look like a spreadsheet
+ * from 2009" - and then this panel stacked five of them, and the mark card three. Two opposing
+ * conventions for one idea, a few hundred pixels apart.
+ *
+ * The separating was never the rule's work anyway: a label hard left and a mono value hard right is
+ * already two columns, and the eye reads the pair without being fenced. One rule stays, above the group,
+ * because that one is doing something the alignment cannot - saying where the prose stops and the
+ * readings start.
+ */
 function Field({ label, value }: { label: string; value: string }): JSX.Element {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-t border-hairline py-2">
+    <div className="flex items-baseline justify-between gap-3 py-[5px]">
       <span className="text-[11px] text-dim">{label}</span>
       <span className="font-mono text-[12px] text-ink">{value}</span>
     </div>
@@ -236,7 +249,7 @@ export function DetailPanel({
         </div>
       ) : null}
 
-      <div className="mt-4">
+      <div className="mt-4 border-t border-hairline pt-1.5">
         <Field label="Depth" value={klass ? `${depth(r)} · ${klass}` : depth(r)} />
         <Field label="Position" value={coordinates(r)} />
         {/*
