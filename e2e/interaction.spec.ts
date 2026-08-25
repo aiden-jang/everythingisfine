@@ -929,8 +929,17 @@ test("the rail resizes in both directions, by pointer and by key", async ({ page
   expect(Number(await height.getAttribute("aria-valuenow"))).toBeGreaterThan(before + 60);
   expect(await visibleRows()).toBeGreaterThan(shownBefore);
 
-  // Arrow keys, not just a pointer. Shift is the coarse step.
+  /*
+   * Arrow keys, not just a pointer. Shift is the coarse step.
+   *
+   * Backed off the ceiling first, because the drag above does not land on a fixed value: it moves the
+   * handle 120px from wherever the rail's own content leaves it, so anything that shortens the rail above
+   * pushes the result further up. Caught when the notes block lost 36px and the drag started saturating
+   * at `max`, where ArrowUp then Shift+ArrowDown measured the clamp rather than the step. Four fine steps
+   * of headroom is enough for either direction to move freely.
+   */
   await height.focus();
+  for (let i = 0; i < 4; i += 1) await page.keyboard.press("ArrowUp");
   const keyed = Number(await height.getAttribute("aria-valuenow"));
   await page.keyboard.press("ArrowUp");
   expect(Number(await height.getAttribute("aria-valuenow"))).toBe(keyed - 16);
