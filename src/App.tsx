@@ -1569,9 +1569,23 @@ export function App(): JSX.Element {
       return rankDay(comparableCount(feed.store, from, to), true);
     }
     if (filters.windowMs !== 24 * 3_600_000 || !edge.complete) return null;
+    /*
+     * Nothing drawn, nothing to rank.
+     *
+     * The count here deliberately ignores the magnitude filter - a ranking the reader could change by
+     * dragging a slider would be worse than none - and that is right until the filter empties the screen
+     * altogether. Caught by filtering to M7 against a feed whose largest was 4.9: the headline read 0, the
+     * list read "No events match the current filters", and this line asserted "5 at M4.5+". True of the
+     * day, and the header's own note forbids exactly that shape - "a true number describing something
+     * other than the picture".
+     *
+     * Gated on nothing at all rather than on any filter, because with a few events drawn the reader can
+     * see the two populations differ; with none, the screen actively contradicts the sentence.
+     */
+    if (shown <= 0) return null;
     return rankDay(comparableCount(feed.store, edge.at, now), true);
     // `snapshot.revision` is what moves when an event lands; the rest are the gates above.
-  }, [feed.store, snapshot.archive, snapshot.revision, filters.windowMs, edge.complete, edge.at, now, replay]);
+  }, [feed.store, snapshot.archive, snapshot.revision, filters.windowMs, edge.complete, edge.at, now, replay, shown]);
   /*
    * Recomputed on the clock rather than memoised.
    *
