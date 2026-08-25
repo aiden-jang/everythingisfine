@@ -2204,26 +2204,37 @@ export function App(): JSX.Element {
               </p>
             ) : null}
             {/*
-              And whether the window itself is large, which the line above cannot say.
+              Ordered to follow the card above, not the order they were written in.
 
-              The share teaches the logarithm inside one window; it has nothing outside itself to be
-              measured against, so a quiet day and a catastrophic one both read as "one event was most of
-              it". This is the same fact given an outside reference, and on the energy axis the answer is
-              worth printing: an ordinary day sits five or six orders of magnitude below one 1960.
+              Each of these is a footnote to one of the figures in the title block: the ranking explains
+              the headline count, the region's ceiling explains the largest event beside it, and the note
+              above explains the edge percentage. They arrived in the order they were built, which put the
+              ranking three paragraphs from the number it is about.
 
-              One event against a whole window is asymmetric, so the wording carries the asymmetry rather
-              than hiding it. It also makes the claim conservative - the real day was larger than its
-              mainshock, and no feed reaches 1960 to say by how much.
+              The energy comparison sits after the ceiling because the two answer the same question - how
+              big is big - on different axes, and the personal line goes last because it is the only one
+              that is not about the window.
             */}
-            {versus && !replay && edge.complete ? (
+            {/*
+              Whether any of that is a lot, which nothing on this screen said.
+
+              The headline is a count with no scale attached, and section 13 bans exactly that shape of claim
+              everywhere else in the app. This is the scale.
+
+              It states its own threshold because it has to: the ranking is of magnitude 4.5 and up, which is
+              not necessarily the population drawn on the globe beside it. That is not a caveat, it is the
+              only way the comparison means anything - how many small events get detected depends on how many
+              instruments are nearby, so an all-magnitude count differs between 2020 and 2025 for reasons of
+              funding rather than of geology.
+            */}
+            {baseline ? (
               <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
-                {versus.exceeded
-                  ? "This window has released "
-                  : `${versus.day.what}, ${versus.day.day.slice(0, 4)}, released `}
-                <span className="text-dim tabular-nums">{timesLabel(versus.times)}</span>
-                {versus.exceeded
-                  ? ` times the energy of ${versus.day.what} in ${versus.day.day.slice(0, 4)}, the largest ever recorded.`
-                  : " times the energy of everything in this window, from one earthquake."}
+                <span className="text-dim tabular-nums">{baseline.count}</span>
+                {" at M"}<span className="tabular-nums">{BASELINE_MIN_MAGNITUDE}</span>{"+: "}
+                {baseline.direction} than{" "}
+                <span className="text-dim tabular-nums">{sharePercent(baseline.share)}%</span> of the{" "}
+                <span className="tabular-nums">{BASELINE_DAYS.toLocaleString("en")}</span> days since{" "}
+                {BASELINE_FROM}.
               </p>
             ) : null}
             {/*
@@ -2244,39 +2255,40 @@ export function App(): JSX.Element {
                 {ceiling.beaten ? (
                   <>
                     {"Nothing in "}{ceiling.region}{" has been this large since at least "}{SINCE}
-                    {". The largest before it was M"}
+                    {". Previous best: M"}
                     <span className="text-dim tabular-nums">{ceiling.record.toFixed(1)}</span>
-                    {", in "}{recordWhen(ceiling.day)}{"."}
+                    {", "}{recordWhen(ceiling.day)}{"."}
                   </>
                 ) : (
                   <>
-                    {"The largest "}{ceiling.region}{" has had since "}{SINCE}{" is M"}
+                    {"Largest in "}{ceiling.region}{" since "}{SINCE}{": M"}
                     <span className="text-dim tabular-nums">{ceiling.record.toFixed(1)}</span>
-                    {", in "}{recordWhen(ceiling.day)}{"."}
+                    {", "}{recordWhen(ceiling.day)}{"."}
                   </>
                 )}
               </p>
             ) : null}
             {/*
-              Whether any of that is a lot, which nothing on this screen said.
+              And whether the window itself is large, which the line above cannot say.
 
-              The headline is a count with no scale attached, and section 13 bans exactly that shape of claim
-              everywhere else in the app. This is the scale.
+              The share teaches the logarithm inside one window; it has nothing outside itself to be
+              measured against, so a quiet day and a catastrophic one both read as "one event was most of
+              it". This is the same fact given an outside reference, and on the energy axis the answer is
+              worth printing: an ordinary day sits five or six orders of magnitude below one 1960.
 
-              It states its own threshold because it has to: the ranking is of magnitude 4.5 and up, which is
-              not necessarily the population drawn on the globe beside it. That is not a caveat, it is the
-              only way the comparison means anything - how many small events get detected depends on how many
-              instruments are nearby, so an all-magnitude count differs between 2020 and 2025 for reasons of
-              funding rather than of geology.
+              One event against a whole window is asymmetric, so the wording carries the asymmetry rather
+              than hiding it. It also makes the claim conservative - the real day was larger than its
+              mainshock, and no feed reaches 1960 to say by how much.
             */}
-            {baseline ? (
+            {versus && !replay && edge.complete ? (
               <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
-                <span className="text-dim tabular-nums">{baseline.count}</span> of them were M
-                <span className="tabular-nums">{BASELINE_MIN_MAGNITUDE}</span> or stronger, which is{" "}
-                {baseline.direction} than{" "}
-                <span className="text-dim tabular-nums">{sharePercent(baseline.share)}%</span> of the{" "}
-                <span className="tabular-nums">{BASELINE_DAYS.toLocaleString("en")}</span> days since{" "}
-                {BASELINE_FROM}.
+                {versus.exceeded
+                  ? "This window has released "
+                  : `${versus.day.what}, ${versus.day.day.slice(0, 4)}, released `}
+                <span className="text-dim tabular-nums">{timesLabel(versus.times)}</span>
+                {versus.exceeded
+                  ? ` times the energy of ${versus.day.what} in ${versus.day.day.slice(0, 4)}, the largest ever recorded.`
+                  : " times the energy of everything in this window, from one earthquake."}
               </p>
             ) : null}
             {/*
