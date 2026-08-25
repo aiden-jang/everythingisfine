@@ -2007,7 +2007,18 @@ export function App(): JSX.Element {
             <Dial counts={clockBins} />
           </details>
 
-          {onMap ? null : <div data-rail="legend">{legend}</div>}
+          {/*
+            The key floats only where there is somewhere for it to float.
+
+            `onMap` is `useWide`, so the floating copy appears at 1280 and up whatever is being drawn. On
+            the globe that corner is ocean and empty space, which is why it works there. The flat map has
+            no such corner: it fills its whole rectangle, so a panel over it permanently hides part of the
+            Pacific and the Americas, and panning cannot get out from under it.
+
+            Flattened, the key comes back to the rail - the same place it lives below 1280 - and the map
+            gets its whole rectangle.
+          */}
+          {onMap && !flat ? null : <div data-rail="legend">{legend}</div>}
 
           {/*
             The day, and the control for the window that was previously unreachable. Sits under the
@@ -2675,7 +2686,7 @@ export function App(): JSX.Element {
                 />
               </div>
             ) : null}
-            {onMap ? (
+            {onMap && !flat ? (
               /*
                 Capped and scrolling, because the legend outgrew the screen.
                 Measured at 1280x720, a very ordinary laptop: the panel had reached 845px in a 720px
