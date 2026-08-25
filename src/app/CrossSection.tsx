@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { SECTION_HALF_WIDTH_KM, type Section as SectionData } from "./section";
 import type { Store } from "../data/store";
@@ -48,6 +48,25 @@ function ticks(lengthKm: number): number[] {
   return out;
 }
 
+/**
+ * True where this panel is the full width of a phone, which is where the drawing collapses.
+ *
+ * The same breakpoint the layout uses to stop floating things over the canvas. Read from `matchMedia`
+ * rather than from a width prop, because nothing above this component knows or should know how tall its
+ * axis wants to be.
+ */
+function useNarrow(): boolean {
+  const query = "(max-width: 767px)";
+  const [narrow, setNarrow] = useState(() => window.matchMedia(query).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const onChange = (): void => setNarrow(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  return narrow;
+}
+
 export function CrossSection({
   data, ramp, store, selected, onSelect, onClose,
 }: CrossSectionProps): JSX.Element {
@@ -72,7 +91,20 @@ export function CrossSection({
    * number that can be printed, which is the part a reader needs.
    */
   const trueHeight = (floorKm / lengthKm) * 1000;
-  const height = Math.round(Math.max(96, Math.min(300, trueHeight)));
+  /*
+   * The floor is taller where the panel is narrow, because these units are a fraction of its width.
+   *
+   * The drawing is 1000 units wide and scales to the box, so its rendered height is `width * height /
+   * 1000`. At 96 units that is a comfortable 110px across a desktop panel and **37px on a 390px phone** -
+   * short enough that the depth labels, 9.5px tall, land about nine pixels apart and collide, with the
+   * axis footer running through the marks underneath them.
+   *
+   * Raising the floor rather than hiding the labels, because the exaggeration this costs is already
+   * printed in the header: the panel says "1:1" or "x4 vertical" and stays true either way. Hiding the
+   * labels would have bought the same space by removing the thing that makes the axis readable.
+   */
+  const narrow = useNarrow();
+  const height = Math.round(Math.max(narrow ? 256 : 96, Math.min(300, trueHeight)));
   const exaggeration = height / trueHeight;
 
   const x = (km: number): number => (km / lengthKm) * 1000;
