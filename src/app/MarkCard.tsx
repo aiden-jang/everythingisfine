@@ -155,7 +155,16 @@ export function MarkCard({ found, now, archived = false, onClose, onFlyTo }: Mar
         <button
           type="button"
           onClick={onClose}
-          className="cursor-pointer font-mono text-[10.5px] text-faint transition-colors hover:text-ink"
+          /*
+            Top-aligned inside its own touch target.
+
+            On a coarse pointer every button gets `min-height: 44px`, which is right - this is a control
+            people tap. But a button centres its content, so the 44px box put "esc" fourteen pixels below
+            the label it sits beside: measured, both start at the same top and the glyph lands at the
+            middle of a box three times its height. The target keeps its size and the text moves to the
+            top of it, which is where the eye expects it.
+          */
+          className="flex cursor-pointer items-start font-mono text-[10.5px] text-faint transition-colors hover:text-ink"
         >
           esc
         </button>
