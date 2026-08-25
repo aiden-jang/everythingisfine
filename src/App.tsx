@@ -1487,7 +1487,16 @@ export function App(): JSX.Element {
     <div className="frame">
       {/* The header used to hold a wordmark and two small words on a 1280px bar. It now carries
           the arithmetic that makes the reconciliation visible without opening anything. */}
-      <header className="zone-head flex items-center gap-6 bg-deck px-5 py-3 xl:bg-transparent">
+      {/*
+        A top edge, so the frame closes.
+
+        The rail carries `xl:border-r` and the panel a `border-l`, and above 1280 this header goes
+        transparent and carries nothing - so the chrome had a left wall and a right wall and no lid, and
+        the wordmark and the controls floated loose over the canvas. A hairline is the same rule weight
+        every other boundary here uses; it seats the row without drawing a bar across the top of the
+        planet.
+      */}
+      <header className="zone-head flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent">
         <div
           /*
             Aligned to the first row of controls, not to the middle of them.
