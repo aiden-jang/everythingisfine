@@ -17,7 +17,7 @@ import {
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
-import { createEventLayer, type EventLayer } from "./events";
+import { createEventLayer, type EventLayer, markerRadiusPx } from "./events";
 import { createRingLayer, type RingLayer } from "./rings";
 import { auroraTexture, writeAurora } from "./auroraTexture";
 import { createMarkLayer, pickMark, type Mark } from "./marks";
@@ -852,9 +852,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         const at = controls.project(candidate.lon, candidate.lat);
         if (!at) continue;
         const d = Math.hypot(at.x - clientX, at.y - clientY);
-        // Same formula and same scale as the shader. If these drift, the pointer stops agreeing
-        // with the picture, which is the sort of bug people describe as "it feels off".
-        const radius = (1.7 + 2.9 * Math.sqrt(Math.max(0, candidate.magnitude - 1))) * markerScale();
+        // Asked of the shader's own formula rather than copied from it. The warning this replaces was
+        // right that a drift here makes the pointer disagree with the picture; writing the constants
+        // out twice is what made the drift possible.
+        const radius = markerRadiusPx(candidate.magnitude, markerScale());
         if (d > radius + HIT_SLOP_PX) continue;
         // Ranked by how far *outside* the marker the pointer is, so a big marker does not win
         // simply for being big when the pointer is squarely inside a small one on top of it.

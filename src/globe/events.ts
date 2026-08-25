@@ -45,15 +45,36 @@ import { DEPTH_DEEP_KM, DEPTH_SHALLOW_KM } from "../data/depth";
 const RADIUS_EVENTS = 1.006;
 
 /**
- * Marker radius in CSS pixels: `BASE + SCALE * sqrt(magnitude - MAG_MIN)`.
+ * Marker radius in CSS pixels: `BASE + SCALE * (magnitude - MAG_MIN) ^ EXPONENT`.
  *
- * Square root because DESIGN.md asks for area, not width, to read as intensity. Magnitude is
- * already logarithmic in energy, so this is a second compression on top of one, and that is
- * deliberate: the alternative is a magnitude 7 that is a thousand times the width of a magnitude 4
- * and covers the country it happened in.
+ * The compression is deliberate and the note it replaces is right about why: magnitude is already
+ * logarithmic in energy, so scaling width by it directly gives a magnitude 7 that covers the country it
+ * happened in. Square root was the answer to that, and it overshot. Measured on the old constants, an
+ * M2 was **4.6px** and an M7 **8.8px** - under two to one across the whole scale - so the key's promise
+ * that "size shows it too" was true by arithmetic and false to look at. Magnitude was carried by colour
+ * alone and the globe read as a field of near-identical dots.
+ *
+ * 0.7 sits between area (0.5) and width (1.0), and the constants are set so the small end does not move:
+ * an M2 is still 4.6px, so nothing gets noisier, while an M7 goes to **13.5px** and the range opens from
+ * 1.9x to 2.9x. The drama is added at the top, where there is room for it, rather than by inflating
+ * everything.
  */
-const RADIUS_BASE = 1.7;
-const RADIUS_SCALE = 2.9;
+const RADIUS_BASE = 1.0;
+const RADIUS_SCALE = 3.6;
+const RADIUS_EXPONENT = 0.7;
+
+/**
+ * The radius the shader will draw, for anything that has to agree with the picture.
+ *
+ * Exported because the hit test needs the same number, and it used to hold its own copy of the formula
+ * with the constants written out as literals - under a comment warning that the two must not drift.
+ * They would have drifted on this very change: the pointer would have kept picking at the old radius
+ * while the marks were drawn at the new one.
+ */
+export function markerRadiusPx(magnitude: number, scale: number): number {
+  const above = Math.max(0, magnitude - MAG_MIN);
+  return (RADIUS_BASE + RADIUS_SCALE * Math.pow(above, RADIUS_EXPONENT)) * scale;
+}
 
 /** Globe radius the sizes above were chosen against: a desktop window at the framing shot. */
 const REFERENCE_RADIUS_PX = 300;
@@ -76,6 +97,7 @@ const SHADER = {
     uniform float uPixelRatio;
     uniform float uBase;
     uniform float uScale;
+    uniform float uExp;
     uniform float uSize;
     uniform float uMagMin;
     varying float vRamp;
@@ -101,7 +123,7 @@ const SHADER = {
       vRamp = clamp((aMag - uMagMin) / 6.5, 0.0, 1.0);
       // A collapsed marker is drawn slightly larger so its ring has somewhere to sit, but the fill
       // inside it still means exactly what every other fill means: the magnitude of an event.
-      float radius = (uBase + uScale * sqrt(max(0.0, aMag - uMagMin))) * uSize + aCluster * 2.0;
+      float radius = (uBase + uScale * pow(max(0.0, aMag - uMagMin), uExp)) * uSize + aCluster * 2.0;
 
       gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position), 1.0);
       gl_PointSize = 2.0 * radius * uPixelRatio;
@@ -277,6 +299,7 @@ export function createEventLayer(
       uPixelRatio: { value: 1 },
       uBase: { value: RADIUS_BASE },
       uScale: { value: RADIUS_SCALE },
+      uExp: { value: RADIUS_EXPONENT },
       uSize: { value: 1 },
       uMagMin: { value: MAG_MIN },
       uOpacity: { value: 1 },
