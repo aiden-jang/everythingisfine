@@ -26,6 +26,7 @@ import { MORPH_GLSL } from "./morph";
  * bands moved to `data/depth.ts`, which the legend can import without dragging three.js with it.
  */
 import { DEPTH_DEEP_KM, DEPTH_SHALLOW_KM } from "../data/depth";
+import { EARTH_RADIUS_KM } from "../geo/sphere";
 
 /*
  * Fifty thousand earthquakes, drawn once.
@@ -76,6 +77,33 @@ export function markerRadiusPx(magnitude: number, scale: number): number {
   return (RADIUS_BASE + RADIUS_SCALE * Math.pow(above, RADIUS_EXPONENT)) * scale;
 }
 
+/*
+ * How far below the surface an event sits, in world units, where the globe has radius 1.
+ *
+ * The existing `aDepth` cannot answer this. It is normalised against `DEPTH_DEEP_KM` and clamps at
+ * 300km, which is right for the hole in the middle of a marker - past 300 the hole stops widening -
+ * and useless as a position, because the deep events worth drawing run to 700. So depth arrives twice,
+ * once as a ramp for the hole and once as a distance for the geometry, and each is derived from the
+ * same field for a job the other cannot do.
+ *
+ * Shared with the hit test, which has to agree with the picture to within a pixel and would drift the
+ * moment this was written out twice. Same reasoning as `markerRadiusPx`.
+ */
+export function sinkFraction(depthKm: number): number {
+  /*
+   * Anything outside the planet is not a reading, and reads as shallow.
+   *
+   * One rule for every bad value, which the first version did not have: it clamped an absurd finite
+   * depth to the centre of the earth and let a non-finite one fall through to the surface, so two
+   * flavours of the same nonsense landed 6371km apart. Deferring to the convention already set a
+   * few lines down - a missing depth draws as shallow, because the overwhelming majority of
+   * catalogued earthquakes are - means there is one answer for NaN, for a negative depth on an event
+   * above sea level, and for a decimal point in the wrong place.
+   */
+  if (!(depthKm > 0) || depthKm > EARTH_RADIUS_KM) return 0;
+  return depthKm / EARTH_RADIUS_KM;
+}
+
 /** Globe radius the sizes above were chosen against: a desktop window at the framing shot. */
 const REFERENCE_RADIUS_PX = 300;
 
@@ -100,6 +128,8 @@ const SHADER = {
     uniform float uExp;
     uniform float uSize;
     uniform float uMagMin;
+    uniform float uSink;
+    attribute float aSink;
     varying float vRamp;
     varying float vFacing;
     varying float vCluster;
@@ -125,7 +155,30 @@ const SHADER = {
       // inside it still means exactly what every other fill means: the magnitude of an event.
       float radius = (uBase + uScale * pow(max(0.0, aMag - uMagMin), uExp)) * uSize + aCluster * 2.0;
 
-      gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position), 1.0);
+      /*
+       * Sunk to the hypocentre, which is where the earthquake actually was.
+       *
+       * Every marker used to sit on one shell just above the surface, so depth was readable only as
+       * the hole in the middle of a disc: a fact about the event rather than a place. Moved inward by
+       * its own depth, the same events resolve into the slab - orbit the Kurils or Chile and the
+       * scatter becomes a plane dipping under the arc, because that is the shape a subducting plate
+       * makes and the catalogue has always known it.
+       *
+       * Added to the projected point rather than scaling position before fmProject, and that is
+       * not a style choice. On the plane, radius *is* the layer index: fmProject builds its z from
+       * length(sphere) - 1.0, so a marker shrunk to 0.89 would be filed a tenth of a world unit
+       * under the map and drawn behind the ocean. Offsetting afterwards leaves the layer term reading
+       * the surface radius it was designed around.
+       *
+       * It fades out with the morph because a map has no inside. Same argument as the facing test
+       * above, and the reason the offset carries 1.0 - uMorph rather than being switched off.
+       *
+       * (No backticks in here. This is inside a template literal and one of them ends the shader.)
+       */
+      // position, not world: this is added to a local-space point, and the model matrix carries
+      // the translation that draws the flat map more than once.
+      vec3 sunk = normalize(position) * (-aSink * uSink * (1.0 - uMorph));
+      gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position) + sunk, 1.0);
       gl_PointSize = 2.0 * radius * uPixelRatio;
     }`,
   fragmentShader: /* glsl */ `
@@ -218,6 +271,13 @@ export interface EventLayer {
    */
   setGlobeRadius: (px: number) => void;
   /**
+   * Whether markers sit on the surface or at their own depth. 0 or 1, and it eases between them.
+   *
+   * A uniform rather than a rewrite of fifty thousand positions, which is the whole reason depth
+   * arrives as an attribute: the sink is a property of how the layer is drawn, not of the data in it.
+   */
+  setDepthSink: (value: number) => void;
+  /**
    * Writes the visible subset into the buffers. Returns how many are drawn.
    *
    * `revealUntil` is the entrance replay: events with a later origin time are held back. It is a
@@ -259,6 +319,8 @@ export function createEventLayer(
   const magnitudes = new Float32Array(capacity);
   const clusters = new Float32Array(capacity);
   const depths = new Float32Array(capacity);
+  /** Depth again, as a distance rather than a ramp. See `sinkFraction`. */
+  const sinks = new Float32Array(capacity);
   /** Written beside the positions: the map projects from these, not from the sphere point. */
   const lonLats = new Float32Array(capacity * 2);
   /** 1 when a marker holds an event inside the hovered hour, 0 otherwise. Only read while hovering. */
@@ -271,18 +333,21 @@ export function createEventLayer(
   const magAttr = new BufferAttribute(magnitudes, 1);
   const clusterAttr = new BufferAttribute(clusters, 1);
   const depthAttr = new BufferAttribute(depths, 1);
+  const sinkAttr = new BufferAttribute(sinks, 1);
   const lonLatAttr = new BufferAttribute(lonLats, 2);
   const focusAttr = new BufferAttribute(focuses, 1);
   positionAttr.setUsage(35048 /* DynamicDrawUsage */);
   magAttr.setUsage(35048);
   clusterAttr.setUsage(35048);
   depthAttr.setUsage(35048);
+  sinkAttr.setUsage(35048);
   lonLatAttr.setUsage(35048);
   focusAttr.setUsage(35048);
   geometry.setAttribute("position", positionAttr);
   geometry.setAttribute("aMag", magAttr);
   geometry.setAttribute("aCluster", clusterAttr);
   geometry.setAttribute("aDepth", depthAttr);
+  geometry.setAttribute("aSink", sinkAttr);
   geometry.setAttribute("aLonLat", lonLatAttr);
   geometry.setAttribute("aFocus", focusAttr);
   geometry.setDrawRange(0, 0);
@@ -303,6 +368,8 @@ export function createEventLayer(
       uSize: { value: 1 },
       uMagMin: { value: MAG_MIN },
       uOpacity: { value: 1 },
+      // 0 draws every event on the surface shell, 1 puts it at its own depth.
+      uSink: { value: 0 },
       uFocusing: { value: 0 },
       // The scene's, not a copy: markers have to flatten with the geography under them.
       uMorph: morph,
@@ -365,6 +432,9 @@ export function createEventLayer(
       // cannot be seen is worse than one that is slightly too large.
       material.uniforms["uSize"]!.value = Math.max(0.45, Math.min(1, px / REFERENCE_RADIUS_PX));
     },
+    setDepthSink: (value) => {
+      material.uniforms["uSink"]!.value = Math.max(0, Math.min(1, value));
+    },
 
     sync: (store, filters, now, zoom = 3, revealUntil, focus = null) => {
       const cell = cellSizeDeg(zoom);
@@ -412,6 +482,7 @@ export function createEventLayer(
               depths[at] = Number.isFinite(r.depthKm)
                 ? Math.max(0, Math.min(1, (r.depthKm - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM)))
                 : 0;
+              sinks[at] = sinkFraction(r.depthKm);
             }
             return;
           }
@@ -448,12 +519,15 @@ export function createEventLayer(
         depths[n] = Number.isFinite(r.depthKm)
           ? Math.max(0, Math.min(1, (r.depthKm - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM)))
           : 0;
+        sinks[n] = sinkFraction(r.depthKm);
         n += 1;
       });
 
       geometry.setDrawRange(0, n);
       clusterAttr.updateRanges = [{ start: 0, count: n }];
       clusterAttr.needsUpdate = true;
+      sinkAttr.updateRanges = [{ start: 0, count: n }];
+      sinkAttr.needsUpdate = true;
       depthAttr.updateRanges = [{ start: 0, count: n }];
       depthAttr.needsUpdate = true;
       lonLatAttr.updateRanges = [{ start: 0, count: n * 2 }];

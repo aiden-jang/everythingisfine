@@ -629,6 +629,18 @@ export function App(): JSX.Element {
   const [motionOn, setMotionOn] = useState<boolean>(() => stored("motion") === "1");
   useEffect(() => { store("motion", motionOn ? "1" : "0"); }, [motionOn]);
   /*
+   * Earthquakes drawn at their own depth, and the one view preference that defaults to on.
+   *
+   * The permalink stays out of it for the same reason the arrows do: it is a way of drawing what is
+   * already there rather than a thing anybody is looking at. But it defaults on where the arrows
+   * default off, because the two toggles cost different amounts. The arrows add 231 marks; this moves
+   * marks that were already on screen to where the events actually were, and a scatter over a
+   * subduction margin resolving into a dipping plane is the strongest thing the globe does. Off by
+   * default, nobody would ever find it.
+   */
+  const [sinkOn, setSinkOn] = useState<boolean>(() => stored("depthSink") !== "0");
+  useEffect(() => { store("depthSink", sinkOn ? "1" : "0"); }, [sinkOn]);
+  /*
    * The samples themselves, fetched on first use rather than imported.
    *
    * 7.1kB of static table behind a toggle that is off by default has no business in the bundle that has
@@ -1442,6 +1454,8 @@ export function App(): JSX.Element {
                 sound={sound ? announceAbove : null}
                 motionOn={motionOn}
                 onMotion={setMotionOn}
+                sinkOn={flat ? null : sinkOn}
+                onSink={setSinkOn}
               >
               {/*
                 Sources sit with the magnitude control because both answer "what is on the globe".
@@ -2660,6 +2674,7 @@ export function App(): JSX.Element {
             marks={marks}
             scrubAt={view.at}
             flat={flat}
+            depthSink={sinkOn}
             section={sectionLine}
             onSection={setSectionLine}
             onSelect={selectQuake}

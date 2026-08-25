@@ -17,7 +17,7 @@ import {
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
-import { createEventLayer, type EventLayer, markerRadiusPx } from "./events";
+import { createEventLayer, type EventLayer, markerRadiusPx, sinkFraction } from "./events";
 import { createRingLayer, type RingLayer } from "./rings";
 import { auroraTexture, writeAurora } from "./auroraTexture";
 import { createMarkLayer, pickMark, type Mark } from "./marks";
@@ -31,7 +31,8 @@ export interface HitStore {
 export interface HitQuake {
   key: string;
   readings: readonly { source: SourceId }[];
-  primary: { lon: number; lat: number; magnitude: number; time: number };
+  /** `depthKm` is here because markers are drawn at their depth, so picking has to know it too. */
+  primary: { lon: number; lat: number; magnitude: number; time: number; depthKm: number };
 }
 
 /**
@@ -282,6 +283,13 @@ export interface Globe {
   /** The `kind:id` under the pointer, or null: its glyph is redrawn bright over itself. */
   setMarkHover: (id: string | null) => void;
   setMorph: (t: number) => void;
+  /**
+   * Whether earthquakes are drawn on the surface or at their own depth.
+   *
+   * Held here as well as in the layer, because the hit test has to project to the same place the
+   * shader draws and it cannot read a uniform.
+   */
+  setDepthSink: (on: boolean) => void;
   /** The entrance reveal: boundaries grow outward from the events rather than arriving with them. */
   plates: {
     orderFrom: (points: readonly { lon: number; lat: number }[]) => void;
@@ -701,6 +709,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    * opened it while the earthquakes kept arriving, which is a stale claim about the world sitting
    * next to a live one. Per frame is pointless, since the edge moves a quarter of a degree a minute.
    */
+  /** 0 surface, 1 hypocentre. Read by the hit test, written by the setter below. */
+  let sink = 0;
+
   let sunMinute = -1;
   const aimSun = (at: number): void => {
     const { lon, lat } = subsolarPoint(at);
@@ -808,6 +819,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       COLOR_SPHERE_C.setHex(palette.sphere);
     },
     /** 0 is the globe, 1 is the flat map. Everything on the canvas reads the same value. */
+    setDepthSink: (on: boolean): void => {
+      sink = on ? 1 : 0;
+      events.setDepthSink(sink);
+    },
     setMorph: (t: number): void => {
       morph.value = Math.max(0, Math.min(1, t));
     },
@@ -855,14 +870,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       const under = controls.pick(clientX, clientY);
       if (!under) return null;
 
-      const near: { key: string; lon: number; lat: number; magnitude: number }[] = [];
+      const near: { key: string; lon: number; lat: number; magnitude: number; depthKm: number }[] = [];
       let worst = Infinity;
       store.forEach((quake) => {
         if (!matches(quake as never, filters, now)) return;
-        const { lon, lat, magnitude } = quake.primary;
+        const { lon, lat, magnitude, depthKm } = quake.primary;
         const km = distanceKm(under.lon, under.lat, lon, lat);
         if (near.length >= SHORTLIST && km >= worst) return;
-        near.push({ key: quake.key, lon, lat, magnitude });
+        near.push({ key: quake.key, lon, lat, magnitude, depthKm });
         near.sort((a, b) => distanceKm(under.lon, under.lat, a.lon, a.lat)
           - distanceKm(under.lon, under.lat, b.lon, b.lat));
         if (near.length > SHORTLIST) near.pop();
@@ -873,7 +888,11 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       let bestKey: string | null = null;
       let bestScore = Infinity;
       for (const candidate of near) {
-        const at = controls.project(candidate.lon, candidate.lat);
+        // Projected at the depth it is drawn at, so the pointer agrees with the marker rather than
+        // with the epicentre above it. Flat, the sink is off and this is the surface again.
+        const at = controls.project(
+          candidate.lon, candidate.lat, 1 - sinkFraction(candidate.depthKm) * sink * (1 - controls.morph()),
+        );
         if (!at) continue;
         const d = Math.hypot(at.x - clientX, at.y - clientY);
         // Asked of the shader's own formula rather than copied from it. The warning this replaces was

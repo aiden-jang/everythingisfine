@@ -116,8 +116,18 @@ export interface Controls {
   /** 0 globe, 1 map. Drag becomes a pan and the facing tests fade out as this reaches 1. */
   setMorph: (t: number) => void;
   morph: () => number;
-  /** Screen position of a geographic point, or null when it is round the back. */
-  project: (lon: number, lat: number) => { x: number; y: number } | null;
+  /**
+   * Screen position of a geographic point, or null when it is round the back.
+   *
+   * `radius` is in globe radii and defaults to the surface. It exists because markers are drawn at
+   * their own depth: everything that has to agree with the picture - the hit test, the hover ring,
+   * the tooltip - has to be able to ask about a point *inside* the planet, and a projection that
+   * only knows the surface would put the pointer a long way from a 600km event near the limb.
+   *
+   * The horizon test still uses the surface point, matching the shader, which decides what is
+   * visible from the surface normal and not from where the marker ended up.
+   */
+  project: (lon: number, lat: number, radius?: number) => { x: number; y: number } | null;
   /**
    * Degrees of the map covered by one screen pixel. Only meaningful once flat.
    *
@@ -751,7 +761,7 @@ export function createControls(
       apply();
       target = to;
     },
-    project: (pLon, pLat) => {
+    project: (pLon, pLat, radius = 1) => {
       const r = canvas.getBoundingClientRect();
 
       /*
@@ -776,8 +786,10 @@ export function createControls(
       const lam = pLon * DEG;
       const c = Math.cos(phi);
       world.set(c * Math.sin(lam), Math.sin(phi), c * Math.cos(lam));
-      // Behind the horizon: the surface normal at that point faces away from the eye.
+      // Behind the horizon: the surface normal at that point faces away from the eye. Asked at the
+      // surface even when a depth was given, because that is the question the shader asks.
       if (world.dot(camera.position.clone().sub(world)) <= 0) return null;
+      if (radius !== 1) world.multiplyScalar(radius);
       world.project(camera);
       return {
         x: r.left + ((world.x + 1) / 2) * r.width,
