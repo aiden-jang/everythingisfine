@@ -123,12 +123,21 @@ export function CrossSection({
               {withoutDepth} without a published depth
             </span>
           ) : null}
+          {/*
+            The third of these, and the one the earlier pass missed.
+
+            The detail panel and the mark card both had a key name wearing `.label`, which uppercases and
+            tracks it; both were moved to the lowercase mono the hint row uses, and this one was not
+            looked for. Keys are written the way they are printed on a keyboard, and the touch target is
+            top-aligned for the same reason as the others: a button centres its content, and on a coarse
+            pointer that content sits in a 44px box.
+          */}
           <button
             type="button"
             onClick={onClose}
-            className="label cursor-pointer hover:text-ink"
+            className="flex cursor-pointer items-start font-mono text-[10.5px] text-faint transition-colors hover:text-ink"
           >
-            Esc
+            esc
           </button>
         </span>
       </div>
