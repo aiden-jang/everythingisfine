@@ -48,6 +48,7 @@ import { decode, encode } from "./app/permalink";
 import { seconds } from "./app/arrival";
 import { timesLabel, versusReference } from "./app/versus";
 import { tick } from "./app/touch";
+import { recordWhen, SINCE, superlativeFor } from "./app/superlative";
 import { MAG_MIN, rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
@@ -1553,6 +1554,14 @@ export function App(): JSX.Element {
 
   const versus = useMemo(() => versusReference(energyTotal), [energyTotal]);
 
+  /*
+   * The window's largest against what its region has managed this century.
+   *
+   * Keyed off `strongest`, which the histogram already found while walking the buffer, so this is a box
+   * test and a table lookup rather than a pass of its own.
+   */
+  const ceiling = useMemo(() => superlativeFor(strongest), [strongest]);
+
   const baseline = useMemo(() => {
     if (replay) return null;
     if (snapshot.archive) {
@@ -2215,6 +2224,37 @@ export function App(): JSX.Element {
                 {versus.exceeded
                   ? ` times the energy of ${versus.day.what} in ${versus.day.day.slice(0, 4)}, the largest ever recorded.`
                   : " times the energy of everything in this window, from one earthquake."}
+              </p>
+            ) : null}
+            {/*
+              And what that region is actually capable of.
+
+              The rail names the largest event and its magnitude, and a magnitude with nothing beside it is
+              the same defect as a bare count: "M6.1, Japan & Kurils" reads as enormous to anybody who has
+              not spent time with the scale, and it is an ordinary week there.
+
+              Two forms, and the rare one is the point. Most days this states the ceiling and leaves the
+              comparison to the reader. On the day the window's largest clears it, the app has a genuine
+              superlative to report - and "since at least 2000" is where the generated table starts, so the
+              claim is bounded rather than overstated. Valdivia is older than the table and larger than
+              anything in it.
+            */}
+            {ceiling && strongest && !replay && edge.complete ? (
+              <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+                {ceiling.beaten ? (
+                  <>
+                    {"Nothing in "}{ceiling.region}{" has been this large since at least "}{SINCE}
+                    {". The largest before it was M"}
+                    <span className="text-dim tabular-nums">{ceiling.record.toFixed(1)}</span>
+                    {", in "}{recordWhen(ceiling.day)}{"."}
+                  </>
+                ) : (
+                  <>
+                    {"The largest "}{ceiling.region}{" has had since "}{SINCE}{" is M"}
+                    <span className="text-dim tabular-nums">{ceiling.record.toFixed(1)}</span>
+                    {", in "}{recordWhen(ceiling.day)}{"."}
+                  </>
+                )}
               </p>
             ) : null}
             {/*
