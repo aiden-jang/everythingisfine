@@ -636,7 +636,20 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
          * night. The wider ramp above is what removes the edge; this only stops the dark side
          * swallowing the coastline.
          */
-        uDepth: { value: 0.26 },
+        /*
+         * Deeper night, and the day left where it was.
+         *
+         * The note above is right that darkening alone makes the globe dimmer rather than lit, and the
+         * day lift is what answered it - but at 0.26 the two ramps nearly cancelled and the planet read
+         * flat, a disc with a wash on it. Raising both together does nothing: rendered side by side, a
+         * variant at 0.36/0.15 and one at 0.46/0.20 were indistinguishable, because every step of night
+         * was paid back by a step of day.
+         *
+         * So only this one moved. The day side stays at the brightness it was tuned to and the night
+         * falls further from it, which is where form comes from: the terminator now has somewhere to
+         * travel. The aurora gains too, since it is multiplied by `night` and there is more of it.
+         */
+        uDepth: { value: 0.44 },
         uLift: { value: 0.11 },
         uAurora: { value: aurora },
         // Off until a grid lands, so a failed or slow fetch draws nothing rather than a black sky.
@@ -697,7 +710,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       ...ATMOSPHERE,
       uniforms: {
         uColor: { value: COLOR_RIM },
-        uIntensity: { value: 0.42 },
+        // Lifted with the night it sits against, so the limb still reads once the edge is darker.
+        uIntensity: { value: 0.55 },
         uOuter: { value: 1.22 },
       },
       side: BackSide,
