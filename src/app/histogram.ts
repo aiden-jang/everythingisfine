@@ -62,6 +62,14 @@ export interface Activity {
    */
   energyShare: number | null;
   /**
+   * The sum of `energyOf` over every event in the window, in the same arbitrary units.
+   *
+   * Already accumulated to produce the share above, so returning it costs nothing and saves a caller a
+   * second full pass. Not joules and deliberately so - see `energyOf` - which is why the only honest
+   * thing to do with it is compare it against another number from the same function.
+   */
+  energyTotal: number;
+  /**
    * Events inside the span both feeds cover, and how many of them both feeds reported.
    *
    * The header prints a bare `both` count, and a bare count invites the window's total as its
@@ -178,6 +186,7 @@ export function histogram(
     strongest,
     bucketMs,
     energyShare,
+    energyTotal,
     overlap: overlapFrom === null ? null : { events: inOverlap, both: bothInOverlap },
   };
 }
