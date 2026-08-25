@@ -67,6 +67,19 @@ describe("the verdict, which is the half the poster was missing", () => {
       .toBe("120 earthquakes. 4 cyclones. 87 fires. 9 floods.");
   });
 
+  it("groups a thousand the way the rest of the app does", () => {
+    /*
+     * Caught by exporting one: a busy day printed "6000 earthquakes" beside a rail reading "6,000". The
+     * poster is the artefact that leaves the app, so it is the last place that should format a figure
+     * differently from the interface that made it. Every test here used to sit under a thousand, which
+     * is exactly why nothing failed.
+     */
+    expect(verdictLine({ ...base, quakes: 6000 })).toBe("6,000 earthquakes.");
+    expect(verdictLine({ ...base, quakes: 11363 })).toBe("11,363 earthquakes.");
+    // The floor marker still lands on the number rather than after the separator.
+    expect(verdictLine({ ...base, fires: 1200, firesCapped: true })).toBe("1,200+ fires.");
+  });
+
   it("leaves out what is not there, because a zero is not a fact worth a poster", () => {
     expect(verdictLine({ ...base, quakes: 120 })).toBe("120 earthquakes.");
     expect(verdictLine({ ...base, quakes: 120, floods: 2 })).toBe("120 earthquakes. 2 floods.");
