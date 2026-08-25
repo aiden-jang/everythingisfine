@@ -46,6 +46,7 @@ import { Dial } from "./app/Dial";
 import { DAY_LENGTH, isArchivableDay, isRealDay, typedDay } from "./app/day";
 import { decode, encode } from "./app/permalink";
 import { seconds } from "./app/arrival";
+import { timesLabel, versusReference } from "./app/versus";
 import { MAG_MIN, rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
@@ -1309,7 +1310,7 @@ export function App(): JSX.Element {
     ? Math.max(snapshot.covered.usgs, snapshot.covered.emsc)
     : null;
 
-  const { bars, strongest, bucketMs, energyShare, overlap } = useMemo(
+  const { bars, strongest, bucketMs, energyShare, energyTotal, overlap } = useMemo(
     () => histogram(feed.store.forEach, filters, now, snapshot.coveredSince, overlapFrom),
     // `now` deliberately absent: it ticks every second and the bars only move on the bucket. The
     // revision is what changes them, and the clock catches up the next time an event lands.
@@ -1510,6 +1511,8 @@ export function App(): JSX.Element {
     return closestTo(feed.store, here, filters, clockAt());
     // `snapshot.revision` moves on every ingest; the rest are what the answer depends on.
   }, [feed.store, here, filters, snapshot.revision, replay]);
+
+  const versus = useMemo(() => versusReference(energyTotal), [energyTotal]);
 
   const baseline = useMemo(() => {
     if (replay) return null;
@@ -2153,6 +2156,29 @@ export function App(): JSX.Element {
               </p>
             ) : null}
             {/*
+              And whether the window itself is large, which the line above cannot say.
+
+              The share teaches the logarithm inside one window; it has nothing outside itself to be
+              measured against, so a quiet day and a catastrophic one both read as "one event was most of
+              it". This is the same fact given an outside reference, and on the energy axis the answer is
+              worth printing: an ordinary day sits five or six orders of magnitude below one 1960.
+
+              One event against a whole window is asymmetric, so the wording carries the asymmetry rather
+              than hiding it. It also makes the claim conservative - the real day was larger than its
+              mainshock, and no feed reaches 1960 to say by how much.
+            */}
+            {versus && !replay && edge.complete ? (
+              <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+                {versus.exceeded
+                  ? "This window has released "
+                  : `${versus.day.what}, ${versus.day.day.slice(0, 4)}, released `}
+                <span className="text-dim tabular-nums">{timesLabel(versus.times)}</span>
+                {versus.exceeded
+                  ? ` times the energy of ${versus.day.what} in ${versus.day.day.slice(0, 4)}, the largest ever recorded.`
+                  : " times the energy of everything in this window, from one earthquake."}
+              </p>
+            ) : null}
+            {/*
               Whether any of that is a lot, which nothing on this screen said.
 
               The headline is a count with no scale attached, and section 13 bans exactly that shape of claim
@@ -2164,6 +2190,16 @@ export function App(): JSX.Element {
               instruments are nearby, so an all-magnitude count differs between 2020 and 2025 for reasons of
               funding rather than of geology.
             */}
+            {baseline ? (
+              <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+                <span className="text-dim tabular-nums">{baseline.count}</span> of them were M
+                <span className="tabular-nums">{BASELINE_MIN_MAGNITUDE}</span> or stronger, which is{" "}
+                {baseline.direction} than{" "}
+                <span className="text-dim tabular-nums">{sharePercent(baseline.share)}%</span> of the{" "}
+                <span className="tabular-nums">{BASELINE_DAYS.toLocaleString("en")}</span> days since{" "}
+                {BASELINE_FROM}.
+              </p>
+            ) : null}
             {/*
               The one line on this screen that is about the reader.
 
@@ -2193,16 +2229,6 @@ export function App(): JSX.Element {
                     {"."}
                   </>
                 )}
-              </p>
-            ) : null}
-            {baseline ? (
-              <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
-                <span className="text-dim tabular-nums">{baseline.count}</span> of them were M
-                <span className="tabular-nums">{BASELINE_MIN_MAGNITUDE}</span> or stronger, which is{" "}
-                {baseline.direction} than{" "}
-                <span className="text-dim tabular-nums">{sharePercent(baseline.share)}%</span> of the{" "}
-                <span className="tabular-nums">{BASELINE_DAYS.toLocaleString("en")}</span> days since{" "}
-                {BASELINE_FROM}.
               </p>
             ) : null}
           </div>
