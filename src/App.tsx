@@ -1974,9 +1974,22 @@ export function App(): JSX.Element {
                   until the answer lands, and this line said "the last day" about 2011. The request
                   knows better than the answer does: `archiveDay` is set before the fetch starts.
                 */}
-                {archiveBusy && archiveDay
-                  ? `Asking USGS and EMSC for ${archiveDay}.`
-                  : "Asking USGS and EMSC for the last day."}
+                {/*
+                  "Asking" stops being true once both feeds have already answered no.
+
+                  Caught by refusing every request: eighteen seconds in, the largest line in the rail read
+                  "Asking USGS and EMSC for the last day" while the notice directly under it read "USGS is
+                  not answering... Retrying at 17:30". Nothing was being asked - the app was waiting out a
+                  backoff - so the most prominent text on screen described an activity that had stopped.
+
+                  Only when *both* are failing. One feed down is a caveat the notice already carries, and
+                  the app is genuinely still asking the other one.
+                */}
+                {snapshot.statuses.usgs.kind === "failing" && snapshot.statuses.emsc.kind === "failing"
+                  ? "Neither feed is answering yet."
+                  : archiveBusy && archiveDay
+                    ? `Asking USGS and EMSC for ${archiveDay}.`
+                    : "Asking USGS and EMSC for the last day."}
               </div>
             ) : (
               <>
