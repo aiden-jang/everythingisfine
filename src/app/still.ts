@@ -18,6 +18,8 @@
  * what a reader needs to know they are looking at.
  */
 
+import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
+
 export interface StillCaption {
   /** What the image is of, from the cursor rather than the clock. */
   moment: string;
@@ -33,6 +35,8 @@ export interface StillTheme {
   background: string;
   ink: string;
   faint: string;
+  /** The palette the marks were drawn in, so the still can say what its colours mean. */
+  ramp: RampName;
 }
 
 /** Fixed output, so a still does not change size with the window it was taken from. */
@@ -172,4 +176,34 @@ export function drawStill(
   ctx.fillText(moment, 56, baseline + 54);
   const width = ctx.measureText(provenance).width;
   ctx.fillText(provenance, STILL_WIDTH - 56 - width, baseline + 54);
+
+  /*
+   * The scale travels with the picture, because the picture is the part that leaves.
+   *
+   * Every colour in a still means a magnitude and nothing in the file said so. Inside the app the key is
+   * always a glance away; shared, the image was a field of coloured dots with a caption that counted them
+   * and never explained them - the one place this app's own rule, that nothing ships without the sentence
+   * explaining it, was not kept. And it was not for want of room: the sphere is a circle in a 16:9 frame,
+   * so nearly half the width is empty either side of it.
+   *
+   * Eight stops rather than a two-colour gradient, because both ramps bend: `thermal` turns through red
+   * and orange and `cividis` through a desaturated middle, and interpolating end to end would print a
+   * key that does not match the marks above it.
+   */
+  const scaleW = 190;
+  const scaleRight = STILL_WIDTH - 56;
+  const scaleLeft = scaleRight - scaleW;
+  const scaleTop = baseline + 2;
+  ctx.font = "13px ui-monospace, SFMono-Regular, Menlo, monospace";
+  const label = "magnitude";
+  ctx.fillText(label, scaleRight - ctx.measureText(label).width, baseline - 10);
+  const grad = ctx.createLinearGradient(scaleLeft, 0, scaleRight, 0);
+  for (let i = 0; i <= 8; i += 1) grad.addColorStop(i / 8, rampColorAt(theme.ramp, i / 8));
+  ctx.fillStyle = grad;
+  ctx.fillRect(scaleLeft, scaleTop, scaleW, 8);
+  ctx.fillStyle = theme.faint;
+  ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, monospace";
+  ctx.fillText(`${MAG_MIN.toFixed(1)}`, scaleLeft, scaleTop + 24);
+  const top = `${MAG_MAX.toFixed(1)}+`;
+  ctx.fillText(top, scaleRight - ctx.measureText(top).width, scaleTop + 24);
 }
