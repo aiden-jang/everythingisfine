@@ -1409,6 +1409,41 @@ export function App(): JSX.Element {
    */
   const driven = replay !== null || view.at !== null;
   const headline = useRolling(replay ? replay.revealed : revealedNow ?? shown, !driven);
+
+  /*
+   * The count in the tab, so leaving it open is worth something.
+   *
+   * This app is built to be left running - the entrance exists because "somebody opens the page for ten
+   * seconds" was the case worth designing for - and a tab that says the same four words all day gives a
+   * reader no reason to glance back at it. The number is already the answer the whole rail is arranged
+   * around; the title is the one place it was missing.
+   *
+   * **Not during the replay.** The count climbs through a whole day in 2.8 seconds, and a title rewritten
+   * on every frame of that is a flickering tab rather than a readout. It is also not information: the
+   * replay is showing yesterday.
+   *
+   * **The archived day says which day.** Otherwise the tab reads as a live figure for a date the reader
+   * chose hours ago, which is the same misstatement the banner exists to prevent on screen.
+   *
+   * Leading, because a tab is truncated from the right and the number is the part worth keeping.
+   */
+  useEffect(() => {
+    const base = "Everything Is Fine";
+    if (replay || snapshot.coveredSince === null) {
+      document.title = base;
+      return;
+    }
+    /*
+     * The day that is loaded, not the day in the box.
+     *
+     * `archiveDay` is the field's own text, so it changes on every keystroke: typing a new date while an
+     * archive was already open put half a date in the tab for a day nobody was looking at. The snapshot's
+     * own span is what is actually drawn.
+     */
+    const at = snapshot.archive;
+    const day = at ? `${new Date(at.from).toISOString().slice(0, 10)} · ` : "";
+    document.title = `(${headline.toLocaleString("en-GB")}) ${day}${base}`;
+  }, [headline, replay, snapshot.coveredSince, snapshot.archive]);
   /*
    * Mirrored for the still, right where the count it needs finally exists.
    *
