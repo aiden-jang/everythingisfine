@@ -464,7 +464,7 @@
     }
 
     .rail > .titleblock { grid-area: title; }
-    .rail > .tb-notes { grid-area: notes; }
+    .rail > .tb-stack { grid-area: notes; }
     .rail > [data-rail="diurnal"] { grid-area: when; }
     .rail > [data-rail="activity"] { grid-area: activity; }
     .rail > [data-rail="legend"] { grid-area: legend; }

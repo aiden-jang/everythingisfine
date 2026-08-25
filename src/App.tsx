@@ -2045,56 +2045,71 @@ export function App(): JSX.Element {
             beside the energy line because both are one sentence about the whole window rather than about
             any event in it.
           */}
-          {!replay && quiet.note ? (
-            <div className="tb-notes">
-              <span className="label">Notes</span>
-              <p className="text-[11px] leading-relaxed text-faint">{quiet.note}</p>
-            </div>
-          ) : null}
           {/*
-            The layers that could not be asked.
+            One tenant for the notes area, because the grid only has one.
 
-            Beside the notes rather than in the legend, because it is a statement about the window like the
-            others here, and because the legend's rows are the very things that vanish when a feed dies -
-            an explanation of an absent layer cannot live inside the layer's own absent row. Archived days
-            withhold these feeds by design, so this stays out of their way.
+            Four separate paragraphs used to sit here as siblings, and on the tablet strip that is
+            four bugs. Only `.tb-notes` is named, and it is named twice - the notes block and the
+            silent-feeds block both match it, so a dead feed stacked one on top of the other. The two
+            bare paragraphs matched nothing and auto-placed into implicit rows: measured at 900x1000,
+            the ranking line alone added 54px to a strip already overflowing by 250.
+
+            That is the same failure the grid comment upstream describes from last time, and the same
+            reason no test caught it: this rail scrolls, so everything stayed technically reachable
+            while the transport went under the fold.
           */}
-          {!archived && silentFeeds(answered) ? (
-            <div className="tb-notes">
-              <span className="label">Feeds</span>
-              <p className="text-[11px] leading-relaxed text-faint">{silentFeeds(answered)}</p>
-            </div>
-          ) : null}
-          {strongest && !replay && edge.complete && energyShare !== null && energyShare > 0.5 ? (
-            <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
-              That one event is{" "}
-              <span className="text-dim tabular-nums">{energyPercent(energyShare)}</span> of the energy
-              released in the window. Magnitude is logarithmic: two points of it is a thousand times the
-              energy.
-            </p>
-          ) : null}
-          {/*
-            Whether any of that is a lot, which nothing on this screen said.
+          <div className="tb-stack">
+            {!replay && quiet.note ? (
+              <div className="tb-notes">
+                <span className="label">Notes</span>
+                <p className="text-[11px] leading-relaxed text-faint">{quiet.note}</p>
+              </div>
+            ) : null}
+            {/*
+              The layers that could not be asked.
 
-            The headline is a count with no scale attached, and section 13 bans exactly that shape of claim
-            everywhere else in the app. This is the scale.
+              Beside the notes rather than in the legend, because it is a statement about the window like the
+              others here, and because the legend's rows are the very things that vanish when a feed dies -
+              an explanation of an absent layer cannot live inside the layer's own absent row. Archived days
+              withhold these feeds by design, so this stays out of their way.
+            */}
+            {!archived && silentFeeds(answered) ? (
+              <div className="tb-notes">
+                <span className="label">Feeds</span>
+                <p className="text-[11px] leading-relaxed text-faint">{silentFeeds(answered)}</p>
+              </div>
+            ) : null}
+            {strongest && !replay && edge.complete && energyShare !== null && energyShare > 0.5 ? (
+              <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+                That one event is{" "}
+                <span className="text-dim tabular-nums">{energyPercent(energyShare)}</span> of the energy
+                released in the window. Magnitude is logarithmic: two points of it is a thousand times the
+                energy.
+              </p>
+            ) : null}
+            {/*
+              Whether any of that is a lot, which nothing on this screen said.
 
-            It states its own threshold because it has to: the ranking is of magnitude 4.5 and up, which is
-            not necessarily the population drawn on the globe beside it. That is not a caveat, it is the
-            only way the comparison means anything - how many small events get detected depends on how many
-            instruments are nearby, so an all-magnitude count differs between 2020 and 2025 for reasons of
-            funding rather than of geology.
-          */}
-          {baseline ? (
-            <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
-              <span className="text-dim tabular-nums">{baseline.count}</span> of them were M
-              <span className="tabular-nums">{BASELINE_MIN_MAGNITUDE}</span> or stronger, which is{" "}
-              {baseline.direction} than{" "}
-              <span className="text-dim tabular-nums">{sharePercent(baseline.share)}%</span> of the{" "}
-              <span className="tabular-nums">{BASELINE_DAYS.toLocaleString("en")}</span> days since{" "}
-              {BASELINE_FROM}.
-            </p>
-          ) : null}
+              The headline is a count with no scale attached, and section 13 bans exactly that shape of claim
+              everywhere else in the app. This is the scale.
+
+              It states its own threshold because it has to: the ranking is of magnitude 4.5 and up, which is
+              not necessarily the population drawn on the globe beside it. That is not a caveat, it is the
+              only way the comparison means anything - how many small events get detected depends on how many
+              instruments are nearby, so an all-magnitude count differs between 2020 and 2025 for reasons of
+              funding rather than of geology.
+            */}
+            {baseline ? (
+              <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+                <span className="text-dim tabular-nums">{baseline.count}</span> of them were M
+                <span className="tabular-nums">{BASELINE_MIN_MAGNITUDE}</span> or stronger, which is{" "}
+                {baseline.direction} than{" "}
+                <span className="text-dim tabular-nums">{sharePercent(baseline.share)}%</span> of the{" "}
+                <span className="tabular-nums">{BASELINE_DAYS.toLocaleString("en")}</span> days since{" "}
+                {BASELINE_FROM}.
+              </p>
+            ) : null}
+          </div>
 
           {/*
             The same window, folded onto the clock.
