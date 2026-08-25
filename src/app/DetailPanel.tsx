@@ -169,8 +169,20 @@ export function DetailPanel({
     >
       <div className="flex items-start justify-between">
         <div className="label">Pinned event</div>
-        <button type="button" onClick={onClose} className="label cursor-pointer hover:text-ink">
-          Esc
+        {/*
+          A key name, written the way this app writes key names.
+
+          This wore `.label`, which uppercases and tracks it, so the panel announced "ESC" as though it
+          were a section heading while the mark card beside it said "esc" and the hint row over the globe
+          said "esc clear". Two casings for one key in one interface. The hint row is the convention:
+          keys are lowercase and mono, because that is what is printed on them.
+        */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="cursor-pointer font-mono text-[10.5px] text-faint transition-colors hover:text-ink"
+        >
+          esc
         </button>
       </div>
 
