@@ -124,7 +124,20 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
   const material = new LineBasicMaterial({ color: 0x9fb0cc, transparent: true, opacity: 0.72 });
   morphable(material, morph);
   const object = new LineSegments(geometry, material);
-  object.renderOrder = 3.5;
+  /*
+   * Above the night, like the earthquakes are.
+   *
+   * These sat at 3.5, under the coastline at 4 and under the night overlay at 4.5, while earthquakes draw
+   * at 5 and their wavefronts at 6. So one set of marks was dimmed on the dark side of the planet and
+   * covered by geography, and the other was not - a storm faded at night and a quake beside it did not.
+   * Deepening the night made the gap plain: the overlay now takes 0.44 rather than 0.26, so the same
+   * inconsistency costs 70% more than it used to.
+   *
+   * 5.5 puts them with the earthquakes: over the geography, because a mark is data and a coastline is
+   * reference, and over the night, because whether a cyclone is legible should not depend on the hour it
+   * is there. Under the rings at 6, which stay on top of everything they expand across.
+   */
+  object.renderOrder = 5.5;
 
   /*
    * The hover highlight: the glyph's own shape, in ink, over itself.
@@ -147,7 +160,8 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
   morphable(hotMaterial, morph);
   const highlight = new LineSegments(hotGeometry, hotMaterial);
   // Above the marks it sits on, below the markers and their rings.
-  highlight.renderOrder = 3.6;
+  // Just above the glyphs it traces, so it stays with them wherever they are drawn.
+  highlight.renderOrder = 5.6;
 
   let written = 0;
   const put = (aLon: number, aLat: number, bLon: number, bLat: number): void => {
