@@ -801,6 +801,30 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           float day = smoothstep(0.10, 0.55, sun);
 
           /*
+           * The lit side is brightest facing the eye and falls off toward the limb.
+           *
+           * Without it the day wash is flat across the whole hemisphere, which draws a lit circle rather
+           * than a lit sphere: the shading says where the sun is and nothing says the surface is curving
+           * away. Real limb darkening has a real cause - obliquely you are looking through more
+           * atmosphere and less deep into it - and on this globe it costs one dot product.
+           *
+           * Applied by taking the wash away rather than by adding shadow. The wash is the only thing on
+           * the lit side with any strength to it, so removing it is worth about twenty levels; adding
+           * black over an ocean already at 2,10,18 would be worth about three. Darkening a thing that is
+           * already dark is arithmetic nobody can see.
+           *
+           * The surface point is the normal times the shell radius, which is exact here: nothing above
+           * this rotates the sphere, and the one thing the model matrix carries is the sideways offset
+           * that repeats the flat map - where this term is switched off anyway, because a plane has no
+           * limb to darken.
+           *
+           * (No backticks in here. This is inside a template literal and one of them ends the shader.)
+           */
+          vec3 toEye = normalize(cameraPosition - vNormal * ${RADIUS_NIGHT});
+          float edge = (1.0 - clamp(dot(vNormal, toEye), 0.0, 1.0)) * (1.0 - uMorph);
+          day *= mix(1.0, 0.32, smoothstep(0.30, 0.94, edge));
+
+          /*
            * The aurora, in the one shader that already knows where night is.
            *
            * (No backticks in here. This is inside a template literal and one of them ends the shader,
