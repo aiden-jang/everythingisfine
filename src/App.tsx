@@ -3039,7 +3039,19 @@ export function App(): JSX.Element {
                 {legend}
               </div>
             ) : null}
-            <div className="key-hints pointer-events-auto order-2 font-mono text-[10.5px] text-faint xl:order-1">
+            <div
+              /*
+                Sat on the planet with nothing under it, which is what made it read as console output
+                rather than as part of the interface. Every other floating element down here already has
+                a ground: the legend is 44% deck under a hard blur, and the section band is 40% under
+                another. This is the same treatment at the same strength, so a row of monospace keys
+                becomes a chip of chrome on the map instead of text lying on it.
+
+                Square, and no border. The corners in this app are ticks or nothing, and a hairline box
+                round eight words would be more furniture than the words are worth.
+              */
+              className="key-hints pointer-events-auto order-2 bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50 xl:order-1"
+            >
               {/*
                 What the keys do here, not what they did on the globe. Arrows orbit a sphere and pan a
                 map, and a hint row that says orbit while the drag pans is worse than no hint row.
