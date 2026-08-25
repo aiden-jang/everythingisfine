@@ -549,8 +549,15 @@ test("the sequence says whether the big one has already happened", async ({ page
   await row.click();
 
   const panel = page.locator(".zone-panel");
-  // Three neighbours, all earlier than the pinned event.
-  await expect(panel).toContainText("3 before · 0 after");
+  /*
+   * Three neighbours, all earlier than the pinned event, and only the side that has something on it
+   * is printed. The empty half used to read "0 after" beside an axis already rendering "this event"
+   * on the right, which is what nothing after looks like there. Asserted as the rule rather than as
+   * the string, so the next copy change does not land here.
+   */
+  await expect(panel).toContainText("3 before");
+  await expect(panel).not.toContainText("0 after");
+  await expect(panel.getByText("this event")).toBeVisible();
   await expect(panel).toContainText("The largest nearby was M 6.0, 2.5h before this one.");
   // One tick per neighbour plus the chrome marker for the pinned event.
   await expect(panel.locator("[data-ramp] > div.relative > span")).toHaveCount(4);
@@ -1102,7 +1109,10 @@ test("a mark in the cross-section pins the event it stands for", async ({ page }
   await marks.nth(3).click();
   const panel = page.locator(".zone-panel");
   await expect(panel).toBeVisible();
-  const pinned = (await panel.locator(".font-mono").first().textContent())!;
+  // By its own hook. ".font-mono first" used to be the magnitude scale and became the close key the
+  // moment that key was set in lowercase mono, so the test read "esc" and still looked like it passed
+  // something meaningful.
+  const pinned = (await panel.locator("[data-magscale]").textContent())!;
 
   /*
    * The band stops where the panel starts.

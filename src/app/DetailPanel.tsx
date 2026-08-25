@@ -197,7 +197,13 @@ export function DetailPanel({
 
       <div className="mt-2 flex items-baseline gap-2">
         <span className="text-[30px] leading-none font-semibold">{magnitude(r)}</span>
-        <span className="font-mono text-[12px] text-faint">{r.scale}</span>
+        {/*
+          Hooked, like the ramp and the map scale are. Which magnitude scale a reading was measured on
+          is the one field that proves the panel is showing a real catalogue entry rather than a
+          placeholder, so a test wants to read exactly it - and "the first mono span in the panel" is
+          not that. It was, until the close key became lowercase mono and moved above it.
+        */}
+        <span data-magscale className="font-mono text-[12px] text-faint">{r.scale}</span>
       </div>
       <div className="mt-2 text-[13px] leading-snug text-dim">{place(r.place)}</div>
       <div className="mt-1 text-[11px] text-faint">
