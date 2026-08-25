@@ -47,6 +47,7 @@ import { DAY_LENGTH, isArchivableDay, isRealDay, typedDay } from "./app/day";
 import { decode, encode } from "./app/permalink";
 import { seconds } from "./app/arrival";
 import { timesLabel, versusReference } from "./app/versus";
+import { tick } from "./app/touch";
 import { MAG_MIN, rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
@@ -1145,6 +1146,8 @@ export function App(): JSX.Element {
    * beside a newly pinned earthquake would be two answers to one question.
    */
   const selectQuake = useCallback((key: string | null) => {
+    // Only on the way in. Dismissing is already confirmed by the panel leaving.
+    if (key !== null) tick();
     setMarkId(null);
     setSelected(key);
   }, []);
@@ -1244,6 +1247,27 @@ export function App(): JSX.Element {
         // hint strip. One press is one bar; the window is twenty-four of them.
         const live = spanNow();
         setScrub((sc) => nudge(clampScrub(sc, live), live, e.key === "." ? 1 : -1));
+      } else if (e.key === "f" || e.key === "F") {
+        /*
+         * The whole window, and only the planet in it.
+         *
+         * Two things at once, because either alone is half the gesture: the browser's own chrome goes,
+         * and so does the app's. What is left is the globe, which is what somebody is doing when they
+         * turn a screen round to show it to the person next to them.
+         *
+         * **Escape is the way back and the browser provides it**, which is why hiding the controls here
+         * is safe when it would not be otherwise: there is no state to get stuck in, because leaving
+         * fullscreen is a key every viewer already knows and the chrome returns with it. The app listens
+         * for the change rather than tracking its own flag, so exiting by any route - the key, the
+         * browser's button, another tab taking over - lands in the same place.
+         *
+         * Requested on the frame rather than on `documentElement`, so the black letterboxing a display
+         * with a different aspect ratio adds belongs to the page's own background rather than to the
+         * browser's.
+         */
+        const el = document.querySelector(".frame");
+        if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+        else if (el) void (el as HTMLElement).requestFullscreen?.().catch(() => {});
       } else if (e.key === "[" || e.key === "]") {
         /*
          * Days, where the comma and the full stop do buckets.
@@ -1512,6 +1536,21 @@ export function App(): JSX.Element {
     // `snapshot.revision` moves on every ingest; the rest are what the answer depends on.
   }, [feed.store, here, filters, snapshot.revision, replay]);
 
+  /*
+   * Whether the browser is in fullscreen, read from the browser rather than remembered.
+   *
+   * Tracking a flag of our own would drift the moment somebody leaves by a route the app did not
+   * initiate, and there are several: the Escape key, the browser's own control, another tab claiming the
+   * display. The event is the single source, so every exit lands in the same state.
+   */
+  const [cinema, setCinema] = useState(false);
+  useEffect(() => {
+    const sync = (): void => setCinema(document.fullscreenElement !== null);
+    document.addEventListener("fullscreenchange", sync);
+    sync();
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+
   const versus = useMemo(() => versusReference(energyTotal), [energyTotal]);
 
   const baseline = useMemo(() => {
@@ -1637,7 +1676,7 @@ export function App(): JSX.Element {
         every other boundary here uses; it seats the row without drawing a bar across the top of the
         planet.
       */}
-      <header className="zone-head flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent">
+      <header className="zone-head flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent" hidden={cinema}>
         <div
           /*
             Aligned to the first row of controls, not to the middle of them.
@@ -1881,7 +1920,7 @@ export function App(): JSX.Element {
           "--regions-h": `${regionsHeight}px`,
         } as React.CSSProperties}
       >
-        <aside className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r">
+        <aside className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r" hidden={cinema}>
           {/*
             The title block, which is where the four stacked prose blocks went.
 
@@ -2862,7 +2901,15 @@ export function App(): JSX.Element {
           max={620}
           measure={(e) => e.clientX}
           onChange={setRailWidth}
-          className="absolute inset-y-0 hidden xl:block"
+          /*
+            Hidden with the rail it resizes.
+
+            The handle is a sibling rather than a child, because the border lives on it so it can light up
+            on hover. That also means hiding the rail leaves it behind: measured in cinema mode as a
+            one-pixel bright line at x=356, running the full height, with identical pixels either side. A
+            hairline down a frame whose whole point is that there is nothing in it but planet.
+          */
+          className={cinema ? "hidden" : "absolute inset-y-0 hidden xl:block"}
           style={{ left: railWidth - 6 }}
         />
 
@@ -2910,6 +2957,8 @@ export function App(): JSX.Element {
             className={`pointer-events-none absolute bottom-0 left-0 z-[1] flex flex-wrap items-end justify-end gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)] ${
               shownQuake && pinned ? "right-0 xl:right-[var(--panel-w)]" : "right-0"
             }`}
+            /* The bottom band is chrome too: the key, the hint row and the scale all live in here. */
+            hidden={cinema}
           >
             {/*
               The section joins the bottom band as its own full-width line rather than as a new
@@ -2965,6 +3014,9 @@ export function App(): JSX.Element {
                 // that names an inert key is worse than one that is short.
                 ...(archived ? [["[ ]", "day"] as const] : []),
                 ...(flat ? [["shift-drag", "section"] as const] : []),
+                // Last but for `esc`, because it is the only one here that changes the window rather
+                // than the view, and somebody scanning for camera keys should not trip over it first.
+                ["f", "full"],
                 ["esc", "clear"],
               ] as const).map(([key, what]) => (
                 <span key={key} className="mr-3 inline-flex items-baseline gap-1.5">
