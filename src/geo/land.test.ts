@@ -1,8 +1,41 @@
 import { describe, expect, it } from "vitest";
 import { buildLand, recentre, rings, unwrap } from "./land";
+import { spanDeg } from "./sphere";
 
 describe("the land mesh", () => {
   const land = buildLand();
+
+  /*
+   * The guard for a bug that was reported four times and misdiagnosed three.
+   *
+   * A vertex stranded on the straight edge of an unsplit neighbour is lifted onto the sphere while the
+   * edge stays a chord in screen space, so the mesh opens a lens the width of that edge's sagitta and
+   * the ocean shows through it. It was invisible at a 1x pixel ratio and about four pixels at 2x, and it
+   * survived being blamed on the graticule, on plate lines and on the night overlay.
+   *
+   * Two assertions, because either alone passes while the defect is present: no edge long enough for the
+   * gap to reach a pixel, and no edge owned by more than two triangles, which is what a fold looks like
+   * if the refinement ever goes wrong.
+   */
+  it("keeps every edge short enough that a stranded vertex cannot open a visible gap", () => {
+    let longest = 0;
+    const owners = new Map<number, number>();
+    for (let t = 0; t < land.index.length; t += 3) {
+      for (let e = 0; e < 3; e += 1) {
+        const a = land.index[t + e]!;
+        const b = land.index[t + ((e + 1) % 3)]!;
+        longest = Math.max(longest, spanDeg(
+          land.lonLat[a * 2]!, land.lonLat[a * 2 + 1]!,
+          land.lonLat[b * 2]!, land.lonLat[b * 2 + 1]!,
+        ));
+        const key = a < b ? a * 1e7 + b : b * 1e7 + a;
+        owners.set(key, (owners.get(key) ?? 0) + 1);
+      }
+    }
+    // 4 degrees is a 0.49px sagitta on this globe; 11.4 was the 4px line people reported.
+    expect(longest).toBeLessThanOrEqual(4.01);
+    expect([...owners.values()].filter((n) => n > 2)).toHaveLength(0);
+  });
 
   it("winds every triangle outward, so back-face culling can hide the far side", () => {
     /*
