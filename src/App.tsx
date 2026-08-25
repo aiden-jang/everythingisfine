@@ -883,7 +883,8 @@ export function App(): JSX.Element {
        */
       filter: `M${filters.minMagnitude.toFixed(1)}+ · last ${compactSpan(filters.windowMs)}`,
       host: window.location.host,
-    }, { background: token("void"), ink: token("ink"), faint: token("faint") });
+      // The ramp the marks were drawn in, so the still can print the scale it used.
+    }, { background: token("void"), ink: token("ink"), faint: token("faint"), ramp });
 
     setSaving(true);
     frame.toBlob((blob) => {
