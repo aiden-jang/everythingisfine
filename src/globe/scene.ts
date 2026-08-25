@@ -268,6 +268,15 @@ export interface Globe {
   setMarks: (marks: readonly Mark[]) => void;
   /** Picks the geography palette the given ramp needs. See `NEUTRAL` in this file. */
   setGeography: (ramp: RampName) => void;
+  /**
+   * The radius the shader is drawing a given magnitude at, in CSS pixels.
+   *
+   * The hover ring and the selection bracket are HTML over the canvas, so their sizes were fixed numbers
+   * chosen against the old marker scale. Widening that scale moved the biggest marks past them - a ring
+   * meant to enclose a mark ends up inside one - and no fixed number can fix it, because the scale also
+   * grows as the camera comes in. So they ask instead of assuming.
+   */
+  markerRadius: (magnitude: number) => number;
   /** The camera's zoom, so the glyphs hold their size on screen the way the markers do. */
   setMarkZoom: (zoom: number) => void;
   /** The `kind:id` under the pointer, or null: its glyph is redrawn bright over itself. */
@@ -787,6 +796,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
      * Called with the ramp rather than a palette name, because there is exactly one reason to choose and
      * it is which ramp the marks are drawn from. See `NEUTRAL` for the measurement.
      */
+    markerRadius: (magnitude: number): number => markerRadiusPx(magnitude, markerScale()),
     setGeography: (ramp: RampName): void => {
       const palette = ramp === "cividis" ? NEUTRAL : BLUEPRINT;
       (ocean.material as MeshBasicMaterial).color.setHex(palette.sphere);

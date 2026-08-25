@@ -242,6 +242,22 @@ export function Globe({
         const at = found ? globe.controls.project(found.lon, found.lat) : null;
         node.style.opacity = at ? "1" : "0";
         if (!at || !found) return;
+        /*
+         * The ring and the bracket take their size from the mark they are on.
+         *
+         * Both were fixed pixel sizes, chosen when the largest marker was 8.8px across. The scale is
+         * wider now and grows with the zoom besides, so a 20px ring could land inside the very events
+         * people reach for first. Sized from the shader's own radius, they enclose whatever they are
+         * pointing at - the ring just clear of it, the bracket a little further out.
+         */
+        if (node === hoverRing.current || node === marker.current) {
+          const mag = found.quake?.primary.magnitude;
+          const radius = mag === undefined ? 7 : globe.markerRadius(mag);
+          const clear = node === marker.current ? 9 : 5;
+          const size = Math.round(radius * 2 + clear * 2);
+          node.style.width = `${size}px`;
+          node.style.height = `${size}px`;
+        }
         if (node === tooltip.current) {
           /*
            * Two events, measured, and no new state to do it with.
