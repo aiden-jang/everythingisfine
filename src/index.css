@@ -497,9 +497,19 @@
     min-width: 0;
     min-height: 0;
   }
-  .zone-panel {
-    grid-area: panel;
-  }
+  /*
+   * No `grid-area` here, because there is no `panel` area to name - in any layout.
+   *
+   * Every template is a single column: "canvas" over "rail" on a phone, the reverse on a tablet, and at
+   * 1280 the panel is positioned absolutely and out of the grid entirely. So this named an area that has
+   * never existed, and a named line the template does not define does not fall back to auto placement -
+   * it *creates an implicit column*. Measured on a phone: the grid went from `390px` to
+   * `40px 0px 350px` the moment an event was tapped, and the globe was drawn 40px wide.
+   *
+   * The note on `grid-template-columns: 1fr` upstream was written against this exact symptom and fixed
+   * the half of it that auto-placement caused. This is the other half: the column was not invented for
+   * want of a template, it was invented on request.
+   */
 }
 
 /*
