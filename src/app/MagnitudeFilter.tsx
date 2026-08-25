@@ -91,6 +91,9 @@ export interface MagnitudeFilterProps {
   depth: { shallow: number; intermediate: number; deep: number; unknown: number; total: number };
   motionOn: boolean;
   onMotion: (on: boolean) => void;
+  /** Whether earthquakes are drawn at their own depth. Null hides the control, on the flat map. */
+  sinkOn: boolean | null;
+  onSink: (on: boolean) => void;
   /**
    * Any further controls, rendered above the key rather than below it.
    *
@@ -126,7 +129,7 @@ export function MagnitudeFilter(
   {
     ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince, now,
     fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
-    motion, motionOn, onMotion, depth, sound, children,
+    motion, motionOn, onMotion, sinkOn, onSink, depth, sound, children,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -256,6 +259,30 @@ export function MagnitudeFilter(
           ))}
         </span>
         <span>solid is shallow, hollow is deep</span>
+        {/*
+          The sink hangs off this row for the same reason the motion arrows hang off the boundaries:
+          it is a second reading of the hole rather than another layer. Hidden rather than disabled on
+          the flat map, because a plane has no inside and a control that does nothing is worse than one
+          that is not there.
+
+          On by default, which the motion arrows are not, and the difference is what it costs. 231
+          arrows put a mark in every margin on the planet; this moves marks that are already drawn, and
+          the payoff is the slab resolving out of a scatter the first time somebody orbits.
+        */}
+        {sinkOn === null ? null : (
+          <button
+            type="button"
+            aria-pressed={sinkOn}
+            onClick={() => onSink(!sinkOn)}
+            className={`ml-auto cursor-pointer border px-2 py-1 text-[11px] transition-colors ${
+              sinkOn
+                ? "border-faint bg-raised text-ink"
+                : "border-hairline text-faint hover:bg-raised hover:text-dim"
+            }`}
+          >
+            depth
+          </button>
+        )}
       </div>
 
       {/*
@@ -272,6 +299,19 @@ export function MagnitudeFilter(
         70 and 300" is the part anybody reads, and the slab explanation behind it is two more lines.
       */}
       <KeyRow note={depthNote(depth)} />
+
+      {/*
+        The drawing has to say what it is doing.
+
+        With the sink on, a marker is no longer over its epicentre: it is over the hypocentre, which for a
+        deep event is a visible distance inland of the point the catalogue names. Everything else in this
+        key explains an encoding; this explains a *position*, and a position that means something other
+        than the obvious is the one thing that cannot go unsaid. Only while it is on, because with it off
+        the marker is back on the surface and there is nothing to declare.
+      */}
+      {sinkOn ? (
+        <KeyRow note="Each one is drawn at its own depth, so a deep event sits inside the surface point it is listed at. Orbit and they separate." />
+      ) : null}
 
       {/*
         The plate boundaries need naming too. An unexplained line on a data visualisation is a

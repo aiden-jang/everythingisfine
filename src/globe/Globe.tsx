@@ -56,6 +56,14 @@ export interface GlobeProps {
   /** false is the globe, true is the flat map. Eased, not switched. */
   flat?: boolean;
   /**
+   * Draw earthquakes at their own depth rather than on the surface.
+   *
+   * Only means anything on the globe: the offset is radial, and a plane has no radius to move along.
+   * The shader fades it out with the morph rather than this being switched off, so unwrapping the map
+   * while it is on lifts every event back to the surface as part of the same motion.
+   */
+  depthSink?: boolean;
+  /**
    * The hour the pointer is holding on the activity strip, in whole hours before now, or null.
    *
    * Linked views: the strip already knows when things happened and the globe already knows where,
@@ -106,7 +114,7 @@ const SCALE_TARGET_PX = 110;
 export function Globe({
   feed, filters, selected, ramp, onSelect, onReady, onCapture, onSelectMark, onCamera, onReplay,
   focus = null, aurora = null, marks = [],
-  scrubAt = null, flat = false, section = null, onSection,
+  scrubAt = null, flat = false, depthSink = false, section = null, onSection,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
@@ -119,6 +127,7 @@ export function Globe({
   const redrawRef = useRef<() => void>(() => {});
   const wakeRef = useRef<() => void>(() => {});
   const rampRef = useRef<(name: RampName) => void>(() => {});
+  const sinkRef = useRef<(on: boolean) => void>(() => {});
   const auroraRef = useRef<(next: Aurora | null) => void>(() => {});
   const markRef = useRef<(next: readonly Mark[]) => void>(() => {});
   /*
@@ -128,8 +137,8 @@ export function Globe({
    * tearing down the WebGL context, the 300,000-triangle globe and both feed subscriptions every
    * time somebody nudges a magnitude slider.
    */
-  const live = useRef({ filters, selected, focus, scrubAt, flat, section, aurora, marks });
-  live.current = { filters, selected, focus, scrubAt, flat, section, aurora, marks };
+  const live = useRef({ filters, selected, focus, scrubAt, flat, depthSink, section, aurora, marks });
+  live.current = { filters, selected, focus, scrubAt, flat, depthSink, section, aurora, marks };
   const onSectionRef = useRef(onSection);
   onSectionRef.current = onSection;
   /** The line being dragged right now, which the frame loop draws in place of the committed one. */
@@ -659,6 +668,11 @@ export function Globe({
      */
     auroraRef.current(live.current.aurora);
     markRef.current(live.current.marks);
+    sinkRef.current = (on) => {
+      globe.setDepthSink(on);
+      redraw();
+    };
+    globe.setDepthSink(live.current.depthSink);
     rampRef.current = (name) => {
       // Both layers, or a wavefront would stay warm while its own marker turned blue.
       globe.events.setRamp(name);
@@ -857,6 +871,10 @@ export function Globe({
   useEffect(() => {
     rampRef.current(ramp);
   }, [ramp]);
+
+  useEffect(() => {
+    sinkRef.current(depthSink);
+  }, [depthSink]);
 
   /*
    * Handed to the scene rather than held in it, and redrawn once when it lands.
