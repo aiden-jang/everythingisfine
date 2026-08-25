@@ -912,6 +912,31 @@
     transform: rotate(45deg);
   }
 
+  /*
+   * The pinned event, bracketed rather than ringed.
+   *
+   * Selection was a white circle, and a circle is the one shape this globe is already full of: every
+   * marker carries a stroke and the deep ones are drawn hollow, so the thing you had chosen was one more
+   * ring among two hundred. It read as slightly brighter rather than as picked.
+   *
+   * Four corner ticks instead, which is the mark this app already uses to say "this is a frame and these
+   * belong together" on the title block. Nothing else on the globe is a right angle, so it cannot be
+   * mistaken for data, and it reads as an instrument sighting something rather than as another datum.
+   *
+   * Hover keeps the ring. Hovering is not choosing, and the two should not look alike.
+   */
+  .pick {
+    background:
+      linear-gradient(var(--color-ink), var(--color-ink)) 0 0 / 7px 1px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 0 0 / 1px 7px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 100% 0 / 7px 1px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 100% 0 / 1px 7px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 0 100% / 7px 1px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 0 100% / 1px 7px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 100% 100% / 7px 1px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 100% 100% / 1px 7px no-repeat;
+  }
+
   .titleblock {
     display: grid;
     grid-template-columns: 1fr auto;

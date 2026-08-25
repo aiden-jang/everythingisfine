@@ -880,7 +880,7 @@ export function Globe({
           because a coloured ring would be a hue that means nothing sitting next to hues that do. */}
       <div
         ref={marker}
-        className="pointer-events-none absolute top-0 left-0 size-6 rounded-full border-2 border-ink opacity-0 transition-opacity duration-150"
+        className="pick pointer-events-none absolute top-0 left-0 size-7 opacity-0 transition-opacity duration-150"
       />
       {/* Lighter than the selection ring, because hovering is not choosing. */}
       <div
