@@ -212,6 +212,13 @@ const BLUEPRINT = {
   coast: COLOR_COAST, plates: COLOR_PLATES,
 } as const;
 const COLOR_RIM = new Color(0x7896be);
+/*
+ * The sky, in the interface's own near-white rather than a colour of its own.
+ *
+ * Slightly under Instrument, because a star at full chrome white is the same value as a focus ring and
+ * the label text, and a backdrop has no business being drawn as brightly as the thing being read off it.
+ */
+const COLOR_STARS = new Color(0xc8d2e2);
 
 /** Where the camera settles. The Ring of Fire is where the data lives, so it faces the viewer. */
 const FRAMING = { lon: 145, lat: 12 } as const;
@@ -246,13 +253,146 @@ const ATMOSPHERE = {
     uniform vec3 uColor;
     uniform float uIntensity;
     uniform float uOuter;
+    uniform vec3 uSun;
     varying vec3 vWorld;
     void main() {
       vec3 dir = normalize(vWorld - cameraPosition);
       // Perpendicular distance from the globe centre (the origin) to this view ray, in radii.
       float b = length(cross(dir, cameraPosition));
       float t = clamp((b - 1.0) / (uOuter - 1.0), 0.0, 1.0);
-      gl_FragColor = vec4(uColor, pow(1.0 - t, 2.6) * uIntensity);
+
+      /*
+       * The halo is brighter where the air it stands for is in sunlight.
+       *
+       * It used to be one even ring all the way round, which is a lit sphere with a decal on it: the
+       * planet already has a day side and a terminator, and the atmosphere above the midnight limb was
+       * glowing exactly as hard as the atmosphere above noon. Scattering needs a sun.
+       *
+       * Which piece of limb a pixel belongs to is the ray's closest approach to the centre, normalised.
+       * That is the same quantity b is measured from, so it costs one dot and one normalize.
+       *
+       * Intensity only, deliberately, and this is the constraint the whole thing turns on. The obvious
+       * version warms the terminator toward orange, and orange means magnitude here: the ramp runs to
+       * orange and near-white at the top, so a sunrise band would put a large non-data orange beside a
+       * scale whose entire contract is that colour is the reading. It is the same objection that took
+       * additive blending off the markers, where a dense cluster summed past the top of the ramp and
+       * clipped to the one colour the chrome reserves. Brightness is free; hue is spoken for.
+       *
+       * Floored rather than faded to nothing, because the night limb is where the halo does its other
+       * job: it is the only thing separating an unlit edge from the void behind it.
+       *
+       * (No backticks in here. This is inside a template literal and one of them ends the shader.)
+       */
+      vec3 nearest = normalize(cameraPosition + dir * -dot(cameraPosition, dir));
+      float sun = mix(0.34, 1.0, smoothstep(-0.28, 0.42, dot(nearest, uSun)));
+
+      gl_FragColor = vec4(uColor, pow(1.0 - t, 2.6) * uIntensity * sun);
+    }`,
+};
+
+/*
+ * Stars, so the planet is somewhere rather than on something.
+ *
+ * The void behind the globe was a flat fill, which reads as a page with a sphere on it. A star field is
+ * the cheapest thing that turns the same frame into a view, and it earns its place on orbit: with nothing
+ * out there, dragging the camera moves the planet against a void that never changes, and there is no
+ * evidence the viewer is the thing that moved.
+ *
+ * **Fixed to the view direction, not to the shell.** Stars are read from where the ray is pointing rather
+ * than from where it lands, so they behave as though they were infinitely far: orbiting sweeps them and
+ * zooming does not. Taking the shell's own surface point instead would slide them under the camera like
+ * wallpaper on a nearby wall, which is exactly the tell that gives a fake sky away.
+ *
+ * **Depth-tested, and that is not the obvious choice here.** Three.js draws every opaque object before any
+ * transparent one, so a transparent shell with the depth test off paints over the planet no matter how low
+ * its `renderOrder` is - the same trap the land fill and the markers are each documented against, arrived
+ * at from a third direction. The ocean is opaque and writes depth first, so leaving the test on is what
+ * puts the stars behind the world.
+ *
+ * **Brightness only, no hue.** Two layers, one sparse and bright, one dense and faint, both drawn in the
+ * interface's own near-white. Coloured stars would be a second thing on screen where hue means something
+ * other than magnitude, and section 13 leaves the atmospheric rim as the only exception that will ever be
+ * made.
+ */
+const STARS = {
+  vertexShader: /* glsl */ `
+    varying vec3 vWorld;
+    void main() {
+      vWorld = (modelMatrix * vec4(position, 1.0)).xyz;
+      gl_Position = projectionMatrix * viewMatrix * vec4(vWorld, 1.0);
+    }`,
+  fragmentShader: /* glsl */ `
+    uniform vec3 uColor;
+    uniform float uOpacity;
+    varying vec3 vWorld;
+
+    float h11(float n) { return fract(sin(n) * 43758.5453123); }
+    float h31(vec3 p) { return h11(dot(p, vec3(127.1, 311.7, 74.7))); }
+
+    /*
+     * One cell, one candidate star, on a grid that the view can actually sample.
+     *
+     * The first version cut space into 3D cells and jittered each star anywhere inside its own. It drew
+     * nothing, and the reason is worth keeping: view directions are unit vectors, so the fragments trace
+     * a two-dimensional sheet through a three-dimensional grid, and a star placed off that sheet in the
+     * third axis is not dim or clipped, it is unreachable. Nearly every star missed.
+     *
+     * So the direction is folded onto a cube face first and the grid is 2D, which is the space the
+     * sampling actually lives in. The face index joins the hash key, or opposite faces would draw the
+     * same constellation twice. Cells stretch a little toward the face corners, the ordinary cube-map
+     * distortion, and for a field of dots nobody can see it.
+     *
+     * The neighbouring cells are deliberately not searched: a dot a twentieth of a cell wide almost never
+     * crosses a wall, and nine hashes a fragment to catch the ones that do is a lot for a backdrop.
+     *
+     * (No backticks in here. This is inside a template literal and one of them ends the shader.)
+     */
+    float layer(vec3 dir, float cells, float keep, float size) {
+      vec3 a = abs(dir);
+      vec2 uv;
+      float face;
+      if (a.x >= a.y && a.x >= a.z) {
+        uv = dir.yz / a.x;
+        face = dir.x > 0.0 ? 0.0 : 1.0;
+      } else if (a.y >= a.z) {
+        uv = dir.xz / a.y;
+        face = dir.y > 0.0 ? 2.0 : 3.0;
+      } else {
+        uv = dir.xy / a.z;
+        face = dir.z > 0.0 ? 4.0 : 5.0;
+      }
+      vec2 p = uv * cells;
+      vec2 cell = floor(p);
+      vec3 key = vec3(cell, face);
+      if (h31(key) < keep) return 0.0;
+      vec2 at = vec2(h31(key + 11.0), h31(key + 23.0));
+      float d = length((p - cell) - at);
+      /*
+       * Squared so a few stars carry the field, then floored so the rest are still there.
+       *
+       * The square alone was measured and wrong: with the magnitude uniform in zero to one, most stars
+       * landed under a tenth of full alpha and simply did not survive to the screen. Roughly twenty of
+       * about two thousand were visible, which reads as dust on a sensor rather than as a sky. The floor
+       * keeps the distribution and lifts its bottom off the floor of what a display can show.
+       */
+      float mag = h31(key + 53.0);
+      return smoothstep(size, 0.0, d) * mix(0.30, 1.0, mag * mag);
+    }
+
+    void main() {
+      vec3 dir = normalize(vWorld - cameraPosition);
+      /*
+       * Two thresholds, measured rather than chosen.
+       *
+       * Counted in a strip of pure void above the planet: at 0.952 and 0.976 the field came out at one
+       * star per 5,160 square pixels, which at this size is a scatter you have to look for. The target
+       * is roughly one per two thousand - enough that the void reads as a place, few enough that nothing
+       * out there competes with a marker. Lowered by keeping more cells rather than by cutting them
+       * smaller, so the dots stay the size they were and none of them fall under a pixel.
+       */
+      float v = layer(dir, 58.0, 0.875, 0.072) + layer(dir, 131.0, 0.938, 0.058) * 0.5;
+      if (v <= 0.001) discard;
+      gl_FragColor = vec4(uColor, clamp(v, 0.0, 1.0) * uOpacity);
     }`,
 };
 
@@ -720,6 +860,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     const c = Math.cos(phi);
     sunDir.set(c * Math.sin(lam), Math.sin(phi), c * Math.cos(lam));
     (night.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
+    (rim.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
   };
 
   // The shell is only a container: it has to be wider than uOuter so the falloff is not clipped by
@@ -733,6 +874,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         // Lifted with the night it sits against, so the limb still reads once the edge is darker.
         uIntensity: { value: 0.55 },
         uOuter: { value: 1.22 },
+        // The same vector the night side reads, handed over once. `aimSun` writes through it.
+        uSun: { value: sunDir },
       },
       side: BackSide,
       blending: AdditiveBlending,
@@ -741,6 +884,30 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     }),
   );
   scene.add(rim);
+
+  /*
+   * Well outside everything, well inside the camera's far plane of 100.
+   *
+   * The radius is arbitrary in the picture, because the stars are read from the ray direction rather
+   * than from where it lands, so this only has to be a shell the camera is always inside.
+   */
+  const stars = new Mesh(
+    new SphereGeometry(40, 32, 24),
+    new ShaderMaterial({
+      ...STARS,
+      uniforms: {
+        uColor: { value: COLOR_STARS },
+        uOpacity: { value: 1 },
+      },
+      side: BackSide,
+      transparent: true,
+      // The ocean is opaque and has already written depth, which is what hides the far side of the sky.
+      depthWrite: false,
+    }),
+  );
+  // Lowest in the transparent pass: the sky is behind the night wash, the rim and every mark on the globe.
+  stars.renderOrder = -2;
+  scene.add(stars);
 
   // Added to the scene root, not to `spin`: the globe group carries no transform, and hanging the
   // events off it would only invite someone to rotate one and not the other later.
@@ -949,6 +1116,15 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
        */
       (rim.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.42 * (1 - morph.value);
       rim.visible = morph.value < 0.999;
+      /*
+       * Gone by the time the map is flat, for the same reason the rim is.
+       *
+       * A star field around a rectangle is a view from space of a thing that cannot be seen from space:
+       * the projection has just given up the globe, and the sky is the one element that would still be
+       * insisting on it.
+       */
+      (stars.material as ShaderMaterial).uniforms["uOpacity"]!.value = 1 - morph.value;
+      stars.visible = morph.value < 0.999;
 
       /*
        * The fill is culled on the globe and not on the map.
