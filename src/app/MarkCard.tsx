@@ -160,7 +160,16 @@ export function MarkCard({ found, now, archived = false, onClose, onFlyTo }: Mar
           esc
         </button>
       </div>
-      <h2 className="mt-2 text-[22px] leading-tight text-ink">{title}</h2>
+      {/*
+        The same size the panel's other tenant uses, because it is the same slot.
+
+        A pinned earthquake put its magnitude here at 30px and a mark put its name at 22px, so the header
+        changed size depending on what you had clicked - one slot, two identities, and they never appear
+        together to justify the difference. 30 is the display step the scale already has; 22 was its only
+        use, so unifying removes a step rather than adding one. `leading-tight` already handles the names
+        long enough to wrap.
+      */}
+      <h2 className="mt-2 text-[30px] leading-tight text-ink">{title}</h2>
       <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{note}</p>
 
       {/* One rule above the group rather than under every row. See the note on `Field` in DetailPanel. */}
