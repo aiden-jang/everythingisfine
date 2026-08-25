@@ -221,6 +221,8 @@ const COLOR_RIM = new Color(0x7896be);
  * the label text, and a backdrop has no business being drawn as brightly as the thing being read off it.
  */
 const COLOR_STARS = new Color(0xc8d2e2);
+/** Pale, and the sea's own family rather than the sun's: this is water returning light, not the light. */
+const COLOR_GLINT = new Color(0xa8c4e4);
 
 /** Where the camera settles. The Ring of Fire is where the data lives, so it faces the viewer. */
 const FRAMING = { lon: 145, lat: 12 } as const;
@@ -395,6 +397,63 @@ const STARS = {
       float v = layer(dir, 58.0, 0.875, 0.072) + layer(dir, 131.0, 0.938, 0.058) * 0.5;
       if (v <= 0.001) discard;
       gl_FragColor = vec4(uColor, clamp(v, 0.0, 1.0) * uOpacity);
+    }`,
+};
+
+/*
+ * The glint, which is what makes water look like water.
+ *
+ * A specular highlight where the sun reflects off the ocean toward the eye. Nothing in these shaders
+ * computed one, so the sea was a flat fill under a shading gradient - lit, and not wet.
+ *
+ * **Its own shell, rather than a term in the ocean's material.** Two reasons and both are constraints
+ * rather than preferences. The ocean is a `MeshBasicMaterial` whose colour `setGeography` swaps, and whose
+ * `onBeforeCompile` is already spoken for by `morphable`; injecting a second time would fight that. And
+ * the night shell, which does have the sun, is drawn *over* the land fill, so a glint added there would
+ * put a wet highlight on the middle of Asia.
+ *
+ * Slotted under the land instead: this draws at `renderOrder` 0.75 and the fill draws at 1, so the
+ * continents cover it exactly where they should and the highlight only ever survives over sea. The mask
+ * this needs already exists as the land itself.
+ */
+const GLINT_RADIUS = 1.0015;
+
+const GLINT = {
+  vertexShader: /* glsl */ `
+    ${MORPH_GLSL}
+    varying vec3 vNormal;
+    varying vec3 vWorld;
+    void main() {
+      // Object space, like the night shell and for the same reason: the model matrix carries the
+      // sideways offset that repeats the flat map, which would move the sun on every copy but one.
+      vNormal = normalize(position);
+      vec3 projected = fmProject(position);
+      vWorld = (modelMatrix * vec4(projected, 1.0)).xyz;
+      gl_Position = projectionMatrix * viewMatrix * vec4(vWorld, 1.0);
+    }`,
+  fragmentShader: /* glsl */ `
+    uniform vec3 uColor;
+    uniform vec3 uSun;
+    uniform float uIntensity;
+    uniform float uPower;
+    varying vec3 vNormal;
+    varying vec3 vWorld;
+
+    void main() {
+      vec3 n = normalize(vNormal);
+      vec3 toEye = normalize(cameraPosition - vWorld);
+      // The far hemisphere, culled the way every other layer here culls it.
+      if (dot(n, toEye) <= 0.0) discard;
+      /*
+       * Reflect the sun about the surface normal and ask how near that lands to the eye. A wide
+       * exponent on purpose: a mirror-smooth sea would give a point, and the sea is not smooth, so the
+       * real thing is a broad lobe tens of degrees across.
+       *
+       * (No backticks in here. This is inside a template literal and one of them ends the shader.)
+       */
+      float spec = pow(max(dot(reflect(-normalize(uSun), n), toEye), 0.0), uPower);
+      if (spec <= 0.002) discard;
+      gl_FragColor = vec4(uColor, spec * uIntensity);
     }`,
 };
 
@@ -873,6 +932,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     sunDir.set(c * Math.sin(lam), Math.sin(phi), c * Math.cos(lam));
     (night.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
     (rim.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
+    (glint.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
   };
 
   // The shell is only a container: it has to be wider than uOuter so the falloff is not clipped by
@@ -920,6 +980,28 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   // Lowest in the transparent pass: the sky is behind the night wash, the rim and every mark on the globe.
   stars.renderOrder = -2;
   scene.add(stars);
+
+  const glintGeom = new SphereGeometry(GLINT_RADIUS, 96, 64, SPHERE_PHI_START);
+  attachLonLat(glintGeom);
+  const glint = new Mesh(
+    glintGeom,
+    new ShaderMaterial({
+      ...GLINT,
+      uniforms: {
+        uColor: { value: COLOR_GLINT },
+        uSun: { value: sunDir },
+        uIntensity: { value: 0 },
+        uPower: { value: 22 },
+        uMorph: morph,
+      },
+      transparent: true,
+      blending: AdditiveBlending,
+      depthWrite: false,
+    }),
+  );
+  // Above the ocean, below the land fill at 1, which is what keeps the highlight off the continents.
+  glint.renderOrder = 0.75;
+  spin.add(glint);
 
   // Added to the scene root, not to `spin`: the globe group carries no transform, and hanging the
   // events off it would only invite someone to rotate one and not the other later.
@@ -1157,6 +1239,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
        * Depth is the only reason it exists.
        */
       if (slabOn) slab.setOpacity(1 - morph.value);
+      /*
+       * Leaves with the globe, for the reason the rim and the sky do.
+       *
+       * A specular lobe on an equirectangular projection is a highlight on a sheet of paper: the whole
+       * quantity depends on a surface curving away from the eye, and the plane has stopped doing that.
+       */
+      (glint.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.55 * (1 - morph.value);
+      glint.visible = morph.value < 0.999;
 
       /*
        * The fill is culled on the globe and not on the map.
@@ -1220,6 +1310,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     dispose: () => {
       events.dispose();
       slab.dispose();
+      glint.geometry.dispose();
+      (glint.material as ShaderMaterial).dispose();
       rings.dispose();
       marks.dispose();
       scene.traverse((o) => {
