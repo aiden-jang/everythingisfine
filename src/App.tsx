@@ -23,6 +23,9 @@ import { createSiren, type Siren } from "./app/sound";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
 import { loadSlab, type SlabPoint } from "./geo/slab";
 import {
+  closestTo, loadZones, localZone, viewerPlace, type ZoneTable,
+} from "./app/viewer";
+import {
   BASELINE_DAYS, BASELINE_FROM, BASELINE_MIN_MAGNITUDE, comparableCount, rankDay, sharePercent,
 } from "./data/baseline";
 import {
@@ -42,12 +45,13 @@ import { diurnal } from "./app/diurnal";
 import { Dial } from "./app/Dial";
 import { DAY_LENGTH, isArchivableDay, isRealDay, typedDay } from "./app/day";
 import { decode, encode } from "./app/permalink";
+import { seconds } from "./app/arrival";
 import { MAG_MIN, rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import {
-  ago, agoShort, clock, compactSpan, corroborationNote, energyPercent, place, quietNote, quietParts, silentFeeds,
+  ago, agoShort, clock, compactSpan, corroborationNote, energyPercent, magnitude, place, quietNote, quietParts, silentFeeds,
   reachFraction, reachNote,
   reachWords, SOURCE_NAMES, windowLabel,
 } from "./app/format";
@@ -654,6 +658,20 @@ export function App(): JSX.Element {
    */
   const [slabOn, setSlabOn] = useState<boolean>(() => stored("slab") === "1");
   useEffect(() => { store("slab", slabOn ? "1" : "0"); }, [slabOn]);
+  /*
+   * The reader's own timezone, resolved once against a table fetched once.
+   *
+   * Not a toggle, because there is nothing to ask: the zone is already readable by any page without a
+   * prompt, nothing is sent anywhere, and a line naming a city is not a setting anybody would want to
+   * turn off. Fetched lazily all the same - 13kB of coordinates has no business in the first frame.
+   */
+  const [zones, setZones] = useState<ZoneTable | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void loadZones().then((next) => { if (alive) setZones(next); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+  const here = useMemo(() => (zones ? viewerPlace(zones, localZone()) : null), [zones]);
   /*
    * The samples themselves, fetched on first use rather than imported.
    *
@@ -1446,6 +1464,18 @@ export function App(): JSX.Element {
    * **An archived day needs neither**, since it is a whole finished day already and its own bounds are
    * the exact span the baseline is made of.
    */
+  /*
+   * The closest event in the window to the reader's city, or null when there is nothing to say.
+   *
+   * Held back during the replay for the same reason every other note is: the window is being filled in
+   * front of the viewer, so "the closest today" would name whichever event the animation had reached.
+   */
+  const near = useMemo(() => {
+    if (replay || here === null) return null;
+    return closestTo(feed.store, here, filters, clockAt());
+    // `snapshot.revision` moves on every ingest; the rest are what the answer depends on.
+  }, [feed.store, here, filters, snapshot.revision, replay]);
+
   const baseline = useMemo(() => {
     if (replay) return null;
     if (snapshot.archive) {
@@ -2099,6 +2129,37 @@ export function App(): JSX.Element {
               instruments are nearby, so an all-magnitude count differs between 2020 and 2025 for reasons of
               funding rather than of geology.
             */}
+            {/*
+              The one line on this screen that is about the reader.
+
+              It names a city rather than a person, and that is not hedging, it is the only true version of
+              the sentence. A timezone is a region: Asia/Shanghai covers all of China, so "310 km from you"
+              would be a confident claim about somebody, built from a value that only ever described a
+              reference point. Named, it is true for every reader of that zone and still their own city for
+              most of them.
+
+              The arrival time appears only inside the 700km that `arrival.ts` already caps at, because
+              past that the wave is diving through the mantle and a crustal speed stops describing its
+              path. Most days the closest event is further away than that, so the distance stands alone.
+            */}
+            {near && here ? (
+              <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+                Closest to {here.label} was{" "}
+                <span className="text-dim tabular-nums">{magnitude(near.quake.primary)}</span>{" "}
+                {place(near.quake.primary.place)},{" "}
+                <span className="text-dim tabular-nums">
+                  {Math.round(near.km).toLocaleString("en")}
+                </span>
+                {" km away."}
+                {near.p === null ? null : (
+                  <>
+                    {" The shaking would have reached it in "}
+                    <span className="text-dim">{seconds(near.p)}</span>
+                    {"."}
+                  </>
+                )}
+              </p>
+            ) : null}
             {baseline ? (
               <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
                 <span className="text-dim tabular-nums">{baseline.count}</span> of them were M
