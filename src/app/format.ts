@@ -276,7 +276,18 @@ export function reachWords(
   from: number | null, failing: boolean, now: number, windowMs: number,
 ): string {
   if (from !== null) return reach(from, now, windowMs);
-  return failing ? "no answer" : "waiting";
+  /*
+   * One word, because the column it lands in is 38px wide.
+   *
+   * "no answer" is two words and wrapped there, which pushed both coverage rows taller and left their
+   * rules sitting at different heights - the one place in the rail where a feed failing also broke the
+   * layout describing it. "waiting" is one word and never had the problem.
+   *
+   * `silent` is this app's own term for a source that was asked and did not reply: `silentFeeds` names
+   * the layers that way. It keeps the distinction the sentence above defends, since a feed that has not
+   * answered yet is still "waiting".
+   */
+  return failing ? "silent" : "waiting";
 }
 
 /**

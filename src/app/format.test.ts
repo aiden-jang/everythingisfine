@@ -127,7 +127,8 @@ describe("what a feed's bar says while it is still arriving", () => {
      * bars is seeing which feed is carrying the window.
      */
     expect(reachWords(null, false, now, DAY)).toBe("waiting");
-    expect(reachWords(null, true, now, DAY)).toBe("no answer");
+    // One word: the 38px column it renders into wrapped "no answer" onto two lines.
+    expect(reachWords(null, true, now, DAY)).toBe("silent");
   });
 
   it("prefers a reach it has over a failure it also has", () => {

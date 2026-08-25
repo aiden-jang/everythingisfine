@@ -402,7 +402,8 @@ export function Timeline({
                   style={{ width: `${Math.max(r.fraction > 0 ? 1 : 0, r.fraction * 100)}%` }}
                 />
               </span>
-              <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] text-faint tabular-nums">
+              {/* `nowrap` so a longer word overflows rather than stacking and moving the rule. */}
+              <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] whitespace-nowrap text-faint tabular-nums">
                 {r.words}
               </span>
             </div>
