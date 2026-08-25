@@ -951,7 +951,15 @@ export function Globe({
           `truncate` moved onto the name inside. It was on the box, which clips to one line, so the
           measurement line existed and was never shown.
         */
-        className="pointer-events-none absolute top-0 left-0 max-w-[260px] border border-hairline bg-raised px-2 py-1 text-[10px] leading-snug text-ink opacity-0"
+        /*
+          On the sans step, like every other piece of prose here.
+
+          This was the one `text-[10px]` in the chrome - a size the scale does not have, left behind when
+          the strays were swept because that pass only remapped the mono ones. It is also the label you
+          read at arm's length while the pointer is moving, so being half a step below the body size was
+          the wrong place to save a pixel.
+        */
+        className="pointer-events-none absolute top-0 left-0 max-w-[260px] border border-hairline bg-raised px-2 py-1 text-[11px] leading-snug text-ink opacity-0"
       />
     </div>
   );
