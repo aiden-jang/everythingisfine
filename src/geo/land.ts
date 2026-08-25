@@ -275,6 +275,81 @@ export interface LandGeometry {
   };
 }
 
+/** Longest edge the fill may keep. See the note at the call site for how this number was chosen. */
+const MAX_EDGE_DEG = 4;
+
+/**
+ * Splits long edges until none is longer than `MAX_EDGE_DEG`, without leaving T-junctions.
+ *
+ * Red-green refinement: mark the edges that are too long, close the marking so no triangle is left with
+ * an awkward split, then rebuild each triangle from the pattern of its marked edges. Marks live on the
+ * edge rather than on the triangle, which is what makes both owners agree.
+ */
+function capEdges(
+  verts: number[], tris: number[],
+): { verts: number[]; tris: number[]; split: number } {
+  const key = (i: number, j: number): number => (i < j ? i * 1e7 + j : j * 1e7 + i);
+  const len = (i: number, j: number): number =>
+    spanDeg(verts[i * 2]!, verts[i * 2 + 1]!, verts[j * 2]!, verts[j * 2 + 1]!);
+
+  const marked = new Set<number>();
+  for (let t = 0; t < tris.length; t += 3) {
+    const [a, b, c] = [tris[t]!, tris[t + 1]!, tris[t + 2]!];
+    if (len(a, b) > MAX_EDGE_DEG) marked.add(key(a, b));
+    if (len(b, c) > MAX_EDGE_DEG) marked.add(key(b, c));
+    if (len(c, a) > MAX_EDGE_DEG) marked.add(key(c, a));
+  }
+  // Closure, capped: a triangle with any marked edge also splits its longest, or refinement leaves
+  // slivers. Eight rounds is a backstop against a degenerate triangle cycling forever.
+  for (let round = 0; round < 8; round += 1) {
+    let changed = false;
+    for (let t = 0; t < tris.length; t += 3) {
+      const [a, b, c] = [tris[t]!, tris[t + 1]!, tris[t + 2]!];
+      const e = [key(a, b), key(b, c), key(c, a)];
+      if (!e.some((k) => marked.has(k))) continue;
+      const d = [len(a, b), len(b, c), len(c, a)];
+      const longest = d[0]! >= d[1]! && d[0]! >= d[2]! ? 0 : d[1]! >= d[2]! ? 1 : 2;
+      if (!marked.has(e[longest]!)) { marked.add(e[longest]!); changed = true; }
+    }
+    if (!changed) break;
+  }
+
+  const mids = new Map<number, number>();
+  const mid = (i: number, j: number): number => {
+    const k = key(i, j);
+    const hit = mids.get(k);
+    if (hit !== undefined) return hit;
+    const idx = verts.length / 2;
+    verts.push((verts[i * 2]! + verts[j * 2]!) / 2, (verts[i * 2 + 1]! + verts[j * 2 + 1]!) / 2);
+    mids.set(k, idx);
+    return idx;
+  };
+
+  const out: number[] = [];
+  for (let t = 0; t < tris.length; t += 3) {
+    let [a, b, c] = [tris[t]!, tris[t + 1]!, tris[t + 2]!];
+    let [ab, bc, ca] = [marked.has(key(a, b)), marked.has(key(b, c)), marked.has(key(c, a))];
+    const count = Number(ab) + Number(bc) + Number(ca);
+    if (count === 0) { out.push(a, b, c); continue; }
+    if (count === 3) {
+      const [p, q, r] = [mid(a, b), mid(b, c), mid(c, a)];
+      out.push(a, p, r, p, b, q, r, q, c, p, q, r);
+      continue;
+    }
+    // Rotate so the cases below only have to handle `ab` (and `bc`) being the marked ones. Winding is
+    // preserved by rotating rather than swapping.
+    for (let turn = 0; turn < 3 && !(ab && (count === 1 || bc)); turn += 1) {
+      [a, b, c] = [b, c, a];
+      [ab, bc, ca] = [bc, ca, ab];
+    }
+    const p = mid(a, b);
+    if (count === 1) { out.push(a, p, c, p, b, c); continue; }
+    const q = mid(b, c);
+    out.push(a, p, c, p, b, q, p, q, c);
+  }
+  return { verts, tris: out, split: marked.size };
+}
+
 export function buildLand(): LandGeometry {
   const polygons = rings();
   const verts: number[] = [];
@@ -419,6 +494,38 @@ export function buildLand(): LandGeometry {
 
   let mesh = { verts, tris: flatTris };
   for (let i = 0; i < SUBDIVISIONS; i += 1) mesh = subdivide(mesh.verts, mesh.tris);
+
+  /*
+   * No edge longer than `MAX_EDGE_DEG`, and every split shared by both triangles that own the edge.
+   *
+   * The passes above split adaptively, which leaves a midpoint stranded on the straight edge of an
+   * unsplit neighbour. The note on the bisection argues that is harmless because the two sides differ
+   * only by a sagitta - true, and the sagitta is the whole problem. A stranded vertex is lifted onto
+   * the sphere while the edge beside it stays a chord in screen space, so the mesh opens a lens-shaped
+   * hole and the ocean shows through it. Reported four times, as lines across Russia, spots across
+   * China, a gap against Mongolia, and finally a scratch line: all one defect, proved by painting the
+   * ocean green and watching the scratch turn green with it.
+   *
+   * Measured, which is what makes the threshold a number rather than a guess. The gap is the sagitta of
+   * its edge, `R(1 - cos(d/2))`: 11.4 degrees was 0.005R, about four pixels on this globe, and it scales
+   * with the square of the edge. At four degrees it is 0.49px and at three, 0.27px. Of 956,706 edges only
+   * 6,014 were over four degrees and none over twelve, so the cap costs a few per cent of the mesh.
+   *
+   * Conforming by construction: an edge is marked once, in a map keyed by its two endpoints, and every
+   * triangle that owns a marked edge is rebuilt around it. Neither side can be left with the long
+   * version. The second rule - a triangle with any marked edge also marks its longest - stops the
+   * refinement leaving slivers behind.
+   */
+  /*
+   * To a fixed point, because one pass only halves. The longest edge starts at 11.4 degrees, so the
+   * first pass leaves 5.7 and the second 2.85; the bound is a backstop against a degenerate triangle,
+   * and the loop stops as soon as a pass finds nothing left to mark.
+   */
+  for (let pass = 0; pass < 6; pass += 1) {
+    const capped = capEdges(mesh.verts, mesh.tris);
+    mesh = { verts: capped.verts, tris: capped.tris };
+    if (capped.split === 0) break;
+  }
 
   /*
    * Whole triangles are repeated across the seam, so the mesh is periodic like the map that draws it.
