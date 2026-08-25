@@ -23,6 +23,9 @@ import { createSiren, type Siren } from "./app/sound";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
 import { loadSlab, type SlabPoint } from "./geo/slab";
 import {
+  BASELINE_DAYS, BASELINE_FROM, BASELINE_MIN_MAGNITUDE, comparableCount, rankDay, sharePercent,
+} from "./data/baseline";
+import {
   boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE,
 } from "./geo/boundaryDistance";
 import { EventList } from "./app/EventList";
@@ -1432,6 +1435,27 @@ export function App(): JSX.Element {
     && view.at !== shared.cursor;
 
   const edge = windowStart(now, filters.windowMs, snapshot.coveredSince);
+
+  /*
+   * Today against five years of days, or null when the comparison would not be true.
+   *
+   * Three gates, and each one is a claim that would otherwise be false. **Only at 24h**, because the
+   * baseline counts calendar days and ranking a thirty-day total against them would say the planet was
+   * busier than every day on record, every time. **Only once the window is covered**, because a day still
+   * filling reads as quiet by construction - the same gate the energy line uses, for the same reason.
+   * **An archived day needs neither**, since it is a whole finished day already and its own bounds are
+   * the exact span the baseline is made of.
+   */
+  const baseline = useMemo(() => {
+    if (replay) return null;
+    if (snapshot.archive) {
+      const { from, to } = snapshot.archive;
+      return rankDay(comparableCount(feed.store, from, to), true);
+    }
+    if (filters.windowMs !== 24 * 3_600_000 || !edge.complete) return null;
+    return rankDay(comparableCount(feed.store, edge.at, now), true);
+    // `snapshot.revision` is what moves when an event lands; the rest are the gates above.
+  }, [feed.store, snapshot.archive, snapshot.revision, filters.windowMs, edge.complete, edge.at, now, replay]);
   /*
    * Recomputed on the clock rather than memoised.
    *
@@ -2047,6 +2071,28 @@ export function App(): JSX.Element {
               <span className="text-dim tabular-nums">{energyPercent(energyShare)}</span> of the energy
               released in the window. Magnitude is logarithmic: two points of it is a thousand times the
               energy.
+            </p>
+          ) : null}
+          {/*
+            Whether any of that is a lot, which nothing on this screen said.
+
+            The headline is a count with no scale attached, and section 13 bans exactly that shape of claim
+            everywhere else in the app. This is the scale.
+
+            It states its own threshold because it has to: the ranking is of magnitude 4.5 and up, which is
+            not necessarily the population drawn on the globe beside it. That is not a caveat, it is the
+            only way the comparison means anything - how many small events get detected depends on how many
+            instruments are nearby, so an all-magnitude count differs between 2020 and 2025 for reasons of
+            funding rather than of geology.
+          */}
+          {baseline ? (
+            <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+              <span className="text-dim tabular-nums">{baseline.count}</span> of them were M
+              <span className="tabular-nums">{BASELINE_MIN_MAGNITUDE}</span> or stronger, which is{" "}
+              {baseline.direction} than{" "}
+              <span className="text-dim tabular-nums">{sharePercent(baseline.share)}%</span> of the{" "}
+              <span className="tabular-nums">{BASELINE_DAYS.toLocaleString("en")}</span> days since{" "}
+              {BASELINE_FROM}.
             </p>
           ) : null}
 
