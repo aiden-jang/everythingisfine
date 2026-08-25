@@ -163,9 +163,10 @@ export function MarkCard({ found, now, archived = false, onClose, onFlyTo }: Mar
       <h2 className="mt-2 text-[22px] leading-tight text-ink">{title}</h2>
       <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{note}</p>
 
-      <dl className="mt-4">
+      {/* One rule above the group rather than under every row. See the note on `Field` in DetailPanel. */}
+      <dl className="mt-4 border-t border-hairline pt-1.5">
         {lines.map(({ label, value }) => (
-          <div key={label} className="flex items-baseline justify-between gap-3 border-t border-hairline py-2">
+          <div key={label} className="flex items-baseline justify-between gap-3 py-[5px]">
             <dt className="text-[11px] text-faint">{label}</dt>
             <dd className="text-right font-mono text-[12px] text-dim tabular-nums">{value}</dd>
           </div>
