@@ -30,8 +30,16 @@ type RegionMax = Record<string, readonly [number, string]>;
 
 const RECORDS = table as unknown as RegionMax;
 
-/** Where the generated table begins. Printed, because the claim is bounded by it. */
+/*
+ * Where the generated table begins and ends. Both printed, because the claim is bounded by both.
+ *
+ * The end used to be left off, so the sentence read "largest in Indonesia since 2000" while the table
+ * stopped on 2025-08-01. That is a claim about 2000 to now backed by data that ends over a year short of
+ * now, and it is the strongest claim this app makes: a larger event in the gap would make it false with
+ * nothing on screen to say so. The same omission was in the slab key and the ranking line.
+ */
 export const SINCE = "2000";
+export const UNTIL = "2025";
 
 export interface Superlative {
   region: string;
