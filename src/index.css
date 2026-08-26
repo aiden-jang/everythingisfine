@@ -451,11 +451,23 @@
        * strip past the bottom of a strip this short. Spanning the sheet they are two lines and the
        * column above them gets that height back.
        */
+      /*
+       * The activity column swapped with the legend, so the one thing that gets cut is prose.
+       *
+       * Stacked third under the title block and the time-of-day row, `activity` began 299px into a strip
+       * 340px tall, which put the histogram, the coverage bars and the transport below the fold at every
+       * tablet size measured - the whole time dimension, in 92 visible pixels. Given its own column it
+       * starts at the top of the strip and its 295px fits.
+       *
+       * The legend takes the stacked position instead, and that is the right way round: it is six lines
+       * explaining what the marks mean, and a viewer who scrolls for it loses nothing they were about to
+       * press. `34dvh` stays exactly as it was - the globe's share is not what was wrong here.
+       */
       grid-template-areas:
-        "title    regions legend list"
-        "when     regions legend list"
-        "activity regions legend list"
-        "notes    notes   notes  notes";
+        "title    regions activity list"
+        "when     regions activity list"
+        "legend   regions activity list"
+        "notes    notes   notes    notes";
       /* The short blocks take what they need, then the list takes the rest, then notes take what
          they need again. */
       grid-template-rows: auto auto 1fr auto;
@@ -487,6 +499,33 @@
     /* The column it was given, rather than the height the desktop resizer remembers. */
     .rail-regions {
       height: 100%;
+    }
+
+    /*
+     * The transport comes first in this band, because this band is the one that gets cut.
+     *
+     * Column one stacks three tenants - the title block at 190px, the time-of-day disclosure, then the
+     * activity column - so activity begins 299px into a strip that is 340px tall. Measured at three
+     * tablet sizes, the histogram, the coverage bars and the play control were all below the fold, and at
+     * 900x1000 and 1024x768 the whole time dimension was: 643px of content in a 340px scroller.
+     *
+     * The strip's height is deliberate and stays - `34dvh` is what stops the globe being reduced to a
+     * strip by the controls describing it - so the fix is which end of the column gets the 92 visible
+     * pixels. The transport is the most-used thing in here and the archive entry is the least, so they
+     * swap. Scoped to this band: on a phone the rail scrolls freely and on a desktop nothing is cut, so
+     * neither has a reason to reorder.
+     *
+     * `data-ramp` is the Timeline's own root. Ordering on `:last-child` would have worked today and
+     * broken silently the first time anything was appended after it.
+     */
+    .rail > [data-rail="activity"] {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .rail > [data-rail="activity"] > [data-ramp] {
+      order: -1;
+      margin-bottom: 0.85rem;
     }
   }
   /*
