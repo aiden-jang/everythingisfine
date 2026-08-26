@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { matches } from "../data/filter";
+import { loadStars } from "../geo/stars";
 import { createGlobe } from "./scene";
 import type { FocusSpan } from "./events";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
@@ -624,6 +625,23 @@ export function Globe({
     };
     el.addEventListener("pointerdown", onSectionDown, { capture: true });
 
+    /*
+     * The sky, once its own chunk has landed.
+     *
+     * `stars.json` is 88kB and lives outside `land` for that reason, so it arrives a beat after the first
+     * frame - behind the entrance, where the one layer nobody is watching can afford to be late.
+     *
+     * **And it wakes the loop.** The loop sleeps whenever nothing is moving, so a table that lands after
+     * the entrance has settled would fill buffers nobody draws and the sky would stay black until the
+     * reader happened to touch something. The plate boundaries already taught this lesson once.
+     */
+    let gone = false;
+    void loadStars().then((table) => {
+      if (gone) return;
+      globe.setStars(table);
+      wakeRef.current();
+    });
+
     const wake = (): void => {
       if (running) return;
       running = true;
@@ -871,6 +889,8 @@ export function Globe({
       el.removeEventListener("pointerup", onUp);
       el.removeEventListener("pointerleave", onLeave);
       el.removeEventListener("pointerdown", onSectionDown, { capture: true });
+      // Before dispose, so a table landing after unmount cannot write to a scene that is gone.
+      gone = true;
       globe.dispose();
     };
   }, [feed, onReady, onSelect]);

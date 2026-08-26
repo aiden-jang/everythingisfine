@@ -393,6 +393,20 @@ and the descent were not symmetric. As a function of position it inherits the ea
 and lat spring, and it is guaranteed to arrive at the same instant they do. The entrance is deliberately
 left flat: "one opening, then stillness" is its own move and does not need a second one inside it.
 
+**The sky is the real one.** 5,080 stars from the Yale Bright Star Catalogue down to magnitude 6, which
+is about what an unaided eye reaches, placed by right ascension and declination and turned about the pole
+by Greenwich sidereal time. The field it replaced was procedural, well tuned, and could never be
+recognised: Orion was not there to be found, and a sky whose whole job is telling you which way you are
+facing cannot do that job if none of it is real. Brightness only, no hue, so a blue Rigel beside an orange
+Betelgeuse does not become a second place where colour means something.
+
+Magnitude is spent on size and opacity together, each on its own curve, because the flux ratio across the
+table is 1,400 to 1 and spending it literally leaves Sirius alone in an empty sky. Both curves are pulled
+toward the faint end: 4,176 of the 5,080 are fainter than magnitude 4.5, so a curve that favours the
+bright end draws almost the whole catalogue at the minimum size. Weight was matched against the field this
+replaced by measurement, not by eye - lit pixels in a fixed patch of sky, 164 before and 101 after with
+more of them bright.
+
 **Both rail edges are draggable and remembered**, by pointer and by arrow key. A fixed size is a guess
 about what somebody is doing, and it is wrong about half the time. The width splitter trades the rail
 against the globe; the one under the regions trades the regions against the event list.
