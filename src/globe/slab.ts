@@ -25,7 +25,18 @@ import type { SlabPoint } from "../geo/slab";
  * of the shape. Lifted to where the sheet resolves, and still nowhere near the ramp, because the one
  * thing this layer must never look like is today's earthquakes.
  */
-const COLOR_SLAB = new Color(0x7ba0c8);
+const COLOR_SLAB = 0x7ba0c8;
+
+/**
+ * The same lift applied to the colourblind palette's own boundary tone.
+ *
+ * This layer is drawn as geography, so it has to change with the geography. It did not: the colour was a
+ * constant while `setGeography` swapped the ocean, the land, the graticule, the coastlines and the plate
+ * lines, which left the slab at chroma 77 on a palette whose geography sits between 12 and 20. The one
+ * layer claiming to be part of the landscape would have been the only saturated thing on a screen chosen
+ * for people who cannot rely on hue.
+ */
+const COLOR_SLAB_NEUTRAL = 0x9ea2ae;
 
 /**
  * Small, and fixed.
@@ -83,6 +94,8 @@ export interface SlabLayer {
   /** Fills the buffers from the committed table. Called once, when the toggle first asks for it. */
   set: (points: readonly SlabPoint[]) => void;
   setPixelRatio: (ratio: number) => void;
+  /** Follows the geography palette, because this layer is drawn as geography rather than as data. */
+  setRamp: (ramp: "thermal" | "cividis") => void;
   /** 0 hides it. Everything on this globe fades rather than switching. */
   setOpacity: (value: number) => void;
   dispose: () => void;
@@ -93,7 +106,7 @@ export function createSlabLayer(morph = { value: 0 }): SlabLayer {
   const material = new ShaderMaterial({
     ...SHADER,
     uniforms: {
-      uColor: { value: COLOR_SLAB },
+      uColor: { value: new Color(COLOR_SLAB) },
       uOpacity: { value: 0 },
       uPixelRatio: { value: 1 },
       uSize: { value: SIZE_PX },
@@ -147,6 +160,10 @@ export function createSlabLayer(morph = { value: 0 }): SlabLayer {
     },
     setPixelRatio: (ratio) => {
       material.uniforms["uPixelRatio"]!.value = ratio;
+    },
+    setRamp: (ramp) => {
+      (material.uniforms["uColor"]!.value as Color)
+        .setHex(ramp === "cividis" ? COLOR_SLAB_NEUTRAL : COLOR_SLAB);
     },
     setOpacity: (value) => {
       const next = Math.max(0, Math.min(1, value));
