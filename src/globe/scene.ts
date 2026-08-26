@@ -13,6 +13,7 @@ import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
 import { gmstDeg, type StarTable } from "../geo/stars";
 import { createStarfield } from "./starfield";
+import { createMoon } from "./moon";
 import {
   attachLonLat, MAP_HALF_WIDTH, MORPH_GLSL, morphable, SPHERE_PHI_START, visibleCopies,
 } from "./morph";
@@ -840,6 +841,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
      * throttle cannot show.
      */
     starfield.setTime(at, gmstDeg(at));
+    // The same direction that lights the Earth lights the moon, which is where its phase comes from.
+    moon.setTime(at, sunDir);
   };
 
   // The shell is only a container: it has to be wider than uOuter so the falloff is not clipped by
@@ -873,6 +876,15 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    */
   const starfield = createStarfield();
   scene.add(starfield.object);
+
+  /*
+   * And the moon, which needs no table and so needs no loading.
+   *
+   * Its whole position is six lines of trigonometry, so unlike the sky there is nothing to fetch and
+   * nothing to wait for. It is aimed from the same clock as the sun, which is also what lights it.
+   */
+  const moon = createMoon();
+  scene.add(moon.object);
 
   const glintGeom = new SphereGeometry(GLINT_RADIUS, 96, 64, SPHERE_PHI_START);
   attachLonLat(glintGeom);
@@ -1134,6 +1146,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
        * insisting on it.
        */
       starfield.setOpacity(1 - morph.value);
+      moon.setOpacity(1 - morph.value);
       /*
        * Gone by the time the map is flat, and this one is not only for consistency.
        *
@@ -1214,6 +1227,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       events.dispose();
       slab.dispose();
       starfield.dispose();
+      moon.dispose();
       glint.geometry.dispose();
       (glint.material as ShaderMaterial).dispose();
       rings.dispose();

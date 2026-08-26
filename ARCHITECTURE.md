@@ -5759,3 +5759,37 @@ and hands it wall-clock time, so an archived day is drawn under tonight's termin
 existed and now true of the sky too. Both should follow the moment on screen. What stops it being a
 one-line change is that a whole archived day has no single instant, and the app has not decided which one
 it means.
+
+### The moon costs one formula because the sky went in first
+
+`geo/moon.ts` is the abridged lunar series - the largest handful of terms out of hundreds - reported the
+same way `sun.ts` reports the sun: as the point on Earth the body stands over. It reuses `gmstDeg` to turn
+a right ascension into a longitude, which it has to, since a moon placed by a different convention than
+the sky behind it would drift through the constellations it is supposed to be crossing.
+
+Accuracy is about a tenth of a degree, or a fifth of a moon's width. Stated rather than implied, because
+it is far too coarse to predict an eclipse with and far finer than an eleven-pixel disc can show.
+
+**Tested against eclipses, which is the only honest way to test an ephemeris without shipping a second
+one.** An eclipse is a published fact about the sun and the moon coinciding, or opposing, at a stated
+minute, and it exercises the position, the frame and the epoch at once - with `sun.ts` as the independent
+half, sharing no code beyond the definition of a Julian century. The April 2024 total solar eclipse comes
+out under a degree of separation and the September 2025 lunar eclipse over 179.
+
+**The synodic month test failed on a correct answer.** A year of new moons averaged 29.42 days against the
+true 29.530588, because the real spacing swings a quarter of a day either side and twelve intervals do not
+converge. Five years do. Loosening the tolerance would have hidden the quantity being measured.
+
+**The moon forced the stars further out.** `STAR_DISTANCE` was 60, and the moon reaches 64 radii from the
+origin and so 68 from the eye, which put stars in front of it. Now 80, still inside the far plane of 100.
+
+**It is transparent and writes depth.** It has to draw after the stars so it can cover them, and it has to
+fade with the morph to the flat map, and those two together rule out the opaque pass. Writing depth keeps
+it solid anyway: a star behind it is already on screen by then and gets painted over, while the planet is
+opaque and wrote depth before any of this, so a moon behind the Earth is correctly hidden.
+
+**Finding it on screen took four attempts, and none of the failures were the moon's.** `controls.project`
+returns null for anything behind the horizon and asks that question at the surface even when handed a
+radius - correct for event markers, useless for something sixty radii out. A blob detector then found the
+sunlit limb of the Earth instead, being brighter than a moon. What worked was arithmetic: at a 32 degree
+vertical field of view over 900px, 28.1px per degree puts a 13 degree offset at y=85, and there it was.

@@ -37,10 +37,12 @@ export const COLOR_STARS = new Color(0xc8d2e2);
  * Far enough that the planet always occludes, near enough that the camera's far plane never clips.
  *
  * The camera orbits between roughly one and four units out, the globe is a unit sphere, and the far
- * plane is at 100. Sixty leaves room at both ends and the exact value does not show: the stars are
- * placed relative to the eye, so this sets no scale a viewer can see.
+ * plane is at 100. The stars are placed relative to the eye, so the exact value sets no scale a viewer
+ * can see, but it does have to clear the moon: at apogee the moon reaches 64 radii from the origin and so
+ * up to 68 from the eye, and a star nearer than that draws in front of it. Sixty did, until there was a
+ * moon to be in front of. Eighty clears it with room, and the far plane with more.
  */
-const STAR_DISTANCE = 60;
+const STAR_DISTANCE = 80;
 
 /*
  * Magnitude spent on size and on opacity together, each on its own curve.
