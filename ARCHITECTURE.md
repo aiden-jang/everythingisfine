@@ -5850,3 +5850,40 @@ in a comment referring to a filename. The codebase warns about this in three pla
 Occlusion was verified rather than reasoned about: mean luminance inside the planet's disc moved 35.85 to
 35.67 with the layer on, which is inside the render's run-to-run noise, while the sky brightened where
 lines fall.
+
+### The eclipse is two facts multiplied, not a third fact
+
+`geo/eclipse.ts` takes the sun's direction and the moon's position, both already computed, and finds where
+the axis between them meets the sphere. The umbral and penumbral radii come from the sun's angular radius
+seen from the moon: the cone converges at that rate over roughly sixty Earth radii and arrives at nearly
+exactly nothing, which is why totality is marginal in reality and why the sign of `umbra` is what separates
+a total eclipse from an annular one. Nothing decides that; it is a difference of two large numbers.
+
+Drawn inside the night wash rather than as its own layer, because it is the same question the terminator
+already answers - how much sun reaches this point. Both `day` and `night` move: dimming the day alone left
+the shadow grey, since a shadow that does not raise the night wash is a shadow the planet is not in. The
+umbra is a separate ramp rather than the tail of the penumbral one, because the two differ by a factor of
+forty in radius and one smoothstep across that range makes totality a smudge.
+
+**Measured against three published eclipses**, which is the same trick the lunar tests use:
+
+| eclipse | position error | umbra |
+|---|---|---|
+| 2024-04-08 total | 466 km | 86 km |
+| 2023-10-14 annular | 759 km | -89 km |
+| 2017-08-21 total | 1006 km | 26 km |
+
+**The timing is far better than the position, and separating the two was what diagnosed it.** Scanning for
+the smallest gap finds greatest eclipse within two minutes across all three, so no mean-argument rate is
+wrong. The position error is the lunar series' own error passed through almost one for one, because the
+axis pivots about a sun four hundred times further away than the moon - displace the moon 500km and the
+shadow moves 500km. The first version of the series had seven longitude terms and was 840km out; extending
+to fourteen halved that. It is not an ephemeris and the key says so out loud.
+
+**The gate was the moment fix.** The shadow of tonight's moon over an archived April would have been
+nonsense, so this was unbuildable until the light followed the day on screen.
+
+**Discoverability is not solved.** The shadow only appears if you load an eclipse day and put the cursor
+near greatest eclipse, and nothing in the app points at one. `NOTABLE_DAYS` is the obvious home and is the
+wrong one: it requires a magnitude, sorts by it, and its own comment argues against growth. An eclipse
+entry needs a time rather than a day, so it wants its own affordance and its own decision.

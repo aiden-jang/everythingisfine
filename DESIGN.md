@@ -407,6 +407,17 @@ bright end draws almost the whole catalogue at the minimum size. Weight was matc
 replaced by measurement, not by eye - lit pixels in a fixed patch of sky, 164 before and 101 after with
 more of them bright.
 
+**The moon's shadow, on the few days there is one.** Nothing new is measured for it: the sun's direction
+and the moon's position are both already on screen, and a solar eclipse is the one place those two facts
+multiply into a third. The umbra lands as a dark spot a few hundred kilometres across, which is what it is,
+inside a soft penumbra some 3,500km wide. An annular eclipse draws no umbra at all, because the cone closed
+before it arrived, and that falls out of the arithmetic rather than being decided.
+
+**It says how well it knows.** "Placed to a few hundred km", because the position is an abridged lunar
+series passed through sixty Earth radii of lever arm, and it is good to 466km on the 2024 April eclipse and
+1,006km on the 2017 one. Every bounded number in this app says it is bounded, and a shadow that looked
+precise is the one mark here somebody might plan a journey around.
+
 **And the moon, at its real distance and its real size.** Sixty globe radii out and a quarter of a radius
 across, which comes to half a degree, which is about eleven pixels. It is small, and that is the point: the
 enormous moon everybody pictures is a long lens, and inflating it here would be the same lie as a
