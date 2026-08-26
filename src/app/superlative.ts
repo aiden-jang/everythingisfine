@@ -63,7 +63,9 @@ export function regionOf(lon: number, lat: number): string | null {
  * the generator is rerun with a threshold high enough to miss one, and is better as silence than as a
  * sentence with a hole in it.
  */
-export function superlativeFor(quake: Quake | null): Superlative | null {
+export function superlativeFor(
+  quake: Quake | null, asOf: number = Date.now(),
+): Superlative | null {
   if (quake === null) return null;
   const { lon, lat, magnitude } = quake.primary;
   if (!Number.isFinite(magnitude)) return null;
@@ -72,6 +74,21 @@ export function superlativeFor(quake: Quake | null): Superlative | null {
   const held = RECORDS[region];
   if (!held) return null;
   const [record, day] = held;
+  /*
+   * Never cite a record that had not happened yet.
+   *
+   * The table is a maximum over the whole span and knows nothing about which day is on screen, so on an
+   * archived day it happily reached forward. Caught by loading 2001-06-23: the rail read "Largest in
+   * Indonesia since 2000: M9.1, December 2004" beside a banner saying 2001 - an earthquake offered as
+   * context for a day three years before it happened.
+   *
+   * Comparing against the whole span is still right whenever the record predates the day, and that is not
+   * a fudge: the record is the maximum over 2000 to 2025, so if it fell before the day on screen then
+   * nothing between 2000 and that day was larger either. Silence is the only honest answer for the days
+   * it did not.
+   */
+  const happened = Date.parse(`${day}T00:00:00Z`);
+  if (!Number.isFinite(happened) || happened > asOf) return null;
   return { region, record, day, beaten: magnitude > record };
 }
 
