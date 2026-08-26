@@ -105,11 +105,22 @@ export interface Closest {
  * unimportant.
  */
 export function closestTo(
-  store: Store, at: { lon: number; lat: number }, filters: Filters, now: number,
+  store: Store, at: { lon: number; lat: number }, filters: Filters, now: number, until = now,
 ): Closest | null {
   let best: Closest | null = null;
   store.forEach((quake) => {
     if (!matches(quake, filters, now)) return;
+    /*
+     * Not past the moment on screen.
+     *
+     * Every other note in this block describes the window, and that is fine for an aggregate: the
+     * headline says "held" with a clock beside it, so a reader knows they are looking at part of a whole.
+     * This line does not describe an aggregate - it names one event - and with the cursor parked it named
+     * whichever event was nearest across the whole window, including ones the globe had not drawn yet.
+     * Being told the closest thing to your city while looking at a map that does not show it is the same
+     * defect the ranking had on an empty screen.
+     */
+    if (quake.primary.time > until) return;
     const km = distanceKm(at.lon, at.lat, quake.primary.lon, quake.primary.lat);
     if (best !== null && km >= best.km) return;
     const path = km <= MAX_KM ? pathKm(km, quake.primary.depthKm) : null;

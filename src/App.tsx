@@ -1551,9 +1551,10 @@ export function App(): JSX.Element {
    */
   const near = useMemo(() => {
     if (replay || here === null) return null;
-    return closestTo(feed.store, here, filters, clockAt());
+    // `view.at` is the parked cursor, or null when live: the moment the globe is actually drawing.
+    return closestTo(feed.store, here, filters, clockAt(), view.at ?? clockAt());
     // `snapshot.revision` moves on every ingest; the rest are what the answer depends on.
-  }, [feed.store, here, filters, snapshot.revision, replay]);
+  }, [feed.store, here, filters, snapshot.revision, replay, view.at]);
 
   /*
    * Whether the browser is in fullscreen, read from the browser rather than remembered.
@@ -1604,11 +1605,16 @@ export function App(): JSX.Element {
      *
      * Gated on nothing at all rather than on any filter, because with a few events drawn the reader can
      * see the two populations differ; with none, the screen actively contradicts the sentence.
+     *
+     * On the *displayed* count rather than the window's, which is the same distinction one layer down. The
+     * first version read `shown`, the window total, so parking the cursor at the start of the window put
+     * "103 at M4.5+" under a headline reading 0. `revealedNow ?? shown` is exactly what the headline
+     * itself prints, so the two can no longer disagree about whether there is anything on screen.
      */
-    if (shown <= 0) return null;
+    if ((revealedNow ?? shown) <= 0) return null;
     return rankDay(comparableCount(feed.store, edge.at, now), true);
     // `snapshot.revision` is what moves when an event lands; the rest are the gates above.
-  }, [feed.store, snapshot.archive, snapshot.revision, filters.windowMs, edge.complete, edge.at, now, replay, shown]);
+  }, [feed.store, snapshot.archive, snapshot.revision, filters.windowMs, edge.complete, edge.at, now, replay, shown, revealedNow]);
   /*
    * Recomputed on the clock rather than memoised.
    *
@@ -2300,7 +2306,15 @@ export function App(): JSX.Element {
               claim is bounded rather than overstated. Valdivia is older than the table and larger than
               anything in it.
             */}
-            {ceiling && strongest && !replay && edge.complete ? (
+            {/*
+              Silent when nothing is drawn, for the reason the ranking above is.
+
+              The region it names is derived from the window's strongest event, so with the cursor parked
+              before anything has arrived it was naming Indonesia beside an empty globe - a place made
+              relevant by an earthquake the reader cannot see. The Valdivia line below needs no such gate:
+              it says "in this window" out loud, so its scope is on the page.
+            */}
+            {ceiling && strongest && !replay && edge.complete && (revealedNow ?? shown) > 0 ? (
               <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
                 {ceiling.beaten ? (
                   <>
