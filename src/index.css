@@ -27,6 +27,10 @@
      there and as closely as the chroma ceiling allows on the default one. */
   --color-coast: #555663;
   --color-plate: #646478;
+  /* The two sky layers' own colours, kept equal to `COLOR_STARS` in `starfield.ts` and `COLOR_MOON` in
+     `moon.ts`, so a swatch in the key is the same value as the thing it stands for. */
+  --color-star: #c8d2e2;
+  --color-moon: #b8b4ae;
   --color-deck: #0a1322;
   --color-raised: #101d33;
   --color-hairline: rgb(148 163 184 / 0.14);
