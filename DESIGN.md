@@ -433,6 +433,21 @@ is barely there.
 about what somebody is doing, and it is wrong about half the time. The width splitter trades the rail
 against the globe; the one under the regions trades the regions against the event list.
 
+**Controls above the rule, commentary below it, and the layers had drifted.** The legend states the split
+in its own comment - the slider, the ticks and the source buttons change what is on the globe, and the rest
+is what the marks mean - and four layer switches were sitting under the rule, inside a fold titled "What
+the marks mean". Turning the slab on meant opening a glossary, which is not where anybody looks for a
+control. They are now one wrapping row labelled Layers, beside the feeds. Each switch used to hang off the
+row that explained it, and that adjacency was worth less than it looked: the buttons carry their own
+labels, the glossary still explains each layer underneath, and a fifth layer now costs a word instead of a
+paragraph. The two rows that existed only to name a layer follow the layer now rather than the platform,
+because a key for a mark that is not on screen explains nothing.
+
+This did not make the panel shorter. It is 558px with the layers off and 632px with two on, against about
+533px before, because the new row costs roughly what the two conditional rows save. The height is driven by
+the explanatory notes, and shortening it means trading the rule that no layer ships without its sentence -
+which is a bigger decision than a layout one.
+
 **The chrome is the globe out of focus.** The header floats on the canvas rather than sitting on a bar
 above it, and the panels are 44% fill over a hard blur rather than a surface with the planet faintly
 behind. The saturation of the blur is pulled down to match, because a thinner fill lets more of the

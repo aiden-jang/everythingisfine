@@ -21,6 +21,33 @@ import { flame, spiral, volcano, waves } from "../globe/shapes";
  * `details` rather than a button and state: it is natively focusable, so the row stays reachable without
  * a keyboard path being invented for it, and it matches the two disclosures the rail already uses.
  */
+/**
+ * One layer switch.
+ *
+ * The same fifteen lines of button appeared four times, and the fourth was pasted in this session. Also
+ * the place the `aria-pressed` idiom is now defined once: the header's controls state their condition in
+ * their label ("Sound off") and these state it in their pressed state, which is two idioms for one job
+ * and worth settling in one direction eventually.
+ */
+function LayerToggle(
+  { label, on, onChange }: { label: string; on: boolean; onChange: (on: boolean) => void },
+): JSX.Element {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={() => onChange(!on)}
+      className={`cursor-pointer border px-2 py-1 text-[11px] transition-colors ${
+        on
+          ? "border-faint bg-raised text-ink"
+          : "border-hairline text-faint hover:bg-raised hover:text-dim"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
 function KeyRow(
   { glyph, note }: { glyph?: ReactNode; note: string | null },
 ): ReactElement | null {
@@ -145,6 +172,22 @@ export function MagnitudeFilter(
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
+  /*
+   * Only the switches that mean something here.
+   *
+   * Null is not the same as off: the flat map has no inside for the depth sink and no sky for the
+   * figures, so those are absent rather than disabled. A control that cannot do anything is worse than
+   * one that is not there, which is the rule each of them already followed separately.
+   */
+  const switches = [
+    sinkOn === null ? null
+      : <LayerToggle key="depth" label="depth" on={sinkOn} onChange={onSink} />,
+    <LayerToggle key="motion" label="motion" on={motionOn} onChange={onMotion} />,
+    slabOn === null ? null
+      : <LayerToggle key="slab" label="slab" on={slabOn} onChange={onSlab} />,
+    figuresOn === null || figuresOn === undefined || !onFigures ? null
+      : <LayerToggle key="figures" label="figures" on={figuresOn} onChange={onFigures} />,
+  ].filter((v) => v !== null);
   // Where the threshold sits along the scale, as a percentage of the track.
   const cut = Math.max(0, Math.min(100, ((value - MAG_MIN) / (MAG_MAX - MAG_MIN)) * 100));
 
@@ -190,6 +233,29 @@ export function MagnitudeFilter(
       </div>
 
       {children}
+
+      {/*
+        The layers, which are controls and had drifted into the commentary.
+
+        The note below this states the rule outright - "the slider, the ticks and the source buttons are
+        how you change what is on the globe, and the rest is what the marks mean" - and four switches were
+        sitting on the wrong side of it, inside a fold titled "What the marks mean". Turning the slab on
+        meant opening a glossary, which is not where anybody looks for a control, and every new layer added
+        a whole row plus a paragraph to a panel that was already the tallest thing on screen.
+
+        Grouped rather than each hanging off the row it explains. That adjacency was the old argument for
+        the arrangement and it was worth less than it looked: the buttons carry their own labels, the
+        glossary still explains each layer below, and a wrapping row of four costs one line where four rows
+        cost four. A fifth layer now adds a word, not a paragraph.
+      */}
+      {switches.length === 0 ? null : (
+        <div className="mt-3">
+          <span className="label block">Layers</span>
+          <div role="group" aria-label="Layers" className="mt-1 flex flex-wrap gap-1.5">
+            {switches}
+          </div>
+        </div>
+      )}
 
       {/*
         The split, drawn.
@@ -271,30 +337,6 @@ export function MagnitudeFilter(
           ))}
         </span>
         <span>solid is shallow, hollow is deep</span>
-        {/*
-          The sink hangs off this row for the same reason the motion arrows hang off the boundaries:
-          it is a second reading of the hole rather than another layer. Hidden rather than disabled on
-          the flat map, because a plane has no inside and a control that does nothing is worse than one
-          that is not there.
-
-          On by default, which the motion arrows are not, and the difference is what it costs. 231
-          arrows put a mark in every margin on the planet; this moves marks that are already drawn, and
-          the payoff is the slab resolving out of a scatter the first time somebody orbits.
-        */}
-        {sinkOn === null ? null : (
-          <button
-            type="button"
-            aria-pressed={sinkOn}
-            onClick={() => onSink(!sinkOn)}
-            className={`ml-auto cursor-pointer border px-2 py-1 text-[11px] transition-colors ${
-              sinkOn
-                ? "border-faint bg-raised text-ink"
-                : "border-hairline text-faint hover:bg-raised hover:text-dim"
-            }`}
-          >
-            depth
-          </button>
-        )}
       </div>
 
       {/*
@@ -337,18 +379,6 @@ export function MagnitudeFilter(
       <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
         <span className="inline-block h-px w-[38px] shrink-0 bg-plate opacity-90" />
         <span>plate boundaries</span>
-        <button
-          type="button"
-          aria-pressed={motionOn}
-          onClick={() => onMotion(!motionOn)}
-          className={`ml-auto cursor-pointer border px-2 py-1 text-[11px] transition-colors ${
-            motionOn
-              ? "border-faint bg-raised text-ink"
-              : "border-hairline text-faint hover:bg-raised hover:text-dim"
-          }`}
-        >
-          motion
-        </button>
       </div>
 
       {motion ? (
@@ -371,7 +401,14 @@ export function MagnitudeFilter(
         looks like data and is not has to say so in its own sentence, and the count is the part that
         proves it arrived rather than promising it will.
       */}
-      {slabOn === null ? null : (
+      {/*
+        Only while the layer is on, now that the switch is not attached to it.
+
+        The row used to appear whenever the control did, which meant naming a mark that was not on screen
+        - the exact thing the plate-crossings key a few rows down is written to avoid. It reads as a
+        glossary entry now, like the storms and the volcanoes, and glossary entries are for what is there.
+      */}
+      {slabOn ? (
         <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
           <span
             className="inline-block size-[7px] shrink-0 rounded-full"
@@ -383,20 +420,8 @@ export function MagnitudeFilter(
             long it has been since the generator last ran, and it silently gets wronger.
           */}
           <span>the deep ones, {SLAB_FROM} to {SLAB_TO}</span>
-          <button
-            type="button"
-            aria-pressed={slabOn}
-            onClick={() => onSlab(!slabOn)}
-            className={`ml-auto cursor-pointer border px-2 py-1 text-[11px] transition-colors ${
-              slabOn
-                ? "border-faint bg-raised text-ink"
-                : "border-hairline text-faint hover:bg-raised hover:text-dim"
-            }`}
-          >
-            slab
-          </button>
         </div>
-      )}
+      ) : null}
 
       {/*
         The lines between the stars, which is the only row here describing something nobody measured.
@@ -405,24 +430,12 @@ export function MagnitudeFilter(
         so the row says whose idea it is rather than what it counts: there is no honest number to print
         beside a constellation. It sits last because the sky is the furthest thing from the subject.
       */}
-      {figuresOn === null || figuresOn === undefined || !onFigures ? null : (
+      {figuresOn ? (
         <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
           <span className="inline-block h-[1px] w-[7px] shrink-0 bg-current opacity-60" />
           <span>the lines are the constellations people drew</span>
-          <button
-            type="button"
-            aria-pressed={figuresOn}
-            onClick={() => onFigures(!figuresOn)}
-            className={`ml-auto cursor-pointer border px-2 py-1 text-[11px] transition-colors ${
-              figuresOn
-                ? "border-faint bg-raised text-ink"
-                : "border-hairline text-faint hover:bg-raised hover:text-dim"
-            }`}
-          >
-            figures
-          </button>
         </div>
-      )}
+      ) : null}
 
       {slabOn && slabCount > 0 ? (
         <KeyRow
