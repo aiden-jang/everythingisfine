@@ -349,6 +349,8 @@ export interface Globe {
     /** Hands over an aurora grid, or null to draw no sky at all. */
   setAurora: (grid: Aurora | null) => void;
   /** The star table, once its own chunk has landed. The caller wakes the loop afterwards. */
+  /** The moment the sun, sky and moon are drawn for. Null follows the wall clock. */
+  setMoment: (at: number | null) => void;
   setStars: (table: StarTable) => void;
   setFigures: (table: FigureTable) => void;
   setFiguresOn: (on: boolean) => void;
@@ -827,6 +829,16 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   let slabOn = false;
 
   let sunMinute = -1;
+  /*
+   * The instant the sun, the sky and the moon are aimed at, or null to follow the wall clock.
+   *
+   * Null is the live view and is not the same as `Date.now()` passed in every frame: it means "keep
+   * using the minute throttle below", which is what stops a cheap-but-not-free trig call happening
+   * sixty times a second to move a terminator that cannot be seen to move in a minute. Any other value
+   * is an exact moment - a held cursor or an archived day - and is aimed the instant it arrives, because
+   * a scrub that lagged a minute behind the marks it is dragging would be worse than no sun at all.
+   */
+  let moment: number | null = null;
   const aimSun = (at: number): void => {
     const { lon, lat } = subsolarPoint(at);
     const phi = lat * (Math.PI / 180);
@@ -1125,6 +1137,24 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
      * layer that filled itself while the loop was asleep would stay invisible until something else moved,
      * which is precisely how the plate boundaries once stayed hidden on a load where no feed answered.
      */
+    /*
+     * Which moment the sky is of.
+     *
+     * The scene aimed everything from `Date.now()`, so an archived day was drawn under tonight's
+     * terminator, tonight's sky and tonight's moon phase - true of the sun long before there was a sky to
+     * join it, and the one place this app was casual about time while being pedantic about it everywhere
+     * else. It refused to backdate the storms and the fires for exactly this reason, and then backdated
+     * nothing about the light.
+     *
+     * The caller decides the instant, and there is only one rule for it in the app: the held cursor if
+     * there is one, otherwise `clockAt`, which is already the app's own idea of what time is on screen.
+     */
+    setMoment: (at: number | null) => {
+      moment = at;
+      // Immediately, not on the next minute boundary, or a scrub drags the marks and leaves the light.
+      if (at !== null) aimSun(at);
+      else sunMinute = -1;
+    },
     setStars: (t: StarTable) => starfield.setStars(t),
     /** The figures' table, fetched only once the reader turns the layer on. */
     setFigures: (t: FigureTable) => figures.setFigures(t),
@@ -1139,10 +1169,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       material.uniforms["uAuroraOn"]!.value = 1;
     },
     render: () => {
-      const minute = Math.floor(Date.now() / 60_000);
-      if (minute !== sunMinute) {
-        sunMinute = minute;
-        aimSun(Date.now());
+      if (moment === null) {
+        const minute = Math.floor(Date.now() / 60_000);
+        if (minute !== sunMinute) {
+          sunMinute = minute;
+          aimSun(Date.now());
+        }
       }
 
       /*

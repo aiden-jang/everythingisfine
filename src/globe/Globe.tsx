@@ -68,6 +68,13 @@ export interface GlobeProps {
   /** The constellation lines: the table once its chunk lands, or null while the layer is off. */
   figures?: FigureTable | null;
   /**
+   * The moment the sun, sky and moon are drawn for, or null to follow the wall clock.
+   *
+   * The held cursor if there is one, otherwise the app's own clock, which already answers this for an
+   * archived day. Null rather than `Date.now()` on the live view, so the scene keeps its minute throttle.
+   */
+  moment?: number | null;
+  /**
    * Five years of deep seismicity, or null to draw none.
    *
    * Handed in already loaded rather than fetched here, so the chunk is pulled by whoever pressed the
@@ -125,7 +132,7 @@ const SCALE_TARGET_PX = 110;
 export function Globe({
   feed, filters, selected, ramp, onSelect, onReady, onCapture, onSelectMark, onCamera, onReplay,
   focus = null, aurora = null, marks = [],
-  scrubAt = null, flat = false, depthSink = false, slab = null, figures = null,
+  scrubAt = null, flat = false, depthSink = false, slab = null, figures = null, moment = null,
   section = null, onSection,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -141,6 +148,7 @@ export function Globe({
   const rampRef = useRef<(name: RampName) => void>(() => {});
   const sinkRef = useRef<(on: boolean) => void>(() => {});
   const figuresRef = useRef<(table: FigureTable | null) => void>(() => {});
+  const momentRef = useRef<(at: number | null) => void>(() => {});
   const slabRef = useRef<(points: readonly SlabPoint[] | null) => void>(() => {});
   const auroraRef = useRef<(next: Aurora | null) => void>(() => {});
   const markRef = useRef<(next: readonly Mark[]) => void>(() => {});
@@ -152,10 +160,10 @@ export function Globe({
    * time somebody nudges a magnitude slider.
    */
   const live = useRef({
-    filters, selected, focus, scrubAt, flat, depthSink, slab, figures, section, aurora, marks,
+    filters, selected, focus, scrubAt, flat, depthSink, slab, figures, moment, section, aurora, marks,
   });
   live.current = {
-    filters, selected, focus, scrubAt, flat, depthSink, slab, figures, section, aurora, marks,
+    filters, selected, focus, scrubAt, flat, depthSink, slab, figures, moment, section, aurora, marks,
   };
   const onSectionRef = useRef(onSection);
   onSectionRef.current = onSection;
@@ -717,6 +725,11 @@ export function Globe({
      * The layer is off until a reader asks, and asking is what fetches the chunk, so there is no state
      * where the lines are wanted and the table is absent that is worth a second entry point.
      */
+    momentRef.current = (at) => {
+      globe.setMoment(at);
+      redraw();
+    };
+    globe.setMoment(live.current.moment ?? null);
     figuresRef.current = (table) => {
       if (table !== null) globe.setFigures(table);
       globe.setFiguresOn(table !== null);
@@ -934,6 +947,12 @@ export function Globe({
     figuresRef.current(figures ?? null);
     wakeRef.current();
   }, [figures]);
+
+  // The loop sleeps when nothing moves, and a new moment moves the light rather than the camera.
+  useEffect(() => {
+    momentRef.current(moment ?? null);
+    wakeRef.current();
+  }, [moment]);
 
   // Same route and the same reason as the marks: the loop is asleep when a lazy chunk lands.
   useEffect(() => {
