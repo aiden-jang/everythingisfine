@@ -26,7 +26,8 @@ import {
   closestTo, loadZones, localZone, viewerPlace, type ZoneTable,
 } from "./app/viewer";
 import {
-  BASELINE_DAYS, BASELINE_FROM, BASELINE_MIN_MAGNITUDE, comparableCount, rankDay, sharePercent,
+  BASELINE_DAYS, BASELINE_FROM, BASELINE_MIN_MAGNITUDE, BASELINE_TO, comparableCount, rankDay,
+  sharePercent,
 } from "./data/baseline";
 import {
   boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE,
@@ -2302,8 +2303,8 @@ export function App(): JSX.Element {
                 {" at M"}<span className="tabular-nums">{BASELINE_MIN_MAGNITUDE}</span>{"+: "}
                 {baseline.direction} than{" "}
                 <span className="text-dim tabular-nums">{sharePercent(baseline.share)}%</span> of the{" "}
-                <span className="tabular-nums">{BASELINE_DAYS.toLocaleString("en")}</span> days since{" "}
-                {BASELINE_FROM}.
+                <span className="tabular-nums">{BASELINE_DAYS.toLocaleString("en")}</span> days from{" "}
+                {BASELINE_FROM} to {BASELINE_TO}.
               </p>
             ) : null}
             {/*
