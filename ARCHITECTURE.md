@@ -5723,3 +5723,39 @@ real depth plus that one deliberate difference.
 **Pixel comparison could not verify this.** Two screenshots of identical code at the same permalink hash
 differently, so a before/after image diff proves nothing about the render. The algebra is covered by unit
 test and the render by eye.
+
+### The sky is a skybox with no per-frame work
+
+`starfield.ts` draws the catalogue as one `Points` object whose vertex shader adds `cameraPosition` to
+each star's unit direction. Stars therefore sit at a fixed distance from wherever the eye is, so orbiting
+sweeps them and travelling never slides them, and nothing in the render loop has to know the layer exists.
+The alternative - copying the camera position onto the object every frame - needs a hook in a loop that is
+deliberately asleep whenever nothing moves.
+
+Two things bit on the way:
+
+- **Three.js frustum-culls `Points` against a bounding sphere derived from the buffer.** The positions are
+  unit vectors about the origin while the shader draws them sixty units out around a moving camera, so the
+  whole layer vanished the moment the camera left the unit sphere, which is immediately.
+  `geometry.boundingSphere = null` and `frustumCulled = false`, because the geometry is not where the
+  drawing is.
+- **The brightness curves were the wrong way round.** Both gammas started above 1, which is right for a
+  flat distribution and wrong for this one: 4,176 of 5,080 stars are fainter than magnitude 4.5, so the
+  typical normalised brightness is about 0.07 and a gamma above 1 crushed nearly the whole catalogue onto
+  the minimum size. Measured as 16 lit pixels in a patch of sky where the old field had 164, with the star
+  count in that patch already about right. Gammas below 1 lift the same 0.07 to 0.31.
+
+**The star count in that patch was right all along, and the first diagnosis said otherwise.** The initial
+read was "too few stars" and the fix would have been a bigger catalogue; working out the camera's actual
+field of view gave about 14 catalogue stars in the patch against the old field's 19. The stars were all
+there and all drawn a pixel and a half wide.
+
+**Pixel comparison cannot verify any of this.** Two screenshots of identical code at the same permalink
+differ, so both a before/after image diff and a same-day/same-sky check come back false for reasons that
+have nothing to do with the sky. Lit-pixel *counts* are stable and were used instead; positions were not.
+
+**The sun and the sky are both aimed from `Date.now()`.** `scene.render` throttles `aimSun` to the minute
+and hands it wall-clock time, so an archived day is drawn under tonight's terminator - true before the sky
+existed and now true of the sky too. Both should follow the moment on screen. What stops it being a
+one-line change is that a whole archived day has no single instant, and the app has not decided which one
+it means.

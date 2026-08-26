@@ -11,6 +11,8 @@ import type { RampName } from "./ramp";
 import { DEG, distanceKm, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
+import { gmstDeg, type StarTable } from "../geo/stars";
+import { createStarfield } from "./starfield";
 import {
   attachLonLat, MAP_HALF_WIDTH, MORPH_GLSL, morphable, SPHERE_PHI_START, visibleCopies,
 } from "./morph";
@@ -214,13 +216,6 @@ const BLUEPRINT = {
   coast: COLOR_COAST, plates: COLOR_PLATES,
 } as const;
 const COLOR_RIM = new Color(0x7896be);
-/*
- * The sky, in the interface's own near-white rather than a colour of its own.
- *
- * Slightly under Instrument, because a star at full chrome white is the same value as a focus ring and
- * the label text, and a backdrop has no business being drawn as brightly as the thing being read off it.
- */
-const COLOR_STARS = new Color(0xc8d2e2);
 /** Pale, and the sea's own family rather than the sun's: this is water returning light, not the light. */
 const COLOR_GLINT = new Color(0xa8c4e4);
 
@@ -294,128 +289,6 @@ const ATMOSPHERE = {
     }`,
 };
 
-/*
- * Stars, so the planet is somewhere rather than on something.
- *
- * The void behind the globe was a flat fill, which reads as a page with a sphere on it. A star field is
- * the cheapest thing that turns the same frame into a view, and it earns its place on orbit: with nothing
- * out there, dragging the camera moves the planet against a void that never changes, and there is no
- * evidence the viewer is the thing that moved.
- *
- * **Fixed to the view direction, not to the shell.** Stars are read from where the ray is pointing rather
- * than from where it lands, so they behave as though they were infinitely far: orbiting sweeps them and
- * zooming does not. Taking the shell's own surface point instead would slide them under the camera like
- * wallpaper on a nearby wall, which is exactly the tell that gives a fake sky away.
- *
- * **Depth-tested, and that is not the obvious choice here.** Three.js draws every opaque object before any
- * transparent one, so a transparent shell with the depth test off paints over the planet no matter how low
- * its `renderOrder` is - the same trap the land fill and the markers are each documented against, arrived
- * at from a third direction. The ocean is opaque and writes depth first, so leaving the test on is what
- * puts the stars behind the world.
- *
- * **Brightness only, no hue.** Two layers, one sparse and bright, one dense and faint, both drawn in the
- * interface's own near-white. Coloured stars would be a second thing on screen where hue means something
- * other than magnitude, and section 13 leaves the atmospheric rim as the only exception that will ever be
- * made.
- */
-const STARS = {
-  vertexShader: /* glsl */ `
-    varying vec3 vWorld;
-    void main() {
-      vWorld = (modelMatrix * vec4(position, 1.0)).xyz;
-      gl_Position = projectionMatrix * viewMatrix * vec4(vWorld, 1.0);
-    }`,
-  fragmentShader: /* glsl */ `
-    uniform vec3 uColor;
-    uniform float uOpacity;
-    varying vec3 vWorld;
-
-    float h11(float n) { return fract(sin(n) * 43758.5453123); }
-    float h31(vec3 p) { return h11(dot(p, vec3(127.1, 311.7, 74.7))); }
-
-    /*
-     * One cell, one candidate star, on a grid that the view can actually sample.
-     *
-     * The first version cut space into 3D cells and jittered each star anywhere inside its own. It drew
-     * nothing, and the reason is worth keeping: view directions are unit vectors, so the fragments trace
-     * a two-dimensional sheet through a three-dimensional grid, and a star placed off that sheet in the
-     * third axis is not dim or clipped, it is unreachable. Nearly every star missed.
-     *
-     * So the direction is folded onto a cube face first and the grid is 2D, which is the space the
-     * sampling actually lives in. The face index joins the hash key, or opposite faces would draw the
-     * same constellation twice. Cells stretch a little toward the face corners, the ordinary cube-map
-     * distortion, and for a field of dots nobody can see it.
-     *
-     * The neighbouring cells are deliberately not searched: a dot a twentieth of a cell wide almost never
-     * crosses a wall, and nine hashes a fragment to catch the ones that do is a lot for a backdrop.
-     *
-     * (No backticks in here. This is inside a template literal and one of them ends the shader.)
-     */
-    float layer(vec3 dir, float cells, float keep, float size) {
-      vec3 a = abs(dir);
-      vec2 uv;
-      float face;
-      if (a.x >= a.y && a.x >= a.z) {
-        uv = dir.yz / a.x;
-        face = dir.x > 0.0 ? 0.0 : 1.0;
-      } else if (a.y >= a.z) {
-        uv = dir.xz / a.y;
-        face = dir.y > 0.0 ? 2.0 : 3.0;
-      } else {
-        uv = dir.xy / a.z;
-        face = dir.z > 0.0 ? 4.0 : 5.0;
-      }
-      vec2 p = uv * cells;
-      vec2 cell = floor(p);
-      vec3 key = vec3(cell, face);
-      if (h31(key) < keep) return 0.0;
-      vec2 at = vec2(h31(key + 11.0), h31(key + 23.0));
-      float d = length((p - cell) - at);
-      /*
-       * Squared so a few stars carry the field, then floored so the rest are still there.
-       *
-       * The square alone was measured and wrong: with the magnitude uniform in zero to one, most stars
-       * landed under a tenth of full alpha and simply did not survive to the screen. Roughly twenty of
-       * about two thousand were visible, which reads as dust on a sensor rather than as a sky. The floor
-       * keeps the distribution and lifts its bottom off the floor of what a display can show.
-       */
-      float mag = h31(key + 53.0);
-      return smoothstep(size, 0.0, d) * mix(0.30, 1.0, mag * mag);
-    }
-
-    void main() {
-      vec3 dir = normalize(vWorld - cameraPosition);
-      /*
-       * Two thresholds, measured rather than chosen.
-       *
-       * Counted in a strip of pure void above the planet: at 0.952 and 0.976 the field came out at one
-       * star per 5,160 square pixels, which at this size is a scatter you have to look for. The target
-       * is roughly one per two thousand - enough that the void reads as a place, few enough that nothing
-       * out there competes with a marker. Lowered by keeping more cells rather than by cutting them
-       * smaller, so the dots stay the size they were and none of them fall under a pixel.
-       */
-      float v = layer(dir, 58.0, 0.875, 0.072) + layer(dir, 131.0, 0.938, 0.058) * 0.5;
-      if (v <= 0.001) discard;
-      gl_FragColor = vec4(uColor, clamp(v, 0.0, 1.0) * uOpacity);
-    }`,
-};
-
-/*
- * The glint, which is what makes water look like water.
- *
- * A specular highlight where the sun reflects off the ocean toward the eye. Nothing in these shaders
- * computed one, so the sea was a flat fill under a shading gradient - lit, and not wet.
- *
- * **Its own shell, rather than a term in the ocean's material.** Two reasons and both are constraints
- * rather than preferences. The ocean is a `MeshBasicMaterial` whose colour `setGeography` swaps, and whose
- * `onBeforeCompile` is already spoken for by `morphable`; injecting a second time would fight that. And
- * the night shell, which does have the sun, is drawn *over* the land fill, so a glint added there would
- * put a wet highlight on the middle of Asia.
- *
- * Slotted under the land instead: this draws at `renderOrder` 0.75 and the fill draws at 1, so the
- * continents cover it exactly where they should and the highlight only ever survives over sea. The mask
- * this needs already exists as the land itself.
- */
 const GLINT_RADIUS = 1.0015;
 
 const GLINT = {
@@ -473,6 +346,8 @@ export interface Globe {
   setSlab: (points: readonly SlabPoint[] | null) => void;
     /** Hands over an aurora grid, or null to draw no sky at all. */
   setAurora: (grid: Aurora | null) => void;
+  /** The star table, once its own chunk has landed. The caller wakes the loop afterwards. */
+  setStars: (table: StarTable) => void;
   /** Hands over every non-earthquake mark as polylines. An empty list draws nothing. */
   setMarks: (marks: readonly Mark[]) => void;
   /** Picks the geography palette the given ramp needs. See `NEUTRAL` in this file. */
@@ -957,6 +832,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     (night.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
     (rim.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
     (glint.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
+    /*
+     * The sky turns here too, from the same timestamp, because the sun and the stars are the same fact.
+     *
+     * Aiming them apart is how a globe ends up with Orion overhead at noon. This is throttled to the
+     * minute along with the sun, and sidereal rotation is a quarter of a degree a minute, so the
+     * throttle cannot show.
+     */
+    starfield.setTime(at, gmstDeg(at));
   };
 
   // The shell is only a container: it has to be wider than uOuter so the falloff is not clipped by
@@ -982,28 +865,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   scene.add(rim);
 
   /*
-   * Well outside everything, well inside the camera's far plane of 100.
+   * The real sky, as points rather than a shaded shell.
    *
-   * The radius is arbitrary in the picture, because the stars are read from the ray direction rather
-   * than from where it lands, so this only has to be a shell the camera is always inside.
+   * `starfield.ts` owns the reasoning. What matters here is that it needs no per-frame hook: the shader
+   * places every star relative to `cameraPosition`, so orbiting sweeps it and travelling never slides it
+   * without anything in the loop having to know the layer exists.
    */
-  const stars = new Mesh(
-    new SphereGeometry(40, 32, 24),
-    new ShaderMaterial({
-      ...STARS,
-      uniforms: {
-        uColor: { value: COLOR_STARS },
-        uOpacity: { value: 1 },
-      },
-      side: BackSide,
-      transparent: true,
-      // The ocean is opaque and has already written depth, which is what hides the far side of the sky.
-      depthWrite: false,
-    }),
-  );
-  // Lowest in the transparent pass: the sky is behind the night wash, the rim and every mark on the globe.
-  stars.renderOrder = -2;
-  scene.add(stars);
+  const starfield = createStarfield();
+  scene.add(starfield.object);
 
   const glintGeom = new SphereGeometry(GLINT_RADIUS, 96, 64, SPHERE_PHI_START);
   attachLonLat(glintGeom);
@@ -1070,6 +939,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     // Marker sizes are in CSS pixels, so the shader needs the ratio the renderer actually used.
     events.setPixelRatio(dpr);
     slab.setPixelRatio(dpr);
+    starfield.setPixelRatio(dpr);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
@@ -1222,6 +1092,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       slabOn = true;
       slab.setOpacity(1 - morph.value);
     },
+    /*
+     * The sky's table, handed over when its chunk lands.
+     *
+     * Loaded from `Globe.tsx` rather than here, because the caller is the only one holding `wake`. A
+     * layer that filled itself while the loop was asleep would stay invisible until something else moved,
+     * which is precisely how the plate boundaries once stayed hidden on a load where no feed answered.
+     */
+    setStars: (t: StarTable) => starfield.setStars(t),
     setAurora: (grid) => {
       const material = night.material as ShaderMaterial;
       if (grid === null) {
@@ -1255,8 +1133,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
        * the projection has just given up the globe, and the sky is the one element that would still be
        * insisting on it.
        */
-      (stars.material as ShaderMaterial).uniforms["uOpacity"]!.value = 1 - morph.value;
-      stars.visible = morph.value < 0.999;
+      starfield.setOpacity(1 - morph.value);
       /*
        * Gone by the time the map is flat, and this one is not only for consistency.
        *
@@ -1336,6 +1213,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     dispose: () => {
       events.dispose();
       slab.dispose();
+      starfield.dispose();
       glint.geometry.dispose();
       (glint.material as ShaderMaterial).dispose();
       rings.dispose();

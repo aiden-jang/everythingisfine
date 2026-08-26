@@ -33,8 +33,15 @@ export default defineConfig({
            * against it: 37kB of deep seismicity behind an off-by-default toggle went straight into `land`
            * and onto every first visit, while its own comment claimed it was a chunk nobody paid for
            * until they asked. Anything under `/src/geo/` reached only by `await import()` belongs here.
+           *
+           * `stars.json` is the third, and the biggest: 88kB took `land` from 41kB over the wire to 76kB,
+           * an 84% rise on a preloaded chunk. It is not behind a toggle - the sky is always drawn - so it
+           * is here for the other reason, which is that it is the layer furthest behind the entrance and
+           * the only one whose arriving a moment late cannot be seen.
            */
-          if (id.includes("plateMotion.json") || id.includes("slab.json")) return undefined;
+          if (
+            id.includes("plateMotion.json") || id.includes("slab.json") || id.includes("stars.json")
+          ) return undefined;
           if (id.includes("world-atlas") || id.includes("/src/geo/")) return "land";
           if (id.includes("/node_modules/three/")) return "three";
           if (id.includes("/node_modules/react")) return "react";
