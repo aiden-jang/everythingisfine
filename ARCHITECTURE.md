@@ -5411,6 +5411,98 @@ day-night wash cannot eat it, and the **gain is largest where the surroundings a
 dark gains more than a cyclone in daylight. That is the opposite of the failure I went looking for, which was
 the wash washing the highlight out.
 
+## The depth encoding was right and the sample was hopeless
+
+Markers moved from a single shell just above the surface to their own hypocentre, which is where the
+earthquake was. Two couplings made that harder than it sounds, and both are the kind that fail quietly.
+
+`events.ts` turns the **depth test off on purpose**: a point sprite is a screen-aligned square carrying the
+single depth of its centre, so near the limb half of every dot fails against an ocean surface much nearer the
+camera and the survivors end at a straight edge through the middle. The far hemisphere is culled by a facing
+discard in the fragment instead. That decision is what made true-depth marks possible at all - the planet
+never had to occlude them - and reopening it would have brought the limb slicing back.
+
+On the plane, **radius is the layer index**: `fmProject` builds its z from `length(sphere) - 1.0`, so a
+marker shrunk to 0.89 would be filed a tenth of a world unit under the map and drawn behind the ocean. The
+offset is therefore added to the projected point rather than baked into the radius, and it carries
+`1.0 - uMorph` so it lifts back to the surface as the map unwraps.
+
+Then the measurement that mattered. A real USGS day is **237 events, 14 of them between 70 and 300km, and
+exactly two below 300**. A subducted plate is a sheet a hundred kilometres thick reaching seven hundred
+down, and two points do not describe a sheet. The geometry was correct and the sample could never draw it,
+so the pitch - orbit the Kurils and the scatter becomes a dipping plane - was not going to happen on live
+data at any zoom.
+
+The shape comes from the catalogue instead: **1,583 events at M4.5 and deeper than 300km over five years,
+1,048 of them in the Tonga-Fiji corner**, committed as 37kB of numbers by `tools/make-slab.mjs`. Below 300km
+nothing but a descending plate makes earthquakes, so every point is on one. It is drawn as geography rather
+than as data - one dim tone, one fixed size, no ramp - because these are not today's readings and the one
+thing the layer must never look like is the marks beside it.
+
+### The chunking trap, walked into with the warning already written
+
+`vite.config.ts` sweeps everything under `/src/geo/` into the `land` chunk, and **assigning a module to a
+manual chunk overrides dynamic-import splitting**. `slab.json` went straight into `land`, which is
+modulepreloaded, so 37kB behind an off-by-default toggle was fetched on every first visit - while the
+module's own comment claimed it was a chunk nobody paid for until they asked. The config already carried a
+note about this happening to `plateMotion.json`. Excluding it by name moved `land` from 142.91 kB to
+**104.70 kB** and gave the table its own 11.99 kB gzipped chunk.
+
+## Bloom was refused on a precedent already in this file
+
+The ramp runs to near-white at the top and renders flat, so a glow pass looked like the obvious way to make
+magnitude read as emitted energy. The entry above on additive blending is the argument against it: a dense
+margin summed past the top of the ramp and **clipped to pure white, which is Instrument, the chrome colour**,
+so the data was drawing the interface's own colour exactly where the data was most interesting. Bloom
+spreads mark colour into neighbouring pixels, which recreates that on any dense cluster. It is a gamut
+problem rather than a tuning one, and no intensity setting fixes it - it only moves the density at which it
+breaks.
+
+Three other canvas effects were built and cut for a simpler reason: they could not be demonstrated. A sun at
+true angular size (0.533 degrees, about fifteen pixels) renders correctly and is **occluded at every camera
+offset that also keeps it in frame**, because the visible window is a thin annulus between the planet's
+angular radius and the frame's half-angle. A Milky Way band changed **700 of 1.15 million pixels**, then
+1,689 after re-gating - at or below the noise between two runs of the same build. Star size variation lands
+under the pixel grid. What survived - stars, a sun-aware limb, ocean glint, limb darkening - each moved
+between 1.3% and 3.5% of the frame in an A/B against its own disabled build.
+
+## The tour was narrating the wrong hemisphere
+
+The rail's line is the tour's whole licence to move the camera: section 13 bans motion that means nothing,
+and the line answers it by saying where the camera is and how much is there. It was not doing that. The
+label and the flight were set from the same `tourAt` on the same tick, so for the first **45%** of every stop
+the rail named the destination while the globe still showed the last one. Sampled mid-tour, it read
+**"Japan & Kurils · 685 events" at longitude -82.8**, which is Chile.
+
+Narration now waits for arrival, detected geometrically rather than on a timer, because the flight is a
+spring and its duration depends on how far it went. Four degrees of tolerance: a spring approaches
+asymptotically and a tight threshold leaves the line permanently unspoken. It works through a ref and a
+stable setter, since `Globe` captures `onCamera` once when it builds the scene - the same reason the camera
+itself was already written to a ref rather than to state.
+
+**Nothing caught this because nothing tested the tour.** Seven surfaces had no browser coverage at all -
+Tour, Sound, Copy link, Far side, Fly here, Announce, and cinema mode. They have guards now, and each guard
+was mutation-tested: reverting this fix fails with `narrated "Alaska & Aleutians" while the camera was at
+126.5`, 78 degrees out.
+
+### The guard's first version measured the wrong thing
+
+It sampled `location.hash`, which is written on a throttle and trails the live camera far enough to cross 37
+degrees mid-flight, so it paired a fresh label with a stale position and failed on a stop that was correct.
+The lazy repair was to widen the tolerance past 37 and call the test flaky. Reading the camera the label is
+actually gated on allowed it to be **tightened from 30 degrees to 10**.
+
+## An archived day was told about its own future
+
+The region-record table is a maximum over 2000 to 2025 and knows nothing about which day is on screen. Load
+the archived day 2001-06-23 and the rail read **"Largest in Indonesia since 2000: M9.1, December 2004"** - an
+earthquake offered as context for a day three years before it happened.
+
+The comparison takes the displayed day as its now: `snapshot.archive.from` for an archived day, the clock
+otherwise, and silence when the record postdates it. Citing the whole-span record whenever it *predates* the
+day is still correct rather than a fudge - the record is the maximum over the full span, so if it fell before
+the day on screen then nothing between 2000 and that day was larger either.
+
 ## Open, and honestly so
 
 Written last, and kept accurate rather than kept short.
@@ -5537,6 +5629,27 @@ Written last, and kept accurate rather than kept short.
   to gdacs.org and 2 to services.swpc.noaa.gov on a single test** - roughly a thousand GDACS calls per
   suite run - for data **no test asserts on**: a grep for the layer sentences across both specs returns
   nothing. All four hazard hosts are stubbed now and a spy sees nothing leave.
+
+- **The ratio cancels a busy machine and not an oversubscribed one, and the entry above overstated it.**
+  That bullet closed the perf gate's load sensitivity on the strength of measuring a *ratio* rather than
+  a duration, and the ratio does hold across ordinary busyness. It does not hold across heavy
+  oversubscription. Measured on this ten-core machine across one day: **5.61, 5.72, 5.80** reference units
+  at a load average under 10, against **6.43, 6.76, 6.89, 7.19** at a load average near 100 - the same
+  build, the same commit, straddling a budget of 7 on the second set and nowhere near it on the first.
+  Scheduling noise stops being symmetric once the reference workload is itself being preempted.
+
+  Recorded because of what it invites. The failure looks exactly like a regression in
+  `events.sync`, and the cheap repair is to raise the budget - which would spend the whole margin on a
+  machine condition rather than on code. The check that settles it is cheap: the number returns to 5.7 when
+  the machine is quiet, so a budget-raising commit should always have a low-load measurement beside it.
+
+- **Both browser suites are load-sensitive in a way that reads as breakage.** Same day, same commit:
+  design **27/27 in 3.1 minutes** at a load average of 4 to 16, and **23/27 in 7.5 minutes** at 71.
+  Interaction **45/45 in 7.8 minutes** at 12, and **9 passed in 18.1 minutes** at 71. Every failure in the
+  loaded runs passed in isolation. The camera assertions already wait for motion to stop rather than for a
+  fixed number of seconds, which is what the entry above fixed; what remains is that a page which takes 39
+  seconds to reach first data cannot finish a 45-second test whatever it is waiting on. There is no repair
+  here to make in the app - the note exists so a loaded run is read as a loaded run.
 
 - **No demo video.** The write-up asks for one and there is none, because recording it was not
   something this build could do.
