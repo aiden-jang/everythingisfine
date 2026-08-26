@@ -1690,6 +1690,7 @@ export function App(): JSX.Element {
                   section is open: otherwise it would be a button that does nothing, which is the thing
                   hiding it was avoiding in the first place.
                 */
+                sky={!flat}
                 figuresOn={flat ? null : figuresOn}
                 onFigures={setFiguresOn}
                 slabOn={flat && sectionLine === null ? null : slabOn}

@@ -124,6 +124,8 @@ export interface MagnitudeFilterProps {
   /** Whether earthquakes are drawn at their own depth. Null hides the control, on the flat map. */
   sinkOn: boolean | null;
   onSink: (on: boolean) => void;
+  /** Whether there is a sky at all, which the flat map has not. Gates the two rows that describe it. */
+  sky?: boolean;
   /** Whether the constellation lines are drawn. Null hides the control, on the flat map. */
   figuresOn?: boolean | null;
   onFigures?: (on: boolean) => void;
@@ -168,7 +170,7 @@ export function MagnitudeFilter(
     ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince, now,
     fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
     motion, motionOn, onMotion, sinkOn, onSink, slabOn, onSlab, slabCount,
-    figuresOn, onFigures, depth, sound, children,
+    figuresOn, onFigures, sky = false, depth, sound, children,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -430,6 +432,41 @@ export function MagnitudeFilter(
         so the row says whose idea it is rather than what it counts: there is no honest number to print
         beside a constellation. It sits last because the sky is the furthest thing from the subject.
       */}
+      {/*
+        The sky, which shipped twice today with nothing in here explaining either half.
+
+        This panel's own rule is that no layer ships without the sentence that explains it, and every
+        other thing drawn - the storms, the volcanoes, the floods, the aurora, the boundaries - has a line.
+        The stars and the moon did not, which made them the two layers the argument was not applied to.
+
+        Both say the fact a viewer would otherwise get wrong. Nobody expects a real catalogue behind a
+        globe of earthquakes, and the moon looks like a speck because it is the size the moon is: the
+        familiar enormous one is a long lens, so the sentence has to say "real size" or the layer reads as
+        a bug.
+
+        The phase went out of that line rather than wrapping it onto a second row. A crescent explains
+        itself once it is a crescent; the smallness is the part that needs defending. Neither row gets a
+        note under it either, because a panel this tall has to earn every extra line.
+      */}
+      {sky ? (
+        <>
+          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+            <span
+              className="inline-block size-[5px] shrink-0 rounded-full"
+              style={{ background: "var(--color-star)" }}
+            />
+            <span>the stars are the real ones, down to magnitude 6</span>
+          </div>
+          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+            <span
+              className="inline-block size-[9px] shrink-0 rounded-full"
+              style={{ background: "var(--color-moon)" }}
+            />
+            <span>the small disc is the moon, at its real size</span>
+          </div>
+        </>
+      ) : null}
+
       {figuresOn ? (
         <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
           <span className="inline-block h-[1px] w-[7px] shrink-0 bg-current opacity-60" />
