@@ -49,7 +49,7 @@ import { decode, encode } from "./app/permalink";
 import { seconds } from "./app/arrival";
 import { timesLabel, versusReference } from "./app/versus";
 import { tick } from "./app/touch";
-import { recordWhen, SINCE, superlativeFor } from "./app/superlative";
+import { recordWhen, SINCE, superlativeFor, UNTIL } from "./app/superlative";
 import { MAG_MIN, rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
@@ -2332,14 +2332,14 @@ export function App(): JSX.Element {
               <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
                 {ceiling.beaten ? (
                   <>
-                    {"Nothing in "}{ceiling.region}{" has been this large since at least "}{SINCE}
+                    {"Larger than anything in "}{ceiling.region}{" from "}{SINCE}{" to "}{UNTIL}
                     {". Previous best: M"}
                     <span className="text-dim tabular-nums">{ceiling.record.toFixed(1)}</span>
                     {", "}{recordWhen(ceiling.day)}{"."}
                   </>
                 ) : (
                   <>
-                    {"Largest in "}{ceiling.region}{" since "}{SINCE}{": M"}
+                    {"Largest in "}{ceiling.region}{", "}{SINCE}{" to "}{UNTIL}{": M"}
                     <span className="text-dim tabular-nums">{ceiling.record.toFixed(1)}</span>
                     {", "}{recordWhen(ceiling.day)}{"."}
                   </>
