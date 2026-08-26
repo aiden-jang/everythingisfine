@@ -3205,7 +3205,19 @@ export function App(): JSX.Element {
                 // Last but for `esc`, because it is the only one here that changes the window rather
                 // than the view, and somebody scanning for camera keys should not trip over it first.
                 ["f", "full"],
-                ["esc", "clear"],
+                /*
+                 * Only when there is something to clear, which is the rule two entries above already
+                 * follow and this one did not.
+                 *
+                 * `esc` walks one rung at a time - the search box, then the section, then a held cursor,
+                 * then the pin - and with all four empty it does nothing at all. That is the app's state
+                 * on every first load, so the one unconditional hint in this row was inert exactly when
+                 * most people read it. The comment on `[ ]` says naming an inert key is worse than being
+                 * short; this is the same key in the same row.
+                 */
+                ...(query || sectionLine || view.at !== null || selected
+                  ? [["esc", "clear"] as const]
+                  : []),
               ] as const).map(([key, what]) => (
                 <span key={key} className="mr-3 inline-flex items-baseline gap-1.5">
                   <span className="text-dim">{key}</span>
