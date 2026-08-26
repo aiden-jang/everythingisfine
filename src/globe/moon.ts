@@ -29,6 +29,21 @@ import { toVec3 } from "../geo/sphere";
 /** Lunar grey, faintly warm, and kept well inside the chroma the interface allows anything painted. */
 const COLOR_MOON = new Color(0xb8b4ae);
 
+/*
+ * The eclipsed moon, and the one place this app admits a warm hue on purpose.
+ *
+ * Section 13 bans hue in the interface and names the atmospheric rim as the only exception, admitted
+ * because it is illumination rather than a mark. This is the same illumination seen from the other side:
+ * the light reaching a totally eclipsed moon is sunlight refracted through the Earth's atmosphere, which
+ * is to say it is the sunset ring around the planet, which is the rim. Not a second exception - the same
+ * one, from the far end of the ray.
+ *
+ * Dim as well as red, because a total lunar eclipse is roughly ten thousand times fainter than a full
+ * moon. Drawn at a fifth rather than a ten-thousandth: the point is that it is still there and no longer
+ * white, and a physically faithful brightness would be a moon that had simply gone.
+ */
+const COLOR_ECLIPSED = new Color(0x6e3a2c);
+
 /** In globe radii, from the real numbers. */
 const MOON_SIZE = moonRadii(MOON_RADIUS_KM);
 
@@ -42,6 +57,8 @@ const MOON = {
     }`,
   fragmentShader: /* glsl */ `
     uniform vec3 uColor;
+    uniform vec3 uEclipsed;
+    uniform float uUmbral;
     uniform vec3 uSun;
     uniform float uOpacity;
     varying vec3 vNormal;
@@ -67,7 +84,19 @@ const MOON = {
       */
       float shade = mix(0.72, 1.0, pow(max(lit, 0.0), 0.35));
       if (day < 0.004) discard;
-      gl_FragColor = vec4(uColor * shade, day * uOpacity);
+
+      /*
+        The Earth's shadow, which does not care which way the moon is facing.
+
+        A phase is a lighting term and an eclipse is not: the whole lit face dims together, because what
+        has been taken away is the source rather than the angle. So this is mixed over the result instead
+        of folded into the day term, and the same fraction applies across the disc.
+
+        No falloff across the face. The real umbra edge crosses a disc eleven pixels wide, and eleven
+        pixels is not enough to show a curve travelling over it.
+      */
+      vec3 body = mix(uColor * shade, uEclipsed * mix(1.0, 0.55, uUmbral), uUmbral);
+      gl_FragColor = vec4(body, day * uOpacity);
     }`,
 };
 
@@ -75,6 +104,8 @@ export interface MoonLayer {
   object: Mesh;
   /** Places it for the moment on screen. Called wherever the sun is aimed, from the same clock. */
   setTime: (at: number, sunDir: Vector3) => void;
+  /** How much of the face the Earth's shadow covers, 0 to 1. */
+  setUmbral: (value: number) => void;
   /** Fades with the morph to the flat map, which has no sky to hang a moon in. */
   setOpacity: (value: number) => void;
   dispose: () => void;
@@ -92,6 +123,9 @@ export function createMoon(): MoonLayer {
     ...MOON,
     uniforms: {
       uColor: { value: COLOR_MOON },
+      uEclipsed: { value: COLOR_ECLIPSED },
+      // 0 on all but a couple of days a year. See `lunarEclipse`.
+      uUmbral: { value: 0 },
       uSun: { value: null },
       uOpacity: { value: 1 },
     },
@@ -111,6 +145,9 @@ export function createMoon(): MoonLayer {
       const [x, y, z] = toVec3(lon, lat, moonRadii(distanceKm));
       object.position.set(x, y, z);
       material.uniforms["uSun"]!.value = sunDir;
+    },
+    setUmbral: (value) => {
+      material.uniforms["uUmbral"]!.value = Math.max(0, Math.min(1, value));
     },
     setOpacity: (value) => {
       material.uniforms["uOpacity"]!.value = value;

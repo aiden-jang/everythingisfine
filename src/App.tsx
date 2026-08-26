@@ -23,7 +23,7 @@ import { createSiren, type Siren } from "./app/sound";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
 import { loadSlab, type SlabPoint } from "./geo/slab";
 import { loadFigures, type FigureTable } from "./geo/stars";
-import { solarEclipse } from "./geo/eclipse";
+import { lunarEclipse, solarEclipse } from "./geo/eclipse";
 import {
   closestTo, loadZones, localZone, viewerPlace, type ZoneTable,
 } from "./app/viewer";
@@ -913,8 +913,14 @@ export function App(): JSX.Element {
   const litAt = view.at ?? (snapshot.archive === null ? null : clockAt());
   const eclipseKey = litAt ?? Math.floor(Date.now() / 60_000) * 60_000;
   const eclipse = useMemo(() => {
-    const shadow = solarEclipse(eclipseKey);
-    return shadow.touching ? { total: shadow.umbra > 0 } : null;
+    /*
+     * Solar first, and the two can never both be true: a solar eclipse needs a new moon and a lunar one
+     * needs a full moon, so they are a fortnight apart by construction. The order is for the reader, not
+     * for correctness - a shadow on the planet outranks a shadow on the moon.
+     */
+    const solar = solarEclipse(eclipseKey);
+    if (solar.touching) return { kind: solar.umbra > 0 ? "total" : "annular" } as const;
+    return lunarEclipse(eclipseKey).umbral > 0 ? ({ kind: "lunar" } as const) : null;
   }, [eclipseKey]);
   /*
    * Writes the still.

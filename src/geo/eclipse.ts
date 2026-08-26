@@ -72,6 +72,28 @@ export function solarEclipse(at: number): Eclipse {
    * the axis misses keeps `centre` meaningful on the days there is no eclipse, which is most of them.
    */
   const along = -dot(moonAt, dir);
+
+  /*
+   * The moon has to be between the sun and the Earth, and checking the distance alone does not say so.
+   *
+   * At full moon the axis still runs very near the Earth's centre - the sun, the Earth and the moon are
+   * almost in a line, just in the other order - so `gap` comes out tiny and every test below passes. The
+   * shadow travels away from the planet, and this returned a total eclipse centred on the subsolar point
+   * with an umbra 0.557 radii wide, which is to say a black disc 3,500km across at local noon.
+   *
+   * Caught in the browser rather than here, and the unit tests had every reason to catch it: the
+   * false positives only occur within about 1.5 degrees of the anti-solar point, which is precisely when
+   * a lunar eclipse is happening, so they added two days a year to a count already bounded at eight. The
+   * mirror of this guard was written for `lunarEclipse` in the same sitting, with a comment explaining
+   * exactly this failure, and not written here.
+   */
+  if (along <= 0) {
+    const behind = Math.hypot(
+      moonAt[0] + along * dir[0], moonAt[1] + along * dir[1], moonAt[2] + along * dir[2],
+    );
+    const lit = toVec3(sun.lon, sun.lat, 1);
+    return { centre: lit, umbra: 0, penumbra: 0, gap: behind, touching: false };
+  }
   const closest: [number, number, number] = [
     moonAt[0] + along * dir[0], moonAt[1] + along * dir[1], moonAt[2] + along * dir[2],
   ];
@@ -103,4 +125,59 @@ export function eclipseAt(centre: readonly [number, number, number]): { lon: num
     lon: Math.atan2(centre[0], centre[2]) * (180 / Math.PI),
     lat: Math.asin(Math.max(-1, Math.min(1, centre[1]))) * (180 / Math.PI),
   };
+}
+
+/*
+ * And the other way round: the Earth's shadow on the moon.
+ *
+ * The same cone arithmetic with the bodies swapped, and the numbers come out completely differently. The
+ * Earth's umbra is 0.72 radii wide where the moon crosses it and the moon is 0.27 radii across, so it fits
+ * inside with room to spare - which is why a total lunar eclipse lasts an hour and is visible to half the
+ * planet, while a total solar one is a few minutes in a corridor a couple of hundred kilometres wide. Two
+ * facts about the same two cones.
+ */
+
+export interface LunarEclipse {
+  /** How much of the moon's face is inside the umbra: 0 clear, 1 wholly swallowed. */
+  umbral: number;
+  /** True once any part of it is inside the penumbra, which is the faint outer shading. */
+  penumbral: boolean;
+  /** Perpendicular distance from the anti-solar axis, in globe radii. */
+  offset: number;
+}
+
+export function lunarEclipse(at: number): LunarEclipse {
+  const sun = subsolarPoint(at);
+  const sunAt = toVec3(sun.lon, sun.lat, SUN_DISTANCE);
+  const sunLen = Math.hypot(sunAt[0], sunAt[1], sunAt[2]);
+  // The shadow runs from the sun through the Earth's centre, so the axis is simply the anti-solar ray.
+  const axis: [number, number, number] = [-sunAt[0] / sunLen, -sunAt[1] / sunLen, -sunAt[2] / sunLen];
+
+  const moon = moonPosition(at);
+  const moonAt = toVec3(moon.lon, moon.lat, moonRadii(moon.distanceKm));
+  const along = dot(moonAt, axis);
+  const offset = Math.hypot(
+    moonAt[0] - along * axis[0], moonAt[1] - along * axis[1], moonAt[2] - along * axis[2],
+  );
+
+  /*
+   * Behind the Earth or in front of it.
+   *
+   * A negative `along` puts the moon on the sunward side, where it cannot be in shadow however small its
+   * offset - which is every new moon, and is the case a distance test alone would call a total eclipse.
+   */
+  if (along <= 0) return { umbral: 0, penumbral: false, offset };
+
+  const spread = Math.tan(Math.asin(SUN_RADIUS / sunLen));
+  const umbra = 1 - along * spread;
+  const penumbra = 1 + along * spread;
+  const moonR = moonRadii(MOON_RADIUS_KM);
+
+  /*
+   * Reported as a fraction of the face rather than as a flag, so the shader can dim through a partial
+   * eclipse instead of switching. Linear across the moon's own diameter: crude against the real
+   * geometry of two overlapping discs, and the difference is invisible on a disc eleven pixels wide.
+   */
+  const umbral = Math.max(0, Math.min(1, (umbra + moonR - offset) / (2 * moonR)));
+  return { umbral, penumbral: offset < penumbra + moonR, offset };
 }

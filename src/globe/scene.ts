@@ -11,7 +11,7 @@ import type { RampName } from "./ramp";
 import { DEG, distanceKm, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
-import { solarEclipse } from "../geo/eclipse";
+import { lunarEclipse, solarEclipse } from "../geo/eclipse";
 import { gmstDeg, type FigureTable, type StarTable } from "../geo/stars";
 import { createStarfield } from "./starfield";
 import { createMoon } from "./moon";
@@ -928,6 +928,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     figures.setSpin(gmstDeg(at));
     // The same direction that lights the Earth lights the moon, which is where its phase comes from.
     moon.setTime(at, sunDir);
+    // And the Earth's own shadow, which is the same two cones as above with the bodies swapped.
+    moon.setUmbral(lunarEclipse(at).umbral);
   };
 
   // The shell is only a container: it has to be wider than uOuter so the falloff is not clipped by
