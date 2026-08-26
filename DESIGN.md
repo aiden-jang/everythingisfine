@@ -407,6 +407,19 @@ bright end draws almost the whole catalogue at the minimum size. Weight was matc
 replaced by measurement, not by eye - lit pixels in a fixed patch of sky, 164 before and 101 after with
 more of them bright.
 
+**And the moon, at its real distance and its real size.** Sixty globe radii out and a quarter of a radius
+across, which comes to half a degree, which is about eleven pixels. It is small, and that is the point: the
+enormous moon everybody pictures is a long lens, and inflating it here would be the same lie as a
+photographic earth texture. Nothing about it is scaled for effect, so it drifts against the stars as the
+camera moves, because that is what parallax is at sixty radii.
+
+**Its phase is not computed.** The scene already knows where the sun is, and a sphere lit from that
+direction gives the crescent, the terminator and - the part hand-rolled phase code gets wrong - which way
+the horns point. The terminator on the moon is hard where the Earth's is soft, because the Earth has air to
+scatter light round its limb and the moon has none. The limb darkening is deliberately flattened: a Lambert
+sphere renders a full moon as a bright centre fading to a dark rim, and the real one is famously flat to
+the edge.
+
 **Both rail edges are draggable and remembered**, by pointer and by arrow key. A fixed size is a guess
 about what somebody is doing, and it is wrong about half the time. The width splitter trades the rail
 against the globe; the one under the regions trades the regions against the event list.
