@@ -5588,8 +5588,14 @@ Written last, and kept accurate rather than kept short.
   other cancels contention within a machine and nothing at all between them. The comment in
   `events.perf.test.ts` claimed contention "hits both the same way" and now says what it can support.
 
-  So the budgets are a regression alarm calibrated to one machine, not absolute figures, and a failure on
-  a different machine is worth reproducing before it is worth believing. Fixing it properly means a
+  **Then the same thing happened here, which is better evidence than the cross-machine comparison.** The
+  `findNearby` gate read 14.6, 15.2 and 15.0 at load average 11, and 17.4, 21.1 and 22.2 at load average
+  65 - same machine, same code, same budget of 22, tripping on the third run. So the confound is not
+  really about machines at all: it is load, and a second machine is just one more way to have some. On one
+  machine it is 50% of the budget, which is more than the whole of the headroom.
+
+  So the budgets are a regression alarm calibrated to one machine at one load, not absolute figures, and a
+  failure is worth reproducing on a quiet machine before it is worth believing. Fixing it properly means a
   reference workload bound by the same resource as the target, which cannot be validated from a single
   machine and so has not been attempted. That is the third correction to this bullet, which is the
   argument for keeping it rather than the argument against.
