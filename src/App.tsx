@@ -3174,6 +3174,29 @@ export function App(): JSX.Element {
         </main>
 
         {/*
+          The one thing cinema is not allowed to hide.
+
+          Pressing `f` hides the header, the rail and the bottom band, which is the point - but on an
+          archived day it also hid every statement of which day this is. Measured: four mentions of the
+          date on screen, all four hidden, including the banner that says "Nothing here is arriving now".
+          The tab title carries the day too and a fullscreen window has no tab. So a viewer was looking at
+          2011's earthquakes with nothing anywhere saying it was not this morning, which is the exact
+          misstatement the banner exists to prevent.
+
+          The rule cinema follows is therefore not "hide the chrome" but "hide the controls and the
+          commentary". A sentence that stops the picture being misread is neither.
+
+          The day comes from the snapshot rather than from the field, the same source the tab title uses:
+          `archiveDay` is the text somebody is typing and changes on every keystroke.
+        */}
+        {cinema && snapshot.archive ? (
+          <div className="stamp pointer-events-none absolute bottom-4 left-4 z-[2] bg-deck/40 px-3 py-2 font-mono text-[11px] text-faint backdrop-blur-xl backdrop-saturate-50">
+            {new Date(snapshot.archive.from).toISOString().slice(0, 10)}
+            {" · all day UTC · not live"}
+          </div>
+        ) : null}
+
+        {/*
           Held past the unpin, so the panel can leave.
 
           A conditional mount has no exit: React removes the node on the same frame the selection
