@@ -373,7 +373,12 @@ export function MagnitudeFilter(
             className="inline-block size-[7px] shrink-0 rounded-full"
             style={{ background: "var(--color-plate)" }}
           />
-          <span>the deep ones, over five years</span>
+          {/*
+            Dated rather than relative, because "over five years" has no anchor and reads as the last
+            five. The table stops at 2025-08-01 and does not move, so a relative age is wrong by however
+            long it has been since the generator last ran, and it silently gets wronger.
+          */}
+          <span>the deep ones, {SLAB_FROM} to {SLAB_TO}</span>
           <button
             type="button"
             aria-pressed={slabOn}
@@ -392,7 +397,7 @@ export function MagnitudeFilter(
       {slabOn && slabCount > 0 ? (
         <KeyRow
           note={`${slabCount.toLocaleString("en")} events below ${SLAB_MIN_DEPTH_KM} km, `
-            + `M${SLAB_MIN_MAGNITUDE} and up, ${SLAB_FROM} to ${SLAB_TO}. Nothing that deep happens `
+            + `M${SLAB_MIN_MAGNITUDE} and up. Nothing that deep happens `
             + `outside a subducting plate, so this is where the plates went. Not today's earthquakes, `
             + `which is why they carry no colour.`}
         />

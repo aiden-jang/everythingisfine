@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { SECTION_HALF_WIDTH_KM, type Section as SectionData } from "./section";
+import { SLAB_FROM, SLAB_TO } from "../geo/slab";
 import type { Store } from "../data/store";
 import { depth, magnitude, place } from "./format";
 
@@ -192,7 +193,8 @@ export function CrossSection({
          * has no way to tell that none of it is from the last day.
          */
         <p className="mb-1.5 max-w-[52ch] text-[11px] leading-relaxed text-dim">
-          Nothing from this window is inside the corridor. Everything drawn is the five-year deep record.
+          Nothing from this window is inside the corridor. Everything drawn is the deep record for{" "}
+          {SLAB_FROM} to {SLAB_TO}.
         </p>
       ) : null}
       {drawn === 0 ? (

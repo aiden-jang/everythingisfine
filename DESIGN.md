@@ -387,6 +387,20 @@ above it, and the panels are 44% fill over a hard blur rather than a surface wit
 behind. The saturation of the blur is pulled down to match, because a thinner fill lets more of the
 data ramp through and hue does not belong in the chrome.
 
+**The section band is the one panel that goes further**, to 70% fill and zero saturation. It is the only
+chrome that spans the full width of the canvas, so unlike the rail and the key it reliably has data
+behind it, and it is the only chrome that is a drawing rather than type: the slab is 1.6px dots at a
+quarter opacity, and at half saturation a cluster behind the band came through as a magenta glow and won.
+Measured rather than assumed. The rendered chroma inside the rail and the key hints over live data is 53
+against a ceiling of 55, unchanged between half saturation and none, which is why the other panels were
+left alone. Note that the chroma test reads declared CSS colours and so cannot see backdrop bleed at all.
+
+**Committed reference tables name their span, and never their age.** The slab key said "over five years"
+and the ranking line said "the 1,826 days since 2020"; both tables stop on 2025-08-01 and do not move, so
+both sentences pointed at the present and got wronger every month. They now read "2020 to 2025", from the
+same constants the generators write. A relative age in copy backed by a frozen table is a fact with a
+timer on it.
+
 **The cross-section is the map's own view.** Shift-drag draws it, because a plain drag pans and a mode
 button is a mode to get stuck in, and the hint row on the map says so. It opens as a band flush with
 the bottom of the canvas, pushing the legend and the key hints up: while a section is open it is the
