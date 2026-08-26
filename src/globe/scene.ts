@@ -1098,6 +1098,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     markerRadius: (magnitude: number): number => markerRadiusPx(magnitude, markerScale()),
     setGeography: (ramp: RampName): void => {
       const palette = ramp === "cividis" ? NEUTRAL : BLUEPRINT;
+      // The slab is geography too, and was the one layer here that did not know it.
+      slab.setRamp(ramp === "cividis" ? "cividis" : "thermal");
       (ocean.material as MeshBasicMaterial).color.setHex(palette.sphere);
       (fill.material as MeshBasicMaterial).color.setHex(palette.land);
       (grat.material as LineBasicMaterial).color.setHex(GRATICULE_ON(palette));
