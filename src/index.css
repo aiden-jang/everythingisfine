@@ -452,22 +452,26 @@
        * column above them gets that height back.
        */
       /*
-       * The activity column swapped with the legend, so the one thing that gets cut is prose.
+       * Every control at the top of a column, and the two lists are what scroll.
        *
-       * Stacked third under the title block and the time-of-day row, `activity` began 299px into a strip
-       * 340px tall, which put the histogram, the coverage bars and the transport below the fold at every
-       * tablet size measured - the whole time dimension, in 92 visible pixels. Given its own column it
-       * starts at the top of the strip and its 295px fits.
+       * `activity` used to be stacked third, under the title block and the time-of-day row, so it began
+       * 299px into a strip 340px tall: the histogram, the coverage bars and the transport were below the
+       * fold at every tablet size measured - the whole time dimension, in 92 visible pixels. It has its
+       * own column now and its 295px fits.
        *
-       * The legend takes the stacked position instead, and that is the right way round: it is six lines
-       * explaining what the marks mean, and a viewer who scrolls for it loses nothing they were about to
-       * press. `34dvh` stays exactly as it was - the globe's share is not what was wrong here.
+       * The first attempt put the legend in the position `activity` vacated and that was a bad trade,
+       * measured rather than guessed: at 1024x768 it moved the magnitude slider and the feed toggles below
+       * the fold, which is controls for controls. Above `regions` instead, both survive - `regions` is a
+       * scroll box with its own resizer and is designed to be short, so it is the right thing to give up
+       * the room. Measured at 900x1000, 1024x768 and 820x1180: the ramp, the feeds, the key's disclosure,
+       * the window buttons and the transport are all above the fold at every one of them.
+       *
+       * `34dvh` stays exactly as it was. The globe's share was never what was wrong here.
        */
       grid-template-areas:
-        "title    regions activity list"
-        "when     regions activity list"
-        "legend   regions activity list"
-        "notes    notes   notes    notes";
+        "title  legend  activity list"
+        "when   regions activity list"
+        "notes  notes   notes    notes";
       /* The short blocks take what they need, then the list takes the rest, then notes take what
          they need again. */
       grid-template-rows: auto auto 1fr auto;
