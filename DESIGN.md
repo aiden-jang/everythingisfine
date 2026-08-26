@@ -378,6 +378,21 @@ in two corners with a void between them, and the Pacific rim is the thing worth 
 is the default because it is the honest one; the map exists because comparing two margins on a sphere means
 turning it.
 
+**A long flight rises and settles.** Crossing a hemisphere used to keep the camera pressed against the
+surface for the whole trip: the ground streaked past, nothing about the distance said the journey was
+long, and arriving somewhere far looked exactly like nudging somewhere near. Flights now pull back over
+the middle and come back in, by up to 45% of their own magnification, which also shows the reader where
+they are going while they are still going there. **Scaled to the trip, and absent below 25 degrees**,
+because a short hop that dollies out and back is a camera drawing attention to itself; full pullback is
+reached at 110 degrees. The pullback still respects `ZOOM_MIN`, so an arc that starts from the framing
+shot is clipped rather than losing the globe.
+
+Zoom is slaved to how far along the path the camera actually is, not given a spring of its own. A fourth
+spring chasing a moving target lagged it, so the pullback came out shallower than asked for and the climb
+and the descent were not symmetric. As a function of position it inherits the easing already in the lon
+and lat spring, and it is guaranteed to arrive at the same instant they do. The entrance is deliberately
+left flat: "one opening, then stillness" is its own move and does not need a second one inside it.
+
 **Both rail edges are draggable and remembered**, by pointer and by arrow key. A fixed size is a guess
 about what somebody is doing, and it is wrong about half the time. The width splitter trades the rail
 against the globe; the one under the regions trades the regions against the event list.

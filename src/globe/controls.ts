@@ -1,6 +1,6 @@
 import { Raycaster, Vector2, Vector3, type PerspectiveCamera } from "three";
 import { RADIUS_ATMOSPHERE } from "../geo/land";
-import { DEG } from "../geo/sphere";
+import { DEG, spanDeg } from "../geo/sphere";
 import { MAP_HALF_WIDTH } from "./morph";
 
 /*
@@ -33,6 +33,23 @@ const LAT_LIMIT = 85;
  * The clamps stop the globe being entered or lost: 3 puts the camera about a third of a radius off
  * the surface, and 0.75 keeps it filling enough of the frame to still be the subject.
  */
+/*
+ * A flight across the planet rises and settles rather than sliding at a fixed magnification.
+ *
+ * The spring already carried lon, lat and zoom independently, so crossing a hemisphere kept the camera
+ * pressed against the surface the whole way: the ground streaks past, nothing about the distance says the
+ * trip was long, and arriving looks the same as nudging. Pulling back over the middle of the flight is
+ * what makes the two read differently, and it shows the reader where they are going on the way.
+ *
+ * **Only for trips long enough to need it.** Below ARC_MIN_DEG there is no pullback at all, because a
+ * short hop that dollies out and back is a camera drawing attention to itself. Full pullback arrives at
+ * ARC_FULL_DEG, which is a little over a quarter of the way round.
+ */
+const ARC_MIN_DEG = 25;
+const ARC_FULL_DEG = 110;
+/** Extra distance at the top of the arc, as a fraction of the flight's own magnification. */
+const ARC_PULLBACK = 0.45;
+
 const ZOOM_MIN = 0.75;
 const ZOOM_MAX = 3;
 
@@ -162,7 +179,16 @@ export function createControls(
    * so they are one mechanism. Writing the reset as a special case first and then bolting on a
    * second spring for regions would have given the two an inconsistent feel for no reason.
    */
-  let target: { lon: number; lat: number; zoom: number } | null = null;
+  /*
+   * `arc` is set only by `flyTo`, and deliberately lives on the target rather than beside it.
+   *
+   * Six other places assign or clear this, for drags, wheels, the morph and the entrance. Hanging the
+   * arc off the target means all six keep exactly the behaviour they had, and a flight interrupted by a
+   * drag loses its arc without anything having to remember to cancel it.
+   */
+  let target:
+    | { lon: number; lat: number; zoom: number; arc?: { span: number; pull: number; fromZoom: number } }
+    | null = null;
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   const pointers = new Map<number, { x: number; y: number }>();
@@ -666,14 +692,41 @@ export function createControls(
 
     vLon += acc(shortest, vLon) * h;
     vLat += acc(target.lat - lat, vLat) * h;
-    vZoom += acc(target.zoom - zoom, vZoom) * h;
     lon += vLon * h;
     lat += vLat * h;
-    zoom += vZoom * h;
 
+    if (target.arc) {
+      /*
+       * Zoom is a function of where the camera is, not a fourth spring.
+       *
+       * Chasing a moving zoom target with its own spring lags it, so the pullback came out shallower
+       * than asked for and the climb and descent were not symmetric. Slaving zoom to distance covered
+       * instead makes it exact and free: the easing is already in the lon/lat spring, so zoom inherits
+       * it, and zoom is guaranteed to reach the target at the same moment the position does.
+       */
+      const { span, pull, fromZoom } = target.arc;
+      const progress = Math.max(0, Math.min(1, 1 - spanDeg(lon, lat, target.lon, target.lat) / span));
+      // Zero at both ends, one over the middle, so departure and arrival are untouched.
+      const lift = Math.sin(Math.PI * progress);
+      zoom = clampZoom((fromZoom + (target.zoom - fromZoom) * progress) / (1 + pull * lift));
+      vZoom = 0;
+    } else {
+      vZoom += acc(target.zoom - zoom, vZoom) * h;
+      zoom += vZoom * h;
+    }
+
+    /*
+     * Zoom is left out of the test while an arc is flying, because it would never pass.
+     *
+     * Position settles at 0.05 degrees of slack, and at that point the lift is still around 0.002 of a
+     * radian: enough to hold zoom about 0.002 off its target and 0.001 is the threshold. The flight
+     * would have hung a hair short of arriving, forever. Zoom needs no test here anyway - it is a
+     * function of a position that has just been declared arrived, and the block below assigns it exactly.
+     */
     const settled =
       Math.abs(shortest) < 0.05 && Math.abs(target.lat - lat) < 0.05 &&
-      Math.abs(target.zoom - zoom) < 0.001 && Math.abs(vLon) < 0.5 && Math.abs(vLat) < 0.5;
+      (target.arc ? true : Math.abs(target.zoom - zoom) < 0.001) &&
+      Math.abs(vLon) < 0.5 && Math.abs(vLat) < 0.5;
     if (settled) {
       lon = target.lon;
       lat = target.lat;
@@ -733,7 +786,12 @@ export function createControls(
     vLon = 0;
     vLat = 0;
     vZoom = 0;
-    target = clamped;
+    const span = spanDeg(lon, lat, clamped.lon, clamped.lat);
+    const reach = (span - ARC_MIN_DEG) / (ARC_FULL_DEG - ARC_MIN_DEG);
+    const pull = ARC_PULLBACK * Math.max(0, Math.min(1, reach));
+    target = pull > 0
+      ? { ...clamped, arc: { span, pull, fromZoom: zoom } }
+      : clamped;
   }
 
   return {
