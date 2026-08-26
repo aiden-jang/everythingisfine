@@ -5760,11 +5760,33 @@ there and all drawn a pixel and a half wide.
 differ, so both a before/after image diff and a same-day/same-sky check come back false for reasons that
 have nothing to do with the sky. Lit-pixel *counts* are stable and were used instead; positions were not.
 
-**The sun and the sky are both aimed from `Date.now()`.** `scene.render` throttles `aimSun` to the minute
-and hands it wall-clock time, so an archived day is drawn under tonight's terminator - true before the sky
-existed and now true of the sky too. Both should follow the moment on screen. What stops it being a
-one-line change is that a whole archived day has no single instant, and the app has not decided which one
-it means.
+### The light follows the moment on screen
+
+~~**The sun and the sky are both aimed from `Date.now()`.**~~ **Closed.** `scene.setMoment(at | null)` now
+decides it: null keeps the minute throttle for the live view, and any other value is aimed the instant it
+arrives, because a scrub that lagged a minute behind the marks it was dragging would be worse than no sun.
+`App` passes `view.at ?? (archive === null ? null : clockAt())`.
+
+**The rule came from the app, not from me.** `clockAt` already answers "what time is on screen" - the
+archived day's own right edge, or now - and a held cursor overrides it with the same precedence
+`stillMoment` uses for the poster and the fullscreen stamp, so the terminator and the caption cannot
+disagree. One source of truth for "now" is the argument that made `stillMoment` exist.
+
+**One thing genuinely was undecided, and an earlier note here claimed the opposite in both directions.**
+First it said the whole-archived-day instant was an open question; then a task description said the
+question was already answered because `stillMoment` exists. Both were wrong: `stillMoment` prints only the
+date when archived and throws the instant away, so it never had to choose. The choice made here is the
+window's right edge, because that is what the live view uses. Scrubbing then walks the light through the
+day, which is the part worth having.
+
+Measured over three days at a fixed camera, as the centroid of the brightest 1% inside the globe's disc:
+19% north of centre on 2024-06-21, 12% on the live view in late August, 2% on 2024-12-21 - monotonic in
+the real solar declination of +23.4, +10.2 and -23.4 degrees. The absolute figures are pulled toward the
+centre because that centroid also catches the rim and the markers; the ordering is the signal, and the
+December highlight is plainly below centre by eye.
+
+This is the gate on eclipses. With a correct sun and a correct moon on an archived day, a solar eclipse is
+the moon's shadow on the Earth, and 2024-04-08 becomes a day worth seeing.
 
 ### The moon costs one formula because the sky went in first
 

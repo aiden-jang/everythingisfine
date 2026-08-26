@@ -3076,6 +3076,22 @@ export function App(): JSX.Element {
             aurora={onGlobe.aurora}
             marks={marks}
             scrubAt={view.at}
+            /*
+              Which moment the light is of, by the one rule the app already has for it.
+
+              `clockAt` is literally the app's answer to what time is on screen: the archived day's own
+              right edge, or now. A held cursor overrides it, the same precedence `stillMoment` uses for
+              the poster and the fullscreen stamp, so the terminator and the caption cannot disagree.
+
+              Null on the live view rather than a timestamp, so the scene keeps its minute throttle
+              instead of re-aiming the sun on every render for a change no eye could see.
+
+              An archived day defaults to the end of the day, which `stillMoment` never had to decide -
+              it prints only the date when archived and throws the instant away. The window's right edge
+              is what the live view uses, so it is what an archived one uses. Scrubbing then moves the
+              light through the day, which is the part worth having.
+            */
+            moment={view.at ?? (snapshot.archive === null ? null : clockAt())}
             flat={flat}
             depthSink={sinkOn}
             slab={slabOn && slabData.length > 0 ? slabData : null}
