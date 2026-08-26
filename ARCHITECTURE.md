@@ -5653,3 +5653,30 @@ Written last, and kept accurate rather than kept short.
 
 - **No demo video.** The write-up asks for one and there is none, because recording it was not
   something this build could do.
+
+### The cross-section draws the slab, and the empty state had to learn that
+
+`buildSection` takes the slab table as an argument and projects it into the same corridor as the events,
+so the deep record appears as a second, dimmer layer under them. This is where item 11's depth encoding
+actually pays off: on the globe the sink is a parallax that only reads obliquely and gets hidden by the
+limb and the facing test, while a section is a depth plot with nowhere for the shape to hide. A corridor
+across Tonga draws the slab dipping from 300km to a 600km cluster, which is the picture the globe can
+only gesture at.
+
+Two things had to move to make it reachable.
+
+The **slab toggle was hidden on the flat map**, on the correct grounds that a plane has no inside and the
+globe layer collapses there. Sections only exist on the flat map, so the control was unavailable in the
+one place the data had just become useful. It is now offered on the map when a section is open and hidden
+otherwise, which keeps the original point: the control appears exactly where it changes something.
+
+The **empty state counted the wrong thing**. It asked whether this window's events were empty and printed
+"nothing inside this corridor", which was the same question as "is there a picture" right up until the
+slab arrived. A Tonga corridor with 548 slab points and no recent events rendered the empty state and no
+plot at all. The gate is now `points.length + slab.length`, and the case where those differ gets a
+sentence of its own: a dense arc with nothing from the window in it is the one drawing here that can lie
+by looking busy, and every other drawing in this app is about the window on screen.
+
+The panel also went from `bg-deck/40 backdrop-saturate-50` to `bg-deck/70 backdrop-saturate-0`. Half
+saturation was fine behind type and not behind 1.6px dots at a quarter opacity: the map's own cluster came
+through as a magenta glow and won. Hue is banned in the interface anyway, so zero rather than half.

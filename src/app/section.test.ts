@@ -177,3 +177,37 @@ describe("plate boundaries along a section", () => {
     expect(s.crossings.length).toBeGreaterThan(0);
   });
 });
+
+describe("the slab in the section", () => {
+  /*
+   * `[lon, lat, depthKm, magnitude]`, the shape `geo/slab.json` ships. Placed by hand so the corridor
+   * test is checking geometry rather than whatever the committed table happens to contain.
+   */
+  const LINE = { fromLon: 0, fromLat: 0, toLon: 10, toLat: 0 } as const;
+
+  it("keeps what is inside the corridor and drops what is not", () => {
+    const s = buildSection(storeWith([]), LINE, DEFAULT_FILTERS, NOW, 200, [
+      [5, 0, 400, 5],
+      // ~555km off the line, which is well past the 200km half-width.
+      [5, 5, 400, 5],
+      // Past the far end of the line, so on the geometry but not on the section.
+      [20, 0, 400, 5],
+    ]);
+    expect(s.slab.length).toBe(1);
+    expect(s.slab[0]!.depthKm).toBe(400);
+    expect(Math.abs(s.slab[0]!.offsetKm)).toBeLessThan(200);
+  });
+
+  it("lets the slab set the floor, because the axis has to hold what is drawn", () => {
+    // The whole point of the layer: an empty window still gets a 400km axis rather than a 70km one.
+    const shallow = buildSection(storeWith([]), LINE, DEFAULT_FILTERS, NOW, 200, []);
+    const deep = buildSection(storeWith([]), LINE, DEFAULT_FILTERS, NOW, 200, [[5, 0, 400, 5]]);
+    expect(shallow.deepestKm).toBeLessThan(400);
+    expect(deep.deepestKm).toBe(400);
+  });
+
+  it("draws nothing extra when the layer is off, which is how the panel asks", () => {
+    // The toggle is expressed as an empty table rather than a flag, so this is the off state.
+    expect(buildSection(storeWith([]), LINE, DEFAULT_FILTERS, NOW, 200, []).slab).toEqual([]);
+  });
+});
