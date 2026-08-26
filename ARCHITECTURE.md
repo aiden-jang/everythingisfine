@@ -5574,6 +5574,26 @@ Written last, and kept accurate rather than kept short.
   about 32 bytes of retention each against the old 325, and it was checked by making it fail: retaining one
   small object per ingest costs 149 bytes each and 2.302MB, which this catches and 5MB did not.
 
+  **Corrected again on 2026-08-26: the ratio normalises load, and does not normalise machines.** This
+  entry has said since it was closed that "13.96ms on a busy laptop and 7.65ms on a quiet one both read as
+  the same number of reference units", and that is true of two runs on *one* machine. Between machines it
+  is not. A second machine reported **22.85 reference units on the `findNearby` budget of 22** and went
+  over the `sync` budget on the same run, on code neither machine had touched; three runs here at load
+  average 11 read **4.4 to 5.4 against a budget of 7** for the same `sync`, and 14.7 to 15.8 for the same
+  `findNearby`. That is a 50% gap in the supposedly machine-independent number.
+
+  The mechanism is that the reference is not shaped like the target after all. It writes one typed array
+  and is bound by arithmetic on a single stream; `sync` walks five typed arrays and a Map and is bound by
+  memory and cache. Two different bottlenecks do not scale together across CPUs, so dividing one by the
+  other cancels contention within a machine and nothing at all between them. The comment in
+  `events.perf.test.ts` claimed contention "hits both the same way" and now says what it can support.
+
+  So the budgets are a regression alarm calibrated to one machine, not absolute figures, and a failure on
+  a different machine is worth reproducing before it is worth believing. Fixing it properly means a
+  reference workload bound by the same resource as the target, which cannot be validated from a single
+  machine and so has not been attempted. That is the third correction to this bullet, which is the
+  argument for keeping it rather than the argument against.
+
 - ~~**GPU frame time has never been measured with a profiler.**~~ **Measured on 2026-08-21**, and the
   answer is comfortable at 60Hz and not especially comfortable at 120Hz. On an M1 Pro through
   ANGLE/Metal at **2560x1440** (device pixel ratio 2), with 95 events in the window, a full scene draw
