@@ -126,6 +126,8 @@ export interface MagnitudeFilterProps {
   onSink: (on: boolean) => void;
   /** Whether there is a sky at all, which the flat map has not. Gates the two rows that describe it. */
   sky?: boolean;
+  /** Set only while the moon's shadow is on the planet, which is a handful of days a year. */
+  eclipse?: { total: boolean } | null;
   /** Whether the constellation lines are drawn. Null hides the control, on the flat map. */
   figuresOn?: boolean | null;
   onFigures?: (on: boolean) => void;
@@ -170,7 +172,7 @@ export function MagnitudeFilter(
     ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince, now,
     fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
     motion, motionOn, onMotion, sinkOn, onSink, slabOn, onSlab, slabCount,
-    figuresOn, onFigures, sky = false, depth, sound, children,
+    figuresOn, onFigures, sky = false, eclipse = null, depth, sound, children,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -432,6 +434,30 @@ export function MagnitudeFilter(
         so the row says whose idea it is rather than what it counts: there is no honest number to print
         beside a constellation. It sits last because the sky is the furthest thing from the subject.
       */}
+      {/*
+        The moon's shadow, on the few days there is one.
+
+        Required rather than optional: a dark patch appearing on the planet with nothing naming it is the
+        exact case this panel's rule exists for. Conditional like the storms and the floods, so it costs
+        nothing on the days - almost all of them - when there is no shadow to explain.
+
+        **And it bounds its own claim, which matters more here than anywhere else in the key.** The
+        position comes from an abridged lunar series through sixty Earth radii of lever arm, so it is good
+        to a few hundred kilometres and no better. Every other number in this app that is bounded says so
+        - "since at least 2000", "2020 to 2025" - and a shadow that looked precise would be the one mark
+        here somebody might plan around.
+      */}
+      {eclipse ? (
+        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+          <span className="mt-[4px] inline-block size-[7px] shrink-0 rounded-full bg-void" />
+          <span>
+            {eclipse.total
+              ? "the dark spot is the moon's shadow, placed to a few hundred km"
+              : "the moon's shadow, too far out to cover the sun: a ring, not a blackout"}
+          </span>
+        </div>
+      ) : null}
+
       {/*
         The sky, which shipped twice today with nothing in here explaining either half.
 

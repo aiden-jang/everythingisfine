@@ -23,6 +23,7 @@ import { createSiren, type Siren } from "./app/sound";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
 import { loadSlab, type SlabPoint } from "./geo/slab";
 import { loadFigures, type FigureTable } from "./geo/stars";
+import { solarEclipse } from "./geo/eclipse";
 import {
   closestTo, loadZones, localZone, viewerPlace, type ZoneTable,
 } from "./app/viewer";
@@ -898,6 +899,24 @@ export function App(): JSX.Element {
   const fetching = pendingRev !== null && snapshot.revision === pendingRev;
   const view = clampScrub(scrub, span);
   /*
+   * The moment the globe is lit by, and whether the moon's shadow is on it.
+   *
+   * One expression, used by both the scene and the key, because a sentence about a shadow that disagreed
+   * with the shadow would be worse than no sentence at all. `clockAt` is the app's own answer to what
+   * time is on screen; a held cursor overrides it with the same precedence `stillMoment` uses.
+   *
+   * Null on the live view rather than a timestamp, so the scene keeps its minute throttle instead of
+   * re-aiming the sun on every render for a change no eye could see. The key's own copy of that quantises
+   * to the minute for the same reason: a fresh object every render would churn a row that changes a
+   * handful of days a year.
+   */
+  const litAt = view.at ?? (snapshot.archive === null ? null : clockAt());
+  const eclipseKey = litAt ?? Math.floor(Date.now() / 60_000) * 60_000;
+  const eclipse = useMemo(() => {
+    const shadow = solarEclipse(eclipseKey);
+    return shadow.touching ? { total: shadow.umbra > 0 } : null;
+  }, [eclipseKey]);
+  /*
    * Writes the still.
    *
    * Everything between the capture and the `drawImage` has to stay synchronous, because the globe's
@@ -1691,6 +1710,7 @@ export function App(): JSX.Element {
                   hiding it was avoiding in the first place.
                 */
                 sky={!flat}
+                eclipse={flat ? null : eclipse}
                 figuresOn={flat ? null : figuresOn}
                 onFigures={setFiguresOn}
                 slabOn={flat && sectionLine === null ? null : slabOn}
@@ -3091,7 +3111,7 @@ export function App(): JSX.Element {
               is what the live view uses, so it is what an archived one uses. Scrubbing then moves the
               light through the day, which is the part worth having.
             */
-            moment={view.at ?? (snapshot.archive === null ? null : clockAt())}
+            moment={litAt}
             flat={flat}
             depthSink={sinkOn}
             slab={slabOn && slabData.length > 0 ? slabData : null}

@@ -11,6 +11,7 @@ import type { RampName } from "./ramp";
 import { DEG, distanceKm, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
+import { solarEclipse } from "../geo/eclipse";
 import { gmstDeg, type FigureTable, type StarTable } from "../geo/stars";
 import { createStarfield } from "./starfield";
 import { createMoon } from "./moon";
@@ -620,6 +621,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position), 1.0);
         }`,
       fragmentShader: /* glsl */ `
+        uniform vec3 uEclipse;
+        uniform float uPenumbraAng;
+        uniform float uUmbraAng;
         uniform vec3 uSun;
         uniform vec3 uDayColor;
         uniform float uDepth;
@@ -680,6 +684,35 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
            */
           float night = smoothstep(0.10, -0.30, sun);
           float day = smoothstep(0.10, 0.55, sun);
+
+          /*
+            The moon's shadow, on the few days there is one.
+
+            uPenumbraAng is zero on every other day, so this costs a compare almost always. When it is
+            not zero the surface point's angular distance from the shadow centre decides how much of the
+            sun is covered: nothing at the penumbra's edge, most of it at the middle, and effectively all
+            of it inside the umbra - which is a couple of hundred kilometres across and lands as a dark
+            spot about eight pixels wide on a globe this size.
+
+            The umbra term is a separate ramp rather than the tail of the first, because the two differ by
+            a factor of forty in radius and one smoothstep across that range would make totality a smudge.
+            An annular eclipse has no umbra at all: eclipse.ts hands over zero, and the cone that closed
+            before it arrived simply does not darken anything the rest of the way.
+
+            Both night and day are moved. Dimming the day alone left the shadow grey rather than dark,
+            because the night wash is a separate term and a shadow that does not raise it is a shadow the
+            planet is not actually in.
+          */
+          float cover = 0.0;
+          if (uPenumbraAng > 0.0) {
+            float away = acos(clamp(dot(normalize(mix(normalize(vNormal), fromLonLat, uMorph)), uEclipse), -1.0, 1.0));
+            cover = smoothstep(uPenumbraAng, uPenumbraAng * 0.08, away) * 0.88;
+            if (uUmbraAng > 0.0) {
+              cover = max(cover, smoothstep(uUmbraAng * 2.2, uUmbraAng, away));
+            }
+          }
+          day *= 1.0 - cover;
+          night = max(night, cover);
 
           /*
            * The lit side is brightest facing the eye and falls off toward the limb.
@@ -750,6 +783,15 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       uniforms: {
         uMorph: morph,
         uSun: { value: new Vector3(0, 0, 1) },
+        /*
+         * The eclipse, as a centre and two angular radii. See `geo/eclipse.ts`.
+         *
+         * Zero radii means no eclipse, which is the case on all but a handful of days a year, so the
+         * shader's fast path is the only one most people ever hit.
+         */
+        uEclipse: { value: new Vector3(0, 0, 1) },
+        uPenumbraAng: { value: 0 },
+        uUmbraAng: { value: 0 },
         // Achromatic, like every other piece of chrome: a warm daylight would put hue on the one
         // surface the data is drawn against.
         uDayColor: { value: new Color(0x9fb0cc) },
@@ -815,6 +857,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   let heldMarks: readonly Mark[] = [];
 
   const sunDir = new Vector3();
+  /** Reused, like `sunDir`: the shader holds the reference and this only ever rewrites its contents. */
+  const eclipseDir = new Vector3(0, 0, 1);
   /*
    * Recomputed per minute, not per frame and not once.
    *
@@ -848,6 +892,30 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     (night.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
     (rim.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
     (glint.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
+
+    /*
+     * And the moon's shadow, which is these two facts multiplied rather than a third fact.
+     *
+     * Aimed from the same instant as everything else, which is the whole reason it can exist: the shadow
+     * of tonight's moon over an archived April would be nonsense, and until the light followed the day on
+     * screen that is exactly what it would have been.
+     *
+     * Radii convert from perpendicular distances to angles on the surface here rather than in
+     * `eclipse.ts`, because the geometry is naturally perpendicular and only the shader wants angles.
+     */
+    const shadow = solarEclipse(at);
+    const nightUniforms = (night.material as ShaderMaterial).uniforms;
+    if (shadow.touching) {
+      eclipseDir.set(shadow.centre[0], shadow.centre[1], shadow.centre[2]);
+      nightUniforms["uEclipse"]!.value = eclipseDir;
+      nightUniforms["uPenumbraAng"]!.value = Math.asin(Math.min(1, shadow.penumbra));
+      // Negative means annular: the cone closed before it landed, so there is no totality to draw.
+      nightUniforms["uUmbraAng"]!.value = shadow.umbra > 0 ? Math.asin(Math.min(1, shadow.umbra)) : 0;
+    } else {
+      nightUniforms["uPenumbraAng"]!.value = 0;
+      nightUniforms["uUmbraAng"]!.value = 0;
+    }
+
     /*
      * The sky turns here too, from the same timestamp, because the sun and the stars are the same fact.
      *
