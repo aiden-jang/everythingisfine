@@ -660,9 +660,19 @@ test("a dead feed says so, and does not claim a covered day", async ({ page }) =
   await expect(rail).toContainText("Retrying at");
   await expect(rail).toContainText("The globe keeps what it has.");
 
-  // Nothing was fetched, so nothing is covered.
+  /*
+   * Nothing was fetched, so nothing is covered - and the headline says which of those it is.
+   *
+   * It used to read "Asking USGS and EMSC for the last day" here, and this test pinned that string. But
+   * "asking" stops being true once both feeds have answered no: eighteen seconds in, the largest line in
+   * the rail described an activity that had stopped, directly above a notice giving the retry time.
+   *
+   * Asserted as the rule rather than the sentence. What this test is for is that a dead feed *says so*,
+   * and the wording of the line that says it is not the thing being defended.
+   */
   await expect(rail).not.toContainText("last 24 hours");
-  await expect(rail).toContainText("Asking USGS and EMSC for the last day.");
+  await expect(rail).not.toContainText("Asking USGS and EMSC");
+  await expect(rail).toContainText(/Neither feed is answering/);
 });
 
 test.describe("on a touch screen", () => {
@@ -1637,4 +1647,111 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
 
   await page.getByText("What the marks mean").first().click();
   await expect(page.getByText("size shows it too").first()).toBeVisible();
+});
+
+/*
+ * The share link, which is the one promise this app makes to somebody who is not looking at it.
+ *
+ * Untested until now, and it is the worst thing on the list to have untested: every other failure is
+ * visible to the person who caused it, and this one is only ever visible to the person who received it.
+ * A link that opens the right globe and the wrong event is indistinguishable from a working link until
+ * the two of them are in the same room.
+ */
+test("a copied link reopens the same event, not merely the same view", async ({ page, context }) => {
+  // Two cold loads of a WebGL app in one test, which is genuinely more than the default allows.
+  test.setTimeout(120_000);
+  await installFeeds(page, { count: 400 });
+  await page.goto("/#at=145,12,1&m=2&w=24&s=usgs,emsc&r=thermal");
+  await waitForData(page);
+
+  await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
+  const panel = page.locator('.zone-panel[data-open="true"]');
+  await expect(panel).toBeVisible();
+
+  /*
+   * The magnitude scale by its own hook, because that is the field that says *which* reading this is.
+   * Two events in the same region at the same minute would agree on almost everything else on screen.
+   */
+  const scale = await panel.locator("[data-magscale]").textContent();
+  const place = await panel.locator("[data-magscale]").locator("xpath=../following-sibling::div[1]").textContent();
+  const href = await page.evaluate(() => window.location.href);
+  expect(href).toContain("&e=");
+
+  // A cold page, not a reload: the link has to work for somebody who has never opened this app.
+  const opened = await context.newPage();
+  await installFeeds(opened, { count: 400 });
+  await opened.goto(href);
+
+  const reopened = opened.locator('.zone-panel[data-open="true"]');
+  await expect(reopened).toBeVisible({ timeout: 30_000 });
+  await expect(reopened.locator("[data-magscale]")).toHaveText(scale ?? "");
+  if (place) await expect(reopened).toContainText(place.trim());
+  /*
+   * The same event id, which is the promise. Deliberately not the same camera: a link carrying an event
+   * flies to it during setup, so the sender's framing is a starting point rather than a guarantee. That
+   * is the right way round - without it a recipient can be handed a panel describing an event that is
+   * round the back of the globe - but it does mean the two of them are not looking at the same numbers
+   * in the hash, and a test that asserted otherwise would be asserting the bug.
+   */
+  const hash = await opened.evaluate(() => window.location.hash);
+  expect(hash).toContain("e=");
+  expect(hash.split("e=")[1]).toBe(href.split("e=")[1]);
+});
+
+/*
+ * The tour's narration, which is the whole of its licence to move the camera.
+ *
+ * DESIGN.md 13 bans motion that means nothing, and the rail's line is what answers that: it says where
+ * the camera is and how much is there. It was not doing that. The label and the flight were set on the
+ * same tick, so for the first few seconds of every stop the rail named the destination while the globe
+ * still showed the last one - sampled mid-tour, "Japan & Kurils · 685 events" at longitude -82.8, which
+ * is Chile. Nothing caught it because nothing tested the tour at all.
+ */
+test("the tour names where the camera is, not where it is going", async ({ page }) => {
+  // A tour stop is about six seconds, so seeing several of them takes longer than the default allows.
+  test.setTimeout(120_000);
+  await installFeeds(page, { count: 6000 });
+  await page.goto("/#at=145,12,1&m=2&w=24&s=usgs,emsc&r=thermal");
+  await waitForData(page);
+
+  await page.getByRole("button", { name: /^Tour$/ }).click();
+
+  /*
+   * Sampled in the page rather than by polling from here: a round trip per sample is slower than the
+   * stop it is trying to observe, and a sparse series lands on the transitions and manufactures its own
+   * findings. Every sample that carries a name is checked; the silent ones are the flights.
+   */
+  const named = await page.evaluate(async () => {
+    const seen: { name: string; lon: number }[] = [];
+    for (let i = 0; i < 45; i += 1) {
+      await new Promise((r) => { setTimeout(r, 300); });
+      const head = (document.querySelector("[data-rail=headline]")?.textContent ?? "").replace(/\s+/g, " ");
+      const label = /\d\/\d\s*([^·]+)·/.exec(head);
+      const at = /#at=(-?[\d.]+)/.exec(window.location.hash);
+      if (label && at) seen.push({ name: label[1]!.trim(), lon: Number(at[1]) });
+    }
+    return seen;
+  });
+
+  expect(named.length, "the tour never narrated at all").toBeGreaterThan(3);
+
+  /** Where each region sits, from `regions.ts`. Only the ones the tour can reach on this fixture. */
+  const at: Record<string, number> = {
+    "Japan & Kurils": 142, Kamchatka: 160, Indonesia: 118, Philippines: 124,
+    "Tonga & Kermadec": -175, "Alaska & Aleutians": -155, California: -120,
+    "Chile & Peru": -71, "Mediterranean & Turkey": 28, "Hindu Kush & Himalaya": 75,
+    "Mid-Atlantic Ridge": -30,
+  };
+  for (const sample of named) {
+    const want = at[sample.name];
+    if (want === undefined) continue;
+    // Shortest way round, so a stop at 175E is not judged 350 degrees from one at 175W.
+    let off = Math.abs(sample.lon - want) % 360;
+    if (off > 180) off = 360 - off;
+    /*
+     * Thirty degrees is loose on purpose. The hash is written on a throttle, so it trails the camera by
+     * a fraction of a second, and the assertion that matters is the one this failed by a hemisphere.
+     */
+    expect(off, `narrated "${sample.name}" while the camera was at ${sample.lon}`).toBeLessThan(30);
+  }
 });
