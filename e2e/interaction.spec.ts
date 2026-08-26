@@ -1708,6 +1708,15 @@ test("a copied link reopens the same event, not merely the same view", async ({ 
  * is Chile. Nothing caught it because nothing tested the tour at all.
  */
 test("the tour names where the camera is, not where it is going", async ({ page }) => {
+  /*
+   * Reads the live camera rather than the hash, which is what `cameraNow` is for.
+   *
+   * The first version sampled `location.hash` and failed at "California" with the camera at -83, which
+   * looked like the bug returning and was the throttle: the hash trails the camera by enough to cross
+   * 37 degrees mid-flight, so it pairs a fresh label with a stale position. Measuring the thing the
+   * label is actually gated on removes the ambiguity rather than widening the tolerance to hide it.
+   */
+  needsDevHooks();
   // A tour stop is about six seconds, so seeing several of them takes longer than the default allows.
   test.setTimeout(120_000);
   await installFeeds(page, { count: 6000 });
@@ -1727,8 +1736,8 @@ test("the tour names where the camera is, not where it is going", async ({ page 
       await new Promise((r) => { setTimeout(r, 300); });
       const head = (document.querySelector("[data-rail=headline]")?.textContent ?? "").replace(/\s+/g, " ");
       const label = /\d\/\d\s*([^·]+)·/.exec(head);
-      const at = /#at=(-?[\d.]+)/.exec(window.location.hash);
-      if (label && at) seen.push({ name: label[1]!.trim(), lon: Number(at[1]) });
+      const globe = (window as unknown as { __globe?: { state: () => { lon: number } } }).__globe;
+      if (label && globe) seen.push({ name: label[1]!.trim(), lon: globe.state().lon });
     }
     return seen;
   });
@@ -1749,9 +1758,57 @@ test("the tour names where the camera is, not where it is going", async ({ page 
     let off = Math.abs(sample.lon - want) % 360;
     if (off > 180) off = 360 - off;
     /*
-     * Thirty degrees is loose on purpose. The hash is written on a throttle, so it trails the camera by
-     * a fraction of a second, and the assertion that matters is the one this failed by a hemisphere.
+     * Ten degrees, which is tight enough to mean something: the narration is gated on the camera being
+     * within four of the stop, and the region's listed longitude is not always exactly what the tour
+     * flies to. The failure this exists for was a hemisphere.
      */
-    expect(off, `narrated "${sample.name}" while the camera was at ${sample.lon}`).toBeLessThan(30);
+    expect(off, `narrated "${sample.name}" while the camera was at ${sample.lon}`).toBeLessThan(10);
   }
+});
+
+/*
+ * The two buttons in the panel that move the camera, and the fact that they move it opposite ways.
+ *
+ * Both were untested. They are easy to get subtly wrong in the same direction - point at the event, pick
+ * a zoom, ship - and the zoom is the whole difference between them. "Fly here" is for looking at one
+ * epicentre, so it goes in. "Far side" draws five circles spanning the planet, so it has to pull back or
+ * the figure it just turned on is off every edge of the screen. A regression that gave them the same
+ * zoom would leave both buttons apparently working and one of them useless.
+ */
+test("the panel's camera buttons land on the same event and pull opposite ways", async ({ page }) => {
+  // Three eased flights in one test, each of which has to settle before the next is measured.
+  test.setTimeout(120_000);
+  await installFeeds(page, { count: 400 });
+  await page.goto("/#at=145,12,1&m=2&w=24&s=usgs,emsc&r=thermal");
+  await waitForData(page);
+  await cameraStill(page);
+
+  await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
+  const panel = page.locator('.zone-panel[data-open="true"]');
+  await expect(panel).toBeVisible();
+
+  await panel.getByRole("button", { name: "Fly here" }).click();
+  const near = await cameraStill(page);
+  // In, not merely elsewhere: the default framing is 1, so a button that did nothing would pass a test
+  // that only checked the camera had moved off its start.
+  expect(near.zoom).toBeGreaterThan(1.9);
+
+  const farSide = panel.getByRole("button", { name: "Far side" });
+  await expect(farSide).toHaveAttribute("aria-pressed", "false");
+  await farSide.click();
+  await expect(farSide).toHaveAttribute("aria-pressed", "true");
+  const wide = await cameraStill(page);
+
+  /*
+   * Pulled back far enough to hold the figure, and pointed at the same place. The antipode is half a
+   * planet away and the camera deliberately does not go there: what is being framed is the whole
+   * sphere, because the point of the drawing is that a front grows to a great circle and then closes.
+   */
+  expect(wide.zoom).toBeLessThan(1.1);
+  expect(Math.abs(wide.lon - near.lon)).toBeLessThan(1);
+  expect(Math.abs(wide.lat - near.lat)).toBeLessThan(1);
+
+  // A toggle, not a one-way door: it was offered rather than drawn, so it can be put away.
+  await farSide.click();
+  await expect(farSide).toHaveAttribute("aria-pressed", "false");
 });
