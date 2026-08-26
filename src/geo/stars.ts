@@ -63,6 +63,20 @@ export function starBrightness(magnitude: number): number {
   return Math.max(0, Math.min(1, (STAR_MAG_LIMIT - magnitude) / span));
 }
 
+/*
+ * The constellation figures: each entry one polyline, as a flat run of right ascension and declination.
+ *
+ * From d3-celestial, copyright (c) 2015 Olaf Frohn, BSD 3-Clause. See `tools/make-figures.mjs` for the
+ * notice the licence asks be retained, and README.md for where it is reproduced.
+ */
+export type FigureTable = readonly (readonly number[])[];
+
+/** Its own chunk, and only fetched when the reader asks for the lines. */
+export async function loadFigures(): Promise<FigureTable> {
+  const module = await import("./figures.json");
+  return module.default as FigureTable;
+}
+
 /** Its own chunk on first use, so the sky is not on the critical path. */
 export async function loadStars(): Promise<StarTable> {
   const module = await import("./stars.json");

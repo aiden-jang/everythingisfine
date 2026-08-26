@@ -97,6 +97,9 @@ export interface MagnitudeFilterProps {
   /** Whether earthquakes are drawn at their own depth. Null hides the control, on the flat map. */
   sinkOn: boolean | null;
   onSink: (on: boolean) => void;
+  /** Whether the constellation lines are drawn. Null hides the control, on the flat map. */
+  figuresOn?: boolean | null;
+  onFigures?: (on: boolean) => void;
   /** Whether five years of deep seismicity are drawn. Null hides the control, on the flat map. */
   slabOn: boolean | null;
   onSlab: (on: boolean) => void;
@@ -137,7 +140,8 @@ export function MagnitudeFilter(
   {
     ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince, now,
     fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
-    motion, motionOn, onMotion, sinkOn, onSink, slabOn, onSlab, slabCount, depth, sound, children,
+    motion, motionOn, onMotion, sinkOn, onSink, slabOn, onSlab, slabCount,
+    figuresOn, onFigures, depth, sound, children,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -390,6 +394,32 @@ export function MagnitudeFilter(
             }`}
           >
             slab
+          </button>
+        </div>
+      )}
+
+      {/*
+        The lines between the stars, which is the only row here describing something nobody measured.
+
+        Every other layer in this key reports a reading. Nobody discovered that seven stars are a plough,
+        so the row says whose idea it is rather than what it counts: there is no honest number to print
+        beside a constellation. It sits last because the sky is the furthest thing from the subject.
+      */}
+      {figuresOn === null || figuresOn === undefined || !onFigures ? null : (
+        <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+          <span className="inline-block h-[1px] w-[7px] shrink-0 bg-current opacity-60" />
+          <span>the lines are the constellations people drew</span>
+          <button
+            type="button"
+            aria-pressed={figuresOn}
+            onClick={() => onFigures(!figuresOn)}
+            className={`ml-auto cursor-pointer border px-2 py-1 text-[11px] transition-colors ${
+              figuresOn
+                ? "border-faint bg-raised text-ink"
+                : "border-hairline text-faint hover:bg-raised hover:text-dim"
+            }`}
+          >
+            figures
           </button>
         </div>
       )}

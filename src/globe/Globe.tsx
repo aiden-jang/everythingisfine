@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { matches } from "../data/filter";
-import { loadStars } from "../geo/stars";
+import { loadStars, type FigureTable } from "../geo/stars";
 import { createGlobe } from "./scene";
 import type { FocusSpan } from "./events";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
@@ -65,6 +65,8 @@ export interface GlobeProps {
    * while it is on lifts every event back to the surface as part of the same motion.
    */
   depthSink?: boolean;
+  /** The constellation lines: the table once its chunk lands, or null while the layer is off. */
+  figures?: FigureTable | null;
   /**
    * Five years of deep seismicity, or null to draw none.
    *
@@ -123,7 +125,8 @@ const SCALE_TARGET_PX = 110;
 export function Globe({
   feed, filters, selected, ramp, onSelect, onReady, onCapture, onSelectMark, onCamera, onReplay,
   focus = null, aurora = null, marks = [],
-  scrubAt = null, flat = false, depthSink = false, slab = null, section = null, onSection,
+  scrubAt = null, flat = false, depthSink = false, slab = null, figures = null,
+  section = null, onSection,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
@@ -137,6 +140,7 @@ export function Globe({
   const wakeRef = useRef<() => void>(() => {});
   const rampRef = useRef<(name: RampName) => void>(() => {});
   const sinkRef = useRef<(on: boolean) => void>(() => {});
+  const figuresRef = useRef<(table: FigureTable | null) => void>(() => {});
   const slabRef = useRef<(points: readonly SlabPoint[] | null) => void>(() => {});
   const auroraRef = useRef<(next: Aurora | null) => void>(() => {});
   const markRef = useRef<(next: readonly Mark[]) => void>(() => {});
@@ -147,8 +151,12 @@ export function Globe({
    * tearing down the WebGL context, the 300,000-triangle globe and both feed subscriptions every
    * time somebody nudges a magnitude slider.
    */
-  const live = useRef({ filters, selected, focus, scrubAt, flat, depthSink, slab, section, aurora, marks });
-  live.current = { filters, selected, focus, scrubAt, flat, depthSink, slab, section, aurora, marks };
+  const live = useRef({
+    filters, selected, focus, scrubAt, flat, depthSink, slab, figures, section, aurora, marks,
+  });
+  live.current = {
+    filters, selected, focus, scrubAt, flat, depthSink, slab, figures, section, aurora, marks,
+  };
   const onSectionRef = useRef(onSection);
   onSectionRef.current = onSection;
   /** The line being dragged right now, which the frame loop draws in place of the committed one. */
@@ -703,6 +711,17 @@ export function Globe({
       globe.setSlab(points);
       redraw();
     };
+    /*
+     * One call carries both halves, because the table and the toggle arrive together.
+     *
+     * The layer is off until a reader asks, and asking is what fetches the chunk, so there is no state
+     * where the lines are wanted and the table is absent that is worth a second entry point.
+     */
+    figuresRef.current = (table) => {
+      if (table !== null) globe.setFigures(table);
+      globe.setFiguresOn(table !== null);
+      redraw();
+    };
     globe.setSlab(live.current.slab ?? null);
     globe.setDepthSink(live.current.depthSink);
     rampRef.current = (name) => {
@@ -909,6 +928,12 @@ export function Globe({
   useEffect(() => {
     sinkRef.current(depthSink);
   }, [depthSink]);
+
+  // Same route and the same reason as the slab: the loop is asleep when a lazy chunk lands.
+  useEffect(() => {
+    figuresRef.current(figures ?? null);
+    wakeRef.current();
+  }, [figures]);
 
   // Same route and the same reason as the marks: the loop is asleep when a lazy chunk lands.
   useEffect(() => {

@@ -5793,3 +5793,32 @@ returns null for anything behind the horizon and asks that question at the surfa
 radius - correct for event markers, useless for something sixty radii out. A blob detector then found the
 sunlit limb of the Earth instead, being brighter than a moon. What worked was arithmetic: at a 32 degree
 vertical field of view over 900px, 28.1px per degree puts a 13 degree offset at y=85, and there it was.
+
+### The figures join the sky by coordinate, not by catalogue number
+
+Most asterism files list pairs of HIP numbers, and the committed star table carries no identifiers at all:
+right ascension, declination, magnitude. Joining would have meant regenerating the table with a fourth
+column and shipping the join. `constellations.lines.json` from d3-celestial states where each line begins
+and ends, so there is nothing to join - 150 polylines, 743 segments, 11.6kB and 4.7kB over the wire.
+
+BSD 3-Clause, so the notice is retained in `tools/make-figures.mjs` and reproduced in README.md.
+
+**The two sources are checked against each other rather than assumed to agree.** The lines are from
+d3-celestial and the stars are from the Yale catalogue, and nothing structural makes them consistent: if
+they were not, the figures would hang in the gaps between stars. A test asserts that over 90% of figure
+vertices land within 0.2 degrees of a catalogued star, as a proportion rather than absolutely, because
+some vertices are deliberate bends rather than stars.
+
+**Both generators assert on Alnilam.** The middle star of Orion's belt is at 84.05, -1.20, and a line has
+to touch it. This is really a units test: swap the source for one quoting right ascension in hours rather
+than degrees and every coordinate is still a finite number inside its bounds, with every figure squashed
+into a twenty-fourth of the sky. Naming one star that must be touched is the cheapest way to catch that.
+
+`sky.ts` now holds what the two sky layers agree about - `SKY_DISTANCE` and the placement GLSL - because a
+line drawn at a different distance or rotation than the star it reaches is a line pointing at nothing.
+Extracting it also cost a fourth encounter with the same trap: a backtick inside a GLSL template literal,
+in a comment referring to a filename. The codebase warns about this in three places now.
+
+Occlusion was verified rather than reasoned about: mean luminance inside the planet's disc moved 35.85 to
+35.67 with the layer on, which is inside the render's run-to-run noise, while the sky brightened where
+lines fall.

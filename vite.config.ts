@@ -40,7 +40,8 @@ export default defineConfig({
            * the only one whose arriving a moment late cannot be seen.
            */
           if (
-            id.includes("plateMotion.json") || id.includes("slab.json") || id.includes("stars.json")
+            id.includes("plateMotion.json") || id.includes("slab.json")
+            || id.includes("stars.json") || id.includes("figures.json")
           ) return undefined;
           if (id.includes("world-atlas") || id.includes("/src/geo/")) return "land";
           if (id.includes("/node_modules/three/")) return "three";

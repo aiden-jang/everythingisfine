@@ -420,6 +420,15 @@ scatter light round its limb and the moon has none. The limb darkening is delibe
 sphere renders a full moon as a bright centre fading to a dark rim, and the real one is famously flat to
 the edge.
 
+**The constellation figures are a toggle, and that is the point of them.** A real sky nobody can find
+anything in is still a backdrop, because finding things in a sky means knowing which dots belong together.
+But they are also the only layer on this globe that measures nothing: every other thing drawn here is a
+reading, and nobody discovered that seven stars are a plough. So they sit beside the slab and the plate
+motions, which are the other two layers that interpret rather than report, off until a reader asks. The
+weight was set by measurement and then deliberately raised past it - somebody who presses a button marked
+"figures" has asked to see figures, so the ceiling is what would start competing with the planet, not what
+is barely there.
+
 **Both rail edges are draggable and remembered**, by pointer and by arrow key. A fixed size is a guess
 about what somebody is doing, and it is wrong about half the time. The width splitter trades the rail
 against the globe; the one under the regions trades the regions against the event list.
