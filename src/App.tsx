@@ -3186,13 +3186,21 @@ export function App(): JSX.Element {
           The rule cinema follows is therefore not "hide the chrome" but "hide the controls and the
           commentary". A sentence that stops the picture being misread is neither.
 
+          A held cursor needs it for the same reason an archived day does, and that was the first version's
+          mistake: it covered the archive only. Parked mid-window, cinema hid the word "held" and the clock
+          beside it, so 3,542 of 6,000 events were on screen with nothing saying the globe was stopped.
+
+          The wording comes from `stillMoment`, which already exists to state this app's moment on an
+          artefact that has to stand alone: the still had this exact bug first - it once said "Live" about a
+          day in July - and its fix is the sentence to reuse rather than to write again. One place decides
+          how this app names the moment, so the poster and the fullscreen view cannot drift apart.
+
           The day comes from the snapshot rather than from the field, the same source the tab title uses:
           `archiveDay` is the text somebody is typing and changes on every keystroke.
         */}
-        {cinema && snapshot.archive ? (
+        {cinema && (snapshot.archive !== null || view.at !== null) ? (
           <div className="stamp pointer-events-none absolute bottom-4 left-4 z-[2] bg-deck/40 px-3 py-2 font-mono text-[11px] text-faint backdrop-blur-xl backdrop-saturate-50">
-            {new Date(snapshot.archive.from).toISOString().slice(0, 10)}
-            {" · all day UTC · not live"}
+            {stillMoment(view.at, snapshot.archive ? snapshot.archive.from : clockAt(), snapshot.archive !== null)}
           </div>
         ) : null}
 
