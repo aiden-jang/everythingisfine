@@ -1062,9 +1062,13 @@ export function App(): JSX.Element {
   const touring = tourAt !== null && tourArrived === tourAt ? route.current[tourAt] ?? null : null;
 
   const section = useMemo(
-    () => (sectionLine ? buildSection(feed.store, sectionLine, filters, clockAt()) : null),
+    // The slab only when it is switched on, so the axis and the drawing match what the globe is showing.
+    () => (sectionLine
+      ? buildSection(feed.store, sectionLine, filters, clockAt(), undefined,
+        slabOn && slabData.length > 0 ? slabData : [])
+      : null),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [feed.store, sectionLine, filters, snapshot.revision],
+    [feed.store, sectionLine, filters, snapshot.revision, slabOn, slabData],
   );
 
   /*
@@ -1659,7 +1663,16 @@ export function App(): JSX.Element {
                 onMotion={setMotionOn}
                 sinkOn={flat ? null : sinkOn}
                 onSink={setSinkOn}
-                slabOn={flat ? null : slabOn}
+                /*
+                  Offered wherever it can change something, which is no longer just the globe.
+
+                  It was hidden on the flat map because a plane has no inside and the layer collapses -
+                  correct until the cross-section started reading the same table. A section is a depth
+                  plot and only exists on the map, so on the map the control now appears exactly when a
+                  section is open: otherwise it would be a button that does nothing, which is the thing
+                  hiding it was avoiding in the first place.
+                */
+                slabOn={flat && sectionLine === null ? null : slabOn}
                 onSlab={setSlabOn}
                 slabCount={slabData.length}
               >
@@ -3099,7 +3112,17 @@ export function App(): JSX.Element {
               read as the map having been cut in half.
             */}
             {section ? (
-              <div className="order-9 -mx-4 -mb-4 w-[calc(100%+2rem)] bg-deck/40 px-4 pt-3 pb-4 backdrop-blur-2xl backdrop-saturate-50">
+              /*
+                A deeper, fully desaturated ground than the other rail panels, because this one is a
+                drawing rather than type.
+
+                At bg-deck/40 and half saturation the map's own cluster came through the panel as a
+                magenta glow, which was survivable behind text and not behind the slab: 1.6px dots at a
+                quarter opacity lost to it outright. Hue is banned in the interface anyway, so the
+                saturation goes to zero rather than half, and the scrim deepens enough to give a depth
+                plot a floor to sit on.
+              */
+              <div className="order-9 -mx-4 -mb-4 w-[calc(100%+2rem)] bg-deck/70 px-4 pt-3 pb-4 backdrop-blur-2xl backdrop-saturate-0">
                 <CrossSection
                   data={section}
                   ramp={ramp}

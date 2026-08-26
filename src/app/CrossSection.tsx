@@ -72,7 +72,16 @@ export function CrossSection({
 }: CrossSectionProps): JSX.Element {
   const [hovered, setHovered] = useState<string | null>(null);
   const hoveredReading = hovered ? store.get(hovered)?.primary : undefined;
-  const { lengthKm, points, deepestKm, withoutDepth, crossings } = data;
+  const { lengthKm, points, deepestKm, withoutDepth, crossings, slab } = data;
+  /*
+   * What is on screen, which stopped being the same thing as this window's events.
+   *
+   * The empty state used to ask whether `points` was empty, and that was the same question until the
+   * slab arrived. Caught with a corridor across Tonga: the deep record ran the full length of it and the
+   * panel said "nothing inside this corridor", because the only thing it knew how to count was the part
+   * that happened this week. The gate is about whether there is a picture, not about whose data it is.
+   */
+  const drawn = points.length + slab.length;
   /*
    * The floor is the deeper of the data and 70km.
    *
@@ -174,7 +183,19 @@ export function CrossSection({
         </span>
       </div>
 
-      {points.length === 0 ? (
+      {points.length === 0 && slab.length > 0 ? (
+        /*
+         * Said out loud, because this picture is the one that can lie by looking busy.
+         *
+         * A corridor with no events this window and a slab running the length of it draws a dense arc,
+         * and every other drawing in this app is about the window on screen. Without this line a reader
+         * has no way to tell that none of it is from the last day.
+         */
+        <p className="mb-1.5 max-w-[52ch] text-[11px] leading-relaxed text-dim">
+          Nothing from this window is inside the corridor. Everything drawn is the five-year deep record.
+        </p>
+      ) : null}
+      {drawn === 0 ? (
         <p className="max-w-[52ch] text-[11px] leading-relaxed text-dim">
           Nothing inside this corridor in the current window. Margins are where the depth is: try a
           line across a plate boundary, at right angles to it.
@@ -239,6 +260,26 @@ export function CrossSection({
               />
             ))}
             {/*
+              The slab first, so this window's own events sit on top of it.
+
+              Drawn as geography, exactly as it is on the globe: one dim neutral tone, one small fixed
+              radius, no ramp and no hit area. It is five years of deep seismicity rather than anything in
+              this window, and the one thing it must not look like is the marks above it. Not clickable
+              either - there is no event behind these to open, only a row in a committed table.
+            */}
+            {data.slab.map((p) => (
+              <circle
+                key={p.key}
+                cx={x(p.alongKm)}
+                cy={y(p.depthKm)}
+                r={1.6}
+                fill="currentColor"
+                className="text-plate"
+                opacity={0.25 + 0.35 * (1 - Math.abs(p.offsetKm) / data.halfWidthKm)}
+                pointerEvents="none"
+              />
+            ))}
+            {/*
               Deepest last, so a 600km event is not hidden behind the shallow swarm above it. By depth
               rather than by magnitude, because depth is what this picture is for.
             */}
@@ -298,7 +339,7 @@ export function CrossSection({
         </div>
       )}
 
-      {points.length > 0 ? (
+      {drawn > 0 ? (
         // In flow rather than absolutely positioned below the drawing: the panel is flush with the
         // bottom of the window, so anything hanging under it hangs off the screen.
         <div className="mt-1 flex justify-between font-mono text-[9.5px] text-faint">

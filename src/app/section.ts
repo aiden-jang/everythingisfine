@@ -3,6 +3,7 @@ import plates from "../geo/plates.json";
 import { matches } from "../data/filter";
 import type { Store } from "../data/store";
 import type { Filters, Quake } from "../data/types";
+import type { SlabPoint } from "../geo/slab";
 
 /*
  * A cross-section through the crust, along a line drawn on the map.
@@ -45,6 +46,14 @@ export interface Section {
   withoutDepth: number;
   /** Distances along the line at which it crosses a plate boundary. */
   crossings: number[];
+  /**
+   * The committed deep-seismicity table, where it falls in this corridor.
+   *
+   * A separate array rather than more `points`, because these are not the same population: they are five
+   * years of M4.5-and-deeper-than-300km, not this window's readings, and everything downstream has to be
+   * able to draw them differently and refuse to let them be clicked.
+   */
+  slab: SectionPoint[];
 }
 
 /**
@@ -261,9 +270,21 @@ export function plateCrossings(line: SectionLine, lengthKm: number): number[] {
   return out.sort((a, b) => a - b);
 }
 
+/*
+ * The slab, in the one drawing where its shape cannot hide.
+ *
+ * On the globe the depth sink is a parallax that appears only obliquely: the offset is radial, so it is
+ * zero at the sub-camera point and largest at the limb, where the facing fade is dimming everything
+ * anyway. A cross-section has no such problem. It is a depth axis, drawn flat, and a dipping plane of
+ * hypocentres reads as a dipping plane from any angle - which is what the layer was built to show and what
+ * the globe can only half-deliver.
+ *
+ * The corridor test is the same one the events get, and so is the refusal to clamp: a slab point past
+ * either end is off the section rather than at its nearest edge.
+ */
 export function buildSection(
   store: Store, line: SectionLine, filters: Filters, now: number,
-  halfWidthKm = SECTION_HALF_WIDTH_KM,
+  halfWidthKm = SECTION_HALF_WIDTH_KM, slabTable: readonly SlabPoint[] = [],
 ): Section {
   const lengthKm = sectionLengthKm(line);
   const points: SectionPoint[] = [];
@@ -288,8 +309,27 @@ export function buildSection(
     if (r.depthKm > deepestKm) deepestKm = r.depthKm;
   });
 
+  /*
+   * Counted into `deepestKm`, which decides the axis.
+   *
+   * That is the consequence worth stating: with the slab on, a corridor across Tonga runs to 665km rather
+   * than to the 250 its own events reach, so the live marks compress into a band near the surface. That is
+   * the honest picture rather than a side effect - the footer prints the depth it drew to - and it is the
+   * whole reason to put them here. Off, nothing changes at all.
+   */
+  const slab: SectionPoint[] = [];
+  for (let i = 0; i < slabTable.length; i += 1) {
+    const [lon, lat, depthKm, magnitude] = slabTable[i]!;
+    const { alongKm, offsetKm } = project(line, lon, lat);
+    if (Math.abs(offsetKm) > halfWidthKm) continue;
+    if (alongKm < 0 || alongKm > lengthKm) continue;
+    // Keyed by index: these are not events the app holds, so they have no key anything else would know.
+    slab.push({ key: `slab:${i}`, alongKm, offsetKm, depthKm, magnitude });
+    if (depthKm > deepestKm) deepestKm = depthKm;
+  }
+
   return {
-    lengthKm, halfWidthKm, points, deepestKm, withoutDepth,
+    lengthKm, halfWidthKm, points, deepestKm, withoutDepth, slab,
     crossings: plateCrossings(line, lengthKm),
   };
 }
