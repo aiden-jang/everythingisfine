@@ -64,6 +64,8 @@ export function tourStops(
 
 /** What the rail says while the camera is there. The narration is what makes the motion mean something. */
 export function tourLabel(stop: Stop, index: number, total: number): string {
-  const events = `${stop.count} ${stop.count === 1 ? "event" : "events"}`;
+  // Grouped, like every other figure the app prints. Caught reading "2481 events" in a rail whose
+  // headline directly above it said "6,000" - the same slip the still export had.
+  const events = `${stop.count.toLocaleString("en-GB")} ${stop.count === 1 ? "event" : "events"}`;
   return `${index + 1} of ${total} · ${stop.name} · ${events}`;
 }

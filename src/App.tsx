@@ -997,6 +997,21 @@ export function App(): JSX.Element {
   const busiest = regions[0]?.count ?? 0;
   const [tourAt, setTourAt] = useState<number | null>(null);
   /*
+   * Which stop the camera has actually reached, as opposed to which one it is flying to.
+   *
+   * The narration is what makes this feature legal under DESIGN.md 13 - the ban is on motion that means
+   * nothing, and the line answers it by saying where the camera is and how much is there. Measured, it was
+   * not doing that: the label and the flight both change on the same tick, so for the first few seconds of
+   * every stop the rail named the destination while the globe still showed the last one. Sampled mid-tour,
+   * it read "Japan & Kurils · 685 events" at longitude -82.8, which is Chile.
+   *
+   * A ref for the target and a stable setter, because `onCamera` is captured once when the scene is built:
+   * an inline closure over `tourAt` would compare against whatever the value was on the first render, which
+   * is the same reason the camera itself is written to a ref rather than to state.
+   */
+  const tourTarget = useRef<{ lon: number; lat: number; index: number } | null>(null);
+  const [tourArrived, setTourArrived] = useState<number | null>(null);
+  /*
    * The tour's own control, excluded from the end-on-interaction listener below.
    *
    * Without this, pressing Stop with a mouse is a race: `pointerdown` ends the tour, and then the click
@@ -1023,6 +1038,8 @@ export function App(): JSX.Element {
     if (tourAt === null) return undefined;
     const stop = route.current[tourAt];
     if (!stop) { setTourAt(null); return undefined; }
+    tourTarget.current = { lon: stop.lon, lat: stop.lat, index: tourAt };
+    setTourArrived(null);
     flyTo.current(stop.lon, stop.lat, stop.zoom);
     const next = window.setTimeout(() => {
       setTourAt((at) => (at === null || at + 1 >= route.current.length ? null : at + 1));
@@ -1041,7 +1058,8 @@ export function App(): JSX.Element {
       window.removeEventListener("keydown", end, { capture: true });
     };
   }, [tourAt]);
-  const touring = tourAt !== null ? route.current[tourAt] ?? null : null;
+  // Only once the camera is there. In transit the line would be describing somewhere else.
+  const touring = tourAt !== null && tourArrived === tourAt ? route.current[tourAt] ?? null : null;
 
   const section = useMemo(
     () => (sectionLine ? buildSection(feed.store, sectionLine, filters, clockAt()) : null),
@@ -3014,7 +3032,23 @@ export function App(): JSX.Element {
             onReady={onReady}
             onCapture={onCapture}
             onSelectMark={setMarkId}
-            onCamera={(state) => { camera.current = state; }}
+            onCamera={(state) => {
+              camera.current = state;
+              /*
+                Arrival, by geometry rather than by a timer: the flight is a spring, so how long it takes
+                depends on how far it went. Four degrees of tolerance because the spring approaches its
+                target asymptotically and a tight threshold would leave the narration permanently unspoken.
+                Cleared on arrival so this stops calling `setState` on every subsequent frame.
+              */
+              const target = tourTarget.current;
+              if (!target) return;
+              let dLon = Math.abs(state.lon - target.lon) % 360;
+              if (dLon > 180) dLon = 360 - dLon;
+              if (dLon < 4 && Math.abs(state.lat - target.lat) < 4) {
+                tourTarget.current = null;
+                setTourArrived(target.index);
+              }
+            }}
             onReplay={setReplay}
           />
           </Suspense>
