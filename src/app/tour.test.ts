@@ -56,4 +56,11 @@ describe("what the rail says at each stop", () => {
     const [stop] = tourStops([row("Iceland", 1)]);
     expect(tourLabel(stop!, 3, 4)).toBe("4 of 4 · Iceland · 1 event");
   });
+
+  it("groups a thousand, like every other figure the app prints", () => {
+    // Caught on screen reading "2481 events" under a headline saying "6,000". Both tests here used
+    // counts below a thousand, which is exactly why neither failed.
+    const stop = { name: "Indonesia", lon: 118, lat: -4, zoom: 1.9, count: 2481 };
+    expect(tourLabel(stop, 0, 6)).toBe("1 of 6 · Indonesia · 2,481 events");
+  });
 });
