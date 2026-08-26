@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { sinkFraction } from "./events";
 import { EARTH_RADIUS_KM } from "../geo/sphere";
+import { DEPTH_DEEP_KM, DEPTH_SHALLOW_KM } from "../data/depth";
 
 describe("how far below the surface a marker is drawn", () => {
   it("is a fraction of the globe's radius, not of a depth band", () => {
@@ -27,5 +28,48 @@ describe("how far below the surface a marker is drawn", () => {
     expect(sinkFraction(Number.POSITIVE_INFINITY)).toBe(0);
     // The deepest earthquake ever recorded is about 750km, so the boundary is nowhere near real data.
     expect(sinkFraction(EARTH_RADIUS_KM)).toBeCloseTo(1, 6);
+  });
+});
+
+describe("deriving the hole's depth from the sink", () => {
+  /*
+   * `aDepth` was deleted and the fragment's `vDepth` is now computed from `aSink` in the vertex shader,
+   * which halves the per-event writes in `sync`. That is only allowed if the two agree, so this pins the
+   * algebra of the claim.
+   *
+   * **It cannot see the shader.** The GLSL interpolates the same three constants this test imports, so a
+   * change to any of them moves both together, but a change to the *expression* in `events.ts` would not
+   * fail here. The screenshot check is what covers that half: deep marks draw hollow, shallow ones solid.
+   */
+  const old = (depthKm: number): number => (Number.isFinite(depthKm)
+    ? Math.max(0, Math.min(1, (depthKm - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM)))
+    : 0);
+  /** What the vertex shader now does, in the same order. */
+  const derived = (depthKm: number): number => Math.max(0, Math.min(1,
+    (sinkFraction(depthKm) * EARTH_RADIUS_KM - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM),
+  ));
+
+  it("agrees with the attribute it replaced, everywhere a depth is real", () => {
+    for (const km of [0, 1, 10, 35, 69, 70, 71, 150, 299, 300, 301, 500, 700, 1000, 6371]) {
+      expect(derived(km), `${km}km`).toBeCloseTo(old(km), 6);
+    }
+  });
+
+  it("agrees on the values that are not depths at all", () => {
+    for (const bad of [-1, -500, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(derived(bad), String(bad)).toBeCloseTo(old(bad), 6);
+    }
+  });
+
+  it("settles the one case they disagreed on, in favour of the stricter rule", () => {
+    /*
+     * A finite depth below the planet's own radius is not a reading. `sinkFraction` already called it
+     * shallow and refused to sink the mark, while the old normalisation clamped it to 1 and drew the mark
+     * hollow: the same absurd value read as deep for the hole and shallow for the offset. One source now
+     * gives one answer, and it is the conservative one.
+     */
+    const absurd = EARTH_RADIUS_KM + 1;
+    expect(old(absurd)).toBe(1);
+    expect(derived(absurd)).toBe(0);
   });
 });

@@ -65,9 +65,16 @@ const BUDGET_REF_HELD = 7.0;
 /**
  * A fixed workload shaped like the thing being measured: trigonometry into a typed array.
  *
- * Shape matters. A pure arithmetic loop would be CPU-bound where `sync` is partly memory-bound, and
- * the ratio would then drift with cache pressure rather than hold still. This does what the inner
- * loop of `sync` does, so contention hits both the same way.
+ * Shape matters. A pure arithmetic loop would be CPU-bound where `sync` is partly memory-bound, and the
+ * ratio would then drift with cache pressure rather than hold still. This does what the inner loop of
+ * `sync` does, so contention hits both roughly the same way.
+ *
+ * **Roughly, and not across machines.** This writes one typed array; `sync` walks several and a Map, so
+ * the two are not bound by the same resource and the ratio does not transfer. Measured: a second machine
+ * read 22.85 on the `findNearby` budget against 15.0 here, on code neither of us had touched, and the
+ * `sync` budget went over on the same run. The budgets below are calibrated to one machine and should be
+ * read as a regression alarm for that machine, not as an absolute figure. A failure here on a different
+ * machine is worth reproducing before it is worth believing.
  */
 function referenceMs(): number {
   const out = new Float32Array(50_000 * 3);

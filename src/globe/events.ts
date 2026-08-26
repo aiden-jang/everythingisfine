@@ -120,7 +120,6 @@ const SHADER = {
     ${MORPH_GLSL}
     attribute float aMag;
     attribute float aCluster;
-    attribute float aDepth;
     attribute float aFocus;
     uniform float uPixelRatio;
     uniform float uBase;
@@ -138,7 +137,23 @@ const SHADER = {
 
     void main() {
       vCluster = aCluster;
-      vDepth = aDepth;
+      /*
+        Derived rather than uploaded, because aSink already carries the same reading.
+
+        aSink is depth as a fraction of the planet's radius and aDepth was that same depth normalised
+        against DEPTH_DEEP_KM, so the two attributes were one scalar written twice: two array writes per
+        event in the sync loop and two 50k-float uploads per frame at full zoom. The derivation only
+        runs this way round - aDepth saturates at 300km and cannot produce a sink that reaches 700.
+
+        It also settles a disagreement. A finite depth below the planet's own radius is not a reading,
+        and sinkFraction called it shallow while this normalisation called it fully deep, so the same
+        absurd value drew a hollow mark that did not sink. One source, one answer.
+      */
+      float aDepthKm = aSink * ${EARTH_RADIUS_KM.toFixed(1)};
+      vDepth = clamp(
+        (aDepthKm - ${DEPTH_SHALLOW_KM.toFixed(1)}) / ${(DEPTH_DEEP_KM - DEPTH_SHALLOW_KM).toFixed(1)},
+        0.0, 1.0
+      );
       vFocus = aFocus;
       vec4 world = modelMatrix * vec4(position, 1.0);
       // The globe is a unit sphere at the origin, so the surface normal is the position itself.
@@ -318,7 +333,6 @@ export function createEventLayer(
   const positions = new Float32Array(capacity * 3);
   const magnitudes = new Float32Array(capacity);
   const clusters = new Float32Array(capacity);
-  const depths = new Float32Array(capacity);
   /** Depth again, as a distance rather than a ramp. See `sinkFraction`. */
   const sinks = new Float32Array(capacity);
   /** Written beside the positions: the map projects from these, not from the sphere point. */
@@ -332,21 +346,18 @@ export function createEventLayer(
   const positionAttr = new BufferAttribute(positions, 3);
   const magAttr = new BufferAttribute(magnitudes, 1);
   const clusterAttr = new BufferAttribute(clusters, 1);
-  const depthAttr = new BufferAttribute(depths, 1);
   const sinkAttr = new BufferAttribute(sinks, 1);
   const lonLatAttr = new BufferAttribute(lonLats, 2);
   const focusAttr = new BufferAttribute(focuses, 1);
   positionAttr.setUsage(35048 /* DynamicDrawUsage */);
   magAttr.setUsage(35048);
   clusterAttr.setUsage(35048);
-  depthAttr.setUsage(35048);
   sinkAttr.setUsage(35048);
   lonLatAttr.setUsage(35048);
   focusAttr.setUsage(35048);
   geometry.setAttribute("position", positionAttr);
   geometry.setAttribute("aMag", magAttr);
   geometry.setAttribute("aCluster", clusterAttr);
-  geometry.setAttribute("aDepth", depthAttr);
   geometry.setAttribute("aSink", sinkAttr);
   geometry.setAttribute("aLonLat", lonLatAttr);
   geometry.setAttribute("aFocus", focusAttr);
@@ -479,9 +490,6 @@ export function createEventLayer(
             // Averaging would draw a hole that belongs to no earthquake in the cell.
             if (r.magnitude > magnitudes[at]!) {
               magnitudes[at] = r.magnitude;
-              depths[at] = Number.isFinite(r.depthKm)
-                ? Math.max(0, Math.min(1, (r.depthKm - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM)))
-                : 0;
               sinks[at] = sinkFraction(r.depthKm);
             }
             return;
@@ -516,9 +524,6 @@ export function createEventLayer(
          * so the tie goes to the far more common case: the overwhelming majority of catalogued
          * earthquakes are shallow, and the detail panel still says "not given" rather than a number.
          */
-        depths[n] = Number.isFinite(r.depthKm)
-          ? Math.max(0, Math.min(1, (r.depthKm - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM)))
-          : 0;
         sinks[n] = sinkFraction(r.depthKm);
         n += 1;
       });
@@ -528,8 +533,6 @@ export function createEventLayer(
       clusterAttr.needsUpdate = true;
       sinkAttr.updateRanges = [{ start: 0, count: n }];
       sinkAttr.needsUpdate = true;
-      depthAttr.updateRanges = [{ start: 0, count: n }];
-      depthAttr.needsUpdate = true;
       lonLatAttr.updateRanges = [{ start: 0, count: n * 2 }];
       lonLatAttr.needsUpdate = true;
       focusAttr.updateRanges = [{ start: 0, count: n }];

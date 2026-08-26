@@ -5680,3 +5680,26 @@ by looking busy, and every other drawing in this app is about the window on scre
 The panel also went from `bg-deck/40 backdrop-saturate-50` to `bg-deck/70 backdrop-saturate-0`. Half
 saturation was fine behind type and not behind 1.6px dots at a quarter opacity: the map's own cluster came
 through as a magenta glow and won. Hue is banned in the interface anyway, so zero rather than half.
+
+### `aDepth` was `aSink` written twice
+
+The events layer carried two per-event float attributes derived from the same `depthKm`: `aSink`
+(depth over the planet's radius, for the sink offset) and `aDepth` (depth normalised against
+`DEPTH_DEEP_KM`, for the hollow centre). `aDepth` is now computed from `aSink` in the vertex shader, so
+`sync` writes one array instead of two and uploads one 50k-float attribute instead of two.
+
+The derivation only runs this way round, which is why the redundancy survived: `aDepth` saturates at
+300km and cannot produce a sink that reaches 700, so the comment on `sinkFraction` correctly rejected
+going the other way. It never asked the reverse question.
+
+Measured on `sync` at 50,000 events, median of three: **5.36 ref before, 4.44 after**, against a budget
+of 7. Removing only the sink write scored 4.94, so this is faster than before the depth sink existed.
+
+It also settled a disagreement. A finite depth greater than the planet's radius is not a reading;
+`sinkFraction` called it shallow and refused to offset the mark, while the old normalisation clamped it to
+1 and drew it hollow. One source now gives one answer, and `sink.test.ts` pins the equivalence for every
+real depth plus that one deliberate difference.
+
+**Pixel comparison could not verify this.** Two screenshots of identical code at the same permalink hash
+differently, so a before/after image diff proves nothing about the render. The algebra is covered by unit
+test and the render by eye.
