@@ -5887,3 +5887,27 @@ nonsense, so this was unbuildable until the light followed the day on screen.
 near greatest eclipse, and nothing in the app points at one. `NOTABLE_DAYS` is the obvious home and is the
 wrong one: it requires a magnitude, sorts by it, and its own comment argues against growth. An eclipse
 entry needs a time rather than a day, so it wants its own affordance and its own decision.
+
+### Both shadows, and the guard that was written once instead of twice
+
+`lunarEclipse` is the same cone arithmetic with the bodies swapped, and it needed one guard: the moon must
+be on the far side of the Earth, because at a new moon the three bodies are nearly in a line as well and a
+distance-from-the-axis test alone calls that a total eclipse. That guard was written, with a comment
+explaining exactly the failure it prevents.
+
+**The mirror of it was not written for `solarEclipse`, in the same sitting.** At full moon the axis through
+the moon also runs near the Earth's centre, just in the other order, so `gap` came out near zero and every
+condition passed: it reported a total solar eclipse centred on the subsolar point with an umbra 0.557 radii
+wide, which is a black disc 3,500km across at local noon, during every lunar eclipse.
+
+**The unit tests had every reason to catch it and did not.** The "touches on very few days" test bounds the
+count at eight a year, and the false positives only occur within about 1.5 degrees of the anti-solar point -
+which is precisely when a lunar eclipse happens. So they added two days to a count of two, and four is
+under eight. The browser found it: three different eclipse days all rendered the same "total" sentence.
+There is now a test asserting the two are never simultaneously true across three years of hourly samples.
+
+**Two probe faults cost more time than the bug did.** Checking four eclipse days by changing only the hash
+does not reload the page, so each case inherited the previous one's archive and the results looked like
+three separate product bugs. Adding `page.reload()` made it worse - the cursor stopped applying at all. A
+fresh page per case, as four `test()` blocks, was correct. This is the fourth time this session a probe has
+reported a product failure that was its own.

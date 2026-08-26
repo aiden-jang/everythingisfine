@@ -413,6 +413,18 @@ multiply into a third. The umbra lands as a dark spot a few hundred kilometres a
 inside a soft penumbra some 3,500km wide. An annular eclipse draws no umbra at all, because the cone closed
 before it arrived, and that falls out of the arithmetic rather than being decided.
 
+**And the other way round: the moon goes red in the Earth's shadow.** This is the only warm value in the
+app, and it is not a second exception to the ban on hue. The light reaching a totally eclipsed moon is
+sunlight refracted through the Earth's atmosphere - it is the sunset ring around the planet, which is the
+atmospheric rim, seen from the far end of the ray. The same admission, not a new one. Dim as well as red,
+though nowhere near the ten thousand times fainter it really is: the point is that it is still there and no
+longer white.
+
+The same two cones give completely different answers in the two directions, which is the fact worth
+noticing. The Earth's umbra is 0.72 radii wide where the moon crosses it and the moon is 0.27 across, so it
+fits inside with room to spare - an hour of totality visible to half the planet. The moon's umbra arrives
+at the Earth a couple of hundred kilometres wide or not at all.
+
 **It says how well it knows.** "Placed to a few hundred km", because the position is an abridged lunar
 series passed through sixty Earth radii of lever arm, and it is good to 466km on the 2024 April eclipse and
 1,006km on the 2017 one. Every bounded number in this app says it is bounded, and a shadow that looked

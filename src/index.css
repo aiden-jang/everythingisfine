@@ -31,6 +31,9 @@
      `moon.ts`, so a swatch in the key is the same value as the thing it stands for. */
   --color-star: #c8d2e2;
   --color-moon: #b8b4ae;
+  /* The eclipsed moon, equal to `COLOR_ECLIPSED` in `globe/moon.ts`. The one warm value in the key, and
+     the same admission the atmospheric rim already has: it is refracted sunlight, not a mark. */
+  --color-eclipsed: #6e3a2c;
   --color-deck: #0a1322;
   --color-raised: #101d33;
   --color-hairline: rgb(148 163 184 / 0.14);

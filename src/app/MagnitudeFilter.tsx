@@ -126,8 +126,8 @@ export interface MagnitudeFilterProps {
   onSink: (on: boolean) => void;
   /** Whether there is a sky at all, which the flat map has not. Gates the two rows that describe it. */
   sky?: boolean;
-  /** Set only while the moon's shadow is on the planet, which is a handful of days a year. */
-  eclipse?: { total: boolean } | null;
+  /** Set only while one of the two shadows is falling, which is a handful of days a year. */
+  eclipse?: { kind: "total" | "annular" | "lunar" } | null;
   /** Whether the constellation lines are drawn. Null hides the control, on the flat map. */
   figuresOn?: boolean | null;
   onFigures?: (on: boolean) => void;
@@ -449,11 +449,16 @@ export function MagnitudeFilter(
       */}
       {eclipse ? (
         <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-          <span className="mt-[4px] inline-block size-[7px] shrink-0 rounded-full bg-void" />
+          <span
+            className="mt-[4px] inline-block size-[7px] shrink-0 rounded-full"
+            style={{ background: eclipse.kind === "lunar" ? "var(--color-eclipsed)" : "var(--color-void)" }}
+          />
           <span>
-            {eclipse.total
+            {eclipse.kind === "total"
               ? "the dark spot is the moon's shadow, placed to a few hundred km"
-              : "the moon's shadow, too far out to cover the sun: a ring, not a blackout"}
+              : eclipse.kind === "annular"
+                ? "the moon's shadow, too far out to cover the sun: a ring, not a blackout"
+                : "the moon is red because it is in the Earth's shadow, lit through our sunsets"}
           </span>
         </div>
       ) : null}
