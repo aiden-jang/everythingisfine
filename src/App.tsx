@@ -22,6 +22,7 @@ import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
 import { loadSlab, type SlabPoint } from "./geo/slab";
+import { loadFigures, type FigureTable } from "./geo/stars";
 import {
   closestTo, loadZones, localZone, viewerPlace, type ZoneTable,
 } from "./app/viewer";
@@ -663,6 +664,14 @@ export function App(): JSX.Element {
   const [slabOn, setSlabOn] = useState<boolean>(() => stored("slab") === "1");
   useEffect(() => { store("slab", slabOn ? "1" : "0"); }, [slabOn]);
   /*
+   * Off by default, like the slab and the arrows.
+   *
+   * The sky itself is not a choice - it is the background - but joining the stars up is somebody's idea
+   * about them, and a globe that opened as a star chart would be competing with its own subject.
+   */
+  const [figuresOn, setFiguresOn] = useState<boolean>(() => stored("figures") === "1");
+  useEffect(() => { store("figures", figuresOn ? "1" : "0"); }, [figuresOn]);
+  /*
    * The reader's own timezone, resolved once against a table fetched once.
    *
    * Not a toggle, because there is nothing to ask: the zone is already readable by any page without a
@@ -751,6 +760,14 @@ export function App(): JSX.Element {
     void loadSlab().then((next) => { if (alive) setSlabData(next); }).catch(() => {});
     return () => { alive = false; };
   }, [slabOn, slabData.length]);
+  // And the same again for the constellation lines: 5kB, fetched the first time anybody asks.
+  const [figureData, setFigureData] = useState<FigureTable>([]);
+  useEffect(() => {
+    if (!figuresOn || figureData.length > 0) return;
+    let alive = true;
+    void loadFigures().then((next) => { if (alive) setFigureData(next); }).catch(() => {});
+    return () => { alive = false; };
+  }, [figuresOn, figureData.length]);
   const motion = motionOn && motionData.length > 0 ? summariseMotion(motionData) : null;
   useEffect(() => { store("ramp", ramp); }, [ramp]);
   useEffect(() => {
@@ -1673,6 +1690,8 @@ export function App(): JSX.Element {
                   section is open: otherwise it would be a button that does nothing, which is the thing
                   hiding it was avoiding in the first place.
                 */
+                figuresOn={flat ? null : figuresOn}
+                onFigures={setFiguresOn}
                 slabOn={flat && sectionLine === null ? null : slabOn}
                 onSlab={setSlabOn}
                 slabCount={slabData.length}
@@ -3059,6 +3078,7 @@ export function App(): JSX.Element {
             flat={flat}
             depthSink={sinkOn}
             slab={slabOn && slabData.length > 0 ? slabData : null}
+            figures={figuresOn && figureData.length > 0 ? figureData : null}
             section={sectionLine}
             onSection={setSectionLine}
             onSelect={selectQuake}

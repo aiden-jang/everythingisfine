@@ -11,9 +11,10 @@ import type { RampName } from "./ramp";
 import { DEG, distanceKm, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
 import { subsolarPoint } from "../geo/sun";
-import { gmstDeg, type StarTable } from "../geo/stars";
+import { gmstDeg, type FigureTable, type StarTable } from "../geo/stars";
 import { createStarfield } from "./starfield";
 import { createMoon } from "./moon";
+import { createFigures } from "./figures";
 import {
   attachLonLat, MAP_HALF_WIDTH, MORPH_GLSL, morphable, SPHERE_PHI_START, visibleCopies,
 } from "./morph";
@@ -349,6 +350,8 @@ export interface Globe {
   setAurora: (grid: Aurora | null) => void;
   /** The star table, once its own chunk has landed. The caller wakes the loop afterwards. */
   setStars: (table: StarTable) => void;
+  setFigures: (table: FigureTable) => void;
+  setFiguresOn: (on: boolean) => void;
   /** Hands over every non-earthquake mark as polylines. An empty list draws nothing. */
   setMarks: (marks: readonly Mark[]) => void;
   /** Picks the geography palette the given ramp needs. See `NEUTRAL` in this file. */
@@ -841,6 +844,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
      * throttle cannot show.
      */
     starfield.setTime(at, gmstDeg(at));
+    // The same turn, so a line cannot separate from the star it reaches.
+    figures.setSpin(gmstDeg(at));
     // The same direction that lights the Earth lights the moon, which is where its phase comes from.
     moon.setTime(at, sunDir);
   };
@@ -885,6 +890,15 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    */
   const moon = createMoon();
   scene.add(moon.object);
+
+  /*
+   * And the lines between the stars, which are off until somebody asks.
+   *
+   * The only layer up here that interprets rather than reports, so it gets a toggle for the same reason
+   * the slab and the plate motions do.
+   */
+  const figures = createFigures();
+  scene.add(figures.object);
 
   const glintGeom = new SphereGeometry(GLINT_RADIUS, 96, 64, SPHERE_PHI_START);
   attachLonLat(glintGeom);
@@ -1112,6 +1126,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
      * which is precisely how the plate boundaries once stayed hidden on a load where no feed answered.
      */
     setStars: (t: StarTable) => starfield.setStars(t),
+    /** The figures' table, fetched only once the reader turns the layer on. */
+    setFigures: (t: FigureTable) => figures.setFigures(t),
+    setFiguresOn: (on: boolean) => figures.setOn(on),
     setAurora: (grid) => {
       const material = night.material as ShaderMaterial;
       if (grid === null) {
@@ -1147,6 +1164,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
        */
       starfield.setOpacity(1 - morph.value);
       moon.setOpacity(1 - morph.value);
+      figures.setOpacity(1 - morph.value);
       /*
        * Gone by the time the map is flat, and this one is not only for consistency.
        *
@@ -1228,6 +1246,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       slab.dispose();
       starfield.dispose();
       moon.dispose();
+      figures.dispose();
       glint.geometry.dispose();
       (glint.material as ShaderMaterial).dispose();
       rings.dispose();

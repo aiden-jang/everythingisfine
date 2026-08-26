@@ -122,6 +122,11 @@ Live seismicity from **USGS** (polled) and **EMSC** (WebSocket). Coastlines from
 public domain. Plate boundaries from **PB2002** (Bird, P., 2003, *An updated digital model of plate
 boundaries*, Geochemistry Geophysics Geosystems 4(3)), public domain, simplified to 0.15 degrees.
 
+Stars from the **Yale Bright Star Catalogue** (BSC5, Hoffleit & Warren, 5th revised edition), down to
+magnitude 6. Constellation figures from **d3-celestial**, copyright (c) 2015 Olaf Frohn, BSD 3-Clause,
+whose licence asks that this notice be retained. The moon's position is computed, not tabulated: the
+abridged lunar series, good to about a tenth of a degree.
+
 ## Globe and map
 
 One geometry, projected in the vertex shader, so switching unwraps the planet rather than cross-fading

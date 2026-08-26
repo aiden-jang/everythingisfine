@@ -3,6 +3,7 @@ import {
 } from "three";
 import { DEG } from "../geo/sphere";
 import { starBrightness, starVector, type StarTable } from "../geo/stars";
+import { SKY_DISTANCE, SKY_GLSL } from "./sky";
 
 /*
  * The sky, as 5,080 real stars rather than a hash of the view direction.
@@ -34,17 +35,6 @@ import { starBrightness, starVector, type StarTable } from "../geo/stars";
 export const COLOR_STARS = new Color(0xc8d2e2);
 
 /*
- * Far enough that the planet always occludes, near enough that the camera's far plane never clips.
- *
- * The camera orbits between roughly one and four units out, the globe is a unit sphere, and the far
- * plane is at 100. The stars are placed relative to the eye, so the exact value sets no scale a viewer
- * can see, but it does have to clear the moon: at apogee the moon reaches 64 radii from the origin and so
- * up to 68 from the eye, and a star nearer than that draws in front of it. Sixty did, until there was a
- * moon to be in front of. Eighty clears it with room, and the far plane with more.
- */
-const STAR_DISTANCE = 80;
-
-/*
  * Magnitude spent on size and on opacity together, each on its own curve.
  *
  * The physical flux ratio across this table is about 1,400 to 1. Spending that on opacity alone leaves
@@ -68,40 +58,25 @@ const ALPHA_GAMMA = 0.6;
 
 const STARFIELD = {
   vertexShader: /* glsl */ `
+    ${SKY_GLSL}
     attribute float aBright;
     uniform float uPixelRatio;
-    uniform float uSpin;
-    uniform float uDistance;
     varying float vBright;
 
     void main() {
       vBright = aBright;
 
       /*
-        The sidereal turn, as a rotation about the pole.
+        Placed by the shared sky rule: turned by sidereal time, then offset to the eye. See sky.ts.
+        No backticks in here: this is inside a template literal and one would end the shader.
 
-        Positions in the buffer are unit vectors for a right ascension read straight off the catalogue,
-        which is where the star stands when Greenwich sidereal time is zero. Turning the whole field by
-        -GMST puts every one of them over the longitude it is actually above. One uniform, one sine and
-        one cosine per vertex.
-
-        Driven from wall-clock time, which is correct for the live view and is not the whole story: the
-        scene aims the sun from Date.now() too, so an archived day is drawn under tonight's terminator and
-        now under tonight's sky as well. That was already true of the sun before there was a sky to join
-        it. Both should follow the moment on screen, and which instant a whole archived day means is a
-        question the app has not answered yet.
+        The turn is driven from wall-clock time, which is correct for the live view and is not the whole
+        story: the scene aims the sun from Date.now() too, so an archived day is drawn under tonight's
+        terminator and now under tonight's sky as well. That was already true of the sun before there was
+        a sky to join it. Both should follow the moment on screen, and which instant a whole archived day
+        means is a question the app has not answered yet.
       */
-      float s = sin(uSpin);
-      float c = cos(uSpin);
-      vec3 dir = vec3(
-        position.x * c + position.z * s,
-        position.y,
-        position.z * c - position.x * s
-      );
-
-      // Relative to the eye, so orbiting sweeps the sky and travelling never slides it.
-      vec4 world = vec4(dir * uDistance + cameraPosition, 1.0);
-      gl_Position = projectionMatrix * viewMatrix * world;
+      gl_Position = projectionMatrix * viewMatrix * vec4(skyPoint(position), 1.0);
 
       /*
         A fixed size in pixels, with no distance falloff.
@@ -169,7 +144,7 @@ export function createStarfield(): Starfield {
       uOpacity: { value: 1 },
       uPixelRatio: { value: 1 },
       uSpin: { value: 0 },
-      uDistance: { value: STAR_DISTANCE },
+      uDistance: { value: SKY_DISTANCE },
     },
     transparent: true,
     // The ocean is opaque and has already written depth, which is what hides the far side of the sky.
