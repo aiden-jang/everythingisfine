@@ -1896,3 +1896,58 @@ test("sound opens no audio device until it is asked to", async ({ page }) => {
   await expect(toggle).toHaveText("Sound off");
   expect(await made()).toBe(1);
 });
+
+/*
+ * Cinema mode, and specifically the half of it that is easy to get wrong.
+ *
+ * Hiding the chrome is safe only because the way back is a key every viewer already knows and the browser
+ * provides it, so the app must follow the browser's own state rather than a flag of its own. There are
+ * several exits it never initiates - the Escape key, the browser's control, another tab claiming the
+ * display - and a local boolean is right for exactly one of them. That is the regression this guards: it
+ * leaves the app in fullscreen-looking chromelessness with no fullscreen and no way back.
+ */
+test("cinema hides every piece of chrome, and comes back when the browser leaves", async ({ page }) => {
+  test.setTimeout(120_000);
+  await installFeeds(page, { count: 400 });
+  await page.goto("/#at=145,12,1&m=2&w=24&s=usgs,emsc&r=thermal");
+  await waitForData(page);
+
+  const chrome = (): Promise<{ head: boolean; rail: boolean; band: number; resizer: number; full: string }> =>
+    page.evaluate(() => ({
+      head: document.querySelector(".zone-head")?.hasAttribute("hidden") ?? true,
+      rail: document.querySelector(".zone-rail")?.hasAttribute("hidden") ?? true,
+      band: document.querySelectorAll("[hidden]").length,
+      // The handle is a sibling of the rail rather than a child, so hiding the rail leaves it behind:
+      // measured once as a one-pixel bright line down a frame whose whole point is that it is empty.
+      resizer: document.querySelector('[aria-label="Rail width"]')?.getBoundingClientRect().width ?? -1,
+      full: document.fullscreenElement ? document.fullscreenElement.className : "",
+    }));
+
+  const before = await chrome();
+  expect(before.head, "the header starts visible").toBe(false);
+  expect(before.rail, "the rail starts visible").toBe(false);
+  expect(before.full).toBe("");
+
+  // `requestFullscreen` needs a gesture, which the click supplies; the key is the app's own path in.
+  await page.locator("canvas").first().click({ position: { x: 30, y: 30 }, force: true });
+  await page.keyboard.press("f");
+
+  await expect.poll(async () => (await chrome()).full, { timeout: 10_000 }).toContain("frame");
+  const during = await chrome();
+  expect(during.head, "the header hides").toBe(true);
+  expect(during.rail, "the rail hides").toBe(true);
+  // Header, rail and the bottom band that carries the key, the hints and the scale.
+  expect(during.band).toBeGreaterThanOrEqual(3);
+  expect(during.resizer, "the rail's handle goes with the rail").toBe(0);
+
+  /*
+   * Left by the browser rather than by the app, which is the whole assertion. Calling `exitFullscreen`
+   * directly is the one exit the key handler knows nothing about, so the chrome can only come back if
+   * the app is listening to `fullscreenchange`.
+   */
+  await page.evaluate(() => document.exitFullscreen());
+  await expect.poll(async () => (await chrome()).head, { timeout: 10_000 }).toBe(false);
+  const after = await chrome();
+  expect(after.rail, "the rail comes back").toBe(false);
+  expect(after.full).toBe("");
+});
