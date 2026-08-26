@@ -1578,7 +1578,12 @@ export function App(): JSX.Element {
    * Keyed off `strongest`, which the histogram already found while walking the buffer, so this is a box
    * test and a table lookup rather than a pass of its own.
    */
-  const ceiling = useMemo(() => superlativeFor(strongest), [strongest]);
+  const ceiling = useMemo(
+    // As of the day on screen, not as of today: an archived day must not be handed a record from its
+    // own future. `archive.from` is that day's own midnight.
+    () => superlativeFor(strongest, snapshot.archive ? snapshot.archive.from : clockAt()),
+    [strongest, snapshot.archive],
+  );
 
   const baseline = useMemo(() => {
     if (replay) return null;

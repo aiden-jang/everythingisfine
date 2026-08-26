@@ -63,6 +63,19 @@ describe("comparing against the region's ceiling", () => {
     expect(superlativeFor(quake(142, 38, 9.1))!.beaten).toBe(false);
   });
 
+  it("never cites a record from the displayed day's future", () => {
+    /*
+     * Caught by loading an archived 2001-06-23: the rail offered Indonesia's December 2004 record as
+     * context for a day three years before it happened. The table is a maximum over the whole span and
+     * has no idea which day is on screen.
+     */
+    const day2001 = Date.parse("2001-06-23T00:00:00Z");
+    expect(superlativeFor(quake(118, -4, 5.2), day2001)).toBeNull();
+    // The same event on a day after the record is fine, and still the maximum up to that day.
+    const day2011 = Date.parse("2011-03-11T00:00:00Z");
+    expect(superlativeFor(quake(118, -4, 5.2), day2011)?.record).toBe(9.1);
+  });
+
   it("says nothing when there is nothing to say", () => {
     expect(superlativeFor(null)).toBeNull();
     expect(superlativeFor(quake(-140, 0, 7))).toBeNull();
