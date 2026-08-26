@@ -19,11 +19,16 @@ import { gmstDeg } from "./stars";
  * crescent for free, including which way it faces, which is the part hand-rolled phase code gets wrong.
  * See `globe/moon.ts`.
  *
- * **Low precision, and the number is stated rather than implied.** This is the standard abridged lunar
- * series - the largest handful of terms out of hundreds - and it is good to roughly a tenth of a degree,
- * or about a fifth of a moon's width. That is far too coarse to predict an eclipse with and far finer than
- * a ten-pixel disc on a globe can show. The full series would be several hundred lines to move the moon
- * by less than a pixel.
+ * **Fourteen terms of longitude and eight of latitude, and the count was set by a consumer.** The first
+ * version kept seven and four, which is good to about a tenth of a degree - far finer than a ten-pixel
+ * disc can show, and the honest limit was stated rather than implied. Then `eclipse.ts` started
+ * multiplying this position by sixty Earth radii of lever arm, where a tenth of a degree is 670km of
+ * shadow on the ground, and the 2024 April eclipse came out over New Mexico instead of Chihuahua. The
+ * extra terms cost constants and nothing else.
+ *
+ * It is still not an ephemeris. UTC is used where the series wants Terrestrial Time, which in this decade
+ * is about 69 seconds and a further 70km of shadow, and the truncation is the larger error of the two.
+ * Good enough to draw where a shadow was; never good enough to tell anybody where to stand.
  */
 
 /** Mean radius, in the same kilometres the globe's own radius is quoted in. */
@@ -68,11 +73,22 @@ export function moonPosition(at: number): Moon {
     + 0.658 * sin(2 * elongation)
     + 0.214 * sin(2 * meanAnomaly)
     - 0.186 * sin(sunAnomaly)
-    - 0.114 * sin(2 * argOfLatitude);
+    - 0.114 * sin(2 * argOfLatitude)
+    + 0.059 * sin(2 * elongation - 2 * meanAnomaly)
+    + 0.057 * sin(2 * elongation - sunAnomaly - meanAnomaly)
+    + 0.053 * sin(2 * elongation + meanAnomaly)
+    + 0.046 * sin(2 * elongation - sunAnomaly)
+    - 0.041 * sin(sunAnomaly - meanAnomaly)
+    - 0.035 * sin(elongation)
+    - 0.031 * sin(sunAnomaly + meanAnomaly);
   const beta = 5.128 * sin(argOfLatitude)
     + 0.281 * sin(meanAnomaly + argOfLatitude)
     - 0.278 * sin(argOfLatitude - meanAnomaly)
-    - 0.173 * sin(2 * elongation - argOfLatitude);
+    - 0.173 * sin(2 * elongation - argOfLatitude)
+    + 0.055 * sin(2 * elongation + argOfLatitude - meanAnomaly)
+    - 0.046 * sin(2 * elongation - argOfLatitude - meanAnomaly)
+    + 0.033 * sin(2 * elongation + argOfLatitude)
+    + 0.017 * sin(2 * meanAnomaly + argOfLatitude);
   const distanceKm = 385_001
     - 20_905 * cos(meanAnomaly)
     - 3_699 * cos(2 * elongation - meanAnomaly)
