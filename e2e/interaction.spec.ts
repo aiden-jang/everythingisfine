@@ -1812,3 +1812,87 @@ test("the panel's camera buttons land on the same event and pull opposite ways",
   await farSide.click();
   await expect(farSide).toHaveAttribute("aria-pressed", "false");
 });
+
+/*
+ * What gets spoken, and what deliberately does not.
+ *
+ * `announce.ts` states the trade in as many words: an event published unusually late passes unannounced,
+ * and that is the recoverable direction, because the other one floods somebody's screen reader on every
+ * page load. Nothing tested it. The window is a constant one edit away from being widened to "fix" a
+ * late publisher, and the cost of that edit is paid by the person least able to escape it.
+ */
+test("the live region speaks a new event and stays silent about an old one", async ({ page }) => {
+  test.setTimeout(120_000);
+
+  const at = (mag: number, minutesAgo: number, id: string) => ({
+    id,
+    properties: {
+      mag,
+      place: `${id} near Sendai, Japan`,
+      time: Date.now() - minutesAgo * 60_000,
+      updated: 1,
+      magType: "mww",
+      type: "earthquake",
+    },
+    geometry: { coordinates: [142, 38, 25] },
+  });
+
+  /*
+   * One inside the thirty-minute window and one well outside it, both above the threshold and both
+   * unseen. Time is the only thing separating them, which is exactly the rule under test: "unseen" was
+   * once the whole test and let a seed of hours-old events announce itself on a cold load.
+   */
+  await installFeeds(page, { usgs: [at(5.6, 4, "justnow"), at(6.4, 240, "hoursago")] });
+  await page.goto("/#at=142,38,2&m=2&w=24&s=usgs&r=thermal");
+  await waitForData(page);
+
+  const live = page.locator('[aria-live="polite"]');
+  await expect(live).toContainText("justnow", { timeout: 25_000 });
+  /*
+   * The louder one is the silent one, which is the point. `hoursago` is the larger magnitude and would
+   * win any ranking; it is four hours old, so it is not news however big it was.
+   */
+  await expect(live).not.toContainText("hoursago");
+});
+
+/*
+ * The sound toggle, which is a device handle rather than a preference.
+ *
+ * `App.tsx` builds an `AudioContext` when this goes on and closes it when it goes off, and a leaked one
+ * is a tab that a browser will eventually mark as making noise. The rest of the audio design is covered
+ * by unit tests on the mapping; what only a browser can settle is whether the handle is opened at the
+ * right moment and never before.
+ */
+test("sound opens no audio device until it is asked to", async ({ page }) => {
+  test.setTimeout(120_000);
+
+  // Counted rather than mocked away: the app still gets a real context, and the test sees each one made.
+  await page.addInitScript(() => {
+    const w = window as unknown as { made: number; AudioContext: unknown };
+    w.made = 0;
+    const Real = w.AudioContext as new () => AudioContext;
+    class Counted extends (Real as new () => AudioContext) {
+      constructor() { super(); w.made += 1; }
+    }
+    w.AudioContext = Counted;
+  });
+
+  await installFeeds(page, { count: 400 });
+  await page.goto("/#at=145,12,1&m=2&w=24&s=usgs,emsc&r=thermal");
+  await waitForData(page);
+
+  const made = () => page.evaluate(() => (window as unknown as { made: number }).made);
+  // A page that has never been asked for sound has no business holding a device open.
+  expect(await made()).toBe(0);
+
+  const toggle = page.getByRole("button", { name: /^Sound (on|off)$/ });
+  await expect(toggle).toHaveText("Sound off");
+  await toggle.click();
+  await expect(toggle).toHaveText("Sound on");
+  await expect.poll(made, { timeout: 10_000 }).toBe(1);
+
+  // And back off again, which is the half that leaks if nobody checks it.
+  await toggle.click();
+  await expect(toggle).toHaveText("Sound off");
+  expect(await made()).toBe(1);
+});
