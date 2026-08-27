@@ -488,6 +488,21 @@ export function MagnitudeFilter(
             />
             <span>the stars are the real ones, down to magnitude 6</span>
           </div>
+          {/*
+            The planets, which are drawn as stars on purpose and so need saying out loud.
+
+            Everything else in this key names a mark by how it looks. These look exactly like the dots
+            above them - same colour, same ramp, one nudge in size - because that is what they look like
+            in the sky. So the sentence has to carry what the picture deliberately does not, which is
+            that five of them are not stars at all and will have moved by next week.
+          */}
+          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+            <span
+              className="inline-block size-[7px] shrink-0 rounded-full"
+              style={{ background: "var(--color-star)" }}
+            />
+            <span>five of them are planets, and they wander</span>
+          </div>
           <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
             <span
               className="inline-block size-[9px] shrink-0 rounded-full"

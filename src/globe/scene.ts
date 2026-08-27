@@ -16,6 +16,7 @@ import { gmstDeg, type FigureTable, type StarTable } from "../geo/stars";
 import { createStarfield } from "./starfield";
 import { createMoon } from "./moon";
 import { createFigures } from "./figures";
+import { createPlanets } from "./planets";
 import {
   attachLonLat, MAP_HALF_WIDTH, MORPH_GLSL, morphable, SPHERE_PHI_START, visibleCopies,
 } from "./morph";
@@ -930,6 +931,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     moon.setTime(at, sunDir);
     // And the Earth's own shadow, which is the same two cones as above with the bodies swapped.
     moon.setUmbral(lunarEclipse(at).umbral);
+    // The planets move against the sky rather than with it, so their buffer is rewritten, not rotated.
+    planets.setTime(at);
   };
 
   // The shell is only a container: it has to be wider than uOuter so the falloff is not clipped by
@@ -981,6 +984,15 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
    */
   const figures = createFigures();
   scene.add(figures.object);
+
+  /*
+   * And the five that move, which need no table and no chunk.
+   *
+   * Six Kepler solutions is cheaper than fetching anything, so unlike the star catalogue there is nothing
+   * to load and nothing to wait for. Rebuilt whenever the sun is aimed, from the same clock.
+   */
+  const planets = createPlanets();
+  scene.add(planets.object);
 
   const glintGeom = new SphereGeometry(GLINT_RADIUS, 96, 64, SPHERE_PHI_START);
   attachLonLat(glintGeom);
@@ -1048,6 +1060,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     events.setPixelRatio(dpr);
     slab.setPixelRatio(dpr);
     starfield.setPixelRatio(dpr);
+    planets.setPixelRatio(dpr);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
@@ -1267,6 +1280,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       starfield.setOpacity(1 - morph.value);
       moon.setOpacity(1 - morph.value);
       figures.setOpacity(1 - morph.value);
+      planets.setOpacity(1 - morph.value);
       /*
        * Gone by the time the map is flat, and this one is not only for consistency.
        *
@@ -1349,6 +1363,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       starfield.dispose();
       moon.dispose();
       figures.dispose();
+      planets.dispose();
       glint.geometry.dispose();
       (glint.material as ShaderMaterial).dispose();
       rings.dispose();
