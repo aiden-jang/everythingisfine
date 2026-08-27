@@ -1,3 +1,4 @@
+import { reportedBy } from "./gdacs";
 /*
  * Tropical cyclones, as tracks rather than dots.
  *
@@ -27,6 +28,8 @@ const WRAP_DEG = 170;
 
 export interface Cyclone {
   id: string;
+  /** The agency that reported it, or null when the feed did not say. */
+  source: string | null;
   name: string;
   /** Where it is now. */
   lon: number;
@@ -65,6 +68,8 @@ export function parseCycloneList(payload: unknown): Omit<Cyclone, "track">[] {
     const severity = (p["severitydata"] as { severity?: unknown } | undefined)?.severity;
     out.push({
       id: String(p["eventid"] ?? ""),
+      // Who reported it. See `reportedBy`.
+      source: reportedBy(p),
       name: String(p["eventname"] ?? p["name"] ?? "unnamed"),
       lon,
       lat,

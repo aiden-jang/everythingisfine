@@ -48,6 +48,21 @@ export interface Happening {
   here?: { lon: number; lat: number } | null;
 }
 
+/*
+ * The reporting agency, appended to a label that already has words in it.
+ *
+ * Earthquakes have carried their provenance since the beginning: two feeds named in the header, the
+ * agency in the panel, a corroboration count. The hazards carried none, and GDACS was sending it on
+ * every event. Same rule, applied to the other third of the marks.
+ *
+ * Appended rather than given a row of its own, because it is a qualifier on a fact and not a fact: "who
+ * says" belongs beside "what", the way the panel puts the agency under the magnitude rather than above
+ * it. Absent when the feed did not say, which is every hazard on an archived day.
+ */
+function by(label: string, source: string | null): string {
+  return source === null ? label : `${label} · ${source}`;
+}
+
 export function marksFor(
   { cyclones, volcanoes, fires, floods, farSide = null, motion = [], here = null }: Happening,
 ): Mark[] {
@@ -97,9 +112,10 @@ export function marksFor(
     */
     out.push({
       points: spiral(storm.lon, storm.lat), anchor: at(storm), id: `cyclone:${storm.id}`,
-      label: storm.peakKmh === null
-        ? storm.name
-        : `${storm.name} · ${Math.round(storm.peakKmh)} km/h`,
+      label: by(
+        storm.peakKmh === null ? storm.name : `${storm.name} · ${Math.round(storm.peakKmh)} km/h`,
+        storm.source,
+      ),
     });
   }
   for (const v of volcanoes) {
@@ -107,16 +123,19 @@ export function marksFor(
     // live, and that is a sentence rather than a tooltip: the card says it, the legend says it.
     out.push({
       points: volcano(v.lon, v.lat), anchor: at(v), id: `volcano:${v.id}`,
-      label: v.country ? `${v.name} · ${v.country}` : v.name,
+      label: by(v.country ? `${v.name} · ${v.country}` : v.name, v.source),
     });
   }
   for (const f of fires) {
     out.push({
       points: flame(f.lon, f.lat), anchor: at(f), id: `fire:${f.id}`,
       // Area in km2 to match the legend's unit, from hectares, and omitted rather than guessed at zero.
-      label: f.hectares === null
-        ? (f.country || "Forest fire")
-        : `${f.country || "Forest fire"} · ${Math.round(f.hectares / 100).toLocaleString("en")} km²`,
+      label: by(
+        f.hectares === null
+          ? (f.country || "Forest fire")
+          : `${f.country || "Forest fire"} · ${Math.round(f.hectares / 100).toLocaleString("en")} km²`,
+        f.source,
+      ),
     });
   }
   // Three strokes each, all sharing one anchor and one id, so a flood is one mark and not three.
@@ -126,7 +145,7 @@ export function marksFor(
       // nothing about how bad, exactly as the legend refuses to.
       out.push({
         points: row, anchor: at(f), id: `flood:${f.id}`,
-        label: f.country || "Flood",
+        label: by(f.country || "Flood", f.source),
       });
     }
   }

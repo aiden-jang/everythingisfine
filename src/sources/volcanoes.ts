@@ -1,4 +1,4 @@
-import { events, fetchList, listUrl, parseUtc } from "./gdacs";
+import { events, fetchList, listUrl, parseUtc, reportedBy } from "./gdacs";
 
 /*
  * Volcanoes with an eruption episode on record, which is not the same as volcanoes erupting now.
@@ -23,6 +23,8 @@ import { events, fetchList, listUrl, parseUtc } from "./gdacs";
 
 export interface Volcano {
   id: string;
+  /** The agency that reported it, or null when GDACS did not say. */
+  source: string | null;
   name: string;
   country: string;
   lon: number;
@@ -46,6 +48,8 @@ export function parseVolcanoes(payload: unknown): Volcano[] {
     seen.add(key);
     out.push({
       id: String(p["eventid"] ?? key),
+      // Who reported it. See `reportedBy`.
+      source: reportedBy(p),
       name,
       country: String(p["country"] ?? ""),
       lon,

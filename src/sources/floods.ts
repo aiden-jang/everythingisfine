@@ -1,4 +1,4 @@
-import { events, fetchList, isCurrent, listUrl, parseUtc } from "./gdacs";
+import { events, fetchList, isCurrent, listUrl, parseUtc, reportedBy } from "./gdacs";
 
 /*
  * Floods happening now, which for once is a straightforward claim.
@@ -17,6 +17,8 @@ import { events, fetchList, isCurrent, listUrl, parseUtc } from "./gdacs";
 
 export interface Flood {
   id: string;
+  /** The agency that reported it, or null when GDACS did not say. */
+  source: string | null;
   country: string;
   lon: number;
   lat: number;
@@ -30,6 +32,8 @@ export function parseFloods(payload: unknown): Flood[] {
     if (!isCurrent(props)) continue;
     out.push({
       id: String(props["eventid"] ?? `${lon},${lat}`),
+      // Who reported it. See `reportedBy`.
+      source: reportedBy(props),
       country: String(props["country"] ?? ""),
       lon,
       lat,
