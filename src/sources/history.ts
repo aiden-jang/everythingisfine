@@ -147,22 +147,28 @@ export function parseHistory(
       // The peak over the samples inside the day, which is what the live layer's number also means.
       const peaks = points.map((p) => p.magnitude).filter((m): m is number => m !== null);
       out.cyclones.push({
-        id, name: stormName(title), lon: last.lon, lat: last.lat,
+        id, source: null, name: stormName(title), lon: last.lon, lat: last.lat,
         peakKmh: peaks.length > 0 ? Math.round(Math.max(...peaks) * KTS_TO_KMH) : null,
         track: points.map((p) => ({ lon: p.lon, lat: p.lat })),
       });
     } else if (kind === "volcano") {
-      out.volcanoes.push({ id, name: stormName(title), country: place, lon: last.lon, lat: last.lat, endedAt });
+      /*
+        No reporting agency. GDACS credits one on every live hazard and this is the archive path, which
+        comes from a different feed that does not: null is "the feed did not say", which is true here.
+      */
+      out.volcanoes.push({
+        id, source: null, name: stormName(title), country: place, lon: last.lon, lat: last.lat, endedAt,
+      });
     } else if (kind === "fire") {
       const acres = points.map((p) => p.magnitude).filter((m): m is number => m !== null);
       out.fires.push({
-        id, country: place, lon: last.lon, lat: last.lat,
+        id, source: null, country: place, lon: last.lon, lat: last.lat,
         hectares: acres.length > 0 ? Math.round(Math.max(...acres) * ACRES_TO_HECTARES) : null,
         startedAt: points[0]!.at || null, endedAt,
       });
     } else {
       // No measure, exactly as the live flood layer refuses one: this feed rates none of them either.
-      out.floods.push({ id, country: place, lon: last.lon, lat: last.lat, startedAt: points[0]!.at || null, endedAt });
+      out.floods.push({ id, source: null, country: place, lon: last.lon, lat: last.lat, startedAt: points[0]!.at || null, endedAt });
     }
   }
   return out;

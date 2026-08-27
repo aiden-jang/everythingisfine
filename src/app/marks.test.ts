@@ -188,3 +188,38 @@ describe("the reader's mark, through the pipeline", () => {
     expect(withHazard.filter((m) => m.id?.startsWith("volcano:"))).toHaveLength(1);
   });
 });
+
+describe("who reported a hazard", () => {
+  /*
+   * Provenance was a first-class fact for earthquakes and absent from every hazard, while GDACS sent it
+   * on all of them. These pin the shape of the fix rather than the wording of any one label.
+   */
+  const storm = {
+    id: "s1", name: "SAUDEL-26", lon: 130, lat: 20, peakKmh: 213, track: [], source: "JTWC",
+  };
+
+  it("appends the agency to a label that already has words", () => {
+    const [mark] = marksFor({ ...nothing, cyclones: [storm] as never }).filter((m) => m.id?.startsWith("cyclone:"));
+    expect(mark?.label).toBe("SAUDEL-26 · 213 km/h · JTWC");
+  });
+
+  it("says nothing when the feed did not say, rather than leaving a dangling separator", () => {
+    // Every hazard on an archived day: the history feed carries no reporting agency.
+    const quiet = { ...storm, source: null };
+    const [mark] = marksFor({ ...nothing, cyclones: [quiet] as never }).filter((m) => m.id?.startsWith("cyclone:"));
+    expect(mark?.label).toBe("SAUDEL-26 · 213 km/h");
+  });
+
+  it("reaches the volcanoes, the fires and the floods too", () => {
+    const marks = marksFor({
+      ...nothing,
+      volcanoes: [{ id: "v", name: "Fuji", country: "Japan", lon: 138, lat: 35, source: "GVP" } as never],
+      fires: [{ id: "f", country: "Spain", lon: -4, lat: 40, hectares: 5_000, source: "EFFIS" } as never],
+      floods: [{ id: "w", country: "Peru", lon: -75, lat: -10, source: "DFO" } as never],
+    });
+    const label = (kind: string) => marks.find((m) => m.id?.startsWith(kind))?.label;
+    expect(label("volcano:")).toContain("GVP");
+    expect(label("fire:")).toContain("EFFIS");
+    expect(label("flood:")).toContain("DFO");
+  });
+});

@@ -80,6 +80,25 @@ export function events(payload: unknown): Event[] {
  * The one field that decides whether a layer may claim the present tense, and the reason the volcano layer
  * does not: none of those are flagged, all hundred wildfires are, and floods split 19 to 81.
  */
+/**
+ * Which agency reported it: `JTWC` for a Pacific typhoon, and so on.
+ *
+ * **The rule this closes.** Provenance is a first-class fact in this app for earthquakes - two feeds named
+ * in the header, the reporting agency in the panel, a corroboration count, a revision tracker - and the
+ * five hazard layers said nothing at all about who reported them. GDACS carries the answer on every event
+ * and it was being dropped. Same rule, a third of the marks.
+ *
+ * Trimmed and null rather than empty, so a blank never reaches a label as a dangling separator. Left as
+ * the agency's own initials: expanding `JTWC` to its full name would need a lookup table of forecast
+ * centres that would go stale, and the initials are what the agency calls itself.
+ */
+export function reportedBy(props: Record<string, unknown>): string | null {
+  const raw = props["source"];
+  if (typeof raw !== "string") return null;
+  const name = raw.trim();
+  return name === "" ? null : name;
+}
+
 export function isCurrent(props: Record<string, unknown>): boolean {
   return String(props["iscurrent"]).toLowerCase() === "true";
 }

@@ -383,6 +383,13 @@ const hazardEvent = (type: string, id: number, lon: number, lat: number, extra: 
     fromdate: new Date(Date.now() - 6 * 86_400_000).toISOString(),
     todate: new Date(Date.now() + 2 * 86_400_000).toISOString(),
     iscurrent: "true", alertlevel: "Green", severitydata: { severity: 0 },
+    /*
+      The reporting agency, which GDACS sends on every real event and the app now shows.
+
+      A plausible one rather than "FIXTURE": these reach a hover label, and a label reading
+      "FIXTURE · FIXTURE" would not have caught the day the separator was left dangling.
+    */
+    source: type === "TC" ? "JTWC" : type === "VO" ? "GVP" : type === "WF" ? "EFFIS" : "DFO",
     ...extra,
   },
 });

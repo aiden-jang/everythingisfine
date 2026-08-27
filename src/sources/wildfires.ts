@@ -1,4 +1,4 @@
-import { events, fetchList, isCurrent, listUrl, num, parseUtc } from "./gdacs";
+import { events, fetchList, isCurrent, listUrl, num, parseUtc, reportedBy } from "./gdacs";
 
 /*
  * Forest fires burning now. The first layer here that is live, complete in its dates, and incomplete in
@@ -21,6 +21,8 @@ import { events, fetchList, isCurrent, listUrl, num, parseUtc } from "./gdacs";
 
 export interface Wildfire {
   id: string;
+  /** The agency that reported it, or null when GDACS did not say. */
+  source: string | null;
   country: string;
   lon: number;
   lat: number;
@@ -37,6 +39,8 @@ export function parseWildfires(payload: unknown): Wildfire[] {
     if (!isCurrent(props)) continue;
     out.push({
       id: String(props["eventid"] ?? `${lon},${lat}`),
+      // Who reported it. See `reportedBy`.
+      source: reportedBy(props),
       country: String(props["country"] ?? ""),
       lon,
       lat,

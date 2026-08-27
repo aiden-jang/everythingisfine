@@ -6037,3 +6037,26 @@ Gutenberg-Richter, and does - at b = 0.625, where real catalogues sit between 0.
 surfaced that until the rail started reading the distribution back and quoting "about 5 times as many" on
 fixture data. Left as it is, because the count at every magnitude threshold moves with it and much of the
 browser suite asserts on those, but it is recorded where somebody will find it.
+
+### The hazards had no provenance, and the feed was sending it
+
+Provenance is a first-class fact in this app for earthquakes: two feeds named in the header, the reporting
+agency in the panel, a corroboration count, a revision tracker, a whole apparatus for who said what. The
+five hazard layers said nothing at all about who reported them, and GDACS carries `source` on every event
+- `JTWC` for a Pacific typhoon, `GVP` for a volcano. Same rule, the other third of the marks, and the bytes
+were already arriving.
+
+Read once in `gdacs.reportedBy` rather than four times, and appended to labels that already had words in
+them: `SAUDEL-26 · 213 km/h · JTWC`. A qualifier belongs beside the fact it qualifies, the way the panel
+puts the agency under the magnitude rather than above it, so it gets no row of its own.
+
+**Null, never blank.** A dangling separator with nothing after it is what an empty string reaches a label
+as, and every hazard on an archived day has no agency: the history feed is a different path that does not
+carry one, so those are explicitly `source: null`.
+
+**Sampled from the live payload before deciding what else to take.** GDACS sends 26 populated fields per
+event and the app reads seven. `alertlevel` is Green/Orange/Red on all 100 events sampled, which is
+meaningful and hue-coded in an app where hue means magnitude - the same objection that kept USGS's PAGER
+`alert` out, so it stays out too. `alertscore` is a composite nobody can check, like `sig`.
+`affectedcountries` is the structured form of the `country` string already read and adds nothing.
+`glide`, `iso3`, `datemodified`, `htmldescription` and `url` are identifiers, timestamps and prose.
