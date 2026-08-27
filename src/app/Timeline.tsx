@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { peakCount, type Bar } from "./histogram";
 import { WINDOWS } from "./windows";
@@ -83,6 +83,16 @@ export interface TimelineProps {
    * explains: a caveat about an asymmetry belongs under the picture of the asymmetry.
    */
   notes: readonly string[];
+  /**
+   * More about the same events, rendered under the footnotes and above the transport.
+   *
+   * The size distribution goes here. It is the other axis on this exact set of events - these bars are
+   * counts against time, that chart is counts against magnitude - and it was sitting at the bottom of the
+   * rail with the play controls between the two, which read as two unrelated things that happened to be
+   * near each other. Above the transport rather than below the bars: the footnotes to the strip belong to
+   * the strip, and a fold underneath them is plainly a second reading of the same picture.
+   */
+  children?: ReactNode;
 }
 
 const STRIP_PX = 44;
@@ -142,7 +152,7 @@ const spanLabel = (hours: number): string =>
 export function Timeline({
   bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange, bucketMs, fetching, waiting,
   cursor, parked, playing, onScrub, onStep, onPlayToggle, onLive, cursorLabel, reaches,
-  notes, archived = false,
+  notes, archived = false, children,
 }: TimelineProps): JSX.Element {
   const peak = peakCount(bars);
   const tallest = bars.find((b) => b.count === peak && peak > 0);
@@ -413,6 +423,8 @@ export function Timeline({
           ))}
         </div>
       ) : null}
+
+      {children}
 
       {/*
         The transport, on its own track rather than on the strip.

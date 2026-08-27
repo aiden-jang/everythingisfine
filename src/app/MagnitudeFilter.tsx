@@ -429,113 +429,6 @@ export function MagnitudeFilter(
         </div>
       ) : null}
 
-      {/*
-        The lines between the stars, which is the only row here describing something nobody measured.
-
-        Every other layer in this key reports a reading. Nobody discovered that seven stars are a plough,
-        so the row says whose idea it is rather than what it counts: there is no honest number to print
-        beside a constellation. It sits last because the sky is the furthest thing from the subject.
-      */}
-      {/*
-        The reader, which is the one mark on this globe that is not about the planet.
-
-        The city goes in the row rather than in a tooltip, because a tooltip needs the mark found first
-        and this mark exists to be found. "Roughly" is not modesty: the position comes from a timezone,
-        so it is the middle of a zone that can be a thousand kilometres wide, and somebody in Vancouver
-        gets a tick over Los Angeles.
-      */}
-      {herePlace ? (
-        <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-          <span className="inline-block size-[9px] shrink-0 border border-current opacity-70" />
-          <span>the four ticks are roughly you, near {herePlace}</span>
-        </div>
-      ) : null}
-
-      {/*
-        The moon's shadow, on the few days there is one.
-
-        Required rather than optional: a dark patch appearing on the planet with nothing naming it is the
-        exact case this panel's rule exists for. Conditional like the storms and the floods, so it costs
-        nothing on the days - almost all of them - when there is no shadow to explain.
-
-        **And it bounds its own claim, which matters more here than anywhere else in the key.** The
-        position comes from an abridged lunar series through sixty Earth radii of lever arm, so it is good
-        to a few hundred kilometres and no better. Every other number in this app that is bounded says so
-        - "since at least 2000", "2020 to 2025" - and a shadow that looked precise would be the one mark
-        here somebody might plan around.
-      */}
-      {eclipse ? (
-        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-          <span
-            className="mt-[4px] inline-block size-[7px] shrink-0 rounded-full"
-            style={{ background: eclipse.kind === "lunar" ? "var(--color-eclipsed)" : "var(--color-void)" }}
-          />
-          <span>
-            {eclipse.kind === "total"
-              ? "the dark spot is the moon's shadow, placed to a few hundred km"
-              : eclipse.kind === "annular"
-                ? "the moon's shadow, too far out to cover the sun: a ring, not a blackout"
-                : "the moon is red because it is in the Earth's shadow, lit through our sunsets"}
-          </span>
-        </div>
-      ) : null}
-
-      {/*
-        The sky, which shipped twice today with nothing in here explaining either half.
-
-        This panel's own rule is that no layer ships without the sentence that explains it, and every
-        other thing drawn - the storms, the volcanoes, the floods, the aurora, the boundaries - has a line.
-        The stars and the moon did not, which made them the two layers the argument was not applied to.
-
-        Both say the fact a viewer would otherwise get wrong. Nobody expects a real catalogue behind a
-        globe of earthquakes, and the moon looks like a speck because it is the size the moon is: the
-        familiar enormous one is a long lens, so the sentence has to say "real size" or the layer reads as
-        a bug.
-
-        The phase went out of that line rather than wrapping it onto a second row. A crescent explains
-        itself once it is a crescent; the smallness is the part that needs defending. Neither row gets a
-        note under it either, because a panel this tall has to earn every extra line.
-      */}
-      {sky ? (
-        <>
-          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-            <span
-              className="inline-block size-[5px] shrink-0 rounded-full"
-              style={{ background: "var(--color-star)" }}
-            />
-            <span>the stars are the real ones, down to magnitude 6</span>
-          </div>
-          {/*
-            The planets, which are drawn as stars on purpose and so need saying out loud.
-
-            Everything else in this key names a mark by how it looks. These look exactly like the dots
-            above them - same colour, same ramp, one nudge in size - because that is what they look like
-            in the sky. So the sentence has to carry what the picture deliberately does not, which is
-            that five of them are not stars at all and will have moved by next week.
-          */}
-          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-            <span
-              className="inline-block size-[7px] shrink-0 rounded-full"
-              style={{ background: "var(--color-star)" }}
-            />
-            <span>five of them are planets, and they wander</span>
-          </div>
-          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-            <span
-              className="inline-block size-[9px] shrink-0 rounded-full"
-              style={{ background: "var(--color-moon)" }}
-            />
-            <span>the small disc is the moon, at its real size</span>
-          </div>
-        </>
-      ) : null}
-
-      {figuresOn ? (
-        <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-          <span className="inline-block h-[1px] w-[7px] shrink-0 bg-current opacity-60" />
-          <span>the lines are the constellations people drew</span>
-        </div>
-      ) : null}
 
       {slabOn && slabCount > 0 ? (
         <KeyRow
@@ -545,6 +438,7 @@ export function MagnitudeFilter(
             + `which is why they carry no colour.`}
         />
       ) : null}
+
 
       {/*
         The rings, which are the signature of the whole design and were the one mark nothing named.
@@ -653,6 +547,102 @@ export function MagnitudeFilter(
         />
       ) : null}
 
+
+      {/*
+        The moon's shadow, on the few days there is one.
+
+        Required rather than optional: a dark patch appearing on the planet with nothing naming it is the
+        exact case this panel's rule exists for. Conditional like the storms and the floods, so it costs
+        nothing on the days - almost all of them - when there is no shadow to explain.
+
+        **And it bounds its own claim, which matters more here than anywhere else in the key.** The
+        position comes from an abridged lunar series through sixty Earth radii of lever arm, so it is good
+        to a few hundred kilometres and no better. Every other number in this app that is bounded says so
+        - "since at least 2000", "2020 to 2025" - and a shadow that looked precise would be the one mark
+        here somebody might plan around.
+      */}
+      {eclipse ? (
+        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+          <span
+            className="mt-[4px] inline-block size-[7px] shrink-0 rounded-full"
+            style={{ background: eclipse.kind === "lunar" ? "var(--color-eclipsed)" : "var(--color-void)" }}
+          />
+          <span>
+            {eclipse.kind === "total"
+              ? "the dark spot is the moon's shadow, placed to a few hundred km"
+              : eclipse.kind === "annular"
+                ? "the moon's shadow, too far out to cover the sun: a ring, not a blackout"
+                : "the moon is red because it is in the Earth's shadow, lit through our sunsets"}
+          </span>
+        </div>
+      ) : null}
+
+
+      {/*
+        The sky, which shipped twice today with nothing in here explaining either half.
+
+        This panel's own rule is that no layer ships without the sentence that explains it, and every
+        other thing drawn - the storms, the volcanoes, the floods, the aurora, the boundaries - has a line.
+        The stars and the moon did not, which made them the two layers the argument was not applied to.
+
+        Both say the fact a viewer would otherwise get wrong. Nobody expects a real catalogue behind a
+        globe of earthquakes, and the moon looks like a speck because it is the size the moon is: the
+        familiar enormous one is a long lens, so the sentence has to say "real size" or the layer reads as
+        a bug.
+
+        The phase went out of that line rather than wrapping it onto a second row. A crescent explains
+        itself once it is a crescent; the smallness is the part that needs defending. Neither row gets a
+        note under it either, because a panel this tall has to earn every extra line.
+      */}
+      {sky ? (
+        <>
+          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+            <span
+              className="inline-block size-[5px] shrink-0 rounded-full"
+              style={{ background: "var(--color-star)" }}
+            />
+            <span>the stars are the real ones, down to magnitude 6</span>
+          </div>
+          {/*
+            The planets, which are drawn as stars on purpose and so need saying out loud.
+
+            Everything else in this key names a mark by how it looks. These look exactly like the dots
+            above them - same colour, same ramp, one nudge in size - because that is what they look like
+            in the sky. So the sentence has to carry what the picture deliberately does not, which is
+            that five of them are not stars at all and will have moved by next week.
+          */}
+          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+            <span
+              className="inline-block size-[7px] shrink-0 rounded-full"
+              style={{ background: "var(--color-star)" }}
+            />
+            <span>five of them are planets, and they wander</span>
+          </div>
+          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+            <span
+              className="inline-block size-[9px] shrink-0 rounded-full"
+              style={{ background: "var(--color-moon)" }}
+            />
+            <span>the small disc is the moon, at its real size</span>
+          </div>
+        </>
+      ) : null}
+
+
+      {/*
+        The lines between the stars, which is the only row here describing something nobody measured.
+
+        Every other layer in this key reports a reading. Nobody discovered that seven stars are a plough,
+        so the row says whose idea it is rather than what it counts: there is no honest number to print
+        beside a constellation. It sits last because the sky is the furthest thing from the subject.
+      */}
+      {figuresOn ? (
+        <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+          <span className="inline-block h-[1px] w-[7px] shrink-0 bg-current opacity-60" />
+          <span>the lines are the constellations people drew</span>
+        </div>
+      ) : null}
+
       {/*
         The rings, the one row whose words were JSX rather than a note, so that it could interpolate the
         playback multiplier. A template string carries that just as well and lets this row take the same
@@ -682,6 +672,22 @@ export function MagnitudeFilter(
           </span>
         }
       />
+
+      {/*
+        The reader, which is the one mark on this globe that is not about the planet.
+
+        The city goes in the row rather than in a tooltip, because a tooltip needs the mark found first
+        and this mark exists to be found. "Roughly" is not modesty: the position comes from a timezone,
+        so it is the middle of a zone that can be a thousand kilometres wide, and somebody in Vancouver
+        gets a tick over Los Angeles.
+      */}
+      {herePlace ? (
+        <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+          <span className="inline-block size-[9px] shrink-0 border border-current opacity-70" />
+          <span>the four ticks are roughly you, near {herePlace}</span>
+        </div>
+      ) : null}
+
       </details>
 
     </div>

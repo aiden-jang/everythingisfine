@@ -481,6 +481,19 @@ is barely there.
 about what somebody is doing, and it is wrong about half the time. The width splitter trades the rail
 against the globe; the one under the regions trades the regions against the event list.
 
+**The key is ordered by subject, and it had to be put back that way.** Marks first, then everything
+belonging to the planet - boundaries, the slab, the storms and fires and floods and the aurora - then the
+sky, then the arrival rings, then the reader's own tick last, because it is the only row here that is not
+about the world. Each row had been appended wherever was convenient as layers arrived, which left the
+slab's note a hundred lines from the slab's row, the figures comment separated from the figures row, and
+the reader's mark sitting between the plate boundaries and the stars belonging to neither. Nothing here is
+new; it is the same rows in the order they always described.
+
+**And the size chart lives inside the strip.** It is counts against magnitude where the bars are counts
+against time - the same events, the other axis - and it had been placed below the whole component, which
+put the play controls between two charts of one thing. It now sits under the strip's own footnotes and
+above the transport.
+
 **Controls above the rule, commentary below it, and the layers had drifted.** The legend states the split
 in its own comment - the slider, the ticks and the source buttons change what is on the globe, and the rest
 is what the marks mean - and four layer switches were sitting under the rule, inside a fold titled "What
