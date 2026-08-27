@@ -39,6 +39,30 @@ export function spiral(lon: number, lat: number, radiusDeg = 3): Point[] {
  * On the point because that is where the mountain is, and a centred triangle puts half the mark in the sea
  * for anything coastal, which most of them are.
  */
+/**
+ * Where the reader is: four ticks around a gap, pointing in.
+ *
+ * **Ticks because this app's corners are ticks or nothing**, which DESIGN.md says outright. Every other
+ * glyph out here is a picture of the thing it marks - a spiral is a storm, a triangle a volcano - and
+ * there is no picture of a person that would not be either a pin from another app's vocabulary or a
+ * joke. Four ticks is the surveyor's answer and it is already the house idiom.
+ *
+ * **The gap is the point.** A cross drawn through the centre covers the ground it is identifying, and
+ * this is the one mark on the globe whose whole job is to say "that spot, there". Nothing is drawn in the
+ * middle, so whatever is at that spot stays visible - including an earthquake mark, which is exactly the
+ * coincidence a reader would most want to see.
+ */
+export function here(lon: number, lat: number, radiusDeg = 1.5): Point[][] {
+  const stretch = stretchAt(lat);
+  const gap = radiusDeg * 0.45;
+  return [
+    [{ lon, lat: lat + gap }, { lon, lat: lat + radiusDeg }],
+    [{ lon, lat: lat - gap }, { lon, lat: lat - radiusDeg }],
+    [{ lon: lon + gap * stretch, lat }, { lon: lon + radiusDeg * stretch, lat }],
+    [{ lon: lon - gap * stretch, lat }, { lon: lon - radiusDeg * stretch, lat }],
+  ];
+}
+
 export function volcano(lon: number, lat: number, radiusDeg = 1.6): Point[] {
   const stretch = stretchAt(lat);
   const w = radiusDeg * stretch;

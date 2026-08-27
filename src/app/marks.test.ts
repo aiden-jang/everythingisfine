@@ -141,3 +141,50 @@ describe("the plate-motion arrows", () => {
     expect(marksFor({ ...nothing, volcanoes: [mountain()], motion: [sample()] })).toHaveLength(1 + 3);
   });
 });
+
+
+
+describe("the reader's mark, through the pipeline", () => {
+  it("puts four anchored strokes on the globe", () => {
+    /*
+     * Four marks rather than one, because a `Mark` is a single polyline and the ticks are separate
+     * strokes with a gap between them. They share one anchor, which is what keeps them pointing at the
+     * same spot rather than drifting apart as the globe turns.
+     */
+    const marks = marksFor({ ...nothing, here: { lon: -9.1, lat: 38.7 } });
+    expect(marks).toHaveLength(4);
+    for (const m of marks) {
+      expect(m.points).toHaveLength(2);
+      expect(m.anchor).toEqual({ lon: -9.1, lat: 38.7 });
+    }
+  });
+
+  it("is not pickable, because there is nothing to ask it", () => {
+    // The key names the city. A tooltip would need the mark found first, and this mark is the thing
+    // being looked for.
+    for (const m of marksFor({ ...nothing, here: { lon: 0, lat: 0 } })) {
+      expect(m.id).toBeUndefined();
+      expect(m.label).toBeUndefined();
+    }
+  });
+
+  it("draws nothing when the timezone did not resolve to a place", () => {
+    // Which is a real case: "UTC" and "Etc/UTC" are not places, and `viewerPlace` returns null for them.
+    expect(marksFor({ ...nothing })).toHaveLength(0);
+    expect(marksFor({ ...nothing, here: null })).toHaveLength(0);
+  });
+
+  it("stays out of the way of the other glyphs", () => {
+    /*
+     * Added first in the list and unlabelled, so it cannot be confused with a hazard when something is
+     * hovered. This pins the count, which is the cheap way to catch a stray extra mark later.
+     */
+    const withHazard = marksFor({
+      ...nothing,
+      volcanoes: [{ id: "v1", name: "Fuji", country: "Japan", lon: 138.7, lat: 35.4 } as never],
+      here: { lon: 0, lat: 0 },
+    });
+    expect(withHazard.filter((m) => m.id === undefined)).toHaveLength(4);
+    expect(withHazard.filter((m) => m.id?.startsWith("volcano:"))).toHaveLength(1);
+  });
+});

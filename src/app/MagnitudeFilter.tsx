@@ -126,6 +126,8 @@ export interface MagnitudeFilterProps {
   onSink: (on: boolean) => void;
   /** Whether there is a sky at all, which the flat map has not. Gates the two rows that describe it. */
   sky?: boolean;
+  /** The city the reader's timezone resolved to, or null. Names the ticks on the globe. */
+  herePlace?: string | null;
   /** Set only while one of the two shadows is falling, which is a handful of days a year. */
   eclipse?: { kind: "total" | "annular" | "lunar" } | null;
   /** Whether the constellation lines are drawn. Null hides the control, on the flat map. */
@@ -172,7 +174,7 @@ export function MagnitudeFilter(
     ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince, now,
     fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
     motion, motionOn, onMotion, sinkOn, onSink, slabOn, onSlab, slabCount,
-    figuresOn, onFigures, sky = false, eclipse = null, depth, sound, children,
+    figuresOn, onFigures, sky = false, eclipse = null, herePlace = null, depth, sound, children,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -434,6 +436,21 @@ export function MagnitudeFilter(
         so the row says whose idea it is rather than what it counts: there is no honest number to print
         beside a constellation. It sits last because the sky is the furthest thing from the subject.
       */}
+      {/*
+        The reader, which is the one mark on this globe that is not about the planet.
+
+        The city goes in the row rather than in a tooltip, because a tooltip needs the mark found first
+        and this mark exists to be found. "Roughly" is not modesty: the position comes from a timezone,
+        so it is the middle of a zone that can be a thousand kilometres wide, and somebody in Vancouver
+        gets a tick over Los Angeles.
+      */}
+      {herePlace ? (
+        <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+          <span className="inline-block size-[9px] shrink-0 border border-current opacity-70" />
+          <span>the four ticks are roughly you, near {herePlace}</span>
+        </div>
+      ) : null}
+
       {/*
         The moon's shadow, on the few days there is one.
 

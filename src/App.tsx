@@ -1220,10 +1220,10 @@ export function App(): JSX.Element {
   }, []);
   const marks = useMemo(
     () => marksFor({
-      ...onGlobe, farSide, motion: motionOn ? motionData : [],
+      ...onGlobe, farSide, motion: motionOn ? motionData : [], here,
     }),
     [onGlobe.cyclones, onGlobe.volcanoes, onGlobe.fires, onGlobe.floods,
-      farSide?.lon, farSide?.lat, motionOn, motionData],
+      farSide?.lon, farSide?.lat, motionOn, motionData, here],
   );
   useEffect(() => {
     // Only if it genuinely fell out of the buffer. A refresh must never clear the panel.
@@ -1716,6 +1716,7 @@ export function App(): JSX.Element {
                   section is open: otherwise it would be a button that does nothing, which is the thing
                   hiding it was avoiding in the first place.
                 */
+                herePlace={here?.label ?? null}
                 sky={!flat}
                 eclipse={flat ? null : eclipse}
                 figuresOn={flat ? null : figuresOn}
