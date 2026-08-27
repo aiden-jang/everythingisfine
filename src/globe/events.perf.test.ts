@@ -43,6 +43,14 @@ import type { Filters, Reading } from "../data/types";
  * was +82% in milliseconds, which is memory pressure rather than pure CPU contention, and no
  * same-process reference fully cancels that.
  */
+/*
+ * The gate, and the same three numbers DESIGN.md section 11 publishes.
+ *
+ * They disagreed for a while: the document said 6.0 at fifty thousand and this said 7.0, in the section
+ * whose first line is that an unenforced benchmark is quietly false within a month. 7.0 is the number in
+ * force and the document now prints it, with the reason - the ratio does not cancel an oversubscribed
+ * machine, and a second machine read 7.48 on code that passes here at 4.5.
+ */
 const BUDGET_REF: Record<number, number> = { 1_000: 0.15, 10_000: 1.05, 50_000: 7.0 };
 
 /*
