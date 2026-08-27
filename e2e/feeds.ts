@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { REPLAY_FRONT_MIN_MAG } from "../src/app/replay";
 
 /*
  * Both feeds, served from the test.
@@ -56,13 +57,45 @@ export interface Quake {
   both: boolean;
 }
 
+/** Gutenberg-Richter's slope. Real catalogues sit between 0.8 and 1.2, and the draw divides by it. */
+const B_VALUE = 1;
+
+/** The floor. M2.5 is USGS's own second daily feed, and it is what buys back the half magnitude the slope costs. */
+const MIN_MAG = 2.5;
+
 /**
- * A day of seismicity, newest last. Gutenberg-Richter rather than uniform magnitudes: a uniform draw would
- * put a magnitude 7 on screen every few minutes and quietly make every magnitude filter test meaningless.
+ * The ceiling, held just under the magnitude that spawns a wavefront, and it is load-bearing rather than tidy.
  *
- * The slope here is 0.625 and real catalogues sit between 0.8 and 1.2, so this fixture has about 76 magnitude
- * 2s for every 5 where the Earth has around a thousand. Left alone deliberately - changing it moves the count
- * at every magnitude threshold and half the browser suite asserts on those - but it is wrong and worth knowing.
+ * The draw's old tail cut read `0.985`, which looks arbitrary and was holding the whole browser suite below
+ * `REPLAY_FRONT_MIN_MAG` by accident: the old ceiling was M4.9. Raising it past 5 let the entrance replay
+ * start firing fronts, each of which keeps the frame loop awake for about sixteen seconds, and three tests
+ * went from roughly 20 seconds to 40, 45 and 66 - straight through the 45-second budget. Nothing was wrong
+ * with the app and nothing was wrong with the tests.
+ *
+ * So the coupling is written down and derived, rather than left as a number somebody would round off later.
+ * The cost is that no browser test ever sees a wavefront, which was already true and is now at least visible.
+ */
+const MAX_MAG = REPLAY_FRONT_MIN_MAG - 0.05;
+
+/** The tail cut that puts the largest draw at `MAX_MAG`, from inverting the relation at that magnitude. */
+const MAG_CUT = 1 - 10 ** (-(MAX_MAG - MIN_MAG) * B_VALUE);
+
+/**
+ * A day of seismicity, newest last, drawn from Gutenberg-Richter. A uniform draw would put a magnitude 7 on
+ * screen every few minutes and quietly make every magnitude filter test meaningless.
+ *
+ * The slope read 0.625 for a long time, against the 0.8 to 1.2 real catalogues sit in - and the
+ * size-distribution chart reads this back and quotes it, so the fixture was making the app print "about 5
+ * times as many" where a real feed gives about 10.
+ *
+ * Measured across four seeds at the constants above: largest M4.4 to M4.9, and an estimated b of 0.87 to
+ * 0.95. The old draw gave a largest of M4.8 and a b of 0.59.
+ *
+ * The app reads it back as **"about 12 times as many, each magnitude smaller"**, where it was saying about 5
+ * and a real feed gives about 10. The remaining gap is the ceiling above: cutting the upper tail pulls the
+ * mean magnitude down, and Aki's estimator is one over that distance, so it reads about 1.08 from a draw at
+ * 1.0. Drawing at 0.93 to make the readout land on 10 would be tuning the generator to fool the estimator,
+ * which is the same dishonesty in the other direction. 12 sits inside the 0.8 to 1.2 real catalogues span.
  */
 function day(seed = 4, count = 240): Quake[] {
   const rand = seeded(seed);
@@ -74,7 +107,7 @@ function day(seed = 4, count = 240): Quake[] {
     const belt = BELTS.find((b) => (pick -= b.weight) <= 0) ?? BELTS[0]!;
     out.push({
       id: `fx${i.toString(36)}`,
-      magnitude: Number((2 + -Math.log10(1 - rand() * 0.985) * 1.6).toFixed(1)),
+      magnitude: Number((MIN_MAG + -Math.log10(1 - rand() * MAG_CUT) / B_VALUE).toFixed(1)),
       lon: belt.lon + (rand() - 0.5) * belt.spread[0],
       lat: belt.lat + (rand() - 0.5) * belt.spread[1],
       depthKm: Number((5 + rand() * rand() * 260).toFixed(1)),
