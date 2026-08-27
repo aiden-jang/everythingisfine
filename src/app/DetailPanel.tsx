@@ -388,7 +388,22 @@ export function DetailPanel({
         />
         <Field
           label="Reported by"
-          value={quake.readings.map((x) => SOURCE_NAMES[x.source]).join(" + ")}
+          /*
+            The relay, and in brackets whoever actually computed it.
+
+            Both feeds aggregate: a Hawaiian earthquake reported by USGS was solved at the Hawaiian
+            Volcano Observatory, and one reported by EMSC may have been solved by BMKG in Jakarta. The
+            row was already labelled "Reported by" and was answering it one level short.
+
+            Here rather than in the comparison table below, which is already four columns inside a
+            300px panel: a fifth would have taken the coordinates down to nothing, and they are data
+            where this is an attribution.
+          */
+          value={quake.readings
+            .map((x) => (x.network === undefined
+              ? SOURCE_NAMES[x.source]
+              : `${SOURCE_NAMES[x.source]} (${x.network})`))
+            .join(" + ")}
         />
       </div>
 

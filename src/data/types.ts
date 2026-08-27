@@ -122,6 +122,20 @@ export interface Reading {
    */
   shaking?: number;
   /**
+   * The network that actually computed this solution, when the agency names it.
+   *
+   * **Both feeds are aggregators and the app was crediting the relay.** USGS calls this `net` and sends
+   * `hv` for the Hawaiian Volcano Observatory or `ci` for southern California; EMSC calls it `auth` and
+   * sends `BMKG` or `AK`. So a Hawaiian earthquake "reported by USGS" was computed by seismologists at
+   * the volcano observatory, and the panel had no way to say so. The same gap the hazard marks had, one
+   * level deeper and on this app's own subject.
+   *
+   * Kept as the code the agency uses. Expanding `hv` to its full name needs a table of seismic networks
+   * that would go stale, and the app already prints `mww` and `mb` verbatim for the same reason: DESIGN
+   * section 10 wants the technical term on screen rather than a paraphrase of it.
+   */
+  network?: string;
+  /**
    * Set once this agency has revised its own magnitude or depth, absent until then.
    *
    * The epicentre is revised too and is not tracked. It moves by a few kilometres on most revisions,
