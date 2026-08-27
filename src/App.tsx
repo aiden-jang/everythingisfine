@@ -17,6 +17,8 @@ import { findSubject, MarkCard } from "./app/MarkCard";
 import { hazardCount, hazardGroups } from "./app/hazards";
 import { countForDay, dayRange, fetchArchive } from "./sources/archive";
 import { NOTABLE_DAYS, NOTABLE_NOTE } from "./app/notableDays";
+import { sizesOf } from "./app/gutenberg";
+import { SizeChart } from "./app/Sizes";
 import { ECLIPSE_DAYS, eclipseMoment } from "./app/eclipseDays";
 import { fetchHistory, type History } from "./sources/history";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
@@ -1475,6 +1477,18 @@ export function App(): JSX.Element {
     [focusHour, bucketMs],
   );
 
+  /*
+   * The size distribution of what is on screen.
+   *
+   * Recomputed when the window's contents change, which is what `snapshot.revision` tracks, rather than
+   * on every render: it walks the whole buffer and sorts it, and the rail re-renders once a second for
+   * the clock.
+   */
+  const sizes = useMemo(
+    () => sizesOf(feed.store, filters, now),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [feed.store, filters, snapshot.revision],
+  );
   const hours = Math.round(filters.windowMs / 3_600_000);
   /*
    * The headline counts what is on the globe, not what is in the buffer.
@@ -2807,6 +2821,20 @@ export function App(): JSX.Element {
                 corroborationNote(overlap, overlapFrom, now, filters.windowMs),
               ].filter((n): n is string => n !== null)}
             />
+
+            {/*
+              The other distribution: counts against size, where the bars above are counts against time.
+
+              Behind a disclosure because the rail is already dense and this is the app arguing rather
+              than reporting - a reader who only wants to know what happened today never has to open it.
+              Next to the bars because the two are siblings: same events, the other axis.
+            */}
+            <details className="mt-3">
+              <summary className="disclose text-[11px] text-faint hover:text-dim">
+                How the sizes stack up
+              </summary>
+              <SizeChart sizes={sizes} />
+            </details>
           </div>
 
           {/*
