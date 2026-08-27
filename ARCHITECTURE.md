@@ -6291,3 +6291,37 @@ On live data at the time of writing it reads **1.9 against an expected scatter o
 inside the band, which is exactly the null result the dial exists to show, now stated rather than only drawn.
 
 The first wording put two sentences ending in "of them" back to back. "The furthest hour reaches 1.9."
+
+### The fixture's b-value, and the constant it turned out to be holding down
+
+`e2e/feeds.ts` drew magnitudes with a multiplier of 1.6, which is `1 / b`, so b = 0.625 against the 0.8 to
+1.2 real catalogues sit in. The size-distribution chart reads the fixture back and quotes it, so the app was
+printing "about 5 times as many, each magnitude smaller" under test where a real feed gives about 10. It now
+prints **about 12**.
+
+**The slope and the floor are one number.** A sample's largest is about `base + log10(n) / b`, so simply
+changing 1.6 to 1.0 takes a 240-event day from M2.0 down to a ceiling of M3.8 with no M4 at all - which
+would have taken the felt-report row, the `mww` scale and the ranking line with it. Raising the floor to
+M2.5, which is USGS's own second daily feed, buys back exactly the half magnitude the slope costs: largest
+M4.4 to M4.9 across four seeds, against M4.8 before.
+
+**Raising the count instead was tried and reverted.** 600 events from M2.5 is a closer sample of a real day
+and it pushed three browser tests past their 45-second budget: the rail walks the buffer for the region
+counts, the size distribution, the dial and the neighbour search, and it re-renders every second. The
+fixture exists to make the suite honest, not to load-test it.
+
+**And the old tail cut was load-bearing by accident, which is the actual finding here.** `0.985` looked like
+an arbitrary truncation. It put the fixture's ceiling at M4.9, just under `REPLAY_FRONT_MIN_MAG`, so no
+browser test had ever spawned an entrance wavefront. A ceiling of M5.2 let them fire, each front keeps the
+frame loop awake for about sixteen seconds, and the same three tests went from roughly 20 seconds to 40, 45
+and 66. Nothing was wrong with the app and nothing was wrong with the tests.
+
+Diagnosed by measuring rather than by reading: each failing test passes alone on the old fixture at 19 to 22
+seconds, fails alone on the new one, and passes again the moment the ceiling drops below 5. The cut is now
+derived from `REPLAY_FRONT_MIN_MAG` instead of written as a number somebody would round off later. The cost
+is that no browser test sees a wavefront, which was already true and is now at least visible.
+
+**The readout lands on 12 rather than 10, and that is left alone.** The ceiling cuts the upper tail, which
+pulls the mean magnitude down, and Aki's estimator is one over that distance - so a draw at b = 1.0 reads
+back as about 1.08. Drawing at 0.93 to make the number land on 10 would be tuning the generator to fool the
+estimator, which is the same dishonesty in the other direction.
