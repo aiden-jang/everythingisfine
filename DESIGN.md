@@ -407,6 +407,11 @@ bright end draws almost the whole catalogue at the minimum size. Weight was matc
 replaced by measurement, not by eye - lit pixels in a fixed patch of sky, 164 before and 101 after with
 more of them bright.
 
+**And there is a way in.** A short list of eclipses sits in the rail beside the notable days, setting the
+cursor as well as the day, because a shadow lasts a few hours and an archived day opens at its own edge. It
+is separate from the notable days rather than part of them: that list ranks by magnitude and an eclipse has
+none. Seven rows, newest first, checked against the geometry rather than trusted.
+
 **The moon's shadow, on the few days there is one.** Nothing new is measured for it: the sun's direction
 and the moon's position are both already on screen, and a solar eclipse is the one place those two facts
 multiply into a third. The umbra lands as a dark spot a few hundred kilometres across, which is what it is,
