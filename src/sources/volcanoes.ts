@@ -3,23 +3,17 @@ import { events, fetchList, listUrl, parseUtc, reportedBy } from "./gdacs";
 /*
  * Volcanoes with an eruption episode on record, which is not the same as volcanoes erupting now.
  *
- * The distinction is the whole of this module. GDACS lists 23 and flags **none** of them `iscurrent`; the
- * most recently ended episode ended nine days ago and the oldest over two years. Within the last week
- * there are none at all. There is no keyless feed of currently erupting volcanoes: the Smithsonian's
- * weekly report is the authority and sends no CORS header, so reaching it costs a Worker and the
- * zero-invocation deployment with it.
+ * GDACS lists 23 and flags none of them `iscurrent`; the most recently ended episode ended nine days ago and
+ * the oldest over two years. There is no keyless feed of currently erupting volcanoes: the Smithsonian's
+ * weekly report is the authority and sends no CORS header, which would cost a Worker.
  *
- * So this layer does not claim currency, and the legend says what it is instead. That is not a
- * consolation prize. The reason section I put volcanoes first is that they sit on the same plate
- * boundaries the earthquakes trace, so they reinforce the explanation already drawn underneath the
- * evidence, and that argument does not need any of them to be erupting this minute. It needs them to be
- * volcanoes.
+ * So this layer does not claim currency, and the legend says what it is instead. The argument for drawing them
+ * is that they sit on the same plate boundaries the earthquakes trace, which does not need any of them to be
+ * erupting this minute.
  *
- * `severity` is 0.0 for every one and `severitytext` is empty, so unlike cyclones there is no strength to
- * report. Alert level exists, Green through Red, and is deliberately not used: an Orange on an episode
- * that ended two hundred days ago describes a concern nobody has any more.
+ * Alert level exists, Green through Red, and is deliberately not used: an Orange on an episode that ended two
+ * hundred days ago describes a concern nobody has any more.
  */
-
 
 export interface Volcano {
   id: string;
@@ -38,11 +32,8 @@ export function parseVolcanoes(payload: unknown): Volcano[] {
   const seen = new Set<string>();
   for (const { lon, lat, props: p } of events(payload)) {
     const name = String(p["eventname"] ?? "unnamed");
-    /*
-     * One triangle per volcano, not per episode. The list carries Mayon three times and Kanlaon four,
-     * because each is an episode, and drawing them stacked would put four marks on one mountain and
-     * make the layer look like it had found four volcanoes there.
-     */
+    // One triangle per volcano, not per episode. The list carries Mayon three times and Kanlaon four, and
+    // drawing them stacked would make the layer look like it had found four volcanoes there.
     const key = `${name}@${lon.toFixed(2)},${lat.toFixed(2)}`;
     if (seen.has(key)) continue;
     seen.add(key);

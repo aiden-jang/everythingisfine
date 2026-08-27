@@ -1,22 +1,14 @@
 /*
- * Plate motion, sampled from Bird (2003) rather than computed here.
- *
- * Item 6 asked for motion vectors, and the first instinct was Euler poles: a small table of rotation
- * axes, one line of spherical algebra per point. That would have meant **writing pole coordinates from
- * memory**, which is the same sin `arrival.ts` refused when it declined to keep a city list, with the
- * added problem that the app's boundary file is lines with no plate identity, so there would have been
- * nothing to say which plate a point belongs to.
- *
- * PB2002's own step file makes all of that unnecessary. Every one of its 5,819 boundary steps already
- * carries the relative velocity of the plate on one side with respect to the other, its azimuth, the
- * divergent and right-lateral components, and a boundary class. So the velocities here are published
- * measurements passed through unaltered, and this script's only opinions are which steps to keep and
- * how to round them.
- *
- * Committed script, committed output. `make-card.mjs` shipped for months unable to run, so an asset with
- * no working generator beside it is an asset that goes quietly stale.
+ * Plate motion, sampled from Bird (2003) rather than computed here. Committed script, committed output.
  *
  *   node tools/make-plate-motion.mjs
+ *
+ * Not Euler poles: that would mean writing pole coordinates from memory, and the app's boundary file is lines
+ * with no plate identity, so nothing would say which plate a point belongs to.
+ *
+ * PB2002's step file already carries the relative velocity of the plate on one side with respect to the
+ * other for each of its 5,819 steps, so the velocities here are published measurements passed through
+ * unaltered. This script only chooses which steps to keep and how to round them.
  */
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -27,19 +19,13 @@ const SRC = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/orig
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "geo", "plateMotion.json");
 
 /*
- * One arrow per 800km of boundary.
- *
- * Measured against the alternatives rather than picked: the 260,483km of boundary in this file give 415
- * arrows at 500km, 231 at 800 and 133 at 1200. 231 is the one that still resolves a single ridge as a
- * row of arrows rather than as three, and lands near 6kB before compression, which sits beside the 9.4kB
- * the boundary lines already cost.
+ * One arrow per 800km of boundary. Measured against the alternatives: 415 arrows at 500km, 231 at 800, 133 at
+ * 1200. 231 still resolves a single ridge as a row of arrows rather than as three, and lands near 6kB.
  */
 const SPACING_KM = 800;
 
-/*
- * Fixed-width columns, from `PB2002_steps_desc.txt`, converted from its 1-based byte positions.
- * Not split on whitespace: negative numbers in this file run together with the column before them.
- */
+/* Fixed-width columns, from `PB2002_steps_desc.txt`, converted from its 1-based byte positions. Not split on
+ * whitespace: negative numbers in this file run together with the column before them. */
 const cut = (line, from, to) => line.slice(from - 1, to).trim();
 
 const res = await fetch(SRC);

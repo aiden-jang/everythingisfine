@@ -5,10 +5,8 @@ const NOW = Date.parse("2026-08-21T04:12:30Z");
 
 describe("what the still says it is of", () => {
   it("stamps the cursor's moment, not the clock, when one is held", () => {
-    /*
-     * The whole reason this is not a screenshot. A still of a view parked two hours back is a picture of
-     * two hours ago, and stamping it "now" would be the image lying about itself.
-     */
+    // The whole reason this is not a screenshot. A still of a view parked two hours back is a picture of two
+    // hours ago, and stamping it "now" would be the image lying about itself.
     const twoHoursBack = NOW - 2 * 3_600_000;
     expect(stillMoment(twoHoursBack, NOW)).toBe("Held at 2026-08-21 02:12 UTC");
   });
@@ -18,10 +16,8 @@ describe("what the still says it is of", () => {
   });
 
   it("writes an absolute time rather than a relative one", () => {
-    /*
-     * "18 minutes ago" ages into a lie the instant the file is saved, and a still is looked at later by
-     * definition. So it carries its date too, not just a clock time.
-     */
+    // "18 minutes ago" ages into a lie the instant the file is saved, and a still is looked at later by
+    // definition, so it carries its date too.
     for (const cursor of [null, NOW - 60_000]) {
       const text = stillMoment(cursor, NOW);
       expect(text).toContain("2026-08-21");
@@ -68,12 +64,8 @@ describe("the verdict, which is the half the poster was missing", () => {
   });
 
   it("groups a thousand the way the rest of the app does", () => {
-    /*
-     * Caught by exporting one: a busy day printed "6000 earthquakes" beside a rail reading "6,000". The
-     * poster is the artefact that leaves the app, so it is the last place that should format a figure
-     * differently from the interface that made it. Every test here used to sit under a thousand, which
-     * is exactly why nothing failed.
-     */
+    // Caught by exporting one: a busy day printed "6000 earthquakes" beside a rail reading "6,000". Every
+    // test here used to sit under a thousand, which is exactly why nothing failed.
     expect(verdictLine({ ...base, quakes: 6000 })).toBe("6,000 earthquakes.");
     expect(verdictLine({ ...base, quakes: 11363 })).toBe("11,363 earthquakes.");
     // The floor marker still lands on the number rather than after the separator.
@@ -86,10 +78,8 @@ describe("the verdict, which is the half the poster was missing", () => {
   });
 
   it("marks the fire count as a floor when the feed is capped", () => {
-    /*
-     * The feed stops at 100 and one country can fill it on its own, so a flat "100 fires" would state a
-     * floor as a total on the one surface with nothing around to correct it.
-     */
+    // The feed stops at 100 and one country can fill it, so a flat "100 fires" would state a floor as a
+    // total on the one surface with nothing around to correct it.
     expect(verdictLine({ ...base, fires: 100, firesCapped: true })).toBe("100+ fires.");
     expect(verdictLine({ ...base, fires: 100, firesCapped: false })).toBe("100 fires.");
   });
@@ -120,11 +110,8 @@ describe("the frame", () => {
 
 describe("a still taken while an archived day is on screen", () => {
   it("names the day instead of saying Live", () => {
-    /*
-     * The falsehood this exists to stop. The clock was made archive-aware when that mode shipped, so the
-     * stamp was correct and the word in front of it was not - on the one artefact designed to be looked
-     * at away from the app, where nothing is around to correct it.
-     */
+    // The falsehood this exists to stop. The clock was made archive-aware when that mode shipped, so the
+    // stamp was correct and the word in front of it was not.
     const dayEnd = Date.parse("2026-07-05T00:00:00Z");
     expect(stillMoment(null, dayEnd, true)).toBe("Archived day · 2026-07-05");
     expect(stillMoment(null, dayEnd, true)).not.toContain("Live");

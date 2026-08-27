@@ -5,11 +5,9 @@ import type { Quake, Reading } from "../data/types";
 /*
  * The gate for PLAN.md step 8, tested as a rule rather than as a screenshot.
  *
- * The requirement is that a cold load always has a front expanding in the first frame. That cannot
- * be observed directly here: announcements are coalesced through requestAnimationFrame, and every
- * headless and backgrounded context suspends it, so any "cold load" a test could stage is one where
- * the handler never runs. What *can* be pinned down is the rule the handler applies, and the rule
- * is the part that would silently rot.
+ * A cold load always has a front expanding in the first frame, and that cannot be observed here:
+ * announcements coalesce through requestAnimationFrame, which every headless context suspends. What can be
+ * pinned is the rule the handler applies, which is the part that would silently rot.
  */
 
 const quake = (id: string, magnitude: number): Quake => {

@@ -4,14 +4,9 @@ import { countByRegion, contains, REGIONS } from "./regions";
 import type { Filters, Reading } from "../data/types";
 
 /*
- * The gate for PLAN.md step 9.
- *
- * The polish doc calls losing a pinned selection on refresh the most infuriating possible bug in a
- * live visualization, and says it is easy to write by accident. It is: the accident is holding the
- * selection as an object or an index instead of a key, and it only shows up once a refresh lands
- * while someone happens to be reading the panel.
- *
- * So the property is asserted directly against the store, which is where it is actually decided.
+ * The gate for PLAN.md step 9. Losing a pinned selection on refresh is easy to write by accident: the
+ * accident is holding the selection as an object or an index instead of a key, and it only shows up once a
+ * refresh lands while somebody is reading the panel. Asserted against the store, where it is decided.
  */
 
 const reading = (over: Partial<Reading> = {}): Reading => ({

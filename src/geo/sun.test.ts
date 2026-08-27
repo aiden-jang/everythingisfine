@@ -1,10 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { daylight, solarClock, solarHour, subsolarPoint, sunElevation } from "./sun";
 
-/*
- * Checked against the astronomical facts rather than against itself, which is the only way a formula
- * this opaque can be tested: a golden value copied from a first run pins whatever it did wrong.
- */
+/* Checked against the astronomical facts rather than against itself, which is the only way a formula this
+ * opaque can be tested: a golden value copied from a first run pins whatever it did wrong. */
 describe("the subsolar point", () => {
   it("sits on the tropics at the solstices", () => {
     const june = subsolarPoint(Date.UTC(2025, 5, 21, 12, 0, 0));
@@ -21,11 +19,9 @@ describe("the subsolar point", () => {
 
   it("tracks Greenwich at UTC noon, offset by the equation of time", () => {
     /*
-     * The sign is the whole point of this test, and it is the one I got backwards first.
-     *
-     * In early November apparent solar time runs about 16 minutes ahead of mean, so by 12:00 UTC the
-     * sun has *already* crossed the Greenwich meridian and sits four degrees west of it. In February
-     * it runs behind, so at the same clock time it has not arrived yet and sits east.
+     * The sign is the whole point of this test, and the one I got backwards first. In early November apparent
+     * solar time runs about 16 minutes ahead of mean, so by 12:00 UTC the sun has already crossed Greenwich
+     * and sits four degrees west of it. In February it runs behind and sits east.
      */
     expect(subsolarPoint(Date.UTC(2025, 10, 3, 12, 0, 0)).lon).toBeCloseTo(-4.1, 0);
     expect(subsolarPoint(Date.UTC(2025, 1, 11, 12, 0, 0)).lon).toBeCloseTo(3.5, 0);
@@ -50,11 +46,9 @@ describe("the subsolar point", () => {
 });
 
 describe("what it was like there, then", () => {
-  /*
-   * Anchored on the subsolar point rather than on hardcoded expectations, because the whole value of
-   * using `subsolarPoint` is that it already carries the equation of time. Restating times computed by
-   * hand would be testing my arithmetic against itself.
-   */
+  // Anchored on the subsolar point rather than on hardcoded expectations, because the value of using
+  // `subsolarPoint` is that it already carries the equation of time. Restating hand-computed times would be
+  // testing my arithmetic against itself.
   const at = Date.UTC(2026, 2, 15, 6, 40, 0);
 
   it("is noon exactly where the sun is overhead", () => {
@@ -100,10 +94,8 @@ describe("what it was like there, then", () => {
     const sub = subsolarPoint(at);
     /*
      * On the equator, where a quarter turn of longitude really is a quarter turn of arc whatever the
-     * declination: cos(z) collapses to cos(dec) times cos(90), which is zero exactly.
-     *
-     * At the subsolar latitude instead it is asin(sin squared dec), which is 0.08 degrees in March and
-     * zero only at an equinox. That was this test's first version, and the formula was right.
+     * declination. At the subsolar latitude instead it is asin(sin squared dec), which is 0.08 degrees in
+     * March and zero only at an equinox - this test's first version, and the formula was right.
      */
     expect(sunElevation(sub.lon + 90, 0, at)).toBeCloseTo(0, 6);
     expect(sunElevation(sub.lon - 90, 0, at)).toBeCloseTo(0, 6);
@@ -118,10 +110,8 @@ describe("what it was like there, then", () => {
   });
 
   it("reads a polar summer as daylight at three in the morning, which it is", () => {
-    /*
-     * The reason the band comes off elevation and not off the hour. Northern midsummer inside the
-     * Arctic circle: the small hours are broad daylight, and a rule reading the clock would say dark.
-     */
+    // Why the band comes off elevation and not off the hour. Northern midsummer inside the Arctic circle: the
+    // small hours are broad daylight, and a rule reading the clock would say dark.
     const midsummer = Date.UTC(2026, 5, 21, 12, 0, 0);
     const lon = subsolarPoint(midsummer).lon + 180;
     expect(solarHour(lon, midsummer)).toBeCloseTo(0, 3);

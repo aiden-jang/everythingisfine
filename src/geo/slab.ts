@@ -1,25 +1,18 @@
 /*
  * Where the world's slabs are, from five years of the catalogue.
  *
- * Earthquakes are drawn at their own depth, and on live data that is almost nothing to look at. Measured
- * against a real USGS day: 237 events, 14 between 70 and 300km, and **exactly two** below 300. A subducted
- * plate is a sheet a hundred kilometres thick reaching seven hundred down, and two points do not describe
- * a sheet. The geometry was right and the sample was hopeless.
+ * A real USGS day carries 237 events, 14 between 70 and 300km, and exactly two below 300. A subducted plate is
+ * a sheet reaching seven hundred kilometres down, and two points do not describe a sheet.
  *
- * This is the sample. Every magnitude 4.5 event deeper than 300km between 2020 and 2025, which is 1,583
- * of them, and 1,048 of those in the Tonga-Fiji corner alone. Drawn together they are the dipping plane
- * the day view can only hint at.
+ * This is the sample: every magnitude 4.5 event deeper than 300km between 2020 and 2025, 1,583 of them, with
+ * 1,048 in the Tonga-Fiji corner alone.
  *
- * **It is geography, not data, and it is drawn that way.** These are not today's earthquakes and must not
- * be mistaken for them, so they carry no ramp colour and no magnitude size: one dim tone, one small dot,
- * the same treatment the plate boundaries get. The boundaries say where two plates meet at the surface;
- * this says where one of them went. Today's events then draw over it in the ramp, which is the only layer
- * on this globe entitled to hue.
+ * It is geography, not data, and it is drawn that way: no ramp colour and no magnitude size, the same
+ * treatment the plate boundaries get. The boundaries say where two plates meet at the surface; this says
+ * where one of them went.
  *
- * **Not fetched at runtime.** `tools/make-slab.mjs` asks USGS once and commits the answer, because this
- * does not change: it is where slabs are, not what happened this morning. 37kB of numbers, 12kB over the
- * wire, as its own chunk behind a toggle - the arrangement `plateMotion.json` already has, for the reason
- * given there.
+ * Not fetched at runtime. `tools/make-slab.mjs` asks USGS once and commits the answer, because this does not
+ * change: 37kB of numbers, 12kB over the wire, as its own chunk behind a toggle.
  */
 
 /** `[lon, lat, depthKm, magnitude]`, as generated. */

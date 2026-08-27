@@ -26,13 +26,23 @@ export default defineConfig({
    */
   fullyParallel: true,
   /*
-   * Two, not four. Each worker runs a WebGL globe, and four of them saturated the machine at 584% CPU
-   * and failed three tests on the entrance spring taking longer than its poll allowed. Two halves the
-   * wall clock without turning the suite into its own load test.
+   * Two locally, one in CI, and each number is measured rather than picked.
+   *
+   * Each worker runs a WebGL globe. Four saturated this machine at 584% CPU and failed three tests on the
+   * entrance spring taking longer than its poll allowed. Two is fine for a single spec - `design.spec.ts`
+   * alone runs 27 tests green in 2.0m - and is still too many for the whole suite: a full run put two
+   * design tests red that both pass in isolation in 32s, so the suite was load-testing itself.
+   *
+   * A CI runner has fewer cores than this and no GPU at all, so WebGL falls back to software rendering.
+   * One worker there removes the contention rather than betting the build on it.
    */
-  workers: 2,
-  timeout: 45_000,
-  expect: { timeout: 15_000 },
+  workers: process.env["CI"] ? 1 : 2,
+  /*
+   * Longer in CI for the same reason. These are wall-clock budgets on a spring settling and a canvas
+   * painting, and software rendering makes both slower without making either wrong.
+   */
+  timeout: process.env["CI"] ? 90_000 : 45_000,
+  expect: { timeout: process.env["CI"] ? 30_000 : 15_000 },
   use: {
     baseURL: "http://localhost:31600",
     trace: "retain-on-failure",

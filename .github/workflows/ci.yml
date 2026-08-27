@@ -24,6 +24,50 @@ jobs:
       - run: pnpm test:heap
       - run: pnpm build
 
+  # The browser suite, which stayed out of CI while it talked to two real agencies: a quiet planet or an
+  # agency doing maintenance would have failed the build for reasons that are not the code's fault.
+  # `e2e/feeds.ts` serves both agencies, all five hazard feeds and the aurora, so the reason is gone.
+  #
+  # Its own job rather than more steps on `check`, so a WebGL failure and a type error are told apart at a
+  # glance and the unit gate is not held up behind a browser download.
+  #
+  # `pnpm dev` rather than `EIF_BUILD=1`. Build mode exercises `dist` and is the stronger gate against a
+  # bundler-only failure, but seven tests reach for `window.__globe`, which a production bundle correctly
+  # does not carry - so it covers less of the product's behaviour. `test:e2e:build` stays a deliberate
+  # pre-release run.
+  #
+  # NOT a `needs:` for deploy yet, and that is deliberate rather than an oversight. The suite load-tests
+  # itself: a full parallel run on a developer machine put two design tests red that both pass in isolation
+  # in 32s, and `design.spec.ts` on its own runs 27 green in 2.0m. `playwright.config.ts` now drops to one
+  # worker and doubles the timeouts under CI, which should remove the contention - but a runner has fewer
+  # cores and software-rendered WebGL, and none of that has been observed from here. So it runs on every
+  # push and PR where its real behaviour is visible, and it is promoted to a deploy gate once it has been
+  # green on a runner. Blocking deploys on an unverified browser suite is the thing this job exists to
+  # stop happening.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Chromium only, because the config declares no `projects` and the default is one browser. Installing
+      # all three would be three downloads to run the same tests once.
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      # `trace: "retain-on-failure"`, so this is empty on a green run and is the whole picture on a red one.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
   # Auto-deploy on merge to main, only after the checks above pass.
   #
   # Needs a CLOUDFLARE_API_TOKEN repo secret with Workers Scripts:Edit. No D1 permission, because

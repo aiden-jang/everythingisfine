@@ -6213,3 +6213,58 @@ files, so a static scan cannot see it. Removing it would have broken the build. 
 `tools/make-*.mjs` generators as unused files, which they are, and they are the provenance of every
 committed table in `src/geo/` - deleting them would leave `slab.json` and `stars.json` with no way to be
 regenerated and no record of how they were made.
+
+### The browser suite is a gate now, and the reason it was not is gone
+
+It stayed out of CI because it talked to two real agencies, and that was the right call: a quiet planet or
+an agency doing maintenance would have failed the build for reasons that are not the code's fault. Then
+`e2e/feeds.ts` grew fixtures for both agencies, all five hazard feeds and the aurora, and the reason
+quietly stopped applying. Nothing was re-decided; the entry in the README just went on saying it.
+
+**Its own job rather than more steps on `check`**, so a WebGL failure and a type error are told apart at a
+glance and the unit gate is not held up behind a browser download.
+
+**And it does not gate the deploy yet, which the run that was supposed to bless it is the reason for.**
+The full suite came back 2 failed, 7 flaky, 63 passed. Both failures were in `design.spec.ts`, and both
+passed in isolation in 32 seconds; `design.spec.ts` on its own at two workers runs 27 green in 2.0m. So
+the suite was load-testing itself, and the seven flaky ones self-healed on the existing single retry.
+
+`workers: 2` came from a measurement against one spec and was never checked against the whole suite. It is
+now one worker under CI with the timeouts doubled, because a runner has fewer cores than this machine and
+software-rendered WebGL on top. That should remove the contention and it has not been watched doing it, so
+the job runs on every push where its behaviour is visible and is promoted to a `needs:` once it has been
+green on a runner. Wiring an unverified browser suite in front of deploys is the failure this job exists
+to prevent, not to cause.
+
+**Against `pnpm dev`, not `EIF_BUILD=1`, and that is the weaker of the two gates on one axis.** Build mode
+exercises `dist` and is the only thing that catches a bundler-only failure - a purged Tailwind arbitrary
+class, a dynamic import that splits wrong - and both of those have shipped here. But seven tests reach for
+`window.__globe`, which a production bundle correctly does not carry, so build mode covers less of the
+product's actual behaviour. Full behavioural coverage on every push is worth more as a standing gate than
+a narrower run that catches a rarer class of bug, and `test:e2e:build` stays there for deliberate use.
+
+Chromium only, because the config declares no `projects`. Installing three browsers to run the same tests
+once is three downloads for nothing.
+
+### The tail of the comment pass, and where the cut stopped being worth making
+
+The second pass took the 101 files the first one never reached: every `*.test.ts` and every
+`tools/make-*.mjs`, holding 2,334 comment lines between them.
+
+**The generator scripts were the clearest case.** Each opened with six or seven paragraphs arguing why the
+data was chosen, which is the same argument this file already holds, and buried the two things a person
+running the script actually needs: the command, and the trap. `make-stars.mjs` is the example - the byte
+offsets are the whole of it, because BSC5 carries a B1900 coordinate block before the J2000 one and
+reading the wrong one puts every star a degree and a half out, invisible until somebody who knows the sky
+looks at it. That survived. The three paragraphs on why magnitude 6.0 rather than 5.5 did not.
+
+**And the pass stopped rather than finishing.** About sixty files were left as they were, because their
+comments are already three or four lines and every one of them names something that would cost real time
+to rediscover: `atan2(0, 0)` is zero so every meridian's pole vertex collapses onto the prime meridian;
+GDACS writes timestamps without a zone and the platform reads them as local; an offset of zero is a
+neighbour at the same instant and calling it earlier or later invents an order the data does not have.
+Cutting those would have been trimming for a number, which is the failure mode this whole exercise is
+against.
+
+Final figures, measured rather than estimated: **13,190 comment lines to 7,805**, a 41% cut, and the tree
+is 26% comment against 41%.

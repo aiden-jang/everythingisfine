@@ -5,11 +5,9 @@ import { DEFAULT_FILTERS } from "./feed";
 import type { Reading } from "../data/types";
 
 /*
- * The section is the one view where being slightly wrong is invisible.
- *
- * A slab drawn at the wrong dip still looks like a slab, and an offset with the wrong sign still
- * fills the corridor. So the geometry is checked against distances that can be worked out by hand:
- * a degree of latitude, a quarter of the equator, and a point known to be off to one side.
+ * The section is the one view where being slightly wrong is invisible: a slab drawn at the wrong dip still
+ * looks like a slab, and an offset with the wrong sign still fills the corridor. So the geometry is checked
+ * against distances that can be worked out by hand.
  */
 
 const NOW = Date.UTC(2026, 0, 2, 12);
@@ -57,10 +55,8 @@ describe("a cross-section", () => {
   });
 
   it("drops what is beyond either end rather than piling it on the ends", () => {
-    /*
-     * Clamping is the tempting version and it invents structure: every event in the wider region
-     * lands on one of the two edges as a vertical stack that reads like a fault.
-     */
+    // Clamping is the tempting version and it invents structure: every event in the wider region lands on
+    // one of the two edges as a vertical stack that reads like a fault.
     const store = storeWith([
       reading(0, -3, 10), // before the start
       reading(0, 13, 10), // past the end
@@ -108,15 +104,12 @@ describe("a cross-section", () => {
 });
 
 /*
- * Where the line crosses a plate boundary.
+ * Where the line crosses a plate boundary. The tick turns the section from a shape into an explanation, so a
+ * wrong one is worse than none.
  *
- * The tick is what turns the section from a shape into an explanation, so a wrong one is worse than
- * none: it would put the reason for the slab in the wrong place and still look deliberate.
- *
- * The far side of the planet is the case that looks like it needs guarding and does not: the great
- * circle through the two ends is a whole circle, so boundaries cross it everywhere, and everywhere
- * other than on the section lands outside nought to length. Asserted below rather than assumed, since
- * the first version of this carried a distance guard on the strength of that worry.
+ * The far side of the planet looks like it needs guarding and does not: the great circle through the two ends
+ * is a whole circle, so boundaries cross it everywhere, and everywhere but the section lands outside nought
+ * to length. Asserted below rather than assumed, since the first version carried a distance guard.
  */
 describe("plate boundaries along a section", () => {
   const crossings = (
@@ -141,11 +134,8 @@ describe("plate boundaries along a section", () => {
   });
 
   it("reports a crossing only where the boundary is actually near the line", () => {
-    /*
-     * The invariant behind the range check, stated rather than trusted: every tick has to sit where a
-     * boundary vertex sits, within the length of one simplified segment. Swept over the globe because
-     * a single lucky line proves nothing about a circle that goes all the way round.
-     */
+    // The invariant behind the range check: every tick has to sit where a boundary vertex sits, within one
+    // simplified segment. Swept over the globe, because a single lucky line proves nothing about a circle.
     for (let lon = -180; lon < 180; lon += 23) {
       for (let lat = -50; lat <= 50; lat += 25) {
         const line = { fromLon: lon, fromLat: lat, toLon: lon + 6, toLat: lat + 4 };
@@ -179,10 +169,8 @@ describe("plate boundaries along a section", () => {
 });
 
 describe("the slab in the section", () => {
-  /*
-   * `[lon, lat, depthKm, magnitude]`, the shape `geo/slab.json` ships. Placed by hand so the corridor
-   * test is checking geometry rather than whatever the committed table happens to contain.
-   */
+  // `[lon, lat, depthKm, magnitude]`, the shape `geo/slab.json` ships. Placed by hand so the corridor test
+  // checks geometry rather than whatever the committed table happens to contain.
   const LINE = { fromLon: 0, fromLat: 0, toLon: 10, toLat: 0 } as const;
 
   it("keeps what is inside the corridor and drops what is not", () => {

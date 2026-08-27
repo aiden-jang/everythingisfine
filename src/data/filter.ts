@@ -1,12 +1,9 @@
 import type { Filters, Quake } from "./types";
 
 /*
- * What is on screen right now.
- *
- * Pure predicates over a quake and a clock, deliberately taking `now` as an argument rather than
- * reading it. Filtering has to be re-run on every frame while a slider moves, and a function that
- * reads the clock itself cannot be tested for the one case that matters: what happens exactly on a
- * boundary.
+ * What is on screen right now. Pure predicates over a quake and a clock, taking `now` as an argument rather
+ * than reading it: filtering re-runs on every frame while a slider moves, and a function that reads the clock
+ * cannot be tested for the one case that matters, which is what happens exactly on a boundary.
  */
 
 /** Magnitude is judged on the primary reading, the same one the marker is drawn from. */
@@ -15,12 +12,9 @@ export function passesMagnitude(quake: Quake, min: number): boolean {
 }
 
 /**
- * Origin time, not arrival.
- *
- * A quake that happened twenty minutes ago but reached us thirty seconds ago belongs twenty minutes
- * back on a timeline, and putting it at the front would be a lie about when the ground moved. This
- * is the reason the store evicts on arrival while the filter selects on origin: the two orderings
- * answer different questions and collapsing them gets one of them wrong.
+ * Origin time, not arrival. A quake that happened twenty minutes ago but reached us thirty seconds ago belongs
+ * twenty minutes back on a timeline. This is why the store evicts on arrival while the filter selects on
+ * origin: the two orderings answer different questions.
  */
 export function passesWindow(quake: Quake, now: number, windowMs: number): boolean {
   return now - quake.primary.time <= windowMs;
@@ -40,17 +34,12 @@ export function matches(quake: Quake, filters: Filters, now: number): boolean {
 }
 
 /**
- * The window's honest left edge, as a timestamp.
+ * The window's honest left edge, as a timestamp. With no backend a requested window can reach back further
+ * than anything the app holds, so this returns the later of the two and the rail prints whichever it is.
  *
- * With no backend the app only knows what its sources handed it, so a requested window can reach
- * back further than anything it holds. This returns the later of the requested window and the point
- * coverage actually begins, and the rail prints whichever it is. DESIGN.md section 10 treats this
- * as a design rule rather than a nicety: it is the difference between a demo and a claim.
- *
- * `coveredSince` is coverage, not arrival. It used to be the earliest arrival still held, which was
- * true when the seed fetched an hour and became a permanent lie when it started fetching a day:
- * every event in a full day-long buffer arrives at page open, so the rail said "still filling"
- * forever. A rule that is always on stops being read, which is worse than not having it.
+ * `coveredSince` is coverage, not arrival. As the earliest arrival still held it was true when the seed
+ * fetched an hour and became a permanent lie when it started fetching a day: every event in a full buffer
+ * arrives at page open, so the rail said "still filling" forever.
  */
 export function windowStart(
   now: number, windowMs: number, coveredSince: number | null,

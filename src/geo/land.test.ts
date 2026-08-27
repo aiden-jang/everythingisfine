@@ -6,16 +6,15 @@ describe("the land mesh", () => {
   const land = buildLand();
 
   /*
-   * The guard for a bug that was reported four times and misdiagnosed three.
+   * The guard for a bug reported four times and misdiagnosed three.
    *
-   * A vertex stranded on the straight edge of an unsplit neighbour is lifted onto the sphere while the
-   * edge stays a chord in screen space, so the mesh opens a lens the width of that edge's sagitta and
-   * the ocean shows through it. It was invisible at a 1x pixel ratio and about four pixels at 2x, and it
-   * survived being blamed on the graticule, on plate lines and on the night overlay.
+   * A vertex stranded on the straight edge of an unsplit neighbour is lifted onto the sphere while the edge
+   * stays a chord in screen space, so the mesh opens a lens the width of that edge's sagitta. Invisible at
+   * 1x and about four pixels at 2x, and it survived being blamed on the graticule, the plate lines and the
+   * night overlay.
    *
-   * Two assertions, because either alone passes while the defect is present: no edge long enough for the
-   * gap to reach a pixel, and no edge owned by more than two triangles, which is what a fold looks like
-   * if the refinement ever goes wrong.
+   * Two assertions, because either alone passes while the defect is present: no edge long enough for the gap
+   * to reach a pixel, and no edge owned by more than two triangles.
    */
   it("keeps every edge short enough that a stranded vertex cannot open a visible gap", () => {
     let longest = 0;
@@ -38,11 +37,9 @@ describe("the land mesh", () => {
   });
 
   it("winds every triangle outward, so back-face culling can hide the far side", () => {
-    /*
-     * The fill is drawn without a depth test, so culling is the only thing hiding the far hemisphere.
-     * A triangle wound the wrong way survives on the far side and vanishes on the near one, which
-     * reads as the globe being slightly transparent rather than as a bug.
-     */
+    // The fill is drawn without a depth test, so culling is the only thing hiding the far hemisphere. A
+    // triangle wound the wrong way survives on the far side and vanishes on the near one, which reads as
+    // the globe being slightly transparent.
     let inward = 0;
     const p = land.position;
     for (let i = 0; i < land.index.length; i += 3) {
@@ -66,17 +63,12 @@ describe("the land mesh", () => {
 /*
  * The date line, in the ring rather than in the picture.
  *
- * Three Natural Earth rings hold both +180 and -180, the largest being the 1,320-point Eurasia ring,
- * which crosses the antimeridian exactly twice: out at 178.6E and back at 180W. Read literally that
- * ring teleports across the world halfway round its own coastline, which makes it self-intersecting
- * in longitude and latitude, and earcut promises nothing about a polygon that is not simple. It
- * emitted wedges a hundred and fifty degrees long and a quarter of a degree thick: no area to speak
- * of, invisible on a globe where longitude is compressed at those latitudes, and a hairline drawn
- * across the ocean the moment the map existed.
+ * Three Natural Earth rings hold both +180 and -180. Read literally, Eurasia teleports across the world
+ * halfway round its own coastline, which makes it self-intersecting, and earcut promises nothing about a
+ * polygon that is not simple: it emitted wedges a hundred and fifty degrees long and a quarter thick.
  *
- * Tested on the ring rather than on the mesh because the mesh cannot tell the difference. An ordinary
- * earcut needle over Kazakhstan spans 16 degrees and one out of the date line spanned 19, so no
- * threshold on triangle width separates a wedge from the triangulation working normally.
+ * Tested on the ring rather than on the mesh, because the mesh cannot tell the difference: an ordinary
+ * earcut needle over Kazakhstan spans 16 degrees and one out of the date line spanned 19.
  */
 describe("unwrapping a ring at the date line", () => {
   it("leaves an ordinary ring alone", () => {

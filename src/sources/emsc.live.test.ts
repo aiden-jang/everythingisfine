@@ -5,14 +5,11 @@ import { createEmscSource, EMSC_CATALOGUE, EMSC_SOCKET, SEED_LIMIT } from "./ems
 /*
  * The second and last test that touches the real internet. Excluded from the default run and CI.
  *
- * It asserts that the socket still accepts an anonymous connection, and nothing at all about what
- * comes down it. Global seismicity above the reporting threshold arrives every few minutes, so a
- * test that waited for an event would fail on a quiet planet, which is not a defect in this code.
+ * It asserts that the socket still accepts an anonymous connection, and nothing about what comes down it: a
+ * test that waited for an event would fail on a quiet planet.
  *
- * That connection is the entire basis for the push half of the design and for the zero-invocation
- * deployment: if EMSC ever starts requiring a key, the project needs a Worker to hold it and the
- * "no configuration, first frame is already live" promise in DESIGN.md is over. Better to learn
- * that from a deliberate test than from a globe that quietly only ever shows one source.
+ * That connection is the whole basis for the push half of the design and the zero-invocation deployment. If
+ * EMSC ever requires a key, the project needs a Worker to hold it.
  */
 
 describe("EMSC, for real", () => {
@@ -43,13 +40,10 @@ describe("EMSC, for real", () => {
   }, 25_000);
 
   /*
-   * The two facts the coverage claim rests on, which were argued rather than measured for a long time.
-   *
-   * A short page is read as a complete catalogue for the span asked for, and a full one as a page
-   * truncated at its oldest row. Both readings are only sound while the portal's own ceiling sits far
-   * above `SEED_LIMIT` and while it truncates from the old end. Neither is documented, so neither is
-   * promised, and if either changes the app starts claiming coverage it does not have while looking
-   * exactly as it does now. That is the failure worth a deliberate test.
+   * The two facts the coverage claim rests on, argued rather than measured for a long time: a short page is a
+   * complete catalogue for the span asked for, and a full one is truncated at its oldest row. Both hold only
+   * while the portal's ceiling sits far above `SEED_LIMIT` and while it truncates from the old end. Neither
+   * is documented, so neither is promised.
    */
   it("has a row ceiling far above the seed limit, so a short page is a short catalogue", async () => {
     const since = new Date(Date.now() - 30 * 24 * 3_600_000).toISOString().slice(0, 19);
@@ -60,12 +54,10 @@ describe("EMSC, for real", () => {
     const payload = (await res.json()) as { features: unknown[] };
 
     /*
-     * Asking for four times the limit has to return more than the limit. If it ever comes back at or
-     * under `SEED_LIMIT`, ours has stopped being the binding limit and a page under it could be a
-     * silently truncated one, at which point vouching for the whole span is a guess.
+     * Asking for four times the limit has to return more than the limit. If it ever comes back at or under
+     * `SEED_LIMIT`, ours has stopped being the binding limit and a page under it could be silently truncated.
      *
-     * Measured at 14,958 events over thirty days on 2026-08-19, against a portal ceiling of 20,000,
-     * so there is a wide margin here rather than a coincidence.
+     * Measured at 14,958 events over thirty days on 2026-08-19, against a portal ceiling of 20,000.
      */
     expect(payload.features.length).toBeGreaterThan(SEED_LIMIT);
   }, 60_000);
@@ -81,12 +73,9 @@ describe("EMSC, for real", () => {
     expect(payload.features.length).toBe(5);
 
     /*
-     * Five rows out of a month have to be the newest five. Were the order ever to flip, a truncated
-     * page's oldest row would sit back at `start` and the app would vouch for the whole month while
-     * holding the five oldest events in it: the same code, the opposite of honest.
-     *
-     * Three days rather than an hour, because the assertion is about which end is kept and a quiet
-     * planet is not a defect in this code.
+     * Five rows out of a month have to be the newest five. Were the order to flip, a truncated page's oldest
+     * row would sit back at `start` and the app would vouch for the whole month while holding the five oldest
+     * events in it. Three days rather than an hour, because a quiet planet is not a defect in this code.
      */
     const times = payload.features.map((f) => Date.parse(f.properties.time));
     expect(Math.min(...times)).toBeGreaterThan(now - 3 * 24 * 3_600_000);

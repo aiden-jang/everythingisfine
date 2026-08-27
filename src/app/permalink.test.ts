@@ -80,13 +80,11 @@ describe("permalinks", () => {
 });
 
 /*
- * The cross-section, in the link.
+ * The cross-section, in the link. The one piece of state somebody makes rather than chooses, and the only one
+ * that carries a view: a section has nowhere to be drawn except the map.
  *
- * It is the one piece of state somebody makes rather than chooses, so it is the one most worth
- * sending, and it is also the only one that carries a view: a section has nowhere to be drawn except
- * the map. What needs guarding is what guards every other field here, since a fragment is untrusted
- * input in the most ordinary way, and one extra guard of its own: a line with both ends in the same
- * place finds nothing and reads as a broken link rather than an edited one.
+ * One guard of its own beyond the untrusted-input rules: a line with both ends in the same place finds
+ * nothing and reads as a broken link rather than an edited one.
  */
 describe("a cross-section in the link", () => {
   const line = { fromLon: 138.5, fromLat: 34.2, toLon: 145.8, toLat: 39.9 };
@@ -135,23 +133,16 @@ describe("a cross-section in the link", () => {
 
 describe("the window, which was silently thrown away", () => {
   it("carries a week and a month, which it used to flatten to a day", () => {
-    /*
-     * The bug this describes: the decoder clamped `w` to 1..24, which was right while a day was the
-     * only choice and wrong from the moment 7d and 30d shipped. A link to a month arrived as a day and
-     * nothing said so, which is the worst of the three possible outcomes and the reason a round trip is
-     * asserted here rather than each direction separately.
-     */
+    // The decoder clamped `w` to 1..24, which was right while a day was the only choice: a link to a month
+    // arrived as a day and nothing said so. Asserted as a round trip rather than each direction separately.
     for (const windowHours of [24, 168, 720]) {
       expect(decode(encode({ ...state, windowHours })).windowHours).toBe(windowHours);
     }
   });
 
   it("snaps a window nobody can select to the nearest one they can", () => {
-    /*
-     * The rule at the top of `decode`: a link must not leave the app in a state it has no other way to
-     * reach. A 100-hour window works arithmetically and would leave the window buttons showing nothing
-     * selected, with no way back to whatever the link asked for.
-     */
+    // A link must not leave the app in a state it has no other way to reach. A 100-hour window works
+    // arithmetically and leaves the window buttons showing nothing selected.
     expect(decode("w=100").windowHours).toBe(168);
     expect(decode("w=1").windowHours).toBe(24);
     expect(decode("w=100000").windowHours).toBe(720);
@@ -182,10 +173,8 @@ describe("the moment, which the camera never carried", () => {
   });
 
   it("drops a moment that is not one, rather than clamping to a nearby year", () => {
-    /*
-     * Unlike a window, there is no nearest valid moment: 1970 and the year 5000 are both simply not
-     * what the link meant, so they go the way an unreadable camera goes.
-     */
+    // Unlike a window, there is no nearest valid moment: 1970 and the year 5000 are both simply not what
+    // the link meant.
     expect(decode("c=0").cursor).toBeUndefined();
     expect(decode("c=-5").cursor).toBeUndefined();
     expect(decode("c=99999999999999").cursor).toBeUndefined();
@@ -193,21 +182,15 @@ describe("the moment, which the camera never carried", () => {
   });
 
   it("does not carry whether it was playing", () => {
-    /*
-     * A link that arrives already running is motion the recipient did not ask for, which is the same
-     * objection DESIGN.md makes to ambient rotation. It arrives held.
-     */
+    // A link that arrives already running is motion the recipient did not ask for. It arrives held.
     expect(encode({ ...state, cursor: at })).not.toMatch(/p=|play/);
   });
 });
 
 describe("bounds read from the controls rather than restated", () => {
   it("carries the top of the magnitude scale, which it used to shave", () => {
-    /*
-     * The clamp read 0..7 while the slider runs MAG_MIN to MAG_MAX, 1 to 7.5. A filter parked at the top
-     * of the scale shared as 7.5 and arrived as 7: the sibling of the window bug, and the same cause, a
-     * bound written as a literal instead of read from the thing it bounds.
-     */
+    // The clamp read 0..7 while the slider runs 1 to 7.5, so a filter parked at the top of the scale shared
+    // as 7.5 and arrived as 7: a bound written as a literal instead of read from the thing it bounds.
     expect(MAG_MAX).toBe(7.5);
     expect(decode(encode({ ...state, minMagnitude: MAG_MAX })).minMagnitude).toBe(MAG_MAX);
   });
@@ -220,11 +203,8 @@ describe("bounds read from the controls rather than restated", () => {
   });
 
   it("carries a map zoomed out past the globe's floor", () => {
-    /*
-     * The map derives its own floor from the zoom at which the frame is 360 degrees wide: 0.64 at
-     * desktop and 0.19 on a phone, both under the globe's 0.75. Clamping to 0.75 here made every fully
-     * zoomed-out map view arrive up to four times tighter than it was shared.
-     */
+    // The map derives its own floor from the zoom at which the frame is 360 degrees wide: 0.64 at desktop and
+    // 0.19 on a phone, both under the globe's 0.75. Clamping to 0.75 made every zoomed-out map arrive tighter.
     for (const zoom of [0.19, 0.31, 0.64]) {
       expect(decode(encode({ ...state, zoom })).zoom).toBeCloseTo(zoom, 6);
     }
@@ -257,10 +237,7 @@ describe("an archived day in the link", () => {
   });
 
   it("refuses a date that only looks like one", () => {
-    /*
-     * `2026-02-31` matches the shape and is not a date; `Date.parse` would roll it into March and the
-     * app would show a day nobody asked for.
-     */
+    // `2026-02-31` matches the shape and is not a date; `Date.parse` would roll it into March.
     expect(decode("#d=2026-02-31").day).toBeUndefined();
     expect(decode("#d=2026-13-01").day).toBeUndefined();
     expect(decode("#d=04-07-2026").day).toBeUndefined();

@@ -2,15 +2,11 @@ import { describe, expect, it } from "vitest";
 import { fetchHistory } from "./history";
 
 /*
- * EONET, for real, and excluded from the default run for the reason `usgs.live.test.ts` gives.
+ * EONET, for real. Run it deliberately:  pnpm test:live
  *
- * Run it deliberately:  pnpm test:live
- *
- * This one has more to check than the earthquake feeds do, because the whole feature rests on a claim
- * about somebody else's API: that `start`/`end` are honoured. GDACS looked like it honoured them and did
- * not, and the difference is invisible from a single query - which is exactly how this nearly shipped as a
- * layer that draws one storm on a day that had many. So the assertion is comparative: two different days
- * must return different sets.
+ * The whole feature rests on a claim about somebody else's API: that `start`/`end` are honoured. GDACS looked
+ * like it honoured them and did not, and the difference is invisible from a single query - which is how this
+ * nearly shipped as a layer that draws one storm on a day that had many. So the assertion is comparative.
  */
 
 const day = (iso: string): { from: number; to: number } => {

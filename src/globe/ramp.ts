@@ -3,15 +3,12 @@ import { DataTexture, LinearFilter, RGBAFormat, UnsignedByteType } from "three";
 /*
  * The only place hue is allowed to exist.
  *
- * DESIGN.md section 3 forbids the interface any hue at all, because the default ramp is warm and the
- * colourblind-safe ramp runs blue to yellow, and between them they occupy most of the wheel. Keeping
- * every stop in one file makes that rule enforceable rather than aspirational: if a colour is not
- * here, it is chrome, and chrome is achromatic.
+ * The default ramp is warm and the colourblind-safe ramp runs blue to yellow, and between them they occupy
+ * most of the wheel. Keeping every stop in one file makes the rule enforceable: if a colour is not here, it
+ * is chrome, and chrome is achromatic.
  *
- * Ramps are uploaded as a 256-pixel texture and sampled in the shader. Two reasons beyond speed.
- * Switching ramps becomes a single uniform swap rather than fifty thousand colour rewrites, and the
- * shader has no way to express a colour that is not on the ramp, so a fifty-thousand-point layer
- * literally cannot drift off-palette.
+ * Uploaded as a 256-pixel texture and sampled in the shader. Switching ramps is one uniform swap rather than
+ * fifty thousand colour rewrites, and the shader has no way to express a colour that is not on the ramp.
  */
 
 export type RampName = "thermal" | "cividis";
@@ -24,12 +21,9 @@ const STOPS: Record<RampName, readonly string[]> = {
 };
 
 /**
- * The magnitude range the ramp spans.
- *
- * Not the range earthquakes occupy, which reaches past 9. Almost everything reported sits between
- * 1 and 6, and stretching the ramp to 9 would spend most of its resolution on a band that is empty
- * for months at a time. Above 7.5 the colour clamps, and since radius keeps growing past that
- * point the largest events still read as the largest events.
+ * The magnitude range the ramp spans. Not the range earthquakes occupy, which reaches past 9: almost
+ * everything reported sits between 1 and 6, and stretching to 9 would spend most of the resolution on a band
+ * that is empty for months. Above 7.5 the colour clamps and radius keeps growing.
  */
 export const MAG_MIN = 1;
 export const MAG_MAX = 7.5;
@@ -47,11 +41,9 @@ function hexToRgb(hex: string): [number, number, number] {
 const WIDTH = 256;
 
 /**
- * A ramp as a 1D texture.
- *
- * Interpolated in sRGB between the stops, which is not the perceptually correct space, and is the
- * right choice here anyway: the stops were picked by eye against this background, and interpolating
- * in a space they were not chosen in moves the midtones somewhere nobody looked at.
+ * A ramp as a 1D texture. Interpolated in sRGB between the stops, which is not the perceptually correct space
+ * and is right anyway: the stops were picked by eye against this background, and interpolating in a space they
+ * were not chosen in moves the midtones somewhere nobody looked at.
  */
 export function rampTexture(name: RampName): DataTexture {
   const stops = STOPS[name].map(hexToRgb);

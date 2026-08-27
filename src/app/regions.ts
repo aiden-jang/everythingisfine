@@ -5,13 +5,11 @@ import { matches } from "../data/filter";
 /*
  * Named seismic regions, so the rail has somewhere to fly to.
  *
- * Authored rather than derived, and the bounds are real. Deriving regions by clustering the events
- * themselves was the tempting alternative and it is worse: the names would change from load to
- * load, and "cluster 3" is not a place anyone can decide to look at. These are the margins a
- * seismologist would name, and their boxes are the ones on the map.
+ * Authored rather than derived. Clustering the events themselves would make the names change from load to
+ * load, and "cluster 3" is not a place anyone can decide to look at.
  *
- * The counts under them are not authored. They are whatever is currently held and passing the
- * filter, which is why a quiet region reads zero rather than disappearing.
+ * The counts under them are not authored: they are whatever is held and passing the filter, which is why a
+ * quiet region reads zero rather than disappearing.
  */
 
 export interface Region {
