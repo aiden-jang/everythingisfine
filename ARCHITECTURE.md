@@ -143,15 +143,22 @@ three.js is 127KB gzipped and fixed. Against a single combined ceiling a 20KB re
 application code reads as 10% drift; against the thing that actually changed it is a third of the
 budget. Vendors are paid for once; application code and geometry are what move.
 
-| Chunk | Budget | At step 3 |
-|---|---|---|
-| Application code | 60KB | 4.1KB |
-| Coastline geometry | 40KB | 26.5KB |
-| three.js | 135KB | 127.7KB |
-| React | 50KB | 45.7KB |
+| Chunk | Budget | At step 3 | 2026-08-27 |
+|---|---|---|---|
+| Application code | 75KB | 4.1KB | 70.1KB |
+| Coastline geometry | 40KB | 26.5KB | **41.1KB, over** |
+| Celestial positions | no ceiling yet | did not exist | 2.4KB |
+| three.js | 135KB | 127.7KB | 128.1KB |
+| React's API, preact's runtime | 15KB | 45.7KB | 7.8KB |
 
-React's 45.7KB is the reserve if application code ever needs it: nothing here uses React beyond
-components and effects, so `preact/compat` reclaims most of it. That is a reserve, not a plan.
+~~React's 45.7KB is the reserve if application code ever needs it.~~ **Spent on 2026-08-27.** Application
+code reached 70KB and `preact/compat` took that line to 7.8KB, which paid for the rise to 75KB. DESIGN
+section 11 holds the full working; this table is the same four numbers and was two of them out of date
+until the swap forced a look at it.
+
+A second copy of a budget is a second thing to go stale, and this one did: it still called a spent reserve
+a reserve. Kept rather than deleted because it is the number a reader of this file needs at this point, and
+now dated so the next drift is visible.
 
 ---
 
