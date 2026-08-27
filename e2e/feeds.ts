@@ -119,6 +119,13 @@ const usgsFeature = (q: Quake, now: number) => ({
     ...(q.magnitude >= 4.2
       ? { felt: Math.round(q.magnitude * 37) % 900, cdi: Math.min(8, q.magnitude - 0.4) }
       : {}),
+    /*
+     * A shaking map on fewer events still, and deliberately not equal to `cdi`.
+     *
+     * The two rows exist to be read against each other, so a fixture where they always agreed would
+     * hide the case the wording was written for. Modelled peaks run higher than what people report.
+     */
+    ...(q.magnitude >= 4.6 ? { mmi: Math.min(9, q.magnitude + 0.8) } : {}),
   },
   geometry: { coordinates: [q.lon, q.lat, q.depthKm] },
 });

@@ -105,10 +105,16 @@ const SHAKING = [
   "extreme",
 ];
 
+/** One point on the intensity scale, in the scale's own word. */
+export function shakingWord(intensity: number): string | null {
+  if (!Number.isFinite(intensity) || intensity <= 0) return null;
+  return SHAKING[Math.min(SHAKING.length - 1, Math.max(0, Math.round(intensity) - 1))] ?? null;
+}
+
 export function feltNote(felt: { reports: number; intensity?: number } | undefined): string | null {
   if (!felt || felt.reports < 1) return null;
   const who = felt.reports === 1 ? "1 person" : `${felt.reports.toLocaleString("en-GB")} people`;
-  const step = felt.intensity === undefined ? null : SHAKING[Math.min(SHAKING.length - 1, Math.max(0, Math.round(felt.intensity) - 1))];
+  const step = felt.intensity === undefined ? null : shakingWord(felt.intensity);
   return step ? `${who}, ${step}` : who;
 }
 
@@ -346,6 +352,18 @@ export function DetailPanel({
           The consequence is stated rather than the jargon left bare: "automatic" alone means nothing to
           a reader who has not met the word, and "may still change" is the entire reason to care.
         */}
+        {/*
+          What a model says the worst of it was, as against what people said where they were.
+
+          "Up to" is doing the work: this is the peak of a whole shaking map, so it is higher than nearly
+          every individual account of the same earthquake. Bare, it would read as "what it felt like",
+          and a reader comparing it against the felt row above would conclude one of the two was wrong.
+          They are two different questions and the wording has to keep them apart.
+        */}
+        {shakingWord(r.shaking ?? 0) ? (
+          <Field label="Shaking" value={`up to ${shakingWord(r.shaking!)!}, modelled`} />
+        ) : null}
+
         {r.review ? (
           <Field
             label="Review"

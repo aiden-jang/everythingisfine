@@ -220,3 +220,35 @@ describe("the review state", () => {
     expect(stated.length).toBe(readings.length);
   });
 });
+
+describe("the modelled shaking", () => {
+  const make = (mmi: unknown) => ({
+    type: "FeatureCollection",
+    features: [{
+      id: "x",
+      properties: { mag: 5, magType: "mb", place: "somewhere", time: 1_700_000_000_000, mmi },
+      geometry: { type: "Point", coordinates: [10, 20, 30] },
+    }],
+  });
+
+  it("keeps a real estimate", () => {
+    expect(parseUsgs(make(3.024), 1).readings[0]?.shaking).toBeCloseTo(3.024, 3);
+  });
+
+  it("is absent far more often than present, and absent is not zero", () => {
+    for (const none of [null, undefined, 0, "4", Number.NaN]) {
+      expect(parseUsgs(make(none), 1).readings[0]?.shaking, String(none)).toBeUndefined();
+    }
+  });
+
+  it("is rarer than the felt count on the recorded feed", () => {
+    /*
+     * USGS builds a shaking map for a fraction of what people report on, so a parser that read the wrong
+     * field would show up here as the two counts matching.
+     */
+    const { readings } = parseUsgs(recorded, 1_700_000_000_000);
+    const mapped = readings.filter((r) => r.shaking !== undefined).length;
+    const reported = readings.filter((r) => r.felt !== undefined).length;
+    expect(mapped).toBeLessThanOrEqual(reported);
+  });
+});
