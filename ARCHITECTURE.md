@@ -6268,3 +6268,26 @@ against.
 
 Final figures, measured rather than estimated: **13,190 comment lines to 7,805**, a 41% cut, and the tree
 is 26% comment against 41%.
+
+### The dial computed its own headline number and never said it
+
+`diurnal.ts` returns `worst`, "the largest departure from the mean, in units of sigma". It has a unit test.
+Nothing rendered it: `Dial.tsx` destructured `counts, total, mean, sigma` and dropped it.
+
+So the one number the picture is about reached nobody who could not read a ring against a band by eye - and
+nobody at all through a screen reader, because the SVG carried `aria-hidden="true"`. `Sizes.tsx`, a few
+hundred pixels away in the same rail, gives its chart `role="img"` and an `aria-label` that states its
+finding outright. Two conventions for one kind of thing, which is the shape every other audit here has found.
+
+**A number and no verdict, which is the constraint the module already sets.** With 24 bins roughly one strays
+past two sigma by luck alone, so an app printing "no signal" off that threshold would be wrong about a third
+of the time. Stating the departure and the band it is measured against is the same move `data/depth.ts`
+makes: print the number that says whether the reader can see the thing, rather than the claim that they will.
+
+Split into `worstNote` rather than built in the component, so it can be asserted without a DOM - the pattern
+`still.ts` uses for `verdictLine`.
+
+On live data at the time of writing it reads **1.9 against an expected scatter of 2**: the ring sitting just
+inside the band, which is exactly the null result the dial exists to show, now stated rather than only drawn.
+
+The first wording put two sentences ending in "of them" back to back. "The furthest hour reaches 1.9."

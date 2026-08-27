@@ -1,4 +1,4 @@
-import { BINS, departure, dialPoint, type Diurnal as Counts } from "./diurnal";
+import { BINS, departure, dialPoint, worstNote, type Diurnal as Counts } from "./diurnal";
 
 /*
  * The window folded onto a 24-hour dial. Behind a disclosure because its payload is a null result:
@@ -20,6 +20,7 @@ const SIZE = (R0 + SPAN + 4) * 2;
 
 export function Dial({ counts }: DialProps): JSX.Element | null {
   const { counts: bins, total, mean, sigma } = counts;
+  const worst = worstNote(counts);
   // Nothing to fold. One event per bin is not a distribution and the band would be wider than the dial.
   if (total < BINS * 2) return null;
 
@@ -40,7 +41,13 @@ export function Dial({ counts }: DialProps): JSX.Element | null {
         viewBox={`${-SIZE / 2} ${-SIZE / 2} ${SIZE} ${SIZE}`}
         className="mx-auto block"
         style={{ width: `${SIZE}px`, height: `${SIZE}px` }}
-        aria-hidden="true"
+        role="img"
+        aria-label={
+          worst === null
+            ? "Earthquakes by hour of local solar time."
+            : `Earthquakes by hour of local solar time. The furthest hour departs an even spread by `
+              + `${worst} units of counting noise, against an expected scatter of ${BAND}.`
+        }
       >
         {/*
           The band, as a filled annulus between plus and minus two sigma. Drawn as two rings with the
@@ -74,7 +81,13 @@ export function Dial({ counts }: DialProps): JSX.Element | null {
       <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
         Hours of local solar time, midnight at the top. Distance from the dashed ring is how far that
         hour departs from an even spread, in units of counting noise; the shaded band is two of them.
-        {" "}{total.toLocaleString("en-GB")} events.
+        {worst === null ? null : (
+          <>
+            {" "}The furthest hour reaches{" "}
+            <span className="text-dim tabular-nums">{worst}</span>.
+          </>
+        )}
+        {" "}<span className="tabular-nums">{total.toLocaleString("en-GB")}</span> events.
       </p>
     </div>
   );

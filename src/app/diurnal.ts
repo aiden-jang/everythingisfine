@@ -70,6 +70,23 @@ export function diurnal(
 }
 
 /**
+ * The dial's own finding, as a sentence, or null when there is nothing to report.
+ *
+ * `worst` was computed and tested and never drawn, so the one number the picture is about reached nobody who
+ * could not read a ring against a band - and nobody at all through a screen reader, since the drawing is not
+ * in the accessibility tree.
+ *
+ * A number and no verdict. With 24 bins roughly one strays past two sigma by luck, so an app declaring "no
+ * signal" off that threshold would be wrong about a third of the time. Stating the departure and the band it
+ * is measured against is the same move `data/depth.ts` makes: print the number that says whether the reader
+ * can see the thing, rather than the claim that they will.
+ */
+export function worstNote(d: Diurnal): string | null {
+  if (!Number.isFinite(d.worst) || d.sigma <= 0) return null;
+  return `${d.worst.toFixed(1)}`;
+}
+
+/**
  * How far a bin sits from an even spread, in sigmas, clamped for drawing. The radial axis carries this
  * rather than the count, which is the difference between a chart and a decoration: drawn from zero, a
  * month's 4.5 percent variation is under two pixels on a forty pixel bar.
