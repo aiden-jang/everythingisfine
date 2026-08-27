@@ -69,7 +69,7 @@ interface UsgsFeature {
   id?: unknown;
   properties?: {
     mag?: unknown; place?: unknown; time?: unknown; updated?: unknown;
-    magType?: unknown; type?: unknown; felt?: unknown; cdi?: unknown;
+    magType?: unknown; type?: unknown; felt?: unknown; cdi?: unknown; status?: unknown;
   };
   geometry?: { coordinates?: unknown };
 }
@@ -131,6 +131,14 @@ export function parseUsgs(payload: unknown, receivedAt: number): ParseResult {
        * rather than as a zero. `cdi` without `felt` is not a thing USGS sends, but it is cheap to
        * refuse: an intensity with no reports behind it would be a number with nothing under it.
        */
+      /*
+       * The review state, and only the two words that mean something.
+       *
+       * USGS also sends "deleted" here, and a third value could arrive at any time. Matching the two
+       * known ones and dropping the rest is what keeps an unknown word from being drawn as though it
+       * said something: absent reads as "the agency did not say", which is true of anything else.
+       */
+      ...(p?.status === "automatic" || p?.status === "reviewed" ? { review: p.status } : {}),
       ...(typeof p?.felt === "number" && p.felt > 0
         ? {
           felt: {

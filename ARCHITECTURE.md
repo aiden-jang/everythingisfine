@@ -5970,7 +5970,18 @@ The USGS parser read magnitude, scale, place, type, coordinates and time, and dr
 dependency: the bytes were already on the wire.
 
 `felt` and `cdi` are now kept and shown, because they are the only human number in an app that is
-otherwise a picture of physics with nobody in it. The rest stay out for reasons worth recording:
+otherwise a picture of physics with nobody in it.
+
+`status` is kept too, as `review`. It is the forward-looking half of the revision machinery: `revision`
+records that a number already moved, and this says a number may still, because nobody has looked at it
+yet. Until now an automatic solution - a computer's answer minutes after the ground stopped - was drawn at
+exactly the same confidence as one a seismologist had been through. Only the agency's two known words are
+accepted; USGS also sends "deleted" and could send anything, and an unknown state has to read as "the
+agency did not say" rather than being folded into one of the two that mean something.
+
+`mmi` is left for later rather than refused: it is the shaking instruments estimate as opposed to the size
+of the event, which is the more meaningful number when present, and it is present on about one event in
+thirteen. The rest stay out for reasons worth recording:
 
 - **`tsunami` is a trap.** The flag means the event is somewhere a tsunami could be generated, not that
   one happened or was warned. It would be the most consequential false claim the app could make.

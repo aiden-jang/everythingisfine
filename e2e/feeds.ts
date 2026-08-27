@@ -103,6 +103,13 @@ const usgsFeature = (q: Quake, now: number) => ({
     magType: q.magnitude >= 4.5 ? "mww" : "ml",
     type: "earthquake",
     /*
+     * Reviewed once a person has plausibly got to it, which in practice means the older and larger ones.
+     *
+     * Both values have to appear or the panel row is only ever tested in one state, and the interesting
+     * one is "automatic": a number that may still move.
+     */
+    status: q.ago > 3 * 3_600_000 && q.magnitude >= 4 ? "reviewed" : "automatic",
+    /*
      * Felt reports on the larger events only, which is roughly how the real feed behaves.
      *
      * USGS carried a count on two of thirteen events in an M4.5 day sampled while this was written, so

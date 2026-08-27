@@ -180,3 +180,43 @@ describe("felt reports", () => {
     expect(reading?.felt).toBeUndefined();
   });
 });
+
+describe("the review state", () => {
+  it("keeps the agency's own two words", () => {
+    const make = (status: unknown) => ({
+      type: "FeatureCollection",
+      features: [{
+        id: "x",
+        properties: { mag: 5, magType: "mb", place: "somewhere", time: 1_700_000_000_000, status },
+        geometry: { type: "Point", coordinates: [10, 20, 30] },
+      }],
+    });
+    expect(parseUsgs(make("automatic"), 1).readings[0]?.review).toBe("automatic");
+    expect(parseUsgs(make("reviewed"), 1).readings[0]?.review).toBe("reviewed");
+  });
+
+  it("drops anything else, including the third value USGS actually sends", () => {
+    /*
+     * "deleted" is real, and a fourth word could arrive whenever USGS decides. An unknown state must
+     * read as "the agency did not say" rather than being folded into one of the two that mean something,
+     * because this field exists precisely to stop the app guessing about provenance.
+     */
+    const make = (status: unknown) => ({
+      type: "FeatureCollection",
+      features: [{
+        id: "x",
+        properties: { mag: 5, magType: "mb", place: "somewhere", time: 1_700_000_000_000, status },
+        geometry: { type: "Point", coordinates: [10, 20, 30] },
+      }],
+    });
+    for (const odd of ["deleted", "REVIEWED", "", null, undefined, 1]) {
+      expect(parseUsgs(make(odd), 1).readings[0]?.review, String(odd)).toBeUndefined();
+    }
+  });
+
+  it("reads it off the recorded feed, where every event has one", () => {
+    const { readings } = parseUsgs(recorded, 1_700_000_000_000);
+    const stated = readings.filter((r) => r.review !== undefined);
+    expect(stated.length).toBe(readings.length);
+  });
+});
