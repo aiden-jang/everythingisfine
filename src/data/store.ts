@@ -2,15 +2,14 @@ import { choosePrimary, sameEvent, TIME_WINDOW_MS } from "./reconcile";
 import type { Quake, Reading, SourceId } from "./types";
 
 /*
- * Holding the events, and letting go of them.
+ * Holds the events and lets go of them.
  *
- * Eviction is by arrival order, not by origin time. With no backend the window genuinely starts when the
- * page loads, which is why the rail says "since 21:40" rather than "last 24 hours". Evicting the oldest
- * arrival is exactly that window, and it is O(1). By origin time it would need a heap to describe a window
- * the app does not have.
+ * Evict by arrival order, never by origin time. With no backend the window really does start when the page
+ * loads, which is why the rail says "since 21:40". Arrival order is exactly that window and it is O(1);
+ * origin time would need a heap to describe a window the app does not have.
  *
- * Delete from every index below as carefully as you write to it. A Map that only ever grows is how a live
- * view leaks, and it leaks invisibly: nothing about the picture on screen changes while it happens.
+ * Delete from every index as carefully as you write to it. A Map that only grows is how a live view leaks,
+ * and nothing on screen changes while it happens.
  */
 
 const DEFAULT_CAPACITY = 50_000;

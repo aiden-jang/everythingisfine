@@ -3,21 +3,16 @@
  *
  *   node tools/make-figures.mjs
  *
- * From d3-celestial, and the licence requires saying so:
+ * From d3-celestial, and the licence requires this notice be kept:
  *
  *   constellations.lines.json, from https://github.com/ofrohn/d3-celestial
  *   Copyright (c) 2015, Olaf Frohn. BSD 3-Clause.
  *
- * BSD 3-Clause asks that the notice be retained and reproduced in the documentation, which is what this block
- * and the entry in README.md are for.
+ * Line endpoints as coordinates, not star ids. Most asterism files list HIP numbers and the committed star
+ * table carries no ids at all, so a source that states where each line starts and ends needs no join. The
+ * lines therefore sit over stars from a different source; at this scale a tenth of a degree is invisible.
  *
- * Line endpoints as coordinates, not star identifiers. Most asterism files list pairs of HIP numbers and the
- * committed star table carries no identifiers at all, so a source that states where each line begins and ends
- * needs no join. The lines are therefore laid over stars from a different source; at this scale a tenth of a
- * degree of disagreement is invisible.
- *
- * Polylines, not segments: writing a run of joined points as independent segments duplicates every interior
- * point on the wire, and `LineSegments` gets the same buffer either way.
+ * Polylines, not segments: independent segments duplicate every interior point on the wire.
  */
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";

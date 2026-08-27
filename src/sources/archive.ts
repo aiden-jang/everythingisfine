@@ -5,13 +5,12 @@ import { parseEmscFrame } from "./emsc";
 /*
  * A day that has already happened, from both agencies.
  *
- * ARCHITECTURE.md listed "the window cannot go back before the page opened" as a backend limitation, and that
- * was wrong: both agencies expose FDSN event endpoints taking an arbitrary `starttime` and `endtime`,
- * keylessly, with `access-control-allow-origin: *`.
+ * ARCHITECTURE.md called this impossible without a backend and was wrong: both agencies expose FDSN event
+ * endpoints taking an arbitrary `starttime` and `endtime`, keylessly, with `access-control-allow-origin: *`.
  *
- * What was right about the old decision is the shape. The worse version of time scrubbing is a slider that
- * quietly makes "this is happening right now" false, so this is a mode that replaces the live set rather
- * than blending with it, and every claim of liveness in the chrome is suppressed while it is on.
+ * What the old note was right about is the shape. A slider that quietly makes "this is happening right now"
+ * false is the version worth refusing, so this is a mode: it replaces the live set rather than blending with
+ * it, and every claim of liveness in the chrome stands down while it is on.
  *
  * Both parsers are the live ones, so there is no second definition of what an earthquake is.
  */

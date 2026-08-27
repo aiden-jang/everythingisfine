@@ -1,13 +1,11 @@
 /*
- * Eclipses worth opening, because otherwise nobody will ever see one: the shadow only draws when the day and
- * the cursor land inside a few hours that occur two or three times a year.
- *
- * Not in `NOTABLE_DAYS`: that list requires a magnitude, sorts by it and labels every row with it.
- *
- * The table checks itself. A wrong minute is invisible - the day loads, the cursor sets, nothing happens -
- * so `eclipseDays.test.ts` runs every entry through the same geometry the globe uses.
+ * Eclipses worth opening. The shadow only draws inside a few hours that happen two or three times a year, so
+ * left to chance nobody ever sees one.
  *
  * Times are the published greatest eclipse, to the minute, in UTC.
+ *
+ * A wrong minute fails silently: the day loads, the cursor moves, nothing happens. `eclipseDays.test.ts`
+ * runs every row through the same geometry the globe uses.
  */
 
 export interface EclipseDay {

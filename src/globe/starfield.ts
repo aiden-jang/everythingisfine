@@ -6,22 +6,18 @@ import { starBrightness, starVector, type StarTable } from "../geo/stars";
 import { SKY_DISTANCE, SKY_GLSL } from "./sky";
 
 /*
- * The sky, as 5,080 real stars rather than a hash of the view direction.
+ * The sky, as 5,080 real stars rather than a hash of the view direction. Orion is over the Pacific in
+ * January and findable, which a generated field can never be.
  *
- * What that buys is recognition: Orion is over the Pacific in January and the Southern Cross sits under
- * Australia, and both are findable.
+ * A skybox without a skybox, and no per-frame work: the vertex shader adds `cameraPosition` to the star's own
+ * direction, so every star sits a fixed distance from the eye and nothing updates as the camera moves.
  *
- * A skybox without a skybox, and with no per-frame work. The vertex shader adds `cameraPosition` to the
- * star's own direction, so every star sits at a fixed distance from wherever the eye is and nothing has to
- * be updated as the camera moves.
+ * Depth-tested, deliberately. Three.js draws opaque before transparent, so a transparent layer with the test
+ * off paints over the planet however low its `renderOrder`. The ocean writes depth first and `STAR_DISTANCE`
+ * is far enough out that every star behind the planet fails against it.
  *
- * Depth-tested, deliberately. Three.js draws every opaque object before any transparent one, so a
- * transparent layer with the test off paints over the planet however low its `renderOrder`. The ocean is
- * opaque and writes depth first, and `STAR_DISTANCE` is far enough out that every star behind the planet
- * fails against it.
- *
- * Brightness only, no hue. A blue Rigel beside an orange Betelgeuse would be the second thing on screen
- * where colour meant something, and it would mean something different.
+ * Brightness only, no hue. A blue Rigel beside an orange Betelgeuse would be a second thing on screen where
+ * colour meant something, meaning something different.
  */
 
 /** Slightly under Instrument, so a star is never as bright as a focus ring. Matches the old field. */

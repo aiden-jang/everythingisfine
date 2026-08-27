@@ -1,18 +1,16 @@
 /*
- * The largest earthquake each region has had this century, so today's largest has something to stand next to.
- * Committed script, committed output.
+ * The largest earthquake each region has had this century. Committed script, committed output.
  *
  *   node tools/make-region-max.mjs
  *
- * Magnitude 6 and up, chosen to sit safely below every answer: no region on this list has gone a quarter
- * century without a 6, and a lower threshold would be 12,628 events instead of 3,815 for the same eleven
- * numbers.
+ * Magnitude 6 and up, safely below every answer: no region here has gone a quarter century without a 6, and
+ * lower would be 12,628 events instead of 3,815 for the same eleven numbers.
  *
- * From 2000, and the copy says "since at least". The catalogue reaches further back and the query does not,
+ * From 2000, and the copy says "since at least": the catalogue reaches further back and the query does not,
  * so a region's true maximum may be older and larger - Valdivia is not in here.
  *
- * Regions come from `regions.ts`, not from here: a second set of bounds would put a sentence about one region
- * beside a count of another.
+ * Regions come from `regions.ts`, never a second copy, or a sentence about one region ends up beside a count
+ * of another.
  */
 import { writeFile, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";

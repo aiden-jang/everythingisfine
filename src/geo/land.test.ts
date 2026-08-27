@@ -8,13 +8,11 @@ describe("the land mesh", () => {
   /*
    * The guard for a bug reported four times and misdiagnosed three.
    *
-   * A vertex stranded on the straight edge of an unsplit neighbour is lifted onto the sphere while the edge
-   * stays a chord in screen space, so the mesh opens a lens the width of that edge's sagitta. Invisible at
-   * 1x and about four pixels at 2x, and it survived being blamed on the graticule, the plate lines and the
-   * night overlay.
+   * A vertex stranded on the straight edge of an unsplit neighbour is lifted onto the sphere while that edge
+   * stays a chord, so the mesh opens a lens and the ocean shows through. Invisible at 1x, four pixels at 2x,
+   * and blamed in turn on the graticule, the plate lines and the night overlay.
    *
-   * Two assertions, because either alone passes while the defect is present: no edge long enough for the gap
-   * to reach a pixel, and no edge owned by more than two triangles.
+   * Two assertions, because either alone passes while the defect is there.
    */
   it("keeps every edge short enough that a stranded vertex cannot open a visible gap", () => {
     let longest = 0;
@@ -61,14 +59,13 @@ describe("the land mesh", () => {
 });
 
 /*
- * The date line, in the ring rather than in the picture.
+ * The date line, checked in the ring rather than in the picture.
  *
  * Three Natural Earth rings hold both +180 and -180. Read literally, Eurasia teleports across the world
- * halfway round its own coastline, which makes it self-intersecting, and earcut promises nothing about a
- * polygon that is not simple: it emitted wedges a hundred and fifty degrees long and a quarter thick.
+ * halfway round its own coastline, and earcut promises nothing about a polygon that is not simple.
  *
- * Tested on the ring rather than on the mesh, because the mesh cannot tell the difference: an ordinary
- * earcut needle over Kazakhstan spans 16 degrees and one out of the date line spanned 19.
+ * The mesh cannot tell the difference: an ordinary earcut needle over Kazakhstan spans 16 degrees and one
+ * out of the date line spanned 19.
  */
 describe("unwrapping a ring at the date line", () => {
   it("leaves an ordinary ring alone", () => {

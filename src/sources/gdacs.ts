@@ -1,13 +1,11 @@
 /*
  * The parts of GDACS every hazard layer needs, in one place.
  *
- * The list caps at 100 features and there is no way past it: `limit`, `pagesize`, `count` and `page` are all
- * ignored and all return exactly 100. Angola alone returns a full hundred wildfires, so the unfiltered
- * global response is a truncated slice of thousands. Floods and volcanoes are complete; wildfires are not,
- * and say so.
+ * The list caps at 100 and there is no way past it: `limit`, `pagesize`, `count` and `page` are all ignored
+ * and all return exactly 100. Angola alone returns a full hundred wildfires, so the global response is a
+ * truncated slice of thousands. Floods and volcanoes are complete; wildfires are not, and say so.
  *
- * One request per type. `eventlist=EQ;TC;FL;VO;DR;WF` returns 100 total, of which 69 were wildfires and 2
- * were floods, silently dropping the rest.
+ * One request per type. `eventlist=EQ;TC;FL;VO;DR;WF` returns 100 total, 69 of them wildfires.
  */
 
 const ENDPOINT = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH";
@@ -87,11 +85,11 @@ export function isCurrent(props: Record<string, unknown>): boolean {
 /**
  * One fetch, one type, failing to an empty list rather than into the app.
  *
- * `onAnswer` exists because that sentence was the whole problem: an empty list and a dead feed drew the same
- * globe, so with GDACS down a viewer read "no storms today" off a page that had never been able to ask.
+ * `onAnswer` exists because an empty list and a dead feed drew the same globe: with GDACS down, a viewer read
+ * "no storms today" off a page that had never been able to ask.
  *
- * Reported through a callback rather than by returning a pair: the data shape is consumed by memos all
- * through the app, and a status channel has no business changing any of that.
+ * A callback rather than a returned pair: the data shape is consumed by memos all through the app, and a
+ * status channel has no business changing any of that.
  */
 export async function fetchList<T>(
   url: string,

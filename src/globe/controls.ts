@@ -6,11 +6,11 @@ import { MAP_HALF_WIDTH } from "./morph";
 /*
  * Orbiting the globe, hand-written.
  *
- * Zoom is anchored to the cursor, and on a sphere that is not the problem OrbitControls solves: there
- * is no pan target to slide, only a rotation that puts the same coastline back under the pointer.
+ * Zoom is anchored to the cursor, which is not the problem OrbitControls solves: on a sphere there is no pan
+ * target to slide, only a rotation that puts the same coastline back under the pointer.
  *
- * The camera is kept in geographic terms - a longitude, a latitude, a distance - so every interaction
- * here is in the same units as the data, and cursor anchoring becomes a subtraction.
+ * The camera is kept in geographic terms, so every interaction is in the same units as the data and cursor
+ * anchoring becomes a subtraction.
  */
 
 /** Beyond this the up vector flips and the globe rolls over. */
@@ -37,14 +37,13 @@ const ZOOM_MIN = 0.75;
 const ZOOM_MAX = 3;
 
 /*
- * The map's share of the framing distance. The framing shot is a sphere's, and the map is not.
+ * The map's share of the framing distance, because the framing shot is a sphere's and the map is not.
  *
  * `fit` frames a 2-unit ball; the map is that ball unrolled to 4 by 2, so the same distance showed 335
  * degrees of longitude and markers too small to aim at.
  *
- * Measure against the height-only fit, never against `fit`. Fitting by the tighter dimension is right
- * for a ball and wrong for a plane that tiles: on a phone it framed the width and left the world as a
- * strip with a third of the canvas empty. Cropping longitude costs nothing, because east wraps.
+ * Measure against the height-only fit, never against `fit`. Fitting by the tighter dimension is right for a
+ * ball and wrong for a plane that tiles: on a phone it framed the width and left a strip across the middle.
  */
 const MAP_FIT = 0.72;
 
@@ -178,13 +177,11 @@ export function createControls(
   /*
    * How far out you may go, which is a different question on each view.
    *
-   * A globe can be lost; a plane cannot, because it tiles. What a map floor protects is being able to
-   * see the whole world at once, and a fixed floor could not: a phone bottomed out at 155 degrees of
-   * longitude, so the one reason to leave the globe was the one thing the map could not do.
+   * A globe can be lost; a plane cannot, because it tiles. What a map floor protects is seeing the whole
+   * world at once, and a fixed floor could not: a phone bottomed out at 155 degrees of longitude.
    *
-   * So the map's floor is derived - the zoom at which the frame is exactly 360 degrees wide - and the
-   * further-out of the two wins. Interpolated on morph, not switched, or leaving a zoomed-out map
-   * snaps the camera on the next wheel notch.
+   * So derive the map's floor - the zoom where the frame is exactly 360 degrees wide - and take whichever of
+   * the two is further out. Interpolate on morph, never switch, or leaving a zoomed-out map snaps the camera.
    */
   const zoomFloor = (): number => {
     const wholeWorld =
@@ -202,20 +199,17 @@ export function createControls(
   /*
    * How far around the globe a pixel offset from centre actually is.
    *
-   * Two wrong versions looked fine in code. Dividing pixels by the on-screen radius treats the sphere
-   * as flat. `asin(px / R)` treats it as orthographic, which is a sphere seen from infinity; this
-   * camera is 4.5 radii out, and the gap is a factor of d/(d-1), about 29%. The coastline visibly
-   * slides out from under the pointer.
+   * Two wrong versions looked fine in code. Dividing pixels by the on-screen radius treats the sphere as
+   * flat. `asin(px / R)` treats it as orthographic, which is a sphere seen from infinity; this camera is 4.5
+   * radii out and the gap is d/(d-1), about 29%, so the coastline slides out from under the pointer.
    *
-   * For a point `sigma` around from the sub-camera point the projection is
+   * For a point `sigma` around from the sub-camera point:
    *
    *     px = focal * sin(sigma) / (d - cos(sigma))
    *
-   * and with `u = px / focal` that inverts exactly to
+   * which with `u = px / focal` inverts exactly to
    *
    *     sigma = asin(u * d / sqrt(1 + u^2)) - atan(u)
-   *
-   * At the limb it returns acos(1/d), which is how much of a sphere is visible from distance d.
    */
   const exactAngle = (px: number, d: number, focal: number): number => {
     const u = px / focal;
@@ -369,13 +363,12 @@ export function createControls(
   };
 
   /*
-   * Zooms toward the cursor through the spring, not straight onto the camera.
+   * Zooms toward the cursor through the spring, never straight onto the camera. Assigning `zoom` directly
+   * stepped 14% per notch in one frame: correct, anchored, and a staircase.
    *
-   * Assigning `zoom` directly stepped 14% per notch in one frame: correct, anchored, and a staircase.
-   *
-   * The anchoring maths still runs against a real camera, just a hypothetical one: move the camera to
-   * where it is heading, solve there, make that the new target, put the visible camera back. That is
-   * what lets ten fast notches travel ten notches instead of racing the animation.
+   * The anchoring still runs against a real camera, just a hypothetical one: move it to where it is heading,
+   * solve there, make that the new target, put the visible camera back. That is what lets ten fast notches
+   * travel ten notches instead of racing the animation.
    */
   const zoomAt = (factor: number, clientX: number, clientY: number): void => {
     const before = pick(clientX, clientY);

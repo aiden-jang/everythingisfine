@@ -1,14 +1,13 @@
 /*
- * Plate motion, sampled from Bird (2003) rather than computed here. Committed script, committed output.
+ * Plate motion, sampled from Bird (2003). Committed script, committed output.
  *
  *   node tools/make-plate-motion.mjs
  *
- * Not Euler poles: that would mean writing pole coordinates from memory, and the app's boundary file is lines
- * with no plate identity, so nothing would say which plate a point belongs to.
+ * Not Euler poles: that means writing pole coordinates from memory, and the app's boundary file is lines with
+ * no plate identity, so nothing would say which plate a point belongs to.
  *
- * PB2002's step file already carries the relative velocity of the plate on one side with respect to the
- * other for each of its 5,819 steps, so the velocities here are published measurements passed through
- * unaltered. This script only chooses which steps to keep and how to round them.
+ * PB2002's step file already carries the relative velocity for each of its 5,819 steps. This script only
+ * picks which steps to keep and how to round them.
  */
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";

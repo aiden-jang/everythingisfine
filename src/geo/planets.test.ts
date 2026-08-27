@@ -72,8 +72,7 @@ describe("where the planets are", () => {
      *   Jupiter  -2.82 to -1.89   (real -2.9 to -1.9)
      *   Saturn    0.68 to  1.20   (real  0.6 to  1.2)
      *
-     * Mars is left out of the tight bounds below: its true floor of -2.9 needs a perihelic opposition, which
-     * does not fall inside this window.
+     * Mars is left out below: its true floor of -2.9 needs a perihelic opposition, which is not in this window.
      */
     const lo: Record<string, number> = {};
     const hi: Record<string, number> = {};

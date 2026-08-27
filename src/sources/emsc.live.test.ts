@@ -5,11 +5,11 @@ import { createEmscSource, EMSC_CATALOGUE, EMSC_SOCKET, SEED_LIMIT } from "./ems
 /*
  * The second and last test that touches the real internet. Excluded from the default run and CI.
  *
- * It asserts that the socket still accepts an anonymous connection, and nothing about what comes down it: a
- * test that waited for an event would fail on a quiet planet.
+ * It asserts the socket still accepts an anonymous connection and nothing about what comes down it: waiting
+ * for an event would fail on a quiet planet.
  *
- * That connection is the whole basis for the push half of the design and the zero-invocation deployment. If
- * EMSC ever requires a key, the project needs a Worker to hold it.
+ * That connection is the whole basis for the push half of the design. If EMSC ever requires a key, the
+ * project needs a Worker to hold it.
  */
 
 describe("EMSC, for real", () => {

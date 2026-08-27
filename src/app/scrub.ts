@@ -90,17 +90,15 @@ export function clamp(scrub: Scrub, span: Span): Scrub {
 }
 
 /**
- * Steps the cursor by whole buckets.
+ * Moves the cursor one bar at a time.
  *
- * A bucket, not a fixed span: an hour is a twenty-fourth of a day and a seven-hundred-and-twentieth of a
- * month, so one press would mean two things depending on a control somewhere else.
+ * A bar, never a fixed span: an hour is a 24th of a day and a 720th of a month, so one press would mean two
+ * things depending on a control elsewhere.
  *
- * No snapping to a boundary. The buckets are anchored to `now`, so a grid to snap onto slides out from
- * under the cursor between one press and the next.
+ * Do not snap to a boundary. Bars are anchored to `now`, so the grid slides between one press and the next.
  *
- * A step forward landing anywhere in the last bucket hands back to live, not only one that overshoots `to`.
- * Without that, three steps back and three forward parked on the `to` of three presses ago, and the app read
- * as exactly live while saying held.
+ * Anywhere in the last bar hands back to live, not only past `to`. Otherwise three steps back and three
+ * forward park on the `to` of three presses ago, and the app reads as live while saying held.
  */
 export function nudge(scrub: Scrub, span: Span, buckets: number): Scrub {
   const width = span.to - span.from;

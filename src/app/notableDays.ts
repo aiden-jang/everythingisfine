@@ -1,18 +1,13 @@
 /*
- * Days worth seeing, because the archive had no way in.
+ * Days worth seeing, because the archive's only way in was a blank date field.
  *
- * The archive can draw any day since the catalogues begin, and its entry point was a blank `mm/dd/yyyy`
- * field: it required a date the viewer already knew.
+ * Dates are UTC, which is the trap. Loma Prieta is remembered as 17 October 1989 and struck at 00:04 UTC on
+ * the 18th: ask for the 17th and you get an M6.3 in Papua New Guinea. A famous date is usually the local one.
  *
- * Measured, not remembered. Every row was fetched from USGS FDSN at M2.5+ for that UTC day before it was
- * written down, and `notableDays.live.test.ts` re-checks the magnitudes so a wrong label fails.
+ * Every row was fetched before it was written down, and `notableDays.live.test.ts` re-checks the magnitudes.
  *
- * Dates are UTC, which is a trap. Loma Prieta is remembered as 17 October 1989 and struck at 00:04 UTC on
- * the 18th: asking for the 17th returns an M6.3 in Papua New Guinea. A famous date is usually the local one.
- *
- * The oldest two are sparse and that needs saying: 1960-05-22 holds the largest earthquake ever recorded
- * and six events at M2.5+. That is the network of the day, not a quiet planet, and `NOTABLE_NOTE` is the
- * sentence that stops a reader drawing the wrong conclusion from a true number.
+ * The oldest two look empty and are not: 1960-05-22 holds the largest earthquake ever recorded and six
+ * events at M2.5+. That is the network of the day. `NOTABLE_NOTE` has to say so.
  */
 
 export interface NotableDay {

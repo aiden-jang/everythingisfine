@@ -231,17 +231,13 @@ export function MagnitudeFilter(
       <hr className="mt-3.5 border-t border-hairline" />
 
       {/*
-        Everything below the scale is explanation, and it folds away. The split is control against
-        commentary: the slider, the ticks and the source buttons change what is on the globe, and the rest
-        says what the marks mean.
+        Everything below the scale is explanation and folds away. Controls above, commentary below.
 
-        Open by default, and only remembered once somebody closes it. No layer ships without the sentence
-        that explains it, so shipping it folded shut would hide the argument from everyone who never finds
-        the toggle. The viewer gets to dismiss it; the app does not get to pre-dismiss it for them.
+        Open by default. Remember only that somebody closed it: folding it shut out of the box would hide
+        the argument from everyone who never finds the toggle.
 
-        Controlled rather than left to the browser, because the state is persisted. `preventDefault` on the
-        summary stops the native toggle so React owns `open`: React 18 does not listen for `toggle`, so
-        reading the browser's own state back is not an option.
+        `preventDefault` on the summary so React owns `open`. React 18 does not listen for `toggle`, so the
+        browser's own state cannot be read back, and this state is persisted.
       */}
       <details className="mt-2.5" open={keyOpen}>
         <summary

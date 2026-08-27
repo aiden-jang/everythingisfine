@@ -4,13 +4,11 @@ import { createStore } from "../data/store";
 import type { Filters, Reading } from "../data/types";
 
 /*
- * You cannot gate CI on frame time. A shared runner has no GPU and falls back to software rendering, so a
- * number measured there is noise wearing a unit, and a threshold loose enough to pass is loose enough to
- * never fail.
+ * You cannot gate CI on frame time. A shared runner has no GPU and falls back to software rendering, so the
+ * number is noise wearing a unit and any threshold loose enough to pass never fails.
  *
- * What regresses in code is the per-frame CPU work: filter predicates, projection maths, buffer writes.
- * That is deterministic and needs no GPU. GPU frame time is measured by hand and recorded in
- * ARCHITECTURE.md with the machine named.
+ * Gate on per-frame CPU work instead - filter predicates, projection maths, buffer writes - which is
+ * deterministic and needs no GPU. GPU frame time is measured by hand and recorded with the machine named.
  */
 
 /*
@@ -22,13 +20,12 @@ import type { Filters, Reading } from "../data/types";
  * machine is busy and the ratio does not. The milliseconds are still printed.
  */
 /*
- * Calibrated, not guessed. Quiet measurements are 0.07, 0.71 and 4.10 reference units, and six saturated
- * cores move the ratio 13% where the milliseconds moved 20%. These sit about 45% above quiet.
+ * Calibrated, not guessed. Quiet is 0.07, 0.71 and 4.10 reference units; six saturated cores move the ratio
+ * 13% where the milliseconds moved 20%. These sit about 45% above quiet.
  *
- * The ratio is not immune: the worst case seen was +82% in milliseconds with browsers resident, which is
- * memory pressure rather than pure CPU contention.
+ * Not immune: the worst seen was +82% in milliseconds with browsers resident, which is memory pressure.
  *
- * These are the same three numbers DESIGN.md section 11 publishes. Keep the two in step.
+ * The same three numbers DESIGN.md section 11 publishes. Keep the two in step.
  */
 const BUDGET_REF: Record<number, number> = { 1_000: 0.15, 10_000: 1.05, 50_000: 7.0 };
 

@@ -1,16 +1,12 @@
 import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 
 /*
- * One earthquake, one sound.
+ * One earthquake, one tone. Not a recording - real ground motion is below hearing, so this is a transposition.
  *
- * Nothing here is a recording. Real ground motion is below hearing, under about 10 Hz, so an audible
- * rendering is a transposition - the same situation as the wavefronts, which print their multiplier rather
- * than hiding it.
+ * Pitch falls as magnitude rises, which is what a real rupture does, and duration grows.
  *
- * The mapping is derived, not composed. Pitch falls as magnitude rises, which is the direction a real
- * rupture goes; duration grows, because a larger rupture lasts longer. Loudness is the one channel that
- * cannot be honest: M2 to M7.5 is a hundred and seventy-eight million times the energy, so gain is
- * compressed hard and the legend admits the compression.
+ * Loudness cannot be honest. M2 to M7.5 is 178 million times the energy, so gain is squashed hard and the
+ * legend has to say so.
  */
 
 /** Two octaves, high for the smallest event and low for the largest. */

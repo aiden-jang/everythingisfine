@@ -13,34 +13,30 @@ import type { Reading, SourceId } from "./types";
  */
 
 /*
- * The two windows, set from measurement rather than intuition. Over 24 hours of real M2.5+ activity, 50 of
- * 53 USGS events had an EMSC counterpart:
+ * Both windows are measured, not guessed. Over 24 hours of real M2.5+ activity, 50 of 53 USGS events had an
+ * EMSC counterpart:
  *
  *              median      p95      max
  *   origin time   0.1s     3.0s    16.7s
  *   epicentre     0.0km   19.6km  135.6km
  *
- * 30s/150km matches the same 50 events as the original 60s/200km guess while halving the exposure to the
- * aftershock false positive below. 20s/100km would drop one genuine pair, which is where the evidence stops.
+ * 30s/150km matches the same 50 events as the original 60s/200km guess. 20s/100km would drop a genuine pair.
  */
 export const TIME_WINDOW_MS = 30_000;
 export const DISTANCE_LIMIT_KM = 150;
 
 /*
- * The third axis. In time and distance the genuine-pair and aftershock populations really do overlap;
- * magnitude is where they do not, because two agencies describing one rupture agree about its size.
+ * The third axis. In time and distance, genuine pairs and aftershocks overlap. Magnitude is where they do
+ * not, because two agencies describing one rupture agree about its size:
  *
  *                            pairs   median   p90    max
  *   M2.5+, 24 hours            50     0.00    0.20   0.40
  *   M6+, 120 days              47     0.00    0.00   0.10
  *
- * The obvious objection - `mb` saturates while `Mww` does not, so a great earthquake would split into two
- * markers - does not survive the second sample: at M6 and above both agencies report Mw or Mww.
+ * The obvious objection - `mb` saturates and `Mww` does not, so a great earthquake would split in two - does
+ * not survive the second sample: at M6 and up both agencies report Mw or Mww.
  *
- * One magnitude unit has two and a half times the headroom over the worst pair observed and sits below the
- * ~1.2 units Bath's law puts between a mainshock and its largest aftershock.
- *
- * A partial guard, not a fix: a doublet within one unit still merges.
+ * A partial guard, not a fix. A doublet within one magnitude unit still merges.
  */
 export const MAGNITUDE_LIMIT = 1.0;
 

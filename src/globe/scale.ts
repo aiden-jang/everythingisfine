@@ -1,16 +1,14 @@
 /*
- * A scale on the map, and the reason it has to name a latitude.
+ * A scale bar on the map, and the reason it has to name a latitude.
  *
- * A sphere on screen carries its own size and nobody reads a distance off it. A flat map invites exactly
- * that reading and gave nothing to read it against.
+ * A sphere carries its own size and nobody reads a distance off it. A flat map invites exactly that reading
+ * and gave nothing to read against.
  *
- * On this projection a horizontal bar is only true where it is drawn. Equirectangular spaces meridians
- * evenly, so a degree of longitude occupies the same pixels at 60 north as at the equator while covering
- * half the ground - a bar labelled "500 km" with no latitude on it is wrong nearly everywhere, by up to a
- * factor of eleven. So the label carries the latitude it was measured at.
+ * On equirectangular a horizontal bar is only true where it is drawn: meridians are evenly spaced, so the
+ * same pixels cover half the ground at 60 north as at the equator. A bar labelled "500 km" with no latitude
+ * on it is wrong nearly everywhere, by up to a factor of eleven.
  *
- * A vertical bar would need no caveat, latitude scale being constant here, but it is not the bar people
- * look for on a map.
+ * A vertical bar would need no caveat, but it is not the bar people look for.
  */
 
 /** Kilometres in one degree of latitude, from the mean Earth radius. Mean rather than equatorial: the

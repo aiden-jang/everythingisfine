@@ -3,17 +3,13 @@ import { matches } from "../data/filter";
 import type { Filters } from "../data/types";
 
 /*
- * How the sizes stack up: the one law every earthquake catalogue obeys.
+ * How many earthquakes there are at each size. Ten times as many, each magnitude down, since 1944.
  *
- * Count everything at or above each magnitude, plot the log of that against magnitude, and the points fall
- * on a straight line. Ten times as many, each magnitude down. It has held since 1944.
+ * The bend at the bottom is about us, not the Earth: below some size the network stops hearing everything.
  *
- * The bend at the bottom is about us rather than the Earth: below some magnitude a catalogue stops hearing
- * everything, so this is the app's own detection limit made visible.
- *
- * The b-value is estimated by maximum likelihood, not by fitting a line through the plotted points. Least
- * squares on cumulative counts weights the rare large events equally with the common small ones and is known
- * to be biased. The line drawn is that same estimate, so plotted and quoted cannot disagree.
+ * Estimate b by maximum likelihood, never by fitting a line to the plotted points. Least squares on
+ * cumulative counts weights the rare big events like the common small ones and is known to be biased. Draw
+ * that same estimate, so what is plotted and what is quoted cannot disagree.
  */
 
 /** Bin width in magnitude units. 0.1 is the precision the feeds report at. */

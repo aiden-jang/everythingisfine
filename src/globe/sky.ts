@@ -16,14 +16,12 @@ export const SKY_DISTANCE = 80;
 /*
  * Placing a direction in the sky: the sidereal turn, then the skybox offset.
  *
- * Buffer positions are unit vectors for a right ascension read straight off a catalogue, so rotating the whole
- * sky by -GMST about the pole puts every one over the longitude it is actually above.
+ * Buffer positions are unit vectors for a catalogue right ascension, so rotating the sky by -GMST about the
+ * pole puts every one over the longitude it is actually above.
  *
- * Adding `cameraPosition` puts every point at a fixed distance from wherever the eye is, so orbiting sweeps
- * the sky and travelling never slides it. Here rather than from the render loop, so neither layer needs a hook
- * in a loop that is deliberately asleep whenever nothing is moving.
- *
- * Declared with its uniforms so the two shaders cannot disagree about their names.
+ * Adding `cameraPosition` puts every point a fixed distance from the eye, so orbiting sweeps the sky and
+ * travelling never slides it. Here rather than in the render loop, so neither layer needs a hook in a loop
+ * that is asleep whenever nothing moves.
  */
 export const SKY_GLSL = /* glsl */ `
   uniform float uSpin;

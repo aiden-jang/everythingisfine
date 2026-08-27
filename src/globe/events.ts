@@ -121,17 +121,15 @@ const SHADER = {
       float radius = (uBase + uScale * pow(max(0.0, aMag - uMagMin), uExp)) * uSize + aCluster * 2.0;
 
       /*
-        Sunk to the hypocentre, so the scatter resolves into the slab: orbit Chile and the events form
-        a plane dipping under the arc.
+        Sunk to the hypocentre, so the scatter resolves into the slab: orbit Chile and the events form a
+        plane dipping under the arc.
 
-        Add the offset AFTER fmProject, never by shrinking position before it. On the flat map,
-        radius IS the layer index - fmProject builds z from length(sphere) - 1.0 - so a marker pushed
-        in to 0.89 gets filed under the map and drawn behind the ocean.
+        Add the offset AFTER fmProject, never by shrinking position first. On the flat map radius IS the
+        layer index - fmProject builds z from length(sphere) - 1.0 - so a marker pushed in to 0.89 gets filed
+        under the map and drawn behind the ocean.
 
-        It fades with the morph because a map has no inside, which is why the term carries 1.0 - uMorph.
-
-        (No backticks anywhere in this file's shaders. One of them ends the template literal, and the
-        error lands twenty lines away from the comment that caused it.)
+        (No backticks anywhere in this file's shaders. One ends the template literal, and the error lands
+        twenty lines from the comment that caused it.)
       */
       // position, not world: the model matrix draws the flat map more than once.
       vec3 sunk = normalize(position) * (-aSink * uSink * (1.0 - uMorph));

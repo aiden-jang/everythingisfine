@@ -1,12 +1,11 @@
 /*
- * What an earthquake is, once two feeds have both had a go at describing it.
+ * What an earthquake is, once two agencies have both described it.
  *
- * With one source an event would be a flat record. With two it cannot be, because they disagree: USGS and
- * EMSC report the same rupture minutes apart, under different identifiers, on different magnitude scales,
- * from epicentres tens of kilometres apart. Flattening picks a winner at parse time and throws the
- * disagreement away, and the disagreement is the most interesting thing on screen.
+ * They disagree: same rupture, different identifiers, different magnitude scales, epicentres tens of
+ * kilometres apart. Flattening that picks a winner at parse time and throws the disagreement away, and the
+ * disagreement is the most interesting thing on screen.
  *
- * So a Reading is what one agency said, and a Quake is the ground moving. Nothing collapses the two.
+ * So a Reading is what one agency said and a Quake is the ground moving. Nothing collapses the two.
  */
 
 export type SourceId = "usgs" | "emsc";
@@ -81,12 +80,11 @@ export interface Reading {
   /**
    * The strongest shaking the agency's model thinks happened anywhere, on the same scale as `felt`.
    *
-   * `felt.intensity` is what people ticked on a form where they were standing; this is what a model says the
-   * worst of it was, whether or not anybody was there. The two routinely disagree, which is why both are shown.
+   * `felt.intensity` is what people ticked where they were standing; this is what a model says the worst of
+   * it was, whether or not anybody was there. They routinely disagree, which is why both are shown.
    *
-   * A maximum, and the copy has to say so: printed bare it reads as "what it felt like".
-   *
-   * USGS only, and only on the events they build a map for - about one in thirteen at magnitude 4.5.
+   * A maximum, and the copy must say so, or it reads as "what it felt like". USGS only, and only on the
+   * events they build a map for - about one in thirteen at M4.5.
    */
   shaking?: number;
   /**

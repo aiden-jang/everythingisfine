@@ -2,15 +2,11 @@ import { passesMagnitude, passesSource } from "../data/filter";
 import type { Filters, Quake } from "../data/types";
 
 /*
- * The window as 24 bars.
+ * The window as 24 bars, so the globe can answer "when" as well as "where".
  *
- * The globe answers "where" completely and "when" not at all: every event is drawn the same whether it
- * happened four minutes or nineteen hours ago, so the one thing a seismic sequence actually is - a shape
- * in time - was the one thing the app could not show.
- *
- * Twenty-four bars of whatever the window divides into, rather than twenty-four hours. Fixing the bucket
- * to an hour puts a ceiling on the window, because a month of hourly bars is seven hundred and twenty of
- * them in two hundred pixels. The count never changes, so the geometry and the scaling carry over.
+ * Twenty-four bars of whatever the window divides into, never twenty-four hours. Fixing a bar at an hour
+ * caps the window: a month of hourly bars is 720 of them in 200 pixels. The count never changes, so the
+ * geometry and the scaling carry over.
  */
 
 /** Bars across the strip, whatever the window. Keeps the strip's geometry independent of its span. */

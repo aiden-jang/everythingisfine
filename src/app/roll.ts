@@ -3,12 +3,10 @@ import { useEffect, useRef, useState } from "react";
 /*
  * Numbers that roll rather than jump.
  *
- * The count moves for three reasons and only one looked like anything: the replay climbs it a frame at a
- * time, a live arrival snaps it by one, and changing the window snaps it from 872 to 11,363.
+ * Only on a discrete change. A rolling readout eases toward a target, so pointing it at something already
+ * moving frame by frame - the replay, the cursor - makes it a late copy rather than a smooth one.
  *
- * Only ever on a discrete change. A rolling readout eases toward a target, so pointing it at a continuously
- * moving source makes it a permanently late reading of that source rather than a smooth one - and the
- * cursor and the replay both drive this count continuously.
+ * What is left to roll is a live arrival, and a window change that snaps 872 to 11,363.
  */
 
 /**

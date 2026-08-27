@@ -19,13 +19,11 @@ const WINDOW_HOURS: readonly number[] = WINDOWS.map((w) => w.hours);
 /**
  * The offered window nearest a number of hours.
  *
- * Snapping rather than clamping, and the decoder's own rule is the argument: anything unreadable is
- * dropped rather than allowed to put the app in a state it has no other way to reach. A 100-hour window
- * works arithmetically and is a state no button can show, so a link carrying one would leave the window
- * group with nothing selected and no way back to what the link asked for.
+ * Snap, do not clamp. A 100-hour window works arithmetically and no button can show it, so a link carrying
+ * one would leave the group with nothing selected and no way back.
  *
- * Nearest in log space, because these are multiples rather than an interval: 100 hours is 4.2 times a
- * day and 0.6 of a week, and linear distance would call the day nearer when proportionally it is not.
+ * Nearest in log space: 100 hours is 4.2 times a day and 0.6 of a week, and linear distance would call the
+ * day nearer when it is not.
  */
 export function nearestWindow(hours: number): number {
   if (!Number.isFinite(hours) || hours <= 0) return WINDOW_HOURS[0]!;

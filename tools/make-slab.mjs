@@ -3,16 +3,14 @@
  *
  *   node tools/make-slab.mjs
  *
- * Measured against a real USGS day: 237 events, 14 of them between 70 and 300km and exactly two below 300.
- * The subducting plate those two belong to is a surface seven hundred kilometres deep, and no single day
- * will ever draw it.
+ * A real USGS day has 237 events, 14 between 70 and 300km and exactly two below 300. The plate those two
+ * belong to reaches seven hundred kilometres down, and no single day will ever draw it.
  *
- * Generated rather than fetched at runtime: a live layer would put 294kB on the wire to draw something that
- * does not change. Baked, it is a code-split chunk that costs nothing until somebody asks.
+ * Generated, not fetched at runtime: a live layer would put 294kB on the wire to draw something that does not
+ * change. Baked, it is a chunk that costs nothing until somebody asks.
  *
- * Deeper than 300km, because below that the only thing producing earthquakes is a subducted plate, and the
- * app already treats 300 as where deep begins. M4.5, because that is where the global catalogue is complete:
- * lower, and the layer would draw instrument coverage as though it were geology.
+ * Deeper than 300km, because below that only a subducted plate makes earthquakes. M4.5, because that is where
+ * the catalogue is complete - lower, and the layer draws instrument coverage as though it were geology.
  */
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";

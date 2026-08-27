@@ -3,18 +3,14 @@ import { contains, REGIONS } from "./regions";
 import type { Quake } from "../data/types";
 
 /*
- * Where the window's largest sits against what its region is capable of.
+ * The window's largest against what its region has managed this century.
  *
- * A magnitude on its own is a number with no scale beside it: "M6.1, Japan & Kurils" reads as enormous to
- * anybody who has not spent time with the scale, and it is an ordinary week there.
+ * A magnitude alone has no scale beside it: "M6.1, Japan & Kurils" reads as enormous and is an ordinary week
+ * there. On the rare day the window clears the record, the app has a real superlative.
  *
- * Two sentences, and only one is rare. Most days this states the ceiling; on the day the window's largest
- * clears it, the app has a real superlative, and it can say so because the number came from the catalogue.
+ * Say "since at least 2000", because that is where the table starts - Valdivia is not in it.
  *
- * "Since at least 2000", because that is where the table starts. Valdivia is not in here and neither is
- * Prince William Sound, so bounding the claim is the difference between a fact and an overstatement.
- *
- * Only inside a named region: outside the eleven boxes it is mid-ocean, with no local record to compare to.
+ * Only inside a named region. Outside the eleven boxes it is mid-ocean, with no local record to compare to.
  */
 
 /** `[magnitude, day]` per region name, as generated. */

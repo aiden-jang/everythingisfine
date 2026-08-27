@@ -1,13 +1,11 @@
 /*
  * The view as a PNG, with the moment it is of written on it.
  *
- * The stamp is the whole reason this is not a screenshot. `make-card.mjs` already learned that an image of
- * live data outlives the data. A still is worse, because it is shared by hand with no cache to blame. So
- * every still says the moment it is of, and takes that moment from the cursor rather than the clock.
+ * Always stamp the moment, and take it from the cursor rather than the clock. An image of live data outlives
+ * the data, and a still is shared by hand with no cache to blame.
  *
- * Composed rather than grabbed raw. The globe's context is `alpha: true` with a zero clear alpha, so a bare
- * capture is a globe on transparency, which viewers paint black, white or a checkerboard. And the chrome
- * that explains the globe is DOM over the canvas, so it is not in the capture at all.
+ * Compose it; never grab the canvas raw. The globe's context has a zero clear alpha, so a bare capture is a
+ * globe on transparency, and the chrome that explains it is DOM sitting over the canvas.
  */
 
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
@@ -60,15 +58,12 @@ export function captionLines(
 }
 
 /**
- * The evidence for the title. Every number here is already in the snapshot; it was simply never said.
+ * The evidence line under the title. Every number is already in the snapshot.
  *
- * Two things this refuses to say.
+ * No volcanoes. GDACS flags none of them current, so a count beside "Live" would imply they are erupting.
  *
- * Volcanoes are left out entirely. GDACS flags none of them current and the newest episode is usually weeks
- * old, so "16 volcanoes" beside "Live" would imply currency on the one surface stamped with a timestamp.
- *
- * Fires take a `+` when the feed is capped. The wildfire feed stops at 100 and one country can fill it, so a
- * flat "100 fires" states a floor as a total where nothing is around to correct it.
+ * Fires take a `+` when the feed is capped at 100, because one country can fill it and a flat "100 fires"
+ * would state a floor as a total.
  */
 export function verdictLine(n: {
   quakes: number;

@@ -6,20 +6,15 @@ import type { Flood } from "./floods";
 /*
  * The four non-earthquake layers, for a day that has already happened.
  *
- * GDACS cannot do this, measured twice. Its event list takes `fromdate`/`todate` and appears to honour them,
- * but the filter runs over the current event pool rather than an archive: a year-wide query returns the same
- * 15 fires as no filter at all, `eventlist=VO` with dates answers `204 No Content`, and the separate
- * `ARCHIVE` path ignores the dates and hands back today's list. What looks like history is a handful of
- * long-running current events overlapping the date asked for.
+ * GDACS cannot do this, measured twice. Its list takes `fromdate`/`todate` and looks like it honours them,
+ * but the filter runs over the current pool: a year-wide query returns the same 15 fires as no filter,
+ * `eventlist=VO` with dates answers `204 No Content`, and the `ARCHIVE` path hands back today's list. What
+ * looks like history is a few long-running events overlapping the date asked for.
  *
- * NASA EONET v3 is a real archive: `start`/`end` are honoured, payloads are 14-24kB for a day, and it
- * answers keylessly with `access-control-allow-origin: *`. v2.1 is not usable - it ignores the range and
- * returns 18.5MB.
+ * NASA EONET v3 is a real archive: `start`/`end` are honoured, a day is 14-24kB, and it is keyless and
+ * CORS-open. v2.1 ignores the range and returns 18.5MB.
  *
- * It is not a rival dataset. EONET's sources for these categories are IRWIN and GDACS itself.
- *
- * The aurora stays withheld and always will: NOAA publishes a predicted oval for a stamped minute, and a
- * forecast has no history to ask for.
+ * The aurora stays withheld and always will: NOAA publishes a forecast for a stamped minute.
  */
 
 /** EONET's category ids, mapped to the four layers this app draws. */

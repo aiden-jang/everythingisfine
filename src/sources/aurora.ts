@@ -4,10 +4,8 @@
  * The first layer that is not an earthquake, and chosen first because it is not more dots: it is a field, so
  * it renders as light on the night side rather than as another marker.
  *
- * It arrives already explained. The globe computes the real subsolar point every minute to shade the night
- * side, and an aurora is visible exactly where that shading is.
- *
- * Keyless, `access-control-allow-origin: *`, verified from the command line before any of this was written.
+ * It arrives already explained: the globe computes the subsolar point every minute, and an aurora is visible
+ * exactly where that shading is. Keyless, `access-control-allow-origin: *`.
  */
 
 /** Aurora probability on a one-degree grid, updated every few minutes. */
@@ -33,14 +31,13 @@ interface Payload {
 }
 
 /**
- * The published grid into a raster, or null when the shape is not what it should be.
+ * The published grid into a raster, or null when the shape is wrong.
  *
- * Indexed row-major from the south pole, which is what a texture wants and what the feed publishes, so
- * nothing is transposed. Longitude stays 0-359 east: the shader wraps it with a `fract`, and rebasing here
- * would be a second place for the seam to be got wrong.
+ * Row-major from the south pole, which is what a texture wants and what the feed publishes, so nothing is
+ * transposed. Longitude stays 0-359 east: the shader wraps it with a `fract`, and rebasing here would be a
+ * second place for the seam to be got wrong.
  *
- * Null rather than a partial grid. A half-filled aurora is a claim about the sky being dark where the parser
- * gave up.
+ * Null, never a partial grid. A half-filled aurora claims the sky is dark where the parser gave up.
  */
 export function parseOvation(payload: unknown): Aurora | null {
   const body = payload as Payload | null;

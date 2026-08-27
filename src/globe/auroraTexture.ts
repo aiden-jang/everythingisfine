@@ -4,12 +4,11 @@ import { AURORA_LAT, AURORA_LON, type Aurora } from "../sources/aurora";
 /*
  * The aurora grid as something a shader can sample.
  *
- * RGBA rather than a single red channel: `ramp.ts` already proves this exact path works on this renderer,
- * and a one-channel texture brings row-alignment rules that are only interesting when they are wrong. 260kB
- * is nothing.
+ * RGBA rather than one red channel. `ramp.ts` already proves this path works on this renderer, and a
+ * single-channel texture brings row-alignment rules that are only interesting when they are wrong.
  *
- * Linear filtering on purpose. The model publishes one degree cells, about seven pixels at the framing shot,
- * and nearest sampling would draw a picture of the grid rather than of the sky.
+ * Linear filtering. The model publishes one-degree cells, about seven pixels at the framing shot, and
+ * nearest sampling draws a picture of the grid rather than of the sky.
  */
 
 export function auroraTexture(): DataTexture {

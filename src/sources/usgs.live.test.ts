@@ -5,13 +5,11 @@ import { createUsgsSource, USGS_HOUR_FEED } from "./usgs";
 /*
  * The one test that touches the real internet. Excluded from the default run and from CI.
  *
- * Run it deliberately:  pnpm test:live
+ *   pnpm test:live
  *
  * Live-API tests are flaky by construction: they fail on a train and when an agency is doing maintenance.
- * Recorded fixtures cover behaviour; this covers whether the feed still exists, still answers, and still has
- * the shape the parser expects.
- *
- * It asserts almost nothing about the contents: the hourly feed is genuinely sometimes empty.
+ * Fixtures cover behaviour; this covers whether the feed still exists, answers, and has the shape the parser
+ * expects. It asserts almost nothing about contents - the hourly feed is genuinely sometimes empty.
  */
 
 describe("USGS, for real", () => {

@@ -4,14 +4,12 @@ import { peakCount, type Bar } from "./histogram";
 import { WINDOWS } from "./windows";
 
 /*
- * The day as a strip, and the control that selects part of it.
+ * The window as a strip of bars, with the transport under it.
  *
- * Same idea as the magnitude filter: the scale is the track. The histogram is the legend and the thumb is
- * the left edge of the window. Hours outside it dim in place, so the day stays whole.
+ * The scale is the track, like the magnitude filter: the histogram is the legend and the thumb is the edge.
  *
- * The window is named, not dragged. As a slider whose value was the window's left edge, the strip showed a
- * day and the globe showed part of it: the two views disagreeing by construction. It also fixed the bucket
- * at an hour, and a month of hourly bars is seven hundred and twenty of them in two hundred pixels.
+ * Name the window, never drag it. As a slider the strip showed a day and the globe showed part of it - the
+ * two views disagreeing by construction - and it fixed a bar at an hour, which caps the window.
  */
 
 export interface TimelineProps {
@@ -121,14 +119,13 @@ export function Timeline({
   const unit = bucketUnit(bucketMs);
 
   /*
-   * The bars are real buttons, so holding an hour is not a mouse-only gesture. A focusable group shows a
-   * focus ring where the hold is, and on a touch screen a tap does what a tap looks like it should do.
+   * The bars are real buttons, so holding an hour is not mouse-only.
    *
-   * Focus is the hold, so there is no second state to keep in step with the pointer's. One tab stop for
-   * the whole strip on a roving `tabIndex`, the same shape `EventList` uses: twenty-four tab stops in
-   * front of the rest of the rail would be a worse barrier than the one this removes.
+   * Focus is the hold, so there is no second state to keep in step with the pointer's. One tab stop for the
+   * whole strip on a roving `tabIndex`: twenty-four tab stops in front of the rail would be a worse barrier
+   * than the one this removes.
    *
-   * `STRIP_PX` is 44, exactly the touch-target minimum, so this costs no layout.
+   * `STRIP_PX` is 44, exactly the touch minimum, so this costs no layout.
    */
   const [barAt, setBarAt] = useState(0);
   const barRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -293,14 +290,13 @@ export function Timeline({
       </div>
 
       {/*
-        How far back each feed reaches, against the axis directly above it.
+        How far back each feed reaches, against the axis above it.
 
         The catalogue returns its most recent page whatever is asked of it, so at a month USGS vouches for
-        thirty days while EMSC vouches for the last eighteen hours. Widening the window widens one bar and
-        not the other, which is the dual-source architecture made visible rather than described.
+        thirty days and EMSC for eighteen hours. Widening the window widens one bar and not the other.
 
-        Anchored right, because coverage reaches back from now. On screen from the first frame, both tracks
-        empty, each filling when its own feed answers, so the load state and the steady state are one visual.
+        Anchored right, because coverage reaches back from now. Both tracks are on screen from the first
+        frame, empty, so the load state and the steady state are one picture.
       */}
       {reaches.length > 0 ? (
         /* Tight to the axis, because these measure it. At 8 to 10px apart the axis, the two coverage rules

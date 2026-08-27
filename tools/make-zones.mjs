@@ -4,17 +4,15 @@
  *
  *   node tools/make-zones.mjs
  *
- * Nothing is asked and nothing leaves the browser. `Intl.DateTimeFormat().resolvedOptions().timeZone` is the
- * only input, and it is already available to any page without a prompt.
+ * Nothing is asked and nothing leaves the browser. The timezone is the only input, and any page can read it
+ * without a prompt.
  *
- * A zone is a region, so the app names the city rather than the reader. `Asia/Shanghai` covers the whole of
- * China, so "340 km from you" would be a confident claim about a person made from a reference point.
+ * A zone is a region, so name the city and never the reader. `Asia/Shanghai` covers the whole of China.
  *
- * The coordinates are IANA's, not ours: tzdb maintains this list and this script only reparses and rounds.
+ * Coordinates are IANA's: tzdb maintains this list and this script only reparses and rounds.
  *
- * Both tables, because the newer one is deliberately smaller. `zone1970.tab` lists only zones whose civil
- * timestamps have agreed since 1970, which drops 106 zones a browser may still report - `Africa/Nairobi`
- * among them - so the older `zone.tab` is merged in with the modern file winning any overlap.
+ * Both tables. `zone1970.tab` lists only zones whose civil timestamps have agreed since 1970, which drops 106
+ * a browser may still report - `Africa/Nairobi` among them - so the older `zone.tab` is merged in underneath.
  */
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";

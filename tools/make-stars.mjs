@@ -4,19 +4,16 @@
  *
  *   node tools/make-stars.mjs
  *
- * The Yale Bright Star Catalogue: 9,110 stars, positions at J2000, visual magnitudes.
+ * The Yale Bright Star Catalogue: 9,110 stars, J2000 positions, visual magnitudes.
  *
- * Magnitude 6.0 and brighter, which is 5,080 of them, and it is the naked-eye limit rather than a tuned
- * number. An earlier cut took 5.5 to match the density of the procedural field it replaced, which was doing
- * the renderer's job: matching the weight of that field belongs in the brightness ramp in `starfield.ts`.
- * The cost is 88kB of numbers, 34kB over the wire, against 50kB and 20kB at 5.5.
+ * Cut at magnitude 6.0, which is 5,080 stars and the naked-eye limit rather than a tuned number. An earlier
+ * cut took 5.5 to match the density of the procedural field it replaced, which was doing the renderer's job:
+ * that belongs in the brightness ramp. Costs 88kB, 34kB over the wire, against 50kB and 20kB at 5.5.
  *
- * Degrees, not unit vectors: the same three numbers, fewer digits for the same angular precision, and a
- * table a person can check against a star chart. Flat, not nested, because 5,080 pairs of brackets is 10kB
- * of punctuation.
+ * Degrees, not unit vectors: fewer digits for the same precision, and a table a person can check against a
+ * star chart. Flat, not nested - 5,080 pairs of brackets is 10kB of punctuation.
  *
- * Positions are J2000 and are not precessed. Precession moves a star about 1.4 arcminutes a year, so a
- * quarter century is under half a degree, below this table's own rounding.
+ * Not precessed. Precession moves a star 1.4 arcminutes a year, so a quarter century is under half a degree.
  */
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";

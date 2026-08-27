@@ -3,11 +3,9 @@ import type { Quake } from "../data/types";
 /*
  * What counts as news, for the one interface that speaks.
  *
- * The live region treated "I have not seen this" as "this just happened". On a cold load the list goes from
- * empty to sixty events at once and every one is unseen, so a screen reader was told "3 new earthquakes
- * above magnitude 4.5" about a backlog hours old. Lowering the magnitude filter did the same thing.
- *
- * So news is decided by the clock rather than by what has been on screen.
+ * Decide by the clock, never by "have I shown this before". On a cold load the list goes from empty to sixty
+ * at once and every one is unseen, so a screen reader was told "3 new earthquakes" about a backlog hours old.
+ * Lowering the magnitude filter did the same thing.
  */
 
 /**

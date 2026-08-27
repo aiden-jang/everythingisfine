@@ -2,13 +2,11 @@ import plates from "./plates.json";
 import { toVec3, spanDeg } from "./sphere";
 
 /*
- * The tectonic plate boundaries.
+ * The tectonic plate boundaries. The earthquakes were always tracing these and nothing said so, so the Ring
+ * of Fire read as a coincidence of where dots land.
  *
- * The earthquakes were always tracing these and nothing said so, so the Ring of Fire read as a coincidence
- * of where dots land rather than as the thing it is.
- *
- * PB2002, Bird (2003), public domain. Simplified with Douglas-Peucker at 0.15 degrees, under a pixel at the
- * framing shot, and quantised to two decimals: 6,292 vertices become 1,872 and 221kB becomes 9.4kB gzipped.
+ * PB2002, Bird (2003), public domain. Douglas-Peucker at 0.15 degrees, under a pixel at the framing shot,
+ * quantised to two decimals: 6,292 vertices become 1,872 and 221kB becomes 9.4kB gzipped.
  */
 
 /** Between the graticule and the land, so continents sit on top of the boundaries they contain. */
@@ -62,10 +60,10 @@ export function buildPlates(
 /**
  * Reorders segments nearest-first from a set of points, for the entrance reveal.
  *
- * A fade says nothing and a wipe has a direction that means nothing. Growing from the events is the claim
- * the picture is making: the dots are where they are because the line is there.
+ * Growing from the events is the claim the picture makes: the dots are where they are because the line is
+ * there. A fade says nothing and a wipe has a direction that means nothing.
  *
- * Ordering plus a growing draw range, not a shader: reveal by threshold would need a per-vertex attribute
+ * Ordering plus a growing draw range, not a shader: a threshold reveal would need a per-vertex attribute
  * and a custom material for a line layer that needs neither.
  */
 export function orderByProximity(

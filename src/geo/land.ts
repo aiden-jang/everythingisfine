@@ -71,12 +71,10 @@ export function rings(): Ring[][] {
  *
  * Three rings hold both +180 and -180. Read literally, Eurasia teleports across the world and back, which
  * makes it self-intersecting - and earcut promises nothing about a polygon that is not simple. It emitted
- * needles a hundred and fifty degrees long fanning out across Siberia, too thin for the seam filter to catch.
+ * needles a hundred and fifty degrees long across Siberia, too thin for the seam filter to catch.
  *
- * Unwrapping runs the coastline past 180 rather than jumping back, which is what the shape actually does.
- *
- * The recentring is not optional: unwrapping accumulates from wherever the ring starts, and Eurasia's
- * starts inside the Chukotka tip, which leaves the whole continent a turn west and in the next map copy.
+ * Recentring is not optional. Unwrapping accumulates from wherever the ring starts, and Eurasia's starts in
+ * the Chukotka tip, which leaves the whole continent a turn west and in the next map copy.
  */
 export function unwrap(ring: Ring): { ring: Ring; mean: number } {
   const out: Ring = [ring[0]!];
@@ -108,13 +106,13 @@ function reframe(mean: number, outlineMean: number): number {
 }
 
 /**
- * Closes a ring that wraps the world instead of closing, by walking it around the pole.
+ * Closes a ring that wraps the world instead of closing, by walking it round the pole.
  *
- * Antarctica is one west-to-east sweep, not a loop, so its closing edge runs 358 degrees straight back at
- * latitude -84.5 and cuts through its own coastline. The shape being filled is the ring plus a cap: on to
- * the antimeridian, down to the pole, across. Three points, and the polygon is simple.
+ * Antarctica is one west-to-east sweep, not a loop, so its closing edge runs 358 degrees back at latitude
+ * -84.5 and cuts through its own coastline. Fill the ring plus a cap: to the antimeridian, down to the pole,
+ * across.
  *
- * After `unwrap`, never before. Unwrap reads the cap's deliberate 360-degree step as a seam and collapses it.
+ * After `unwrap`, never before. Unwrap reads the cap's 360-degree step as a seam and collapses it.
  */
 function closeAtPole(ring: Ring): Ring {
   const first = ring[0]!;
@@ -345,17 +343,14 @@ export function buildLand(): LandGeometry {
   }
 
   /*
-   * Wide triangles are split here, before anything subdivides them.
+   * Split wide triangles here, before anything subdivides them.
    *
-   * They used to be dropped, on the reasoning that a triangle wider than half the world must be crossing the
-   * date line. That was never what the filter did: Eurasia spans 207 degrees by nature and Antarctica 358, so
-   * dropping them cut a chord-edged wedge through Siberia with no fill and no coastline in it.
+   * They used to be dropped, on the reasoning that anything wider than half the world must be crossing the
+   * date line. Eurasia spans 207 degrees by nature and Antarctica 358, so dropping them cut a wedge through
+   * Siberia with no fill and no coastline in it.
    *
-   * Keeping them is safe only because `reframe` and `closeAtPole` removed both sources of malformed output.
-   * Bisect the widest edge rather than clipping against a meridian: in one continuous frame the midpoint of
-   * two longitudes is their average, with no cases.
-   *
-   * The adaptive split leaves T-junctions, which `conform` below is what removes.
+   * Safe only because `reframe` and `closeAtPole` removed both sources of malformed output. Bisect the widest
+   * edge rather than clipping against a meridian: in one continuous frame the midpoint is just the average.
    */
   const flatTris: number[] = [];
   let split = 0;
@@ -411,15 +406,11 @@ export function buildLand(): LandGeometry {
    * No edge longer than `MAX_EDGE_DEG`, and every split shared by both triangles owning the edge.
    *
    * The adaptive passes above strand a midpoint on the straight edge of an unsplit neighbour. That vertex is
-   * lifted onto the sphere while the edge beside it stays a chord, so the mesh opens a lens-shaped hole and
-   * the ocean shows through. Reported four times as lines across Russia and spots across China, all one
-   * defect, proved by painting the ocean green and watching the scratch turn green with it.
+   * lifted onto the sphere while the edge stays a chord, so the mesh opens a lens and the ocean shows through.
+   * Reported four times, proved by painting the ocean green and watching the scratch turn green with it.
    *
-   * The gap is the sagitta of its edge, `R(1 - cos(d/2))`, so it scales with the square: 11.4 degrees is
-   * about four pixels, four degrees is 0.49px. Of 956,706 edges only 6,014 were over four.
-   *
-   * Conforming by construction: an edge is marked once in a map keyed by its endpoints, so neither side can
-   * be left with the long version.
+   * The gap is the sagitta, `R(1 - cos(d/2))`, so it goes as the square: 11.4 degrees is four pixels, four
+   * degrees is 0.49px. Of 956,706 edges only 6,014 were over four.
    */
   // To a fixed point, because one pass only halves. The bound is a backstop; the loop stops as soon as a
   // pass finds nothing left to mark.
@@ -430,14 +421,13 @@ export function buildLand(): LandGeometry {
   }
 
   /*
-   * Whole triangles are repeated across the seam, so the mesh is periodic like the map that draws it.
+   * Repeat whole triangles across the seam, so the mesh is periodic like the map that draws it.
    *
-   * `visibleCopies` assumes copy k covers a period centred on k, which is true of the ocean shell and false
-   * here: `unwrap` runs Eurasia out to 190 degrees, so the land poked into the next copy's territory and
-   * that copy's opaque ocean painted over it. The coastline sits in front of the ocean and survived, which
-   * is why the eastern tip of Russia appeared as an outline around nothing.
+   * `visibleCopies` assumes copy k covers a period centred on k. True of the ocean shell, false here:
+   * `unwrap` runs Eurasia to 190 degrees, so the land poked into the next copy and that copy's ocean painted
+   * over it. The coastline sits in front and survived, which is why Russia's tip was an outline around nothing.
    *
-   * Whole triangles, never clipped: a triangle cut at the seam can tear, and a duplicate cannot.
+   * Whole triangles, never clipped. A triangle cut at the seam can tear; a duplicate cannot.
    */
   let wrapped = 0;
   {

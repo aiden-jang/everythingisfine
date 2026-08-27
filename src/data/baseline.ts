@@ -2,16 +2,13 @@ import counts from "./baseline.json";
 import type { Store } from "./store";
 
 /*
- * Whether today is a lot.
+ * Whether today is a lot, against five years of days: 1,826 of them, quietest 3, median 18, busiest 422.
  *
- * The headline says "400 in the last 24 hours" and nothing said whether that is busy, quiet or average.
- * `tools/make-baseline.mjs` counts every UTC day in five years: 1,826 days, quietest 3, median 18, busiest 422.
+ * Compare at magnitude 4.5, never at whatever the filter says. How many small events get detected depends on
+ * how many seismometers are nearby, so a count of everything cannot be compared across years. At 4.5 the
+ * catalogue is complete and a difference between two days is the planet.
  *
- * The comparison runs at magnitude 4.5, not at whatever the filter says. A count of everything cannot be
- * compared across years, because how many small events are detected depends on how many seismometers are
- * near them. At 4.5 the global catalogue is complete, so a difference between two days is the planet.
- *
- * So the sentence states its own threshold. It has to: it reports on a population the map may not be drawing.
+ * The sentence has to state that threshold, because it reports on a population the map may not be drawing.
  */
 
 /** Sorted ascending. See the note in the generator on why that is the entire structure. */

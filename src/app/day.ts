@@ -1,12 +1,11 @@
 /*
- * What counts as a day this app can load, in one place.
+ * What counts as a day this app can load. Every path asks this one function.
  *
- * The rule existed twice and was enforced in three ways, one of which was a browser widget: the field in
- * the rail relied on `type="date"` plus a `max` attribute, so the ceiling for a typed date was enforced by
- * Chrome. Every path now asks this same function.
+ * The rule used to live in three places, one of them a browser widget: the date field relied on `max`, so
+ * Chrome was enforcing the ceiling for anything typed.
  *
  * "Has ended", not "is before now". `at < Date.now()` accepts today, and a banner reading "all day UTC"
- * over a day that is still happening is the one claim the archive must not make.
+ * over a day still in progress is the one claim the archive must not make.
  */
 
 /** Midnight-to-midnight in UTC, so a shared link means the same day everywhere. */

@@ -2308,17 +2308,12 @@ export function App(): JSX.Element {
         </main>
 
         {/*
-          The one thing cinema is not allowed to hide.
-
-          Pressing `f` hides the header, the rail and the bottom band. On an archived day that hid all four
-          statements of which day this is, including the banner saying "Nothing here is arriving now", and a
-          fullscreen window has no tab title either. So the rule is not "hide the chrome" but "hide the
-          controls and the commentary": a sentence that stops the picture being misread is neither.
-
-          A held cursor needs it for the same reason, and the first version covered only the archive.
-
-          The wording comes from `stillMoment`, so one place decides how this app names its moment. The day
-          comes from the snapshot, not the field, which is text somebody is still typing.
+          Cinema hides the chrome. It must not hide which day this is.
+          Pressing `f` hid all four statements of the date, and a fullscreen window has no tab title either,
+          so a viewer saw 2011's earthquakes with nothing saying it was not this morning. Hide controls and
+          commentary; keep any sentence that stops the picture being misread. A held cursor counts too.
+          Take the wording from `stillMoment` and the day from the snapshot, not the field, which is text
+          somebody is still typing.
         */}
         {cinema && (snapshot.archive !== null || view.at !== null) ? (
           <div className="stamp pointer-events-none absolute bottom-4 left-4 z-[2] bg-deck/40 px-3 py-2 font-mono text-[11px] text-faint backdrop-blur-xl backdrop-saturate-50">

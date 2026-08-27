@@ -3,33 +3,32 @@ import { moonPosition, moonRadii, MOON_RADIUS_KM } from "../geo/moon";
 import { toVec3 } from "../geo/sphere";
 
 /*
- * The moon, at its real distance, its real size, and its real phase.
+ * The moon, at its real distance, size and phase.
  *
- * Nothing is scaled for effect, and the result is small: sixty radii out and a quarter of a radius across is
- * half a degree, about eleven pixels. The familiar enormous moon of photographs is a long lens.
+ * Nothing is scaled for effect, so it is small: sixty radii out and a quarter of a radius across is half a
+ * degree, about eleven pixels. The enormous moon of photographs is a long lens.
  *
- * The phase is not computed anywhere. The scene already knows which way the sun is, and a sphere lit from
- * that direction produces the crescent and - the part hand-rolled phase code gets wrong - which way the
- * horns point. The sun is four hundred times further away than the moon, so one uniform serves both.
+ * The phase is not computed. The scene knows where the sun is, and a sphere lit from there gives the
+ * crescent and - the part hand-rolled phase code gets wrong - which way the horns point.
  *
  * No texture: at eleven pixels a map of the maria contributes nothing.
  *
- * Transparent, but it writes depth. It has to draw after the stars to cover them and fade with the morph,
- * which rules out the opaque pass, and writing depth is what keeps it solid over a star.
+ * Transparent, but it writes depth. It draws after the stars to cover them and fades with the morph, which
+ * rules out the opaque pass, and writing depth is what keeps it solid over a star.
  */
 
 /** Lunar grey, faintly warm, and kept well inside the chroma the interface allows anything painted. */
 const COLOR_MOON = new Color(0xb8b4ae);
 
 /*
- * The eclipsed moon, and the one place this app admits a warm hue on purpose.
+ * The eclipsed moon, and the one warm hue this app admits on purpose.
  *
- * Not a second exception to the hue ban - the same one, from the far end of the ray. The light reaching a
- * totally eclipsed moon is sunlight refracted through the Earth's atmosphere, which is the sunset ring
- * around the planet, which is the rim.
+ * Not a second exception to the hue ban - the same one from the far end of the ray. The light reaching a
+ * totally eclipsed moon is sunlight bent through the Earth's atmosphere, which is the sunset ring, which is
+ * the rim.
  *
- * Dim as well as red. A total lunar eclipse is roughly ten thousand times fainter than a full moon, drawn
- * here at a fifth: a physically faithful brightness would be a moon that had simply gone.
+ * Dim as well as red, but only to a fifth: a real total lunar eclipse is ten thousand times fainter than a
+ * full moon, and drawing that faithfully is a moon that has simply gone.
  */
 const COLOR_ECLIPSED = new Color(0x6e3a2c);
 
