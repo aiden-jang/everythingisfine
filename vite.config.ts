@@ -1,9 +1,39 @@
 import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
+import preact from "@preact/preset-vite";
 import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  /*
+   * Preact behind React's API, which DESIGN.md section 11 names as the lever for the application-code
+   * budget and which has now been pulled.
+   *
+   * The preset rather than hand-written aliases: it maps `react`, `react-dom` and both JSX runtimes to
+   * `preact/compat`, and it swaps react-refresh for prefresh. Hand-aliasing would have left
+   * `@vitejs/plugin-react` injecting a refresh runtime that preact does not implement, which breaks the
+   * dev server the browser suite runs against - and the unit suite would not have noticed, because not
+   * one of its tests renders a component.
+   *
+   * The source keeps importing from "react" throughout. Nothing here uses an API preact/compat does not
+   * cover: StrictMode, lazy, Suspense, five hooks, createRoot and three types.
+   */
+  plugins: [preact(), tailwindcss()],
+  /*
+   * The aliases spelled out, because the preset's own only reach the client build.
+   *
+   * Removing `react` from the dependencies broke three unit files the moment they imported a module that
+   * imports it: vitest resolves through Node and never saw the preset's mapping. Declared here so the
+   * swap holds in the dev server, the production build and the test runner alike.
+   *
+   * Two entries cover four specifiers. Vite matches a string alias on the whole name or on a `name/`
+   * prefix and rewrites just that part, so `react/jsx-runtime` becomes `preact/compat/jsx-runtime` and
+   * `react-dom/client` becomes `preact/compat/client` without either being listed.
+   */
+  resolve: {
+    alias: {
+      react: "preact/compat",
+      "react-dom": "preact/compat",
+    },
+  },
   build: {
     assetsDir: "a",
     /*
@@ -62,7 +92,11 @@ export default defineConfig({
           if (/\/src\/geo\/(stars|moon|planets|eclipse)\.ts$/.test(id)) return "sky";
           if (id.includes("world-atlas") || id.includes("/src/geo/")) return "land";
           if (id.includes("/node_modules/three/")) return "three";
-          if (id.includes("/node_modules/react")) return "react";
+          /*
+           * Still called "react" so the budget line and its history stay comparable: this is the same
+           * row measuring the same job, now done by preact/compat behind React's API.
+           */
+          if (id.includes("/node_modules/preact") || id.includes("/node_modules/react")) return "react";
           return undefined;
         },
       },
