@@ -93,6 +93,20 @@ export interface Reading {
    */
   felt?: { reports: number; intensity?: number };
   /**
+   * Whether a person has checked this reading yet, when the agency says.
+   *
+   * The forward-looking half of the revision machinery. `revision` records that a number already moved;
+   * this says a number may still move, because nobody has looked at it. An automatic solution is a
+   * computer's first answer minutes after the ground stopped, and the app already draws it at full
+   * confidence beside solutions that have been through a seismologist.
+   *
+   * **USGS only.** EMSC sends `auth` and `source_catalog` and no review state, and inferring one from a
+   * catalogue name would be guessing about provenance, which is the one thing this field exists to stop.
+   * The agency's own two words, kept verbatim rather than translated into a boolean, so a third value
+   * arriving is absent rather than silently folded into one of these.
+   */
+  review?: "automatic" | "reviewed";
+  /**
    * Set once this agency has revised its own magnitude or depth, absent until then.
    *
    * The epicentre is revised too and is not tracked. It moves by a few kilometres on most revisions,

@@ -336,6 +336,23 @@ export function DetailPanel({
           <Field label="Felt reports" value={feltNote(r.felt)!} />
         ) : null}
         {/*
+          Whether anybody has checked this number yet.
+
+          The panel already says an agency revised its own magnitude once it has; this says one still
+          might, which is the more useful half while a number is fresh. An automatic solution is a
+          computer's answer minutes after the ground stopped, and until now the app drew it at exactly
+          the same confidence as one a seismologist had been through.
+
+          The consequence is stated rather than the jargon left bare: "automatic" alone means nothing to
+          a reader who has not met the word, and "may still change" is the entire reason to care.
+        */}
+        {r.review ? (
+          <Field
+            label="Review"
+            value={r.review === "automatic" ? "automatic, may still change" : "checked by a person"}
+          />
+        ) : null}
+        {/*
           What the sky was doing there when it happened, which the terminator was already computing and
           nothing read. An M6 at three in the morning, with everyone asleep and indoors, is a different
           event from the same rupture at three in the afternoon.
