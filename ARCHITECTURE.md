@@ -5918,3 +5918,21 @@ does not reload the page, so each case inherited the previous one's archive and 
 three separate product bugs. Adding `page.reload()` made it worse - the cursor stopped applying at all. A
 fresh page per case, as four `test()` blocks, was correct. This is the fourth time this session a probe has
 reported a product failure that was its own.
+
+### A chrome token copied from a shader broke the chroma ceiling
+
+`COLOR_ECLIPSED` is `#6e3a2c`, chroma 66. The canvas is exempt from the ceiling and a swatch in the key is
+not, so copying the value into `--color-eclipsed` for the eclipse row put a 66 into chrome against a limit
+of 55 that `design.spec.ts` enforces. The token is now `#6e4b3c`, the same hue at chroma 50, and it is
+deliberately **unequal** to the shader constant - unlike `--color-plate`, `--color-star` and `--color-moon`,
+which are all documented as kept equal on purpose. One is light and one is paint.
+
+**It slipped because the guard lives in the browser suite and the working loop is unit tests.** Nothing
+about the arithmetic was hard; nothing ran it. The other three tokens added the same day measure 10, 26 and
+20, so this was the one that needed checking and the one that got least.
+
+**And the suite could not confirm the fix.** Two full runs at load average 21 to 32 failed two and then
+five cases, with no overlap between the sets and every one passing in isolation - the same signature the
+perf entry above documents, with runtime up from 5.5 to 6.8 minutes as the tell. The chroma fix stands on
+arithmetic instead: 50 is under 55. The one case that could plausibly have been a real regression from the
+same session, a taller rail scrolling the phone, was run in isolation and passed.
