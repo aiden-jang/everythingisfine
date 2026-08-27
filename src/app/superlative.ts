@@ -5,24 +5,16 @@ import type { Quake } from "../data/types";
 /*
  * Where the window's largest sits against what its region is capable of.
  *
- * The rail names the biggest event and its magnitude, and a magnitude on its own is the thing this app
- * refuses everywhere else: a number with no scale beside it. "M6.1, Japan & Kurils" reads as enormous to
- * anybody who has not spent time with the scale, and it is an ordinary week there. The region's own
- * ceiling is the shortest way to say so.
+ * A magnitude on its own is a number with no scale beside it: "M6.1, Japan & Kurils" reads as enormous to
+ * anybody who has not spent time with the scale, and it is an ordinary week there.
  *
- * **Two sentences, and only one of them is rare.** Most days this states the ceiling and lets the reader
- * do the comparison. On the day the window's largest clears that ceiling it becomes a superlative, which is
- * the strongest thing this app will ever have to say - and it can say it because the number came from the
- * catalogue rather than from an impression.
+ * Two sentences, and only one is rare. Most days this states the ceiling; on the day the window's largest
+ * clears it, the app has a real superlative, and it can say so because the number came from the catalogue.
  *
- * **"Since at least 2000", because that is where the table starts.** The catalogue reaches further back and
- * `tools/make-region-max.mjs` does not, so a region's true maximum may be older and larger: Valdivia is
- * not in here and neither is Prince William Sound. Bounding the claim costs two words and is the whole
- * difference between a fact and an overstatement.
+ * "Since at least 2000", because that is where the table starts. Valdivia is not in here and neither is
+ * Prince William Sound, so bounding the claim is the difference between a fact and an overstatement.
  *
- * **Only inside a named region.** Most of the seismicity on this globe is in one of the eleven boxes the
- * rail already counts by, and the rest is mid-ocean, where there is no meaningful local record to compare
- * against. Outside them this says nothing, which is the same choice every other note here makes.
+ * Only inside a named region: outside the eleven boxes it is mid-ocean, with no local record to compare to.
  */
 
 /** `[magnitude, day]` per region name, as generated. */
@@ -31,12 +23,9 @@ type RegionMax = Record<string, readonly [number, string]>;
 const RECORDS = table as unknown as RegionMax;
 
 /*
- * Where the generated table begins and ends. Both printed, because the claim is bounded by both.
- *
- * The end used to be left off, so the sentence read "largest in Indonesia since 2000" while the table
- * stopped on 2025-08-01. That is a claim about 2000 to now backed by data that ends over a year short of
- * now, and it is the strongest claim this app makes: a larger event in the gap would make it false with
- * nothing on screen to say so. The same omission was in the slab key and the ranking line.
+ * Where the generated table begins and ends. Both printed, because the claim is bounded by both. With the
+ * end left off, the sentence read "largest in Indonesia since 2000" off a table that stops on 2025-08-01 -
+ * a larger event in the gap would make the strongest claim this app makes false, with nothing saying so.
  */
 export const SINCE = "2000";
 export const UNTIL = "2025";
@@ -52,10 +41,8 @@ export interface Superlative {
 }
 
 /**
- * The region an event falls in, or null when it is outside all of them.
- *
- * First match wins. The boxes overlap - Tonga & Kermadec and Alaska & Aleutians both reach the date line -
- * and the order in `REGIONS` is the app's existing preference, which the rail's counts already follow.
+ * The region an event falls in, or null when it is outside all of them. First match wins: the boxes overlap,
+ * and the order in `REGIONS` is the preference the rail's counts already follow.
  */
 export function regionOf(lon: number, lat: number): string | null {
   for (const region of REGIONS) {
@@ -65,11 +52,8 @@ export function regionOf(lon: number, lat: number): string | null {
 }
 
 /**
- * The comparison for one event, or null when there is nothing to compare it against.
- *
- * Null outside a named region, and null for a region with no record in the table - which happens only if
- * the generator is rerun with a threshold high enough to miss one, and is better as silence than as a
- * sentence with a hole in it.
+ * The comparison for one event, or null when there is nothing to compare against. Null for a region with no
+ * record in the table, which is better as silence than as a sentence with a hole in it.
  */
 export function superlativeFor(
   quake: Quake | null, asOf: number = Date.now(),
@@ -83,17 +67,12 @@ export function superlativeFor(
   if (!held) return null;
   const [record, day] = held;
   /*
-   * Never cite a record that had not happened yet.
+   * Never cite a record that had not happened yet. The table is a maximum over the whole span and knows
+   * nothing about the day on screen: loading 2001-06-23 read "Largest in Indonesia since 2000: M9.1,
+   * December 2004", offered as context for a day three years before it happened.
    *
-   * The table is a maximum over the whole span and knows nothing about which day is on screen, so on an
-   * archived day it happily reached forward. Caught by loading 2001-06-23: the rail read "Largest in
-   * Indonesia since 2000: M9.1, December 2004" beside a banner saying 2001 - an earthquake offered as
-   * context for a day three years before it happened.
-   *
-   * Comparing against the whole span is still right whenever the record predates the day, and that is not
-   * a fudge: the record is the maximum over 2000 to 2025, so if it fell before the day on screen then
-   * nothing between 2000 and that day was larger either. Silence is the only honest answer for the days
-   * it did not.
+   * Comparing against the whole span is still right whenever the record predates the day: if the maximum
+   * over 2000 to 2025 fell before that day, nothing between 2000 and it was larger either.
    */
   const happened = Date.parse(`${day}T00:00:00Z`);
   if (!Number.isFinite(happened) || happened > asOf) return null;

@@ -16,30 +16,22 @@ export const USGS_HOUR_FEED = FEED("all_hour");
 /**
  * The first request asks for a day; every one after asks for an hour.
  *
- * DESIGN.md originally said to seed from the last hour, and measuring killed that: the hourly feed
- * held **8 earthquakes**, of which four cleared the default magnitude floor. Four dots is not a
- * live visualization, however genuinely live it is, and section 8's promise that the first frame is
- * already alive would have been false on most loads.
+ * Seeding from the last hour was the original plan, and measuring killed it: the hourly feed held 8
+ * earthquakes, four of them above the default magnitude floor. The daily feed holds 227 in 163kB.
  *
- * The daily feed holds 227 events in 163kB, which fills the globe immediately and costs one request.
- * Polling it every minute instead would cost 163kB a minute forever to re-learn 8 events, so the
- * seed is a one-off and the steady state stays on the hourly feed.
+ * Polling the day every minute would cost 163kB a minute to re-learn 8 events, so the seed is a one-off.
  *
- * The 2.5+ daily feed was the other candidate at 53 events and 38kB, and it was rejected because
- * discarding everything below magnitude 2.5 discards most of what a seismic network actually
- * records. The magnitude floor belongs to the viewer's filter, not to the fetch.
+ * The 2.5+ daily feed was the other candidate at 38kB, and it was rejected because the magnitude floor
+ * belongs to the viewer's filter, not to the fetch.
  */
-export const USGS_DAY_FEED = FEED("all_day");
+const USGS_DAY_FEED = FEED("all_day");
 
 /**
- * Which backlog to ask for, given how far back the viewer wants to see.
+ * Which backlog to ask for, given how far back the viewer wants to see. Measured: the day is 0.23MB, the
+ * week 1.5MB, the month 7.4MB. The 2.5+ month is 1.5MB for the same span and is rejected for the same
+ * reason the 2.5+ day is - a baked-in floor makes the slider below it say something untrue.
  *
- * Measured, because the month is not free: the day is 0.23MB, the week 1.5MB and the month 7.4MB.
- * The 2.5+ month is 1.5MB for the same span and was rejected for the same reason the 2.5+ day was.
- * The magnitude floor belongs to the viewer's filter, not to the fetch, and a month whose floor is
- * baked in at 2.5 would leave the slider below that saying something untrue about what it holds.
- *
- * The cost lands on a click rather than on a page load, which is what makes it acceptable to take.
+ * The cost lands on a click rather than on a page load, which is what makes it acceptable.
  */
 export const usgsSeedFor = (windowMs: number): string => {
   const days = windowMs / 86_400_000;
@@ -55,13 +47,9 @@ const BACKOFF_CAP_MS = 5 * 60_000;
 
 export interface ParseResult {
   readings: Reading[];
-  /**
-   * Features that could not be turned into a reading.
-   *
-   * Counted rather than silently dropped. USGS publishes events with a null magnitude, and a
-   * magnitude is not optional here: it drives both the radius and the ramp position, so an event
-   * without one cannot be drawn honestly. Discarding is right; discarding invisibly is not.
-   */
+  /** Features that could not be turned into a reading. Counted rather than silently dropped: USGS publishes
+   * events with a null magnitude, which drives both the radius and the ramp position, so they cannot be
+   * drawn honestly. Discarding is right; discarding invisibly is not. */
   skipped: number;
 }
 
@@ -78,11 +66,8 @@ const num = (v: unknown): number | null =>
   typeof v === "number" && Number.isFinite(v) ? v : null;
 
 /**
- * GeoJSON to readings.
- *
- * Written defensively on purpose. This is the one place the app touches something it does not
- * control, and every field below has been null in a real USGS response at some point. A parser
- * that trusts the shape turns a bad afternoon at an agency into a blank globe.
+ * GeoJSON to readings. Written defensively on purpose: this is the one place the app touches something it
+ * does not control, and every field below has been null in a real USGS response at some point.
  */
 export function parseUsgs(payload: unknown, receivedAt: number): ParseResult {
   const features = (payload as { features?: unknown })?.features;
@@ -113,31 +98,21 @@ export function parseUsgs(payload: unknown, receivedAt: number): ParseResult {
       source: "usgs",
       id,
       magnitude: mag,
-      // Absent magType has happened. Naming it "unknown" is honest; defaulting it to a real scale
-      // like Mww would put a specific false claim on screen.
+      // Absent magType has happened. Naming it "unknown" is honest; defaulting to a real scale like Mww
+      // would put a specific false claim on screen.
       scale: typeof p?.magType === "string" && p.magType ? p.magType : "unknown",
       lon,
       lat,
-      // Depth is the third coordinate and is genuinely optional. Zero is a real seabed value, so
-      // a missing depth becomes NaN rather than a plausible-looking zero.
+      // Depth is the third coordinate and is genuinely optional. Zero is a real seabed value, so a missing
+      // depth becomes NaN rather than a plausible-looking zero.
       depthKm: (Array.isArray(coords) ? num(coords[2]) : null) ?? Number.NaN,
       time,
       place: typeof p?.place === "string" && p.place ? p.place : "location not given",
-      /*
-       * Felt reports, when there are any. See `Reading.felt`.
-       *
-       * Both fields are routinely null in this feed - two of thirteen events carried a count in the
-       * M4.5 day sampled while writing this - so absent is the normal case and has to read as absent
-       * rather than as a zero. `cdi` without `felt` is not a thing USGS sends, but it is cheap to
-       * refuse: an intensity with no reports behind it would be a number with nothing under it.
-       */
-      /*
-       * The review state, and only the two words that mean something.
-       *
-       * USGS also sends "deleted" here, and a third value could arrive at any time. Matching the two
-       * known ones and dropping the rest is what keeps an unknown word from being drawn as though it
-       * said something: absent reads as "the agency did not say", which is true of anything else.
-       */
+      // Felt reports, when there are any. Both fields are routinely null - two of thirteen events carried a
+      // count in the M4.5 day sampled while writing this - so absent is the normal case and must read as
+      // absent rather than as a zero.
+      // Only the two review words that mean something. USGS also sends "deleted", and a third value could
+      // arrive at any time: absent reads as "the agency did not say", which is true of anything else.
       ...(p?.status === "automatic" || p?.status === "reviewed" ? { review: p.status } : {}),
       // Who computed it, which is not always USGS themselves. See `Reading.network`.
       ...(typeof p?.net === "string" && p.net.trim() !== "" ? { network: p.net.trim() } : {}),
@@ -189,15 +164,11 @@ export function createUsgsSource(
   let liveSince: number | null = null;
 
   /*
-   * What we have already told the store about.
+   * What we have already told the store about. Replaced wholesale each poll rather than accumulated: both
+   * feeds are rolling windows that restate themselves, so keeping every id ever seen grows forever.
    *
-   * Replaced wholesale each poll rather than accumulated. Both feeds are rolling windows that
-   * restate themselves, so keeping every id ever seen would grow forever for no benefit; keeping
-   * only the current response bounds it to that response's size.
-   *
-   * It shrinks from 227 to 8 on the first hourly poll after the daily seed, and that is harmless
-   * in both directions: the hour is a subset of the day, so nothing in it is re-announced, and a
-   * day-event that later reappears is treated by the store as a revision rather than a new event.
+   * It shrinks from 227 to 8 on the first hourly poll after the daily seed, which is harmless both ways:
+   * the hour is a subset of the day, and a day-event that reappears is treated by the store as a revision.
    */
   let seen = new Map<string, number>();
 
@@ -224,8 +195,8 @@ export function createUsgsSource(
   };
 
   const schedule = (ms: number): void => {
-    // Cleared first, always. Two timers on one source is the orphaned-listener bug wearing a
-    // different hat: nothing throws, the feed just arrives twice as often forever.
+    // Cleared first, always. Two timers on one source is the orphaned-listener bug in a different hat:
+    // nothing throws, the feed just arrives twice as often forever.
     if (timer !== null) runtime.clearTimer(timer);
     timer = runtime.setTimer(() => {
       timer = null;
@@ -234,16 +205,11 @@ export function createUsgsSource(
   };
 
   /*
-   * One poll.
+   * One poll. The try block contains the transport and nothing else.
    *
-   * The try block contains the transport and nothing else. Scheduling, status and parsing all sit
-   * outside it, and that separation is not tidiness: the first version scheduled inside the try,
-   * so when `browserRuntime` turned out to use `window.setTimeout` and threw under Node, the catch
-   * dutifully reported it as `failing` with an HTTP-shaped reason. The feed was perfectly healthy.
-   *
-   * A source that blames the network for its own bugs is worse than one that crashes, because the
-   * status it shows is a lie and the retry it schedules will never help. Our own faults now
-   * propagate as unhandled rejections, which is loud and correct.
+   * Scheduling inside it meant that when `browserRuntime` turned out to use `window.setTimeout` and threw
+   * under Node, the catch reported a healthy feed as `failing` with an HTTP-shaped reason. A source that
+   * blames the network for its own bugs shows a lie and schedules a retry that will never help.
    */
   const poll = async (): Promise<void> => {
     if (!handlers) return;
@@ -265,14 +231,8 @@ export function createUsgsSource(
 
     if (failure === null) {
       // The day feed has no result cap, so a successful fetch of it vouches for the whole day.
-      /*
-       * The span the seed asked for, not a day.
-       *
-       * Hardcoded at a day while the only seed was the daily one, and choosing a month then left the
-       * app drawing a month while vouching for the last twenty-four hours of it: twenty-nine days of
-       * the strip marked as time the buffer was never open for, under a globe covered in the events
-       * from them.
-       */
+      // The span the seed asked for, not a day. Hardcoded at a day, choosing a month left the app drawing a
+      // month while vouching for the last twenty-four hours of it.
       if (!seeded && target === seedUrl) handlers.onSeeded(runtime.now() - seedMs);
       seeded = true;
       emit(payload);
@@ -301,8 +261,7 @@ export function createUsgsSource(
       liveSince = null;
       seeded = false;
       seen = new Map();
-      // Immediately, not after the first interval. A minute of empty globe on load would fail
-      // DESIGN.md section 8 outright.
+      // Immediately, not after the first interval. A minute of empty globe on load would fail DESIGN.md 8.
       void poll();
     },
     stop: () => {

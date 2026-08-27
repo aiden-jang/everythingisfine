@@ -4,30 +4,19 @@ import { gmstDeg } from "./stars";
 /*
  * The five planets anybody can see, in the same frame as the stars behind them.
  *
- * The sky is real and fixed; these are the things in it that move. A reader who knows that bright dot low
- * in the west is Venus can now check, and one who does not can watch it change places over a week of
- * archived days while the constellations stay put. That is the whole argument: the star field made the sky
- * a place, and planets are what makes it a place with weather.
+ * The star field made the sky a place; these are the things in it that move. Scrub a week of archived days
+ * and five dots walk through constellations that hold still.
  *
- * **Keplerian elements with linear rates, from the standard approximate table for 1800 to 2050.** Solve
- * Kepler's equation, rotate into the ecliptic, subtract the Earth, convert to right ascension and
- * declination, and hand back the same `lon`/`lat` every other body here uses. Good to roughly a tenth of
- * a degree for the inner planets and better for the outer ones, which is a fraction of a pixel on a dot
- * this size.
+ * Keplerian elements with linear rates, from the standard approximate table for 1800 to 2050. Good to
+ * roughly a tenth of a degree, which is a fraction of a pixel on a dot this size.
  *
- * **Magnitudes carry a phase term, because leaving it out was visibly wrong.** Brightness is the absolute
- * magnitude plus the distance terms plus a correction for how much of the disc is lit. The first version
- * skipped the last one on the grounds that the renderer only needs the ordering, and it put Venus at
- * -5.9 against a real ceiling near -4.9: at inferior conjunction Venus is closest and therefore brightest
- * by distance alone, and in truth it is a thin crescent. A layer that sizes its dots by magnitude would
- * have drawn the biggest Venus of the year on the night it is hardest to see.
+ * Magnitudes carry a phase term. Leaving it out put Venus at -5.9 against a real ceiling near -4.9: at
+ * inferior conjunction Venus is closest and brightest by distance alone, and in truth it is a thin
+ * crescent, so a layer that sizes its dots by magnitude drew the biggest Venus of the year on the night it
+ * is hardest to see. Saturn's rings are not modelled, worth up to half a magnitude.
  *
- * Saturn's rings are not modelled, and they are worth up to about half a magnitude depending on how open
- * they are to us. Everything else here is inside a tenth.
- *
- * **No Pluto, no Uranus, no Neptune.** Uranus is magnitude 5.7 at best, which is inside the star table's
- * own limit and indistinguishable from the field around it, and the other two are not naked-eye objects
- * at all. A dot labelled Neptune would be a claim about eyesight rather than about the sky.
+ * No Pluto, Uranus or Neptune. Uranus is magnitude 5.7 at best, inside the star table's own limit and
+ * indistinguishable from the field around it; a dot labelled Neptune would be a claim about eyesight.
  */
 
 /** Julian centuries since J2000.0, matching `sun.ts` and `moon.ts`. */
@@ -57,11 +46,9 @@ interface Elements {
 }
 
 /*
- * The Earth is in this table and is not offered as a planet.
- *
- * Every other position here is geocentric, which means every one of them is a subtraction against the
- * Earth's own heliocentric position. Keeping it in the same table with the same rates is what stops the
- * two halves of that subtraction being computed from different sources.
+ * The Earth is in this table and is not offered as a planet. Every position here is geocentric, which means
+ * a subtraction against the Earth's own heliocentric position, and keeping it in the same table with the
+ * same rates is what stops the two halves of that subtraction coming from different sources.
  */
 const EARTH: Elements = {
   name: "Earth", h: 0, phase: [],
@@ -111,12 +98,8 @@ function heliocentric(el: Elements, t: number): [number, number, number] {
   if (m > 180) m -= 360;
   if (m < -180) m += 360;
 
-  /*
-   * Kepler's equation by Newton, which needs a handful of steps and not a loop with a guard.
-   *
-   * Eccentricities here top out at Mercury's 0.206, where six iterations from `m` land inside a
-   * millionth of a degree. Fixed count rather than a tolerance so the cost is the same every frame.
-   */
+  // Kepler's equation by Newton. Eccentricities top out at Mercury's 0.206, where six iterations land
+  // inside a millionth of a degree. Fixed count rather than a tolerance, so the cost is the same every frame.
   let ecc = m;
   for (let k = 0; k < 6; k += 1) {
     const dm = m - (ecc - (e * Math.sin(ecc * DEG)) / DEG);
@@ -175,12 +158,8 @@ export function planetPositions(at: number): Planet[] {
 
     const distanceAu = Math.hypot(x, y, z);
     const sunDistance = Math.hypot(p[0], p[1], p[2]);
-    /*
-     * The phase angle, at the planet, between the sun and us.
-     *
-     * Straight from the triangle the three bodies make: two sides are the distances just computed and the
-     * third is the Earth's own distance from the sun, which is why `EARTH` is in the same table.
-     */
+    // The phase angle at the planet, between the sun and us. Straight from the triangle the three bodies
+    // make, which is why `EARTH` is in the same table.
     const earthSun = Math.hypot(earth[0], earth[1], earth[2]);
     const cosPhase = (sunDistance * sunDistance + distanceAu * distanceAu - earthSun * earthSun)
       / (2 * sunDistance * distanceAu);

@@ -1,4 +1,4 @@
-# First Motion: build plan
+# Everything Is Fine: build plan
 
 The source doc is the layer above the code and explicitly defers the build sequence. This is that
 sequence. [DESIGN.md](DESIGN.md) is the visual authority and is not restated here.

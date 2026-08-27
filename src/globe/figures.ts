@@ -5,33 +5,23 @@ import { SKY_DISTANCE, SKY_GLSL } from "./sky";
 /*
  * The constellation figures, laid over the stars they join.
  *
- * The star field is real and that only got halfway: a sky nobody can find anything in is still a
- * backdrop, and finding things in a sky means knowing which dots belong together. These are the lines
- * that make Orion into Orion.
+ * A sky nobody can find anything in is still a backdrop. These are the lines that make Orion into Orion.
  *
- * **The one layer here that measures nothing.** Every other thing drawn on this globe is a reading -
- * where an earthquake was, where a plate edge runs, how deep a slab goes. Nobody discovered that those
- * seven stars are a plough; somebody decided it. That is why it is a toggle rather than scenery, and it
- * sits beside the slab and the plate motions, which are the other two layers that interpret rather than
- * report.
+ * The one layer here that measures nothing. Nobody discovered that those seven stars are a plough; somebody
+ * decided it. That is why it is a toggle, beside the slab and the plate motions.
  *
- * **Faint, and thinner than the stars are bright.** The lines exist to be followed, not looked at, so
- * they are drawn at a fraction of the star colour's weight. Any brighter and the sky becomes a star chart
- * competing with the planet, which is the thing on screen that actually matters.
+ * Faint, and thinner than the stars are bright: the lines exist to be followed, not looked at.
  *
- * **Placed by the same rule as the stars**, from `sky.ts`, which is not a convenience: a line drawn at a
- * different distance or a different rotation than the star it points at is a line pointing at nothing.
+ * Placed by the same rule as the stars, from `sky.ts`. A line drawn at a different distance or rotation
+ * than the star it points at is a line pointing at nothing.
  */
 
 /*
- * The star colour, at the weight a guide line deserves.
+ * The star colour, at the weight a guide line deserves. Not a colour of its own: these belong to the stars,
+ * and reading as a different material would make them a third thing on screen.
  *
- * Not a colour of its own. These belong to the stars and reading as a different material would make them
- * a third thing on screen rather than an annotation on the second.
- *
- * Started at 0.2 and measured: a 360 by 110 patch of sky brightened by 0.14 of a luminance level, which
- * is present and takes hunting for. A reader who pressed a button labelled "figures" has asked to see
- * figures, so the ceiling here is what would start competing with the planet, not what is barely there.
+ * At 0.2 a 360 by 110 patch of sky brightened by 0.14 of a luminance level, which takes hunting for. A
+ * reader who pressed a button labelled "figures" has asked to see figures.
  */
 const COLOR_FIGURES = new Color(0xc8d2e2);
 const FIGURE_OPACITY = 0.3;
@@ -65,11 +55,8 @@ export interface Figures {
 
 export function createFigures(): Figures {
   const geometry = new BufferGeometry();
-  /*
-   * The same reason the star field needs it: the positions describe a unit sphere at the origin while
-   * the shader draws them eighty units out around a moving eye, so a bounding sphere derived from the
-   * buffer culls the whole layer the moment the camera leaves the unit sphere, which is immediately.
-   */
+  // Same reason the star field needs it: the positions describe a unit sphere at the origin while the
+  // shader draws them eighty units out around a moving eye.
   geometry.boundingSphere = null;
 
   const material = new ShaderMaterial({
@@ -99,13 +86,9 @@ export function createFigures(): Figures {
   return {
     object,
     setFigures: (table) => {
-      /*
-       * Polylines expanded to segments here rather than in the committed file.
-       *
-       * A run of joined points is what a figure is, and writing it out as independent segments would
-       * duplicate every interior point on the wire. `LineSegments` wants the duplicates, so they are
-       * made at load: cheaper to ship, identical in the buffer.
-       */
+      // Polylines expanded to segments here rather than in the committed file. Writing them out as
+      // independent segments would duplicate every interior point on the wire; `LineSegments` wants the
+      // duplicates, so they are made at load.
       let vertices = 0;
       for (const line of table) vertices += Math.max(0, line.length / 2 - 1) * 2;
       const positions = new Float32Array(vertices * 3);

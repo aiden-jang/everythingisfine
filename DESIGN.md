@@ -1,4 +1,4 @@
-# Design System: First Motion
+# Design System: Everything Is Fine
 
 A live global event visualization. A WebGL globe with real events streaming onto it as they happen.
 
@@ -84,7 +84,7 @@ would throw away the most interesting thing on the screen.
 
 The most important rule in the document. Everything else bends around it.
 
-**First Motion has two colour systems that must never touch.** One belongs to the data. One belongs to
+**This app has two colour systems that must never touch.** One belongs to the data. One belongs to
 the interface. If a viewer cannot tell at a glance whether a colour is telling them something or
 just decorating a button, the visualization has lost the thing it exists to do.
 

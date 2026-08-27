@@ -5,30 +5,16 @@ import { distanceKm } from "../geo/sphere";
 /*
  * When the shaking reached the nearest named place.
  *
- * A marker says an earthquake happened at a point. It does not say that the point is 7km from a town
- * that felt it two seconds later, and that second fact is the one that makes an event something that
- * happened to people rather than a dot in a margin.
+ * The distance is the agency's, not ours. USGS writes every place as "38 km NW of Stanton, Texas". The
+ * alternative was an authored list of cities with coordinates written from memory, where a tenth of a
+ * degree of drift is 11km and 11km is two seconds of a claim that reads as measured.
  *
- * **The distance is the agency's, not ours.** USGS writes every place as "38 km NW of Stanton, Texas",
- * so the settlement and its distance arrive with the event. The alternative was an authored list of
- * cities with coordinates, which means writing latitudes from memory and then making confident claims
- * about real towns from them: a tenth of a degree of drift is 11km, and 11km is two seconds of a claim
- * that reads as measured. Nothing here is authored, so nothing here can be quietly wrong.
- *
- * **Straight line at crustal speeds, which is why it is capped.** The travel times are path length over
- * a constant velocity, which holds while the path stays in the crust and upper mantle and stops holding
- * at teleseismic distance, where the real wave dives into faster material and arrives earlier than a
- * constant would predict. USGS names the nearest settlement, so these distances are usually tens of
- * kilometres, and anything beyond `MAX_KM` is refused rather than approximated.
+ * Straight line at crustal speeds, which is why it is capped. Path length over a constant velocity holds
+ * in the crust and stops holding at teleseismic distance, where the wave dives into faster material.
  */
 
-/**
- * Beyond this the constant-velocity assumption stops being an approximation and starts being wrong.
- *
- * Mantle velocity climbs with depth, so a 2000km path arrives materially before distance over 6 would
- * say. Nothing near this is common: the distance is to the nearest named place, which is why the cap is
- * a backstop rather than a limit anybody meets.
- */
+/** Beyond this the constant-velocity assumption stops being an approximation and starts being wrong: a
+ * 2000km path arrives materially before distance over 6 would say. A backstop, not a limit anybody meets. */
 export const MAX_KM = 700;
 
 export interface Arrival {
@@ -43,12 +29,9 @@ export interface Arrival {
 }
 
 /**
- * The distance and the place out of an agency's own description, or null when it is not that shape.
- *
- * EMSC writes Flynn regions, "OFF EAST COAST OF KAMCHATKA", which name an area and no distance, so
- * they parse to nothing and are correctly skipped. So are USGS's own regional strings like
- * "Flores Sea". Returning null for both is the point: there is no distance to be had, and inventing
- * one from a region's centroid would be exactly the authored-coordinate mistake avoided above.
+ * The distance and the place out of an agency's own description, or null when it is not that shape. EMSC
+ * writes Flynn regions - "OFF EAST COAST OF KAMCHATKA" - which name an area and no distance, so they parse
+ * to nothing. Inventing one from a region's centroid would be the authored-coordinate mistake above.
  */
 export function parsePlace(place: string): { km: number; name: string } | null {
   const m = /^\s*(\d+(?:\.\d+)?)\s*km\s+[NSEW]{1,3}\s+of\s+(.+?)\s*$/i.exec(place);
@@ -59,28 +42,20 @@ export function parsePlace(place: string): { km: number; name: string } | null {
 }
 
 /**
- * Path length from the hypocentre to the place, which is not the distance on the map.
+ * Path length from the hypocentre to the place, which is not the distance on the map. The published figure
+ * is epicentral; the wave leaves from depth, so the path is the hypotenuse - at a 45km-deep event 40km away
+ * that is 60km, and ignoring it understates the arrival by a third exactly where it matters most.
  *
- * The published figure is epicentral: measured across the surface. The wave leaves from depth, so the
- * path is the hypotenuse, and at a 45km-deep event 40km away that is 60km rather than 40. Ignoring it
- * would understate the arrival by a third on exactly the deep events where it matters most.
- *
- * A missing depth counts as zero, which follows the decision the event layer already made and
- * documented: the feeds genuinely omit it, and the overwhelming majority of catalogued events are
- * shallow. It biases the arrival early by however deep the event actually was.
+ * A missing depth counts as zero, following the event layer's convention. It biases the arrival early.
  */
 export function pathKm(epicentralKm: number, depthKm: number): number {
   const depth = Number.isFinite(depthKm) ? Math.max(0, depthKm) : 0;
   return Math.sqrt(epicentralKm * epicentralKm + depth * depth);
 }
 
-/**
- * The arrival, from whichever reading described its own surroundings.
- *
- * The primary first, then the others, because the marker is drawn from the primary and a distance
- * quoted from one agency beside a position from another would be two accounts spliced into one
- * sentence. Depth comes from the same reading as the distance for the same reason.
- */
+/** The arrival, from whichever reading described its own surroundings. The primary first, because a
+ * distance quoted from one agency beside a position from another would be two accounts spliced into one
+ * sentence. Depth comes from the same reading as the distance. */
 export function arrivalFor(quake: Quake): Arrival | null {
   const order: Reading[] = [
     quake.primary,
@@ -98,12 +73,9 @@ export function arrivalFor(quake: Quake): Arrival | null {
 }
 
 /**
- * Seconds, at the precision the inputs support and no finer.
- *
- * The distance is published to the kilometre and the depth likewise, so a kilometre of rounding is
- * already 0.17 seconds in the answer, and the origin time it is measured from is itself an agency's
- * estimate. Whole seconds are supportable and a decimal is not. Under a second reads as "under a
- * second" rather than as zero, which is a different and wrong claim.
+ * Seconds, at the precision the inputs support and no finer. The distance is published to the kilometre,
+ * which is already 0.17 seconds, and the origin time is itself an estimate. Under a second reads as "under
+ * a second" rather than as zero, which is a different and wrong claim.
  */
 export function seconds(value: number): string {
   if (!Number.isFinite(value) || value < 0) return "unknown";
@@ -123,22 +95,14 @@ export interface Separation {
 }
 
 /**
- * Great-circle distance between two events, and how long the first one's P wave took to reach the
- * second's ground.
+ * Great-circle distance between two events, and how long the first one's P wave took to reach the second's
+ * ground. The panel lists neighbours inside 150km of whatever is pinned; this answers for any two on screen.
  *
- * The panel already lists neighbours with their distances, but only inside 150km and only for whatever
- * is pinned. This answers the same question for any two events on screen, which is the difference
- * between a display and an instrument.
+ * The distance is always given and the time is not. Distance is geometry and true at any separation; a
+ * travel time over a constant crustal velocity is refused past the same `MAX_KM` the arrival sentence uses.
  *
- * **The distance is always given and the time is not.** Distance is geometry and true at any separation.
- * A travel time over a constant crustal velocity stops being true well before the antipode, so it is
- * refused past the same `MAX_KM` the arrival sentence uses rather than being quietly extrapolated. One
- * cap, one reason, one place to change it.
- *
- * Depth is deliberately absent. The arrival sentence corrects for it because a wave leaves a hypocentre
- * for a point on the surface, and the correction is worth a third on a deep event. Here both ends are
- * hypocentres and the honest path between them is neither the surface arc nor the straight chord but a
- * refracted ray, so the surface distance is reported as what it is and nothing is dressed up.
+ * Depth is deliberately absent here. Both ends are hypocentres, and the honest path between them is neither
+ * the surface arc nor the straight chord but a refracted ray, so the surface distance is reported as itself.
  */
 export function between(
   aLon: number, aLat: number, bLon: number, bLat: number,

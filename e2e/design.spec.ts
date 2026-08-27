@@ -4,60 +4,37 @@ import { installFeeds, waitForData } from "./feeds";
 /*
  * DESIGN.md section 13, as a test rather than as a list.
  *
- * Phase C in PLAN.md is a visual audit: walk the app and confirm nothing on the banned list has
- * crept in. An audit performed once is worth very little, because everything it checks can come
- * back the next afternoon. Two of these rules have already been broken by accident during this
- * build, and neither was broken by a decision:
+ * An audit performed once is worth very little. Two of these rules were broken by accident during the build
+ * and neither was broken by a decision: the magnitude slider rendered a saturated blue thumb because
+ * `accent-color` defaults to the platform highlight, and a dense cluster clipped to pure white under
+ * additive blending.
  *
- *   - the magnitude slider rendered a saturated blue thumb, because `accent-color` defaults to the
- *     platform highlight and nobody overrode it;
- *   - a dense cluster clipped to pure white under additive blending, which is the chrome colour.
- *
- * Both were caught by looking. Neither would have been caught twice. So the rules that can be
- * expressed as assertions are expressed as assertions, and the ones that genuinely need eyes are
- * named at the bottom rather than pretended away.
+ * The rules that can be expressed as assertions are; the ones that need eyes are named at the bottom.
  */
 
 const BREAKPOINTS = [
   { name: "phone", width: 375, height: 812 },
   { name: "tablet", width: 768, height: 1024 },
-  /*
-   * Landscape, because portrait was the only shape this band was ever measured in.
-   *
-   * The strip layout lives from 768 to 1279 and every sample of it was tall. Wide and short is the
-   * same band with a third of the height to give the strip, which is where it had quietly grown to
-   * half the viewport with the globe underneath paying for it, and it is also every half-screen
-   * desktop window.
-   */
+  // Landscape, because portrait was the only shape this band was ever measured in. The strip layout lives
+  // from 768 to 1279, and wide and short is the same band with a third of the height - where the strip had
+  // quietly grown to half the viewport.
   { name: "tablet landscape", width: 1024, height: 768 },
   /*
-   * A rotated phone, which is a real device state and the shortest shape anybody actually holds.
-   *
-   * The argument above applies one size down and harder: 812 crosses into the strip band, so a phone
-   * turned sideways gets the four-column layout in **375px of height** - the strip takes a third of it
-   * and the globe keeps the rest. Every sample of this app had been upright or wide, and audited across
-   * this shape, a short laptop and a very short window it holds: nothing overflows, nothing scrolls the
-   * page, no control is unreachable, and the canvas keeps 53%.
+   * A rotated phone, which is a real device state and the shortest shape anybody holds. 812 crosses into the
+   * strip band, so a sideways phone gets the four-column layout in 375px of height.
    */
   { name: "phone landscape", width: 812, height: 375 },
   { name: "desktop", width: 1280, height: 820 },
 ] as const;
 
 /**
- * Chroma of every colour the chrome paints, measured from the rendered page.
+ * Chroma of every colour the chrome paints, measured from the rendered page. The canvas is excluded, because
+ * that is where hue belongs.
  *
- * The canvas is excluded, because that is where hue belongs. Everything else is chrome, and
- * DESIGN.md section 3 gives chrome no hue at all: stricter than "one accent", and the rule that
- * lets a viewer tell at a glance whether a colour is telling them something.
- *
- * **Absolute chroma, not saturation.** The first version measured HSV saturation and failed on the
- * palette it was written to protect: `Deck` is `#0D1420`, whose channels differ by 19 out of 255,
- * and relative saturation calls that 0.59 because the colour is nearly black. Every dark tint
- * scores high that way. What actually distinguishes a barely-tinted grey from a blue button is the
- * absolute spread between channels, and on that measure the entire chrome palette sits at or below
- * 37 while a browser default accent sits at 255.
- *
- * A test that fails on correct code is worse than no test: it teaches people to skip the suite.
+ * Absolute chroma, not saturation. HSV saturation failed on the palette it was written to protect: `Deck` is
+ * `#0D1420`, whose channels differ by 19 out of 255, and relative saturation calls that 0.59 because the
+ * colour is nearly black. On absolute spread the whole chrome palette sits at or below 37 and a browser
+ * default accent sits at 255.
  */
 async function chromeHues(
   page: Page,
@@ -77,14 +54,8 @@ async function chromeHues(
     };
 
     for (const el of Array.from(document.querySelectorAll("*"))) {
-      /*
-       * Two exclusions, both named in DESIGN.md rather than assumed here.
-       *
-       * The canvas is where hue belongs. The legend is the one element outside it allowed to paint
-       * the ramp, because a legend that cannot show the colours it is explaining is not a legend.
-       * Excluding a specific marked element rather than loosening the threshold keeps every other
-       * pixel of chrome under the same rule.
-       */
+      // Two exclusions, both named in DESIGN.md rather than assumed here. Excluding a specific marked element
+      // rather than loosening the threshold keeps every other pixel of chrome under the same rule.
       if (el.closest("canvas") || el.tagName === "CANVAS") continue;
       if (el.closest("[data-ramp]")) continue;
       const style = getComputedStyle(el);
@@ -127,14 +98,8 @@ for (const bp of BREAKPOINTS) {
   });
 
   test(`the page does not scroll at ${bp.name}`, async ({ page }) => {
-    /*
-     * Measured by trying to scroll, not by reading a height.
-     *
-     * The sideways test below reads scrollWidth and passed throughout, while the document was 3,486px
-     * tall against a 940px viewport: the entire app could be dragged off the top of the screen to
-     * reveal 2,546px of nothing. A number that could have been read at any point, and was not, because
-     * nothing asked the only question that matters here.
-     */
+    // Measured by trying to scroll, not by reading a height. The sideways test below reads scrollWidth and
+    // passed throughout while the document was 3,486px tall against a 940px viewport.
     await page.setViewportSize({ width: bp.width, height: bp.height ?? 900 });
     await installFeeds(page);
     await page.goto("/");
@@ -168,18 +133,12 @@ for (const bp of BREAKPOINTS) {
 
   test(`every control is reachable at ${bp.name}`, async ({ page }) => {
     /*
-     * The invariant the other two tests in this file do not ask.
+     * The invariant the other two tests do not ask. Neither "nothing overflows sideways" nor "the page does
+     * not scroll" catches a control sitting above the top of the viewport with nothing scrollable around it,
+     * which is how the legend broke: the magnitude slider sat 104px off the top of the screen and both passed.
      *
-     * "Nothing overflows sideways" catches a box past the right edge, and "the page does not scroll"
-     * catches a document taller than the window. Neither catches a control sitting *above* the top of
-     * the viewport with nothing scrollable around it, which is how the legend broke: seven added rows
-     * pushed the panel to 845px inside a 720px window, the bottom band's top went to -157, and the
-     * magnitude slider - the app's primary control - sat 104px off the top of the screen. Nothing
-     * scrolled, nothing overflowed sideways, and both tests passed.
-     *
-     * A control is reachable if its box is inside the viewport **or** some ancestor scrolls, because
-     * the rail below 768px is deliberately a sheet you scroll: its lower half is off screen by design
-     * and that is not the same fault at all.
+     * A control is reachable if its box is inside the viewport or some ancestor scrolls, because the rail
+     * below 768px is deliberately a sheet you scroll.
      */
     await page.setViewportSize({ width: bp.width, height: bp.height });
     await installFeeds(page);
@@ -190,13 +149,9 @@ for (const bp of BREAKPOINTS) {
 
     const unreachable = await page.evaluate(() => {
       /*
-       * A scrolling ancestor only counts if it is itself on screen.
-       *
-       * The first version of this check passed any control with a scrollable ancestor, and running the
-       * suite proved that exemption too generous: Playwright reported `done scrolling` followed by
-       * `element is outside of the viewport` on a rail row, which is precisely a container that scrolls
-       * and whose own box is out of reach. Scrolling a box nobody can see does not make its contents
-       * reachable.
+       * A scrolling ancestor only counts if it is itself on screen. Passing any control with a scrollable
+       * ancestor was too generous: Playwright reported `done scrolling` then `element is outside of the
+       * viewport` on a rail row.
        */
       const scrollable = (el: Element): boolean => {
         for (let node: Element | null = el; node; node = node.parentElement) {
@@ -231,13 +186,9 @@ for (const bp of BREAKPOINTS) {
 
 test("every control clears 44px where there is a finger", async ({ browser }) => {
   /*
-   * Emulated with a real coarse pointer, not merely at a phone width.
-   *
-   * DESIGN.md asks for 44px *touch* targets, and the first version of this test asserted it at
-   * desktop width with a mouse. It failed on three controls, which was correct, and it was
-   * measuring the wrong thing: a mouse is precise and 44px buttons on a desktop rail are chunky
-   * for no benefit. The rule is scoped to `pointer: coarse` in CSS, so the test has to be too, or
-   * it is asserting something the design never claimed.
+   * Emulated with a real coarse pointer, not merely at a phone width. DESIGN.md asks for 44px touch targets,
+   * and asserting it at desktop width with a mouse measures the wrong thing: the rule is scoped to
+   * `pointer: coarse` in CSS, so the test has to be too.
    */
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
@@ -251,12 +202,11 @@ test("every control clears 44px where there is a finger", async ({ browser }) =>
   expect(await page.evaluate(() => window.matchMedia("(pointer: coarse)").matches)).toBe(true);
 
   /*
-   * The list shipped at 31px a row and the filter buttons at 27px: not merely cramped, in breach of
-   * the design system's own rule. Found by measuring after somebody said the list looked bad, which
-   * is not a process that scales, which is why it is a test now.
+   * The list shipped at 31px a row and the filter buttons at 27px. Found by measuring after somebody said the
+   * list looked bad, which is not a process that scales.
    *
-   * The slider is exempt: its hit area is the 18px track, and browsers already give range inputs a
-   * generous invisible target that `getBoundingClientRect` does not report.
+   * The slider is exempt: its hit area is the 18px track, and browsers give range inputs a generous invisible
+   * target that `getBoundingClientRect` does not report.
    */
   const small = await page.evaluate(() => {
     const bad: { tag: string; height: number }[] = [];
@@ -299,12 +249,9 @@ test("every number that updates has tabular figures", async ({ page }) => {
 });
 
 test("no user-agent defaults left in the chrome", async ({ page }) => {
-  /*
-   * The two that were. `::selection` was unstyled, so dragging across a place name painted the
-   * browser's saturated blue, in the one app whose chrome is achromatic by rule and enforced by the
-   * test above. Scrollbars were unstyled, invisible on macOS overlay scrollbars and a light channel
-   * down the darkest element on Windows, which is how it survived being looked at.
-   */
+  // The two that were. `::selection` was unstyled, so dragging across a place name painted the browser's
+  // saturated blue. Scrollbars were unstyled, invisible on macOS overlay scrollbars and a light channel down
+  // the darkest element on Windows, which is how it survived being looked at.
   await installFeeds(page);
   await page.goto("/");
 
@@ -344,11 +291,8 @@ test("a shared link previews as something", async ({ page }) => {
 });
 
 test("the globe always gets a real share of the screen", async ({ page }) => {
-  /*
-   * The tablet band gave the rail an `auto` row and the canvas the remainder. On a 900 by 700 laptop
-   * the remainder was 153px: a globe reduced to a sliver by a strip of controls describing it. Every
-   * screenshot of that band had been taken tall enough to hide it.
-   */
+  // The tablet band gave the rail an `auto` row and the canvas the remainder. On a 900 by 700 laptop that
+  // remainder was 153px, and every screenshot of the band had been taken tall enough to hide it.
   await installFeeds(page);
   await page.goto("/");
   await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
@@ -403,14 +347,9 @@ test("the colourblind ramp survives a reload", async ({ page }) => {
 });
 
 /*
- * Left to eyes, deliberately.
- *
- * These are the section 13 rules a computer cannot judge, and listing them is more honest than
- * writing an assertion that pretends to cover them:
+ * Left to eyes, deliberately. These are the section 13 rules a computer cannot judge:
  *
  *   - whether the globe reads as an instrument rather than a placeholder at tweet size;
  *   - whether the wavefront reads as arriving rather than decorating;
  *   - whether the copy contains a claim the data does not support.
- *
- * The first two are checked by screenshot at each phase. The third is checked by reading.
  */

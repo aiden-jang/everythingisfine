@@ -1,21 +1,13 @@
 /*
  * The view as a PNG, with the moment it is of written on it.
  *
- * Item 20's state half already travels: the permalink carries the camera and the cursor, so a link says
- * where and when. This is the other half - the same view as an image, for the places a link cannot go.
+ * The stamp is the whole reason this is not a screenshot. `make-card.mjs` already learned that an image of
+ * live data outlives the data. A still is worse, because it is shared by hand with no cache to blame. So
+ * every still says the moment it is of, and takes that moment from the cursor rather than the clock.
  *
- * **The stamp is the whole reason this is not a screenshot.** `make-card.mjs` already learned that an
- * image of live data outlives the data: a card cached for days showed one afternoon's wildfires as if
- * they were now. A still is that problem in miniature and worse, because it is shared by hand with no
- * cache to blame. So every still says the moment it is of, and it takes that moment from **the cursor**
- * rather than from the clock - a still of a view parked two hours back is a picture of two hours ago, and
- * stamping it "now" would be the picture lying about itself.
- *
- * Composition rather than a raw canvas grab, for two reasons. The globe's own context is `alpha: true`
- * with a zero clear alpha, so a bare capture is a globe on transparency - which viewers paint black,
- * white, or a checkerboard, none of which is the design. And the chrome that explains the globe is DOM
- * sitting over the canvas, so it is not in the capture at all; the caption is the minimum that puts back
- * what a reader needs to know they are looking at.
+ * Composed rather than grabbed raw. The globe's context is `alpha: true` with a zero clear alpha, so a bare
+ * capture is a globe on transparency, which viewers paint black, white or a checkerboard. And the chrome
+ * that explains the globe is DOM over the canvas, so it is not in the capture at all.
  */
 
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
@@ -40,28 +32,21 @@ export interface StillTheme {
 }
 
 /*
- * Fixed output, so a still does not change size with the window it was taken from - and square, because
- * the subject is a circle.
- *
- * It was 16:9, and a sphere in a 16:9 frame cannot be both large and whole: measured on the old frame the
- * globe filled **46% of the width**, with the rest dark on either side. Widening the sphere to fill that
- * would have cropped its poles. The frame was the thing in the way, so the frame changed.
+ * Fixed output, so a still does not change size with the window - and square, because the subject is a
+ * circle. At 16:9 the globe filled 46% of the width, and widening the sphere to fill it would have cropped
+ * the poles. The frame was the thing in the way.
  */
 export const STILL_WIDTH = 1200;
 export const STILL_HEIGHT = 1200;
 /*
- * 118 rather than 92, for the verdict line.
- *
- * The band grew by one 26px row and the globe above it lost the same, which is the right way round: the
- * globe is 798px of an 808px frame either way, and the line is the reason anybody would share the image.
+ * 118 rather than 92, for the verdict line. The globe is 798px of an 808px frame either way, and the line
+ * is the reason anybody would share the image.
  */
 const CAPTION_H = 118;
 
 /**
- * The caption's three lines of text, in the order they are drawn.
- *
- * Separated from the drawing so it can be asserted without a canvas: what a still claims is the part
- * worth testing, and `fillText` is not.
+ * The caption's three lines of text, in the order they are drawn. Separated from the drawing so it can be
+ * asserted without a canvas: what a still claims is the part worth testing, and `fillText` is not.
  */
 export function captionLines(
   caption: StillCaption,
@@ -75,23 +60,15 @@ export function captionLines(
 }
 
 /**
- * The evidence for the title.
+ * The evidence for the title. Every number here is already in the snapshot; it was simply never said.
  *
- * This is the only artefact the app makes that gets looked at somewhere else, and it used to carry the
- * claim, a timestamp and a URL: the setup, the time, and where to buy tickets. Nothing on it said what was
- * actually happening, so the deadpan had nothing to be deadpan *about* and the image read as a title card.
- * Every number here is already in the snapshot; none of it is new work, it was simply never said.
+ * Two things this refuses to say.
  *
- * **Two things this refuses to say, both for reasons the app already argues elsewhere.**
+ * Volcanoes are left out entirely. GDACS flags none of them current and the newest episode is usually weeks
+ * old, so "16 volcanoes" beside "Live" would imply currency on the one surface stamped with a timestamp.
  *
- * Volcanoes are left out entirely. GDACS flags none of them current and the newest episode is usually
- * weeks old, so `volcanoNote` leads with the age rather than the count precisely so a triangle cannot pass
- * as an eruption. A poster stamped with a timestamp is the worst possible place to imply currency, and
- * "16 volcanoes" beside "Live" would do exactly that. Every number on this line is a right-now number.
- *
- * Fires take a `+` when the feed is capped. The wildfire feed stops at 100 and one country alone can fill
- * it, so a flat "100 fires" would be the app stating a floor as a total on the one surface where nothing
- * is around to correct it.
+ * Fires take a `+` when the feed is capped. The wildfire feed stops at 100 and one country can fill it, so a
+ * flat "100 fires" states a floor as a total where nothing is around to correct it.
  */
 export function verdictLine(n: {
   quakes: number;
@@ -100,14 +77,8 @@ export function verdictLine(n: {
   firesCapped: boolean;
   floods: number;
 }): string | null {
-  /*
-   * Grouped, because a poster is the one place the number is read rather than glanced at.
-   *
-   * Caught by exporting one: a busy day printed "6000 earthquakes" while every figure in the rail
-   * beside it read "6,000". The image is the artefact that leaves the app and gets looked at on its
-   * own, so it is the last place that should be formatting a thousand differently from the interface
-   * that produced it.
-   */
+  // Grouped, because a poster is read rather than glanced at. A busy day printed "6000 earthquakes" while
+  // every figure in the rail beside it read "6,000".
   const group = (count: number): string => count.toLocaleString("en-GB");
   const plural = (count: number, word: string): string =>
     `${group(count)} ${word}${count === 1 ? "" : "s"}`;
@@ -127,14 +98,11 @@ export function verdictLine(n: {
 /**
  * The moment, as the caption states it.
  *
- * "Live" only when the cursor is not holding a moment *and* the app is actually live. Anything else is
- * written as an absolute time with its date, because a still is looked at later by definition and "18
- * minutes ago" ages into a lie the instant the image is saved.
+ * "Live" only when the cursor is not holding a moment and the app is actually live. Anything else is an
+ * absolute time with its date, because a still is looked at later by definition and "18 minutes ago" ages
+ * into a lie the instant the image is saved.
  *
- * **The archive branch exists because this said "Live" about a day in July.** The clock was made
- * archive-aware when that mode shipped, so the stamp was right and the word in front of it was a flat
- * falsehood - on the one artefact in this app designed to be looked at away from the app, where nothing
- * else is around to correct it. An archived still names the day and never the word.
+ * The archive branch exists because this said "Live" about a day in July. An archived still names the day.
  */
 export function stillMoment(
   cursor: number | null, now: number, archived = false, live = "Live",
@@ -148,11 +116,8 @@ export function stillMoment(
 }
 
 /**
- * Draws the still onto a 2D context.
- *
- * Takes the globe's canvas as an image source and letterboxes it: scaled to fit rather than cropped to
- * fill, because cropping a globe to a wider frame cuts the limb off and the shape of the planet is the
- * one thing every reader uses to orient themselves.
+ * Draws the still onto a 2D context. Scaled to fit rather than cropped to fill, because cropping a globe
+ * cuts the limb off and the shape of the planet is what every reader uses to orient themselves.
  */
 export function drawStill(
   ctx: CanvasRenderingContext2D,
@@ -166,17 +131,13 @@ export function drawStill(
   ctx.fillRect(0, 0, STILL_WIDTH, STILL_HEIGHT);
 
   /*
-   * Cropped to the frame, not letterboxed into it.
+   * Cropped to the frame, not letterboxed into it. What is scaled is the whole app canvas, with the globe
+   * in the middle and dark to spare, so fitting it fitted its margins too: the same sphere goes from 46% of
+   * the width to about 85%.
    *
-   * What is being scaled is the whole app canvas, and the globe sits in the middle of it with dark to
-   * spare - so fitting the canvas fitted its margins too and then added more. Taking a centred window of
-   * the canvas at the frame's own shape throws away the emptiness instead of paying to keep it, which is
-   * the whole of the gain here: the same sphere goes from 46% of the width to about 85%.
-   *
-   * Never cropped below the shorter side of the canvas, because that is the most the globe can span: the
-   * sphere is centred and fits the smaller dimension, so a window at least that big on both axes cannot
-   * clip it. A portrait canvas - a phone - cannot satisfy that at this frame's shape, and there the old
-   * behaviour is right, so it falls back to fitting rather than cutting the poles off a phone's still.
+   * Never cropped below the shorter side of the canvas, because that is the most the globe can span. A
+   * portrait canvas cannot satisfy that at this frame's shape, so it falls back to fitting rather than
+   * cutting the poles off a phone's still.
    */
   const frameH = STILL_HEIGHT - CAPTION_H;
   const frameAspect = STILL_WIDTH / frameH;
@@ -203,12 +164,8 @@ export function drawStill(
   ctx.letterSpacing = "0.16em";
   ctx.fillText(mark, 56, baseline);
   ctx.letterSpacing = "0px";
-  /*
-   * The verdict in ink rather than faint, and directly under the title.
-   *
-   * It is the half of the joke the image was missing, so it gets the weight the claim gets. The stamp and
-   * the provenance stay faint underneath: they are what the picture is of, not what it says.
-   */
+  // The verdict in ink rather than faint, directly under the title: it is the half of the joke the image was
+  // missing. The stamp and the provenance stay faint - they are what the picture is of, not what it says.
   ctx.font = "16px ui-monospace, SFMono-Regular, Menlo, monospace";
   if (verdict !== null) ctx.fillText(verdict, 56, baseline + 27);
   ctx.font = "15px ui-monospace, SFMono-Regular, Menlo, monospace";
@@ -218,17 +175,12 @@ export function drawStill(
   ctx.fillText(provenance, STILL_WIDTH - 56 - width, baseline + 54);
 
   /*
-   * The scale travels with the picture, because the picture is the part that leaves.
+   * The scale travels with the picture, because the picture is the part that leaves. Shared, the image was a
+   * field of coloured dots with a caption that counted them and never explained them.
    *
-   * Every colour in a still means a magnitude and nothing in the file said so. Inside the app the key is
-   * always a glance away; shared, the image was a field of coloured dots with a caption that counted them
-   * and never explained them - the one place this app's own rule, that nothing ships without the sentence
-   * explaining it, was not kept. And it was not for want of room: the sphere is a circle in a 16:9 frame,
-   * so nearly half the width is empty either side of it.
-   *
-   * Eight stops rather than a two-colour gradient, because both ramps bend: `thermal` turns through red
-   * and orange and `cividis` through a desaturated middle, and interpolating end to end would print a
-   * key that does not match the marks above it.
+   * Eight stops rather than a two-colour gradient, because both ramps bend: `thermal` turns through red and
+   * orange and `cividis` through a desaturated middle, so interpolating end to end prints a key that does
+   * not match the marks above it.
    */
   const scaleW = 190;
   const scaleRight = STILL_WIDTH - 56;

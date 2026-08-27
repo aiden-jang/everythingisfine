@@ -1,18 +1,14 @@
 import { DEG } from "../geo/sphere";
 
 /*
- * The glyphs, as polylines in longitude and latitude.
+ * The glyphs, as polylines in longitude and latitude. Light gets colour and marks get shapes, so every
+ * phenomenon that is not an earthquake is told apart by outline.
  *
- * The rule settled with the aurora is that light gets colour and marks get shapes, so every phenomenon
- * that is not an earthquake is told apart by outline rather than by hue. These are the outlines.
+ * Shapes in degrees rather than pixels, because they are things on the ground: a cyclone really is about six
+ * degrees across. They grow and shrink with the camera the way the coastline does.
  *
- * Shapes in degrees rather than pixels, because they are things on the ground: a cyclone really is about
- * six degrees across and a volcano is a point being pointed at. They grow and shrink with the camera the
- * way the coastline does, which is what stops them reading as labels stuck to the screen.
- *
- * Longitude is stretched by `1/cos(lat)` in all of them, so a shape stays the shape away from the equator
- * instead of being squeezed into an ellipse. Same correction the clustering grid makes, same reason, and
- * clamped near the poles where the factor runs away.
+ * Longitude is stretched by `1/cos(lat)` in all of them, so a shape stays the shape away from the equator,
+ * and clamped near the poles where the factor runs away.
  */
 
 export interface Point { lon: number; lat: number }
@@ -33,24 +29,16 @@ export function spiral(lon: number, lat: number, radiusDeg = 3): Point[] {
   });
 }
 
-/**
- * A volcano: the map symbol, a triangle sitting on the point rather than centred on it.
- *
- * On the point because that is where the mountain is, and a centred triangle puts half the mark in the sea
- * for anything coastal, which most of them are.
- */
+/** A volcano: the map symbol, a triangle sitting on the point rather than centred on it. On the point,
+ * because a centred triangle puts half the mark in the sea for anything coastal. */
 /**
  * Where the reader is: four ticks around a gap, pointing in.
  *
- * **Ticks because this app's corners are ticks or nothing**, which DESIGN.md says outright. Every other
- * glyph out here is a picture of the thing it marks - a spiral is a storm, a triangle a volcano - and
- * there is no picture of a person that would not be either a pin from another app's vocabulary or a
- * joke. Four ticks is the surveyor's answer and it is already the house idiom.
+ * Ticks because this app's corners are ticks or nothing. There is no picture of a person that would not be
+ * either a pin from another app's vocabulary or a joke.
  *
- * **The gap is the point.** A cross drawn through the centre covers the ground it is identifying, and
- * this is the one mark on the globe whose whole job is to say "that spot, there". Nothing is drawn in the
- * middle, so whatever is at that spot stays visible - including an earthquake mark, which is exactly the
- * coincidence a reader would most want to see.
+ * The gap is the point. A cross covers the ground it is identifying, and this is the one mark whose whole
+ * job is to say "that spot, there" - including when an earthquake is at it.
  */
 export function here(lon: number, lat: number, radiusDeg = 1.5): Point[][] {
   const stretch = stretchAt(lat);
@@ -75,13 +63,9 @@ export function volcano(lon: number, lat: number, radiusDeg = 1.6): Point[] {
   ];
 }
 
-/**
- * A wildfire: a flame, leaning, standing on the point like the volcano does.
- *
- * Leaning because a symmetrical one reads as a leaf. Fixed size rather than scaled by burned area: size
- * belongs to the magnitude ramp, and at true scale the largest fire on Earth is a fifth of a degree
- * across, which is nothing. The hectares go in words instead.
- */
+/** A wildfire: a flame, leaning, standing on the point like the volcano does. Leaning because a symmetrical
+ * one reads as a leaf. Fixed size rather than scaled by burned area: size belongs to the magnitude ramp,
+ * and at true scale the largest fire on Earth is a fifth of a degree across. */
 export function flame(lon: number, lat: number, radiusDeg = 1.2): Point[] {
   const stretch = stretchAt(lat);
   const at = (x: number, y: number): Point =>
@@ -95,13 +79,8 @@ export function flame(lon: number, lat: number, radiusDeg = 1.2): Point[] {
 const WAVE_ROWS = 3;
 const WAVE_STEPS = 12;
 
-/**
- * A flood: the wavy lines cartography draws for water, which no other mark here could be mistaken for.
- *
- * Three separate strokes rather than one path, because a single polyline would have to travel from the end
- * of one row to the start of the next and that connector would be drawn. Same phase on every row, since
- * alternating them reads as noise rather than as water.
- */
+/** A flood: the wavy lines cartography draws for water. Three separate strokes rather than one path, because
+ * a single polyline would draw the connector from the end of one row to the start of the next. */
 export function waves(lon: number, lat: number, radiusDeg = 1.4): Point[][] {
   const stretch = stretchAt(lat);
   return Array.from({ length: WAVE_ROWS }, (_, row) => {

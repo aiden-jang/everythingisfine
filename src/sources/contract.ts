@@ -5,15 +5,12 @@ import type { FetchResult, GeoEventSource, Runtime, SocketLike, SourceStatus } f
 /*
  * The suite every source must pass, written while there is only one source.
  *
- * PLAN.md insists on this ordering and the reason is worth stating: a contract written after the
- * second adapter exists will have been shaped by both, and will quietly describe the intersection
- * of what they already do rather than what a source owes the app. Written now, adding EMSC in step
- * 6 means running this file unchanged, and any assertion that turns out to be USGS-specific is a
- * finding rather than an edit.
+ * A contract written after the second adapter exists describes the intersection of what they both already
+ * do rather than what a source owes the app. Written now, adding EMSC meant running this file unchanged.
  *
- * So nothing below mentions HTTP, JSON, sockets, intervals or magnitudes. It asserts only the four
- * things the rest of the app relies on: what a reading is, that stopping stops, that a broken
- * transport degrades instead of throwing, and that nothing is announced twice.
+ * Nothing below mentions HTTP, JSON, sockets, intervals or magnitudes. It asserts four things: what a
+ * reading is, that stopping stops, that a broken transport degrades instead of throwing, and that nothing
+ * is announced twice.
  */
 
 /** A clock and network the test drives by hand. Shared so both adapters are exercised identically. */
@@ -116,11 +113,9 @@ export interface ContractSubject {
   runtime: (mode: "healthy" | "broken") => FakeRuntime;
   /**
    * Makes the transport hand over one payload and waits until the source has processed it.
-   * For a poller that means running the due timer; for a push source, dispatching a message.
    *
-   * `mode` is passed because a push source must be told *not* to hand over data when the transport
-   * is meant to be broken. The first version always dispatched a message, so the "degrades instead
-   * of throwing" test fed a healthy payload into a socket it had just declared dead.
+   * `mode` is passed because a push source must be told not to hand over data when the transport is meant
+   * to be broken. Always dispatching a message fed a healthy payload into a socket just declared dead.
    */
   deliver: (runtime: FakeRuntime, mode: "healthy" | "broken") => Promise<void>;
   /** How many readings a healthy `deliver` is expected to produce the first time. */
@@ -129,13 +124,9 @@ export interface ContractSubject {
 
 export function describeSourceContract(subject: ContractSubject): void {
   describe(`${subject.name} satisfies the source contract`, () => {
-    /*
-     * Statuses are stamped with the time they arrived.
-     *
-     * A status carries `retryAt`, an absolute moment, and the thing under test is the gap between
-     * the failure and the retry. Subtracting the clock's *current* value gets that wrong the
-     * instant the clock moves, which is exactly what the backoff test does to itself.
-     */
+    // Statuses are stamped with the time they arrived. A status carries `retryAt`, an absolute moment, and
+    // the thing under test is the gap between the failure and the retry: subtracting the clock's current
+    // value gets that wrong the instant the clock moves.
     const collect = (source: GeoEventSource, runtime: FakeRuntime) => {
       const readings: Reading[] = [];
       const statuses: { status: SourceStatus; at: number }[] = [];
@@ -231,11 +222,8 @@ export function describeSourceContract(subject: ContractSubject): void {
       source.stop();
     });
 
-    /*
-     * The one the polish doc singles out, and the one most likely to be written wrong by accident.
-     * A leaked timer or socket does not throw. It shows up as the feed arriving twice as fast, or
-     * as events appearing after the user switched the source off.
-     */
+    // A leaked timer or socket does not throw. It shows up as the feed arriving twice as fast, or as events
+    // appearing after the user switched the source off.
     it("goes completely quiet after stop, and leaves nothing behind", async () => {
       const runtime = subject.runtime("healthy");
       const source = subject.create(runtime);
@@ -247,13 +235,9 @@ export function describeSourceContract(subject: ContractSubject): void {
       const statusesAtStop = statuses.length;
 
       /*
-       * Checked here, before the clock moves, and that ordering is the whole test.
-       *
-       * The first version asserted this after advancing, and a deliberately sabotaged `stop` that
-       * left its timer behind still passed: the stray timer fired during the advance, removed
-       * itself from the map, and found `handlers` already null so it emitted nothing. The leak was
-       * real and every downstream symptom was masked. Asking immediately after stop is the only
-       * moment the question means anything.
+       * Checked before the clock moves, and that ordering is the whole test. Asserted after advancing, a
+       * sabotaged `stop` that left its timer behind still passed: the stray timer fired during the advance,
+       * removed itself, and found `handlers` already null. The leak was real and every symptom was masked.
        */
       expect(runtime.pendingTimers()).toBe(0);
       expect(runtime.openSockets()).toBe(0);

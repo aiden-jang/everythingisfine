@@ -6,14 +6,12 @@ import {
 /*
  * EMSC, which tells us.
  *
- * The push half of the pair, and the reason the project can claim one polling source and one push
- * source at zero cost. The seismic portal publishes a public WebSocket standing order: no key, no
- * registration, and WebSocket is exempt from CORS by construction, so the browser reaches it
- * directly and the deployment keeps its zero-invocation shape.
+ * The push half of the pair. The seismic portal publishes a public WebSocket standing order - no key, no
+ * registration - and WebSocket is exempt from CORS by construction, so the browser reaches it directly and
+ * the deployment keeps its zero-invocation shape.
  *
- * Nothing about the *data* differs from the polling case in any interesting way. What differs is
- * who decides when, and everything downstream of that is deliberately identical: the same Reading,
- * the same status vocabulary, the same contract suite, unchanged.
+ * Nothing about the data differs from the polling case. What differs is who decides when, and everything
+ * downstream is deliberately identical.
  */
 
 export const EMSC_SOCKET = "wss://www.seismicportal.eu/standing_order/websocket";
@@ -21,27 +19,21 @@ export const EMSC_SOCKET = "wss://www.seismicportal.eu/standing_order/websocket"
 /**
  * The catalogue, fetched once when the socket opens.
  *
- * A push source has no history: it says what changes from the moment you connect, so on a fresh
- * load EMSC contributed nothing and the rail read `EMSC 0` beside `USGS 227`. That made the
- * project's headline claim invisible, because corroboration only exists where both agencies have
- * reported, and one of them had not reported anything yet.
+ * A push source has no history, so on a fresh load EMSC contributed nothing and the rail read `EMSC 0`
+ * beside `USGS 227` - which made the project's headline claim invisible, because corroboration only exists
+ * where both agencies have reported.
  *
- * Seeding from FDSN fixes it in one request: 600 events over 24 hours in 327kB, keyless, and it
- * returns `access-control-allow-origin: *`, so it needs no proxy and the deployment stays
- * Worker-free. The socket then takes over for everything after.
+ * FDSN fixes it in one request: 600 events over 24 hours in 327kB, keyless, `access-control-allow-origin: *`.
  */
 export const EMSC_CATALOGUE = "https://www.seismicportal.eu/fdsnws/event/1/query";
 
 /** Matches the USGS daily seed, so the two agencies cover the same window on the first frame. */
 const SEED_HOURS = 24;
 /*
- * Held at 600 whatever the window, and the coverage report is what makes that honest.
- *
- * A wider window asks FDSN for a wider `start` but not for more rows, so a week or a month comes back
- * truncated to the most recent 600 events. Raising it would be guessing at a limit this endpoint has
- * never stated, and being wrong is a 400 that takes the seed out entirely. `onSeeded` already vouches
- * only as far as its oldest row when a page comes back full, so a truncated month reports itself as a
- * short backlog and the strip marks the rest unobserved rather than drawing it as quiet.
+ * Held at 600 whatever the window, and the coverage report is what makes that honest. A wider window asks
+ * FDSN for a wider `start` but not for more rows, and raising the cap would be guessing at a limit this
+ * endpoint has never stated - where being wrong is a 400 that takes the seed out entirely. `onSeeded`
+ * vouches only as far as its oldest row when a page comes back full.
  */
 export const SEED_LIMIT = 600;
 
@@ -49,22 +41,16 @@ const BACKOFF_BASE_MS = 2_000;
 const BACKOFF_CAP_MS = 60_000;
 
 /**
- * How many identifiers to remember for deduplication.
- *
- * A polling source can replace its whole seen-set each cycle, because the feed restates itself. A
- * socket cannot: it only ever tells you what changed, so anything remembered accumulates for as
- * long as the page is open. That is precisely the leak the four-hour test exists to catch, arriving
- * by a different door, so the map is bounded and evicts oldest-first.
+ * How many identifiers to remember for deduplication. A polling source can replace its whole seen-set each
+ * cycle because the feed restates itself; a socket only ever tells you what changed, so anything remembered
+ * accumulates for as long as the page is open. Bounded, evicting oldest first.
  */
 const SEEN_LIMIT = 20_000;
 
 /**
- * EMSC event type codes, spelled out.
- *
- * `ke` is a known earthquake and is the overwhelming majority. The rest are real and are not
- * earthquakes, and the same rule applies as to a USGS quarry blast: keep them, name them. An
- * unrecognised code is passed through verbatim rather than flattened to "earthquake", because
- * inventing a classification is worse than showing one the reader can look up.
+ * EMSC event type codes, spelled out. `ke` is a known earthquake and is the overwhelming majority; the rest
+ * are real and are not earthquakes. An unrecognised code passes through verbatim rather than flattened to
+ * "earthquake", because inventing a classification is worse than showing one the reader can look up.
  */
 const EVENT_TYPES: Record<string, string> = {
   ke: "earthquake",
@@ -107,12 +93,9 @@ export interface EmscParsed {
 }
 
 /**
- * One socket frame to a reading.
- *
- * Positions come from `properties`, not from `geometry.coordinates`. The two disagree by design:
- * the geometry's third value is negative for a depth below the surface, so a 15km-deep event
- * reports `-15.0` there and `15.0` in properties. Reading the wrong one puts every earthquake in
- * the sky.
+ * One socket frame to a reading. Positions come from `properties`, never from `geometry.coordinates`: the
+ * geometry's third value is negative for a depth below the surface, so a 15km-deep event reports `-15.0`
+ * there and `15.0` in properties. Reading the wrong one puts every earthquake in the sky.
  */
 export function parseEmscFrame(raw: unknown, receivedAt: number): EmscParsed | null {
   let message: unknown = raw;
@@ -158,16 +141,11 @@ export function parseEmscFrame(raw: unknown, receivedAt: number): EmscParsed | n
         : "location not given",
       kind: EVENT_TYPES[evtype] ?? (evtype || "earthquake"),
       /*
-       * The authority that computed it, which EMSC relays rather than produces.
+       * The authority that computed it, which EMSC relays rather than produces: `BMKG` for Indonesia,
+       * `AK` for the Alaska Earthquake Center. USGS carries the same fact under `net`.
        *
-       * `BMKG` for Indonesia's agency, `AK` for the Alaska Earthquake Center. USGS carries the same fact
-       * under `net`, so both feeds can now name who did the work instead of only who passed it on. See
-       * `Reading.network`.
-       *
-       * `source_catalog` is deliberately not read. It is always `EMSC-RTS`, and RTS is their real-time
-       * service - suggestive of "automatic", which would give a counterpart to USGS's `status`. Reading a
-       * review state out of a catalogue name is guessing about provenance, which is the one thing these
-       * fields exist to prevent.
+       * `source_catalog` is deliberately not read. It is always `EMSC-RTS`, and reading a review state out
+       * of a catalogue name is guessing about provenance.
        */
       ...(typeof p?.auth === "string" && p.auth.trim() !== "" ? { network: p.auth.trim() } : {}),
       receivedAt,
@@ -213,8 +191,8 @@ export function createEmscSource(
 
   const teardownSocket = (): void => {
     const doomed = socket;
-    // Nulled before closing, so the close handler this triggers sees no current socket and does
-    // not treat our own teardown as a dropped connection worth reconnecting from.
+    // Nulled before closing, so the close handler this triggers sees no current socket and does not treat
+    // our own teardown as a dropped connection worth reconnecting from.
     socket = null;
     doomed?.close();
   };
@@ -248,12 +226,9 @@ export function createEmscSource(
   };
 
   /*
-   * One catalogue fetch, fired alongside the connection rather than before it.
-   *
-   * Not awaited: a slow or unhappy catalogue must never delay the socket, because the socket is the
-   * source's actual job and the seed is a convenience. If it fails, nothing is reported as broken.
-   * The feed is genuinely live either way, and telling somebody a working source is failing because
-   * an optional extra request did not land would be the wrong kind of honest.
+   * One catalogue fetch, fired alongside the connection rather than before it. Not awaited: a slow catalogue
+   * must never delay the socket, and if it fails nothing is reported as broken, because the feed is
+   * genuinely live either way.
    */
   const seed = async (): Promise<void> => {
     if (!catalogue) return;
@@ -266,13 +241,9 @@ export function createEmscSource(
       if (!handlers || !Array.isArray(payload?.features)) return;
 
       const readings: Reading[] = [];
-      /*
-       * Tracked over the page, not over what was delivered from it.
-       *
-       * Coverage is a claim about what the catalogue answered, and the delivered list is that minus
-       * whatever the socket had already pushed. Reading the edge off the delivery would let a single
-       * duplicate at the far end of a truncated page move the claim forwards in time.
-       */
+      // Tracked over the page, not over what was delivered from it. The delivered list is the page minus
+      // whatever the socket already pushed, so reading the edge off it would let a single duplicate at the
+      // far end of a truncated page move the claim forwards in time.
       let oldestOnPage = Infinity;
       for (const feature of payload.features) {
         // Wrapped in the socket's envelope so there is exactly one parser for both transports.
@@ -286,25 +257,18 @@ export function createEmscSource(
       }
       if (readings.length > 0) handlers.onReadings(readings);
       /*
-       * How far back this seed actually reaches, which is not always the whole window.
+       * How far back this seed actually reaches, which is not always the whole window. The request is capped
+       * at SEED_LIMIT, so a full page vouches only as far as its oldest event.
        *
-       * The request is capped at SEED_LIMIT results, so on a busy day it returns the most recent 600
-       * events and stops. Claiming 24 hours then would be claiming a backlog that was truncated on
-       * the way out of the server, so a full page vouches only as far as its oldest event.
-       *
-       * A short page vouches for everything it asked for, and that is sound for a measured reason
-       * rather than an assumed one: the portal's own ceiling is 20,000 rows, so `SEED_LIMIT` is
-       * always the binding limit and a page under it is a genuinely short catalogue rather than a
-       * quietly truncated one. `emsc.live.test.ts` is where that stays checked.
+       * A short page vouches for everything it asked for, and that is measured rather than assumed: the
+       * portal's own ceiling is 20,000 rows, so `SEED_LIMIT` is always the binding limit. Checked in
+       * `emsc.live.test.ts`.
        */
       const full = payload.features.length >= SEED_LIMIT;
       /*
-       * A truncated page nothing could be parsed out of vouches for nothing.
-       *
-       * It used to fall through to the full span, which is the one combination where that fallback is
-       * exactly wrong: the page was cut short *and* the app has no idea where, so claiming the whole
-       * window is claiming a month on the strength of zero events. Skipping leaves EMSC with no
-       * coverage of its own, which is the true statement, and USGS still reports its own.
+       * A truncated page nothing could be parsed out of vouches for nothing. Falling through to the full span
+       * is exactly wrong here: the page was cut short and the app has no idea where, so claiming the whole
+       * window claims a month on the strength of zero events.
        */
       if (full && !Number.isFinite(oldestOnPage)) return;
       handlers.onSeeded(full ? oldestOnPage : runtime.now() - seedHours * 3_600_000);
@@ -328,8 +292,8 @@ export function createEmscSource(
       if (socket !== active) return;
       onMessage(e);
     });
-    // Both funnel to the same place. A socket that errors always closes afterwards, and treating
-    // them separately double-counts the failure and halves the backoff.
+    // Both funnel to the same place. A socket that errors always closes afterwards, and treating them
+    // separately double-counts the failure and halves the backoff.
     const dropped = (): void => {
       if (socket !== active) return;
       socket = null;

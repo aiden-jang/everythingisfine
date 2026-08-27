@@ -2,32 +2,21 @@ import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, waitForData } from "./feeds";
 
 /*
- * The claims that only a browser can settle.
- *
- * Each is here because the alternative would have been to assert it in a unit test where the thing
- * under test is absent, or to claim it from reading the code. Deliberately not counted here: it said
- * four for most of the time it has held twenty-odd, which is what a number in a comment does.
+ * The claims that only a browser can settle. Each is here because the alternative would be to assert it in
+ * a unit test where the thing under test is absent, or to claim it from reading the code.
  */
 
 /** The rail's event count is the app's own signal that both feeds have answered. */
 interface Camera { lon: number; lat: number; zoom: number; morph: number }
 
-/*
- * `morph` is sampled alongside the camera because the projection unwrap is the same kind of thing: a
- * value easing toward a target that a test must not read halfway through. It keeps one helper honest for
- * both, since a screenshot taken mid-unwrap is neither a globe nor a map.
- */
+/* `morph` is sampled alongside the camera because the projection unwrap is the same kind of thing: a value
+ * easing toward a target that a test must not read halfway through. */
 /**
  * Whether this run is against `dist` rather than the dev server.
  *
- * A handful of tests reach for `window.__globe` and `window.__feed`, which `Globe.tsx` exposes only under
- * `import.meta.env.DEV`. That is the right call - a production bundle should not carry a debug surface -
- * and it means those tests cannot run against a build *by construction*, not because anything is broken.
- * Running the whole suite with `EIF_BUILD=1` before this existed failed seven tests with
- * `Cannot read properties of undefined (reading 'store')`, which reads like a bug and is a contract.
- *
- * Skipped rather than silently passed, for the reason the heap test gives for `skipIf` over an early
- * return: a run that did not check something should say so in the summary.
+ * A handful of tests reach for `window.__globe`, which `Globe.tsx` exposes only under `import.meta.env.DEV`.
+ * Those tests cannot run against a build by construction. Skipped rather than silently passed: a run that
+ * did not check something should say so in the summary.
  */
 const AGAINST_BUILD = process.env["EIF_BUILD"] === "1";
 
@@ -46,16 +35,9 @@ const cameraNow = (page: Page): Promise<Camera> => page.evaluate(() => {
 /**
  * Waits for the camera to stop moving, and returns where it stopped.
  *
- * Every camera assertion used to be written as "is it at the target yet, within N seconds", which asks
- * two questions at once and answers neither when it fails. The entrance spring is the clearest case: its
- * poll allowed ten seconds, and on a machine busy with other workers the run failed with
- * `Timeout 10000ms exceeded while waiting on the predicate` and `Received: false` - no indication of
- * whether the camera was still travelling, had stopped somewhere wrong, or had never started.
- *
- * So the two questions are separated. This one waits for **motion to stop**, however long the machine
- * takes about it, by sampling until two consecutive readings agree. Then the test asserts where it came
- * to rest, which is the actual claim. A slow machine now makes the suite slower instead of red, and a
- * camera that settles in the wrong place fails with the position it settled at.
+ * "Is it at the target yet, within N seconds" asks two questions at once and answers neither when it fails.
+ * This one waits for motion to stop, however long the machine takes, by sampling until two readings agree;
+ * the test then asserts where it came to rest. A slow machine makes the suite slower instead of red.
  */
 async function cameraStill(page: Page): Promise<Camera> {
   let last: Camera | null = null;
@@ -103,24 +85,14 @@ test("a pinned selection survives a data refresh", async ({ page }) => {
 
   const panel = page.locator(".zone-panel");
   await expect(panel).toBeVisible();
-  /*
-   * Compared as a number, not as a rendered string.
-   *
-   * This matched `M 2.9` against both, and broke when the list dropped the `M` prefix and kept it
-   * only in the panel. The data never changed. A test that asserts formatting when it means to
-   * assert identity fails on every redesign and teaches people that redesigns break tests.
-   */
+  // Compared as a number, not as a rendered string. Matching `M 2.9` broke when the list dropped the `M`
+  // prefix and kept it only in the panel, while the data never changed.
   const magnitude = (await panel.innerText()).match(/M (\d+\.\d)/)?.[1];
   expect(magnitude).toBeTruthy();
   expect(chosen).toContain(magnitude!);
 
-  /*
-   * Force real refreshes rather than waiting a minute for the poller.
-   *
-   * The store is the thing under test, so it is fed directly: re-ingesting everything it already
-   * holds is exactly what a USGS poll does, and it is what would break a selection held as an
-   * object or an index.
-   */
+  // Force real refreshes rather than waiting a minute for the poller. The store is the thing under test, and
+  // re-ingesting everything it already holds is exactly what a USGS poll does.
   await page.evaluate(() => {
     const feedHandle = (window as unknown as { __feed: { store: { forEach: (f: (q: unknown) => void) => void; ingest: (r: unknown) => void } } }).__feed;
     const readings: unknown[] = [];
@@ -178,12 +150,11 @@ test("the globe is operable with the canvas hidden", async ({ page }) => {
 });
 
 /*
- * The one claim that has been written down since step 3 and never observed.
+ * The one claim written down since step 3 and never observed.
  *
- * The context is built explicitly rather than through `test.use({ reducedMotion })`, because that
- * form silently did not reach the page in this Playwright version: `matchMedia` reported false
- * inside a block named "with reduced motion". The test passed its behavioural assertions anyway,
- * which is the worst possible outcome, so the emulation is asserted before anything else is.
+ * The context is built explicitly rather than through `test.use({ reducedMotion })`, which silently did not
+ * reach the page in this Playwright version: `matchMedia` reported false inside a block named "with reduced
+ * motion", and the behavioural assertions passed anyway. So the emulation is asserted first.
  */
 test("with reduced motion, there is no entrance and flying is instant", async ({ browser }) => {
   needsDevHooks();
@@ -224,11 +195,8 @@ test("with reduced motion, there is no entrance and flying is instant", async ({
 });
 
 /*
- * The entrance, at normal motion, must arrive without a bounce.
- *
- * This is the assertion the reduced-motion failure paid for: chasing why the camera sat past its
+ * The entrance, at normal motion, must arrive without a bounce. Chasing why the camera sat past its
  * destination turned up an integrator that overshot by up to fifteen degrees when frames were slow.
- * The spring is now sliced, so the destination is exact whatever the frame rate.
  */
 test("the entrance settles exactly on the framing shot", async ({ page }) => {
   needsDevHooks();
@@ -243,18 +211,11 @@ test("the entrance settles exactly on the framing shot", async ({ page }) => {
 });
 
 /*
- * A permalink has to survive leaving the machine that made it.
- *
- * The failure this guards against is subtle and would look like success: the store's key is an
- * arrival counter, so a link carrying `q12` restores *a* twelfth event, just not the same one. This
- * asserts the link names the event the way the agency does, and that a fresh page finds it again.
+ * A permalink has to survive leaving the machine that made it. The failure would look like success: the
+ * store's key is an arrival counter, so a link carrying `q12` restores a twelfth event, just not the same one.
  */
 test("a shared link restores the view on a fresh page", async ({ page }) => {
-  /*
-   * Twice the budget, because this test does twice the work: it opens a second page with its own
-   * fixtures and its own WebGL globe. It exhausted the default 45s on a machine already running another
-   * worker, which is the test's own cost rather than a claim about the app.
-   */
+  // Twice the budget, because this test opens a second page with its own fixtures and its own WebGL globe.
   test.setTimeout(90_000);
   await installFeeds(page);
   await page.goto("/");
@@ -293,11 +254,8 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
 });
 
 test("an hour can be held from the keyboard, and let go", async ({ page }) => {
-  /*
-   * The pointer half of this is above. This is the half that was on the open-limitations list: hover had
-   * no keyboard equivalent, so a keyboard user could not ask which hour an event landed in, and the link
-   * between the strip and the globe was an enhancement rather than a feature.
-   */
+  // The keyboard half. Hover had no keyboard equivalent, so a keyboard user could not ask which hour an
+  // event landed in.
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
@@ -320,11 +278,8 @@ test("an hour can be held from the keyboard, and let go", async ({ page }) => {
 });
 
 test("a swarm can be walked one event at a time", async ({ page }) => {
-  /*
-   * The other half of the sequence strip. It could draw three hundred neighbours in time order and there
-   * was no way to visit one: you could read the shape of a swarm and not step through it. This asserts
-   * the step actually re-pins, which is the whole feature - the strip itself is gated by the perf test.
-   */
+  // The other half of the sequence strip: it could draw three hundred neighbours in time order and there was
+  // no way to visit one. This asserts the step actually re-pins.
   await installFeeds(page, { count: 200 });
   await page.goto("/");
   await waitForData(page);
@@ -351,14 +306,9 @@ test("a swarm can be walked one event at a time", async ({ page }) => {
 
 test("the window buttons move the data and the headline follows", async ({ page }) => {
   /*
-   * Three claims that only exist together in a browser: the window is a control, the control
-   * reaches the data, and the headline counts what is on the globe rather than what is in the
-   * buffer. The last one is the reason this test exists. The number was the held total, so every
-   * filter in the app moved the picture and left the biggest number in the rail sitting still.
-   *
-   * Widening rather than narrowing, since the window became three named lengths. Narrowing below a
-   * day is no longer offered: a slider that picked any of twenty-four hours was also what fixed the
-   * strip's bucket at an hour, which is what put a ceiling on the window at a day.
+   * Three claims that only exist together in a browser: the window is a control, the control reaches the
+   * data, and the headline counts what is on the globe rather than what is in the buffer. The last is why
+   * this test exists - the number was the held total, so every filter moved the picture and left it still.
    */
   await installFeeds(page);
   await page.goto("/");
@@ -368,11 +318,8 @@ test("the window buttons move the data and the headline follows", async ({ page 
   const count = async (): Promise<number> =>
     Number((await headline.innerText()).replace(/[^0-9]/g, ""));
 
-  /*
-   * Settle before measuring. The two feeds seed independently and the first assertion read the
-   * total mid-batch, so narrowing the window to four hours produced a *larger* number and the
-   * test blamed the feature. A baseline taken from a moving total is not a baseline.
-   */
+  // Settle before measuring. The two feeds seed independently, and a baseline taken from a moving total
+  // made narrowing the window produce a larger number.
   let whole = 0;
   await expect.poll(async () => {
     const seen = await count();
@@ -381,10 +328,8 @@ test("the window buttons move the data and the headline follows", async ({ page 
     return stable;
   }, { timeout: 30_000, intervals: [1_500] }).toBe(true);
 
-  /*
-   * A week reaches further back than a day, so it can only hold more. The fixture is a day wide, so
-   * the count need not grow, but the label and the permalink both have to follow the button.
-   */
+  // A week reaches further back than a day, so it can only hold more. The fixture is a day wide, so the count
+  // need not grow, but the label and the permalink both have to follow the button.
   await page.getByRole("button", { name: "7d", exact: true }).click();
   await expect(page.getByText("last 7 days")).toBeVisible();
   expect(await count()).toBeGreaterThanOrEqual(whole);
@@ -400,14 +345,9 @@ test("the window buttons move the data and the headline follows", async ({ page 
 
 test("holding a bucket on the strip reads it, and lets go", async ({ page }) => {
   /*
-   * The globe knows where and the strip knows when, and neither could answer the other's question.
-   * Hovering a bucket dims everything outside it, which only WebGL can show, so what is asserted here
-   * is the half that is observable: the strip reports the bucket under the pointer, and stops when the
-   * pointer leaves. The veil itself is gated by the perf test and looked at in a screenshot.
-   *
-   * Hovered on the bar rather than through a slider lying over the bars. The strip used to carry the
-   * window control as well, and reading hover off the individual bars then meant the slider swallowing
-   * every pointer event meant for them. The window moved to buttons, so the bars own their own hover.
+   * The globe knows where and the strip knows when, and neither could answer the other's question. What is
+   * asserted here is the observable half: the strip reports the bucket under the pointer and stops when the
+   * pointer leaves. The veil itself is gated by the perf test.
    */
   await installFeeds(page);
   await page.goto("/");
@@ -430,13 +370,9 @@ test("holding a bucket on the strip reads it, and lets go", async ({ page }) => 
 
 test("a revised magnitude says what the agency first said", async ({ page }) => {
   /*
-   * The one test here that routes a feed instead of waiting on one, because revisions are real and
-   * rare: an agency reviewing an automatic magnitude an hour later is not something a test can wait
-   * for, and the panel that reports it would otherwise ship having never been looked at.
-   *
-   * The trick is that USGS's parser reads each feature independently, so one payload carrying the
-   * same identifier twice with two magnitudes exercises exactly the ingest path a real revision
-   * takes, an hour of waiting compressed into one response.
+   * The one test here that routes a feed instead of waiting on one: an agency reviewing an automatic
+   * magnitude an hour later is not something a test can wait for. USGS's parser reads each feature
+   * independently, so one payload carrying the same identifier twice exercises the real ingest path.
    */
   const feature = (mag: number, updated: number, depthKm = 24.6) => ({
     id: "ak0219neksb",
@@ -473,11 +409,8 @@ test("a revised magnitude says what the agency first said", async ({ page }) => 
 });
 
 test("before any data lands, the rail says what it is waiting for", async ({ page }) => {
-  /*
-   * This state used to read "Events 0" over "nothing yet · still filling": a number that meant
-   * nothing under two disclaimers stacked by two independently reasonable branches. Neither of them
-   * was wrong on its own, which is why nobody had read the sentence they composed.
-   */
+  // This state used to read "Events 0" over "nothing yet · still filling": a number that meant nothing under
+  // two disclaimers stacked by two independently reasonable branches.
   await installFeeds(page, { silent: true });
 
   await page.goto("/");
@@ -493,13 +426,8 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
   await expect(rail).not.toContainText("No events match");
   await expect(rail).not.toContainText("not quiet hours");
 
-  /*
-   * Both tracks on screen from the first frame, empty, and saying which state they are in.
-   *
-   * The sentence above says the app is asking two agencies. These say which of them has replied, which
-   * is the same architecture legible in the first second rather than a moment later, and it is the one
-   * thing that state could not previously show.
-   */
+  // Both tracks on screen from the first frame, empty, and saying which state they are in. The sentence above
+  // says the app is asking two agencies; these say which has replied.
   const activity = page.locator('[data-rail="activity"]');
   await expect(activity).toContainText("USGS");
   await expect(activity).toContainText("EMSC");
@@ -516,12 +444,9 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
 
 test("the sequence says whether the big one has already happened", async ({ page }) => {
   /*
-   * The question anybody actually has when they click an earthquake in a swarm, and the one the panel
-   * could not answer: it said how many neighbours and how far, never when. An M4 with a larger event
-   * three hours behind it is an aftershock; the same M4 with smaller ones after it is a mainshock.
-   *
-   * Routed rather than waited on, for the same reason as the revision test: real sequences exist and
-   * cannot be scheduled.
+   * The question anybody has when they click an earthquake in a swarm, and the one the panel could not
+   * answer: it said how many neighbours and how far, never when. Routed rather than waited on, for the same
+   * reason as the revision test.
    */
   const at = (mag: number, minutesAgo: number, id: string, dLat = 0) => ({
     id,
@@ -549,12 +474,8 @@ test("the sequence says whether the big one has already happened", async ({ page
   await row.click();
 
   const panel = page.locator(".zone-panel");
-  /*
-   * Three neighbours, all earlier than the pinned event, and only the side that has something on it
-   * is printed. The empty half used to read "0 after" beside an axis already rendering "this event"
-   * on the right, which is what nothing after looks like there. Asserted as the rule rather than as
-   * the string, so the next copy change does not land here.
-   */
+  // Only the side that has something on it is printed. The empty half read "0 after" beside an axis already
+  // rendering "this event" on the right. Asserted as the rule rather than as the string.
   await expect(panel).toContainText("3 before");
   await expect(panel).not.toContainText("0 after");
   await expect(panel.getByText("this event")).toBeVisible();
@@ -566,17 +487,12 @@ test("the sequence says whether the big one has already happened", async ({ page
 test("notches compound off where the camera is heading", async ({ page }) => {
   needsDevHooks();
   /*
-   * Wheel zoom used to assign `zoom` straight onto the camera: one notch moved 14% in a single frame
-   * while every `flyTo` in the app went through a spring. It now sets a target instead.
+   * Wheel zoom used to assign `zoom` straight onto the camera: one notch moved 14% in a single frame. It now
+   * sets a target.
    *
-   * What is asserted here is the part a test can settle. Two notches in quick succession must land on
-   * two notches, which is only true if each one compounds off the *pending* target rather than off the
-   * animated value it can see. Compounding off the current zoom is the natural way to write it and it
-   * silently undershoots, because the second notch is measured against a camera still in flight.
-   *
-   * The smoothness itself is not asserted. Frame counting cannot tell the two apart, because Playwright
-   * dispatches one notch as about eight wheel events and each wakes the loop for a frame either way.
-   * The ramp was measured directly instead and the numbers are in ARCHITECTURE.md.
+   * Two notches in quick succession must land on two notches, which is only true if each compounds off the
+   * pending target rather than off the animated value. The smoothness itself is not asserted: Playwright
+   * dispatches one notch as about eight wheel events, so frame counting cannot tell the two apart.
    */
   await installFeeds(page, { silent: true });
   await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
@@ -598,11 +514,8 @@ test("notches compound off where the camera is heading", async ({ page }) => {
 });
 
 test("the globe is operable from the keyboard, and the keys are written down", async ({ page }) => {
-  /*
-   * The canvas is aria-hidden and unfocusable on purpose, because the accessible feed is the interface
-   * for a screen reader. A sighted person with no mouse is a different user and could not move the
-   * globe at all: no orbit, no zoom, no reset, and nothing on screen naming a single key.
-   */
+  // The canvas is aria-hidden and unfocusable on purpose, because the accessible feed is the screen-reader
+  // interface. A sighted person with no mouse could not move the globe at all.
   await installFeeds(page, { silent: true });
   await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
   await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
@@ -644,13 +557,11 @@ test("the globe is operable from the keyboard, and the keys are written down", a
 
 test("a dead feed says so, and does not claim a covered day", async ({ page }) => {
   /*
-   * Two bugs in one state. DESIGN.md section 6 specifies a hairline notice naming the source and the
-   * retry, and `SourceStatus` has carried both since the first source was written; nothing ever read
-   * them, so the header said "one feed live" whether the other was connecting or refused.
+   * Two bugs in one state. DESIGN.md 6 specifies a hairline notice naming the source and the retry, and
+   * `SourceStatus` carried both while nothing read them.
    *
-   * Worse, coverage was inferred from the first delivery that carried events. With the seed requests
-   * dead and two stray socket pushes arriving, the rail read "0 events, last 24 hours": a complete day
-   * claimed on the strength of two events it happened to be handed.
+   * Worse, coverage was inferred from the first delivery carrying events: with the seed requests dead and two
+   * stray socket pushes arriving, the rail read "0 events, last 24 hours".
    */
   await installFeeds(page, { dead: true });
   await page.goto("/");
@@ -661,14 +572,9 @@ test("a dead feed says so, and does not claim a covered day", async ({ page }) =
   await expect(rail).toContainText("The globe keeps what it has.");
 
   /*
-   * Nothing was fetched, so nothing is covered - and the headline says which of those it is.
-   *
-   * It used to read "Asking USGS and EMSC for the last day" here, and this test pinned that string. But
-   * "asking" stops being true once both feeds have answered no: eighteen seconds in, the largest line in
-   * the rail described an activity that had stopped, directly above a notice giving the retry time.
-   *
-   * Asserted as the rule rather than the sentence. What this test is for is that a dead feed *says so*,
-   * and the wording of the line that says it is not the thing being defended.
+   * Nothing was fetched, so nothing is covered, and the headline says which of those it is. "Asking" stops
+   * being true once both feeds have answered no. Asserted as the rule rather than the sentence: what this
+   * defends is that a dead feed says so.
    */
   await expect(rail).not.toContainText("last 24 hours");
   await expect(rail).not.toContainText("Asking USGS and EMSC");
@@ -680,11 +586,8 @@ test.describe("on a touch screen", () => {
 
   test("one finger orbits and two fingers zoom the globe", async ({ page }) => {
     needsDevHooks();
-    /*
-     * Touch had no coverage at all. The drag worked; the pinch was zooming the *document*, because
-     * the canvas was `touch-action: auto` and the browser claims a two-finger gesture before the
-     * pointer events reach the pinch handler that has been in controls.ts from the first version.
-     */
+    // Touch had no coverage at all. The drag worked; the pinch was zooming the document, because the canvas
+    // was `touch-action: auto` and the browser claims a two-finger gesture first.
     test.setTimeout(120_000);
     await installFeeds(page);
     await page.goto("/#at=140,20,1&m=2&w=24&s=usgs,emsc&r=thermal");
@@ -726,14 +629,9 @@ test.describe("on a touch screen", () => {
   });
 
   test("the key hints are not offered to a device with no keys", async ({ page }) => {
-    /*
-     * Every entry names something touch cannot do: no arrow keys, no `+`, no `0`, no shift to hold and
-     * no escape to press. The row's own rule is that it describes what works in the current view, so
-     * on a phone the honest version of the list is empty rather than two wrapped lines of it.
-     *
-     * The desktop test above asserts the opposite, which is the pair that matters: hidden here has to
-     * mean "no keyboard", not "narrow".
-     */
+    // Every entry names something touch cannot do. The row describes what works in the current view, so on a
+    // phone the honest version is empty. The desktop test above asserts the pair: hidden here has to mean
+    // "no keyboard", not "narrow".
     await installFeeds(page, { silent: true });
     await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
     await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
@@ -742,11 +640,8 @@ test.describe("on a touch screen", () => {
 });
 
 test("a pinned event the filters exclude says so", async ({ page }) => {
-  /*
-   * Raising the magnitude slider above a pinned event left the panel describing it in full, with its
-   * depth, its neighbours and its whole sequence, beside a headline reading 0 and a globe with nothing
-   * on it. The same inconsistency the headline count was fixed for, one panel over.
-   */
+  // Raising the magnitude slider above a pinned event left the panel describing it in full beside a headline
+  // reading 0 and a globe with nothing on it.
   const at = (mag: number, id: string) => ({
     id,
     properties: {
@@ -780,11 +675,7 @@ test("a pinned event the filters exclude says so", async ({ page }) => {
 });
 
 test("the rail names the largest event and flies to it", async ({ page }) => {
-  /*
-   * The list is newest first, so a magnitude 6 from eight hours ago sits forty rows down while forty
-   * magnitude 2s sit above it. The one fact a person actually wants was the hardest thing in the rail
-   * to find.
-   */
+  // The list is newest first, so a magnitude 6 from eight hours ago sits forty rows below forty magnitude 2s.
   const at = (mag: number, id: string, agoMinutes: number, lon: number) => ({
     id,
     properties: {
@@ -822,23 +713,13 @@ test("the globe unwraps into a map and back", async ({ page }) => {
   /*
    * Double the budget, because this test costs about a full one.
    *
-   * It was failing with the projection toggle reading `""`, which looks like a broken header and was the
-   * test being killed mid-assertion: a passing run measures **45.5s** against the default 45s, so it sat
-   * exactly on its own ceiling and flipped with the weather. Nothing was erroring - `pageerror` and
-   * `console` were both silent through a passing run, and the same sequence driven by hand in a browser
-   * goes Map, Globe, Map with the projection stored correctly each time.
-   *
-   * The cost is real rather than wasteful: an entrance to wait out, two 2.5s morphs, and **two WebGL
-   * canvas screenshots**, which are the expensive part. Same call as the two-page shared-link test - when
-   * a test legitimately does twice the work, the budget is what should move, not the assertions.
+   * A passing run measures 45.5s against the default 45s, so it sat exactly on its own ceiling and flipped
+   * with the weather: the projection toggle read `""` because the test was killed mid-assertion, not because
+   * anything errored. An entrance to wait out, two 2.5s morphs, and two WebGL canvas screenshots.
    */
   test.setTimeout(90_000);
-  /*
-   * One geometry, projected in the vertex shader. Two scenes cross-faded would double every buffer and
-   * every place a layer can be forgotten, and the switch would be a dissolve, which says nothing. A
-   * planet unwrapping says what a projection *is*, which is the thing a flat map of earthquakes most
-   * needs its viewer to understand.
-   */
+  // One geometry, projected in the vertex shader. Two scenes cross-faded would double every buffer and make
+  // the switch a dissolve, which says nothing.
   await installFeeds(page);
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first())
@@ -853,13 +734,9 @@ test("the globe unwraps into a map and back", async ({ page }) => {
   await toggle.click();
   await expect(toggle).toHaveText("Globe");
   /*
-   * A flat wait here, deliberately, where the camera assertions use `cameraStill`.
-   *
-   * The morph is an exponential ease, so its per-sample delta creeps toward zero and a stillness
-   * threshold tight enough to mean "finished" is reached many time constants after the projection has
-   * visibly changed. `cameraStill` is the right tool for "the camera arrived somewhere and I want to
-   * assert where"; it is the wrong tool for "the picture has changed enough to screenshot". This test
-   * only needs the second, and 2.5s against a 1.1s morph is twice over.
+   * A flat wait here, deliberately, where the camera assertions use `cameraStill`. The morph is an exponential
+   * ease, so a stillness threshold tight enough to mean "finished" is reached many time constants after the
+   * projection has visibly changed. This test only needs "changed enough to screenshot".
    */
   await page.waitForTimeout(2_500);
 
@@ -876,12 +753,8 @@ test("the globe unwraps into a map and back", async ({ page }) => {
 });
 
 test("a shared camera survives the entrance", async ({ page }) => {
-  /*
-   * Regression. The entrance named the default framing as its destination and runs after the
-   * permalink has already aimed the camera, so every shared link arrived at the default view.
-   * Nothing threw and the entrance looked correct, which is exactly why the older test above,
-   * checking the ramp and the pinned event, never noticed the third thing a link carries.
-   */
+  // Regression. The entrance named the default framing as its destination and runs after the permalink has
+  // aimed the camera, so every shared link arrived at the default view. Nothing threw.
   await installFeeds(page);
   await page.goto("/#at=-70.5,-33.5,2.4&m=2&w=24&s=emsc,usgs&r=thermal");
   await waitForData(page);
@@ -902,12 +775,9 @@ test("a link naming an event that has aged out says so", async ({ page }) => {
 });
 
 /*
- * Both edges of the rail are draggable, and both answer a keyboard.
- *
- * The width splitter shipped without coverage and the height one is new, and the failure they share
- * is silent: a splitter whose pointer handler works and whose keys do nothing looks finished and is
- * a control a keyboard user can see and cannot use. The width case also has to survive a reload,
- * since the whole argument for it is that the app should stop guessing.
+ * Both edges of the rail are draggable, and both answer a keyboard. The failure they share is silent: a
+ * splitter whose pointer handler works and whose keys do nothing looks finished. The width case also has to
+ * survive a reload, since the whole argument for it is that the app should stop guessing.
  */
 test("the rail resizes in both directions, by pointer and by key", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
@@ -942,11 +812,8 @@ test("the rail resizes in both directions, by pointer and by key", async ({ page
   /*
    * Arrow keys, not just a pointer. Shift is the coarse step.
    *
-   * Backed off the ceiling first, because the drag above does not land on a fixed value: it moves the
-   * handle 120px from wherever the rail's own content leaves it, so anything that shortens the rail above
-   * pushes the result further up. Caught when the notes block lost 36px and the drag started saturating
-   * at `max`, where ArrowUp then Shift+ArrowDown measured the clamp rather than the step. Four fine steps
-   * of headroom is enough for either direction to move freely.
+   * Backed off the ceiling first, because the drag above does not land on a fixed value: anything that
+   * shortens the rail pushes the result up, and at `max` the arrows measure the clamp rather than the step.
    */
   await height.focus();
   for (let i = 0; i < 4; i += 1) await page.keyboard.press("ArrowUp");
@@ -972,12 +839,9 @@ test("the rail resizes in both directions, by pointer and by key", async ({ page
 });
 
 /*
- * Shift-drag on the map draws a cross-section.
- *
- * The gesture is the risk here, not the geometry, which has its own unit tests. It has to take the
- * drag away from the camera without leaving a mode behind, and it has to read the same direction as
- * the panel it opens: a line dragged east to west put the map's right-hand end at the panel's zero and
- * nothing on screen said so.
+ * Shift-drag on the map draws a cross-section. The gesture is the risk, not the geometry: it has to take the
+ * drag away from the camera without leaving a mode behind, and it has to read the same direction as the panel
+ * it opens.
  */
 test("a line dragged across the map opens a section through it", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
@@ -1014,13 +878,8 @@ test("a line dragged across the map opens a section through it", async ({ page }
   await expect(section).toBeVisible();
   // Into the link, which is written on a one-second interval rather than on every state change.
   await expect.poll(() => page.url(), { timeout: 4000 }).toContain("x=");
-  /*
-    Found by the corridor width, not by the length.
-
-    This looked for "km long", which the header stopped printing when the length moved to being read off
-    the axis below the plot instead of twice in one panel. The width and the vertical scale are the two
-    facts nothing else in the panel states, so they are what identifies it.
-  */
+  /* Found by the corridor width, not by the length: this looked for "km long", which the header stopped
+     printing when the length moved to being read off the axis. */
   const band = page.locator(".zone-canvas").getByText(/km either side/);
   await expect(band).toContainText(/1:1|vertical/);
   // The camera did not move, which is the whole reason this listens in the capture phase. Compared on
@@ -1028,12 +887,8 @@ test("a line dragged across the map opens a section through it", async ({ page }
   const at = (url: string): string => new URLSearchParams(url.split("#")[1]).get("at")!;
   expect(at(page.url())).toBe(at(before));
 
-  /*
-   * The same line dragged the other way reads the same way.
-   *
-   * Measured on where the marks land, not on the stated length, which is the same either way round
-   * and made the first version of this a tautology that survived deleting the normalisation.
-   */
+  // The same line dragged the other way reads the same way. Measured on where the marks land, not on the
+  // stated length, which is the same either way round and made the first version a tautology.
   const centroid = async (): Promise<number> => {
     const xs = await page.locator(".zone-canvas svg circle[fill]").evaluateAll(
       (nodes) => nodes.map((n) => Number(n.getAttribute("cx"))),
@@ -1057,14 +912,11 @@ test("a line dragged across the map opens a section through it", async ({ page }
 });
 
 /*
- * A section survives being sent to somebody.
+ * A section survives being sent to somebody. It carries its own view, which no other field does: a section
+ * has nowhere to be drawn except the map.
  *
- * It carries its own view, which no other field does: a section has nowhere to be drawn except the map,
- * so a link holding one has to arrive on the map even though the projection is deliberately kept out
- * of the permalink. Opened on the globe the panel would describe a slice with no line anywhere.
- *
- * Started from a fresh context with the map turned off in storage, since the interesting case is a
- * recipient whose own preference disagrees with the link.
+ * Started from a fresh context with the map turned off in storage, since the interesting case is a recipient
+ * whose own preference disagrees with the link.
  */
 test("a link carrying a section opens on the map with the line drawn", async ({ browser }) => {
   needsDevHooks();
@@ -1100,12 +952,8 @@ test("a link carrying a section opens on the map with the line drawn", async ({ 
 });
 
 /*
- * A mark in the section is an event, not a dot.
- *
- * The section shipped read-only for a version: it would put a magnitude 5 at 400km on screen and offer
- * no way to find out what it was, while the same event was one click away in the list beside it. The
- * other thing this covers is the layout consequence, since the panel it opens sits over the band the
- * section is in, and the band ran the full width.
+ * A mark in the section is an event, not a dot. The section shipped read-only for a version. The other thing
+ * this covers is the layout consequence: the panel it opens sits over the band the section is in.
  */
 test("a mark in the cross-section pins the event it stands for", async ({ page }) => {
   await page.setViewportSize({ width: 1600, height: 900 });
@@ -1133,12 +981,8 @@ test("a mark in the cross-section pins the event it stands for", async ({ page }
   // something meaningful.
   const pinned = (await panel.locator("[data-magscale]").textContent())!;
 
-  /*
-   * The band stops where the panel starts.
-   *
-   * It ran to the right edge, so opening an event from the section hid a fifth of the section behind
-   * it, and the key hints had been truncated the same way since before the section existed.
-   */
+  // The band stops where the panel starts. It ran to the right edge, so opening an event from the section hid
+  // a fifth of the section behind it.
   const bandBox = (await band.locator("svg").last().boundingBox())!;
   const panelBox = (await panel.boundingBox())!;
   expect(bandBox.x + bandBox.width).toBeLessThanOrEqual(panelBox.x + 1);
@@ -1149,10 +993,8 @@ test("a mark in the cross-section pins the event it stands for", async ({ page }
   expect(pinned).toMatch(/m[bl]|M[wc]/i);
 });
 
-/*
- * The cursor, which only a browser can settle: the reveal limit reaches the event layer through a
- * ref the frame loop reads, and a unit test has neither the loop nor the layer.
- */
+/* The cursor, which only a browser can settle: the reveal limit reaches the event layer through a ref the
+ * frame loop reads, and a unit test has neither the loop nor the layer. */
 test("holding the cursor part way through draws part of the window", async ({ page }) => {
   await installFeeds(page, { count: 400 });
   await page.goto("/");
@@ -1198,21 +1040,14 @@ test("playing advances the cursor against the wall clock", async ({ page }) => {
       .replace(/,/g, ""),
   );
 
-  /*
-   * Two readings, not one, because the first version of this stepped by the interval it asked for
-   * rather than by the time that passed. Every tick drags a render and a re-sync behind it, so the
-   * timer fired late and a twelve second window took over fourteen. A single reading would have
-   * passed that.
-   */
+  // Two readings, not one. The first version stepped by the interval it asked for rather than by the time
+  // that passed, so a twelve second window took over fourteen. A single reading would have passed that.
   expect(later).toBeGreaterThan(early);
 });
 
 test("the transport has a keyboard path, and the keys are written down", async ({ page }) => {
-  /*
-   * The cursor and its play control shipped reachable by pointer only, which is the rule in
-   * DESIGN.md that the camera keys were added to satisfy and that this half of the interface then
-   * broke. Tab reaches both, but tabbing to a clock to move it one bar is not a path anybody uses.
-   */
+  // The cursor and its play control shipped reachable by pointer only. Tab reaches both, but tabbing to a
+  // clock to move it one bar is not a path anybody uses.
   await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);
@@ -1226,13 +1061,8 @@ test("the transport has a keyboard path, and the keys are written down", async (
   const cursor = page.getByRole("slider", { name: "Time in the window" });
   await expect(cursor).toHaveValue("1000");
 
-  /*
-   * A bar per press, and this is the assertion that says so.
-   *
-   * The track is 0 to 1000 so a drag is smooth, which made the native arrow step a thousandth of the
-   * window: three presses would read 997 here instead of 875. Neither of those thousandths
-   * corresponds to anything drawn on the strip above it.
-   */
+  // A bar per press. The track is 0 to 1000 so a drag is smooth, which made the native arrow step a
+  // thousandth of the window: three presses would read 997 here instead of 875.
   await page.keyboard.press(",");
   await page.keyboard.press(",");
   await page.keyboard.press(",");
@@ -1278,24 +1108,17 @@ test("the transport has a keyboard path, and the keys are written down", async (
 
 test("the chrome says how far back each agency actually covers", async ({ page }) => {
   /*
-   * EMSC's catalogue returns its most recent page whatever `start` asks for, so widening the window
-   * buys nothing from it: at a month USGS vouches for thirty days and EMSC for the last eighteen
-   * hours. The header went on printing a count per feed and a "both" count over the whole span, and
-   * nothing anywhere said where corroboration was even possible.
+   * EMSC's catalogue returns its most recent page whatever `start` asks for, so at a month USGS vouches for
+   * thirty days and EMSC for eighteen hours, and nothing said where corroboration was even possible.
    *
-   * Not scoped to the rail. The source toggles ride with the magnitude control, which floats onto the
-   * map at xl, so the assertion is on the fact rather than on where the fact currently sits.
+   * Not scoped to the rail: the source toggles float onto the map at xl, so this asserts the fact.
    */
   await installFeeds(page, { count: 400, emscCappedHours: 6 });
   await page.goto("/");
   await waitForData(page);
 
-  /*
-   * On the activity strip, against its own axis, rather than on the source toggles.
-   *
-   * The buttons carried the durations first and the strip now carries them with the axis they have to
-   * be read against, which is the same span measured twice if both stay. So the toggles are toggles.
-   */
+  // On the activity strip, against its own axis, rather than on the source toggles: the axis is what the
+  // durations have to be read against, and both would be the same span measured twice.
   const activity = page.locator('[data-rail="activity"]');
   // USGS has no result cap, so a successful fetch of a feed vouches for the whole of it.
   await expect(activity).toContainText("24h");
@@ -1304,11 +1127,8 @@ test("the chrome says how far back each agency actually covers", async ({ page }
   await expect(activity).toContainText("returns its most recent page whatever the window");
   await expect(activity).toContainText("Older events are USGS alone");
 
-  /*
-   * The bar has to be a fraction of the axis, not merely present. Widening the window widens USGS's
-   * bar and leaves EMSC's where it was, because the catalogue returns its most recent page whatever it
-   * is asked for, and that difference in width is the whole point of drawing them.
-   */
+  // The bar has to be a fraction of the axis, not merely present. Widening the window widens USGS's bar and
+  // leaves EMSC's where it was, and that difference is the whole point of drawing them.
   const emscWidth = async (): Promise<number> => page.evaluate(() => {
     const rows = Array.from(document.querySelectorAll('[data-rail="activity"] .relative'));
     const row = rows.find((el) => el.parentElement?.textContent?.startsWith("EMSC"));
@@ -1340,11 +1160,8 @@ test("with both agencies covering the window, nothing is caveated", async ({ pag
 
 test("the rail can be searched, and says what it cannot search", async ({ page }) => {
   /*
-   * Four region rows were the entire navigation, so somebody who wanted Japan had to find it among
-   * whichever four were showing or drag the globe until it appeared.
-   *
-   * There is no gazetteer behind this and there cannot be one under the no-key constraint, so the
-   * half of this test that matters most is the empty state: a real place with no seismicity looks
+   * Four region rows were the entire navigation. There is no gazetteer and cannot be one under the no-key
+   * constraint, so the half that matters most is the empty state: a real place with no seismicity looks
    * exactly like a typo unless the app says which it means.
    */
   await installFeeds(page, { count: 400 });
@@ -1398,11 +1215,8 @@ test("enter takes the first result, so the box does not swallow the query", asyn
 
 test("the map carries a scale, and it names the latitude it is true at", async ({ page }) => {
   /*
-   * The globe implies scale by being a globe and the flat map gave nothing to read a distance
-   * against. The interesting half is that on equirectangular a horizontal bar is only true where it
-   * is drawn: meridians are evenly spaced, so the same pixels cover half the ground at sixty degrees
-   * as at the equator. A bar labelled "2,000 km" with no latitude on it would be wrong nearly
-   * everywhere.
+   * The flat map gave nothing to read a distance against. The interesting half is that on equirectangular a
+   * horizontal bar is only true where it is drawn: the same pixels cover half the ground at sixty degrees.
    */
   await installFeeds(page, { count: 200, silent: false });
   await page.goto("/#at=140,0,0.9&m=6");
@@ -1410,10 +1224,8 @@ test("the map carries a scale, and it names the latitude it is true at", async (
   await page.waitForTimeout(4000);
 
   const scale = page.locator("[data-scale]");
-  /*
-   * Asserted on opacity, not on visibility. The bar fades rather than unmounting, so it keeps its box
-   * and Playwright rightly calls an `opacity: 0` element visible; the opacity is the mechanism.
-   */
+  // Asserted on opacity, not on visibility. The bar fades rather than unmounting, so Playwright rightly calls
+  // an `opacity: 0` element visible.
   const shown = () => page.evaluate(() => getComputedStyle(
     document.querySelector("[data-scale]")!,
   ).opacity);
@@ -1430,32 +1242,24 @@ test("the map carries a scale, and it names the latitude it is true at", async (
   const atEquator = await ruleWidth();
   expect(atEquator).toBeGreaterThan(20);
 
-  /*
-   * North, and the bar has to change. The camera keys only fire while nothing has focus, which the
-   * Map button still had, so the blur is the part that makes this test test anything.
-   */
+  // North, and the bar has to change. The camera keys only fire while nothing has focus, which the Map button
+  // still had, so the blur is the part that makes this test test anything.
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   for (let i = 0; i < 6; i += 1) await page.keyboard.press("ArrowUp");
   await page.waitForTimeout(1200);
 
   await expect(scale).toContainText(/km at \d+°N$/);
   const atLatitude = await ruleWidth();
-  /*
-   * Longer, for the same round number of kilometres: north of the equator this projection stretches
-   * east-west, so a fixed distance takes more pixels. If this ever comes back equal, the `cos` has
-   * been dropped and the bar is quoting an equatorial measurement over Alaska.
-   */
+  // Longer, for the same round number of kilometres. If this ever comes back equal, the `cos` has been
+  // dropped and the bar is quoting an equatorial measurement over Alaska.
   expect(atLatitude).toBeGreaterThan(atEquator + 5);
 });
 
 test("the legend says what a ring is, since nothing else did", async ({ page }) => {
   /*
-   * The rings are the signature of the design and were the one mark with no explanation anywhere.
-   * Every other encoding belongs to a dot somebody can stare at; a ring appears when an event lands,
-   * expands for fifteen seconds and is gone, so a first time viewer gets exactly one look at it.
-   *
-   * The multiplier is part of the claim rather than a footnote to it: a front moving at twenty times
-   * real speed with nothing saying so would be the only dishonest mark on screen.
+   * The rings are the signature of the design and were the one mark with no explanation. A ring appears when
+   * an event lands, expands for fifteen seconds and is gone, so a first-time viewer gets one look at it. The
+   * multiplier is part of the claim rather than a footnote to it.
    */
   await installFeeds(page, { count: 200 });
   await page.goto("/");
@@ -1467,32 +1271,23 @@ test("the legend says what a ring is, since nothing else did", async ({ page }) 
   await expect(zones).toContainText("how distance to a quake is measured");
   await expect(zones).toContainText("×20");
   /*
-   * The "first motion is a seismogram term" sentence used to be asserted here and is gone on purpose.
-   * It existed to explain the app's own name while the app was called First Motion; the rename to
-   * Everything Is Fine removed the name, so the sentence explained nothing and went with it. That
-   * commit updated other strings in this file and missed this one, and the suite was not being run, so
-   * a stale expectation sat here green-until-executed. See ARCHITECTURE.md, "The contract was already
-   * written, and asleep".
+   * The "first motion is a seismogram term" sentence used to be asserted here and is gone on purpose: it
+   * explained the app's own name while the app was called First Motion. The rename missed this string, and
+   * the suite was not being run, so a stale expectation sat here green-until-executed.
    */
 
-  /*
-   * Once, not twice. The header carried a bare "wavefront ×20" that the sentence now states in the
-   * one place it means something, and two identical figures in one viewport with only one of them
-   * explained is the trap the activity axis already fell into.
-   */
+  // Once, not twice. The header carried a bare "wavefront ×20" that the sentence now states in the one place
+  // it means something.
   expect(await zones.evaluate((el) => (el.textContent ?? "").split("×20").length - 1)).toBe(1);
 });
 
 test("the largest event is a way in, in time as well as in space", async ({ page }) => {
   /*
-   * The app opens on the present, which at a wide window is the least interesting moment it holds:
-   * whatever is happening this minute is an M2 somewhere, and the one worth looking at was hours or
-   * days ago. The rail already named it and flew to it, and left the cursor live, so arriving showed
-   * the end state of the whole window with the event buried in it.
+   * The app opens on the present, which at a wide window is the least interesting moment it holds. The rail
+   * already named the strongest event and flew to it, and left the cursor live.
    *
-   * Built from exact features rather than the plausible day, because the whole point is an event old
-   * enough that going to it moves the clock. A fixture whose strongest event happened four minutes
-   * ago would pass every assertion below while testing nothing.
+   * Built from exact features rather than the plausible day: a fixture whose strongest event happened four
+   * minutes ago would pass every assertion below while testing nothing.
    */
   const now = Date.now();
   const features = [
@@ -1521,13 +1316,8 @@ test("the largest event is a way in, in time as well as in space", async ({ page
       },
       geometry: { coordinates: [122.4, -6.2, 45] },
     },
-    /*
-     * Aftershocks, inside the 150km the panel calls a neighbourhood and after the main shock.
-     *
-     * The first version of this fixture put the big one alone in the Flores Sea with everything else
-     * off Honshu, and the panel correctly answered "on its own, so far". An event with no sequence
-     * cannot demonstrate arriving at one.
-     */
+    // Aftershocks, inside the 150km the panel calls a neighbourhood and after the main shock. With the big one
+    // alone in the Flores Sea the panel correctly answered "on its own, so far", which demonstrates nothing.
     ...Array.from({ length: 15 }, (_, i) => ({
       id: `after${i}`,
       properties: {
@@ -1565,11 +1355,8 @@ test("the largest event is a way in, in time as well as in space", async ({ page
   // Time: the window is held at that moment rather than at the present.
   await expect(page.getByText("held", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "go live" })).toBeVisible();
-  /*
-   * And the globe is drawing that moment, not the end state. Twenty hours back of this fixture is the
-   * big one and nothing else, against forty-one events live, so a count that had not moved would mean
-   * the cursor was decoration.
-   */
+  // And the globe is drawing that moment, not the end state. Twenty hours back of this fixture is the big one
+  // and nothing else, against forty-one events live.
   const held = Number(
     (await page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first().innerText())
       .replace(/,/g, ""),
@@ -1585,13 +1372,8 @@ test("the largest event is a way in, in time as well as in space", async ({ page
 });
 
 test("a section can be opened from the panel, not only by a gesture", async ({ page }) => {
-  /*
-   * `CrossSection` was reachable by shift-dragging the map and by nothing else. That is
-   * undiscoverable with a mouse, since nothing but one line of the hint strip mentions it, and
-   * outright impossible on a touch screen, where there is no shift to hold. The panel's own note
-   * about the permalink already says a feature nobody can find is not shipped, and this was the same
-   * fault in the one view that shows the dimension a map cannot.
-   */
+  // `CrossSection` was reachable by shift-dragging the map and by nothing else: undiscoverable with a mouse
+  // and impossible on a touch screen, where there is no shift to hold.
   await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);
@@ -1616,11 +1398,8 @@ test("a section can be opened from the panel, not only by a gesture", async ({ p
 });
 
 test("the key folds away and the controls do not go with it", async ({ page }) => {
-  /*
-   * Five layers made the legend seven paragraphs, and over the map that is a wall in front of the thing
-   * it describes. The risk in folding it is folding the wrong half: the slider and the source buttons are
-   * how you change what is on the globe, and they have to survive the fold.
-   */
+  // Five layers made the legend seven paragraphs. The risk in folding it is folding the wrong half: the slider
+  // and the source buttons are how you change what is on the globe, and they have to survive the fold.
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
@@ -1650,12 +1429,9 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
 });
 
 /*
- * The share link, which is the one promise this app makes to somebody who is not looking at it.
- *
- * Untested until now, and it is the worst thing on the list to have untested: every other failure is
- * visible to the person who caused it, and this one is only ever visible to the person who received it.
- * A link that opens the right globe and the wrong event is indistinguishable from a working link until
- * the two of them are in the same room.
+ * The share link, which is the one promise this app makes to somebody who is not looking at it. Every other
+ * failure is visible to the person who caused it; a link that opens the right globe and the wrong event is
+ * indistinguishable from a working link until the two of them are in the same room.
  */
 test("a copied link reopens the same event, not merely the same view", async ({ page, context }) => {
   // Two cold loads of a WebGL app in one test, which is genuinely more than the default allows.
@@ -1668,10 +1444,8 @@ test("a copied link reopens the same event, not merely the same view", async ({ 
   const panel = page.locator('.zone-panel[data-open="true"]');
   await expect(panel).toBeVisible();
 
-  /*
-   * The magnitude scale by its own hook, because that is the field that says *which* reading this is.
-   * Two events in the same region at the same minute would agree on almost everything else on screen.
-   */
+  // The magnitude scale by its own hook, because that is the field that says which reading this is. Two events
+  // in the same region at the same minute would agree on almost everything else.
   const scale = await panel.locator("[data-magscale]").textContent();
   const place = await panel.locator("[data-magscale]").locator("xpath=../following-sibling::div[1]").textContent();
   const href = await page.evaluate(() => window.location.href);
@@ -1687,11 +1461,9 @@ test("a copied link reopens the same event, not merely the same view", async ({ 
   await expect(reopened.locator("[data-magscale]")).toHaveText(scale ?? "");
   if (place) await expect(reopened).toContainText(place.trim());
   /*
-   * The same event id, which is the promise. Deliberately not the same camera: a link carrying an event
-   * flies to it during setup, so the sender's framing is a starting point rather than a guarantee. That
-   * is the right way round - without it a recipient can be handed a panel describing an event that is
-   * round the back of the globe - but it does mean the two of them are not looking at the same numbers
-   * in the hash, and a test that asserted otherwise would be asserting the bug.
+   * The same event id, which is the promise. Deliberately not the same camera: a link carrying an event flies
+   * to it during setup, so the sender's framing is a starting point rather than a guarantee, and a test that
+   * asserted otherwise would be asserting the bug.
    */
   const hash = await opened.evaluate(() => window.location.hash);
   expect(hash).toContain("e=");
@@ -1699,22 +1471,15 @@ test("a copied link reopens the same event, not merely the same view", async ({ 
 });
 
 /*
- * The tour's narration, which is the whole of its licence to move the camera.
- *
- * DESIGN.md 13 bans motion that means nothing, and the rail's line is what answers that: it says where
- * the camera is and how much is there. It was not doing that. The label and the flight were set on the
- * same tick, so for the first few seconds of every stop the rail named the destination while the globe
- * still showed the last one - sampled mid-tour, "Japan & Kurils · 685 events" at longitude -82.8, which
- * is Chile. Nothing caught it because nothing tested the tour at all.
+ * The tour's narration, which is the whole of its licence to move the camera. The label and the flight were
+ * set on the same tick, so for the first few seconds of every stop the rail named the destination while the
+ * globe still showed the last one: "Japan & Kurils · 685 events" at longitude -82.8, which is Chile.
  */
 test("the tour names where the camera is, not where it is going", async ({ page }) => {
   /*
-   * Reads the live camera rather than the hash, which is what `cameraNow` is for.
-   *
-   * The first version sampled `location.hash` and failed at "California" with the camera at -83, which
-   * looked like the bug returning and was the throttle: the hash trails the camera by enough to cross
-   * 37 degrees mid-flight, so it pairs a fresh label with a stale position. Measuring the thing the
-   * label is actually gated on removes the ambiguity rather than widening the tolerance to hide it.
+   * Reads the live camera rather than the hash. Sampling `location.hash` failed at "California" with the
+   * camera at -83, which looked like the bug returning and was the throttle: the hash trails the camera by
+   * enough to pair a fresh label with a stale position.
    */
   needsDevHooks();
   // A tour stop is about six seconds, so seeing several of them takes longer than the default allows.
@@ -1725,11 +1490,8 @@ test("the tour names where the camera is, not where it is going", async ({ page 
 
   await page.getByRole("button", { name: /^Tour$/ }).click();
 
-  /*
-   * Sampled in the page rather than by polling from here: a round trip per sample is slower than the
-   * stop it is trying to observe, and a sparse series lands on the transitions and manufactures its own
-   * findings. Every sample that carries a name is checked; the silent ones are the flights.
-   */
+  // Sampled in the page rather than by polling from here: a round trip per sample is slower than the stop it
+  // is trying to observe, and a sparse series lands on the transitions and manufactures its own findings.
   const named = await page.evaluate(async () => {
     const seen: { name: string; lon: number }[] = [];
     for (let i = 0; i < 45; i += 1) {
@@ -1757,23 +1519,16 @@ test("the tour names where the camera is, not where it is going", async ({ page 
     // Shortest way round, so a stop at 175E is not judged 350 degrees from one at 175W.
     let off = Math.abs(sample.lon - want) % 360;
     if (off > 180) off = 360 - off;
-    /*
-     * Ten degrees, which is tight enough to mean something: the narration is gated on the camera being
-     * within four of the stop, and the region's listed longitude is not always exactly what the tour
-     * flies to. The failure this exists for was a hemisphere.
-     */
+    // Ten degrees, which is tight enough to mean something: the narration is gated on the camera being within
+    // four of the stop. The failure this exists for was a hemisphere.
     expect(off, `narrated "${sample.name}" while the camera was at ${sample.lon}`).toBeLessThan(10);
   }
 });
 
 /*
- * The two buttons in the panel that move the camera, and the fact that they move it opposite ways.
- *
- * Both were untested. They are easy to get subtly wrong in the same direction - point at the event, pick
- * a zoom, ship - and the zoom is the whole difference between them. "Fly here" is for looking at one
- * epicentre, so it goes in. "Far side" draws five circles spanning the planet, so it has to pull back or
- * the figure it just turned on is off every edge of the screen. A regression that gave them the same
- * zoom would leave both buttons apparently working and one of them useless.
+ * The two buttons in the panel that move the camera, and the fact that they move it opposite ways. The zoom is
+ * the whole difference: "Fly here" is for one epicentre, and "Far side" draws five circles spanning the planet,
+ * so it has to pull back. A regression giving them the same zoom leaves both apparently working.
  */
 test("the panel's camera buttons land on the same event and pull opposite ways", async ({ page }) => {
   // Three eased flights in one test, each of which has to settle before the next is measured.
@@ -1799,11 +1554,8 @@ test("the panel's camera buttons land on the same event and pull opposite ways",
   await expect(farSide).toHaveAttribute("aria-pressed", "true");
   const wide = await cameraStill(page);
 
-  /*
-   * Pulled back far enough to hold the figure, and pointed at the same place. The antipode is half a
-   * planet away and the camera deliberately does not go there: what is being framed is the whole
-   * sphere, because the point of the drawing is that a front grows to a great circle and then closes.
-   */
+  // Pulled back far enough to hold the figure, and pointed at the same place. The antipode is half a planet
+  // away and the camera deliberately does not go there: what is being framed is the whole sphere.
   expect(wide.zoom).toBeLessThan(1.1);
   expect(Math.abs(wide.lon - near.lon)).toBeLessThan(1);
   expect(Math.abs(wide.lat - near.lat)).toBeLessThan(1);
@@ -1814,12 +1566,9 @@ test("the panel's camera buttons land on the same event and pull opposite ways",
 });
 
 /*
- * What gets spoken, and what deliberately does not.
- *
- * `announce.ts` states the trade in as many words: an event published unusually late passes unannounced,
- * and that is the recoverable direction, because the other one floods somebody's screen reader on every
- * page load. Nothing tested it. The window is a constant one edit away from being widened to "fix" a
- * late publisher, and the cost of that edit is paid by the person least able to escape it.
+ * What gets spoken, and what deliberately does not. `announce.ts` states the trade: an event published
+ * unusually late passes unannounced, because the other direction floods somebody's screen reader on every page
+ * load. The window is one edit away from being widened to "fix" a late publisher.
  */
 test("the live region speaks a new event and stays silent about an old one", async ({ page }) => {
   test.setTimeout(120_000);
@@ -1837,31 +1586,23 @@ test("the live region speaks a new event and stays silent about an old one", asy
     geometry: { coordinates: [142, 38, 25] },
   });
 
-  /*
-   * One inside the thirty-minute window and one well outside it, both above the threshold and both
-   * unseen. Time is the only thing separating them, which is exactly the rule under test: "unseen" was
-   * once the whole test and let a seed of hours-old events announce itself on a cold load.
-   */
+  // One inside the thirty-minute window and one well outside it, both above the threshold and both unseen.
+  // "Unseen" was once the whole test, and let a seed of hours-old events announce itself on a cold load.
   await installFeeds(page, { usgs: [at(5.6, 4, "justnow"), at(6.4, 240, "hoursago")] });
   await page.goto("/#at=142,38,2&m=2&w=24&s=usgs&r=thermal");
   await waitForData(page);
 
   const live = page.locator('[aria-live="polite"]');
   await expect(live).toContainText("justnow", { timeout: 25_000 });
-  /*
-   * The louder one is the silent one, which is the point. `hoursago` is the larger magnitude and would
-   * win any ranking; it is four hours old, so it is not news however big it was.
-   */
+  // The louder one is the silent one. `hoursago` is the larger magnitude and would win any ranking; it is four
+  // hours old, so it is not news however big it was.
   await expect(live).not.toContainText("hoursago");
 });
 
 /*
- * The sound toggle, which is a device handle rather than a preference.
- *
- * `App.tsx` builds an `AudioContext` when this goes on and closes it when it goes off, and a leaked one
- * is a tab that a browser will eventually mark as making noise. The rest of the audio design is covered
- * by unit tests on the mapping; what only a browser can settle is whether the handle is opened at the
- * right moment and never before.
+ * The sound toggle, which is a device handle rather than a preference. A leaked `AudioContext` is a tab a
+ * browser eventually marks as making noise. What only a browser can settle is whether the handle is opened at
+ * the right moment and never before.
  */
 test("sound opens no audio device until it is asked to", async ({ page }) => {
   test.setTimeout(120_000);
@@ -1898,13 +1639,9 @@ test("sound opens no audio device until it is asked to", async ({ page }) => {
 });
 
 /*
- * Cinema mode, and specifically the half of it that is easy to get wrong.
- *
- * Hiding the chrome is safe only because the way back is a key every viewer already knows and the browser
- * provides it, so the app must follow the browser's own state rather than a flag of its own. There are
- * several exits it never initiates - the Escape key, the browser's control, another tab claiming the
- * display - and a local boolean is right for exactly one of them. That is the regression this guards: it
- * leaves the app in fullscreen-looking chromelessness with no fullscreen and no way back.
+ * Cinema mode, and the half of it that is easy to get wrong. Hiding the chrome is safe only because the way
+ * back is a key the browser provides, so the app must follow the browser's own state rather than a flag: there
+ * are several exits it never initiates, and a local boolean is right for exactly one of them.
  */
 test("cinema hides every piece of chrome, and comes back when the browser leaves", async ({ page }) => {
   test.setTimeout(120_000);
@@ -1940,11 +1677,8 @@ test("cinema hides every piece of chrome, and comes back when the browser leaves
   expect(during.band).toBeGreaterThanOrEqual(3);
   expect(during.resizer, "the rail's handle goes with the rail").toBe(0);
 
-  /*
-   * Left by the browser rather than by the app, which is the whole assertion. Calling `exitFullscreen`
-   * directly is the one exit the key handler knows nothing about, so the chrome can only come back if
-   * the app is listening to `fullscreenchange`.
-   */
+  // Left by the browser rather than by the app, which is the whole assertion. Calling `exitFullscreen` directly
+  // is the one exit the key handler knows nothing about.
   await page.evaluate(() => document.exitFullscreen());
   await expect.poll(async () => (await chrome()).head, { timeout: 10_000 }).toBe(false);
   const after = await chrome();

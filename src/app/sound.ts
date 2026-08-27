@@ -3,18 +3,14 @@ import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 /*
  * One earthquake, one sound.
  *
- * The rule this is built against is DESIGN.md 12b, which was written first because the document said
- * nothing about audio and a feature built into that silence would have set the rule by accident.
- *
- * **Nothing here is a recording.** Real ground motion is below hearing, under about 10 Hz, so an audible
- * rendering is a transposition - the same situation as the wavefronts, which run at twenty times real
- * speed and print the multiplier rather than hiding it. The legend says this out loud for the same reason.
+ * Nothing here is a recording. Real ground motion is below hearing, under about 10 Hz, so an audible
+ * rendering is a transposition - the same situation as the wavefronts, which print their multiplier rather
+ * than hiding it.
  *
  * The mapping is derived, not composed. Pitch falls as magnitude rises, which is the direction a real
- * rupture goes: a larger rupture radiates a lower corner frequency. Duration grows, because a larger
- * rupture genuinely lasts longer. Loudness is the one channel that cannot be honest - three points of
- * magnitude is **thirty thousand times** the energy, and M2 to M7.5 is a hundred and seventy-eight
- * million - so gain is compressed hard and the legend admits the compression instead of implying a scale.
+ * rupture goes; duration grows, because a larger rupture lasts longer. Loudness is the one channel that
+ * cannot be honest: M2 to M7.5 is a hundred and seventy-eight million times the energy, so gain is
+ * compressed hard and the legend admits the compression.
  */
 
 /** Two octaves, high for the smallest event and low for the largest. */
@@ -27,12 +23,9 @@ function position(magnitude: number): number {
   return Math.max(0, Math.min(1, t));
 }
 
-/**
- * Hz for a magnitude. Lower for larger, geometric rather than linear.
- *
- * Geometric because pitch is perceived logarithmically: interpolating frequency linearly would spend most
- * of the audible range on the top half of the magnitude scale, where almost no events are.
- */
+/** Hz for a magnitude. Lower for larger, and geometric because pitch is perceived logarithmically:
+ * interpolating linearly spends most of the audible range on the top half of the magnitude scale, where
+ * almost no events are. */
 export function toneHz(magnitude: number): number {
   return HIGH_HZ * (LOW_HZ / HIGH_HZ) ** position(magnitude);
 }
@@ -42,13 +35,8 @@ export function toneSeconds(magnitude: number): number {
   return 0.18 + position(magnitude) * 0.72;
 }
 
-/**
- * Peak gain, compressed on purpose.
- *
- * Energy goes as `10^1.5M`, so a faithful mapping would make one event inaudible and the next one
- * damaging. This is a gentle ramp that keeps every event audible and says nothing about energy, which is
- * why the legend states that loudness is not energy rather than leaving it to be assumed.
- */
+/** Peak gain, compressed on purpose. Energy goes as `10^1.5M`, so a faithful mapping makes one event
+ * inaudible and the next one damaging. The legend states that loudness is not energy. */
 export function toneGain(magnitude: number): number {
   return 0.04 + position(magnitude) * 0.16;
 }
@@ -61,24 +49,16 @@ export interface Siren {
   close: () => void;
 }
 
-/**
- * Loudest first, capped.
- *
- * When more arrive at once than can be played, the ones that are dropped should be the small ones: the
- * cap exists so a swarm does not become a chord, and a swarm's largest event is the one worth hearing.
- */
+/** Loudest first, capped. The cap exists so a swarm does not become a chord, and a swarm's largest event
+ * is the one worth hearing. */
 export function chooseVoices(
   magnitudes: readonly number[], max: number = MAX_VOICES,
 ): number[] {
   return [...magnitudes].sort((a, b) => b - a).slice(0, max);
 }
 
-/**
- * A Web Audio siren, created on the gesture that switches it on.
- *
- * Built lazily because an `AudioContext` made before a user gesture starts suspended and every later
- * sound is silently dropped - the failure mode where the toggle looks on and nothing is ever heard.
- */
+/** A Web Audio siren, created on the gesture that switches it on. An `AudioContext` made before a user
+ * gesture starts suspended and drops every later sound silently: the toggle looks on and nothing is heard. */
 export function createSiren(Ctx: typeof AudioContext = AudioContext): Siren {
   const ctx = new Ctx();
   return {
@@ -94,10 +74,8 @@ export function createSiren(Ctx: typeof AudioContext = AudioContext): Siren {
         // Sine, because anything with harmonics reads as an alert and this is not one.
         osc.type = "sine";
         osc.frequency.value = toneHz(magnitude);
-        /*
-         * A short attack and an exponential tail, which is the shape of a struck thing. A square envelope
-         * clicks at both ends, and the click is louder than the tone.
-         */
+        // A short attack and an exponential tail, which is the shape of a struck thing. A square envelope
+        // clicks at both ends, and the click is louder than the tone.
         gain.gain.setValueAtTime(0.0001, at);
         gain.gain.exponentialRampToValueAtTime(toneGain(magnitude), at + 0.012);
         gain.gain.exponentialRampToValueAtTime(0.0001, at + seconds);

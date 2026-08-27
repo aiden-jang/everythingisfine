@@ -7,18 +7,13 @@ import { MORPH_GLSL } from "./morph";
 /*
  * The signature: a wavefront leaving the epicentre.
  *
- * DESIGN.md 3.3 replaced arcs with these, and the reason is that two seismic feeds have no origin
- * and destination. A line drawn between two earthquakes asserts a relationship that does not exist.
- * A ring asserts something true and already known: this happened here, and the energy has reached
- * this far.
+ * Two seismic feeds have no origin and destination, so a line drawn between two earthquakes asserts a
+ * relationship that does not exist. A ring asserts something true: this happened here, and the energy has
+ * reached this far.
  */
 
-/**
- * Degrees of arc the front covers per real second. Derived, never typed in.
- *
- * 6 km/s over a 6371km radius is 0.054 deg/s, and writing that constant directly is how it survives
- * a change to either input without anyone noticing.
- */
+/** Degrees of arc the front covers per real second. Derived, never typed in: writing 0.054 directly is how
+ * it survives a change to either input without anyone noticing. */
 export const TRUE_RATE_DEG_PER_S = (P_WAVE_KM_PER_S / EARTH_RADIUS_KM) / DEG;
 
 export const RATE_DEG_PER_S = TRUE_RATE_DEG_PER_S * PLAYBACK;
@@ -30,12 +25,9 @@ export { PLAYBACK, P_WAVE_KM_PER_S, S_OVER_P } from "../geo/waves";
 export const MAX_DEG = 17;
 
 /**
- * Both fronts end together, when the P front reaches `MAX_DEG`.
- *
- * The S front is still travelling at that point and cutting it short is the deliberate choice: one
- * event is one mark, and letting the S ring outlive the P by eleven seconds leaves a lone circle
- * expanding with nothing to be the second half of, which reads as a new earthquake rather than as the
- * tail of an old one. So the pair shares a lifetime and the S front is simply where it has got to.
+ * Both fronts end together, when the P front reaches `MAX_DEG`. The S front is still travelling, and cutting
+ * it short is deliberate: a lone circle expanding with nothing to be the second half of reads as a new
+ * earthquake rather than as the tail of an old one.
  */
 export const S_MAX_DEG = MAX_DEG * S_OVER_P;
 
@@ -60,9 +52,8 @@ const SHADER = {
       vec4 world = modelMatrix * vec4(position, 1.0);
       vRamp = aRamp;
       vFade = aFade;
-      // Interpolated across the segment, so a ring straddling the horizon is clipped exactly at
-      // the limb rather than vanishing or showing through the planet all at once.
-      // Same as the markers: a map has no limb to be clipped at.
+      // Interpolated across the segment, so a ring straddling the horizon is clipped exactly at the limb
+      // rather than vanishing or showing through the planet all at once. A map has no limb to clip at.
       vFacing = mix(dot(normalize(world.xyz), normalize(cameraPosition - world.xyz)), 1.0, uMorph);
       gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position), 1.0);
     }`,
@@ -96,11 +87,8 @@ export interface RingLayer {
   active: () => number;
   setRamp: (name: RampName) => void;
   /**
-   * Pulls the fronts back while an hour is held on the activity strip.
-   *
-   * Without it, holding an hour five hours old left the brightest things on screen, the wavefronts,
-   * belonging to the current one: the whole globe faded to ghosts around three full-strength rings
-   * announcing the opposite of what the pointer was asking about.
+   * Pulls the fronts back while an hour is held on the activity strip. Without it, holding an hour five hours
+   * old left the brightest things on screen belonging to the current one.
    */
   setDim: (dim: number) => void;
   dispose: () => void;
@@ -109,8 +97,8 @@ export interface RingLayer {
 export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }): RingLayer {
   const rings: Ring[] = [];
 
-  // Two circles per front, so twice the room. Sized for the pair rather than the ring, because a
-  // buffer sized for one and asked for two silently draws half the fronts.
+  // Two circles per front, so twice the room. A buffer sized for one and asked for two silently draws half
+  // the fronts.
   const vertexCount = MAX_RINGS * SEGMENTS * 2 * 2;
   const positions = new Float32Array(vertexCount * 3);
   const ramps = new Float32Array(vertexCount);
@@ -136,8 +124,8 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
     uniforms: { uRamp: { value: texture }, uDim: { value: 1 }, uMorph: morph },
     transparent: true,
     depthWrite: false,
-    // Same as the markers: the fronts carry their own facing test, so depth-testing them against
-    // the globe can only clip them where the sphere happens to curve past their own depth.
+    // Like the markers: the fronts carry their own facing test, so depth-testing them against the globe can
+    // only clip them where the sphere curves past their own depth.
     depthTest: false,
     blending: NormalBlending,
   });
@@ -146,19 +134,16 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
   object.frustumCulled = false;
   object.renderOrder = 6;
 
-  // Scratch, reused across frames. Allocating a basis per ring per frame is the same mistake the
-  // event layer's inlined projection exists to avoid.
+  // Scratch, reused across frames. Allocating a basis per ring per frame is the same mistake the event
+  // layer's inlined projection exists to avoid.
   const cx = new Float32Array(3);
   const ux = new Float32Array(3);
   const vx = new Float32Array(3);
 
   /**
-   * Writes one circle of angular radius `theta` about a point on the sphere.
-   *
-   * A circle on a sphere is not a circle in the plane: it is the set of points a fixed angle away
-   * from a centre, which needs two vectors perpendicular to that centre to sweep between. Building
-   * that basis from the north pole fails when the epicentre *is* the pole, so the fallback axis is
-   * picked from whichever component of the centre is smallest.
+   * Writes one circle of angular radius `theta` about a point on the sphere. A circle on a sphere needs two
+   * vectors perpendicular to the centre to sweep between, and building that basis from the north pole fails
+   * when the epicentre is the pole - so the fallback axis comes from the centre's smallest component.
    */
   const writeCircle = (
     at: number, lon: number, lat: number, theta: number, rampAt: number, fade: number,
@@ -206,10 +191,9 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
         positions[w * 3 + 1] = py;
         positions[w * 3 + 2] = pz;
         /*
-         * Derived here rather than carried, because a front has no source coordinates: it is a circle
-         * generated around an epicentre. Safe for the same reason the sphere shells are: the wrap only
-         * bites where a primitive interpolates across it, and a front crossing the date line is two
-         * degenerate segments at the edge rather than a band across the map.
+         * Derived here rather than carried, because a front has no source coordinates. Safe for the same
+         * reason the sphere shells are: the wrap only bites where a primitive interpolates across it, and a
+         * front crossing the date line is two degenerate segments at the edge.
          */
         lonLats[w * 2] = (Math.atan2(px, pz) * 180) / Math.PI;
         lonLats[w * 2 + 1] = (Math.asin(py / (Math.hypot(px, py, pz) || 1)) * 180) / Math.PI;
@@ -241,24 +225,21 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
         ring.age += dt;
         const deg = ring.age * RATE_DEG_PER_S;
         if (deg >= MAX_DEG) {
-          // Swap-remove. Splicing shifts every later ring, which matters not at all at this size
-          // and is exactly the habit that does matter in the event layer.
+          // Swap-remove. Splicing shifts every later ring, which matters not at all at this size and is
+          // exactly the habit that does matter in the event layer.
           rings[i] = rings[rings.length - 1]!;
           rings.pop();
           continue;
         }
-        // Linear fade. An eased one would make the front look like it was decelerating, and the
-        // whole point of the derived rate is that it is not.
+        // Linear fade. An eased one would make the front look like it was decelerating, and the whole point
+        // of the derived rate is that it is not.
         const fade = 1 - deg / MAX_DEG;
         writeCircle(written, ring.lon, ring.lat, deg * DEG, ring.ramp, fade);
         written += SEGMENTS * 2;
         /*
-         * The S front, behind it, on the same clock and the same fade.
-         *
-         * Lighter, and that is a grouping decision rather than a claim about amplitude: an S arrival
-         * is usually the larger one on a seismogram. Two circles of equal weight expanding from one
-         * point read as two earthquakes in the same place, and the whole point is that they are one
-         * event whose two arrivals are separating.
+         * The S front, behind it, on the same clock and fade. Lighter, which is a grouping decision rather
+         * than a claim about amplitude - an S arrival is usually the larger one on a seismogram. Two circles
+         * of equal weight expanding from one point read as two earthquakes in the same place.
          */
         writeCircle(
           written, ring.lon, ring.lat, deg * S_OVER_P * DEG, ring.ramp, fade * 0.7,

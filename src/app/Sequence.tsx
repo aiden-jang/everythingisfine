@@ -5,12 +5,9 @@ import { MIN_AFTER, observed, reference, staircase } from "./omori";
 /*
  * The pinned event inside its own sequence.
  *
- * One axis, time, with the pinned event fixed at its true position and every neighbour as a tick.
- * Overlap is not a defect here: three hundred ticks piling into ninety minutes is the shape of a
- * swarm, which is exactly what the globe cannot show because clustering collapses it to one marker.
- *
- * Reading it: ticks to the left happened first. A tall tick left of centre means the big one has
- * already been, and the pinned event is an aftershock.
+ * One axis, time, with the pinned event fixed at its true position and every neighbour as a tick. Overlap is
+ * not a defect: three hundred ticks piling into ninety minutes is the shape of a swarm, which is exactly
+ * what the globe cannot show because clustering collapses it to one marker.
  */
 
 export interface SequenceProps {
@@ -21,12 +18,9 @@ export interface SequenceProps {
 
 const HEIGHT = 40;
 /*
- * The decay plot, on its own line rather than over the ticks.
- *
- * The ticks already use height for magnitude. A cumulative count drawn in the same box would be a
- * second meaning for the same axis, and the reader would have no way to know which of two heights they
- * were reading. Sharing the x axis and nothing else is what makes the two comparable: the bunching in
- * the ticks and the steepness in the curve are the same fact, one above the other.
+ * The decay plot, on its own line rather than over the ticks. The ticks already use height for magnitude,
+ * and a cumulative count in the same box would be a second meaning for the same axis. Sharing the x axis and
+ * nothing else is what makes the two comparable.
  */
 const DECAY_HEIGHT = 28;
 const rampAt = (m: number): number => (m - MAG_MIN) / (MAG_MAX - MAG_MIN);
@@ -46,19 +40,13 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
   const width = last - first || 1;
   // Inset, so a tick at either extreme sits fully inside the plot rather than half over the edge.
   const x = (at: number): number => 1.5 + ((at - first) / width) * 97;
-  // The same square root the marker radius uses, so height here and size on the globe mean the
-  // magnitude the same way. Linear against the ramp position left a swarm of M2s and an M4.9 within
-  // seven pixels of each other, which is the one comparison this strip exists to make.
+  // The same square root the marker radius uses, so height here and size on the globe mean magnitude the
+  // same way. Linear against the ramp position left a swarm of M2s and an M4.9 within seven pixels.
   const height = (m: number): number =>
     Math.max(4, Math.round((Math.sqrt(Math.max(0, m - MAG_MIN)) / Math.sqrt(MAG_MAX - MAG_MIN)) * HEIGHT));
 
-  /*
-   * Both lines as `points` strings, in the same x space as the ticks above.
-   *
-   * Computed here rather than in `omori.ts` because turning counts into a polyline is this component's
-   * business and the law is not: that module answers "what does Omori say" and knows nothing about
-   * pixels, which is what makes it testable without a DOM.
-   */
+  // Here rather than in `omori.ts`, because turning counts into a polyline is this component's business and
+  // the law is not: that module knows nothing about pixels, which is what makes it testable without a DOM.
   const decay = ((): { steps: string; curve: string } | null => {
     const after = observed(nearby.sequence);
     if (after.length < MIN_AFTER) return null;
@@ -78,17 +66,10 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
     <div data-ramp className="mt-3">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-[11px] text-faint">Sequence</span>
-        {/*
-          A side with nothing on it is not printed, because the axis already says so.
-
-          This read "3 before · 0 after" while the axis below rendered "this event" on the right, which
-          is what an empty side looks like there. Two ways of saying the same nothing, a strip apart. The
-          count itself earns its place - ticks can be counted at three and cannot at three hundred, so it
-          says what the drawing cannot - but a zero is the one value the drawing states perfectly well.
-
-          The same rule the header keeps for revisions: "a permanent 0 revised is a slot reserved for
-          nothing".
-        */}
+        {/* A side with nothing on it is not printed, because the axis already says so: this read "3 before ·
+            0 after" while the axis rendered "this event" on the right. The count itself earns its place -
+            ticks can be counted at three and cannot at three hundred - but a zero is the one value the
+            drawing states perfectly well. */}
         <span className="font-mono text-[10.5px] text-faint">
           {[
             nearby.before > 0 ? `${nearby.before} before` : null,
@@ -117,14 +98,9 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
         />
       </div>
 
-      {/*
-        Omori's law against what happened.
-
-        Drawn only when there are enough arrivals afterwards to have a shape: below that the staircase
-        is three steps and any curve fits it. The law is at its textbook exponent and scaled to end on
-        the observed total, so what is being compared is where the events bunch, not how many there
-        were. See `omori.ts` for why it is a reference and never a fit.
-      */}
+      {/* Omori's law against what happened. Drawn only when there are enough arrivals afterwards to have a
+          shape: below that the staircase is three steps and any curve fits it. See `omori.ts` for why it is
+          a reference and never a fit. */}
       {decay ? (
         <div className="relative mt-2" style={{ height: `${DECAY_HEIGHT}px` }}>
           <svg
@@ -132,10 +108,8 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
             preserveAspectRatio="none"
             viewBox={`0 0 100 ${DECAY_HEIGHT}`}
           >
-            {/*
-              The law, dashed, because it is the thing being claimed rather than the thing observed.
-              Behind the staircase for the same reason.
-            */}
+            {/* The law, dashed, because it is the thing being claimed rather than the thing observed.
+                Behind the staircase for the same reason. */}
             <polyline
               points={decay.curve}
               fill="none"
@@ -163,11 +137,8 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
         <span>{last > 0 ? `${span(last)} after` : "this event"}</span>
       </div>
 
-      {/*
-        Named, because two unexplained lines in a box is a decoration. Only the words: which line is
-        which is carried by the dash, and a swatch legend for two strokes would be larger than the
-        plot it explained.
-      */}
+      {/* Named, because two unexplained lines in a box is a decoration. Only the words: which line is which
+          is carried by the dash, and a swatch legend for two strokes would be larger than the plot. */}
       {decay ? (
         <p className="mt-1 text-[11px] leading-relaxed text-faint">
           The solid line is how the aftershocks actually arrived. The dashed one is Omori's law, which
@@ -176,8 +147,8 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
       ) : null}
 
       {nearby.largest !== null && nearby.largestAt !== null && nearby.largest > magnitude ? (
-        // Stated, not interpreted. "Larger, and it already happened" is the fact; whether that makes
-        // this an aftershock is the reader's call and depends on things no keyless feed carries.
+        // Stated, not interpreted. "Larger, and it already happened" is the fact; whether that makes this an
+        // aftershock is the reader's call and depends on things no keyless feed carries.
         <p className="mt-2 text-[11px] leading-relaxed text-dim">
           The largest nearby was M {nearby.largest.toFixed(1)},{" "}
           {nearby.largestAt < 0

@@ -8,15 +8,11 @@ import type { SlabPoint } from "../geo/slab";
 /*
  * A cross-section through the crust, along a line drawn on the map.
  *
- * Every other view in this app answers "where". Depth is the dimension the data carries and the
- * picture cannot show: on a globe or a map it is a filled or hollow ring, which says shallow or deep
- * and nothing about structure. Drawn against distance instead, the same events say what they actually
- * are. A line across Japan puts the Pacific plate on screen diving west at about forty-five degrees,
- * because the earthquakes *are* the slab, and nothing on the surface can show that.
+ * Every other view answers "where". Depth is the dimension the data carries and the picture cannot show:
+ * on a globe it is a filled or hollow ring. Drawn against distance, a line across Japan puts the Pacific
+ * plate on screen diving west at forty-five degrees, because the earthquakes are the slab.
  *
- * This is the one thing the flat map is better at than the globe, which is the argument for the map
- * existing at all. Picking two points on a sphere you are rotating is a guess; picking them on a map
- * is a drag.
+ * This is the one thing the flat map is better at than the globe, which is the argument for the map.
  */
 
 export interface SectionLine {
@@ -46,32 +42,21 @@ export interface Section {
   withoutDepth: number;
   /** Distances along the line at which it crosses a plate boundary. */
   crossings: number[];
-  /**
-   * The committed deep-seismicity table, where it falls in this corridor.
-   *
-   * A separate array rather than more `points`, because these are not the same population: they are five
-   * years of M4.5-and-deeper-than-300km, not this window's readings, and everything downstream has to be
-   * able to draw them differently and refuse to let them be clicked.
-   */
+  /** The committed deep-seismicity table where it falls in this corridor. A separate array, because these
+   * are five years of M4.5-and-deeper-than-300km rather than this window's readings, and everything
+   * downstream has to draw them differently and refuse to let them be clicked. */
   slab: SectionPoint[];
 }
 
 /**
- * How wide a band counts as "on the line".
- *
- * Subduction zones are hundreds of kilometres across and a zero-width section would find almost
- * nothing, so every section is really a corridor. 200km each side is wide enough to fill in a slab
- * and narrow enough that two neighbouring margins do not overlap into one smear.
+ * How wide a band counts as "on the line". Subduction zones are hundreds of kilometres across, so a
+ * zero-width section finds almost nothing. 200km each side fills a slab without smearing two margins together.
  */
 export const SECTION_HALF_WIDTH_KM = 200;
 
 /**
- * How long a section offered from the panel is, end to end.
- *
- * A shift-drag picks its own length. This one has to pick for you, and the thing it is picking for is
- * a slab: 300km either side of the epicentre reaches from the trench across the arc and down to the
- * deep events behind it, which is the shape the section exists to show. Longer starts collecting the
- * next margin, which the 200km corridor was already sized to avoid.
+ * How long a section offered from the panel is, end to end. 300km either side reaches from the trench across
+ * the arc to the deep events behind it. Longer starts collecting the next margin.
  */
 export const SECTION_DEFAULT_KM = 600;
 
@@ -81,14 +66,11 @@ const KM_PER_DEGREE = (Math.PI * EARTH_RADIUS_KM) / 180;
 /**
  * A section through a point, across the local trend rather than along it.
  *
- * The orientation is the whole value of this. Earthquakes at a subduction zone lie along the trench,
- * so slicing *across* that line is what puts the slab on screen and slicing along it is a smear of
- * everything at once. `trendDeg` is the trend measured from the events themselves, so the section is
- * perpendicular to it.
+ * The orientation is the whole value. Earthquakes at a subduction zone lie along the trench, so slicing
+ * across it puts the slab on screen and slicing along it is a smear.
  *
- * A null trend falls back to west-to-east, which is not a guess dressed up as a measurement: when the
- * scatter has no long axis, every orientation is equally arbitrary, and west to east is the one that
- * matches the direction the cross-section is read in.
+ * A null trend falls back to west-to-east: with no long axis every orientation is arbitrary, and that is
+ * the direction a cross-section is read in.
  */
 export function sectionThrough(
   lon: number, lat: number, trendDeg: number | null, lengthKm = SECTION_DEFAULT_KM,
@@ -97,26 +79,17 @@ export function sectionThrough(
   const bearing = ((trendDeg ?? 0) + 90) * (Math.PI / 180);
   const halfDeg = lengthKm / 2 / KM_PER_DEGREE;
   const dLat = halfDeg * Math.cos(bearing);
-  /*
-   * East-west degrees stretch by 1/cos(lat), and the guard is not decoration: at 85 degrees the
-   * factor is 11, and at the pole it is infinite. Clamped so a section offered from a polar event is
-   * short rather than infinitely wide.
-   */
+  // East-west degrees stretch by 1/cos(lat), and the guard is not decoration: at 85 degrees the factor is
+  // 11 and at the pole it is infinite.
   const scale = Math.max(0.02, Math.cos((lat * Math.PI) / 180));
   const dLon = (halfDeg * Math.sin(bearing)) / scale;
 
   /*
-   * Always read west to east, and south to north when it is neither.
+   * Always read west to east, and south to north when it is neither. Left to the bearing arithmetic, a
+   * north-south trench reads top to bottom while an east-west one reads left to right.
    *
-   * The cross-section plots distance along the line from its first end, so which end is first decides
-   * which way the picture reads. Left to the bearing arithmetic that is an accident: a north-south
-   * trench yields a bearing of 180 and a section that reads top to bottom, while an east-west one
-   * reads left to right, so two neighbouring margins would be drawn in opposite directions with
-   * nothing saying so.
-   *
-   * The epsilon is doing real work. `sin` of 180 degrees is 1.2e-16 rather than 0, so a test for a
-   * negative east component never fires on the exactly-north-south case and it keeps the arbitrary
-   * direction the arithmetic happened to produce.
+   * The epsilon is doing real work: `sin` of 180 degrees is 1.2e-16, not 0, so a test for a negative east
+   * component never fires on the exactly-north-south case.
    */
   const EPS = 1e-9;
   const flip = dLon < -EPS || (Math.abs(dLon) <= EPS && dLat < 0);
@@ -136,15 +109,11 @@ export function sectionThrough(
 /**
  * The two edges of the corridor, as lines that can be drawn beside the centre.
  *
- * The panel prints "200 km either side" and the map drew a dashed centre line and two caps, so the
- * width was a number with nothing corroborating it: an event just outside the corridor looked exactly
- * like one just inside, and there was no way to see why a nearby quake was missing from the plot or
- * whether redrawing wider would catch it. The overlay's own comment called it "two points and a
- * corridor" while drawing only the two points.
+ * The panel prints "200 km either side" and the map drew only a centre line, so an event just outside the
+ * corridor looked exactly like one just inside.
  *
- * The same normal `project` already builds. A point at cross-track angle t off the great circle is
- * `v cos t + n sin t`, which is the inverse of the `asin` below rather than new trigonometry, so the
- * edges are exact on the sphere instead of a screen-space approximation that would skew with latitude.
+ * A point at cross-track angle t off the great circle is `v cos t + n sin t`, the inverse of the `asin`
+ * below, so the edges are exact on the sphere rather than a screen-space approximation that skews with latitude.
  */
 export function sectionEdges(
   line: SectionLine, halfWidthKm = SECTION_HALF_WIDTH_KM,
@@ -179,12 +148,9 @@ export function sectionEdges(
 }
 
 /**
- * Along-track and cross-track distance, by vector algebra rather than by bearings.
- *
- * The bearing formulation needs an `atan2`, a difference of angles that has to be wrapped, and an
- * `asin` whose sign has to be reasoned about; this needs a cross product and two dot products, and
- * gets the sign of the offset for free. Both are exact on a sphere. Only one is easy to read six
- * months later.
+ * Along-track and cross-track distance, by vector algebra rather than by bearings. The bearing form needs an
+ * `atan2`, a wrapped difference of angles and an `asin` whose sign has to be reasoned about; this needs a
+ * cross product and two dot products, and gets the sign for free.
  */
 function project(
   line: SectionLine, lon: number, lat: number,
@@ -229,22 +195,14 @@ export function sectionLengthKm(line: SectionLine): number {
 }
 
 /**
- * Where the line crosses a plate boundary, as distances along it.
+ * Where the line crosses a plate boundary, as distances along it. A tick where the line crosses a plate edge
+ * turns the picture into an explanation: the earthquakes start at the boundary and descend away from it.
  *
- * The section shows a slab and cannot say why one is there. A tick on the distance axis where the line
- * crosses a plate edge turns the picture into an explanation: the earthquakes start at the boundary and
- * descend away from it, which is the claim a subduction zone makes.
+ * Found by sign change in the cross-track offset, not by intersecting two great circles: the offset is
+ * already computed for every event, so this is the same call over the boundary vertices.
  *
- * Found by sign change in the cross-track offset rather than by intersecting two great circles. The
- * offset is already computed for every event, so this is the same call over the boundary vertices, and
- * a segment whose ends fall on opposite sides of the line has crossed it. Interpolated linearly between
- * the two, which at the 0.15-degree simplification of the boundary data is well inside a pixel.
- *
- * What keeps the far side of the planet out is the range check, not a distance test. The great circle
- * through the two ends is a whole circle, so boundaries cross it everywhere, but a crossing anywhere
- * other than on the section itself lands outside nought to length and is dropped. A guard on the offset
- * was written first and measured against a thousand lines scattered over the globe: it changed nothing,
- * because a crossing whose distance along is inside the section is on the section by construction.
+ * The range check is what keeps the far side of the planet out. The great circle is a whole circle, so
+ * boundaries cross it everywhere, and a crossing off the section lands outside nought to length.
  */
 export function plateCrossings(line: SectionLine, lengthKm: number): number[] {
   const out: number[] = [];
@@ -256,8 +214,7 @@ export function plateCrossings(line: SectionLine, lengthKm: number): number[] {
         prev
         && Math.sign(prev.offsetKm) !== Math.sign(here.offsetKm)
         // `atan2` breaks at the antipode of the start, so a segment straddling it has one end near
-        // +20,000km and the other near -20,000km. Interpolating between those two is not arithmetic
-        // about anything, and it lands at zero, which is inside the section and looks deliberate.
+        // +20,000km and the other near -20,000km. Interpolating lands at zero, which looks deliberate.
         && Math.abs(here.alongKm - prev.alongKm) < 10_000
       ) {
         const t = Math.abs(prev.offsetKm) / (Math.abs(prev.offsetKm) + Math.abs(here.offsetKm));
@@ -271,16 +228,9 @@ export function plateCrossings(line: SectionLine, lengthKm: number): number[] {
 }
 
 /*
- * The slab, in the one drawing where its shape cannot hide.
- *
- * On the globe the depth sink is a parallax that appears only obliquely: the offset is radial, so it is
- * zero at the sub-camera point and largest at the limb, where the facing fade is dimming everything
- * anyway. A cross-section has no such problem. It is a depth axis, drawn flat, and a dipping plane of
- * hypocentres reads as a dipping plane from any angle - which is what the layer was built to show and what
- * the globe can only half-deliver.
- *
- * The corridor test is the same one the events get, and so is the refusal to clamp: a slab point past
- * either end is off the section rather than at its nearest edge.
+ * The slab, in the one drawing where its shape cannot hide. On the globe the depth sink is a parallax that
+ * appears only obliquely - the offset is radial, so it is zero at the sub-camera point. A cross-section is a
+ * depth axis drawn flat, and a dipping plane reads as one from any angle.
  */
 export function buildSection(
   store: Store, line: SectionLine, filters: Filters, now: number,
@@ -296,8 +246,8 @@ export function buildSection(
     const r = quake.primary;
     const { alongKm, offsetKm } = project(line, r.lon, r.lat);
     if (Math.abs(offsetKm) > halfWidthKm) return;
-    // Past either end is off the section, not at its nearest end: clamping would pile every event in
-    // the wider region onto the two edges and invent a structure that is not there.
+    // Past either end is off the section, not at its nearest end. Clamping would pile every event in the
+    // wider region onto the two edges and invent a structure that is not there.
     if (alongKm < 0 || alongKm > lengthKm) return;
     if (!Number.isFinite(r.depthKm)) {
       withoutDepth += 1;
@@ -310,12 +260,9 @@ export function buildSection(
   });
 
   /*
-   * Counted into `deepestKm`, which decides the axis.
-   *
-   * That is the consequence worth stating: with the slab on, a corridor across Tonga runs to 665km rather
-   * than to the 250 its own events reach, so the live marks compress into a band near the surface. That is
-   * the honest picture rather than a side effect - the footer prints the depth it drew to - and it is the
-   * whole reason to put them here. Off, nothing changes at all.
+   * Counted into `deepestKm`, which decides the axis. With the slab on, a corridor across Tonga runs to 665km
+   * rather than 250, so the live marks compress near the surface. That is the honest picture - the footer
+   * prints the depth it drew to - and it is the whole reason to put them here.
    */
   const slab: SectionPoint[] = [];
   for (let i = 0; i < slabTable.length; i += 1) {

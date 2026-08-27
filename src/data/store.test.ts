@@ -5,11 +5,9 @@ import { distanceKm } from "../geo/sphere";
 import type { Reading } from "./types";
 
 /*
- * The one Node global this file needs, declared rather than imported.
- *
- * Installing @types/node would put every Node global into a browser-only app's type surface, where
- * `setTimeout` starts returning a Timeout, `Buffer` becomes available in application code, and a
- * genuine mistake typechecks. One narrow declaration in the one file that needs it costs nothing.
+ * The one Node global this file needs, declared rather than imported. Installing @types/node would put
+ * every Node global into a browser-only app's type surface, where `setTimeout` returns a Timeout and a
+ * genuine mistake typechecks.
  */
 declare const process: { memoryUsage: () => { heapUsed: number } };
 
@@ -83,11 +81,8 @@ describe("revisions", () => {
   });
 
   it("does not count a re-poll that changed nothing", () => {
-    /*
-     * The case that decides whether the feature means anything. Both USGS feeds re-serve every
-     * event they hold, so the replace branch runs on every poll; counting arrivals there would have
-     * every earthquake claiming twenty revisions by evening.
-     */
+    // Both USGS feeds re-serve every event they hold, so the replace branch runs on every poll. Counting
+    // arrivals there would have every earthquake claiming twenty revisions by evening.
     const store = createStore(100);
     store.ingest(reading());
     for (let i = 0; i < 20; i += 1) store.ingest(reading({ receivedAt: 1_700_000_020_000 + i }));
@@ -125,8 +120,8 @@ describe("revisions", () => {
   });
 
   it("does not drift upward as revised events churn through eviction", () => {
-    // The shape of the bug the test above found: an increment and a refund on different units drifts
-    // for as long as the page is open, and one event at a time never shows it.
+    // The shape of the bug above: an increment and a refund on different units drifts for as long as the
+    // page is open, and one event at a time never shows it.
     const store = createStore(10);
     for (let i = 0; i < 200; i += 1) {
       const base = { id: `u${i}`, lon: (i % 170) - 85, lat: (i % 80) - 40, time: 1_700_000_000_000 + i * 60_000 };
@@ -232,8 +227,8 @@ describe("association", () => {
     store.ingest(reading({ lon: 179.9, lat: 0 }));
     store.ingest(reading({ source: "emsc", id: "e1", lon: -179.9, lat: 0 }));
 
-    // 0.2 degrees at the equator is about 22km, well inside the limit, and the two are on
-    // opposite sides of the date line. A naive subtraction would call it 40,000km apart.
+    // 0.2 degrees at the equator is about 22km, and the two are on opposite sides of the date line. A naive
+    // subtraction would call it 40,000km apart.
     expect(distanceKm(179.9, 0, -179.9, 0)).toBeLessThan(30);
     expect(store.size()).toBe(1);
   });
@@ -276,16 +271,12 @@ describe("ring buffer", () => {
 });
 
 /*
- * The gate for PLAN.md step 4.
+ * The failure that only shows up in a demo left running for hours. Four hours of events are pushed through
+ * a store far too small to hold them, so eviction runs tens of thousands of times, and every internal index
+ * is then checked for growth.
  *
- * The polish doc is right that this is the failure that only shows up in the demo left running
- * during an interview. Four hours of events are pushed through a store far too small to hold them,
- * so eviction runs tens of thousands of times, and every internal index is then checked for growth.
- *
- * Structural assertions rather than a heap reading, because they are deterministic and they name
- * the actual failure. A leak here is not "memory crept up", it is "an index kept a key after its
- * quake was evicted", and that is directly observable. The heap check runs too when the runner was
- * started with --expose-gc, but it is the corroboration, not the gate.
+ * Structural assertions rather than a heap reading: a leak here is "an index kept a key after its quake was
+ * evicted", which is directly observable. The heap check is corroboration, not the gate.
  */
 describe("the long session", () => {
   it("stays flat across four simulated hours", () => {
@@ -308,9 +299,8 @@ describe("the long session", () => {
       }
     }
 
-    // The buffer has to have turned over completely more than once, or this measures a warm-up
-    // rather than a steady state. Counted in evictions, which is the thing that has to be correct,
-    // rather than in readings, which is only loosely related to it.
+    // The buffer has to have turned over completely more than once, or this measures a warm-up rather than
+    // a steady state. Counted in evictions, which is the thing that has to be correct.
     const evictions = created - capacity;
     expect(evictions).toBeGreaterThan(capacity);
     expect(store.size()).toBe(capacity);
@@ -323,13 +313,13 @@ describe("the long session", () => {
       expect(s.slots).toBe(capacity);
       // At most one reading per source per quake, so this is bounded by capacity times sources.
       expect(s.byReadingId).toBeLessThanOrEqual(capacity * 2);
-      // The bucket index is the one that leaks silently: an emptied Set that is never deleted
-      // costs nothing visible and accumulates one entry per minute of wall clock forever.
+      // The bucket index is the one that leaks silently: an emptied Set that is never deleted costs nothing
+      // visible and accumulates one entry per minute of wall clock forever.
       expect(s.buckets).toBeLessThan(capacity);
     }
 
-    // Flatness, not just boundedness. The last sample must not be meaningfully larger than the
-    // first settled one, which is what separates a leak from a warm-up.
+    // Flatness, not just boundedness. The last sample must not be meaningfully larger than the first
+    // settled one, which is what separates a leak from a warm-up.
     const first = settled[0]!;
     const last = settled.at(-1)!;
     expect(last.byReadingId).toBeLessThanOrEqual(first.byReadingId * 1.05);
@@ -337,42 +327,23 @@ describe("the long session", () => {
   });
 
   /*
-   * `skipIf` rather than an early return.
-   *
-   * The first version returned early with a console note when gc was unavailable, and the default
-   * reporter swallows stdout for passing tests, so it reported as green whether or not it had
-   * measured anything. That is the polish doc's "unenforced benchmark is quietly false within a
-   * month" in miniature. Skipping puts it in the summary, where a run that did not measure says so.
+   * `skipIf` rather than an early return. Returning early with a console note reported green whether or not
+   * it had measured anything, because the default reporter swallows stdout for passing tests.
    */
   /*
-   * The warm-up was too short, so this measured the ring filling rather than the ring holding.
+   * The warm-up has to fill the ring, or this measures the ring filling rather than the ring holding.
    *
-   * "Warm up past capacity first" pushed thirty minutes, which at one reading every four seconds is
-   * **450 readings into 2,000 slots**. The ring was a quarter full when `before` was taken, so the 1.41MB
-   * it went on to report was mostly the first fill: a one-time cost, measured against a 5MB budget, and
-   * therefore a gate that would have passed a store retaining 325 bytes of garbage per ingest.
+   * The old warm-up pushed 450 readings into 2,000 slots, so the 1.41MB it reported was mostly the first
+   * fill: a one-time cost measured against a 5MB budget, which would have passed a store retaining 325
+   * bytes per ingest. Filled properly, twelve further hours cost 0.044 to 0.085MB across eight runs.
    *
-   * Measured, which is how the shape came out. With the old warm-up the first four hours cost 1.406MB and
-   * the next four cost **0.026MB**, two per cent of it. Fill the ring properly first and twelve further
-   * hours cost **0.044 to 0.085MB** across eight runs, with individual phases sometimes negative as gc
-   * reclaims more than the phase added. That is a fixed-size buffer behaving like one.
+   * Absolute, not a ratio, unlike the CPU gate next door. Retained bytes do not scale with contention: this
+   * read 1.40MB on fourteen consecutive runs, varying by less than 0.01.
    *
-   * **Absolute, not a ratio, and that is the opposite of what the CPU gate needed.** `events.perf.test.ts`
-   * budgets reference units because milliseconds legitimately scale with machine load, so an absolute
-   * threshold there is measuring the laptop. Retained bytes do not scale with contention: this number was
-   * 1.40MB on fourteen consecutive runs, alone and inside the full suite, varying by less than 0.01. A
-   * same-process reference would divide a stable measurement by a noisier one and call the result
-   * robustness. What this gate needed was not a different denominator but a correct precondition, and the
-   * precondition is now asserted rather than described.
+   * Twelve hours rather than four, because gc granularity is a step of about 0.04MB and three phases average
+   * over it. 16,151 ingests, so the 0.5MB budget is about 32 bytes per ingest.
    *
-   * Twelve hours rather than four, because gc granularity shows up as a step of about 0.04MB and three
-   * phases average over it. That is **16,151 ingests**, so the 0.5MB budget is about 32 bytes of retention
-   * per ingest against the old gate's 325, and it sits six times above the worst steady-state reading.
-   *
-   * Checked by making it fail, because a budget nobody has seen fail is a budget nobody has tested.
-   * Retaining one three-field object per ingest - the shape of a real leak, holding what should have been
-   * evicted - costs **149 bytes each and 2.302MB in total**: over this budget by 4.6x, and comfortably
-   * under the one it replaces.
+   * Checked by making it fail: retaining one three-field object per ingest costs 2.302MB, 4.6x over.
    */
   it.skipIf(!(globalThis as { gc?: () => void }).gc)("holds heap flat once the ring is full", () => {
     const gc = (globalThis as { gc?: () => void }).gc!;
@@ -385,8 +356,8 @@ describe("the long session", () => {
     };
 
     push(4 * 60 * 60 * 1000, 3);
-    // The precondition, asserted. A warm-up that stops filling the ring makes the rest of this a
-    // measurement of something else, and that is exactly how it went wrong before.
+    // The precondition, asserted. A warm-up that stops filling the ring makes the rest of this a measurement
+    // of something else, which is exactly how it went wrong before.
     expect(store.size()).toBe(store.capacity);
 
     gc();
@@ -398,8 +369,8 @@ describe("the long session", () => {
     const after = process.memoryUsage().heapUsed;
 
     const growthMb = (after - before) / 1024 / 1024;
-    // Printed rather than merely asserted: a threshold that passes tells you nothing about how
-    // much headroom it passed by, and that margin is the number worth watching over time.
+    // Printed rather than merely asserted: a threshold that passes tells you nothing about how much headroom
+    // it passed by, and that margin is the number worth watching.
     console.info(`[heap] twelve hours past capacity grew ${growthMb.toFixed(3)}MB`);
     expect(growthMb).toBeLessThan(0.5);
   });
@@ -407,12 +378,9 @@ describe("the long session", () => {
 
 describe("newest by origin, which arrival order is not", () => {
   /*
-   * The bug this exists for: the recent list pooled the 400 most recently *arrived* and sorted those.
-   * That was enough while a day's seed was three hundred events. USGS lists a feed newest first, so the
-   * last four hundred to arrive from a month's seed are its four hundred oldest, and at a 30-day window
-   * the list showed events 28.8 days old under a heading reading "newest first". Measured against the
-   * live month feed: 10,976 events, and the sixty rows on screen spanned 28.8 to 28.9 days old where
-   * they should have spanned the last 7.4 hours.
+   * The recent list used to pool the 400 most recently arrived and sort those. USGS lists a feed newest
+   * first, so the last four hundred to arrive from a month's seed are its four hundred oldest: measured
+   * against the live month feed, the sixty rows on screen spanned 28.8 to 28.9 days old.
    */
   const seed = (store: ReturnType<typeof createStore>, count: number, now: number): void => {
     // Newest first, exactly as the agency lists it and therefore as the app ingests it.
@@ -441,11 +409,8 @@ describe("newest by origin, which arrival order is not", () => {
   });
 
   it("filters before selecting, because doing it after cannot be made correct", () => {
-    /*
-     * Selecting sixty and then filtering returns however many of those sixty happen to pass, which is
-     * fewer than sixty and sometimes none. Here every recent event is excluded, so a correct answer has
-     * to reach past them into the older ones.
-     */
+    // Selecting sixty and then filtering returns however many of those sixty happen to pass, which is fewer
+    // than sixty and sometimes none. Here every recent event is excluded.
     const now = 1_700_000_000_000;
     const store = createStore(500);
     for (let i = 0; i < 100; i += 1) {
@@ -482,10 +447,9 @@ describe("newest by origin, which arrival order is not", () => {
 
 describe("clearing the store, which archive mode leans on entirely", () => {
   /*
-   * Untested until now, on the newest and most consequential method here: `showArchive` calls it and
-   * then loads a past day, so anything it forgets is stale state a viewer reads as that day's data.
-   * Asserted through the public surface rather than the private fields, because a field this misses is
-   * only a bug if something can still see it.
+   * `showArchive` calls this and then loads a past day, so anything it forgets is stale state a viewer reads
+   * as that day's data. Asserted through the public surface: a field this misses is only a bug if something
+   * can still see it.
    */
   const fill = (store: ReturnType<typeof createStore>, start: number): void => {
     for (const r of syntheticReadings({

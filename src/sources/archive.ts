@@ -5,21 +5,15 @@ import { parseEmscFrame } from "./emsc";
 /*
  * A day that has already happened, from both agencies.
  *
- * ARCHITECTURE.md listed "the window cannot go back before the page opened" as a limitation and
- * attributed it to having no backend. That attribution was wrong: both agencies expose FDSN event
- * endpoints that take an arbitrary `starttime` and `endtime`, keylessly, with
- * `access-control-allow-origin: *`. The blocker was never the backend, it was that nobody had asked
- * them for anything but the last day.
+ * ARCHITECTURE.md listed "the window cannot go back before the page opened" as a backend limitation, and that
+ * was wrong: both agencies expose FDSN event endpoints taking an arbitrary `starttime` and `endtime`,
+ * keylessly, with `access-control-allow-origin: *`.
  *
- * **What was right about the old decision is the shape, not the capability.** The note said time
- * scrubbing was "rejected rather than shipped as a worse version of itself", and the worse version is
- * a slider that quietly makes "this is happening right now" false while the interface goes on saying
- * it. So this is a *mode*, loaded on request, that replaces the live set rather than blending with it,
- * and every claim of liveness in the chrome is suppressed while it is on. See `feed.ts`.
+ * What was right about the old decision is the shape. The worse version of time scrubbing is a slider that
+ * quietly makes "this is happening right now" false, so this is a mode that replaces the live set rather
+ * than blending with it, and every claim of liveness in the chrome is suppressed while it is on.
  *
- * Both parsers are the live ones. USGS FDSN returns the same GeoJSON as its summary feeds, and EMSC's
- * catalogue rows go through the socket's own envelope, so an archived event is parsed by exactly the
- * code that parses a live one - there is no second definition of what an earthquake is.
+ * Both parsers are the live ones, so there is no second definition of what an earthquake is.
  */
 
 const USGS_QUERY = "https://earthquake.usgs.gov/fdsnws/event/1/query";
@@ -27,13 +21,8 @@ const USGS_QUERY = "https://earthquake.usgs.gov/fdsnws/event/1/query";
 const USGS_COUNT = "https://earthquake.usgs.gov/fdsnws/event/1/count";
 const EMSC_QUERY = "https://www.seismicportal.eu/fdsnws/event/1/query";
 
-/**
- * Rows asked for per agency.
- *
- * Below both services' own ceilings and above any real day: the busiest 24 hours in this project's
- * measurements produced a few hundred events above M2.5. A response that comes back at exactly this
- * length is reported as truncated rather than presented as a complete day.
- */
+/** Rows asked for per agency. Below both services' own ceilings and above any real day. A response that
+ * comes back at exactly this length is reported as truncated rather than presented as a complete day. */
 export const ARCHIVE_LIMIT = 1_500;
 
 /** FDSN wants seconds precision and no zone suffix; both services accept this form. */
@@ -53,12 +42,8 @@ export interface Archive {
   answered: Record<SourceId, ArchiveAnswer | null>;
 }
 
-/**
- * One day from each agency, merged.
- *
- * Failures are per agency and reported rather than thrown: one service being down should give a day
- * from the other with the gap stated, exactly as the live path does when a feed stops answering.
- */
+/** One day from each agency, merged. Failures are per agency and reported rather than thrown: one service
+ * being down gives a day from the other with the gap stated. */
 export async function fetchArchive(
   from: number, to: number, minMagnitude: number,
   get: (url: string) => Promise<Response> = fetch,
@@ -105,16 +90,11 @@ export async function fetchArchive(
 }
 
 /**
- * How many events a day holds, without fetching them.
+ * How many events a day holds, without fetching them. FDSN has a `count` method beside `query` that answers
+ * `{"count":684}` in forty bytes, so asking about twelve days costs less than one day's events.
  *
- * FDSN has a `count` method beside `query` that answers `{"count":684}` in forty bytes, so asking about
- * twelve days costs less than one day's events. Keyless and `access-control-allow-origin: *`, measured.
- *
- * `MAG_MIN` is the caller's business: this is the same threshold the archive loads at, so the number is
- * what the day would actually draw rather than a different census.
- *
- * Null rather than zero when the request fails, because a day with nothing in it and a day nobody could
- * ask about are the distinction this app keeps everywhere else.
+ * Null rather than zero when the request fails: a day with nothing in it and a day nobody could ask about
+ * are the distinction this app keeps everywhere else.
  */
 export async function countForDay(
   iso: string, minMagnitude: number, get: typeof fetch = fetch,

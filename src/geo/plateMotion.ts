@@ -3,26 +3,18 @@ import { DEG } from "./sphere";
 /*
  * How fast the plates are moving, and which way, at 231 points along their edges.
  *
- * The boundaries already drawn explain the lines the earthquakes fall in. This explains the boundaries:
- * a line is there because the two sides are pulling apart, colliding, or sliding past, and the arrow's
- * angle to the line is which. Along a spreading ridge the arrows run across it; at a trench they point
- * into it; on a transform they lie along it. That reading is free - it is what Bird's own azimuths do
- * once they are drawn.
+ * The boundaries explain the lines the earthquakes fall in; this explains the boundaries. Along a spreading
+ * ridge the arrows run across it, at a trench they point into it, on a transform they lie along it.
  *
- * **Every velocity here is a published measurement, not a computation.** PB2002's step file carries the
- * relative velocity of the plate on one side with respect to the other for each of its 5,819 steps, so
- * `tools/make-plate-motion.mjs` samples and rounds and nothing else. Deriving these from Euler poles
- * would have meant typing rotation axes from memory, and the app's boundary file has no plate identities
- * to apply them to anyway.
+ * Every velocity here is a published measurement. PB2002's step file carries the relative velocity for each
+ * of its 5,819 steps, so `tools/make-plate-motion.mjs` samples and rounds and nothing else.
  *
- * The one thing a reader has to be told is that the velocity is **relative**: it is one side with respect
- * to the other, not either plate's motion over the mantle. The legend sentence says so, because an arrow
- * cannot.
+ * The one thing a reader has to be told is that the velocity is relative: one side with respect to the
+ * other, not either plate's motion over the mantle. The legend says so, because an arrow cannot.
  *
- * **The samples are not imported here.** This module is reached from `app/marks.ts`, which App imports at
- * the top level, so a static import of the 7.1kB table would sit in the eager bundle to serve a toggle
- * that is off until somebody presses it - the same mistake `waves.ts` exists to have undone, where two
- * floats dragged in the whole of three.js. `loadMotion` fetches it as its own chunk on first use.
+ * The samples are not imported here. This module is reached from `app/marks.ts`, which App imports at the
+ * top level, so a static import of the 7.1kB table would sit in the eager bundle to serve a toggle that is
+ * off until somebody presses it.
  */
 
 /** `[lon, lat, azimuthDeg, mmPerYear, divergentSign, class]`, as generated. */
@@ -34,13 +26,8 @@ export async function loadMotion(): Promise<readonly MotionSample[]> {
   return module.default as MotionSample[];
 }
 
-/**
- * Arrow length, in degrees of arc, from a rate in mm/a.
- *
- * Square-rooted, which is the same choice the markers make against magnitude and for the same reason:
- * the range is 0.3 to 263 mm/a, and linear scaling puts the median at a fiftieth of the longest arrow,
- * which is not a mark. Rooted, the median lands near a third of it.
- */
+/** Arrow length, in degrees of arc, from a rate in mm/a. Square-rooted, like the markers against magnitude:
+ * the range is 0.3 to 263 mm/a, and linear scaling puts the median at a fiftieth of the longest arrow. */
 const MAX_DEG = 3.4;
 const MAX_RATE = 263.3;
 
@@ -50,11 +37,9 @@ export function arrowLengthDeg(mmPerYear: number): number {
 }
 
 /**
- * One arrow, as polylines in longitude and latitude: a shaft and two barbs.
- *
- * Walked with the destination-point formula rather than offset in lon/lat, so the shaft is a real bearing
- * on the sphere. An arrow drawn by adding degrees to a longitude points the wrong way everywhere except
- * the equator, which at 60 degrees north is wrong by a factor of two.
+ * One arrow, as polylines in longitude and latitude: a shaft and two barbs. Walked with the
+ * destination-point formula rather than offset in lon/lat, because an arrow drawn by adding degrees to a
+ * longitude points the wrong way everywhere except the equator - by a factor of two at 60 north.
  */
 export function motionArrow(
   lon: number, lat: number, azimuthDeg: number, mmPerYear: number,

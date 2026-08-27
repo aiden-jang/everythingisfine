@@ -3,19 +3,16 @@ import { reportedBy } from "./gdacs";
  * Tropical cyclones, as tracks rather than dots.
  *
  * A storm drawn as a point is a dot that happens to be a hurricane. Drawn as a track it explains itself:
- * the measured track of SAUDEL-26 runs from 7.9 to 26.5 degrees of latitude while moving west, which is
- * the poleward curve every cyclone makes and the reason none of them form on the equator. That is the
- * geography this layer arrives with, and the rule in `PLAN.local.md` is that no layer ships without one.
+ * SAUDEL-26 runs from 7.9 to 26.5 degrees of latitude while moving west, which is the poleward curve every
+ * cyclone makes and the reason none of them form on the equator.
  *
- * **Only what is happening now.** GDACS lists 99 cyclones and flags 3 of them `iscurrent`. The other 96
- * are this season's dead storms, and drawing them would be the EONET mistake again: a map that looks live
- * and is mostly a year old.
+ * Only what is happening now. GDACS lists 99 cyclones and flags 3 `iscurrent`; the other 96 are this
+ * season's dead storms.
  *
- * **The polygons are left on the server on purpose.** Each storm's geometry payload is 370kB of which 49
- * features are wind-radius rings and a forecast cone, and section I is explicit that rings in longitude
- * and latitude walk into all four traps the land mesh paid for. The 17 LineStrings are 28kB and are a
- * polyline, which this codebase already draws correctly for plate boundaries. Taking the cheap 8% and
- * refusing the expensive 92% is the whole of this decision.
+ * The polygons are left on the server on purpose. Each storm's geometry payload is 370kB, of which 49
+ * features are wind-radius rings and a forecast cone: rings in longitude and latitude walk into all four
+ * traps the land mesh paid for. The 17 LineStrings are 28kB and are a polyline, which this codebase
+ * already draws correctly.
  */
 
 const LIST = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH"
@@ -37,11 +34,8 @@ export interface Cyclone {
   /**
    * Strongest wind over the storm's life, in km/h, or null when not published.
    *
-   * Their `severity` number, not their `severitytext`. The two disagree systematically: a storm measured
-   * at 259 km/h is labelled "Tropical Storm" and one at 243 is labelled "Post-tropical Depression". The
-   * likeliest reading is that the number is the peak and the text is the classification now, which are
-   * two true statements about different moments. The number is unambiguous, carries a unit, and is the
-   * one this app can stand behind.
+   * Their `severity` number, never their `severitytext`. The two disagree systematically: a storm measured
+   * at 259 km/h is labelled "Tropical Storm". The number is unambiguous and carries a unit.
    */
   peakKmh: number | null;
   /** Where it has been, oldest first, as one polyline. Empty when the track could not be had. */
@@ -84,13 +78,12 @@ export function parseCycloneList(payload: unknown): Omit<Cyclone, "track">[] {
 /**
  * The track out of a storm's geometry payload, oldest point first.
  *
- * GDACS publishes it as seventeen two-point LineStrings rather than one line, in reverse order: each
- * segment's start is the previous segment's end. So they are stitched by walking the ends rather than by
- * trusting the `Class` numbering, which is a name and not a promise.
+ * GDACS publishes it as seventeen two-point LineStrings in reverse order, each segment's start being the
+ * previous segment's end. Stitched by walking the ends rather than by trusting the `Class` numbering,
+ * which is a name and not a promise.
  *
- * A segment spanning more than `WRAP_DEG` of longitude is dropped, for the reason `buildPlates` drops the
- * same thing: a Pacific storm really can cross the antimeridian, and joining 179 to -179 draws a line
- * across the whole world.
+ * A segment spanning more than `WRAP_DEG` is dropped: a Pacific storm really can cross the antimeridian,
+ * and joining 179 to -179 draws a line across the whole world.
  */
 export function parseTrack(payload: unknown): { lon: number; lat: number }[] {
   const features = (payload as { features?: unknown })?.features;
@@ -139,12 +132,9 @@ export function category(kmh: number | null): string | null {
 }
 
 /**
- * Current storms with their tracks, or an empty list on any failure.
- *
- * One request for the list and one per current storm, which is three. Each of those is 370kB for the 28kB
- * of track inside it, which is the price of an endpoint that returns cones and wind rings together with
- * the line. Three requests every ten minutes is worth a picture that explains itself; ninety-nine would
- * not have been.
+ * Current storms with their tracks, or an empty list on any failure. One request for the list and one per
+ * current storm, which is three. Each is 370kB for the 28kB of track inside it, which is the price of an
+ * endpoint that returns cones and wind rings with the line. Ninety-nine would not have been worth it.
  */
 export async function fetchCyclones(
   get: (url: string) => Promise<Response> = fetch,
@@ -157,10 +147,8 @@ export async function fetchCyclones(
       return [];
     }
     const current = parseCycloneList(await res.json());
-    /*
-     * The list answered, which is what this reports. A storm whose *track* request fails is still a
-     * storm and still drawn where it is, per the catch below, so a missing tail is not a dead feed.
-     */
+    // The list answered, which is what this reports. A storm whose track request fails is still a storm and
+    // still drawn where it is, so a missing tail is not a dead feed.
     onAnswer?.(true);
     return await Promise.all(current.map(async (storm) => {
       const episode = (storm as unknown as { episode?: string }).episode ?? "";

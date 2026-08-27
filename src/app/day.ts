@@ -1,19 +1,12 @@
 /*
  * What counts as a day this app can load, in one place.
  *
- * The rule existed twice and was enforced in three different ways, which is how the third way came to be
- * a browser widget. `decode` checked the format, round-tripped it and required the day to be in the past;
- * `dayRange` only parsed; and the field in the rail relied on `type="date"` plus a `max` attribute, so the
- * ceiling for a typed date was enforced by Chrome rather than by this codebase. Replacing that widget would
- * have quietly removed the only guard on the path a person actually types into.
+ * The rule existed twice and was enforced in three ways, one of which was a browser widget: the field in
+ * the rail relied on `type="date"` plus a `max` attribute, so the ceiling for a typed date was enforced by
+ * Chrome. Every path now asks this same function.
  *
- * So the guard moved to where every path goes through it: `loadArchive` refuses, and the field and the URL
- * both ask the same function the same question. The rail's stepper still checks its own ceiling, which is
- * now belt and braces rather than the enforcement.
- *
- * **"Has ended", not "is before now".** `decode` allowed `at < Date.now()`, which accepts today: a banner
- * reading "all day UTC" over a day that is still happening is the one claim the archive must not make. A
- * day qualifies once all 24 of its hours are behind us.
+ * "Has ended", not "is before now". `at < Date.now()` accepts today, and a banner reading "all day UTC"
+ * over a day that is still happening is the one claim the archive must not make.
  */
 
 /** Midnight-to-midnight in UTC, so a shared link means the same day everywhere. */
@@ -41,15 +34,11 @@ export function isArchivableDay(iso: string, now: number): boolean {
 /**
  * What the viewer typed, as far along an ISO day as it has got.
  *
- * The field it replaced was a native date input, the only browser widget left in a hand-drawn interface:
- * a platform calendar button, a locale-dependent order, and `mm/dd/yyyy` asked for a format this app
- * never prints. Every date on screen here is ISO - the banner says "2011-03-11, all day UTC" and the
- * notable list writes the same - so the field now asks for what the app shows, and a date can be copied
- * out of the list and pasted straight in.
+ * Every date on screen here is ISO, so the field asks for what the app shows and a date can be copied out
+ * of the notable list and pasted straight in.
  *
- * Digits are the input and the hyphens are ours, which is what makes backspace behave: the value is
- * rebuilt from the digits every keystroke rather than edited in place, so deleting into a hyphen removes
- * the digit before it instead of stalling on punctuation.
+ * Digits are the input and the hyphens are ours, which is what makes backspace behave: the value is rebuilt
+ * from the digits every keystroke, so deleting into a hyphen removes the digit before it.
  */
 export function typedDay(raw: string): string {
   const digits = raw.replace(/\D/g, "").slice(0, 8);

@@ -44,116 +44,44 @@ export interface HitQuake {
 }
 
 /**
- * How far from a marker's centre still counts as pointing at it.
- *
- * Generous by four pixels, because a marker for a small earthquake is under four pixels across and
- * asking someone to hit that exactly on a moving globe is asking them not to use the feature. Ties
- * go to the larger event, which is the one a person was more likely aiming at.
+ * How far from a marker's centre still counts as pointing at it. Generous by four pixels, because a small
+ * earthquake's marker is under four pixels across. Ties go to the larger event.
  */
 const HIT_SLOP_PX = 4;
 
 /**
- * How many nearest events get projected before picking a winner.
- *
- * Eight, because great-circle distance and screen distance disagree near the limb, so the closest
- * event on the sphere is not always the closest one to the pointer. Eight is more than enough to
- * contain that disagreement and small enough that the projections cost nothing.
+ * How many nearest events get projected before picking a winner. Great-circle distance and screen distance
+ * disagree near the limb, so the closest event on the sphere is not always closest to the pointer.
  */
 const SHORTLIST = 8;
 
 /*
- * The globe, and nothing on it yet.
+ * The globe's own palette.
  *
- * Step 2 of PLAN.md, so there is deliberately no animation frame loop in this file. The camera is
- * placed once and the scene renders on mount and on resize. That is not a stub standing in for a
- * loop: DESIGN.md section 8 bans ambient rotation outright, so for as long as nothing is arriving
- * there is genuinely nothing to redraw, and an idle rAF burning a frame every 16ms to draw an
- * identical picture would be the first thing to cut later anyway.
- */
-
-/*
- * The globe's own palette, raised by measurement.
+ * Every value is bounded above by the darkest stop of the data ramp: chrome brighter than the dimmest
+ * earthquake competes with the thing it is a backdrop for. The stroke is raised further than the fill,
+ * because definition comes from edges and a brighter fill just puts a large pale shape on screen.
  *
- * Land against ocean was **1.13:1**, which is not restraint, it is invisibility: the continents were
- * a suggestion and the coastline barely closed them. Every value here is bounded above by the
- * darkest stop of the data ramp, because chrome that is brighter than the dimmest earthquake starts
- * competing with the thing it is a backdrop for.
- *
- *   land  #1E293F   1.31:1 against ocean, still 1.57x darker than the ramp's floor
- *   coast #31405D   1.40:1 against land, and the stroke does the defining
- *
- * The stroke was raised further than the fill on purpose. Definition comes from edges, and
- * brightening a 1px line adds crispness without adding mass, where brightening the fill would put
- * a large pale shape on screen and pull the eye off the data.
+ * These are canvas, so the chrome's chroma ceiling of 55 does not apply and they run to 78. The
+ * `--color-coast` and `--color-plate` tokens in `index.css` deliberately do not follow: the cross-section
+ * paints text with them, and text is chrome.
  */
 /*
- * The geography, taken bluer for the drafting-sheet direction.
+ * The linework carries the drawing, and its order is load-bearing: sea, then land, then graticule, then
+ * coast, then plates.
  *
- * Every one of these is the old colour's chroma multiplied by 1.6 at **held luminance**, solved rather
- * than eyeballed, so the relative order the paragraph above argues for survives the change exactly:
- * sphere, then land, then graticule, then coast, then plates. Hue is banded to slate, with green kept
- * roughly halfway between red and blue, because letting green collapse onto red produced a violet
- * coastline at the same luminance and chroma.
+ * Two ratios were tuned from reports rather than from theory, and both went the counterintuitive way.
+ * Land sits 1.50 above sea, not 1.31: an interior that reads as ocean makes every line crossing it read
+ * as a crack, and Eurasia has no coastline in view to rescue it. Plates sit 2.52 above land, not 3.21:
+ * brighter, the closed boundaries across Asia read as cracks in the fill rather than as boundaries.
  *
- * These are canvas, so the chrome's chroma ceiling of 55 does not apply and these run to 78. The
- * `--color-coast` and `--color-plate` tokens in `index.css` deliberately do **not** follow: the cross
- * section paints text with them, that text is chrome, and 70 would fail the ceiling. Chrome quoting the
- * drawing approximates it; it does not match it.
- */
-/*
- * The linework carries the drawing, which it could not at the values these started on.
- *
- * Measured before changing anything: land against sea was **1.31**, coastline against land **1.40**, and
- * plate boundaries against coastline **1.24**. One fill and three line types inside a 1.3-to-1.8 band, so
- * the globe had an edge and a silhouette and nothing in between - Australia read, and the interior of Asia
- * was mush. It also put the two apart by nothing: plate boundaries are data and coastlines are reference,
- * and at 1.24 the data was not the louder of the two.
- *
- * The fill stays quiet and the lines take the range, which is what a blueprint does with a plan.
- *
- * **Land against sea was left at 1.31 and that was the wrong call, reported three times.** The reasoning
- * was that once the outline carries the shape the fill can stay dark - true at a coastline, useless in the
- * middle of Eurasia, which is the largest interior on the planet and has no coastline in view at all. So
- * the fill read as unfilled: reports came in as "empty lines across Russia", then "unfilled spots across
- * China", then "the gap against Mongolia and China", and each time the geometry was innocent - painting
- * the fill red proves it is solid there. It was a contrast problem wearing a geometry problem's clothes.
- *
- * Land is now **1.50** above sea, which costs coastline 2.01 -> 1.75 and plates 2.52 -> 2.20 against it.
- * Every ratio in the picture is smaller and the picture is more legible, because the one that was wrong
- * was load-bearing: an interior that reads as ocean makes every line crossing it read as a crack.
- *
- * **Plates were pulled back from 1.6 above the coastline to 1.26, reported from the app.** At 1.6 they sat
- * 3.21 above the land, and Asia's interior boundaries - Eurasia against India, Amur, Okhotsk - form closed
- * polygons across the middle of a continent. Bright lines across a dark fill do not read as boundaries
- * there, they read as cracks in it: the report was "unfilled spots, like thin lines, across China". Over
- * ocean the brightening was the fix; over land it invented a defect.
- *
- * Not reverted to the value they had, which was **darker than the coastline is now**: data under
- * reference, and the two within 1.15 of each other, which is the mush this whole comment exists to
- * undo. So they sit at the quietest value that still reads as the louder line - 2.52 above land against
- * 3.21 - and the ordering the picture depends on survives.
- *
- * Both palettes moved to the same luminances and kept their own hues, so the invariant that makes `NEUTRAL`
- * safe for the cividis ramp still holds: measured after the change, coast is 0.0950 against 0.0949 and
- * plates 0.1820 against 0.1818.
- *
- * `NEUTRAL` was re-picked rather than scaled, and its chroma fell from 49 to 14 and 30. Scaling it in
- * proportion put the coastline **9.7 dE** from cividis's second stop, below the 12.0 this project already
- * recorded as too close - so brightening it in place would have fixed the mush and reintroduced the exact
- * regression that mush was traded for. The search that replaced it holds the luminance, caps chroma at 52
- * because `--color-coast` and `--color-plate` mirror these two outside the canvas under DESIGN.md 3.1, and
- * maximises the distance to every ramp stop: the nearest is now **18** and both were within 14 of it before.
- *
- * Twice the optimiser had to be argued with rather than obeyed. Unconstrained, "furthest from a
- * blue-to-yellow ramp" is green, and constrained only to `b >= g >= r` it is teal - both correct answers to
- * the question asked and wrong answers for a blue-grey drawing. The constraint that fixed it says what the
- * palette actually is: blue, by at least 12 of it.
+ * `NEUTRAL` below must be re-picked, never scaled. Scaling the blue palette's chroma puts the coastline
+ * 9.7 dE from cividis's second stop, and under about 12 the two stop separating.
  */
 const COLOR_SPHERE = 0x031120;
 /*
- * The map's backdrop fades between these two, so both are needed as objects rather than numbers.
- * Kept equal to `--color-void` by hand. They are two copies of one decision and the palette pass
- * moved the CSS one first, which left the canvas fading to a ground the page no longer painted.
+ * Kept equal to `--color-void` by hand: two copies of one decision. The palette pass moved the CSS one
+ * first, which left the canvas fading to a ground the page no longer painted.
  */
 const COLOR_VOID_C = new Color(0x050b16);
 const COLOR_SPHERE_C = new Color(COLOR_SPHERE);
@@ -162,50 +90,31 @@ const COLOR_COAST = 0x245b83;
 /** The graticule stays dimmer than land: it is scaffolding, and it should stay behind it. */
 const COLOR_GRATICULE = 0x13334e;
 /*
- * Plate boundaries, brighter than the coastline.
- *
- * The first pass gave them the coastline's colour at 62% and they were nearly invisible, which
- * defeats the entire reason for adding them: a line you cannot see cannot explain the pattern of
- * dots sitting on it.
- *
- * They outrank the coastline deliberately. A coastline is orientation, it tells you where you are
- * looking. A plate boundary is the explanation, it tells you why the earthquakes are in a line. In
- * a seismic map the explanation should not be the fainter mark.
+ * Plate boundaries outrank the coastline, deliberately. A coastline tells you where you are looking; a
+ * plate boundary tells you why the earthquakes are in a line. The explanation should not be the fainter mark.
  */
 const COLOR_PLATES = 0x316a97;
 
 /*
  * The neutral geography, for the colourblind ramp.
  *
- * These are the pre-blueprint values, and they are kept because the bluer palette costs the *accessibility*
- * ramp something the default ramp does not pay. Holding luminance when the geography went bluer kept
- * mark-versus-ground contrast identical to a hundredth - and luminance was the wrong thing to measure alone.
- * Moving the geography toward blue moved it toward the half of the wheel cividis lives in, so perceptual
- * distance fell even though contrast did not:
- *
- *   cividis 2nd stop vs plate lines   12.0 dE -> 9.3 dE   (under ~10 is where colours stop separating)
- *   cividis low stop vs land          16.3 dE -> 12.6 dE
- *
- * The thermal ramp is warm and loses nothing, so it keeps the blue. This is DESIGN.md section 3's argument
- * running in the only direction left once the ceiling is no longer the binding constraint: chrome has to
- * survive *both* ramps, and the two ramps do not want the same chrome.
+ * The bluer palette costs the accessibility ramp something the default ramp does not pay. Holding
+ * luminance kept contrast identical to a hundredth, and luminance was the wrong thing to measure alone:
+ * moving toward blue moved toward the half of the wheel cividis lives in, and the plate lines fell from
+ * 12.0 dE to 9.3 from its second stop. The thermal ramp is warm and loses nothing, so it keeps the blue.
  */
 /*
- * These are also the values `--color-coast` and `--color-plate` still hold in `index.css`, which is why
- * the cross-section's swatches match the drawn lines **exactly** on this ramp and to dE 6.5 on the other.
- * Chrome cannot hold the blue values at all - coast is chroma 70 and plates 78, against a ceiling of 55 -
- * so 6.5 is the floor there, not a slip. Keep the two in step: change one and the swatch starts describing
- * a line nobody is drawing.
+ * These are also what `--color-coast` and `--color-plate` hold in `index.css`, so the cross-section's
+ * swatches match the drawn lines. Change one and the swatch describes a line nobody is drawing.
  */
 const NEUTRAL = {
   sphere: 0x0a101c, land: 0x25334e, graticule: 0x243149, coast: 0x555663, plates: 0x646478,
 } as const;
 
 /**
- * The graticule as an opaque colour: its old 38% over the ocean it is drawn on.
- *
- * It stopped being able to fade on alpha when it moved in front of the land in draw order, so the fade
- * moved into the colour. Computed rather than written down, so the two palettes cannot drift apart.
+ * The graticule as an opaque colour: its old 38% over the ocean it is drawn on. It stopped being able to
+ * fade on alpha when it moved in front of the land, so the fade moved into the colour. Computed, not
+ * written down, so the two palettes cannot drift apart.
  */
 const GRATICULE_ON = (palette: { sphere: number; graticule: number }): number => {
   const mix = (shift: number): number => {
@@ -227,23 +136,16 @@ const COLOR_GLINT = new Color(0xa8c4e4);
 const FRAMING = { lon: 145, lat: 12 } as const;
 
 const FOV = 32;
-/**
- * Fraction of the smaller viewport dimension the globe occupies.
- *
- * Was 0.78, which left the subject floating in a lot of nothing. 0.86 still leaves the rim room to
- * fall off into, which is the only thing the margin was ever for.
- */
+/** Fraction of the smaller viewport dimension the globe fills. The margin exists only to give the rim
+ * somewhere to fall off into. */
 const FILL = 0.86;
 
 /*
  * Rim light. Sits on the silhouette, encodes nothing, and is the one hue DESIGN.md 3.1 allows.
  *
- * Not a fresnel term. The obvious backside-shell fresnel peaks at the *shell's* silhouette rather
- * than the globe's, so it paints a hard-edged ring floating a little way off the planet with a dark
- * gap inside it. What is wanted is a halo that starts at the horizon and fades outward, so the
- * shader asks the only question that actually describes that: how close does this pixel's view ray
- * pass to the centre of the globe? At exactly one radius it grazes the horizon and the halo is
- * brightest; further out it decays; nearer in, the planet is in front of it anyway.
+ * Not a fresnel term: the obvious backside-shell fresnel peaks at the shell's silhouette, not the globe's,
+ * so it paints a hard ring floating off the planet with a dark gap inside. This asks how close the pixel's
+ * view ray passes to the centre instead, so the halo starts at the horizon and fades outward.
  */
 const ATMOSPHERE = {
   vertexShader: /* glsl */ `
@@ -265,26 +167,17 @@ const ATMOSPHERE = {
       float t = clamp((b - 1.0) / (uOuter - 1.0), 0.0, 1.0);
 
       /*
-       * The halo is brighter where the air it stands for is in sunlight.
+       * The halo is brighter where the air it stands for is in sunlight. One even ring is a lit sphere
+       * with a decal on it: the atmosphere above the midnight limb glowing as hard as the one above noon.
        *
-       * It used to be one even ring all the way round, which is a lit sphere with a decal on it: the
-       * planet already has a day side and a terminator, and the atmosphere above the midnight limb was
-       * glowing exactly as hard as the atmosphere above noon. Scattering needs a sun.
+       * Intensity only. The obvious version warms the terminator toward orange, and orange means magnitude
+       * here - a sunrise band would put a large non-data orange beside a scale whose whole contract is that
+       * colour is the reading. Brightness is free; hue is spoken for.
        *
-       * Which piece of limb a pixel belongs to is the ray's closest approach to the centre, normalised.
-       * That is the same quantity b is measured from, so it costs one dot and one normalize.
+       * Floored rather than faded out: on the night limb the halo is the only thing separating an unlit
+       * edge from the void.
        *
-       * Intensity only, deliberately, and this is the constraint the whole thing turns on. The obvious
-       * version warms the terminator toward orange, and orange means magnitude here: the ramp runs to
-       * orange and near-white at the top, so a sunrise band would put a large non-data orange beside a
-       * scale whose entire contract is that colour is the reading. It is the same objection that took
-       * additive blending off the markers, where a dense cluster summed past the top of the ramp and
-       * clipped to the one colour the chrome reserves. Brightness is free; hue is spoken for.
-       *
-       * Floored rather than faded to nothing, because the night limb is where the halo does its other
-       * job: it is the only thing separating an unlit edge from the void behind it.
-       *
-       * (No backticks in here. This is inside a template literal and one of them ends the shader.)
+       * (No backticks in here. One of them ends the template literal.)
        */
       vec3 nearest = normalize(cameraPosition + dir * -dot(cameraPosition, dir));
       float sun = mix(0.34, 1.0, smoothstep(-0.28, 0.42, dot(nearest, uSun)));
@@ -301,8 +194,8 @@ const GLINT = {
     varying vec3 vNormal;
     varying vec3 vWorld;
     void main() {
-      // Object space, like the night shell and for the same reason: the model matrix carries the
-      // sideways offset that repeats the flat map, which would move the sun on every copy but one.
+      // Object space. The model matrix carries the sideways offset that repeats the flat map, which would
+      // move the sun on every copy but one.
       vNormal = normalize(position);
       vec3 projected = fmProject(position);
       vWorld = (modelMatrix * vec4(projected, 1.0)).xyz;
@@ -322,11 +215,10 @@ const GLINT = {
       // The far hemisphere, culled the way every other layer here culls it.
       if (dot(n, toEye) <= 0.0) discard;
       /*
-       * Reflect the sun about the surface normal and ask how near that lands to the eye. A wide
-       * exponent on purpose: a mirror-smooth sea would give a point, and the sea is not smooth, so the
-       * real thing is a broad lobe tens of degrees across.
+       * Reflect the sun about the surface normal and ask how near that lands to the eye. A wide exponent
+       * on purpose: a mirror-smooth sea gives a point, and the real thing is a lobe tens of degrees across.
        *
-       * (No backticks in here. This is inside a template literal and one of them ends the shader.)
+       * (No backticks in here. One of them ends the template literal.)
        */
       float spec = pow(max(dot(reflect(-normalize(uSun), n), toEye), 0.0), uPower);
       if (spec <= 0.002) discard;
@@ -341,12 +233,7 @@ export interface Globe {
   controls: Controls;
   events: EventLayer;
   rings: RingLayer;
-  /**
-   * Hands over the committed deep-seismicity table, or null to draw none of it.
-   *
-   * Set once and then left: it is not a reading that refreshes, so there is no sync for it and nothing
-   * in `Filters` applies. Fades rather than switching, like everything else here.
-   */
+  /** The deep-seismicity table, or null to draw none. Set once and left: it is not a reading that refreshes. */
   setSlab: (points: readonly SlabPoint[] | null) => void;
     /** Hands over an aurora grid, or null to draw no sky at all. */
   setAurora: (grid: Aurora | null) => void;
@@ -361,12 +248,9 @@ export interface Globe {
   /** Picks the geography palette the given ramp needs. See `NEUTRAL` in this file. */
   setGeography: (ramp: RampName) => void;
   /**
-   * The radius the shader is drawing a given magnitude at, in CSS pixels.
-   *
-   * The hover ring and the selection bracket are HTML over the canvas, so their sizes were fixed numbers
-   * chosen against the old marker scale. Widening that scale moved the biggest marks past them - a ring
-   * meant to enclose a mark ends up inside one - and no fixed number can fix it, because the scale also
-   * grows as the camera comes in. So they ask instead of assuming.
+   * The radius the shader is drawing a given magnitude at, in CSS pixels. The hover ring and the selection
+   * bracket are HTML over the canvas, and no fixed number works: the scale also grows as the camera comes
+   * in, so a ring meant to enclose a mark ends up inside one.
    */
   markerRadius: (magnitude: number) => number;
   /** The camera's zoom, so the glyphs hold their size on screen the way the markers do. */
@@ -374,12 +258,8 @@ export interface Globe {
   /** The `kind:id` under the pointer, or null: its glyph is redrawn bright over itself. */
   setMarkHover: (id: string | null) => void;
   setMorph: (t: number) => void;
-  /**
-   * Whether earthquakes are drawn on the surface or at their own depth.
-   *
-   * Held here as well as in the layer, because the hit test has to project to the same place the
-   * shader draws and it cannot read a uniform.
-   */
+  /** Surface or true depth. Held here as well as in the layer, because the hit test has to project where
+   * the shader draws and cannot read a uniform. */
   setDepthSink: (on: boolean) => void;
   /** The entrance reveal: boundaries grow outward from the events rather than arriving with them. */
   plates: {
@@ -403,20 +283,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const camera = new PerspectiveCamera(FOV, 1, 0.1, 100);
 
   /*
-   * The globe never moves. The camera orbits it.
-   *
-   * The first pass rotated two nested groups and left the camera parked on +Z, which draws the same
-   * picture and is the wrong model the moment anything has to be picked. Every question this app
-   * asks is geographic: what is under the pointer, where is this event, where should the camera fly.
-   * With the geometry pinned to true coordinates those are all answered in degrees; with the world
-   * spinning underneath, every one of them first needs undoing by a rotation.
+   * The globe never moves; the camera orbits it. Every question this app asks is geographic - what is under
+   * the pointer, where should the camera fly - and with the geometry pinned to true coordinates those are
+   * answered in degrees. Spin the world instead and every one of them needs a rotation undone first.
    */
-  /*
-   * One group for everything with a location, so the map can be drawn more than once.
-   *
-   * The atmosphere stays outside it: it is a property of looking at a ball, not a thing at a place,
-   * and repeating it either side of a flat map would put a glowing edge in the middle of the ocean.
-   */
+  // One group for everything with a location, so the map can be drawn more than once. The atmosphere stays
+  // outside it: repeated either side of a flat map it would put a glowing edge in the middle of the ocean.
   const world = new Group();
   scene.add(world);
   const spin = new Group();
@@ -425,24 +297,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   /*
    * A plain rectangle behind the flat map, in the ocean's own colour.
    *
-   * A sphere cannot tile a straight edge at the pole: its top row is a fan of triangles whose apexes
-   * sit at each column's longitude, so flattened they leave a sawtooth along the top and bottom of the
-   * map. Cutting the polar caps out instead would put a hole at each pole on the globe, which is worse
-   * and more visible.
-   *
-   * The rectangle is the same colour as the ocean, so the sawtooth lands on it and disappears, and the
-   * map gets a defined edge rather than fading into the void.
+   * A sphere cannot tile a straight edge at the pole - its top row is a fan of triangles - so flattened it
+   * leaves a sawtooth along the top and bottom. The rectangle swallows it and gives the map a real edge.
    */
   /*
    * Opaque, and faded by its colour rather than its alpha.
    *
-   * Three.js draws every opaque object before any transparent one, and `renderOrder` only sorts
-   * within each of those two lists. A transparent backdrop therefore paints *over* the geography no
-   * matter how low its order, and the only reason it did not was that the ocean shell happened to
-   * write depth in front of it. That is a backdrop held up by an unrelated layer's depth writes.
-   *
-   * Opaque puts it back in the list its order actually means something in. It cannot fade on alpha
-   * there, so it fades from the void to the ocean instead, which is the same picture.
+   * Three.js draws every opaque object before any transparent one, and `renderOrder` sorts only within each
+   * list. A transparent backdrop paints over the geography however low its order.
    */
   const mapBase = new Mesh(
     new PlaneGeometry(2 * MAP_HALF_WIDTH, 2),
@@ -453,11 +315,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   mapBase.visible = false;
   world.add(mapBase);
 
-  /*
-   * One uniform, shared by every layer. A morph where one thing stays behind is not a projection, it
-   * is a bug wearing an animation, and sharing the object is what makes "did I wire that one up"
-   * unanswerable in the wrong direction.
-   */
+  // One uniform, shared by every layer. A morph where one thing stays behind is a bug wearing an animation.
   const morph = { value: 0 };
 
   const oceanGeom = new SphereGeometry(RADIUS_SPHERE, 96, 64, SPHERE_PHI_START);
@@ -473,18 +331,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const land = buildLand();
 
   /*
-   * The land fill is ordered, not depth-tested, and that is the whole fix for a problem that cost
-   * an afternoon: triangulation happens in flat degrees, so a triangle spanning a continent's
-   * interior chords through the sphere and the ocean pokes up through the middle of Asia. Lifting
-   * the shell only works if you know the worst sag, and the worst sag measured 0.037 radii.
+   * The land fill is ordered, not depth-tested. Triangulation happens in flat degrees, so a triangle
+   * spanning a continent's interior chords through the sphere and the ocean pokes up through Asia. Lifting
+   * the shell needs the worst sag, which measured 0.037 radii; turning the test off removes the question.
    *
-   * Turning the depth test off removes the question. Back-facing land is still discarded, because
-   * the winding survives the projection: a ring wound counter-clockwise in degrees is still
-   * counter-clockwise seen from outside the sphere, so ordinary front-face culling hides the far
-   * hemisphere exactly the way it hides the far half of the ocean sphere.
-   *
-   * The lines cannot do this. A line has no facing, so the graticule and the coastline keep their
-   * depth test and let the ocean sphere occlude their far halves.
+   * Back-facing land is still culled, because the winding survives the projection. The lines cannot do this:
+   * a line has no facing, so the graticule and the coastline keep their depth test.
    */
   const fillGeom = new BufferGeometry();
   fillGeom.setAttribute("position", new BufferAttribute(land.position, 3));
@@ -506,20 +358,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   /*
    * Opaque and drawn before the land, which is the only way it can end up behind it.
    *
-   * DESIGN.md says the graticule is "deliberately left behind the land it sits under: it is
-   * scaffolding", and it was not. It sits at 1.003, outside the ocean shell, so its near half passes
-   * the depth test - and the land fill writes no depth at all, by the decision argued above. Nothing
-   * could occlude it, so it drew *over* the continents.
+   * The graticule sits at 1.003, outside the ocean shell, so its near half passes the depth test - and the
+   * land fill writes no depth at all, by the decision above. Nothing could occlude it, so it drew over the
+   * continents: invisible at the equator, a starburst across Siberia from a polar orbit.
    *
-   * Invisible at the equator, where a 38% line over land is a whisper. Glaring from a polar orbit,
-   * where two dozen meridians converge into a starburst across Siberia and the land reads as unfilled
-   * with bare lines through it. Reported from the app, which is how it was found.
-   *
-   * `renderOrder` alone cannot fix it: three.js draws every opaque object before any transparent one,
-   * so a transparent graticule paints after the fill however low its order - the same trap the map
-   * backdrop above is opaque to avoid. So this fades by colour instead of by alpha, pre-blended against
-   * the ocean it is now only ever seen over, and `setGeography` keeps that blend in step with the
-   * palette. The far half is still occluded by the ocean's depth, because a line has no facing to cull.
+   * `renderOrder` cannot fix it, because opaque always draws before transparent. So this fades by colour,
+   * pre-blended against the ocean, and `setGeography` keeps that blend in step with the palette.
    */
   const grat = new LineSegments(gratGeom, new LineBasicMaterial({
     color: GRATICULE_ON({ sphere: COLOR_SPHERE, graticule: COLOR_GRATICULE }),
@@ -529,12 +373,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   spin.add(grat);
 
   /*
-   * Boundaries draw over the land, and that is the right way round.
-   *
-   * The instinct is to tuck them under the continents so the land reads as solid. That would hide
-   * the Himalayan front, the San Andreas and the Anatolian faults, which are the boundaries a
-   * viewer is most likely to recognise and the ones whose earthquakes are on land in the first
-   * place. Over the graticule too, because these are real geography and that is scaffolding.
+   * Boundaries draw over the land. Tucking them under would hide the Himalayan front, the San Andreas and
+   * the Anatolian faults - the ones a viewer is most likely to recognise, and the ones on land.
    */
   const plateGeom = new BufferGeometry();
   const plateBuilt = buildPlates();
@@ -545,8 +385,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   plateGeom.setAttribute("position", plateAttr);
   plateGeom.setAttribute("aLonLat", plateLlAttr);
   const plateSegments = plateData.length / 6;
-  // Hidden until the entrance reveals them. The whole point is that the dots read as scattered
-  // first, which they cannot do with the explanation already on screen.
+  // Hidden until the entrance reveals them: the dots have to read as scattered before the explanation arrives.
   plateGeom.setDrawRange(0, 0);
   const plateLines = new LineSegments(
     plateGeom,
@@ -557,15 +396,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   spin.add(plateLines);
 
   /*
-   * The leading edge of the reveal, brighter, sharing the same geometry.
-   *
-   * Fading the boundaries in was correct and did not land: they are quiet chrome by design, so a
-   * dim line appearing is a detail rather than a moment. A bright band travelling outward from the
-   * earthquakes and settling to resting weight behind itself is the same information with the
-   * revelation actually visible.
-   *
-   * Two draw calls over one buffer rather than a shader. The geometry is already sorted nearest-first,
-   * so "the band" is just a second draw range sliding along it.
+   * The leading edge of the reveal, brighter, over the same buffer. The geometry is already sorted
+   * nearest-first, so the band is a second draw range sliding along it - two draw calls, no shader.
    */
   const plateEdge = new LineSegments(
     plateGeom.clone(),
@@ -587,17 +419,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   /*
    * Night, as a shell over the geography and under the data.
    *
-   * The globe was a navy disc with outlines on it: correct, unlit, and reading as a diagram of Earth
-   * rather than as Earth. A terminator is the cheapest thing that fixes that, and it fixes it with a
-   * fact: the sun really is overhead somewhere right now, and half the earthquakes on screen are
-   * happening in the dark.
+   * One shell rather than a light on each layer: the fill, the graticule, the boundaries and the coastlines
+   * have to dim together, and four shaders that must agree is four chances for them not to.
    *
-   * One shell rather than a light on each layer. The land fill, the graticule, the plate boundaries
-   * and the coastlines all need to dim together or the night side looks like a rendering fault, and
-   * four shaders that must agree is four chances for them not to.
-   *
-   * Above the coastline and below the markers. An earthquake at 3am is not dimmer than one at noon,
-   * so the data layers are drawn after this and are untouched by it.
+   * Below the markers, because an earthquake at 3am is not dimmer than one at noon.
    */
   const aurora = auroraTexture();
   const nightGeom = new SphereGeometry(RADIUS_NIGHT, 96, 64, SPHERE_PHI_START);
@@ -610,13 +435,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         varying vec3 vNormal;
         varying vec2 vLonLat;
         void main() {
-          // Where the sun is depends on where a point is on Earth, not on where the projection has
-          // decided to draw it, so the shading direction is carried rather than derived from the
-          // vertex. Both forms travel: see the fragment shader for why one of them is not enough.
-          //
-          // Object space, not world space. Nothing above this rotates the sphere, and the one thing
-          // the model matrix does carry is the sideways offset that repeats the map, which would move
-          // the sun by four world units on every copy but the middle one.
+          // Object space, and the direction is carried rather than derived from the vertex: where the sun
+          // is depends on where a point is on Earth, not on where the projection drew it. The model matrix
+          // carries the offset that repeats the map, which would move the sun on every copy but the middle.
           vNormal = normalize(position);
           vLonLat = aLonLat;
           gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position), 1.0);
@@ -638,20 +459,13 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
         void main() {
           /*
-           * On the map the direction is rebuilt per fragment, not interpolated.
+           * On the map the direction is rebuilt per fragment, not interpolated. A normal interpolated
+           * across a triangle is only right at its corners, and flattening stretches these: each quad
+           * splits into two that interpolate differently, so a crease runs along every shared diagonal and
+           * ninety-six columns of them read as streaks across Russia.
            *
-           * A normal interpolated across a triangle is only right at its corners, and flattening
-           * stretches these triangles: each quad splits into two that interpolate differently, so a
-           * crease runs along every shared diagonal. Ninety-six columns of parallel creases read as
-           * long diagonal streaks across Russia and Europe, which is what this looked like.
-           *
-           * Longitude and latitude interpolate exactly on the map, because the map *is* the lon/lat
-           * plane, so rebuilding the direction from them per fragment has no error to accumulate.
-           * That also fixes the repeated copies, whose model matrix carries an offset the sphere
-           * normal was silently picking up.
-           *
-           * Mixed rather than switched. On the globe the interpolated normal is the exact one and the
-           * rebuilt one is not, and a hard swap partway through the morph would be a visible jump.
+           * Mixed rather than switched: on the globe the interpolated normal is the exact one, and a hard
+           * swap partway through the morph would jump.
            */
           float lam = radians(vLonLat.x);
           float phi = radians(vLonLat.y);
@@ -660,28 +474,15 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           float sun = dot(normalize(mix(normalize(vNormal), fromLonLat, uMorph)), normalize(uSun));
 
           /*
-           * Darkens one side and lifts the other, in one pass.
+           * Darkens one side and lifts the other, in one pass. Darkening alone made the globe dimmer rather
+           * than lit: it still read as a disc with a shadow instead of a ball with a sun somewhere.
            *
-           * Darkening alone made the globe dimmer rather than lit: the night side receded and the day
-           * side stayed exactly as flat as before, so the sphere still read as a disc with a shadow on
-           * it instead of as a ball with a sun somewhere.
+           * The two factors are disjoint and meet at zero across the terminator, so nothing paints there.
+           * Overlap them and a band of mid-grey reads as haze on the lens rather than as dawn.
            *
-           * The two factors are deliberately disjoint. They meet at zero across the terminator, so
-           * nothing paints there at all: overlapping them puts a band of mid-grey along the edge,
-           * which reads as haze on the lens rather than as dawn.
-           *
-           * The real terminator is not a hard edge either. Refraction and the sun's own width spread
-           * civil twilight over about six degrees, and a hard line on a sphere this size looks like a
-           * clipping fault rather than like nightfall.
-           *
-           * Wider than any of that, and deliberately. On the globe the band wraps a curve and reads as
-           * one; flattened it runs almost straight across Eurasia, and a narrow ramp there was read as
-           * a wedge with a corner missing rather than as evening. Twenty-three degrees of arc is four
-           * times physical, and is where no single edge along it is legible as a boundary.
-           *
-           * Only the night side widens. The day ramp is already broad and asymmetric on purpose, and
-           * the two still meet at 0.10 where both are zero, which is what keeps a band of mid-grey off
-           * the terminator.
+           * Twenty-three degrees of arc, four times physical. Flattened, the band runs almost straight
+           * across Eurasia, and a narrow ramp there read as a wedge with a corner missing. Only the night
+           * side widens; the day ramp is already broad.
            */
           float night = smoothstep(0.10, -0.30, sun);
           float day = smoothstep(0.10, 0.55, sun);
@@ -762,17 +563,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           /*
            * A quarter of a level of noise, because the alpha here is a very shallow ramp.
            *
-           * This overlay fades across a whole hemisphere, so its alpha changes by less than 1/255 over
-           * tens of pixels and the 8-bit framebuffer quantises it into flat steps. Over a coastline
-           * nobody notices; over the middle of Eurasia, which is the largest uniform area on the globe,
-           * the steps read as evenly spaced vertical seams - reported three times as lines or gaps
-           * across Russia, China and Mongolia. It only resolves at a 2x pixel ratio, which is why every
+           * This overlay fades across a whole hemisphere, so its alpha changes by less than 1/255 over tens
+           * of pixels and the 8-bit framebuffer quantises it into flat steps - reported three times as
+           * lines across Russia and China. It only resolves at a 2x pixel ratio, which is why every
            * screenshot taken at 1x said the fill was fine.
            *
-           * Dither rather than more geometry: the sphere was tried at 256 segments and the seams
-           * survived, because interpolation was never the problem. A hash of the pixel coordinate
-           * scatters the rounding either side of the true value, which is what turns a step into a
-           * gradient at no cost per frame.
+           * Dither, not more geometry: 256 segments changed nothing, because interpolation was never it.
            */
           float grain = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
           float dither = (grain - 0.5) / 255.0;
@@ -785,42 +581,24 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         uMorph: morph,
         uSun: { value: new Vector3(0, 0, 1) },
         /*
-         * The eclipse, as a centre and two angular radii. See `geo/eclipse.ts`.
-         *
-         * Zero radii means no eclipse, which is the case on all but a handful of days a year, so the
-         * shader's fast path is the only one most people ever hit.
+         * The eclipse, as a centre and two angular radii. Zero radii means no eclipse, which is every day
+         * but a handful a year, so the shader's fast path is the only one most people hit.
          */
         uEclipse: { value: new Vector3(0, 0, 1) },
         uPenumbraAng: { value: 0 },
         uUmbraAng: { value: 0 },
-        // Achromatic, like every other piece of chrome: a warm daylight would put hue on the one
-        // surface the data is drawn against.
+        // Achromatic, like every other piece of chrome. A warm daylight would put hue on the one surface
+        // the data is drawn against.
         uDayColor: { value: new Color(0x9fb0cc) },
         /*
          * Deep enough to read as night, shallow enough that the geography survives it.
          *
-         * 0.38 did not clear the second bar, and the measurement is the argument: land in shadow
-         * against ocean in daylight came out at 1.084:1, under the 1.13 this palette already threw out
-         * once as invisibility. Land against ocean is 1.31:1 by design, so at 0.38 the lighting was the
-         * stronger edge of the two and the shading out-contrasted the thing it was shading.
+         * At 0.38, land in shadow against ocean in daylight measured 1.084:1 - under the 1.13 this palette
+         * already threw out once as invisibility - so the lighting out-contrasted the thing it was lighting.
          *
-         * 0.26 brings the swing across the terminator to roughly 1.5:1. Still above 1.31, so the two
-         * are nearer comparable than ordered, and going lower means a night that stops reading as
-         * night. The wider ramp above is what removes the edge; this only stops the dark side
-         * swallowing the coastline.
-         */
-        /*
-         * Deeper night, and the day left where it was.
-         *
-         * The note above is right that darkening alone makes the globe dimmer rather than lit, and the
-         * day lift is what answered it - but at 0.26 the two ramps nearly cancelled and the planet read
-         * flat, a disc with a wash on it. Raising both together does nothing: rendered side by side, a
-         * variant at 0.36/0.15 and one at 0.46/0.20 were indistinguishable, because every step of night
-         * was paid back by a step of day.
-         *
-         * So only this one moved. The day side stays at the brightness it was tuned to and the night
-         * falls further from it, which is where form comes from: the terminator now has somewhere to
-         * travel. The aurora gains too, since it is multiplied by `night` and there is more of it.
+         * Only the night depth was tuned. Raising both ramps together does nothing: 0.36/0.15 and 0.46/0.20
+         * render indistinguishable, because every step of night is paid back by a step of day. The day side
+         * stays where it was tuned and the night falls further from it, which is where form comes from.
          */
         uDepth: { value: 0.44 },
         uLift: { value: 0.11 },
@@ -828,13 +606,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         // Off until a grid lands, so a failed or slow fetch draws nothing rather than a black sky.
         uAuroraOn: { value: 0 },
         /*
-         * The one hue in this app that is not a magnitude, and it is admitted as light rather than as a
-         * mark. The atmospheric rim is already blue and the day wash already pale blue, because both are
-         * illumination; an aurora joins those. Every layer after this one is a mark and stays achromatic,
-         * distinguished by shape, which matters most for wildfires, whose obvious orange is the ramp.
-         *
-         * Desaturated well below a real 557nm green, because it sits behind markers that carry meaning
-         * and must not compete with them.
+         * The one hue here that is not a magnitude, and it is admitted as light rather than as a mark. The
+         * rim is blue and the day wash pale blue for the same reason. Every layer after this is a mark and
+         * stays achromatic, which matters most for wildfires, whose obvious orange is the ramp.
          */
         uAuroraColor: { value: new Color(0x7fc9a6) },
       },
@@ -847,10 +621,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   night.renderOrder = 4.5;
   spin.add(night);
 
-  /*
-   * Storms, volcanoes and whatever comes next: over the boundaries and under the markers, like the rest
-   * of the explanatory geography. On `spin` rather than `world` so it travels with the map's copies.
-   */
+  // Over the boundaries and under the markers, like the rest of the explanatory geography. On `spin`
+  // rather than `world` so it travels with the map's copies.
   const marks = createMarkLayer(morph);
   spin.add(marks.object);
   spin.add(marks.highlight);
@@ -861,11 +633,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   /** Reused, like `sunDir`: the shader holds the reference and this only ever rewrites its contents. */
   const eclipseDir = new Vector3(0, 0, 1);
   /*
-   * Recomputed per minute, not per frame and not once.
-   *
-   * Once is wrong for a page somebody leaves open: the terminator would freeze at the moment they
-   * opened it while the earthquakes kept arriving, which is a stale claim about the world sitting
-   * next to a live one. Per frame is pointless, since the edge moves a quarter of a degree a minute.
+   * Recomputed per minute. Once is wrong for a page left open - the terminator would freeze while the
+   * earthquakes kept arriving - and per frame is pointless, since the edge moves a quarter degree a minute.
    */
   /** 0 surface, 1 hypocentre. Read by the hit test, written by the setter below. */
   let sink = 0;
@@ -875,13 +644,11 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
   let sunMinute = -1;
   /*
-   * The instant the sun, the sky and the moon are aimed at, or null to follow the wall clock.
+   * The instant the sun, sky and moon are aimed at, or null to follow the wall clock.
    *
-   * Null is the live view and is not the same as `Date.now()` passed in every frame: it means "keep
-   * using the minute throttle below", which is what stops a cheap-but-not-free trig call happening
-   * sixty times a second to move a terminator that cannot be seen to move in a minute. Any other value
-   * is an exact moment - a held cursor or an archived day - and is aimed the instant it arrives, because
-   * a scrub that lagged a minute behind the marks it is dragging would be worse than no sun at all.
+   * Null is not the same as passing `Date.now()` every frame: it means keep the minute throttle. Any other
+   * value is an exact moment and is aimed the instant it arrives, because a scrub that lagged a minute
+   * behind the marks it drags would be worse than no sun at all.
    */
   let moment: number | null = null;
   const aimSun = (at: number): void => {
@@ -895,14 +662,11 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     (glint.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
 
     /*
-     * And the moon's shadow, which is these two facts multiplied rather than a third fact.
+     * The moon's shadow, aimed from the same instant as everything else. Tonight's shadow over an archived
+     * April would be nonsense.
      *
-     * Aimed from the same instant as everything else, which is the whole reason it can exist: the shadow
-     * of tonight's moon over an archived April would be nonsense, and until the light followed the day on
-     * screen that is exactly what it would have been.
-     *
-     * Radii convert from perpendicular distances to angles on the surface here rather than in
-     * `eclipse.ts`, because the geometry is naturally perpendicular and only the shader wants angles.
+     * Radii convert from perpendicular distances to angles here rather than in `eclipse.ts`, because the
+     * geometry is naturally perpendicular and only the shader wants angles.
      */
     const shadow = solarEclipse(at);
     const nightUniforms = (night.material as ShaderMaterial).uniforms;
@@ -918,11 +682,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     }
 
     /*
-     * The sky turns here too, from the same timestamp, because the sun and the stars are the same fact.
-     *
-     * Aiming them apart is how a globe ends up with Orion overhead at noon. This is throttled to the
-     * minute along with the sun, and sidereal rotation is a quarter of a degree a minute, so the
-     * throttle cannot show.
+     * The sky turns from the same timestamp, because the sun and the stars are one fact. Aim them apart and
+     * you get Orion overhead at noon.
      */
     starfield.setTime(at, gmstDeg(at));
     // The same turn, so a line cannot separate from the star it reaches.
@@ -935,8 +696,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     planets.setTime(at);
   };
 
-  // The shell is only a container: it has to be wider than uOuter so the falloff is not clipped by
-  // its own geometry, and beyond that its radius does not affect the picture.
+  // The shell is a container. It has to be wider than uOuter so the falloff is not clipped by its own
+  // geometry; beyond that its radius does not affect the picture.
   const rim = new Mesh(
     new SphereGeometry(RADIUS_ATMOSPHERE, 64, 48),
     new ShaderMaterial({
@@ -958,39 +719,24 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   scene.add(rim);
 
   /*
-   * The real sky, as points rather than a shaded shell.
-   *
-   * `starfield.ts` owns the reasoning. What matters here is that it needs no per-frame hook: the shader
-   * places every star relative to `cameraPosition`, so orbiting sweeps it and travelling never slides it
-   * without anything in the loop having to know the layer exists.
+   * The real sky, as points. `starfield.ts` owns the reasoning. It needs no per-frame hook: the shader places
+   * every star relative to `cameraPosition`, so orbiting sweeps it without the loop knowing it exists.
    */
   const starfield = createStarfield();
   scene.add(starfield.object);
 
-  /*
-   * And the moon, which needs no table and so needs no loading.
-   *
-   * Its whole position is six lines of trigonometry, so unlike the sky there is nothing to fetch and
-   * nothing to wait for. It is aimed from the same clock as the sun, which is also what lights it.
-   */
+  // The moon needs no table and so needs no loading: its position is six lines of trigonometry. Aimed from
+  // the same clock as the sun, which is also what lights it.
   const moon = createMoon();
   scene.add(moon.object);
 
-  /*
-   * And the lines between the stars, which are off until somebody asks.
-   *
-   * The only layer up here that interprets rather than reports, so it gets a toggle for the same reason
-   * the slab and the plate motions do.
-   */
+  // Off until asked for. The only layer up here that interprets rather than reports, so it gets a toggle
+  // for the same reason the slab and the plate motions do.
   const figures = createFigures();
   scene.add(figures.object);
 
-  /*
-   * And the five that move, which need no table and no chunk.
-   *
-   * Six Kepler solutions is cheaper than fetching anything, so unlike the star catalogue there is nothing
-   * to load and nothing to wait for. Rebuilt whenever the sun is aimed, from the same clock.
-   */
+  // Six Kepler solutions is cheaper than fetching anything, so there is nothing to load. Rebuilt whenever
+  // the sun is aimed, from the same clock.
   const planets = createPlanets();
   scene.add(planets.object);
 
@@ -1016,8 +762,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   glint.renderOrder = 0.75;
   spin.add(glint);
 
-  // Added to the scene root, not to `spin`: the globe group carries no transform, and hanging the
-  // events off it would only invite someone to rotate one and not the other later.
+  // Added to the scene root, not to `spin`: the globe group carries no transform, and hanging the events
+  // off it would invite somebody to rotate one and not the other.
   const events = createEventLayer(capacity, "thermal", morph);
   world.add(events.object);
   const rings = createRingLayer("thermal", morph);
@@ -1026,21 +772,16 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   world.add(slab.object);
 
   /*
-   * Nothing under `world` is culled against its own bounds, because its bounds are the wrong shape.
+   * Nothing under `world` is culled against its own bounds, because those bounds are the wrong shape.
    *
-   * Every layer here is projected in the vertex shader, so three.js measures the sphere the geometry
-   * was built as and never the plane it draws. Flat, a layer really occupies x from -2 to 2; its
-   * bounding sphere still says radius 1.3 at the group origin. Offset by a period to repeat the map,
-   * that sphere leaves a narrow frustum while the triangles it describes are still on screen, and the
-   * copy is thrown away before it is drawn.
+   * Every layer is projected in the vertex shader, so three.js measures the sphere the geometry was built
+   * as and never the plane it draws. Flat, a layer occupies x from -2 to 2 while its bounding sphere still
+   * says radius 1.3 at the origin, so an offset copy is thrown away while its triangles are on screen.
    *
-   * The symptom was the east half of a phone going void with its earthquakes still floating in it:
-   * `events` and `rings` already set this flag, so the markers survived the cull that took the ocean,
-   * the coastline and the graticule out from under them. `visibleCopies` was right and the renderer
-   * was discarding what it asked for, which is why the copy arithmetic looked innocent.
+   * The symptom was the east half of a phone going void with its earthquakes still floating in it, because
+   * `events` and `rings` already set this flag.
    *
-   * One traverse over the finished graph rather than a flag at each `add`, so the reason is written
-   * once. Every layer is in place by this line, and one added below it would need the same treatment.
+   * One traverse over the finished graph, so the reason is written once. A layer added below needs the same.
    */
   world.traverse((o) => { o.frustumCulled = false; });
 
@@ -1064,9 +805,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
-    // Fit by whichever dimension is tighter. Fitting by height alone puts the globe off both
-    // sides of a phone; fitting by width alone leaves it swimming on a desktop. Zoom is a
-    // multiple of this, so a resize rescales the view without throwing away where you were.
+    // Fit by whichever dimension is tighter. Height alone puts the globe off both sides of a phone; width
+    // alone leaves it swimming on a desktop. Zoom is a multiple of this, so a resize keeps where you were.
     const limiting = Math.min(1, camera.aspect);
     const byHeight = 1 / (FILL * Math.tan((FOV / 2) * DEG));
     const fit = byHeight / limiting;
@@ -1080,12 +820,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   return {
     resize,
     controls,
-    /**
-     * Swaps the geography between the blue palette and the neutral one.
-     *
-     * Called with the ramp rather than a palette name, because there is exactly one reason to choose and
-     * it is which ramp the marks are drawn from. See `NEUTRAL` for the measurement.
-     */
+    /** Swaps the geography palette. Called with the ramp rather than a palette name, because which ramp the
+     * marks are drawn from is the only reason to choose. See `NEUTRAL` for the measurement. */
     markerRadius: (magnitude: number): number => markerRadiusPx(magnitude, markerScale()),
     setGeography: (ramp: RampName): void => {
       const palette = ramp === "cividis" ? NEUTRAL : BLUEPRINT;
@@ -1138,14 +874,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     /*
      * What is under the pointer, answered geographically first and in pixels second.
      *
-     * The obvious implementation projects every drawn event to the screen and compares distances.
-     * That is a matrix multiply per event per pointer move, and it needs the layer to keep a list
-     * of what it drew, which turned out to cost 40% of the fifty-thousand-event update budget.
-     *
-     * Turning the pointer into a longitude and latitude instead makes the first pass a cheap
-     * great-circle distance and no projection at all. Only a handful of nearest candidates are then
-     * projected to settle it in pixels, which is the part that has to be exact because
-     * foreshortening near the limb makes angles and pixels disagree.
+     * Projecting every drawn event is a matrix multiply per event per pointer move, and it needs the layer
+     * to keep a list of what it drew, which measured 40% of the fifty-thousand-event budget. A longitude
+     * and latitude makes the first pass a great-circle distance with no projection at all; only a handful
+     * of candidates are projected to settle it, because near the limb angles and pixels disagree.
      */
     hitTest: (clientX, clientY, store, filters, now) => {
       const under = controls.pick(clientX, clientY);
@@ -1169,20 +901,19 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       let bestKey: string | null = null;
       let bestScore = Infinity;
       for (const candidate of near) {
-        // Projected at the depth it is drawn at, so the pointer agrees with the marker rather than
-        // with the epicentre above it. Flat, the sink is off and this is the surface again.
+        // Projected at the depth it is drawn at, so the pointer agrees with the marker rather than with the
+        // epicentre above it. Flat, the sink is off and this is the surface again.
         const at = controls.project(
           candidate.lon, candidate.lat, 1 - sinkFraction(candidate.depthKm) * sink * (1 - controls.morph()),
         );
         if (!at) continue;
         const d = Math.hypot(at.x - clientX, at.y - clientY);
-        // Asked of the shader's own formula rather than copied from it. The warning this replaces was
-        // right that a drift here makes the pointer disagree with the picture; writing the constants
-        // out twice is what made the drift possible.
+        // Asked of the shader's own formula rather than copied from it. Writing the constants out twice is
+        // what lets the pointer drift away from the picture.
         const radius = markerRadiusPx(candidate.magnitude, markerScale());
         if (d > radius + HIT_SLOP_PX) continue;
-        // Ranked by how far *outside* the marker the pointer is, so a big marker does not win
-        // simply for being big when the pointer is squarely inside a small one on top of it.
+        // Ranked by how far outside the marker the pointer is, so a big marker does not win simply for
+        // being big when the pointer is squarely inside a small one on top of it.
         const score = d - radius;
         if (score < bestScore) {
           bestScore = score;
@@ -1192,11 +923,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       return bestKey;
     },
     /*
-     * Marks are picked by their anchor, at a slop the glyphs are drawn at.
-     *
-     * Wider than the marker slop because these are outlines rather than filled discs: the middle of a
-     * spiral or a triangle is mostly empty, so requiring the pointer to land on a stroke would make them
-     * feel broken. The anchor is the point the glyph stands on, which is what a person is aiming at.
+     * Marks are picked by their anchor, at a wider slop than the markers. These are outlines rather than
+     * filled discs, so requiring the pointer to land on a stroke would make them feel broken.
      */
     hitMark: (clientX, clientY) => pickMark(heldMarks, { x: clientX, y: clientY }, controls.project, 18),
     events,
@@ -1214,23 +942,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       slab.setOpacity(1 - morph.value);
     },
     /*
-     * The sky's table, handed over when its chunk lands.
-     *
-     * Loaded from `Globe.tsx` rather than here, because the caller is the only one holding `wake`. A
-     * layer that filled itself while the loop was asleep would stay invisible until something else moved,
-     * which is precisely how the plate boundaries once stayed hidden on a load where no feed answered.
+     * Loaded from `Globe.tsx` rather than here, because the caller is the only one holding `wake`. A layer
+     * that filled itself while the loop was asleep would stay invisible until something else moved.
      */
     /*
      * Which moment the sky is of.
      *
-     * The scene aimed everything from `Date.now()`, so an archived day was drawn under tonight's
-     * terminator, tonight's sky and tonight's moon phase - true of the sun long before there was a sky to
-     * join it, and the one place this app was casual about time while being pedantic about it everywhere
-     * else. It refused to backdate the storms and the fires for exactly this reason, and then backdated
-     * nothing about the light.
-     *
-     * The caller decides the instant, and there is only one rule for it in the app: the held cursor if
-     * there is one, otherwise `clockAt`, which is already the app's own idea of what time is on screen.
+     * The scene aimed everything from `Date.now()`, so an archived day was drawn under tonight's terminator,
+     * sky and moon phase. One rule decides the instant: the held cursor if there is one, otherwise `clockAt`.
      */
     setMoment: (at: number | null) => {
       moment = at;
@@ -1261,39 +980,28 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       }
 
       /*
-       * The atmosphere belongs to the planet, so it leaves with it.
-       *
-       * It is the one layer deliberately outside the morph, being a halo rather than geography, and
-       * that left it sitting at the origin on the flat map: a soft blue disc a radius wide, reading as
-       * an empty sea across Russia and China. Fading it out with the morph, rather than hiding it at
-       * the end, because it has to be gone before the geography is flat enough to notice it.
+       * The atmosphere is a halo rather than geography, so it sits outside the morph - which left it at the
+       * origin on the flat map as a soft blue disc reading as an empty sea across Russia. Faded out with the
+       * morph rather than hidden at the end, because it has to be gone before the geography is flat.
        */
       (rim.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.42 * (1 - morph.value);
       rim.visible = morph.value < 0.999;
       /*
-       * Gone by the time the map is flat, for the same reason the rim is.
-       *
-       * A star field around a rectangle is a view from space of a thing that cannot be seen from space:
-       * the projection has just given up the globe, and the sky is the one element that would still be
-       * insisting on it.
+       * Gone by the time the map is flat. A star field around a rectangle is a view from space of a thing
+       * that cannot be seen from space.
        */
       starfield.setOpacity(1 - morph.value);
       moon.setOpacity(1 - morph.value);
       figures.setOpacity(1 - morph.value);
       planets.setOpacity(1 - morph.value);
       /*
-       * Gone by the time the map is flat, and this one is not only for consistency.
-       *
-       * Flattened, every point in the slab collapses onto the epicentre it sits under, so 1,583 dots
-       * pile into the same arcs the live events already draw and the layer stops saying anything at all.
-       * Depth is the only reason it exists.
+       * Gone by the time the map is flat, and not only for consistency: flattened, every point in the slab
+       * collapses onto the epicentre it sits under. Depth is the only reason the layer exists.
        */
       if (slabOn) slab.setOpacity(1 - morph.value);
       /*
-       * Leaves with the globe, for the reason the rim and the sky do.
-       *
-       * A specular lobe on an equirectangular projection is a highlight on a sheet of paper: the whole
-       * quantity depends on a surface curving away from the eye, and the plane has stopped doing that.
+       * Leaves with the globe. A specular lobe depends on a surface curving away from the eye, and the plane
+       * has stopped doing that.
        */
       (glint.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.55 * (1 - morph.value);
       glint.visible = morph.value < 0.999;
@@ -1301,17 +1009,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       /*
        * The fill is culled on the globe and not on the map.
        *
-       * Culling is what hides the far hemisphere, since the fill does not depth test. A flat map has no
-       * far hemisphere, so there it only throws away whichever triangles the winding pass got wrong,
-       * and it got a family of them across Asia wrong: alternately wound, every other one culled, a
-       * hairline of ocean running from the Caspian to Sakhalin. None of it on the globe, where those
-       * same triangles face the camera edge-on and the gap closes to nothing.
+       * Culling is what hides the far hemisphere, since the fill does not depth test. A flat map has no far
+       * hemisphere, so there it only throws away triangles the winding pass got wrong - a family of them
+       * across Asia, leaving a hairline of ocean from the Caspian to Sakhalin.
        *
-       * Deciding the winding in longitude and latitude instead was the first attempt and measured
-       * worse, 301 gaps against 126. Removing the mechanism beats hardening the test it depends on.
+       * Deciding the winding in lon/lat instead measured worse: 301 gaps against 126.
+       *
+       * Switched late, at 0.9, so it cannot flash: by then there is no far side left to see through.
        */
-      // Late, at 0.9: by then the shape is flat enough that there is no far side left to see
-      // through, so the switch cannot flash, and the hairlines only exist once it is flat.
       const wantSide = morph.value > 0.9 ? DoubleSide : FrontSide;
       const fillMaterial = fill.material as MeshBasicMaterial;
       if (fillMaterial.side !== wantSide) {
@@ -1332,16 +1037,11 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         .copy(COLOR_VOID_C).lerp(COLOR_SPHERE_C, morph.value);
 
       /*
-       * The map repeats, by drawing the world again beside itself.
+       * The map repeats by drawing the world again beside itself. Wrapping each vertex to the nearest copy
+       * in the shader is cheaper and tears, because the three corners of one triangle can land on different
+       * copies. A whole extra pass cannot tear.
        *
-       * The alternative is wrapping each vertex to the copy nearest the camera in the shader, which is
-       * cheaper and tears: the three corners of one triangle can land on different copies, and the
-       * result is the same band across the world this projection has already produced twice from other
-       * causes. A whole extra pass cannot tear, because every pass is internally consistent.
-       *
-       * Only the copies that intersect the view are drawn, which is two most of the time and one when
-       * zoomed in. Zoomed out far enough to see the whole map at once, the neighbours are off screen
-       * and this costs nothing.
+       * Only the copies that intersect the view are drawn: two most of the time, one zoomed in.
        */
       const period = 2 * MAP_HALF_WIDTH;
       const halfHeight = camera.position.z * Math.tan((FOV / 2) * (Math.PI / 180));

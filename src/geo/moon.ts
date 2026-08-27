@@ -4,31 +4,19 @@ import { gmstDeg } from "./stars";
 /*
  * Where the moon is, in the same frame as everything else on this globe.
  *
- * The sky went in first and made this cheap: there was already a sidereal rotation to put a right
- * ascension over a longitude, and already a convention that a celestial body is reported as the point on
- * Earth it stands over. The moon is one more of those, and unlike the stars it moves fast enough that
- * getting it wrong would be obvious within a night.
+ * It sits at its real distance, which is only possible because that distance is small: 60 radii out and a
+ * quarter of a radius across, both small enough to put on screen literally. It comes out half a degree
+ * wide, and it shifts against the stars as the camera moves, which is parallax.
  *
- * **It sits at its real distance, which is only possible because that distance is small.** The globe is a
- * unit sphere, so the moon is 60 radii out and a quarter of a radius across - both numbers small enough to
- * put on screen literally. It comes out half a degree wide, which is what the moon is, and it shifts
- * slightly against the stars as the camera moves, which is what parallax is. Nothing here is scaled for
- * effect, and a viewer who thinks it looks too small is seeing the sky correctly.
+ * The phase is not computed. Lighting a sphere with the direction the sun already points gives the crescent
+ * for free, including which way it faces.
  *
- * **The phase is not computed.** Lighting a sphere with the direction the sun already points gives the
- * crescent for free, including which way it faces, which is the part hand-rolled phase code gets wrong.
- * See `globe/moon.ts`.
+ * Fourteen terms of longitude and eight of latitude, and the count was set by a consumer. Seven and four is
+ * good to a tenth of a degree - far finer than a ten-pixel disc can show - until `eclipse.ts` started
+ * multiplying this by sixty Earth radii of lever arm, where a tenth of a degree is 670km of shadow and the
+ * 2024 April eclipse came out over New Mexico instead of Chihuahua.
  *
- * **Fourteen terms of longitude and eight of latitude, and the count was set by a consumer.** The first
- * version kept seven and four, which is good to about a tenth of a degree - far finer than a ten-pixel
- * disc can show, and the honest limit was stated rather than implied. Then `eclipse.ts` started
- * multiplying this position by sixty Earth radii of lever arm, where a tenth of a degree is 670km of
- * shadow on the ground, and the 2024 April eclipse came out over New Mexico instead of Chihuahua. The
- * extra terms cost constants and nothing else.
- *
- * It is still not an ephemeris. UTC is used where the series wants Terrestrial Time, which in this decade
- * is about 69 seconds and a further 70km of shadow, and the truncation is the larger error of the two.
- * Good enough to draw where a shadow was; never good enough to tell anybody where to stand.
+ * Still not an ephemeris: UTC is used where the series wants Terrestrial Time, worth another 70km.
  */
 
 /** Mean radius, in the same kilometres the globe's own radius is quoted in. */
@@ -54,12 +42,8 @@ const cos = (deg: number): number => Math.cos(deg * DEG);
 export function moonPosition(at: number): Moon {
   const t = julianCentury(at);
 
-  /*
-   * The five arguments the abridged series is built from.
-   *
-   * `elongation` is the moon's angular distance from the sun and is what drives the phase, so the terms
-   * carrying it are the ones that matter most for how the moon looks rather than only where it is.
-   */
+  // The five arguments the abridged series is built from. `elongation` is the moon's angular distance from
+  // the sun and is what drives the phase, so its terms matter most for how the moon looks.
   const meanLongitude = 218.3164477 + 481_267.881_234_21 * t;
   const meanAnomaly = 134.9633964 + 477_198.867_505_5 * t;
   const argOfLatitude = 93.2720950 + 483_202.017_523_3 * t;
@@ -105,12 +89,8 @@ export function moonPosition(at: number): Moon {
     cos(lambda),
   ) / DEG;
 
-  /*
-   * Right ascension to longitude, which is the one line that ties this to the rest of the globe.
-   *
-   * Identical to what the star field does, and it has to be: a moon placed by a different convention
-   * than the sky behind it would drift through the constellations it is supposed to be passing.
-   */
+  // Right ascension to longitude, which ties this to the rest of the globe. Identical to what the star
+  // field does, and it has to be: a moon placed by another convention drifts through the constellations.
   let lon = rightAscension - gmstDeg(at);
   lon = ((lon % 360) + 540) % 360 - 180;
   return { lon, lat: declination, distanceKm };

@@ -7,20 +7,14 @@ import { REGIONS, type Region } from "./regions";
 /*
  * Somewhere to search, over the only two things this app can honestly search.
  *
- * Four region rows were the entire navigation, and a person arriving cold who wants Japan has to
- * either know that "Japan & Kurils" is one of the four currently showing or drag the globe until they
- * find it.
+ * There is no gazetteer and there cannot be one: every geocoder needs a key. So this searches the eleven
+ * authored regions and the place strings the two agencies wrote on the events currently held.
  *
- * **There is no gazetteer, and there cannot be one.** Every geocoder needs a key, and the project's
- * constraint is that the repo renders its first frame for anyone who clones it. So this searches the
- * eleven authored regions and the place strings the two agencies wrote on the events currently held.
- * That is a real limit with a real consequence: "Paris" finds nothing, because nothing has happened
- * there, and the empty state has to say which of the two it means. A search that answers "no results"
- * to a place that plainly exists is a search that reads as broken.
+ * That is a real limit with a real consequence: "Paris" finds nothing, because nothing has happened there,
+ * and the empty state has to say which of the two it means.
  *
- * Regions rank above places because they are authored navigation and they work at zero count: a quiet
- * Kamchatka is still somewhere to go and look, where a place only exists here while an event is in
- * the buffer.
+ * Regions rank above places because they are authored navigation and work at zero count: a quiet Kamchatka
+ * is still somewhere to go and look.
  */
 
 /** Places are grouped rather than listed: a sequence puts three hundred rows behind one name. */
@@ -51,12 +45,9 @@ export interface Results {
 export const PLACE_LIMIT = 8;
 
 /**
- * Lowercased, unaccented, punctuation flattened to single spaces.
- *
- * The agencies do not agree on any of those three. USGS writes "72 km E of Petropavlovsk-Kamchatsky,
- * Russia" and EMSC writes "OFF EAST COAST OF KAMCHATKA", and somebody typing "kamchatka" means both.
- * Accents are stripped rather than matched because a keyboard that types "Coquimbo" easily does not
- * necessarily type "Coquimbó".
+ * Lowercased, unaccented, punctuation flattened to single spaces. The agencies agree on none of those three:
+ * USGS writes "72 km E of Petropavlovsk-Kamchatsky, Russia" and EMSC writes "OFF EAST COAST OF KAMCHATKA",
+ * and somebody typing "kamchatka" means both.
  */
 export function fold(text: string): string {
   return text
@@ -68,11 +59,8 @@ export function fold(text: string): string {
 }
 
 /**
- * Whether a folded needle starts a word in a folded haystack.
- *
- * Word starts rank above bare substrings, so "chile" prefers "Coquimbo, Chile" to anything that
- * merely contains the letters. Without it the ordering is whatever the store's iteration happened to
- * be, which is arrival order and means nothing to a reader.
+ * Whether a folded needle starts a word in a folded haystack. Word starts rank above bare substrings, so
+ * "chile" prefers "Coquimbo, Chile". Without it the ordering is the store's arrival order.
  */
 function atWordStart(hay: string, needle: string): boolean {
   const i = hay.indexOf(needle);
@@ -81,11 +69,8 @@ function atWordStart(hay: string, needle: string): boolean {
 }
 
 /**
- * What the query matches, regions first, then places by relevance and then by size.
- *
- * One pass over the store. The region counts and the place groups come out of the same walk, because
- * two walks over fifty thousand events to answer one question is the thing `countByRegion` already
- * refused to do.
+ * What the query matches, regions first, then places by relevance and then by size. One pass over the store:
+ * the region counts and the place groups come out of the same walk.
  */
 export function search(
   query: string, store: Store, filters: Filters, now: number,

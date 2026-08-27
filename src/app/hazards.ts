@@ -1,4 +1,4 @@
-import { category, type Cyclone } from "../sources/cyclones";
+import type { Cyclone } from "../sources/cyclones";
 import type { Flood } from "../sources/floods";
 import type { Volcano } from "../sources/volcanoes";
 import type { Wildfire } from "../sources/wildfires";
@@ -110,5 +110,3 @@ export function hazardCount(groups: readonly HazardGroup[]): number {
   return groups.reduce((n, g) => n + g.rows.length, 0);
 }
 
-/** Re-exported so the card and the list agree about what a wind speed means. */
-export { category };

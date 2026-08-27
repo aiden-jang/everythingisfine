@@ -7,22 +7,14 @@ import { SKY_DISTANCE, SKY_GLSL } from "./sky";
 /*
  * The planets, drawn as the brightest things in the star field.
  *
- * The catalogue made the sky a place and this is what moves in it. Scrub a week of archived days and the
- * constellations hold still while five dots walk through them, which is the observation the word planet
- * comes from and the one thing a fixed catalogue can never show.
+ * Five points, rebuilt on the clock, which is the whole difference from the star field: the stars are
+ * written once and turned by a uniform, and these move against the sky rather than with it.
  *
- * **Five points, rebuilt on the clock, and that is the whole difference from the star field.** The stars
- * are written once and turned by a uniform; these have to be recomputed, because they move against the
- * sky rather than with it. Five Kepler solutions a minute is nothing.
+ * Drawn exactly like a star, on purpose - same colour, same ramp, same shader - so Venus takes its place at
+ * the top of a scale the sky already establishes.
  *
- * **Drawn exactly like a star, on purpose.** Same colour, same brightness ramp, same shader - so Venus
- * takes its place at the top of a scale the sky already establishes rather than being a new kind of mark
- * with a new rule. It looks like the brightest star up there because that is what it looks like.
- *
- * **Positions go in already turned.** The star field's buffer holds sidereal-zero directions and the
- * shader rotates the whole sky; a planet's right ascension is only true for the instant it was computed,
- * so applying the same rotation to a stale position would be wrong twice. `uSpin` stays at zero here and
- * `setTime` writes directions that are already correct for the moment.
+ * Positions go in already turned. A planet's right ascension is only true for the instant it was computed,
+ * so applying the sky's rotation to a stale position would be wrong twice: `uSpin` stays at zero here.
  */
 
 /** Sirius is -1.46 and the sky's ramp tops out there, so a brighter Venus simply saturates. */
@@ -38,13 +30,9 @@ const PLANETS = {
     void main() {
       vBright = aBright;
       gl_Position = projectionMatrix * viewMatrix * vec4(skyPoint(position), 1.0);
-      /*
-        Slightly larger than a star of the same magnitude.
-
-        Not a cheat: a planet is a disc rather than a point, so it twinkles less and reads as steadier and
-        fatter to the eye than a star of equal brightness. This is the smallest nudge that reproduces
-        that, and the brightness itself is left exactly on the star ramp.
-      */
+      // Slightly larger than a star of the same magnitude. Not a cheat: a planet is a disc rather than a
+      // point, so it twinkles less and reads as steadier and fatter to the eye. The brightness itself is
+      // left exactly on the star ramp.
       gl_PointSize = mix(2.6, 5.4, pow(aBright, 0.5)) * ${PLANET_SIZE_BOOST.toFixed(2)} * uPixelRatio;
     }`,
   fragmentShader: /* glsl */ `
@@ -108,11 +96,8 @@ export function createPlanets(): PlanetLayer {
       const all = planetPositions(at);
       for (let i = 0; i < count; i += 1) {
         const p = all[i]!;
-        /*
-         * `lon` is where the planet stands over the Earth right now, so it is already the turned
-         * direction: the same thing the star shader produces after rotating a catalogue position by
-         * -GMST. Feeding it through `starVector` unrotated is what keeps the two layers in one frame.
-         */
+        // `lon` is where the planet stands over the Earth right now, so it is already the turned direction:
+        // the same thing the star shader produces after rotating a catalogue position by -GMST.
         const [x, y, z] = starVector(p.lon, p.lat);
         positions[i * 3] = x;
         positions[i * 3 + 1] = y;

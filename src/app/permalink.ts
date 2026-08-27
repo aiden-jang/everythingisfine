@@ -3,24 +3,16 @@ import type { RampName } from "../globe/ramp";
 import type { SectionLine } from "./section";
 import { isArchivableDay } from "./day";
 import { nearestWindow } from "./windows";
-// Data bounds, which happen to live in a rendering module. Restating them here as literals is exactly
-// what produced the bug their use fixes.
+// Import the bounds, don't retype them. A retyped bound is what caused the clamp bug in `decode`.
 import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 
 /*
  * "Look at this" as a link.
  *
- * The highest-leverage item in the source doc's section 6, and the cheapest: everything it needs
- * already exists as three numbers, three filters and one identifier. It lives in the fragment, so
- * nothing is sent to a server, which is what keeps the deployment Worker-free.
+ * Everything lives in the fragment, so nothing is sent to a server and the deployment stays static.
  *
- * **The selected event is encoded by the agency's identifier, not by ours.** The store's key is
- * `q` plus an arrival counter, which is stable for as long as one page is open and completely
- * meaningless anywhere else: the twelfth event to arrive on my machine is not the twelfth on
- * yours. A link carrying `q12` would restore a *different earthquake*, which is worse than
- * restoring none, because it would look like it worked.
- *
- * `usgs:us7000abcd` is the agency's own name for the event and means the same thing everywhere.
+ * The chosen event travels as the agency's id, never ours. Our key is an arrival counter, so `q12` is a
+ * different earthquake on every machine: the link would look like it worked and show the wrong thing.
  */
 
 export interface Permalink {
@@ -33,76 +25,29 @@ export interface Permalink {
   ramp: RampName;
   /** `source:id`, or null. Not our internal key. */
   event: string | null;
-  /**
-   * The two ends of the cross-section, or null.
-   *
-   * A section is the one thing in this app somebody makes rather than chooses, so it is the one most
-   * worth sending. It also carries its own view: a section only exists on the map, so a link holding
-   * one arrives on the map whatever the recipient was last looking at. That is not the projection
-   * preference travelling, which is deliberately left out; it is the link saying what it is a section
-   * of. Without it the panel would open over a globe with no line drawn on it.
-   */
+  /** The two ends of the cross-section, or null. A link with one always lands on the map, because that is the only place a section exists. */
   section: SectionLine | null;
-  /**
-   * The moment the cursor was standing at, in epoch milliseconds, or null for live.
-   *
-   * The camera travelled and the clock did not, so "look at this" could say where and never when. That
-   * gap became obvious once the largest-event row started parking the cursor: the app's best entry point
-   * put you at a moment and produced a link that threw it away.
-   *
-   * Absolute rather than an offset back from now, because the thing being shared is a moment and not a
-   * distance from whenever the recipient happens to open it. The cost is that it can fall out of the
-   * window, which is the same cost `event` already pays and is handled the same way: restored if it
-   * fits, and said out loud if it does not.
-   */
+  /** The moment the cursor sat on, in epoch milliseconds, or null for live. Absolute, so it means the same moment to whoever opens it. */
   cursor: number | null;
-  /**
-   * The archived day being shown, as `YYYY-MM-DD`, or null when this is live.
-   *
-   * Shipping the archive without this left the link describing a view the app was no longer in: you could
-   * load a day in July and the URL still said live. This document argues throughout that a link says
-   * where *and when*, and an archived day is the strongest "when" the app has.
-   *
-   * The day rather than the span, because the span is derived from it and a URL carrying both could
-   * disagree with itself. Midnight to midnight UTC, so a shared day is the same day everywhere.
-   */
+  /** The archived day, `YYYY-MM-DD`, or null when live. The day and not the span, because the span is derived from it and two copies could disagree. */
   day: string | null;
-  /**
-   * The selected non-earthquake mark as `kind:id`, or null.
-   *
-   * The link already carried which earthquake, which day, which slice and which moment, and not which
-   * storm - a gap that arrived with mark selection and is the same one the day had. "Look at this
-   * cyclone" is exactly the kind of thing somebody sends.
-   *
-   * The agencies' own identifiers, like `e=`, so it means something on another machine. A mark that has
-   * since dropped out of its feed simply has no card, which `findSubject` already handles: the alternative
-   * is a link that resurrects a storm that has blown out.
-   */
+  /** The chosen storm, volcano, fire or flood as `kind:id`, or null. The agency's id, so it still names the same thing on another machine. */
   mark: string | null;
 }
 
+// Two places, not fourteen. A URL claiming the camera to fourteen decimals is claiming precision
+// nobody can aim with.
 const round = (value: number, places: number): number =>
   Number(value.toFixed(places));
-
 /**
- * Coordinates to two places, zoom to two, magnitude to one.
+ * Longitude back into [-180, 180). The camera's is not.
  *
- * Not for compactness. A longitude written to fourteen decimals in a shared URL is a claim to
- * sub-micron camera precision, and every number in this app is supposed to be honest about what it
- * knows. Two places is about 100 metres of camera position, which is far finer than anyone can aim.
- */
-/**
- * Longitude into [-180, 180), because the camera's is not.
- *
- * `lon` accumulates: the spring takes the shortest way round, which means crossing the date line adds
- * or subtracts a turn and nothing ever brings it back. Links were coming out as `at=499.37`, which
- * decodes correctly, since `decode` has always normalised on the way in, and is nonsense to read and
- * to send to somebody.
+ * `lon` keeps counting: cross the date line and it gains a whole turn and never gives it back. Links
+ * were coming out as `at=499.37`.
  */
 const wrapLon = (lon: number): number => {
-  // Untouched when it is already in range. The modulo form is exact in principle and not in floating
-  // point: it turns 145.8 into 145.79999999999995, which survives rounding on the way out and then
-  // comes back through `decode` unrounded, so a section did not equal itself after a round trip.
+  // Leave it alone when it already fits. The modulo turns 145.8 into 145.79999999999995, and then a
+  // section stops equalling itself after a round trip.
   if (lon >= -180 && lon < 180) return lon;
   return ((((lon + 180) % 360) + 360) % 360) - 180;
 };
@@ -116,8 +61,7 @@ export function encode(state: Permalink): string {
     `r=${state.ramp}`,
   ];
   if (state.event) parts.push(`e=${state.event}`);
-  // Seconds, not milliseconds. A cursor is read off a strip 24 buckets wide, so a shared moment is
-  // meaningful to about a minute and three digits of false precision in a URL is three too many.
+  // Seconds, not milliseconds. The strip is 24 buckets wide, so a shared moment is good to about a minute.
   if (state.cursor !== null) parts.push(`c=${Math.round(state.cursor / 1000)}`);
   if (state.day) parts.push(`d=${state.day}`);
   if (state.mark) parts.push(`k=${state.mark}`);
@@ -137,14 +81,7 @@ const RAMPS: readonly string[] = ["thermal", "cividis"];
 const clamp = (value: number, lo: number, hi: number): number =>
   Math.max(lo, Math.min(hi, value));
 
-/**
- * A fragment back into state, defensively.
- *
- * Every field is optional and every one is clamped, because a permalink is untrusted input in the
- * most ordinary way: people edit URLs, chat clients truncate them, and an old link outlives the
- * shape it was written against. Anything unreadable is dropped rather than allowed to put the
- * camera inside the planet or the magnitude filter above every earthquake that has ever happened.
- */
+/** A fragment back into state. Treat every field as untrusted: people edit URLs and chat clients cut them off. */
 export function decode(fragment: string): Partial<Permalink> {
   const out: Partial<Permalink> = {};
   const params = new URLSearchParams(fragment.replace(/^#/, ""));
@@ -154,71 +91,36 @@ export function decode(fragment: string): Partial<Permalink> {
     out.lon = wrapLon(at[0]!);
     out.lat = clamp(at[1]!, -85, 85);
     /*
-     * Sanity, and the camera does the rest.
-     *
-     * This clamped to the globe's 0.75, which is not the map's floor: the map derives its own from the
-     * zoom at which the frame is exactly 360 degrees wide, and that is 0.64 at desktop and 0.19 on a
-     * phone. So every fully zoomed-out map view shared as 0.75 and arrived up to four times tighter,
-     * losing "see everywhere at once", which is the only reason to leave the globe.
-     *
-     * The real bound is viewport-dependent and the decoder has no viewport. It also does not need one:
-     * `flyTo` runs every shared camera through `clampZoom` against the live frame. So this rejects
-     * nonsense and leaves the contextual limit to the one place that can know it.
+     * Sanity only. The real floor depends on the viewport, which the decoder does not have: it is 0.64
+     * on a desktop map and 0.19 on a phone. `flyTo` re-clamps every shared camera against the live frame.
      */
     out.zoom = clamp(at[2]!, 0.05, 3);
   }
 
   const m = Number(params.get("m"));
-  /*
-   * The bounds the slider actually has, not a pair of round numbers near them.
-   *
-   * This read `clamp(m, 0, 7)`. The control runs from `MAG_MIN` to `MAG_MAX`, which are 1 and 7.5, so a
-   * filter parked at the top of the scale shared as 7.5 and arrived as 7, and a link could ask for 0,
-   * which the slider cannot reach. Both are the sibling of the window bug above: a bound restated as a
-   * literal instead of read from the thing it is bounding.
-   */
+  // The slider's own bounds, not round numbers near them. Hard-coded 0 and 7 turned a shared 7.5 into 7.
   if (params.has("m") && Number.isFinite(m)) out.minMagnitude = clamp(m, MAG_MIN, MAG_MAX);
 
   /*
-   * Snapped to an offered window, not clamped to a day.
-   *
-   * This read `clamp(w, 1, 24)`, which was right while a day was the only choice and wrong from the
-   * moment 7d and 30d shipped: a link to a month arrived as a day, and nothing said so, which is the
-   * worst of the three possible outcomes. Snapping rather than merely widening the clamp follows the
-   * rule at the top of this function, that a link must not put the app in a state it has no other way
-   * to reach, and a 100-hour window is one: the window group would show nothing selected.
+   * Snap to a window the app offers. A plain clamp to 1-24 turned a link to a month into a day and said
+   * nothing, and a 100-hour window would leave the window group with nothing selected.
    */
   const w = Number(params.get("w"));
   if (params.has("w") && Number.isFinite(w)) out.windowHours = nearestWindow(w);
 
-  /*
-   * A day, only if it is a day.
-   *
-   * Validated as a real calendar date rather than pattern-matched: `2026-02-31` matches the shape and is
-   * not a date, and `Date.parse` would quietly roll it into March. A future day is rejected too - there
-   * is nothing to fetch - which follows the rule at the top of this function that a link must not put
-   * the app in a state it has no other way to reach.
-   */
-  // Asked rather than repeated: this was the second copy of the rule and the field in the rail was
-  // relying on a browser attribute for the third. See `day.ts`.
+  // A real calendar date, not the right shape. `2026-02-31` matches the pattern and `Date.parse` rolls it
+  // quietly into March. `day.ts` owns this rule, so don't write a second copy here.
   const day = params.get("d");
   if (day !== null && isArchivableDay(day, Date.now())) out.day = day;
 
-  /*
-   * A mark, only if it names a layer this app draws.
-   *
-   * Validated on the kind rather than accepted whole, because the id half is an agency's and this app has
-   * no business guessing its shape. An unknown kind is dropped rather than passed to `findSubject` to come
-   * back null, so a hand-edited link fails at the boundary instead of silently doing nothing.
-   */
+  // Check the kind, not the id. The id half belongs to an agency and this app should not guess its shape.
   const mark = params.get("k");
   if (mark !== null && /^(cyclone|volcano|fire|flood):.+/.test(mark)) out.mark = mark;
 
   const s = params.get("s");
   if (s !== null) {
     const chosen = s.split(",").filter((id): id is SourceId => SOURCES.includes(id));
-    // An empty source list is a real state, so it is honoured rather than treated as absent: it
-    // means "show nothing", and the rail says so.
+    // An empty list is a real state meaning "show nothing", so honour it rather than treat it as absent.
     out.sources = chosen;
   }
 
@@ -228,12 +130,7 @@ export function decode(fragment: string): Partial<Permalink> {
   const e = params.get("e");
   if (e && /^(usgs|emsc):[\w.-]{1,64}$/.test(e)) out.event = e;
 
-  /*
-   * Range-checked, not clamped. A cursor is a moment, and there is no nearest valid moment to move an
-   * unreadable one to: 1970 and the year 5000 are both simply not what the link meant, so they are
-   * dropped the way an unreadable camera is. Whether a well-formed moment is still inside the window is
-   * a different question, and one only the app with a buffer in front of it can answer.
-   */
+  // Range-checked, not clamped. There is no nearest valid moment to drag 1970 to, so drop it instead.
   const c = Number(params.get("c"));
   if (params.has("c") && Number.isFinite(c) && c > 1_000_000_000 && c < 100_000_000_000) {
     out.cursor = c * 1000;
@@ -247,14 +144,8 @@ export function decode(fragment: string): Partial<Permalink> {
       toLon: wrapLon(x[2]!),
       toLat: clamp(x[3]!, -90, 90),
     };
-    /*
-     * A line with both ends in the same place is dropped rather than restored.
-     *
-     * Its length is zero, so nothing falls inside the corridor and the panel opens to say it found
-     * nothing, which reads as a broken link rather than as an edited one. The gesture cannot produce
-     * this, since a drag under twelve pixels is treated as a dismissal, so it only arrives from a URL
-     * somebody has typed into.
-     */
+    // Both ends in one place matches nothing and reads as a broken link. The drag cannot make one, so
+    // it only ever arrives from a URL somebody typed.
     if (line.fromLon !== line.toLon || line.fromLat !== line.toLat) out.section = line;
   }
 

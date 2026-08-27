@@ -6,21 +6,12 @@ import { WINDOWS } from "./windows";
 /*
  * The day as a strip, and the control that selects part of it.
  *
- * Same idea as the magnitude filter: the scale is the track. There the ramp is the legend and the
- * thumb is the threshold; here the histogram is the legend and the thumb is the left edge of the
- * window. Hours outside it dim in place rather than disappear, so the day stays whole and you can
- * see what has been cut instead of inferring it.
+ * Same idea as the magnitude filter: the scale is the track. The histogram is the legend and the thumb is
+ * the left edge of the window. Hours outside it dim in place, so the day stays whole.
  *
- * The window is named, not dragged.
- *
- * It used to be a slider on this strip whose value was the window's left edge, which meant the strip
- * showed a day and the globe showed whatever part of it the thumb had kept: the two views disagreeing
- * by construction. It also fixed the bucket at an hour, and a month of hourly bars is seven hundred
- * and twenty of them in two hundred pixels.
- *
- * Three buttons instead, and the strip is always exactly the window. That frees the strip of one of
- * the three gestures it was carrying, so hovering a bar can belong to the bar rather than to a slider
- * lying over the top of them all.
+ * The window is named, not dragged. As a slider whose value was the window's left edge, the strip showed a
+ * day and the globe showed part of it: the two views disagreeing by construction. It also fixed the bucket
+ * at an hour, and a month of hourly bars is seven hundred and twenty of them in two hundred pixels.
  */
 
 export interface TimelineProps {
@@ -39,10 +30,8 @@ export interface TimelineProps {
   /**
    * True before any feed has vouched for the window, so an empty strip is not blamed on the filters.
    *
-   * The same distinction the rail already draws between "Waiting for the first events" and "No events
-   * match the current filters". `fetching` is not it: that is a pending *window change*, so at first
-   * paint it is false while the strip is genuinely empty, and the readout would have claimed nothing
-   * matched when in fact nothing had arrived.
+   * `fetching` is not this: that is a pending window change, so at first paint it is false while the strip
+   * is genuinely empty, and the readout would claim nothing matched when nothing had arrived.
    */
   waiting: boolean;
   /** Where the cursor sits across the strip, 0 at the old edge and 1 at now. Live reads as 1. */
@@ -57,40 +46,22 @@ export interface TimelineProps {
   onLive: () => void;
   /** The cursor's clock, already formatted, for the readout beside the transport. */
   cursorLabel: string | null;
-  /**
-   * True on an archived day, which has no right-hand edge called "now".
-   *
-   * The axis said "now" and the transport said "live" over a picture of a finished day. Both are the
-   * same mistake the layer sentences and the ages made: a label describing the present printed against
-   * a past span. The archived day's right edge is the end of that day.
-   */
+  /** True on an archived day, which has no right-hand edge called "now". The axis said "now" and the
+   * transport said "live" over a picture of a finished day. */
   archived?: boolean;
   /**
-   * How far back each feed can vouch, as a fraction of the window and a duration in words.
-   *
-   * Drawn here rather than beside the source buttons because this strip's axis already *is* the
-   * window, labelled at both ends, and the blocks on it already mean "not covered". A bar needs an
-   * axis to be read against, and inventing a second one two blocks away would be the same span
-   * measured twice.
+   * How far back each feed can vouch, as a fraction of the window and a duration in words. Drawn here
+   * because this strip's axis already is the window, labelled at both ends. A bar needs an axis to be read
+   * against, and a second one two blocks away would be the same span measured twice.
    */
   reaches: readonly { id: string; label: string; fraction: number; words: string }[];
-  /**
-   * What the bars mean, when they need saying. Empty when they do not.
-   *
-   * A list rather than one string per sentence, because these are all footnotes to the same picture and
-   * the alternative is a new prop each time the bars have something else to admit. Moved here from
-   * beside the source buttons, which is where the first one was written and two blocks from the thing it
-   * explains: a caveat about an asymmetry belongs under the picture of the asymmetry.
-   */
+  /** What the bars mean, when they need saying. A list rather than one prop per sentence: these are all
+   * footnotes to the same picture, and a caveat belongs under the picture it is about. */
   notes: readonly string[];
   /**
-   * More about the same events, rendered under the footnotes and above the transport.
-   *
-   * The size distribution goes here. It is the other axis on this exact set of events - these bars are
-   * counts against time, that chart is counts against magnitude - and it was sitting at the bottom of the
-   * rail with the play controls between the two, which read as two unrelated things that happened to be
-   * near each other. Above the transport rather than below the bars: the footnotes to the strip belong to
-   * the strip, and a fold underneath them is plainly a second reading of the same picture.
+   * More about the same events, under the footnotes and above the transport. The size distribution goes
+   * here: these bars are counts against time and that chart is counts against magnitude, and it used to
+   * sit at the bottom of the rail with the play controls between the two.
    */
   children?: ReactNode;
 }
@@ -100,20 +71,14 @@ const STRIP_PX = 44;
 const BAR_MAX_PX = 39;
 
 /*
- * Relative, not a clock time.
- *
- * The buckets are anchored to `now`, so the hour five bars back ends at 05:51 rather than 05:00 and
- * printing that reads as false precision about a bucket boundary nobody chose. The axis either side
- * is already relative, so the readout matches it.
+ * Relative, not a clock time. The buckets are anchored to `now`, so the hour five bars back ends at 05:51
+ * rather than 05:00, and printing that is false precision about a boundary nobody chose.
  */
 const HOUR_MS = 3_600_000;
 
 /**
- * How long ago a bucket was, in the coarsest unit that does not lie about the bucket's own width.
- *
- * A thirty-hour bucket described as "30h ago" reads as a precise moment thirty hours back, when it is
- * a day and a bit wide. Naming it in days at that size says roughly the right thing, and saying
- * roughly the right thing about a bucket is the honest option when the bucket is roughly that wide.
+ * How long ago a bucket was, in the coarsest unit that does not lie about the bucket's own width. A
+ * thirty-hour bucket called "30h ago" reads as a precise moment; it is a day and a bit wide.
  */
 const bucketAgo = (bucketsAgo: number, bucketMs: number): string => {
   if (bucketsAgo === 0) return "latest";
@@ -124,16 +89,10 @@ const bucketAgo = (bucketsAgo: number, bucketMs: number): string => {
 };
 
 /**
- * What one bucket is, named the same way `bucketAgo` names a distance.
+ * What one bucket is, named the way `bucketAgo` names a distance.
  *
- * `BUCKETS` is fixed at 24 and the window is 24h, 7d or 30d, so a bucket is an hour on exactly one of
- * the three and seven or thirty hours on the others. Two strings in this file said "hours" flatly - the
- * caveat under the strip and the strip's own accessible name - which made both of them wrong on two
- * windows out of three, directly under a helper whose comment explains that a bucket is not an hour.
- *
- * Rounding to days above 24 hours is `bucketAgo`'s rule rather than a new one: thirty hours called a day
- * is roughly right about something that is roughly that wide, which is the honest reading when the
- * alternative is "30-hour spans" in a sentence a viewer is meant to absorb in passing.
+ * `BUCKETS` is fixed at 24 and the window is 24h, 7d or 30d, so a bucket is an hour on exactly one of the
+ * three. Two strings here said "hours" flatly, which made both wrong on two windows out of three.
  */
 const bucketUnit = (bucketMs: number): { one: string; many: string } => {
   const h = Math.round(bucketMs / HOUR_MS);
@@ -162,20 +121,14 @@ export function Timeline({
   const unit = bucketUnit(bucketMs);
 
   /*
-   * The bars are real buttons, so holding an hour is not a mouse-only gesture.
+   * The bars are real buttons, so holding an hour is not a mouse-only gesture. A focusable group shows a
+   * focus ring where the hold is, and on a touch screen a tap does what a tap looks like it should do.
    *
-   * This was on the open-limitations list as an enhancement rather than a feature: hover had no
-   * keyboard or touch equivalent, so a keyboard user could not ask "which of these happened at 05:00"
-   * the way a pointer user could. That entry also rejected the obvious fix - "no amount of arrow-key
-   * cleverness would be discoverable enough to count" - and it was right about cleverness. A focusable
-   * group is not cleverness: it is the pattern, it shows a focus ring where the hold is, and on a touch
-   * screen a tap does what a tap looks like it should do.
+   * Focus is the hold, so there is no second state to keep in step with the pointer's. One tab stop for
+   * the whole strip on a roving `tabIndex`, the same shape `EventList` uses: twenty-four tab stops in
+   * front of the rest of the rail would be a worse barrier than the one this removes.
    *
-   * **Focus is the hold**, so there is no second state to keep in step with the pointer's. One tab stop
-   * for the whole strip on a roving `tabIndex`, the same shape `EventList` uses, because twenty-four tab
-   * stops in front of the rest of the rail would be a worse barrier than the one this removes.
-   *
-   * `STRIP_PX` is 44, which is exactly the touch-target minimum, so this costs no layout at all.
+   * `STRIP_PX` is 44, exactly the touch-target minimum, so this costs no layout.
    */
   const [barAt, setBarAt] = useState(0);
   const barRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -186,28 +139,22 @@ export function Timeline({
   };
 
   /*
-   * Square root, not linear.
-   *
-   * Counts across a day run from 0 to several hundred once a sequence starts, and linear height
-   * turns the other twenty-three hours into a flat line: the strip would show the swarm and hide
-   * the day around it. The bars answer when the activity was, and the peak is printed as a number
-   * beside them so the one quantity worth knowing exactly is read rather than estimated.
+   * Square root, not linear. Counts run from 0 to several hundred once a sequence starts, and linear
+   * height turns the other twenty-three hours into a flat line: the strip would show the swarm and hide
+   * the day around it. The peak is printed as a number beside them.
    */
   const heightOf = (count: number): number =>
     count === 0 ? 1 : Math.max(3, Math.round(Math.sqrt(count / peak) * BAR_MAX_PX));
 
   return (
-    // Paints the magnitude ramp outside the canvas, so it carries the marker the design contract
-    // excludes by name. See DESIGN.md 3.1.
+    // Paints the magnitude ramp outside the canvas, so it carries the marker the design contract excludes
+    // by name. See DESIGN.md 3.1.
     <div data-ramp>
       <div className="flex items-baseline justify-between gap-3">
-        {/* Still a label, just no longer an uppercase badge: the slider below needs an accessible
-            name, and swapping the element for a span quietly took it away. */}
-        {/*
-          Buttons, not a label for a slider that no longer exists. The group names itself by what its
-          options are, which is what makes the word "Activity" beside them redundant rather than
-          missing.
-        */}
+        {/* Still a label, just no longer an uppercase badge: the slider below needs an accessible name,
+            and swapping the element for a span quietly took it away. */}
+        {/* Buttons, not a label for a slider that no longer exists. The group names itself by what its
+            options are, which is what makes the word "Activity" redundant rather than missing. */}
         <div className="flex items-center gap-1" role="group" aria-label="Window">
           {WINDOWS.map((w) => (
             <button
@@ -217,9 +164,8 @@ export function Timeline({
               aria-pressed={hours === w.hours}
               className={`border px-1.5 py-0.5 font-mono text-[10.5px] ${
                 hours === w.hours
-                  // `border-hair` was a token that does not exist, so this fell back to `currentColor`
-                  // and drew an `ink` border - the brightest edge in the app, by accident. `faint` is
-                  // what a pressed control wears in the panel and the key.
+                  // `border-hair` is not a token, so this fell back to `currentColor` and drew an `ink`
+                  // border - the brightest edge in the app, by accident.
                   ? "border-faint bg-raised text-ink"
                   : "border-transparent text-faint hover:text-dim"
               }`}
@@ -228,11 +174,8 @@ export function Timeline({
             </button>
           ))}
         </div>
-        {/*
-          The held hour replaces the peak while hovering. Both are readings of the same strip and
-          only one of them is being asked for; showing them together put two numbers side by side
-          with nothing to say which the pointer was over.
-        */}
+        {/* The held hour replaces the peak while hovering. Both read the same strip and only one is being
+            asked for, so showing them together left two numbers with nothing saying which was which. */}
         <span className="font-mono text-[10.5px] text-faint">
           {fetching
             ? "fetching the backlog"
@@ -242,13 +185,9 @@ export function Timeline({
               : peak > 0 && tallest
                 ? `peak ${peak} · ${bucketAgo(tallest.bucketsAgo, bucketMs)}`
                 /*
-                  An empty window says so, in the slot the peak was using.
-
-                  With nothing passing the filter every bucket draws its 1px floor, so the strip becomes
-                  a row of twenty-four slivers under an axis: a frame around nothing, which reads as a
-                  rendering fault rather than as zero. The rail says "No events match the current filters"
-                  forty pixels below, and this is the same fact about the same window, so it costs a line
-                  that was already blank.
+                  An empty window says so, in the slot the peak was using. With nothing passing the filter
+                  every bucket draws its 1px floor, so the strip becomes a row of twenty-four slivers under
+                  an axis: a frame around nothing, which reads as a rendering fault rather than as zero.
                 */
                 : waiting
                   ? ""
@@ -274,11 +213,8 @@ export function Timeline({
             // otherwise could not do at all.
             if (e.key === "Escape") onFocusHourChange(null);
           }}
-          /*
-            Released when focus leaves the strip entirely, not when it moves between bars: `relatedTarget`
-            is the element gaining focus, and without this check every arrow press would clear the hold it
-            had just set.
-          */
+          /* Released when focus leaves the strip entirely, not when it moves between bars: `relatedTarget`
+             is the element gaining focus, and without this every arrow press clears the hold it just set. */
           onBlur={(e) => {
             if (!e.currentTarget.contains(e.relatedTarget as Node | null)) onFocusHourChange(null);
           }}
@@ -289,10 +225,8 @@ export function Timeline({
               ref={(node) => { barRefs.current[i] = node; }}
               type="button"
               tabIndex={i === barAt ? 0 : -1}
-              /*
-                The same words the readout uses, so the two cannot drift apart, and an hour the buffer
-                never covered says so rather than reading as a quiet hour.
-              */
+              /* The same words the readout uses, so the two cannot drift, and an hour the buffer never
+                 covered says so rather than reading as a quiet hour. */
               aria-label={bar.observed
                 ? `${bar.count} ${bar.count === 1 ? "event" : "events"}, `
                   + `${bucketAgo(bar.bucketsAgo, bucketMs)}`
@@ -300,11 +234,9 @@ export function Timeline({
               onFocus={() => { setBarAt(i); onFocusHourChange(bar.bucketsAgo); }}
               onPointerEnter={() => onFocusHourChange(bar.bucketsAgo)}
               className={`flex h-full flex-1 cursor-pointer items-end ${
-                // Chrome, not hue: the held hour is an interface state, and the fills beside it are
-                // data. Behind the bar so it reads as a backdrop rather than as a value.
-                // A tick at the top of the column plus a lifted backdrop. The backdrop alone was
-                // invisible: the bar fills most of the cell, so the only part of it anybody could
-                // have seen was the few pixels of headroom above a peak.
+                // Chrome, not hue: the held hour is an interface state and the fills beside it are data.
+                // A tick at the top of the column plus a lifted backdrop - the backdrop alone was invisible,
+                // since the bar fills most of the cell.
                 bar.bucketsAgo === focusHour ? "border-t border-ink bg-raised" : "border-t border-transparent"
               }`}
             >
@@ -321,11 +253,8 @@ export function Timeline({
                 />
               ) : (
                 /*
-                 * A filled block, not an empty bar.
-                 *
-                 * An hour the buffer did not cover drawn as a zero-height bar says the planet was
-                 * quiet. It says nothing of the sort: the page was not open. The block reads as
-                 * territory rather than as a measurement, which is the distinction.
+                 * A filled block, not an empty bar. An hour the buffer did not cover drawn as a zero-height
+                 * bar says the planet was quiet; it says nothing of the sort, the page was not open.
                  */
                 <div className="h-full w-full bg-raised" />
               )}
@@ -333,13 +262,9 @@ export function Timeline({
           ))}
         </div>
 
-        {/*
-          Everything after the cursor, veiled.
-
-          The globe is already only drawing up to the cursor, and a strip that went on showing the
-          whole day beside it would be the two views disagreeing about what time it is. Lighter than
-          the window veil below, because these hours are coming rather than excluded.
-        */}
+        {/* Everything after the cursor, veiled. The globe is only drawing up to the cursor, and a strip
+            showing the whole day beside it would be the two views disagreeing about what time it is.
+            Lighter than the window veil, because these hours are coming rather than excluded. */}
         {parked ? (
           <div
             className="pointer-events-none absolute inset-y-0 right-0 bg-deck/62"
@@ -360,12 +285,9 @@ export function Timeline({
         id="window-scale"
         className="mt-2 flex justify-between font-mono text-[10.5px] text-faint"
       >
-        {/*
-          The axis, and only the axis. It carried "last N hours" in the middle, which is the same
-          sentence the headline above already prints from the same number: two identical phrases in
-          one rail, and nothing to tell you which one you had just changed. The thumb marks the
-          window here, the count names it there, and a screen reader gets it from `aria-valuetext`.
-        */}
+        {/* The axis, and only the axis. It carried "last N hours" in the middle, which is the sentence the
+            headline already prints from the same number: two identical phrases in one rail, with nothing
+            to tell you which one you had just changed. */}
         <span>{archived ? "day start" : spanLabel(hours)}</span>
         <span>{archived ? "day end" : "now"}</span>
       </div>
@@ -373,38 +295,24 @@ export function Timeline({
       {/*
         How far back each feed reaches, against the axis directly above it.
 
-        The header prints a count per agency and this strip marks the hours nothing covered, and between
-        them there was no way to see that at a month USGS vouches for thirty days while EMSC vouches for
-        the last eighteen hours. The catalogue returns its most recent page whatever is asked of it, so
-        widening the window widens one bar and not the other, and that is the dual-source architecture
-        made visible rather than described.
+        The catalogue returns its most recent page whatever is asked of it, so at a month USGS vouches for
+        thirty days while EMSC vouches for the last eighteen hours. Widening the window widens one bar and
+        not the other, which is the dual-source architecture made visible rather than described.
 
-        Anchored right, because coverage reaches back from now, which is the direction the axis runs.
-
-        On screen from the first frame, both tracks empty, each filling when its own feed answers. That
-        is the same architecture legible in the first second rather than a moment later: the headline says
-        the app is asking two agencies and these say which of them has replied. It also means the load
-        state and the steady state are one visual instead of a spinner and then a chart.
+        Anchored right, because coverage reaches back from now. On screen from the first frame, both tracks
+        empty, each filling when its own feed answers, so the load state and the steady state are one visual.
       */}
       {reaches.length > 0 ? (
-        /*
-          Tight to the axis, because these measure it.
-          The axis, the two coverage rules and the transport all sat 8 to 10px apart, so four lines read
-          as four peers when they are one scale, two annotations of it, and a control. Grouping by gap
-          costs nothing and does what the weight change alone could not.
-        */
+        /* Tight to the axis, because these measure it. At 8 to 10px apart the axis, the two coverage rules
+           and the transport read as four peers, when they are one scale, two annotations and a control. */
         <div className="mt-1">
           {reaches.map((r) => (
             <div key={r.id} className="flex items-center gap-2">
               <span className="w-[34px] shrink-0 font-mono text-[10.5px] text-faint">{r.label}</span>
               {/*
-                A rule, not a track, because this one cannot be dragged.
-
-                Three horizontal lines used to sit in a row here - USGS coverage, EMSC coverage and the
-                cursor - at one weight and with no cue for which of them answers a pointer. The two that
-                do not were the *heavier* pair: 3px on a filled `raised` track against the transport's 2px
-                hairline, so the readouts looked more like controls than the control did. Weight now says
-                what is touchable, which leaves the thumb below as the only track-shaped thing in the rail.
+                A rule, not a track, because this one cannot be dragged. The two readouts were the heavier
+                pair - 3px on a filled `raised` track against the transport's 2px hairline - so they looked
+                more like controls than the control did. Weight now says what is touchable.
               */}
               <span className="relative h-px min-w-0 flex-1 bg-hairline">
                 <span
@@ -427,12 +335,9 @@ export function Timeline({
       {children}
 
       {/*
-        The transport, on its own track rather than on the strip.
-
-        The strip already carries two gestures: dragging sets the window, moving across it holds an
-        hour. A third on the same forty-four pixels would be three meanings for one drag, and the one
-        that lost would be whichever the pointer happened not to mean. So the cursor gets its own
-        line, aligned to the same width so it reads against the bars above it.
+        The transport, on its own track rather than on the strip. The strip already carries two gestures:
+        dragging sets the window, moving across it holds an hour. A third on the same forty-four pixels
+        would be three meanings for one drag.
       */}
       <div className="mt-4 flex items-center gap-2">
         <button
@@ -440,9 +345,8 @@ export function Timeline({
           onClick={onPlayToggle}
           aria-label={playing ? "Pause" : "Play the window through"}
           aria-keyshortcuts="Space"
-          // Same missing token, and the same accident: a `dim` edge on a control whose neighbours are
-          // all hairline. The glyph sits on the sans body step: it is a symbol rather than a figure, so
-          // the mono step it briefly borrowed was the wrong one.
+          // Same missing token and the same accident: a `dim` edge on a control whose neighbours are all
+          // hairline. The glyph is a symbol rather than a figure, so it sits on the sans step.
           className="h-5 w-5 shrink-0 border border-hairline text-[11px] leading-none text-dim
             hover:text-ink"
         >
@@ -456,12 +360,9 @@ export function Timeline({
           value={Math.round(cursor * 1000)}
           onChange={(e) => onScrub(Number(e.target.value) / 1000)}
           /*
-           * Arrows step a bucket, not a thousandth of the window.
-           *
-           * The track is 0 to 1000 so a pointer drag is smooth, and that made one arrow press
-           * 1/1000th of the span: 86 seconds at a day, 43 minutes at a month. Neither corresponds
-           * to anything drawn on the strip above, so the cursor moved and the picture did not, at
-           * every width. A bucket is the smallest step the bars can show.
+           * Arrows step a bucket, not a thousandth of the window. The track is 0 to 1000 so a pointer drag
+           * is smooth, which made one arrow press 86 seconds at a day and 43 minutes at a month: the cursor
+           * moved and the picture did not.
            */
           onKeyDown={(e) => {
             const by = e.key === "ArrowRight" || e.key === "ArrowUp" ? 1
@@ -476,19 +377,14 @@ export function Timeline({
           aria-keyshortcuts="Comma Period"
           className="scrub-slider flex-1"
         />
-        {/*
-          Reads "live" rather than a clock when it is live, because null is not a time. The button is
-          only offered when there is something to come back from.
-
-          On an archived day there is no live edge to be at, so the unparked state says where the cursor
-          actually is - the end of the day it is showing - rather than claiming to be live.
-        */}
+        {/* Reads "live" rather than a clock when it is live, because null is not a time. On an archived day
+            there is no live edge to be at, so the unparked state says where the cursor actually is. */}
         {parked ? (
           <button
             type="button"
             onClick={onLive}
-            // The clock is already the headline's job, and printing it twice in one rail gave two
-            // readings of one number with nothing to say which was which.
+            // The clock is already the headline's job, and printing it twice gave two readings of one
+            // number with nothing to say which was which.
             className="shrink-0 font-mono text-[10.5px] text-dim hover:text-ink"
           >
             go live
@@ -500,8 +396,8 @@ export function Timeline({
         )}
       </div>
 
-      {/* Only once some hours are observed. A caveat about the blocks, at the moment the whole strip
-          is blocks, explains a state the sentence above the rail has already named. */}
+      {/* Only once some hours are observed. A caveat about the blocks, at the moment the whole strip is
+          blocks, explains a state the sentence above the rail has already named. */}
       {unobserved ? (
         <p className="mt-2 text-[11px] leading-relaxed text-faint">
           Blocks are {unit.many} the buffer was not open for, not quiet ones.
