@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { BINS, departure, dialPoint, diurnal } from "./diurnal";
+import { BINS, departure, dialPoint, diurnal, worstNote } from "./diurnal";
 import { solarHour } from "../geo/sun";
 import type { Filters, Quake, Reading } from "../data/types";
 
@@ -144,5 +144,27 @@ describe("the dial itself", () => {
       expect(Math.hypot(p.x, p.y)).toBeCloseTo(17, 9);
       expect(Number.isFinite(p.x)).toBe(true);
     }
+  });
+});
+
+describe("the sentence the dial prints", () => {
+  it("states the largest departure, and no word about what it means", () => {
+    // Everything in one bin, which is as far from flat as 24 bins can get.
+    const at = Date.UTC(2026, 2, 15, 6, 0, 0);
+    const qs = Array.from({ length: 240 }, (_, i) => quakeAt(0, at, i));
+    const note = worstNote(diurnal(over(qs), filters, now));
+    expect(note).not.toBeNull();
+    expect(Number(note)).toBeGreaterThan(10);
+    /*
+     * A bare number to one decimal. With 24 bins roughly one strays past two sigma by luck alone, so any
+     * verdict this printed would be wrong about a third of the time - and a reader given "1.4 against a
+     * band of 2" can draw the conclusion the app must not.
+     */
+    expect(note).toMatch(/^\d+\.\d$/);
+  });
+
+  it("says nothing when there is no scatter to measure against", () => {
+    const empty = { counts: new Array(BINS).fill(0), total: 0, mean: 0, sigma: 0, worst: 0 };
+    expect(worstNote(empty)).toBeNull();
   });
 });
