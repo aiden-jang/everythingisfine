@@ -6060,3 +6060,29 @@ meaningful and hue-coded in an app where hue means magnitude - the same objectio
 `alert` out, so it stays out too. `alertscore` is a composite nobody can check, like `sig`.
 `affectedcountries` is the structured form of the `country` string already read and adds nothing.
 `glide`, `iso3`, `datemodified`, `htmldescription` and `url` are identifiers, timestamps and prose.
+
+### Both earthquake feeds are aggregators too
+
+The same gap as the hazard marks, one level deeper and on this app's own subject. USGS sends `net` - `hv`
+for the Hawaiian Volcano Observatory, `ci` for southern California, `us` for the national one - and EMSC
+sends `auth`, which is `BMKG` or `AK`. Neither was read. So an earthquake "reported by USGS" had been
+solved by seismologists at a volcano observatory and the panel could not say so, in an app with a header
+that names its feeds, a corroboration count and a revision tracker.
+
+The row already labelled "Reported by" now answers it: `USGS (ci)`, and `USGS (hv) + EMSC (BMKG)` where
+both saw it. Not in the comparison table below, which is already four columns inside a 300px panel - a
+fifth would have taken the coordinates down to nothing, and those are data where this is an attribution.
+
+**Codes kept verbatim.** Expanding `hv` needs a table of seismic networks that goes stale, and the app
+already prints `mww` and `mb` unexpanded because DESIGN section 10 wants the technical term rather than a
+paraphrase. Same argument kept GDACS's `JTWC` as initials.
+
+**`source_catalog` is deliberately not read.** EMSC always sends `EMSC-RTS`, and RTS is their real-time
+service - suggestive of "automatic", which would give a counterpart to USGS's `status`. Reading a review
+state out of a catalogue name is guessing about provenance, which is the one thing these fields exist to
+prevent.
+
+**And this find was a consequence of the last one.** Naming the agency behind each hazard was a rule-audit;
+it only became obvious that the earthquakes had the identical gap because the hazards had just been fixed.
+Worth remembering as a pattern: closing a rule in one place is the cheapest way to find where else it is
+open.

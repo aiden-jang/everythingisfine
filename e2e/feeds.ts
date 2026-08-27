@@ -117,6 +117,11 @@ const usgsFeature = (q: Quake, now: number) => ({
      */
     status: q.ago > 3 * 3_600_000 && q.magnitude >= 4 ? "reviewed" : "automatic",
     /*
+      The regional network that computed it, which USGS relays. Varied by position so the panel row is
+      not always the same two letters: `hv` is Hawaii, `ci` southern California, `us` the national one.
+    */
+    net: q.lat > 30 && q.lon < -100 ? "ci" : q.lat > 15 && q.lat < 25 ? "hv" : "us",
+    /*
      * Felt reports on the larger events only, which is roughly how the real feed behaves.
      *
      * USGS carried a count on two of thirteen events in an M4.5 day sampled while this was written, so
@@ -152,6 +157,8 @@ const emscFeature = (q: Quake, now: number) => ({
     depth: q.depthKm,
     mag: Number((q.magnitude - 0.2).toFixed(1)),
     magtype: "mb",
+    // The authority EMSC relays, so a corroborated event names two different networks in the panel.
+    auth: "BMKG",
     time: new Date(now - q.ago + 7_000).toISOString(),
     lastupdate: new Date(now - q.ago + 7_000).toISOString(),
     flynn_region: q.place.toUpperCase(),

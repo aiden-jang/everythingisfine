@@ -252,3 +252,31 @@ describe("the modelled shaking", () => {
     expect(mapped).toBeLessThanOrEqual(reported);
   });
 });
+
+describe("the contributing network", () => {
+  it("keeps the code the agency uses", () => {
+    /*
+     * USGS aggregates: `hv` is the Hawaiian Volcano Observatory, `ci` southern California. The app said
+     * "reported by USGS" for solutions it had only relayed.
+     */
+    const { readings } = parseUsgs(recorded, 1_700_000_000_000);
+    const hawaii = readings.find((r) => r.place.includes("Honaunau"));
+    expect(hawaii?.network).toBe("hv");
+    // Every event in this feed names one, so a parser reading the wrong key shows up as none.
+    expect(readings.every((r) => r.network !== undefined)).toBe(true);
+  });
+
+  it("is absent rather than blank when the agency did not say", () => {
+    const make = (net: unknown) => ({
+      type: "FeatureCollection",
+      features: [{
+        id: "x",
+        properties: { mag: 5, magType: "mb", place: "somewhere", time: 1_700_000_000_000, net },
+        geometry: { type: "Point", coordinates: [10, 20, 30] },
+      }],
+    });
+    for (const none of [null, undefined, "", "   ", 7]) {
+      expect(parseUsgs(make(none), 1).readings[0]?.network, String(none)).toBeUndefined();
+    }
+  });
+});

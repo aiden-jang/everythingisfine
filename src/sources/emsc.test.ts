@@ -390,3 +390,27 @@ describe("how far back a seed says it reaches", () => {
     expect(covered).toBe(at - (SEED_LIMIT - 1) * 60_000);
   });
 });
+
+describe("the authority behind an EMSC solution", () => {
+  it("names who computed it, not who relayed it", () => {
+    // BMKG is Indonesia's agency; EMSC passed their answer on. Both facts are now on screen.
+    const nets = (captured.frames as { data: unknown }[])
+      .map((f) => parseEmscFrame(JSON.stringify(f), 1_700_000_000_000)?.reading.network);
+    expect(nets).toContain("BMKG");
+    expect(nets.every((n) => n === undefined || n.trim() === n)).toBe(true);
+  });
+
+  it("is absent rather than blank", () => {
+    const frame = {
+      action: "create",
+      data: {
+        properties: {
+          unid: "x", mag: 5, magtype: "mb", lat: 10, lon: 20, depth: 5,
+          time: "2026-08-17T00:00:00Z", auth: "   ",
+        },
+        geometry: { coordinates: [20, 10, -5] },
+      },
+    };
+    expect(parseEmscFrame(JSON.stringify(frame), 1)?.reading.network).toBeUndefined();
+  });
+});

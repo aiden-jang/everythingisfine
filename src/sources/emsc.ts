@@ -85,6 +85,7 @@ interface EmscFeature {
   properties?: {
     unid?: unknown; lat?: unknown; lon?: unknown; depth?: unknown; mag?: unknown;
     magtype?: unknown; time?: unknown; lastupdate?: unknown; flynn_region?: unknown;
+    auth?: unknown;
     evtype?: unknown;
   };
 }
@@ -156,6 +157,19 @@ export function parseEmscFrame(raw: unknown, receivedAt: number): EmscParsed | n
       place: typeof p?.flynn_region === "string" && p.flynn_region ? p.flynn_region
         : "location not given",
       kind: EVENT_TYPES[evtype] ?? (evtype || "earthquake"),
+      /*
+       * The authority that computed it, which EMSC relays rather than produces.
+       *
+       * `BMKG` for Indonesia's agency, `AK` for the Alaska Earthquake Center. USGS carries the same fact
+       * under `net`, so both feeds can now name who did the work instead of only who passed it on. See
+       * `Reading.network`.
+       *
+       * `source_catalog` is deliberately not read. It is always `EMSC-RTS`, and RTS is their real-time
+       * service - suggestive of "automatic", which would give a counterpart to USGS's `status`. Reading a
+       * review state out of a catalogue name is guessing about provenance, which is the one thing these
+       * fields exist to prevent.
+       */
+      ...(typeof p?.auth === "string" && p.auth.trim() !== "" ? { network: p.auth.trim() } : {}),
       receivedAt,
     },
   };
