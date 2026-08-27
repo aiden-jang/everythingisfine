@@ -118,16 +118,34 @@ permission, and the custom domain is created by Wrangler on first deploy.
 
 ## Where the data comes from
 
-Live seismicity from **USGS** (polled) and **EMSC** (WebSocket), including USGS's "Did You Feel It"
-reports where anybody filed one. Storms, volcanoes, wildfires and floods from **GDACS**, each carrying
-the agency GDACS credits for it - JTWC for a Pacific typhoon, and so on. Coastlines from **Natural Earth**,
-public domain. Plate boundaries from **PB2002** (Bird, P., 2003, *An updated digital model of plate
-boundaries*, Geochemistry Geophysics Geosystems 4(3)), public domain, simplified to 0.15 degrees.
+Five hosts, no keys, nothing cached behind anything.
 
-Stars from the **Yale Bright Star Catalogue** (BSC5, Hoffleit & Warren, 5th revised edition), down to
-magnitude 6. Constellation figures from **d3-celestial**, copyright (c) 2015 Olaf Frohn, BSD 3-Clause,
-whose licence asks that this notice be retained. The moon's position is computed, not tabulated: the
-abridged lunar series, good to about a tenth of a degree.
+**Live seismicity** from **USGS** (polled, `earthquake.usgs.gov`) and **EMSC** (WebSocket,
+`seismicportal.eu`). Both are aggregators, so each reading also names the network that computed it - `hv`
+for the Hawaiian Volcano Observatory, `BMKG` for Indonesia's agency - and the panel says both. USGS's "Did
+You Feel It" counts and ShakeMap intensities come with them where anybody filed or anything was modelled.
+
+**Storms, volcanoes, wildfires and floods** from **GDACS** (`gdacs.org`), each carrying the agency GDACS
+credits for it - JTWC for a Pacific typhoon, and so on. On an archived day those five come from **NASA
+EONET** (`eonet.gsfc.nasa.gov`) instead, because GDACS's lists are flagged current rather than queryable
+by date.
+
+**The aurora** from **NOAA SWPC**'s OVATION model (`services.swpc.noaa.gov`). A forecast for a stamped
+minute rather than an observation, which is why it has no archived branch: there is no past to ask for.
+
+**Coastlines** from **Natural Earth**, public domain. **Plate boundaries** from **PB2002** (Bird, P., 2003,
+*An updated digital model of plate boundaries*, Geochemistry Geophysics Geosystems 4(3)), public domain,
+simplified to 0.15 degrees.
+
+**Stars** from the **Yale Bright Star Catalogue** (BSC5, Hoffleit & Warren, 5th revised edition), down to
+magnitude 6. **Constellation figures** from **d3-celestial**, copyright (c) 2015 Olaf Frohn, BSD 3-Clause,
+whose licence asks that this notice be retained.
+
+**The rest of the sky is computed, not tabulated**, and each states its own accuracy where it is used: the
+sun from NOAA's solar position algorithm, good to about 0.01 degrees; the moon from the abridged lunar
+series, about a tenth of a degree; the planets from the standard approximate Keplerian elements for 1800
+to 2050. Eclipses fall out of the first two multiplied together, which puts the shadow within a few
+hundred kilometres - a picture, never a forecast.
 
 ## Globe and map
 
