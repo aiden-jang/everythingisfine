@@ -22,14 +22,14 @@
     "@fontsource-variable/geist": "^5.2.5",
     "@fontsource-variable/geist-mono": "^5.2.5",
     "earcut": "^3.2.3",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "preact": "^10.29.8",
     "three": "^0.185.1",
     "topojson-client": "^3.1.0",
     "world-atlas": "^2.0.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.1",
+    "@preact/preset-vite": "^2.10.6",
     "@tailwindcss/vite": "^4.0.0",
     "@types/earcut": "^3.0.0",
     "@types/geojson": "^7946.0.16",

@@ -775,11 +775,11 @@ for once and never move; application code and geometry are what drift, so they a
 
 | Chunk | Budget (gzip) | At step 2 | 2026-08-27 |
 |---|---|---|---|
-| Application code (`index` + `Globe`) | 60KB | 2.3KB | **70.5KB, over** |
+| Application code (`index` + `Globe`) | 75KB | 2.3KB | 70.1KB |
 | Coastline and plate geometry (`land`) | 40KB | 36.8KB | **41.1KB, over** |
 | Celestial positions (`sky`) | counted, no ceiling yet | did not exist | 2.4KB |
 | three.js | 135KB | 127.3KB | 128.1KB |
-| React | 50KB | 45.7KB | 45.7KB |
+| React's API, preact's runtime | 15KB | 45.7KB | 7.8KB |
 | Stylesheet | not counted | not counted | 8.3KB |
 | Star catalogue, fetched behind the entrance | not counted | did not exist | 34.3KB |
 | Deep seismicity, fetched on toggle | not counted | did not exist | 12.0KB |
@@ -796,16 +796,22 @@ fell to 41.1KB and `sky` came out at 2.4KB, which accounts for the difference ex
 preloaded exactly as `land` is and is counted here for that reason. What it buys is that each line
 measures the thing its name says, which is the only reason a budget catches anything.
 
-**Two lines are still over.** `land` is 1.1KB over, which is real growth in geometry-adjacent code rather
-than misfiled sky code - the sky move was the whole 2.4KB and no more. Application code is 70.5KB against
-60, because the app has grown a real sky since that figure was written: a star field, a moon, five planets,
-both eclipse geometries, a size distribution and a felt-report reader.
+**The React lever has been pulled, which is what it was reserved for.** Application code passed 60KB - the
+app grew a real sky, a size distribution and a felt-report reader - and this section already named the
+remedy: nothing here uses React beyond components and effects, so `preact/compat` behind React's API
+reclaims most of it. That line went 45.7KB to 7.8KB, a saving of 38KB, and the application-code budget
+rises to 75KB out of it.
 
-The lever for that is named below and has not been pulled: nothing here uses React beyond components and
-effects, and `preact/compat` reclaims most of its 45.7KB. Recorded rather than quietly raised, because the
-line about a budget column that is not re-read applies with more force to one that is re-read and ignored.
+Spending a reserve is not the same as raising a budget to match reality, and the difference is that the
+four ceilings now sum to **265KB against the 285KB they summed to before**. The React line is cut to 15KB
+in the same move, so the reserve cannot quietly reappear.
 
-First load, all counted lines: **296KB gzipped.**
+**`land` is still 1.1KB over.** The sky move accounted for its whole 2.4KB and no more, so this is real
+growth in geometry-adjacent code. It would close by moving `sun.ts` and `antipode.ts` out as well, and that
+is not being done: one accounting-only chunk was worth making because a line had stopped describing its own
+name, and a second would be splitting chunks to hit a number rather than to describe one.
+
+First load, all counted lines: **258KB gzipped**, down from 296KB.
 
 The geometry line reached **42KB and was over budget** before the motion table was split out of it, and
 nobody knew, because "At step 2" was measured once and never measured again. A budget column that is not
@@ -813,9 +819,12 @@ re-read is a decoration. The motion chunk is listed separately and deliberately 
 geometry: it is fetched only if the arrows are switched on, so charging it to the first paint would make
 the number describe a load that does not happen.
 
-If application code ever genuinely needs more than 60KB, the 40KB sitting in React is the lever:
-nothing here uses React beyond components and effects, so `preact/compat` reclaims most of it. That
-is a deliberate reserve, not a plan.
+~~If application code ever genuinely needs more than 60KB, the 40KB sitting in React is the lever.~~
+**Spent on 2026-08-27.** Application code reached 70KB and `preact/compat` took the React line from 45.7KB
+to 7.8KB. The source still imports from `react` throughout and `@types/react` stays as a dev dependency,
+because compat implements that API and React's types are an accurate description of it: only the runtime
+changed. There is no second reserve of this size, so the next 15KB of application code is a real decision
+rather than a withdrawal.
 - **First arc in flight** within 2.5s on a 4x CPU throttle over a slow connection.
 - **Memory flat over a simulated 4-hour session**, ring buffer capped, drift under 5MB. This is the
   failure that only appears in the demo left running during an interview.

@@ -14,6 +14,23 @@ import { defineConfig } from "vitest/config";
 const includeLive = process.env["EIF_LIVE"] === "1";
 
 export default defineConfig({
+  /*
+   * The same react-to-preact aliases vite.config.ts declares, because this file replaces that one.
+   *
+   * vitest reads its own config and never sees the app's, so removing `react` from the dependencies
+   * broke three unit files the instant they imported a module importing it - `Cannot find package
+   * 'react'`, resolved through Node with no alias in sight. Duplicated deliberately: the alternative is
+   * importing vite.config.ts here for two lines and inheriting a plugin list the tests do not want.
+   *
+   * Two entries cover four specifiers: a string alias matches the whole name or a `name/` prefix and
+   * rewrites only that part, so `react/jsx-runtime` and `react-dom/client` follow without being listed.
+   */
+  resolve: {
+    alias: {
+      react: "preact/compat",
+      "react-dom": "preact/compat",
+    },
+  },
   test: {
     /*
      * One file at a time.

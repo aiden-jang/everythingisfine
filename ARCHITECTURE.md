@@ -6112,3 +6112,36 @@ rather than quietly raised; the React lever named in that section has not been p
 measured 73 lit pixels yesterday measured 3,244 today, which read as the star field having broken. The
 legend is bottom-anchored and has grown taller from rows added the same day, so its top had risen into the
 patch: what was being measured was the magnitude ramp. Screenshotting the patch settled it in one look.
+
+### The React lever, pulled
+
+DESIGN section 11 had reserved React as the lever for the application-code budget: nothing here uses it
+beyond components and effects. Application code reached 70KB, so it was spent. `preact/compat` behind
+React's API took that line from **45.7KB to 7.8KB gzipped**, and first load from 296KB to 258KB.
+
+The source still imports from `react` everywhere and `@types/react` stays a dev dependency. Only the
+runtime changed, and React's types are an accurate description of an API compat implements. A `paths`
+mapping to compat's own types was tried and reverted: compat ships them at `src/index.d.ts` and ships none
+at all for its jsx-runtime, so TypeScript silently fell through to preact's own JSX namespace, which spells
+`spellcheck` where React spells `spellCheck` and leaves `e.target` untyped. Setting `jsxImportSource` to
+preact does the same thing more directly. Types from React, runtime from preact, no bridge between them.
+
+**`@preact/preset-vite` rather than hand-written aliases**, because `@vitejs/plugin-react` injects a
+react-refresh runtime preact does not implement, which would have broken the dev server the browser suite
+runs against.
+
+**And the preset's aliases only reach the client build.** Removing `react` from the dependencies broke three
+unit files the moment they imported a module that imports it - `Cannot find package 'react'`, resolved
+through Node with no alias in sight. `vitest.config.ts` is a separate file that never reads the app's
+config, so the aliases are declared in both. Two entries cover four specifiers: a string alias matches the
+whole name or a `name/` prefix and rewrites only that part, so `react/jsx-runtime` and `react-dom/client`
+follow without being listed.
+
+**Nothing in the unit suite renders a component**, so it could not have caught a broken swap - it caught a
+broken *resolution* and nothing more. The check that mattered was the browser: the full app, the panel
+opening by keyboard, a layer toggle, a disclosure with a chart inside it, and Escape clearing the pin, all
+with no console errors on both the production build and the dev server.
+
+That run also supplied a verification missed earlier: the panel read **"Reported by · USGS (ci) + EMSC
+(BMKG)"**, which is the corroborated two-network case that had not appeared in twelve tries when the
+network attribution went in.
