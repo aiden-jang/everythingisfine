@@ -6202,6 +6202,15 @@ must **not** be used there. Two re-exports, `rampPosition` from `events.ts` and 
 the preact swap replaced it with `@preact/preset-vite`. `@types/earcut`, redundant since earcut began
 shipping its own.
 
+**And the lockfile was not regenerated, which broke CI.** `pnpm install --frozen-lockfile` compares the
+lockfile's importer specifiers against `package.json` and refuses on any mismatch, so dropping two
+devDependencies without a `pnpm install` fails the build before a single test runs. It is the right refusal
+- a lockfile that silently drifts from the manifest is how a CI run stops describing the repo - and it is
+the one consequence of removing a dependency that typechecking, the unit suite and a local build all miss,
+because every one of them reads `node_modules` rather than the lockfile. Regenerating it removed 95 lines
+and added none: the two packages, plus the babel react-jsx transforms and `@types/babel__*` that only
+`@vitejs/plugin-react` was pulling in.
+
 Seven more were exported and used only inside their own module - `WINDOW_HOURS`, `AURORA_URL`,
 `reframe`, `closeAtPole` and three others. An unnecessary `export` is not dead code in the sense of unused
 bytes, since the bundler drops it; it is dead in the sense that costs something, which is public surface a
