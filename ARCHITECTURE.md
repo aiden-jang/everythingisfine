@@ -5883,10 +5883,17 @@ to fourteen halved that. It is not an ephemeris and the key says so out loud.
 **The gate was the moment fix.** The shadow of tonight's moon over an archived April would have been
 nonsense, so this was unbuildable until the light followed the day on screen.
 
-**Discoverability is not solved.** The shadow only appears if you load an eclipse day and put the cursor
-near greatest eclipse, and nothing in the app points at one. `NOTABLE_DAYS` is the obvious home and is the
-wrong one: it requires a magnitude, sorts by it, and its own comment argues against growth. An eclipse
-entry needs a time rather than a day, so it wants its own affordance and its own decision.
+~~**Discoverability is not solved.**~~ **Closed by `app/eclipseDays.ts`**, a seven-row list in the rail
+beside "Days worth seeing" rather than inside it: that list requires a magnitude, sorts by it and labels
+every row with it, and borrowing its affordance would have meant breaking it to fit. The rows set the
+cursor as well as the day, because an archived day opens at its own right edge and a shadow lasts a few
+hours - a row that loaded only the day would land after the thing it names.
+
+**The table checks itself against the geometry.** Those dates and minutes were written from memory, and a
+wrong one fails silently: the day loads, the cursor moves, and nothing appears. `eclipseDays.test.ts` runs
+every row through `solarEclipse`/`lunarEclipse` and fails if the shadow is not there, and it also asserts
+that the word "annular" in the prose agrees with the sign of the umbra. All seven survived, which is a
+better check of the recall than re-reading it would have been.
 
 ### Both shadows, and the guard that was written once instead of twice
 

@@ -17,6 +17,7 @@ import { findSubject, MarkCard } from "./app/MarkCard";
 import { hazardCount, hazardGroups } from "./app/hazards";
 import { countForDay, dayRange, fetchArchive } from "./sources/archive";
 import { NOTABLE_DAYS, NOTABLE_NOTE } from "./app/notableDays";
+import { ECLIPSE_DAYS, eclipseMoment } from "./app/eclipseDays";
 import { fetchHistory, type History } from "./sources/history";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
@@ -2692,6 +2693,49 @@ export function App(): JSX.Element {
                     <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{NOTABLE_NOTE}</p>
                   </div>
                 </details>
+                {/*
+                  Eclipses, which need a minute and not just a day.
+
+                  Its own list rather than rows in the one above: that list requires a magnitude, sorts by
+                  it and labels every row with it, and an eclipse has none. Borrowing the affordance would
+                  have meant breaking the list to fit.
+
+                  **Sets the cursor as well as the day, which is the whole point.** The shadow exists for a
+                  few hours and an archived day opens at its own right edge, so a row that loaded only the
+                  day would land hours after the thing it names and show nothing at all. The table's times
+                  are checked against the geometry in `eclipseDays.test.ts`, because a wrong minute here
+                  fails silently.
+                */}
+                <details className="mt-2">
+                  <summary className="disclose text-[11px] text-faint hover:text-dim">
+                    Eclipses
+                  </summary>
+                  <div className="mt-1">
+                    {ECLIPSE_DAYS.map((e) => (
+                      <button
+                        key={e.day}
+                        type="button"
+                        disabled={archiveBusy}
+                        onClick={() => {
+                          setArchiveDay(e.day);
+                          void loadArchive(e.day);
+                          setScrub({ at: eclipseMoment(e), playing: false });
+                        }}
+                        aria-label={`${e.what}, ${e.kind} eclipse, ${e.day} at ${e.at} UTC`}
+                        aria-current={loadedDay === e.day ? "true" : undefined}
+                        className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left text-[11px] transition-colors hover:bg-raised disabled:cursor-default ${
+                          loadedDay === e.day ? "bg-raised text-ink" : "text-faint"
+                        }`}
+                      >
+                        <span className="w-[62px] shrink-0 font-mono text-[10.5px] tabular-nums">
+                          {e.day.slice(0, 7)}
+                        </span>
+                        <span className="grow">{e.what}</span>
+                      </button>
+                    ))}
+                  </div>
+                </details>
+
             {/*
               The seam between choosing a day and reading one.
 
