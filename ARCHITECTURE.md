@@ -5936,3 +5936,28 @@ five cases, with no overlap between the sets and every one passing in isolation 
 perf entry above documents, with runtime up from 5.5 to 6.8 minutes as the tell. The chroma fix stands on
 arithmetic instead: 50 is under 55. The one case that could plausibly have been a real regression from the
 same session, a taller rail scrolling the phone, was run in isolation and passed.
+
+### The planets rebuild their buffer instead of being rotated
+
+The star field writes its positions once and turns the whole sky with a `uSpin` uniform. Planets move
+against that sky rather than with it, so `uSpin` stays at zero for them and `setTime` writes directions
+that are already correct for the moment - a planet's right ascension is only true for the instant it was
+computed, and applying a sidereal rotation to a stale position would be wrong twice over. Five Kepler
+solutions a minute is nothing, and there is no table to fetch.
+
+**The magnitude needed a phase term, which the first version left out.** Brightness is the absolute
+magnitude plus the distance terms plus how much of the disc is lit. Without the last one Venus reached
+-5.9, brighter than it has ever been: at inferior conjunction it is closest and therefore brightest by
+distance alone, and in truth it is a thin crescent. A layer that sizes its dots by magnitude would have
+drawn the largest Venus of the year on the night it is hardest to see. Ranges over two years now measure
+Mercury -2.30 to 5.61, Venus -4.64 to -3.89, Jupiter -2.82 to -1.89 and Saturn 0.68 to 1.20, against
+published extremes of -2.5 to 5.7, -4.9 to -3.8, -2.9 to -1.9 and 0.6 to 1.2.
+
+**Verified by aiming at three of them at one instant**, which is what rules out the alternative that the
+bright dot was the moon: Venus was 232 degrees away from it and still produced a blob at its own predicted
+position. The blob sizes came out ordered by magnitude - Venus 97 pixels, Jupiter 73, Mars 25.
+
+An earlier attempt at an on-screen motion check was inconclusive and is worth not repeating: aiming the
+camera at a planet's position on two different dates changes the framing as well as the target, so the
+absence of a dot proved nothing. Motion follows from the geometry tests instead, where a year of samples
+walks Venus through the full 47 degrees of elongation its orbit allows.

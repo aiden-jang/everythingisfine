@@ -448,6 +448,13 @@ scatter light round its limb and the moon has none. The limb darkening is delibe
 sphere renders a full moon as a bright centre fading to a dark rim, and the real one is famously flat to
 the edge.
 
+**The five naked-eye planets are drawn as stars, deliberately.** Same colour, same brightness ramp, one
+small nudge in size because a planet is a disc and reads steadier and fatter than a star of equal
+brightness. Venus takes its place at the top of a scale the sky already establishes rather than becoming a
+new kind of mark with a new rule. What the picture will not say, the key says: five of them are planets and
+they wander. Scrub a month of archived days and they walk through constellations that hold still, which is
+the observation the word comes from and the one thing a fixed catalogue can never show.
+
 **The constellation figures are a toggle, and that is the point of them.** A real sky nobody can find
 anything in is still a backdrop, because finding things in a sky means knowing which dots belong together.
 But they are also the only layer on this globe that measures nothing: every other thing drawn here is a
