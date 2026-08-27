@@ -748,11 +748,21 @@ unchanged code, at 13.96ms and 13.11ms against 6.8ms quiet, because it cannot te
 a busy machine. The gate now measures a fixed reference workload in the same process and budgets the
 ratio. Eight saturated cores move the ratio 4.12 to 4.29 where the milliseconds move 6.8 to 7.3.
 
-| Events | CPU update (CI, gating) | Measured quiet | GPU frame p95 (reference machine, recorded) |
+| Events | CPU update (CI, gating) | Measured | GPU frame p95 (reference machine, recorded) |
 |---|---|---|---|
-| 1,000 | under 0.15 ref | 0.07 ref, 0.11ms | 16.7ms, 60fps |
-| 10,000 | under 1.05 ref | 0.69 ref, 1.13ms | 16.7ms, 60fps |
-| 50,000 | under 6.0 ref | 4.12 ref, 6.81ms | 33.3ms, 30fps floor |
+| 1,000 | under 0.15 ref | 0.10 ref, 0.16ms | 16.7ms, 60fps |
+| 10,000 | under 1.05 ref | 0.96 ref, 1.57ms | 16.7ms, 60fps |
+| 50,000 | under 7.0 ref | 4.45 to 4.91 ref, 7.3 to 8.1ms | 33.3ms, 30fps floor |
+
+**The 50,000 row said 6.0 for a while and the test said 7.0**, which is the failure this section opens by
+warning about, in this section. 7.0 is the number in force and is kept deliberately: the ratio does not
+cancel an oversubscribed machine, a second machine read 7.48 on code that passes here at 4.5, and a 6.0
+gate would fail more often on a busy laptop without catching anything a 7.0 gate misses. Published at 7.0
+with that reason attached rather than tightened to a figure nothing enforces.
+
+The measured column is a range now, and re-measured rather than inherited: three runs at load average 16.8
+on 2026-08-27. It was 4.12 when written; the sink attribute added 0.4 and deriving it back out of `aSink`
+returned rather more than that.
 
 Milliseconds are still printed, because "fast enough for a human" is a real question a ratio cannot
 answer. The reference machine is named and dated wherever a GPU number is published. "60fps at 10k
@@ -763,13 +773,31 @@ measured, and three.js alone is 127KB gzipped. Under one number an app-code regr
 as 10% drift; against the thing that actually changed it is a third of the budget. Vendors are paid
 for once and never move; application code and geometry are what drift, so they are watched apart.
 
-| Chunk | Budget (gzip) | At step 2 | Now |
+| Chunk | Budget (gzip) | At step 2 | 2026-08-27 |
 |---|---|---|---|
-| Application code | 60KB | 2.3KB | 33KB |
-| Coastline and plate geometry | 40KB | 36.8KB | 39KB |
-| three.js | 135KB | 127.3KB | 124KB |
-| React | 50KB | 45.7KB | 44KB |
-| Plate motion, fetched on toggle | not counted | in geometry | 2KB |
+| Application code (`index` + `Globe`) | 60KB | 2.3KB | **70.4KB, over** |
+| Coastline and plate geometry (`land`) | 40KB | 36.8KB | **43.5KB, over** |
+| three.js | 135KB | 127.3KB | 128.1KB |
+| React | 50KB | 45.7KB | 45.7KB |
+| Stylesheet | not counted | not counted | 8.3KB |
+| Star catalogue, fetched behind the entrance | not counted | did not exist | 34.3KB |
+| Deep seismicity, fetched on toggle | not counted | did not exist | 12.0KB |
+| Timezone table, fetched on first use | not counted | did not exist | 5.8KB |
+| Constellation figures, fetched on toggle | not counted | did not exist | 4.8KB |
+| Plate motion, fetched on toggle | not counted | in geometry | 2.7KB |
+
+**Both watched lines are over, and the second one for the second time.** Application code is 70.4KB
+against 60: the app has grown a real sky since that figure was written - a star field, a moon, five
+planets, both eclipse geometries, a size distribution. Geometry is 43.5KB against 40 because
+`manualChunks` sweeps everything under `/src/geo/` into `land`, and `stars.ts`, `moon.ts`, `planets.ts` and
+`eclipse.ts` all landed there. None of that is coastline or plate geometry, so the line is now measuring
+something its own name does not describe.
+
+Two honest ways out, and neither has been taken yet. The sky modules could have their own chunk, which
+costs nothing at load - the sky draws on the first frame either way - and would make each number describe
+what its row says. Or the React lever below could be pulled, which is what this section already says to do
+when application code genuinely needs more than 60KB. Recorded here rather than quietly raised, because
+the line above about a budget column that is not re-read applies to a budget that is re-read and ignored.
 
 The geometry line reached **42KB and was over budget** before the motion table was split out of it, and
 nobody knew, because "At step 2" was measured once and never measured again. A budget column that is not
