@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { flame, spiral, volcano, waves } from "./shapes";
+import { flame, here, spiral, volcano, waves } from "./shapes";
 
 const width = (p: readonly { lon: number }[]): number =>
   Math.max(...p.map((q) => q.lon)) - Math.min(...p.map((q) => q.lon));
@@ -90,5 +90,43 @@ describe("the flood waves", () => {
 
   it("stretches in longitude away from the equator like everything else", () => {
     expect(width(waves(0, 64)[0]!)).toBeGreaterThan(width(waves(0, 0)[0]!) * 2);
+  });
+});
+
+describe("the reader's own mark", () => {
+  it("is four separate strokes, not one closed shape", () => {
+    // Four marks with one anchor, so the ticks keep pointing at the same spot as the globe turns.
+    const ticks = here(10, 20);
+    expect(ticks).toHaveLength(4);
+    for (const t of ticks) expect(t).toHaveLength(2);
+  });
+
+  it("leaves the middle empty, which is the whole idea", () => {
+    /*
+     * The one mark here whose job is to say "that spot, there". A cross through the centre would cover
+     * the ground it is identifying - including an earthquake at the same place, which is the coincidence
+     * a reader would most want to see.
+     */
+    const ticks = here(0, 0, 2);
+    for (const [inner] of ticks) {
+      const away = Math.hypot(inner!.lon, inner!.lat);
+      expect(away).toBeGreaterThan(0.4);
+    }
+  });
+
+  it("points outward from the centre in four directions", () => {
+    const ticks = here(0, 0, 2);
+    const outer = ticks.map((t) => t[1]!);
+    expect(outer.some((p) => p.lat > 1)).toBe(true);
+    expect(outer.some((p) => p.lat < -1)).toBe(true);
+    expect(outer.some((p) => p.lon > 1)).toBe(true);
+    expect(outer.some((p) => p.lon < -1)).toBe(true);
+  });
+
+  it("widens in longitude near the poles, like every other glyph here", () => {
+    // Longitude degrees shrink toward the poles, so a tick of fixed angular length has to stretch.
+    const equator = here(0, 0, 2).map((t) => t[1]!.lon);
+    const north = here(0, 70, 2).map((t) => t[1]!.lon);
+    expect(Math.max(...north)).toBeGreaterThan(Math.max(...equator));
   });
 });

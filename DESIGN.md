@@ -448,6 +448,19 @@ scatter light round its limb and the moon has none. The limb darkening is delibe
 sphere renders a full moon as a bright centre fading to a dark rim, and the real one is famously flat to
 the edge.
 
+**The reader gets a mark, and it is the only one here that is not about the planet.** Four ticks around a
+gap, at the city their timezone resolves to. Ticks because this app's corners are ticks or nothing, and
+because every other glyph out there is a picture of the thing it marks - a spiral is a storm, a triangle a
+volcano - and there is no picture of a person that is not either a borrowed pin or a joke. The gap is the
+point: a cross through the middle would cover the ground it is identifying, and an earthquake at the same
+spot is the coincidence a reader would most want to see.
+
+**"Roughly" is not modesty.** A timezone is a zone, so the position is the middle of something that can be
+a thousand kilometres across, and somebody in Vancouver gets a tick over Los Angeles. The key says so and
+names the city, which is better than a tooltip because it is on screen without the mark having to be found
+first. Nothing new is disclosed: the rail already used this to say what the closest earthquake to them was,
+and it never leaves the browser.
+
 **The five naked-eye planets are drawn as stars, deliberately.** Same colour, same brightness ramp, one
 small nudge in size because a planet is a disc and reads steadier and fatter than a star of equal
 brightness. Venus takes its place at the top of a scale the sky already establishes rather than becoming a

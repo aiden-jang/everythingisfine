@@ -1,7 +1,7 @@
 import { antipodeCross, antipodeOf, FRONT_ARCS, smallCircle } from "../geo/antipode";
 import { motionArrow, type MotionSample } from "../geo/plateMotion";
 import type { Mark } from "../globe/marks";
-import { flame, spiral, volcano, waves } from "../globe/shapes";
+import { flame, here as hereTicks, spiral, volcano, waves } from "../globe/shapes";
 import type { Cyclone } from "../sources/cyclones";
 import type { Flood } from "../sources/floods";
 import type { Volcano } from "../sources/volcanoes";
@@ -38,10 +38,18 @@ export interface Happening {
    * loaded by whoever turned the toggle on rather than by importing this file.
    */
   motion?: readonly MotionSample[];
+  /**
+   * Roughly where the reader is, or null when their timezone did not resolve to a place.
+   *
+   * **No new disclosure.** It comes from `Intl` naming a timezone and a committed table turning that into
+   * a city, which the rail already uses to say what the closest earthquake to them was. It is city-level
+   * at best, it never leaves the browser, and drawing it says nothing the app was not already saying.
+   */
+  here?: { lon: number; lat: number } | null;
 }
 
 export function marksFor(
-  { cyclones, volcanoes, fires, floods, farSide = null, motion = [] }: Happening,
+  { cyclones, volcanoes, fires, floods, farSide = null, motion = [], here = null }: Happening,
 ): Mark[] {
   const out: Mark[] = [];
   /*
@@ -62,6 +70,21 @@ export function marksFor(
     }
     const far = antipodeOf(farSide.lon, farSide.lat);
     for (const stroke of antipodeCross(far.lon, far.lat)) out.push({ points: stroke });
+  }
+  /*
+   * Anchored, so it holds one size on screen.
+   *
+   * It is a symbol rather than a measured extent - unlike the storm tracks and the motion arrows, whose
+   * length is the quantity they carry. Four strokes, four marks, one anchor between them, which is what
+   * keeps the ticks pointing at the same spot as the globe turns.
+   *
+   * Unlabelled and unpickable on purpose. There is nothing to ask it: the key names the city, which is
+   * better than a tooltip because it is on screen without anybody having to find the mark first.
+   */
+  if (here) {
+    for (const tick of hereTicks(here.lon, here.lat)) {
+      out.push({ points: tick, anchor: { lon: here.lon, lat: here.lat } });
+    }
   }
   for (const storm of cyclones) {
     // The track carries no anchor: it is measured geography and scales with the coastline, not with the
