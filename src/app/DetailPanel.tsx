@@ -17,14 +17,10 @@ import {
 /*
  * The pinned event, in full.
  *
- * This panel was 81% empty: ten lines in a 360 by 1187 space. Emptiness was the symptom; the cause
- * was that it only ever said what one feed reported, and for 94% of events only one feed reported.
- * The project's whole subject, two agencies disagreeing, was invisible on almost every event a
- * person could click.
- *
- * So it answers the questions somebody pinning an earthquake actually has, from data already held:
- * how deep and what that means, what else has happened around it, exactly how far apart the two
- * agencies put it, and how to send it to someone.
+ * This panel was 81% empty, because it only ever said what one feed reported and for 94% of events only
+ * one feed reported. The project's whole subject - two agencies disagreeing - was invisible on almost
+ * every event a person could click. So it answers the questions a reader actually has, from data already
+ * held: how deep, what else happened around it, how far apart the two agencies put it, and how to share it.
  */
 
 export interface DetailPanelProps {
@@ -37,12 +33,9 @@ export interface DetailPanelProps {
   /** The feed's revision, so the neighbour search reruns on new data and not on the clock. */
   revision: number;
   /**
-   * The clock this panel measures against: the end of an archived day, or the present.
-   *
-   * Read from `Date.now()` before, in two places, which put "99 days ago" on an event from a picture of
-   * 2026-05-15 while the title block said "13h" about the same day. It also fed the neighbour search a
-   * window ending today, so the sequence for an archived event was being filtered against a present it
-   * has nothing to do with.
+   * The clock this panel measures against: the end of an archived day, or the present. Read from
+   * `Date.now()` before, which put "99 days ago" on a picture of 2026-05-15 and fed the neighbour search
+   * a window ending today.
    */
   now: number;
   /** True on an archived day, so ages name that day's end rather than the present. */
@@ -52,12 +45,8 @@ export interface DetailPanelProps {
   onClose: () => void;
   onFlyTo: (lon: number, lat: number, zoom?: number) => void;
   /**
-   * Opens a cross-section through this event, across the local trend.
-   *
-   * The section was reachable by shift-dragging the map and by nothing else, which is undiscoverable
-   * on a mouse and impossible on a touch screen, where there is no shift to hold. The panel's own note
-   * about the permalink says a feature nobody can find is not shipped; this was the same fault in the
-   * one view that shows the dimension the map cannot.
+   * Opens a cross-section through this event, across the local trend. Shift-dragging the map was the only
+   * way in: undiscoverable on a mouse and impossible on a touch screen, where there is no shift to hold.
    */
   onSection: (line: SectionLine) => void;
   /** Whether this event's far side is currently drawn, and the toggle for it. */
@@ -70,37 +59,23 @@ export interface DetailPanelProps {
 }
 
 /*
- * No rule under every row, which is the rule the rail already keeps.
- *
- * `Row` in the rail refuses this by name - "sixty rows each with a hairline beneath it is the densest
- * possible way to say these are separate, and it is the thing that makes a list look like a spreadsheet
- * from 2009" - and then this panel stacked five of them, and the mark card three. Two opposing
- * conventions for one idea, a few hundred pixels apart.
- *
- * The separating was never the rule's work anyway: a label hard left and a mono value hard right is
- * already two columns, and the eye reads the pair without being fenced. One rule stays, above the group,
- * because that one is doing something the alignment cannot - saying where the prose stops and the
- * readings start.
+ * No rule under every row, which is the rule the rail already keeps. A label hard left and a mono value
+ * hard right is already two columns, and the eye reads the pair without being fenced. One rule stays,
+ * above the group, because it says where the prose stops and the readings start.
  */
 /*
- * How many people said they felt it, and how hard.
+ * How many people said they felt it, and how hard. The only human number in this app.
  *
- * The only human number in this app. Everything else on this panel is an instrument's account of the
- * ground; this is people saying they noticed, which is a different question and often the one somebody
- * means when they ask how big it was.
+ * Reported, not felt, and the wording carries that. "Did You Feel It" is self-selected, so it counts where
+ * people live and whether they went online afterwards. "Felt by N people" would be a claim about the
+ * world rather than about the mailbox.
  *
- * **Reported, not felt, and the wording carries that.** "Did You Feel It" is self-selected, so it counts
- * where people live and whether they went online afterwards - an earthquake in open ocean gets nothing
- * however large it was. Saying "N people reported feeling it" is true; saying "felt by N people" is a
- * claim about the world rather than about the mailbox.
- *
- * The intensity is rounded to the whole Roman-numeral step it belongs to and named in words, because
- * a community-determined 3.9 is a mean of what people ticked on a form, not a measurement to a tenth.
+ * The intensity is rounded to a whole Roman-numeral step: a community-determined 3.9 is a mean of what
+ * people ticked on a form, not a measurement to a tenth.
  */
 const SHAKING = [
   // USGS's own words for intensity I through X, not a paraphrase. Two and three are both "weak" there,
-  // and an earlier version of this list invented "barely" for the second, which is a word the scale
-  // does not use. Borrowing a scale means borrowing its vocabulary.
+  // and inventing a word the scale does not use is how a borrowed scale stops being the scale.
   "not felt", "weak", "weak", "light", "moderate", "strong", "very strong", "severe", "violent",
   "extreme",
 ];
@@ -136,43 +111,27 @@ export function DetailPanel({
   /*
    * Recomputed on new data, not on the clock.
    *
-   * This walks the whole buffer, and the panel re-renders every second because the rail's clock ticks,
-   * so a pinned event was paying for a full pass every second. Measured in a swarm at a full buffer:
-   * 56ms, which is three dropped frames a second, for an answer that had not changed. It was written
-   * up as a known cost and left live on the argument that memoising would freeze the neighbour list.
-   * Keying on the revision keeps it live: the revision moves whenever an earthquake does.
+   * This walks the whole buffer, and the panel re-renders every second because the rail's clock ticks:
+   * measured in a swarm at a full buffer, 56ms every second for an answer that had not changed.
    *
-   * `now` is read inside and deliberately not a dependency, for that same reason: it ticks every second
-   * and would undo the whole point. Entering or leaving an archived day moves the revision anyway, since
-   * the store is cleared and refilled, so the clock that matters is always the one this recomputed with.
+   * `now` is read inside and is deliberately not a dependency. Entering or leaving an archived day moves
+   * the revision anyway, since the store is cleared and refilled.
    */
   const near = useMemo(
     () => findNearby(store, quake, filters, now),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [store, quake.key, filters, revision],
   );
-  /*
-   * Per agency, because they revise independently and only one of them may have.
-   *
-   * Narrowed to a tuple rather than filtered in the markup so the revision is non-optional by the
-   * time it is read: `revision!` inside a map is the kind of assertion that survives a refactor and
-   * then stops being true.
-   */
+  // Narrowed to a tuple rather than filtered in the markup, so the revision is non-optional by the time
+  // it is read. A `revision!` inside a map survives a refactor and then stops being true.
   const revisions = quake.readings.flatMap((reading) =>
     reading.revision ? [{ reading, revision: reading.revision }] : []);
   const klass = depthClass(r.depthKm);
 
-  /*
-   * The disagreement, as a sentence.
-   *
-   * It is the point of the project and it was only ever implied by two blocks of numbers sitting
-   * near each other. Stated in the units a person thinks in, and only when there is genuinely a
-   * second reading to disagree with.
-   */
-  /*
-   * Recomputed with the event rather than memoised: it is a regex and two divisions, where everything
-   * else this panel derives walks the buffer.
-   */
+  // The disagreement, as a sentence, in the units a person thinks in. Only when there is genuinely a
+  // second reading to disagree with.
+  // Recomputed with the event rather than memoised: a regex and two divisions, where everything else this
+  // panel derives walks the buffer.
   const arrival = arrivalFor(quake);
 
   const [a, b] = quake.readings;
@@ -190,40 +149,30 @@ export function DetailPanel({
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard access can be refused. The address bar already holds the link, so this is a
-      // convenience failing rather than the feature failing, and saying nothing is right.
+      // Clipboard access can be refused. The address bar already holds the link, so this is a convenience
+      // failing rather than the feature failing.
     }
   };
 
   return (
     <aside
       data-open={open}
-      // Out of the reading order the moment it starts leaving. `display: none` lands at the end of
-      // the transition, so for those 300ms it is still a real panel describing an event nobody pinned.
+      // Out of the reading order the moment it starts leaving. `display: none` lands at the end of the
+      // transition, so for those 300ms it is still a real panel describing an event nobody pinned.
       aria-hidden={!open}
       className="zone-panel flex w-[var(--panel-w)] flex-col overflow-y-auto border-l border-hairline bg-deck p-5 max-xl:w-full"
     >
       <div className="flex items-start justify-between">
         <div className="label">Pinned event</div>
-        {/*
-          A key name, written the way this app writes key names.
-
-          This wore `.label`, which uppercases and tracks it, so the panel announced "ESC" as though it
-          were a section heading while the mark card beside it said "esc" and the hint row over the globe
-          said "esc clear". Two casings for one key in one interface. The hint row is the convention:
-          keys are lowercase and mono, because that is what is printed on them.
-        */}
+        {/* Keys are lowercase and mono here, because that is what is printed on them. Wearing `.label` this
+            announced "ESC" as a section heading while the hint row over the globe said "esc". */}
         <button
           type="button"
           onClick={onClose}
           /*
-            Top-aligned inside its own touch target.
-
-            On a coarse pointer every button gets `min-height: 44px`, which is right - this is a control
-            people tap. But a button centres its content, so the 44px box put "esc" fourteen pixels below
-            the label it sits beside: measured, both start at the same top and the glyph lands at the
-            middle of a box three times its height. The target keeps its size and the text moves to the
-            top of it, which is where the eye expects it.
+            Top-aligned inside its own touch target. A coarse pointer gives every button `min-height: 44px`
+            and a button centres its content, so the box put "esc" fourteen pixels below the label beside
+            it. The target keeps its size and the text moves to the top of it.
           */
           className="flex cursor-pointer items-start font-mono text-[10.5px] text-faint transition-colors hover:text-ink"
         >
@@ -233,12 +182,9 @@ export function DetailPanel({
 
       <div className="mt-2 flex items-baseline gap-2">
         <span className="text-[30px] leading-none font-semibold">{magnitude(r)}</span>
-        {/*
-          Hooked, like the ramp and the map scale are. Which magnitude scale a reading was measured on
-          is the one field that proves the panel is showing a real catalogue entry rather than a
-          placeholder, so a test wants to read exactly it - and "the first mono span in the panel" is
-          not that. It was, until the close key became lowercase mono and moved above it.
-        */}
+        {/* Hooked, like the ramp and the map scale. Which magnitude scale a reading was measured on is the
+            field that proves this is a real catalogue entry, and "the first mono span in the panel" stopped
+            being that when the close key became lowercase mono. */}
         <span data-magscale className="font-mono text-[12px] text-faint">{r.scale}</span>
       </div>
       <div className="mt-2 text-[13px] leading-snug text-dim">{place(r.place)}</div>
@@ -246,19 +192,10 @@ export function DetailPanel({
         {clock(r.time)} · {ago(r.time, now, archived)}
       </div>
 
-      {/*
-        What the agencies first said, when they have since changed their minds.
-        Directly under the magnitude, because it is a statement about that number and nowhere else
-        in the panel would connect the two. Absent entirely on the common case, which is no revision:
-        a permanent "not revised" line would be four words of chrome saying nothing.
-      */}
-      {/*
-        A pinned event that the filters now exclude.
-        Raising the magnitude slider above it left this panel describing an earthquake in full, with
-        its depth, its neighbours and its whole sequence, beside a headline reading 0 and a globe with
-        nothing on it. Kept rather than closed, because losing a pin to a nudged slider is worse than
-        holding one, and named rather than kept quietly.
-      */}
+      {/* Directly under the magnitude, because it is a statement about that number. Absent on the common
+          case: a permanent "not revised" line would be four words of chrome saying nothing. */}
+      {/* A pinned event the filters now exclude. Kept rather than closed, because losing a pin to a nudged
+          slider is worse than holding one - and named, rather than kept quietly. */}
       {excluded ? (
         <p className="mt-3 border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
           Outside the current filters, so it is not on the globe. Everything below still describes it.
@@ -275,8 +212,8 @@ export function DetailPanel({
             return (
               <div key={reading.source} className="text-[11px] leading-relaxed text-dim">
                 <span className="text-ink">{SOURCE_NAMES[reading.source]}</span> first said{" "}
-                {/* Only what actually moved. A revision usually touches one of the two, and printing
-                    an unchanged number beside a changed one reads as though both had shifted. */}
+                {/* Only what actually moved. A revision usually touches one of the two, and an unchanged
+                    number beside a changed one reads as though both had shifted. */}
                 {magMoved ? (
                   <>
                     <span className="font-mono">M {revision.fromMagnitude.toFixed(1)}</span>
@@ -305,8 +242,8 @@ export function DetailPanel({
       ) : null}
 
       {r.kind !== "earthquake" ? (
-        // Named rather than drawn as an earthquake. A quarry blast is a real seismic event and
-        // calling it something it is not would be the quiet kind of lie.
+        // Named rather than drawn as an earthquake. A quarry blast is a real seismic event, and calling it
+        // something it is not would be the quiet kind of lie.
         <div className="mt-2 border-l border-hairline pl-2.5 text-[11px] text-dim">
           recorded as a {r.kind}
         </div>
@@ -315,51 +252,29 @@ export function DetailPanel({
       <div className="mt-4 border-t border-hairline pt-1.5">
         <Field label="Depth" value={klass ? `${depth(r)} · ${klass}` : depth(r)} />
         <Field label="Position" value={coordinates(r)} />
-        {/*
-          Where it sits relative to the plate edges.
-
-          With the coordinates rather than in prose, because it is the same kind of fact: a position,
-          read against the geography the globe already draws. On its own it turns the place name into an
-          explanation - "3,557 km from the nearest plate boundary" under Pahala, Hawaii is the hotspot,
-          without the app ever having to claim one.
-        */}
+        {/* With the coordinates rather than in prose, because it is the same kind of fact. On its own it
+            turns a place name into an explanation: "3,557 km from the nearest plate boundary" under
+            Pahala, Hawaii is the hotspot, without the app having to claim one. */}
         {boundaryNote(boundaryKm) ? (
           <Field label="Boundary" value={boundaryNote(boundaryKm)!} />
         ) : null}
         {/*
-          Only when somebody reported. An absent row is the honest form of no reports: this app cannot
-          tell "nobody felt it" from "nobody wrote in", and only the second is a thing it knows.
+          Only when somebody reported. This app cannot tell "nobody felt it" from "nobody wrote in", and
+          only the second is a thing it knows. USGS only: EMSC runs its own system and does not put it in
+          the feed this reads.
 
-          USGS only - EMSC runs its own felt-report system and does not put it in the feed this reads -
-          so an event both agencies saw still carries at most one of these.
-
-          Labelled "Felt reports" and not "Reported", which is what it said until the panel was looked at:
-          "Reported - 170 people, light" sat two rows above "Reported by - USGS", two near-identical
-          labels for unrelated facts. Naming the thing rather than the act also keeps the row honest,
-          since these are reports that arrived and not a count of who felt it.
+          Labelled "Felt reports", not "Reported", which sat two rows above "Reported by - USGS".
         */}
         {feltNote(r.felt) ? (
           <Field label="Felt reports" value={feltNote(r.felt)!} />
         ) : null}
-        {/*
-          Whether anybody has checked this number yet.
-
-          The panel already says an agency revised its own magnitude once it has; this says one still
-          might, which is the more useful half while a number is fresh. An automatic solution is a
-          computer's answer minutes after the ground stopped, and until now the app drew it at exactly
-          the same confidence as one a seismologist had been through.
-
-          The consequence is stated rather than the jargon left bare: "automatic" alone means nothing to
-          a reader who has not met the word, and "may still change" is the entire reason to care.
-        */}
-        {/*
-          What a model says the worst of it was, as against what people said where they were.
-
-          "Up to" is doing the work: this is the peak of a whole shaking map, so it is higher than nearly
-          every individual account of the same earthquake. Bare, it would read as "what it felt like",
-          and a reader comparing it against the felt row above would conclude one of the two was wrong.
-          They are two different questions and the wording has to keep them apart.
-        */}
+        {/* Whether anybody has checked this number yet. An automatic solution is a computer's answer
+            minutes after the ground stopped, and the app drew it at the same confidence as one a
+            seismologist had been through. The consequence is stated rather than the jargon left bare:
+            "may still change" is the entire reason to care. */}
+        {/* "Up to" is doing the work: this is the peak of a whole shaking map, so it is higher than nearly
+            every individual account. Bare, a reader comparing it against the felt row above would conclude
+            one of the two was wrong. */}
         {shakingWord(r.shaking ?? 0) ? (
           <Field label="Shaking" value={`up to ${shakingWord(r.shaking!)!}, modelled`} />
         ) : null}
@@ -371,16 +286,12 @@ export function DetailPanel({
           />
         ) : null}
         {/*
-          What the sky was doing there when it happened, which the terminator was already computing and
-          nothing read. An M6 at three in the morning, with everyone asleep and indoors, is a different
-          event from the same rupture at three in the afternoon.
+          What the sky was doing there when it happened. An M6 at three in the morning is a different event
+          from the same rupture at three in the afternoon.
 
           Solar time, not clock time, and that is the keyless answer rather than a lazy one: civil time
-          needs timezone boundaries, which is a dataset, and this needs the sun, which is already here.
-          Labelled "solar" so nobody reads it as what a watch there would have said.
-
-          At the event's own origin, not at `now`. Computing it from the current clock would answer
-          "what is the sky doing there at this moment", which is a fact about nothing.
+          needs timezone boundaries, and this needs the sun. Labelled "solar" so nobody reads it as what a
+          watch there would have said. At the event's own origin, not at `now`.
         */}
         <Field
           label="Solar time"
@@ -389,15 +300,10 @@ export function DetailPanel({
         <Field
           label="Reported by"
           /*
-            The relay, and in brackets whoever actually computed it.
+            The relay, and in brackets whoever actually computed it. Both feeds aggregate: a Hawaiian
+            earthquake reported by USGS was solved at the Hawaiian Volcano Observatory.
 
-            Both feeds aggregate: a Hawaiian earthquake reported by USGS was solved at the Hawaiian
-            Volcano Observatory, and one reported by EMSC may have been solved by BMKG in Jakarta. The
-            row was already labelled "Reported by" and was answering it one level short.
-
-            Here rather than in the comparison table below, which is already four columns inside a
-            300px panel: a fifth would have taken the coordinates down to nothing, and they are data
-            where this is an attribution.
+            Here rather than in the comparison table, which is already four columns in a 300px panel.
           */
           value={quake.readings
             .map((x) => (x.network === undefined
@@ -408,18 +314,13 @@ export function DetailPanel({
       </div>
 
       {/*
-        When it reached the nearest place with a name on it.
+        When it reached the nearest place with a name on it. A marker says an earthquake happened at a
+        point; it does not say the point is 7km from a town that felt it two seconds later.
 
-        A marker says an earthquake happened at a point. It does not say the point is 7km from a town
-        that felt it two seconds later, and that is the fact that makes this something which happened
-        to people rather than a dot in a margin.
-
-        The distance and the town are the agency's own words, parsed out of "38 km NW of Stanton,
-        Texas". Nothing is authored, which is the whole design: a list of cities with coordinates
-        written from memory would make confident claims about real towns from latitudes that could be
-        a tenth of a degree out, and a tenth of a degree is two seconds of an answer that reads as
-        measured. Absent for an event whose agencies named only a region, because a region has no
-        distance to give and a centroid would be that same invention.
+        The distance and the town are the agency's own words, parsed out of "38 km NW of Stanton, Texas".
+        Nothing is authored: a list of cities written from memory would make confident claims about real
+        towns from latitudes a tenth of a degree out, and a tenth of a degree is two seconds. Absent when
+        the agencies named only a region, because a centroid would be that same invention.
       */}
       {arrival ? (
         <div className="mt-4">
@@ -437,14 +338,9 @@ export function DetailPanel({
 
       {spread ? (
         <div className="mt-4">
-          {/*
-           * The heading follows the numbers, rather than the numbers following the heading.
-           *
-           * It read "The two agencies disagree" over 0.0 km, 0.0 s and "same magnitude", which is
-           * a caption contradicting the data directly beneath it. Worse, agreement is the *common*
-           * case: measured across 50 real matched pairs the median separation was 0.0 km and 0.1
-           * seconds, so the panel was calling almost every corroborated event a disagreement.
-           */}
+          {/* The heading follows the numbers, not the other way round. It read "The two agencies disagree"
+              over 0.0 km and "same magnitude": across 50 real matched pairs the median separation was
+              0.0 km and 0.1 seconds, so the panel called almost every corroborated event a disagreement. */}
           <div className="label">Both agencies reported this</div>
           <div className="mt-2 border-l border-hairline pl-3">
             <div className="text-[12px] leading-relaxed text-ink">
@@ -458,11 +354,8 @@ export function DetailPanel({
               does not move depending on which feed arrived first.
             </div>
           </div>
-          {/*
-            One dot, and columns for the rest. Three facts joined by two middle dots reads as a string
-            somebody concatenated; the same three aligned down the panel read as a comparison, which is
-            what two agencies reporting one earthquake actually is.
-          */}
+          {/* One dot, and columns for the rest. Three facts joined by two middle dots reads as a
+              concatenation; the same three aligned down the panel read as a comparison. */}
           {quake.readings.map((reading, i) => (
             <div
               key={i}
@@ -494,13 +387,9 @@ export function DetailPanel({
                 : ""}
               .
             </p>
-            {/*
-              The largest neighbours, and now a way to get to them.
-
-              They were listed and unreachable: the panel named the four events most worth looking at and
-              left you to find them in a rail of sixty. Pinning from here is the same gesture the rail's
-              own rows use.
-            */}
+            {/* The largest neighbours, and a way to get to them. They were listed and unreachable: the
+                panel named the four events most worth looking at and left you to find them in a rail
+                of sixty. */}
             {near.notable.map(({ quake: other, km }) => (
               <button
                 key={other.key}
@@ -521,15 +410,12 @@ export function DetailPanel({
             ))}
             <Sequence nearby={near} magnitude={r.magnitude} ramp={ramp} />
             {/*
-              Walking the sequence, which was the missing half of it.
+              Walking the sequence, which was the missing half of the strip: you could read the shape of a
+              swarm and not visit it.
 
-              The strip drew three hundred neighbours in time order and could not be stepped through: you
-              could read the shape of a swarm and not visit it. These two go to the events immediately
-              before and after this one, so a sequence can be followed the way it happened.
-
-              Labelled with the neighbour's magnitude rather than "previous" and "next", because the
-              useful question in a swarm is how big the next one was. Hidden entirely when this event
-              stands alone at either end, rather than shown disabled: a dead control is a question.
+              Labelled with the neighbour's magnitude rather than "previous" and "next", because the useful
+              question in a swarm is how big the next one was. Hidden at either end rather than disabled:
+              a dead control is a question.
             */}
             {(() => {
               const { earlier, later } = stepsFrom(near.sequence);
@@ -563,34 +449,23 @@ export function DetailPanel({
         )}
       </div>
 
-      {/*
-        The one thing telling anybody the measurement exists.
-
-        Measuring between two events reuses the pin and the hover rather than adding a mode, which is
-        the right trade and leaves it with nothing to advertise: the hint strip is for keys and this is
-        not a key. So the panel says it, while an event is pinned, which is exactly when it is true.
-      */}
+      {/* The one thing telling anybody the measurement exists. It reuses the pin and the hover rather than
+          adding a mode, which leaves it nothing to advertise: the hint strip is for keys. So the panel
+          says it while an event is pinned, which is exactly when it is true. */}
       <p className="mt-4 text-[11px] leading-relaxed text-faint">
         Hover another event to measure from this one.
       </p>
 
-      {/*
-        The figure's own sentence, present exactly while the figure is.
-        In the panel rather than the legend because the legend describes what is always on the globe, and
-        this is five arcs somebody asked for a moment ago about one specific epicentre.
-      */}
+      {/* Present exactly while the figure is. In the panel rather than the legend, because the legend
+          describes what is always on the globe and this is five arcs about one epicentre. */}
       {farSide ? (
         <p className="mt-3 border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
           {farSideNote(FRONT_ARCS, frontLengthKm, antipodeOf(r.lon, r.lat))}
         </p>
       ) : null}
 
-      {/*
-        Wraps, because this row gained a fourth button.
-        Fly here, Slice here and Copy link fit a phone at `nowrap`; adding Far side pushed the last two
-        past the right edge, where a clipped button is an action that does not exist. Wrapping costs a
-        second line on a narrow panel and nothing at all on a wide one.
-      */}
+      {/* Wraps, because this row gained a fourth button and a clipped button is an action that does not
+          exist. Wrapping costs a second line on a narrow panel and nothing on a wide one. */}
       <div className="mt-5 flex flex-wrap gap-2 pb-1">
         <button
           type="button"
@@ -599,17 +474,10 @@ export function DetailPanel({
         >
           Fly here
         </button>
-        {/*
-          The permalink existed for a whole phase with no way to reach it: the URL updated silently
-          and nothing on screen ever suggested it was worth copying. A feature nobody can find is
-          not shipped.
-        */}
-        {/*
-          Offered whichever view is showing, because taking it switches to the map.
-          A section only exists on the map, so this is not the button deciding the projection: it is
-          naming a slice that has nowhere else to be drawn, which is the same reasoning a shared link
-          carrying a section already follows.
-        */}
+        {/* The permalink existed for a whole phase with no way to reach it: the URL updated silently and
+            nothing suggested it was worth copying. A feature nobody can find is not shipped. */}
+        {/* Offered on either view, because taking it switches to the map. A section only exists there, so
+            this is naming a slice rather than choosing a projection. */}
         <button
           type="button"
           onClick={() => onSection(sectionThrough(r.lon, r.lat, near.trendDeg))}
@@ -617,15 +485,9 @@ export function DetailPanel({
         >
           Slice here
         </button>
-        {/*
-          The far side, offered rather than drawn.
-
-          Five circles spanning the planet is not something to hand somebody who clicked an event to
-          read its depth, which is why this is a button and not a consequence of selection. It is a
-          figure about the shape of the Earth and it claims no timing: the live rings fade at 17
-          degrees, 9.4% of the way, and the far side is 55 minutes of real travel that this app has
-          always refused to model. See `geo/antipode.ts`.
-        */}
+        {/* The far side, offered rather than drawn: five circles spanning the planet is not something to
+            hand somebody who clicked an event to read its depth. It claims no timing - the live rings fade
+            at 17 degrees, and the far side is 55 minutes of travel this app refuses to model. */}
         <button
           type="button"
           aria-pressed={farSide}
@@ -639,21 +501,12 @@ export function DetailPanel({
           Far side
         </button>
         {/*
-          A seam, because the fourth button is not the same kind of thing as the first three.
+          A seam, because the fourth button is not the same kind of thing as the first three. Fly, Slice and
+          Far side move the camera; Copy link changes nothing on screen.
 
-          Fly here, Slice here and Far side all move the camera: press one and the globe answers. Copy
-          link puts the view on your clipboard and changes nothing on screen. Four identical bordered
-          buttons in a row said those were four of a kind, and the one that leaves the app was the one
-          least like the others.
-
-          Pushed apart rather than fenced off. A separator was tried and it dangles: this row wraps, and a
-          divider that lands at the end of a line is an orphan pointing at nothing. `ml-auto` reads as the
-          same break in both layouts - hard right when all four share a line, and alone on its own line
-          when they do not - and it adds no element that can end up in the wrong place.
-
-          Not a wrapper either: the note above bought this row's wrapping with a real fix, and nesting the
-          first three as one group would spend it, pushing them past the edge of a phone as one
-          unsplittable item.
+          `ml-auto` rather than a separator: this row wraps, and a divider landing at the end of a line is
+          an orphan. Not a wrapper either - grouping the first three would push them past the edge of a
+          phone as one unsplittable item.
         */}
         <button
           type="button"

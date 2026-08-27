@@ -1,4 +1,4 @@
-# First Motion: decisions
+# Everything Is Fine: decisions
 
 Written on the day each decision was made, not reconstructed at the end. A reconstructed log reads
 as reconstructed: every alternative loses for a clean reason and nothing was ever tried and
@@ -6152,3 +6152,64 @@ with no console errors on both the production build and the dev server.
 That run also supplied a verification missed earlier: the panel read **"Reported by · USGS (ci) + EMSC
 (BMKG)"**, which is the corroborated two-network case that had not appeared in twelve tries when the
 network attribution went in.
+
+### The comments came down, and three documents were wrong about the app
+
+The codebase carried **13,190 lines of comment against 32,000 lines of code**, a third of the source, and
+almost none of it was a warning. It was reasoning: why this component and not that one, what the number was
+before it was measured, which alternative was tried and abandoned. That reads as thorough while it is being
+written and as noise on the fourth read, because a maintainer cannot act on any of it.
+
+The cut is **13,190 to roughly 8,400**, and the shape of it matters more than the number. What went was
+history in the present tense - "it used to read `clamp(m, 0, 7)`", "the note this replaces was right about
+why", "switched from MultiSelect" - which the reader has no access to and which rots the moment anything
+else changes. What stayed is the trap that has actually bitten: no backticks inside a GLSL template
+literal, `min-height` has no effect on a non-replaced inline element, `NaN !== NaN` so a plain comparison
+reports a revision on every re-poll, add the depth offset **after** `fmProject` because on the flat map
+radius is the layer index. Those are the ones where the code compiles, the tests pass, and the picture is
+wrong.
+
+**Anything defended at four paragraphs was defending itself against a reviewer, not explaining itself to a
+maintainer.** The single largest block was 49 lines in `scene.ts` arguing the geography palette through
+three revisions of contrast ratios. Six lines carry the two ratios that were tuned from reports and the one
+constraint that must not be scaled - the rest was the argument, and the argument belongs here.
+
+**The audit found what the audit method always finds.** Reading the app's own documents against the app
+turned up four claims that had stopped being true and one that had never been checked:
+
+- README listed "the window cannot go back beyond the seed" as a limitation. The archive shipped weeks ago.
+- README said the browser tests are not in CI *because they wait on two real agencies*. `e2e/feeds.ts`
+  stubs both agencies, all five hazard feeds and the aurora. The limitation is real; the reason was stale.
+- README listed "you cannot walk a swarm event by event" and "hovering an hour is pointer-only". Both
+  shipped: `stepsFrom` in the panel, and twenty-four focusable bars on one tab stop.
+- README's performance table was the **third** copy of the same numbers, still in milliseconds against
+  budgets of 1.0/4.0/12.0 while the test has measured reference units against 0.15/1.05/7.0 since the
+  ratio change. DESIGN 11 and this file were reconciled the same session and the README was missed.
+- `RECONCILIATION.md` was titled around a false positive it called unfixable, written before the magnitude
+  window measured 97 genuine pairs at a worst disagreement of 0.40 and removed the common case.
+
+Four documents still called the app **First Motion** in their titles. The rename is recorded in this file
+and the titles were never touched.
+
+### Dead code, and the difference between unused and unreachable
+
+`knip` over the whole tree, then every hit checked by hand, because the useful finding is not the list.
+
+Genuinely dead: `midpoint` in `sphere.ts`, a date-line-aware helper nothing has called since the land mesh
+started keeping one continuous frame - its own last reference was a comment in `land.ts` explaining why it
+must **not** be used there. Two re-exports, `rampPosition` from `events.ts` and `category` from
+`hazards.ts`, each with a live import feeding nothing. `@vitejs/plugin-react`, left in `package.json` after
+the preact swap replaced it with `@preact/preset-vite`. `@types/earcut`, redundant since earcut began
+shipping its own.
+
+Seven more were exported and used only inside their own module - `WINDOW_HOURS`, `AURORA_URL`,
+`reframe`, `closeAtPole` and three others. An unnecessary `export` is not dead code in the sense of unused
+bytes, since the bundler drops it; it is dead in the sense that costs something, which is public surface a
+future edit has to assume somebody depends on.
+
+**What `knip` reported and was wrong about is the part worth writing down.** It flagged `preact` as an
+unused dependency: it is never imported by name, only reached through the `react` alias in two config
+files, so a static scan cannot see it. Removing it would have broken the build. It also flagged the seven
+`tools/make-*.mjs` generators as unused files, which they are, and they are the provenance of every
+committed table in `src/geo/` - deleting them would leave `slab.json` and `stars.json` with no way to be
+regenerated and no record of how they were made.

@@ -3,19 +3,14 @@ import { expect, type Page } from "@playwright/test";
 /*
  * Both feeds, served from the test.
  *
- * The browser suite used to talk to USGS and EMSC for real, and it was the one thing keeping it out
- * of CI. The cost was not theoretical: across a single afternoon the feeds became unreachable three
- * times and the suite went red with four, then nine, then one failure. None of those tests assert
- * anything about data. They are layout, colour and interaction tests that time out waiting for
- * content, so a quiet network looked exactly like a broken app.
+ * Talking to USGS and EMSC for real was the one thing keeping this suite out of CI: across a single afternoon
+ * the feeds became unreachable three times, and none of these tests assert anything about data - they time
+ * out waiting for content, so a quiet network looked exactly like a broken app.
  *
- * Deterministic rather than recorded. A recording pins the *shape* of a response, which is what the
- * source unit tests already do against committed samples. What a browser test needs is a plausible
- * day positioned relative to now: fixed timestamps would age out of the twenty-four hour window
- * within a day of being committed and the suite would rot quietly.
+ * Deterministic rather than recorded. A browser test needs a plausible day positioned relative to now: fixed
+ * timestamps would age out of the twenty-four hour window and the suite would rot quietly.
  *
- * The live contract is still checked, by `pnpm test:live`, which is where a test that genuinely needs
- * the real agencies belongs.
+ * The live contract is still checked, by `pnpm test:live`.
  */
 
 /** mulberry32, so a failure reproduces exactly rather than turning up once a week. */
@@ -30,11 +25,8 @@ function seeded(seed: number): () => number {
   };
 }
 
-/*
- * Real margins, because the rail groups events into named regions and a uniform sphere would leave
- * that panel empty. Weighted so Indonesia dominates, which is what a real day looks like and what
- * makes the clustering and sequence code do any work.
- */
+/* Real margins, because the rail groups events into named regions and a uniform sphere would leave that
+ * panel empty. Weighted so Indonesia dominates. */
 const BELTS: readonly {
   lon: number; lat: number; place: string; weight: number; spread: readonly [number, number];
 }[] = [
@@ -65,20 +57,14 @@ export interface Quake {
 }
 
 /**
- * A day of seismicity, newest last.
+ * A day of seismicity, newest last. Gutenberg-Richter rather than uniform magnitudes: a uniform draw would
+ * put a magnitude 7 on screen every few minutes and quietly make every magnitude filter test meaningless.
  *
- * Gutenberg-Richter rather than uniform magnitudes: a day is mostly twos and threes with a handful
- * above five. A uniform draw would put a magnitude 7 on screen every few minutes and quietly make
- * every magnitude filter test meaningless.
- *
- * **The slope here is 0.625, and real catalogues sit between 0.8 and 1.2.** The 1.6 below is one over
- * the b-value, so this fixture is shallower than any real day: it has about 76 magnitude 2s for every
- * 5, where the Earth has around a thousand. That did not show until the rail started drawing the size
- * distribution, which reads this back and quotes "about 5 times as many" on fixture data against the
- * "about 10" a real feed gives. Left alone deliberately - changing it moves the count at every
- * magnitude threshold and half the browser suite asserts on those - but it is wrong and worth knowing.
+ * The slope here is 0.625 and real catalogues sit between 0.8 and 1.2, so this fixture has about 76 magnitude
+ * 2s for every 5 where the Earth has around a thousand. Left alone deliberately - changing it moves the count
+ * at every magnitude threshold and half the browser suite asserts on those - but it is wrong and worth knowing.
  */
-export function day(seed = 4, count = 240): Quake[] {
+function day(seed = 4, count = 240): Quake[] {
   const rand = seeded(seed);
   const total = BELTS.reduce((n, b) => n + b.weight, 0);
   const out: Quake[] = [];
@@ -109,45 +95,30 @@ const usgsFeature = (q: Quake, now: number) => ({
     updated: now - q.ago,
     magType: q.magnitude >= 4.5 ? "mww" : "ml",
     type: "earthquake",
-    /*
-     * Reviewed once a person has plausibly got to it, which in practice means the older and larger ones.
-     *
-     * Both values have to appear or the panel row is only ever tested in one state, and the interesting
-     * one is "automatic": a number that may still move.
-     */
+    // Reviewed once a person has plausibly got to it. Both values have to appear or the panel row is only
+    // ever tested in one state, and the interesting one is "automatic": a number that may still move.
     status: q.ago > 3 * 3_600_000 && q.magnitude >= 4 ? "reviewed" : "automatic",
-    /*
-      The regional network that computed it, which USGS relays. Varied by position so the panel row is
-      not always the same two letters: `hv` is Hawaii, `ci` southern California, `us` the national one.
-    */
+    /* The regional network that computed it, varied by position so the panel row is not always the same two
+       letters: `hv` is Hawaii, `ci` southern California, `us` the national one. */
     net: q.lat > 30 && q.lon < -100 ? "ci" : q.lat > 15 && q.lat < 25 ? "hv" : "us",
     /*
-     * Felt reports on the larger events only, which is roughly how the real feed behaves.
-     *
-     * USGS carried a count on two of thirteen events in an M4.5 day sampled while this was written, so
-     * a fixture where every event had one would exercise a case the app never sees. Deterministic from
-     * the magnitude rather than random, so a screenshot of one run matches the next.
+     * Felt reports on the larger events only, which is roughly how the real feed behaves: USGS carried a count
+     * on two of thirteen events in an M4.5 day. Deterministic from the magnitude rather than random, so a
+     * screenshot of one run matches the next.
      */
     ...(q.magnitude >= 4.2
       ? { felt: Math.round(q.magnitude * 37) % 900, cdi: Math.min(8, q.magnitude - 0.4) }
       : {}),
-    /*
-     * A shaking map on fewer events still, and deliberately not equal to `cdi`.
-     *
-     * The two rows exist to be read against each other, so a fixture where they always agreed would
-     * hide the case the wording was written for. Modelled peaks run higher than what people report.
-     */
+    // A shaking map on fewer events still, and deliberately not equal to `cdi`. The two rows exist to be read
+    // against each other, so a fixture where they always agreed would hide the case the wording was for.
     ...(q.magnitude >= 4.6 ? { mmi: Math.min(9, q.magnitude + 0.8) } : {}),
   },
   geometry: { coordinates: [q.lon, q.lat, q.depthKm] },
 });
 
 /*
- * EMSC's own numbers, not a copy of USGS's.
- *
- * A corroborated event is the project's subject, and a fixture where both agencies agree exactly
- * would make the association logic look correct while exercising none of it. Offsets are the size
- * the real feeds show: seconds of origin time, tens of kilometres, a couple of tenths of magnitude.
+ * EMSC's own numbers, not a copy of USGS's. A fixture where both agencies agree exactly would make the
+ * association logic look correct while exercising none of it. Offsets are the size the real feeds show.
  */
 const emscFeature = (q: Quake, now: number) => ({
   properties: {
@@ -178,12 +149,9 @@ export interface FeedOptions {
   seed?: number;
   count?: number;
   /**
-   * Makes EMSC's catalogue answer a full page, capped, reaching back only this many hours.
-   *
-   * The default fixture returns fewer rows than the seed limit, so EMSC vouches for the whole window
-   * and the truncated branch never runs. That is the common case and not the interesting one: the
-   * real endpoint returns its most recent 600 rows whatever `start` asks for, which at a month is
-   * about eighteen hours of them.
+   * Makes EMSC's catalogue answer a full page, capped, reaching back only this many hours. The default fixture
+   * returns fewer rows than the seed limit, so the truncated branch never runs - and the real endpoint returns
+   * its most recent 600 rows whatever `start` asks for.
    */
   emscCappedHours?: number;
 }
@@ -194,9 +162,8 @@ const EMSC_SEED_LIMIT = 600;
 /**
  * Routes both feeds and stubs the socket. Call before `page.goto`.
  *
- * The socket has to be stubbed rather than routed: EMSC pushes over a WebSocket and `page.route`
- * never sees one, which is how a live earthquake from Salta turned up in a test that had carefully
- * routed both HTTP endpoints to nothing.
+ * The socket has to be stubbed rather than routed: `page.route` never sees a WebSocket, which is how a live
+ * earthquake from Salta turned up in a test that had carefully routed both HTTP endpoints to nothing.
  */
 export async function installFeeds(page: Page, options: FeedOptions = {}): Promise<void> {
   const { usgs, empty, silent, dead, seed, count, emscCappedHours } = options;
@@ -243,15 +210,11 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
   const quakes = empty ? [] : day(seed, count);
 
   /*
-   * Every backlog, not just the daily one.
+   * Every backlog, not just the daily one. The window control can ask for `all_week` or `all_month`, and a
+   * pattern that only caught `all_day` quietly started pulling a live week down the moment a test clicked 7d.
    *
-   * The window control can ask for `all_week` or `all_month`, and a pattern that only caught
-   * `all_day` let those two straight out to USGS: a suite that had been made independent of the real
-   * agencies quietly started pulling a live week down the moment a test clicked 7d.
-   *
-   * All three answer with the same fixture day. What the seeding path is being tested on is which URL
-   * it asks for and what it does with the reply, and a fixture that grew with the window would only
-   * make the counts harder to reason about.
+   * All three answer with the same fixture day: what the seeding path is being tested on is which URL it asks
+   * for and what it does with the reply.
    */
   await page.route(/all_(day|week|month)\.geojson/, (route) => {
     const now = Date.now();
@@ -276,13 +239,8 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
   await page.route(/seismicportal\.eu/, (route) => {
     const now = Date.now();
     if (emscCappedHours !== undefined) {
-      /*
-       * Exactly a full page, spread evenly over the hours asked for.
-       *
-       * Full is what makes the source vouch for its oldest row rather than for the window, so the
-       * count has to be the limit and not merely large. The oldest row is pinned to the far end of
-       * the span so the reach the rail prints is the number this test passed in.
-       */
+      // Exactly a full page, spread evenly over the hours asked for. Full is what makes the source vouch for
+      // its oldest row rather than for the window, so the count has to be the limit and not merely large.
       const capped = Array.from({ length: EMSC_SEED_LIMIT }, (_, i) => emscFeature({
         ...quakes[i % Math.max(1, quakes.length)]!,
         id: `cap${i}`,
@@ -296,25 +254,18 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
     });
   });
   /*
-   * The archive, which was reaching the real internet for months without anybody noticing.
+   * The archive, which was reaching the real internet for months.
    *
-   * The routes above catch `all_day.geojson` and `seismicportal.eu`. The archive asks
-   * `earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=...`, which contains no literal
-   * `.geojson`, so **USGS archive requests missed every pattern and went out to the real agency** while
-   * the EMSC archive request was caught by the host pattern below. Every archived-day test was therefore
-   * running on real events from that day mixed with fixtures dated near now - and the newest fixture sat
-   * at the top of the list, which is exactly how a wrong clock read "1h ago" and hid a bug for two turns.
+   * The archive asks `earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=...`, which contains
+   * no literal `.geojson`, so USGS archive requests missed every pattern. Every archived-day test was running
+   * on real events from that day mixed with fixtures dated near now.
    *
-   * The fixtures are dated **inside the requested day** rather than near now, because that is the whole
-   * point: an archived day whose events are dated today cannot tell a correct clock from a broken one.
+   * The fixtures are dated inside the requested day, because an archived day whose events are dated today
+   * cannot tell a correct clock from a broken one.
    */
-  /*
-   * The count method, which is a different method on the same service.
-   *
-   * The route below matches `query`, so `count` went straight past it to the real agency - the same leak
-   * that had archived-day tests running on live events for months. The number is derived from the day so
-   * it is stable per date and different between dates, which is what the list is there to show.
-   */
+  // The count method, which is a different method on the same service: the route below matches `query`, so
+  // `count` went straight past it to the real agency. The number is derived from the day so it is stable per
+  // date and different between dates.
   await page.route(/fdsnws\/event\/1\/count/, (route) => {
     const url = new URL(route.request().url());
     const day = (url.searchParams.get("starttime") ?? "").slice(0, 10);
@@ -328,13 +279,9 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
     const url = new URL(route.request().url());
     const start = Date.parse(`${url.searchParams.get("starttime") ?? ""}`);
     const end = Date.parse(`${url.searchParams.get("endtime") ?? ""}`);
-    /*
-     * Only an archive query, handed back to the routes above otherwise.
-     *
-     * EMSC's *live* seed uses this same endpoint - `?limit=600&format=json&start=...` - so claiming every
-     * `fdsnws` request replaced the capped seed fixtures the reach test depends on, and that test went
-     * red. `starttime`/`endtime` are the archive's parameters; the live seed says `start`.
-     */
+    // Only an archive query, handed back to the routes above otherwise. EMSC's live seed uses this same
+    // endpoint, so claiming every `fdsnws` request replaced the capped seed fixtures the reach test depends
+    // on. `starttime`/`endtime` are the archive's parameters; the live seed says `start`.
     if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
       await route.fallback();
       return;
@@ -354,33 +301,24 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
     });
   });
 
-  /*
-   * Registered last on purpose: Playwright checks routes in reverse registration order, so the broad
-   * `seismicportal.eu` host pattern above would otherwise keep catching the EMSC archive query.
-   */
+  // Registered last on purpose: Playwright checks routes in reverse registration order, so the broad
+  // `seismicportal.eu` host pattern above would otherwise keep catching the EMSC archive query.
 
 }
 
 /**
  * Waits for the rail's counter to leave zero, which is the app's own "data has landed" signal.
  *
- * The rail is asserted first, on a short timeout, because `not.toHaveText` against an element that does
- * not exist spends the full thirty seconds and then reports "element(s) not found" - which is what a page
- * that threw on load looks like, and reads nothing like it. Diagnosing one instance cost a whole suite
- * run. A page that died now fails in a second, saying so.
+ * The rail is asserted first, on a short timeout, because `not.toHaveText` against an element that does not
+ * exist spends the full thirty seconds and then reports "element(s) not found".
  */
 /*
- * The hazard feeds, stubbed because they were never stubbed and nobody had measured the cost.
+ * The hazard feeds, stubbed because they were never stubbed and nobody had measured the cost: 14 requests to
+ * gdacs.org and 2 to services.swpc.noaa.gov on a single test, which is roughly a thousand calls per suite run
+ * for data no test asserts on.
  *
- * A fallback spy that only sees requests every `installFeeds` route declined counted **14 to gdacs.org
- * and 2 to services.swpc.noaa.gov on a single test**, plus EONET on any archived day. Across the
- * sixty-two browser tests that is roughly a thousand calls to GDACS per suite run, for data **no test
- * asserts on** - a grep for the layer sentences across both specs returns nothing. Every browser test was
- * therefore depending on two third-party services being up and fast, which is a plausible share of the
- * flakiness and the runtime that has been put down to machine load.
- *
- * Small fixed sets rather than empty responses: the layers still draw, so screenshots taken for visual
- * review keep showing a spiral, a triangle, a flame and waves, and they draw the *same* ones every run.
+ * Small fixed sets rather than empty responses, so screenshots keep showing a spiral, a triangle, a flame and
+ * waves, and the same ones every run.
  */
 const hazardEvent = (type: string, id: number, lon: number, lat: number, extra: object = {}) => ({
   type: "Feature",
@@ -390,12 +328,8 @@ const hazardEvent = (type: string, id: number, lon: number, lat: number, extra: 
     fromdate: new Date(Date.now() - 6 * 86_400_000).toISOString(),
     todate: new Date(Date.now() + 2 * 86_400_000).toISOString(),
     iscurrent: "true", alertlevel: "Green", severitydata: { severity: 0 },
-    /*
-      The reporting agency, which GDACS sends on every real event and the app now shows.
-
-      A plausible one rather than "FIXTURE": these reach a hover label, and a label reading
-      "FIXTURE · FIXTURE" would not have caught the day the separator was left dangling.
-    */
+    /* The reporting agency. A plausible one rather than "FIXTURE": these reach a hover label, and
+       "FIXTURE · FIXTURE" would not have caught the day the separator was left dangling. */
     source: type === "TC" ? "JTWC" : type === "VO" ? "GVP" : type === "WF" ? "EFFIS" : "DFO",
     ...extra,
   },
@@ -430,12 +364,9 @@ async function installHazards(page: Page): Promise<void> {
   });
 
   /*
-   * The whole grid, because `parseOvation` refuses anything else.
-   *
-   * It checks `rows.length === AURORA_LON * AURORA_LAT` and returns null on a mismatch, so a sparse
-   * patch parses to nothing and the aurora silently disappears - which is what the first version of this
-   * fixture did. The key is `Forecast Time`, not `Observation Time`; the wrong one falls back to the
-   * fetch clock rather than failing, which is exactly the kind of quiet pass worth not writing.
+   * The whole grid, because `parseOvation` checks `rows.length === AURORA_LON * AURORA_LAT` and returns null
+   * on a mismatch, so a sparse patch parses to nothing and the aurora silently disappears. The key is
+   * `Forecast Time`, not `Observation Time`; the wrong one falls back to the fetch clock rather than failing.
    */
   await page.route(/ovation_aurora_latest\.json/, (route) => {
     const coordinates: [number, number, number][] = [];
@@ -449,10 +380,8 @@ async function installHazards(page: Page): Promise<void> {
     route.fulfill({ json: { "Forecast Time": new Date().toISOString(), coordinates } });
   });
 
-  /*
-   * EONET, for archived days. Dated inside the requested range for the reason the earthquake archive is:
-   * a past day whose events are stamped today cannot tell a correct clock from a broken one.
-   */
+  // EONET, for archived days. Dated inside the requested range for the reason the earthquake archive is: a
+  // past day whose events are stamped today cannot tell a correct clock from a broken one.
   await page.route(/eonet\.gsfc\.nasa\.gov/, (route) => {
     const url = new URL(route.request().url());
     const start = Date.parse(`${url.searchParams.get("start") ?? ""}T00:00:00Z`);
@@ -471,11 +400,9 @@ async function installHazards(page: Page): Promise<void> {
             categories: [{ id: "wildfires" }], geometry: [point(-116, 43, 1200, "acres")] },
           { id: "EONET_F3", title: "Flood in Fixtureland 9", closed: at,
             categories: [{ id: "floods" }], geometry: [point(100, 14)] },
-          /*
-           * Volcanoes were the category this fixture left out, and the only one whose note does date
-           * arithmetic - "the newest ended N days ago". So the archived volcano line was the one
-           * reading that no browser test could see, and it was measuring N from today.
-           */
+          // Volcanoes were the category this fixture left out, and the only one whose note does date
+          // arithmetic. So the archived volcano line was the one reading no browser test could see, and it
+          // was measuring from today.
           { id: "EONET_F4", title: "Fixture Volcano", closed: at,
             categories: [{ id: "volcanoes" }], geometry: [point(-155, 19)] },
         ],

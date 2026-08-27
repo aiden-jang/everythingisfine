@@ -7,18 +7,15 @@ import { ago, latLon } from "./format";
 /*
  * What a storm, a volcano, a fire or a flood says when you point at it.
  *
- * The five layers arrived able to be seen and not asked. Each one carries measurements the legend could
- * only summarise across the whole set - this storm's peak wind, this fire's burned area and how long it
- * has been alight - and clicking a mark had no effect at all while the earthquake beside it opened a
- * panel. That asymmetry is what this closes.
+ * The five layers arrived able to be seen and not asked: each carries measurements the legend could only
+ * summarise across the whole set, and clicking a mark had no effect while the earthquake beside it opened
+ * a panel.
  *
- * **Every line is a fact from the feed.** Where a feed does not carry something, the row is absent rather
- * than showing a dash: the app's rule about not implying data it does not have applies here as much as it
- * does to a flood's missing severity.
+ * Every line is a fact from the feed. Where a feed does not carry something the row is absent rather than
+ * showing a dash.
  *
- * Deliberately not the earthquake panel. That one is built around a reading two agencies dispute, with
- * depth, neighbours, arrival times and a sequence; none of those exist for a wildfire, and reshaping it to
- * hold both would make it worse at the thing it is good at.
+ * Deliberately not the earthquake panel: that one is built around a reading two agencies dispute, and none
+ * of depth, neighbours, arrival times or a sequence exists for a wildfire.
  */
 
 export type MarkSubject =
@@ -63,10 +60,9 @@ interface Line { label: string; value: string }
 /**
  * The rows for a subject, as facts. Split out from the markup so it can be asserted without a DOM.
  *
- * `archived` moves the tense, for the reason the layer sentences needed it too: these notes read "running
- * now" and "burning now", which was safe only while an archived day withheld the four layers entirely.
- * Now that a past day draws them, a card opened on 2026-05-15 was calling a fire that ended in May a fire
- * burning this minute - on the one surface a reader opens *because* they want the detail.
+ * `archived` moves the tense. These notes read "running now" and "burning now", which was safe only while
+ * an archived day withheld the four layers: now a card opened on 2026-05-15 would call a fire that ended
+ * in May a fire burning this minute.
  */
 export function linesFor(
   found: MarkSubject, now: number, archived = false,
@@ -93,10 +89,8 @@ export function linesFor(
     const v = found.subject;
     return {
       title: v.name,
-      /*
-        The second sentence is the one thing this layer must never imply, and it holds either way: not
-        erupting now on a live day, not erupting then on an archived one. See `volcanoes.ts`.
-      */
+      // The second sentence is the one thing this layer must never imply, and it holds either way: not
+      // erupting now on a live day, not erupting then on an archived one.
       note: `Volcano with a logged eruption episode. Not erupting ${archived ? "then" : "now"}.`,
       lines: [
         ...(v.country ? [{ label: "Country", value: v.country }] : []),
@@ -155,29 +149,16 @@ export function MarkCard({ found, now, archived = false, onClose, onFlyTo }: Mar
         <button
           type="button"
           onClick={onClose}
-          /*
-            Top-aligned inside its own touch target.
-
-            On a coarse pointer every button gets `min-height: 44px`, which is right - this is a control
-            people tap. But a button centres its content, so the 44px box put "esc" fourteen pixels below
-            the label it sits beside: measured, both start at the same top and the glyph lands at the
-            middle of a box three times its height. The target keeps its size and the text moves to the
-            top of it, which is where the eye expects it.
-          */
+          // Top-aligned inside its own touch target. A coarse pointer gives every button `min-height: 44px`
+          // and a button centres its content, so the box put "esc" fourteen pixels below the label beside it.
           className="flex cursor-pointer items-start font-mono text-[10.5px] text-faint transition-colors hover:text-ink"
         >
           esc
         </button>
       </div>
-      {/*
-        The same size the panel's other tenant uses, because it is the same slot.
-
-        A pinned earthquake put its magnitude here at 30px and a mark put its name at 22px, so the header
-        changed size depending on what you had clicked - one slot, two identities, and they never appear
-        together to justify the difference. 30 is the display step the scale already has; 22 was its only
-        use, so unifying removes a step rather than adding one. `leading-tight` already handles the names
-        long enough to wrap.
-      */}
+      {/* The same size the panel's other tenant uses, because it is the same slot. A pinned earthquake put
+          its magnitude here at 30px and a mark put its name at 22px, so the header changed size depending
+          on what you had clicked. 30 is a step the scale already has; 22 was its only use. */}
       <h2 className="mt-2 text-[30px] leading-tight text-ink">{title}</h2>
       <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{note}</p>
 

@@ -4,18 +4,13 @@ import type { Quake, Reading, SourceId } from "./types";
 /*
  * Holding the events, and letting go of them.
  *
- * The polish doc is right that this is the thing that works for an hour and fails at four, so the
- * shape is chosen for what it does at hour four rather than for what it does on the first frame.
+ * Eviction is by arrival order, not by origin time. With no backend the window genuinely starts when the
+ * page loads, which is why the rail says "since 21:40" rather than "last 24 hours". Evicting the oldest
+ * arrival is exactly that window, and it is O(1). By origin time it would need a heap to describe a window
+ * the app does not have.
  *
- * Eviction is by **arrival order**, not by origin time. That sounds like the lazy choice and it is
- * the honest one: with no backend the window genuinely starts when the page loads, which is why
- * DESIGN.md section 10 makes the rail say "since 21:40" rather than "last 24 hours". Evicting the
- * oldest arrival is exactly that window, and it is O(1). Evicting by origin time would need a heap
- * to describe a window the app does not actually have.
- *
- * Every index below is deleted from as carefully as it is written to. A Map that only ever grows is
- * how a live view leaks, and it leaks invisibly, because nothing about the picture on screen
- * changes while it happens.
+ * Delete from every index below as carefully as you write to it. A Map that only ever grows is how a live
+ * view leaks, and it leaks invisibly: nothing about the picture on screen changes while it happens.
  */
 
 const DEFAULT_CAPACITY = 50_000;
@@ -25,19 +20,11 @@ export interface StoreStats {
   quakes: number;
   /** Readings currently held, per source. Sums to more than `quakes` when both feeds saw an event. */
   readings: Record<SourceId, number>;
-  /**
-   * Events both agencies reported.
-   *
-   * Counted as it happens rather than derived on demand: deriving means walking every held event
-   * on every announcement, which is fifty thousand comparisons a frame to display one number.
-   */
+  /** Events both agencies reported. Counted as it happens rather than derived: deriving means walking
+   * fifty thousand events on every announcement to display one number. */
   corroborated: number;
-  /**
-   * Events where at least one agency has changed its own magnitude.
-   *
-   * Counted as it happens, like `corroborated`, for the same reason: deriving it means walking every
-   * held event on every announcement to display one number.
-   */
+  /** Events where at least one agency has changed its own magnitude. Counted as it happens, like
+   * `corroborated`, for the same reason. */
   revised: number;
   /** Earliest arrival still held. The honest left edge of the window. */
   since: number | null;
@@ -54,41 +41,26 @@ export interface Ingested {
 export interface Store {
   ingest: (reading: Reading) => Ingested;
   /**
-   * Empties it, keeping the allocation.
-   *
-   * For switching between live and an archived day, which are two different sets of events that must
-   * never be mixed: an archive showing yesterday plus whatever the socket pushed while you read it
-   * would be a day that never happened. The ring itself is reused rather than reallocated, because the
-   * capacity is the thing the four-hour heap test is about.
+   * Empties it, keeping the allocation. For switching between live and an archived day, which must never
+   * mix: an archive plus whatever the socket pushed while you read it is a day that never happened. The
+   * ring is reused rather than reallocated, because the capacity is what the four-hour heap test is about.
    */
   clear: () => void;
   get: (key: string) => Quake | undefined;
-  /**
-   * The quake an agency's own identifier belongs to.
-   *
-   * Permalinks need this. Our key is an arrival counter, stable within one page and meaningless
-   * across two, so a shared link has to name the event the way the agency does. The index that
-   * answers this already exists for revision handling; it just was not reachable.
-   */
+  /** The quake an agency's own identifier belongs to. Permalinks need it: our key is an arrival counter,
+   * stable within one page and meaningless across two. */
   findByReading: (source: SourceId, id: string) => Quake | undefined;
   /** Every quake, oldest arrival first. */
   forEach: (fn: (quake: Quake) => void) => void;
   /**
-   * Up to `n` most recently *arrived*, in reverse arrival order.
-   *
-   * Arrival order, which is not time order and is nobody's idea of "recent". A seed delivers a whole
-   * window at once in whatever order the agency listed it, and USGS lists newest first, so the last
-   * thing to arrive from a month's seed is the oldest event in it. Anything wanting recency wants
-   * `newest`.
+   * Up to `n` most recently arrived, in reverse arrival order. Which is not time order and is nobody's idea
+   * of "recent": a seed delivers a whole window at once, and USGS lists newest first, so the last thing to
+   * arrive from a month's seed is the oldest event in it. Anything wanting recency wants `newest`.
    */
   latest: (n: number) => Quake[];
-  /**
-   * Up to `n` newest by origin time, newest first, optionally filtered before selection.
-   *
-   * The filter is taken rather than applied afterwards because selecting first and filtering second
-   * cannot be made correct: it returns however many of the top `n` happen to pass, which is fewer than
-   * `n` and sometimes none.
-   */
+  /** Up to `n` newest by origin time, filtered before selection. The filter is taken rather than applied
+   * afterwards because selecting first cannot be made correct: it returns however many of the top `n`
+   * happen to pass, which is fewer than `n` and sometimes none. */
   newest: (n: number, keep?: (quake: Quake) => boolean) => Quake[];
   stats: () => StoreStats;
   size: () => number;
@@ -110,10 +82,8 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
   /** "source:id" to quake key. Makes a revision an O(1) lookup rather than a search. */
   const byReadingId = new Map<string, string>();
   /**
-   * Quake keys bucketed by origin time.
-   *
-   * Association only ever looks within TIME_WINDOW_MS, so bucketing at exactly that width means the
-   * candidates for any reading live in its own bucket and the two either side. Without this, every
+   * Quake keys bucketed by origin time. Association only looks within TIME_WINDOW_MS, so bucketing at
+   * exactly that width puts every candidate in its own bucket and the two either side. Without it, every
    * arriving reading would be compared against all fifty thousand held events.
    */
   const buckets = new Map<number, Set<string>>();
@@ -157,8 +127,8 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
       const set = buckets.get(b);
       if (!set) continue;
       set.delete(key);
-      // Deleting the empty Set is the whole point. Leaving it behind is a slow leak that looks
-      // like nothing on screen and is the exact failure the four-hour test exists to catch.
+      // Deleting the empty Set is the whole point. Leaving it behind is a slow leak that looks like nothing
+      // on screen, which is the exact failure the four-hour test exists to catch.
       if (set.size === 0) buckets.delete(b);
     }
   };
@@ -188,31 +158,25 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
       const at = existing.readings.findIndex((r) => r.source === reading.source);
       let corroboratedNow = false;
       if (at >= 0) {
-        // A revision from an agency that already reported. Replace rather than append, or a busy
-        // event that gets updated all afternoon grows an unbounded array inside a bounded store.
+        // A revision from an agency that already reported. Replace rather than append, or a busy event
+        // updated all afternoon grows an unbounded array inside a bounded store.
         const old = existing.readings[at]!;
         /*
-         * A changed magnitude, not merely a redelivered one.
-         *
-         * USGS's day and hour feeds both re-serve every event they hold, so this branch runs on
-         * every poll for every event whether anything moved or not. Counting arrivals here would
-         * have every earthquake on screen claiming twenty revisions by evening, which is not a
-         * small inaccuracy: it would make the one honest signal in the feature meaningless.
+         * A changed magnitude, not merely a redelivered one. USGS's day and hour feeds both re-serve every
+         * event they hold, so this branch runs on every poll whether anything moved or not: counting
+         * arrivals here would have every earthquake claiming twenty revisions by evening.
          */
         let stored = reading;
-        // NaN is how both feeds spell "no depth given", and NaN !== NaN, so a plain comparison would
-        // report a revision on every re-poll of an event that never had one.
+        // NaN is how both feeds spell "no depth given", and NaN !== NaN, so a plain comparison reports a
+        // revision on every re-poll of an event that never had one.
         const depthMoved = Number.isFinite(old.depthKm) || Number.isFinite(reading.depthKm)
           ? old.depthKm !== reading.depthKm
           : false;
         if (old.magnitude !== reading.magnitude || depthMoved) {
           /*
-           * Once per event, not once per agency, because eviction refunds it once per event.
-           *
-           * Incrementing per reading and decrementing per event is a slow leak: an earthquake both
-           * agencies revised added two and gave one back, so the counter drifted upward for as long
-           * as the page stayed open. The unit here is the event, matching "distinct" and "both" in
-           * the header beside it.
+           * Once per event, not once per agency, because eviction refunds it once per event. Incrementing
+           * per reading and decrementing per event is a slow leak: an earthquake both agencies revised
+           * added two and gave one back.
            */
           if (!existing.readings.some((r) => r.revision)) revised += 1;
           stored = {
@@ -283,8 +247,8 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
     readingCounts.emsc = 0;
     corroborated = 0;
     revised = 0;
-    // `arrivals` deliberately keeps counting: it is how many events this page has ever seen arrive,
-    // which is a fact about the session rather than about the current contents.
+    // `arrivals` deliberately keeps counting: it is how many events this page has ever seen arrive, which
+    // is a fact about the session rather than about the current contents.
   };
 
   const forEach = (fn: (quake: Quake) => void): void => {
@@ -317,11 +281,8 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
       }
       return out;
     },
-    /*
-     * Selection, not a sort, for the reason `nearby.ts` gives about its own four: sorting the buffer to
-     * take sixty is O(n log n) for a fixed-size answer, and the buffer is up to fifty thousand events on
-     * every revision. One pass with a bounded insert is O(n) and touches sixty objects.
-     */
+    // Selection, not a sort: sorting the buffer to take sixty is O(n log n) for a fixed-size answer, on up
+    // to fifty thousand events on every revision. One pass with a bounded insert is O(n).
     newest: (n, keep) => {
       const out: Quake[] = [];
       if (n <= 0) return out;

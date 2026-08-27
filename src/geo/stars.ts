@@ -1,19 +1,12 @@
 /*
  * The real sky, turned to the right place for the moment on screen.
  *
- * The field this replaces was procedural and looked convincing, and that was its whole limit: a reader
- * who knows the sky could not find anything in it. Orion was not there to be found. A sky that can be
- * recognised does something a texture cannot, which is tell you which way you are facing.
+ * The procedural field this replaces looked convincing, and that was its whole limit: Orion was not there
+ * to be found. `tools/make-stars.mjs` commits the Yale Bright Star Catalogue down to magnitude 6.0, about
+ * what an unaided eye reaches: 5,080 stars, 88kB, 34kB over the wire.
  *
- * `tools/make-stars.mjs` commits the Yale Bright Star Catalogue down to magnitude 6.0, which is about
- * what an unaided eye reaches, as a flat `[ra, dec, mag, ...]` table in degrees. 5,080 stars, 88kB, 34kB
- * over the wire.
- *
- * **Its own chunk, like every other table this size here.** A plain import put it in `land`, which
- * `manualChunks` builds out of everything under `/src/geo/` and which is modulepreloaded: the chunk went
- * from 41kB over the wire to 76kB, an 84% rise on the critical path for a background. The sky is on from
- * the first frame, but it is the thing furthest behind an entrance animation, so arriving a moment late
- * costs nothing a reader can see. The layer draws empty until the table lands.
+ * Its own chunk. A plain import puts it in `land`, which is modulepreloaded, taking that chunk from 41kB
+ * to 76kB over the wire on the critical path for a background. The layer draws empty until the table lands.
  */
 import { DEG } from "./sphere";
 
@@ -23,27 +16,20 @@ export type StarTable = readonly number[];
 /** The faintest star in the committed table, and the value the brightness ramp is built against. */
 export const STAR_MAG_LIMIT = 6.0;
 /** Sirius, which is the brightest star there is and so the other end of that ramp. */
-export const STAR_MAG_BRIGHTEST = -1.46;
+const STAR_MAG_BRIGHTEST = -1.46;
 
 /** Midday on 2000-01-01 UTC, near enough to the J2000.0 epoch for anything drawn on a screen. */
 const J2000_MS = Date.UTC(2000, 0, 1, 12, 0, 0);
 
 /**
- * Greenwich mean sidereal time in degrees: how far the sky has turned over the prime meridian.
+ * Greenwich mean sidereal time in degrees: how far the sky has turned over the prime meridian. A star with
+ * right ascension `ra` stands over longitude `ra - gmstDeg(at)`, so one rotation places the whole table.
  *
- * This is the whole of what makes the field correct rather than decorative. A star with right ascension
- * `ra` stands over longitude `ra - gmstDeg(at)`, so the entire table is placed by one rotation about the
- * pole.
+ * The linear term is enough. The full series carries a `T^2` correction reaching 0.000026 degrees by 2026,
+ * four orders of magnitude below this table's own rounding.
  *
- * The caller decides which moment to hand in, and today the scene hands in wall-clock time because that
- * is what it already does for the sun. So the sky is right for the live view and is tonight's sky over an
- * archived day, exactly as the terminator is tonight's terminator over one.
- *
- * The linear term is enough. The full series carries a `T^2` correction that reaches 0.000026 degrees by
- * 2026, which is four orders of magnitude below this table's own rounding.
- *
- * **UT1 is approximated by UTC**, which is what a browser clock gives. They are kept within 0.9 seconds
- * of each other by leap seconds, and 0.9 seconds of Earth rotation is 0.004 degrees.
+ * UT1 is approximated by UTC, which is what a browser clock gives: 0.9 seconds apart at worst, and 0.9
+ * seconds of Earth rotation is 0.004 degrees.
  */
 export function gmstDeg(at: number): number {
   const days = (at - J2000_MS) / 86_400_000;
@@ -52,11 +38,9 @@ export function gmstDeg(at: number): number {
 }
 
 /**
- * How bright to draw a star, as 0 for the faintest in the table and 1 for Sirius.
- *
- * Deliberately not the physical flux. Magnitude is logarithmic and the real ratio across this table is
- * about 1,400 to 1, so a literal mapping draws Sirius and leaves the constellations it belongs to as empty
- * space. The renderer spends this on size and opacity together, each on its own curve.
+ * How bright to draw a star, as 0 for the faintest in the table and 1 for Sirius. Deliberately not the
+ * physical flux: the real ratio across this table is about 1,400 to 1, so a literal mapping draws Sirius
+ * and leaves the constellation it belongs to as empty space.
  */
 export function starBrightness(magnitude: number): number {
   const span = STAR_MAG_LIMIT - STAR_MAG_BRIGHTEST;
@@ -65,9 +49,7 @@ export function starBrightness(magnitude: number): number {
 
 /*
  * The constellation figures: each entry one polyline, as a flat run of right ascension and declination.
- *
- * From d3-celestial, copyright (c) 2015 Olaf Frohn, BSD 3-Clause. See `tools/make-figures.mjs` for the
- * notice the licence asks be retained, and README.md for where it is reproduced.
+ * From d3-celestial, copyright (c) 2015 Olaf Frohn, BSD 3-Clause. See `tools/make-figures.mjs`.
  */
 export type FigureTable = readonly (readonly number[])[];
 

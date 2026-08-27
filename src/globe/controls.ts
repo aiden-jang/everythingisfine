@@ -4,46 +4,29 @@ import { DEG, spanDeg } from "../geo/sphere";
 import { MAP_HALF_WIDTH } from "./morph";
 
 /*
- * Orbiting the globe.
+ * Orbiting the globe, hand-written.
  *
- * Hand-written rather than OrbitControls, for one reason that matters and one that follows from it.
- * DESIGN.md asks for zoom anchored to the cursor, and on a sphere that is a different problem from
- * the one OrbitControls solves: there is no pan target to slide, only a rotation that has to put the
- * same piece of coastline back under the pointer at the new magnification. Once that is being
- * written by hand the rest is a hundred lines, and it avoids pulling examples/jsm in for a
- * behaviour that then has to be fought.
+ * Zoom is anchored to the cursor, and on a sphere that is not the problem OrbitControls solves: there
+ * is no pan target to slide, only a rotation that puts the same coastline back under the pointer.
  *
- * The camera is described in geographic terms, not Cartesian ones: it sits above some longitude and
- * latitude at some distance. Every interaction in this file is then expressible in the same units
- * as the data, which is what makes cursor anchoring a subtraction rather than a matrix problem.
+ * The camera is kept in geographic terms - a longitude, a latitude, a distance - so every interaction
+ * here is in the same units as the data, and cursor anchoring becomes a subtraction.
  */
 
 /** Beyond this the up vector flips and the globe rolls over. */
 const LAT_LIMIT = 85;
 
 /*
- * Zoom is magnification: 1 is the framing shot, 2 is twice as close, and distance is fit/zoom.
+ * Zoom is magnification: 1 is the framing shot, 2 is twice as close, distance is fit/zoom.
  *
- * It was first written as a multiple of the distance, which is the same information and reads
- * backwards at every single use site. The wheel handler duly zoomed out when scrolled up, and the
- * bug was invisible in the code because `zoom * 1.5` looks exactly like zooming in. Naming the
- * quantity after what the user perceives, rather than after what the camera stores, removes the
- * entire class of mistake.
- *
- * The clamps stop the globe being entered or lost: 3 puts the camera about a third of a radius off
- * the surface, and 0.75 keeps it filling enough of the frame to still be the subject.
+ * Don't store it as a multiple of the distance. That reads backwards at every use site, and the wheel
+ * handler duly zoomed out when scrolled up while `zoom * 1.5` looked exactly like zooming in.
  */
 /*
- * A flight across the planet rises and settles rather than sliding at a fixed magnification.
+ * A long flight rises over the middle and settles, instead of sliding along at one magnification.
  *
- * The spring already carried lon, lat and zoom independently, so crossing a hemisphere kept the camera
- * pressed against the surface the whole way: the ground streaks past, nothing about the distance says the
- * trip was long, and arriving looks the same as nudging. Pulling back over the middle of the flight is
- * what makes the two read differently, and it shows the reader where they are going on the way.
- *
- * **Only for trips long enough to need it.** Below ARC_MIN_DEG there is no pullback at all, because a
- * short hop that dollies out and back is a camera drawing attention to itself. Full pullback arrives at
- * ARC_FULL_DEG, which is a little over a quarter of the way round.
+ * Without the pullback the ground just streaks past and arriving looks the same as nudging. Short hops
+ * get none of it, because a camera that dollies out and back for a nudge is drawing attention to itself.
  */
 const ARC_MIN_DEG = 25;
 const ARC_FULL_DEG = 110;
@@ -54,17 +37,14 @@ const ZOOM_MIN = 0.75;
 const ZOOM_MAX = 3;
 
 /*
- * The map's share of the framing distance, because the framing shot is a sphere's and the map is not.
+ * The map's share of the framing distance. The framing shot is a sphere's, and the map is not.
  *
- * `fit` frames a 2-unit ball. The map is that ball unrolled to 4 by 2, so the same distance leaves the
- * whole planet in frame with the poles and half the Pacific paying for it: at zoom 1 on a desktop
- * that was 335 degrees of longitude and markers too small to aim at. Zooming the seismic band up to
- * fill the frame is what zoom 1 should mean on either view.
+ * `fit` frames a 2-unit ball; the map is that ball unrolled to 4 by 2, so the same distance showed 335
+ * degrees of longitude and markers too small to aim at.
  *
- * Measured against the height-only fit, never against `fit`. Fitting by the tighter dimension is
- * correct for a ball and wrong for a plane that tiles: on a phone it framed the map's 4-unit width,
- * which left the world as a strip across the middle with a third of the canvas empty above and below
- * it. Cropping longitude costs nothing, because panning east wraps into the next copy.
+ * Measure against the height-only fit, never against `fit`. Fitting by the tighter dimension is right
+ * for a ball and wrong for a plane that tiles: on a phone it framed the width and left the world as a
+ * strip with a third of the canvas empty. Cropping longitude costs nothing, because east wraps.
  */
 const MAP_FIT = 0.72;
 
@@ -72,19 +52,16 @@ const MAP_FIT = 0.72;
 const MOMENTUM_TAU = 0.32;
 const MOMENTUM_FLOOR = 0.6; // deg/sec, below which it has stopped
 /**
- * Ceiling on a flick, in deg/sec. Coast distance is velocity times MOMENTUM_TAU, so an unclamped
- * hard flick measured 131 degrees: a third of the planet from one gesture, which overshoots any
- * intent. At 200 the hardest possible throw coasts about 64 degrees and still feels thrown.
+ * Ceiling on a flick, in deg/sec. Coast distance is velocity times MOMENTUM_TAU, and unclamped a hard
+ * flick measured 131 degrees - a third of the planet from one gesture. 200 coasts about 64.
  */
 const MOMENTUM_MAX = 200;
 
 /**
  * How far back the entrance starts, in degrees of longitude.
  *
- * One arrival, then nothing. The source doc asks for the globe to rotate into its framing position
- * and stop, and the value of that is entirely in the stopping: a camera that settles says the
- * motion afterwards belongs to the data. Forty-two degrees is about a second of critically damped
- * travel, which is long enough to read as arriving and short enough not to be a title sequence.
+ * One arrival, then nothing: the value is all in the stopping, because a camera that settles says the
+ * motion afterwards belongs to the data. Forty-two degrees is about a second, not a title sequence.
  */
 const ENTRANCE_DEG = 42;
 const ENTRANCE_ZOOM = 0.88;
@@ -136,21 +113,17 @@ export interface Controls {
   /**
    * Screen position of a geographic point, or null when it is round the back.
    *
-   * `radius` is in globe radii and defaults to the surface. It exists because markers are drawn at
-   * their own depth: everything that has to agree with the picture - the hit test, the hover ring,
-   * the tooltip - has to be able to ask about a point *inside* the planet, and a projection that
-   * only knows the surface would put the pointer a long way from a 600km event near the limb.
-   *
-   * The horizon test still uses the surface point, matching the shader, which decides what is
-   * visible from the surface normal and not from where the marker ended up.
+   * `radius` is in globe radii. Markers are drawn at their own depth, so the hit test, hover ring and
+   * tooltip all have to ask about a point *inside* the planet: a surface-only projection puts the
+   * pointer a long way from a 600km event near the limb. The horizon test still uses the surface
+   * point, because that is the question the shader asks.
    */
   project: (lon: number, lat: number, radius?: number) => { x: number; y: number } | null;
   /**
-   * Degrees of the map covered by one screen pixel. Only meaningful once flat.
+   * Degrees of map covered by one screen pixel. Only meaningful once flat.
    *
-   * Equal in both axes, because the projection puts 90 degrees in a world unit either way, and it is
-   * degrees rather than kilometres because turning it into a distance needs a latitude and this does
-   * not have an opinion about which one. See `scale.ts`.
+   * The same in both axes, because the projection puts 90 degrees in a world unit either way. Degrees
+   * and not kilometres, because a distance needs a latitude and this has no opinion about which.
    */
   degPerPx: () => number;
 }
@@ -172,19 +145,10 @@ export function createControls(
   let vLon = 0;
   let vLat = 0;
   let vZoom = 0;
+  /** Where the camera is being pulled, or null. Double-click reset and fly-to are one mechanism, so they feel the same. */
   /*
-   * Where the camera is being pulled, or null when nothing is pulling it.
-   *
-   * Double-click reset and "fly to this region" are the same motion with different destinations,
-   * so they are one mechanism. Writing the reset as a special case first and then bolting on a
-   * second spring for regions would have given the two an inconsistent feel for no reason.
-   */
-  /*
-   * `arc` is set only by `flyTo`, and deliberately lives on the target rather than beside it.
-   *
-   * Six other places assign or clear this, for drags, wheels, the morph and the entrance. Hanging the
-   * arc off the target means all six keep exactly the behaviour they had, and a flight interrupted by a
-   * drag loses its arc without anything having to remember to cancel it.
+   * `arc` hangs off the target, not beside it. Six other places assign or clear the target, so a
+   * flight interrupted by a drag drops its arc without anything having to remember to cancel it.
    */
   let target:
     | { lon: number; lat: number; zoom: number; arc?: { span: number; pull: number; fromZoom: number } }
@@ -201,33 +165,26 @@ export function createControls(
   const world = new Vector3();
 
   /**
-   * Distance, with a hard floor that does not depend on the zoom clamp being set correctly.
+   * Distance, with a hard floor that does not rely on the zoom clamp being right.
    *
-   * At ZOOM_MAX the camera currently stops 0.19 radii outside the atmosphere shell, which is fine
-   * and is also luck: it falls out of the framing fraction, the field of view and the zoom ceiling
-   * agreeing, and any one of those moving on its own would put the camera inside the shell and wash
-   * the screen. The floor states the actual requirement in one place instead.
+   * At ZOOM_MAX the camera stops 0.19 radii outside the atmosphere shell, and that is luck: it falls
+   * out of the framing fraction, the field of view and the zoom ceiling all agreeing. Move any one and
+   * the camera ends up inside the shell with the screen washed out.
    */
   const DIST_FLOOR = RADIUS_ATMOSPHERE + 0.12;
   const mapFit = (): number => heightFit * MAP_FIT;
   const dist = (): number => Math.max(DIST_FLOOR, (fit + (mapFit() - fit) * morph) / zoom);
 
   /*
-   * How far out you are allowed to go, which is not the same question on the two views.
+   * How far out you may go, which is a different question on each view.
    *
-   * `ZOOM_MIN` keeps the globe from being lost, and a plane cannot be lost: it tiles, so east of the
-   * dateline is the next copy rather than an edge. The thing a map floor should protect is the whole
-   * world being reachable, and on anything narrower than a desktop the fixed floor did not reach it.
-   * A phone's map bottomed out at 155 degrees of longitude, so "see everywhere at once", which is the
-   * only reason to leave the globe, was the one thing the map could not do.
+   * A globe can be lost; a plane cannot, because it tiles. What a map floor protects is being able to
+   * see the whole world at once, and a fixed floor could not: a phone bottomed out at 155 degrees of
+   * longitude, so the one reason to leave the globe was the one thing the map could not do.
    *
-   * So the map's floor is derived: the zoom at which the frame is exactly 360 degrees wide. Whichever
-   * of the two is further out wins, which keeps a very wide window from deriving a floor tighter than
-   * the default framing and clamping the camera on load.
-   *
-   * Interpolated on morph rather than switched at a threshold, and re-applied in `setMorph`, so
-   * leaving a zoomed-out map for the globe eases the camera up to the globe's floor across the
-   * unwrap instead of snapping on the next wheel notch.
+   * So the map's floor is derived - the zoom at which the frame is exactly 360 degrees wide - and the
+   * further-out of the two wins. Interpolated on morph, not switched, or leaving a zoomed-out map
+   * snaps the camera on the next wheel notch.
    */
   const zoomFloor = (): number => {
     const wholeWorld =
@@ -245,25 +202,20 @@ export function createControls(
   /*
    * How far around the globe a pixel offset from centre actually is.
    *
-   * This took three attempts and both wrong ones looked reasonable in code.
+   * Two wrong versions looked fine in code. Dividing pixels by the on-screen radius treats the sphere
+   * as flat. `asin(px / R)` treats it as orthographic, which is a sphere seen from infinity; this
+   * camera is 4.5 radii out, and the gap is a factor of d/(d-1), about 29%. The coastline visibly
+   * slides out from under the pointer.
    *
-   * Dividing pixels by the globe's on-screen radius treats the sphere as flat, which under-rotates
-   * badly. Inverting a sine, `asin(px / R)`, treats it as an *orthographic* sphere, which is the
-   * projection a sphere has only when viewed from infinity. This camera is 4.5 radii away, and the
-   * difference between those two cases is a factor of d/(d-1), about 29% here: enough that the
-   * coastline visibly slides out from under the pointer during a drag.
-   *
-   * The real relationship, for a point `sigma` around from the sub-camera point, is
+   * For a point `sigma` around from the sub-camera point the projection is
    *
    *     px = focal * sin(sigma) / (d - cos(sigma))
    *
-   * which inverts in closed form. Writing `u = px / focal` and collecting the sine and cosine into
-   * one phase-shifted sine gives
+   * and with `u = px / focal` that inverts exactly to
    *
    *     sigma = asin(u * d / sqrt(1 + u^2)) - atan(u)
    *
-   * and that is exact, not an approximation: at the limb it returns acos(1/d), which is precisely
-   * how much of a sphere you can see from distance d.
+   * At the limb it returns acos(1/d), which is how much of a sphere is visible from distance d.
    */
   const exactAngle = (px: number, d: number, focal: number): number => {
     const u = px / focal;
@@ -273,10 +225,9 @@ export function createControls(
   /**
    * The inverse above, straightened out near the limb.
    *
-   * Approaching the horizon the curve goes vertical: the last pixel before the edge is worth an
-   * unbounded number of degrees, so a drag that grazes the rim would fling the globe. Past 0.985 of
-   * the way out it continues at the slope it had, which is wrong exactly where the surface is
-   * edge-on and unreadable anyway, and keeps the control usable at the rim.
+   * At the horizon the curve goes vertical, so the last pixel before the edge is worth an unbounded
+   * number of degrees and a drag grazing the rim would fling the globe. Past 0.985 it continues at the
+   * slope it had, which is wrong exactly where the surface is edge-on and unreadable anyway.
    */
   const SHOULDER = 0.985;
 
@@ -302,11 +253,8 @@ export function createControls(
     const d = raycaster.ray.direction;
 
     /*
-     * On the map, the ray meets a plane rather than a ball.
-     *
-     * Raycasting the sphere still returns an answer here, which is worse than returning none: the
-     * cursor names whichever earthquake happens to sit under that point of a globe nobody is looking
-     * at. Hover appeared to work and pointed at the wrong event.
+     * On the map the ray meets a plane, not a ball. Raycasting the sphere still returns an answer,
+     * which is worse than none: hover looked like it worked and named the wrong earthquake.
      */
     if (morph > 0.5) {
       if (Math.abs(d.z) < 1e-6) return null;
@@ -321,8 +269,8 @@ export function createControls(
       };
     }
 
-    // Analytic against the unit sphere rather than against the ocean mesh: it cannot be thrown off
-    // by tessellation, and it still answers when the mesh is mid-rebuild.
+    // Analytic against the unit sphere, not against the ocean mesh: tessellation cannot throw it off
+    // and it still answers while the mesh is rebuilding.
     const b = o.dot(d);
     const c = o.lengthSq() - 1;
     const disc = b * b - c;
@@ -336,14 +284,10 @@ export function createControls(
   };
 
   /*
-   * The camera flies from orbiting a sphere to facing a plane, on the same number as the geometry.
+   * The camera changes from orbiting a sphere to facing a plane on the same number as the geometry.
    *
-   * Sequencing it after the morph instead, or switching at the halfway point, both show a frame of a
-   * flattened map viewed from an oblique angle, which looks like the projection has broken rather
-   * than like a projection.
-   *
-   * The map camera keeps the same magnification model: `dist` is the framing distance over the zoom,
-   * so a notch of wheel means the same proportion of the way in on either view.
+   * Sequence it after the morph, or switch at the halfway point, and you get a frame of a flat map
+   * seen from an angle, which looks like the projection broke rather than like a projection.
    */
   const apply = (): void => {
     const phi = lat * DEG;
@@ -355,14 +299,12 @@ export function createControls(
 
     if (morph > 0) {
       /*
-       * The map has no pan of its own: longitude and latitude *are* the camera position here, exactly
-       * as on the globe, and the plane's x and y are just where those land.
+       * The map has no pan of its own. Longitude and latitude *are* the camera position here, and the
+       * plane's x and y are just where they land.
        *
-       * Holding a separate pan was the first version and it split the camera in two. Flying to a
-       * region set longitude, which the map ignored, so clicking Indonesia zoomed and went nowhere;
-       * dragging moved a pan the permalink had never heard of, so a shared map link came back to the
-       * middle of the Atlantic. One position, and every existing thing that moves the camera works in
-       * both views without knowing there are two.
+       * A separate pan split the camera in two: flying to a region set a longitude the map ignored, and
+       * dragging moved a pan the permalink had never heard of, so shared map links came back to the
+       * middle of the Atlantic.
        */
       const flatX = (lon / 180) * MAP_HALF_WIDTH;
       const flatY = lat / 90;
@@ -379,10 +321,9 @@ export function createControls(
 
     camera.position.set(orbitX, orbitY, orbitZ);
     camera.lookAt(0, 0, 0);
-    // Not optional, and not a formality. `lookAt` writes the quaternion but leaves matrixWorld
-    // stale until something renders, and `pick` raycasts through matrixWorld. Without this the
-    // cursor-anchoring passes below each measure from where the camera used to be, and the
-    // correction they compute is not small-and-wrong but tens of degrees wrong.
+    // Required. `lookAt` writes the quaternion but leaves matrixWorld stale until something renders,
+    // and `pick` raycasts through matrixWorld. Skip it and the anchoring below measures from where the
+    // camera used to be, off by tens of degrees.
     camera.updateMatrixWorld();
   };
 
@@ -391,18 +332,14 @@ export function createControls(
   /**
    * Zoom about a pixel rather than about the middle of the screen.
    *
-   * Read the coastline under the pointer, change the magnification, read whatever is under the
-   * pointer now, and move the camera by the difference. Because the camera is described in degrees,
-   * "move it by the difference" is literally a subtraction in the same units. Two passes, because
-   * one is visibly short near the limb where the projection compresses hardest.
+   * Read what is under the pointer, change the magnification, read it again, move the camera by the
+   * difference. Two passes: one is visibly short near the limb, where the projection compresses hardest.
    */
   /*
    * Aims the camera, compounding off wherever it is already heading.
    *
-   * Shared by the wheel and the keyboard so both feel the same and both survive being repeated faster
-   * than the spring settles. Compounding off the animated value instead is the natural way to write it
-   * and silently undershoots: two quick notches land on 1.59 instead of 1.70, because the second is
-   * measured against a camera still in flight.
+   * Compound off the animated value instead and two quick notches land on 1.59 rather than 1.70,
+   * because the second is measured against a camera still in flight.
    */
   const aim = (
     dest: { lon: number; lat: number; zoom: number }, instant = reduced.matches,
@@ -416,8 +353,8 @@ export function createControls(
       apply();
       return;
     }
-    // Velocity is deliberately not zeroed the way flyTo does it: these are streams of small inputs,
-    // and resetting on each one is what turns a scroll or a held key into a stutter.
+    // Velocity is not zeroed here, unlike flyTo. These are streams of small inputs, and resetting on
+    // each one turns a scroll or a held key into a stutter.
     target = dest;
   };
 
@@ -432,17 +369,13 @@ export function createControls(
   };
 
   /*
-   * Zooms toward the cursor, through the spring rather than straight onto the camera.
+   * Zooms toward the cursor through the spring, not straight onto the camera.
    *
-   * It used to assign `zoom` directly, so a mouse wheel stepped the camera 14% per notch in one
-   * frame: correct, anchored, and visibly a staircase. The spring that already smooths every `flyTo`
-   * was sitting right there and the wheel was the one input bypassing it.
+   * Assigning `zoom` directly stepped 14% per notch in one frame: correct, anchored, and a staircase.
    *
-   * The anchoring maths is unchanged and still runs against a real camera, just a hypothetical one:
-   * the camera is moved to where it is *heading*, the correction is solved there, the result becomes
-   * the new target, and the visible camera is put back for the spring to carry. Compounding off the
-   * pending target rather than the current zoom is what makes ten fast notches travel ten notches
-   * instead of racing the animation.
+   * The anchoring maths still runs against a real camera, just a hypothetical one: move the camera to
+   * where it is heading, solve there, make that the new target, put the visible camera back. That is
+   * what lets ten fast notches travel ten notches instead of racing the animation.
    */
   const zoomAt = (factor: number, clientX: number, clientY: number): void => {
     const before = pick(clientX, clientY);
@@ -491,9 +424,8 @@ export function createControls(
     };
 
     const onPointerDown = (e: PointerEvent): void => {
-      // Capture keeps a drag alive when the pointer leaves the canvas, which matters here because
-      // the globe sits against the panel edge. It throws when the pointer is already gone, which
-      // a fast tap can arrange, and losing the capture is survivable where an exception is not.
+      // Capture keeps a drag alive when the pointer leaves the canvas, and the globe sits against the
+      // panel edge. It throws when the pointer is already gone, which a fast tap can arrange.
       try {
         canvas.setPointerCapture(e.pointerId);
       } catch {
@@ -524,28 +456,22 @@ export function createControls(
     };
 
     /*
-     * On the map a drag moves the map, not the camera's longitude.
-     *
-     * Reusing the orbit path with the morph applied would spin a plane, which is the kind of thing
-     * that technically animates and means nothing. The switch is at the halfway point rather than
-     * blended, because a drag that is half a rotation and half a pan tracks neither.
+     * On the map a drag moves the map, not the camera's longitude. Reusing the orbit path with the
+     * morph applied would spin a plane. Switched at the halfway point, because a drag that is half
+     * rotation and half pan tracks neither.
      */
     const panBy = (dxPx: number, dyPx: number): void => {
       const perPixel = (2 * dist() * Math.tan((fovDeg / 2) * DEG)) / canvas.clientHeight;
       lon -= ((dxPx * perPixel) / MAP_HALF_WIDTH) * 180;
       /*
-       * Vertically the map is a wall, horizontally it is a loop.
-       *
-       * There is nothing above 90 north to look at, so the clamp keeps the poles at the edge of the
-       * view rather than letting the map be dragged off into empty space. It accounts for how much of
-       * the world the view covers: zoomed out far enough to see the whole map, there is nowhere to go
-       * and latitude locks to the equator.
+       * Vertically the map is a wall, horizontally a loop. There is nothing above 90 north to look at,
+       * and the clamp accounts for how much of the world is in frame: zoomed out far enough to see all
+       * of it, latitude locks to the equator.
        */
       const halfView = dist() * Math.tan((fovDeg / 2) * DEG);
       const room = Math.max(0, 1 - halfView) * 90;
       lat = Math.max(-room, Math.min(room, lat + dyPx * perPixel * 90));
-      // Wrapped rather than clamped: the map repeats, and hitting a wall at the date line on a
-      // projection whose whole point is that it is continuous would be a strange place to stop.
+      // Wrapped, not clamped. The map repeats, so a wall at the date line would be a strange place to stop.
       lon = ((((lon + 180) % 360) + 360) % 360) - 180;
     };
 
@@ -581,15 +507,12 @@ export function createControls(
         (angleAt(to - centre) - angleAt(from - centre)) / DEG;
 
       /*
-       * Longitude is compressed by latitude, and the drag has to undo that.
+       * Longitude is squeezed by latitude and the drag has to undo it.
        *
        * The camera turns about the pole, so a horizontal drag moves the grabbed point along its
-       * parallel, and a parallel at latitude L is only cos(L) as long as the equator. Without this
-       * the globe crawls under the pointer up north: measured, a 140px drag at 70 degrees left the
-       * coastline 69 pixels behind, against 0.2 pixels at the equator.
-       *
-       * Floored at 0.25 rather than run to the pole. The exact correction diverges as cos goes to
-       * zero, and near the axis it would turn a small drag into a spin.
+       * parallel, which at latitude L is only cos(L) as long as the equator. Without this a 140px drag
+       * at 70 degrees left the coastline 69 pixels behind. Floored at 0.25, or a small drag near the
+       * axis becomes a spin.
        */
       const lonScale = 1 / Math.max(0.25, Math.cos(lat * DEG));
       lon -= swept(prev.x, e.clientX, cx) * lonScale;
@@ -609,8 +532,7 @@ export function createControls(
     const onPointerUp = (e: PointerEvent): void => {
       pointers.delete(e.pointerId);
       pinchDist = 0;
-      // A flick only coasts if it was still moving when it let go. Releasing after a pause
-      // should leave the globe exactly where it was put.
+      // A flick only coasts if it was still moving when it let go. Release after a pause and the globe stays put.
       const stale = performance.now() - lastMove.t > 90;
       if (stale || reduced.matches || pointers.size > 0) {
         vLon = 0;
@@ -621,8 +543,7 @@ export function createControls(
 
     const onWheel = (e: WheelEvent): void => {
       e.preventDefault();
-      // Exponential, so one notch is the same proportion of the way in wherever you start.
-      // A 120-unit notch works out at about 14%, which takes roughly ten notches end to end.
+      // Exponential, so a notch is the same proportion of the way in wherever you start: about 14%.
       zoomAt(Math.exp(-e.deltaY * 0.0011), e.clientX, e.clientY);
       onChange();
     };
@@ -633,15 +554,12 @@ export function createControls(
     };
 
     /*
-     * Camera keys, on the window rather than the canvas.
+     * Camera keys live on the window, not the canvas. The canvas is `aria-hidden` and unfocusable on
+     * purpose - the feed is the screen-reader interface - but a sighted person with no mouse still needs
+     * to move the globe.
      *
-     * The canvas is `aria-hidden` and not focusable on purpose: the accessible feed is the interface
-     * for a screen reader and the canvas is never it. But a sighted person with no mouse is a
-     * different user, and until now they could not move the globe at all.
-     *
-     * Only while nothing is focused, so tabbing into the event list gives its arrows back and a slider
-     * keeps its own. That is one rule rather than a list of elements to keep in step, which is how the
-     * touch-target rule went wrong when it named regions instead of naming the thing.
+     * Only while nothing is focused, so the event list keeps its arrows and a slider keeps its own. One
+     * rule, rather than a list of elements somebody has to keep in step.
      */
     const onKeyDown = (e: KeyboardEvent): void => {
       if (document.activeElement && document.activeElement !== document.body) return;
@@ -684,8 +602,7 @@ export function createControls(
   /** One fixed slice of the flight. Critically damped, so it arrives without a bounce. */
   const stepSpring = (h: number): void => {
     if (!target) return;
-    // Shortest way round, so flying from 179E to 179W crosses the date line rather than taking
-    // the long way through Greenwich.
+    // Shortest way round, so 179E to 179W crosses the date line instead of going through Greenwich.
     let shortest = target.lon - lon;
     shortest -= Math.round(shortest / 360) * 360;
     const acc = (gap: number, v: number): number => SPRING_STIFFNESS * gap - SPRING_DAMPING * v;
@@ -697,12 +614,8 @@ export function createControls(
 
     if (target.arc) {
       /*
-       * Zoom is a function of where the camera is, not a fourth spring.
-       *
-       * Chasing a moving zoom target with its own spring lags it, so the pullback came out shallower
-       * than asked for and the climb and descent were not symmetric. Slaving zoom to distance covered
-       * instead makes it exact and free: the easing is already in the lon/lat spring, so zoom inherits
-       * it, and zoom is guaranteed to reach the target at the same moment the position does.
+       * Zoom is a function of distance covered, not a fourth spring. Chasing a moving zoom target with
+       * its own spring lags it, so the pullback came out shallow and the climb and descent did not match.
        */
       const { span, pull, fromZoom } = target.arc;
       const progress = Math.max(0, Math.min(1, 1 - spanDeg(lon, lat, target.lon, target.lat) / span));
@@ -716,12 +629,9 @@ export function createControls(
     }
 
     /*
-     * Zoom is left out of the test while an arc is flying, because it would never pass.
-     *
-     * Position settles at 0.05 degrees of slack, and at that point the lift is still around 0.002 of a
-     * radian: enough to hold zoom about 0.002 off its target and 0.001 is the threshold. The flight
-     * would have hung a hair short of arriving, forever. Zoom needs no test here anyway - it is a
-     * function of a position that has just been declared arrived, and the block below assigns it exactly.
+     * Zoom is left out of the arrival test while an arc is flying, or it would never pass. Position
+     * settles at 0.05 degrees of slack, where the lift still holds zoom about 0.002 off its target
+     * against a 0.001 threshold, and the flight would hang a hair short forever.
      */
     const settled =
       Math.abs(shortest) < 0.05 && Math.abs(target.lat - lat) < 0.05 &&
@@ -741,17 +651,11 @@ export function createControls(
 
     if (target) {
       /*
-       * Integrated in small fixed slices, not in one step of whatever the frame happened to take.
+       * Integrated in small fixed slices, not one step of whatever the frame took.
        *
-       * Semi-implicit Euler on a stiffness-100 spring is only stable while `stiffness * dt^2` stays
-       * small, and the frame clamp of 50ms is not small enough. On a slow browser the entrance
-       * overshot its destination and wobbled back: measured at 145.6, 146.3, 149.9 and 160.5
-       * degrees against a target of 145, varying with frame rate. Varying with frame rate is the
-       * signature of an integrator, not of a physics choice, and the bounce it produced is exactly
-       * what critical damping was chosen to avoid.
-       *
-       * Slicing makes the flight identical at 15fps and at 120fps, which also means a reset takes
-       * the same second on every machine.
+       * Semi-implicit Euler is only stable while stiffness * dt^2 stays small, and the 50ms frame clamp
+       * is not small enough: the entrance overshot to 145.6, 146.3, 149.9 and 160.5 degrees against a
+       * target of 145, varying with frame rate. Slicing makes 15fps and 120fps identical.
        */
       const slices = Math.min(64, Math.max(1, Math.ceil(dt / MAX_SPRING_STEP)));
       const h = dt / slices;
@@ -801,16 +705,13 @@ export function createControls(
     pick,
     flyTo,
     enter: () => {
-      // Not shortened under reduced motion, skipped. A brief version of a motion somebody asked
-      // not to see is still the motion.
+      // Skipped under reduced motion, not shortened. A brief version of a motion somebody asked not to
+      // see is still the motion.
       if (reduced.matches) return;
       /*
-       * The destination is wherever the camera is already aimed, not the default framing.
-       *
-       * A permalink calls `flyTo` while the globe is being set up and `enter` runs after the first
-       * draw, so naming the framing here quietly discarded the shared camera: every link anybody
-       * sent opened on the default view at zoom 1, which is the one outcome a permalink exists to
-       * prevent. Nothing failed, which is why it survived: the entrance looked correct.
+       * The destination is wherever the camera is already aimed, not the default framing. A permalink
+       * calls `flyTo` during setup and `enter` runs after the first draw, so naming the framing here
+       * silently threw away every shared camera. Nothing failed, which is why it survived.
        */
       const to = target ?? { lon, lat, zoom };
       lon = to.lon - ENTRANCE_DEG;
@@ -823,11 +724,9 @@ export function createControls(
       const r = canvas.getBoundingClientRect();
 
       /*
-       * On the map, project the point on the plane, not the point on the sphere.
-       *
-       * Everything that puts chrome over the canvas goes through here: the tooltip, the hover ring,
-       * the selection ring. Left on the sphere they were all placed where the event would have been on
-       * a globe nobody was looking at, which is why hover on the map appeared to do nothing.
+       * On the map, project the point on the plane, not on the sphere. Every piece of chrome over the
+       * canvas comes through here, and on the sphere they all sat where the event would have been on a
+       * globe nobody was looking at.
        */
       if (morph > 0.5) {
         let dLon = pLon - lon;
@@ -844,8 +743,8 @@ export function createControls(
       const lam = pLon * DEG;
       const c = Math.cos(phi);
       world.set(c * Math.sin(lam), Math.sin(phi), c * Math.cos(lam));
-      // Behind the horizon: the surface normal at that point faces away from the eye. Asked at the
-      // surface even when a depth was given, because that is the question the shader asks.
+      // Behind the horizon: the surface normal faces away from the eye. Asked at the surface even when
+      // a depth was given, because that is the question the shader asks.
       if (world.dot(camera.position.clone().sub(world)) <= 0) return null;
       if (radius !== 1) world.multiplyScalar(radius);
       world.project(camera);
@@ -864,8 +763,8 @@ export function createControls(
     },
     morph: () => morph,
     state: () => ({ lon, lat, zoom }),
-    // The visible height at distance d is 2 d tan(fov/2), which is what `focalPx` is the reciprocal
-    // half of, so a pixel is d/focalPx world units and a world unit is 90 degrees.
+    // Visible height at distance d is 2 d tan(fov/2), and `focalPx` is the reciprocal half of that, so
+    // a pixel is d/focalPx world units and a world unit is 90 degrees.
     degPerPx: () => (90 * dist()) / focalPx(),
     setFit: (d, byHeight) => {
       fit = d;

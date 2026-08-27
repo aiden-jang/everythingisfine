@@ -3,22 +3,15 @@ import { DEG, EARTH_RADIUS_KM } from "./sphere";
 /*
  * The far side, and the one thing a globe can show that a map cannot.
  *
- * A wavefront on a sphere does not simply grow. It grows to a great circle a quarter of the world away,
- * and then it *shrinks*, closing to a single point on the exact opposite side of the planet. The front
- * that has travelled 150 degrees is the same length as the one that had travelled 30 - **20,015 km each,
- * against 40,030 km at the widest** - and the drawing is only true on a sphere. Flattened, the far side is
- * smeared across the whole top and bottom edge of the map, which is the projection lying, and this app can
- * morph between the two while the figure is on screen.
+ * A wavefront on a sphere does not simply grow: it grows to a great circle a quarter of the world away and
+ * then shrinks, closing to a point on the opposite side. The front that has travelled 150 degrees is the
+ * same length as the one that travelled 30 - 20,015 km each, against 40,030 km at the widest.
  *
- * **No time is claimed anywhere in here, deliberately.** The numbers this file states are spherical
- * geometry and contain no velocity at all. Timing the far side would need a teleseismic path through the
- * mantle, and `arrival.ts` already refused that once by capping arrival times at 700km rather than
- * pretending a surface speed holds across the planet. Extending the live ring instead was measured and
- * rejected: it fades at 17 degrees, **9.4% of the way to the antipode**, and reaching the far side at the
- * stated x20 playback would take 166.8 seconds of screen time against the 15.75 it lives now.
+ * No time is claimed anywhere in here. Timing the far side needs a teleseismic path through the mantle, and
+ * `arrival.ts` already refused that by capping at 700km. Extending the live ring was measured and rejected:
+ * it fades at 17 degrees, 9.4% of the way, and reaching the antipode at x20 would take 166.8 seconds.
  *
- * So this is a figure, not an animation: where the front would be at fixed intervals of *arc*, which is a
- * fact about the shape of the Earth rather than about how fast rock carries a shock.
+ * So this is a figure, not an animation: where the front would be at fixed intervals of arc.
  */
 
 /** Where a front from here closes back to a point. */
@@ -29,33 +22,23 @@ export function antipodeOf(lon: number, lat: number): { lon: number; lat: number
   return { lon: wrapped, lat: -lat };
 }
 
-/**
- * How long the front itself is, at an arc radius from the epicentre.
- *
- * `2 pi R sin(theta)`, which is the whole argument in one line: the sine peaks at 90 degrees and returns,
- * so the front grows, turns over, and closes.
- */
+/** How long the front itself is, at an arc radius from the epicentre. `2 pi R sin(theta)`, which is the
+ * whole argument in one line: the sine peaks at 90 degrees and returns. */
 export function frontLengthKm(arcDeg: number): number {
   return 2 * Math.PI * EARTH_RADIUS_KM * Math.abs(Math.sin(arcDeg * DEG));
 }
 
-/**
- * The arcs drawn, in degrees.
- *
- * Symmetric about 90 on purpose: 30 and 150 are the same length, and seeing the pair is what makes the
- * turnover legible rather than merely stated. 90 is the great circle, the widest the front ever is.
- */
+/** The arcs drawn, in degrees. Symmetric about 90 on purpose: 30 and 150 are the same length, and seeing
+ * the pair is what makes the turnover legible rather than merely stated. */
 export const FRONT_ARCS = [30, 60, 90, 120, 150] as const;
 
 /** Points per circle. 120 is a third of a degree of bearing, which reads as a circle at any zoom. */
 const STEPS = 120;
 
 /**
- * A circle of constant arc radius around a point, as longitude and latitude.
- *
- * The standard destination-point formula walked round the full 360 degrees of bearing. Not a circle in
- * longitude and latitude - it is a circle *on the sphere*, which is exactly why it has to be built this
- * way and cannot be an ellipse drawn around the centre.
+ * A circle of constant arc radius around a point, as longitude and latitude. Walked with the
+ * destination-point formula: this is a circle on the sphere, not in lon/lat, so it cannot be drawn as an
+ * ellipse around the centre.
  */
 export function smallCircle(
   lon: number, lat: number, arcDeg: number, steps: number = STEPS,

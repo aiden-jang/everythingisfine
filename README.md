@@ -24,8 +24,10 @@ WebSocket. Both are keyless, so the repo renders a full first frame for anyone w
 nothing to sign up for and nothing to configure.
 
 Hover an event for a one-line summary, click to pin it, drag to orbit, scroll to zoom toward the
-cursor, click a region in the rail to fly there. Every filter answers as it moves; there is no apply
-button. A permalink carries the camera, the filters and the pinned event.
+cursor, search or click a region in the rail to fly there. Every filter answers as it moves; there is
+no apply button. `f` hides the chrome and leaves the planet; `Still` writes a PNG with the moment it
+is of stamped on it. A permalink carries the camera, the filters, the moment, the archived day, the
+pinned event and any cross-section drawn on the map.
 
 ## The budget was $0, and it made the project better
 
@@ -66,6 +68,10 @@ sphere spatially is disorienting. One tab stop, then arrows. A polite live regio
 above a threshold the viewer sets, defaulting high, because a busy feed floods a screen reader until
 the person closes the page.
 
+Every control answers a keyboard, including the two the canvas made easy to forget: the camera keys
+live on the window rather than the canvas, and the activity strip's twenty-four bars are real buttons
+on one tab stop, so "which of these happened at 05:00" is not a pointer-only question.
+
 A browser test drives the whole app with the canvas set to `visibility: hidden`.
 
 ## Design and decisions
@@ -88,16 +94,22 @@ measured there is noise wearing a unit, and a threshold loose enough to pass is 
 to fail. What regresses in code is the per-frame work: filter predicates, projection maths, buffer
 writes.
 
+Budgets are in **reference units**, not milliseconds: a fixed synthetic workload is timed in the same
+process moments earlier and the budget is a ratio against it. Both numbers move together when the
+machine is busy and the ratio does not, which is the property an absolute threshold never had - it
+failed three times on unchanged code.
+
 | Events | Budget | Measured |
 |---|---|---|
-| 1,000 | 1.0ms | 0.12ms |
-| 10,000 | 4.0ms | 1.10ms |
-| 50,000 | 12.0ms | 6.26ms |
-| 50,000, clustered | 12.0ms | 6.22ms |
+| 1,000 | under 0.15 ref | 0.10 ref, 0.16ms |
+| 10,000 | under 1.05 ref | 0.96 ref, 1.57ms |
+| 50,000 | under 7.0 ref | 4.45 to 4.91 ref, 7.3 to 8.1ms |
+| 50,000, hour held | under 7.0 ref | 5.24 to 5.35 ref |
 
 Fastest of 40 runs on an Apple Silicon Mac under Node 22. The fastest rather than the median,
 because every slower sample is the code plus interference and the interference is never the thing
-under test. Memory is asserted flat across four simulated hours.
+under test. Memory is asserted flat across twelve simulated hours, against a 0.5MB budget checked by
+making it fail.
 
 ## Hosting
 
@@ -171,6 +183,36 @@ The globe is lit from the real subsolar point, computed from the clock with NOAA
 algorithm. The geography dims on the night side; the earthquakes do not, because one at 3am is not a
 smaller earthquake.
 
+## Time
+
+The window is 24 hours, 7 days or 30 days, chosen by name rather than dragged. The activity strip
+below it is always exactly that window, divided into 24 bars, so the strip and the globe can never
+disagree about what is on screen.
+
+A cursor under the strip parks the globe at a moment inside the window and plays forward from there.
+It is the entrance replay made permanent: the event layer already takes a reveal limit, so nothing
+here invents an event, reorders one or changes a time. `,` and `.` step it a bar at a time, because
+the arrow keys are the camera.
+
+**Any past day can be loaded**, from both agencies' FDSN endpoints, which take an arbitrary date
+keylessly. The risk in that feature is a chrome that goes on saying "live" over a globe showing last
+March, so it is a mode: the live sources stop, the set is replaced, and every claim of liveness in
+the interface reads the snapshot and stands down. A dozen notable days are listed as the way in,
+each with its own event count, because 1960-05-22 holds the largest earthquake ever recorded and six
+events at M2.5+ - which is the network of the day, not a quiet planet.
+
+## The sky
+
+Real stars, from the Yale Bright Star Catalogue down to magnitude 6, turned by sidereal time so
+Orion is over the Pacific in January and can be found. The moon is at its real distance and its real
+size, which is half a degree and looks small, and its phase is not computed anywhere: lighting a
+sphere from the direction the sun already points gives the crescent for free, including which way the
+horns face. Five planets move against it. On the few days there is one, the moon's shadow falls on the
+Earth, which is the sun's direction and the moon's position multiplied together.
+
+Constellation figures are behind a toggle, because they are the one layer here that measures nothing.
+Nobody discovered that seven stars are a plough.
+
 ## Sequences
 
 Pinning an event shows what happened around it on one axis: time. Every event within 150km appears as a
@@ -191,29 +233,34 @@ position on screen already shows it.
 
 ## What is wrong with it
 
-**Aftershocks can be swallowed.** Association uses time and distance, so a genuine aftershock within
-30 seconds and 150km of a mainshock is folded into it. Separating them needs waveform data no
-keyless feed carries. The detail panel lists every merged reading, so a wrong merge is visible
-rather than hidden, but it is a real limitation and not a rare one during a sequence.
+**Aftershocks can be swallowed.** Association uses time, distance and magnitude, so a doublet within
+one magnitude unit, 30 seconds and 150km of a mainshock is folded into it. Separating that needs
+waveform data no keyless feed carries. The detail panel lists every merged reading, so a wrong merge
+is visible rather than hidden, but it is real and not rare during a sequence.
 
-**The window cannot go back beyond the seed.** Both feeds seed 24 hours on their first request and
-there is no backend, so 24 hours is the hard edge and time scrubbing beyond it was rejected rather
-than shipped as a worse version of itself.
+**The archive is earthquakes plus a second-best.** A past day gets its seismicity from both agencies'
+FDSN endpoints, which is the real thing. Its storms, fires, floods and volcanoes come from NASA EONET
+instead of GDACS, because GDACS filters its *current* pool by date rather than holding an archive.
+The aurora has no archived branch at all and never will: NOAA publishes a forecast for a stamped
+minute, so there is no past oval to ask for.
 
-**Browser tests run against the dev server, not a build.** They no longer touch the network, but they
-exercise `pnpm dev` rather than `dist`, so a bundler-only failure would get past them.
+**Browser tests are not in CI.** They no longer touch the network - `e2e/feeds.ts` serves both
+agencies, all five hazard feeds and the aurora - so the old reason is gone and the wiring has simply
+not been done.
 
-**Browser tests are not in CI.** They wait on two real agencies, so a quiet planet or an agency doing
-maintenance would fail the build for reasons that are not the code's fault. Routing the feeds to the
-committed fixtures would fix this and has not been done.
+**The build-mode browser run skips seven tests.** `pnpm test:e2e:build` exercises `dist` rather than
+`pnpm dev`, and the tests that reach for `window.__globe` skip there by construction, because a
+production bundle should not carry a debug surface. They are skipped rather than silently passed.
 
-**You cannot walk a swarm event by event.** 400 events in the Flores Sea collapse to a handful of
-markers on the globe. Pinning one shows its whole sequence in time, every neighbour within 150km
-placed against it, so the shape is readable; what is not there is stepping through them one at a time.
+**The size distribution reads wrong on fixture data.** `e2e/feeds.ts` draws magnitudes at a b-value
+of 0.625 where the Earth sits between 0.8 and 1.2, so the chart quotes "about 5 times as many" on
+fixtures against "about 10" on a real feed. Changing it moves the count at every magnitude threshold
+and half the browser suite asserts on those.
 
-**Hovering an hour is pointer-only.** The strip's real job, setting the window, works from the
-keyboard; the link that dims the globe to one hour does not, and there is no discoverable keyboard
-gesture for it.
+**The eclipse shadow is a picture, never a forecast.** The lunar series is good to about a tenth of a
+degree, which at sixty Earth radii of lever arm is roughly 670km on the ground, and UTC stands in for
+Terrestrial Time for another 70km. Fine against a penumbra 3,500km wide, useless for telling anybody
+when to look up, and the legend says so.
 
 **No demo video.** The write-up asks for one and there is none, because recording it is not
 something this build could do.

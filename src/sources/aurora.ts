@@ -1,21 +1,17 @@
 /*
  * The aurora oval, from NOAA's OVATION model.
  *
- * The first layer that is not an earthquake, and chosen first because it is the only one that is not more
- * dots: it is a field, so it renders as light on the night side rather than as another marker competing
- * with the ones already there.
+ * The first layer that is not an earthquake, and chosen first because it is not more dots: it is a field, so
+ * it renders as light on the night side rather than as another marker.
  *
- * It also arrives already explained, which is the rule this app now holds every layer to. The globe
- * computes the real subsolar point every minute to shade the night side, and an aurora is visible exactly
- * where that shading is: the terminator the app already draws is the reason the oval appears where it
- * does.
+ * It arrives already explained. The globe computes the real subsolar point every minute to shade the night
+ * side, and an aurora is visible exactly where that shading is.
  *
- * Keyless, `access-control-allow-origin: *`, verified from the command line before any of this was
- * written. See `PLAN.local.md` section I for the feeds that failed the same check and why.
+ * Keyless, `access-control-allow-origin: *`, verified from the command line before any of this was written.
  */
 
 /** Aurora probability on a one-degree grid, updated every few minutes. */
-export const AURORA_URL = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json";
+const AURORA_URL = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json";
 
 /** Columns of longitude, 0 to 359 east, as the model publishes them. */
 export const AURORA_LON = 360;
@@ -39,13 +35,12 @@ interface Payload {
 /**
  * The published grid into a raster, or null when the shape is not what it should be.
  *
- * Indexed row-major from the south pole, which is the order a texture wants and the order the feed
- * happens to publish, so nothing is transposed on the way in. Longitude stays 0-359 east rather than
- * being rebased to -180: the shader wraps it with a `fract`, and rebasing here would be a second place
- * for the seam to be got wrong.
+ * Indexed row-major from the south pole, which is what a texture wants and what the feed publishes, so
+ * nothing is transposed. Longitude stays 0-359 east: the shader wraps it with a `fract`, and rebasing here
+ * would be a second place for the seam to be got wrong.
  *
- * Returns null rather than a partial grid. A half-filled aurora is a claim about the sky being dark in
- * the places the parser gave up on.
+ * Null rather than a partial grid. A half-filled aurora is a claim about the sky being dark where the parser
+ * gave up.
  */
 export function parseOvation(payload: unknown): Aurora | null {
   const body = payload as Payload | null;
@@ -83,12 +78,8 @@ export function auroraAt(aurora: Aurora, lon: number, lat: number): number {
   return aurora.grid[row * AURORA_LON + wrapped] ?? 0;
 }
 
-/**
- * Fetches and parses, or null on anything at all going wrong.
- *
- * Optional by design, like EMSC's catalogue seed: the app is a seismic instrument that also draws the
- * sky, and a sky that fails to load must not be reported as a broken feed or hold anything up.
- */
+/** Fetches and parses, or null on anything going wrong. Optional by design, like EMSC's catalogue seed: a
+ * sky that fails to load must not be reported as a broken feed or hold anything up. */
 export async function fetchAurora(
   get: (url: string) => Promise<Response> = fetch,
   onAnswer?: (ok: boolean) => void,
@@ -100,11 +91,8 @@ export async function fetchAurora(
       return null;
     }
     const grid = parseOvation(await res.json());
-    /*
-     * A null grid counts as no answer. It means the payload was there and unusable - a short row count
-     * or a bad tuple - and from the viewer's side that is the same fact: the sky is missing and it is
-     * not because the sky is quiet.
-     */
+    // A null grid counts as no answer. The payload was there and unusable, and from the viewer's side that
+    // is the same fact: the sky is missing, and not because the sky is quiet.
     onAnswer?.(grid !== null);
     return grid;
   } catch {

@@ -8,46 +8,32 @@ import { SKY_DISTANCE, SKY_GLSL } from "./sky";
 /*
  * The sky, as 5,080 real stars rather than a hash of the view direction.
  *
- * What this buys over the procedural field it replaces is recognition. Orion is over the Pacific in
- * January and the Southern Cross sits under Australia, and both are findable, which is the one thing a
- * generated field can never do however well it is tuned. It also costs less to reason about: magnitude is
- * a real number in the table instead of a density curve that had to be measured against screenshots.
+ * What that buys is recognition: Orion is over the Pacific in January and the Southern Cross sits under
+ * Australia, and both are findable.
  *
- * **A skybox without a skybox, and without any per-frame work.** The stars must swing when the camera
- * orbits and must not slide when it moves, which is the tell that gives a fake sky away. Rather than
- * chasing the camera from the render loop, the vertex shader adds `cameraPosition` to the star's own
- * direction, so every star sits at a fixed distance from wherever the eye is. Nothing has to be updated
- * as the camera moves, and the layer needs no hook in the loop at all.
+ * A skybox without a skybox, and with no per-frame work. The vertex shader adds `cameraPosition` to the
+ * star's own direction, so every star sits at a fixed distance from wherever the eye is and nothing has to
+ * be updated as the camera moves.
  *
- * **Depth-tested, and that is deliberate rather than incidental.** Three.js draws every opaque object
- * before any transparent one, so a transparent layer with the test off paints over the planet no matter
- * how low its `renderOrder` sits - the trap the land fill, the markers and the old star shell are each
- * documented against. The ocean is opaque and writes depth first, and `STAR_DISTANCE` is far enough out
- * that every star in the planet's direction fails against it. That is what puts the sky behind the world.
+ * Depth-tested, deliberately. Three.js draws every opaque object before any transparent one, so a
+ * transparent layer with the test off paints over the planet however low its `renderOrder`. The ocean is
+ * opaque and writes depth first, and `STAR_DISTANCE` is far enough out that every star behind the planet
+ * fails against it.
  *
- * **Brightness only, no hue.** Real stars have real colours and this draws all of them in the interface's
- * own near-white, because hue on this globe means magnitude and section 13 leaves the atmospheric rim as
- * the only exception that will ever be made. A blue Rigel beside an orange Betelgeuse would be the second
- * thing on screen where colour meant something, and it would mean something different.
+ * Brightness only, no hue. A blue Rigel beside an orange Betelgeuse would be the second thing on screen
+ * where colour meant something, and it would mean something different.
  */
 
 /** Slightly under Instrument, so a star is never as bright as a focus ring. Matches the old field. */
 export const COLOR_STARS = new Color(0xc8d2e2);
 
 /*
- * Magnitude spent on size and on opacity together, each on its own curve.
+ * Magnitude spent on size and on opacity together, each on its own curve. The flux ratio across this table
+ * is about 1,400 to 1: on opacity alone that leaves Sirius in a black sky, on size alone it is a scatter plot.
  *
- * The physical flux ratio across this table is about 1,400 to 1. Spending that on opacity alone leaves
- * Sirius alone in a black sky, and spending it on size alone gives a field of equally bright dots in
- * assorted sizes, which reads as a scatter plot. Splitting it is what makes the bright stars sit forward
- * without the faint ones dropping out.
- *
- * **Both gammas are below one, and the first attempt had them above.** The table is bottom-heavy - 4,176
- * of its 5,080 stars are fainter than magnitude 4.5 - so the normalised brightness of a typical star is
- * about 0.07, and a gamma above one crushes almost the whole catalogue onto the minimum. Measured against
- * the field this replaces: 16 lit pixels in a patch of sky where the old one had 164, with the star count
- * in that patch very nearly the same. The stars were all there and all drawn a pixel and a half wide.
- * Below one, the same 0.07 lifts to 0.31 and the faint end draws at a size a reader can actually see.
+ * Both gammas are below one. The table is bottom-heavy - 4,176 of 5,080 stars fainter than magnitude 4.5 -
+ * so a typical star normalises to about 0.07, and a gamma above one crushes the catalogue onto the minimum:
+ * measured, 16 lit pixels in a patch of sky where the old field had 164. Below one, 0.07 lifts to 0.31.
  */
 const SIZE_MIN_PX = 2.6;
 const SIZE_MAX_PX = 5.4;
@@ -68,22 +54,13 @@ const STARFIELD = {
 
       /*
         Placed by the shared sky rule: turned by sidereal time, then offset to the eye. See sky.ts.
-        No backticks in here: this is inside a template literal and one would end the shader.
-
-        The turn is driven from wall-clock time, which is correct for the live view and is not the whole
-        story: the scene aims the sun from Date.now() too, so an archived day is drawn under tonight's
-        terminator and now under tonight's sky as well. That was already true of the sun before there was
-        a sky to join it. Both should follow the moment on screen, and which instant a whole archived day
-        means is a question the app has not answered yet.
+        No backticks in here: one would end the template literal.
       */
       gl_Position = projectionMatrix * viewMatrix * vec4(skyPoint(position), 1.0);
 
       /*
-        A fixed size in pixels, with no distance falloff.
-
-        Every star is the same distance from the eye by construction, so there is nothing for
-        perspective to say. Attenuating anyway would make the whole sky swell as the camera pulled back,
-        which is the same wallpaper tell the position maths exists to avoid.
+        A fixed size in pixels, with no distance falloff. Every star is the same distance from the eye by
+        construction, so attenuating would make the whole sky swell as the camera pulled back.
       */
       gl_PointSize = mix(${SIZE_MIN_PX.toFixed(2)}, ${SIZE_MAX_PX.toFixed(2)},
         pow(aBright, ${SIZE_GAMMA.toFixed(2)})) * uPixelRatio;
@@ -95,12 +72,8 @@ const STARFIELD = {
 
     void main() {
       /*
-        Round, and softened only at the very edge.
-
-        A point sprite is a square, so the disc has to be cut out here. The falloff starts late on
-        purpose: these are one to four pixels across, and a gentle gradient across a two-pixel dot
-        removes the dot rather than softening it. Measured against the field this replaces, which had
-        the same problem and solved it the same way.
+        Round, and softened only at the very edge. A point sprite is a square, so the disc is cut out here.
+        These are one to four pixels across, and a gentle gradient across a two-pixel dot removes the dot.
       */
       float d = length(gl_PointCoord - vec2(0.5));
       if (d > 0.5) discard;
@@ -128,12 +101,9 @@ export interface Starfield {
 export function createStarfield(): Starfield {
   const geometry = new BufferGeometry();
   /*
-   * Told outright, rather than computed from positions that are only unit vectors.
-   *
-   * Three.js frustum-culls a Points object against a bounding sphere it derives from the buffer, and
-   * these positions describe a unit sphere at the origin while the shader draws them sixty units out
-   * around a moving eye. Left to itself the layer vanishes the moment the camera leaves that unit
-   * sphere, which is immediately. The geometry is not where the drawing is, so the culling has to go.
+   * Told outright, not computed from positions that are only unit vectors. Three.js culls a Points object
+   * against a bounding sphere derived from the buffer, and these describe a unit sphere at the origin while
+   * the shader draws them sixty units out around a moving eye.
    */
   geometry.boundingSphere = null;
 
@@ -150,12 +120,9 @@ export function createStarfield(): Starfield {
     // The ocean is opaque and has already written depth, which is what hides the far side of the sky.
     depthWrite: false,
     /*
-     * Additive, because a star is light arriving and not paint being laid down.
-     *
-     * Over the void this is nearly indistinguishable from ordinary blending, and where two stars in a
-     * dense part of the Milky Way land on the same pixel it is the difference between a knot brightening
-     * and a knot doing nothing. It cannot wash anything out: the layer draws first and the planet is
-     * opaque in front of it.
+     * Additive, because a star is light arriving and not paint being laid down. Where two stars in a dense
+     * part of the Milky Way land on the same pixel it is the difference between a knot brightening and a knot
+     * doing nothing. It cannot wash anything out: the layer draws first and the planet is opaque in front.
      */
     blending: AdditiveBlending,
   });

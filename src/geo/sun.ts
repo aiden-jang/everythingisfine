@@ -1,13 +1,10 @@
 /*
  * Where the sun is overhead, right now.
  *
- * The globe was a navy disc: correct, and unlit, so it read as a diagram of Earth rather than as
- * Earth. A terminator fixes that with a fact rather than with styling. It gives the sphere a light
- * direction and it says, without a caption, that this is the planet at this moment.
+ * The globe was a navy disc: correct, unlit, and reading as a diagram of Earth rather than as Earth. A
+ * terminator fixes that with a fact rather than with styling.
  *
- * NOAA's low-precision solar position algorithm, good to about 0.01 degrees over 1950-2050. Far more
- * than a shadow edge needs, and the alternative is a hand-waved approximation sitting in an app whose
- * design document has a section called Honest Numbers.
+ * NOAA's low-precision solar position algorithm, good to about 0.01 degrees over 1950-2050.
  */
 
 const DEG = Math.PI / 180;
@@ -48,13 +45,8 @@ export function subsolarPoint(at: number): Subsolar {
     Math.sin(obliquity * DEG) * Math.sin(apparentLongitude * DEG),
   ) / DEG;
 
-  /*
-   * The equation of time, in minutes.
-   *
-   * This is the part a naive version drops, and dropping it puts the terminator up to a quarter of an
-   * hour out, which is about four degrees of longitude: visible, and wrong for a reason nobody would
-   * ever find.
-   */
+  // The equation of time, in minutes. A naive version drops it, which puts the terminator up to a quarter
+  // of an hour out - about four degrees of longitude, visible and wrong for a reason nobody would find.
   const y = Math.tan((obliquity / 2) * DEG) ** 2;
   const equationOfTime = 4 * (
     y * Math.sin(2 * meanLongitude * DEG)
@@ -72,27 +64,18 @@ export function subsolarPoint(at: number): Subsolar {
 }
 
 /*
- * Two things the terminator already knew and nothing read.
+ * Two things the terminator already knew and nothing read. `subsolarPoint` is computed every minute to light
+ * the globe, and it answers "what was it like there, then" for free: an earthquake at three in the morning
+ * is a different event from the same rupture at three in the afternoon.
  *
- * `subsolarPoint` is computed every minute to light the globe, and it answers "what was it like there,
- * then" for free. An earthquake at three in the morning, when everyone is asleep and indoors, is a
- * different event from the same rupture at three in the afternoon, and the app held the arithmetic to
- * say so and never did.
- *
- * **Solar time rather than clock time, and that is the keyless answer rather than a lazy one.** Civil
- * time needs timezone boundaries, which is a dataset or a service, and the project renders its first
- * frame for anyone who clones it. Solar time needs the sun, which is already here. It is also the more
- * honest quantity for the question: what matters is where the sun was, not which side of a political
- * line the epicentre fell on.
+ * Solar time rather than clock time, and that is the keyless answer rather than a lazy one. Civil time needs
+ * timezone boundaries; this needs the sun, which is already here.
  */
 
 /**
- * Local apparent solar time at a longitude, in hours from midnight.
- *
- * Noon is where the true sun crosses the meridian, so this is anchored on the subsolar longitude and
- * every 15 degrees east of it is an hour later. Apparent rather than mean, because `subsolarPoint`
- * already carries the equation of time and dropping it here would put this up to a quarter of an hour
- * out for no reason.
+ * Local apparent solar time at a longitude, in hours from midnight. Noon is where the true sun crosses the
+ * meridian, so this is anchored on the subsolar longitude. Apparent rather than mean, because
+ * `subsolarPoint` already carries the equation of time.
  */
 export function solarHour(lon: number, at: number): number {
   const { lon: sub } = subsolarPoint(at);
@@ -104,11 +87,8 @@ export function solarHour(lon: number, at: number): number {
 }
 
 /**
- * How high the sun stood over a place at a moment, in degrees above the horizon.
- *
- * The zenith angle is the angular distance from the point to the subsolar point, so this is one
- * spherical cosine and no more. Negative below the horizon, which is what makes the bands below
- * possible without a sunrise calculation.
+ * How high the sun stood over a place, in degrees above the horizon. The zenith angle is the angular
+ * distance to the subsolar point, so this is one spherical cosine. Negative below the horizon.
  */
 export function sunElevation(lon: number, lat: number, at: number): number {
   const sub = subsolarPoint(at);
@@ -122,14 +102,12 @@ export function sunElevation(lon: number, lat: number, at: number): number {
 }
 
 /**
- * Daylight, twilight or dark, on the conventional boundaries.
+ * Daylight, twilight or dark, on the conventional boundaries. Civil twilight is the sun within six degrees
+ * of the horizon, the same figure the night shader spreads its terminator over, so the words and the band
+ * agree by construction.
  *
- * Civil twilight is the sun within six degrees of the horizon, which is the same figure the night
- * shader spreads its terminator over, so the words here and the band on the globe agree by
- * construction rather than by coincidence.
- *
- * Derived from elevation rather than from the clock, because at high latitude three in the morning is
- * broad daylight for months and a band read off the hour would say the opposite.
+ * Derived from elevation, not from the clock: at high latitude three in the morning is broad daylight for
+ * months and a band read off the hour would say the opposite.
  */
 export function daylight(elevationDeg: number): "daylight" | "twilight" | "dark" {
   if (elevationDeg > 0) return "daylight";

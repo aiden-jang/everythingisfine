@@ -14,7 +14,7 @@ export const WINDOWS = [
   { hours: 30 * 24, label: "30d" },
 ] as const;
 
-export const WINDOW_HOURS: readonly number[] = WINDOWS.map((w) => w.hours);
+const WINDOW_HOURS: readonly number[] = WINDOWS.map((w) => w.hours);
 
 /**
  * The offered window nearest a number of hours.

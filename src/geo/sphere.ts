@@ -16,26 +16,6 @@ export function toVec3(lon: number, lat: number, r: number): [number, number, nu
   return [c * Math.sin(lam), Math.sin(phi) * r, c * Math.cos(lam)];
 }
 
-/**
- * Midpoint of two points in degrees.
- *
- * Averaging longitudes is wrong across the antimeridian: the midpoint of 179 and -179 is 180, not
- * zero. Natural Earth clips its geometry at the antimeridian so no real edge should span it, but a
- * silent wrong answer here draws a band straight across the map, so it is handled rather than
- * assumed away.
- */
-export function midpoint(
-  aLon: number, aLat: number, bLon: number, bLat: number,
-): [number, number] {
-  let d = bLon - aLon;
-  if (d > 180) d -= 360;
-  else if (d < -180) d += 360;
-  let lon = aLon + d / 2;
-  if (lon > 180) lon -= 360;
-  else if (lon < -180) lon += 360;
-  return [lon, (aLat + bLat) / 2];
-}
-
 /** Mean Earth radius. The value the two agencies' own distance figures are quoted against. */
 export const EARTH_RADIUS_KM = 6371;
 

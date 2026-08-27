@@ -6,7 +6,7 @@
 
 ## The problem arrived by accident
 
-First Motion had a $0 budget, and I read that strictly: no key that costs money, and no key that a
+This project had a $0 budget, and I read that strictly: no key that costs money, and no key that a
 person cloning the repo would have to go and get. The second half is stricter than the budget
 requires and it is the half that shaped everything, because a project that cannot render its own
 first frame without a signup has no first thirty seconds.
@@ -93,19 +93,39 @@ cannot quietly invalidate the thresholds the tests are really about.
 
 ---
 
-## The false positive I cannot fix
+## The false positive, and the third axis that narrowed it
 
 A large earthquake's immediate aftershocks can fall inside both windows. An aftershock 20 seconds
 after the mainshock and 40km away is, by these rules, the same event.
 
-It is not. Separating them needs waveform data, and no keyless feed carries it.
+It is not. I could narrow the windows until aftershocks fall outside, but the measurement says that
+costs genuine matches before it buys much: real pairs reach 16.7 seconds and 135km, which is
+squarely inside aftershock territory. **In time and distance the two populations genuinely overlap**,
+so no threshold on those two axes separates them.
 
-I could narrow the windows until aftershocks fall outside, but the measurement says that costs
-genuine matches before it buys much: real pairs reach 16.7 seconds and 135km, which is squarely
-inside aftershock territory. There is no threshold that cleanly separates the two using only time
-and distance, because the two populations genuinely overlap.
+Magnitude is a different axis, and that is the part I missed the first time. Two agencies describing
+**one** rupture agree about its size to a degree the aftershock case cannot imitate. Measured the
+same way the windows were, on two independent samples:
 
-So it is documented rather than hidden, and the interface is built so a wrong merge is *visible*:
+| | pairs | median | p90 | max |
+|---|---|---|---|---|
+| M2.5+, 24 hours | 50 | 0.00 | 0.20 | 0.40 |
+| M6+, 120 days | 47 | 0.00 | 0.00 | 0.10 |
+
+The worst disagreement anywhere in 97 genuine pairs is **0.40**, and it is on small events, where the
+scales differ most. The obvious objection - that `mb` saturates while `Mww` does not, so a great
+earthquake would be split into two markers, which is far worse than the bug being fixed - does not
+survive the second sample: at M6 and above both agencies report Mw or Mww and the pairs agree to
+0.1, M7.8 and M7.7 included.
+
+So a magnitude window of **one unit** costs nothing on the true population, with two and a half times
+the headroom over the worst pair observed, and sits below the ~1.2 units Bath's law puts between a
+mainshock and its *largest* aftershock. It removes the common case without touching the two windows
+that were already measured to be right.
+
+It is a partial guard and not a fix. A doublet within one magnitude unit still merges, and separating
+that needs waveform data no keyless feed carries. So the remainder is documented rather than hidden,
+and the interface is built so a wrong merge is *visible*:
 the detail panel lists every reading that was folded together, with its agency, its magnitude, its
 scale and its own coordinates. If two readings 40km apart are showing under one marker, you can see
 that they are, and you can see why the app thought they were one thing.

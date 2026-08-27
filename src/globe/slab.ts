@@ -8,42 +8,31 @@ import type { SlabPoint } from "../geo/slab";
 /*
  * The slab, drawn once and then left alone.
  *
- * Built from a committed table rather than from the store, so unlike the event layer this fills its
- * buffers a single time and never syncs again. There is no filter that applies to it: it is not a
- * reading anybody made today, it is the shape of a plate.
+ * Built from a committed table rather than from the store, so it fills its buffers once and never syncs
+ * again. No filter applies: it is not a reading anybody made today, it is the shape of a plate.
  *
- * The positions carry the depth already. `events.ts` sinks its markers in the shader because their
- * depths arrive with the data and change every tick; these never change, so the trigonometry happens
- * once on the CPU and the shader only has to undo it as the map flattens.
+ * The positions carry the depth already. `events.ts` sinks its markers in the shader because their depths
+ * change every tick; these never change, so the trigonometry happens once on the CPU.
  */
 
 /*
- * The boundaries' family, lifted until it reads.
- *
- * Started at the plate line's own tone and measured: against the ocean at this depth the field was
- * there and could not be seen, which is the worst of both - the cost of drawing 1,583 marks and none
- * of the shape. Lifted to where the sheet resolves, and still nowhere near the ramp, because the one
+ * The boundaries' family, lifted until it reads. At the plate line's own tone the field was there and could
+ * not be seen - the cost of 1,583 marks and none of the shape. Still nowhere near the ramp, because the one
  * thing this layer must never look like is today's earthquakes.
  */
 const COLOR_SLAB = 0x7ba0c8;
 
 /**
- * The same lift applied to the colourblind palette's own boundary tone.
- *
- * This layer is drawn as geography, so it has to change with the geography. It did not: the colour was a
- * constant while `setGeography` swapped the ocean, the land, the graticule, the coastlines and the plate
- * lines, which left the slab at chroma 77 on a palette whose geography sits between 12 and 20. The one
- * layer claiming to be part of the landscape would have been the only saturated thing on a screen chosen
- * for people who cannot rely on hue.
+ * The same lift applied to the colourblind palette's own boundary tone. This layer is drawn as geography, so
+ * it has to change with the geography: as a constant it left the slab at chroma 77 on a palette whose
+ * geography sits between 12 and 20, the only saturated thing on a screen chosen for people who cannot rely
+ * on hue.
  */
 const COLOR_SLAB_NEUTRAL = 0x9ea2ae;
 
 /**
- * Small, and fixed.
- *
- * Deliberately not scaled by magnitude. Size means magnitude on this globe and these are not the
- * magnitudes anybody is reading - dotting the frame with 1,583 sized marks would put a second, older,
- * differently-thresholded population into the one channel the live data owns.
+ * Small, and fixed. Deliberately not scaled by magnitude: size means magnitude on this globe, and 1,583
+ * sized marks would put an older, differently-thresholded population into the channel the live data owns.
  */
 const SIZE_PX = 2.5;
 
@@ -62,12 +51,10 @@ const SHADER = {
       /*
        * Lifted back to the surface as the map unwraps, exactly as the markers are.
        *
-       * The offset is added after the projection rather than baked into the radius, because on the
-       * plane radius is the layer index: fmProject builds its z from length(sphere) - 1.0, so a point
-       * already sunk to 0.9 would be filed a tenth of a world unit under the map and drawn behind the
-       * ocean. The positions here are unit vectors for that reason, and the depth rides in aSink.
+       * The offset is added after the projection, never baked into the radius: on the plane radius is the
+       * layer index, so a point already sunk to 0.9 gets filed under the map and drawn behind the ocean.
        *
-       * (No backticks in here. This is inside a template literal and one of them ends the shader.)
+       * (No backticks in here. One of them ends the template literal.)
        */
       vec3 sunk = surface * (-aSink * (1.0 - uMorph));
       gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position) + sunk, 1.0);
@@ -115,18 +102,15 @@ export function createSlabLayer(morph = { value: 0 }): SlabLayer {
     },
     transparent: true,
     depthWrite: false,
-    /*
-     * Not depth-tested, for the reason `events.ts` sets out at length: a point sprite carries the single
-     * depth of its centre across a screen-aligned quad, so near the limb half of every dot fails against
-     * a surface that curves away and the survivors end at a straight edge through the middle. The facing
-     * test above is the question that actually wants answering, and it is asked in the fragment.
-     */
+    // Not depth-tested, for the reason `events.ts` sets out: a point sprite carries the single depth of its
+    // centre across a screen-aligned quad, so near the limb half of every dot fails against a surface that
+    // curves away. The facing test above is the question that actually wants answering.
     depthTest: false,
   });
 
   const object = new Points(geometry, material);
-  // Under the plate lines and everything above them: this is the deepest thing on the globe, and the
-  // only layer that is literally beneath the others.
+  // Under the plate lines and everything above them: the deepest thing on the globe, and the only layer
+  // that is literally beneath the others.
   object.renderOrder = 2;
   object.visible = false;
   object.frustumCulled = false;

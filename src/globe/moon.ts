@@ -5,25 +5,17 @@ import { toVec3 } from "../geo/sphere";
 /*
  * The moon, at its real distance, its real size, and its real phase.
  *
- * **Nothing here is scaled for effect, and the result is small.** Sixty radii out and a quarter of a
- * radius across comes to half a degree, which is about eleven pixels. That is what the moon is: the
- * familiar enormous moon of photographs is a long lens, and a globe that inflated it would be telling the
- * same lie every other layer here refuses. It is small, it is unmistakably a moon, and it moves.
+ * Nothing is scaled for effect, and the result is small: sixty radii out and a quarter of a radius across is
+ * half a degree, about eleven pixels. The familiar enormous moon of photographs is a long lens.
  *
- * **The phase is not computed anywhere.** The scene already knows which way the sun is, and a sphere lit
- * from that direction produces the crescent, the gibbous, the terminator and - the part that hand-rolled
- * phase code reliably gets wrong - which way the horns point. The sun is four hundred times further away
- * than the moon, so the direction from the moon to the sun and the direction from the Earth to the sun
- * agree to about a sixth of a degree, and the same uniform serves both.
+ * The phase is not computed anywhere. The scene already knows which way the sun is, and a sphere lit from
+ * that direction produces the crescent and - the part hand-rolled phase code gets wrong - which way the
+ * horns point. The sun is four hundred times further away than the moon, so one uniform serves both.
  *
- * **No texture, and not because one could not be drawn.** At eleven pixels there is nothing a map of the
- * maria could contribute, and an asset slot for an image that cannot be seen is a slot nobody should be
- * asked to fill. A shaded sphere is the honest version at this size.
+ * No texture: at eleven pixels a map of the maria contributes nothing.
  *
- * **Transparent, but it writes depth.** It has to draw after the stars so it can cover them, and it has to
- * fade with the morph to the flat map, and those two together rule out the opaque pass. Writing depth is
- * what keeps it solid: a star behind the moon is already on screen by then, and the moon paints over it.
- * The planet is opaque and wrote depth before any of this, so a moon behind the Earth is correctly hidden.
+ * Transparent, but it writes depth. It has to draw after the stars to cover them and fade with the morph,
+ * which rules out the opaque pass, and writing depth is what keeps it solid over a star.
  */
 
 /** Lunar grey, faintly warm, and kept well inside the chroma the interface allows anything painted. */
@@ -32,15 +24,12 @@ const COLOR_MOON = new Color(0xb8b4ae);
 /*
  * The eclipsed moon, and the one place this app admits a warm hue on purpose.
  *
- * Section 13 bans hue in the interface and names the atmospheric rim as the only exception, admitted
- * because it is illumination rather than a mark. This is the same illumination seen from the other side:
- * the light reaching a totally eclipsed moon is sunlight refracted through the Earth's atmosphere, which
- * is to say it is the sunset ring around the planet, which is the rim. Not a second exception - the same
- * one, from the far end of the ray.
+ * Not a second exception to the hue ban - the same one, from the far end of the ray. The light reaching a
+ * totally eclipsed moon is sunlight refracted through the Earth's atmosphere, which is the sunset ring
+ * around the planet, which is the rim.
  *
- * Dim as well as red, because a total lunar eclipse is roughly ten thousand times fainter than a full
- * moon. Drawn at a fifth rather than a ten-thousandth: the point is that it is still there and no longer
- * white, and a physically faithful brightness would be a moon that had simply gone.
+ * Dim as well as red. A total lunar eclipse is roughly ten thousand times fainter than a full moon, drawn
+ * here at a fifth: a physically faithful brightness would be a moon that had simply gone.
  */
 const COLOR_ECLIPSED = new Color(0x6e3a2c);
 
@@ -67,33 +56,26 @@ const MOON = {
       float lit = dot(vNormal, normalize(uSun));
 
       /*
-        A hard terminator, because the moon has no atmosphere to soften one.
-
-        The Earth's night wash fades over several degrees for a real reason - air scatters light round the
-        limb - and copying that here would be a borrowed effect. The narrow smoothstep is doing
-        antialiasing and nothing else: on an eleven-pixel disc the terminator crosses about two pixels.
+        A hard terminator, because the moon has no atmosphere to soften one. The Earth's night wash fades
+        over several degrees because air scatters light round the limb; copying that here would be a
+        borrowed effect. The narrow smoothstep is antialiasing and nothing else.
       */
       float day = smoothstep(-0.02, 0.06, lit);
 
       /*
-        Limb darkening, which on the moon is the opposite of subtle.
-
-        A Lambert sphere renders full moon as a bright centre fading to a dark rim, and the real full moon
-        is famously flat to the edge - the regolith backscatters. Flattening the falloff is what stops a
-        gibbous moon reading as a shaded ball rather than as a moon.
+        Limb darkening, which on the moon is the opposite of subtle. A Lambert sphere renders full moon as a
+        bright centre fading to a dark rim, and the real one is famously flat to the edge, because the
+        regolith backscatters.
       */
       float shade = mix(0.72, 1.0, pow(max(lit, 0.0), 0.35));
       if (day < 0.004) discard;
 
       /*
-        The Earth's shadow, which does not care which way the moon is facing.
+        The Earth's shadow, which does not care which way the moon is facing. A phase is a lighting term and
+        an eclipse is not: what has been taken away is the source rather than the angle, so this is mixed
+        over the result instead of folded into the day term.
 
-        A phase is a lighting term and an eclipse is not: the whole lit face dims together, because what
-        has been taken away is the source rather than the angle. So this is mixed over the result instead
-        of folded into the day term, and the same fraction applies across the disc.
-
-        No falloff across the face. The real umbra edge crosses a disc eleven pixels wide, and eleven
-        pixels is not enough to show a curve travelling over it.
+        No falloff across the face. The real umbra edge crosses a disc eleven pixels wide.
       */
       vec3 body = mix(uColor * shade, uEclipsed * mix(1.0, 0.55, uUmbral), uUmbral);
       gl_FragColor = vec4(body, day * uOpacity);
@@ -112,12 +94,8 @@ export interface MoonLayer {
 }
 
 export function createMoon(): MoonLayer {
-  /*
-   * Enough segments that an eleven-pixel disc has a round edge and a straight terminator.
-   *
-   * 48 by 32 puts a vertex every seven and a half degrees, which at this apparent size is well under a
-   * pixel. The cost of a sphere this small is not worth economising on.
-   */
+  // Enough segments that an eleven-pixel disc has a round edge and a straight terminator. 48 by 32 puts a
+  // vertex every seven and a half degrees, well under a pixel at this apparent size.
   const geometry = new SphereGeometry(MOON_SIZE, 48, 32);
   const material = new ShaderMaterial({
     ...MOON,

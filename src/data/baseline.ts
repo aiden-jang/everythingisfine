@@ -4,24 +4,14 @@ import type { Store } from "./store";
 /*
  * Whether today is a lot.
  *
- * The headline says "400 in the last 24 hours" and nothing on the screen said whether that is busy, quiet
- * or exactly average. It is the same defect the rest of this app refuses everywhere else - section 13 bans
- * a bare magnitude with no scale beside it - and the count at the top of the rail had no scale at all. A
- * viewer could read the number and still not know the one thing they wanted to know.
+ * The headline says "400 in the last 24 hours" and nothing said whether that is busy, quiet or average.
+ * `tools/make-baseline.mjs` counts every UTC day in five years: 1,826 days, quietest 3, median 18, busiest 422.
  *
- * `tools/make-baseline.mjs` counts every UTC day in five years of the catalogue, so the answer is a
- * measurement rather than an impression: 1,826 days, quietest 3, median 18, busiest 422.
+ * The comparison runs at magnitude 4.5, not at whatever the filter says. A count of everything cannot be
+ * compared across years, because how many small events are detected depends on how many seismometers are
+ * near them. At 4.5 the global catalogue is complete, so a difference between two days is the planet.
  *
- * **The comparison runs at magnitude 4.5, not at whatever the filter says.** This is the constraint the
- * whole feature turns on, and it is not a detail. A count of everything cannot be compared across years,
- * because how many small events are detected depends on how many seismometers are near them: the M2 rate
- * in 2025 differs from 2020 for reasons of funding rather than of geology. At 4.5 the global catalogue is
- * complete, so a difference between two days is the planet. Comparing the rail's own number - which moves
- * with a slider - against a fixed historical baseline would have produced a ranking the viewer could
- * change by dragging, which is worse than no ranking.
- *
- * So the sentence states its own threshold. It has to: it is reporting on a population the map beside it
- * is not necessarily drawing.
+ * So the sentence states its own threshold. It has to: it reports on a population the map may not be drawing.
  */
 
 /** Sorted ascending. See the note in the generator on why that is the entire structure. */
@@ -43,11 +33,9 @@ export interface DayRank {
 }
 
 /**
- * How many of the baseline days were strictly busier, and how many strictly quieter.
- *
- * Strict on both sides, so ties belong to neither. With integer counts and a median of 18 there are a lot
- * of ties, and folding them into one side would let the same day be reported as quieter than 61% or
- * quieter than 68% depending on which way the inequality happened to be written.
+ * How many of the baseline days were strictly busier, and how many strictly quieter. Strict on both sides,
+ * so ties belong to neither: with integer counts and a median of 18 there are a lot of ties, and folding
+ * them into one side lets the same day read as quieter than 61% or 68% depending on the inequality.
  */
 function split(count: number): { quieter: number; busier: number } {
   let lo = 0;
@@ -64,11 +52,9 @@ function split(count: number): { quieter: number; busier: number } {
 }
 
 /**
- * Today against the five years, or null when there is nothing worth saying.
- *
- * Null rather than a share when the day is still filling. A partial day compared against whole ones is
- * guaranteed to read as quiet, and would say "quieter than 94% of days" at nine in the morning every
- * morning: true of the numbers, false about the earth, and the kind of claim this app exists not to make.
+ * Today against the five years, or null when there is nothing worth saying. Null rather than a share while
+ * the day is still filling: a partial day compared against whole ones would say "quieter than 94% of days"
+ * at nine every morning.
  */
 export function rankDay(count: number, complete: boolean): DayRank | null {
   if (!complete || !Number.isFinite(count) || count < 0) return null;
@@ -79,12 +65,9 @@ export function rankDay(count: number, complete: boolean): DayRank | null {
 }
 
 /**
- * The share as a whole percent, without rounding into a claim the data does not support.
- *
- * Caught on screen: five events ranked as "quieter than 100% of the 1,826 days since 2020", which is
- * false - the quietest day on record had three, so five cannot be quieter than all of them. The share was
- * 99.945% and `Math.round` turned a true number into an untrue sentence. 100 and 0 are now reserved for
- * the cases that genuinely are every day and no day, which do occur and are worth being able to say.
+ * The share as a whole percent, without rounding into a claim the data does not support. Five events once
+ * ranked as "quieter than 100% of the 1,826 days since 2020", which is false - the quietest day had three.
+ * The share was 99.945% and `Math.round` turned a true number into an untrue sentence.
  */
 export function sharePercent(share: number): number {
   const whole = Math.round(share * 100);
@@ -94,10 +77,8 @@ export function sharePercent(share: number): number {
 }
 
 /**
- * How many held events are comparable to the baseline: strong enough, and inside the window.
- *
- * Counted from the store rather than from the drawn subset, because the drawn subset is whatever the
- * viewer filtered to and this number has to mean the same thing every time it is printed.
+ * How many held events are comparable to the baseline: strong enough, and inside the window. Counted from
+ * the store rather than the drawn subset, so it means the same thing every time it is printed.
  */
 export function comparableCount(store: Store, from: number, to: number): number {
   let n = 0;
