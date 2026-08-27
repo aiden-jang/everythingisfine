@@ -69,7 +69,7 @@ interface UsgsFeature {
   id?: unknown;
   properties?: {
     mag?: unknown; place?: unknown; time?: unknown; updated?: unknown;
-    magType?: unknown; type?: unknown;
+    magType?: unknown; type?: unknown; felt?: unknown; cdi?: unknown;
   };
   geometry?: { coordinates?: unknown };
 }
@@ -123,6 +123,22 @@ export function parseUsgs(payload: unknown, receivedAt: number): ParseResult {
       depthKm: (Array.isArray(coords) ? num(coords[2]) : null) ?? Number.NaN,
       time,
       place: typeof p?.place === "string" && p.place ? p.place : "location not given",
+      /*
+       * Felt reports, when there are any. See `Reading.felt`.
+       *
+       * Both fields are routinely null in this feed - two of thirteen events carried a count in the
+       * M4.5 day sampled while writing this - so absent is the normal case and has to read as absent
+       * rather than as a zero. `cdi` without `felt` is not a thing USGS sends, but it is cheap to
+       * refuse: an intensity with no reports behind it would be a number with nothing under it.
+       */
+      ...(typeof p?.felt === "number" && p.felt > 0
+        ? {
+          felt: {
+            reports: Math.round(p.felt),
+            ...(typeof p?.cdi === "number" && p.cdi > 0 ? { intensity: p.cdi } : {}),
+          },
+        }
+        : {}),
       kind: typeof p?.type === "string" && p.type ? p.type : "earthquake",
       receivedAt,
     });

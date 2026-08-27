@@ -142,3 +142,41 @@ describe("polling behaviour specific to USGS", () => {
     source.stop();
   });
 });
+
+describe("felt reports", () => {
+  it("keeps the count and the reported intensity when the feed carries them", () => {
+    const { readings } = parseUsgs(recorded, 1_700_000_000_000);
+    const hawaii = readings.find((r) => r.place.includes("Honaunau"));
+    expect(hawaii?.felt).toEqual({ reports: 77, intensity: 3.9 });
+  });
+
+  it("leaves it absent when nobody reported, rather than setting zero", () => {
+    /*
+     * "Nobody felt it" and "the agency has no report" are different claims, and only the second is one
+     * this app can make. A zero would be the first, printed as a fact, on every event in the ocean.
+     */
+    const feed = {
+      type: "FeatureCollection",
+      features: [{
+        id: "quiet",
+        properties: { mag: 5.1, magType: "mb", place: "somewhere", time: 1_700_000_000_000, felt: null, cdi: null },
+        geometry: { type: "Point", coordinates: [10, 20, 30] },
+      }],
+    };
+    const [reading] = parseUsgs(feed, 1_700_000_000_000).readings;
+    expect(reading?.felt).toBeUndefined();
+  });
+
+  it("refuses an intensity with no reports under it", () => {
+    const feed = {
+      type: "FeatureCollection",
+      features: [{
+        id: "odd",
+        properties: { mag: 5.1, magType: "mb", place: "somewhere", time: 1_700_000_000_000, felt: 0, cdi: 4.2 },
+        geometry: { type: "Point", coordinates: [10, 20, 30] },
+      }],
+    };
+    const [reading] = parseUsgs(feed, 1_700_000_000_000).readings;
+    expect(reading?.felt).toBeUndefined();
+  });
+});

@@ -78,6 +78,21 @@ export interface Reading {
    */
   kind: string;
   /**
+   * How many people told the agency they felt it, and how hard, when anybody did.
+   *
+   * **The only human number in this app**, which is otherwise a picture of physics with nobody in it.
+   * A magnitude says how much the ground moved; this says how many people noticed, which is a different
+   * question and often the one somebody actually means.
+   *
+   * **USGS only, and self-selected.** It is the "Did You Feel It" count, so it measures where people
+   * live and whether they went online afterwards, not the size of the earthquake: a magnitude 7 in open
+   * ocean gets nothing and a magnitude 3 under a city gets thousands. EMSC runs its own felt-report
+   * system and does not put it in this feed, so an event seen by both agencies still carries at most one
+   * of these. Absent rather than zero when nobody reported, because "nobody felt it" and "the agency has
+   * no report" are different claims and only the second one is true.
+   */
+  felt?: { reports: number; intensity?: number };
+  /**
    * Set once this agency has revised its own magnitude or depth, absent until then.
    *
    * The epicentre is revised too and is not tracked. It moves by a few kilometres on most revisions,

@@ -102,6 +102,16 @@ const usgsFeature = (q: Quake, now: number) => ({
     updated: now - q.ago,
     magType: q.magnitude >= 4.5 ? "mww" : "ml",
     type: "earthquake",
+    /*
+     * Felt reports on the larger events only, which is roughly how the real feed behaves.
+     *
+     * USGS carried a count on two of thirteen events in an M4.5 day sampled while this was written, so
+     * a fixture where every event had one would exercise a case the app never sees. Deterministic from
+     * the magnitude rather than random, so a screenshot of one run matches the next.
+     */
+    ...(q.magnitude >= 4.2
+      ? { felt: Math.round(q.magnitude * 37) % 900, cdi: Math.min(8, q.magnitude - 0.4) }
+      : {}),
   },
   geometry: { coordinates: [q.lon, q.lat, q.depthKm] },
 });
