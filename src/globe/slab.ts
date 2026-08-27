@@ -6,10 +6,8 @@ import { DEG, EARTH_RADIUS_KM } from "../geo/sphere";
 import type { SlabPoint } from "../geo/slab";
 
 /*
- * The slab, drawn once and then left alone.
- *
- * Built from a committed table rather than from the store, so it fills its buffers once and never syncs
- * again. No filter applies: it is not a reading anybody made today, it is the shape of a plate.
+ * The slab, filled once and left alone. Built from a committed table, so no filter applies: it is not a
+ * reading anybody made today, it is the shape of a plate.
  *
  * The positions carry the depth already. `events.ts` sinks its markers in the shader because their depths
  * change every tick; these never change, so the trigonometry happens once on the CPU.

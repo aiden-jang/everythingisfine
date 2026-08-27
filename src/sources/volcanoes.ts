@@ -3,16 +3,15 @@ import { events, fetchList, listUrl, parseUtc, reportedBy } from "./gdacs";
 /*
  * Volcanoes with an eruption episode on record, which is not the same as volcanoes erupting now.
  *
- * GDACS lists 23 and flags none of them `iscurrent`; the most recently ended episode ended nine days ago and
- * the oldest over two years. There is no keyless feed of currently erupting volcanoes: the Smithsonian's
- * weekly report is the authority and sends no CORS header, which would cost a Worker.
+ * GDACS lists 23 and flags none `iscurrent`; the newest episode ended nine days ago and the oldest over two
+ * years. There is no keyless feed of currently erupting volcanoes - the Smithsonian's weekly report sends no
+ * CORS header, which would cost a Worker.
  *
- * So this layer does not claim currency, and the legend says what it is instead. The argument for drawing them
- * is that they sit on the same plate boundaries the earthquakes trace, which does not need any of them to be
- * erupting this minute.
+ * So this layer claims no currency and the legend says what it is instead. They earn their place by sitting
+ * on the same boundaries the earthquakes trace, which needs none of them to be erupting.
  *
- * Alert level exists, Green through Red, and is deliberately not used: an Orange on an episode that ended two
- * hundred days ago describes a concern nobody has any more.
+ * Alert level exists and is not used: an Orange on an episode that ended two hundred days ago describes a
+ * concern nobody has any more.
  */
 
 export interface Volcano {

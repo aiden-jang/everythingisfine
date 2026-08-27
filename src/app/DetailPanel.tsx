@@ -66,12 +66,11 @@ export interface DetailPanelProps {
 /*
  * How many people said they felt it, and how hard. The only human number in this app.
  *
- * Reported, not felt, and the wording carries that. "Did You Feel It" is self-selected, so it counts where
- * people live and whether they went online afterwards. "Felt by N people" would be a claim about the
- * world rather than about the mailbox.
+ * Say "reported", never "felt". "Did You Feel It" is self-selected, so it counts where people live and
+ * whether they went online afterwards.
  *
- * The intensity is rounded to a whole Roman-numeral step: a community-determined 3.9 is a mean of what
- * people ticked on a form, not a measurement to a tenth.
+ * Round the intensity to a whole step. A community-determined 3.9 is an average of what people ticked on a
+ * form, not a measurement to a tenth.
  */
 const SHAKING = [
   // USGS's own words for intensity I through X, not a paraphrase. Two and three are both "weak" there,

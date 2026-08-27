@@ -2,19 +2,15 @@ import { energyOf } from "./histogram";
 import { NOTABLE_DAYS, type NotableDay } from "./notableDays";
 
 /*
- * Today against the largest earthquake ever recorded.
+ * Today's energy against the largest earthquake ever recorded.
  *
- * The energy share teaches the logarithm inside one window and has nothing outside itself to be measured
- * against. The ranking line answers that by count; this answers it by energy.
+ * Nothing new is fetched: Valdivia's magnitude is in `NOTABLE_DAYS` and the window's total is already
+ * accumulated in `histogram.ts`.
  *
- * No new data: Valdivia's magnitude is in `NOTABLE_DAYS`, `energyOf` is in `histogram.ts`, and the window's
- * total is already accumulated there.
+ * One event against a whole window, and the wording has to carry that. It also makes the claim conservative,
+ * since the real 1960 day was larger than its mainshock.
  *
- * The reference is one event and the sentence says so. A whole day of Valdivia would need every event from
- * 1960, which no feed reaches, so the wording carries the asymmetry - which also makes the claim
- * conservative, since the real day was larger than its mainshock.
- *
- * Ratios only, because `energyOf` is not joules. A figure in any unit would be inventing precision.
+ * Ratios only. `energyOf` is not joules, so a figure in any unit would invent precision.
  */
 
 /** The largest instrumentally recorded earthquake, and the reason the list is sorted the way it is. */

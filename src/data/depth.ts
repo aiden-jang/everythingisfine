@@ -3,16 +3,14 @@ import type { Store } from "./store";
 import type { Filters } from "./types";
 
 /*
- * The depth bands, and how many events are actually in each one.
+ * The depth bands, and how many events are in each.
  *
- * The constants live here rather than in `events.ts` for the reason the wave speeds live in `geo/waves.ts`:
- * the legend needs them and has no business importing a renderer that drags three.js into the first frame.
+ * The constants live here, not in `events.ts`, so the legend can import them without dragging three.js into
+ * the first frame.
  *
- * Why the counts exist at all: the marker's hole was sold as tracing the Wadati-Benioff zone, and a count
- * settles it. In a typical 24-hour window 1 event of 79 is below 300km - one ring on the whole planet. Over
- * seven days it is 14 of 704 and a slab starts to show.
- *
- * So the legend states the counts instead of promising the pattern.
+ * The counts exist because the hole in a marker was oversold as tracing a slab: in a typical day 1 event of
+ * 79 is below 300km, which is one ring on the whole planet. Over seven days it is 14 of 704. So the legend
+ * prints the counts instead of promising the pattern.
  */
 
 /** Above this an event is shallow, and shallow events do the damage. */

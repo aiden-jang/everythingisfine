@@ -1,18 +1,14 @@
 /*
  * Where the world's slabs are, from five years of the catalogue.
  *
- * A real USGS day carries 237 events, 14 between 70 and 300km, and exactly two below 300. A subducted plate is
- * a sheet reaching seven hundred kilometres down, and two points do not describe a sheet.
+ * A real USGS day carries 237 events, 14 between 70 and 300km, and exactly two below 300. A subducted plate
+ * reaches seven hundred kilometres down, and two points do not describe a sheet. This is the sample: 1,583
+ * events at M4.5 and deeper than 300km, 2020 to 2025, with 1,048 in the Tonga-Fiji corner alone.
  *
- * This is the sample: every magnitude 4.5 event deeper than 300km between 2020 and 2025, 1,583 of them, with
- * 1,048 in the Tonga-Fiji corner alone.
+ * Geography, not data, and drawn that way: no ramp colour, no magnitude size, the same treatment the plate
+ * boundaries get. The boundaries say where two plates meet; this says where one of them went.
  *
- * It is geography, not data, and it is drawn that way: no ramp colour and no magnitude size, the same
- * treatment the plate boundaries get. The boundaries say where two plates meet at the surface; this says
- * where one of them went.
- *
- * Not fetched at runtime. `tools/make-slab.mjs` asks USGS once and commits the answer, because this does not
- * change: 37kB of numbers, 12kB over the wire, as its own chunk behind a toggle.
+ * Committed, not fetched. It does not change: 37kB of numbers, 12kB over the wire, its own chunk.
  */
 
 /** `[lon, lat, depthKm, magnitude]`, as generated. */

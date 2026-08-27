@@ -2,14 +2,13 @@ import type { JSX } from "react";
 import { fitLine, type Sizes } from "./gutenberg";
 
 /*
- * The size distribution, drawn: log of how many, against how big. Ten times as many, each magnitude down,
- * everywhere on Earth, since 1944.
+ * How many earthquakes at each size, log up the side. Ten times as many, each magnitude down, since 1944.
  *
- * Log up the side and nothing else. The two things a reader has to see are that the points are straight and
- * where they stop being straight.
+ * Draw nothing else. The two things a reader has to see are that the points are straight and where they
+ * stop being straight.
  *
- * The bend at the left is about us, not the Earth: below the completeness magnitude the network stopped
- * hearing the small ones, and the sentence underneath says whose fault it is.
+ * The bend at the left is about us, not the Earth: below that size the network stopped hearing them. The
+ * sentence underneath has to say so.
  */
 
 const W = 260;

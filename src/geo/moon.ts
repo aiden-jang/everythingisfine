@@ -4,19 +4,17 @@ import { gmstDeg } from "./stars";
 /*
  * Where the moon is, in the same frame as everything else on this globe.
  *
- * It sits at its real distance, which is only possible because that distance is small: 60 radii out and a
- * quarter of a radius across, both small enough to put on screen literally. It comes out half a degree
- * wide, and it shifts against the stars as the camera moves, which is parallax.
+ * At its real distance, which is only possible because that distance is small: 60 radii out, a quarter of a
+ * radius across. It comes out half a degree wide and shifts against the stars as the camera moves.
  *
- * The phase is not computed. Lighting a sphere with the direction the sun already points gives the crescent
- * for free, including which way it faces.
+ * The phase is not computed. Light a sphere from where the sun already points and the crescent falls out,
+ * including which way it faces.
  *
- * Fourteen terms of longitude and eight of latitude, and the count was set by a consumer. Seven and four is
- * good to a tenth of a degree - far finer than a ten-pixel disc can show - until `eclipse.ts` started
- * multiplying this by sixty Earth radii of lever arm, where a tenth of a degree is 670km of shadow and the
- * 2024 April eclipse came out over New Mexico instead of Chihuahua.
+ * Fourteen terms of longitude and eight of latitude, and a consumer set that count. Seven and four is good
+ * to a tenth of a degree, which was ample until `eclipse.ts` multiplied it by sixty Earth radii of lever arm
+ * and put the 2024 April eclipse over New Mexico instead of Chihuahua.
  *
- * Still not an ephemeris: UTC is used where the series wants Terrestrial Time, worth another 70km.
+ * Still not an ephemeris: UTC stands in for Terrestrial Time, worth another 70km.
  */
 
 /** Mean radius, in the same kilometres the globe's own radius is quoted in. */

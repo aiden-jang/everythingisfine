@@ -3,15 +3,14 @@ import { eclipseAt, lunarEclipse, solarEclipse } from "./eclipse";
 
 describe("the moon's shadow on the Earth", () => {
   /*
-   * Checked against published eclipse paths: a dated public fact about where a shadow was, against arithmetic
-   * that knows nothing about it. The tolerance is set by the result rather than by hope.
+   * Checked against published eclipse paths, so the tolerance comes from the result rather than from hope:
    *
    *   2024-04-08 total    466 km out, umbra  86 km
    *   2023-10-14 annular  759 km out, umbra -89 km
    *   2017-08-21 total   1006 km out, umbra  26 km
    *
-   * The timing is far better than the position. The position error is the lunar series' error passed straight
-   * through, near one for one, because the axis pivots about a sun four hundred times further away.
+   * Timing is far better than position: the position error is the lunar series' own, near one for one,
+   * because the axis pivots about a sun four hundred times further away.
    */
   it("puts the shadow over Mexico at the 2024 April total eclipse", () => {
     // Greatest eclipse 2024-04-08 18:17 UTC, at 25.3N 104.1W.
@@ -103,8 +102,8 @@ describe("the Earth's shadow on the moon", () => {
 
   it("comes out mid-range at a deep partial, which is the case worth having", () => {
     /*
-     * The claim is that a partial reads as a partial: a model returning only 0 or 1 would pass every other
-     * test in this block and still be unable to draw one.
+     * A partial has to read as a partial. A model returning only 0 or 1 would pass every other test here and
+     * still be unable to draw one.
      *
      *   2025-09-07 total    mag 1.36 -> 1.00
      *   2021-11-19 partial  mag 0.97 -> 1.00   saturates
@@ -112,8 +111,8 @@ describe("the Earth's shadow on the moon", () => {
      *   2023-10-28 partial  mag 0.12 -> 0.00   missed
      *   2024-09-18 partial  mag 0.09 -> 0.00   missed
      *
-     * Anything shallower than about 0.15 is beyond it: the moon's position is good to roughly 0.08 globe
-     * radii perpendicular to the axis, which is 29% of the moon's own radius. `penumbral` still says true.
+     * Below about 0.15 is beyond it: the moon's position is good to 0.08 globe radii across the axis, which
+     * is 29% of the moon's own radius. `penumbral` still says true.
      */
     const e = lunarEclipse(Date.UTC(2019, 6, 16, 21, 31));
     expect(e.umbral).toBeGreaterThan(0.1);

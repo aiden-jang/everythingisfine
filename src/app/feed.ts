@@ -48,11 +48,10 @@ export interface FeedSnapshot {
   /**
    * The same fact per agency, because the earliest of the two hides the disagreement.
    *
-   * `coveredSince` is a min, which is the right left edge for the strip and the wrong number beside two
-   * feeds. EMSC's catalogue returns its most recent page whatever window is asked for, so at a month USGS
-   * vouches for thirty days and EMSC for eighteen hours.
+   * `coveredSince` is a min: right for the strip, wrong beside two feeds. EMSC returns its most recent page
+   * whatever window is asked for, so at a month USGS vouches for thirty days and EMSC for eighteen hours.
    *
-   * Null for a source that has not reported a backlog, which is not a source that reported a short one.
+   * Null means a source has not reported a backlog. That is not a source that reported a short one.
    */
   covered: Record<SourceId, number | null>;
 }

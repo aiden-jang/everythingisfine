@@ -5,11 +5,10 @@ import { matches } from "../data/filter";
 /*
  * Named seismic regions, so the rail has somewhere to fly to.
  *
- * Authored rather than derived. Clustering the events themselves would make the names change from load to
- * load, and "cluster 3" is not a place anyone can decide to look at.
+ * Authored, not derived. Clustering the events would make the names change from load to load, and
+ * "cluster 3" is not a place anyone can decide to look at.
  *
- * The counts under them are not authored: they are whatever is held and passing the filter, which is why a
- * quiet region reads zero rather than disappearing.
+ * The counts are not authored: they are whatever is held and passing the filter, so a quiet region reads zero.
  */
 
 export interface Region {

@@ -74,6 +74,26 @@ on one tab stop, so "which of these happened at 05:00" is not a pointer-only que
 
 A browser test drives the whole app with the canvas set to `visibility: hidden`.
 
+## How the code is commented
+
+A comment here is a warning, not an essay. The bar is whether it records something that would cost
+somebody real time to rediscover: a trap that has actually bitten, a deviation from the code around
+it, a constraint that fails silently when broken, or why not the obvious alternative.
+
+Everything else went. The reasoning behind a feature lives in ARCHITECTURE.md, where it can be read
+in order and dated, rather than in a docstring where it rots. What survives reads like a note over
+your shoulder - hazard first, imperative, one idea per sentence:
+
+- *Never recover longitude with `atan2`. At a pole longitude does not exist, `atan2(0, 0)` is zero,
+  and every meridian gets dragged onto the prime meridian.*
+- *Evict by arrival order, never by origin time. With no backend the window really does start when
+  the page loads, which is why the rail says "since 21:40".*
+- *No backticks anywhere in this file's shaders. One ends the template literal, and the error lands
+  twenty lines from the comment that caused it.*
+
+The tree went from 13,190 comment lines to about 7,600 across two passes, and the second was mostly
+about register rather than volume.
+
 ## Design and decisions
 
 - **[DESIGN.md](DESIGN.md)** is the visual authority. Its central rule is that the interface carries

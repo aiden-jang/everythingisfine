@@ -1,17 +1,13 @@
 /*
- * A tick in the hand when something is picked.
+ * A short buzz when a mark is picked. On a phone the fingertip covers the mark, so nothing else confirms the
+ * tap landed.
  *
- * On a phone the marks are a few pixels across and the fingertip covers them, so the only confirmation a tap
- * landed is the panel appearing a moment later.
+ * On selection only, never on arrival. Buzzing because an earthquake happened is an alert, and an alert needs
+ * consent; this cannot arrive uninvited, so it needs no toggle.
  *
- * On selection only, never on arrival. Buzzing a phone because an earthquake happened is an alert, and an
- * alert is something a person opts into. A tick that fires only when a finger just tapped cannot arrive
- * uninvited, which is also why it needs no toggle.
+ * Feature-detected, not user-agent sniffed. Safari on iOS does not implement `navigator.vibrate`.
  *
- * Android only in practice: `navigator.vibrate` is unimplemented in Safari on iOS. Feature-detected rather
- * than user-agent sniffed.
- *
- * Twelve milliseconds, at the floor of what hardware reproduces. Longer reads as a notification.
+ * Twelve milliseconds. Longer reads as a notification.
  */
 
 /** Short enough to read as contact rather than as a notification. */

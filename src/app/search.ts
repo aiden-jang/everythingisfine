@@ -5,16 +5,12 @@ import { place } from "./format";
 import { REGIONS, type Region } from "./regions";
 
 /*
- * Somewhere to search, over the only two things this app can honestly search.
+ * Searches two things: the eleven named regions, and the place strings the agencies wrote on events we hold.
  *
- * There is no gazetteer and there cannot be one: every geocoder needs a key. So this searches the eleven
- * authored regions and the place strings the two agencies wrote on the events currently held.
+ * There is no gazetteer and there cannot be one - every geocoder needs a key. So "Paris" finds nothing,
+ * because nothing has happened there, and the empty state has to say which of the two it means.
  *
- * That is a real limit with a real consequence: "Paris" finds nothing, because nothing has happened there,
- * and the empty state has to say which of the two it means.
- *
- * Regions rank above places because they are authored navigation and work at zero count: a quiet Kamchatka
- * is still somewhere to go and look.
+ * Regions rank first. They work at zero count: a quiet Kamchatka is still somewhere to go and look.
  */
 
 /** Places are grouped rather than listed: a sequence puts three hundred rows behind one name. */

@@ -1,14 +1,12 @@
 import { DEG } from "../geo/sphere";
 
 /*
- * Collapsing dense margins into one marker until you zoom in.
+ * Collapses dense margins into one marker until you zoom in. Measured: on a real seed, 149 of 228 events had
+ * a neighbour within 40km, which is why the Ring of Fire renders as overlapping crescents.
  *
- * The legibility problem is measured rather than imagined: on a real seed, 149 of 228 events had a neighbour
- * within 40km, which is why markers in the Ring of Fire render as overlapping crescents.
- *
- * Binned on a longitude/latitude grid rather than by distance. A grid is O(n) with one pass and it is stable
- * frame to frame, where distance-based clusters shimmer as membership flips - and stability matters more than
- * optimal grouping when the thing is being watched rather than analysed.
+ * Bin on a lon/lat grid, not by distance. A grid is O(n) in one pass and stable frame to frame, where
+ * distance-based clusters shimmer as membership flips - and stability matters more than optimal grouping
+ * when the thing is being watched rather than analysed.
  */
 
 /**

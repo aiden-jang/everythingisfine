@@ -195,14 +195,14 @@ export function sectionLengthKm(line: SectionLine): number {
 }
 
 /**
- * Where the line crosses a plate boundary, as distances along it. A tick where the line crosses a plate edge
- * turns the picture into an explanation: the earthquakes start at the boundary and descend away from it.
+ * Where the line crosses a plate boundary, as distances along it. The tick turns the picture into an
+ * explanation: the earthquakes start at the boundary and descend away from it.
  *
- * Found by sign change in the cross-track offset, not by intersecting two great circles: the offset is
- * already computed for every event, so this is the same call over the boundary vertices.
+ * Found by sign change in the cross-track offset, not by intersecting two great circles - the offset is
+ * already computed for every event.
  *
- * The range check is what keeps the far side of the planet out. The great circle is a whole circle, so
- * boundaries cross it everywhere, and a crossing off the section lands outside nought to length.
+ * The range check keeps the far side of the planet out. A great circle is a whole circle, so boundaries
+ * cross it everywhere, and a crossing off the section falls outside nought to length.
  */
 export function plateCrossings(line: SectionLine, lengthKm: number): number[] {
   const out: number[] = [];

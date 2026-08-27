@@ -7,14 +7,14 @@ import { SKY_DISTANCE, SKY_GLSL } from "./sky";
 /*
  * The planets, drawn as the brightest things in the star field.
  *
- * Five points, rebuilt on the clock, which is the whole difference from the star field: the stars are
- * written once and turned by a uniform, and these move against the sky rather than with it.
+ * Five points, rebuilt on the clock. That is the whole difference from the star field: the stars are written
+ * once and turned by a uniform, and these move against the sky rather than with it.
  *
- * Drawn exactly like a star, on purpose - same colour, same ramp, same shader - so Venus takes its place at
- * the top of a scale the sky already establishes.
+ * Drawn exactly like a star - same colour, ramp and shader - so Venus takes its place at the top of a scale
+ * the sky already sets.
  *
  * Positions go in already turned. A planet's right ascension is only true for the instant it was computed,
- * so applying the sky's rotation to a stale position would be wrong twice: `uSpin` stays at zero here.
+ * so the sky's rotation would be wrong twice: `uSpin` stays at zero.
  */
 
 /** Sirius is -1.46 and the sky's ramp tops out there, so a brighter Venus simply saturates. */

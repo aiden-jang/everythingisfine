@@ -3,15 +3,14 @@
  *
  *   node tools/make-baseline.mjs
  *
- * Magnitude 4.5, and the threshold is the whole argument: a count of everything cannot be compared across
- * years, because detection depends on how many seismometers are nearby. At 4.5 the global catalogue is
- * complete, so a day-to-day difference is the planet and not the network.
+ * Magnitude 4.5, and that threshold is the whole argument: detection depends on how many seismometers are
+ * nearby, so a count of everything cannot be compared across years. At 4.5 the catalogue is complete.
  *
- * Calendar days in UTC, matching what the app's archive means by a day. A rolling window would make every
- * day overlap its neighbours and flatten the distribution.
+ * Calendar days in UTC, matching the app's archive. A rolling window would overlap every day with its
+ * neighbours and flatten the distribution.
  *
- * Paged by year, because the API refuses more: five years at this threshold is 38,289 events against a hard
- * limit of 20,000 per query, which returns a 400 rather than a truncated list.
+ * Paged by year: five years at this threshold is 38,289 events against a hard limit of 20,000 per query,
+ * which returns a 400 rather than a truncated list.
  */
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";

@@ -4,14 +4,12 @@ import {
 } from "./types";
 
 /*
- * EMSC, which tells us.
+ * EMSC, the push half of the pair.
  *
- * The push half of the pair. The seismic portal publishes a public WebSocket standing order - no key, no
- * registration - and WebSocket is exempt from CORS by construction, so the browser reaches it directly and
- * the deployment keeps its zero-invocation shape.
+ * The seismic portal publishes a public WebSocket standing order - no key, no registration - and WebSocket
+ * is exempt from CORS, so the browser reaches it directly and the deployment stays zero-invocation.
  *
- * Nothing about the data differs from the polling case. What differs is who decides when, and everything
- * downstream is deliberately identical.
+ * Nothing about the data differs from the polling case. What differs is who decides when.
  */
 
 export const EMSC_SOCKET = "wss://www.seismicportal.eu/standing_order/websocket";
@@ -20,10 +18,9 @@ export const EMSC_SOCKET = "wss://www.seismicportal.eu/standing_order/websocket"
  * The catalogue, fetched once when the socket opens.
  *
  * A push source has no history, so on a fresh load EMSC contributed nothing and the rail read `EMSC 0`
- * beside `USGS 227` - which made the project's headline claim invisible, because corroboration only exists
- * where both agencies have reported.
+ * beside `USGS 227` - which hid the project's headline claim, since corroboration needs both agencies.
  *
- * FDSN fixes it in one request: 600 events over 24 hours in 327kB, keyless, `access-control-allow-origin: *`.
+ * FDSN fixes it in one request: 600 events over 24 hours in 327kB, keyless, CORS-open.
  */
 export const EMSC_CATALOGUE = "https://www.seismicportal.eu/fdsnws/event/1/query";
 

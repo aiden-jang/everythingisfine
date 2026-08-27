@@ -4,15 +4,13 @@ import { morphable } from "./morph";
 import type { Point } from "./shapes";
 
 /*
- * Every mark that is not an earthquake, in one layer.
+ * Every mark that is not an earthquake, in one layer. It knows nothing about storms or volcanoes: it draws
+ * achromatic polylines in lon/lat, above the boundaries and below the markers. `shapes.ts` decides what a
+ * phenomenon looks like, `app/marks.ts` decides which exist.
  *
- * It knows nothing about storms or volcanoes. It draws polylines in longitude and latitude, achromatic,
- * above the boundaries they sit on and below the markers that carry meaning. What shape a phenomenon gets
- * is decided in `shapes.ts`, and which shapes exist in `app/marks.ts`.
- *
- * A glyph holds its size on screen; a track does not. Built in degrees, a flame was five pixels of thin
- * grey line at the framing zoom. A symbol standing for a fire belongs on the markers' side of that
- * question; a cyclone track is measured geography and scales with the coastline. `anchor` distinguishes them.
+ * A glyph holds its size on screen; a track does not. Built in degrees, a flame was five pixels of thin grey
+ * line at the framing zoom. A cyclone track is measured geography and scales with the coastline.
+ * `anchor` is what tells the two apart.
  */
 
 /** Above the plate boundaries these things sit on, below the land that contains them. */

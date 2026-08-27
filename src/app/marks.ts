@@ -13,8 +13,7 @@ import type { Wildfire } from "../sources/wildfires";
  * The one place that knows both the phenomena and the glyphs, so the scene can take polylines and know
  * nothing about storms, and `shapes.ts` can draw outlines and know nothing about feeds.
  *
- * Four outlines, no hue between them: a spiral is a storm, a triangle a volcano, a flame a fire, three wavy
- * lines a flood. Light gets colour, marks get shapes.
+ * Four outlines, no hue: spiral is storm, triangle volcano, flame fire, wavy lines flood.
  */
 
 export interface Happening {
@@ -37,11 +36,8 @@ export interface Happening {
 /*
  * The reporting agency, appended to a label that already has words in it.
  *
- * Earthquakes have carried their provenance since the beginning and the hazards carried none, while GDACS
- * was sending it on every event.
- *
- * Appended rather than given a row of its own, because "who says" is a qualifier on a fact and not a fact.
- * Absent when the feed did not say, which is every hazard on an archived day.
+ * Earthquakes carried their provenance from the start and the hazards carried none, while GDACS was sending
+ * it on every event. Appended, not given a row: "who says" is a qualifier on a fact, not a fact.
  */
 function by(label: string, source: string | null): string {
   return source === null ? label : `${label} · ${source}`;

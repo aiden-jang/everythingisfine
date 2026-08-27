@@ -6,8 +6,8 @@
  *
  * It writes `public/share.png` at the 1200x630 the meta tags promise.
  *
- * No live data on it, deliberately. A card is cached for days by every client that fetches it, so real
- * events would show one particular day's seismicity as if it were now.
+ * No live data on it. A card is cached for days by every client that fetches it, so real events would show
+ * one afternoon's seismicity as if it were now.
  */
 // `@playwright/test`, not `playwright`: the bare package is not a dependency here, so the import this
 // script shipped with threw ERR_MODULE_NOT_FOUND and `pnpm card` had never actually run.
@@ -28,14 +28,13 @@ const BASE = process.env.CARD_BASE ?? "http://localhost:31600";
 const VIEW = "#at=105,18,1.05&m=7.5&r=thermal";
 
 /*
- * Every feed blocked, rather than filtered.
+ * Block every feed, rather than filtering.
  *
  * `m=7.5` empties the globe of earthquake markers and nothing else. The five hazard layers ignore the
- * magnitude filter entirely - correctly, a fire has no magnitude - and so do the wavefront rings: the first
- * card built after the new layers had three orange rings on it at `m=7.5`.
+ * magnitude filter - correctly, a fire has no magnitude - and so do the wavefront rings: the first card built
+ * after those layers had three orange rings on it at `m=7.5`.
  *
- * Blocked at the network rather than behind a new switch, so the app is unmodified and does the honest thing
- * with an empty response. `m=7.5` stays as the second lock.
+ * Blocked at the network, not behind a new switch, so the app is unmodified. `m=7.5` is the second lock.
  */
 const FEEDS = [
   "earthquake.usgs.gov", "www.seismicportal.eu", "www.gdacs.org", "services.swpc.noaa.gov",

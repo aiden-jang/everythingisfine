@@ -1,18 +1,14 @@
 import type { RegionCount } from "./regions";
 
 /*
- * The tour, and the ruling it needed first.
+ * Flies the camera round the busiest regions, on request.
  *
- * Section 13 bans "ambient globe rotation, and perpetual loops on any chrome element", and section 8 gives
- * the reason: motion that means nothing makes all the other motion suspect.
+ * The design bans motion that means nothing, and this passes only because it is built to: every stop is a
+ * real place with a real count, the rail names both while the camera is there, and any interaction kills it.
+ * A fixed slideshow of pretty margins would fail.
  *
- * The ban is on motion that means nothing, so this is not an exemption - it is the test the rule already
- * states. Every stop is a real place with a real count, the rail names both while the camera is there, it
- * is asked for, it ends, and any interaction kills it. A fixed slideshow of pretty margins would fail.
- *
- * No new authored data: the stops come from `REGIONS` and the order from live counts, so the tour visits
- * wherever today's earthquakes actually are. Under reduced motion `flyTo` is already instant, so this
- * degrades by itself into a sequence of cuts.
+ * No authored data. Stops come from `REGIONS` and the order from live counts, so it visits wherever today's
+ * earthquakes are. Under reduced motion `flyTo` is instant, so this becomes a sequence of cuts by itself.
  */
 
 /** Long enough to read the name and the count and look at the globe. */

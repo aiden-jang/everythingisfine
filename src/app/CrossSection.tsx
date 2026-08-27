@@ -6,16 +6,11 @@ import type { Store } from "../data/store";
 import { depth, magnitude, place } from "./format";
 
 /*
- * The crust, side on. Distance across, depth down, drawn at 1:1.
+ * The crust seen from the side: distance across, depth down, drawn at 1:1.
  *
- * Vertical exaggeration is the textbook default and the one thing this picture must not do silently: the
- * dip of a slab is the whole content. A section across Japan at 1:1 is a wide thin strip with dots running
- * down to the left at forty-five degrees, and that angle is a measurement somebody could check.
- *
- * Exaggerated only when 1:1 does not fit, with the factor printed. A 3,700km line against 150km of depth is
- * four pixels tall at true scale. A stated exaggeration is a fact a reader can undo; an unstated one is a lie.
- *
- * The depth axis stops at the deepest event rather than at 700km, for the same reason.
+ * Never stretch the depth axis quietly. The dip of the slab is the whole content, and stretching invents a
+ * steeper one. When 1:1 will not fit - a 3,700km line against 150km of depth is four pixels tall - stretch
+ * it and print the factor, so a reader can undo it.
  */
 
 export interface CrossSectionProps {

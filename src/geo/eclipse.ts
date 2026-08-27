@@ -3,19 +3,16 @@ import { moonPosition, moonRadii, MOON_RADIUS_KM } from "./moon";
 import { subsolarPoint } from "./sun";
 
 /*
- * Where the moon's shadow falls on the Earth.
+ * Where the moon's shadow falls on the Earth. Nothing new is measured: the sun's direction and the moon's
+ * position are both already on screen, and an eclipse is those two multiplied.
  *
- * Nothing new is measured here: the sun's direction and the moon's position are both already on screen, and
- * a solar eclipse is where those two facts multiply into a third.
+ * A picture, never a prediction, and the copy must say so. The lunar series is good to about a tenth of a
+ * degree, which at sixty Earth radii of lever arm is 670km on the ground - fine against a penumbra 3,500km
+ * wide, useless for telling anybody when to look up.
  *
- * It is a picture, not a prediction, and the copy has to say so. The lunar series behind this is accurate to
- * about a tenth of a degree, which at sixty Earth radii of lever arm moves the shadow about 670km. Fine
- * against a penumbra 3,500km wide, useless for telling anybody when to look up.
- *
- * The umbra is a difference of two large numbers. The cone converges at the sun's own angular radius, about
- * 0.0047 Earth radii per radius travelled, and it has to cross roughly sixty of them - so it arrives at
- * nearly nothing, or short of the surface altogether, which is the difference between total and annular.
- * That falls out of the arithmetic, and the sign of `umbra` is what carries it.
+ * The umbra is a difference of two large numbers: the cone narrows by 0.0047 Earth radii per radius and has
+ * to cross sixty of them, so it arrives at nearly nothing or short of the surface. The sign of `umbra`
+ * carries which.
  */
 
 /** Mean Earth-sun distance in globe radii. The 1.7% annual variation moves the umbra by under a km. */
@@ -63,12 +60,10 @@ export function solarEclipse(at: number): Eclipse {
    * The moon has to be between the sun and the Earth, and a distance check alone does not say so.
    *
    * At full moon the axis still runs near the Earth's centre - same line, other order - so `gap` comes out
-   * tiny and every test below passes. This returned a total eclipse centred on the subsolar point with a
-   * black disc 3,500km across at local noon.
+   * tiny and every test below passes. This returned a total eclipse with a black disc 3,500km across at noon.
    *
-   * The unit tests missed it because the false positives only occur within 1.5 degrees of the anti-solar
-   * point, which is exactly when a lunar eclipse is happening. The mirror guard was written for
-   * `lunarEclipse` in the same sitting and not written here.
+   * The unit tests missed it: the false positives only happen within 1.5 degrees of the anti-solar point,
+   * which is exactly when a lunar eclipse is on.
    */
   if (along <= 0) {
     const behind = Math.hypot(

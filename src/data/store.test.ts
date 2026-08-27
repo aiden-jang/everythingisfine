@@ -333,17 +333,13 @@ describe("the long session", () => {
   /*
    * The warm-up has to fill the ring, or this measures the ring filling rather than the ring holding.
    *
-   * The old warm-up pushed 450 readings into 2,000 slots, so the 1.41MB it reported was mostly the first
-   * fill: a one-time cost measured against a 5MB budget, which would have passed a store retaining 325
-   * bytes per ingest. Filled properly, twelve further hours cost 0.044 to 0.085MB across eight runs.
+   * The old one pushed 450 readings into 2,000 slots, so the 1.41MB it reported was mostly the first fill -
+   * a one-time cost that would have passed a store retaining 325 bytes per ingest. Filled properly, twelve
+   * further hours cost 0.044 to 0.085MB across eight runs.
    *
-   * Absolute, not a ratio, unlike the CPU gate next door. Retained bytes do not scale with contention: this
-   * read 1.40MB on fourteen consecutive runs, varying by less than 0.01.
+   * Absolute, not a ratio, unlike the CPU gate next door: retained bytes do not scale with contention.
    *
-   * Twelve hours rather than four, because gc granularity is a step of about 0.04MB and three phases average
-   * over it. 16,151 ingests, so the 0.5MB budget is about 32 bytes per ingest.
-   *
-   * Checked by making it fail: retaining one three-field object per ingest costs 2.302MB, 4.6x over.
+   * Checked by making it fail: one retained three-field object per ingest costs 2.302MB, 4.6x over.
    */
   it.skipIf(!(globalThis as { gc?: () => void }).gc)("holds heap flat once the ring is full", () => {
     const gc = (globalThis as { gc?: () => void }).gc!;

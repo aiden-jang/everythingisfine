@@ -1,17 +1,14 @@
 import { DEG, EARTH_RADIUS_KM } from "./sphere";
 
 /*
- * The far side, and the one thing a globe can show that a map cannot.
+ * The far side, which a globe can show and a map cannot.
  *
- * A wavefront on a sphere does not simply grow: it grows to a great circle a quarter of the world away and
- * then shrinks, closing to a point on the opposite side. The front that has travelled 150 degrees is the
- * same length as the one that travelled 30 - 20,015 km each, against 40,030 km at the widest.
+ * A wavefront on a sphere grows to a great circle a quarter of the world away and then shrinks to a point on
+ * the opposite side. The front 150 degrees out is the same length as the one 30 degrees out - 20,015 km each,
+ * against 40,030 at the widest.
  *
- * No time is claimed anywhere in here. Timing the far side needs a teleseismic path through the mantle, and
- * `arrival.ts` already refused that by capping at 700km. Extending the live ring was measured and rejected:
- * it fades at 17 degrees, 9.4% of the way, and reaching the antipode at x20 would take 166.8 seconds.
- *
- * So this is a figure, not an animation: where the front would be at fixed intervals of arc.
+ * Claims no time. Timing the far side needs a path through the mantle, which `arrival.ts` already refused.
+ * A figure, not an animation: where the front would be at fixed intervals of arc.
  */
 
 /** Where a front from here closes back to a point. */

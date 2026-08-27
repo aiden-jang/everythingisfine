@@ -1,14 +1,11 @@
 /*
- * Omori's law, drawn against what actually happened.
+ * Omori's law, drawn against what happened. Aftershocks slow down as one over elapsed time, so the running
+ * count is a logarithm: steep, then almost flat. A swarm climbs in a straight line instead.
  *
- * Aftershock rate decays as one over elapsed time, so the cumulative count is a logarithm: steep at first,
- * then almost flat. A swarm climbs in a straight line instead, which is the more interesting outcome.
+ * Draw it as a reference curve, never a fit. Fitting `p` to a dozen aftershocks gives a number made of
+ * noise, and printing it would look like analysis.
  *
- * A reference curve, not a fit. Fitting `p` to a dozen aftershocks produces a number governed by noise, and
- * printing it would be analysis in the sense of looking like analysis. `Sequence.tsx` already refuses to
- * call an event an aftershock; a fitted exponent would be the same overreach with a decimal point on it.
- *
- * Cumulative rather than a rate. A rate needs bins, and at these counts the bin width decides the answer.
+ * Count, not rate. A rate needs bins, and at these numbers the bin width decides the answer.
  */
 
 /**

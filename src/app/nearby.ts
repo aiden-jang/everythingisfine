@@ -35,11 +35,9 @@ export interface Nearby {
   /**
    * Which way the local seismicity runs, as a bearing in [0, 180), or null when it does not run.
    *
-   * Earthquakes at a subduction zone lie along the trench, so the long axis of the local scatter is the
-   * trench strike and the section worth drawing is the one across it. A fixed east-west slice would be
-   * right at Japan and useless along the Aleutians.
-   *
-   * Null when there is no trend: too few neighbours, or a scatter round enough that its axis is noise.
+   * Earthquakes at a subduction zone lie along the trench, so the long axis of the scatter is the trench and
+   * the useful slice is the one across it. A fixed east-west section is right at Japan and useless along the
+   * Aleutians.
    */
   trendDeg: number | null;
 }

@@ -1,20 +1,17 @@
 import { DEG } from "./sphere";
 
 /*
- * How fast the plates are moving, and which way, at 231 points along their edges.
+ * How fast the plates move, and which way, at 231 points along their edges. Along a ridge the arrows run
+ * across it, at a trench they point into it, on a transform they lie along it.
  *
- * The boundaries explain the lines the earthquakes fall in; this explains the boundaries. Along a spreading
- * ridge the arrows run across it, at a trench they point into it, on a transform they lie along it.
+ * Every velocity is a published measurement. PB2002's step file carries the relative velocity for each of
+ * its 5,819 steps, so `tools/make-plate-motion.mjs` samples and rounds and nothing else.
  *
- * Every velocity here is a published measurement. PB2002's step file carries the relative velocity for each
- * of its 5,819 steps, so `tools/make-plate-motion.mjs` samples and rounds and nothing else.
+ * The velocity is relative - one side against the other, not motion over the mantle - and the legend has to
+ * say so, because an arrow cannot.
  *
- * The one thing a reader has to be told is that the velocity is relative: one side with respect to the
- * other, not either plate's motion over the mantle. The legend says so, because an arrow cannot.
- *
- * The samples are not imported here. This module is reached from `app/marks.ts`, which App imports at the
- * top level, so a static import of the 7.1kB table would sit in the eager bundle to serve a toggle that is
- * off until somebody presses it.
+ * The samples are not imported here. This is reached from `app/marks.ts`, which App imports at the top
+ * level, so a static import would put 7.1kB in the eager bundle for a toggle that is off.
  */
 
 /** `[lon, lat, azimuthDeg, mmPerYear, divergentSign, class]`, as generated. */

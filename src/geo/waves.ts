@@ -23,10 +23,8 @@ export const S_OVER_P = S_WAVE_KM_PER_S / P_WAVE_KM_PER_S;
 /**
  * Playback multiplier for the wavefronts, printed on screen rather than hidden.
  *
- * At true rate a front advances 0.16 pixels per second on a 400px globe, which reads as a still image. Real
- * rate would have been honest and useless at once; stating the multiplier keeps both.
+ * At true rate a front advances 0.16 pixels per second on a 400px globe, which reads as a still image.
  *
- * Here rather than beside the ring layer, because the legend prints it and has no business importing a
- * renderer.
+ * Here rather than beside the ring layer: the legend prints it and has no business importing a renderer.
  */
 export const PLAYBACK = 20;

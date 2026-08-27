@@ -5,12 +5,11 @@ import type { FetchResult, GeoEventSource, Runtime, SocketLike, SourceStatus } f
 /*
  * The suite every source must pass, written while there is only one source.
  *
- * A contract written after the second adapter exists describes the intersection of what they both already
- * do rather than what a source owes the app. Written now, adding EMSC meant running this file unchanged.
+ * Write it now. A contract written after the second adapter describes the intersection of what they both
+ * already do rather than what a source owes the app; written first, adding EMSC meant running it unchanged.
  *
- * Nothing below mentions HTTP, JSON, sockets, intervals or magnitudes. It asserts four things: what a
- * reading is, that stopping stops, that a broken transport degrades instead of throwing, and that nothing
- * is announced twice.
+ * Nothing below mentions HTTP, JSON, sockets or magnitudes. It asserts four things: what a reading is, that
+ * stopping stops, that a broken transport degrades instead of throwing, and that nothing is announced twice.
  */
 
 /** A clock and network the test drives by hand. Shared so both adapters are exercised identically. */

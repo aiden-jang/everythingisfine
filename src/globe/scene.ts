@@ -58,25 +58,23 @@ const SHORTLIST = 8;
 /*
  * The globe's own palette.
  *
- * Every value is bounded above by the darkest stop of the data ramp: chrome brighter than the dimmest
- * earthquake competes with the thing it is a backdrop for. The stroke is raised further than the fill,
- * because definition comes from edges and a brighter fill just puts a large pale shape on screen.
+ * Every value stays below the darkest stop of the data ramp: chrome brighter than the dimmest earthquake
+ * competes with what it is a backdrop for. Raise the stroke further than the fill - definition comes from
+ * edges, and a brighter fill just puts a large pale shape on screen.
  *
- * These are canvas, so the chrome's chroma ceiling of 55 does not apply and they run to 78. The
- * `--color-coast` and `--color-plate` tokens in `index.css` deliberately do not follow: the cross-section
- * paints text with them, and text is chrome.
+ * These are canvas, so the chroma ceiling of 55 does not apply and they run to 78. `--color-coast` and
+ * `--color-plate` in `index.css` must not follow: the cross-section paints text with them, and text is chrome.
  */
 /*
- * The linework carries the drawing, and its order is load-bearing: sea, then land, then graticule, then
- * coast, then plates.
+ * The order is load-bearing: sea, land, graticule, coast, plates.
  *
- * Two ratios were tuned from reports rather than from theory, and both went the counterintuitive way.
- * Land sits 1.50 above sea, not 1.31: an interior that reads as ocean makes every line crossing it read
- * as a crack, and Eurasia has no coastline in view to rescue it. Plates sit 2.52 above land, not 3.21:
- * brighter, the closed boundaries across Asia read as cracks in the fill rather than as boundaries.
+ * Two ratios were tuned from bug reports and both went the counterintuitive way. Land sits 1.50 above sea,
+ * not 1.31: an interior that reads as ocean makes every line crossing it read as a crack, and Eurasia has no
+ * coastline in view to rescue it. Plates sit 2.52 above land, not 3.21: brighter, the closed boundaries
+ * across Asia read as cracks in the fill.
  *
- * `NEUTRAL` below must be re-picked, never scaled. Scaling the blue palette's chroma puts the coastline
- * 9.7 dE from cividis's second stop, and under about 12 the two stop separating.
+ * Re-pick `NEUTRAL` below, never scale it. Scaling the blue palette's chroma puts the coastline 9.7 dE from
+ * cividis's second stop, and under about 12 two colours stop separating.
  */
 const COLOR_SPHERE = 0x031120;
 /*
@@ -167,15 +165,13 @@ const ATMOSPHERE = {
       float t = clamp((b - 1.0) / (uOuter - 1.0), 0.0, 1.0);
 
       /*
-       * The halo is brighter where the air it stands for is in sunlight. One even ring is a lit sphere
-       * with a decal on it: the atmosphere above the midnight limb glowing as hard as the one above noon.
+       * Brighter where the air it stands for is in sunlight. One even ring is a lit sphere with a decal on
+       * it: the atmosphere above the midnight limb glowing as hard as the one above noon.
        *
-       * Intensity only. The obvious version warms the terminator toward orange, and orange means magnitude
-       * here - a sunrise band would put a large non-data orange beside a scale whose whole contract is that
-       * colour is the reading. Brightness is free; hue is spoken for.
+       * Intensity only. Warming the terminator toward orange would put a large non-data orange beside a
+       * scale whose whole contract is that colour is the reading. Brightness is free; hue is spoken for.
        *
-       * Floored rather than faded out: on the night limb the halo is the only thing separating an unlit
-       * edge from the void.
+       * Floored, never faded out: on the night limb the halo is all that separates an unlit edge from the void.
        *
        * (No backticks in here. One of them ends the template literal.)
        */
@@ -356,14 +352,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   gratGeom.setAttribute("position", new BufferAttribute(grid.position, 3));
   gratGeom.setAttribute("aLonLat", new BufferAttribute(grid.lonLat, 2));
   /*
-   * Opaque and drawn before the land, which is the only way it can end up behind it.
+   * Opaque and drawn before the land, which is the only way it ends up behind it.
    *
    * The graticule sits at 1.003, outside the ocean shell, so its near half passes the depth test - and the
-   * land fill writes no depth at all, by the decision above. Nothing could occlude it, so it drew over the
-   * continents: invisible at the equator, a starburst across Siberia from a polar orbit.
+   * land fill writes no depth at all. Nothing could occlude it, so it drew over the continents: invisible at
+   * the equator, a starburst across Siberia from a polar orbit.
    *
-   * `renderOrder` cannot fix it, because opaque always draws before transparent. So this fades by colour,
-   * pre-blended against the ocean, and `setGeography` keeps that blend in step with the palette.
+   * `renderOrder` cannot fix it, because opaque always draws before transparent. So it fades by colour,
+   * pre-blended against the ocean, and `setGeography` keeps that blend in step.
    */
   const grat = new LineSegments(gratGeom, new LineBasicMaterial({
     color: GRATICULE_ON({ sphere: COLOR_SPHERE, graticule: COLOR_GRATICULE }),
@@ -459,13 +455,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
         void main() {
           /*
-           * On the map the direction is rebuilt per fragment, not interpolated. A normal interpolated
-           * across a triangle is only right at its corners, and flattening stretches these: each quad
-           * splits into two that interpolate differently, so a crease runs along every shared diagonal and
-           * ninety-six columns of them read as streaks across Russia.
+           * On the map, rebuild the direction per fragment rather than interpolating. An interpolated normal
+           * is only right at the corners, and flattening stretches these triangles: each quad splits into two
+           * that interpolate differently, so a crease runs along every shared diagonal and ninety-six columns
+           * of them read as streaks across Russia.
            *
-           * Mixed rather than switched: on the globe the interpolated normal is the exact one, and a hard
-           * swap partway through the morph would jump.
+           * Mixed, never switched: on the globe the interpolated normal is exact, so a hard swap would jump.
            */
           float lam = radians(vLonLat.x);
           float phi = radians(vLonLat.y);
@@ -475,35 +470,31 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
           /*
            * Darkens one side and lifts the other, in one pass. Darkening alone made the globe dimmer rather
-           * than lit: it still read as a disc with a shadow instead of a ball with a sun somewhere.
+           * than lit - still a disc with a shadow instead of a ball with a sun somewhere.
            *
            * The two factors are disjoint and meet at zero across the terminator, so nothing paints there.
            * Overlap them and a band of mid-grey reads as haze on the lens rather than as dawn.
            *
-           * Twenty-three degrees of arc, four times physical. Flattened, the band runs almost straight
-           * across Eurasia, and a narrow ramp there read as a wedge with a corner missing. Only the night
-           * side widens; the day ramp is already broad.
+           * Twenty-three degrees of arc, four times physical. Flattened, the band runs almost straight across
+           * Eurasia, and a narrow ramp there read as a wedge with a corner missing.
            */
           float night = smoothstep(0.10, -0.30, sun);
           float day = smoothstep(0.10, 0.55, sun);
 
           /*
-            The moon's shadow, on the few days there is one.
+            The moon's shadow, on the few days there is one. uPenumbraAng is zero otherwise, so this costs a
+            compare almost always.
 
-            uPenumbraAng is zero on every other day, so this costs a compare almost always. When it is
-            not zero the surface point's angular distance from the shadow centre decides how much of the
-            sun is covered: nothing at the penumbra's edge, most of it at the middle, and effectively all
-            of it inside the umbra - which is a couple of hundred kilometres across and lands as a dark
-            spot about eight pixels wide on a globe this size.
+            The surface point's angular distance from the shadow centre decides how much sun is covered:
+            nothing at the penumbra's edge, most at the middle, effectively all inside the umbra - a couple
+            of hundred kilometres, about eight pixels on a globe this size.
 
-            The umbra term is a separate ramp rather than the tail of the first, because the two differ by
-            a factor of forty in radius and one smoothstep across that range would make totality a smudge.
-            An annular eclipse has no umbra at all: eclipse.ts hands over zero, and the cone that closed
-            before it arrived simply does not darken anything the rest of the way.
+            The umbra gets its own ramp rather than the tail of the first. The two differ by a factor of
+            forty in radius, and one smoothstep across that range makes totality a smudge. An annular eclipse
+            has no umbra at all: eclipse.ts hands over zero.
 
-            Both night and day are moved. Dimming the day alone left the shadow grey rather than dark,
-            because the night wash is a separate term and a shadow that does not raise it is a shadow the
-            planet is not actually in.
+            Move both night and day. Dimming the day alone left the shadow grey, because a shadow that does
+            not raise the night wash is a shadow the planet is not in.
           */
           float cover = 0.0;
           if (uPenumbraAng > 0.0) {
@@ -517,25 +508,19 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           night = max(night, cover);
 
           /*
-           * The lit side is brightest facing the eye and falls off toward the limb.
-           *
-           * Without it the day wash is flat across the whole hemisphere, which draws a lit circle rather
-           * than a lit sphere: the shading says where the sun is and nothing says the surface is curving
-           * away. Real limb darkening has a real cause - obliquely you are looking through more
-           * atmosphere and less deep into it - and on this globe it costs one dot product.
-           *
-           * Applied by taking the wash away rather than by adding shadow. The wash is the only thing on
-           * the lit side with any strength to it, so removing it is worth about twenty levels; adding
-           * black over an ocean already at 2,10,18 would be worth about three. Darkening a thing that is
-           * already dark is arithmetic nobody can see.
-           *
-           * The surface point is the normal times the shell radius, which is exact here: nothing above
-           * this rotates the sphere, and the one thing the model matrix carries is the sideways offset
-           * that repeats the flat map - where this term is switched off anyway, because a plane has no
-           * limb to darken.
-           *
-           * (No backticks in here. This is inside a template literal and one of them ends the shader.)
-           */
+            The lit side is brightest facing the eye and falls off toward the limb. Without it the day wash is
+            flat across the hemisphere, which draws a lit circle rather than a lit sphere.
+
+            Take the wash away rather than adding shadow. The wash is the only thing on the lit side with any
+            strength, so removing it is worth about twenty levels; adding black over an ocean already at
+            2,10,18 is worth about three. Darkening something already dark is arithmetic nobody can see.
+
+            The surface point is the normal times the shell radius, which is exact here: nothing above this
+            rotates the sphere, and the model matrix only carries the offset that repeats the flat map - where
+            this term is off anyway, because a plane has no limb.
+
+            (No backticks in here. One of them ends the shader.)
+          */
           vec3 toEye = normalize(cameraPosition - vNormal * ${RADIUS_NIGHT});
           float edge = (1.0 - clamp(dot(vNormal, toEye), 0.0, 1.0)) * (1.0 - uMorph);
           day *= mix(1.0, 0.32, smoothstep(0.30, 0.94, edge));

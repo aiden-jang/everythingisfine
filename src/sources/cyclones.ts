@@ -1,18 +1,13 @@
 import { reportedBy } from "./gdacs";
 /*
- * Tropical cyclones, as tracks rather than dots.
+ * Tropical cyclones, as tracks rather than dots. A storm drawn as a point is a dot that happens to be a
+ * hurricane; drawn as a track it explains itself, curving poleward as every cyclone does.
  *
- * A storm drawn as a point is a dot that happens to be a hurricane. Drawn as a track it explains itself:
- * SAUDEL-26 runs from 7.9 to 26.5 degrees of latitude while moving west, which is the poleward curve every
- * cyclone makes and the reason none of them form on the equator.
+ * Only what is happening now. GDACS lists 99 and flags 3 `iscurrent`; the other 96 are dead storms.
  *
- * Only what is happening now. GDACS lists 99 cyclones and flags 3 `iscurrent`; the other 96 are this
- * season's dead storms.
- *
- * The polygons are left on the server on purpose. Each storm's geometry payload is 370kB, of which 49
- * features are wind-radius rings and a forecast cone: rings in longitude and latitude walk into all four
- * traps the land mesh paid for. The 17 LineStrings are 28kB and are a polyline, which this codebase
- * already draws correctly.
+ * Leave the polygons on the server. Each storm's geometry payload is 370kB, of which 49 features are
+ * wind-radius rings and a forecast cone - rings in lon/lat walk into all four traps the land mesh paid for.
+ * The 17 LineStrings are 28kB and are a polyline, which this codebase already draws correctly.
  */
 
 const LIST = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH"
@@ -78,12 +73,11 @@ export function parseCycloneList(payload: unknown): Omit<Cyclone, "track">[] {
 /**
  * The track out of a storm's geometry payload, oldest point first.
  *
- * GDACS publishes it as seventeen two-point LineStrings in reverse order, each segment's start being the
- * previous segment's end. Stitched by walking the ends rather than by trusting the `Class` numbering,
- * which is a name and not a promise.
+ * GDACS publishes seventeen two-point LineStrings in reverse order, each segment's start being the previous
+ * one's end. Stitch by walking the ends, never by trusting the `Class` numbering, which is a name.
  *
- * A segment spanning more than `WRAP_DEG` is dropped: a Pacific storm really can cross the antimeridian,
- * and joining 179 to -179 draws a line across the whole world.
+ * Drop a segment spanning more than `WRAP_DEG`: a Pacific storm really does cross the antimeridian, and
+ * joining 179 to -179 draws a line across the whole world.
  */
 export function parseTrack(payload: unknown): { lon: number; lat: number }[] {
   const features = (payload as { features?: unknown })?.features;

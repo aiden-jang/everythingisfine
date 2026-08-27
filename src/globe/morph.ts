@@ -4,9 +4,8 @@ import type { BufferGeometry, Material, WebGLProgramParametersWithUniforms } fro
 /*
  * Globe to map, as one geometry.
  *
- * Two scenes cross-faded doubles every buffer, doubles every place a layer can be forgotten, and the switch
- * is a dissolve, which says nothing. A planet unwrapping says what a projection is, which is the thing a
- * flat map of earthquakes needs its viewer to understand.
+ * Two scenes cross-faded doubles every buffer and every place a layer can be forgotten, and the switch is a
+ * dissolve, which says nothing. A planet unwrapping says what a projection is.
  *
  * So there is one set of positions, on the sphere, and the plane is derived from them in the vertex shader.
  */
@@ -17,14 +16,13 @@ export const MAP_HALF_WIDTH = 2;
 /**
  * How much of a layer's radial lift survives on the flat map.
  *
- * Flattened, a radial lift becomes a shift straight at the camera, and a perspective camera magnifies
- * whatever is nearer: at 0.032 the coastline drew one percent larger than the fill and crept seven pixels
- * outward at the edge of the frame at zoom 2. It doubled with zoom, which is the signature of parallax.
+ * Flattened, a radial lift becomes a shift straight at the camera, and perspective magnifies whatever is
+ * nearer. At 0.032 the coastline drew one percent larger than the fill and crept seven pixels outward at the
+ * edge of the frame at zoom 2 - doubling with zoom, which is the signature of parallax. The markers were
+ * worse at 0.048, while `project` places their hover ring at zero.
  *
- * The markers were worse at 0.048, while `project` places their hover ring at zero.
- *
- * So the lift shrinks to the least that still orders the layers: 0.0002 between neighbours is a few hundred
- * depth-buffer steps at these distances, and leaves the worst-case drift under half a pixel.
+ * So shrink the lift to the least that still orders the layers. 0.0002 between neighbours is a few hundred
+ * depth-buffer steps here, and leaves the worst drift under half a pixel.
  */
 const MAP_LAYER_LIFT = 0.2;
 
@@ -41,12 +39,11 @@ export const MORPH_GLSL = /* glsl */ `
 
   vec3 fmProject(vec3 sphere) {
     /*
-     * The plane comes from the attribute, not from the position.
+     * The plane comes from the attribute, never from the position.
      *
-     * Never recover longitude with atan2. Densifying emits longitudes past 180 and earcut triangulates in
-     * that space, so atan2 folds 180.5 back to -179.5 and a two-degree triangle is drawn spanning the world.
-     * At a pole longitude does not exist, atan2(0, 0) returns zero, and every meridian is dragged onto the
-     * prime meridian.
+     * Never recover longitude with atan2. Densifying emits longitudes past 180 and earcut triangulates
+     * there, so atan2 folds 180.5 to -179.5 and a two-degree triangle spans the world. At a pole longitude
+     * does not exist, atan2(0, 0) is zero, and every meridian gets dragged onto the prime meridian.
      *
      * (No backticks in here. One of them ends the template literal.)
      */
@@ -83,13 +80,11 @@ export function visibleCopies(
 }
 
 /**
- * Derives `aLonLat` for a sphere shell, from its texture coordinates rather than its positions.
+ * Derives `aLonLat` for a sphere shell from its texture coordinates, not its positions.
  *
- * The shells have no source coordinates to carry, and `atan2` fails them twice: the duplicated seam column
- * reports -180 for one copy and +180 for the other, and the pole rows have no longitude at all.
- *
- * The texture coordinate knows both, and only lines up with longitude because the shells are built with the
- * seam rotated to the antimeridian. See `SPHERE_PHI_START`.
+ * `atan2` fails the shells twice: the duplicated seam column reports -180 for one copy and +180 for the
+ * other, and the pole rows have no longitude at all. The texture coordinate knows both, and only lines up
+ * with longitude because the shells are built with the seam rotated to the antimeridian.
  */
 export function attachLonLat(geometry: BufferGeometry): void {
   const position = geometry.getAttribute("position");

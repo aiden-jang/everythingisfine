@@ -1,14 +1,13 @@
 import { DEG } from "../geo/sphere";
 
 /*
- * The glyphs, as polylines in longitude and latitude. Light gets colour and marks get shapes, so every
- * phenomenon that is not an earthquake is told apart by outline.
+ * The glyphs, as polylines in lon/lat. Light gets colour and marks get shapes, so everything that is not an
+ * earthquake is told apart by outline.
  *
- * Shapes in degrees rather than pixels, because they are things on the ground: a cyclone really is about six
- * degrees across. They grow and shrink with the camera the way the coastline does.
+ * Degrees, not pixels: these are things on the ground, and a cyclone really is about six degrees across.
  *
- * Longitude is stretched by `1/cos(lat)` in all of them, so a shape stays the shape away from the equator,
- * and clamped near the poles where the factor runs away.
+ * Stretch longitude by `1/cos(lat)` in all of them or a shape stops being that shape away from the equator.
+ * Clamp near the poles, where the factor runs away.
  */
 
 export interface Point { lon: number; lat: number }
@@ -34,11 +33,10 @@ export function spiral(lon: number, lat: number, radiusDeg = 3): Point[] {
 /**
  * Where the reader is: four ticks around a gap, pointing in.
  *
- * Ticks because this app's corners are ticks or nothing. There is no picture of a person that would not be
- * either a pin from another app's vocabulary or a joke.
+ * Ticks because this app's corners are ticks or nothing, and no picture of a person would be anything but a
+ * pin from another app or a joke.
  *
- * The gap is the point. A cross covers the ground it is identifying, and this is the one mark whose whole
- * job is to say "that spot, there" - including when an earthquake is at it.
+ * The gap is the point. A cross covers the ground it is identifying, and this mark exists to say "that spot".
  */
 export function here(lon: number, lat: number, radiusDeg = 1.5): Point[][] {
   const stretch = stretchAt(lat);

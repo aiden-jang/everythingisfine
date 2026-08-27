@@ -5,17 +5,12 @@ import type { Wildfire } from "../sources/wildfires";
 import { ago, latLon } from "./format";
 
 /*
- * What a storm, a volcano, a fire or a flood says when you point at it.
+ * What a storm, volcano, fire or flood says when you click it.
  *
- * The five layers arrived able to be seen and not asked: each carries measurements the legend could only
- * summarise across the whole set, and clicking a mark had no effect while the earthquake beside it opened
- * a panel.
+ * Every line is a fact from the feed. If the feed does not carry something, drop the row - never show a dash.
  *
- * Every line is a fact from the feed. Where a feed does not carry something the row is absent rather than
- * showing a dash.
- *
- * Deliberately not the earthquake panel: that one is built around a reading two agencies dispute, and none
- * of depth, neighbours, arrival times or a sequence exists for a wildfire.
+ * Not the earthquake panel. That one is built around two agencies disagreeing, and a wildfire has no depth,
+ * no neighbours, no arrival time and no sequence.
  */
 
 export type MarkSubject =

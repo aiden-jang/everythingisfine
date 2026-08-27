@@ -16,13 +16,12 @@ export const USGS_HOUR_FEED = FEED("all_hour");
 /**
  * The first request asks for a day; every one after asks for an hour.
  *
- * Seeding from the last hour was the original plan, and measuring killed it: the hourly feed held 8
- * earthquakes, four of them above the default magnitude floor. The daily feed holds 227 in 163kB.
+ * Seeding from the last hour was the plan until it was measured: the hourly feed held 8 earthquakes, four of
+ * them above the default floor. The daily feed holds 227 in 163kB.
  *
  * Polling the day every minute would cost 163kB a minute to re-learn 8 events, so the seed is a one-off.
  *
- * The 2.5+ daily feed was the other candidate at 38kB, and it was rejected because the magnitude floor
- * belongs to the viewer's filter, not to the fetch.
+ * Not the 2.5+ daily feed: the magnitude floor belongs to the viewer's filter, not to the fetch.
  */
 const USGS_DAY_FEED = FEED("all_day");
 

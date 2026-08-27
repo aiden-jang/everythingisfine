@@ -1,15 +1,9 @@
 /*
- * The last day, played in.
+ * Plays the last day in when the page opens, so the first thing anybody sees is the globe doing something.
  *
- * The wavefront is this product's signature and almost nobody ever saw one: events arrive every few
- * minutes, so somebody who opens the page for ten seconds sees a static scatter of dots. Meanwhile the app
- * holds a complete day of history and draws all of it at once, flat, with its time dimension unused.
+ * Invents nothing. It only changes when the app draws data it already has.
  *
- * Nothing here invents an event, reorders one or changes a time. The only thing being animated is when the
- * app chooses to draw something it already has.
- *
- * 2.8 seconds, down from seven: it now shares the opening with the boundary reveal that follows it, and
- * the activity strip answers "when" permanently, so the replay no longer has to.
+ * 2.8 seconds, down from seven, because it now shares the opening with the boundary reveal.
  */
 
 /** Long enough to read as a day passing, short enough that nobody waits through it twice. */

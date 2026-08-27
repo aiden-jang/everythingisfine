@@ -6325,3 +6325,36 @@ is that no browser test sees a wavefront, which was already true and is now at l
 pulls the mean magnitude down, and Aki's estimator is one over that distance - so a draw at b = 1.0 reads
 back as about 1.08. Drawing at 0.93 to make the number land on 10 would be tuning the generator to fool the
 estimator, which is the same dishonesty in the other direction.
+
+### The second comment pass, which was about register rather than volume
+
+The first pass cut 13,190 lines to 7,805 and kept the wrong voice. Re-reading it, the survivors were
+still arguing: "which is the more interesting outcome", "the difference between a limitation and a lie",
+"analysis in the sense of looking like analysis". That is prose written at a reviewer, and a maintainer
+cannot act on any of it.
+
+**The rewrite rule was: say what it does in one line, then only the traps, as instructions.** Hazard first,
+imperative, one idea per sentence, short words. The same fact, before and after:
+
+> Never recover longitude with atan2. Densifying emits longitudes past 180 and earcut triangulates in that
+> space, so atan2 folds 180.5 back to -179.5 and a two-degree triangle is drawn spanning the world.
+
+became
+
+> Never recover longitude with `atan2`. At a pole longitude does not exist, `atan2(0, 0)` is zero, and every
+> meridian gets dragged onto the prime meridian.
+
+**What went was the product argument, which was in the wrong file.** Nearly every module header opened by
+defending why the feature exists - three or four paragraphs of it - and every one of those arguments is
+already in this log, in order and dated. A docstring is the worst place to keep it: it is read by somebody
+who has already accepted that the file exists and wants to know what will bite them.
+
+**Where it stopped, and why.** 13,190 to about 7,600, which is 43% rather than the 70% the exercise usually
+lands at, and the shortfall is not laziness. Two checks say so. The blocks left at 8 to 11 lines each name
+exactly one trap - the graticule drawing over the continents, the marker offset that has to come after
+`fmProject`, the coastline creeping outward under parallax - and cutting them loses the thing they exist
+for. And an automated scan for one-line comments that merely restate the identifier beneath them returned
+34 candidates, every one of which turned out to carry a unit, a null case or a range the identifier does
+not: "in globe radii", "or null when sound is off", "as `YYYY-MM-DD`". There was nothing left to take.
+
+The rule is now written down in README.md, where somebody adding a file will see it before they write one.

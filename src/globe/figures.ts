@@ -3,17 +3,15 @@ import { starVector, type FigureTable } from "../geo/stars";
 import { SKY_DISTANCE, SKY_GLSL } from "./sky";
 
 /*
- * The constellation figures, laid over the stars they join.
+ * The constellation lines, over the stars they join. A sky nobody can find anything in is still a backdrop.
  *
- * A sky nobody can find anything in is still a backdrop. These are the lines that make Orion into Orion.
+ * The one layer here that measures nothing - nobody discovered that seven stars are a plough - which is why
+ * it is a toggle, beside the slab and the plate motions.
  *
- * The one layer here that measures nothing. Nobody discovered that those seven stars are a plough; somebody
- * decided it. That is why it is a toggle, beside the slab and the plate motions.
+ * Faint. The lines exist to be followed, not looked at.
  *
- * Faint, and thinner than the stars are bright: the lines exist to be followed, not looked at.
- *
- * Placed by the same rule as the stars, from `sky.ts`. A line drawn at a different distance or rotation
- * than the star it points at is a line pointing at nothing.
+ * Placed by the same rule as the stars, from `sky.ts`. A line at a different distance or rotation than the
+ * star it points at is a line pointing at nothing.
  */
 
 /*

@@ -4,16 +4,13 @@ import type { Volcano } from "../sources/volcanoes";
 import type { Wildfire } from "../sources/wildfires";
 
 /*
- * The five layers as a list, because a glyph is not reachable.
+ * The five layers as a list, because a glyph cannot be reached by keyboard.
  *
- * Marks became clickable, which gave them a pointer and nothing else: there is no list of storms or fires
- * anywhere in the chrome, so a keyboard user could not reach a single one of them, and nobody could browse
- * them. The earthquakes have had the rail's own list from the beginning. This is the same argument the
- * activity strip's bars won when holding an hour stopped being mouse-only.
+ * Marks became clickable, which gave them a pointer and nothing else. The earthquakes have had the rail's
+ * list from the start.
  *
- * **Ordered by what each layer is actually about.** Storms by peak wind, fires by burned area, floods and
- * volcanoes by recency, because that is the question each one invites - "how bad", "how big", "how recent"
- * - and an alphabetical list of a hundred fires answers none of them.
+ * Order each layer by what it is about: storms by wind, fires by area, floods and volcanoes by recency. An
+ * alphabetical list of a hundred fires answers nothing.
  */
 
 export interface HazardRow {

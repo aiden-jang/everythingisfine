@@ -5,12 +5,11 @@ import { distanceKm } from "../geo/sphere";
 /*
  * When the shaking reached the nearest named place.
  *
- * The distance is the agency's, not ours. USGS writes every place as "38 km NW of Stanton, Texas". The
- * alternative was an authored list of cities with coordinates written from memory, where a tenth of a
- * degree of drift is 11km and 11km is two seconds of a claim that reads as measured.
+ * The distance is the agency's, never ours. USGS writes every place as "38 km NW of Stanton, Texas". An
+ * authored list of cities means latitudes written from memory, and a tenth of a degree is 11km, which is
+ * two seconds of an answer that reads as measured.
  *
- * Straight line at crustal speeds, which is why it is capped. Path length over a constant velocity holds
- * in the crust and stops holding at teleseismic distance, where the wave dives into faster material.
+ * Straight line at crustal speed, so it is capped: past that the wave dives into faster mantle and arrives early.
  */
 
 /** Beyond this the constant-velocity assumption stops being an approximation and starts being wrong: a
@@ -95,14 +94,13 @@ export interface Separation {
 }
 
 /**
- * Great-circle distance between two events, and how long the first one's P wave took to reach the second's
- * ground. The panel lists neighbours inside 150km of whatever is pinned; this answers for any two on screen.
+ * Distance between two events, and how long the first one's P wave took to reach the second.
  *
- * The distance is always given and the time is not. Distance is geometry and true at any separation; a
- * travel time over a constant crustal velocity is refused past the same `MAX_KM` the arrival sentence uses.
+ * Distance always, time only inside `MAX_KM`. Distance is geometry and true at any separation; a constant
+ * crustal velocity stops being true well before the antipode.
  *
- * Depth is deliberately absent here. Both ends are hypocentres, and the honest path between them is neither
- * the surface arc nor the straight chord but a refracted ray, so the surface distance is reported as itself.
+ * No depth correction here. Both ends are hypocentres, and the honest path between them is a refracted ray
+ * rather than the surface arc or the chord.
  */
 export function between(
   aLon: number, aLat: number, bLon: number, bLat: number,

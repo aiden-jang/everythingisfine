@@ -1,12 +1,12 @@
 /*
- * The real sky, turned to the right place for the moment on screen.
+ * The real sky, turned to the moment on screen. The procedural field this replaces looked convincing and
+ * Orion was not there to be found.
  *
- * The procedural field this replaces looked convincing, and that was its whole limit: Orion was not there
- * to be found. `tools/make-stars.mjs` commits the Yale Bright Star Catalogue down to magnitude 6.0, about
- * what an unaided eye reaches: 5,080 stars, 88kB, 34kB over the wire.
+ * `tools/make-stars.mjs` commits the Yale Bright Star Catalogue down to magnitude 6.0, about what an unaided
+ * eye reaches: 5,080 stars, 88kB, 34kB over the wire.
  *
- * Its own chunk. A plain import puts it in `land`, which is modulepreloaded, taking that chunk from 41kB
- * to 76kB over the wire on the critical path for a background. The layer draws empty until the table lands.
+ * Its own chunk. A plain import puts it in `land`, which is modulepreloaded, taking that from 41kB to 76kB
+ * on the critical path for a background.
  */
 import { DEG } from "./sphere";
 
@@ -22,14 +22,11 @@ const STAR_MAG_BRIGHTEST = -1.46;
 const J2000_MS = Date.UTC(2000, 0, 1, 12, 0, 0);
 
 /**
- * Greenwich mean sidereal time in degrees: how far the sky has turned over the prime meridian. A star with
+ * Greenwich mean sidereal time in degrees: how far the sky has turned over the prime meridian. A star at
  * right ascension `ra` stands over longitude `ra - gmstDeg(at)`, so one rotation places the whole table.
  *
- * The linear term is enough. The full series carries a `T^2` correction reaching 0.000026 degrees by 2026,
- * four orders of magnitude below this table's own rounding.
- *
- * UT1 is approximated by UTC, which is what a browser clock gives: 0.9 seconds apart at worst, and 0.9
- * seconds of Earth rotation is 0.004 degrees.
+ * The linear term is enough: the `T^2` correction reaches 0.000026 degrees by 2026, four orders below this
+ * table's own rounding. UTC stands in for UT1, worth 0.004 degrees.
  */
 export function gmstDeg(at: number): number {
   const days = (at - J2000_MS) / 86_400_000;

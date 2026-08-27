@@ -2,19 +2,14 @@ import plates from "./plates.json";
 import { EARTH_RADIUS_KM } from "./sphere";
 
 /*
- * How far an earthquake is from the nearest plate boundary.
- *
- * The original ask was the quiet map: dim the belts, light the cratons. Read literally that is a claim about
- * geological time, and this app holds at most thirty days - inverting one window lights up half the Ring of
- * Fire, because most active belt cells have no event today either. So the claim was cut down to one this
- * data can carry: not which places are quiet, but how far each earthquake is from an edge.
+ * How far each earthquake is from the nearest plate boundary.
  *
  * Measured against a real day of USGS M2+: median 93 km, half within 100 km, and that band is 9.4% of the
- * surface. So the belts concentrate seismicity by about 5.4x - a floor, not a ceiling, because a dense
- * network finds M2 events in Oklahoma while nobody is listening in the middle of the Pacific.
+ * surface - so the belts concentrate seismicity by about 5.4x. That is a floor, because a dense network
+ * finds M2 events in Oklahoma while nobody is listening mid-Pacific.
  *
- * Deliberately not a marker decoration. The marker's channels are spent - colour and size are magnitude,
- * fill is depth - so this is a number in the panel and a sentence in the rail.
+ * Not drawn on the marker. Colour and size are magnitude and the fill is depth, so this is a number in the
+ * panel and a sentence in the rail.
  */
 
 /** A boundary segment as two unit vectors' worth of arithmetic, prepared once. */
@@ -55,16 +50,12 @@ function unit(lon: number, lat: number): [number, number, number] {
 /**
  * Great-circle distance to the nearest segment, in km.
  *
- * Point-to-segment, not point-to-vertex. The shipped boundary file is simplified to one vertex every 139 km,
- * so a point halfway along a straight run of ridge is 70 km from the nearest vertex and 0 from the line:
- * measuring to vertices put the within-50km share at 11%, and to segments at 32%.
+ * To the segment, never to a vertex. Vertices are 139 km apart, so a point halfway along a straight run of
+ * ridge is 70 km from the nearest one and 0 from the line: measuring to vertices put the within-50km share
+ * at 11% where it is 32%.
  *
- * Measured to the arc, not to the chord joining its ends. The chord is a line through the inside of the
- * planet: a 10-degree segment sags 24 km below the surface at its midpoint. On the real file that error is
- * 0.4 km and would have hidden behind the kilometre rounding forever.
- *
- * So: cross-track distance to the great circle, used only when the perpendicular foot falls between the
- * endpoints, and the nearer endpoint otherwise.
+ * To the arc, never to the chord. The chord runs through the inside of the planet, and a 10-degree segment
+ * sags 24 km below the surface at its midpoint.
  */
 export function nearestBoundaryKm(
   lon: number, lat: number, segments: readonly Segment[],

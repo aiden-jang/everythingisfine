@@ -3,20 +3,13 @@ import { solarHour } from "../geo/sun";
 import type { Filters, Quake } from "../data/types";
 
 /*
- * The window folded onto a 24-hour dial, which is worth drawing because it shows nothing.
+ * Counts events by hour of day, on a 24-hour dial. Earthquakes have no time of day, so this shows nothing.
  *
- * Almost everything anybody counts has a time of day in it: traffic, births, crime, power draw. Earthquakes
- * do not. A dial that comes out flat says that more convincingly than a sentence claiming it.
+ * Bin on solar time at each epicentre, never UTC. UTC smears a real signal across every longitude and
+ * flattens it, so the dial would come out flat whether or not anything was there.
  *
- * Local solar time at each epicentre, not UTC. A real diurnal signal would be driven by the sun, so binning
- * on UTC would smear it across every longitude and flatten it by construction.
- *
- * The noise band is not decoration. 400 events into 24 bins is 17 apiece and a Poisson scatter of 4, and
- * bars wobbling by a quarter look exactly like a signal. So the expected scatter is drawn, and a narrow
- * window announces its own weakness by having a wide band.
- *
- * No verdict is printed. With 24 bins, roughly one strays past two sigma by luck alone, so an app declaring
- * "no signal" off that threshold would be wrong about a third of the time.
+ * Draw the noise band: 400 events in 24 bins is 17 each give or take 4, and bars wobbling by a quarter look
+ * like a signal. Never print a verdict - with 24 bins, one strays past two sigma by luck alone.
  */
 
 export const BINS = 24;
@@ -70,16 +63,13 @@ export function diurnal(
 }
 
 /**
- * The dial's own finding, as a sentence, or null when there is nothing to report.
+ * The dial's finding, as a number, or null when there is none.
  *
- * `worst` was computed and tested and never drawn, so the one number the picture is about reached nobody who
- * could not read a ring against a band - and nobody at all through a screen reader, since the drawing is not
- * in the accessibility tree.
+ * Say the number. `worst` was computed and tested and never drawn, so it reached nobody who could not read a
+ * ring against a band by eye, and nobody at all through a screen reader.
  *
- * A number and no verdict. With 24 bins roughly one strays past two sigma by luck, so an app declaring "no
- * signal" off that threshold would be wrong about a third of the time. Stating the departure and the band it
- * is measured against is the same move `data/depth.ts` makes: print the number that says whether the reader
- * can see the thing, rather than the claim that they will.
+ * A number and no word. With 24 bins one strays past two sigma by luck, so any verdict is wrong a third of
+ * the time.
  */
 export function worstNote(d: Diurnal): string | null {
   if (!Number.isFinite(d.worst) || d.sigma <= 0) return null;

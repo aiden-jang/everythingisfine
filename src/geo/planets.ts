@@ -4,19 +4,15 @@ import { gmstDeg } from "./stars";
 /*
  * The five planets anybody can see, in the same frame as the stars behind them.
  *
- * The star field made the sky a place; these are the things in it that move. Scrub a week of archived days
- * and five dots walk through constellations that hold still.
+ * Keplerian elements with linear rates, from the standard approximate table for 1800 to 2050. Good to about
+ * a tenth of a degree, a fraction of a pixel on a dot this size.
  *
- * Keplerian elements with linear rates, from the standard approximate table for 1800 to 2050. Good to
- * roughly a tenth of a degree, which is a fraction of a pixel on a dot this size.
+ * Magnitudes need the phase term. Without it Venus reached -5.9 against a real ceiling near -4.9: at
+ * inferior conjunction it is closest and so brightest by distance alone, and in truth it is a thin crescent.
+ * Saturn's rings are not modelled, worth up to half a magnitude.
  *
- * Magnitudes carry a phase term. Leaving it out put Venus at -5.9 against a real ceiling near -4.9: at
- * inferior conjunction Venus is closest and brightest by distance alone, and in truth it is a thin
- * crescent, so a layer that sizes its dots by magnitude drew the biggest Venus of the year on the night it
- * is hardest to see. Saturn's rings are not modelled, worth up to half a magnitude.
- *
- * No Pluto, Uranus or Neptune. Uranus is magnitude 5.7 at best, inside the star table's own limit and
- * indistinguishable from the field around it; a dot labelled Neptune would be a claim about eyesight.
+ * No Pluto, Uranus or Neptune. Uranus is magnitude 5.7 at best, inside the star table's own limit; a dot
+ * labelled Neptune would be a claim about eyesight.
  */
 
 /** Julian centuries since J2000.0, matching `sun.ts` and `moon.ts`. */
