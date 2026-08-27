@@ -775,8 +775,9 @@ for once and never move; application code and geometry are what drift, so they a
 
 | Chunk | Budget (gzip) | At step 2 | 2026-08-27 |
 |---|---|---|---|
-| Application code (`index` + `Globe`) | 60KB | 2.3KB | **70.4KB, over** |
-| Coastline and plate geometry (`land`) | 40KB | 36.8KB | **43.5KB, over** |
+| Application code (`index` + `Globe`) | 60KB | 2.3KB | **70.5KB, over** |
+| Coastline and plate geometry (`land`) | 40KB | 36.8KB | **41.1KB, over** |
+| Celestial positions (`sky`) | counted, no ceiling yet | did not exist | 2.4KB |
 | three.js | 135KB | 127.3KB | 128.1KB |
 | React | 50KB | 45.7KB | 45.7KB |
 | Stylesheet | not counted | not counted | 8.3KB |
@@ -786,18 +787,25 @@ for once and never move; application code and geometry are what drift, so they a
 | Constellation figures, fetched on toggle | not counted | did not exist | 4.8KB |
 | Plate motion, fetched on toggle | not counted | in geometry | 2.7KB |
 
-**Both watched lines are over, and the second one for the second time.** Application code is 70.4KB
-against 60: the app has grown a real sky since that figure was written - a star field, a moon, five
-planets, both eclipse geometries, a size distribution. Geometry is 43.5KB against 40 because
-`manualChunks` sweeps everything under `/src/geo/` into `land`, and `stars.ts`, `moon.ts`, `planets.ts` and
-`eclipse.ts` all landed there. None of that is coastline or plate geometry, so the line is now measuring
-something its own name does not describe.
+**The geometry line is measuring its own name again.** It reached 43.5KB because `manualChunks` swept
+everything under `/src/geo/` into `land`, so a star catalogue's loader, a lunar series, five planets and
+two eclipse geometries were being counted against coastlines. They now have their own `sky` chunk: `land`
+fell to 41.1KB and `sky` came out at 2.4KB, which accounts for the difference exactly.
 
-Two honest ways out, and neither has been taken yet. The sky modules could have their own chunk, which
-costs nothing at load - the sky draws on the first frame either way - and would make each number describe
-what its row says. Or the React lever below could be pulled, which is what this section already says to do
-when application code genuinely needs more than 60KB. Recorded here rather than quietly raised, because
-the line above about a budget column that is not re-read applies to a budget that is re-read and ignored.
+**That saved nothing at load and was not meant to.** The sky draws on the first frame, so `sky` is
+preloaded exactly as `land` is and is counted here for that reason. What it buys is that each line
+measures the thing its name says, which is the only reason a budget catches anything.
+
+**Two lines are still over.** `land` is 1.1KB over, which is real growth in geometry-adjacent code rather
+than misfiled sky code - the sky move was the whole 2.4KB and no more. Application code is 70.5KB against
+60, because the app has grown a real sky since that figure was written: a star field, a moon, five planets,
+both eclipse geometries, a size distribution and a felt-report reader.
+
+The lever for that is named below and has not been pulled: nothing here uses React beyond components and
+effects, and `preact/compat` reclaims most of its 45.7KB. Recorded rather than quietly raised, because the
+line about a budget column that is not re-read applies with more force to one that is re-read and ignored.
+
+First load, all counted lines: **296KB gzipped.**
 
 The geometry line reached **42KB and was over budget** before the motion table was split out of it, and
 nobody knew, because "At step 2" was measured once and never measured again. A budget column that is not

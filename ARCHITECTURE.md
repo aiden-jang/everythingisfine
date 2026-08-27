@@ -6086,3 +6086,29 @@ prevent.
 it only became obvious that the earthquakes had the identical gap because the hazards had just been fixed.
 Worth remembering as a pattern: closing a rule in one place is the cheapest way to find where else it is
 open.
+
+### The sky got its own chunk so the geometry budget could measure geometry
+
+`manualChunks` sweeps everything under `/src/geo/` into `land`, which DESIGN section 11 budgets and names
+as coastline and plate geometry. So `stars.ts`, `moon.ts`, `planets.ts` and `eclipse.ts` were being counted
+against coastlines, and the line went 3.5KB over its 40KB ceiling while measuring something its own name
+did not describe - the second time that exact trap has been recorded in that section.
+
+They now route to a `sky` chunk. `land` fell from 43.5KB to 41.1KB and `sky` came out at 2.4KB, which
+accounts for the move exactly and confirms nothing else went with it.
+
+**It saves nothing at load and was not meant to.** The sky draws on the first frame, so `sky` is preloaded
+exactly as `land` is and is counted against first paint in the table. The gain is that each budget line
+measures the thing it claims, which is the only reason a budget catches anything.
+
+`sun.ts` deliberately stays in `land`: it predates the sky and its job is lighting the planet's own night
+side, so it belongs with the geometry it shades.
+
+**`land` is still 1.1KB over**, and the sky move was the whole 2.4KB, so that remainder is real growth in
+geometry-adjacent code rather than more misfiled sky. Application code is 70.5KB against 60. Both recorded
+rather than quietly raised; the React lever named in that section has not been pulled.
+
+**And the verification probe misreported again, for the seventh time this session.** A patch of sky that
+measured 73 lit pixels yesterday measured 3,244 today, which read as the star field having broken. The
+legend is bottom-anchored and has grown taller from rows added the same day, so its top had risen into the
+patch: what was being measured was the magnitude ramp. Screenshotting the patch settled it in one look.

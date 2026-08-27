@@ -43,6 +43,23 @@ export default defineConfig({
             id.includes("plateMotion.json") || id.includes("slab.json")
             || id.includes("stars.json") || id.includes("figures.json")
           ) return undefined;
+          /*
+           * The sky's own arithmetic, out of the geometry line.
+           *
+           * `land` is budgeted and named as coastline and plate geometry, and the rule below sweeps
+           * everything under `/src/geo/` into it - so a star catalogue's loader, a lunar series, five
+           * planets and two eclipse geometries all landed in a line measuring coastlines. It went 3.5KB
+           * over budget and the number had stopped describing its own row, which is worse than the
+           * overage.
+           *
+           * **This saves nothing at load and is not meant to.** The sky draws on the first frame, so this
+           * chunk is preloaded exactly as `land` is. What it buys is that each budget line now measures
+           * the thing its name says, which is the only reason the budget catches anything.
+           *
+           * `sun.ts` deliberately stays in `land`: it predates the sky and its job here is lighting the
+           * planet's own night side, so it belongs with the geometry it shades.
+           */
+          if (/\/src\/geo\/(stars|moon|planets|eclipse)\.ts$/.test(id)) return "sky";
           if (id.includes("world-atlas") || id.includes("/src/geo/")) return "land";
           if (id.includes("/node_modules/three/")) return "three";
           if (id.includes("/node_modules/react")) return "react";
