@@ -82,6 +82,36 @@ export interface DetailPanelProps {
  * because that one is doing something the alignment cannot - saying where the prose stops and the
  * readings start.
  */
+/*
+ * How many people said they felt it, and how hard.
+ *
+ * The only human number in this app. Everything else on this panel is an instrument's account of the
+ * ground; this is people saying they noticed, which is a different question and often the one somebody
+ * means when they ask how big it was.
+ *
+ * **Reported, not felt, and the wording carries that.** "Did You Feel It" is self-selected, so it counts
+ * where people live and whether they went online afterwards - an earthquake in open ocean gets nothing
+ * however large it was. Saying "N people reported feeling it" is true; saying "felt by N people" is a
+ * claim about the world rather than about the mailbox.
+ *
+ * The intensity is rounded to the whole Roman-numeral step it belongs to and named in words, because
+ * a community-determined 3.9 is a mean of what people ticked on a form, not a measurement to a tenth.
+ */
+const SHAKING = [
+  // USGS's own words for intensity I through X, not a paraphrase. Two and three are both "weak" there,
+  // and an earlier version of this list invented "barely" for the second, which is a word the scale
+  // does not use. Borrowing a scale means borrowing its vocabulary.
+  "not felt", "weak", "weak", "light", "moderate", "strong", "very strong", "severe", "violent",
+  "extreme",
+];
+
+export function feltNote(felt: { reports: number; intensity?: number } | undefined): string | null {
+  if (!felt || felt.reports < 1) return null;
+  const who = felt.reports === 1 ? "1 person" : `${felt.reports.toLocaleString("en-GB")} people`;
+  const step = felt.intensity === undefined ? null : SHAKING[Math.min(SHAKING.length - 1, Math.max(0, Math.round(felt.intensity) - 1))];
+  return step ? `${who}, ${step}` : who;
+}
+
 function Field({ label, value }: { label: string; value: string }): JSX.Element {
   return (
     <div className="flex items-baseline justify-between gap-3 py-[5px]">
@@ -289,6 +319,21 @@ export function DetailPanel({
         */}
         {boundaryNote(boundaryKm) ? (
           <Field label="Boundary" value={boundaryNote(boundaryKm)!} />
+        ) : null}
+        {/*
+          Only when somebody reported. An absent row is the honest form of no reports: this app cannot
+          tell "nobody felt it" from "nobody wrote in", and only the second is a thing it knows.
+
+          USGS only - EMSC runs its own felt-report system and does not put it in the feed this reads -
+          so an event both agencies saw still carries at most one of these.
+
+          Labelled "Felt reports" and not "Reported", which is what it said until the panel was looked at:
+          "Reported - 170 people, light" sat two rows above "Reported by - USGS", two near-identical
+          labels for unrelated facts. Naming the thing rather than the act also keeps the row honest,
+          since these are reports that arrived and not a count of who felt it.
+        */}
+        {feltNote(r.felt) ? (
+          <Field label="Felt reports" value={feltNote(r.felt)!} />
         ) : null}
         {/*
           What the sky was doing there when it happened, which the terminator was already computing and

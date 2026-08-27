@@ -5961,3 +5961,32 @@ An earlier attempt at an on-screen motion check was inconclusive and is worth no
 camera at a planet's position on two different dates changes the framing as well as the target, so the
 absence of a dot proved nothing. Motion follows from the geometry tests instead, where a year of samples
 walks Venus through the full 47 degrees of elongation its orbit allows.
+
+### The feed was already carrying people
+
+The USGS parser read magnitude, scale, place, type, coordinates and time, and dropped the rest of
+`properties`. Sampled from the live M4.5 day feed, that discarded `felt` and `cdi` (2 of 13 events),
+`mmi` and `alert` (1 of 13), and `tsunami`, `sig` and `status` (13 of 13). No new fetch, no new
+dependency: the bytes were already on the wire.
+
+`felt` and `cdi` are now kept and shown, because they are the only human number in an app that is
+otherwise a picture of physics with nobody in it. The rest stay out for reasons worth recording:
+
+- **`tsunami` is a trap.** The flag means the event is somewhere a tsunami could be generated, not that
+  one happened or was warned. It would be the most consequential false claim the app could make.
+- **`alert` is PAGER's green/yellow/orange/red**, and hue means magnitude here. It would need
+  re-expressing as words, and it is present on roughly one event in thirteen.
+- **`sig` is an opaque composite.** A number nobody can check is the opposite of what this app does.
+
+**Absent, never zero.** "Nobody felt it" and "nobody wrote in" are different claims and only the second
+is one this app can make, so an event with no reports has no row rather than a row saying none.
+
+**The words are USGS's own.** An early version of the intensity list invented "barely" for step II; the
+scale calls II and III both "weak" and tops out at "extreme". Borrowing a scale means borrowing its
+vocabulary, and a unit test now pins each step.
+
+**And the label was wrong until the panel was looked at.** "Reported - 170 people, light" sat two rows
+above the existing "Reported by - USGS": two near-identical labels for unrelated facts. It is "Felt
+reports" now, which also names the thing rather than the act, since these are reports that arrived and
+not a census of who felt it. A text assertion could not have found that; only seeing the rows together
+did.

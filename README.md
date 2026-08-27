@@ -118,7 +118,8 @@ permission, and the custom domain is created by Wrangler on first deploy.
 
 ## Where the data comes from
 
-Live seismicity from **USGS** (polled) and **EMSC** (WebSocket). Coastlines from **Natural Earth**,
+Live seismicity from **USGS** (polled) and **EMSC** (WebSocket), including USGS's "Did You Feel It"
+reports where anybody filed one. Coastlines from **Natural Earth**,
 public domain. Plate boundaries from **PB2002** (Bird, P., 2003, *An updated digital model of plate
 boundaries*, Geochemistry Geophysics Geosystems 4(3)), public domain, simplified to 0.15 degrees.
 
