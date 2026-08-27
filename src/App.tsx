@@ -2820,21 +2820,23 @@ export function App(): JSX.Element {
                 sourceNote,
                 corroborationNote(overlap, overlapFrom, now, filters.windowMs),
               ].filter((n): n is string => n !== null)}
-            />
+            >
+              {/*
+                The other distribution: counts against size, where the bars above are counts against time.
 
-            {/*
-              The other distribution: counts against size, where the bars above are counts against time.
-
-              Behind a disclosure because the rail is already dense and this is the app arguing rather
-              than reporting - a reader who only wants to know what happened today never has to open it.
-              Next to the bars because the two are siblings: same events, the other axis.
-            */}
-            <details className="mt-3">
-              <summary className="disclose text-[11px] text-faint hover:text-dim">
-                How the sizes stack up
-              </summary>
-              <SizeChart sizes={sizes} />
-            </details>
+                Inside the strip rather than after it. It was below the whole component, which put the
+                play controls between two charts of the same events and made them read as unrelated
+                neighbours. Behind a disclosure because the rail is already 356px past the fold and this
+                is the app arguing rather than reporting: a reader who only wants to know what happened
+                today never has to open it.
+              */}
+              <details className="mt-3">
+                <summary className="disclose text-[11px] text-faint hover:text-dim">
+                  How the sizes stack up
+                </summary>
+                <SizeChart sizes={sizes} />
+              </details>
+            </Timeline>
           </div>
 
           {/*
