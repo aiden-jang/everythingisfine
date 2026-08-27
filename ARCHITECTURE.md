@@ -6009,3 +6009,31 @@ above the existing "Reported by - USGS": two near-identical labels for unrelated
 reports" now, which also names the thing rather than the act, since these are reports that arrived and
 not a census of who felt it. A text assertion could not have found that; only seeing the rows together
 did.
+
+### The size distribution, and the bend that is about us
+
+`gutenberg.ts` counts everything at or above each magnitude and the rail plots the log of that against
+magnitude. The points fall on a straight line - ten times as many, each magnitude down - which is the app's
+own prose about logarithms turned into a picture with today's events on it.
+
+**The b-value is estimated by maximum likelihood, not by fitting the plotted line.** Least squares on
+cumulative counts weights the rare large events equally with the common small ones and is known to be
+biased; Aki's estimator uses the mean magnitude above completeness and is one line. The drawn line is that
+estimate anchored on the count at completeness, so what is plotted and what is quoted cannot disagree.
+
+**Verified by generating catalogues with a known slope**, which is the only way to test an estimator:
+samples built at b = 0.8, 1.0 and 1.25 come back at each. Completeness is asserted to within one bin,
+which is what maximum curvature can promise - a sample with a hard floor exactly at a bin centre reports
+one bin high, because that bin catches half its width and the one above catches all of it. Real catalogues
+roll off over several tenths instead of stopping dead.
+
+**The bend at the low end is the app's own deafness, and the copy says so.** Below completeness the counts
+fall short of the line because the network stopped hearing the small ones, not because the Earth stopped
+making them. A reader who took that for physics would have learned something false from an app built to
+prevent exactly that, so the sentence names it and the fit is drawn only from completeness rightward.
+
+**It also caught a fixture that was misdescribing itself.** `e2e/feeds.ts` says it draws magnitudes
+Gutenberg-Richter, and does - at b = 0.625, where real catalogues sit between 0.8 and 1.2. Nothing
+surfaced that until the rail started reading the distribution back and quoting "about 5 times as many" on
+fixture data. Left as it is, because the count at every magnitude threshold moves with it and much of the
+browser suite asserts on those, but it is recorded where somebody will find it.

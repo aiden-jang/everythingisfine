@@ -70,6 +70,13 @@ export interface Quake {
  * Gutenberg-Richter rather than uniform magnitudes: a day is mostly twos and threes with a handful
  * above five. A uniform draw would put a magnitude 7 on screen every few minutes and quietly make
  * every magnitude filter test meaningless.
+ *
+ * **The slope here is 0.625, and real catalogues sit between 0.8 and 1.2.** The 1.6 below is one over
+ * the b-value, so this fixture is shallower than any real day: it has about 76 magnitude 2s for every
+ * 5, where the Earth has around a thousand. That did not show until the rail started drawing the size
+ * distribution, which reads this back and quotes "about 5 times as many" on fixture data against the
+ * "about 10" a real feed gives. Left alone deliberately - changing it moves the count at every
+ * magnitude threshold and half the browser suite asserts on those - but it is wrong and worth knowing.
  */
 export function day(seed = 4, count = 240): Quake[] {
   const rand = seeded(seed);
