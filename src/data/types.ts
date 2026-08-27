@@ -107,6 +107,21 @@ export interface Reading {
    */
   review?: "automatic" | "reviewed";
   /**
+   * The strongest shaking the agency's model thinks happened anywhere, on the same scale as `felt`.
+   *
+   * The other account of the same event. `felt.intensity` is what people ticked on a form where they
+   * happened to be standing; this is what a model of the seismic data and the local ground says the
+   * worst of it was, somewhere, whether or not anybody was there. The two routinely disagree and the
+   * disagreement is the interesting part - which is why both are shown rather than one being picked.
+   *
+   * **A maximum, and the copy has to say so.** It is the peak of a whole shaking map, so it is higher
+   * than almost every individual experience of the same earthquake. Printed bare it would read as "what
+   * it felt like", which is the one thing it is not.
+   *
+   * USGS only, and only on the events they build a map for - about one in thirteen at magnitude 4.5.
+   */
+  shaking?: number;
+  /**
    * Set once this agency has revised its own magnitude or depth, absent until then.
    *
    * The epicentre is revised too and is not tracked. It moves by a few kilometres on most revisions,

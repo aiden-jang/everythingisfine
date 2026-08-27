@@ -5979,9 +5979,17 @@ exactly the same confidence as one a seismologist had been through. Only the age
 accepted; USGS also sends "deleted" and could send anything, and an unknown state has to read as "the
 agency did not say" rather than being folded into one of the two that mean something.
 
-`mmi` is left for later rather than refused: it is the shaking instruments estimate as opposed to the size
-of the event, which is the more meaningful number when present, and it is present on about one event in
-thirteen. The rest stay out for reasons worth recording:
+`mmi` is kept as `shaking`, and it earns its row by disagreeing with the one above it. `felt.intensity` is
+what people ticked on a form where they happened to be standing; `mmi` is what a model of the seismic data
+and the local ground says the worst of it was, somewhere, whether or not anybody was there. On one fixture
+event the panel reads "Felt reports - 170 people, light" and "Shaking - up to moderate, modelled", and both
+are true. The wording carries the difference: "up to" because it is the peak of a whole map and would
+otherwise read as what it felt like, and "modelled" because nobody measured it at that value.
+
+Both rows share one word list, deliberately. Two vocabularies would make a disagreement between the two
+sources look like a disagreement about language.
+
+The rest stay out for reasons worth recording:
 
 - **`tsunami` is a trap.** The flag means the event is somewhere a tsunami could be generated, not that
   one happened or was warned. It would be the most consequential false claim the app could make.

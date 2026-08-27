@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { feltNote } from "./DetailPanel";
+import { feltNote, shakingWord } from "./DetailPanel";
 
 describe("what the felt row says", () => {
   it("counts people, and one person is not one people", () => {
@@ -33,5 +33,34 @@ describe("what the felt row says", () => {
   it("cannot fall off either end of the scale", () => {
     expect(feltNote({ reports: 3, intensity: 0.2 })).toBe("3 people, not felt");
     expect(feltNote({ reports: 3, intensity: 99 })).toBe("3 people, extreme");
+  });
+});
+
+describe("what the shaking row says", () => {
+  it("names the step in the scale's own word", () => {
+    expect(shakingWord(1)).toBe("not felt");
+    expect(shakingWord(4.2)).toBe("light");
+    expect(shakingWord(6)).toBe("strong");
+  });
+
+  it("says nothing when there is no estimate", () => {
+    // Absent is the normal case: USGS builds a shaking map for about one event in thirteen.
+    expect(shakingWord(0)).toBeNull();
+    expect(shakingWord(Number.NaN)).toBeNull();
+    expect(shakingWord(-3)).toBeNull();
+  });
+
+  it("cannot fall off the top of the scale", () => {
+    expect(shakingWord(50)).toBe("extreme");
+  });
+
+  it("shares its vocabulary with the felt row, which is the point", () => {
+    /*
+     * The two rows report the same quantity from different sources - a model's peak against what people
+     * ticked on a form - so they have to be readable against each other. Two word lists would make a
+     * disagreement between them look like a disagreement about vocabulary.
+     */
+    expect(feltNote({ reports: 9, intensity: 5 })).toBe("9 people, moderate");
+    expect(shakingWord(5)).toBe("moderate");
   });
 });

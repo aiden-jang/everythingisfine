@@ -69,7 +69,7 @@ interface UsgsFeature {
   id?: unknown;
   properties?: {
     mag?: unknown; place?: unknown; time?: unknown; updated?: unknown;
-    magType?: unknown; type?: unknown; felt?: unknown; cdi?: unknown; status?: unknown;
+    magType?: unknown; type?: unknown; felt?: unknown; cdi?: unknown; status?: unknown; mmi?: unknown;
   };
   geometry?: { coordinates?: unknown };
 }
@@ -139,6 +139,8 @@ export function parseUsgs(payload: unknown, receivedAt: number): ParseResult {
        * said something: absent reads as "the agency did not say", which is true of anything else.
        */
       ...(p?.status === "automatic" || p?.status === "reviewed" ? { review: p.status } : {}),
+      // The modelled peak, when they have built a map. Absent far more often than present.
+      ...(typeof p?.mmi === "number" && p.mmi > 0 ? { shaking: p.mmi } : {}),
       ...(typeof p?.felt === "number" && p.felt > 0
         ? {
           felt: {
