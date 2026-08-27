@@ -21,12 +21,9 @@ const sunMoonGap = (at: number): number => {
 describe("where the moon is", () => {
   /*
    * Checked against eclipses, which is the only way to test a lunar position without shipping a second
-   * ephemeris to test the first one against.
-   *
-   * An eclipse is a dated, published fact about the sun and the moon being in the same place, or exactly
-   * opposite places, at a stated minute. It tests the position, the frame and the epoch at once, and it
-   * uses `sun.ts` as the independent half, which shares no code with `moon.ts` beyond the definition of a
-   * Julian century.
+   * ephemeris to test the first against. An eclipse is a dated published fact about the sun and the moon
+   * being in the same place, or exactly opposite ones, at a stated minute: it tests the position, the frame
+   * and the epoch at once, with `sun.ts` as the independent half.
    */
   it("puts the moon on the sun during the April 2024 total solar eclipse", () => {
     // Greatest eclipse 2024-04-08 at 18:17 UTC. Geocentrically the two centres nearly coincide.
@@ -49,10 +46,9 @@ describe("where the moon is", () => {
     /*
      * Successive new moons, found by minimising the elongation rather than by being told when they are.
      *
-     * The mean interval is 29.530588 days and no single one is that: the real spacing swings by about a
-     * quarter of a day either side, so a year's worth averaged to 29.42 and the first version of this test
-     * failed on a true answer. Five years converges it. Long-run behaviour needs a long run, and loosening
-     * the tolerance instead would have hidden the very thing being measured.
+     * The mean interval is 29.530588 days and no single one is that: the real spacing swings by a quarter of
+     * a day either side, so a year averaged to 29.42 and the first version failed on a true answer. Five
+     * years converges it.
      */
     const newMoons: number[] = [];
     let previous = -1;
@@ -92,10 +88,8 @@ describe("where the moon is", () => {
   });
 
   it("stays inside the band the moon's orbit allows", () => {
-    /*
-     * The moon's declination cannot exceed the obliquity plus its orbital inclination, 23.44 + 5.15, and
-     * over nearly a full 18.6-year nodal cycle it should get close to that ceiling and never past it.
-     */
+    // The moon's declination cannot exceed the obliquity plus its orbital inclination, 23.44 + 5.15, and over
+    // nearly a full 18.6-year nodal cycle it should get close to that ceiling and never past it.
     let extreme = 0;
     for (let d = 0; d < 19 * 365; d += 1) {
       const { lat } = moonPosition(Date.UTC(2020, 0, 1) + d * 86_400_000);

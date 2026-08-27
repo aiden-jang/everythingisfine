@@ -2,12 +2,11 @@ import { describe, expect, it } from "vitest";
 import { NOTABLE_DAYS } from "./notableDays";
 
 /*
- * The list's claims, against the catalogue that has to back them. Excluded from the default run for the
- * reason `usgs.live.test.ts` gives; run it with `pnpm test:live`.
+ * The list's claims, against the catalogue that has to back them. Run it with `pnpm test:live`.
  *
- * This is the test that matters for this feature: a curated list is an assertion about somebody else's
- * data, and the failure mode is a label that is quietly wrong - the right day with the wrong magnitude, or
- * a famous local date that is a different UTC day entirely. Both look fine in a screenshot.
+ * A curated list is an assertion about somebody else's data, and the failure mode is a label that is quietly
+ * wrong: the right day with the wrong magnitude, or a famous local date that is a different UTC day. Both
+ * look fine in a screenshot.
  */
 const QUERY = "https://earthquake.usgs.gov/fdsnws/event/1/query";
 

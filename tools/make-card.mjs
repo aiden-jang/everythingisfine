@@ -1,27 +1,13 @@
 /*
- * The share card, composed rather than screenshotted, and reproducible rather than a one-off.
- *
- * `index.html` has claimed since the preview shipped that the card was "captured from the app itself
- * by a Playwright script". That script was never committed, so the card could not be rebuilt after any
- * visual change to the globe, and the palette moved twice after it was taken. An asset nobody can
- * regenerate is an asset that quietly goes stale.
- *
- * It is a composition and not a crop, because the old card was an unlabelled dark circle. In a feed a
- * card is a thumbnail: whatever the client does with the title and description underneath, the image
- * itself has to say which app this is.
- *
- * **No earthquakes on it, deliberately.** A card is cached for days by every client that fetches it, so
- * real events would show one particular day's seismicity as if it were now. DESIGN.md section 10
- * forbids unlabelled sample data and a preview claiming yesterday's earthquakes are today's is exactly
- * that. So the globe is drawn with its geography and plate boundaries and nothing else, which is the
- * one version of this picture that cannot go out of date.
- *
- * Run it against a dev server:
+ * The share card, composed rather than screenshotted. Run it against a dev server:
  *
  *   pnpm dev            # in another shell
  *   pnpm card
  *
  * It writes `public/share.png` at the 1200x630 the meta tags promise.
+ *
+ * No live data on it, deliberately. A card is cached for days by every client that fetches it, so real
+ * events would show one particular day's seismicity as if it were now.
  */
 // `@playwright/test`, not `playwright`: the bare package is not a dependency here, so the import this
 // script shipped with threw ERR_MODULE_NOT_FOUND and `pnpm card` had never actually run.
@@ -35,28 +21,21 @@ const OUT = join(HERE, "..", "public", "share.png");
 const BASE = process.env.CARD_BASE ?? "http://localhost:31600";
 
 /*
- * A framing with land in three quadrants rather than a hemisphere of Pacific.
- *
- * `m=7.5` is the top of the magnitude scale, so nothing passes the filter and no marker is drawn. It
- * is the honest way to get an empty globe: the filter is a real control doing its real job, rather
- * than a flag that only exists to make this picture.
+ * A framing with land in three quadrants rather than a hemisphere of Pacific. `m=7.5` is the top of the
+ * magnitude scale, so nothing passes the filter: an empty globe from a real control doing its real job,
+ * rather than a flag that exists only to make this picture.
  */
 const VIEW = "#at=105,18,1.05&m=7.5&r=thermal";
 
 /*
  * Every feed blocked, rather than filtered.
  *
- * `m=7.5` empties the globe of earthquake *markers* and nothing else, and two things turned out to be
- * outside it. Storms, volcanoes, fires, floods and the aurora ignore the magnitude filter entirely -
- * correctly, a fire has no magnitude - so once those layers shipped, a card cached for days would have
- * carried one afternoon's hundred wildfires as if they were now. And the wavefront rings are not
- * magnitude-filtered either: the first card built after the new layers had three orange rings on it at
- * `m=7.5`, one moment's seismicity, which is the exact thing the paragraph above exists to prevent.
+ * `m=7.5` empties the globe of earthquake markers and nothing else. The five hazard layers ignore the
+ * magnitude filter entirely - correctly, a fire has no magnitude - and so do the wavefront rings: the first
+ * card built after the new layers had three orange rings on it at `m=7.5`.
  *
- * Blocked at the network rather than behind a new switch in the app, because the alternative is exactly
- * the "flag that only exists to make this picture" that was refused for the magnitude. No data, no
- * marks; the app is unmodified and does the honest thing with an empty response, which is the same thing
- * it does for a viewer whose network ate the request. `m=7.5` stays as the second lock.
+ * Blocked at the network rather than behind a new switch, so the app is unmodified and does the honest thing
+ * with an empty response. `m=7.5` stays as the second lock.
  */
 const FEEDS = [
   "earthquake.usgs.gov", "www.seismicportal.eu", "www.gdacs.org", "services.swpc.noaa.gov",
@@ -82,11 +61,8 @@ const card = (globe, tokens) => `<!doctype html>
     background-image: url("${globe}");
     background-size: contain; background-repeat: no-repeat; background-position: center;
   }
-  /*
-   * A wash left to right, so type on the left never sits on the coastlines.
-   * Sized to the type rather than to the image: it has to stop before the globe's limb or the card
-   * gets a vertical edge across it that reads as a seam.
-   */
+  // A wash left to right, so type on the left never sits on the coastlines. Sized to the type rather than to
+  // the image: it has to stop before the globe's limb or the card gets a vertical seam across it.
   .veil {
     position: absolute; inset: 0;
     background: linear-gradient(90deg, ${tokens.void} 0%, ${tokens.void} 34%, transparent 62%);
@@ -130,23 +106,16 @@ try {
   await page.goto(`${BASE}/${VIEW}`, { waitUntil: "load" });
   await page.waitForSelector("canvas", { timeout: 30_000 });
   /*
-   * Long enough for the plate boundaries to finish growing in.
-   *
-   * This number is coupled to the feeds being blocked and has to move with it. The boundary reveal
-   * normally starts when the entrance replay finishes, and with no feed answering there is no replay,
-   * so it starts on its 8s fallback in `Globe.tsx` and then takes 1.5s to grow. Seven seconds was
-   * right while the earthquake feeds still loaded and would now produce a card with no tectonics on
-   * it at all.
+   * Long enough for the plate boundaries to finish growing in, and coupled to the feeds being blocked. With
+   * no feed answering there is no entrance replay, so the reveal starts on its 8s fallback in `Globe.tsx` and
+   * then takes 1.5s. Seven seconds was right while the earthquake feeds still loaded.
    */
   await page.waitForTimeout(11_000);
 
   /*
-   * The key hints, hidden for the shot.
-   *
-   * `locator.screenshot()` clips the page to the element's box rather than isolating the element, so
-   * anything overlaid on the canvas inside that box lands in the image - and the hint row did, putting
-   * "arrows orbit + - zoom" across the bottom of the globe on a social card. Hidden here rather than in
-   * the app, because it is the right thing on screen and wrong only in a photograph of it.
+   * The key hints, hidden for the shot. `locator.screenshot()` clips the page to the element's box rather
+   * than isolating the element, so the hint row landed across the bottom of the globe. Hidden here rather
+   * than in the app, because it is right on screen and wrong only in a photograph of it.
    */
   await page.addStyleTag({ content: ".key-hints { display: none !important; }" });
 

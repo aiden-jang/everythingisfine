@@ -82,10 +82,8 @@ describe("the far-side figure", () => {
   });
 
   it("anchors none of it, because the point is how big the front gets", () => {
-    /*
-     * A 90-degree circle held at a constant size on screen would be the one thing this figure cannot
-     * afford: it is 40,030 km of front, and shrinking it to a glyph is the argument thrown away.
-     */
+    // A 90-degree circle held at a constant size on screen would throw the argument away: it is 40,030 km
+    // of front, and the point of the figure is how big the front gets.
     for (const m of marksFor({ ...nothing, farSide: { lon: 140, lat: 38 } })) {
       expect(m.anchor).toBeUndefined();
     }
@@ -142,15 +140,10 @@ describe("the plate-motion arrows", () => {
   });
 });
 
-
-
 describe("the reader's mark, through the pipeline", () => {
   it("puts four anchored strokes on the globe", () => {
-    /*
-     * Four marks rather than one, because a `Mark` is a single polyline and the ticks are separate
-     * strokes with a gap between them. They share one anchor, which is what keeps them pointing at the
-     * same spot rather than drifting apart as the globe turns.
-     */
+    // Four marks rather than one, because a `Mark` is a single polyline and the ticks are separate strokes
+    // with a gap between them. They share one anchor, which keeps them pointing at the same spot.
     const marks = marksFor({ ...nothing, here: { lon: -9.1, lat: 38.7 } });
     expect(marks).toHaveLength(4);
     for (const m of marks) {
@@ -175,10 +168,8 @@ describe("the reader's mark, through the pipeline", () => {
   });
 
   it("stays out of the way of the other glyphs", () => {
-    /*
-     * Added first in the list and unlabelled, so it cannot be confused with a hazard when something is
-     * hovered. This pins the count, which is the cheap way to catch a stray extra mark later.
-     */
+    // Added first in the list and unlabelled, so it cannot be confused with a hazard when something is
+    // hovered. Pinning the count is the cheap way to catch a stray extra mark later.
     const withHazard = marksFor({
       ...nothing,
       volcanoes: [{ id: "v1", name: "Fuji", country: "Japan", lon: 138.7, lat: 35.4 } as never],
@@ -190,10 +181,8 @@ describe("the reader's mark, through the pipeline", () => {
 });
 
 describe("who reported a hazard", () => {
-  /*
-   * Provenance was a first-class fact for earthquakes and absent from every hazard, while GDACS sent it
-   * on all of them. These pin the shape of the fix rather than the wording of any one label.
-   */
+  // Provenance was a first-class fact for earthquakes and absent from every hazard, while GDACS sent it on
+  // all of them. These pin the shape of the fix rather than the wording of any one label.
   const storm = {
     id: "s1", name: "SAUDEL-26", lon: 130, lat: 20, peakKmh: 213, track: [], source: "JTWC",
   };

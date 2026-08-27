@@ -3,10 +3,8 @@ import recorded from "./fixtures/usgs-all-hour.json";
 import { createFakeRuntime, describeSourceContract, type FakeRuntime } from "./contract";
 import { createUsgsSource, parseUsgs } from "./usgs";
 
-/*
- * `recorded` is a real USGS hourly response, saved once and committed. Live-API tests are flaky and
- * burn quota, so exactly one of those exists and it is excluded from CI (see usgs.live.test.ts).
- */
+/* `recorded` is a real USGS hourly response, saved once and committed. Live-API tests are flaky and burn
+ * quota, so exactly one exists and it is excluded from CI. */
 
 const FEED_COUNT = (recorded as { features: unknown[] }).features.length;
 
@@ -51,10 +49,8 @@ describe("parsing a real USGS response", () => {
   });
 });
 
-/*
- * Hand-written rather than recorded, because these are the shapes a recording will not contain on
- * the day you take it. Every one of them has appeared in a real USGS response.
- */
+/* Hand-written rather than recorded, because these are the shapes a recording will not contain on the day you
+ * take it. Every one of them has appeared in a real USGS response. */
 describe("parsing what the feed does on a bad day", () => {
   const feature = (over: Record<string, unknown> = {}, geom: unknown = [141, 41, 30]) => ({
     id: "us1", geometry: { coordinates: geom },
@@ -151,10 +147,8 @@ describe("felt reports", () => {
   });
 
   it("leaves it absent when nobody reported, rather than setting zero", () => {
-    /*
-     * "Nobody felt it" and "the agency has no report" are different claims, and only the second is one
-     * this app can make. A zero would be the first, printed as a fact, on every event in the ocean.
-     */
+    // "Nobody felt it" and "the agency has no report" are different claims, and only the second is one this
+    // app can make. A zero would be the first, printed as a fact, on every event in the ocean.
     const feed = {
       type: "FeatureCollection",
       features: [{
@@ -196,11 +190,8 @@ describe("the review state", () => {
   });
 
   it("drops anything else, including the third value USGS actually sends", () => {
-    /*
-     * "deleted" is real, and a fourth word could arrive whenever USGS decides. An unknown state must
-     * read as "the agency did not say" rather than being folded into one of the two that mean something,
-     * because this field exists precisely to stop the app guessing about provenance.
-     */
+    // "deleted" is real, and a fourth word could arrive whenever USGS decides. An unknown state must read as
+    // "the agency did not say" rather than being folded into one of the two that mean something.
     const make = (status: unknown) => ({
       type: "FeatureCollection",
       features: [{
@@ -242,10 +233,8 @@ describe("the modelled shaking", () => {
   });
 
   it("is rarer than the felt count on the recorded feed", () => {
-    /*
-     * USGS builds a shaking map for a fraction of what people report on, so a parser that read the wrong
-     * field would show up here as the two counts matching.
-     */
+    // USGS builds a shaking map for a fraction of what people report on, so a parser reading the wrong field
+    // would show up here as the two counts matching.
     const { readings } = parseUsgs(recorded, 1_700_000_000_000);
     const mapped = readings.filter((r) => r.shaking !== undefined).length;
     const reported = readings.filter((r) => r.felt !== undefined).length;
@@ -255,10 +244,8 @@ describe("the modelled shaking", () => {
 
 describe("the contributing network", () => {
   it("keeps the code the agency uses", () => {
-    /*
-     * USGS aggregates: `hv` is the Hawaiian Volcano Observatory, `ci` southern California. The app said
-     * "reported by USGS" for solutions it had only relayed.
-     */
+    // USGS aggregates: `hv` is the Hawaiian Volcano Observatory, `ci` southern California. The app said
+    // "reported by USGS" for solutions it had only relayed.
     const { readings } = parseUsgs(recorded, 1_700_000_000_000);
     const hawaii = readings.find((r) => r.place.includes("Honaunau"));
     expect(hawaii?.network).toBe("hv");

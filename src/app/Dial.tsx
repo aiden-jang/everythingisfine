@@ -1,13 +1,10 @@
 import { BINS, departure, dialPoint, type Diurnal as Counts } from "./diurnal";
 
 /*
- * The window folded onto a 24-hour dial.
+ * The window folded onto a 24-hour dial. Behind a disclosure because its payload is a null result:
+ * interesting once, and not something anybody monitors.
  *
- * Behind a disclosure because its payload is a null result: interesting once, and not something anybody
- * monitors. The rail's permanent space belongs to what changes.
- *
- * See `diurnal.ts` for why the bins are local solar time, why the radius carries a departure rather
- * than a count, and why no verdict is printed.
+ * See `diurnal.ts` for why the bins are local solar time and why no verdict is printed.
  */
 
 export interface DialProps {

@@ -5,11 +5,8 @@ import {
   wildfireNote, quietParts, cycloneNote, volcanoNote, windowLabel, ago, agoShort} from "./format";
 
 /*
- * The reach labels, which exist because two feeds do not cover the same span.
- *
- * The header prints a count per agency and the rail prints one left edge for the pair, so the number
- * nobody could get was how much of the window each agency is actually answering for. Every case here
- * is a sentence somebody would read as a bug if it were wrong.
+ * The reach labels, which exist because two feeds do not cover the same span. Every case here is a sentence
+ * somebody would read as a bug if it were wrong.
  */
 
 const HOUR = 3_600_000;
@@ -59,11 +56,8 @@ describe("the note under the pair", () => {
   });
 
   it("does not blame the cap for a feed that returned nothing at all", () => {
-    /*
-     * Two different failures. A short page was capped by the endpoint; an absent one failed, and it
-     * has its own notice elsewhere. One sentence covering both would explain the wrong thing about
-     * the wrong feed.
-     */
+    // Two different failures. A short page was capped by the endpoint; an absent one failed and has its own
+    // notice elsewhere. One sentence covering both would explain the wrong thing about the wrong feed.
     const note = reachNote({ usgs: null, emsc: now - 18 * HOUR }, now, MONTH);
     expect(note).toContain("EMSC returns its most recent page");
     expect(note).toContain("USGS has returned no backlog.");
@@ -92,10 +86,8 @@ describe("the reach as a fraction of the window", () => {
   });
 
   it("is the proportion the words cannot give", () => {
-    /*
-     * The reason the bars exist beside the durations. "6h" against "30d" is a fortieth, and arriving at
-     * that from two words is arithmetic the reader should not have to do.
-     */
+    // Why the bars exist beside the durations: "6h" against "30d" is a fortieth, and arriving at that from
+    // two words is arithmetic the reader should not have to do.
     expect(reachFraction(now - 18 * HOUR, now, MONTH)).toBeCloseTo(0.025, 4);
     expect(reachFraction(now - 18 * HOUR, now, DAY)).toBeCloseTo(0.75, 4);
   });
@@ -121,11 +113,8 @@ describe("what a feed's bar says while it is still arriving", () => {
   });
 
   it("distinguishes not yet from refused, which resolve differently", () => {
-    /*
-     * `reach` alone answers "no backlog" for both, which describes a feed that failed as one that
-     * happened to have nothing. The first fixes itself and the second does not, and the point of two
-     * bars is seeing which feed is carrying the window.
-     */
+    // `reach` alone answers "no backlog" for both, which describes a feed that failed as one that happened
+    // to have nothing. The first fixes itself and the second does not.
     expect(reachWords(null, false, now, DAY)).toBe("waiting");
     // One word: the 38px column it renders into wrapped "no answer" onto two lines.
     expect(reachWords(null, true, now, DAY)).toBe("silent");
@@ -141,12 +130,8 @@ describe("stating the corroboration rate where it is true", () => {
   const overlap = { events: 202, both: 100 };
 
   it("gives the rate against the span both feeds cover, not the window", () => {
-    /*
-     * The number this exists for, measured against the live feeds. A `both` count of about a hundred
-     * reads as 0.9 percent of a 30-day window and is 49.5 percent of the 21 hours EMSC actually reaches.
-     * The project's subject is two agencies reporting one earthquake and its own headline was
-     * understating it fifty-five fold.
-     */
+    // Measured against the live feeds: a `both` count of about a hundred reads as 0.9 percent of a 30-day
+    // window and is 49.5 percent of the 21 hours EMSC actually reaches.
     const note = corroborationNote(overlap, now - 21 * HOUR, now, MONTH)!;
     expect(note).toContain("21h");
     expect(note).toContain("100 of 202");
@@ -275,10 +260,8 @@ describe("the far-side sentence", () => {
   });
 
   it("refuses to put a time on it, and says why in the same breath", () => {
-    /*
-     * The one claim this figure must not make. Minutes on these arcs would be the teleseismic path
-     * through the mantle that arrival.ts already declined by capping at 700km.
-     */
+    // The one claim this figure must not make. Minutes on these arcs would be the teleseismic path through
+    // the mantle that `arrival.ts` already declined by capping at 700km.
     const note = farSideNote([30, 60, 90, 120, 150], len, { lon: 0, lat: 0 });
     expect(note).toContain("No time is drawn");
     expect(note).not.toMatch(/\d+\s*(min|minute|second|s\b)/);
@@ -361,10 +344,8 @@ describe("the negative-space sentence", () => {
   });
 
   it("says at least, because the catalogue over-counts the interiors", () => {
-    /*
-     * Not hedging. A dense network finds M2 under Oklahoma and nobody is listening mid-Pacific, so the
-     * intraplate count is inflated and this ratio is pushed down. The truth is above whatever it prints.
-     */
+    // Not hedging. A dense network finds M2 under Oklahoma and nobody is listening mid-Pacific, so the
+    // intraplate count is inflated and this ratio is pushed down. The truth is above whatever it prints.
     expect(quietNote(41, 81, 100, 0.094)!).toContain("at least");
   });
 
@@ -382,11 +363,8 @@ describe("the depth sentence, which counts instead of promising", () => {
   });
 
   it("always states the deep count, even when it is zero", () => {
-    /*
-     * The whole point of the row. The encoding's payoff is a margin resolving into rings, and on a
-     * typical day one event of seventy-nine is deep enough to be one, so "0 below 300" is the useful
-     * reading rather than an omission.
-     */
+    // The whole point of the row. On a typical day one event of seventy-nine is deep enough to be a ring,
+    // so "0 below 300" is the useful reading rather than an omission.
     expect(depthNote({ shallow: 40, intermediate: 0, deep: 0, unknown: 0, total: 40 })!)
       .toContain("0 below 300");
   });
@@ -408,10 +386,8 @@ describe("the depth sentence, which counts instead of promising", () => {
 
 describe("the sound sentence", () => {
   it("says it is not a recording, before anything else about it", () => {
-    /*
-     * The one outright falsehood this app could tell. Ground motion is below hearing, so a tone offered
-     * as the sound of an earthquake would be invention presented as data.
-     */
+    // The one outright falsehood this app could tell. Ground motion is below hearing, so a tone offered as
+    // the sound of an earthquake would be invention presented as data.
     const note = soundNote(4.5);
     expect(note).toContain("not a recording");
     expect(note).toContain("below hearing");
@@ -441,11 +417,8 @@ describe("the layer sentences on an archived day", () => {
     expect(cycloneNote(storms, cat)).toContain("1 tropical cyclone running");
 
     const fire = { count: 20, km2: 400, medianDays: 3, leader: "Spain" };
-    /*
-     * The tense moved past the full stop when the legend heads were shortened, and it is the tense
-     * these assertions are for. "the flames are forest fires burning now, 20 of them" became "the
-     * flames are forest fires, 20 of them. Burning now, ..." - same distinction, second sentence.
-     */
+    // The tense moved past the full stop when the legend heads were shortened: "the flames are forest fires
+    // burning now, 20 of them" became "... 20 of them. Burning now, ...". Same distinction, second sentence.
     expect(wildfireNote(fire, 100, true)).toContain("They burned that day");
     expect(wildfireNote(fire, 100)).toContain("Burning now");
 
@@ -457,11 +430,8 @@ describe("the layer sentences on an archived day", () => {
     expect(volcanoNote(3, Date.parse("2026-05-01T00:00:00Z"), Date.parse("2026-05-15T00:00:00Z")))
       .toContain("is erupting this minute");
 
-    /*
-     * The distance, not only the tense. The two assertions above pass whichever clock the day count was
-     * measured against, which is how "ended 101 days ago, so none of this was erupting then" survived:
-     * the flag switched the verb and the caller was still handing the function `Date.now()`.
-     */
+    // The distance, not only the tense. The two assertions above pass whichever clock the day count was
+    // measured against, which is how "ended 101 days ago, so none of this was erupting then" survived.
     const day = Date.parse("2026-05-15T00:00:00Z");
     expect(volcanoNote(3, day - 3 * 86_400_000, day, true)).toContain("3 days earlier");
     expect(volcanoNote(3, day - 3 * 86_400_000, day)).toContain("3 days ago");
@@ -503,11 +473,8 @@ describe("ago on a finished day", () => {
   const END = Date.parse("2026-05-16T00:00:00Z");
 
   it("names the day's end rather than the present", () => {
-    /*
-     * Deferred twice as 0.05% of a day, which was the wrong quantity: the row that gets read is the
-     * newest one, and the gap from a day's end to its newest event is exponential. At 200 events a day
-     * the top row says this 10% of the time, and at 400 nearly 19%.
-     */
+    // Deferred twice as 0.05% of a day, which was the wrong quantity: the row that gets read is the newest
+    // one, and at 200 events a day the top row says this 10% of the time.
     const twenty = END - 20_000;
     expect(ago(twenty, END, true)).toBe("at the day's end");
     expect(ago(twenty, END)).toBe("just now");

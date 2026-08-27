@@ -49,12 +49,9 @@ describeSourceContract({
 });
 
 /*
- * The strongest evidence in the file.
- *
- * Every other EMSC fixture here is built from the REST catalogue, which publishes the same feature
- * but says nothing about the envelope the socket wraps it in. These frames were captured verbatim
- * off the live standing-order socket, so they are the only thing that can confirm the adapter
- * unwraps what the socket actually sends rather than what its documentation implies.
+ * The strongest evidence in the file. Every other EMSC fixture is built from the REST catalogue, which says
+ * nothing about the envelope the socket wraps it in. These frames were captured verbatim off the live
+ * standing-order socket.
  */
 describe("frames captured off the live socket", () => {
   it("parses every recorded frame into a usable reading", () => {
@@ -197,11 +194,8 @@ describe("push-specific behaviour", () => {
 });
 
 /*
- * The gate for PLAN.md step 6.
- *
- * `one-quake-both-feeds.json` is one real earthquake, recorded from both agencies on the same day,
- * with nothing edited. It is the whole reason the $0 constraint produced a better project than a
- * paid second source would have: the two accounts disagree, and the app has to hold both.
+ * The gate for PLAN.md step 6. `one-quake-both-feeds.json` is one real earthquake recorded from both agencies
+ * on the same day, with nothing edited: the two accounts disagree, and the app has to hold both.
  */
 describe("one real earthquake, two agencies", () => {
   const drive = async () => {
@@ -272,16 +266,11 @@ describe("one real earthquake, two agencies", () => {
 });
 
 /*
- * The coverage claim, which nothing checked.
+ * The coverage claim, which nothing checked: every test in this file passed `onSeeded` an empty function, so
+ * the one branch that decides whether the app claims a month or eighteen hours of it had no test at all.
  *
- * `onSeeded` is how the strip knows which hours the buffer was open for, and every test in this file
- * passed it an empty function. So the one branch that decides whether the app claims a month or
- * eighteen hours of it had no test at all, in a project whose whole argument is that it says what it
- * does not know.
- *
- * Sound for a measured reason rather than an assumed one: the portal's own ceiling is 20,000 rows,
- * thirty-three times `SEED_LIMIT`, so ours is always the binding limit and a short page is a short
- * catalogue. `emsc.live.test.ts` keeps that checked against the real endpoint.
+ * Sound for a measured reason: the portal's own ceiling is 20,000 rows, thirty-three times `SEED_LIMIT`, so
+ * ours is always the binding limit and a short page is a short catalogue.
  */
 describe("how far back a seed says it reaches", () => {
   const HOUR = 3_600_000;
@@ -344,11 +333,8 @@ describe("how far back a seed says it reaches", () => {
   });
 
   it("vouches for nothing when a full page yielded no events at all", async () => {
-    /*
-     * The one combination where falling back to the whole span is exactly wrong: the page was cut
-     * short *and* there is no way to know where, so claiming the month is claiming it on zero
-     * events. It used to do precisely that.
-     */
+    // The one combination where falling back to the whole span is exactly wrong: the page was cut short and
+    // there is no way to know where, so claiming the month claims it on zero events.
     const { covered } = await seedWith(
       page(SEED_LIMIT, 1_700_000_000_000, { parseable: false }), 30 * 24,
     );
@@ -356,11 +342,8 @@ describe("how far back a seed says it reaches", () => {
   });
 
   it("reads the edge off the page, not off what survived deduplication", async () => {
-    /*
-     * A socket push arriving before the seed lands removes that event from the delivered batch. If
-     * the edge were read off the delivery, one duplicate at the old end of a truncated page would
-     * move the coverage claim forwards in time and quietly over-claim.
-     */
+    // A socket push arriving before the seed lands removes that event from the delivered batch. Read off the
+    // delivery, one duplicate at the old end of a truncated page moves the coverage claim forwards in time.
     const at = 1_700_000_000_000;
     const sockets: FakeSocket[] = [];
     const body = page(SEED_LIMIT, at);

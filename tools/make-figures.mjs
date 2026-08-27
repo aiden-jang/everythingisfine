@@ -1,33 +1,23 @@
 /*
- * The constellation figures, so the real sky can be read rather than only looked at.
+ * The constellation figures. Committed script, committed output.
  *
- * The star field is genuine and that was half the job: 5,080 stars in their true places is a sky nobody
- * can find anything in, because finding things in a sky means knowing which dots belong together. The
- * lines are the other half. They are also the one layer here that is not a measurement of anything -
- * nobody discovered that those seven stars are a plough - which is why they are a toggle and not scenery.
+ *   node tools/make-figures.mjs
  *
- * **Line endpoints as coordinates, not star identifiers.** Most asterism files list pairs of HIP catalogue
- * numbers, and the committed star table carries no identifiers at all: it is right ascension, declination
- * and magnitude, and adding a fourth column to join on would mean regenerating it and shipping the join.
- * A source that states where each line begins and ends needs no join, so that is the source used.
- *
- * **From d3-celestial, and the licence requires saying so.**
+ * From d3-celestial, and the licence requires saying so:
  *
  *   constellations.lines.json, from https://github.com/ofrohn/d3-celestial
  *   Copyright (c) 2015, Olaf Frohn. BSD 3-Clause.
  *
- * BSD 3-Clause asks that the copyright notice be retained and reproduced in the documentation, which is
- * what this block and the entry in README.md are for. The star positions themselves are not from here -
- * they come from the Yale catalogue via `make-stars.mjs` - so the lines are laid over stars from a
- * different source, and a line that ends a tenth of a degree off its star is invisible at this scale.
+ * BSD 3-Clause asks that the notice be retained and reproduced in the documentation, which is what this block
+ * and the entry in README.md are for.
  *
- * **Polylines, not segments.** A figure like Orion is a run of joined points, and writing it as
- * independent segments duplicates every interior point. Stored one point per point and expanded to
- * segments at load, which is smaller on the wire and the same buffer either way.
+ * Line endpoints as coordinates, not star identifiers. Most asterism files list pairs of HIP numbers and the
+ * committed star table carries no identifiers at all, so a source that states where each line begins and ends
+ * needs no join. The lines are therefore laid over stars from a different source; at this scale a tenth of a
+ * degree of disagreement is invisible.
  *
- * Committed script, committed output.
- *
- *   node tools/make-figures.mjs
+ * Polylines, not segments: writing a run of joined points as independent segments duplicates every interior
+ * point on the wire, and `LineSegments` gets the same buffer either way.
  */
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -44,12 +34,8 @@ if (collection.type !== "FeatureCollection" || !Array.isArray(collection.feature
   throw new Error("not the FeatureCollection this expects; the file's shape changed");
 }
 
-/*
- * Two decimal places, matching the star table.
- *
- * A line is drawn to a star's position, so it can be no more precise than the star it points at, and
- * 0.01 degrees is 36 arcseconds either way.
- */
+/* Two decimal places, matching the star table. A line is drawn to a star's position, so it can be no more
+ * precise than the star it points at. */
 const round = (v) => Number(v.toFixed(2));
 
 const figures = [];
@@ -77,11 +63,9 @@ for (const feature of collection.features) {
 if (figures.length < 100) throw new Error(`only ${figures.length} polylines; expected several hundred`);
 
 /*
- * Orion's belt has to be in here somewhere, and this is the cheapest way to insist on it.
- *
- * Alnilam, the middle star of the belt, is at 84.05, -1.20. If the file were ever swapped for one in
- * hours of right ascension rather than degrees, every coordinate would still parse and every figure would
- * be squeezed into a twenty-fourth of the sky - which this catches and nothing else here would.
+ * Orion's belt has to be in here somewhere, and this is the cheapest way to insist on it. Alnilam is at
+ * 84.05, -1.20. Swapped for a file in hours of right ascension rather than degrees, every coordinate would
+ * still parse and every figure would be squeezed into a twenty-fourth of the sky.
  */
 const nearAlnilam = figures.some((flat) => {
   for (let i = 0; i < flat.length; i += 2) {

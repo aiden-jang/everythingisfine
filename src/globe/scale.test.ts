@@ -13,11 +13,8 @@ describe("kilometres per pixel", () => {
   });
 
   it("halves by sixty degrees, which is why the bar cannot be one number", () => {
-    /*
-     * cos(60) is exactly a half. The same pixels cover half the ground at sixty degrees as at the
-     * equator, so a bar labelled once and drawn everywhere is wrong by a factor of two here and by
-     * eleven at the poleward limit the camera allows.
-     */
+    // cos(60) is exactly a half, so the same pixels cover half the ground at sixty degrees as at the equator.
+    // A bar labelled once and drawn everywhere is wrong by a factor of two here and eleven at the limit.
     expect(kmPerPixel(1, 60)).toBeCloseTo(KM_PER_DEGREE / 2, 6);
     expect(kmPerPixel(1, -60)).toBeCloseTo(KM_PER_DEGREE / 2, 6);
   });
@@ -35,10 +32,8 @@ describe("choosing the bar", () => {
   });
 
   it("chooses in log space, so 300 does not always round up", () => {
-    /*
-     * 300 is 1.67 times 200 and 0.6 times 500. Linear distance calls 500 nearer, at 200 away against
-     * 100; proportionally 200 is the closer of the two, and proportion is what a ruler is read in.
-     */
+    // 300 is 1.67 times 200 and 0.6 times 500. Linear distance calls 500 nearer; proportionally 200 is the
+    // closer of the two, and proportion is what a ruler is read in.
     expect(niceScale(3, 100)!.km).toBe(200);
   });
 
@@ -64,11 +59,8 @@ describe("choosing the bar", () => {
   });
 
   it("still covers the whole range this camera can reach", () => {
-    /*
-     * The map runs from roughly a thousand kilometres a bar at its tightest zoom down to about a
-     * hundred at 85 degrees, where cos has taken eleven twelfths of the scale away. The guard above
-     * must not be tight enough to bite anywhere in there.
-     */
+    // The map runs from roughly a thousand kilometres a bar at its tightest zoom down to about a hundred at 85
+    // degrees. The guard above must not be tight enough to bite anywhere in there.
     for (const kmPerPx of [0.9, 1.2, 4.5, 13.5, 40, 90]) {
       expect(niceScale(kmPerPx, 110)).not.toBeNull();
     }

@@ -3,15 +3,12 @@ import { useEffect, useRef } from "react";
 /*
  * A draggable edge, horizontal or vertical.
  *
- * Both sides of every edge in this rail genuinely want the space and which one wants it more depends
- * on what somebody is doing: reading the list wants a wide rail and a short region box, watching a
- * sequence wants neither. A fixed size is a guess that is wrong half the time, and it is a guess this
- * app is in no position to make for someone.
+ * Both sides of every edge in this rail genuinely want the space, and which one wants it more depends on
+ * what somebody is doing. A fixed size is a guess this app is in no position to make for someone.
  *
- * One component for both axes rather than two nearly identical ones, because the accessible part is
- * the part worth having once: a `separator` with `aria-valuenow` and arrow keys, not a bare div with
- * a pointer handler. A splitter that only answers a mouse is a control a keyboard user can see and
- * cannot touch, which is the same gap the globe had before the camera keys.
+ * One component for both axes, because the accessible part is the part worth having once: a `separator`
+ * with `aria-valuenow` and arrow keys. A splitter that only answers a mouse is a control a keyboard user
+ * can see and cannot touch.
  */
 
 export interface ResizerProps {

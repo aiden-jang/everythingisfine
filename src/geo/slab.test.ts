@@ -5,10 +5,8 @@ import { SLAB_MIN_DEPTH_KM, SLAB_MIN_MAGNITUDE, type SlabPoint } from "./slab";
 /*
  * The committed table, checked against the claims the key makes about it.
  *
- * This is generated data, so the interesting failure is not a bug in a function: it is the file being
- * regenerated against a different query and the sentence beside it quietly becoming false. The key tells
- * a viewer these are magnitude 4.5 and up, below 300km, and nothing else - so that is what is asserted,
- * and a rerun of `tools/make-slab.mjs` with a changed threshold fails here rather than on the screen.
+ * This is generated data, so the interesting failure is the file being regenerated against a different query
+ * and the sentence beside it quietly becoming false.
  */
 const points = table as SlabPoint[];
 

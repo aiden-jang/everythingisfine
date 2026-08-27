@@ -43,12 +43,9 @@ describe("the activity histogram", () => {
   });
 
   /*
-   * The reverse of what this asserted before, and deliberately.
-   *
-   * The strip used to ignore `windowMs` because the strip was the control that set it, so it had to
-   * keep showing the hours it was about to exclude. The window is chosen by name now and the strip is
-   * always exactly it, which means respecting the filter is the whole point: the alternative is the
-   * bars totalling a day beside a globe drawing an hour.
+   * The reverse of what this asserted before. The strip used to ignore `windowMs` because the strip was the
+   * control that set it; the window is chosen by name now and the strip is always exactly it, so the
+   * alternative is the bars totalling a day beside a globe drawing an hour.
    */
   it("spans exactly the window, because it no longer sets it", () => {
     const old = quake({ time: NOW - 20 * HOUR });
@@ -156,11 +153,8 @@ describe("the energy the window released", () => {
   });
 
   it("gives one large event almost all of a busy window", () => {
-    /*
-     * The number that makes this worth printing. One M6.4 against four hundred events near M2.5: the
-     * big one is better than 99.9 percent of the energy, which is the log scale landing on a reader who
-     * has just scrolled a list of four hundred rows.
-     */
+    // The number that makes this worth printing. One M6.4 against four hundred events near M2.5: the big one
+    // is better than 99.9 percent of the energy.
     const many = Array.from({ length: 400 }, (_, i) =>
       quake({ magnitude: 2.5, time: NOW - i * 60_000 }));
     const big = quake({ magnitude: 6.4, time: NOW - HOUR });

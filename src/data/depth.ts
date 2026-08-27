@@ -6,17 +6,13 @@ import type { Filters } from "./types";
  * The depth bands, and how many events are actually in each one.
  *
  * The constants live here rather than in `events.ts` for the reason the wave speeds live in `geo/waves.ts`:
- * these are facts about earthquakes, the legend needs them, and the legend has no business importing a
- * renderer that drags three.js into the bundle that paints the first frame.
+ * the legend needs them and has no business importing a renderer that drags three.js into the first frame.
  *
- * **Why the counts exist at all.** `events.ts` carves a hole in a marker in proportion to depth and its
- * comment claimed the payoff: along a subduction margin "solid dots at the trench giving way to rings
- * inland ... that is the Wadati-Benioff zone". The encoding is real and that reading was oversold, which
- * a count settles: in a typical 24-hour window **1 event of 79 is below 300km** - 1.3%, one ring on the
- * whole planet, which traces nothing. Over seven days it is 14 of 704, and a slab starts to show.
+ * Why the counts exist at all: the marker's hole was sold as tracing the Wadati-Benioff zone, and a count
+ * settles it. In a typical 24-hour window 1 event of 79 is below 300km - one ring on the whole planet. Over
+ * seven days it is 14 of 704 and a slab starts to show.
  *
- * So the legend states the counts instead of promising the pattern. It is the same move the corroboration
- * note made: replace a claim about what the viewer will see with the number that says whether they can.
+ * So the legend states the counts instead of promising the pattern.
  */
 
 /** Above this an event is shallow, and shallow events do the damage. */

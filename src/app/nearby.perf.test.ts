@@ -5,14 +5,11 @@ import { seeded } from "../data/fixtures";
 import type { Filters, Reading } from "../data/types";
 
 /*
- * The panel's cost, measured rather than assumed.
+ * The panel's cost, measured rather than assumed. `findNearby` walks the whole buffer, and it was written
+ * up as a known cost on the argument that memoising would freeze the neighbour list - which is the right
+ * trade only if the cost is small, and nobody had checked.
  *
- * `findNearby` walks the whole buffer and the panel re-renders once a second with the clock, so a
- * pinned event pays this every second for as long as it stays pinned. It was written up as a known
- * cost with the note that memoising it would freeze the neighbour list while somebody watches a live
- * sequence. That is the right trade only if the cost is small, and nobody had checked.
- *
- * Budgeted as a ratio for the same reason as the event layer: a millisecond threshold cannot tell a
+ * Budgeted as a ratio, for the same reason as the event layer: a millisecond threshold cannot tell a
  * regression from a busy machine.
  */
 

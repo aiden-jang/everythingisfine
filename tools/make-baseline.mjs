@@ -1,31 +1,17 @@
 /*
- * How busy a day is, against five years of days.
- *
- * The app prints a count and nothing tells anybody whether it is a lot. "400 in the last 24 hours" is a
- * number with no scale attached, which is the one thing DESIGN.md section 13 bans everywhere else: a bare
- * magnitude with no scale, a window that misstates its edge, a count that hides deduplication. The
- * headline had the same shape as all three and no way to be read.
- *
- * So this counts every day in the catalogue and ships the distribution. Then "quieter than 71% of days
- * since 2020" is a measurement, and the app's title stops being a joke in the corner and becomes a claim
- * with a number behind it.
- *
- * **Magnitude 4.5, and the threshold is the whole argument.** A count of everything cannot be compared
- * across years: detection depends on how many seismometers are nearby, so the M2 rate in 2025 differs
- * from 2020 because of instruments rather than because of the earth. At 4.5 the global catalogue is
- * complete, so a day-to-day difference is the planet and not the network. `make-slab.mjs` picked the same
- * number for the same reason.
- *
- * **Calendar days in UTC**, because that is what the app's own archive means by a day, and because a
- * rolling window would make every day overlap its neighbours and flatten the distribution.
- *
- * **Paged by year, because the API refuses more.** Five years at this threshold is 38,289 events against
- * a hard limit of 20,000 per query, which returns a 400 rather than a truncated list - a useful refusal,
- * since a silent cut would have produced a baseline quietly missing its last two years.
- *
- * Committed script, committed output.
+ * How busy a day is, against five years of days. Committed script, committed output.
  *
  *   node tools/make-baseline.mjs
+ *
+ * Magnitude 4.5, and the threshold is the whole argument: a count of everything cannot be compared across
+ * years, because detection depends on how many seismometers are nearby. At 4.5 the global catalogue is
+ * complete, so a day-to-day difference is the planet and not the network.
+ *
+ * Calendar days in UTC, matching what the app's archive means by a day. A rolling window would make every
+ * day overlap its neighbours and flatten the distribution.
+ *
+ * Paged by year, because the API refuses more: five years at this threshold is 38,289 events against a hard
+ * limit of 20,000 per query, which returns a 400 rather than a truncated list.
  */
 import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -79,12 +65,9 @@ for (let year = Number(START.slice(0, 4)); year <= Number(END.slice(0, 4)); year
 }
 
 /*
- * Sorted, and that is the whole data structure.
- *
- * The app asks one question - what share of days were busier than this one - and a sorted list answers it
- * with a binary search. Keeping the dates would be four times the bytes to support a chart nobody asked
- * for, and keeping only a handful of percentiles would round the answer for a day sitting between two of
- * them. Which day was which is not part of the question.
+ * Sorted, and that is the whole data structure. The app asks one question - what share of days were busier -
+ * and a sorted list answers it with a binary search. Percentiles would round the answer for a day sitting
+ * between two of them.
  */
 const counts = [...byDay.values()].sort((a, b) => a - b);
 const json = JSON.stringify(counts);

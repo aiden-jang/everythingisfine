@@ -3,16 +3,12 @@ import { events, fetchList, isCurrent, listUrl, parseUtc, reportedBy } from "./g
 /*
  * Floods happening now, which for once is a straightforward claim.
  *
- * Nineteen of the hundred are flagged `iscurrent` and every one of those ended within three days; the
- * other eighty-one are last year's, running to 359 days old, and a map drawn from all hundred would be
- * mostly a flood archive. So this filters on `iscurrent` like the cyclones do, for the same reason.
+ * Nineteen of the hundred are flagged `iscurrent` and every one ended within three days; the other
+ * eighty-one run to 359 days old, so a map drawn from all hundred would be mostly a flood archive.
  *
- * Unlike wildfires the cap is not in play: floods spread across 68 countries at no more than three each,
- * and a single-country request returns ten where the same request for Angolan fires returns a hundred.
- * Nineteen countries with water where it should not be is a real figure.
+ * Unlike wildfires the cap is not in play: floods spread across 68 countries at no more than three each.
  *
- * There is no severity to read. GDACS writes `severity: 0.0` and "Magnitude 0" for every flood in the
- * list, so unlike a fire's hectares there is nothing to rank them by and nothing claimed.
+ * There is no severity to read. GDACS writes `severity: 0.0` for every flood in the list.
  */
 
 export interface Flood {

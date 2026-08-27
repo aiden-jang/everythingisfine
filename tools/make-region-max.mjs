@@ -1,30 +1,18 @@
 /*
  * The largest earthquake each region has had this century, so today's largest has something to stand next to.
- *
- * The rail names the window's biggest event and its magnitude, and a magnitude alone is the thing this app
- * refuses everywhere else: a number with no scale attached. "M6.1, Japan & Kurils" reads as large to
- * anybody who has not spent time with the scale, and it is an ordinary week there.
- *
- * So each region carries its own ceiling. Then the sentence is a comparison rather than a reading, and on
- * the rare day the window's largest clears that ceiling it becomes a genuine superlative - the strongest
- * thing this app could ever have to say, and it can say it honestly because the number came from the
- * catalogue rather than from an impression.
- *
- * **Magnitude 6 and up, which is a threshold chosen to be safely below every answer.** The point is a
- * per-region maximum, and no region on this list has gone a quarter century without a 6. A lower threshold
- * would be 12,628 events instead of 3,815 to compute the same eleven numbers.
- *
- * **From 2000, and the copy says "since at least".** The catalogue reaches further back and the query does
- * not, so a region's true maximum may be older and larger - Valdivia is not in here. Bounding the claim in
- * the sentence costs two words and is the difference between a fact and an overstatement.
- *
- * **Regions come from `regions.ts`, not from here.** Those boxes are already the app's own idea of where
- * things happen, they are already what the rail counts by, and a second set of bounds that drifted from
- * them would put a sentence about one region beside a count of another.
- *
  * Committed script, committed output.
  *
  *   node tools/make-region-max.mjs
+ *
+ * Magnitude 6 and up, chosen to sit safely below every answer: no region on this list has gone a quarter
+ * century without a 6, and a lower threshold would be 12,628 events instead of 3,815 for the same eleven
+ * numbers.
+ *
+ * From 2000, and the copy says "since at least". The catalogue reaches further back and the query does not,
+ * so a region's true maximum may be older and larger - Valdivia is not in here.
+ *
+ * Regions come from `regions.ts`, not from here: a second set of bounds would put a sentence about one region
+ * beside a count of another.
  */
 import { writeFile, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -39,12 +27,8 @@ const OUT = join(here, "..", "src", "app", "regionMax.json");
 const SRC = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv"
   + `&minmagnitude=${MIN_MAGNITUDE}&starttime=${START}&endtime=${END}`;
 
-/*
- * The region boxes, read out of the TypeScript rather than copied.
- *
- * A duplicated table is a table that drifts, and this one would drift silently: nothing would fail, the
- * sentences would simply start describing boxes the rail no longer counts by.
- */
+/* The region boxes, read out of the TypeScript rather than copied. A duplicated table drifts silently:
+ * nothing would fail, the sentences would simply start describing boxes the rail no longer counts by. */
 const source = await readFile(join(here, "..", "src", "app", "regions.ts"), "utf8");
 const regions = [...source.matchAll(
   /\{\s*name:\s*"([^"]+)",\s*lon:\s*[-\d.]+,\s*lat:\s*[-\d.]+,\s*bounds:\s*\[([-\d.,\s]+)\]/g,

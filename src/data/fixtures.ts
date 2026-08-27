@@ -1,12 +1,9 @@
 import type { Reading, SourceId } from "./types";
 
 /*
- * A deterministic pretend planet.
- *
- * Not a stand-in for recorded feed responses. Those arrive in step 5 and are the right thing for
- * testing parsing. This exists for the questions recordings cannot answer: what the store does over
- * four simulated hours, what happens when two agencies report the same rupture with the
- * disagreement real feeds actually show, and what happens at capacity.
+ * A deterministic pretend planet, for the questions recorded responses cannot answer: what the store does over
+ * four simulated hours, what happens when two agencies report the same rupture with the disagreement real
+ * feeds show, and what happens at capacity.
  *
  * Seeded, so a failure reproduces exactly rather than turning up once a week in CI.
  */
@@ -41,12 +38,10 @@ export interface SyntheticOptions {
 }
 
 /**
- * A stream of readings in arrival order, with the disagreement the real feeds have.
- *
- * When both agencies report an event the second reading gets a different identifier, an origin time
- * a few seconds off, an epicentre tens of kilometres away, a magnitude a couple of tenths apart and
- * a different scale name. Generating agreement instead would make the association logic look
- * correct while testing nothing.
+ * A stream of readings in arrival order, with the disagreement the real feeds have: a different identifier, an
+ * origin time a few seconds off, an epicentre tens of kilometres away, a magnitude a couple of tenths apart
+ * and a different scale name. Generating agreement would make the association logic look correct while
+ * testing nothing.
  */
 export function* syntheticReadings(opts: SyntheticOptions): Generator<Reading> {
   const rand = seeded(opts.seed ?? 1);

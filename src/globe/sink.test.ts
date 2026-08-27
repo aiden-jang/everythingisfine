@@ -33,13 +33,11 @@ describe("how far below the surface a marker is drawn", () => {
 
 describe("deriving the hole's depth from the sink", () => {
   /*
-   * `aDepth` was deleted and the fragment's `vDepth` is now computed from `aSink` in the vertex shader,
-   * which halves the per-event writes in `sync`. That is only allowed if the two agree, so this pins the
-   * algebra of the claim.
+   * `aDepth` was deleted and `vDepth` is now computed from `aSink` in the vertex shader, which halves the
+   * per-event writes in `sync`. That is only allowed if the two agree, so this pins the algebra.
    *
-   * **It cannot see the shader.** The GLSL interpolates the same three constants this test imports, so a
-   * change to any of them moves both together, but a change to the *expression* in `events.ts` would not
-   * fail here. The screenshot check is what covers that half: deep marks draw hollow, shallow ones solid.
+   * It cannot see the shader. A change to the constants moves both together; a change to the expression in
+   * `events.ts` would not fail here, and the screenshot check covers that half.
    */
   const old = (depthKm: number): number => (Number.isFinite(depthKm)
     ? Math.max(0, Math.min(1, (depthKm - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM)))

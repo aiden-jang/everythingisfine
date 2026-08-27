@@ -45,13 +45,10 @@ describe("the constellation figures", () => {
 
   it("ends its lines on stars the app actually draws", () => {
     /*
-     * The lines and the stars come from different sources - d3-celestial and the Yale catalogue - so
-     * nothing structural guarantees they agree. If they did not, the figures would hang in the gaps
-     * between stars and the whole layer would be pointless.
+     * The lines and the stars come from different sources - d3-celestial and the Yale catalogue - so nothing
+     * structural guarantees they agree, and if they did not the figures would hang in the gaps between stars.
      *
-     * Checked as a proportion rather than absolutely: these are the vertices of a figure, and a few of
-     * them are deliberate bends rather than stars. Most of them landing within a fifth of a degree of a
-     * catalogued star is the claim worth holding.
+     * Checked as a proportion, because a few vertices are deliberate bends rather than stars.
      */
     let near = 0;
     let total = 0;

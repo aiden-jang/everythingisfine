@@ -7,10 +7,9 @@ import { S_WAVE_KM_PER_S } from "../geo/waves";
 import { EARTH_RADIUS_KM } from "../geo/sphere";
 
 /*
- * The rings are the one piece of motion in the product, and the claim attached to them is that
- * their speed is measured rather than invented. These tests exist to keep that claim true, because
- * it is the sort of thing that survives a refactor as a comment long after the number stopped
- * agreeing with it.
+ * The rings are the one piece of motion in the product, and the claim attached to them is that their speed is
+ * measured rather than invented. A claim like that survives a refactor as a comment long after the number
+ * stopped agreeing with it.
  */
 
 describe("the rate is derived, not typed in", () => {
@@ -37,9 +36,8 @@ describe("the rate is derived, not typed in", () => {
   });
 
   it("gives a front a lifetime a person can actually watch", () => {
-    // At true rate a 400px globe advances the front 0.16 pixels per second, which is why the
-    // playback multiplier exists at all. Fifteen-ish seconds is long enough to notice and short
-    // enough that fronts do not pile up.
+    // At true rate a 400px globe advances the front 0.16 pixels per second, which is why the playback
+    // multiplier exists. Fifteen-ish seconds is long enough to notice and short enough not to pile up.
     expect(RING_LIFETIME_S).toBeGreaterThan(10);
     expect(RING_LIFETIME_S).toBeLessThan(25);
     expect(RING_LIFETIME_S).toBeCloseTo(MAX_DEG / RATE_DEG_PER_S, 10);
@@ -123,12 +121,9 @@ describe("the ring layer", () => {
     expect(layer.active()).toBeLessThanOrEqual(64);
     layer.step(0.1);
     /*
-     * Against the buffer it actually has, not against a restatement of how big that should be.
-     *
-     * This read `64 * 96 * 2`, which is the front count times the segments times two vertices, and it
-     * quietly encoded "one circle per front" as well. Adding the S front made it fail while nothing
-     * had overrun anything: the assertion had stopped describing the invariant and started describing
-     * an implementation detail that changed.
+     * Against the buffer it actually has, not a restatement of how big that should be. This read
+     * `64 * 96 * 2`, which quietly encoded "one circle per front" as well, so adding the S front made it fail
+     * while nothing had overrun anything.
      */
     const room = layer.object.geometry.getAttribute("position").count;
     expect(layer.object.geometry.drawRange.count).toBeLessThanOrEqual(room);
@@ -167,11 +162,9 @@ describe("the S front, and the gap that measures distance", () => {
 
   it("opens a gap wide enough to read, which is the whole reason for it", () => {
     /*
-     * The number that decided this was worth building, computed before it was. At the end of a front's
-     * life the P ring is at 17 degrees and the S at 9.9, a gap of 7.1 degrees of arc. At the default
-     * framing the globe projects to about 392px of radius, so a degree is 6.8px and the gap is some
-     * 48px. The previous attempt at drawing the two agencies' disagreement failed at 4px, so this is
-     * the check that says this one is a different proposition.
+     * The number that decided this was worth building, computed before it was. At the end of a front's life
+     * the P ring is at 17 degrees and the S at 9.9, and at the default framing a degree is 6.8px, so the gap
+     * is some 48px. The previous attempt at drawing the disagreement failed at 4px.
      */
     const gapDeg = MAX_DEG - MAX_DEG * S_OVER_P;
     expect(gapDeg).toBeCloseTo(7.083, 3);

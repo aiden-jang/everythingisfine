@@ -121,8 +121,9 @@ them. Both feeds are reached straight from the browser, which is what makes that
 pnpm deploy
 ```
 
-**Merging to `main` deploys.** The workflow checks first (typecheck, tests with `--expose-gc` so the
-memory gate cannot skip itself, build) and only deploys if that passes. One repository secret,
+**Merging to `main` deploys.** The workflow checks first - typecheck, unit tests with `--expose-gc` so
+the memory gate cannot skip itself, and the build - and only deploys if that passes. The browser suite
+runs in its own job alongside it and does not yet block the deploy; see below. One repository secret,
 `CLOUDFLARE_API_TOKEN` with `Workers Scripts:Edit`, is the entire setup: no account id, no D1
 permission, and the custom domain is created by Wrangler on first deploy.
 
@@ -244,13 +245,16 @@ instead of GDACS, because GDACS filters its *current* pool by date rather than h
 The aurora has no archived branch at all and never will: NOAA publishes a forecast for a stamped
 minute, so there is no past oval to ask for.
 
-**Browser tests are not in CI.** They no longer touch the network - `e2e/feeds.ts` serves both
-agencies, all five hazard feeds and the aurora - so the old reason is gone and the wiring has simply
-not been done.
+**The browser suite runs in CI but does not gate the deploy.** It load-tests itself: a full parallel run
+puts two design tests red that both pass in isolation in 32 seconds, and `design.spec.ts` on its own
+runs 27 green in two minutes. The config drops to one worker and doubles the timeouts under CI, which
+should remove the contention, but a runner has fewer cores and software-rendered WebGL and that has
+not been observed yet. It becomes a gate once it has been green on a runner.
 
-**The build-mode browser run skips seven tests.** `pnpm test:e2e:build` exercises `dist` rather than
-`pnpm dev`, and the tests that reach for `window.__globe` skip there by construction, because a
-production bundle should not carry a debug surface. They are skipped rather than silently passed.
+**The build-mode run skips seven tests.** `pnpm test:e2e:build` exercises `dist` and is the stronger
+gate against a bundler-only failure - a purged Tailwind class, a mis-split dynamic import, both of
+which have shipped here - but the tests that reach for `window.__globe` skip there by construction,
+because a production bundle should not carry a debug surface. It is a deliberate pre-release run.
 
 **The size distribution reads wrong on fixture data.** `e2e/feeds.ts` draws magnitudes at a b-value
 of 0.625 where the Earth sits between 0.8 and 1.2, so the chart quotes "about 5 times as many" on

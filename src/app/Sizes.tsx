@@ -2,20 +2,14 @@ import type { JSX } from "react";
 import { fitLine, type Sizes } from "./gutenberg";
 
 /*
- * The size distribution, drawn: log of how many, against how big.
+ * The size distribution, drawn: log of how many, against how big. Ten times as many, each magnitude down,
+ * everywhere on Earth, since 1944.
  *
- * The app already says magnitude is logarithmic and that two points of it is a thousand times the energy.
- * This is that sentence with today's own events on it, and the point is that they land on a straight
- * line - ten times as many, each magnitude down, everywhere on Earth, since 1944.
+ * Log up the side and nothing else. The two things a reader has to see are that the points are straight and
+ * where they stop being straight.
  *
- * **Log up the side and nothing else.** No gridlines, no axis box, no second colour. The two things a
- * reader has to see are that the points are straight and where they stop being straight, and everything
- * else drawn here would be furniture in front of that.
- *
- * **The bend at the left is about us, not the Earth.** Below the completeness magnitude the counts fall
- * short of the line because the network stopped hearing the small ones. The chart marks where that turn
- * is and the sentence underneath says whose fault it is, because a reader who took the bend for physics
- * would have learned something false from an app that exists to avoid exactly that.
+ * The bend at the left is about us, not the Earth: below the completeness magnitude the network stopped
+ * hearing the small ones, and the sentence underneath says whose fault it is.
  */
 
 const W = 260;
@@ -47,11 +41,8 @@ export function SizeChart({ sizes }: { sizes: Sizes }): JSX.Element | null {
               + `for each magnitude smaller, complete above magnitude ${complete.toFixed(1)}.`
         }
       >
-        {/*
-          The straight line the law predicts, drawn under the points so they sit on it rather than
-          behind it. Only from completeness rightward: the stretch to its left is where the catalogue
-          is missing events, and a line drawn through that would be predicting the network's deafness.
-        */}
+        {/* The straight line the law predicts, under the points so they sit on it. Only from completeness
+            rightward: a line through the stretch to its left would be predicting the network's deafness. */}
         {line ? (
           <line
             x1={x(line.from[0])}
@@ -98,12 +89,8 @@ export function SizeChart({ sizes }: { sizes: Sizes }): JSX.Element | null {
         </text>
       </svg>
 
-      {/*
-        Two sentences, and the second one is the whole reason the first is trustworthy.
-
-        The slope is the fact; where the data stops supporting it is the caveat, and this app puts the
-        caveat next to the number everywhere else it quotes one.
-      */}
+      {/* Two sentences, and the second is the whole reason the first is trustworthy: the slope is the fact,
+          and where the data stops supporting it is the caveat. */}
       {b === null ? (
         <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
           Too few to fit a slope. The shape needs a few hundred events before it means anything.

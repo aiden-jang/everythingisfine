@@ -36,13 +36,9 @@ describe("cluster cells", () => {
 
   it("never gives two different cells the same key", () => {
     /*
-     * The invariant, not a count.
-     *
-     * The first version asserted the number of distinct keys exceeded a round number, which was
-     * arbitrary arithmetic rather than a property: it failed at 847 keys with zero collisions,
-     * which is a correct grid. What actually matters is that the packing of two band indices into
-     * one integer is injective, because a collision merges two unrelated parts of the world into
-     * a single marker.
+     * The invariant, not a count. Asserting that distinct keys exceed a round number failed at 847 keys with
+     * zero collisions, which is a correct grid. What matters is that packing two band indices into one
+     * integer is injective, because a collision merges two unrelated parts of the world into one marker.
      */
     for (const zoom of [0.75, 1, 1.5]) {
       // Scoped per cell size. Keys only have to be unique within one grid; two different grids
@@ -66,30 +62,21 @@ describe("cluster cells", () => {
 });
 
 /*
- * The third of the seam audit: markers.
- *
- * A marker is a point, so it has no geometry to be wrong at the antimeridian. What can be wrong is the
- * grid that decides whether two of them are one, and the Ring of Fire crosses 180 degrees twice, at
- * Tonga and along the Aleutians. So the question is whether that line behaves differently from any other
- * cell edge, and the answer measured out as no.
+ * The third of the seam audit: markers. A marker is a point, so it has no geometry to be wrong at the
+ * antimeridian. What can be wrong is the grid that decides whether two of them are one, and the Ring of Fire
+ * crosses 180 degrees twice.
  */
 describe("clustering across the antimeridian", () => {
   const CELL = 3.2;
 
   it("cuts the grid at 180, which every cell edge also does", () => {
-    /*
-     * Two events either side of the date line land in different cells. That looked like the bug this
-     * audit was looking for and is not: two events either side of *any* cell edge land in different
-     * cells, which is what a grid is. The check that matters is the one below.
-     */
+    // Two events either side of the date line land in different cells. That is not the bug: two events either
+    // side of any cell edge land in different cells, which is what a grid is.
     expect(cellKey(179.9, -18, CELL)).not.toBe(cellKey(-179.9, -18, CELL));
     /*
-     * The same separation, mid-ocean, straddling an ordinary edge. Also separate.
-     *
-     * The edge has to be found from the *widened* cell, not from `CELL`. Longitude cells stretch by
-     * 1/cos(lat), so at latitude -18 they are 3.3647 degrees and not 3.2, and a boundary computed from
-     * the base figure is not a boundary at all: the first version of this put both points in one cell
-     * and asserted they were in two.
+     * The same separation mid-ocean, straddling an ordinary edge. The edge has to be found from the widened
+     * cell, not from `CELL`: longitude cells stretch by 1/cos(lat), so at latitude -18 they are 3.3647 degrees
+     * and a boundary computed from the base figure is not a boundary at all.
      */
     const widen = Math.min(8, 1 / Math.max(0.125, Math.cos((-18 * Math.PI) / 180)));
     const lonCell = CELL * widen;
@@ -98,11 +85,8 @@ describe("clustering across the antimeridian", () => {
   });
 
   it("merges pairs at the seam as readily as anywhere else", () => {
-    /*
-     * The property that would have been the bug. Sliding a fixed-separation pair across a region and
-     * counting how often it merges: measured at 90.0 percent straddling 180 against 90.0 percent
-     * mid-Pacific. A seam that clustered differently would show up here as a dip.
-     */
+    // The property that would have been the bug: sliding a fixed-separation pair across a region and counting
+    // how often it merges. 90.0 percent straddling 180 against 90.0 percent mid-Pacific.
     const wrap = (v: number): number => ((((v + 180) % 360) + 360) % 360) - 180;
     const rate = (centre: number): number => {
       let merged = 0;
@@ -119,12 +103,8 @@ describe("clustering across the antimeridian", () => {
   });
 
   it("keeps the band at the seam the same width as its neighbours, near enough", () => {
-    /*
-     * The one thing that *is* seam-specific. 360 degrees is not a whole number of widened cells, so the
-     * last band is a runt. Measured at latitude -18 it is 3.344 degrees against 3.365: six parts in a
-     * thousand, which is nothing, and worth an assertion only so that a future change to the widening
-     * cannot make it something.
-     */
+    // The one thing that is seam-specific. 360 degrees is not a whole number of widened cells, so the last
+    // band is a runt: 3.344 against 3.365 at latitude -18, worth an assertion only so it cannot grow.
     const widen = Math.min(8, 1 / Math.max(0.125, Math.cos((-18 * Math.PI) / 180)));
     const lonCell = CELL * widen;
     const runt = ((360 / lonCell) % 1) * lonCell;

@@ -5,13 +5,9 @@ import { BUCKETS } from "../app/histogram";
 import type { Filters, Reading } from "../data/types";
 
 /*
- * Holding a bar on the activity strip lights the events it stands for.
- *
- * It lit the wrong ones at two of the three windows. The layer took the bucket's *index* and multiplied
- * it by a hardcoded hour, which is the same thing as the bucket only while a bucket is an hour, and a
- * bucket is `windowMs / 24`. At 7d it is 7 hours and at 30d it is 30, so every bar on the strip lit the
- * same recent hour whichever one the pointer was on, and the feature was silently dead at any window but
- * the default.
+ * Holding a bar on the activity strip lights the events it stands for, and it lit the wrong ones at two of
+ * the three windows. The layer took the bucket's index and multiplied it by a hardcoded hour, where a bucket
+ * is `windowMs / 24`: at 7d it is 7 hours and at 30d it is 30, so every bar lit the same recent hour.
  */
 
 const HOUR = 3_600_000;

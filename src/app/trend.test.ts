@@ -4,10 +4,9 @@ import { SECTION_DEFAULT_KM, sectionThrough } from "./section";
 import { distanceKm } from "../geo/sphere";
 
 /*
- * Offering a cross-section means choosing its orientation for somebody, and the orientation is the
- * whole value of the thing. Earthquakes at a subduction zone lie along the trench, so a slice across
- * that line puts the slab on screen and a slice along it is a smear of everything at once. A fixed
- * east-west section would be right at Japan and useless along the Aleutians.
+ * Offering a cross-section means choosing its orientation, and the orientation is the whole value of it.
+ * Earthquakes at a subduction zone lie along the trench, so a slice across puts the slab on screen and a
+ * slice along it is a smear. A fixed east-west section would be right at Japan and useless along the Aleutians.
  */
 
 /** Second moments of a scatter, the way `findNearby` accumulates them inside its walk. */
@@ -48,10 +47,8 @@ describe("the long axis of local seismicity", () => {
   });
 
   it("survives a perfectly straight line, whose minor axis is zero", () => {
-    /*
-     * The clearest possible trend, and the one a naive guard throws away: the subtraction that
-     * produces the minor axis can land a rounding step below zero.
-     */
+    // The clearest possible trend, and the one a naive guard throws away: the subtraction that produces the
+    // minor axis can land a rounding step below zero.
     expect(moments(along(30))).toBeCloseTo(60, 6);
   });
 
@@ -94,10 +91,8 @@ describe("the section it produces", () => {
   });
 
   it("always reads west to east, so two margins are not drawn in opposite directions", () => {
-    /*
-     * The section plots distance from its first end, so which end is first decides which way the
-     * picture reads. Left to the bearing that is an accident of the angle.
-     */
+    // The section plots distance from its first end, so which end is first decides which way the picture
+    // reads. Left to the bearing that is an accident of the angle.
     for (const trend of [0, 20, 45, 80, 100, 135, 170]) {
       const line = sectionThrough(140, 38, trend);
       expect(line.toLon).toBeGreaterThan(line.fromLon);
@@ -141,10 +136,8 @@ describe("the section it produces", () => {
   });
 
   it("stays finite at the pole, where east-west degrees do not", () => {
-    /*
-     * `1/cos(lat)` is 11 at 85 degrees and infinite at 90. Unclamped, a section offered from a polar
-     * event spans the whole planet or produces NaN.
-     */
+    // `1/cos(lat)` is 11 at 85 degrees and infinite at 90. Unclamped, a section offered from a polar event
+    // spans the whole planet or produces NaN.
     const line = sectionThrough(0, 89.9, 0);
     expect(Number.isFinite(line.fromLon)).toBe(true);
     expect(Number.isFinite(line.toLon)).toBe(true);
