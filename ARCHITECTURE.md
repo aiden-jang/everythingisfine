@@ -6429,3 +6429,31 @@ reproduce, so a swallowed paste leaves nothing on screen that looks nearly right
 runner caught exactly 2. The count is only proof the tour narrated at all; the loop underneath - every label
 naming where the camera actually is - is the test, and it bites on a single sample. The guard is now above
 zero, which is the only part of it that was ever a claim about the app.
+
+### The one perf ratio that does not cancel across machines
+
+`findNearby`'s gate went red on a GitHub runner at **25.20** against a budget of 22, on code with zero
+non-comment changes since the budget was set. I misread it first as transient local load and said so, which
+was wrong twice: the number came from CI, and CI is not a machine you can ask to be quieter.
+
+The runner log is what settles it. Every other gate in the same run passes with room - sync at 0.08/0.15,
+0.97/1.05, 6.19/7, clustering at 5.68/7 - so the runner is not slow in general. One measurement is.
+
+**The cause is the shape of the reference.** `events.perf.test.ts` states the rule: a reference has to be
+shaped like the workload, or the ratio drifts with cache pressure instead of holding still. It shapes its own
+to match. This file borrowed that reference, and the two workloads are not alike: `findNearby` walks fifty
+thousand quakes dereferencing `primary`, where the reference writes one typed array. Memory-bound against
+compute-bound, so they degrade at different rates and a runner's memory subsystem lands where a Mac's does
+not. The events budgets had already been raised 6.0 to 7.0 for the same reason after a second machine
+disagreed; this one had never been calibrated anywhere but a dev machine.
+
+**Reshaping the reference was built and measured before settling for a second number.** Walking an object
+graph instead tightened the quiet spread from 10% to 2.6% and cut worst-case drift under a memory hog from
++27% to +19%. It is the better estimator. It was not taken, because it moves the scale and would strand the
+33.5 -> 15.3 calibration the comment is built on, and confirming a new CI figure costs a round trip per
+attempt. It is written down as the thing to do when there is one to spend.
+
+So the budget splits on `process.env.CI`, the same way `playwright.config.ts` splits its workers and timeouts
+and for the same reason: 22 on a dev machine, tight enough that the sort coming back would read 33.5 and trip
+it, and 32 on CI, 27% over what that hardware actually measures. `process` is declared locally rather than
+pulling in @types/node, which is `store.test.ts`'s pattern.
