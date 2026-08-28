@@ -82,8 +82,8 @@ export interface MagnitudeFilterProps {
   cyclones: readonly { name: string; peakKmh: number | null }[];
   /** How many volcanoes are drawn. */
   volcanoes: number;
-  /** How many the feed holds, before the window. Lets the row explain an empty layer instead of vanishing. */
-  volcanoesHeld?: number;
+  /** Which layers the window emptied, as a sentence, or null when it emptied none. */
+  outsideWindow?: string | null;
   /** When the newest of their eruption episodes ended, which the line has to admit is not now. */
   volcanoesSince: number | null;
   /** The fires burning, already summarised, because the caveat needs the leader and the median. */
@@ -151,7 +151,7 @@ function path(points: readonly { lon: number; lat: number }[]): string {
 
 export function MagnitudeFilter(
   {
-    ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesHeld, volcanoesSince, now,
+    ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince, now, outsideWindow = null,
     fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
     motion, motionOn, onMotion, sinkOn, onSink, slabOn, onSlab, slabCount,
     figuresOn, onFigures, sky = false, eclipse = null, herePlace = null, depth, sound, children,
@@ -385,9 +385,9 @@ export function MagnitudeFilter(
 
       {/* A triangle, which cannot be read as a magnitude dot. Under the storms because it is the one layer
           here that is not live, and the line beside it says so. */}
-      {volcanoes > 0 || (volcanoesHeld ?? 0) > 0 ? (
+      {volcanoes > 0 ? (
         <KeyRow
-          note={volcanoNote(volcanoes, volcanoesSince, now, archived, volcanoesHeld ?? volcanoes)}
+          note={volcanoNote(volcanoes, volcanoesSince, now, archived)}
           glyph={<svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
             <path d={VOLCANO_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
               className="text-dim" />
@@ -421,6 +421,10 @@ export function MagnitudeFilter(
           }
         />
       ) : null}
+
+      {/* Last of the layer rows, and the only one that appears because a layer is absent. Without it, a
+          24-hour window silently deletes all four and the globe just looks empty. */}
+      <KeyRow note={outsideWindow} />
 
       {/* The sound leads with what it is not. A tone presented as what an earthquake sounds like would be
           the one outright falsehood here: real ground motion is below hearing. */}

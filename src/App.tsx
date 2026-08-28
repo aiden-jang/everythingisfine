@@ -14,8 +14,8 @@ import { marksFor } from "./app/marks";
 import { depthBands } from "./data/depth";
 import { drawStill, stillMoment, verdictLine, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
 import { findSubject, MarkCard } from "./app/MarkCard";
-import { hazardCount, hazardGroups } from "./app/hazards";
-import { endedWithin } from "./app/age";
+import { hazardCount, hazardGroups, outsideWindowNote } from "./app/hazards";
+import { withinWindow } from "./app/age";
 import { countForDay, dayRange, fetchArchive } from "./sources/archive";
 import { NOTABLE_DAYS, NOTABLE_NOTE } from "./app/notableDays";
 import { sizesOf } from "./app/gutenberg";
@@ -47,7 +47,7 @@ import { clamp as clampScrub, dragTo, fractionOf, LIVE, nudge, step as stepScrub
 import { Resizer } from "./app/Resizer";
 import { CrossSection } from "./app/CrossSection";
 import { buildSection, type SectionLine } from "./app/section";
-import { histogram, totalIn } from "./app/histogram";
+import { BUCKETS, histogram, totalIn } from "./app/histogram";
 import { diurnal } from "./app/diurnal";
 import { Dial } from "./app/Dial";
 import { DAY_LENGTH, isArchivableDay, isRealDay, typedDay } from "./app/day";
@@ -275,23 +275,83 @@ export function App(): JSX.Element {
    * The cost is that "3h ago" is relative to that day. The banner naming the date is load-bearing.
    */
   const now = snapshot.archive ? snapshot.archive.to : Date.now();
+  // `to` is the wall clock, so the window slides out from under a parked cursor. Both the clock and the
+  // clamp are handed over fresh for that reason.
+  const span = { from: now - filters.windowMs, to: now };
+  // Clamped on the way out, never written back. A cursor the window has slid past has to read as live,
+  // and a render must not correct its own state.
+  const view = clampScrub(scrub, span);
   /*
-   * The window judges volcanoes and no other layer, because nothing flags them current. A 24-hour view was
-   * drawing episodes that ended two years ago. `age.ts` has the argument for leaving the other three.
+   * The cursor reveals these layers too. It gated earthquakes alone, so scrubbing to last Tuesday moved
+   * five hundred dots and left every storm, fire and flood exactly where it was.
    *
-   * Keyed on the minute, not the clock: this rebuilds on every one-second render otherwise.
+   * Quantised to the strip's own bucket. Playing steps the cursor twenty times a second and these feeds
+   * are dated to the hour at best, so a continuous reveal would rebuild a hundred outlines for a change
+   * no feed can resolve.
    */
-  const datedVolcanoes = useMemo(
-    () => volcanoes.filter((v) => endedWithin(v.endedAt, now, filters.windowMs)),
-    [volcanoes, filters.windowMs, Math.floor(now / 60_000)],
-  );
-  const onGlobe = {
-    cyclones: archived ? archiveHazards?.cyclones ?? [] : cyclones,
-    volcanoes: archived ? archiveHazards?.volcanoes ?? [] : datedVolcanoes,
-    fires: archived ? archiveHazards?.fires ?? [] : fires,
-    floods: archived ? archiveHazards?.floods ?? [] : floods,
-    aurora: archived ? null : aurora,
-  };
+  const revealStep = filters.windowMs / BUCKETS;
+  const revealAt = view.at === null ? null : Math.floor(view.at / revealStep) * revealStep;
+  /*
+   * What is actually drawn, after the window and the cursor have both had their say.
+   *
+   * One memo, because `marksFor` turns these into a few thousand points and the rail re-renders every
+   * second. Keyed on the minute rather than the clock for the same reason.
+   */
+  const onGlobe = useMemo(() => {
+    /*
+     * The window first, on each layer's own date, then the cursor.
+     *
+     * Dated by start for the three live layers and by episode end for volcanoes; `age.ts` has the argument.
+     * The cursor reveals by the same date, which is the rule the earthquakes already use: on screen once it
+     * has happened.
+     */
+    const shown = <T,>(list: readonly T[], dateOf: (h: T) => number | null): readonly T[] =>
+      list.filter((h) => {
+        const at = dateOf(h);
+        if (!withinWindow(at, now, filters.windowMs)) return false;
+        return revealAt === null || at === null || at <= revealAt;
+      });
+    const started = (h: { startedAt: number | null }): number | null => h.startedAt;
+    return {
+      cyclones: shown(archived ? archiveHazards?.cyclones ?? [] : cyclones, started),
+      volcanoes: shown(archived ? archiveHazards?.volcanoes ?? [] : volcanoes, (v) => v.endedAt),
+      fires: shown(archived ? archiveHazards?.fires ?? [] : fires, started),
+      floods: shown(archived ? archiveHazards?.floods ?? [] : floods, started),
+      aurora: archived ? null : aurora,
+    };
+  }, [archived, archiveHazards, cyclones, volcanoes, fires, floods, aurora,
+    filters.windowMs, revealAt, Math.floor(now / 60_000)]);
+  /*
+   * What each layer holds against what the window kept.
+   *
+   * Read off the unfiltered feed, because that difference is the whole point: at 24 hours all four layers
+   * routinely go to nothing, and the key has to say so rather than let four rows vanish.
+   */
+  const hazardTally = useMemo(() => {
+    const held = archived
+      ? {
+        cyclones: archiveHazards?.cyclones ?? [], volcanoes: archiveHazards?.volcanoes ?? [],
+        fires: archiveHazards?.fires ?? [], floods: archiveHazards?.floods ?? [],
+      }
+      : { cyclones, volcanoes, fires, floods };
+    const newestOf = <T,>(list: readonly T[], dateOf: (h: T) => number | null): number | null =>
+      list.reduce<number | null>((best, h) => {
+        const at = dateOf(h);
+        return at === null ? best : best === null ? at : Math.max(best, at);
+      }, null);
+    const started = (h: { startedAt: number | null }): number | null => h.startedAt;
+    return [
+      { kind: "cyclone" as const, held: held.cyclones.length, shown: onGlobe.cyclones.length,
+        newest: newestOf(held.cyclones, started) },
+      { kind: "fire" as const, held: held.fires.length, shown: onGlobe.fires.length,
+        newest: newestOf(held.fires, started) },
+      { kind: "flood" as const, held: held.floods.length, shown: onGlobe.floods.length,
+        newest: newestOf(held.floods, started) },
+      { kind: "volcano" as const, held: held.volcanoes.length, shown: onGlobe.volcanoes.length,
+        newest: newestOf(held.volcanoes, (v) => v.endedAt) },
+    ];
+  }, [archived, archiveHazards, cyclones, volcanoes, fires, floods,
+    onGlobe.cyclones, onGlobe.fires, onGlobe.floods, onGlobe.volcanoes]);
   const fireSummary = useMemo(() => summarise(onGlobe.fires), [onGlobe.fires]);
   // Keyed on the store revision, not the clock. The rail re-renders every second and these counts only
   // move when an earthquake does.
@@ -633,13 +693,7 @@ export function App(): JSX.Element {
   }, []);
 
 
-  // `to` is the wall clock, so the window slides out from under a parked cursor. Both the clock and the
-  // clamp are handed over fresh for that reason.
-  const span = { from: now - filters.windowMs, to: now };
-  // Clamped on the way out, never written back. A cursor the window has slid past has to read as live,
-  // and a render must not correct its own state.
   const fetching = pendingRev !== null && snapshot.revision === pendingRev;
-  const view = clampScrub(scrub, span);
   /*
    * The moment the globe is lit by, and whether the moon's shadow is on it. One expression for both the
    * scene and the key, because a sentence disagreeing with the shadow beside it is worse than no sentence.
@@ -1194,7 +1248,7 @@ export function App(): JSX.Element {
                 aurora={onGlobe.aurora}
                 cyclones={onGlobe.cyclones}
                 volcanoes={onGlobe.volcanoes.length}
-                volcanoesHeld={archived ? onGlobe.volcanoes.length : volcanoes.length}
+                outsideWindow={outsideWindowNote(hazardTally, now)}
                 volcanoesSince={newestEpisode(volcanoes)}
                 /*
                   The archived day's clock, not this minute's. `volcanoNote` counts days since the newest

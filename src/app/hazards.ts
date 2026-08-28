@@ -118,3 +118,48 @@ export function hazardCount(groups: readonly HazardGroup[]): number {
   return groups.reduce((n, g) => n + g.rows.length, 0);
 }
 
+
+/** What a layer holds against what the window kept, so the key can name the ones the filter emptied. */
+export interface LayerTally {
+  kind: HazardRow["kind"];
+  /** How many the feed carries, before the window. */
+  held: number;
+  shown: number;
+  /** The most recent date in the layer, for saying how far back the reader would have to widen. */
+  newest: number | null;
+}
+
+const PLURAL: Record<HazardRow["kind"], string> = {
+  cyclone: "storms", fire: "fires", flood: "floods", volcano: "volcanoes",
+};
+
+/** "Storms and volcanoes" from a list of kinds, so the sentence reads rather than enumerates. */
+function names(kinds: readonly HazardRow["kind"][]): string {
+  const words = kinds.map((k) => PLURAL[k]);
+  if (words.length === 1) return words[0]!;
+  return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
+}
+
+/*
+ * The line that keeps an emptied layer from vanishing without a word.
+ *
+ * The window judges every layer on its own date, so at 24 hours all four routinely go to nothing: GDACS
+ * flags a three-week-old fire as still burning, and the filter still says 24 hours. Four rows disappearing
+ * in silence reads as a broken app rather than as a filter doing its job.
+ */
+export function outsideWindowNote(
+  layers: readonly LayerTally[], now: number,
+): string | null {
+  const gone = layers.filter((l) => l.shown === 0 && l.held > 0);
+  if (gone.length === 0) return null;
+  const held = gone.reduce((n, l) => n + l.held, 0);
+  const newest = gone.reduce<number | null>(
+    (best, l) => (l.newest === null ? best : best === null ? l.newest : Math.max(best, l.newest)),
+    null,
+  );
+  const since = newest === null
+    ? ""
+    : ` the newest ${Math.max(0, Math.round((now - newest) / 86_400_000))} days back,`;
+  const subject = gone.length === layers.length ? "None of the marks are" : `No ${names(gone.map((l) => l.kind))} are`;
+  return `${subject} in this window. The feed holds ${held},${since} so widen the window to see them.`;
+}
