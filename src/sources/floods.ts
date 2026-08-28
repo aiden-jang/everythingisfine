@@ -6,7 +6,12 @@ import { events, fetchList, isCurrent, listUrl, parseUtc, reportedBy } from "./g
  * Nineteen of the hundred are flagged `iscurrent` and all ended within three days; the other eighty-one run
  * to 359 days old, so drawing all hundred would be mostly a flood archive.
  *
- * The cap is not in play here: floods spread across 68 countries at no more than three each.
+ * The list is capped at 100 like every GDACS list, and it does bite: it comes back at exactly 100 across 66
+ * countries at no more than three each, while asking for India alone returns 10. What survives the cut is
+ * the part this layer draws - measured across the flood-heaviest countries, India, China, Indonesia, the
+ * Philippines, Nepal, Bangladesh and Pakistan, **zero current floods were missing from the global list**.
+ * So the count on screen is honest without a floor beside it, unlike the wildfires, and that is a
+ * measurement rather than an assumption. Re-measure it before trusting it again.
  *
  * No severity to read. GDACS writes `severity: 0.0` for every flood in the list.
  */
