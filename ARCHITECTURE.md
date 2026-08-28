@@ -6399,3 +6399,33 @@ opens the panel locally in 12.9 seconds and did not find it in 30 on the runner,
 "retain-on-failure"` with no HTML reporter writes to `test-results/`; `playwright-report/` is never created.
 The step logged "No files were found with the provided path" as a warning and the run went red with nothing
 attached. A failure artifact that has never been seen to contain anything is not a diagnostic.
+
+### A flaky browser test was reporting a real race in the permalink
+
+The cross-section link test failed on CI twice and I had twice declined to guess at it. Reproduced locally it
+came up **1 in 6**, which was enough to work with, and the cause is in the app rather than in the test.
+
+`buildSection` never returns null, so the panel is absent only when `sectionLine` is - and that comes from
+`shared`, read once at module load. A pasted link changes only the fragment, which does not reload, so the
+`hashchange` handler exists to reload for it. Both halves were right. What was missing is that the permalink
+writer runs on a one-second interval and `replaceState`s the app's current state.
+
+Land the interval between the paste and the queued `hashchange` and the writer puts the old state back over
+the new link; the handler then compares that against `lastWritten`, finds them equal, and skips the reload.
+**The pasted link is swallowed and the tab keeps showing the old view**, which is the exact failure the
+handler was written to prevent, arriving through the door beside it.
+
+The guard is one line in the interval: if the hash is not what this app last wrote, do not write - somebody
+else changed it, and the reload is theirs to trigger. Twelve consecutive runs of the test afterwards, against
+one failure in six before.
+
+**A shared cross-section is the field most likely to expose this**, which is why that test found it and the
+other permalink tests did not: it is the one piece of state a viewer's own session would never happen to
+reproduce, so a swallowed paste leaves nothing on screen that looks nearly right.
+
+### The tour's guard, one more time
+
+`named.length > 2` was still counting how many 150ms samples happened to land inside an arrived window, and a
+runner caught exactly 2. The count is only proof the tour narrated at all; the loop underneath - every label
+naming where the camera actually is - is the test, and it bites on a single sample. The guard is now above
+zero, which is the only part of it that was ever a claim about the app.
