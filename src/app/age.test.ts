@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { endedWithin, spanWords } from "./age";
+import { spanWords, withinWindow } from "./age";
 
 const NOW = 1_700_000_000_000;
 const DAYS = (n: number) => NOW - n * 86_400_000;
@@ -28,15 +28,15 @@ describe("dating a hazard that outlives the window", () => {
   });
 });
 
-describe("which layers the window may judge", () => {
-  it("keeps an episode inside the window and drops one outside it", () => {
-    expect(endedWithin(HOURS(9), NOW, 86_400_000)).toBe(true);
-    expect(endedWithin(DAYS(9), NOW, 86_400_000)).toBe(false);
-    // The same episode returns at a month, which is what widening the window is for.
-    expect(endedWithin(DAYS(9), NOW, 30 * 86_400_000)).toBe(true);
+describe("what the window keeps", () => {
+  it("keeps a date inside the window and drops one outside it", () => {
+    expect(withinWindow(HOURS(9), NOW, 86_400_000)).toBe(true);
+    expect(withinWindow(DAYS(9), NOW, 86_400_000)).toBe(false);
+    // The same event returns at a month, which is what widening the window is for.
+    expect(withinWindow(DAYS(9), NOW, 30 * 86_400_000)).toBe(true);
   });
 
-  it("keeps an undated episode, rather than dropping the reason for dropping it", () => {
-    expect(endedWithin(null, NOW, 86_400_000)).toBe(true);
+  it("keeps an undated event, rather than dropping the reason for dropping it", () => {
+    expect(withinWindow(null, NOW, 86_400_000)).toBe(true);
   });
 });

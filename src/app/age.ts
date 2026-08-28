@@ -1,14 +1,15 @@
 import { agoShort } from "./format";
 
 /*
- * How old a hazard is, and whether the window may judge it.
+ * How old a hazard is, and whether it falls inside the window.
  *
- * Don't filter storms, fires or floods on their dates. GDACS keeps flagging them `iscurrent` long after
- * `todate` passes - a live fire's end date measured three days stale, a live cyclone's today - so an
- * interval filter drops events the agency calls current. The flag is the only honest signal. Those three
- * stay on screen and say how long they have been running instead.
+ * The window means the same thing for every layer: the event's own date has to be inside it. GDACS keeps
+ * flagging storms, fires and floods `iscurrent` for weeks, so an ongoing three-week-old fire is genuinely
+ * burning - but the filter says 24 hours, and a control that governs one layer and not the others is worse
+ * than a layer that empties. The key says when a layer is empty because of the window.
  *
- * Nobody flags volcanoes current, so the episode date is all they have and the window judges them on it.
+ * Each layer is judged on the date it actually has: storms, fires and floods on their start, volcanoes on
+ * their episode end, which is the only date nobody flags current.
  */
 
 /** A row's age. Ongoing events date from their start, because that is the number that surprises: a bare
@@ -26,9 +27,9 @@ export function spanWords(
   return at === null ? "" : `${agoShort(at, now)} ago`;
 }
 
-/** Whether a finished episode falls inside the window. Only for layers claiming no currency. Undated
- * stays, because dropping it would hide the event and the reason for hiding it together. */
-export function endedWithin(endedAt: number | null, now: number, windowMs: number): boolean {
-  if (endedAt === null) return true;
-  return now - endedAt <= windowMs;
+/** Whether a hazard's own date falls inside the window. Undated stays, because dropping it would hide the
+ * event and the reason for hiding it together. */
+export function withinWindow(at: number | null, now: number, windowMs: number): boolean {
+  if (at === null) return true;
+  return now - at <= windowMs;
 }

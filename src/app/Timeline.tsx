@@ -330,11 +330,8 @@ export function Timeline({
 
       {children}
 
-      {/*
-        The transport, on its own track rather than on the strip. The strip already carries two gestures:
-        dragging sets the window, moving across it holds an hour. A third on the same forty-four pixels
-        would be three meanings for one drag.
-      */}
+      {/* The transport, on its own track rather than on the strip. Moving across the strip holds an hour,
+          and a drag that both held an hour and moved the cursor would be two meanings for one gesture. */}
       <div className="mt-4 flex items-center gap-2">
         <button
           type="button"

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hazardCount, hazardGroups } from "./hazards";
+import { hazardCount, hazardGroups, outsideWindowNote } from "./hazards";
 
 const storm = (id: string, name: string, peakKmh: number | null) =>
   ({ id, name, lon: 130, lat: 18, peakKmh, track: [], startedAt: null, endedAt: null }) as never;
@@ -81,5 +81,52 @@ describe("what the list says about itself", () => {
   it("survives a missing measure without printing a dash", () => {
     const groups = hazardGroups({ ...none, cyclones: [storm("a", "Unnamed", null)] }, NOW);
     expect(groups[0]!.rows[0]!.measure).toBe("");
+  });
+});
+
+describe("saying that the window emptied a layer", () => {
+  const DAY = 86_400_000;
+  const tally = (kind: "cyclone" | "fire" | "flood" | "volcano", held: number, shown: number,
+    newest: number | null = NOW - 10 * DAY) => ({ kind, held, shown, newest });
+
+  it("says nothing when every layer the feed holds is on screen", () => {
+    expect(outsideWindowNote([tally("fire", 3, 3), tally("flood", 2, 2)], NOW)).toBeNull();
+  });
+
+  it("says nothing about a layer the feed itself has none of, which is not the filter's doing", () => {
+    expect(outsideWindowNote([tally("volcano", 0, 0)], NOW)).toBeNull();
+  });
+
+  it("names only the layers the window emptied", () => {
+    const note = outsideWindowNote([tally("cyclone", 12, 0), tally("fire", 7, 7)], NOW);
+    expect(note).toContain("No storms are in this window");
+    expect(note).toContain("holds 12");
+    expect(note).not.toContain("fires");
+  });
+
+  it("joins several layers into a sentence rather than a list", () => {
+    const note = outsideWindowNote(
+      [tally("cyclone", 2, 0), tally("fire", 3, 0), tally("flood", 4, 0), tally("volcano", 1, 1)], NOW,
+    );
+    expect(note).toContain("No storms, fires and floods are in this window");
+    // The totals are added across the emptied layers only, so the number matches what widening would show.
+    expect(note).toContain("holds 9");
+  });
+
+  it("speaks of the marks as a whole once the window has emptied all of them", () => {
+    const note = outsideWindowNote(
+      [tally("cyclone", 2, 0), tally("fire", 3, 0), tally("flood", 4, 0), tally("volcano", 1, 0)], NOW,
+    );
+    expect(note).toContain("None of the marks are in this window");
+  });
+
+  it("says how far back the reader would have to widen, from the newest that is missing", () => {
+    const note = outsideWindowNote([tally("fire", 5, 0, NOW - 23 * DAY)], NOW);
+    expect(note).toContain("the newest 23 days back");
+  });
+
+  it("leaves the distance out rather than guessing when the layer carries no dates", () => {
+    const note = outsideWindowNote([tally("fire", 5, 0, null)], NOW);
+    expect(note).toContain("holds 5, so widen");
   });
 });
