@@ -1,3 +1,4 @@
+import { spanWords } from "./age";
 import type { Cyclone } from "../sources/cyclones";
 import type { Flood } from "../sources/floods";
 import type { Volcano } from "../sources/volcanoes";
@@ -20,6 +21,8 @@ export interface HazardRow {
   name: string;
   /** The one number worth a column, already formatted, or empty when the feed carries none. */
   measure: string;
+  /** How long it has been running, or when the episode ended. Empty when the feed carries no dates. */
+  age: string;
   lon: number;
   lat: number;
 }
@@ -40,8 +43,13 @@ export interface HazardInput {
 
 const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
 
-export function hazardGroups({ cyclones, volcanoes, fires, floods }: HazardInput): HazardGroup[] {
+// `now` and `archived` let a row date itself. Live storms, fires and floods arrive flagged current, so
+// they are ongoing by construction; an archived day holds none that are.
+export function hazardGroups(
+  { cyclones, volcanoes, fires, floods }: HazardInput, now: number, archived = false,
+): HazardGroup[] {
   const groups: HazardGroup[] = [];
+  const live = !archived;
 
   if (cyclones.length > 0) {
     groups.push({
@@ -52,6 +60,7 @@ export function hazardGroups({ cyclones, volcanoes, fires, floods }: HazardInput
         .map((c) => ({
           id: `cyclone:${c.id}`, kind: "cyclone" as const, name: c.name,
           measure: c.peakKmh === null ? "" : `${Math.round(c.peakKmh)} km/h`,
+          age: spanWords(c.startedAt, c.endedAt, now, live),
           lon: c.lon, lat: c.lat,
         })),
     });
@@ -67,6 +76,7 @@ export function hazardGroups({ cyclones, volcanoes, fires, floods }: HazardInput
           id: `fire:${f.id}`, kind: "fire" as const, name: f.country || "Forest fire",
           // Square kilometres, the unit the legend's total uses, so the two read as the same quantity.
           measure: f.hectares === null ? "" : `${Math.round(f.hectares / 100).toLocaleString("en")} km²`,
+          age: spanWords(f.startedAt, f.endedAt, now, live),
           lon: f.lon, lat: f.lat,
         })),
     });
@@ -81,7 +91,7 @@ export function hazardGroups({ cyclones, volcanoes, fires, floods }: HazardInput
         .sort((a, b) => (b.startedAt ?? 0) - (a.startedAt ?? 0))
         .map((f) => ({
           id: `flood:${f.id}`, kind: "flood" as const, name: f.country || "Flood",
-          measure: "", lon: f.lon, lat: f.lat,
+          measure: "", age: spanWords(f.startedAt, f.endedAt, now, live), lon: f.lon, lat: f.lat,
         })),
     });
   }
@@ -94,7 +104,8 @@ export function hazardGroups({ cyclones, volcanoes, fires, floods }: HazardInput
         .sort((a, b) => (b.endedAt ?? 0) - (a.endedAt ?? 0))
         .map((v) => ({
           id: `volcano:${v.id}`, kind: "volcano" as const, name: v.name,
-          measure: v.country, lon: v.lon, lat: v.lat,
+          // Never ongoing: no keyless feed says which volcanoes are erupting, so this dates the episode.
+          measure: v.country, age: spanWords(null, v.endedAt, now, false), lon: v.lon, lat: v.lat,
         })),
     });
   }

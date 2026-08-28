@@ -15,6 +15,7 @@ import { depthBands } from "./data/depth";
 import { drawStill, stillMoment, verdictLine, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
 import { findSubject, MarkCard } from "./app/MarkCard";
 import { hazardCount, hazardGroups } from "./app/hazards";
+import { endedWithin } from "./app/age";
 import { countForDay, dayRange, fetchArchive } from "./sources/archive";
 import { NOTABLE_DAYS, NOTABLE_NOTE } from "./app/notableDays";
 import { sizesOf } from "./app/gutenberg";
@@ -265,9 +266,28 @@ export function App(): JSX.Element {
    * The aurora has no archived branch and never will. NOAA publishes a forecast for a stamped minute, so
    * drawing tonight's oval over last July is exactly the falsehood this mode exists to avoid.
    */
+  /*
+   * The clock everything filters against, which in archive mode is the end of the archived day.
+   *
+   * Every window, strip and count here means "the last N hours before now", so against the wall clock an
+   * archived day filtered to nothing: 702 events in the store and a headline of 0.
+   *
+   * The cost is that "3h ago" is relative to that day. The banner naming the date is load-bearing.
+   */
+  const now = snapshot.archive ? snapshot.archive.to : Date.now();
+  /*
+   * The window judges volcanoes and no other layer, because nothing flags them current. A 24-hour view was
+   * drawing episodes that ended two years ago. `age.ts` has the argument for leaving the other three.
+   *
+   * Keyed on the minute, not the clock: this rebuilds on every one-second render otherwise.
+   */
+  const datedVolcanoes = useMemo(
+    () => volcanoes.filter((v) => endedWithin(v.endedAt, now, filters.windowMs)),
+    [volcanoes, filters.windowMs, Math.floor(now / 60_000)],
+  );
   const onGlobe = {
     cyclones: archived ? archiveHazards?.cyclones ?? [] : cyclones,
-    volcanoes: archived ? archiveHazards?.volcanoes ?? [] : volcanoes,
+    volcanoes: archived ? archiveHazards?.volcanoes ?? [] : datedVolcanoes,
     fires: archived ? archiveHazards?.fires ?? [] : fires,
     floods: archived ? archiveHazards?.floods ?? [] : floods,
     aurora: archived ? null : aurora,
@@ -612,15 +632,6 @@ export function App(): JSX.Element {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
-  /*
-   * The clock everything filters against, which in archive mode is the end of the archived day.
-   *
-   * Every window, strip and count here means "the last N hours before now", so against the wall clock an
-   * archived day filtered to nothing: 702 events in the store and a headline of 0.
-   *
-   * The cost is that "3h ago" is relative to that day. The banner naming the date is load-bearing.
-   */
-  const now = snapshot.archive ? snapshot.archive.to : Date.now();
 
   // `to` is the wall clock, so the window slides out from under a parked cursor. Both the clock and the
   // clamp are handed over fresh for that reason.
@@ -851,8 +862,9 @@ export function App(): JSX.Element {
   // from a snapshot would keep describing a storm the feed had dropped.
   // Built from `onGlobe` so the list holds exactly what is drawn: an archived day withholds the layers
   // and the list goes with them rather than offering rows that point at nothing.
-  const hazards = useMemo(() => hazardGroups(onGlobe),
-    [onGlobe.cyclones, onGlobe.volcanoes, onGlobe.fires, onGlobe.floods]);
+  const hazards = useMemo(() => hazardGroups(onGlobe, now, archived),
+    [onGlobe.cyclones, onGlobe.volcanoes, onGlobe.fires, onGlobe.floods, archived,
+      Math.floor(now / 60_000)]);
   const markSubject = findSubject(markId, onGlobe);
   // Pinning an earthquake from anywhere clears the mark card. The rail's rows and the panel's sequence
   // steps all call `setSelected` directly, and a storm's card left beside it is two answers to one question.
@@ -1176,11 +1188,13 @@ export function App(): JSX.Element {
 
               <MagnitudeFilter
                 ramp={ramp}
+                scale={!markSubject}
                 value={filters.minMagnitude}
                 onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
                 aurora={onGlobe.aurora}
                 cyclones={onGlobe.cyclones}
                 volcanoes={onGlobe.volcanoes.length}
+                volcanoesHeld={archived ? onGlobe.volcanoes.length : volcanoes.length}
                 volcanoesSince={newestEpisode(volcanoes)}
                 /*
                   The archived day's clock, not this minute's. `volcanoNote` counts days since the newest
@@ -2096,6 +2110,13 @@ export function App(): JSX.Element {
                             {row.measure ? (
                               <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
                                 {row.measure}
+                              </span>
+                            ) : null}
+                            {/* The age, always last. Without it a three-week-old fire under a 24-hour
+                                window reads as the filter having leaked. */}
+                            {row.age ? (
+                              <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
+                                {row.age}
                               </span>
                             ) : null}
                           </button>
