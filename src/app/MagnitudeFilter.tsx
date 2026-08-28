@@ -82,6 +82,8 @@ export interface MagnitudeFilterProps {
   cyclones: readonly { name: string; peakKmh: number | null }[];
   /** How many volcanoes are drawn. */
   volcanoes: number;
+  /** How many the feed holds, before the window. Lets the row explain an empty layer instead of vanishing. */
+  volcanoesHeld?: number;
   /** When the newest of their eruption episodes ended, which the line has to admit is not now. */
   volcanoesSince: number | null;
   /** The fires burning, already summarised, because the caveat needs the leader and the median. */
@@ -126,6 +128,9 @@ export interface MagnitudeFilterProps {
   onKeyOpen: (open: boolean) => void;
   /** True on an archived day, which changes the tense of every layer sentence. */
   archived?: boolean;
+  /** Whether to draw the magnitude scale. False while a mark card is open: a flood has no magnitude, so
+   * the threshold describes a filter that does not reach what the reader is looking at. */
+  scale?: boolean;
 }
 
 const TICKS = [MAG_MIN, 3, 5, MAG_MAX];
@@ -146,10 +151,11 @@ function path(points: readonly { lon: number; lat: number }[]): string {
 
 export function MagnitudeFilter(
   {
-    ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince, now,
+    ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesHeld, volcanoesSince, now,
     fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
     motion, motionOn, onMotion, sinkOn, onSink, slabOn, onSlab, slabCount,
     figuresOn, onFigures, sky = false, eclipse = null, herePlace = null, depth, sound, children,
+    scale = true,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -173,6 +179,8 @@ export function MagnitudeFilter(
     // `data-ramp` marks an element outside the canvas allowed to paint the magnitude ramp, which the
     // design-contract test excludes by name rather than by loosening the rule. See DESIGN.md 3.1.
     <div data-ramp>
+      {!scale ? null : (
+        <>
       <label className="label block" htmlFor="mag">
         Magnitude {value.toFixed(1)} and above
       </label>
@@ -206,6 +214,8 @@ export function MagnitudeFilter(
           <span key={t}>{i === TICKS.length - 1 ? `${t}+` : t.toFixed(1)}</span>
         ))}
       </div>
+        </>
+      )}
 
       {children}
 
@@ -375,9 +385,9 @@ export function MagnitudeFilter(
 
       {/* A triangle, which cannot be read as a magnitude dot. Under the storms because it is the one layer
           here that is not live, and the line beside it says so. */}
-      {volcanoes > 0 ? (
+      {volcanoes > 0 || (volcanoesHeld ?? 0) > 0 ? (
         <KeyRow
-          note={volcanoNote(volcanoes, volcanoesSince, now, archived)}
+          note={volcanoNote(volcanoes, volcanoesSince, now, archived, volcanoesHeld ?? volcanoes)}
           glyph={<svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
             <path d={VOLCANO_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
               className="text-dim" />

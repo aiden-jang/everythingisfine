@@ -1,4 +1,4 @@
-import { reportedBy } from "./gdacs";
+import { parseUtc, reportedBy } from "./gdacs";
 /*
  * Tropical cyclones, as tracks rather than dots. A storm drawn as a point is a dot that happens to be a
  * hurricane; drawn as a track it explains itself, curving poleward as every cyclone does.
@@ -35,6 +35,12 @@ export interface Cyclone {
   peakKmh: number | null;
   /** Where it has been, oldest first, as one polyline. Empty when the track could not be had. */
   track: { lon: number; lat: number }[];
+  /** First reported, or null. Every storm here is flagged current, so a ten-day-old one needs a date to
+   * not read as a bug. */
+  startedAt: number | null;
+  /** Last reported, not forecast to end. GDACS keeps flagging a storm current past this date, so it never
+   * bounds the event. See `age.ts`. */
+  endedAt: number | null;
 }
 
 interface Feature {
@@ -63,6 +69,8 @@ export function parseCycloneList(payload: unknown): Omit<Cyclone, "track">[] {
       lon,
       lat,
       peakKmh: typeof severity === "number" && severity > 0 ? severity : null,
+      startedAt: parseUtc(p["fromdate"]),
+      endedAt: parseUtc(p["todate"]),
       // Carried so the geometry request can be built without guessing at it.
       ...({ episode: String(p["episodeid"] ?? "") } as Record<string, string>),
     });

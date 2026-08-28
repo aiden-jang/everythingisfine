@@ -216,10 +216,20 @@ export function cycloneNote(
 }
 
 /** Lead with the age: GDACS flags no volcano current, and one that looks live and is not would mislead. */
+// `held` is what the feed carries, `count` what the window kept. They differ only here, and a layer that
+// vanishes without a word reads as a broken app rather than a fact about volcanoes.
 export function volcanoNote(
-  count: number, newest: number | null, now: number, archived = false,
+  count: number, newest: number | null, now: number, archived = false, held = count,
 ): string | null {
-  if (count === 0) return null;
+  if (count === 0) {
+    if (held === 0 || archived) return null;
+    const days = newest === null ? null : Math.max(0, Math.round((now - newest) / 86_400_000));
+    return "the triangles are volcanoes, and none are shown. "
+      + (days === null
+        ? "The logged episodes are undated, so this window cannot place them. "
+        : `The newest logged episode ended ${days} day${days === 1 ? "" : "s"} ago, outside this window. `)
+      + "Widen the window to bring them back.";
+  }
   const days = newest === null ? null : Math.max(0, Math.round((now - newest) / 86_400_000));
   // "Today" and "ago" are spoken from now; the archived clock is not now.
   const plural = days === 1 ? "" : "s";

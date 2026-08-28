@@ -123,6 +123,7 @@ export function parseHistory(
         id, source: null, name: stormName(title), lon: last.lon, lat: last.lat,
         peakKmh: peaks.length > 0 ? Math.round(Math.max(...peaks) * KTS_TO_KMH) : null,
         track: points.map((p) => ({ lon: p.lon, lat: p.lat })),
+        startedAt: points[0]!.at || null, endedAt,
       });
     } else if (kind === "volcano") {
       // No reporting agency. GDACS credits one on every live hazard; this archive comes from a different
