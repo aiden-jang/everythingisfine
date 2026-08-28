@@ -2376,8 +2376,18 @@ export function App(): JSX.Element {
                 Underscores in the `calc`: CSS needs whitespace around the `-` or `-4.5rem` parses as a
                 negative number and the whole declaration is dropped, silently. `dvh`, not `vh`.
               */
-              <div className="pointer-events-auto order-1 max-h-[calc(100dvh_-_4.5rem)] w-full max-w-[300px] overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
-                {legend}
+              /*
+                A line of its own, so the legend and the hints never share one.
+
+                Sharing a line, the two could not both be right: ordered hints-first the legend sat in the
+                corner but the hints rode the top line whenever it wrapped, and ordered legend-first the
+                hints stayed down and the legend slid to the middle of the canvas. On separate lines the
+                legend keeps the corner and the hints keep the bottom, whatever the legend's height.
+              */
+              <div className="order-1 flex w-full justify-end">
+                <div className="pointer-events-auto max-h-[calc(100dvh_-_4.5rem)] w-full max-w-[300px] overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
+                  {legend}
+                </div>
               </div>
             ) : null}
             <div
@@ -2386,12 +2396,7 @@ export function App(): JSX.Element {
                 of chrome rather than console output lying on the planet. Square and unbordered: the corners
                 in this app are ticks or nothing.
               */
-              /*
-                Ordered after the legend at every width, never before it. The band wraps and is anchored to
-                the bottom, so whatever lands on the first line rides the container's height: with the key
-                folded open the legend grows to most of the viewport and the hints were being carried to the
-                top of the screen.
-              */
+              /* After the legend, and on its own line: see the wrapper above. */
               className="key-hints pointer-events-auto order-2 bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50"
             >
               {/* What the keys do here, not on the globe. Arrows orbit a sphere and pan a map, and a hint
