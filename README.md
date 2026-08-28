@@ -265,21 +265,19 @@ instead of GDACS, because GDACS filters its *current* pool by date rather than h
 The aurora has no archived branch at all and never will: NOAA publishes a forecast for a stamped
 minute, so there is no past oval to ask for.
 
-**The browser suite runs in CI but does not gate the deploy.** It load-tests itself: a full parallel run
-puts two design tests red that both pass in isolation in 32 seconds, and `design.spec.ts` on its own
-runs 27 green in two minutes. The config drops to one worker and doubles the timeouts under CI, which
-should remove the contention, but a runner has fewer cores and software-rendered WebGL and that has
-not been observed yet. It becomes a gate once it has been green on a runner.
+**The browser suite runs in CI but does not gate the deploy.** Its first run there went 69 green and 3
+red in 29 minutes, at one worker with tripled budgets, so contention was not the explanation. Two of
+the three were assertions that measured the machine rather than the app - a camera position compared
+as a rounded string, and a fixed sampling window standing in for "the tour narrated" - and both are
+fixed. The third, a link carrying a cross-section, opens the panel locally in 12.9 seconds and was not
+found in 30 on the runner, which is a factor of thirty on one step and not a slowness story. It needs
+the trace, which the first run did not upload because the job pointed at `playwright-report/` where
+the config writes `test-results/`. It becomes a gate once it has been green on a runner.
 
 **The build-mode run skips seven tests.** `pnpm test:e2e:build` exercises `dist` and is the stronger
 gate against a bundler-only failure - a purged Tailwind class, a mis-split dynamic import, both of
 which have shipped here - but the tests that reach for `window.__globe` skip there by construction,
 because a production bundle should not carry a debug surface. It is a deliberate pre-release run.
-
-**The size distribution reads wrong on fixture data.** `e2e/feeds.ts` draws magnitudes at a b-value
-of 0.625 where the Earth sits between 0.8 and 1.2, so the chart quotes "about 5 times as many" on
-fixtures against "about 10" on a real feed. Changing it moves the count at every magnitude threshold
-and half the browser suite asserts on those.
 
 **The eclipse shadow is a picture, never a forecast.** The lunar series is good to about a tenth of a
 degree, which at sixty Earth radii of lever arm is roughly 670km on the ground, and UTC stands in for
