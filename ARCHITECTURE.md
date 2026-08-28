@@ -6457,3 +6457,23 @@ So the budget splits on `process.env.CI`, the same way `playwright.config.ts` sp
 and for the same reason: 22 on a dev machine, tight enough that the sort coming back would read 33.5 and trip
 it, and 32 on CI, 27% over what that hardware actually measures. `process` is declared locally rather than
 pulling in @types/node, which is `store.test.ts`'s pattern.
+
+### The same swallow, twice more, in the fix for it
+
+The guard that stopped the permalink writer clobbering a pasted link was put on the interval, which is where
+the wide window was. It was not the only caller. `write()` is also called directly by its own effect, which
+re-runs on six dependencies, so the invariant held by luck rather than by construction.
+
+Moving the guard into `write()` covers all three call sites and says the rule once: never overwrite a hash
+this app did not write, whoever is asking.
+
+**That introduced a second version of the same bug, caught at 1 run in 8.** `lastWritten.current =
+window.location.hash` sat beside each call, so a *blocked* write still adopted the pasted hash - and the
+`hashchange` handler then compared that against itself, found no difference, and skipped the reload. The link
+was swallowed again, through the door the guard had just closed. The assignment belongs inside `write()`,
+after the `replaceState`, where it only happens when a write actually did.
+
+Ten consecutive runs of the three permalink tests afterwards, against one failure in eight before.
+
+The shape is worth keeping in mind: a guard and the bookkeeping it guards have to live together, or the
+guard protects the action and leaves the record lying.
