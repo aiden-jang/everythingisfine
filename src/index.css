@@ -591,6 +591,14 @@
    */
   .scroll-fade {
     mask-image: linear-gradient(to bottom, #000 calc(100% - 12px), transparent 100%);
+    /*
+     * Keep a focused row out of the fade it sits in.
+     *
+     * Tabbing scrolls a row flush to the bottom edge, which is exactly the 12px the mask dissolves: half
+     * the rows in the list came to rest with the bottom of their focus ring rubbed out. Measured at 7 of
+     * 14. 16px is the fade plus the ring's own 2px outline and 2px offset.
+     */
+    scroll-padding-block-end: 16px;
   }
 
   /*
