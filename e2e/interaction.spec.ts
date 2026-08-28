@@ -1530,7 +1530,9 @@ test("the tour names where the camera is, not where it is going", async ({ page 
     return seen;
   });
 
-  expect(named.length, "the tour never narrated at all").toBeGreaterThan(2);
+  // Above zero, not above two. The count is only proof the tour narrated; how many samples land inside an
+  // arrived window is a fact about the machine, and a runner caught exactly 2. The loop below is the test.
+  expect(named.length, "the tour never narrated at all").toBeGreaterThan(0);
 
   /** Where each region sits, from `regions.ts`. Only the ones the tour can reach on this fixture. */
   const at: Record<string, number> = {

@@ -573,6 +573,18 @@ export function App(): JSX.Element {
     write();
     lastWritten.current = window.location.hash;
     const timer = window.setInterval(() => {
+      /*
+       * Never overwrite a hash this app did not write.
+       *
+       * Pasting a link changes the fragment and queues a `hashchange`, and the handler below reloads on it.
+       * Without this guard the interval could land in between: `replaceState` would put the app's own state
+       * back over the pasted link, and the handler would then compare that against `lastWritten`, find them
+       * equal, and skip the reload. The link is swallowed and the tab keeps showing the old view.
+       *
+       * Caught as a 1-in-6 flake in the browser test for a shared cross-section, which is the field most
+       * likely to expose it: it is the one nobody's current state would happen to reproduce.
+       */
+      if (window.location.hash !== lastWritten.current) return;
       write();
       lastWritten.current = window.location.hash;
     }, 1000);
@@ -2226,10 +2238,20 @@ export function App(): JSX.Element {
           </Suspense>
 
           <div
-            /* Stops where the pinned panel starts, the same way it stops at the rail. Full width, it
-               truncated the key hints and hid a fifth of the cross-section behind the panel. */
+            /*
+              Stops where whichever panel is open starts, the same way it stops at the rail. Full width, it
+              truncated the key hints and hid a fifth of the cross-section behind the panel.
+             *
+              Both panels, not just the pinned earthquake. They share one slot, so a mark card is exactly as
+              wide and exactly as much in the way - and the band is right-aligned, so the legend is the first
+              thing under it. Clicking a flood covered "MAGNITUDE 2.0 AND ABOVE" entirely.
+             *
+              `pinned` rather than `shownQuake` on the earthquake side, because that panel is held past the
+              unpin to animate out and the band should give the width back at once. A mark card unmounts on
+              the spot, so `markSubject` alone is the same rule.
+            */
             className={`pointer-events-none absolute bottom-0 left-0 z-[1] flex flex-wrap items-end justify-end gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)] ${
-              shownQuake && pinned ? "right-0 xl:right-[var(--panel-w)]" : "right-0"
+              markSubject || (shownQuake && pinned) ? "right-0 xl:right-[var(--panel-w)]" : "right-0"
             }`}
             hidden={cinema}
           >
