@@ -70,12 +70,17 @@ jobs:
           path: test-results/
           retention-days: 7
 
-  # Auto-deploy on merge to main, only after the checks above pass.
+  # Auto-deploy on merge to main, only after both gates above pass.
+  #
+  # `e2e` gates this before it has ever been green on a runner, which is deliberate: the suite covers the
+  # claims only a browser can settle, and a deploy that ships past a red one is the outcome the job exists
+  # to stop. Expect it to block until the last known failure - a link carrying a cross-section - is either
+  # explained by its trace or gone.
   #
   # Needs a CLOUDFLARE_API_TOKEN repo secret with Workers Scripts:Edit. No D1 permission, because
   # there is no database and no migration step. Wrangler infers the account from the token.
   deploy:
-    needs: check
+    needs: [check, e2e]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     concurrency:
