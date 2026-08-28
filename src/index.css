@@ -577,6 +577,23 @@
   }
 
   /*
+   * The rail's fade, for the two boxes inside it that scroll.
+   *
+   * Same reason as the rail's own: a row sliced flat against the bottom edge reads as a rendering fault
+   * rather than as more below. The regions box hides 107px and the event list 2,500, at every width, and
+   * neither had it - the mask was written for the rail and never followed the content in.
+   *
+   * Bottom only, where the rail fades both edges. These two sit under a heading, so their top edge is a
+   * start rather than a cut, and 12px off the top of a 132px box is a fifth of it dimmed for nothing.
+   *
+   * Safe at every width, unlike the rail's: neither box has a ground of its own, so there is no frosted
+   * background for the mask to erode.
+   */
+  .scroll-fade {
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 12px), transparent 100%);
+  }
+
+  /*
    * The key hints are for a keyboard, so a phone with no keyboard does not get them.
    *
    * Every entry names something a touch-only device cannot do: there are no arrow keys, no `+`, no

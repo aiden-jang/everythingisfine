@@ -2068,7 +2068,7 @@ export function App(): JSX.Element {
                     text-[12px] text-ink placeholder:text-faint"
                 />
               </div>
-              <div ref={regionsRef} className="rail-regions">
+              <div ref={regionsRef} className="rail-regions scroll-fade">
                 {query ? (
                   results.hits.length > 0 ? (
                     <>

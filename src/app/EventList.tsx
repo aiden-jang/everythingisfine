@@ -167,7 +167,7 @@ export function EventList({
         them, so the whole app could be dragged off the top of the screen. `overflow: clip` did not fix it.
       */}
       <ul
-        className="mt-2 min-h-0 flex-1 overflow-y-auto pr-2 [contain:paint]"
+        className="scroll-fade mt-2 min-h-0 flex-1 overflow-y-auto pr-2 [contain:paint]"
         onKeyDown={onKeyDown}
       >
         {quakes.map((quake, i) => (
