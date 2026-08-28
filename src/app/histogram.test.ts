@@ -261,3 +261,45 @@ describe("corroboration inside the span both feeds cover", () => {
     expect(out.overlap).toEqual({ events: 0, both: 0 });
   });
 });
+
+describe("naming the event behind each bar", () => {
+  const at = (bucketsAgo: number) => NOW - bucketsAgo * HOUR - HOUR / 2;
+
+  it("carries the strongest event in the bucket, not merely its magnitude", () => {
+    const big = quake({ magnitude: 6.1, time: at(3) });
+    const small = quake({ magnitude: 3.0, time: at(3) });
+    const { bars } = histogram(walk([small, big]), filters(), NOW, NOW - 24 * HOUR);
+    const bar = bars.find((b) => b.bucketsAgo === 3)!;
+    expect(bar.lead?.key).toBe(big.key);
+    expect(bar.lead?.magnitude).toBe(6.1);
+  });
+
+  it("leaves an empty bucket without a lead, so the strip marks nothing there", () => {
+    const { bars } = histogram(walk([quake({ time: at(3) })]), filters(), NOW, NOW - 24 * HOUR);
+    expect(bars.find((b) => b.bucketsAgo === 7)!.lead).toBeNull();
+  });
+
+  it("places the tick at the moment, not at the middle of its bucket", () => {
+    // Six hours back in a 24-hour window is three quarters of the way along.
+    const { bars } = histogram(
+      walk([quake({ time: NOW - 6 * HOUR })]), filters(), NOW, NOW - 24 * HOUR,
+    );
+    const bar = bars.find((b) => b.lead !== null)!;
+    expect(bar.lead!.position).toBeCloseTo(0.75, 5);
+  });
+
+  it("keeps a future origin time inside the strip rather than off its right edge", () => {
+    // Agencies and browsers disagree about the clock by a second or two, and the window filter accepts it.
+    const { bars } = histogram(
+      walk([quake({ time: NOW + 2_000 })]), filters(), NOW, NOW - 24 * HOUR,
+    );
+    expect(bars.find((b) => b.lead !== null)!.lead!.position).toBe(1);
+  });
+
+  it("ignores what the filters already excluded, so no tick outlives its bar", () => {
+    const { bars } = histogram(
+      walk([quake({ magnitude: 1.1, time: at(2) })]), filters({ minMagnitude: 2 }), NOW, NOW - 24 * HOUR,
+    );
+    expect(bars.every((b) => b.lead === null)).toBe(true);
+  });
+});

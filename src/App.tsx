@@ -988,7 +988,14 @@ export function App(): JSX.Element {
         if (query) setQuery("");
         else if (sectionLine) setSectionLine(null);
         else if (scrub.at !== null) setScrub(LIVE);
-        else setSelected(null);
+        /*
+          Both panels on one rung, cleared without being read.
+
+          They share a slot, so at most one is open and clearing both is exact. Reading `markId` here
+          instead would need it in the dependency list, and the listener would go on closing over the
+          value it was armed with: escape did nothing to a mark card for exactly that reason.
+        */
+        else { setMarkId(null); setSelected(null); }
         return;
       }
       if (document.activeElement && document.activeElement !== document.body) return;
@@ -1242,7 +1249,6 @@ export function App(): JSX.Element {
 
               <MagnitudeFilter
                 ramp={ramp}
-                scale={!markSubject}
                 value={filters.minMagnitude}
                 onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
                 aurora={onGlobe.aurora}
@@ -1964,6 +1970,7 @@ export function App(): JSX.Element {
             <hr className="my-3.5 border-t border-hairline" />
             <Timeline
               bars={bars}
+              onSelect={selectQuake}
               archived={archived}
               ramp={ramp}
               hours={hours}
@@ -2355,8 +2362,12 @@ export function App(): JSX.Element {
                 />
               </div>
             ) : null}
-            {onMap && !flat ? (
+            {onMap && !flat && !markSubject ? (
               /*
+                Gone entirely while a mark card is open, not merely narrowed. A flood has no magnitude, no
+                depth and no sources, so every control in here describes something other than what the
+                reader just opened.
+
                 Capped and scrolling, because the legend outgrew the screen. At 1280x720 the panel reached
                 845px, putting the magnitude slider 104px above the top of the window with nothing in the
                 ancestor chain to catch it. The control is at the top and the prose below, so capping keeps
@@ -2365,7 +2376,7 @@ export function App(): JSX.Element {
                 Underscores in the `calc`: CSS needs whitespace around the `-` or `-4.5rem` parses as a
                 negative number and the whole declaration is dropped, silently. `dvh`, not `vh`.
               */
-              <div className="pointer-events-auto order-1 max-h-[calc(100dvh_-_4.5rem)] w-full max-w-[300px] overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50 xl:order-2">
+              <div className="pointer-events-auto order-1 max-h-[calc(100dvh_-_4.5rem)] w-full max-w-[300px] overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
                 {legend}
               </div>
             ) : null}
@@ -2375,7 +2386,13 @@ export function App(): JSX.Element {
                 of chrome rather than console output lying on the planet. Square and unbordered: the corners
                 in this app are ticks or nothing.
               */
-              className="key-hints pointer-events-auto order-2 bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50 xl:order-1"
+              /*
+                Ordered after the legend at every width, never before it. The band wraps and is anchored to
+                the bottom, so whatever lands on the first line rides the container's height: with the key
+                folded open the legend grows to most of the viewport and the hints were being carried to the
+                top of the screen.
+              */
+              className="key-hints pointer-events-auto order-2 bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50"
             >
               {/* What the keys do here, not on the globe. Arrows orbit a sphere and pan a map, and a hint
                   row that says orbit while the drag pans is worse than none. */}
@@ -2393,10 +2410,13 @@ export function App(): JSX.Element {
                 ["f", "full"],
                 /*
                  * Only when there is something to clear. `esc` walks one rung at a time - search box,
-                 * section, held cursor, pin - and with all four empty it does nothing, which is the app's
-                 * state on every first load.
+                 * section, held cursor, either panel - and with all of them empty it does nothing, which is
+                 * the app's state on every first load.
+                 *
+                 * `markId` belongs here for the same reason it belongs in the ladder: a mark card is a pin.
+                 * Left out of both, escape neither worked on a flood nor offered to.
                  */
-                ...(query || sectionLine || view.at !== null || selected
+                ...(query || sectionLine || view.at !== null || selected || markId
                   ? [["esc", "clear"] as const]
                   : []),
               ] as const).map(([key, what]) => (

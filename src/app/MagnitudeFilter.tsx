@@ -128,9 +128,6 @@ export interface MagnitudeFilterProps {
   onKeyOpen: (open: boolean) => void;
   /** True on an archived day, which changes the tense of every layer sentence. */
   archived?: boolean;
-  /** Whether to draw the magnitude scale. False while a mark card is open: a flood has no magnitude, so
-   * the threshold describes a filter that does not reach what the reader is looking at. */
-  scale?: boolean;
 }
 
 const TICKS = [MAG_MIN, 3, 5, MAG_MAX];
@@ -155,7 +152,6 @@ export function MagnitudeFilter(
     fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
     motion, motionOn, onMotion, sinkOn, onSink, slabOn, onSlab, slabCount,
     figuresOn, onFigures, sky = false, eclipse = null, herePlace = null, depth, sound, children,
-    scale = true,
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -179,8 +175,6 @@ export function MagnitudeFilter(
     // `data-ramp` marks an element outside the canvas allowed to paint the magnitude ramp, which the
     // design-contract test excludes by name rather than by loosening the rule. See DESIGN.md 3.1.
     <div data-ramp>
-      {!scale ? null : (
-        <>
       <label className="label block" htmlFor="mag">
         Magnitude {value.toFixed(1)} and above
       </label>
@@ -214,8 +208,6 @@ export function MagnitudeFilter(
           <span key={t}>{i === TICKS.length - 1 ? `${t}+` : t.toFixed(1)}</span>
         ))}
       </div>
-        </>
-      )}
 
       {children}
 
