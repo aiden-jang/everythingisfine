@@ -125,6 +125,17 @@ describe("saying that the window emptied a layer", () => {
     expect(note).toContain("the newest 23 days back");
   });
 
+  it("names the window that would show them, rather than saying widen", () => {
+    // Smallest that reaches: a month to find a three-day-old flood buries it in everything else.
+    expect(outsideWindowNote([tally("flood", 2, 0, NOW - 3 * DAY)], NOW)).toContain("so try 7d.");
+    expect(outsideWindowNote([tally("fire", 2, 0, NOW - 23 * DAY)], NOW)).toContain("so try 30d.");
+  });
+
+  it("falls back to widening in general when nothing offered reaches that far", () => {
+    const note = outsideWindowNote([tally("volcano", 2, 0, NOW - 400 * DAY)], NOW);
+    expect(note).toContain("widen the window");
+  });
+
   it("leaves the distance out rather than guessing when the layer carries no dates", () => {
     const note = outsideWindowNote([tally("fire", 5, 0, null)], NOW);
     expect(note).toContain("holds 5, so widen");
