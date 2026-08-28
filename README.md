@@ -265,14 +265,15 @@ instead of GDACS, because GDACS filters its *current* pool by date rather than h
 The aurora has no archived branch at all and never will: NOAA publishes a forecast for a stamped
 minute, so there is no past oval to ask for.
 
-**The browser suite runs in CI but does not gate the deploy.** Its first run there went 69 green and 3
-red in 29 minutes, at one worker with tripled budgets, so contention was not the explanation. Two of
-the three were assertions that measured the machine rather than the app - a camera position compared
-as a rounded string, and a fixed sampling window standing in for "the tour narrated" - and both are
-fixed. The third, a link carrying a cross-section, opens the panel locally in 12.9 seconds and was not
-found in 30 on the runner, which is a factor of thirty on one step and not a slowness story. It needs
-the trace, which the first run did not upload because the job pointed at `playwright-report/` where
-the config writes `test-results/`. It becomes a gate once it has been green on a runner.
+**The browser suite gates the deploy without ever having been green on a runner.** Its first CI run went
+69 green and 3 red in 29 minutes, at one worker with tripled budgets, so contention was not the
+explanation. Two of the three were assertions that measured the machine rather than the app - a camera
+position compared as a rounded string, and a fixed sampling window standing in for "the tour narrated" -
+and both are fixed. The third, a link carrying a cross-section, opens the panel locally in 12.9 seconds
+and was not found in 30 on the runner: a factor of thirty on one step, not a slowness story. It needs
+the trace, which the first run did not upload because the job pointed at `playwright-report/` where the
+config writes `test-results/`. Gating on it now is the deliberate choice - a deploy that ships past a red
+browser suite is what the job exists to stop - and it may well block the next merge.
 
 **The build-mode run skips seven tests.** `pnpm test:e2e:build` exercises `dist` and is the stronger
 gate against a bundler-only failure - a purged Tailwind class, a mis-split dynamic import, both of
