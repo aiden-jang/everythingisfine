@@ -367,6 +367,22 @@ export function Timeline({
         </div>
       ) : null}
 
+      {/*
+        What the ticks are, and that the bars are a way in.
+
+        The key names every other mark in this app - the triangles, the rings, the four ticks that are you -
+        and these shipped unexplained. The click had no affordance at all: the bar carries it in its
+        `aria-label` and nothing said it to anybody using a mouse.
+      */}
+      {notable.length > 0 ? (
+        <p className="mt-2 text-[11px] leading-relaxed text-faint">
+          {notable.length === 1
+            ? "The tick marks the largest event. "
+            : `The ticks mark the ${notable.length} largest. `}
+          Click a bar to open the largest in it.
+        </p>
+      ) : null}
+
       {children}
 
       {/* The transport, on its own track rather than on the strip. Moving across the strip holds an hour,

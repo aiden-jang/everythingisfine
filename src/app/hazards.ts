@@ -1,4 +1,5 @@
 import { spanWords } from "./age";
+import { WINDOWS } from "./windows";
 import type { Cyclone } from "../sources/cyclones";
 import type { Flood } from "../sources/floods";
 import type { Volcano } from "../sources/volcanoes";
@@ -160,6 +161,17 @@ export function outsideWindowNote(
   const since = newest === null
     ? ""
     : ` the newest ${Math.max(0, Math.round((now - newest) / 86_400_000))} days back,`;
-  const subject = gone.length === layers.length ? "None of the marks are" : `No ${names(gone.map((l) => l.kind))} are`;
-  return `${subject} in this window. The feed holds ${held},${since} so widen the window to see them.`;
+  const subject = gone.length === layers.length
+    ? "None of the marks are"
+    : `No ${names(gone.map((l) => l.kind))} are`;
+  /*
+   * Name the window that would show them, rather than saying "widen" and leaving the reader to guess which
+   * of the three. Smallest that reaches the newest one, because a month to see a three-day-old flood buries
+   * it in everything else.
+   */
+  const reach = newest === null
+    ? null
+    : WINDOWS.find((w) => now - newest <= w.hours * 3_600_000)?.label ?? null;
+  const advice = reach === null ? "so widen the window to see them." : `so try ${reach}.`;
+  return `${subject} in this window. The feed holds ${held},${since} ${advice}`;
 }
