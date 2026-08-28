@@ -380,6 +380,19 @@
     .rail > [data-rail="regions"] {
       margin-top: 1.125rem;
     }
+
+    /*
+     * Notes last, the same call the tablet grid already makes by putting them in a row of their own at the
+     * bottom. Controls above, commentary below.
+     *
+     * Stacked second, they sat between the headline and the strip and pushed the transport under the fold -
+     * the same 92-visible-pixels problem the grid above was written to fix, left standing at the two widths
+     * that grid does not cover. Somebody reading this app on a desktop concluded it had no timeline at all.
+     *
+     * `order` rather than a move in the markup, because the tablet grid places every block by `grid-area`
+     * and explicit placement ignores it. One rule, one breakpoint, nothing else disturbed.
+     */
+    .rail > .tb-stack { order: 1; }
   }
 
   /*
