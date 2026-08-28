@@ -703,9 +703,21 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
   // It is the shortest route to the event it names.
   await largest.click();
   await expect(page.locator(".zone-panel")).toContainText("M 6.3");
+  /*
+   * Compared as numbers within a degree, never against the rounded string.
+   *
+   * `at=` is written to two decimals off a spring that approaches its target asymptotically, so an exact
+   * match demands it settle inside 0.005 degrees before the poll gives up - and the poll carried its own
+   * 10s, which no CI setting widens. It read 119.92 and 119.95 on a runner: arrived, by any reading a
+   * person would give it, and failing. The claim is that the row flies to the event it names.
+   */
   await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 10_000 })
-    .toMatch(/^#at=120,-8\.6,1\.9&/);
+    .poll(async () => {
+      const at = new URLSearchParams((await page.evaluate(() => window.location.hash)).slice(1)).get("at");
+      const [lon, lat, zoom] = (at ?? "").split(",").map(Number);
+      return Math.max(Math.abs((lon ?? 0) - 120), Math.abs((lat ?? 0) + 8.6), Math.abs((zoom ?? 0) - 1.9));
+    }, { timeout: 30_000 })
+    .toBeLessThan(1);
 });
 
 test("the globe unwraps into a map and back", async ({ page }) => {
@@ -1492,10 +1504,24 @@ test("the tour names where the camera is, not where it is going", async ({ page 
 
   // Sampled in the page rather than by polling from here: a round trip per sample is slower than the stop it
   // is trying to observe, and a sparse series lands on the transitions and manufactures its own findings.
+  /*
+   * Collected to a target rather than for a fixed 45 ticks, and the count is only a guard.
+   *
+   * The label appears only once the camera has arrived, so a fixed window really measures how much of it the
+   * machine spent in transit: a runner caught 2 and 3 labelled samples against a bar of 3, and counting
+   * distinct stops instead still came back 2 on a quiet local run. Neither number is the claim.
+   *
+   * The claim is the loop below - that every label names where the camera actually is - and the bug it
+   * guards against shows up on a single sample, because the label and the flight were set on the same tick.
+   * So collect a handful, prove narration happened at all, and let the comparison do the work.
+   */
   const named = await page.evaluate(async () => {
     const seen: { name: string; lon: number }[] = [];
-    for (let i = 0; i < 45; i += 1) {
-      await new Promise((r) => { setTimeout(r, 300); });
+    const deadline = Date.now() + 45_000;
+    while (Date.now() < deadline && seen.length < 12) {
+      // 150ms, not 300. The arrived window inside a stop is under a second on a busy machine, and the
+      // sampler has to land in it more than twice.
+      await new Promise((r) => { setTimeout(r, 150); });
       const head = (document.querySelector("[data-rail=headline]")?.textContent ?? "").replace(/\s+/g, " ");
       const label = /\d\/\d\s*([^·]+)·/.exec(head);
       const globe = (window as unknown as { __globe?: { state: () => { lon: number } } }).__globe;
@@ -1504,7 +1530,7 @@ test("the tour names where the camera is, not where it is going", async ({ page 
     return seen;
   });
 
-  expect(named.length, "the tour never narrated at all").toBeGreaterThan(3);
+  expect(named.length, "the tour never narrated at all").toBeGreaterThan(2);
 
   /** Where each region sits, from `regions.ts`. Only the ones the tour can reach on this fixture. */
   const at: Record<string, number> = {

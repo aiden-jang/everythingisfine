@@ -6367,3 +6367,35 @@ for. And an automated scan for one-line comments that merely restate the identif
 not: "in globe radii", "or null when sound is off", "as `YYYY-MM-DD`". There was nothing left to take.
 
 The rule is now written down in README.md, where somebody adding a file will see it before they write one.
+
+### The browser suite's first CI run, and three tests that were measuring the machine
+
+`check` and `deploy` went green; the `e2e` job I had just added failed with 3 of 72. The reflex is to widen a
+timeout, and it was wrong twice over here: the config already ran CI at one worker with a 90-second test
+budget and a 30-second expect budget, so contention was not available as an explanation, and two of the three
+were brittle regardless of what they ran on.
+
+**A rounded camera position, asserted as a string.** The largest-event row flies the camera, and the test
+matched `location.hash` against `/^#at=120,-8\.6,1\.9&/`. `at=` is written to two decimals off a spring that
+approaches asymptotically, so an exact match demands it settle inside 0.005 degrees - and the poll carried its
+own hard-coded 10 seconds, which no CI setting widens. The runner read **119.92** and **119.95**: arrived, by
+any reading a person would give it, and failing. It now parses the three numbers and asserts they are within a
+degree of the target, which is the claim the test was always making.
+
+**A fixed sampling window, standing in for "the tour narrated".** The label only appears once the camera has
+arrived, so 45 ticks of 300ms really measured how much of 13.5 seconds the machine spent in transit: the
+runner caught 2 and 3 labelled samples against a bar of 3. Counting distinct stops instead was tried and came
+back 2 on a quiet local run, so that was no better. The real assertion in that test is the loop underneath -
+every label names where the camera actually is - and the bug it guards against, the label and the flight being
+set on the same tick, shows up on a single sample. So the count is now only a guard, the sampler runs to a
+target rather than a fixed window, and it ticks at 150ms because the arrived window inside a stop is under a
+second on a busy machine. Ten consecutive local runs, then six more after the interval change.
+
+**The third one I have not diagnosed, and said so rather than guessing.** A link carrying a cross-section
+opens the panel locally in 12.9 seconds and did not find it in 30 on the runner, which is not a slowness story
+- that is a factor of thirty on one step. It needs the trace.
+
+**Which had not been uploaded, because the job I wrote pointed at the wrong directory.** `trace:
+"retain-on-failure"` with no HTML reporter writes to `test-results/`; `playwright-report/` is never created.
+The step logged "No files were found with the provided path" as a warning and the run went red with nothing
+attached. A failure artifact that has never been seen to contain anything is not a diagnostic.
