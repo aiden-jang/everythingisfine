@@ -21,6 +21,9 @@ export interface TimelineProps {
   focusHour: number | null;
   onFocusHourChange: (bucketsAgo: number | null) => void;
   onHoursChange: (hours: number) => void;
+  /** Pins the event a bar stands for. The bar is the control, not the tick: a 2px tick is not a touch
+   * target and the bar already clears 44px. */
+  onSelect: (key: string) => void;
   /** How long one bar covers, for the readout and the axis. */
   bucketMs: number;
   /** True while a wider backlog is still arriving, so the strip can say so rather than look empty. */
@@ -65,6 +68,15 @@ export interface TimelineProps {
 }
 
 const STRIP_PX = 44;
+
+/*
+ * How many events get a tick.
+ *
+ * The bars answer "how much" and could never answer "which one", so a bucket you could see was busy was a
+ * dead end. Five, on a strip a couple of hundred pixels wide: enough to find the one you remember, few
+ * enough to stay countable.
+ */
+const NOTABLE = 5;
 /* The tallest bar stops short of the strip, so a peak reads as a peak rather than as clipping. */
 const BAR_MAX_PX = 39;
 
@@ -109,7 +121,7 @@ const spanLabel = (hours: number): string =>
 export function Timeline({
   bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange, bucketMs, fetching, waiting,
   cursor, parked, playing, onScrub, onStep, onPlayToggle, onLive, cursorLabel, reaches,
-  notes, archived = false, children,
+  notes, archived = false, children, onSelect,
 }: TimelineProps): JSX.Element {
   const peak = peakCount(bars);
   const tallest = bars.find((b) => b.count === peak && peak > 0);
@@ -140,6 +152,14 @@ export function Timeline({
    * height turns the other twenty-three hours into a flat line: the strip would show the swarm and hide
    * the day around it. The peak is printed as a number beside them.
    */
+  /* Copied before sorting: `bars` is a prop, and sorting it in place reorders the strip itself. Strongest
+     chosen, then drawn in time order, because the axis under them is time. */
+  const notable = [...bars]
+    .filter((b) => b.lead !== null)
+    .sort((a, b) => b.lead!.magnitude - a.lead!.magnitude)
+    .slice(0, NOTABLE)
+    .sort((a, b) => a.lead!.position - b.lead!.position);
+
   const heightOf = (count: number): number =>
     count === 0 ? 1 : Math.max(3, Math.round(Math.sqrt(count / peak) * BAR_MAX_PX));
 
@@ -227,7 +247,9 @@ export function Timeline({
               aria-label={bar.observed
                 ? `${bar.count} ${bar.count === 1 ? "event" : "events"}, `
                   + `${bucketAgo(bar.bucketsAgo, bucketMs)}`
+                  + (bar.lead === null ? "" : `, largest M${bar.lead.magnitude.toFixed(1)}`)
                 : `Not covered, ${bucketAgo(bar.bucketsAgo, bucketMs)}`}
+              onClick={() => { if (bar.lead !== null) onSelect(bar.lead.key); }}
               onFocus={() => { setBarAt(i); onFocusHourChange(bar.bucketsAgo); }}
               onPointerEnter={() => onFocusHourChange(bar.bucketsAgo)}
               className={`flex h-full flex-1 cursor-pointer items-end ${
@@ -259,6 +281,23 @@ export function Timeline({
           ))}
         </div>
 
+        {/*
+          The notable events, over the bars they belong to.
+
+          `pointer-events-none`, so the bar underneath still takes the click. The bars stop at 39px inside a
+          44px strip, and this sits in that gutter rather than costing the rail another row.
+        */}
+        {notable.map((bar) => (
+          <span
+            key={bar.lead!.key}
+            aria-hidden="true"
+            className="pointer-events-none absolute top-0 h-[4px] w-[2px] -translate-x-1/2"
+            style={{
+              left: `${bar.lead!.position * 100}%`,
+              background: rampColorAt(ramp, (bar.lead!.magnitude - MAG_MIN) / (MAG_MAX - MAG_MIN)),
+            }}
+          />
+        ))}
         {/* Everything after the cursor, veiled. The globe is only drawing up to the cursor, and a strip
             showing the whole day beside it would be the two views disagreeing about what time it is.
             Lighter than the window veil, because these hours are coming rather than excluded. */}

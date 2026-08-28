@@ -18,6 +18,16 @@ export interface Bar {
   count: number;
   /** Strongest magnitude in the bucket, or null when nothing is in it. */
   peak: number | null;
+  /**
+   * The event behind that peak, or null on an empty bucket.
+   *
+   * Carried so the strip can mark the notable ones and hand a key back on a click. The bars answer "how
+   * much" and could not answer "which one", which is the whole of why the timeline was unsearchable.
+   *
+   * `position` is a fraction of the window, 0 at the old edge, so a tick sits over the moment rather than
+   * over the middle of its bucket. Computed here because this is where `now` and the window both are.
+   */
+  lead: { key: string; magnitude: number; position: number } | null;
   /** Whether the buffer covered this whole bucket. With no backend the buffer starts when the page opens,
    * so most of the strip is time the app never saw, and drawing that as an empty bucket claims a quiet
    * night it was not present for. */
@@ -76,6 +86,7 @@ export function histogram(
   const bucketMs = Math.max(1, filters.windowMs / BUCKETS);
   const counts = new Array<number>(BUCKETS).fill(0);
   const peaks = new Array<number | null>(BUCKETS).fill(null);
+  const leaders = new Array<Quake | null>(BUCKETS).fill(null);
   let strongest: Quake | null = null;
   let energyTotal = 0;
   // The winner's magnitude, tracked beside it, because the share needs the number and not the event.
@@ -101,7 +112,7 @@ export function histogram(
     const bucket = Math.max(0, bucketsAgo);
     counts[bucket] += 1;
     const m = quake.primary.magnitude;
-    if (peaks[bucket] === null || m > peaks[bucket]!) peaks[bucket] = m;
+    if (peaks[bucket] === null || m > peaks[bucket]!) { peaks[bucket] = m; leaders[bucket] = quake; }
     if (strongest === null || m > strongest.primary.magnitude) {
       strongest = quake;
       topMagnitude = m;
@@ -118,10 +129,17 @@ export function histogram(
     const bucketsAgo = BUCKETS - 1 - i;
     // The span this bar covers, as [start, end).
     const start = now - (bucketsAgo + 1) * bucketMs;
+    const lead = leaders[bucketsAgo] ?? null;
     return {
       bucketsAgo,
       count: counts[bucketsAgo]!,
       peak: peaks[bucketsAgo]!,
+      lead: lead === null ? null : {
+        key: lead.key,
+        magnitude: lead.primary.magnitude,
+        // Clamped: an origin time a second in the future would otherwise place a tick past the edge.
+        position: Math.max(0, Math.min(1, 1 - (now - lead.primary.time) / filters.windowMs)),
+      },
       /*
        * The bar straddling the moment the page opened counts as unobserved. It holds real events and its
        * number is still wrong, because the app was absent for part of the span it claims to total.
