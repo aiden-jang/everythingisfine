@@ -3,7 +3,12 @@
  *
  * The list caps at 100 and there is no way past it: `limit`, `pagesize`, `count` and `page` are all ignored
  * and all return exactly 100. Angola alone returns a full hundred wildfires, so the global response is a
- * truncated slice of thousands. Floods and volcanoes are complete; wildfires are not, and say so.
+ * truncated slice of thousands.
+ *
+ * Volcanoes are 23 and complete. Floods also come back at exactly 100 and are therefore truncated - asking
+ * for India alone returns 10 where the global list carries 3 - but every *current* flood survives the cut,
+ * measured across the seven countries most likely to have one. That is why the flood count needs no floor
+ * beside it on screen and the wildfire count does. `country=` is honoured, so it is how you re-check.
  *
  * One request per type. `eventlist=EQ;TC;FL;VO;DR;WF` returns 100 total, 69 of them wildfires.
  */
