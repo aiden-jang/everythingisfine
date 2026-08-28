@@ -545,7 +545,25 @@ export function App(): JSX.Element {
   // Rewritten in place, never pushed. Otherwise every filter nudge is a history entry and Back walks
   // somebody through a hundred of them instead of leaving the page.
   useEffect(() => {
+    /*
+     * Never overwrite a hash this app did not write, whoever is calling.
+     *
+     * Pasting a link changes the fragment and queues a `hashchange`, and the handler below reloads on it.
+     * Land a write in between and `replaceState` puts the app's own state back over the pasted link; the
+     * handler then compares that against `lastWritten`, finds them equal, and skips the reload. The link is
+     * swallowed and the tab keeps showing the old view.
+     *
+     * Caught as a 1-in-6 flake in the browser test for a shared cross-section - the field most likely to
+     * expose it, being the one nobody's current state would happen to reproduce.
+     *
+     * The guard lives here rather than at the call sites because there are three: this effect's own call,
+     * the interval below, and any re-run when one of the six dependencies changes. Guarding one leaves the
+     * others open, and the invariant is about the writer, not about who asked.
+     *
+     * On mount `lastWritten` is initialised to the current hash, so the first write is never blocked.
+     */
     const write = (): void => {
+      if (window.location.hash !== lastWritten.current) return;
       const pinnedNow = selected ? feed.store.get(selected) : undefined;
       const reading = pinnedNow?.primary;
       const fragment = encode({
@@ -569,25 +587,13 @@ export function App(): JSX.Element {
         cursor: view.at,
       });
       history.replaceState(null, "", `#${fragment}`);
+      // Recorded here, and only when a write actually happened. Setting it beside the call sites means a
+      // blocked write still adopts the pasted hash, and the handler below then treats somebody else's link
+      // as its own and skips the reload - the same swallow, through a door the guard had just closed.
+      lastWritten.current = window.location.hash;
     };
     write();
-    lastWritten.current = window.location.hash;
-    const timer = window.setInterval(() => {
-      /*
-       * Never overwrite a hash this app did not write.
-       *
-       * Pasting a link changes the fragment and queues a `hashchange`, and the handler below reloads on it.
-       * Without this guard the interval could land in between: `replaceState` would put the app's own state
-       * back over the pasted link, and the handler would then compare that against `lastWritten`, find them
-       * equal, and skip the reload. The link is swallowed and the tab keeps showing the old view.
-       *
-       * Caught as a 1-in-6 flake in the browser test for a shared cross-section, which is the field most
-       * likely to expose it: it is the one nobody's current state would happen to reproduce.
-       */
-      if (window.location.hash !== lastWritten.current) return;
-      write();
-      lastWritten.current = window.location.hash;
-    }, 1000);
+    const timer = window.setInterval(write, 1000);
     return () => window.clearInterval(timer);
     // `snapshot.archive` is a dependency because `write` closes over it and the interval below keeps
     // calling the closure it was created with. Without it, entering an archive left the link saying live.
