@@ -32,7 +32,8 @@ import {
   closestTo, loadZones, localZone, viewerPlace, type ZoneTable,
 } from "./app/viewer";
 import {
-  BASELINE_DAYS, BASELINE_FROM, BASELINE_MIN_MAGNITUDE, BASELINE_TO, comparableCount, rankDay,
+  BASELINE_DAYS, BASELINE_FROM, BASELINE_MIN_MAGNITUDE, BASELINE_TO, BASELINE_WEEKS,
+  comparableCount, rankDay, type Span as BaselineSpan,
   sharePercent,
 } from "./data/baseline";
 import {
@@ -138,7 +139,11 @@ export function App(): JSX.Element {
   const snapshot = useFeed();
   const [filters, setFilters] = useState<Filters>(() => ({
     minMagnitude: shared.minMagnitude ?? DEFAULT_FILTERS.minMagnitude,
-    windowMs: (shared.windowHours ?? 24) * 3_600_000,
+    // From `DEFAULT_FILTERS`, not a 24 written again here. The default moved to a week and this did not,
+    // so the app went on opening on a day while the constant said otherwise.
+    windowMs: shared.windowHours === undefined
+      ? DEFAULT_FILTERS.windowMs
+      : shared.windowHours * 3_600_000,
     sources: new Set(shared.sources ?? [...DEFAULT_FILTERS.sources]),
   }));
   const [selected, setSelected] = useState<string | null>(null);
@@ -1267,13 +1272,22 @@ export function App(): JSX.Element {
     [strongest, snapshot.archive],
   );
 
+  /*
+   * Which population the headline count is held against, or null for a window that has none.
+   *
+   * A day and a week are the two the table carries. At a month there is nothing honest to compare with, so
+   * the line stands down rather than ranking thirty days against seven.
+   */
+  const baselineSpan: BaselineSpan | null = filters.windowMs === 24 * 3_600_000
+    ? "day"
+    : filters.windowMs === 7 * 24 * 3_600_000 ? "week" : null;
   const baseline = useMemo(() => {
     if (replay) return null;
     if (snapshot.archive) {
       const { from, to } = snapshot.archive;
-      return rankDay(comparableCount(feed.store, from, to), true);
+      return rankDay(comparableCount(feed.store, from, to), true, "day");
     }
-    if (filters.windowMs !== 24 * 3_600_000 || !edge.complete) return null;
+    if (baselineSpan === null || !edge.complete) return null;
     /*
      * Nothing drawn, nothing to rank.
      *
@@ -1285,7 +1299,7 @@ export function App(): JSX.Element {
      * M4.5+" under a headline reading 0. `revealedNow ?? shown` is what the headline itself prints.
      */
     if ((revealedNow ?? shown) <= 0) return null;
-    return rankDay(comparableCount(feed.store, edge.at, now), true);
+    return rankDay(comparableCount(feed.store, edge.at, now), true, baselineSpan);
   }, [feed.store, snapshot.archive, snapshot.revision, filters.windowMs, edge.complete, edge.at, now, replay, shown, revealedNow]);
   // On the clock, not memoised. It reads `now`, and the reach it names is a moving distance from the
   // present: keyed on the revision it would freeze "18h" at whatever it was when the last event landed.
@@ -1747,7 +1761,10 @@ export function App(): JSX.Element {
                 {" at M"}<span className="tabular-nums">{BASELINE_MIN_MAGNITUDE}</span>{"+: "}
                 {baseline.direction} than{" "}
                 <span className="text-dim tabular-nums">{sharePercent(baseline.share)}%</span> of the{" "}
-                <span className="tabular-nums">{BASELINE_DAYS.toLocaleString("en")}</span> days from{" "}
+                <span className="tabular-nums">
+                  {(baselineSpan === "week" ? BASELINE_WEEKS : BASELINE_DAYS).toLocaleString("en")}
+                </span>{" "}
+                {baselineSpan === "week" ? "weeks" : "days"} from{" "}
                 {BASELINE_FROM} to {BASELINE_TO}.
               </p>
             ) : null}
