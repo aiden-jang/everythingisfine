@@ -2290,21 +2290,6 @@ export function App(): JSX.Element {
 
           {/* Styled rather than left to the browser: an unstyled `a` takes the user-agent blue, in the one
               app whose chrome is held under a chroma ceiling and tested for it. */}
-          <p className="mt-4 pt-1 text-[11px] text-faint">
-            made by{" "}
-            <a
-              href="https://www.aidenjang.com"
-              target="_blank"
-              rel="noreferrer"
-              /*
-                `inline-flex`, not inline. `min-height` has no effect on a non-replaced inline element, so
-                the 44px touch minimum slid straight off an inline `a` and the finger test caught it at 14px.
-              */
-              className="inline-flex items-center text-faint underline decoration-from-font underline-offset-2 transition-colors hover:text-dim"
-            >
-              aiden jang
-            </a>
-          </p>
         </aside>
 
         <Resizer
@@ -2438,6 +2423,28 @@ export function App(): JSX.Element {
                 </div>
               </div>
             ) : null}
+            {/*
+              Beside the hints on their line, pushed to the other end of it.
+
+              It was the last block in the rail, so reaching a credit meant scrolling a column of controls
+              past everything else, and it was the one rail child the tablet grid never named - it auto-flowed
+              into an implicit row of its own. Down here it needs neither.
+            */}
+            <p className="pointer-events-auto order-2 mr-auto text-[11px] text-faint">
+              made by{" "}
+              <a
+                href="https://www.aidenjang.com"
+                target="_blank"
+                rel="noreferrer"
+                /*
+                  `inline-flex`, not inline. `min-height` has no effect on a non-replaced inline element, so
+                  the 44px touch minimum slid straight off an inline `a` and the finger test caught it at 14px.
+                */
+                className="inline-flex min-h-11 items-center text-faint underline decoration-from-font underline-offset-2 transition-colors hover:text-dim"
+              >
+                aiden jang
+              </a>
+            </p>
             <div
               /*
                 A ground under it, like the legend and the section band, so a row of monospace keys is a chip
