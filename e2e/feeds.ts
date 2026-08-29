@@ -119,6 +119,18 @@ function day(seed = 4, count = 240): Quake[] {
   return out.sort((a, b) => b.ago - a.ago);
 }
 
+/*
+ * An FDSN timestamp, which is UTC whether or not it says so.
+ *
+ * The app sends `2026-08-26T00:00:00` because the spec asks for no zone suffix, and `Date.parse` reads a
+ * bare date-time as local. So this fixture built its day at the runner's offset while the app bucketed
+ * against UTC midnight, and the newest hours of every archived day landed after the app's `now` and
+ * clamped into the newest bucket: four empty buckets at one end and forty extra events at the other,
+ * on a machine four hours from UTC. Green in London, wrong everywhere else.
+ */
+const fdsnTime = (raw: string | null): number =>
+  Date.parse(/([Zz]|[+-]\d\d:?\d\d)$/.test(raw ?? "") ? raw ?? "" : `${raw ?? ""}Z`);
+
 const usgsFeature = (q: Quake, now: number) => ({
   id: q.id,
   properties: {
@@ -310,8 +322,8 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
 
   await page.route(/fdsnws\/event\/1\/query/, async (route) => {
     const url = new URL(route.request().url());
-    const start = Date.parse(`${url.searchParams.get("starttime") ?? ""}`);
-    const end = Date.parse(`${url.searchParams.get("endtime") ?? ""}`);
+    const start = fdsnTime(url.searchParams.get("starttime"));
+    const end = fdsnTime(url.searchParams.get("endtime"));
     // Only an archive query, handed back to the routes above otherwise. EMSC's live seed uses this same
     // endpoint, so claiming every `fdsnws` request replaced the capped seed fixtures the reach test depends
     // on. `starttime`/`endtime` are the archive's parameters; the live seed says `start`.
