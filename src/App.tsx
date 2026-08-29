@@ -2154,9 +2154,19 @@ export function App(): JSX.Element {
               which is what somebody scanning for where today is quiet came to see. */}
           {/* Open when there is either kind of thing to list. Gated on the region rows alone it tied the
               hazard list to the earthquake feed, and the five layers do not depend on the two agencies. */}
-          {regions.length > 0 || hazards.length > 0 ? (
+          {/*
+            No region index on the flat map.
+
+            It answers where the events are - Indonesia 95, Japan & Kurils 36 - which is the one question a
+            whole world on screen at once has already answered. On the globe it earns its 161px, because
+            half the planet is facing away.
+
+            The hazard list stays either way: a glyph cannot be reached by keyboard, so that disclosure is
+            the only way in to the marks, and it is not an index of anything the map is showing.
+          */}
+          {(regions.length > 0 && !flat) || hazards.length > 0 ? (
             <div data-rail="regions" className="relative">
-              {regions.length > 0 ? (
+              {regions.length > 0 && !flat ? (
                 <>
               {/*
                 Label above the field until the column is wide enough to spare the room. A label sharing a
