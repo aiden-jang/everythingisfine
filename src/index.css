@@ -376,7 +376,7 @@
   }
 
   @media (max-width: 767px), (min-width: 1280px) {
-    .rail > [data-rail="diurnal"],
+    .rail > [data-rail="when"],
     .rail > [data-rail="regions"] {
       margin-top: 1.125rem;
     }
@@ -392,7 +392,20 @@
      * `order` rather than a move in the markup, because the tablet grid places every block by `grid-area`
      * and explicit placement ignores it. One rule, one breakpoint, nothing else disturbed.
      */
-    .rail > .tb-stack { order: 1; }
+    .rail > .tb-stack { order: 2; }
+
+    /*
+     * The events take the room the summary of them was holding.
+     *
+     * Measured at 1440x900 and 1280x800: the list was 0% visible - every earthquake in the app below the
+     * fold - while `regions`, which counts the same events by area, sat fully above it. The tablet grid
+     * already ranks these the other way round, giving the list a column of its own and `regions` a short
+     * cell beside it. These two layouts stack in source order and inherited none of that.
+     *
+     * The height that lets it use the room is on the element itself, in `EventList`: a utility class beats
+     * this file whatever the specificity, because Tailwind's layer comes later.
+     */
+    .rail > [data-rail="regions"] { order: 1; }
   }
 
   /*
@@ -507,7 +520,7 @@
 
     .rail > .titleblock { grid-area: title; }
     .rail > .tb-stack { grid-area: notes; }
-    .rail > [data-rail="diurnal"] { grid-area: when; }
+    .rail > [data-rail="when"] { grid-area: when; }
     .rail > [data-rail="activity"] { grid-area: activity; }
     .rail > [data-rail="legend"] { grid-area: legend; }
     .rail > [data-rail="regions"] { grid-area: regions; }
