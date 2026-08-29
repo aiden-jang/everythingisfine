@@ -546,6 +546,20 @@ export function App(): JSX.Element {
     if (saved !== null) return saved !== "0";
     return window.matchMedia("(min-width: 1280px)").matches;
   });
+  /*
+   * Folded in the flat map, where the key sits in the rail instead of over the canvas.
+   *
+   * Open, it is 445px of a rail already 964px past its own height there, and it put the event list - every
+   * earthquake in the app - at 0% visible, which is the thing the single-column order was fixed to stop.
+   * On the globe the key floats over ocean and costs the rail nothing, so it stays open there.
+   *
+   * Only while nobody has answered: `legendKey` records a real toggle, and a choice outranks this in both
+   * directions exactly as it outranks the width default above.
+   */
+  useEffect(() => {
+    if (stored("legendKey") !== null) return;
+    setKeyOpen(!flat && window.matchMedia("(min-width: 1280px)").matches);
+  }, [flat]);
   // Written on the press, never in an effect on the value. As an effect it fired on mount and persisted
   // the width-derived default, as though somebody had chosen it. Only a real toggle is a choice.
   const changeKeyOpen = useCallback((next: boolean) => {
