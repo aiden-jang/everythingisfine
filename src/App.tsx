@@ -497,6 +497,40 @@ export function App(): JSX.Element {
     setMarkId(null);
     feed.resumeLive();
   }, []);
+  /*
+   * Back to the view the app opens on, without a reload.
+   *
+   * Reloading was the first cut and it threw away the buffer: with no backend the events on screen are
+   * whatever has arrived since the page opened, so a reset cost minutes of accumulation to undo a filter.
+   * This sets the same state a cold load would compute from an empty fragment instead.
+   *
+   * The ramp and the layer toggles are left alone: they are stored preferences rather than anything the
+   * fragment carries, and a colourblind ramp is not something a reset should quietly undo.
+   */
+  const resetView = useCallback(() => {
+    setQuery("");
+    setSectionLine(null);
+    setScrub(LIVE);
+    setSelected(null);
+    setMarkId(null);
+    setFarSideOf(null);
+    setFilters({ ...DEFAULT_FILTERS, sources: new Set(DEFAULT_FILTERS.sources) });
+    // Only when there is an archive to leave: `resumeLive` clears the store, which on the live view would
+    // throw away the buffer this exists to protect.
+    if (feed.snapshot().archive !== null) backToLive();
+    // The window is part of the reset, and the feed seeds per window like the buttons do.
+    if (feed.setWindow(DEFAULT_FILTERS.windowMs)) setPendingRev(feed.snapshot().revision);
+    flyTo.current(145, 12, 1);
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+    /*
+     * Told, not left to notice.
+     *
+     * The writer only writes while the hash is still the one it last wrote, which is what stops it
+     * overwriting a link somebody pasted. Emptying the hash here without saying so left that test failing
+     * forever: the URL would have gone quiet after a reset and never carried another change.
+     */
+    lastWritten.current = window.location.hash;
+  }, [backToLive]);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
   /*
    * The key starts open only where the rail runs the full height of the window.
@@ -1335,18 +1369,8 @@ export function App(): JSX.Element {
       <header className="zone-head flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent" hidden={cinema}>
         <button
           type="button"
-          /*
-            The wordmark is the way back to nothing, the way a masthead usually is.
-
-            Reloads on an empty fragment rather than resetting the pieces this component happens to hold.
-            The fragment carries the camera, the filters, the cursor, the archived day and either panel, and
-            a reset that missed one of them would be a worse lie than no reset at all. The app already
-            treats an outside edit of the hash as a reload, so this is the same door.
-          */
-          onClick={() => {
-            history.replaceState(null, "", window.location.pathname + window.location.search);
-            window.location.reload();
-          }}
+          /* The wordmark is the way back to nothing, the way a masthead usually is. See `resetView`. */
+          onClick={resetView}
           aria-label="Everything Is Fine, back to the default view"
           /*
             Aligned to the first row of controls, not to the middle of them. The group wraps to two rows on
