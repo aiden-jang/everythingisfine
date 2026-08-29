@@ -1775,12 +1775,53 @@ export function App(): JSX.Element {
             ) : null}
           </div>
 
-          <details data-rail="diurnal">
+          {/*
+            The search and the time-of-day fold share a cell.
+
+            `Find` was inside the regions block, so ranking the event list above `regions` sent a control
+            below the fold with it - the same mistake this reorder exists to undo. Paired here it stays
+            above, and the tablet grid still has one child to place rather than a fifth that auto-flows.
+          */}
+          <div data-rail="when">
+              <div role="search" className="mb-1.5 flex flex-col gap-1 xl:flex-row xl:items-baseline xl:gap-2">
+              <label htmlFor="find" className="label shrink-0">Find</label>
+              <input
+                id="find"
+                /*
+                  Text, not `type="search"`: that brings a user-agent cancel button with user-agent styling
+                  into chrome whose rule is that it carries none. Escape already clears this.
+                */
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                /* Enter takes the first result. Without it the only way through was Tab, and a field that
+                   swallows Enter reads as one that did not understand the query. */
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  const first = results.hits[0];
+                  if (first) pick(first);
+                }}
+                placeholder="a region or a place"
+                autoComplete="off"
+                spellCheck={false}
+                /*
+                  The same box and the same focus ring as the day field. This one replaced the global focus
+                  outline with a border tint, which a keyboard user has to hunt for.
+
+                  Font and size stay different: a day is a formatted number and reads in mono, a place name
+                  is prose and does not.
+                */
+                className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1
+                  text-[12px] text-ink placeholder:text-faint"
+              />
+            </div>
+          <details>
             <summary className="disclose text-[11px] text-faint hover:text-dim">
               Time of day
             </summary>
             <Dial counts={clockBins} />
           </details>
+          </div>
 
           {/*
             The key floats only where there is somewhere for it to float. On the globe that corner is ocean.
@@ -2084,38 +2125,6 @@ export function App(): JSX.Element {
                 row takes its width first: at 768px this column is ~180px and the field was left with 87px
                 for a 134px placeholder, so it read "a region or a pla".
               */}
-              <div role="search" className="mb-1.5 flex flex-col gap-1 xl:flex-row xl:items-baseline xl:gap-2">
-                <label htmlFor="find" className="label shrink-0">Find</label>
-                <input
-                  id="find"
-                  /*
-                    Text, not `type="search"`: that brings a user-agent cancel button with user-agent styling
-                    into chrome whose rule is that it carries none. Escape already clears this.
-                  */
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  /* Enter takes the first result. Without it the only way through was Tab, and a field that
-                     swallows Enter reads as one that did not understand the query. */
-                  onKeyDown={(e) => {
-                    if (e.key !== "Enter") return;
-                    const first = results.hits[0];
-                    if (first) pick(first);
-                  }}
-                  placeholder="a region or a place"
-                  autoComplete="off"
-                  spellCheck={false}
-                  /*
-                    The same box and the same focus ring as the day field. This one replaced the global focus
-                    outline with a border tint, which a keyboard user has to hunt for.
-
-                    Font and size stay different: a day is a formatted number and reads in mono, a place name
-                    is prose and does not.
-                  */
-                  className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1
-                    text-[12px] text-ink placeholder:text-faint"
-                />
-              </div>
               <div ref={regionsRef} className="rail-regions scroll-fade">
                 {query ? (
                   results.hits.length > 0 ? (

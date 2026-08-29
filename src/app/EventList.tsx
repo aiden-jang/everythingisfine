@@ -118,7 +118,15 @@ export function EventList({
     */
     <section
       aria-label="Recent earthquakes"
-      className="flex min-h-[8.25rem] flex-1 flex-col"
+      /*
+        A share of the viewport in the two single-column layouts, not just a floor.
+
+        `flex-1` cannot help here: that column is over-subscribed, so there is no free space for a grow
+        factor to claim and this stayed at its 8.25rem floor - measured at 0% visible at 1440x900, every
+        earthquake in the app below the fold. Between 768 and 1279 the grid gives it a column of its own
+        and the floor is all it needs.
+      */
+      className="flex min-h-[8.25rem] flex-1 flex-col max-md:min-h-[30dvh] xl:min-h-[30dvh]"
     >
       <div className="flex items-baseline justify-between">
         <h2 className="label">Recent</h2>
