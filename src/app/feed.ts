@@ -187,6 +187,16 @@ export function createFeed(capacity = 50_000): Feed {
     for (const source of sources) {
       source.start({
         onReadings: (batch) => {
+          /*
+           * Nothing from the present belongs in an archived day.
+           *
+           * `showArchive` stops every source before it clears the store, which prevents the next request
+           * and cannot recall one already in flight. That answer arrived afterwards and was ingested into
+           * the day on screen: its events are dated later than the day's end, so the window filter kept
+           * them - a negative age is inside any window - and the strip clamped every one of them into the
+           * newest bucket. An archived day was counting events that had not happened yet.
+           */
+          if (archive !== null) return;
           for (const reading of batch) {
             const result = store.ingest(reading);
             if (result.isNew && arrived.length < ARRIVAL_LIMIT) arrived.push(result.quake);
@@ -201,6 +211,9 @@ export function createFeed(capacity = 50_000): Feed {
         // Only ever wider. A second seed reaching further back widens it; one reaching less far does not
         // narrow what the first already fetched.
         onSeeded: (from) => {
+          // Same race, same rule: an archived day's coverage is the span it asked for, not what a live
+          // seed happens to reach back to.
+          if (archive !== null) return;
           coveredSince = coveredSince === null ? from : Math.min(coveredSince, from);
           const held = covered[source.id];
           covered[source.id] = held === null ? from : Math.min(held, from);
