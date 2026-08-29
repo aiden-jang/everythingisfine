@@ -2364,20 +2364,16 @@ export function App(): JSX.Element {
 
           <div
             /*
-              Stops where whichever panel is open starts, the same way it stops at the rail. Full width, it
-              truncated the key hints and hid a fifth of the cross-section behind the panel.
-             *
-              Both panels, not just the pinned earthquake. They share one slot, so a mark card is exactly as
-              wide and exactly as much in the way - and the band is right-aligned, so the legend is the first
-              thing under it. Clicking a flood covered "MAGNITUDE 2.0 AND ABOVE" entirely.
-             *
-              `pinned` rather than `shownQuake` on the earthquake side, because that panel is held past the
-              unpin to animate out and the band should give the width back at once. A mark card unmounts on
-              the spot, so `markSubject` alone is the same rule.
+              Fixed to the rail's edge, and never moved by a panel.
+
+              It used to inset its right edge whenever one opened, which kept it clear but slid every piece
+              of it sideways each time somebody pinned an event. Pinning the width alone would not do: the
+              band was right-aligned, so a 380px panel covered the legend outright.
+
+              So the contents sit against the left edge instead - which is the rail, and a panel opening does
+              not move the rail. Nothing overlaps, and nothing shifts.
             */
-            className={`pointer-events-none absolute bottom-0 left-0 z-[1] flex flex-wrap items-end justify-end gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)] ${
-              markSubject || (shownQuake && pinned) ? "right-0 xl:right-[var(--panel-w)]" : "right-0"
-            }`}
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
             hidden={cinema}
           >
             {/* The section joins the bottom band as a full-width line, last, so it is flush with the bottom
@@ -2410,20 +2406,20 @@ export function App(): JSX.Element {
                 ancestor chain to catch it. The control is at the top and the prose below, so capping keeps
                 the slider in view and scrolls the explanation.
 
-                Underscores in the `calc`: CSS needs whitespace around the `-` or `-7.5rem` parses as a
+                Underscores in the `calc`: CSS needs whitespace around the `-` or `-11rem` parses as a
                 negative number and the whole declaration is dropped, silently. `dvh`, not `vh`.
 
-                7.5rem, not 4.5. The reserve has to clear everything this panel is not: the header above it,
-                and below it the hint row, the gap and the band's own padding. 4.5rem covered that while the
-                legend and the hints shared a line; once they were given a line each, the rows beneath lifted
-                the panel by about forty pixels and at 700px tall it printed its own title under the header.
+                The reserve has to clear everything this panel is not: the header above it, and below it the
+                hint row, the credit's line, their gaps and the band's own padding. It has been wrong twice,
+                each time because a row was added underneath and this number was not revisited - 4.5rem when
+                the hints moved to their own line, 7.5rem when the credit got one. Count the rows below.
               */
               /*
                * A line each. Sharing one, neither could be right: hints first put them on the top line whenever it
                * wrapped, legend first slid the legend into the middle of the canvas.
                */
-              <div className="order-1 flex w-full justify-end">
-                <div className="pointer-events-auto max-h-[calc(100dvh_-_7.5rem)] w-full max-w-[300px] overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
+              <div className="order-1 flex w-full justify-start">
+                <div className="pointer-events-auto max-h-[calc(100dvh_-_11rem)] w-full max-w-[300px] overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
                   {legend}
                 </div>
               </div>
