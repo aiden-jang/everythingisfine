@@ -1692,10 +1692,14 @@ test("cinema hides every piece of chrome, and comes back when the browser leaves
   await page.goto("/#at=145,12,1&m=2&w=24&s=usgs,emsc&r=thermal");
   await waitForData(page);
 
-  const chrome = (): Promise<{ head: boolean; rail: boolean; band: number; resizer: number; full: string }> =>
+  const chrome = (): Promise<{
+    head: boolean; rail: boolean; band: number; resizer: number; full: string; panels: number;
+  }> =>
     page.evaluate(() => ({
       head: document.querySelector(".zone-head")?.hasAttribute("hidden") ?? true,
       rail: document.querySelector(".zone-rail")?.hasAttribute("hidden") ?? true,
+      // The panel was the one piece this mode did not hide, and the omission was never asserted here.
+      panels: document.querySelectorAll(".zone-panel").length,
       band: document.querySelectorAll("[hidden]").length,
       // The handle is a sibling of the rail rather than a child, so hiding the rail leaves it behind:
       // measured once as a one-pixel bright line down a frame whose whole point is that it is empty.
@@ -1703,9 +1707,14 @@ test("cinema hides every piece of chrome, and comes back when the browser leaves
       full: document.fullscreenElement ? document.fullscreenElement.className : "",
     }));
 
+  // Pinned first, so the panel is something cinema has to take away rather than something absent anyway.
+  await page.locator("section[aria-label='Recent earthquakes'] button").first().click();
+  await page.waitForTimeout(900);
+
   const before = await chrome();
   expect(before.head, "the header starts visible").toBe(false);
   expect(before.rail, "the rail starts visible").toBe(false);
+  expect(before.panels, "a pinned event shows its panel").toBeGreaterThan(0);
   expect(before.full).toBe("");
 
   /*
@@ -1726,6 +1735,7 @@ test("cinema hides every piece of chrome, and comes back when the browser leaves
   const during = await chrome();
   expect(during.head, "the header hides").toBe(true);
   expect(during.rail, "the rail hides").toBe(true);
+  expect(during.panels, "and so does the panel, which is chrome too").toBe(0);
   // Header, rail and the bottom band that carries the key, the hints and the scale.
   expect(during.band).toBeGreaterThanOrEqual(3);
   expect(during.resizer, "the rail's handle goes with the rail").toBe(0);

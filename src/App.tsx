@@ -2605,7 +2605,15 @@ export function App(): JSX.Element {
             node on the same frame, and a transition on a removed node never runs. */}
         {/* One zone, not two. The layout has a slot for "the thing being asked about", and two panels
             racing for it would be two things claiming to be the answer. */}
-        {markSubject ? (
+        {/*
+          Gone in cinema, like every other piece of chrome.
+
+          It was the one thing the mode did not hide, which made the mode mean two things and left Escape
+          with a conflict it cannot win: the browser owns that key while fullscreen and exits on it, so the
+          ladder could never reach a panel that was only ever open here by omission. The selection itself is
+          untouched - leaving fullscreen brings the panel straight back.
+        */}
+        {cinema ? null : markSubject ? (
           <MarkCard
             found={markSubject}
             now={now}
