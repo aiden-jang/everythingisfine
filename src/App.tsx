@@ -2384,7 +2384,19 @@ export function App(): JSX.Element {
                 half saturation the map's cluster glowed magenta through it and the slab's 1.6px dots were
                 lost outright.
               */
-              <div className="order-9 -mx-4 -mb-4 w-[calc(100%+2rem)] bg-deck/70 px-4 pt-3 pb-4 backdrop-blur-2xl backdrop-saturate-0">
+              /*
+                The one thing in this band that still yields to a panel.
+
+                The band is pinned so the legend and the hints never slide, and everything else in it is
+                left-aligned and narrow enough that a panel cannot reach it. This is a drawing that spans
+                the full width, and a panel over it hides a fifth of the section - so it keeps the inset the
+                band gave up, as padding of its own.
+              */
+              <div
+                className={`order-9 -mx-4 -mb-4 w-[calc(100%+2rem)] bg-deck/70 px-4 pt-3 pb-4 backdrop-blur-2xl backdrop-saturate-0 ${
+                  markSubject || (shownQuake && pinned) ? "xl:pr-[calc(var(--panel-w)+1rem)]" : ""
+                }`}
+              >
                 <CrossSection
                   data={section}
                   ramp={ramp}
