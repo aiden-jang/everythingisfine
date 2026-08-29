@@ -2524,9 +2524,10 @@ export function App(): JSX.Element {
             node on the same frame, and a transition on a removed node never runs. */}
         {/* One zone, not two. The layout has a slot for "the thing being asked about", and two panels
             racing for it would be two things claiming to be the answer. */}
-        {/* Gone in cinema like the rest of the chrome. It was the one piece the mode kept, which left escape
-            a fight it cannot win: the browser owns that key while fullscreen. */}
-        {cinema ? null : markSubject ? (
+        {/* Stays in cinema, where the header, rail and band all go. This is not chrome, it is the answer to
+            "what is that dot", and a full screen with nothing readable on it is a screensaver. Escape belongs
+            to the browser while fullscreen, so the header's `esc` control is how this closes there. */}
+        {markSubject ? (
           <MarkCard
             found={markSubject}
             now={now}
