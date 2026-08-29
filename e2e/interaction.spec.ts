@@ -68,8 +68,7 @@ test("the first frame is already live", async ({ page }) => {
   expect(held).toBeGreaterThan(50);
   await expect(page.getByText("BOTH FEEDS LIVE")).toBeVisible();
   // The window states its own left edge rather than claiming a full 24 hours it does not have.
-  // Any live span, not one particular window: this is about the first frame being live, and the default
-  // moved from a day to a week.
+  // Any live span, not one particular window: this is about the first frame being live.
   await expect(page.locator(".zone-rail")).toContainText(/since \d\d:\d\d|last 24 hours|last 7 days/);
 });
 
@@ -1010,12 +1009,8 @@ test("a mark in the cross-section pins the event it stands for", async ({ page }
 /* The cursor, which only a browser can settle: the reveal limit reaches the event layer through a ref the
  * frame loop reads, and a unit test has neither the loop nor the layer. */
 test("holding the cursor part way through draws part of the window", async ({ page }) => {
-  /*
-   * A day, asked for rather than assumed.
-   *
-   * The fixture spreads its events over the last 24 hours, so at the default week they all sit in the
-   * newest seventh and a cursor at 40% of the strip reveals nothing. This test is about the cursor.
-   */
+  // A day, asked for: the fixture spreads over 24 hours, so at the default week a cursor at 40% of the
+  // strip reveals nothing. This test is about the cursor.
   await installFeeds(page, { count: 400 });
   await page.goto("/#w=24");
   const live = await waitForData(page);
@@ -1043,12 +1038,8 @@ test("holding the cursor part way through draws part of the window", async ({ pa
 });
 
 test("playing advances the cursor against the wall clock", async ({ page }) => {
-  /*
-   * A day, asked for rather than assumed.
-   *
-   * The fixture spreads its events over the last 24 hours, so at the default week they all sit in the
-   * newest seventh and a cursor at 40% of the strip reveals nothing. This test is about the cursor.
-   */
+  // A day, asked for: the fixture spreads over 24 hours, so at the default week a cursor at 40% of the
+  // strip reveals nothing. This test is about the cursor.
   await installFeeds(page, { count: 400 });
   await page.goto("/#w=24");
   await waitForData(page);
@@ -1718,12 +1709,9 @@ test("cinema hides every piece of chrome, and comes back when the browser leaves
   expect(before.full).toBe("");
 
   /*
-   * `requestFullscreen` needs a gesture, which the click supplies; the key is the app's own path in.
-   *
-   * Clicked well inside the canvas, and focus handed back afterwards. The canvas is full-bleed behind the
-   * header, so a click 30px down was landing on the wordmark - inert while it was a `div`, and a reload
-   * once it became the reset control. `f` is also ignored while anything is focused, which is the app's
-   * own rule for the camera keys.
+   * `requestFullscreen` needs a gesture; the key is the app's own path in. Clicked well inside the canvas,
+   * because it is full-bleed behind the header and 30px down lands on the wordmark. Focus handed back
+   * afterwards: `f` is ignored while anything is focused.
    */
   const canvas = page.locator("canvas").first();
   const box = (await canvas.boundingBox())!;

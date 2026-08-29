@@ -18,15 +18,8 @@ export interface Bar {
   count: number;
   /** Strongest magnitude in the bucket, or null when nothing is in it. */
   peak: number | null;
-  /**
-   * The event behind that peak, or null on an empty bucket.
-   *
-   * Carried so the strip can mark the notable ones and hand a key back on a click. The bars answer "how
-   * much" and could not answer "which one", which is the whole of why the timeline was unsearchable.
-   *
-   * `position` is a fraction of the window, 0 at the old edge, so a tick sits over the moment rather than
-   * over the middle of its bucket. Computed here because this is where `now` and the window both are.
-   */
+  /** The event behind that peak, or null on an empty bucket. `position` is a fraction of the window, 0 at
+   * the old edge, so a tick sits over the moment rather than the middle of its bucket. */
   lead: { key: string; magnitude: number; position: number } | null;
   /** Whether the buffer covered this whole bucket. With no backend the buffer starts when the page opens,
    * so most of the strip is time the app never saw, and drawing that as an empty bucket claims a quiet

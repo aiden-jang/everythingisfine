@@ -44,8 +44,7 @@ export interface HazardInput {
 
 const plural = (n: number, one: string, many: string): string => `${n} ${n === 1 ? one : many}`;
 
-// `now` and `archived` let a row date itself. Live storms, fires and floods arrive flagged current, so
-// they are ongoing by construction; an archived day holds none that are.
+// Live storms, fires and floods arrive flagged current; an archived day holds none that are.
 export function hazardGroups(
   { cyclones, volcanoes, fires, floods }: HazardInput, now: number, archived = false,
 ): HazardGroup[] {
@@ -141,13 +140,7 @@ function names(kinds: readonly HazardRow["kind"][]): string {
   return `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}`;
 }
 
-/*
- * The line that keeps an emptied layer from vanishing without a word.
- *
- * The window judges every layer on its own date, so at 24 hours all four routinely go to nothing: GDACS
- * flags a three-week-old fire as still burning, and the filter still says 24 hours. Four rows disappearing
- * in silence reads as a broken app rather than as a filter doing its job.
- */
+/* Four layers can empty at once, and four rows vanishing in silence reads as a broken app. */
 export function outsideWindowNote(
   layers: readonly LayerTally[], now: number,
 ): string | null {
@@ -164,11 +157,7 @@ export function outsideWindowNote(
   const subject = gone.length === layers.length
     ? "None of the marks are"
     : `No ${names(gone.map((l) => l.kind))} are`;
-  /*
-   * Name the window that would show them, rather than saying "widen" and leaving the reader to guess which
-   * of the three. Smallest that reaches the newest one, because a month to see a three-day-old flood buries
-   * it in everything else.
-   */
+  // The smallest window that reaches them, named. A month to see a three-day-old flood buries it.
   const reach = newest === null
     ? null
     : WINDOWS.find((w) => now - newest <= w.hours * 3_600_000)?.label ?? null;

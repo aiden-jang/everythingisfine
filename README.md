@@ -208,7 +208,19 @@ smaller earthquake.
 
 The window is 24 hours, 7 days or 30 days, chosen by name rather than dragged. The activity strip
 below it is always exactly that window, divided into 24 bars, so the strip and the globe can never
-disagree about what is on screen.
+disagree about what is on screen. Five ticks over the bars mark the largest events in the window, and
+clicking a bar opens the largest inside it - the bars answer "how much" and could never answer "which".
+
+**The window judges every layer, each on the date it actually has.** It used to govern earthquakes
+alone, which made it a control that quietly meant one thing for the dots and nothing for the other
+five layers: GDACS flags a three-week-old fire as still burning, so at 24 hours the map drew fires
+that started weeks outside the span the reader had asked for. Storms, fires and floods are now judged
+on when they started and volcanoes on their episode end, and when the filter empties a layer the key
+says which one and names the window that would bring it back, rather than letting four rows vanish.
+
+**It opens on a week**, because hardly any storm, fire or flood starts inside a given day: measured
+live, a day held 2 hazards against 25 over a week, so opening on a day meant opening with five of the
+app's layers empty.
 
 A cursor under the strip parks the globe at a moment inside the window and plays forward from there.
 It is the entrance replay made permanent: the event layer already takes a reveal limit, so nothing
@@ -284,6 +296,18 @@ because a production bundle should not carry a debug surface. It is a deliberate
 degree, which at sixty Earth radii of lever arm is roughly 670km on the ground, and UTC stands in for
 Terrestrial Time for another 70km. Fine against a penumbra 3,500km wide, useless for telling anybody
 when to look up, and the legend says so.
+
+**Opening on a week costs 1.5MB on load.** `usgsSeedFor` asks USGS for `all_week` above a day, where
+the daily feed is a fraction of that, and the seed comment argues that cost belongs on a click rather
+than a page load. It is a real argument and it lost: an app that opens with five of its layers empty
+is paying a worse price in a currency that file does not measure. The trade is deliberate and it is
+the first thing to revisit if the load ever matters more than the layers.
+
+**The flat map still opens with no events on screen.** The rail there carries the key, which cannot
+float over a map that fills its own rectangle, and after trimming the region index and the two
+headline rows it still totals about 860px against 854px of rail - the list begins six pixels below
+the fold. The globe shows five. Closing that needs a decision about what the map's rail is for, not
+another trim.
 
 **No demo video.** The write-up asks for one and there is none, because recording it is not
 something this build could do.

@@ -1,19 +1,14 @@
 import { agoShort } from "./format";
 
 /*
- * How old a hazard is, and whether it falls inside the window.
+ * How old a hazard is, and whether the window keeps it.
  *
- * The window means the same thing for every layer: the event's own date has to be inside it. GDACS keeps
- * flagging storms, fires and floods `iscurrent` for weeks, so an ongoing three-week-old fire is genuinely
- * burning - but the filter says 24 hours, and a control that governs one layer and not the others is worse
- * than a layer that empties. The key says when a layer is empty because of the window.
- *
- * Each layer is judged on the date it actually has: storms, fires and floods on their start, volcanoes on
- * their episode end, which is the only date nobody flags current.
+ * Don't judge these on `iscurrent`: GDACS flags a three-week-old fire as burning, so a currency filter
+ * governs one layer and not the others. Every layer is judged on its own date instead - storms, fires and
+ * floods on their start, volcanoes on their episode end.
  */
 
-/** A row's age. Ongoing events date from their start, because that is the number that surprises: a bare
- * row gave no hint that "Mozambique" had been burning for three weeks. */
+/** A row's age. Ongoing events date from their start: how long it has been burning is the surprise. */
 export function spanWords(
   startedAt: number | null, endedAt: number | null, now: number, current: boolean,
 ): string {
@@ -27,8 +22,7 @@ export function spanWords(
   return at === null ? "" : `${agoShort(at, now)} ago`;
 }
 
-/** Whether a hazard's own date falls inside the window. Undated stays, because dropping it would hide the
- * event and the reason for hiding it together. */
+/** Whether a hazard's date is inside the window. Undated stays: dropping it hides the reason too. */
 export function withinWindow(at: number | null, now: number, windowMs: number): boolean {
   if (at === null) return true;
   return now - at <= windowMs;
