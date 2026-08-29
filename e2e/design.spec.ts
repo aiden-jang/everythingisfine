@@ -446,15 +446,24 @@ test("the legend keeps to its corner and clears the header", async ({ page }) =>
       const b = panel.getBoundingClientRect();
       const head = document.querySelector(".zone-head")!.getBoundingClientRect();
       const title = document.querySelector('label[for="mag"]')!.getBoundingClientRect();
+      // Against the band's own left edge, which is the rail. Measuring from the viewport would move with
+      // the rail's resizer and prove nothing.
+      const band = panel.closest(".absolute")!.getBoundingClientRect();
       return {
-        fromRight: Math.round(window.innerWidth - b.right),
+        fromBandLeft: Math.round(b.left - band.left),
         clearsHeader: b.top >= head.bottom,
         titleClipped: title.top < head.bottom,
       };
     });
     if (seen === null) continue; // in the rail at this width, which is the flat map's arrangement
-    // Ordering it before the hints once slid it to x=688 of 1440 - the middle of the canvas.
-    expect(seen.fromRight, `legend from the right edge at ${w}x${h}`).toBeLessThanOrEqual(24);
+    /*
+     * Pinned to the band's left edge, which is the rail's.
+     *
+     * It has drifted twice: once to x=688 of 1440 - the middle of the canvas - by being ordered before the
+     * hints, and once by sliding sideways every time a panel opened, because the band inset its right edge
+     * to clear one. Left-aligned it cannot do either, since a panel does not move the rail.
+     */
+    expect(seen.fromBandLeft, `legend from the band's left edge at ${w}x${h}`).toBeLessThanOrEqual(24);
     // A stale reserve let it climb under the header and print its own title behind the wordmark.
     expect(seen.clearsHeader, `legend clears the header at ${w}x${h}`).toBe(true);
     expect(seen.titleClipped, `legend title clipped at ${w}x${h}`).toBe(false);
