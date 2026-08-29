@@ -353,3 +353,102 @@ test("the colourblind ramp survives a reload", async ({ page }) => {
  *   - whether the wavefront reads as arriving rather than decorating;
  *   - whether the copy contains a claim the data does not support.
  */
+
+/*
+ * Where the rail's blocks sit, which nothing asserted until five regressions had shipped past a green run.
+ *
+ * Each of these was found by hand, and one of them by the author rather than by me: the transport 5px under
+ * the fold, the transport again after a footnote wrapped in the tablet column, the legend adrift in the
+ * middle of the canvas, the legend clipping its own title under the header, and the event list entirely
+ * below the fold. The suite checked that the canvas kept its share and that controls cleared 44px, and had
+ * nothing to say about any of it.
+ */
+test("the rail's controls stay above its fold", async ({ page }) => {
+  await installFeeds(page);
+  await page.goto("/");
+  await waitForData(page);
+
+  // Both single-column layouts and the tablet grid, which places by `grid-area` and behaves differently.
+  for (const [w, h] of [[1440, 900], [1280, 800], [1024, 768], [900, 1000]] as const) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(500);
+    const seen = await page.evaluate(() => {
+      const inView = (sel: string): boolean => {
+        const el = document.querySelector(sel);
+        if (!el) return false;
+        const b = el.getBoundingClientRect();
+        return b.height > 0 && b.top >= 0 && b.bottom <= window.innerHeight;
+      };
+      return {
+        transport: inView("input.scrub-slider"),
+        magnitude: inView("#mag"),
+        window: inView('[role="group"][aria-label="Window"]'),
+      };
+    });
+    // The transport is the whole time dimension. It has gone under twice, both times as a side effect of
+    // something else growing above it.
+    expect(seen.transport, `transport at ${w}x${h}`).toBe(true);
+    expect(seen.magnitude, `magnitude slider at ${w}x${h}`).toBe(true);
+    expect(seen.window, `window buttons at ${w}x${h}`).toBe(true);
+  }
+});
+
+test("the events are on screen, not merely in the rail", async ({ page }) => {
+  await installFeeds(page, { count: 400 });
+  await page.goto("/");
+  await waitForData(page);
+
+  for (const [w, h] of [[1440, 900], [1512, 982], [1024, 768]] as const) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(600);
+    // Rows wholly inside the rail's own box, so a list that merely exists below the fold does not count.
+    const rows = await page.evaluate(() => {
+      const rail = document.querySelector(".rail") as HTMLElement;
+      const box = rail.getBoundingClientRect();
+      const list = rail.querySelector("section[aria-label='Recent earthquakes']");
+      if (!list) return -1;
+      return Array.from(list.querySelectorAll("button")).filter((b) => {
+        const r = b.getBoundingClientRect();
+        return r.height > 0 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1;
+      }).length;
+    });
+    // It was zero at 1440x900 and 1280x800 while `regions`, a summary of the same events, sat fully visible.
+    expect(rows, `event rows visible at ${w}x${h}`).toBeGreaterThan(0);
+  }
+});
+
+test("the legend keeps to its corner and clears the header", async ({ page }) => {
+  await installFeeds(page);
+  await page.goto("/");
+  await waitForData(page);
+  // Opened, because the key is what makes it tall enough to reach the header.
+  await page.evaluate(() => {
+    const d = Array.from(document.querySelectorAll("details"))
+      .find((x) => /What the marks mean/.test(x.querySelector("summary")?.textContent || ""));
+    if (d && !(d as HTMLDetailsElement).open) (d.querySelector("summary") as HTMLElement).click();
+  });
+
+  for (const [w, h] of [[1920, 1080], [1440, 900], [1440, 700], [1280, 640]] as const) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(600);
+    const seen = await page.evaluate(() => {
+      const mag = document.querySelector("#mag");
+      const panel = mag ? (mag.closest(".overflow-y-auto") as HTMLElement | null) : null;
+      if (!panel) return null;
+      const b = panel.getBoundingClientRect();
+      const head = document.querySelector(".zone-head")!.getBoundingClientRect();
+      const title = document.querySelector('label[for="mag"]')!.getBoundingClientRect();
+      return {
+        fromRight: Math.round(window.innerWidth - b.right),
+        clearsHeader: b.top >= head.bottom,
+        titleClipped: title.top < head.bottom,
+      };
+    });
+    if (seen === null) continue; // in the rail at this width, which is the flat map's arrangement
+    // Ordering it before the hints once slid it to x=688 of 1440 - the middle of the canvas.
+    expect(seen.fromRight, `legend from the right edge at ${w}x${h}`).toBeLessThanOrEqual(24);
+    // A stale reserve let it climb under the header and print its own title behind the wordmark.
+    expect(seen.clearsHeader, `legend clears the header at ${w}x${h}`).toBe(true);
+    expect(seen.titleClipped, `legend title clipped at ${w}x${h}`).toBe(false);
+  }
+});
