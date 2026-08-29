@@ -1693,8 +1693,18 @@ test("cinema hides every piece of chrome, and comes back when the browser leaves
   expect(before.rail, "the rail starts visible").toBe(false);
   expect(before.full).toBe("");
 
-  // `requestFullscreen` needs a gesture, which the click supplies; the key is the app's own path in.
-  await page.locator("canvas").first().click({ position: { x: 30, y: 30 }, force: true });
+  /*
+   * `requestFullscreen` needs a gesture, which the click supplies; the key is the app's own path in.
+   *
+   * Clicked well inside the canvas, and focus handed back afterwards. The canvas is full-bleed behind the
+   * header, so a click 30px down was landing on the wordmark - inert while it was a `div`, and a reload
+   * once it became the reset control. `f` is also ignored while anything is focused, which is the app's
+   * own rule for the camera keys.
+   */
+  const canvas = page.locator("canvas").first();
+  const box = (await canvas.boundingBox())!;
+  await canvas.click({ position: { x: Math.round(box.width / 2), y: Math.round(box.height / 2) }, force: true });
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.keyboard.press("f");
 
   await expect.poll(async () => (await chrome()).full, { timeout: 10_000 }).toContain("frame");
