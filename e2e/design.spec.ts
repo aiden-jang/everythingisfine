@@ -168,6 +168,14 @@ for (const bp of BREAKPOINTS) {
       for (const el of Array.from(
         document.querySelectorAll("button, a[href], summary, input:not([type=hidden])"),
       )) {
+        /*
+         * A zero box is not the only way to be off screen. A closed `<details>` hides its contents with
+         * `content-visibility`, and descendants of one still report a full-size rect from
+         * `getBoundingClientRect` - laid out, never painted. Folding the key by default surfaced fifty of
+         * them at once, all of them "unreachable" and none of them on screen. `checkVisibility` is the
+         * question actually being asked: can a reader see this at all.
+         */
+        if (!(el as HTMLElement).checkVisibility()) continue;
         const box = el.getBoundingClientRect();
         if (box.height === 0 || box.width === 0) continue;
         const inside = box.top >= -1 && box.bottom <= window.innerHeight + 1
