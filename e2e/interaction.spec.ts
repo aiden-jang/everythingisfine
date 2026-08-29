@@ -1427,23 +1427,26 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   const slider = page.locator("#mag");
   const usgs = page.getByRole("button", { name: "USGS" }).first();
 
-  // Open by default: the app's argument is that no layer ships without the sentence explaining it, so
-  // shipping it shut would hide that from anyone who never finds the toggle.
-  await expect(explanation).toBeVisible();
-
-  await key.click();
+  /*
+   * Closed by default now. It used to open, on the argument that no layer ships without the sentence
+   * explaining it - but it is 445px, and it opened over the map, the rail or the canvas corner by turns
+   * depending on width and projection. The sentence still ships: the summary naming it is on screen.
+   */
   await expect(explanation).toBeHidden();
   await expect(slider).toBeVisible();
   await expect(usgs).toBeVisible();
 
-  // Remembered, because a panel somebody folded away is a preference.
+  await key.click();
+  await expect(explanation).toBeVisible();
+
+  // Remembered, because a panel somebody opened is a preference too.
   await page.reload();
   await waitForData(page);
-  await expect(page.getByText("size shows it too").first()).toBeHidden();
+  await expect(page.getByText("size shows it too").first()).toBeVisible();
   await expect(page.locator("#mag")).toBeVisible();
 
   await page.getByText("What the marks mean").first().click();
-  await expect(page.getByText("size shows it too").first()).toBeVisible();
+  await expect(page.getByText("size shows it too").first()).toBeHidden();
 });
 
 /*
