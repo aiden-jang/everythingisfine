@@ -112,17 +112,17 @@ export interface Feed {
 export const DEFAULT_FILTERS: Filters = {
   minMagnitude: 2,
   /*
-   * A week, not a day.
+   * A day, and the reason is the seed rather than the view.
    *
-   * The window judges every layer on its own date, and almost no storm, fire or flood starts within any
-   * given 24 hours: measured live, a day showed 2 hazards against 25 over a week. Five of the app's layers
-   * were empty on first load, and the key's own line said so and told the reader to widen. The default
-   * should be a window the app has something to draw in.
+   * A week reads better - almost no storm, fire or flood starts within any given 24 hours, so five layers
+   * open empty and the key has to tell the reader to widen. It was tried and reverted: `usgsSeedFor` asks
+   * for `all_week` above a day, which is 1.5MB against the daily feed's fraction of that, on every page
+   * load of an app that is meant to cost nothing to serve. `usgs.ts` says it plainly - the cost belongs on
+   * a click, not on a load.
    *
-   * The cost is the day ranking in the headline, which needs a day to rank against days and stands down
-   * above 24 hours.
+   * So the hazards stay a widen away, and the key's own line names which button.
    */
-  windowMs: 7 * 24 * 3_600_000,
+  windowMs: 24 * 3_600_000,
   sources: new Set<SourceId>(["usgs", "emsc"]),
 };
 
