@@ -1,14 +1,38 @@
 import { describe, expect, it } from "vitest";
-import days from "./baseline.json";
-import { BASELINE_DAYS, BASELINE_MIN_MAGNITUDE, rankDay, sharePercent } from "./baseline";
+import table from "./baseline.json";
+import {
+  BASELINE_DAYS, BASELINE_MIN_MAGNITUDE, BASELINE_WEEKS, rankDay, sharePercent,
+} from "./baseline";
 
-const counts = days as number[];
+const { days: counts, weeks } = table as { days: number[]; weeks: number[] };
 
 describe("the five-year baseline table", () => {
   it("is sorted, which is what the binary search assumes", () => {
-    for (let i = 1; i < counts.length; i += 1) {
-      expect(counts[i]!).toBeGreaterThanOrEqual(counts[i - 1]!);
+    for (const table of [counts, weeks]) {
+      for (let i = 1; i < table.length; i += 1) {
+        expect(table[i]!).toBeGreaterThanOrEqual(table[i - 1]!);
+      }
     }
+  });
+
+  it("holds whole weeks, and every week outweighs every day it is made of", () => {
+    // 1,826 days is 260 weeks and six days over, and the remainder is dropped rather than counted short.
+    expect(weeks.length).toBe(260);
+    expect(BASELINE_WEEKS).toBe(weeks.length);
+    expect(weeks.every((n) => Number.isInteger(n) && n >= 0)).toBe(true);
+    // The quietest week must still hold more than the busiest day would suggest of a seventh of it.
+    expect(weeks[0]!).toBeGreaterThan(counts[0]!);
+    expect(weeks.reduce((a, b) => a + b, 0)).toBeLessThanOrEqual(counts.reduce((a, b) => a + b, 0));
+  });
+
+  it("ranks a week against weeks, not against days", () => {
+    const median = weeks[Math.floor(weeks.length / 2)]!;
+    const asWeek = rankDay(median, true, "week")!;
+    // The same count read against days is every day in five years, which is the bug this exists to stop.
+    const asDay = rankDay(median, true, "day")!;
+    expect(asWeek.share).toBeLessThan(0.6);
+    expect(asDay.direction).toBe("busier");
+    expect(asDay.share).toBeGreaterThan(0.99);
   });
 
   it("covers whole years of whole days", () => {

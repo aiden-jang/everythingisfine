@@ -11,14 +11,19 @@ import type { Store } from "./store";
  * The sentence has to state that threshold, because it reports on a population the map may not be drawing.
  */
 
-/** Sorted ascending. See the note in the generator on why that is the entire structure. */
-const DAYS = counts as number[];
+/** Both sorted ascending. See the note in the generator on why that is the entire structure. */
+const { days: DAYS, weeks: WEEKS } = counts as { days: number[]; weeks: number[] };
 
 export const BASELINE_FROM = "2020";
 export const BASELINE_TO = "2025";
 export const BASELINE_MIN_MAGNITUDE = 4.5;
 /** Stated in the sentence, because "of days" is meaningless without knowing how many there were. */
 export const BASELINE_DAYS = DAYS.length;
+/** The same, for the week the app now opens on. Fewer, because these do not overlap. */
+export const BASELINE_WEEKS = WEEKS.length;
+
+/** Which population a count is being held against. The window decides it; nothing else may. */
+export type Span = "day" | "week";
 
 export interface DayRank {
   /** Share of baseline days on the stated side of today, 0 to 1. */
@@ -34,18 +39,18 @@ export interface DayRank {
  * so ties belong to neither: with integer counts and a median of 18 there are a lot of ties, and folding
  * them into one side lets the same day read as quieter than 61% or 68% depending on the inequality.
  */
-function split(count: number): { quieter: number; busier: number } {
+function split(sorted: number[], count: number): { quieter: number; busier: number } {
   let lo = 0;
-  let hi = DAYS.length;
+  let hi = sorted.length;
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
-    if (DAYS[mid]! < count) lo = mid + 1;
+    if (sorted[mid]! < count) lo = mid + 1;
     else hi = mid;
   }
   const quieter = lo;
   let end = lo;
-  while (end < DAYS.length && DAYS[end] === count) end += 1;
-  return { quieter, busier: DAYS.length - end };
+  while (end < sorted.length && sorted[end] === count) end += 1;
+  return { quieter, busier: sorted.length - end };
 }
 
 /**
@@ -53,12 +58,20 @@ function split(count: number): { quieter: number; busier: number } {
  * the day is still filling: a partial day compared against whole ones would say "quieter than 94% of days"
  * at nine every morning.
  */
-export function rankDay(count: number, complete: boolean): DayRank | null {
+export function rankDay(count: number, complete: boolean, span: Span = "day"): DayRank | null {
   if (!complete || !Number.isFinite(count) || count < 0) return null;
-  const { quieter, busier } = split(count);
+  /*
+   * Against its own population, never the other one.
+   *
+   * A week holds seven days of events, so ranked against single days it came out busier than all 1,826 of
+   * them - a true count against the wrong question. The app's default window is a week, which is what made
+   * this worth carrying two distributions for.
+   */
+  const sorted = span === "week" ? WEEKS : DAYS;
+  const { quieter, busier } = split(sorted, count);
   return busier >= quieter
-    ? { share: busier / DAYS.length, direction: "quieter", count }
-    : { share: quieter / DAYS.length, direction: "busier", count };
+    ? { share: busier / sorted.length, direction: "quieter", count }
+    : { share: quieter / sorted.length, direction: "busier", count };
 }
 
 /**

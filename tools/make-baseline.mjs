@@ -68,11 +68,31 @@ for (let year = Number(START.slice(0, 4)); year <= Number(END.slice(0, 4)); year
  * and a sorted list answers it with a binary search. Percentiles would round the answer for a day sitting
  * between two of them.
  */
-const counts = [...byDay.values()].sort((a, b) => a - b);
-const json = JSON.stringify(counts);
+const chronological = [...byDay.values()];
+const counts = [...chronological].sort((a, b) => a - b);
+
+/*
+ * Weeks as well as days, because the app's default window is a week and a week cannot be ranked against
+ * days: seven days of events compared with a distribution of single days reads as busier than all of them.
+ *
+ * Consecutive and non-overlapping, for the reason the days are calendar days rather than rolling ones -
+ * overlapping windows share six sevenths of their events with their neighbours, which correlates the
+ * samples and narrows the spread they appear to have. The odd days at the end are dropped rather than
+ * counted as a short week.
+ */
+const weeks = [];
+for (let i = 0; i + 7 <= chronological.length; i += 7) {
+  weeks.push(chronological.slice(i, i + 7).reduce((a, b) => a + b, 0));
+}
+weeks.sort((a, b) => a - b);
+
+const json = JSON.stringify({ days: counts, weeks });
 await writeFile(OUT, `${json}\n`);
 
 const median = counts[Math.floor(counts.length / 2)];
 console.log(`${total} events over ${counts.length} days, ${outside} outside the span`);
-console.log(`wrote ${counts.length} daily counts, ${(json.length / 1024).toFixed(1)} kB -> ${OUT}`);
-console.log(`quietest ${counts[0]}, median ${median}, busiest ${counts[counts.length - 1]}`);
+console.log(`wrote ${counts.length} daily and ${weeks.length} weekly counts, `
+  + `${(json.length / 1024).toFixed(1)} kB -> ${OUT}`);
+console.log(`days: quietest ${counts[0]}, median ${median}, busiest ${counts[counts.length - 1]}`);
+console.log(`weeks: quietest ${weeks[0]}, median ${weeks[Math.floor(weeks.length / 2)]}, `
+  + `busiest ${weeks[weeks.length - 1]}`);
