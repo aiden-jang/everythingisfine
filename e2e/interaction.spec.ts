@@ -68,7 +68,9 @@ test("the first frame is already live", async ({ page }) => {
   expect(held).toBeGreaterThan(50);
   await expect(page.getByText("BOTH FEEDS LIVE")).toBeVisible();
   // The window states its own left edge rather than claiming a full 24 hours it does not have.
-  await expect(page.locator(".zone-rail")).toContainText(/since \d\d:\d\d|last 24 hours/);
+  // Any live span, not one particular window: this is about the first frame being live, and the default
+  // moved from a day to a week.
+  await expect(page.locator(".zone-rail")).toContainText(/since \d\d:\d\d|last 24 hours|last 7 days/);
 });
 
 test("a pinned selection survives a data refresh", async ({ page }) => {
@@ -1008,8 +1010,14 @@ test("a mark in the cross-section pins the event it stands for", async ({ page }
 /* The cursor, which only a browser can settle: the reveal limit reaches the event layer through a ref the
  * frame loop reads, and a unit test has neither the loop nor the layer. */
 test("holding the cursor part way through draws part of the window", async ({ page }) => {
+  /*
+   * A day, asked for rather than assumed.
+   *
+   * The fixture spreads its events over the last 24 hours, so at the default week they all sit in the
+   * newest seventh and a cursor at 40% of the strip reveals nothing. This test is about the cursor.
+   */
   await installFeeds(page, { count: 400 });
-  await page.goto("/");
+  await page.goto("/#w=24");
   const live = await waitForData(page);
   // Past the entrance, which drives the same reveal and would be the thing under test otherwise.
   await page.waitForTimeout(4000);
@@ -1035,8 +1043,14 @@ test("holding the cursor part way through draws part of the window", async ({ pa
 });
 
 test("playing advances the cursor against the wall clock", async ({ page }) => {
+  /*
+   * A day, asked for rather than assumed.
+   *
+   * The fixture spreads its events over the last 24 hours, so at the default week they all sit in the
+   * newest seventh and a cursor at 40% of the strip reveals nothing. This test is about the cursor.
+   */
   await installFeeds(page, { count: 400 });
-  await page.goto("/");
+  await page.goto("/#w=24");
   await waitForData(page);
   await page.waitForTimeout(4000);
 
@@ -1125,8 +1139,9 @@ test("the chrome says how far back each agency actually covers", async ({ page }
    *
    * Not scoped to the rail: the source toggles float onto the map at xl, so this asserts the fact.
    */
+  // A day, because the fraction below is six hours of it. The default window is a week.
   await installFeeds(page, { count: 400, emscCappedHours: 6 });
-  await page.goto("/");
+  await page.goto("/#w=24");
   await waitForData(page);
 
   // On the activity strip, against its own axis, rather than on the source toggles: the axis is what the
