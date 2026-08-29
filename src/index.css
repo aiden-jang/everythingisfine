@@ -372,15 +372,15 @@
     display: flex;
     min-height: 0;
     flex-direction: column;
-    gap: 0.625rem;
+    /*
+     * One rhythm, not two. The gap was 0.625rem with 1.125rem margins added to two blocks to compensate,
+     * which measured 28, 10, 10, 28, 10 down the column - half the rail's own 20px padding in the tight
+     * places. Uniform 1.125rem costs four pixels of height in total and removes the special cases.
+     */
+    gap: 1.125rem;
   }
 
   @media (max-width: 767px), (min-width: 1280px) {
-    .rail > [data-rail="when"],
-    .rail > [data-rail="regions"] {
-      margin-top: 1.125rem;
-    }
-
     /*
      * Notes last, as the tablet grid already does. Stacked second they pushed the transport under the fold.
      * `order` rather than a markup move: the tablet grid places by `grid-area`, which ignores it.
