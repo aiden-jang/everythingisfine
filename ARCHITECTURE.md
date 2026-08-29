@@ -6582,8 +6582,16 @@ the rail, the resizer and the bottom band. The detail panel was never gated on i
 asserting this is called "cinema hides every piece of chrome" while checking four things and not that one.
 
 It surfaced as an Escape complaint: with a panel open in fullscreen, Escape exits fullscreen instead of
-closing the panel. That is not fixable. The Fullscreen API makes exiting on Escape a user-agent action a page
-cannot cancel; Chrome delivers the keydown and exits anyway, so the app's ladder can never run first. The
-panel was only reachable there by omission, so hiding it with the rest of the chrome dissolves the conflict
-rather than fighting it, and the test now pins an event first so the panel is something the mode has to take
-away rather than something absent anyway.
+closing the panel. That part is not fixable. The Fullscreen API makes exiting on Escape a user-agent action a
+page cannot cancel; Chrome delivers the keydown and exits anyway, so the app's ladder can never run first.
+
+**Hiding the panel to settle it was wrong, and lasted about ten minutes.** "What is the point of the full
+screen if I can't see any details" - which is the whole question. Cinema on a large display is exactly when
+somebody wants to read an event against a big globe, and the change turned it into a screensaver to buy a
+consistency nobody had asked for. Worse, the justification did not survive contact: the panel's `esc` label
+is already a real button calling `onClose`, so it was never stranded there in the first place.
+
+The line the mode draws is not "everything goes". The header, the rail and the band are controls, and cinema
+is for looking rather than operating. The panel is the answer to "what is that dot" - content, not chrome -
+and it stays. The test asserts that it survives, so the next tidy-minded pass has to argue with a failure
+rather than a name.

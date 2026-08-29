@@ -1689,7 +1689,7 @@ test("cinema hides every piece of chrome, and comes back when the browser leaves
     page.evaluate(() => ({
       head: document.querySelector(".zone-head")?.hasAttribute("hidden") ?? true,
       rail: document.querySelector(".zone-rail")?.hasAttribute("hidden") ?? true,
-      // The panel was the one piece this mode did not hide, and the omission was never asserted here.
+      // Deliberately not hidden: it is the answer to "what is that dot", not chrome.
       panels: document.querySelectorAll(".zone-panel").length,
       band: document.querySelectorAll("[hidden]").length,
       // The handle is a sibling of the rail rather than a child, so hiding the rail leaves it behind:
@@ -1723,7 +1723,9 @@ test("cinema hides every piece of chrome, and comes back when the browser leaves
   const during = await chrome();
   expect(during.head, "the header hides").toBe(true);
   expect(during.rail, "the rail hides").toBe(true);
-  expect(during.panels, "and so does the panel, which is chrome too").toBe(0);
+  // Hidden once, to make the mode consistent. That traded away the only thing worth reading on a big
+  // screen, so the panel stays and the header's `esc` control is how it closes while the browser owns Escape.
+  expect(during.panels, "the panel survives, because it is the detail cinema is for").toBeGreaterThan(0);
   // Header, rail and the bottom band that carries the key, the hints and the scale.
   expect(during.band).toBeGreaterThanOrEqual(3);
   expect(during.resizer, "the rail's handle goes with the rail").toBe(0);
