@@ -2428,9 +2428,15 @@ export function App(): JSX.Element {
                 </div>
               </div>
             ) : null}
-            {/* Beside the hints, at the other end of their line. In the rail it was a credit behind a scroll, and
-                the one child the tablet grid never named. */}
-            <p className="pointer-events-auto order-2 mr-auto text-[11px] text-faint">
+            {/*
+              A line of its own, last.
+
+              Beside the hints it wrapped at narrow widths and slid sideways whenever a panel opened; in its
+              own corner it then overlapped them, because both anchor bottom-left. A full-width line cannot
+              collide with anything, and the band's left edge is the rail - which a panel opening does not
+              move, so neither does this.
+            */}
+            <p className="order-3 w-full text-[11px] text-faint">
               made by{" "}
               <a
                 href="https://www.aidenjang.com"
@@ -2440,7 +2446,7 @@ export function App(): JSX.Element {
                   `inline-flex`, not inline. `min-height` has no effect on a non-replaced inline element, so
                   the 44px touch minimum slid straight off an inline `a` and the finger test caught it at 14px.
                 */
-                className="inline-flex min-h-11 items-center text-faint underline decoration-from-font underline-offset-2 transition-colors hover:text-dim"
+                className="pointer-events-auto inline-flex min-h-11 items-center text-faint underline decoration-from-font underline-offset-2 transition-colors hover:text-dim"
               >
                 aiden jang
               </a>
