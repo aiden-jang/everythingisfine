@@ -2498,8 +2498,13 @@ export function App(): JSX.Element {
                 ancestor chain to catch it. The control is at the top and the prose below, so capping keeps
                 the slider in view and scrolls the explanation.
 
-                Underscores in the `calc`: CSS needs whitespace around the `-` or `-4.5rem` parses as a
+                Underscores in the `calc`: CSS needs whitespace around the `-` or `-7.5rem` parses as a
                 negative number and the whole declaration is dropped, silently. `dvh`, not `vh`.
+
+                7.5rem, not 4.5. The reserve has to clear everything this panel is not: the header above it,
+                and below it the hint row, the gap and the band's own padding. 4.5rem covered that while the
+                legend and the hints shared a line; once they were given a line each, the rows beneath lifted
+                the panel by about forty pixels and at 700px tall it printed its own title under the header.
               */
               /*
                 A line of its own, so the legend and the hints never share one.
@@ -2510,7 +2515,7 @@ export function App(): JSX.Element {
                 legend keeps the corner and the hints keep the bottom, whatever the legend's height.
               */
               <div className="order-1 flex w-full justify-end">
-                <div className="pointer-events-auto max-h-[calc(100dvh_-_4.5rem)] w-full max-w-[300px] overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
+                <div className="pointer-events-auto max-h-[calc(100dvh_-_7.5rem)] w-full max-w-[300px] overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
                   {legend}
                 </div>
               </div>
