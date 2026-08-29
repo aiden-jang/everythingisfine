@@ -337,7 +337,18 @@ export function Timeline({
         Anchored right, because coverage reaches back from now. Both tracks are on screen from the first
         frame, empty, so the load state and the steady state are one picture.
       */}
+      {/*
+        Folded, because it is provenance rather than a control.
+
+        The rules and their footnotes are what the strip is drawn from, and they were 32px of a rail that
+        overruns its own height by 600 on the flat map. Opened, they are still tight to the axis they
+        measure, which was the reason for putting them here in the first place.
+      */}
       {reaches.length > 0 ? (
+        <details className="mt-1">
+          <summary className="disclose text-[11px] text-faint hover:text-dim">
+            How far the feeds reach
+          </summary>
         /* Tight to the axis, because these measure it. At 8 to 10px apart the axis, the two coverage rules
            and the transport read as four peers, when they are one scale, two annotations and a control. */
         <div className="mt-1">
@@ -365,6 +376,7 @@ export function Timeline({
             <p key={note} className="mt-2 text-[11px] leading-relaxed text-faint">{note}</p>
           ))}
         </div>
+        </details>
       ) : null}
 
       {children}
