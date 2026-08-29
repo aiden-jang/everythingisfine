@@ -80,7 +80,11 @@ export interface GlobeProps {
 }
 
 /** How far above the canvas floor the scale sits, clear of the key hints on the same line. */
-const SCALE_BOTTOM = 40;
+/*
+ * Clear of the credit's line, which is the bottom-most thing in the band and 44px tall because a link has
+ * to hold a finger. At 40 the ruler was drawn straight through "made by aiden jang".
+ */
+const SCALE_BOTTOM = 76;
 /** How long a bar aims to be before rounding to a number a reader can halve. The actual width is whatever
  * the round kilometre figure works out to, never this. */
 const SCALE_TARGET_PX = 110;

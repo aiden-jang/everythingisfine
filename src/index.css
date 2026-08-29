@@ -67,7 +67,17 @@
   html {
     background: var(--color-void);
     color-scheme: dark;
-    /* The page itself never scrolls. This is a fixed-viewport instrument: the event list scrolls, and
+    /*
+   * No automatic text inflation. Mobile engines grow the type of anything they judge to be a text column,
+   * which on a phone made the rail's prose jump a size against chrome that had not moved - two type scales
+   * in one view, neither of them the one in `DESIGN.md`.
+   */
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* The page itself never scrolls. This is a fixed-viewport instrument: the event list scrolls, and
        on a phone the rail scrolls, and the document has nothing below the fold to reach.
 
        Without it the document was 3,486px tall against a 940px viewport, so the whole app could be
@@ -233,6 +243,11 @@
       grid-template-rows: 1fr;
     }
 
+    /*
+     * `position` here is load-bearing and a utility class will beat it. `relative` was added in the markup
+     * to anchor the phone's menu and silently overrode this, dropping the header back into flow and pushing
+     * the rail 160px down the window. That anchor is scoped to `max-md` for this reason.
+     */
     .zone-head {
       position: absolute;
       z-index: 2;
@@ -324,6 +339,12 @@
     .zone-rail {
       min-height: 0;
       overflow-y: auto;
+      /*
+       * Pinned, not left to compute. Setting only `overflow-y` makes the other axis `auto`, so any child
+       * that bleeds a few pixels - the rail's rows sit at `-mx-1` on purpose - becomes a sideways drag on a
+       * phone. DESIGN.md calls horizontal scroll a build failure; this is where one would come from.
+       */
+      overflow-x: hidden;
       overscroll-behavior: contain;
       /*
        * The top and bottom edges fade rather than cut.
@@ -571,6 +592,8 @@
   .rail-regions {
     height: var(--regions-h, 132px);
     overflow-y: auto;
+    /* See `.zone-rail`: the other axis is pinned rather than left to compute to `auto`. */
+    overflow-x: hidden;
     overscroll-behavior: contain;
     contain: paint;
   }
