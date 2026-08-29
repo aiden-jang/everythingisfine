@@ -1331,7 +1331,7 @@ export function App(): JSX.Element {
     <div className="frame">
       {/* A top edge, so the frame closes. The rail has `xl:border-r` and the panel a `border-l`, and above
           1280 this header is transparent: without the hairline the chrome has two walls and no lid. */}
-      <header className="zone-head flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent" hidden={cinema}>
+      <header className="zone-head max-md:relative flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent" hidden={cinema}>
         <button
           type="button"
           /* The wordmark is the way back to nothing, the way a masthead usually is. See `resetView`. */
@@ -1345,12 +1345,11 @@ export function App(): JSX.Element {
             `min-h-11` because this is a control now, and every control clears 44px where there is a finger.
             The header is already taller than that, so nothing moves.
           */
-          className="flex min-h-11 cursor-pointer items-center text-[13px] font-semibold tracking-[0.16em] whitespace-nowrap transition-colors hover:text-ink max-md:self-start"
+          className="flex min-h-11 cursor-pointer items-center text-[10px] font-semibold tracking-[0.1em] whitespace-nowrap transition-colors hover:text-ink max-md:self-start md:text-[13px] md:tracking-[0.16em]"
         >
-          {/* "FINE" on a phone, the full sentence from `md` up. One extra button already pushed this
-              header 120px past a phone viewport, and this wordmark is half again as long. */}
-          <span className="md:hidden">FINE</span>
-          <span className="hidden md:inline">EVERYTHING IS FINE</span>
+          {/* The whole name everywhere. It was "FINE" below `md`, which is not what the app is called; the
+              type drops a size and a little tracking instead, which fits the same header. */}
+          EVERYTHING IS FINE
         </button>
         {/* Four zeros are four numbers that mean nothing. The status on the right already says what is
             happening while there is nothing to count. */}
@@ -1430,6 +1429,19 @@ export function App(): JSX.Element {
             </span>
           </button>
           {/*
+            The three that fold away, as a menu rather than more header.
+
+            They used to unhide in place, which wrapped the row and grew the header over the canvas - the
+            thing a phone has least of. `display: contents` from `md` up, so on a desktop they are still
+            three buttons in this flex row and nothing about that layout changed. Below it they are a panel
+            hanging under the header, which costs the canvas nothing.
+          */}
+          <div
+            className={`contents max-md:absolute max-md:top-full max-md:right-4 max-md:z-10 max-md:flex max-md:flex-col max-md:items-stretch max-md:gap-1.5 max-md:border max-md:border-hairline max-md:bg-deck max-md:p-2 ${
+              moreOpen ? "" : "max-md:hidden"
+            }`}
+          >
+          {/*
             Sound. No slider of its own: it follows the announce threshold, because "tell me about events
             above this" is one idea and the rail already has the control for it. See DESIGN.md 12b.
           */}
@@ -1437,7 +1449,7 @@ export function App(): JSX.Element {
             type="button"
             onClick={() => setSound((on) => !on)}
             aria-pressed={sound}
-            className={`${moreOpen ? "" : "max-md:hidden"} shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
+            className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
               sound ? "bg-raised text-ink" : "text-faint"
             }`}
           >
@@ -1451,7 +1463,7 @@ export function App(): JSX.Element {
               type="button"
               onClick={() => (tourAt === null ? startTour() : stopTour())}
               aria-pressed={tourAt !== null}
-              className={`${moreOpen ? "" : "max-md:hidden"} shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
+              className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
                 tourAt !== null ? "bg-raised text-ink" : "text-faint"
               }`}
             >
@@ -1462,10 +1474,11 @@ export function App(): JSX.Element {
             type="button"
             onClick={saveStill}
             disabled={saving}
-            className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink disabled:cursor-default ${moreOpen ? "" : "max-md:hidden"}`}
+            className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink disabled:cursor-default"
           >
             {saving ? "Saving…" : "Still"}
           </button>
+          </div>
           {/* The three above fold away on a phone. Five controls want 419px of a 390px header, and the wrap
               left "Still" and the status dot alone on a second line. Map and the ramp stay out: one is the
               projection, the other an accessibility control, and neither should cost a tap. */}
