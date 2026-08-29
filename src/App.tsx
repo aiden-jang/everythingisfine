@@ -502,27 +502,11 @@ export function App(): JSX.Element {
   }, [backToLive]);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
   /*
-   * The key starts open only where the rail runs the full height of the window.
-   *
-   * 1280, not 768. The 768-1279 strip is 34dvh, and the key measures 719px in it: 2.1 times the visible
-   * height, worse than the phone's 1.9. Picking 768 would have left the app's worst case untouched.
-   *
-   * A stored answer always wins in both directions, and this is read once at mount rather than on
-   * resize, so resizing a window never overrules a choice somebody already made.
+   * Closed, everywhere. It is 445px of explanation, and it opened over the map, the rail and the canvas
+   * corner by turns depending on width and projection - three arrangements, none of them asked for. A
+   * stored answer still wins, and only a real toggle stores one.
    */
-  const [keyOpen, setKeyOpen] = useState<boolean>(() => {
-    const saved = stored("legendKey");
-    if (saved !== null) return saved !== "0";
-    return window.matchMedia("(min-width: 1280px)").matches;
-  });
-  /*
-   * Folded on the flat map, where the key is in the rail rather than over ocean: open, it is 445px of a
-   * rail already 964px past its height, and it put the event list at 0% visible. A stored answer wins.
-   */
-  useEffect(() => {
-    if (stored("legendKey") !== null) return;
-    setKeyOpen(!flat && window.matchMedia("(min-width: 1280px)").matches);
-  }, [flat]);
+  const [keyOpen, setKeyOpen] = useState<boolean>(() => stored("legendKey") === "1");
   // Written on the press, never in an effect on the value. As an effect it fired on mount and persisted
   // the width-derived default, as though somebody had chosen it. Only a real toggle is a choice.
   const changeKeyOpen = useCallback((next: boolean) => {
