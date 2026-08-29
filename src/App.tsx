@@ -1333,19 +1333,36 @@ export function App(): JSX.Element {
       {/* A top edge, so the frame closes. The rail has `xl:border-r` and the panel a `border-l`, and above
           1280 this header is transparent: without the hairline the chrome has two walls and no lid. */}
       <header className="zone-head flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent" hidden={cinema}>
-        <div
+        <button
+          type="button"
+          /*
+            The wordmark is the way back to nothing, the way a masthead usually is.
+
+            Reloads on an empty fragment rather than resetting the pieces this component happens to hold.
+            The fragment carries the camera, the filters, the cursor, the archived day and either panel, and
+            a reset that missed one of them would be a worse lie than no reset at all. The app already
+            treats an outside edit of the hash as a reload, so this is the same door.
+          */
+          onClick={() => {
+            history.replaceState(null, "", window.location.pathname + window.location.search);
+            window.location.reload();
+          }}
+          aria-label="Everything Is Fine, back to the default view"
           /*
             Aligned to the first row of controls, not to the middle of them. The group wraps to two rows on
             a phone, and `items-center` then floated the wordmark between them, leaving "Still" orphaned
             diagonally opposite. Scoped to `max-md`, which is exactly where the wrap happens.
+
+            `min-h-11` because this is a control now, and every control clears 44px where there is a finger.
+            The header is already taller than that, so nothing moves.
           */
-          className="text-[13px] font-semibold tracking-[0.16em] whitespace-nowrap max-md:self-start max-md:pt-1"
+          className="flex min-h-11 cursor-pointer items-center text-[13px] font-semibold tracking-[0.16em] whitespace-nowrap transition-colors hover:text-ink max-md:self-start"
         >
           {/* "FINE" on a phone, the full sentence from `md` up. One extra button already pushed this
               header 120px past a phone viewport, and this wordmark is half again as long. */}
           <span className="md:hidden">FINE</span>
           <span className="hidden md:inline">EVERYTHING IS FINE</span>
-        </div>
+        </button>
         {/* Four zeros are four numbers that mean nothing. The status on the right already says what is
             happening while there is nothing to count. */}
         {/*
@@ -1859,6 +1876,37 @@ export function App(): JSX.Element {
                   }}
                   className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[10.5px] text-dim placeholder:text-faint"
                 />
+                {/*
+                  A calendar beside the ISO field, never instead of it.
+
+                  `type="date"` alone shows `mm/dd/yyyy`, which this app never prints, so a day could not
+                  be copied out of the notable list and pasted in. Laid over its own square at zero opacity
+                  it adds the touch calendar and takes nothing away: the text field is still the one that
+                  accepts a paste, and this one only writes into it.
+                */}
+                <span className="relative inline-flex size-[26px] shrink-0 items-center justify-center border border-hairline text-faint hover:text-ink">
+                  <svg viewBox="0 0 14 14" aria-hidden="true" className="size-[11px]">
+                    <rect x="1" y="2.5" width="12" height="10.5" fill="none"
+                      stroke="currentColor" strokeWidth="1.2" />
+                    <path d="M1 6 H13 M4.5 1 V4 M9.5 1 V4" fill="none"
+                      stroke="currentColor" strokeWidth="1.2" />
+                  </svg>
+                  <input
+                    type="date"
+                    aria-label="Pick a day from a calendar"
+                    max={newestDay}
+                    value={isArchivableDay(archiveDay, Date.now()) ? archiveDay : ""}
+                    onChange={(e) => {
+                      const picked = e.target.value;
+                      if (!picked) return;
+                      setArchiveDay(picked);
+                      // Straight in. The picker cannot offer a half-typed date, so there is nothing for a
+                      // second press of `go` to confirm.
+                      if (isArchivableDay(picked, Date.now())) void loadArchive(picked);
+                    }}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                  />
+                </span>
                 <button
                   type="button"
                   disabled={archiveBusy || !isArchivableDay(archiveDay, Date.now())}
