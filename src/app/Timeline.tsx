@@ -349,9 +349,10 @@ export function Timeline({
           <summary className="disclose text-[11px] text-faint hover:text-dim">
             How far the feeds reach
           </summary>
-        /* Tight to the axis, because these measure it. At 8 to 10px apart the axis, the two coverage rules
-           and the transport read as four peers, when they are one scale, two annotations and a control. */
-        <div className="mt-1">
+          {/* Tight to the axis, because these measure it. At 8 to 10px apart the axis, the two coverage
+              rules and the transport read as four peers, when they are one scale, two annotations and a
+              control. */}
+          <div className="mt-1">
           {reaches.map((r) => (
             <div key={r.id} className="flex items-center gap-2">
               <span className="w-[34px] shrink-0 font-mono text-[10.5px] text-faint">{r.label}</span>
