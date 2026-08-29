@@ -1633,7 +1633,13 @@ export function App(): JSX.Element {
 
           {/* The list is newest first, so a magnitude 6 from eight hours ago sits forty rows below forty
               magnitude 2s. This is the one fact a person actually wants. */}
-          {strongest && !replay ? (
+          {/*
+            Both of these rows stand down on the flat map, for the reason the region index does: a whole
+            world on screen at once has already answered them. The largest event is the biggest disc in
+            view, and the strip's ticks mark the five largest besides. On the globe half the planet is
+            facing away and neither is true.
+          */}
+          {strongest && !replay && !flat ? (
             <button
               type="button"
               /*
@@ -1680,7 +1686,7 @@ export function App(): JSX.Element {
           {/* One cell, because it is one fact. `QUIET_BAND_KM` is not a control, it is the width the
               percentage is a percentage of, so it reads as part of the sentence rather than as a fourth
               measurement of equal standing. */}
-          {!replay && quiet.parts !== null ? (
+          {!replay && !flat && quiet.parts !== null ? (
             <div className="tb-cell tb-wide">
               <span className="label">On edge</span>
               <span className="flex items-baseline gap-1.5">
@@ -1982,6 +1988,18 @@ export function App(): JSX.Element {
                       // Straight in. The picker cannot offer a half-typed date, so there is nothing for a
                       // second press of `go` to confirm.
                       if (isArchivableDay(picked, Date.now())) void loadArchive(picked);
+                    }}
+                    /*
+                      Asked to open, not left to the icon.
+
+                      A `type="date"` field only drops its calendar when the pointer lands on the browser's
+                      own icon, which is invisible at zero opacity and sits at one end of the square. This
+                      opens it from anywhere on the square. Guarded: `showPicker` is recent, and it throws
+                      rather than returning false where it is unsupported or not user-driven.
+                    */
+                    onClick={(e) => {
+                      const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
+                      try { el.showPicker?.(); } catch { /* the field still takes a typed date */ }
                     }}
                     className="absolute inset-0 cursor-pointer opacity-0"
                   />

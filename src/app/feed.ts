@@ -111,7 +111,18 @@ export interface Feed {
 
 export const DEFAULT_FILTERS: Filters = {
   minMagnitude: 2,
-  windowMs: 24 * 3_600_000,
+  /*
+   * A week, not a day.
+   *
+   * The window judges every layer on its own date, and almost no storm, fire or flood starts within any
+   * given 24 hours: measured live, a day showed 2 hazards against 25 over a week. Five of the app's layers
+   * were empty on first load, and the key's own line said so and told the reader to widen. The default
+   * should be a window the app has something to draw in.
+   *
+   * The cost is the day ranking in the headline, which needs a day to rank against days and stands down
+   * above 24 hours.
+   */
+  windowMs: 7 * 24 * 3_600_000,
   sources: new Set<SourceId>(["usgs", "emsc"]),
 };
 
