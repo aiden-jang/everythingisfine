@@ -60,13 +60,7 @@ function split(sorted: number[], count: number): { quieter: number; busier: numb
  */
 export function rankDay(count: number, complete: boolean, span: Span = "day"): DayRank | null {
   if (!complete || !Number.isFinite(count) || count < 0) return null;
-  /*
-   * Against its own population, never the other one.
-   *
-   * A week holds seven days of events, so ranked against single days it came out busier than all 1,826 of
-   * them - a true count against the wrong question. The app's default window is a week, which is what made
-   * this worth carrying two distributions for.
-   */
+  // A week ranked against single days came out busier than all 1,826: a true count, wrong question.
   const sorted = span === "week" ? WEEKS : DAYS;
   const { quieter, busier } = split(sorted, count);
   return busier >= quieter

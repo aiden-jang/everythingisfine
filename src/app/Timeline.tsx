@@ -69,13 +69,7 @@ export interface TimelineProps {
 
 const STRIP_PX = 44;
 
-/*
- * How many events get a tick.
- *
- * The bars answer "how much" and could never answer "which one", so a bucket you could see was busy was a
- * dead end. Five, on a strip a couple of hundred pixels wide: enough to find the one you remember, few
- * enough to stay countable.
- */
+/* The bars answer "how much" and never "which one". Five is countable on a strip this wide. */
 const NOTABLE = 5;
 /* The tallest bar stops short of the strip, so a peak reads as a peak rather than as clipping. */
 const BAR_MAX_PX = 39;
@@ -337,13 +331,7 @@ export function Timeline({
         Anchored right, because coverage reaches back from now. Both tracks are on screen from the first
         frame, empty, so the load state and the steady state are one picture.
       */}
-      {/*
-        Folded, because it is provenance rather than a control.
-
-        The rules and their footnotes are what the strip is drawn from, and they were 32px of a rail that
-        overruns its own height by 600 on the flat map. Opened, they are still tight to the axis they
-        measure, which was the reason for putting them here in the first place.
-      */}
+      {/* Folded: provenance, not a control. Opened, still tight to the axis it measures. */}
       {reaches.length > 0 ? (
         <details className="mt-1">
           <summary className="disclose text-[11px] text-faint hover:text-dim">
@@ -441,17 +429,8 @@ export function Timeline({
         )}
       </div>
 
-      {/*
-        What the ticks are, and that the bars are a way in.
-
-        The key names every other mark in this app - the triangles, the rings, the four ticks that are you -
-        and these shipped unexplained. The click had no affordance at all: the bar carries it in its
-        `aria-label` and nothing said it to anybody using a mouse.
-
-        Below the transport, not above it. Above, it wrapped to two lines in the tablet strip's narrow
-        column and pushed the transport past the fold - the one thing that layout's own comment measured
-        and promised. Controls above, commentary below, which is the rule the key already follows.
-      */}
+      {/* Below the transport, not above: there it wrapped in the tablet column and pushed the transport
+          past the fold. Controls above, commentary below. */}
       {notable.length > 0 ? (
         <p className="mt-2 text-[11px] leading-relaxed text-faint">
           {notable.length === 1

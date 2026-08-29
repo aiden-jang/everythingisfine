@@ -6477,3 +6477,113 @@ Ten consecutive runs of the three permalink tests afterwards, against one failur
 
 The shape is worth keeping in mind: a guard and the bookkeeping it guards have to live together, or the
 guard protects the action and leaves the record lying.
+
+### The window governed one layer and not the other five
+
+The filter said "last 24 hours" and meant it for earthquakes only. `matches()` in `data/filter.ts` takes a
+`Quake`; `hazardGroups` and `marksFor` took the four hazard lists and applied no clock at all. Measured live
+on 2026-08-28: every hazard on screen was outside the window the control claimed - floods up to 28 days old,
+a 23-day fire, a 10-day storm, six of six.
+
+The obvious fix is wrong. `iscurrent` is GDACS's own claim that an event is happening now, and it keeps
+flagging one long after `todate` passes: that day's live fire carried an end date three days stale and the
+live cyclone's was the same morning. Filtering on the interval would have hidden events the agency says are
+live. So the first cut kept them and labelled them - "23d ongoing" beside the row.
+
+That was the wrong call and the labelling was the tell. A control that governs one layer and not the others
+is worse than a layer that empties, because the reader cannot see the exception. Every layer is now judged
+on the date it actually has - storms, fires and floods on their start, volcanoes on their episode end, which
+is the only date nobody flags current - and the cost is paid openly: at 24 hours all four routinely go to
+nothing, so the key gains a line naming the layers the filter emptied and the smallest window that reaches
+them. Four rows disappearing in silence reads as a broken app; one sentence reads as a filter working.
+
+### A week by default, and the seed it costs
+
+Hardly any storm, fire or flood starts inside a given day. Measured live, a day held 2 hazards against 25
+over a week, so a 24-hour default opened with five of the app's layers empty and the key's own line telling
+the reader to go and widen. The default is a week.
+
+The price is in `usgsSeedFor`: above a day it asks for `all_week`, which is 1.5MB where the daily feed is a
+fraction of it, and `usgs.ts` argues plainly that this cost belongs on a click rather than a page load. That
+argument is real. It lost on purpose - an app opening with five layers empty is paying a worse price in a
+currency that file does not measure - and the trade is written where the constant is so it is not undone by
+reading half of it.
+
+**It was undone by reading half of it, once, by me.** Asked to choose while the author was away, I reverted
+to a day citing that seed comment, and justified the urgency with test timings that turned out to be a
+saturated machine: the unit suite, which never opens a browser, was taking 1064 seconds against its usual 18.
+The revert also made the run slower, which should have stopped the argument and did not. The lesson is not
+about the window. It is that a measurement which contradicts your conclusion is the most useful one you get,
+and the moment to look hardest at the instrument is when the number finally agrees with you.
+
+### Ranking a week against days is a true count and the wrong question
+
+`baseline.json` held 1,826 daily counts, sorted, and the headline ranked the window against them. At a week
+that produces "busier than 99% of days" every time - seven days of events held against single days. True,
+and answering a question nobody asked.
+
+The table now carries both distributions. Weeks are consecutive and non-overlapping, for the reason the days
+are calendar days: overlapping windows share six sevenths of their events with their neighbours, which
+correlates the samples and narrows the spread they appear to have. 1,826 days is 260 whole weeks and six days
+over; the remainder is dropped rather than counted as a short week. The line stands down entirely at a month,
+because the table has no monthly population and thirty days against seven would be the same error again.
+
+The weekly counts could not be derived from what was committed. The file is sorted, so the chronology was
+gone, and convolving daily counts would have understated the variance badly - aftershock sequences make
+consecutive days heavily correlated, which is the subject of `omori.ts` two files away. It was regenerated
+from USGS: 38,289 events, quietest week 82, median 132, busiest 522.
+
+### The events were below the fold and their own summary was above them
+
+At 1440x900 the event list - every earthquake in the app, 4,650 characters and 62 controls - was 0% visible,
+while `regions`, which counts the same events by area, sat fully above it. At 1280x800 the same. The tablet
+grid already ranks these the other way round, giving the list a column of its own and `regions` a short cell
+beside it; the phone and desktop layouts stack in source order and inherited none of that.
+
+`flex-1` could not fix it: the column is over-subscribed, so there is no free space for a grow factor to
+claim and the list sat at its 8.25rem floor. It takes a share of the viewport instead, and `regions` is
+ordered after it.
+
+The Find box had to be lifted out of `regions` first. Ranking the region index down would have taken a
+control below the fold with it, which is the mistake the reorder exists to undo. It shares a named cell with
+the time-of-day fold now, so the tablet grid still has one child to place rather than a fifth that auto-flows.
+
+### An archived day counting events that had not happened yet
+
+`showArchive` stops every source before it clears the store, and the comment said nothing could arrive
+between the clear and the load. Stopping a source prevents the next request; it cannot recall one already in
+flight. A live EMSC seed - 50 events dated near the wall clock - landed in an archived day three days earlier,
+passed the window filter because a negative age is inside any window, and hit the histogram's future-event
+clamp, which swept every one into the newest bucket. The headline read 480 for a day whose archive returned
+240.
+
+Two lines on `onReadings` and `onSeeded` fix it. The shape is the same one the permalink guard had: an
+invariant enforced at the door that a promise already through it does not have to respect.
+
+### The fixture that was green only in UTC
+
+The archived day's strip was still wrong after that: 40 events missing from the oldest four buckets and
+exactly 40 extra in the newest. Not clustering - a shift of four buckets, which is a timezone.
+
+`stamp()` sends `2026-08-26T00:00:00` with no zone, and its comment is right to: FDSN defines a bare
+timestamp as UTC, so USGS and EMSC read it correctly. The fixture parsed it with `Date.parse`, which reads a
+bare date-time as **local**. So it built its day at the runner's offset while the app bucketed against UTC
+midnight, and the newest hours of every archived day landed after the app's `now`.
+
+It was invisible in UTC. Every archived-day assertion in the suite had been running against a distribution
+skewed by wherever the machine happened to sit - green in London, wrong four hours west, differently wrong on
+a runner. Same family as the b-value fixture: a harness that cannot produce the data it claims to, found only
+by checking the fixture against its own description rather than trusting a passing test.
+
+### Cinema kept one piece of chrome
+
+`f` requests fullscreen and `cinema` is literally `document.fullscreenElement !== null`, hiding the header,
+the rail, the resizer and the bottom band. The detail panel was never gated on it - and the browser test
+asserting this is called "cinema hides every piece of chrome" while checking four things and not that one.
+
+It surfaced as an Escape complaint: with a panel open in fullscreen, Escape exits fullscreen instead of
+closing the panel. That is not fixable. The Fullscreen API makes exiting on Escape a user-agent action a page
+cannot cancel; Chrome delivers the keydown and exits anyway, so the app's ladder can never run first. The
+panel was only reachable there by omission, so hiding it with the rest of the chrome dissolves the conflict
+rather than fighting it, and the test now pins an event first so the panel is something the mode has to take
+away rather than something absent anyway.

@@ -382,28 +382,14 @@
     }
 
     /*
-     * Notes last, the same call the tablet grid already makes by putting them in a row of their own at the
-     * bottom. Controls above, commentary below.
-     *
-     * Stacked second, they sat between the headline and the strip and pushed the transport under the fold -
-     * the same 92-visible-pixels problem the grid above was written to fix, left standing at the two widths
-     * that grid does not cover. Somebody reading this app on a desktop concluded it had no timeline at all.
-     *
-     * `order` rather than a move in the markup, because the tablet grid places every block by `grid-area`
-     * and explicit placement ignores it. One rule, one breakpoint, nothing else disturbed.
+     * Notes last, as the tablet grid already does. Stacked second they pushed the transport under the fold.
+     * `order` rather than a markup move: the tablet grid places by `grid-area`, which ignores it.
      */
     .rail > .tb-stack { order: 2; }
 
     /*
-     * The events take the room the summary of them was holding.
-     *
-     * Measured at 1440x900 and 1280x800: the list was 0% visible - every earthquake in the app below the
-     * fold - while `regions`, which counts the same events by area, sat fully above it. The tablet grid
-     * already ranks these the other way round, giving the list a column of its own and `regions` a short
-     * cell beside it. These two layouts stack in source order and inherited none of that.
-     *
-     * The height that lets it use the room is on the element itself, in `EventList`: a utility class beats
-     * this file whatever the specificity, because Tailwind's layer comes later.
+     * The events outrank the summary of them: the list was 0% visible while `regions` sat fully above it.
+     * The tablet grid already ranks them this way. Its height is in `EventList` - a utility beats this file.
      */
     .rail > [data-rail="regions"] { order: 1; }
   }
@@ -590,27 +576,13 @@
   }
 
   /*
-   * The rail's fade, for the two boxes inside it that scroll.
-   *
-   * Same reason as the rail's own: a row sliced flat against the bottom edge reads as a rendering fault
-   * rather than as more below. The regions box hides 107px and the event list 2,500, at every width, and
-   * neither had it - the mask was written for the rail and never followed the content in.
-   *
-   * Bottom only, where the rail fades both edges. These two sit under a heading, so their top edge is a
-   * start rather than a cut, and 12px off the top of a 132px box is a fifth of it dimmed for nothing.
-   *
-   * Safe at every width, unlike the rail's: neither box has a ground of its own, so there is no frosted
-   * background for the mask to erode.
+   * The rail's fade, for the two boxes inside it that scroll: a row sliced flat reads as a rendering fault.
+   * Bottom only - these sit under a heading, so their top is a start rather than a cut.
    */
   .scroll-fade {
     mask-image: linear-gradient(to bottom, #000 calc(100% - 12px), transparent 100%);
-    /*
-     * Keep a focused row out of the fade it sits in.
-     *
-     * Tabbing scrolls a row flush to the bottom edge, which is exactly the 12px the mask dissolves: half
-     * the rows in the list came to rest with the bottom of their focus ring rubbed out. Measured at 7 of
-     * 14. 16px is the fade plus the ring's own 2px outline and 2px offset.
-     */
+    /* Tabbing scrolls a row flush to the bottom edge, which is the 12px the mask dissolves: half the rows
+       came to rest with their focus ring rubbed out. 16px is the fade plus the ring. */
     scroll-padding-block-end: 16px;
   }
 

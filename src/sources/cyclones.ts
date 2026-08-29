@@ -35,11 +35,9 @@ export interface Cyclone {
   peakKmh: number | null;
   /** Where it has been, oldest first, as one polyline. Empty when the track could not be had. */
   track: { lon: number; lat: number }[];
-  /** First reported, or null. Every storm here is flagged current, so a ten-day-old one needs a date to
-   * not read as a bug. */
+  /** First reported, or null. */
   startedAt: number | null;
-  /** Last reported, not forecast to end. GDACS keeps flagging a storm current past this date, so it never
-   * bounds the event. See `age.ts`. */
+  /** Last reported, not forecast to end: GDACS flags a storm current past this date. See `age.ts`. */
   endedAt: number | null;
 }
 

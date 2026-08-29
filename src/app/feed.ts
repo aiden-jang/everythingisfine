@@ -112,20 +112,8 @@ export interface Feed {
 export const DEFAULT_FILTERS: Filters = {
   minMagnitude: 2,
   /*
-   * A week, chosen with its price known.
-   *
-   * The window judges every layer on its own date, and almost no storm, fire or flood starts within any
-   * given 24 hours: measured live, a day showed 2 hazards against 25 over a week. On a day, five of the
-   * app's layers open empty and the key's own line has to tell the reader to go and widen.
-   *
-   * The price is the seed. `usgsSeedFor` asks for `all_week` above a day, which is 1.5MB where the daily
-   * feed is a fraction of it, and `usgs.ts` argues that cost belongs on a click rather than a page load.
-   * That argument is real and it lost on purpose: an app that opens with five of its layers empty is
-   * paying a worse price in a currency that file does not measure. Do not revert this by citing that
-   * comment alone - it was read, and weighed.
-   *
-   * The day ranking in the headline stands down above 24 hours, and `baseline.json` carries a weekly
-   * distribution so the line still says something here.
+   * A week. Hardly any storm, fire or flood starts inside a given day, so a day opens with five layers
+   * empty. It costs the 1.5MB `all_week` seed on load, which `usgs.ts` argues against - that was weighed.
    */
   windowMs: 7 * 24 * 3_600_000,
   sources: new Set<SourceId>(["usgs", "emsc"]),
@@ -203,15 +191,8 @@ export function createFeed(capacity = 50_000): Feed {
     for (const source of sources) {
       source.start({
         onReadings: (batch) => {
-          /*
-           * Nothing from the present belongs in an archived day.
-           *
-           * `showArchive` stops every source before it clears the store, which prevents the next request
-           * and cannot recall one already in flight. That answer arrived afterwards and was ingested into
-           * the day on screen: its events are dated later than the day's end, so the window filter kept
-           * them - a negative age is inside any window - and the strip clamped every one of them into the
-           * newest bucket. An archived day was counting events that had not happened yet.
-           */
+          // Stopping a source cannot recall a request already in flight. Its answer landed in the
+          // archived day, dated later than the day's end, and every event clamped into the newest bucket.
           if (archive !== null) return;
           for (const reading of batch) {
             const result = store.ingest(reading);
@@ -227,8 +208,7 @@ export function createFeed(capacity = 50_000): Feed {
         // Only ever wider. A second seed reaching further back widens it; one reaching less far does not
         // narrow what the first already fetched.
         onSeeded: (from) => {
-          // Same race, same rule: an archived day's coverage is the span it asked for, not what a live
-          // seed happens to reach back to.
+          // Same race. An archived day's coverage is the span it asked for.
           if (archive !== null) return;
           coveredSince = coveredSince === null ? from : Math.min(coveredSince, from);
           const held = covered[source.id];

@@ -120,13 +120,8 @@ function day(seed = 4, count = 240): Quake[] {
 }
 
 /*
- * An FDSN timestamp, which is UTC whether or not it says so.
- *
- * The app sends `2026-08-26T00:00:00` because the spec asks for no zone suffix, and `Date.parse` reads a
- * bare date-time as local. So this fixture built its day at the runner's offset while the app bucketed
- * against UTC midnight, and the newest hours of every archived day landed after the app's `now` and
- * clamped into the newest bucket: four empty buckets at one end and forty extra events at the other,
- * on a machine four hours from UTC. Green in London, wrong everywhere else.
+ * An FDSN timestamp, which is UTC whether or not it says so. `Date.parse` reads a bare date-time as local,
+ * so this built its day at the runner's offset and skewed every archived day. Green in UTC, wrong elsewhere.
  */
 const fdsnTime = (raw: string | null): number =>
   Date.parse(/([Zz]|[+-]\d\d:?\d\d)$/.test(raw ?? "") ? raw ?? "" : `${raw ?? ""}Z`);

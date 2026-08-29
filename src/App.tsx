@@ -139,8 +139,7 @@ export function App(): JSX.Element {
   const snapshot = useFeed();
   const [filters, setFilters] = useState<Filters>(() => ({
     minMagnitude: shared.minMagnitude ?? DEFAULT_FILTERS.minMagnitude,
-    // From `DEFAULT_FILTERS`, not a 24 written again here. The default moved to a week and this did not,
-    // so the app went on opening on a day while the constant said otherwise.
+    // From `DEFAULT_FILTERS`, never a number written again here.
     windowMs: shared.windowHours === undefined
       ? DEFAULT_FILTERS.windowMs
       : shared.windowHours * 3_600_000,
@@ -286,30 +285,13 @@ export function App(): JSX.Element {
   // Clamped on the way out, never written back. A cursor the window has slid past has to read as live,
   // and a render must not correct its own state.
   const view = clampScrub(scrub, span);
-  /*
-   * The cursor reveals these layers too. It gated earthquakes alone, so scrubbing to last Tuesday moved
-   * five hundred dots and left every storm, fire and flood exactly where it was.
-   *
-   * Quantised to the strip's own bucket. Playing steps the cursor twenty times a second and these feeds
-   * are dated to the hour at best, so a continuous reveal would rebuild a hundred outlines for a change
-   * no feed can resolve.
-   */
+  /* The cursor reveals these layers too, quantised to the strip's bucket: playing steps it twenty times
+     a second, and these feeds are dated to the hour at best. */
   const revealStep = filters.windowMs / BUCKETS;
   const revealAt = view.at === null ? null : Math.floor(view.at / revealStep) * revealStep;
-  /*
-   * What is actually drawn, after the window and the cursor have both had their say.
-   *
-   * One memo, because `marksFor` turns these into a few thousand points and the rail re-renders every
-   * second. Keyed on the minute rather than the clock for the same reason.
-   */
+  // One memo: `marksFor` turns these into a few thousand points and the rail re-renders every second.
   const onGlobe = useMemo(() => {
-    /*
-     * The window first, on each layer's own date, then the cursor.
-     *
-     * Dated by start for the three live layers and by episode end for volcanoes; `age.ts` has the argument.
-     * The cursor reveals by the same date, which is the rule the earthquakes already use: on screen once it
-     * has happened.
-     */
+    /* Window first, on each layer's own date, then the cursor. `age.ts` has the argument for the dates. */
     const shown = <T,>(list: readonly T[], dateOf: (h: T) => number | null): readonly T[] =>
       list.filter((h) => {
         const at = dateOf(h);
@@ -326,12 +308,7 @@ export function App(): JSX.Element {
     };
   }, [archived, archiveHazards, cyclones, volcanoes, fires, floods, aurora,
     filters.windowMs, revealAt, Math.floor(now / 60_000)]);
-  /*
-   * What each layer holds against what the window kept.
-   *
-   * Read off the unfiltered feed, because that difference is the whole point: at 24 hours all four layers
-   * routinely go to nothing, and the key has to say so rather than let four rows vanish.
-   */
+  // Read off the unfiltered feed: the difference is what the key needs to say a layer was emptied.
   const hazardTally = useMemo(() => {
     const held = archived
       ? {
@@ -503,14 +480,8 @@ export function App(): JSX.Element {
     feed.resumeLive();
   }, []);
   /*
-   * Back to the view the app opens on, without a reload.
-   *
-   * Reloading was the first cut and it threw away the buffer: with no backend the events on screen are
-   * whatever has arrived since the page opened, so a reset cost minutes of accumulation to undo a filter.
-   * This sets the same state a cold load would compute from an empty fragment instead.
-   *
-   * The ramp and the layer toggles are left alone: they are stored preferences rather than anything the
-   * fragment carries, and a colourblind ramp is not something a reset should quietly undo.
+   * Back to the opening view, in place. Reloading threw away the buffer, which with no backend is every
+   * event on screen. The ramp and layer toggles stay: they are stored preferences, not fragment state.
    */
   const resetView = useCallback(() => {
     setQuery("");
@@ -520,20 +491,13 @@ export function App(): JSX.Element {
     setMarkId(null);
     setFarSideOf(null);
     setFilters({ ...DEFAULT_FILTERS, sources: new Set(DEFAULT_FILTERS.sources) });
-    // Only when there is an archive to leave: `resumeLive` clears the store, which on the live view would
-    // throw away the buffer this exists to protect.
+    // Only when there is an archive to leave: `resumeLive` clears the store.
     if (feed.snapshot().archive !== null) backToLive();
-    // The window is part of the reset, and the feed seeds per window like the buttons do.
     if (feed.setWindow(DEFAULT_FILTERS.windowMs)) setPendingRev(feed.snapshot().revision);
     flyTo.current(145, 12, 1);
     history.replaceState(null, "", window.location.pathname + window.location.search);
-    /*
-     * Told, not left to notice.
-     *
-     * The writer only writes while the hash is still the one it last wrote, which is what stops it
-     * overwriting a link somebody pasted. Emptying the hash here without saying so left that test failing
-     * forever: the URL would have gone quiet after a reset and never carried another change.
-     */
+    // The writer only writes while the hash is the one it last wrote, which is what protects a pasted
+    // link. Emptying the hash without saying so left that test failing forever.
     lastWritten.current = window.location.hash;
   }, [backToLive]);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
@@ -552,14 +516,8 @@ export function App(): JSX.Element {
     return window.matchMedia("(min-width: 1280px)").matches;
   });
   /*
-   * Folded in the flat map, where the key sits in the rail instead of over the canvas.
-   *
-   * Open, it is 445px of a rail already 964px past its own height there, and it put the event list - every
-   * earthquake in the app - at 0% visible, which is the thing the single-column order was fixed to stop.
-   * On the globe the key floats over ocean and costs the rail nothing, so it stays open there.
-   *
-   * Only while nobody has answered: `legendKey` records a real toggle, and a choice outranks this in both
-   * directions exactly as it outranks the width default above.
+   * Folded on the flat map, where the key is in the rail rather than over ocean: open, it is 445px of a
+   * rail already 964px past its height, and it put the event list at 0% visible. A stored answer wins.
    */
   useEffect(() => {
     if (stored("legendKey") !== null) return;
@@ -1272,12 +1230,7 @@ export function App(): JSX.Element {
     [strongest, snapshot.archive],
   );
 
-  /*
-   * Which population the headline count is held against, or null for a window that has none.
-   *
-   * A day and a week are the two the table carries. At a month there is nothing honest to compare with, so
-   * the line stands down rather than ranking thirty days against seven.
-   */
+  // A day and a week are the two the table carries. At a month there is nothing honest to compare with.
   const baselineSpan: BaselineSpan | null = filters.windowMs === 24 * 3_600_000
     ? "day"
     : filters.windowMs === 7 * 24 * 3_600_000 ? "week" : null;
@@ -1647,12 +1600,8 @@ export function App(): JSX.Element {
 
           {/* The list is newest first, so a magnitude 6 from eight hours ago sits forty rows below forty
               magnitude 2s. This is the one fact a person actually wants. */}
-          {/*
-            Both of these rows stand down on the flat map, for the reason the region index does: a whole
-            world on screen at once has already answered them. The largest event is the biggest disc in
-            view, and the strip's ticks mark the five largest besides. On the globe half the planet is
-            facing away and neither is true.
-          */}
+          {/* Both stand down on the flat map, like the region index: a whole world on screen has answered them,
+              and the strip's ticks mark the five largest besides. */}
           {strongest && !replay && !flat ? (
             <button
               type="button"
@@ -1978,14 +1927,8 @@ export function App(): JSX.Element {
                   }}
                   className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[10.5px] text-dim placeholder:text-faint"
                 />
-                {/*
-                  A calendar beside the ISO field, never instead of it.
-
-                  `type="date"` alone shows `mm/dd/yyyy`, which this app never prints, so a day could not
-                  be copied out of the notable list and pasted in. Laid over its own square at zero opacity
-                  it adds the touch calendar and takes nothing away: the text field is still the one that
-                  accepts a paste, and this one only writes into it.
-                */}
+                {/* A calendar beside the ISO field, never instead of it: `type="date"` shows mm/dd/yyyy, which this
+                    app never prints, so a day could not be pasted in from the notable list. */}
                 <span className="relative inline-flex size-[26px] shrink-0 items-center justify-center border border-hairline text-faint hover:text-ink">
                   <svg viewBox="0 0 14 14" aria-hidden="true" className="size-[11px]">
                     <rect x="1" y="2.5" width="12" height="10.5" fill="none"
@@ -2002,18 +1945,11 @@ export function App(): JSX.Element {
                       const picked = e.target.value;
                       if (!picked) return;
                       setArchiveDay(picked);
-                      // Straight in. The picker cannot offer a half-typed date, so there is nothing for a
-                      // second press of `go` to confirm.
+                      // Straight in: a picker cannot offer a half-typed date.
                       if (isArchivableDay(picked, Date.now())) void loadArchive(picked);
                     }}
-                    /*
-                      Asked to open, not left to the icon.
-
-                      A `type="date"` field only drops its calendar when the pointer lands on the browser's
-                      own icon, which is invisible at zero opacity and sits at one end of the square. This
-                      opens it from anywhere on the square. Guarded: `showPicker` is recent, and it throws
-                      rather than returning false where it is unsupported or not user-driven.
-                    */
+                    /* A date field only drops its calendar on the browser's own icon, which is invisible at zero
+                       opacity. `showPicker` is recent and throws where it is unsupported. */
                     onClick={(e) => {
                       const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
                       try { el.showPicker?.(); } catch { /* the field still takes a typed date */ }
@@ -2189,16 +2125,8 @@ export function App(): JSX.Element {
               which is what somebody scanning for where today is quiet came to see. */}
           {/* Open when there is either kind of thing to list. Gated on the region rows alone it tied the
               hazard list to the earthquake feed, and the five layers do not depend on the two agencies. */}
-          {/*
-            No region index on the flat map.
-
-            It answers where the events are - Indonesia 95, Japan & Kurils 36 - which is the one question a
-            whole world on screen at once has already answered. On the globe it earns its 161px, because
-            half the planet is facing away.
-
-            The hazard list stays either way: a glyph cannot be reached by keyboard, so that disclosure is
-            the only way in to the marks, and it is not an index of anything the map is showing.
-          */}
+          {/* No region index on the flat map: it answers where the events are, which a whole world on screen has
+              already answered. The hazard list stays - a glyph cannot be reached by keyboard. */}
           {(regions.length > 0 && !flat) || hazards.length > 0 ? (
             <div data-rail="regions" className="relative">
               {regions.length > 0 && !flat ? (
@@ -2507,26 +2435,17 @@ export function App(): JSX.Element {
                 the panel by about forty pixels and at 700px tall it printed its own title under the header.
               */
               /*
-                A line of its own, so the legend and the hints never share one.
-
-                Sharing a line, the two could not both be right: ordered hints-first the legend sat in the
-                corner but the hints rode the top line whenever it wrapped, and ordered legend-first the
-                hints stayed down and the legend slid to the middle of the canvas. On separate lines the
-                legend keeps the corner and the hints keep the bottom, whatever the legend's height.
-              */
+               * A line each. Sharing one, neither could be right: hints first put them on the top line whenever it
+               * wrapped, legend first slid the legend into the middle of the canvas.
+               */
               <div className="order-1 flex w-full justify-end">
                 <div className="pointer-events-auto max-h-[calc(100dvh_-_7.5rem)] w-full max-w-[300px] overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
                   {legend}
                 </div>
               </div>
             ) : null}
-            {/*
-              Beside the hints on their line, pushed to the other end of it.
-
-              It was the last block in the rail, so reaching a credit meant scrolling a column of controls
-              past everything else, and it was the one rail child the tablet grid never named - it auto-flowed
-              into an implicit row of its own. Down here it needs neither.
-            */}
+            {/* Beside the hints, at the other end of their line. In the rail it was a credit behind a scroll, and
+                the one child the tablet grid never named. */}
             <p className="pointer-events-auto order-2 mr-auto text-[11px] text-faint">
               made by{" "}
               <a
@@ -2605,14 +2524,8 @@ export function App(): JSX.Element {
             node on the same frame, and a transition on a removed node never runs. */}
         {/* One zone, not two. The layout has a slot for "the thing being asked about", and two panels
             racing for it would be two things claiming to be the answer. */}
-        {/*
-          Gone in cinema, like every other piece of chrome.
-
-          It was the one thing the mode did not hide, which made the mode mean two things and left Escape
-          with a conflict it cannot win: the browser owns that key while fullscreen and exits on it, so the
-          ladder could never reach a panel that was only ever open here by omission. The selection itself is
-          untouched - leaving fullscreen brings the panel straight back.
-        */}
+        {/* Gone in cinema like the rest of the chrome. It was the one piece the mode kept, which left escape
+            a fight it cannot win: the browser owns that key while fullscreen. */}
         {cinema ? null : markSubject ? (
           <MarkCard
             found={markSubject}
