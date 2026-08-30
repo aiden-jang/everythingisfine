@@ -2484,15 +2484,9 @@ export function App(): JSX.Element {
                 </div>
               </div>
             ) : null}
-            {/*
-              A line of its own, last.
-
-              Beside the hints it wrapped at narrow widths and slid sideways whenever a panel opened; in its
-              own corner it then overlapped them, because both anchor bottom-left. A full-width line cannot
-              collide with anything, and the band's left edge is the rail - which a panel opening does not
-              move, so neither does this.
-            */}
-            <p className="order-3 w-full text-[11px] text-faint">
+            {/* First on the last line, with the key hints beside it. Both sit against the band's left edge,
+                which is the rail - and a panel opening does not move the rail, so neither of them moves. */}
+            <p className="order-2 text-[11px] text-faint">
               made by{" "}
               <a
                 href="https://www.aidenjang.com"
