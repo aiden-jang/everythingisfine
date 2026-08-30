@@ -4,7 +4,7 @@ import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { PLACE_LIMIT, search, type Hit } from "./app/search";
 import { useRolling } from "./app/roll";
-import { useNarrow } from "./app/useNarrow";
+import { useFloatingRail, useNarrow } from "./app/useNarrow";
 import { store, stored } from "./app/stored";
 import { fetchAurora, type Aurora } from "./sources/aurora";
 import { fetchCyclones, type Cyclone } from "./sources/cyclones";
@@ -1245,15 +1245,27 @@ export function App(): JSX.Element {
     return closestTo(feed.store, here, filters, clockAt(), view.at ?? clockAt());
   }, [feed.store, here, filters, snapshot.revision, replay, view.at]);
 
-  // Read from the browser, never remembered. A flag of our own drifts the moment somebody leaves by a
-  // route the app did not start: Escape, the browser's control, another tab claiming the display.
-  const [cinema, setCinema] = useState(false);
-  useEffect(() => {
-    const sync = (): void => setCinema(document.fullscreenElement !== null);
-    document.addEventListener("fullscreenchange", sync);
-    sync();
-    return () => document.removeEventListener("fullscreenchange", sync);
+  /*
+   * The chrome, and whether it is showing.
+   *
+   * Fullscreen used to hide all of it, and the answer to "what is that dot" with it. A full screen showing
+   * a planet and nothing else is a screensaver, so `f` now only makes the window bigger and these two say
+   * what is drawn over it. Remembered, because a viewer who cleared the frame once meant it.
+   *
+   * The rail's is only offered where the rail floats over the canvas. On a phone it is the page.
+   */
+  const railFloats = useFloatingRail();
+  const [headOpen, setHeadOpen] = useState<boolean>(() => stored("head") !== "0");
+  const [railOpen, setRailOpen] = useState<boolean>(() => stored("rail") !== "0");
+  const changeHeadOpen = useCallback((next: boolean) => {
+    setHeadOpen(next);
+    store("head", next ? "1" : "0");
   }, []);
+  const changeRailOpen = useCallback((next: boolean) => {
+    setRailOpen(next);
+    store("rail", next ? "1" : "0");
+  }, []);
+  const railShown = railOpen || !railFloats;
 
   const versus = useMemo(() => versusReference(energyTotal), [energyTotal]);
 
@@ -1772,7 +1784,7 @@ export function App(): JSX.Element {
     <div className="frame">
       {/* A top edge, so the frame closes. The rail has `xl:border-r` and the panel a `border-l`, and above
           1280 this header is transparent: without the hairline the chrome has two walls and no lid. */}
-      <header className="zone-head max-md:relative flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent" hidden={cinema}>
+      <header id="chrome-head" className="zone-head max-md:relative flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent" hidden={!headOpen}>
         <button
           type="button"
           /* The wordmark is the way back to nothing, the way a masthead usually is. See `resetView`. */
@@ -1962,13 +1974,49 @@ export function App(): JSX.Element {
               </span>
             )}
           </span>
+          {/*
+            The bar's own fold, last, because it acts on the thing it is at the end of. A glyph rather than
+            a word: everything else in this row is a label for what it controls, and "Bar" would read as
+            another view option rather than as this row folding away.
+          */}
+          <button
+            type="button"
+            onClick={() => changeHeadOpen(false)}
+            aria-label="Hide the top bar"
+            aria-expanded={true}
+            aria-controls="chrome-head"
+            className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[11px]
+              leading-none text-faint transition-colors hover:bg-raised hover:text-ink"
+          >
+            &#8963;
+          </button>
         </div>
       </header>
+
+      {/* The way back. The control that folds the bar goes with it, so the one that unfolds it cannot live
+          there - it sits where the bar was, at the corner the eye already went to. */}
+      {headOpen ? null : (
+        <button
+          type="button"
+          onClick={() => changeHeadOpen(true)}
+          aria-label="Show the top bar"
+          aria-expanded={false}
+          aria-controls="chrome-head"
+          className="absolute top-3 right-4 z-[3] cursor-pointer bg-deck/40 px-2 py-1 font-mono
+            text-[11px] leading-none text-faint backdrop-blur-xl backdrop-saturate-50
+            transition-colors hover:text-ink"
+        >
+          &#8964;
+        </button>
+      )}
 
       <div
         className="zones"
         style={{
-          "--rail-w": `${railWidth}px`,
+          /* Folded, they are worth nothing to the things placed from them: the rail sits under the bar and
+             the band beside the rail, and both should take the space back rather than hold a gap open. */
+          ...(headOpen ? {} : { "--head-h": "0px" }),
+          "--rail-w": railShown ? `${railWidth}px` : "0px",
           "--regions-h": `${regionsHeight}px`,
           ...(sheetCanvas > 0 ? { "--canvas-h": `${sheetCanvas}px` } : {}),
         } as React.CSSProperties}
@@ -1986,7 +2034,7 @@ export function App(): JSX.Element {
         */}
         {/* Gone while a panel is up. The panel covers the sheet on a phone, and this handle sits at `z-[2]`
             above it - a resize grip drawn across something it cannot resize. */}
-        {cinema || markSubject || (shownQuake && pinned) ? null : (
+        {markSubject || (shownQuake && pinned) ? null : (
           <Resizer
             axis="y"
             label="Sheet height"
@@ -2000,7 +2048,7 @@ export function App(): JSX.Element {
             style={{ top: `calc(var(--canvas-h, 60dvh) - 6px)` }}
           />
         )}
-        <aside className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r" hidden={cinema}>
+        <aside id="chrome-rail" className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r" hidden={!railShown}>
           <div className="titleblock">
           <div className="tb-cell tb-wide" data-rail="headline">
             {/* Before any coverage exists there is no count, and a big 0 over "nothing yet" was two
@@ -2531,6 +2579,29 @@ export function App(): JSX.Element {
               app whose chrome is held under a chroma ceiling and tested for it. */}
         </aside>
 
+        {/*
+          The rail's fold, on the edge it folds to. One control in one place: open, it is the handle at the
+          rail's outer edge; closed, it is the same handle at the frame's, which is where a reader last saw
+          the rail go. Only where the rail floats over the canvas - on a phone the rail is the page.
+        */}
+        {railFloats ? (
+          <button
+            type="button"
+            onClick={() => changeRailOpen(!railOpen)}
+            aria-label={railOpen ? "Hide the panel" : "Show the panel"}
+            aria-expanded={railOpen}
+            aria-controls="chrome-rail"
+            className="absolute top-[calc(var(--head-h)_+_1rem)] z-[2] cursor-pointer bg-deck/40 px-1.5
+              py-2.5 font-mono text-[11px] leading-none text-faint backdrop-blur-xl backdrop-saturate-50
+              transition-colors hover:text-ink"
+            /* Clear of the resize handle, which is 12px wide and centred on the same border. Stacked, the
+               button ate the top of the drag target. */
+            style={{ left: railOpen ? railWidth + 6 : 0 }}
+          >
+            {railOpen ? "\u2039" : "\u203a"}
+          </button>
+        ) : null}
+
         <Resizer
           axis="x"
           label="Rail width"
@@ -2541,7 +2612,7 @@ export function App(): JSX.Element {
           onChange={setRailWidth}
           /* Hidden with the rail it resizes. The handle is a sibling, not a child, because the border lives
              on it - so left behind it is a one-pixel bright line down a frame containing nothing but planet. */
-          className={cinema ? "hidden" : "absolute inset-y-0 hidden xl:block"}
+          className={railShown ? "absolute inset-y-0 hidden xl:block" : "hidden"}
           style={{ left: railWidth - 6 }}
         />
 
@@ -2552,7 +2623,7 @@ export function App(): JSX.Element {
           Stands down while a panel is up: they are the same edge, and two things claiming it would be two
           answers to one question. Desktop only - a phone has no spare edge, so there it stays in the rail.
         */}
-        {!keyOnCanvas || cinema || section || markSubject || (shownQuake && pinned) ? null : (
+        {!keyOnCanvas || section || markSubject || (shownQuake && pinned) ? null : (
           <div
             /*
               Anchored at the bottom, so opening it grows upward out of the corner rather than downward off
@@ -2634,7 +2705,6 @@ export function App(): JSX.Element {
               not move the rail. Nothing overlaps, and nothing shifts.
             */
             className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
-            hidden={cinema}
           >
             {/* The section joins the bottom band as a full-width line, last, so it is flush with the bottom
                 edge. Placed first it floated mid-canvas and read as the map having been cut in half. */}
@@ -2744,14 +2814,14 @@ export function App(): JSX.Element {
         </main>
 
         {/*
-          Cinema hides the chrome. It must not hide which day this is.
-          Pressing `f` hid all four statements of the date, and a fullscreen window has no tab title either,
-          so a viewer saw 2011's earthquakes with nothing saying it was not this morning. Hide controls and
+          Hiding the bar must not hide which day this is.
+          It carried all four statements of the date, and a fullscreen window has no tab title either, so a
+          viewer saw 2011's earthquakes with nothing saying it was not this morning. Hide controls and
           commentary; keep any sentence that stops the picture being misread. A held cursor counts too.
           Take the wording from `stillMoment` and the day from the snapshot, not the field, which is text
           somebody is still typing.
         */}
-        {cinema && (snapshot.archive !== null || view.at !== null) ? (
+        {!headOpen && (snapshot.archive !== null || view.at !== null) ? (
           <div className="stamp pointer-events-none absolute bottom-4 left-4 z-[2] bg-deck/40 px-3 py-2 font-mono text-[11px] text-faint backdrop-blur-xl backdrop-saturate-50">
             {stillMoment(view.at, snapshot.archive ? snapshot.archive.from : clockAt(), snapshot.archive !== null)}
           </div>
@@ -2761,9 +2831,8 @@ export function App(): JSX.Element {
             node on the same frame, and a transition on a removed node never runs. */}
         {/* One zone, not two. The layout has a slot for "the thing being asked about", and two panels
             racing for it would be two things claiming to be the answer. */}
-        {/* Stays in cinema, where the header, rail and band all go. This is not chrome, it is the answer to
-            "what is that dot", and a full screen with nothing readable on it is a screensaver. Escape belongs
-            to the browser while fullscreen, so the header's `esc` control is how this closes there. */}
+        {/* Never folds with the chrome: this is the answer to "what is that dot", which is content. Escape
+            belongs to the browser while fullscreen, so the panel's own `esc` control is how it closes there. */}
         {markSubject ? (
           <MarkCard
             found={markSubject}

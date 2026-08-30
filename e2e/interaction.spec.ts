@@ -983,7 +983,11 @@ test("a mark in the cross-section pins the event it stands for", async ({ page }
   // The boundary the slab belongs to is marked, and the key for it only appears when it is.
   await expect(band).toContainText("plate boundar");
 
-  const marks = band.locator("svg circle[fill]");
+  /*
+   * The clickable marks, not every circle. The slab is drawn in the same `svg` and it ships on now, so
+   * `circle[fill]` put 1,583 `pointer-events: none` dots in front of the four this test is about.
+   */
+  const marks = band.locator("svg circle.cursor-pointer");
   await expect(marks.first()).toBeVisible();
 
   // Hovering names it in the header, in place of the section's own geometry.
@@ -1580,11 +1584,14 @@ test("the tour names where the camera is, not where it is going", async ({ page 
 });
 
 /*
- * The two buttons in the panel that move the camera, and the fact that they move it opposite ways. The zoom is
- * the whole difference: "Fly here" is for one epicentre, and "Far side" draws five circles spanning the planet,
- * so it has to pull back. A regression giving them the same zoom leaves both apparently working.
+ * The two ways the panel moves the camera, and the fact that they pull opposite ways. Opening it flies to the
+ * epicentre; "Far side" draws five circles spanning the planet, so it has to pull back. A regression giving
+ * them the same zoom leaves both apparently working.
+ *
+ * Pinning used to need a "Fly here" press. It flies on its own now, which is the same assertion with the
+ * button taken out: a pin that does not move the camera puts the answer on screen and the subject off it.
  */
-test("the panel's camera buttons land on the same event and pull opposite ways", async ({ page }) => {
+test("pinning flies in, and the far side pulls back to the same place", async ({ page }) => {
   // Three eased flights in one test, each of which has to settle before the next is measured.
   test.setTimeout(120_000);
   await installFeeds(page, { count: 400 });
@@ -1596,11 +1603,11 @@ test("the panel's camera buttons land on the same event and pull opposite ways",
   const panel = page.locator('.zone-panel[data-open="true"]');
   await expect(panel).toBeVisible();
 
-  await panel.getByRole("button", { name: "Fly here" }).click();
   const near = await cameraStill(page);
-  // In, not merely elsewhere: the default framing is 1, so a button that did nothing would pass a test
-  // that only checked the camera had moved off its start.
-  expect(near.zoom).toBeGreaterThan(1.9);
+  // In, not merely elsewhere: the default framing is 1, so a pin that did nothing would pass a test that
+  // only checked the camera had moved off its start. `Math.max(zoom, 1.9)` lands exactly on the floor from
+  // a default camera, which is why this is not a strict `>`.
+  expect(near.zoom).toBeGreaterThanOrEqual(1.9);
 
   const farSide = panel.getByRole("button", { name: "Far side" });
   await expect(farSide).toHaveAttribute("aria-pressed", "false");
@@ -1693,40 +1700,33 @@ test("sound opens no audio device until it is asked to", async ({ page }) => {
 });
 
 /*
- * Cinema mode, and the half of it that is easy to get wrong. Hiding the chrome is safe only because the way
- * back is a key the browser provides, so the app must follow the browser's own state rather than a flag: there
- * are several exits it never initiates, and a local boolean is right for exactly one of them.
+ * Fullscreen used to hide the header, the rail and the bottom band, and the case against that is the one
+ * the reader makes: a full screen showing a planet and nothing else is a screensaver. It makes the window
+ * bigger and takes nothing away. What is drawn over the globe is now two folds of their own, tested below.
  */
-test("cinema hides every piece of chrome, and comes back when the browser leaves", async ({ page }) => {
+test("fullscreen makes the window bigger and takes nothing away", async ({ page }) => {
   test.setTimeout(120_000);
   await installFeeds(page, { count: 400 });
   await page.goto("/#at=145,12,1&m=2&w=24&s=usgs,emsc&r=thermal");
   await waitForData(page);
 
-  const chrome = (): Promise<{
-    head: boolean; rail: boolean; band: number; resizer: number; full: string; panels: number;
-  }> =>
-    page.evaluate(() => ({
-      head: document.querySelector(".zone-head")?.hasAttribute("hidden") ?? true,
-      rail: document.querySelector(".zone-rail")?.hasAttribute("hidden") ?? true,
-      // Deliberately not hidden: it is the answer to "what is that dot", not chrome.
-      panels: document.querySelectorAll(".zone-panel").length,
-      band: document.querySelectorAll("[hidden]").length,
-      // The handle is a sibling of the rail rather than a child, so hiding the rail leaves it behind:
-      // measured once as a one-pixel bright line down a frame whose whole point is that it is empty.
-      resizer: document.querySelector('[aria-label="Rail width"]')?.getBoundingClientRect().width ?? -1,
-      full: document.fullscreenElement ? document.fullscreenElement.className : "",
-    }));
+  const chrome = (): Promise<Record<string, number | string | boolean>> =>
+    page.evaluate(() => {
+      const shown = (sel: string): boolean => {
+        const el = document.querySelector(sel);
+        return el !== null && (el as HTMLElement).checkVisibility();
+      };
+      return {
+        head: shown("#chrome-head"),
+        rail: shown("#chrome-rail"),
+        hints: shown(".key-hints"),
+        key: document.body.innerText.includes("What the marks mean"),
+        panels: document.querySelectorAll(".zone-panel").length,
+        full: document.fullscreenElement ? document.fullscreenElement.className : "",
+      };
+    });
 
-  // Pinned first, so the panel is something cinema has to take away rather than something absent anyway.
-  await page.locator("section[aria-label='Recent earthquakes'] button").first().click();
-  await page.waitForTimeout(900);
-
-  const before = await chrome();
-  expect(before.head, "the header starts visible").toBe(false);
-  expect(before.rail, "the rail starts visible").toBe(false);
-  expect(before.panels, "a pinned event shows its panel").toBeGreaterThan(0);
-  expect(before.full).toBe("");
+  expect((await chrome()).full).toBe("");
 
   /*
    * `requestFullscreen` needs a gesture; the key is the app's own path in. Clicked well inside the canvas,
@@ -1741,22 +1741,80 @@ test("cinema hides every piece of chrome, and comes back when the browser leaves
 
   await expect.poll(async () => (await chrome()).full, { timeout: 10_000 }).toContain("frame");
   const during = await chrome();
-  expect(during.head, "the header hides").toBe(true);
-  expect(during.rail, "the rail hides").toBe(true);
-  // Hidden once, to make the mode consistent. That traded away the only thing worth reading on a big
-  // screen, so the panel stays and the header's `esc` control is how it closes while the browser owns Escape.
-  expect(during.panels, "the panel survives, because it is the detail cinema is for").toBeGreaterThan(0);
-  // Header, rail and the bottom band that carries the key, the hints and the scale.
-  expect(during.band).toBeGreaterThanOrEqual(3);
-  expect(during.resizer, "the rail's handle goes with the rail").toBe(0);
+  expect(during.head, "the bar stays").toBe(true);
+  expect(during.rail, "the panel stays").toBe(true);
+  expect(during.hints, "the key hints stay").toBe(true);
+  expect(during.key, "the marks key stays").toBe(true);
 
-  // Left by the browser rather than by the app, which is the whole assertion. Calling `exitFullscreen` directly
-  // is the one exit the key handler knows nothing about.
+  // Pinned from inside fullscreen, because the detail is the thing the mode used to trade away.
+  await page.locator("section[aria-label='Recent earthquakes'] button").first().click();
+  await page.waitForTimeout(900);
+  const pinned = await chrome();
+  expect(pinned.panels, "an event still opens its panel").toBeGreaterThan(0);
+  // The key and the panel are the same edge, so the key stands down. That rule is not fullscreen's.
+  expect(pinned.key, "the key yields to the panel, as it does everywhere").toBe(false);
+
   await page.evaluate(() => document.exitFullscreen());
-  await expect.poll(async () => (await chrome()).head, { timeout: 10_000 }).toBe(false);
-  const after = await chrome();
-  expect(after.rail, "the rail comes back").toBe(false);
-  expect(after.full).toBe("");
+  await expect.poll(async () => (await chrome()).full, { timeout: 10_000 }).toBe("");
+});
+
+/*
+ * The two folds that replaced it. Independent, remembered, and each reachable from where it left: the
+ * control that folds the bar goes with the bar, so the one that unfolds it has to live somewhere else.
+ */
+test("the bar and the panel fold on their own, and stay folded", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installFeeds(page, { count: 200 });
+  await page.goto("/");
+  await waitForData(page);
+
+  const chrome = (): Promise<{ head: boolean; rail: boolean; resizer: number; hintsCentre: number }> =>
+    page.evaluate(() => {
+      const shown = (sel: string): boolean => {
+        const el = document.querySelector(sel);
+        return el !== null && (el as HTMLElement).checkVisibility();
+      };
+      const hints = document.querySelector(".key-hints")!.getBoundingClientRect();
+      return {
+        head: shown("#chrome-head"),
+        rail: shown("#chrome-rail"),
+        // The handle is a sibling of the rail rather than a child, so folding the rail leaves it behind:
+        // measured once as a one-pixel bright line down a frame whose whole point is that it is empty.
+        resizer: document.querySelector('[aria-label="Rail width"]')?.getBoundingClientRect().width ?? -1,
+        hintsCentre: Math.round((hints.left + hints.right) / 2),
+      };
+    });
+
+  const open = await chrome();
+  expect(open.head).toBe(true);
+  expect(open.rail).toBe(true);
+
+  await page.getByLabel("Hide the panel").click();
+  await page.waitForTimeout(400);
+  const noRail = await chrome();
+  expect(noRail.rail, "the panel folds").toBe(false);
+  expect(noRail.head, "and the bar does not go with it").toBe(true);
+  expect(noRail.resizer, "the rail's handle goes with the rail").toBe(0);
+  // `--rail-w` is what the bottom band is measured from, so the keys recentre on the whole canvas.
+  expect(noRail.hintsCentre, "the hints recentre").toBeLessThan(open.hintsCentre);
+
+  await page.getByLabel("Hide the top bar").click();
+  await page.waitForTimeout(400);
+  expect((await chrome()).head, "the bar folds").toBe(false);
+
+  await page.reload();
+  await waitForData(page);
+  const remembered = await chrome();
+  expect(remembered.head, "the bar is still folded").toBe(false);
+  expect(remembered.rail, "the panel is still folded").toBe(false);
+
+  await page.getByLabel("Show the top bar").click();
+  await page.getByLabel("Show the panel").click();
+  await page.waitForTimeout(400);
+  const back = await chrome();
+  expect(back.head).toBe(true);
+  expect(back.rail).toBe(true);
+  expect(back.hintsCentre).toBe(open.hintsCentre);
 });
 
 /*

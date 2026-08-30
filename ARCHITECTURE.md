@@ -6702,3 +6702,29 @@ whole app and requires exactly one: a second copy of 445px of prose reads as a d
 So it mounts once and picks its side at runtime, through `useNarrow`, which moved out of `CrossSection.tsx`
 into `app/useNarrow.ts` for the purpose. The rule worth keeping: a Tailwind visibility pair is fine for a
 control or a label, and wrong for a block of prose long enough that something might count it.
+
+
+## Fullscreen stopped being a mode
+
+`f` used to do two things: enlarge the window, and hide the header, the rail and the bottom band. The second
+one was always the weaker half, and it was argued twice - once when hiding the detail panel too made the
+mode "consistent" and had to be reverted, and again over the whole idea. A full screen showing a planet and
+nothing else is a screensaver, and the hints, the key and the panel are exactly what a bigger picture is
+worth having.
+
+So fullscreen now only makes the window bigger, and what is drawn over the globe is **two folds of its
+own**: the top bar and the left panel, each remembered, each independent. The `cinema` state and its
+`fullscreenchange` listener are gone with it - nothing in the app asks whether it is fullscreen any more,
+which also retires the "follow the browser, never a flag of our own" problem rather than solving it again.
+
+Two details worth keeping:
+
+- **The control that folds a region goes with it.** So each fold needs a second control somewhere the fold
+  cannot reach: the bar's sits at the top-right corner where the bar was, and the rail's is a tab on the
+  rail's own outer edge, which is the frame's edge once the rail is gone. One control, one place, both
+  states.
+- **`--head-h` and `--rail-w` go to zero when their region folds.** Everything else is placed from them -
+  the rail sits under the bar, the bottom band beside the rail, the key panel is capped against the head -
+  so leaving them at their open values holds a gap open where the folded thing used to be. The rail fold
+  is offered only at `xl`, through `useFloatingRail`: below that the rail is a strip or a sheet, and on a
+  phone it is the page.
