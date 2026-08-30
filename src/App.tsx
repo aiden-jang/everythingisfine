@@ -42,7 +42,7 @@ import {
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
-import { Timeline, TimelineNotes } from "./app/Timeline";
+import { Timeline } from "./app/Timeline";
 import { clamp as clampScrub, dragTo, fractionOf, LIVE, nudge, step as stepScrub, togglePlay,
   type Scrub } from "./app/scrub";
 import { Resizer } from "./app/Resizer";
@@ -68,23 +68,6 @@ import {
 } from "./app/format";
 
 
-/**
- * True where the timeline gets the canvas's width instead of the rail's.
- *
- * Rendered once, in one place or the other. Two copies with one hidden would put a second `window-scale`
- * and a second transport in the accessibility tree.
- */
-function useWideTimeline(): boolean {
-  const query = "(min-width: 768px)";
-  const [wide, setWide] = useState(() => window.matchMedia(query).matches);
-  useEffect(() => {
-    const mq = window.matchMedia(query);
-    const onChange = (): void => setWide(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-  return wide;
-}
 
 /*
  * The feed is created once, outside the component. A fifty-thousand-event ring buffer has to survive a
@@ -518,17 +501,6 @@ export function App(): JSX.Element {
    * corner by turns depending on width and projection - three arrangements, none of them asked for. A
    * stored answer still wins, and only a real toggle stores one.
    */
-  /*
-   * The timeline wants width, not height.
-   *
-   * It is a 24-bucket axis of time, and in the rail it was 364px tall getting 316px across - about 13px a
-   * bucket - while being the single biggest thing competing for a column that could not hold everything.
-   * Along the bottom of the canvas it gets the canvas's width, roughly 43px a bucket, and the rail gets
-   * 364px back, which is what lets the legend come in off the globe and the event list stay on screen.
-   *
-   * Below 768 the canvas is too short to give a strip away, so there it stays in the sheet.
-   */
-  const wideTimeline = useWideTimeline();
   const [keyOpen, setKeyOpen] = useState<boolean>(() => stored("legendKey") === "1");
   // Written on the press, never in an effect on the value. As an effect it fired on mount and persisted
   // the width-derived default, as though somebody had chosen it. Only a real toggle is a choice.
@@ -1315,6 +1287,101 @@ export function App(): JSX.Element {
   const sourceNote = reachNote(snapshot.covered, now, filters.windowMs);
   const live = Object.values(snapshot.statuses).filter((s) => s.kind === "live").length;
 
+  /*
+   * The key, on the right and folded shut.
+   *
+   * It is 445px of explanation, and wherever it lived it was in the way: over the globe on one view, over
+   * the rail on the other, and expanding it shoved whatever it shared a column with. On its own edge it
+   * can open to whatever height it needs and disturb nothing.
+   *
+   * The same props as the legend, because it is the same component drawing its other half - `part` splits
+   * the render rather than duplicating it, so `#mag` is still written once.
+   */
+  const marksKey = (
+              <MagnitudeFilter
+                part="key"
+                ramp={ramp}
+                value={filters.minMagnitude}
+                onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
+                aurora={onGlobe.aurora}
+                cyclones={onGlobe.cyclones}
+                volcanoes={onGlobe.volcanoes.length}
+                outsideWindow={outsideWindowNote(hazardTally, now)}
+                volcanoesSince={newestEpisode(volcanoes)}
+                /*
+                  The archived day's clock, not this minute's. `volcanoNote` counts days since the newest
+                  episode ended, and its `archived` flag only swapped the tense: the number still came
+                  from Date.now(), so a picture of 2026-05-15 read "ended 99 days ago".
+                */
+                now={now}
+                fires={fireSummary}
+                fireCap={FEED_CAP}
+                floods={onGlobe.floods.length}
+                floodCountries={countries(onGlobe.floods)}
+                keyOpen={keyOpen}
+                onKeyOpen={changeKeyOpen}
+                archived={archived}
+                motion={motion}
+                depth={depth}
+                sound={sound ? announceAbove : null}
+                motionOn={motionOn}
+                onMotion={setMotionOn}
+                sinkOn={flat ? null : sinkOn}
+                onSink={setSinkOn}
+                /*
+                  Offered wherever it can change something. Hidden on the flat map was right until the
+                  cross-section started reading the same table, so on the map it appears exactly when a
+                  section is open - otherwise it is a button that does nothing.
+                */
+                herePlace={here?.label ?? null}
+                sky={!flat}
+                eclipse={flat ? null : eclipse}
+                figuresOn={flat ? null : figuresOn}
+                onFigures={setFiguresOn}
+                /* The one of the three that survives flattening: its layer takes the scene's morph and
+                   lies down with the geography. Depth cannot - the shader multiplies the sink by
+                   `1.0 - uMorph` - and the figures have no sky. It used to appear on the map only while a
+                   cross-section was open, which is the one place it was already proven to draw. */
+                slabOn={slabOn}
+                onSlab={setSlabOn}
+                slabCount={slabData.length}
+              >
+              {/*
+                Passed in as a child so the sources land above the folding key. At the bottom of a
+                scrolling column they were off the fold at 1280x720: a control reached by scrolling prose.
+              */}
+              {/* Two toggles need a name. Without one a screen reader meets two unexplained pressed-states
+                  and a sighted reader meets two large unlabelled buttons. */}
+              <div className="mt-3">
+              <span className="label block">Feeds</span>
+              <div role="group" aria-label="Feeds" className="mt-1 flex gap-1.5">
+                {(["usgs", "emsc"] as const).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => toggleSource(id)}
+                    aria-pressed={filters.sources.has(id)}
+                    /*
+                      Sized to their labels, not to the panel. `flex-1` gave each half the key's width,
+                      making two secondary filters the heaviest things in it.
+
+                      Pressed is `border-faint`, matching the detail panel and the window buttons. On
+                      hover instead, the state you were about to enter looked like the state you were in.
+                    */
+                    className={`cursor-pointer border px-2.5 py-1 text-[11px] transition-colors ${
+                      filters.sources.has(id)
+                        ? "border-faint bg-raised text-ink"
+                        : "border-hairline text-faint hover:bg-raised hover:text-dim"
+                    }`}
+                  >
+                    {SOURCE_NAMES[id]}
+                  </button>
+                ))}
+              </div>
+              </div>
+              </MagnitudeFilter>
+  );
+
   const legend = (
     <>
 
@@ -1424,7 +1491,6 @@ export function App(): JSX.Element {
   const timeline = (
     <div data-activity>
             <Timeline
-              compact={wideTimeline}
               bars={bars}
               onSelect={selectQuake}
               archived={archived}
@@ -2247,22 +2313,7 @@ export function App(): JSX.Element {
             interface says live, so it is the widest thing in the rail while it is up.
           */}
           {archiveBlock}
-          {/*
-            The strip is over the planet when it is wide, so what it is drawn from stays here. A footnote
-            about an instrument does not belong on top of the thing the instrument is about.
-          */}
-          {wideTimeline ? (
-            <div data-activity-rail>
-              <TimelineNotes bars={bars} reaches={reaches} notes={timelineNotes} bucketMs={bucketMs}>
-                <details className="mt-3">
-                  <summary className="disclose text-[11px] text-faint hover:text-dim">
-                    How the sizes stack up
-                  </summary>
-                  <SizeChart sizes={sizes} />
-                </details>
-              </TimelineNotes>
-            </div>
-          ) : timeline}
+          {timeline}
 
           {/* All twelve in a resizable box. Truncating to four cut exactly the region with two events,
               which is what somebody scanning for where today is quiet came to see. */}
@@ -2469,6 +2520,23 @@ export function App(): JSX.Element {
           style={{ left: railWidth - 6 }}
         />
 
+        {/*
+          The key's own edge. Collapsed it is one line; opened it takes the height it needs and pushes
+          nothing, because nothing shares this column with it.
+
+          Stands down while a panel is up: they are the same edge, and two things claiming it would be two
+          answers to one question. Desktop only - a phone has no spare edge, so there it stays in the rail.
+        */}
+        {cinema || markSubject || (shownQuake && pinned) ? null : (
+          <div
+            className="pointer-events-auto absolute top-[calc(var(--head-h)_+_1rem)] right-4 z-[1] hidden
+              max-h-[calc(100dvh_-_var(--head-h)_-_16rem)] w-[300px] overflow-y-auto bg-deck/40 p-3
+              backdrop-blur-2xl backdrop-saturate-50 xl:block"
+          >
+            {marksKey}
+          </div>
+        )}
+
         <main className="zone-canvas relative bg-void">
           {/* Split out so the rail paints before three.js parses. The fallback is the void the globe
               sits on, so nothing appears and is then replaced. */}
@@ -2564,28 +2632,6 @@ export function App(): JSX.Element {
                   onSelect={selectQuake}
                   onClose={() => setSectionLine(null)}
                 />
-              </div>
-            ) : null}
-            {/*
-              The timeline, across the canvas rather than down the rail.
-
-              A 24-bucket axis of time wants width. In the rail it had 316px - 13px a bucket - and was the
-              biggest single claim on a column that could not hold everything in it. Here it gets the
-              canvas's width and the rail gets its 364px back.
-
-              Its own ground, because it is a control surface over a planet rather than a caption on one,
-              and it stops where a panel starts for the reason the cross-section does: it spans the width,
-              so a panel over it would hide a quarter of the axis.
-            */}
-            {wideTimeline ? (
-              <div
-                /* No padding of its own beyond the ground it needs: the band already has `p-4`, and this sits
-                   over the planet where every pixel is the subject. */
-                className={`pointer-events-auto order-1 w-full bg-deck/70 px-4 py-2 backdrop-blur-2xl backdrop-saturate-50 ${
-                  markSubject || (shownQuake && pinned) ? "xl:pr-[calc(var(--panel-w)+1rem)]" : ""
-                }`}
-              >
-                {timeline}
               </div>
             ) : null}
             {/* First on the last line, with the key hints beside it. Both sit against the band's left edge,

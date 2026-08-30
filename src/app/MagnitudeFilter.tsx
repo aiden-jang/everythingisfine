@@ -125,6 +125,14 @@ export interface MagnitudeFilterProps {
   children?: JSX.Element;
   /** Whether the key below the scale is open. Held outside so it survives a reload. */
   keyOpen: boolean;
+  /**
+   * Which half to draw.
+   *
+   * `controls` is the ramp, the feeds and the layers; `key` is the explanation of every mark. They render
+   * in different places - the rail and a panel of its own - so this splits rather than hides: two copies
+   * with one hidden would put a second `#mag` in the accessibility tree.
+   */
+  part?: "controls" | "key";
   onKeyOpen: (open: boolean) => void;
   /** True on an archived day, which changes the tense of every layer sentence. */
   archived?: boolean;
@@ -152,6 +160,7 @@ export function MagnitudeFilter(
     fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
     motion, motionOn, onMotion, sinkOn, onSink, slabOn, onSlab, slabCount,
     figuresOn, onFigures, sky = false, eclipse = null, herePlace = null, depth, sound, children,
+    part = "controls",
   }: MagnitudeFilterProps,
 ): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
@@ -171,67 +180,9 @@ export function MagnitudeFilter(
   // Where the threshold sits along the scale, as a percentage of the track.
   const cut = Math.max(0, Math.min(100, ((value - MAG_MIN) / (MAG_MAX - MAG_MIN)) * 100));
 
-  return (
-    // `data-ramp` marks an element outside the canvas allowed to paint the magnitude ramp, which the
-    // design-contract test excludes by name rather than by loosening the rule. See DESIGN.md 3.1.
-    <div data-ramp>
-      <label className="label block" htmlFor="mag">
-        Magnitude {value.toFixed(1)} and above
-      </label>
-
-      <div className="relative mt-2.5 h-[10px]">
-        <div
-          className="absolute inset-0 rounded-[1px]"
-          style={{ background: `linear-gradient(90deg, ${stops.join(",")})` }}
-        />
-        {/* The excluded range is dimmed, not removed, so the scale stays whole. Cutting the track short
-            would make the legend change length every time the filter moved. */}
-        <div
-          className="absolute inset-y-0 left-0 rounded-l-[1px] bg-deck/78"
-          style={{ width: `${cut}%` }}
-        />
-        <input
-          id="mag"
-          type="range"
-          min={MAG_MIN}
-          max={MAG_MAX}
-          step="0.1"
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="ramp-slider absolute inset-0 h-full w-full"
-          aria-describedby="mag-scale"
-        />
-      </div>
-
-      <div id="mag-scale" className="mt-2 flex justify-between font-mono text-[10.5px] text-faint">
-        {TICKS.map((t, i) => (
-          <span key={t}>{i === TICKS.length - 1 ? `${t}+` : t.toFixed(1)}</span>
-        ))}
-      </div>
-
-      {children}
-
-      {/*
-        The layers are controls, and they had drifted into the commentary: turning the slab on meant
-        opening a fold titled "What the marks mean", which is not where anybody looks for a control.
-
-        Grouped rather than hanging off the row each explains. The buttons carry their own labels, the
-        glossary still explains each layer below, and a wrapping row of four costs one line where four
-        rows cost four. A fifth layer adds a word, not a paragraph.
-      */}
-      {switches.length === 0 ? null : (
-        <div className="mt-3">
-          <span className="label block">Layers</span>
-          <div role="group" aria-label="Layers" className="mt-1 flex flex-wrap gap-1.5">
-            {switches}
-          </div>
-        </div>
-      )}
-
-      {/* The split, drawn. Without a rule the source buttons sat 10px above the commentary with the same
-          gap that separates the slider from its ticks, so the panel read as one undifferentiated stack. */}
-      <hr className="mt-3.5 border-t border-hairline" />
-
+  if (part === "key") {
+    return (
+      <div data-ramp>
       {/*
         Everything below the scale is explanation and folds away. Controls above, commentary below.
 
@@ -552,6 +503,74 @@ export function MagnitudeFilter(
       ) : null}
 
       </details>
+      </div>
+    );
+  }
+
+  return (
+    // `data-ramp` marks an element outside the canvas allowed to paint the magnitude ramp, which the
+    // design-contract test excludes by name rather than by loosening the rule. See DESIGN.md 3.1.
+    <div data-ramp>
+      <label className="label block" htmlFor="mag">
+        Magnitude {value.toFixed(1)} and above
+      </label>
+
+      <div className="relative mt-2.5 h-[10px]">
+        <div
+          className="absolute inset-0 rounded-[1px]"
+          style={{ background: `linear-gradient(90deg, ${stops.join(",")})` }}
+        />
+        {/* The excluded range is dimmed, not removed, so the scale stays whole. Cutting the track short
+            would make the legend change length every time the filter moved. */}
+        <div
+          className="absolute inset-y-0 left-0 rounded-l-[1px] bg-deck/78"
+          style={{ width: `${cut}%` }}
+        />
+        <input
+          id="mag"
+          type="range"
+          min={MAG_MIN}
+          max={MAG_MAX}
+          step="0.1"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="ramp-slider absolute inset-0 h-full w-full"
+          aria-describedby="mag-scale"
+        />
+      </div>
+
+      <div id="mag-scale" className="mt-2 flex justify-between font-mono text-[10.5px] text-faint">
+        {TICKS.map((t, i) => (
+          <span key={t}>{i === TICKS.length - 1 ? `${t}+` : t.toFixed(1)}</span>
+        ))}
+      </div>
+
+      {/*
+        Feeds and layers fold, because they are set once and then never touched, and the rail is short by
+        about 400px with the timeline back in it. The ramp above stays open - that one gets dragged.
+
+        Layers live here rather than in the key, where they used to be: turning the slab on meant opening
+        a fold titled "What the marks mean", which is not where anybody looks for a control.
+      */}
+      <details className="mt-3">
+        <summary className="label cursor-pointer select-none">Feeds and layers</summary>
+        <div className="mt-2">
+          {children}
+          {switches.length === 0 ? null : (
+            <div className="mt-3">
+              <span className="label block">Layers</span>
+              <div role="group" aria-label="Layers" className="mt-1 flex flex-wrap gap-1.5">
+                {switches}
+              </div>
+            </div>
+          )}
+        </div>
+      </details>
+
+      {/* The split, drawn. Without a rule the source buttons sat 10px above the commentary with the same
+          gap that separates the slider from its ticks, so the panel read as one undifferentiated stack. */}
+      <hr className="mt-3.5 border-t border-hairline" />
+
 
     </div>
   );

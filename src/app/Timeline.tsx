@@ -24,15 +24,6 @@ export interface TimelineProps {
   /** Pins the event a bar stands for. The bar is the control, not the tick: a 2px tick is not a touch
    * target and the bar already clears 44px. */
   onSelect: (key: string) => void;
-  /**
-   * Draws the instrument alone: the window buttons, the bars, the axis and the transport.
-   *
-   * Across the canvas this sits over the planet, and the planet is the subject. Everything else here is a
-   * footnote about the instrument - what the feeds reach, how the sizes stack up, what the ticks are - and
-   * a footnote does not belong on top of the thing it is about. Those render in the rail instead, from
-   * `TimelineNotes`.
-   */
-  compact?: boolean;
   /** How long one bar covers, for the readout and the axis. */
   bucketMs: number;
   /** True while a wider backlog is still arriving, so the strip can say so rather than look empty. */
@@ -124,7 +115,7 @@ const spanLabel = (hours: number): string =>
 export function Timeline({
   bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange, bucketMs, fetching, waiting,
   cursor, parked, playing, onScrub, onStep, onPlayToggle, onLive, cursorLabel, reaches,
-  notes, archived = false, children, onSelect, compact = false,
+  notes, archived = false, children, onSelect,
 }: TimelineProps): JSX.Element {
   const peak = peakCount(bars);
   const tallest = bars.find((b) => b.count === peak && peak > 0);
@@ -341,7 +332,7 @@ export function Timeline({
         frame, empty, so the load state and the steady state are one picture.
       */}
       {/* Folded: provenance, not a control. Opened, still tight to the axis it measures. */}
-      {!compact && reaches.length > 0 ? (
+      {reaches.length > 0 ? (
         <details className="mt-1">
           <summary className="disclose text-[11px] text-faint hover:text-dim">
             How far the feeds reach
@@ -377,12 +368,11 @@ export function Timeline({
         </details>
       ) : null}
 
-      {compact ? null : children}
+      {children}
 
       {/* The transport, on its own track rather than on the strip. Moving across the strip holds an hour,
-          and a drag that both held an hour and moved the cursor would be two meanings for one gesture.
-          Tight to the axis when compact: over the planet, 16px of margin is 16px of planet. */}
-      <div className={`flex items-center gap-2 ${compact ? "mt-1.5" : "mt-4"}`}>
+          and a drag that both held an hour and moved the cursor would be two meanings for one gesture. */}
+      <div className="mt-4 flex items-center gap-2">
         <button
           type="button"
           onClick={onPlayToggle}
@@ -441,7 +431,7 @@ export function Timeline({
 
       {/* Below the transport, not above: there it wrapped in the tablet column and pushed the transport
           past the fold. Controls above, commentary below. */}
-      {!compact && notable.length > 0 ? (
+      {notable.length > 0 ? (
         <p className="mt-2 text-[11px] leading-relaxed text-faint">
           {notable.length === 1
             ? "The tick marks the largest event. "
@@ -452,69 +442,6 @@ export function Timeline({
 
       {/* Only once some hours are observed. A caveat about the blocks, at the moment the whole strip is
           blocks, explains a state the sentence above the rail has already named. */}
-      {!compact && unobserved ? (
-        <p className="mt-2 text-[11px] leading-relaxed text-faint">
-          Blocks are {unit.many} the buffer was not open for, not quiet ones.
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-/*
- * What the strip is drawn from, for the rail to carry while the strip itself is over the planet.
- *
- * The same sections `compact` leaves out, in the same order, so nothing is written twice and nothing is
- * lost by moving the instrument out of the column.
- */
-export function TimelineNotes(
-  { bars, reaches, notes, bucketMs, children }: {
-    bars: Bar[];
-    reaches: TimelineProps["reaches"];
-    notes: TimelineProps["notes"];
-    bucketMs: number;
-    children?: ReactNode;
-  },
-): JSX.Element | null {
-  const unit = bucketUnit(bucketMs);
-  const marked = Math.min(NOTABLE, bars.filter((b) => b.lead !== null).length);
-  const unobserved = bars.some((b) => b.observed) && bars.some((b) => !b.observed);
-  if (reaches.length === 0 && marked === 0 && !unobserved && !children) return null;
-  return (
-    <div data-activity-notes>
-      {reaches.length > 0 ? (
-        <details>
-          <summary className="disclose text-[11px] text-faint hover:text-dim">
-            How far the feeds reach
-          </summary>
-          <div className="mt-1">
-            {reaches.map((r) => (
-              <div key={r.id} className="flex items-center gap-2">
-                <span className="w-[34px] shrink-0 font-mono text-[10.5px] text-faint">{r.label}</span>
-                <span className="relative h-px min-w-0 flex-1 bg-hairline">
-                  <span
-                    className="absolute inset-y-0 right-0 bg-dim"
-                    style={{ width: `${Math.max(r.fraction > 0 ? 1 : 0, r.fraction * 100)}%` }}
-                  />
-                </span>
-                <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] whitespace-nowrap text-faint tabular-nums">
-                  {r.words}
-                </span>
-              </div>
-            ))}
-            {notes.map((note) => (
-              <p key={note} className="mt-2 text-[11px] leading-relaxed text-faint">{note}</p>
-            ))}
-          </div>
-        </details>
-      ) : null}
-      {children}
-      {marked > 0 ? (
-        <p className="mt-2 text-[11px] leading-relaxed text-faint">
-          {marked === 1 ? "The tick marks the largest event. " : `The ticks mark the ${marked} largest. `}
-          Click a bar to open the largest in it.
-        </p>
-      ) : null}
       {unobserved ? (
         <p className="mt-2 text-[11px] leading-relaxed text-faint">
           Blocks are {unit.many} the buffer was not open for, not quiet ones.
