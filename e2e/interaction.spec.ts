@@ -429,7 +429,7 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
 
   // Both tracks on screen from the first frame, empty, and saying which state they are in. The sentence above
   // says the app is asking two agencies; these say which has replied.
-  const activity = page.locator('[data-rail="activity"]');
+  const activity = page.locator('[data-activity]');
   await expect(activity).toContainText("USGS");
   await expect(activity).toContainText("EMSC");
   // "waiting", not "no backlog": a feed still being waited for resolves itself and a refused one does
@@ -438,7 +438,7 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
   await expect(activity).not.toContainText("no answer");
   // Nothing drawn on either track until a feed vouches for something.
   const filled = await page.evaluate(() => Array
-    .from(document.querySelectorAll('[data-rail="activity"] .relative > span'))
+    .from(document.querySelectorAll('[data-activity] .relative > span'))
     .filter((el) => el.getBoundingClientRect().width > 0.5).length);
   expect(filled).toBe(0);
 });
@@ -921,7 +921,9 @@ test("a line dragged across the map opens a section through it", async ({ page }
   await page.mouse.click(cx, cy);
   await page.keyboard.up("Shift");
   await expect(section).toHaveCount(0);
-  expect(page.url()).not.toContain("x=");
+  // Polled: the permalink is written on a one-second interval, so reading it the instant the section
+  // closes is a race against that tick rather than a statement about the link.
+  await expect.poll(() => page.url(), { timeout: 5_000 }).not.toContain("x=");
 });
 
 /*
@@ -1137,7 +1139,7 @@ test("the chrome says how far back each agency actually covers", async ({ page }
 
   // On the activity strip, against its own axis, rather than on the source toggles: the axis is what the
   // durations have to be read against, and both would be the same span measured twice.
-  const activity = page.locator('[data-rail="activity"]');
+  const activity = page.locator('[data-activity]');
   // USGS has no result cap, so a successful fetch of a feed vouches for the whole of it.
   await expect(activity).toContainText("24h");
   // Six hours of a twenty-four hour window, which is the fixture's cap and not the window.
@@ -1148,7 +1150,7 @@ test("the chrome says how far back each agency actually covers", async ({ page }
   // The bar has to be a fraction of the axis, not merely present. Widening the window widens USGS's bar and
   // leaves EMSC's where it was, and that difference is the whole point of drawing them.
   const emscWidth = async (): Promise<number> => page.evaluate(() => {
-    const rows = Array.from(document.querySelectorAll('[data-rail="activity"] .relative'));
+    const rows = Array.from(document.querySelectorAll('[data-activity] .relative'));
     const row = rows.find((el) => el.parentElement?.textContent?.startsWith("EMSC"));
     const fill = row?.firstElementChild as HTMLElement | undefined;
     const track = row?.getBoundingClientRect().width ?? 1;
@@ -1157,7 +1159,8 @@ test("the chrome says how far back each agency actually covers", async ({ page }
   const atDay = await emscWidth();
   expect(atDay).toBeGreaterThan(0.15);
 
-  await page.locator(".zone-rail").getByRole("button", { name: "30d", exact: true }).click();
+  // Scoped to the strip, which owns the window buttons wherever it is rendering.
+  await page.locator("[data-activity]").getByRole("button", { name: "30d", exact: true }).click();
   await expect(activity).toContainText("30d");
   // A thirtieth of the axis it was, or thereabouts: the stub is the fact being stated loudly.
   await expect.poll(emscWidth, { timeout: 8_000 }).toBeLessThan(atDay / 3);
@@ -1169,7 +1172,7 @@ test("with both agencies covering the window, nothing is caveated", async ({ pag
   await page.goto("/");
   await waitForData(page);
 
-  const activity = page.locator('[data-rail="activity"]');
+  const activity = page.locator('[data-activity]');
   // Both bars full, and no caveat, because there is no asymmetry to caveat.
   await expect(activity).toContainText("USGS");
   await expect(activity).toContainText("EMSC");

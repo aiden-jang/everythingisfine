@@ -1384,7 +1384,10 @@ export function App(): JSX.Element {
     </>
   );
 
+  /* `data-activity` rather than `data-rail`: this renders in the rail or in the band across the canvas
+     depending on width, and a hook naming one of them would be wrong half the time. */
   const timeline = (
+    <div data-activity>
             <Timeline
               bars={bars}
               onSelect={selectQuake}
@@ -1438,6 +1441,7 @@ export function App(): JSX.Element {
                 <SizeChart sizes={sizes} />
               </details>
             </Timeline>
+    </div>
   );
 
   const archiveBlock = (
