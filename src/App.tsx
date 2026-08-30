@@ -67,12 +67,15 @@ import {
   reachWords, SOURCE_NAMES, windowLabel,
 } from "./app/format";
 
+
 /**
- * Renders once, in one place or the other. Two copies with one hidden would put a second `#mag` slider
- * and a second pair of source toggles in the accessibility tree.
+ * True where the timeline gets the canvas's width instead of the rail's.
+ *
+ * Rendered once, in one place or the other. Two copies with one hidden would put a second `window-scale`
+ * and a second transport in the accessibility tree.
  */
-function useWide(): boolean {
-  const query = "(min-width: 1280px)";
+function useWideTimeline(): boolean {
+  const query = "(min-width: 768px)";
   const [wide, setWide] = useState(() => window.matchMedia(query).matches);
   useEffect(() => {
     const mq = window.matchMedia(query);
@@ -340,7 +343,6 @@ export function App(): JSX.Element {
   const depth = useMemo(
     () => depthBands(feed.store, filters, clockAt()), [filters, snapshot.revision],
   );
-  const onMap = useWide();
   /*
    * Not in the permalink: which projection somebody happened to be using is a preference.
    *
@@ -516,6 +518,17 @@ export function App(): JSX.Element {
    * corner by turns depending on width and projection - three arrangements, none of them asked for. A
    * stored answer still wins, and only a real toggle stores one.
    */
+  /*
+   * The timeline wants width, not height.
+   *
+   * It is a 24-bucket axis of time, and in the rail it was 364px tall getting 316px across - about 13px a
+   * bucket - while being the single biggest thing competing for a column that could not hold everything.
+   * Along the bottom of the canvas it gets the canvas's width, roughly 43px a bucket, and the rail gets
+   * 364px back, which is what lets the legend come in off the globe and the event list stay on screen.
+   *
+   * Below 768 the canvas is too short to give a strip away, so there it stays in the sheet.
+   */
+  const wideTimeline = useWideTimeline();
   const [keyOpen, setKeyOpen] = useState<boolean>(() => stored("legendKey") === "1");
   // Written on the press, never in an effect on the value. As an effect it fired on mount and persisted
   // the width-derived default, as though somebody had chosen it. Only a real toggle is a choice.
@@ -1371,6 +1384,284 @@ export function App(): JSX.Element {
     </>
   );
 
+  const timeline = (
+            <Timeline
+              bars={bars}
+              onSelect={selectQuake}
+              archived={archived}
+              ramp={ramp}
+              hours={hours}
+              focusHour={focusHour}
+              onFocusHourChange={setFocusHour}
+              onHoursChange={(h) => {
+                const windowMs = h * 3_600_000;
+                setFilters((f) => ({ ...f, windowMs }));
+                /*
+                 * The cursor goes live rather than being clamped: 40% through a day and 40% through a month
+                 * are not the same moment, and keeping the number would move the viewer in time without
+                 * them touching the cursor.
+                 */
+                setScrub(LIVE);
+                if (feed.setWindow(windowMs)) setPendingRev(snapshot.revision);
+              }}
+              bucketMs={bucketMs}
+              fetching={fetching}
+              waiting={snapshot.coveredSince === null}
+              cursor={fractionOf(view, span)}
+              parked={view.at !== null}
+              playing={view.playing}
+              onScrub={(f) => setScrub(dragTo(f, span))}
+              onStep={(buckets) => setScrub(nudge(view, span, buckets))}
+              onPlayToggle={() => setScrub(togglePlay(view, span))}
+              onLive={() => setScrub(LIVE)}
+              cursorLabel={view.at === null ? null : clock(view.at)}
+              reaches={(["usgs", "emsc"] as const).map((id) => ({
+                id,
+                label: SOURCE_NAMES[id],
+                fraction: reachFraction(snapshot.covered[id], now, filters.windowMs),
+                words: reachWords(
+                  snapshot.covered[id],
+                  snapshot.statuses[id].kind === "failing",
+                  now,
+                  filters.windowMs,
+                ),
+              }))}
+              notes={[
+                sourceNote,
+                corroborationNote(overlap, overlapFrom, now, filters.windowMs),
+              ].filter((n): n is string => n !== null)}
+            >
+              <details className="mt-3">
+                <summary className="disclose text-[11px] text-faint hover:text-dim">
+                  How the sizes stack up
+                </summary>
+                <SizeChart sizes={sizes} />
+              </details>
+            </Timeline>
+  );
+
+  const archiveBlock = (
+          <div data-rail="activity">
+            {snapshot.archive ? (
+              <div className="stamp mb-3 bg-raised p-2.5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className="label">Archive</span>
+                  <button
+                    type="button"
+                    onClick={backToLive}
+                    className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink"
+                  >
+                    back to live
+                  </button>
+                </div>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-ink">
+                  {new Date(snapshot.archive.from).toISOString().slice(0, 10)}, all day UTC. Nothing here
+                  is arriving now.
+                </p>
+                {/* Disabled while a day is in flight: two overlapping archive loads race, and the second
+                    answer is not necessarily the second request. Forward stops at yesterday. */}
+                {neighbours ? (
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      disabled={archiveBusy}
+                      onClick={() => stepDay(-1)}
+                      className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink disabled:cursor-default disabled:text-faint"
+                    >
+                      ‹ {neighbours.prev}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={archiveBusy || neighbours.next > newestDay}
+                      onClick={() => stepDay(1)}
+                      className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink disabled:cursor-default disabled:text-faint"
+                    >
+                      {neighbours.next} ›
+                    </button>
+                  </div>
+                ) : null}
+                {/* What is genuinely absent is the aurora, and permanently: a forecast for a stamped
+                    minute has no past to ask for. The other four come from a different upstream. */}
+                <p className="mt-1 text-[11px] leading-relaxed text-faint">
+                  Storms, fires, floods and volcanoes come from NASA rather than the live feeds. No aurora:
+                  it is a forecast, so there is no past to ask for.
+                </p>
+                {archiveNote ? (
+                  <p className="mt-1 font-mono text-[10.5px] leading-relaxed text-faint">{archiveNote}</p>
+                ) : null}
+              </div>
+            ) : (
+              /* Label above, not beside. Side by side the label and "go" took the fixed width and left the
+                 date field 60px in the 768px strip, under the touch minimum. */
+              <div className="mb-3">
+                <label className="label" htmlFor="archive-day">Go to a day</label>
+                <div className="mt-1 flex items-center gap-1.5">
+                {/*
+                  ISO text, not `type="date"`. The native widget asks for `mm/dd/yyyy`, a format this app
+                  never prints, so a day could not be copied out of the notable list and pasted in. The
+                  loss is the touch calendar, and the notable list is the way in for anybody without a date.
+                */}
+                <input
+                  id="archive-day"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="YYYY-MM-DD"
+                  aria-describedby={dayFault ? "archive-day-fault" : undefined}
+                  value={archiveDay}
+                  // Digits in, hyphens ours. See `typedDay`.
+                  onChange={(e) => setArchiveDay(typedDay(e.target.value))}
+                  onKeyDown={(e) => {
+                    // Enter is what a text field promises and a date picker did not have to.
+                    if (e.key === "Enter" && !archiveBusy && isArchivableDay(archiveDay, Date.now())) {
+                      e.preventDefault();
+                      void loadArchive(archiveDay);
+                    }
+                  }}
+                  className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[10.5px] text-dim placeholder:text-faint"
+                />
+                {/* A calendar beside the ISO field, never instead of it: `type="date"` shows mm/dd/yyyy, which this
+                    app never prints, so a day could not be pasted in from the notable list. */}
+                <span className="relative inline-flex size-[26px] shrink-0 items-center justify-center border border-hairline text-faint hover:text-ink">
+                  <svg viewBox="0 0 14 14" aria-hidden="true" className="size-[11px]">
+                    <rect x="1" y="2.5" width="12" height="10.5" fill="none"
+                      stroke="currentColor" strokeWidth="1.2" />
+                    <path d="M1 6 H13 M4.5 1 V4 M9.5 1 V4" fill="none"
+                      stroke="currentColor" strokeWidth="1.2" />
+                  </svg>
+                  <input
+                    type="date"
+                    aria-label="Pick a day from a calendar"
+                    max={newestDay}
+                    value={isArchivableDay(archiveDay, Date.now()) ? archiveDay : ""}
+                    onChange={(e) => {
+                      const picked = e.target.value;
+                      if (!picked) return;
+                      setArchiveDay(picked);
+                      // Straight in: a picker cannot offer a half-typed date.
+                      if (isArchivableDay(picked, Date.now())) void loadArchive(picked);
+                    }}
+                    /* A date field only drops its calendar on the browser's own icon, which is invisible at zero
+                       opacity. `showPicker` is recent and throws where it is unsupported. */
+                    onClick={(e) => {
+                      const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
+                      try { el.showPicker?.(); } catch { /* the field still takes a typed date */ }
+                    }}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                  />
+                </span>
+                <button
+                  type="button"
+                  disabled={archiveBusy || !isArchivableDay(archiveDay, Date.now())}
+                  onClick={() => void loadArchive(archiveDay)}
+                  className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:cursor-default disabled:text-faint"
+                >
+                  {archiveBusy ? "…" : "go"}
+                </button>
+                </div>
+                {/* Said where it was caused: `archiveNote` renders in the archived banner, which is the
+                    other branch of this ternary, so a day refused while live set a message nobody saw. */}
+                {dayFault ? (
+                  <p id="archive-day-fault" className="mt-1 text-[11px] leading-relaxed text-faint">
+                    {dayFault}
+                  </p>
+                ) : null}
+              </div>
+            )}
+                {/*
+                  Outside the archived/live branch on purpose. Inside it the list vanished the moment a day
+                  loaded, so Valdivia to Tōhoku meant going back to live and waiting for the feeds to seed.
+                  Closed by default: it is a way in, not a menu.
+                */}
+                <details
+                  className="mt-2"
+                  onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) askCounts(); }}
+                >
+                  <summary className="disclose text-[11px] text-faint hover:text-dim">
+                    Days worth seeing
+                  </summary>
+                  <div className="mt-1">
+                    {NOTABLE_DAYS.map((d) => (
+                      <button
+                        key={d.day}
+                        type="button"
+                        disabled={archiveBusy}
+                        onClick={() => { setArchiveDay(d.day); void loadArchive(d.day); }}
+                        aria-label={`${d.what}, magnitude ${d.magnitude}, ${d.day}`
+                          + (typeof dayCounts[d.day] === "number"
+                            ? `, ${dayCounts[d.day]!.toLocaleString("en-GB")} events`
+                            : "")}
+                        /* Marks the day on screen. `aria-current` says it to a screen reader rather than
+                           leaving the tint to carry it alone. */
+                        aria-current={loadedDay === d.day ? "true" : undefined}
+                        className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left transition-colors hover:bg-raised disabled:cursor-default ${
+                          loadedDay === d.day ? "bg-raised" : ""
+                        }`}
+                      >
+                        <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
+                          {d.day}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-[11px] text-dim">{d.what}</span>
+                        <span className="shrink-0 font-mono text-[10.5px] text-dim tabular-nums">
+                          M{d.magnitude.toFixed(1)}
+                        </span>
+                        {/* Blank until it answers, and blank if it never does. A dash or a zero would be a
+                            claim about the day rather than about the request. */}
+                        <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] text-faint tabular-nums">
+                          {dayCounts[d.day] === undefined || dayCounts[d.day] === null
+                            ? ""
+                            : dayCounts[d.day]!.toLocaleString("en-GB")}
+                        </span>
+                      </button>
+                    ))}
+                    {/* Required, not decoration: 1960 returns six events against Tōhoku's 685, and a true
+                        number here reads as a claim about the planet. */}
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{NOTABLE_NOTE}</p>
+                  </div>
+                </details>
+                {/*
+                  Its own list, because the one above requires a magnitude and an eclipse has none.
+
+                  Sets the cursor as well as the day. The shadow lasts a few hours and an archived day opens
+                  at its right edge, so loading only the day lands after the thing the row names. The times
+                  are checked against the geometry in `eclipseDays.test.ts`: a wrong minute fails silently.
+                */}
+                <details className="mt-2">
+                  <summary className="disclose text-[11px] text-faint hover:text-dim">
+                    Eclipses
+                  </summary>
+                  <div className="mt-1">
+                    {ECLIPSE_DAYS.map((e) => (
+                      <button
+                        key={e.day}
+                        type="button"
+                        disabled={archiveBusy}
+                        onClick={() => {
+                          setArchiveDay(e.day);
+                          void loadArchive(e.day);
+                          setScrub({ at: eclipseMoment(e), playing: false });
+                        }}
+                        aria-label={`${e.what}, ${e.kind} eclipse, ${e.day} at ${e.at} UTC`}
+                        aria-current={loadedDay === e.day ? "true" : undefined}
+                        className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left text-[11px] transition-colors hover:bg-raised disabled:cursor-default ${
+                          loadedDay === e.day ? "bg-raised text-ink" : "text-faint"
+                        }`}
+                      >
+                        <span className="w-[62px] shrink-0 font-mono text-[10.5px] tabular-nums">
+                          {e.day.slice(0, 7)}
+                        </span>
+                        <span className="grow">{e.what}</span>
+                      </button>
+                    ))}
+                  </div>
+                </details>
+
+            {/* A rule between choosing a day and reading one. Without it, "Days worth seeing" sat 12px
+                above the 24h/7d/30d buttons and read as their label. */}
+          </div>
+  );
+
   return (
     <div className="frame">
       {/* A top edge, so the frame closes. The rail has `xl:border-r` and the panel a `border-l`, and above
@@ -1905,7 +2196,12 @@ export function App(): JSX.Element {
             The flat map fills its whole rectangle, so a panel over it permanently hides part of the Pacific
             and panning cannot get out from under it - so flattened, the key goes back to the rail.
           */}
-          {onMap && !flat ? null : <div data-rail="legend">{legend}</div>}
+          {/*
+            Docked, in both projections. It was 300px of panel over the subject on the globe and in the rail
+            on the flat map, for no reason the two views actually differed on. The timeline leaving the rail
+            is what made room for it.
+          */}
+          <div data-rail="legend">{legend}</div>
 
           {/*
             Under the strip, not in the header: the window buttons choose how much of the recent past to
@@ -1914,279 +2210,8 @@ export function App(): JSX.Element {
             The banner is what stands between this feature and a globe showing last March while the
             interface says live, so it is the widest thing in the rail while it is up.
           */}
-          <div data-rail="activity">
-            {snapshot.archive ? (
-              <div className="stamp mb-3 bg-raised p-2.5">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="label">Archive</span>
-                  <button
-                    type="button"
-                    onClick={backToLive}
-                    className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink"
-                  >
-                    back to live
-                  </button>
-                </div>
-                <p className="mt-1.5 text-[11px] leading-relaxed text-ink">
-                  {new Date(snapshot.archive.from).toISOString().slice(0, 10)}, all day UTC. Nothing here
-                  is arriving now.
-                </p>
-                {/* Disabled while a day is in flight: two overlapping archive loads race, and the second
-                    answer is not necessarily the second request. Forward stops at yesterday. */}
-                {neighbours ? (
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      disabled={archiveBusy}
-                      onClick={() => stepDay(-1)}
-                      className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink disabled:cursor-default disabled:text-faint"
-                    >
-                      ‹ {neighbours.prev}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={archiveBusy || neighbours.next > newestDay}
-                      onClick={() => stepDay(1)}
-                      className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink disabled:cursor-default disabled:text-faint"
-                    >
-                      {neighbours.next} ›
-                    </button>
-                  </div>
-                ) : null}
-                {/* What is genuinely absent is the aurora, and permanently: a forecast for a stamped
-                    minute has no past to ask for. The other four come from a different upstream. */}
-                <p className="mt-1 text-[11px] leading-relaxed text-faint">
-                  Storms, fires, floods and volcanoes come from NASA rather than the live feeds. No aurora:
-                  it is a forecast, so there is no past to ask for.
-                </p>
-                {archiveNote ? (
-                  <p className="mt-1 font-mono text-[10.5px] leading-relaxed text-faint">{archiveNote}</p>
-                ) : null}
-              </div>
-            ) : (
-              /* Label above, not beside. Side by side the label and "go" took the fixed width and left the
-                 date field 60px in the 768px strip, under the touch minimum. */
-              <div className="mb-3">
-                <label className="label" htmlFor="archive-day">Go to a day</label>
-                <div className="mt-1 flex items-center gap-1.5">
-                {/*
-                  ISO text, not `type="date"`. The native widget asks for `mm/dd/yyyy`, a format this app
-                  never prints, so a day could not be copied out of the notable list and pasted in. The
-                  loss is the touch calendar, and the notable list is the way in for anybody without a date.
-                */}
-                <input
-                  id="archive-day"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder="YYYY-MM-DD"
-                  aria-describedby={dayFault ? "archive-day-fault" : undefined}
-                  value={archiveDay}
-                  // Digits in, hyphens ours. See `typedDay`.
-                  onChange={(e) => setArchiveDay(typedDay(e.target.value))}
-                  onKeyDown={(e) => {
-                    // Enter is what a text field promises and a date picker did not have to.
-                    if (e.key === "Enter" && !archiveBusy && isArchivableDay(archiveDay, Date.now())) {
-                      e.preventDefault();
-                      void loadArchive(archiveDay);
-                    }
-                  }}
-                  className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[10.5px] text-dim placeholder:text-faint"
-                />
-                {/* A calendar beside the ISO field, never instead of it: `type="date"` shows mm/dd/yyyy, which this
-                    app never prints, so a day could not be pasted in from the notable list. */}
-                <span className="relative inline-flex size-[26px] shrink-0 items-center justify-center border border-hairline text-faint hover:text-ink">
-                  <svg viewBox="0 0 14 14" aria-hidden="true" className="size-[11px]">
-                    <rect x="1" y="2.5" width="12" height="10.5" fill="none"
-                      stroke="currentColor" strokeWidth="1.2" />
-                    <path d="M1 6 H13 M4.5 1 V4 M9.5 1 V4" fill="none"
-                      stroke="currentColor" strokeWidth="1.2" />
-                  </svg>
-                  <input
-                    type="date"
-                    aria-label="Pick a day from a calendar"
-                    max={newestDay}
-                    value={isArchivableDay(archiveDay, Date.now()) ? archiveDay : ""}
-                    onChange={(e) => {
-                      const picked = e.target.value;
-                      if (!picked) return;
-                      setArchiveDay(picked);
-                      // Straight in: a picker cannot offer a half-typed date.
-                      if (isArchivableDay(picked, Date.now())) void loadArchive(picked);
-                    }}
-                    /* A date field only drops its calendar on the browser's own icon, which is invisible at zero
-                       opacity. `showPicker` is recent and throws where it is unsupported. */
-                    onClick={(e) => {
-                      const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
-                      try { el.showPicker?.(); } catch { /* the field still takes a typed date */ }
-                    }}
-                    className="absolute inset-0 cursor-pointer opacity-0"
-                  />
-                </span>
-                <button
-                  type="button"
-                  disabled={archiveBusy || !isArchivableDay(archiveDay, Date.now())}
-                  onClick={() => void loadArchive(archiveDay)}
-                  className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:cursor-default disabled:text-faint"
-                >
-                  {archiveBusy ? "…" : "go"}
-                </button>
-                </div>
-                {/* Said where it was caused: `archiveNote` renders in the archived banner, which is the
-                    other branch of this ternary, so a day refused while live set a message nobody saw. */}
-                {dayFault ? (
-                  <p id="archive-day-fault" className="mt-1 text-[11px] leading-relaxed text-faint">
-                    {dayFault}
-                  </p>
-                ) : null}
-              </div>
-            )}
-                {/*
-                  Outside the archived/live branch on purpose. Inside it the list vanished the moment a day
-                  loaded, so Valdivia to Tōhoku meant going back to live and waiting for the feeds to seed.
-                  Closed by default: it is a way in, not a menu.
-                */}
-                <details
-                  className="mt-2"
-                  onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) askCounts(); }}
-                >
-                  <summary className="disclose text-[11px] text-faint hover:text-dim">
-                    Days worth seeing
-                  </summary>
-                  <div className="mt-1">
-                    {NOTABLE_DAYS.map((d) => (
-                      <button
-                        key={d.day}
-                        type="button"
-                        disabled={archiveBusy}
-                        onClick={() => { setArchiveDay(d.day); void loadArchive(d.day); }}
-                        aria-label={`${d.what}, magnitude ${d.magnitude}, ${d.day}`
-                          + (typeof dayCounts[d.day] === "number"
-                            ? `, ${dayCounts[d.day]!.toLocaleString("en-GB")} events`
-                            : "")}
-                        /* Marks the day on screen. `aria-current` says it to a screen reader rather than
-                           leaving the tint to carry it alone. */
-                        aria-current={loadedDay === d.day ? "true" : undefined}
-                        className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left transition-colors hover:bg-raised disabled:cursor-default ${
-                          loadedDay === d.day ? "bg-raised" : ""
-                        }`}
-                      >
-                        <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
-                          {d.day}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate text-[11px] text-dim">{d.what}</span>
-                        <span className="shrink-0 font-mono text-[10.5px] text-dim tabular-nums">
-                          M{d.magnitude.toFixed(1)}
-                        </span>
-                        {/* Blank until it answers, and blank if it never does. A dash or a zero would be a
-                            claim about the day rather than about the request. */}
-                        <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] text-faint tabular-nums">
-                          {dayCounts[d.day] === undefined || dayCounts[d.day] === null
-                            ? ""
-                            : dayCounts[d.day]!.toLocaleString("en-GB")}
-                        </span>
-                      </button>
-                    ))}
-                    {/* Required, not decoration: 1960 returns six events against Tōhoku's 685, and a true
-                        number here reads as a claim about the planet. */}
-                    <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{NOTABLE_NOTE}</p>
-                  </div>
-                </details>
-                {/*
-                  Its own list, because the one above requires a magnitude and an eclipse has none.
-
-                  Sets the cursor as well as the day. The shadow lasts a few hours and an archived day opens
-                  at its right edge, so loading only the day lands after the thing the row names. The times
-                  are checked against the geometry in `eclipseDays.test.ts`: a wrong minute fails silently.
-                */}
-                <details className="mt-2">
-                  <summary className="disclose text-[11px] text-faint hover:text-dim">
-                    Eclipses
-                  </summary>
-                  <div className="mt-1">
-                    {ECLIPSE_DAYS.map((e) => (
-                      <button
-                        key={e.day}
-                        type="button"
-                        disabled={archiveBusy}
-                        onClick={() => {
-                          setArchiveDay(e.day);
-                          void loadArchive(e.day);
-                          setScrub({ at: eclipseMoment(e), playing: false });
-                        }}
-                        aria-label={`${e.what}, ${e.kind} eclipse, ${e.day} at ${e.at} UTC`}
-                        aria-current={loadedDay === e.day ? "true" : undefined}
-                        className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left text-[11px] transition-colors hover:bg-raised disabled:cursor-default ${
-                          loadedDay === e.day ? "bg-raised text-ink" : "text-faint"
-                        }`}
-                      >
-                        <span className="w-[62px] shrink-0 font-mono text-[10.5px] tabular-nums">
-                          {e.day.slice(0, 7)}
-                        </span>
-                        <span className="grow">{e.what}</span>
-                      </button>
-                    ))}
-                  </div>
-                </details>
-
-            {/* A rule between choosing a day and reading one. Without it, "Days worth seeing" sat 12px
-                above the 24h/7d/30d buttons and read as their label. */}
-            <hr className="my-3.5 border-t border-hairline" />
-            <Timeline
-              bars={bars}
-              onSelect={selectQuake}
-              archived={archived}
-              ramp={ramp}
-              hours={hours}
-              focusHour={focusHour}
-              onFocusHourChange={setFocusHour}
-              onHoursChange={(h) => {
-                const windowMs = h * 3_600_000;
-                setFilters((f) => ({ ...f, windowMs }));
-                /*
-                 * The cursor goes live rather than being clamped: 40% through a day and 40% through a month
-                 * are not the same moment, and keeping the number would move the viewer in time without
-                 * them touching the cursor.
-                 */
-                setScrub(LIVE);
-                if (feed.setWindow(windowMs)) setPendingRev(snapshot.revision);
-              }}
-              bucketMs={bucketMs}
-              fetching={fetching}
-              waiting={snapshot.coveredSince === null}
-              cursor={fractionOf(view, span)}
-              parked={view.at !== null}
-              playing={view.playing}
-              onScrub={(f) => setScrub(dragTo(f, span))}
-              onStep={(buckets) => setScrub(nudge(view, span, buckets))}
-              onPlayToggle={() => setScrub(togglePlay(view, span))}
-              onLive={() => setScrub(LIVE)}
-              cursorLabel={view.at === null ? null : clock(view.at)}
-              reaches={(["usgs", "emsc"] as const).map((id) => ({
-                id,
-                label: SOURCE_NAMES[id],
-                fraction: reachFraction(snapshot.covered[id], now, filters.windowMs),
-                words: reachWords(
-                  snapshot.covered[id],
-                  snapshot.statuses[id].kind === "failing",
-                  now,
-                  filters.windowMs,
-                ),
-              }))}
-              notes={[
-                sourceNote,
-                corroborationNote(overlap, overlapFrom, now, filters.windowMs),
-              ].filter((n): n is string => n !== null)}
-            >
-              <details className="mt-3">
-                <summary className="disclose text-[11px] text-faint hover:text-dim">
-                  How the sizes stack up
-                </summary>
-                <SizeChart sizes={sizes} />
-              </details>
-            </Timeline>
-          </div>
+          {archiveBlock}
+          {wideTimeline ? null : timeline}
 
           {/* All twelve in a resizable box. Truncating to four cut exactly the region with two events,
               which is what somebody scanning for where today is quiet came to see. */}
@@ -2490,33 +2515,24 @@ export function App(): JSX.Element {
                 />
               </div>
             ) : null}
-            {onMap && !flat && !markSubject ? (
-              /*
-                Gone entirely while a mark card is open, not merely narrowed. A flood has no magnitude, no
-                depth and no sources, so every control in here describes something other than what the
-                reader just opened.
+            {/*
+              The timeline, across the canvas rather than down the rail.
 
-                Capped and scrolling, because the legend outgrew the screen. At 1280x720 the panel reached
-                845px, putting the magnitude slider 104px above the top of the window with nothing in the
-                ancestor chain to catch it. The control is at the top and the prose below, so capping keeps
-                the slider in view and scrolls the explanation.
+              A 24-bucket axis of time wants width. In the rail it had 316px - 13px a bucket - and was the
+              biggest single claim on a column that could not hold everything in it. Here it gets the
+              canvas's width and the rail gets its 364px back.
 
-                Underscores in the `calc`: CSS needs whitespace around the `-` or `-11rem` parses as a
-                negative number and the whole declaration is dropped, silently. `dvh`, not `vh`.
-
-                The reserve has to clear everything this panel is not: the header above it, and below it the
-                hint row, the credit's line, their gaps and the band's own padding. It has been wrong twice,
-                each time because a row was added underneath and this number was not revisited - 4.5rem when
-                the hints moved to their own line, 7.5rem when the credit got one. Count the rows below.
-              */
-              /*
-               * A line each. Sharing one, neither could be right: hints first put them on the top line whenever it
-               * wrapped, legend first slid the legend into the middle of the canvas.
-               */
-              <div className="order-1 flex w-full justify-start">
-                <div className="pointer-events-auto max-h-[calc(100dvh_-_11rem)] w-full max-w-[300px] overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
-                  {legend}
-                </div>
+              Its own ground, because it is a control surface over a planet rather than a caption on one,
+              and it stops where a panel starts for the reason the cross-section does: it spans the width,
+              so a panel over it would hide a quarter of the axis.
+            */}
+            {wideTimeline ? (
+              <div
+                className={`pointer-events-auto order-1 w-full bg-deck/70 px-4 py-3 backdrop-blur-2xl backdrop-saturate-50 ${
+                  markSubject || (shownQuake && pinned) ? "xl:pr-[calc(var(--panel-w)+1rem)]" : ""
+                }`}
+              >
+                {timeline}
               </div>
             ) : null}
             {/* First on the last line, with the key hints beside it. Both sit against the band's left edge,

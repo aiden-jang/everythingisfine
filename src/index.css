@@ -515,10 +515,12 @@
        *
        * `34dvh` stays exactly as it was. The globe's share was never what was wrong here.
        */
+      /* Three columns, not four: the timeline moved to the band across the canvas, where an axis of time
+         gets width instead of height. */
       grid-template-areas:
-        "title  legend  activity list"
-        "when   regions activity list"
-        "notes  notes   notes    notes";
+        "title  legend  list"
+        "when   regions list"
+        "notes  notes   notes";
       /* The short blocks take what they need, then the list takes the rest, then notes take what
          they need again. */
       grid-template-rows: auto auto 1fr auto;
@@ -529,7 +531,6 @@
     .rail > .titleblock { grid-area: title; }
     .rail > .tb-stack { grid-area: notes; }
     .rail > [data-rail="when"] { grid-area: when; }
-    .rail > [data-rail="activity"] { grid-area: activity; }
     .rail > [data-rail="legend"] { grid-area: legend; }
     .rail > [data-rail="regions"] { grid-area: regions; }
     .rail > section[aria-label="Recent earthquakes"] { grid-area: list; }
@@ -552,32 +553,6 @@
       height: 100%;
     }
 
-    /*
-     * The transport comes first in this band, because this band is the one that gets cut.
-     *
-     * Column one stacks three tenants - the title block at 190px, the time-of-day disclosure, then the
-     * activity column - so activity begins 299px into a strip that is 340px tall. Measured at three
-     * tablet sizes, the histogram, the coverage bars and the play control were all below the fold, and at
-     * 900x1000 and 1024x768 the whole time dimension was: 643px of content in a 340px scroller.
-     *
-     * The strip's height is deliberate and stays - `34dvh` is what stops the globe being reduced to a
-     * strip by the controls describing it - so the fix is which end of the column gets the 92 visible
-     * pixels. The transport is the most-used thing in here and the archive entry is the least, so they
-     * swap. Scoped to this band: on a phone the rail scrolls freely and on a desktop nothing is cut, so
-     * neither has a reason to reorder.
-     *
-     * `data-ramp` is the Timeline's own root. Ordering on `:last-child` would have worked today and
-     * broken silently the first time anything was appended after it.
-     */
-    .rail > [data-rail="activity"] {
-      display: flex;
-      flex-direction: column;
-    }
-
-    .rail > [data-rail="activity"] > [data-ramp] {
-      order: -1;
-      margin-bottom: 0.85rem;
-    }
   }
   /*
    * The regions box is sized, not truncated.
