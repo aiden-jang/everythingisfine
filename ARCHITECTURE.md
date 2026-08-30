@@ -6806,6 +6806,28 @@ so it should not bind, and if it ever does it lands the event low - towards the 
 direction to be wrong in.
 
 
+## The rail scrolled twice, and one of the two lied
+
+Reported as a scroll trap in the regions box and left undiagnosed for a session, because the first
+hypothesis - `overscroll-behavior: contain` on that box - was removed and changed nothing, and a fix that
+does not fix it is worse than an open bug.
+
+Measured properly, there were two scroll containers in the rail and the wrong one was the problem. The
+event list was its own, 2,386px of rows inside a rail whose own bar reached its end at 606. So the rail's
+scrollbar claimed the content ended where the list began, and which of the two a wheel moved depended on
+where the pointer happened to be sitting.
+
+At `xl` the list now has no minimum height and no `flex-1`, so it is as tall as its rows and the rail is
+the only thing that scrolls: 606px of honest scroll became 2,992. Below `xl` it keeps its own box, because
+there it has a grid column of its own or the rail is a sheet under the globe.
+
+That leaves the regions box, which really is a sized widget with a drag handle - and *there* the original
+hypothesis was right after all, just about the wrong element. 132px contained inside a column that scrolls
+three thousand means a wheel that happens to be over it stops dead, and the way out is to move the pointer
+somewhere else first. It chains now.
+
+Both are asserted, and both assertions fail with their fix put back.
+
 ## A third comment pass, and what it found
 
 13,190 lines, then about 7,600, now about 6,350. The first two passes were about volume and register.
@@ -6849,6 +6871,134 @@ the sentence that stops somebody undoing a decision, and points at this appendix
 
 Find an entry by the sentence still in the code: the headings are per file, and each note is titled with
 the line the code kept.
+
+**Files below**, and how many notes each carries:
+
+- [e2e/design.spec.ts](#e2edesignspects) &mdash; 4
+- [e2e/feeds.ts](#e2efeedsts) &mdash; 7
+- [e2e/interaction.spec.ts](#e2einteractionspects) &mdash; 9
+- [src/App.tsx](#srcapptsx) &mdash; 18
+- [src/app/CrossSection.tsx](#srcappcrosssectiontsx) &mdash; 2
+- [src/app/DetailPanel.tsx](#srcappdetailpaneltsx) &mdash; 9
+- [src/app/Dial.tsx](#srcappdialtsx) &mdash; 1
+- [src/app/EventList.tsx](#srcappeventlisttsx) &mdash; 4
+- [src/app/MagnitudeFilter.tsx](#srcappmagnitudefiltertsx) &mdash; 8
+- [src/app/MarkCard.tsx](#srcappmarkcardtsx) &mdash; 2
+- [src/app/Resizer.tsx](#srcappresizertsx) &mdash; 1
+- [src/app/Sequence.tsx](#srcappsequencetsx) &mdash; 1
+- [src/app/Sizes.tsx](#srcappsizestsx) &mdash; 1
+- [src/app/Timeline.tsx](#srcapptimelinetsx) &mdash; 6
+- [src/app/age.ts](#srcappagets) &mdash; 1
+- [src/app/announce.ts](#srcappannouncets) &mdash; 2
+- [src/app/arrival.ts](#srcapparrivalts) &mdash; 3
+- [src/app/day.ts](#srcappdayts) &mdash; 2
+- [src/app/diurnal.ts](#srcappdiurnalts) &mdash; 2
+- [src/app/eclipseDays.test.ts](#srcappeclipsedaystestts) &mdash; 1
+- [src/app/eclipseDays.ts](#srcappeclipsedaysts) &mdash; 1
+- [src/app/feed.test.ts](#srcappfeedtestts) &mdash; 1
+- [src/app/feed.ts](#srcappfeedts) &mdash; 8
+- [src/app/felt.test.ts](#srcappfelttestts) &mdash; 1
+- [src/app/format.ts](#srcappformatts) &mdash; 1
+- [src/app/gutenberg.ts](#srcappgutenbergts) &mdash; 1
+- [src/app/hazards.ts](#srcapphazardsts) &mdash; 1
+- [src/app/histogram.ts](#srcapphistogramts) &mdash; 2
+- [src/app/marks.ts](#srcappmarksts) &mdash; 3
+- [src/app/nearby.perf.test.ts](#srcappnearbyperftestts) &mdash; 2
+- [src/app/nearby.ts](#srcappnearbyts) &mdash; 4
+- [src/app/notableDays.live.test.ts](#srcappnotabledayslivetestts) &mdash; 1
+- [src/app/notableDays.ts](#srcappnotabledaysts) &mdash; 2
+- [src/app/omori.ts](#srcappomorits) &mdash; 2
+- [src/app/permalink.test.ts](#srcapppermalinktestts) &mdash; 1
+- [src/app/permalink.ts](#srcapppermalinkts) &mdash; 2
+- [src/app/regions.ts](#srcappregionsts) &mdash; 2
+- [src/app/replay.test.ts](#srcappreplaytestts) &mdash; 1
+- [src/app/replay.ts](#srcappreplayts) &mdash; 3
+- [src/app/roll.ts](#srcapprollts) &mdash; 3
+- [src/app/scrub.ts](#srcappscrubts) &mdash; 3
+- [src/app/search.test.ts](#srcappsearchtestts) &mdash; 1
+- [src/app/search.ts](#srcappsearchts) &mdash; 1
+- [src/app/section.test.ts](#srcappsectiontestts) &mdash; 1
+- [src/app/section.ts](#srcappsectionts) &mdash; 5
+- [src/app/sound.ts](#srcappsoundts) &mdash; 1
+- [src/app/still.ts](#srcappstillts) &mdash; 5
+- [src/app/stored.ts](#srcappstoredts) &mdash; 1
+- [src/app/superlative.ts](#srcappsuperlativets) &mdash; 2
+- [src/app/touch.ts](#srcapptouchts) &mdash; 1
+- [src/app/tour.ts](#srcapptourts) &mdash; 1
+- [src/app/useNarrow.ts](#srcappusenarrowts) &mdash; 2
+- [src/app/versus.ts](#srcappversusts) &mdash; 1
+- [src/app/viewer.ts](#srcappviewerts) &mdash; 1
+- [src/app/windows.ts](#srcappwindowsts) &mdash; 2
+- [src/data/baseline.ts](#srcdatabaselinets) &mdash; 1
+- [src/data/depth.ts](#srcdatadepthts) &mdash; 1
+- [src/data/filter.test.ts](#srcdatafiltertestts) &mdash; 1
+- [src/data/filter.ts](#srcdatafilterts) &mdash; 1
+- [src/data/fixtures.ts](#srcdatafixturests) &mdash; 1
+- [src/data/reconcile.test.ts](#srcdatareconciletestts) &mdash; 1
+- [src/data/reconcile.ts](#srcdatareconcilets) &mdash; 4
+- [src/data/store.test.ts](#srcdatastoretestts) &mdash; 2
+- [src/data/store.ts](#srcdatastorets) &mdash; 1
+- [src/data/types.ts](#srcdatatypests) &mdash; 6
+- [src/geo/antipode.ts](#srcgeoantipodets) &mdash; 1
+- [src/geo/boundaryDistance.test.ts](#srcgeoboundarydistancetestts) &mdash; 2
+- [src/geo/boundaryDistance.ts](#srcgeoboundarydistancets) &mdash; 2
+- [src/geo/eclipse.test.ts](#srcgeoeclipsetestts) &mdash; 3
+- [src/geo/eclipse.ts](#srcgeoeclipsets) &mdash; 2
+- [src/geo/figures.test.ts](#srcgeofigurestestts) &mdash; 1
+- [src/geo/land.test.ts](#srcgeolandtestts) &mdash; 2
+- [src/geo/land.ts](#srcgeolandts) &mdash; 8
+- [src/geo/moon.test.ts](#srcgeomoontestts) &mdash; 2
+- [src/geo/moon.ts](#srcgeomoonts) &mdash; 1
+- [src/geo/planets.test.ts](#srcgeoplanetstestts) &mdash; 1
+- [src/geo/planets.ts](#srcgeoplanetsts) &mdash; 1
+- [src/geo/plateMotion.ts](#srcgeoplatemotionts) &mdash; 1
+- [src/geo/plates.test.ts](#srcgeoplatestestts) &mdash; 1
+- [src/geo/plates.ts](#srcgeoplatests) &mdash; 3
+- [src/geo/slab.test.ts](#srcgeoslabtestts) &mdash; 2
+- [src/geo/slab.ts](#srcgeoslabts) &mdash; 1
+- [src/geo/sphere.test.ts](#srcgeospheretestts) &mdash; 1
+- [src/geo/sphere.ts](#srcgeospherets) &mdash; 3
+- [src/geo/stars.test.ts](#srcgeostarstestts) &mdash; 1
+- [src/geo/stars.ts](#srcgeostarsts) &mdash; 2
+- [src/geo/sun.ts](#srcgeosunts) &mdash; 3
+- [src/geo/waves.ts](#srcgeowavests) &mdash; 2
+- [src/globe/Globe.tsx](#srcglobeglobetsx) &mdash; 5
+- [src/globe/auroraTexture.ts](#srcglobeauroratexturets) &mdash; 1
+- [src/globe/cluster.ts](#srcglobeclusterts) &mdash; 2
+- [src/globe/controls.ts](#srcglobecontrolsts) &mdash; 6
+- [src/globe/events.perf.test.ts](#srcglobeeventsperftestts) &mdash; 6
+- [src/globe/events.ts](#srcglobeeventsts) &mdash; 12
+- [src/globe/figures.ts](#srcglobefigurests) &mdash; 2
+- [src/globe/marks.ts](#srcglobemarksts) &mdash; 3
+- [src/globe/moon.ts](#srcglobemoonts) &mdash; 3
+- [src/globe/morph.ts](#srcglobemorphts) &mdash; 6
+- [src/globe/planets.ts](#srcglobeplanetsts) &mdash; 1
+- [src/globe/ramp.ts](#srcgloberampts) &mdash; 1
+- [src/globe/rings.ts](#srcgloberingsts) &mdash; 1
+- [src/globe/scale.ts](#srcglobescalets) &mdash; 3
+- [src/globe/scene.ts](#srcglobescenets) &mdash; 15
+- [src/globe/shapes.ts](#srcglobeshapests) &mdash; 2
+- [src/globe/sink.test.ts](#srcglobesinktestts) &mdash; 2
+- [src/globe/sky.ts](#srcglobeskyts) &mdash; 2
+- [src/globe/slab.ts](#srcglobeslabts) &mdash; 3
+- [src/globe/starfield.ts](#srcglobestarfieldts) &mdash; 2
+- [src/sources/archive.ts](#srcsourcesarchivets) &mdash; 2
+- [src/sources/aurora.ts](#srcsourcesaurorats) &mdash; 2
+- [src/sources/contract.ts](#srcsourcescontractts) &mdash; 2
+- [src/sources/cyclones.ts](#srcsourcescyclonests) &mdash; 3
+- [src/sources/emsc.live.test.ts](#srcsourcesemsclivetestts) &mdash; 3
+- [src/sources/emsc.test.ts](#srcsourcesemsctestts) &mdash; 1
+- [src/sources/emsc.ts](#srcsourcesemscts) &mdash; 5
+- [src/sources/floods.ts](#srcsourcesfloodsts) &mdash; 1
+- [src/sources/gdacs.ts](#srcsourcesgdacsts) &mdash; 3
+- [src/sources/history.live.test.ts](#srcsourceshistorylivetestts) &mdash; 1
+- [src/sources/history.ts](#srcsourceshistoryts) &mdash; 2
+- [src/sources/types.ts](#srcsourcestypests) &mdash; 1
+- [src/sources/usgs.live.test.ts](#srcsourcesusgslivetestts) &mdash; 1
+- [src/sources/usgs.ts](#srcsourcesusgsts) &mdash; 5
+- [src/sources/volcanoes.ts](#srcsourcesvolcanoests) &mdash; 1
+- [src/sources/wildfires.ts](#srcsourceswildfirests) &mdash; 1
+
 
 ### e2e/design.spec.ts
 

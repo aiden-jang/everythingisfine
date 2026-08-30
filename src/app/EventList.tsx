@@ -101,7 +101,7 @@ export function EventList({
     <section
       aria-label="Recent earthquakes"
       /* A share of the viewport in the two single-column layouts, not just a floor. See ARCHITECTURE.md. */
-      className="flex min-h-[8.25rem] flex-1 flex-col max-md:min-h-[30dvh] xl:min-h-[30dvh]"
+      className="flex min-h-[8.25rem] flex-1 flex-col max-md:min-h-[30dvh] xl:min-h-0 xl:flex-none"
     >
       <div className="flex items-baseline justify-between">
         <h2 className="label">Recent</h2>
@@ -150,7 +150,17 @@ export function EventList({
         them, so the whole app could be dragged off the top of the screen. `overflow: clip` did not fix it.
       */}
       <ul
-        className="scroll-fade mt-2 min-h-0 flex-1 overflow-x-hidden overflow-y-auto pr-2 [contain:paint]"
+        /*
+         * Its own scroller everywhere but the desktop rail. There the rail is already a tall column that
+         * scrolls, and a second scroller inside it is a trap: the rail's bar reached its end with 2,386px
+         * of list still inside, so it lied about how much was left, and which one a wheel moved depended
+         * on where the pointer happened to be.
+         *
+         * The `xl:` height on the section above is what does it - with no minimum and no `flex-1` the box
+         * is as tall as its rows and never overflows. This states the intent; that one enforces it.
+         */
+        className="scroll-fade mt-2 min-h-0 flex-1 overflow-x-hidden overflow-y-auto pr-2 [contain:paint]
+          xl:overflow-y-visible xl:[contain:none]"
         onKeyDown={onKeyDown}
       >
         {quakes.map((quake, i) => (
