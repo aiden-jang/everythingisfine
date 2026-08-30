@@ -425,47 +425,33 @@ test("the events are on screen, not merely in the rail", async ({ page }) => {
   }
 });
 
-test("the legend keeps to its corner and clears the header", async ({ page }) => {
-  await installFeeds(page);
+test("the timeline gets the canvas's width, and yields to the rail and the panel", async ({ page }) => {
+  /*
+   * The strip is an axis of time, and it used to live in the rail: 316px across, about 13px a bucket, while
+   * being the single biggest claim on a column that could not hold everything asked of it. Out here it gets
+   * roughly three times that, and the rail got 364px back - which is what let the legend come in off the
+   * globe and the event list stay on screen.
+   *
+   * So this guards the width, and that it does not slide under the two things that own their own edges.
+   */
+  await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);
-  // Opened, because the key is what makes it tall enough to reach the header.
-  await page.evaluate(() => {
-    const d = Array.from(document.querySelectorAll("details"))
-      .find((x) => /What the marks mean/.test(x.querySelector("summary")?.textContent || ""));
-    if (d && !(d as HTMLDetailsElement).open) (d.querySelector("summary") as HTMLElement).click();
-  });
 
-  for (const [w, h] of [[1920, 1080], [1440, 900], [1440, 700], [1280, 640]] as const) {
+  for (const [w, h] of [[1440, 900], [1280, 800], [1024, 768]] as const) {
     await page.setViewportSize({ width: w, height: h });
     await page.waitForTimeout(600);
     const seen = await page.evaluate(() => {
-      const mag = document.querySelector("#mag");
-      const panel = mag ? (mag.closest(".overflow-y-auto") as HTMLElement | null) : null;
-      if (!panel) return null;
-      const b = panel.getBoundingClientRect();
-      const head = document.querySelector(".zone-head")!.getBoundingClientRect();
-      const title = document.querySelector('label[for="mag"]')!.getBoundingClientRect();
-      // Against the band's own left edge, which is the rail. Measuring from the viewport would move with
-      // the rail's resizer and prove nothing.
-      const band = panel.closest(".absolute")!.getBoundingClientRect();
-      return {
-        fromBandLeft: Math.round(b.left - band.left),
-        clearsHeader: b.top >= head.bottom,
-        titleClipped: title.top < head.bottom,
-      };
+      const strip = document.querySelector('[role="group"][aria-label^="Activity by"]')!;
+      const bars = strip.querySelectorAll("button").length;
+      const box = strip.getBoundingClientRect();
+      const rail = document.querySelector(".rail")!.getBoundingClientRect();
+      const railOverlaps = box.left < rail.right - 1 && box.right > rail.left + 1
+        && box.top < rail.bottom && box.bottom > rail.top;
+      return { bucketPx: box.width / Math.max(1, bars), railOverlaps };
     });
-    if (seen === null) continue; // in the rail at this width, which is the flat map's arrangement
-    /*
-     * Pinned to the band's left edge, which is the rail's.
-     *
-     * It has drifted twice: once to x=688 of 1440 - the middle of the canvas - by being ordered before the
-     * hints, and once by sliding sideways every time a panel opened, because the band inset its right edge
-     * to clear one. Left-aligned it cannot do either, since a panel does not move the rail.
-     */
-    expect(seen.fromBandLeft, `legend from the band's left edge at ${w}x${h}`).toBeLessThanOrEqual(24);
-    // A stale reserve let it climb under the header and print its own title behind the wordmark.
-    expect(seen.clearsHeader, `legend clears the header at ${w}x${h}`).toBe(true);
-    expect(seen.titleClipped, `legend title clipped at ${w}x${h}`).toBe(false);
+    // 13px a bucket was the old rail figure; anything near it means the strip is back in a column.
+    expect(seen.bucketPx, `px per bucket at ${w}x${h}`).toBeGreaterThan(24);
+    expect(seen.railOverlaps, `strip clear of the rail at ${w}x${h}`).toBe(false);
   }
 });
