@@ -192,9 +192,6 @@ export function MagnitudeFilter(
         `preventDefault` on the summary so React owns `open`. React 18 does not listen for `toggle`, so the
         browser's own state cannot be read back, and this state is persisted.
       */}
-      {/* No top margin: this is the whole of the key half, so a margin above it only sits inside the
-          padding of whatever holds it. Closed, it put the label 22px from the top and 12px from the
-          bottom of a 51px box. */}
       <details open={keyOpen}>
         <summary
           className="disclose text-[11px] text-faint hover:text-dim"
@@ -247,11 +244,8 @@ export function MagnitudeFilter(
         <span>solid is shallow, hollow is deep</span>
       </div>
 
-      {/* And how many of each are actually here. The row above says what the hole means; this says
-          whether there is anything to read. On a typical day one event in seventy-nine is deep enough
-          to be a ring. */}
-      {/* The counts stay, the reasoning folds. "66 above 70 km, 54 between 70 and 300" is the part
-          anybody reads, and the slab explanation behind it is two more lines. */}
+      {/* The counts stay, the reasoning folds. "66 above 70 km, 54 between 70 and 300" is the part anybody
+          reads, and the slab explanation behind it is two more lines. */}
       <KeyRow note={depthNote(depth)} />
 
       {/* With the sink on, a marker is over the hypocentre rather than the epicentre, which for a deep
@@ -281,12 +275,9 @@ export function MagnitudeFilter(
         </div>
       ) : null}
 
-      {/* The slab gets its own row rather than hanging off the boundaries: the motion arrows are a second
-          reading of a line already drawn, and this is a second population of events - older, differently
-          thresholded, not from today - which is exactly what a viewer must not mistake for the marks
-          beside it. So the row states how many, how deep, how big, and over what years. */}
-      {/* Only while the layer is on, now the switch is not attached to it. It used to appear whenever the
-          control did, which named a mark that was not on screen. */}
+      {/* Its own row, not hung off the boundaries: this is a second population of events - older,
+          differently thresholded, not from today - which is exactly what a viewer must not mistake for the
+          marks beside it. So the row says how many, how deep, how big, and over what years. */}
       {slabOn ? (
         <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
           <span
@@ -309,11 +300,11 @@ export function MagnitudeFilter(
       ) : null}
 
       {/*
-        The rings were the one mark nothing named. A ring appears when an event arrives, expands for
-        fifteen seconds and is gone, so a first-time viewer gets one look at it.
+        The rings were the one mark nothing named. A ring appears when an event arrives, expands for fifteen
+        seconds and is gone, so a first-time viewer gets one look at it.
 
-        A sentence rather than a label, because the multiplier is part of what the mark is: a wavefront
-        moving at twenty times real speed with nothing saying so would be the one dishonest thing here.
+        A sentence rather than a label, because the multiplier is part of what the mark is: a wavefront moving
+        at twenty times real speed with nothing saying so would be the one dishonest thing here.
 
         `items-start`, since this is the only row that wraps and a glyph centred against two lines floats.
       */}

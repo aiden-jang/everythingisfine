@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
  * A hook rather than a `hidden`/`block` pair for anything expensive or long: both halves of a Tailwind pair
  * are in the document, so a block of prose written that way is in the DOM twice.
  */
-export function useMedia(query: string): boolean {
+function useMedia(query: string): boolean {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
   useEffect(() => {
     const mq = window.matchMedia(query);

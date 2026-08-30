@@ -18,8 +18,7 @@ import type { Mark } from "./marks";
 import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
 
 /*
- * The canvas, and the smallest possible amount of React around it. three.js owns everything inside;
- * React owns the element and the lifetime.
+ * The canvas, and the smallest possible amount of React around it. three.js owns everything inside it.
  *
  * The pinned ring and the hover tooltip are plain DOM written from the frame loop, not state: they move
  * every frame the camera does, and state would re-render the rail sixty times a second.
@@ -31,7 +30,6 @@ export interface GlobeProps {
   selected: string | null;
   ramp: RampName;
   onSelect: (key: string | null) => void;
-  /** Handed a fly function once, so the rail can send the camera to a region. */
   onReady: (
     flyTo: (lon: number, lat: number, zoom?: number, liftPx?: number) => void,
   ) => void;
@@ -43,49 +41,35 @@ export interface GlobeProps {
    * use it synchronously.
    */
   onCapture?: (capture: () => HTMLCanvasElement | null) => void;
-  /** A non-earthquake mark was picked, or null when a click hit neither. */
   onSelectMark?: (id: string | null) => void;
-  /** Called as the camera moves, so the permalink can carry where somebody is looking. */
   onCamera?: (state: { lon: number; lat: number; zoom: number }) => void;
   /** The replay clock and how many *events* have been revealed. Not markers: clustering collapses those,
    * so a day of 789 counted up to 105 under a heading reading EVENTS. */
   onReplay?: (state: { at: number; revealed: number } | null) => void;
-  /** false is the globe, true is the flat map. Eased, not switched. */
   flat?: boolean;
   /** Draw earthquakes at their own depth. Only means anything on the globe, and the shader fades it with
    * the morph, so unwrapping the map lifts every event back to the surface as one motion. */
   depthSink?: boolean;
-  /** The constellation lines: the table once its chunk lands, or null while the layer is off. */
   figures?: FigureTable | null;
-  /** The moment the sun, sky and moon are drawn for. Null rather than `Date.now()` on the live view, so
-   * the scene keeps its minute throttle. */
+  /** Null rather than `Date.now()` on the live view, so the scene keeps its once-a-minute throttle. */
   moment?: number | null;
-  /** Five years of deep seismicity, or null. Handed in already loaded, so the chunk is pulled by whoever
-   * pressed the toggle and this component stays a renderer. */
+  /** Handed in already loaded: whoever pressed the toggle pulls the chunk, and this stays a renderer. */
   slab?: readonly SlabPoint[] | null;
-  /** The hour the pointer holds on the activity strip. Hovering dims everything outside it, so a swarm
-   * that reads as one blob resolves into the ninety minutes it happened in. */
   /** A span, not a bucket index: the strip knows how wide its buckets are and this does not. */
   focus?: FocusSpan | null;
-  /** Tonight's aurora, or null while it has not arrived or has failed to. */
   aurora?: Aurora | null;
-  /** Every mark that is not an earthquake, already shaped: storm tracks, spirals, volcano triangles. */
   marks?: readonly Mark[];
   /** Origin time the cursor stands at, or null for live. Null means no limit rather than "the present",
    * so a live arrival still appears. */
   scrubAt?: number | null;
-  /** The section line, drawn over the map so a reader can see what the panel below is a slice of. */
   section?: SectionLine | null;
   /** Map only: picking two points on a sphere somebody is rotating is a guess. Shift and drag, because a
    * plain drag already pans and a "now draw a line" button would be a mode to get stuck in. */
   onSection?: (line: SectionLine | null) => void;
 }
 
-/** How far above the canvas floor the scale sits, clear of the key hints on the same line. */
-/*
- * Clear of the credit's line, which is the bottom-most thing in the band and 44px tall because a link has
- * to hold a finger. At 40 the ruler was drawn straight through "made by aiden jang".
- */
+/* Clear of the credit's line, which is 44px tall because a link has to hold a finger. At 40 the ruler
+   was drawn straight through "made by aiden jang". */
 const SCALE_BOTTOM = 76;
 
 /* Half of the 44px a finger is reckoned to need, so a marker's own radius makes up the rest. */
@@ -93,8 +77,7 @@ const TOUCH_SLOP_PX = 18;
 
 /** The most a panel may swing the camera. Past this the lift costs more than the panel hid. */
 const MAX_LIFT_DEG = 22;
-/** How long a bar aims to be before rounding to a number a reader can halve. The actual width is whatever
- * the round kilometre figure works out to, never this. */
+/** What the scale bar aims for before rounding to a round number of kilometres. */
 const SCALE_TARGET_PX = 110;
 
 export function Globe({
@@ -132,7 +115,6 @@ export function Globe({
   };
   const onSectionRef = useRef(onSection);
   onSectionRef.current = onSection;
-  /** The line being dragged right now, which the frame loop draws in place of the committed one. */
   const drag = useRef<SectionLine | null>(null);
   const onCameraRef = useRef(onCamera);
   onCameraRef.current = onCamera;
@@ -153,31 +135,23 @@ export function Globe({
      */
     onReady((toLon, toLat, toZoom, liftPx) => {
       /*
-       * `liftPx` puts the target that many pixels above the middle instead of in it.
-       *
-       * A panel covers part of the canvas, and on a phone it covers most of it: aiming at the centre pins
-       * an event and then hides it behind the thing describing it. The camera centre goes south of the
-       * event by the same distance, which is what raises the event on screen.
-       *
-       * Degrees come from the camera rather than a constant, so this holds at any zoom. Clamped, because a
-       * lift near the poles otherwise aims past them.
+       * `liftPx` puts the target that many pixels above the middle instead of in it, so the sheet describing
+       * an event does not cover the event. The camera aims that far south of it.
        */
       let lat = toLat;
       if (liftPx) {
         /*
-         * Two things this asks that the obvious version did not.
+         * Two traps in one line.
          *
-         * `degForPx` and not `degPerPx * px`: the second is the flat map's straight line, and this camera
-         * is about two radii out, so the sphere's curve is what decides. It ran 34% long. And `toZoom`,
-         * because distance is inversely proportional to zoom - asked at the start of a 1 to 1.9 flight,
-         * the answer is nearly twice too big.
+         * Use `degForPx`, not `degPerPx * px`: the second is the flat map's straight line, and this camera is
+         * about two radii out, so the sphere's curve is what decides. It ran 34% long. And ask at `toZoom`,
+         * because distance is inversely proportional to zoom - asked at the start of a 1 to 1.9 flight the
+         * answer is nearly twice too big.
          *
-         * Wrong in both directions at once, they nearly cancelled: a 360x640 phone lifted 186px for a
-         * request of 139 and parked the event 6px under the top bar.
+         * They pull opposite ways, so wrong in both directions nearly cancelled and looked deliberate.
          *
-         * The clamp stays as a backstop. It should not bind now - a lift the size of half a phone's canvas
-         * comes out around 15 degrees - and if it ever does it lands the event low, towards the sheet,
-         * which is the safe direction to be wrong in.
+         * The clamp is a backstop and should not bind. If it ever does it lands the event low, towards the
+         * sheet, which is the safe direction to be wrong in.
          */
         const deg = Math.min(globe.controls.degForPx(liftPx, toZoom), MAX_LIFT_DEG);
         lat = Math.max(-85, Math.min(85, toLat - deg));
@@ -341,10 +315,6 @@ export function Globe({
         live.current.selected === null ? null : { kind: "quake", id: live.current.selected },
         0,
       );
-      /*
-       * Which dot the label is about. The hit test works geographically and accepts a near miss, which is
-       * what makes a 3px dot clickable and exactly what makes a floating label ambiguous without this.
-       */
       // The ring is the earthquakes' highlight only. A circle round a spiral reads as part of the drawing,
       // so a glyph brightens itself in the mark layer instead.
       put(hoverRing.current, hovered?.kind === "quake" ? hovered : null, 0);
@@ -383,10 +353,6 @@ export function Globe({
     // whole planet cut between two brightness levels in one frame.
     let focusFade = 0;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    // Sequenced after the replay, not alongside it. The reveal only means anything once the dots have had
-    // a moment to read as scattered.
-    // Long, at 1.1 seconds, because Greenland swelling as it leaves the sphere is the whole argument for
-    // the globe being the default. At 300ms nobody sees it happen.
     let morph = flat ? 1 : 0;
     globe.setMorph(morph);
     globe.controls.setMorph(morph);
@@ -456,6 +422,8 @@ export function Globe({
       const morphTarget = live.current.flat ? 1 : 0;
       let unwrapping = false;
       if (morph !== morphTarget) {
+        // 1.1 seconds, which is slow. Greenland swelling as it leaves the sphere is the whole argument for
+        // the globe being the default view, and at 300ms nobody sees it happen.
         const step = reducedMotion.matches ? 1 : dt / 1.1;
         morph = morphTarget > morph ? Math.min(morphTarget, morph + step) : Math.max(morphTarget, morph - step);
         globe.setMorph(morph);

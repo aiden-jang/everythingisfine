@@ -58,11 +58,6 @@ export interface DetailPanelProps {
 }
 
 /*
- * No rule under every row, which is the rule the rail already keeps. A label hard left and a mono value
- * hard right is already two columns, and the eye reads the pair without being fenced. One rule stays,
- * above the group, because it says where the prose stops and the readings start.
- */
-/*
  * How many people said they felt it, and how hard. The only human number in this app.
  *
  * Say "reported", never "felt". "Did You Feel It" is self-selected, so it counts where people live and
@@ -190,8 +185,6 @@ export function DetailPanel({
         {clock(r.time)} · {ago(r.time, now, archived)}
       </div>
 
-      {/* Directly under the magnitude, because it is a statement about that number. Absent on the common
-          case: a permanent "not revised" line would be four words of chrome saying nothing. */}
       {/* A pinned event the filters now exclude. Kept rather than closed, because losing a pin to a nudged
           slider is worse than holding one - and named, rather than kept quietly. */}
       {excluded ? (
@@ -266,13 +259,11 @@ export function DetailPanel({
         {feltNote(r.felt) ? (
           <Field label="Felt reports" value={feltNote(r.felt)!} />
         ) : null}
-        {/* Whether anybody has checked this number yet. An automatic solution is a computer's answer
-            minutes after the ground stopped, and the app drew it at the same confidence as one a
-            seismologist had been through. The consequence is stated rather than the jargon left bare:
-            "may still change" is the entire reason to care. */}
+        {/* "May still change" is the whole reason to care: an automatic solution is a computer's answer
+            minutes after the ground stopped, and this used to be drawn at the same confidence as one a
+            seismologist had been through. */}
         {/* "Up to" is doing the work: this is the peak of a whole shaking map, so it is higher than nearly
-            every individual account. Bare, a reader comparing it against the felt row above would conclude
-            one of the two was wrong. */}
+            every individual account and a reader comparing it with the felt row would think one was wrong. */}
         {shakingWord(r.shaking ?? 0) ? (
           <Field label="Shaking" value={`up to ${shakingWord(r.shaking!)!}, modelled`} />
         ) : null}
@@ -465,10 +456,8 @@ export function DetailPanel({
       {/* Wraps, because a clipped button is an action that does not exist. "Fly here" used to lead this
           row; pinning an event now flies to it, so the button was asking for what had already happened. */}
       <div className="mt-5 flex flex-wrap gap-2 pb-1">
-        {/* The permalink existed for a whole phase with no way to reach it: the URL updated silently and
-            nothing suggested it was worth copying. A feature nobody can find is not shipped. */}
         {/* Offered on either view, because taking it switches to the map. A section only exists there, so
-            this is naming a slice rather than choosing a projection. */}
+            this names a slice rather than choosing a projection. */}
         <button
           type="button"
           onClick={() => onSection(sectionThrough(r.lon, r.lat, near.trendDeg))}

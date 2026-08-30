@@ -367,8 +367,25 @@ panel float over it, translucent and blurred. The globe centres in the whole fra
 behind the panels rather than stopping at them.
 
 **The legend belongs to the map.** It sits over the canvas beside the marks it explains, with the key
-hints. Below 1280px it returns to the rail, because a floating panel over a 60dvh globe covers the
+hints. On a phone it returns to the rail, because a floating panel over a 60dvh globe covers the
 subject.
+
+**Fullscreen takes nothing away.** `f` makes the window bigger and that is all it does. Hiding the bar,
+the rail and the bottom band with it leaves a planet and nothing else: a screensaver, not a picture with
+anything to read on it.
+
+**Each region folds where folding it buys something, and nowhere else.** The rail is 356px of a 1440px
+screen drawn over the globe, so it folds at `xl` and not below, where it is a strip or the page itself.
+The bar is the reverse: floating it is transparent and costs the canvas nothing, so it folds below `xl`
+and not above, where it is an opaque row taking 68px of a 768px screen. A control that hides something
+free is a control that does nothing.
+
+**The control that folds a region goes with the region.** So every fold needs a second control the fold
+cannot reach: the bar's is a tab at the corner it left from, the rail's is a tab on the rail's own outer
+edge, which becomes the frame's edge once the rail is gone.
+
+**A preference remembered at one width must not strand a viewer at another.** A bar folded on a phone,
+carried up to a desktop that offers no way to unfold it, would be hidden with nothing to press.
 
 **Globe and map are one geometry, morphed.** The projection happens in the vertex shader from a single
 shared uniform, so the switch is the planet unwrapping rather than a cross-fade. Every layer carries the

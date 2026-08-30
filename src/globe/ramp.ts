@@ -27,11 +27,6 @@ const STOPS: Record<RampName, readonly string[]> = {
 export const MAG_MIN = 1;
 export const MAG_MAX = 7.5;
 
-/** 0..1 position on the ramp for a magnitude. */
-export function rampPosition(magnitude: number): number {
-  return Math.max(0, Math.min(1, (magnitude - MAG_MIN) / (MAG_MAX - MAG_MIN)));
-}
-
 function hexToRgb(hex: string): [number, number, number] {
   const n = Number.parseInt(hex.slice(1), 16);
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];

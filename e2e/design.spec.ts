@@ -2,14 +2,10 @@ import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, waitForData } from "./feeds";
 
 /*
- * DESIGN.md section 13, as a test rather than as a list.
+ * DESIGN.md section 13, as tests rather than as a list. An audit performed once is worth very little:
+ * two of these rules were broken by accident during the build and neither by a decision.
  *
- * An audit performed once is worth very little. Two of these rules were broken by accident during the build
- * and neither was broken by a decision: the magnitude slider rendered a saturated blue thumb because
- * `accent-color` defaults to the platform highlight, and a dense cluster clipped to pure white under
- * additive blending.
- *
- * The rules that can be expressed as assertions are; the ones that need eyes are named at the bottom.
+ * The rules that can be asserted are; the ones that need eyes are named at the bottom.
  */
 
 const BREAKPOINTS = [
@@ -28,13 +24,11 @@ const BREAKPOINTS = [
 ] as const;
 
 /**
- * Chroma of every colour the chrome paints, measured from the rendered page. The canvas is excluded, because
- * that is where hue belongs.
+ * Chroma of every colour the chrome paints, measured from the rendered page. The canvas is excluded,
+ * because that is where hue belongs.
  *
- * Absolute chroma, not saturation. HSV saturation failed on the palette it was written to protect: `Deck` is
- * `#0D1420`, whose channels differ by 19 out of 255, and relative saturation calls that 0.59 because the
- * colour is nearly black. On absolute spread the whole chrome palette sits at or below 37 and a browser
- * default accent sits at 255.
+ * Absolute chroma, not HSV saturation. `Deck` is `#0D1420`, whose channels differ by 19 of 255, and
+ * relative saturation calls that 0.59 because the colour is nearly black.
  */
 async function chromeHues(
   page: Page,
@@ -133,12 +127,9 @@ for (const bp of BREAKPOINTS) {
 
   test(`every control is reachable at ${bp.name}`, async ({ page }) => {
     /*
-     * The invariant the other two tests do not ask. Neither "nothing overflows sideways" nor "the page does
-     * not scroll" catches a control sitting above the top of the viewport with nothing scrollable around it,
-     * which is how the legend broke: the magnitude slider sat 104px off the top of the screen and both passed.
-     *
-     * A control is reachable if its box is inside the viewport or some ancestor scrolls, because the rail
-     * below 768px is deliberately a sheet you scroll.
+     * The invariant the other two do not ask. Neither "nothing overflows sideways" nor "the page does not
+     * scroll" catches a control sitting above the top of the viewport with nothing scrollable around it,
+     * which is how the legend broke: the magnitude slider sat 104px off the top and both passed.
      */
     await page.setViewportSize({ width: bp.width, height: bp.height });
     await installFeeds(page);
@@ -170,10 +161,8 @@ for (const bp of BREAKPOINTS) {
       )) {
         /*
          * A zero box is not the only way to be off screen. A closed `<details>` hides its contents with
-         * `content-visibility`, and descendants of one still report a full-size rect from
-         * `getBoundingClientRect` - laid out, never painted. Folding the key by default surfaced fifty of
-         * them at once, all of them "unreachable" and none of them on screen. `checkVisibility` is the
-         * question actually being asked: can a reader see this at all.
+         * `content-visibility`, and its descendants still report a full-size rect - laid out, never painted.
+         * `checkVisibility` is the question actually being asked: can a reader see this at all.
          */
         if (!(el as HTMLElement).checkVisibility()) continue;
         const box = el.getBoundingClientRect();
@@ -210,11 +199,8 @@ test("every control clears 44px where there is a finger", async ({ browser }) =>
   expect(await page.evaluate(() => window.matchMedia("(pointer: coarse)").matches)).toBe(true);
 
   /*
-   * The list shipped at 31px a row and the filter buttons at 27px. Found by measuring after somebody said the
-   * list looked bad, which is not a process that scales.
-   *
-   * The slider is exempt: its hit area is the 18px track, and browsers give range inputs a generous invisible
-   * target that `getBoundingClientRect` does not report.
+   * The list shipped at 31px a row and the filter buttons at 27px, found by measuring after somebody
+   * said the list looked bad. 44px is the number, and it is asserted rather than remembered.
    */
   const small = await page.evaluate(() => {
     const bad: { tag: string; height: number }[] = [];
@@ -363,13 +349,10 @@ test("the colourblind ramp survives a reload", async ({ page }) => {
  */
 
 /*
- * Where the rail's blocks sit, which nothing asserted until five regressions had shipped past a green run.
- *
- * Each of these was found by hand, and one of them by the author rather than by me: the transport 5px under
- * the fold, the transport again after a footnote wrapped in the tablet column, the legend adrift in the
- * middle of the canvas, the legend clipping its own title under the header, and the event list entirely
- * below the fold. The suite checked that the canvas kept its share and that controls cleared 44px, and had
- * nothing to say about any of it.
+ * Where the rail's blocks sit, which nothing asserted until five regressions had shipped past a green
+ * run - the transport under the fold twice, the legend adrift, the legend clipped, the event list gone
+ * entirely. The suite checked the canvas kept its share and that controls cleared 44px, and had nothing
+ * to say about any of it.
  */
 test("the rail's controls stay above its fold", async ({ page }) => {
   await installFeeds(page);
@@ -431,13 +414,11 @@ test("the rail's controls stay above its fold", async ({ page }) => {
 
 test("the events are reachable, not clipped out of the rail", async ({ page }) => {
   /*
-   * The rail cannot hold everything at once. With the timeline back in it, the column runs about 600px
-   * past a 900px-tall screen, so at desktop widths the event list sits below the fold and you scroll to
-   * it - deliberate, because the alternative was pushing the transport under instead, and that one has
-   * regressed twice.
+   * The rail cannot hold everything at once. With the timeline in it the column runs about 600px past a
+   * 900px screen, so the event list sits below the fold and you scroll to it - deliberate, because the
+   * alternative was pushing the transport under, and that one has regressed twice.
    *
-   * What must never happen is the list being unreachable: clipped by a parent that does not scroll, or
-   * rendered past the scroll height. So this scrolls the rail to the bottom and demands rows.
+   * What must never happen is the list being unreachable: clipped by a parent that does not scroll.
    */
   await installFeeds(page, { count: 400 });
   await page.goto("/");
