@@ -2062,6 +2062,19 @@ export function App(): JSX.Element {
               magnitude 2s. This is the one fact a person actually wants. */}
           {/* Both stand down on the flat map, like the region index: a whole world on screen has answered them,
               and the strip's ticks mark the five largest besides. */}
+          {!strongest && !replay && !flat ? (
+            /*
+              The two cells below vanish when the filter passes nothing, and the titleblock collapses from
+              190px to 86px under your cursor. A control whose effect is the answer disappearing reads as a
+              bug, so the cells hold their place and say what happened instead.
+            */
+            <div className="tb-cell tb-wide" data-rail="largest">
+              <span className="label block">Largest</span>
+              <span className="text-[11px] text-faint">
+                nothing at or above M{filters.minMagnitude.toFixed(1)}
+              </span>
+            </div>
+          ) : null}
           {strongest && !replay && !flat ? (
             <button
               type="button"
@@ -2109,6 +2122,12 @@ export function App(): JSX.Element {
           {/* One cell, because it is one fact. `QUIET_BAND_KM` is not a control, it is the width the
               percentage is a percentage of, so it reads as part of the sentence rather than as a fourth
               measurement of equal standing. */}
+          {!replay && !flat && quiet.parts === null ? (
+            <div className="tb-cell tb-wide">
+              <span className="label block">On edge</span>
+              <span className="text-[11px] text-faint">nothing in range to measure</span>
+            </div>
+          ) : null}
           {!replay && !flat && quiet.parts !== null ? (
             <div className="tb-cell tb-wide">
               <span className="label">On edge</span>
@@ -2521,16 +2540,18 @@ export function App(): JSX.Element {
         />
 
         {/*
-          The key's own edge. Collapsed it is one line; opened it takes the height it needs and pushes
-          nothing, because nothing shares this column with it.
+          The key's own corner, bottom right. Collapsed it is one line; opened it takes the height it
+          needs and pushes nothing, because nothing shares this column with it.
 
           Stands down while a panel is up: they are the same edge, and two things claiming it would be two
           answers to one question. Desktop only - a phone has no spare edge, so there it stays in the rail.
         */}
-        {cinema || markSubject || (shownQuake && pinned) ? null : (
+        {cinema || section || markSubject || (shownQuake && pinned) ? null : (
           <div
-            className="pointer-events-auto absolute top-[calc(var(--head-h)_+_1rem)] right-4 z-[1] hidden
-              max-h-[calc(100dvh_-_var(--head-h)_-_16rem)] w-[300px] overflow-y-auto bg-deck/40 p-3
+            /* Anchored at the bottom, so opening it grows upward out of the corner rather than downward
+               off the screen. `section` is in the gate above because it owns this corner too. */
+            className="pointer-events-auto absolute right-4 bottom-4 z-[1] hidden
+              max-h-[calc(100dvh_-_var(--head-h)_-_6rem)] w-[300px] overflow-y-auto bg-deck/40 p-3
               backdrop-blur-2xl backdrop-saturate-50 xl:block"
           >
             {marksKey}
@@ -2636,7 +2657,9 @@ export function App(): JSX.Element {
             ) : null}
             {/* First on the last line, with the key hints beside it. Both sit against the band's left edge,
                 which is the rail - and a panel opening does not move the rail, so neither of them moves. */}
-            <p className="order-2 text-[11px] text-faint">
+            {/* `py-1.5` matches the hints chip beside it. `items-end` lines up box bottoms, and the chip's
+                own padding then held its text 6px higher than this line. */}
+            <p className="order-2 py-1.5 text-[11px] text-faint">
               made by{" "}
               <a
                 href="https://www.aidenjang.com"
