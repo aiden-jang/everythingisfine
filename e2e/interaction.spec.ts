@@ -503,7 +503,9 @@ test("notches compound off where the camera is heading", async ({ page }) => {
   // This replaces a flat two-second wait, which was the same assumption with no way to be sure of it.
   await cameraStill(page);
 
-  await page.mouse.move(900, 450);
+  // Well up the canvas. The timeline band owns the bottom of it now and takes its own wheel, so a point
+  // that used to be open planet is a control - which is correct, and not what this test is about.
+  await page.mouse.move(900, 220);
   await page.mouse.wheel(0, -240);
   await page.mouse.wheel(0, -240);
 
