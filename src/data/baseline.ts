@@ -1,15 +1,8 @@
 import counts from "./baseline.json";
 import type { Store } from "./store";
 
-/*
- * Whether today is a lot, against five years of days: 1,826 of them, quietest 3, median 18, busiest 422.
- *
- * Compare at magnitude 4.5, never at whatever the filter says. How many small events get detected depends on
- * how many seismometers are nearby, so a count of everything cannot be compared across years. At 4.5 the
- * catalogue is complete and a difference between two days is the planet.
- *
- * The sentence has to state that threshold, because it reports on a population the map may not be drawing.
- */
+/* Whether today is a lot, against five years of days: 1,826 of them, quietest 3, median 18, busiest 422.
+   See ARCHITECTURE.md. */
 
 /** Both sorted ascending. See the note in the generator on why that is the entire structure. */
 const { days: DAYS, weeks: WEEKS } = counts as { days: number[]; weeks: number[] };

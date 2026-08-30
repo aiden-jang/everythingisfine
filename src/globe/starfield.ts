@@ -5,32 +5,13 @@ import { DEG } from "../geo/sphere";
 import { starBrightness, starVector, type StarTable } from "../geo/stars";
 import { SKY_DISTANCE, SKY_GLSL } from "./sky";
 
-/*
- * The sky, as 5,080 real stars rather than a hash of the view direction. Orion is over the Pacific in
- * January and findable, which a generated field can never be.
- *
- * A skybox without a skybox, and no per-frame work: the vertex shader adds `cameraPosition` to the star's own
- * direction, so every star sits a fixed distance from the eye and nothing updates as the camera moves.
- *
- * Depth-tested, deliberately. Three.js draws opaque before transparent, so a transparent layer with the test
- * off paints over the planet however low its `renderOrder`. The ocean writes depth first and `STAR_DISTANCE`
- * is far enough out that every star behind the planet fails against it.
- *
- * Brightness only, no hue. A blue Rigel beside an orange Betelgeuse would be a second thing on screen where
- * colour meant something, meaning something different.
- */
+/* The sky, as 5,080 real stars rather than a hash of the view direction. Orion is over the Pacific in
+   January and findable, which a generated field can never be. See ARCHITECTURE.md. */
 
 /** Slightly under Instrument, so a star is never as bright as a focus ring. Matches the old field. */
 export const COLOR_STARS = new Color(0xc8d2e2);
 
-/*
- * Magnitude spent on size and on opacity together, each on its own curve. The flux ratio across this table
- * is about 1,400 to 1: on opacity alone that leaves Sirius in a black sky, on size alone it is a scatter plot.
- *
- * Both gammas are below one. The table is bottom-heavy - 4,176 of 5,080 stars fainter than magnitude 4.5 -
- * so a typical star normalises to about 0.07, and a gamma above one crushes the catalogue onto the minimum:
- * measured, 16 lit pixels in a patch of sky where the old field had 164. Below one, 0.07 lifts to 0.31.
- */
+/* Magnitude spent on size and on opacity together, each on its own curve. See ARCHITECTURE.md. */
 const SIZE_MIN_PX = 2.6;
 const SIZE_MAX_PX = 5.4;
 const SIZE_GAMMA = 0.5;

@@ -12,12 +12,7 @@ describe("distance to the nearest boundary", () => {
   });
 
   it("measures to the segment, not to the nearest vertex", () => {
-    /*
-     * The bug that made the first measurement of this feature wrong. Vertices here are 10 degrees apart,
-     * so a point directly on the line midway between two of them is 0 km from the boundary and 556 km
-     * from the nearest vertex. Measuring to vertices reported the within-50km share as 11% where the
-     * truth was 32%.
-     */
+    /* The bug that made the first measurement of this feature wrong. See ARCHITECTURE.md. */
     const mid = nearestBoundaryKm(5, 0, segs)!;
     expect(mid).toBeCloseTo(0, 6);
     expect(distanceKm(5, 0, 0, 0)).toBeGreaterThan(500);
@@ -36,12 +31,8 @@ describe("distance to the nearest boundary", () => {
   });
 
   it("takes the nearest of several boundaries", () => {
-    /*
-     * 119.7 km, not the 111.2 that one degree of latitude would suggest, and the difference is the point.
-     * A line of constant latitude is not a great circle: the arc joining 5N,0E to 5N,20E bulges north to
-     * 5.078N at the halfway meridian, so a point at 4N is 1.078 degrees from the arc rather than one. The
-     * equator in the tests above is exempt only because it happens to be a great circle itself.
-     */
+    /* 119.7 km, not the 111.2 that one degree of latitude would suggest, and the difference is the point.
+       See ARCHITECTURE.md. */
     const two = toSegments([[[0, 0], [20, 0]], [[0, 5], [20, 5]]]);
     expect(nearestBoundaryKm(10, 4, two)!).toBeCloseTo(119.7, 0);
   });

@@ -2,13 +2,7 @@ import { describe, expect, it } from "vitest";
 import { frontsFor, MAX_LIVE_FRONTS } from "./feed";
 import type { Quake, Reading } from "../data/types";
 
-/*
- * The gate for PLAN.md step 8, tested as a rule rather than as a screenshot.
- *
- * A cold load always has a front expanding in the first frame, and that cannot be observed here:
- * announcements coalesce through requestAnimationFrame, which every headless context suspends. What can be
- * pinned is the rule the handler applies, which is the part that would silently rot.
- */
+/* The gate for PLAN.md step 8, tested as a rule rather than as a screenshot. See ARCHITECTURE.md. */
 
 const quake = (id: string, magnitude: number): Quake => {
   const primary: Reading = {

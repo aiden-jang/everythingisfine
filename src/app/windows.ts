@@ -1,11 +1,4 @@
-/*
- * The windows on offer, in one place because three files decide things from them.
- *
- * They were declared in `Timeline.tsx`, which is where the buttons are, and that left the permalink
- * decoder with no way to know what a valid window was. It clamped to 24 hours, which was correct when a
- * day was the only option and silently threw away the 7d and 30d views the moment they shipped: a link
- * to a month opened on a day and looked like it had worked.
- */
+/* The windows on offer, in one place because three files decide things from them. See ARCHITECTURE.md. */
 
 /** Hours, longest last. The strip divides whichever of these is chosen into its 24 buckets. */
 export const WINDOWS = [
@@ -16,15 +9,7 @@ export const WINDOWS = [
 
 const WINDOW_HOURS: readonly number[] = WINDOWS.map((w) => w.hours);
 
-/**
- * The offered window nearest a number of hours.
- *
- * Snap, do not clamp. A 100-hour window works arithmetically and no button can show it, so a link carrying
- * one would leave the group with nothing selected and no way back.
- *
- * Nearest in log space: 100 hours is 4.2 times a day and 0.6 of a week, and linear distance would call the
- * day nearer when it is not.
- */
+/** The offered window nearest a number of hours. See ARCHITECTURE.md. */
 export function nearestWindow(hours: number): number {
   if (!Number.isFinite(hours) || hours <= 0) return WINDOW_HOURS[0]!;
   let best = WINDOW_HOURS[0]!;

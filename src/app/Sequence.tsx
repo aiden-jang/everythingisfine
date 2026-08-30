@@ -2,13 +2,7 @@ import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import type { Nearby } from "./nearby";
 import { MIN_AFTER, observed, reference, staircase } from "./omori";
 
-/*
- * The pinned event inside its own sequence.
- *
- * One axis, time, with the pinned event fixed at its true position and every neighbour as a tick. Overlap is
- * not a defect: three hundred ticks piling into ninety minutes is the shape of a swarm, which is exactly
- * what the globe cannot show because clustering collapses it to one marker.
- */
+/* The pinned event inside its own sequence. See ARCHITECTURE.md. */
 
 export interface SequenceProps {
   nearby: Nearby;

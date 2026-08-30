@@ -1,13 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fetchHistory } from "./history";
 
-/*
- * EONET, for real. Run it deliberately:  pnpm test:live
- *
- * The whole feature rests on a claim about somebody else's API: that `start`/`end` are honoured. GDACS looked
- * like it honoured them and did not, and the difference is invisible from a single query - which is how this
- * nearly shipped as a layer that draws one storm on a day that had many. So the assertion is comparative.
- */
+/* EONET, for real. Run it deliberately: pnpm test:live See ARCHITECTURE.md. */
 
 const day = (iso: string): { from: number; to: number } => {
   const from = Date.parse(`${iso}T00:00:00Z`);

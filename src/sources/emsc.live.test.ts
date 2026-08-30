@@ -2,15 +2,8 @@ import { describe, expect, it } from "vitest";
 import { browserRuntime } from "./types";
 import { createEmscSource, EMSC_CATALOGUE, EMSC_SOCKET, SEED_LIMIT } from "./emsc";
 
-/*
- * The second and last test that touches the real internet. Excluded from the default run and CI.
- *
- * It asserts the socket still accepts an anonymous connection and nothing about what comes down it: waiting
- * for an event would fail on a quiet planet.
- *
- * That connection is the whole basis for the push half of the design. If EMSC ever requires a key, the
- * project needs a Worker to hold it.
- */
+/* The second and last test that touches the real internet. Excluded from the default run and CI. See
+   ARCHITECTURE.md. */
 
 describe("EMSC, for real", () => {
   it("still accepts an anonymous connection", async () => {
@@ -39,12 +32,9 @@ describe("EMSC, for real", () => {
     expect(live).toBe(true);
   }, 25_000);
 
-  /*
-   * The two facts the coverage claim rests on, argued rather than measured for a long time: a short page is a
-   * complete catalogue for the span asked for, and a full one is truncated at its oldest row. Both hold only
-   * while the portal's ceiling sits far above `SEED_LIMIT` and while it truncates from the old end. Neither
-   * is documented, so neither is promised.
-   */
+  /* The two facts the coverage claim rests on, argued rather than measured for a long time: a short page is
+     a complete catalogue for the span asked for, and a full one is truncated at its oldest row. See
+     ARCHITECTURE.md. */
   it("has a row ceiling far above the seed limit, so a short page is a short catalogue", async () => {
     const since = new Date(Date.now() - 30 * 24 * 3_600_000).toISOString().slice(0, 19);
     const res = await fetch(
@@ -53,12 +43,8 @@ describe("EMSC, for real", () => {
     expect(res.ok).toBe(true);
     const payload = (await res.json()) as { features: unknown[] };
 
-    /*
-     * Asking for four times the limit has to return more than the limit. If it ever comes back at or under
-     * `SEED_LIMIT`, ours has stopped being the binding limit and a page under it could be silently truncated.
-     *
-     * Measured at 14,958 events over thirty days on 2026-08-19, against a portal ceiling of 20,000.
-     */
+    /* Asking for four times the limit has to return more than the limit. Measured at 14,958 events over
+       thirty days on 2026-08-19, against a portal ceiling of 20,000. See ARCHITECTURE.md. */
     expect(payload.features.length).toBeGreaterThan(SEED_LIMIT);
   }, 60_000);
 

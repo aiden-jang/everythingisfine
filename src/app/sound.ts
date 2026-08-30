@@ -1,13 +1,7 @@
 import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 
-/*
- * One earthquake, one tone. Not a recording - real ground motion is below hearing, so this is a transposition.
- *
- * Pitch falls as magnitude rises, which is what a real rupture does, and duration grows.
- *
- * Loudness cannot be honest. M2 to M7.5 is 178 million times the energy, so gain is squashed hard and the
- * legend has to say so.
- */
+/* One earthquake, one tone. Not a recording - real ground motion is below hearing, so this is a
+   transposition. See ARCHITECTURE.md. */
 
 /** Two octaves, high for the smallest event and low for the largest. */
 const HIGH_HZ = 440;

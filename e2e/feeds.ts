@@ -1,16 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { REPLAY_FRONT_MIN_MAG } from "../src/app/replay";
 
-/*
- * Both feeds, served from the test.
- *
- * Talking to USGS and EMSC for real was the one thing keeping this suite out of CI: none of these tests
- * assert anything about the data, so they time out waiting for content and a quiet network looks exactly
- * like a broken app.
- *
- * Deterministic and positioned relative to now, or fixed timestamps age out of the window and the suite
- * rots quietly. The live contract is still checked, by `pnpm test:live`.
- */
+/* Both feeds, served from the test. See ARCHITECTURE.md. */
 
 /** mulberry32, so a failure reproduces exactly rather than turning up once a week. */
 function seeded(seed: number): () => number {
@@ -62,14 +53,8 @@ const B_VALUE = 1;
 const MIN_MAG = 2.5;
 
 /**
- * Held just under the magnitude that spawns a wavefront, and derived rather than written down.
- *
- * A ceiling above `REPLAY_FRONT_MIN_MAG` lets the entrance replay fire fronts, each of which keeps the
- * frame loop awake about sixteen seconds: three tests went from roughly 20 seconds to 40, 45 and 66,
- * straight through the budget, with nothing wrong with the app or the tests.
- *
- * The cost is that no browser test ever sees a wavefront. That was already true and is now at least
- * visible.
+ * Held just under the magnitude that spawns a wavefront, and derived rather than written down. See
+ * ARCHITECTURE.md.
  */
 const MAX_MAG = REPLAY_FRONT_MIN_MAG - 0.05;
 
@@ -77,15 +62,10 @@ const MAX_MAG = REPLAY_FRONT_MIN_MAG - 0.05;
 const MAG_CUT = 1 - 10 ** (-(MAX_MAG - MIN_MAG) * B_VALUE);
 
 /**
- * A day of seismicity, newest last, drawn from Gutenberg-Richter. A uniform draw would put a magnitude
- * 7 on screen every few minutes and quietly make every magnitude filter test meaningless.
- *
- * The slope matters because the app reads it back: the size-distribution chart estimates b from these
- * events and quotes it. Measured across four seeds, this draw gives a largest of M4.4 to M4.9 and an
- * estimated b of 0.87 to 0.95, inside the 0.8 to 1.2 real catalogues sit in.
- *
- * Don't tune the draw to make the readout land on a rounder number. The gap is the ceiling above cutting
- * the upper tail, and fooling the estimator is the same dishonesty in the other direction.
+ * A day of seismicity, newest last, drawn from Gutenberg-Richter. A uniform draw would put a magnitude 7
+ * on screen every few minutes and quietly make every magnitude filter test meaningless. Don't tune the
+ * draw to make the readout land on a rounder number. The gap is the ceiling above cutting the upper tail,
+ * and fooling the estimator is the same dishonesty in the other direction. See ARCHITECTURE.md.
  */
 function day(seed = 4, count = 240): Quake[] {
   const rand = seeded(seed);
@@ -189,12 +169,7 @@ export interface FeedOptions {
 /** Matches `SEED_LIMIT` in `src/sources/emsc.ts`, which is what decides that a page was truncated. */
 const EMSC_SEED_LIMIT = 600;
 
-/**
- * Routes both feeds and stubs the socket. Call before `page.goto`.
- *
- * The socket has to be stubbed rather than routed: `page.route` never sees a WebSocket, which is how a live
- * earthquake from Salta turned up in a test that had carefully routed both HTTP endpoints to nothing.
- */
+/** Routes both feeds and stubs the socket. Call before `page.goto`. See ARCHITECTURE.md. */
 export async function installFeeds(page: Page, options: FeedOptions = {}): Promise<void> {
   const { usgs, empty, silent, dead, seed, count, emscCappedHours } = options;
 
@@ -280,13 +255,8 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
       json: { features: quakes.filter((q) => q.both).map((q) => emscFeature(q, now)) },
     });
   });
-  /*
-   * The archive asks `fdsnws/event/1/query?format=geojson&...`, which contains no literal `.geojson`, so
-   * it missed every pattern here and reached the real internet for months.
-   *
-   * These fixtures are dated inside the requested day: an archived day whose events are dated today cannot
-   * tell a correct clock from a broken one.
-   */
+  /* The archive asks `fdsnws/event/1/query?format=geojson&...`, which contains no literal `.geojson`, so it
+     missed every pattern here and reached the real internet for months. See ARCHITECTURE.md. */
   // The count method, which is a different method on the same service: the route below matches `query`, so
   // `count` went straight past it to the real agency. The number is derived from the day so it is stable per
   // date and different between dates.
@@ -331,18 +301,11 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
 }
 
 /**
- * Waits for the rail's counter to leave zero, which is the app's own "data has landed" signal.
- *
- * The rail is asserted first, on a short timeout, because `not.toHaveText` against an element that does not
- * exist spends the full thirty seconds and then reports "element(s) not found".
+ * Waits for the rail's counter to leave zero, which is the app's own "data has landed" signal. See
+ * ARCHITECTURE.md.
  */
-/*
- * The hazard feeds. Unstubbed they cost 14 requests to gdacs.org and 2 to swpc.noaa.gov per test, about
- * a thousand a run, for data no test asserts on.
- *
- * Small fixed sets rather than empty replies, so screenshots keep showing a spiral, a triangle, a flame
- * and waves, and the same ones every run.
- */
+/* The hazard feeds. Unstubbed they cost 14 requests to gdacs.org and 2 to swpc.noaa.gov per test, about a
+   thousand a run, for data no test asserts on. See ARCHITECTURE.md. */
 const hazardEvent = (type: string, id: number, lon: number, lat: number, extra: object = {}) => ({
   type: "Feature",
   geometry: { type: "Point", coordinates: [lon, lat] },

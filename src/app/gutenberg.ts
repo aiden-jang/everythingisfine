@@ -2,15 +2,8 @@ import type { Store } from "../data/store";
 import { matches } from "../data/filter";
 import type { Filters } from "../data/types";
 
-/*
- * How many earthquakes there are at each size. Ten times as many, each magnitude down, since 1944.
- *
- * The bend at the bottom is about us, not the Earth: below some size the network stops hearing everything.
- *
- * Estimate b by maximum likelihood, never by fitting a line to the plotted points. Least squares on
- * cumulative counts weights the rare big events like the common small ones and is known to be biased. Draw
- * that same estimate, so what is plotted and what is quoted cannot disagree.
- */
+/* How many earthquakes there are at each size. Ten times as many, each magnitude down, since 1944. See
+   ARCHITECTURE.md. */
 
 /** Bin width in magnitude units. 0.1 is the precision the feeds report at. */
 const BIN = 0.1;

@@ -1,13 +1,8 @@
 import plates from "./plates.json";
 import { toVec3, spanDeg } from "./sphere";
 
-/*
- * The tectonic plate boundaries. The earthquakes were always tracing these and nothing said so, so the Ring
- * of Fire read as a coincidence of where dots land.
- *
- * PB2002, Bird (2003), public domain. Douglas-Peucker at 0.15 degrees, under a pixel at the framing shot,
- * quantised to two decimals: 6,292 vertices become 1,872 and 221kB becomes 9.4kB gzipped.
- */
+/* The tectonic plate boundaries. The earthquakes were always tracing these and nothing said so, so the Ring
+   of Fire read as a coincidence of where dots land. See ARCHITECTURE.md. */
 
 /** Between the graticule and the land, so continents sit on top of the boundaries they contain. */
 export const RADIUS_PLATES = 1.0035;
@@ -29,13 +24,8 @@ export function buildPlates(
     for (let i = 0; i < line.length - 1; i += 1) {
       const a = line[i]!;
       const b = line[i + 1]!;
-      /*
-       * A boundary that leaves at +180 and re-enters at -180 is one line in the source data, and joining
-       * those two points draws a chord straight through the planet.
-       *
-       * No step in the committed simplification reaches this - the widest is 18.3 degrees - but the data is
-       * a build artefact that could be re-run coarser. `plates.test.ts` feeds it a crossing directly.
-       */
+      /* A boundary that leaves at +180 and re-enters at -180 is one line in the source data, and joining
+         those two points draws a chord straight through the planet. See ARCHITECTURE.md. */
       if (Math.abs(b[0] - a[0]) > WRAP_DEG) continue;
 
       const steps = Math.max(1, Math.ceil(spanDeg(a[0], a[1], b[0], b[1]) / DENSIFY_DEG));
@@ -57,15 +47,7 @@ export function buildPlates(
   return { position: new Float32Array(out), lonLat: new Float32Array(ll) };
 }
 
-/**
- * Reorders segments nearest-first from a set of points, for the entrance reveal.
- *
- * Growing from the events is the claim the picture makes: the dots are where they are because the line is
- * there. A fade says nothing and a wipe has a direction that means nothing.
- *
- * Ordering plus a growing draw range, not a shader: a threshold reveal would need a per-vertex attribute
- * and a custom material for a line layer that needs neither.
- */
+/** Reorders segments nearest-first from a set of points, for the entrance reveal. See ARCHITECTURE.md. */
 export function orderByProximity(
   positions: Float32Array,
   points: readonly { lon: number; lat: number }[],

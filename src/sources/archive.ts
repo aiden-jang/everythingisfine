@@ -2,18 +2,7 @@ import type { Reading, SourceId } from "../data/types";
 import { parseUsgs } from "./usgs";
 import { parseEmscFrame } from "./emsc";
 
-/*
- * A day that has already happened, from both agencies.
- *
- * ARCHITECTURE.md called this impossible without a backend and was wrong: both agencies expose FDSN event
- * endpoints taking an arbitrary `starttime` and `endtime`, keylessly, with `access-control-allow-origin: *`.
- *
- * What the old note was right about is the shape. A slider that quietly makes "this is happening right now"
- * false is the version worth refusing, so this is a mode: it replaces the live set rather than blending with
- * it, and every claim of liveness in the chrome stands down while it is on.
- *
- * Both parsers are the live ones, so there is no second definition of what an earthquake is.
- */
+/* A day that has already happened, from both agencies. See ARCHITECTURE.md. */
 
 const USGS_QUERY = "https://earthquake.usgs.gov/fdsnws/event/1/query";
 /** Same service, different method: `count` answers with a number instead of a payload. */
@@ -89,11 +78,9 @@ export async function fetchArchive(
 }
 
 /**
- * How many events a day holds, without fetching them. FDSN has a `count` method beside `query` that answers
- * `{"count":684}` in forty bytes, so asking about twelve days costs less than one day's events.
- *
- * Null rather than zero when the request fails: a day with nothing in it and a day nobody could ask about
- * are the distinction this app keeps everywhere else.
+ * How many events a day holds, without fetching them. FDSN has a `count` method beside `query` that
+ * answers `{"count":684}` in forty bytes, so asking about twelve days costs less than one day's events.
+ * See ARCHITECTURE.md.
  */
 export async function countForDay(
   iso: string, minMagnitude: number, get: typeof fetch = fetch,

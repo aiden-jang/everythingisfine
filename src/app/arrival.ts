@@ -2,15 +2,7 @@ import { P_WAVE_KM_PER_S, S_WAVE_KM_PER_S } from "../geo/waves";
 import type { Quake, Reading } from "../data/types";
 import { distanceKm } from "../geo/sphere";
 
-/*
- * When the shaking reached the nearest named place.
- *
- * The distance is the agency's, never ours. USGS writes every place as "38 km NW of Stanton, Texas". An
- * authored list of cities means latitudes written from memory, and a tenth of a degree is 11km, which is
- * two seconds of an answer that reads as measured.
- *
- * Straight line at crustal speed, so it is capped: past that the wave dives into faster mantle and arrives early.
- */
+/* When the shaking reached the nearest named place. See ARCHITECTURE.md. */
 
 /** Beyond this the constant-velocity assumption stops being an approximation and starts being wrong: a
  * 2000km path arrives materially before distance over 6 would say. A backstop, not a limit anybody meets. */
@@ -40,13 +32,7 @@ export function parsePlace(place: string): { km: number; name: string } | null {
   return { km, name: m[2]! };
 }
 
-/**
- * Path length from the hypocentre to the place, which is not the distance on the map. The published figure
- * is epicentral; the wave leaves from depth, so the path is the hypotenuse - at a 45km-deep event 40km away
- * that is 60km, and ignoring it understates the arrival by a third exactly where it matters most.
- *
- * A missing depth counts as zero, following the event layer's convention. It biases the arrival early.
- */
+/** Path length from the hypocentre to the place, which is not the distance on the map. See ARCHITECTURE.md. */
 export function pathKm(epicentralKm: number, depthKm: number): number {
   const depth = Number.isFinite(depthKm) ? Math.max(0, depthKm) : 0;
   return Math.sqrt(epicentralKm * epicentralKm + depth * depth);
@@ -94,13 +80,8 @@ export interface Separation {
 }
 
 /**
- * Distance between two events, and how long the first one's P wave took to reach the second.
- *
- * Distance always, time only inside `MAX_KM`. Distance is geometry and true at any separation; a constant
- * crustal velocity stops being true well before the antipode.
- *
- * No depth correction here. Both ends are hypocentres, and the honest path between them is a refracted ray
- * rather than the surface arc or the chord.
+ * Distance between two events, and how long the first one's P wave took to reach the second. See
+ * ARCHITECTURE.md.
  */
 export function between(
   aLon: number, aLat: number, bLon: number, bLat: number,

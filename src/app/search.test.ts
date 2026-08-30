@@ -3,12 +3,8 @@ import { createStore } from "../data/store";
 import type { Filters, Reading } from "../data/types";
 import { fold, PLACE_LIMIT, search } from "./search";
 
-/*
- * Search over the only two things this app can honestly search: the authored regions, and the place
- * strings the agencies wrote on the events currently held. There is no gazetteer and there cannot be
- * one under the key constraint, so the cases that matter most here are the ones about what it cannot
- * find.
- */
+/* Search over the only two things this app can honestly search: the authored regions, and the place strings
+   the agencies wrote on the events currently held. See ARCHITECTURE.md. */
 
 const now = 1_700_000_000_000;
 

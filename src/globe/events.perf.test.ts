@@ -3,49 +3,21 @@ import { createEventLayer } from "./events";
 import { createStore } from "../data/store";
 import type { Filters, Reading } from "../data/types";
 
-/*
- * You cannot gate CI on frame time. A shared runner has no GPU and falls back to software rendering, so the
- * number is noise wearing a unit and any threshold loose enough to pass never fails.
- *
- * Gate on per-frame CPU work instead - filter predicates, projection maths, buffer writes - which is
- * deterministic and needs no GPU. GPU frame time is measured by hand and recorded with the machine named.
- */
+/* You cannot gate CI on frame time. A shared runner has no GPU and falls back to software rendering, so the
+   number is noise wearing a unit and any threshold loose enough to pass never fails. See ARCHITECTURE.md. */
 
-/*
- * Budgets in reference units, not milliseconds.
- *
- * Absolute millisecond budgets failed three times on unchanged code, at 13.96ms against 7.65ms quiet.
- * Fastest-of-N removes sampling noise and does nothing about sustained load. So the budget is a ratio
- * against `referenceMs`, measured in the same process moments earlier: both numbers move together when the
- * machine is busy and the ratio does not. The milliseconds are still printed.
- */
-/*
- * Calibrated, not guessed. Quiet is 0.07, 0.71 and 4.10 reference units; six saturated cores move the ratio
- * 13% where the milliseconds moved 20%. These sit about 45% above quiet.
- *
- * Not immune: the worst seen was +82% in milliseconds with browsers resident, which is memory pressure.
- *
- * The same three numbers DESIGN.md section 11 publishes. Keep the two in step.
- */
+/* Budgets in reference units, not milliseconds. See ARCHITECTURE.md. */
+/* Calibrated, not guessed. Quiet is 0.07, 0.71 and 4.10 reference units; six saturated cores move the ratio
+   13% where the milliseconds moved 20%. These sit about 45% above quiet. Not immune: the worst seen was
+   +82% in milliseconds with browsers resident, which is memory pressure. See ARCHITECTURE.md. */
 const BUDGET_REF: Record<number, number> = { 1_000: 0.15, 10_000: 1.05, 50_000: 7.0 };
 
-/*
- * The held-hour variant gets its own number. It reused `BUDGET_REF[50_000]` while doing strictly more work
- * than the plain sync, so it had the least headroom of any case here and was the first to cry wolf.
- *
- * Both moved from 6.0 to 7.0, which is a threshold problem rather than a regression: failures came in at
- * 6.02 and 6.49 with four dev servers resident, and both passed 8 of 8 in isolation. At 7.0 there is 30%
- * headroom over quiet, which still catches an algorithmic change.
- */
+/* The held-hour variant gets its own number. See ARCHITECTURE.md. */
 const BUDGET_REF_HELD = 7.0;
 
 /**
- * A fixed workload shaped like the thing being measured: trigonometry into a typed array. A pure arithmetic
- * loop would be CPU-bound where `sync` is partly memory-bound, and the ratio would drift with cache pressure.
- *
- * Roughly, and not across machines. This writes one typed array; `sync` walks several and a Map. A second
- * machine read 22.85 on the `findNearby` budget against 15.0 here, on code neither of us had touched. Treat
- * a failure on a different machine as worth reproducing before it is worth believing.
+ * A fixed workload shaped like the thing being measured: trigonometry into a typed array. See
+ * ARCHITECTURE.md.
  */
 function referenceMs(): number {
   const out = new Float32Array(50_000 * 3);
@@ -96,11 +68,8 @@ const filters = (over: Partial<Filters> = {}): Filters => ({
 });
 
 /**
- * Fastest of repeated runs, not the median. As a median, the same 50,000-event sync measured 14.99ms in one
- * test and 8.89ms in the next test of the same file, for identical work.
- *
- * For a deterministic CPU-bound operation the fastest run is the honest estimate: every slower sample is the
- * code plus something else, and every scheduler slice and GC pause can only add.
+ * Fastest of repeated runs, not the median. As a median, the same 50,000-event sync measured 14.99ms in
+ * one test and 8.89ms in the next test of the same file, for identical work. See ARCHITECTURE.md.
  */
 function fastestMs(run: () => void, samples: number): number {
   let best = Infinity;

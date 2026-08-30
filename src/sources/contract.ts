@@ -2,15 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Reading } from "../data/types";
 import type { FetchResult, GeoEventSource, Runtime, SocketLike, SourceStatus } from "./types";
 
-/*
- * The suite every source must pass, written while there is only one source.
- *
- * Write it now. A contract written after the second adapter describes the intersection of what they both
- * already do rather than what a source owes the app; written first, adding EMSC meant running it unchanged.
- *
- * Nothing below mentions HTTP, JSON, sockets or magnitudes. It asserts four things: what a reading is, that
- * stopping stops, that a broken transport degrades instead of throwing, and that nothing is announced twice.
- */
+/* The suite every source must pass, written while there is only one source. See ARCHITECTURE.md. */
 
 /** A clock and network the test drives by hand. Shared so both adapters are exercised identically. */
 export interface FakeRuntime extends Runtime {
@@ -111,10 +103,8 @@ export interface ContractSubject {
   /** A runtime wired to deliver real-shaped data on demand. */
   runtime: (mode: "healthy" | "broken") => FakeRuntime;
   /**
-   * Makes the transport hand over one payload and waits until the source has processed it.
-   *
-   * `mode` is passed because a push source must be told not to hand over data when the transport is meant
-   * to be broken. Always dispatching a message fed a healthy payload into a socket just declared dead.
+   * Makes the transport hand over one payload and waits until the source has processed it. See
+   * ARCHITECTURE.md.
    */
   deliver: (runtime: FakeRuntime, mode: "healthy" | "broken") => Promise<void>;
   /** How many readings a healthy `deliver` is expected to produce the first time. */

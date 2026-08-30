@@ -2,14 +2,7 @@ import type { Store } from "../data/store";
 import type { Filters } from "../data/types";
 import { matches } from "../data/filter";
 
-/*
- * Named seismic regions, so the rail has somewhere to fly to.
- *
- * Authored, not derived. Clustering the events would make the names change from load to load, and
- * "cluster 3" is not a place anyone can decide to look at.
- *
- * The counts are not authored: they are whatever is held and passing the filter, so a quiet region reads zero.
- */
+/* Named seismic regions, so the rail has somewhere to fly to. See ARCHITECTURE.md. */
 
 export interface Region {
   name: string;
@@ -47,12 +40,7 @@ export interface RegionCount {
   count: number;
 }
 
-/**
- * Counts per region, largest first, over exactly what is on screen.
- *
- * One pass over the store rather than one per region: eleven passes at fifty thousand events is
- * eleven times the work to answer the same question.
- */
+/** Counts per region, largest first, over exactly what is on screen. See ARCHITECTURE.md. */
 export function countByRegion(store: Store, filters: Filters, now: number): RegionCount[] {
   const counts = new Array<number>(REGIONS.length).fill(0);
   store.forEach((quake) => {

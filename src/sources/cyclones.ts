@@ -1,14 +1,7 @@
 import { parseUtc, reportedBy } from "./gdacs";
-/*
- * Tropical cyclones, as tracks rather than dots. A storm drawn as a point is a dot that happens to be a
- * hurricane; drawn as a track it explains itself, curving poleward as every cyclone does.
- *
- * Only what is happening now. GDACS lists 99 and flags 3 `iscurrent`; the other 96 are dead storms.
- *
- * Leave the polygons on the server. Each storm's geometry payload is 370kB, of which 49 features are
- * wind-radius rings and a forecast cone - rings in lon/lat walk into all four traps the land mesh paid for.
- * The 17 LineStrings are 28kB and are a polyline, which this codebase already draws correctly.
- */
+/* Tropical cyclones, as tracks rather than dots. A storm drawn as a point is a dot that happens to be a
+   hurricane; drawn as a track it explains itself, curving poleward as every cyclone does. Only what is
+   happening now. GDACS lists 99 and flags 3 `iscurrent`; the other 96 are dead storms. See ARCHITECTURE.md. */
 
 const LIST = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH"
   + "?eventlist=TC&alertlevel=Green;Orange;Red";
@@ -26,12 +19,7 @@ export interface Cyclone {
   /** Where it is now. */
   lon: number;
   lat: number;
-  /**
-   * Strongest wind over the storm's life, in km/h, or null when not published.
-   *
-   * Their `severity` number, never their `severitytext`. The two disagree systematically: a storm measured
-   * at 259 km/h is labelled "Tropical Storm". The number is unambiguous and carries a unit.
-   */
+  /** Strongest wind over the storm's life, in km/h, or null when not published. See ARCHITECTURE.md. */
   peakKmh: number | null;
   /** Where it has been, oldest first, as one polyline. Empty when the track could not be had. */
   track: { lon: number; lat: number }[];
@@ -76,15 +64,7 @@ export function parseCycloneList(payload: unknown): Omit<Cyclone, "track">[] {
   return out;
 }
 
-/**
- * The track out of a storm's geometry payload, oldest point first.
- *
- * GDACS publishes seventeen two-point LineStrings in reverse order, each segment's start being the previous
- * one's end. Stitch by walking the ends, never by trusting the `Class` numbering, which is a name.
- *
- * Drop a segment spanning more than `WRAP_DEG`: a Pacific storm really does cross the antimeridian, and
- * joining 179 to -179 draws a line across the whole world.
- */
+/** The track out of a storm's geometry payload, oldest point first. See ARCHITECTURE.md. */
 export function parseTrack(payload: unknown): { lon: number; lat: number }[] {
   const features = (payload as { features?: unknown })?.features;
   if (!Array.isArray(features)) return [];

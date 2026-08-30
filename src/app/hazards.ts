@@ -5,15 +5,7 @@ import type { Flood } from "../sources/floods";
 import type { Volcano } from "../sources/volcanoes";
 import type { Wildfire } from "../sources/wildfires";
 
-/*
- * The five layers as a list, because a glyph cannot be reached by keyboard.
- *
- * Marks became clickable, which gave them a pointer and nothing else. The earthquakes have had the rail's
- * list from the start.
- *
- * Order each layer by what it is about: storms by wind, fires by area, floods and volcanoes by recency. An
- * alphabetical list of a hundred fires answers nothing.
- */
+/* The five layers as a list, because a glyph cannot be reached by keyboard. See ARCHITECTURE.md. */
 
 export interface HazardRow {
   /** `kind:id`, the same identity the globe picks by, so the two cannot disagree. */

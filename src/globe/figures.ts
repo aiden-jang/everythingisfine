@@ -2,25 +2,11 @@ import { BufferAttribute, BufferGeometry, Color, LineSegments, ShaderMaterial } 
 import { starVector, type FigureTable } from "../geo/stars";
 import { SKY_DISTANCE, SKY_GLSL } from "./sky";
 
-/*
- * The constellation lines, over the stars they join. A sky nobody can find anything in is still a backdrop.
- *
- * The one layer here that measures nothing - nobody discovered that seven stars are a plough - which is why
- * it is a toggle, beside the slab and the plate motions.
- *
- * Faint. The lines exist to be followed, not looked at.
- *
- * Placed by the same rule as the stars, from `sky.ts`. A line at a different distance or rotation than the
- * star it points at is a line pointing at nothing.
- */
+/* The constellation lines, over the stars they join. A sky nobody can find anything in is still a backdrop.
+   See ARCHITECTURE.md. */
 
-/*
- * The star colour, at the weight a guide line deserves. Not a colour of its own: these belong to the stars,
- * and reading as a different material would make them a third thing on screen.
- *
- * At 0.2 a 360 by 110 patch of sky brightened by 0.14 of a luminance level, which takes hunting for. A
- * reader who pressed a button labelled "figures" has asked to see figures.
- */
+/* The star colour, at the weight a guide line deserves. Not a colour of its own: these belong to the stars,
+   and reading as a different material would make them a third thing on screen. See ARCHITECTURE.md. */
 const COLOR_FIGURES = new Color(0xc8d2e2);
 const FIGURE_OPACITY = 0.3;
 

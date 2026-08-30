@@ -1,12 +1,4 @@
-/*
- * The aurora oval, from NOAA's OVATION model.
- *
- * The first layer that is not an earthquake, and chosen first because it is not more dots: it is a field, so
- * it renders as light on the night side rather than as another marker.
- *
- * It arrives already explained: the globe computes the subsolar point every minute, and an aurora is visible
- * exactly where that shading is. Keyless, `access-control-allow-origin: *`.
- */
+/* The aurora oval, from NOAA's OVATION model. See ARCHITECTURE.md. */
 
 /** Aurora probability on a one-degree grid, updated every few minutes. */
 const AURORA_URL = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json";
@@ -30,15 +22,7 @@ interface Payload {
   ["Forecast Time"]?: unknown;
 }
 
-/**
- * The published grid into a raster, or null when the shape is wrong.
- *
- * Row-major from the south pole, which is what a texture wants and what the feed publishes, so nothing is
- * transposed. Longitude stays 0-359 east: the shader wraps it with a `fract`, and rebasing here would be a
- * second place for the seam to be got wrong.
- *
- * Null, never a partial grid. A half-filled aurora claims the sky is dark where the parser gave up.
- */
+/** The published grid into a raster, or null when the shape is wrong. See ARCHITECTURE.md. */
 export function parseOvation(payload: unknown): Aurora | null {
   const body = payload as Payload | null;
   const rows = body?.coordinates;

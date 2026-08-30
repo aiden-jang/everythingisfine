@@ -1,13 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { graticule, spanDeg, toVec3 } from "./sphere";
 
-/*
- * The graticule, which had no test of any kind.
- *
- * It is scaffolding rather than data, which is why it went unexamined, and it is also a line layer
- * crossing the antimeridian and running into both poles: the two places every other geometry in this
- * project has been wrong at least once. The land mesh was wrong at both. This audit found it correct.
- */
+/* The graticule, which had no test of any kind. See ARCHITECTURE.md. */
 
 const RADIUS = 1.002;
 

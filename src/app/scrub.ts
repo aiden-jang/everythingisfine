@@ -1,14 +1,6 @@
 import { BUCKETS } from "./histogram";
 
-/*
- * The window, as somewhere you can stand rather than only a total.
- *
- * A sequence is a thing that unfolds, and the app held a whole day of it and could only draw the end state.
- * The entrance replay shows that once, for 2.8 seconds, and then throws the ability away.
- *
- * So the cursor is the replay made permanent and steerable, reusing the same `revealUntil`. Nothing here
- * invents an event, reorders one or changes a time.
- */
+/* The window, as somewhere you can stand rather than only a total. See ARCHITECTURE.md. */
 
 /**
  * How long a play-through of the whole window takes, in seconds. Linear, and slower than the entrance
@@ -50,9 +42,7 @@ export function atFraction(fraction: number, span: Span): number {
 
 /**
  * Advances a playing cursor, and hands back to live when it catches up. Stopping one pixel short of the
- * present and calling it the present is how a live app stops being one.
- *
- * The span is passed in rather than remembered, because `to` is the wall clock and moves underneath this.
+ * present and calling it the present is how a live app stops being one. See ARCHITECTURE.md.
  */
 export function step(scrub: Scrub, span: Span, dt: number): Scrub {
   if (!scrub.playing || scrub.at === null) return scrub;
@@ -90,15 +80,8 @@ export function clamp(scrub: Scrub, span: Span): Scrub {
 }
 
 /**
- * Moves the cursor one bar at a time.
- *
- * A bar, never a fixed span: an hour is a 24th of a day and a 720th of a month, so one press would mean two
- * things depending on a control elsewhere.
- *
- * Do not snap to a boundary. Bars are anchored to `now`, so the grid slides between one press and the next.
- *
- * Anywhere in the last bar hands back to live, not only past `to`. Otherwise three steps back and three
- * forward park on the `to` of three presses ago, and the app reads as live while saying held.
+ * Moves the cursor one bar at a time. Do not snap to a boundary. Bars are anchored to `now`, so the grid
+ * slides between one press and the next. See ARCHITECTURE.md.
  */
 export function nudge(scrub: Scrub, span: Span, buckets: number): Scrub {
   const width = span.to - span.from;

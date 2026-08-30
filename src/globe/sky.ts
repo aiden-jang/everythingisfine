@@ -3,26 +3,11 @@
  * a different distance or rotation than the star it points at would be a line pointing at nothing.
  */
 
-/*
- * Far enough that everything real is in front of it, near enough that the camera's far plane never clips.
- *
- * The moon sets this: at apogee it reaches 64 radii from the origin and up to 68 from the eye, so a star
- * nearer than that draws in front of it. Sixty did, until there was a moon to be in front of.
- *
- * The exact value sets no scale a viewer can see, because the sky is placed relative to the eye.
- */
+/* Far enough that everything real is in front of it, near enough that the camera's far plane never clips.
+   See ARCHITECTURE.md. */
 export const SKY_DISTANCE = 80;
 
-/*
- * Placing a direction in the sky: the sidereal turn, then the skybox offset.
- *
- * Buffer positions are unit vectors for a catalogue right ascension, so rotating the sky by -GMST about the
- * pole puts every one over the longitude it is actually above.
- *
- * Adding `cameraPosition` puts every point a fixed distance from the eye, so orbiting sweeps the sky and
- * travelling never slides it. Here rather than in the render loop, so neither layer needs a hook in a loop
- * that is asleep whenever nothing moves.
- */
+/* Placing a direction in the sky: the sidereal turn, then the skybox offset. See ARCHITECTURE.md. */
 export const SKY_GLSL = /* glsl */ `
   uniform float uSpin;
   uniform float uDistance;

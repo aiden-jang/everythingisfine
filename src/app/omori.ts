@@ -1,12 +1,6 @@
-/*
- * Omori's law, drawn against what happened. Aftershocks slow down as one over elapsed time, so the running
- * count is a logarithm: steep, then almost flat. A swarm climbs in a straight line instead.
- *
- * Draw it as a reference curve, never a fit. Fitting `p` to a dozen aftershocks gives a number made of
- * noise, and printing it would look like analysis.
- *
- * Count, not rate. A rate needs bins, and at these numbers the bin width decides the answer.
- */
+/* Omori's law, drawn against what happened. Aftershocks slow down as one over elapsed time, so the running
+   count is a logarithm: steep, then almost flat. A swarm climbs in a straight line instead. See
+   ARCHITECTURE.md. */
 
 /**
  * Omori's `c`, the offset that keeps the rate finite at the origin. Real catalogues put it between seconds
@@ -69,13 +63,9 @@ export function expectedFraction(spanMs: number, atMs: number): number {
 }
 
 /**
- * The observed counts as a step line. Two points per arrival, across then up, because the count is unchanged
- * between events: a sloping line would claim arrivals at times nothing happened.
- *
- * Starts at the origin, so the line begins at the mainshock rather than at the first aftershock.
- *
- * Here rather than in the component, because the doubling is the part that can be wrong and a component
- * cannot be asked about it without a DOM.
+ * The observed counts as a step line. Two points per arrival, across then up, because the count is
+ * unchanged between events: a sloping line would claim arrivals at times nothing happened. See
+ * ARCHITECTURE.md.
  */
 export function staircase(after: readonly Point[]): Point[] {
   if (after.length === 0) return [];

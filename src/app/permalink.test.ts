@@ -79,13 +79,8 @@ describe("permalinks", () => {
   });
 });
 
-/*
- * The cross-section, in the link. The one piece of state somebody makes rather than chooses, and the only one
- * that carries a view: a section has nowhere to be drawn except the map.
- *
- * One guard of its own beyond the untrusted-input rules: a line with both ends in the same place finds
- * nothing and reads as a broken link rather than an edited one.
- */
+/* The cross-section, in the link. The one piece of state somebody makes rather than chooses, and the only
+   one that carries a view: a section has nowhere to be drawn except the map. See ARCHITECTURE.md. */
 describe("a cross-section in the link", () => {
   const line = { fromLon: 138.5, fromLat: 34.2, toLon: 145.8, toLat: 39.9 };
 

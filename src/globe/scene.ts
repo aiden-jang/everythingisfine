@@ -49,12 +49,7 @@ const MARK_SLOP_PX = 18;
 /* Nearest on the sphere is not nearest on screen near the limb, so a few candidates get projected. */
 const SHORTLIST = 8;
 
-/*
- * The globe's palette, brightest last: sea, land, graticule, coast, plates.
- *
- * Every value stays darker than the dimmest earthquake, or the backdrop competes with the data on it. The
- * exact steps between them were tuned by eye and are easy to make worse; ARCHITECTURE.md says how.
- */
+/* The globe's palette, brightest last: sea, land, graticule, coast, plates. See ARCHITECTURE.md. */
 const COLOR_SPHERE = 0x031120;
 /* Must equal `--color-void` in `index.css`. Nothing checks it, and the canvas fades to this. */
 const COLOR_VOID_C = new Color(0x050b16);
@@ -65,13 +60,9 @@ const COLOR_GRATICULE = 0x13334e;
 /* Brighter than the coastline on purpose: the boundary is why the earthquakes are in a line. */
 const COLOR_PLATES = 0x316a97;
 
-/*
- * Greyer geography, for the colourblind ramp. That ramp is blue, and blue geography behind it stops being
- * a separate thing you can see. Re-pick these by eye; scaling the blue ones down does not work.
- *
- * `--color-coast` and `--color-plate` in `index.css` hold the same two values, for the cross-section's
- * swatches. Change one and the swatch describes a line nobody draws.
- */
+/* Greyer geography, for the colourblind ramp. That ramp is blue, and blue geography behind it stops being a
+   separate thing you can see. Re-pick these by eye; scaling the blue ones down does not work. See
+   ARCHITECTURE.md. */
 const NEUTRAL = {
   sphere: 0x0a101c, land: 0x25334e, graticule: 0x243149, coast: 0x555663, plates: 0x646478,
 } as const;
@@ -270,13 +261,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const grid = graticule(15, RADIUS_GRATICULE);
   gratGeom.setAttribute("position", new BufferAttribute(grid.position, 3));
   gratGeom.setAttribute("aLonLat", new BufferAttribute(grid.lonLat, 2));
-  /*
-   * Drawn before the land, which is the only way it ends up behind it: the land writes no depth, so
-   * nothing occludes the graticule and it drew a starburst across Siberia.
-   *
-   * That is also why it fades by colour rather than alpha - transparent would draw after the land, not
-   * before. `setGeography` keeps the pre-blend in step with the palette.
-   */
+  /* Drawn before the land, which is the only way it ends up behind it: the land writes no depth, so nothing
+     occludes the graticule and it drew a starburst across Siberia. See ARCHITECTURE.md. */
   const grat = new LineSegments(gratGeom, new LineBasicMaterial({
     color: GRATICULE_ON({ sphere: COLOR_SPHERE, graticule: COLOR_GRATICULE }),
   }));
@@ -360,12 +346,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         varying vec2 vLonLat;
 
         void main() {
-          /*
-           * On the map, rebuild the direction per fragment. Flattening stretches these triangles, and an
-           * interpolated normal is only exact at their corners: a crease ran along every shared diagonal.
-           *
-           * Mixed, never switched. On the globe the interpolated normal is exact, so a hard swap would jump.
-           */
+          /* On the map, rebuild the direction per fragment. Flattening stretches these triangles, and an
+             interpolated normal is only exact at their corners: a crease ran along every shared diagonal.
+             See ARCHITECTURE.md. */
           float lam = radians(vLonLat.x);
           float phi = radians(vLonLat.y);
           float c = cos(phi);
@@ -380,16 +363,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           float night = smoothstep(0.10, -0.30, sun);
           float day = smoothstep(0.10, 0.55, sun);
 
-          /*
-            The moon's shadow, on the few days there is one. uPenumbraAng is zero otherwise, so almost every
-            frame pays one compare for it.
-
-            The umbra needs its own ramp, not the tail of the penumbra's: they differ forty-fold in radius, and one
-            smoothstep across that makes totality a smudge. An annular eclipse has no umbra and eclipse.ts sends zero.
-
-            Move night and day together. Dimming the day alone leaves a grey shadow, which is not what being inside
-            one looks like.
-          */
+          /* The moon's shadow, on the few days there is one. uPenumbraAng is zero otherwise, so almost
+             every frame pays one compare for it. Move night and day together. Dimming the day alone leaves
+             a grey shadow, which is not what being inside one looks like. See ARCHITECTURE.md. */
           float cover = 0.0;
           if (uPenumbraAng > 0.0) {
             float away = acos(clamp(dot(normalize(mix(normalize(vNormal), fromLonLat, uMorph)), uEclipse), -1.0, 1.0));
@@ -401,43 +377,21 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           day *= 1.0 - cover;
           night = max(night, cover);
 
-          /*
-            Falls off toward the limb, or the lit side is a flat circle rather than a sphere.
-
-            Take the day wash away rather than adding shadow. The wash is the only thing on the lit side with any
-            strength: removing it is worth about twenty levels, and painting black over an ocean already at 2,10,18
-            is worth about three.
-
-            No backticks in here. One of them ends the shader.
-          */
+          /* Falls off toward the limb, or the lit side is a flat circle rather than a sphere. Take the day
+             wash away rather than adding shadow. See ARCHITECTURE.md. */
           vec3 toEye = normalize(cameraPosition - vNormal * ${RADIUS_NIGHT});
           float edge = (1.0 - clamp(dot(vNormal, toEye), 0.0, 1.0)) * (1.0 - uMorph);
           day *= mix(1.0, 0.32, smoothstep(0.30, 0.94, edge));
 
-          /*
-           * The aurora, in the one shader that already knows where night is.
-           *
-           * No backticks in here - one of them ends the shader. The morph module warns about this in as many
-           * words and I walked into it anyway.
-           *
-           * Multiplied by the night factor, because an aurora is there in daylight and you cannot see it. Drawing
-           * it anyway would be a claim the data does not make.
-           *
-           * The fract wraps longitude: the model counts 0 to 359 east and this carries -180 to 180.
-           *
-           * The gain of 3 is measured. An ordinary active evening peaks around 28 of 100, so dividing by the
-           * model's nominal maximum would draw every real night as almost nothing.
-           */
+          /* The aurora, in the one shader that already knows where night is. No backticks in here - one of
+             them ends the shader. The morph module warns about this in as many words and I walked into it
+             anyway. See ARCHITECTURE.md. */
           vec2 auv = vec2(fract(vLonLat.x / 360.0), (vLonLat.y + 90.0) / 180.0);
           float glow = clamp(texture2D(uAurora, auv).r * 3.0, 0.0, 1.0) * night * uAuroraOn;
 
-          /*
-           * A quarter of a level of noise, because this overlay's alpha changes by less than 1/255 over tens of
-           * pixels and an 8-bit framebuffer turns that into flat bands across Russia.
-           *
-           * Dither, not more geometry: 256 segments changed nothing, because interpolation was never the problem.
-           * It only shows at a 2x pixel ratio, so every screenshot taken at 1x said the fill was fine.
-           */
+          /* A quarter of a level of noise, because this overlay's alpha changes by less than 1/255 over
+             tens of pixels and an 8-bit framebuffer turns that into flat bands across Russia. See
+             ARCHITECTURE.md. */
           float grain = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
           float dither = (grain - 0.5) / 255.0;
           gl_FragColor = vec4(
@@ -454,13 +408,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         uUmbraAng: { value: 0 },
         // Achromatic. A warm daylight would put hue on the one surface the data is drawn against.
         uDayColor: { value: new Color(0x9fb0cc) },
-        /*
-         * Deep enough to read as night, shallow enough that the geography survives it. At 0.38 land in shadow
-         * against ocean in daylight measured 1.084:1, so the lighting out-contrasted what it was lighting.
-         *
-         * Tune this one alone. Raising night and day together renders indistinguishable - every step of night is
-         * paid back by a step of day - and the form comes from the gap between them.
-         */
+        /* Deep enough to read as night, shallow enough that the geography survives it. At 0.38 land in
+           shadow against ocean in daylight measured 1.084:1, so the lighting out-contrasted what it was
+           lighting. See ARCHITECTURE.md. */
         uDepth: { value: 0.44 },
         uLift: { value: 0.11 },
         uAurora: { value: aurora },
@@ -492,13 +442,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   let slabOn = false;
 
   let sunMinute = -1;
-  /*
-   * The instant the sun, sky and moon are aimed at, or null to follow the wall clock.
-   *
-   * Null is not the same as passing `Date.now()` every frame: it keeps the once-a-minute throttle. Any
-   * real value is aimed at immediately, because a scrub whose sun lagged the marks it drags would be worse
-   * than no sun at all.
-   */
+  /* The instant the sun, sky and moon are aimed at, or null to follow the wall clock. See ARCHITECTURE.md. */
   let moment: number | null = null;
   const aimSun = (at: number): void => {
     const { lon, lat } = subsolarPoint(at);
@@ -614,18 +558,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const slab = createSlabLayer(morph);
   world.add(slab.object);
 
-  /*
-   * Nothing under `world` is culled against its own bounds, because those bounds are the wrong shape.
-   *
-   * Every layer is projected in the vertex shader, so three.js measures the sphere the geometry was built
-   * as and never the plane it draws. Flat, a layer occupies x from -2 to 2 while its bounding sphere still
-   * says radius 1.3 at the origin, so an offset copy is thrown away while its triangles are on screen.
-   *
-   * The symptom was the east half of a phone going void with its earthquakes still floating in it, because
-   * `events` and `rings` already set this flag.
-   *
-   * One traverse over the finished graph, so the reason is written once. A layer added below needs the same.
-   */
+  /* Nothing under `world` is culled against its own bounds, because those bounds are the wrong shape. See
+     ARCHITECTURE.md. */
   world.traverse((o) => { o.frustumCulled = false; });
 
   const controls = createControls(camera, canvas, FRAMING, FOV);
@@ -714,14 +648,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         plateEdge.geometry.setDrawRange(settled * 2, (drawn - settled) * 2);
       },
     },
-    /*
-     * What is under the pointer, answered geographically first and in pixels second.
-     *
-     * Projecting every drawn event is a matrix multiply per event per pointer move, and it needs the layer
-     * to keep a list of what it drew, which measured 40% of the fifty-thousand-event budget. A longitude
-     * and latitude makes the first pass a great-circle distance with no projection at all; only a handful
-     * of candidates are projected to settle it, because near the limb angles and pixels disagree.
-     */
+    /* What is under the pointer, answered geographically first and in pixels second. See ARCHITECTURE.md. */
     hitTest: (clientX, clientY, store, filters, now, slopPx = HIT_SLOP_PX) => {
       const under = controls.pick(clientX, clientY);
       if (!under) return null;
@@ -786,12 +713,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
      * Loaded from `Globe.tsx` rather than here, because the caller is the only one holding `wake`. A layer
      * that filled itself while the loop was asleep would stay invisible until something else moved.
      */
-    /*
-     * Which moment the sky is of.
-     *
-     * The scene aimed everything from `Date.now()`, so an archived day was drawn under tonight's terminator,
-     * sky and moon phase. One rule decides the instant: the held cursor if there is one, otherwise `clockAt`.
-     */
+    /* Which moment the sky is of. See ARCHITECTURE.md. */
     setMoment: (at: number | null) => {
       moment = at;
       // Immediately, not on the next minute boundary, or a scrub drags the marks and leaves the light.
@@ -847,17 +769,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       (glint.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.55 * (1 - morph.value);
       glint.visible = morph.value < 0.999;
 
-      /*
-       * The fill is culled on the globe and not on the map.
-       *
-       * Culling is what hides the far hemisphere, since the fill does not depth test. A flat map has no far
-       * hemisphere, so there it only throws away triangles the winding pass got wrong - a family of them
-       * across Asia, leaving a hairline of ocean from the Caspian to Sakhalin.
-       *
-       * Deciding the winding in lon/lat instead measured worse: 301 gaps against 126.
-       *
-       * Switched late, at 0.9, so it cannot flash: by then there is no far side left to see through.
-       */
+      /* The fill is culled on the globe and not on the map. See ARCHITECTURE.md. */
       const wantSide = morph.value > 0.9 ? DoubleSide : FrontSide;
       const fillMaterial = fill.material as MeshBasicMaterial;
       if (fillMaterial.side !== wantSide) {
@@ -877,13 +789,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       (mapBase.material as MeshBasicMaterial).color
         .copy(COLOR_VOID_C).lerp(COLOR_SPHERE_C, morph.value);
 
-      /*
-       * The map repeats by drawing the world again beside itself. Wrapping each vertex to the nearest copy
-       * in the shader is cheaper and tears, because the three corners of one triangle can land on different
-       * copies. A whole extra pass cannot tear.
-       *
-       * Only the copies that intersect the view are drawn: two most of the time, one zoomed in.
-       */
+      /* The map repeats by drawing the world again beside itself. Only the copies that intersect the view
+         are drawn: two most of the time, one zoomed in. See ARCHITECTURE.md. */
       const period = 2 * MAP_HALF_WIDTH;
       const halfHeight = camera.position.z * Math.tan((FOV / 2) * (Math.PI / 180));
       const { first, last } = visibleCopies(camera.position.x, halfHeight * camera.aspect);

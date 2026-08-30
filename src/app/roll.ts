@@ -1,22 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 
-/*
- * Numbers that roll rather than jump.
- *
- * Only on a discrete change. A rolling readout eases toward a target, so pointing it at something already
- * moving frame by frame - the replay, the cursor - makes it a late copy rather than a smooth one.
- *
- * What is left to roll is a live arrival, and a window change that snaps 872 to 11,363.
- */
+/* Numbers that roll rather than jump. Only on a discrete change. A rolling readout eases toward a target,
+   so pointing it at something already moving frame by frame - the replay, the cursor - makes it a late copy
+   rather than a smooth one. See ARCHITECTURE.md. */
 
 /**
- * How fast the gap closes, as the time constant of an exponential approach in milliseconds.
- *
- * Exponential rather than a fixed duration, because the distances differ by four orders of magnitude: a
- * fixed duration either crawls through an arrival or blurs a window change.
- *
- * Solved, not chosen. Time to land is `tau * ln(gap / 0.5)`, so the largest change the app makes costs
- * about ten time constants: 55ms puts that at 547ms and a single arrival at 38ms. 120ms measured 1,194ms.
+ * How fast the gap closes, as the time constant of an exponential approach in milliseconds. See
+ * ARCHITECTURE.md.
  */
 export const ROLL_TAU_MS = 55;
 
@@ -43,15 +33,7 @@ export function shouldRoll(previous: number | null, reducedMotion: boolean): boo
   return previous !== null && !reducedMotion;
 }
 
-/**
- * A number that eases to its target, or the target itself when it must not.
- *
- * Pass `live: false` whenever something else is driving this value a frame at a time, and it passes straight
- * through. Easing on top of the cursor or the replay makes the readout a late copy of a number that is
- * already correct on screen.
- *
- * Its own frame loop, started on a change and stopped on arrival: nothing animates while nothing is happening.
- */
+/** A number that eases to its target, or the target itself when it must not. See ARCHITECTURE.md. */
 export function useRolling(value: number, live: boolean): number {
   const [shown, setShown] = useState(value);
   const previous = useRef<number | null>(null);

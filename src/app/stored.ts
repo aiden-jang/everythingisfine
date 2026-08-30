@@ -1,12 +1,6 @@
-/*
- * Saved preferences, behind one prefix instead of ten string literals.
- *
- * The prefix was `firstmotion.`, spelled out at all ten sites, so renaming the app would have reset every
- * returning viewer's rail width, ramp, projection and announce threshold.
- *
- * Read falls back to the old prefix once and writes the new one, which migrates a preference the first time
- * its owner opens the page.
- */
+/* Saved preferences, behind one prefix instead of ten string literals. Read falls back to the old prefix
+   once and writes the new one, which migrates a preference the first time its owner opens the page. See
+   ARCHITECTURE.md. */
 
 const PREFIX = "eif.";
 /** The name this app shipped under before it grew past earthquakes. */

@@ -46,14 +46,8 @@ describe("plate boundaries", () => {
   });
 });
 
-/*
- * The seam audit, matching the one the land mesh already had. The plate lines and the graticule cross the same
- * antimeridian and had no geometry test between them.
- *
- * This audit found nothing, and that is the result: 2,479 segments, no step anywhere near the wrap guard, and
- * the widest longitude gap 18.3 degrees at latitude 85.8, which is 1.34 degrees of arc. The tests below hold
- * those properties rather than rediscover them.
- */
+/* The seam audit, matching the one the land mesh already had. The plate lines and the graticule cross the
+   same antimeridian and had no geometry test between them. See ARCHITECTURE.md. */
 describe("the plate geometry, at the seam and elsewhere", () => {
   const built = buildPlates();
 

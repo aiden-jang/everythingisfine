@@ -141,13 +141,7 @@ test("the globe is operable with the canvas hidden", async ({ page }) => {
   await expect(page.locator(".zone-panel")).toBeVisible();
 });
 
-/*
- * The one claim written down since step 3 and never observed.
- *
- * The context is built explicitly rather than through `test.use({ reducedMotion })`, which silently did not
- * reach the page in this Playwright version: `matchMedia` reported false inside a block named "with reduced
- * motion", and the behavioural assertions passed anyway. So the emulation is asserted first.
- */
+/* The one claim written down since step 3 and never observed. See ARCHITECTURE.md. */
 test("with reduced motion, there is no entrance and flying is instant", async ({ browser }) => {
   needsDevHooks();
   const context = await browser.newContext({ reducedMotion: "reduce" });
@@ -547,13 +541,8 @@ test("the globe is operable from the keyboard, and the keys are written down", a
 });
 
 test("a dead feed says so, and does not claim a covered day", async ({ page }) => {
-  /*
-   * Two bugs in one state. DESIGN.md 6 specifies a hairline notice naming the source and the retry, and
-   * `SourceStatus` carried both while nothing read them.
-   *
-   * Worse, coverage was inferred from the first delivery carrying events: with the seed requests dead and two
-   * stray socket pushes arriving, the rail read "0 events, last 24 hours".
-   */
+  /* Two bugs in one state. DESIGN.md 6 specifies a hairline notice naming the source and the retry, and
+     `SourceStatus` carried both while nothing read them. See ARCHITECTURE.md. */
   await installFeeds(page, { dead: true });
   await page.goto("/");
 
@@ -709,13 +698,7 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
 
 test("the globe unwraps into a map and back", async ({ page }) => {
   needsDevHooks();
-  /*
-   * Double the budget, because this test costs about a full one.
-   *
-   * A passing run measures 45.5s against the default 45s, so it sat exactly on its own ceiling and flipped
-   * with the weather: the projection toggle read `""` because the test was killed mid-assertion, not because
-   * anything errored. An entrance to wait out, two 2.5s morphs, and two WebGL canvas screenshots.
-   */
+  /* Double the budget, because this test costs about a full one. See ARCHITECTURE.md. */
   test.setTimeout(90_000);
   // One geometry, projected in the vertex shader. Two scenes cross-faded would double every buffer and make
   // the switch a dissolve, which says nothing.
@@ -808,12 +791,7 @@ test("the rail resizes in both directions, by pointer and by key", async ({ page
   expect(Number(await height.getAttribute("aria-valuenow"))).toBeGreaterThan(before + 60);
   expect(await visibleRows()).toBeGreaterThan(shownBefore);
 
-  /*
-   * Arrow keys, not just a pointer. Shift is the coarse step.
-   *
-   * Backed off the ceiling first, because the drag above does not land on a fixed value: anything that
-   * shortens the rail pushes the result up, and at `max` the arrows measure the clamp rather than the step.
-   */
+  /* Arrow keys, not just a pointer. Shift is the coarse step. See ARCHITECTURE.md. */
   await height.focus();
   for (let i = 0; i < 4; i += 1) await page.keyboard.press("ArrowUp");
   const keyed = Number(await height.getAttribute("aria-valuenow"));
@@ -912,13 +890,8 @@ test("a line dragged across the map opens a section through it", async ({ page }
   await expect.poll(() => page.url(), { timeout: 5_000 }).not.toContain("x=");
 });
 
-/*
- * A section survives being sent to somebody. It carries its own view, which no other field does: a section
- * has nowhere to be drawn except the map.
- *
- * Started from a fresh context with the map turned off in storage, since the interesting case is a recipient
- * whose own preference disagrees with the link.
- */
+/* A section survives being sent to somebody. It carries its own view, which no other field does: a section
+   has nowhere to be drawn except the map. See ARCHITECTURE.md. */
 test("a link carrying a section opens on the map with the line drawn", async ({ browser }) => {
   needsDevHooks();
   const context = await browser.newContext({ viewport: { width: 1600, height: 900 } });
@@ -1293,13 +1266,8 @@ test("the legend says what a ring is, since nothing else did", async ({ page }) 
 });
 
 test("the largest event is a way in, in time as well as in space", async ({ page }) => {
-  /*
-   * The app opens on the present, which at a wide window is the least interesting moment it holds. The rail
-   * already named the strongest event and flew to it, and left the cursor live.
-   *
-   * Built from exact features rather than the plausible day: a fixture whose strongest event happened four
-   * minutes ago would pass every assertion below while testing nothing.
-   */
+  /* The app opens on the present, which at a wide window is the least interesting moment it holds. The rail
+     already named the strongest event and flew to it, and left the cursor live. See ARCHITECTURE.md. */
   const now = Date.now();
   const features = [
     ...Array.from({ length: 40 }, (_, i) => ({
@@ -1561,14 +1529,9 @@ test("the tour names where the camera is, not where it is going", async ({ page 
   }
 });
 
-/*
- * The two ways the panel moves the camera, and the fact that they pull opposite ways. Opening it flies to the
- * epicentre; "Far side" draws five circles spanning the planet, so it has to pull back. A regression giving
- * them the same zoom leaves both apparently working.
- *
- * Pinning used to need a "Fly here" press. It flies on its own now, which is the same assertion with the
- * button taken out: a pin that does not move the camera puts the answer on screen and the subject off it.
- */
+/* The two ways the panel moves the camera, and the fact that they pull opposite ways. Opening it flies to
+   the epicentre; "Far side" draws five circles spanning the planet, so it has to pull back. See
+   ARCHITECTURE.md. */
 test("pinning flies in, and the far side pulls back to the same place", async ({ page }) => {
   // Three eased flights in one test, each of which has to settle before the next is measured.
   test.setTimeout(120_000);
@@ -1896,13 +1859,7 @@ test("a stored rail width outside the handle's range is brought back inside it",
   expect(width).toBeGreaterThanOrEqual(264);
 });
 
-/*
- * Guards two separate bugs that together made earthquakes untappable.
- *
- * The globe reports a hit as `onSelect(quake)` then `onSelectMark(null)`, and `selectMark` used to clear
- * the selection whichever way it was called, so the second call undid the first. And a magnitude 2 marker
- * is 3px across against 4px of slop, so a finger was aiming at a 7px circle while marks had 18.
- */
+/* Guards two separate bugs that together made earthquakes untappable. See ARCHITECTURE.md. */
 test("a finger-width miss still opens the earthquake it was aimed at", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await installFeeds(page, { count: 200 });
@@ -1967,13 +1924,8 @@ test("the marks key is reachable at every width", async ({ page }) => {
   }
 });
 
-/*
- * Where a pinned event lands on a phone, which is a question with a bar at one end and a sheet at the
- * other. Two separate errors used to put it 6px under the top bar on a short phone, nearly cancelling
- * each other into something that looked deliberate: the lift was converted with `degPerPx`, which is the
- * flat map's straight line rather than the sphere's curve, and it was converted at the zoom the flight
- * started from rather than the one it ends on.
- */
+/* Where a pinned event lands on a phone, which is a question with a bar at one end and a sheet at the
+   other. See ARCHITECTURE.md. */
 for (const [w, h] of [[390, 844], [360, 640], [412, 915]] as const) {
   test(`a pinned event sits between the bar and the sheet at ${w}x${h}`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h });

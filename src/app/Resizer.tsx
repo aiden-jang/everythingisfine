@@ -1,14 +1,6 @@
 import { useEffect, useRef } from "react";
 
-/*
- * A draggable edge, horizontal or vertical.
- *
- * Both sides of every edge want the space, and which one wants it more depends on what somebody is doing.
- *
- * One component for both axes, because the accessible part is worth having once: a `separator` with
- * `aria-valuenow` and arrow keys. A splitter that only answers a mouse is a control a keyboard user can see
- * and cannot touch.
- */
+/* A draggable edge, horizontal or vertical. See ARCHITECTURE.md. */
 
 export interface ResizerProps {
   axis: "x" | "y";

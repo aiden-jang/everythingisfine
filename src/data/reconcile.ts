@@ -1,53 +1,18 @@
 import { distanceKm } from "../geo/sphere";
 import type { Reading, SourceId } from "./types";
 
-/*
- * Deciding whether two agencies are talking about the same earthquake.
- *
- * Most events above about magnitude 4.5 arrive twice: different identifiers, origin times a few seconds
- * apart, epicentres tens of kilometres apart, magnitudes on different scales. Counting them separately
- * inflates every number on the rail and draws two markers on one rupture.
- *
- * The honest version of association uses travel-time residuals against station data we do not have. What is
- * available is time, position and size, so the rule is a window on each.
- */
+/* Deciding whether two agencies are talking about the same earthquake. See ARCHITECTURE.md. */
 
-/*
- * Both windows are measured, not guessed. Over 24 hours of real M2.5+ activity, 50 of 53 USGS events had an
- * EMSC counterpart:
- *
- *              median      p95      max
- *   origin time   0.1s     3.0s    16.7s
- *   epicentre     0.0km   19.6km  135.6km
- *
- * 30s/150km matches the same 50 events as the original 60s/200km guess. 20s/100km would drop a genuine pair.
- */
+/* Both windows are measured, not guessed. Over 24 hours of real M2.5+ activity, 50 of 53 USGS events had an
+   EMSC counterpart: See ARCHITECTURE.md. */
 export const TIME_WINDOW_MS = 30_000;
 export const DISTANCE_LIMIT_KM = 150;
 
-/*
- * The third axis. In time and distance, genuine pairs and aftershocks overlap. Magnitude is where they do
- * not, because two agencies describing one rupture agree about its size:
- *
- *                            pairs   median   p90    max
- *   M2.5+, 24 hours            50     0.00    0.20   0.40
- *   M6+, 120 days              47     0.00    0.00   0.10
- *
- * The obvious objection - `mb` saturates and `Mww` does not, so a great earthquake would split in two - does
- * not survive the second sample: at M6 and up both agencies report Mw or Mww.
- *
- * A partial guard, not a fix. A doublet within one magnitude unit still merges.
- */
+/* The third axis. In time and distance, genuine pairs and aftershocks overlap. Magnitude is where they do
+   not, because two agencies describing one rupture agree about its size: See ARCHITECTURE.md. */
 export const MAGNITUDE_LIMIT = 1.0;
 
-/**
- * True when two readings plausibly describe one earthquake.
- *
- * Known false positive, narrowed. A large event's immediate aftershocks fall inside the time and distance
- * windows; the magnitude window removes the common case. A doublet within one unit still merges, and
- * separating that needs waveform data no keyless feed carries. The detail panel shows every reading it
- * merged, so a wrong merge is visible rather than hidden behind one number.
- */
+/** True when two readings plausibly describe one earthquake. See ARCHITECTURE.md. */
 export function sameEvent(a: Reading, b: Reading): boolean {
   // Same agency, same identifier is an identity, not a guess: it is a revision of one record.
   if (a.source === b.source) return a.id === b.id;

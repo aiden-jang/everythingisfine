@@ -1,23 +1,10 @@
-/*
- * Plays the last day in when the page opens, so the first thing anybody sees is the globe doing something.
- *
- * Invents nothing. It only changes when the app draws data it already has.
- *
- * 2.8 seconds, down from seven, because it now shares the opening with the boundary reveal.
- */
+/* Plays the last day in when the page opens, so the first thing anybody sees is the globe doing something.
+   See ARCHITECTURE.md. */
 
 /** Long enough to read as a day passing, short enough that nobody waits through it twice. */
 export const REPLAY_SECONDS = 2.8;
 
-/**
- * The most history the entrance will play, however much is held.
- *
- * Playing from the oldest event held was the same thing as a day while a day was the only window. A month
- * played in 2.8 seconds fires 215 fronts at 77 a second, and `MAX_RINGS` is 64, so most were dropped unseen.
- *
- * At a wider window the older events are simply already drawn when it starts, which is true to the claim:
- * the entrance shows what the globe does, not what it holds.
- */
+/** The most history the entrance will play, however much is held. See ARCHITECTURE.md. */
 export const REPLAY_SPAN_MS = 24 * 3_600_000;
 
 /** Where the entrance should start, given the oldest thing held: the later of the buffer's start and a
@@ -28,11 +15,7 @@ export function replayFrom(oldest: number, now: number): number {
 
 /**
  * Fronts are spawned only above this magnitude during the replay. A day holds several hundred events and a
- * front for each would be noise.
- *
- * Raised from 4.5 when the replay went from seven seconds to 2.8: the threshold was chosen for roughly
- * three fronts a second, and shortening the replay without moving it doubled that. Above 5.0 a day yields
- * five to eight. A quiet day still gets the single front every cold load fires.
+ * front for each would be noise. See ARCHITECTURE.md.
  */
 export const REPLAY_FRONT_MIN_MAG = 5;
 

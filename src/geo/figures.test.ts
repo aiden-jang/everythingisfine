@@ -26,14 +26,7 @@ describe("the constellation figures", () => {
   });
 
   it("draws Orion's belt, which is the figure anybody would check first", () => {
-    /*
-     * Alnilam, the middle star of the belt, is at 84.05, -1.20.
-     *
-     * This is really a units test. If the source were ever swapped for one quoting right ascension in
-     * hours rather than degrees, every coordinate would still be a finite number inside the bounds above
-     * and every figure would be squashed into a twenty-fourth of the sky. Naming one star that has to be
-     * touched is the cheapest way to catch that.
-     */
+    /* Alnilam, the middle star of the belt, is at 84.05, -1.20. See ARCHITECTURE.md. */
     const touches = figures.some((line) => {
       for (let k = 0; k < line.length; k += 2) {
         if (Math.abs(line[k]! - 84.05) < 0.5 && Math.abs(line[k + 1]! + 1.2) < 0.5) return true;

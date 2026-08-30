@@ -4,13 +4,7 @@ import { PLAYBACK, P_WAVE_KM_PER_S, S_OVER_P } from "../geo/waves";
 import { MAG_MIN, rampTexture, type RampName } from "./ramp";
 import { MORPH_GLSL } from "./morph";
 
-/*
- * The signature: a wavefront leaving the epicentre.
- *
- * Two seismic feeds have no origin and destination, so a line drawn between two earthquakes asserts a
- * relationship that does not exist. A ring asserts something true: this happened here, and the energy has
- * reached this far.
- */
+/* The signature: a wavefront leaving the epicentre. See ARCHITECTURE.md. */
 
 /** Degrees of arc the front covers per real second. Derived, never typed in: writing 0.054 directly is how
  * it survives a change to either input without anyone noticing. */

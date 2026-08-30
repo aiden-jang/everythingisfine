@@ -1,14 +1,5 @@
-/*
- * A short buzz when a mark is picked. On a phone the fingertip covers the mark, so nothing else confirms the
- * tap landed.
- *
- * On selection only, never on arrival. Buzzing because an earthquake happened is an alert, and an alert needs
- * consent; this cannot arrive uninvited, so it needs no toggle.
- *
- * Feature-detected, not user-agent sniffed. Safari on iOS does not implement `navigator.vibrate`.
- *
- * Twelve milliseconds. Longer reads as a notification.
- */
+/* A short buzz when a mark is picked. On a phone the fingertip covers the mark, so nothing else confirms
+   the tap landed. See ARCHITECTURE.md. */
 
 /** Short enough to read as contact rather than as a notification. */
 export const TICK_MS = 12;

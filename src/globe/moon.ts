@@ -2,34 +2,13 @@ import { Color, Mesh, ShaderMaterial, SphereGeometry, type Vector3 } from "three
 import { moonPosition, moonRadii, MOON_RADIUS_KM } from "../geo/moon";
 import { toVec3 } from "../geo/sphere";
 
-/*
- * The moon, at its real distance, size and phase.
- *
- * Nothing is scaled for effect, so it is small: sixty radii out and a quarter of a radius across is half a
- * degree, about eleven pixels. The enormous moon of photographs is a long lens.
- *
- * The phase is not computed. The scene knows where the sun is, and a sphere lit from there gives the
- * crescent and - the part hand-rolled phase code gets wrong - which way the horns point.
- *
- * No texture: at eleven pixels a map of the maria contributes nothing.
- *
- * Transparent, but it writes depth. It draws after the stars to cover them and fades with the morph, which
- * rules out the opaque pass, and writing depth is what keeps it solid over a star.
- */
+/* The moon, at its real distance, size and phase. See ARCHITECTURE.md. */
 
 /** Lunar grey, faintly warm, and kept well inside the chroma the interface allows anything painted. */
 const COLOR_MOON = new Color(0xb8b4ae);
 
-/*
- * The eclipsed moon, and the one warm hue this app admits on purpose.
- *
- * Not a second exception to the hue ban - the same one from the far end of the ray. The light reaching a
- * totally eclipsed moon is sunlight bent through the Earth's atmosphere, which is the sunset ring, which is
- * the rim.
- *
- * Dim as well as red, but only to a fifth: a real total lunar eclipse is ten thousand times fainter than a
- * full moon, and drawing that faithfully is a moon that has simply gone.
- */
+/* The eclipsed moon, and the one warm hue this app admits on purpose. Not a second exception to the hue ban
+   - the same one from the far end of the ray. See ARCHITECTURE.md. */
 const COLOR_ECLIPSED = new Color(0x6e3a2c);
 
 /** In globe radii, from the real numbers. */
@@ -69,13 +48,7 @@ const MOON = {
       float shade = mix(0.72, 1.0, pow(max(lit, 0.0), 0.35));
       if (day < 0.004) discard;
 
-      /*
-        The Earth's shadow, which does not care which way the moon is facing. A phase is a lighting term and
-        an eclipse is not: what has been taken away is the source rather than the angle, so this is mixed
-        over the result instead of folded into the day term.
-
-        No falloff across the face. The real umbra edge crosses a disc eleven pixels wide.
-      */
+      /* The Earth's shadow, which does not care which way the moon is facing. See ARCHITECTURE.md. */
       vec3 body = mix(uColor * shade, uEclipsed * mix(1.0, 0.55, uUmbral), uUmbral);
       gl_FragColor = vec4(body, day * uOpacity);
     }`,

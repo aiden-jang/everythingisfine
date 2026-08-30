@@ -3,19 +3,7 @@ import type { Volcano } from "./volcanoes";
 import type { Wildfire } from "./wildfires";
 import type { Flood } from "./floods";
 
-/*
- * The four non-earthquake layers, for a day that has already happened.
- *
- * GDACS cannot do this, measured twice. Its list takes `fromdate`/`todate` and looks like it honours them,
- * but the filter runs over the current pool: a year-wide query returns the same 15 fires as no filter,
- * `eventlist=VO` with dates answers `204 No Content`, and the `ARCHIVE` path hands back today's list. What
- * looks like history is a few long-running events overlapping the date asked for.
- *
- * NASA EONET v3 is a real archive: `start`/`end` are honoured, a day is 14-24kB, and it is keyless and
- * CORS-open. v2.1 ignores the range and returns 18.5MB.
- *
- * The aurora stays withheld and always will: NOAA publishes a forecast for a stamped minute.
- */
+/* The four non-earthquake layers, for a day that has already happened. See ARCHITECTURE.md. */
 
 /** EONET's category ids, mapped to the four layers this app draws. */
 const KINDS = {
@@ -160,12 +148,7 @@ export function stormName(title: string): string {
   return stripped.length > 0 ? stripped : head;
 }
 
-/**
- * Where it was, from a title written in one of two shapes by two upstreams. IRWIN writes "RANGE Wildfire,
- * Roosevelt, New Mexico" and the useful part is the last segment; GDACS-sourced rows come through as
- * "Wildfire in Russian Federation 1028712". Half the rows on a sample day were the second shape, and the
- * first version returned nothing for all of them.
- */
+/** Where it was, from a title written in one of two shapes by two upstreams. See ARCHITECTURE.md. */
 export function placeOf(title: string): string {
   if (title.includes(",")) {
     const parts = title.split(",").slice(1).map((s) => s.trim()).filter(Boolean);

@@ -5,14 +5,7 @@ import type { Feature, FeatureCollection, MultiPolygon, Polygon } from "geojson"
 import topology from "world-atlas/land-110m.json";
 import { spanDeg, toVec3 } from "./sphere";
 
-/*
- * Natural Earth 110m, as a filled land mesh and a coastline stroke.
- *
- * Vector rather than a satellite texture: a photographic earth puts green, ochre and white across the
- * sphere and every one competes with the data ramp. Land is chrome here.
- *
- * The fill is a flat colour and needs no resolution at all. Only the boundary does, and a boundary is a line.
- */
+/* Natural Earth 110m, as a filled land mesh and a coastline stroke. See ARCHITECTURE.md. */
 
 /** Ring edges longer than this get points inserted, so the coastline hugs the sphere. */
 const DENSIFY_DEG = 1.5;
@@ -67,14 +60,8 @@ export function rings(): Ring[][] {
 }
 
 /**
- * Longitudes made continuous around a ring, so a landmass crossing the date line stays one shape.
- *
- * Three rings hold both +180 and -180. Read literally, Eurasia teleports across the world and back, which
- * makes it self-intersecting - and earcut promises nothing about a polygon that is not simple. It emitted
- * needles a hundred and fifty degrees long across Siberia, too thin for the seam filter to catch.
- *
- * Recentring is not optional. Unwrapping accumulates from wherever the ring starts, and Eurasia's starts in
- * the Chukotka tip, which leaves the whole continent a turn west and in the next map copy.
+ * Longitudes made continuous around a ring, so a landmass crossing the date line stays one shape. See
+ * ARCHITECTURE.md.
  */
 export function unwrap(ring: Ring): { ring: Ring; mean: number } {
   const out: Ring = [ring[0]!];
@@ -92,13 +79,7 @@ export function unwrap(ring: Ring): { ring: Ring; mean: number } {
   return { ring: out, mean: sum / out.length };
 }
 
-/**
- * Whole turns to add so a hole sits in the frame of the outline that contains it.
- *
- * `unwrap` lands each ring in a frame decided by where that ring starts, so the frames are per ring and
- * the correction has to be too. Giving every hole the outline's shift launched the Caspian a turn east to
- * 411 degrees, and earcut bridged across the world and swept 69 triangles through everything between.
- */
+/** Whole turns to add so a hole sits in the frame of the outline that contains it. See ARCHITECTURE.md. */
 function reframe(mean: number, outlineMean: number): number {
   const turns = Math.round((outlineMean - mean) / 360);
   // Not `turns * 360` unguarded: that gives negative zero for the common case, which compares unequal.
@@ -106,13 +87,8 @@ function reframe(mean: number, outlineMean: number): number {
 }
 
 /**
- * Closes a ring that wraps the world instead of closing, by walking it round the pole.
- *
- * Antarctica is one west-to-east sweep, not a loop, so its closing edge runs 358 degrees back at latitude
- * -84.5 and cuts through its own coastline. Fill the ring plus a cap: to the antimeridian, down to the pole,
- * across.
- *
- * After `unwrap`, never before. Unwrap reads the cap's 360-degree step as a seam and collapses it.
+ * Closes a ring that wraps the world instead of closing, by walking it round the pole. See
+ * ARCHITECTURE.md.
  */
 function closeAtPole(ring: Ring): Ring {
   const first = ring[0]!;
@@ -342,16 +318,7 @@ export function buildLand(): LandGeometry {
     for (const v of flat) verts.push(v);
   }
 
-  /*
-   * Split wide triangles here, before anything subdivides them.
-   *
-   * They used to be dropped, on the reasoning that anything wider than half the world must be crossing the
-   * date line. Eurasia spans 207 degrees by nature and Antarctica 358, so dropping them cut a wedge through
-   * Siberia with no fill and no coastline in it.
-   *
-   * Safe only because `reframe` and `closeAtPole` removed both sources of malformed output. Bisect the widest
-   * edge rather than clipping against a meridian: in one continuous frame the midpoint is just the average.
-   */
+  /* Split wide triangles here, before anything subdivides them. See ARCHITECTURE.md. */
   const flatTris: number[] = [];
   let split = 0;
   const splitMids = new Map<number, number>();
@@ -402,16 +369,8 @@ export function buildLand(): LandGeometry {
   let mesh = { verts, tris: flatTris };
   for (let i = 0; i < SUBDIVISIONS; i += 1) mesh = subdivide(mesh.verts, mesh.tris);
 
-  /*
-   * No edge longer than `MAX_EDGE_DEG`, and every split shared by both triangles owning the edge.
-   *
-   * The adaptive passes above strand a midpoint on the straight edge of an unsplit neighbour. That vertex is
-   * lifted onto the sphere while the edge stays a chord, so the mesh opens a lens and the ocean shows through.
-   * Reported four times, proved by painting the ocean green and watching the scratch turn green with it.
-   *
-   * The gap is the sagitta, `R(1 - cos(d/2))`, so it goes as the square: 11.4 degrees is four pixels, four
-   * degrees is 0.49px. Of 956,706 edges only 6,014 were over four.
-   */
+  /* No edge longer than `MAX_EDGE_DEG`, and every split shared by both triangles owning the edge. See
+     ARCHITECTURE.md. */
   // To a fixed point, because one pass only halves. The bound is a backstop; the loop stops as soon as a
   // pass finds nothing left to mark.
   for (let pass = 0; pass < 6; pass += 1) {
@@ -420,15 +379,8 @@ export function buildLand(): LandGeometry {
     if (capped.split === 0) break;
   }
 
-  /*
-   * Repeat whole triangles across the seam, so the mesh is periodic like the map that draws it.
-   *
-   * `visibleCopies` assumes copy k covers a period centred on k. True of the ocean shell, false here:
-   * `unwrap` runs Eurasia to 190 degrees, so the land poked into the next copy and that copy's ocean painted
-   * over it. The coastline sits in front and survived, which is why Russia's tip was an outline around nothing.
-   *
-   * Whole triangles, never clipped. A triangle cut at the seam can tear; a duplicate cannot.
-   */
+  /* Repeat whole triangles across the seam, so the mesh is periodic like the map that draws it. See
+     ARCHITECTURE.md. */
   let wrapped = 0;
   {
     // The original triangles only. Appending to the array being walked reruns the duplicates, and each one
@@ -470,12 +422,7 @@ export function buildLand(): LandGeometry {
     }
   }
 
-  /*
-   * Every triangle wound so its face points away from the centre. The fill is drawn with `depthTest: false`
-   * and relies on back-face culling to hide the far hemisphere, and earcut preserves the winding of the ring
-   * it is given - Natural Earth's are not all the same. 1,559 of 303,360 faced inward, which showed as
-   * landmasses from the other side of the planet faintly through the ocean.
-   */
+  /* Every triangle wound so its face points away from the centre. See ARCHITECTURE.md. */
   const lonLat = new Float32Array(mesh.verts);
   const index = new Uint32Array(mesh.tris);
   let flipped = 0;

@@ -2,18 +2,8 @@ import { EARTH_RADIUS_KM, toVec3 } from "./sphere";
 import { moonPosition, moonRadii, MOON_RADIUS_KM } from "./moon";
 import { subsolarPoint } from "./sun";
 
-/*
- * Where the moon's shadow falls on the Earth. Nothing new is measured: the sun's direction and the moon's
- * position are both already on screen, and an eclipse is those two multiplied.
- *
- * A picture, never a prediction, and the copy must say so. The lunar series is good to about a tenth of a
- * degree, which at sixty Earth radii of lever arm is 670km on the ground - fine against a penumbra 3,500km
- * wide, useless for telling anybody when to look up.
- *
- * The umbra is a difference of two large numbers: the cone narrows by 0.0047 Earth radii per radius and has
- * to cross sixty of them, so it arrives at nearly nothing or short of the surface. The sign of `umbra`
- * carries which.
- */
+/* Where the moon's shadow falls on the Earth. Nothing new is measured: the sun's direction and the moon's
+   position are both already on screen, and an eclipse is those two multiplied. See ARCHITECTURE.md. */
 
 /** Mean Earth-sun distance in globe radii. The 1.7% annual variation moves the umbra by under a km. */
 const SUN_DISTANCE = 149_597_870 / EARTH_RADIUS_KM;
@@ -56,15 +46,8 @@ export function solarEclipse(at: number): Eclipse {
    */
   const along = -dot(moonAt, dir);
 
-  /*
-   * The moon has to be between the sun and the Earth, and a distance check alone does not say so.
-   *
-   * At full moon the axis still runs near the Earth's centre - same line, other order - so `gap` comes out
-   * tiny and every test below passes. This returned a total eclipse with a black disc 3,500km across at noon.
-   *
-   * The unit tests missed it: the false positives only happen within 1.5 degrees of the anti-solar point,
-   * which is exactly when a lunar eclipse is on.
-   */
+  /* The moon has to be between the sun and the Earth, and a distance check alone does not say so. See
+     ARCHITECTURE.md. */
   if (along <= 0) {
     const behind = Math.hypot(
       moonAt[0] + along * dir[0], moonAt[1] + along * dir[1], moonAt[2] + along * dir[2],

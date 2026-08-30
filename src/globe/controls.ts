@@ -3,12 +3,8 @@ import { RADIUS_ATMOSPHERE } from "../geo/land";
 import { DEG, spanDeg } from "../geo/sphere";
 import { MAP_HALF_WIDTH } from "./morph";
 
-/*
- * Orbiting the globe, hand-written. OrbitControls slides a pan target, and on a sphere there is no
- * target to slide - only a rotation that puts the same coastline back under the pointer.
- *
- * The camera is kept in longitude, latitude and zoom, so cursor anchoring is a subtraction.
- */
+/* Orbiting the globe, hand-written. OrbitControls slides a pan target, and on a sphere there is no target
+   to slide - only a rotation that puts the same coastline back under the pointer. See ARCHITECTURE.md. */
 
 /** Beyond this the up vector flips and the globe rolls over. */
 const LAT_LIMIT = 85;
@@ -84,20 +80,9 @@ export interface Controls {
   /** 0 globe, 1 map. Drag becomes a pan and the facing tests fade out as this reaches 1. */
   setMorph: (t: number) => void;
   morph: () => number;
-  /**
-   * Screen position of a geographic point, or null when it is round the back.
-   *
-   * `radius` is in globe radii, because markers are drawn at their depth: the hit test, hover ring and
-   * tooltip all have to ask about a point *inside* the planet. A surface-only projection puts the pointer
-   * a long way from a 600km event near the limb.
-   */
+  /** Screen position of a geographic point, or null when it is round the back. See ARCHITECTURE.md. */
   project: (lon: number, lat: number, radius?: number) => { x: number; y: number } | null;
-  /**
-   * Degrees of map covered by one screen pixel. Only meaningful once flat.
-   *
-   * `atZoom` asks at a zoom the camera has not reached. Distance is inversely proportional to zoom, so
-   * converting pixels for the end of a 1 to 1.9 flight while still at 1 gives nearly twice too much.
-   */
+  /** Degrees of map covered by one screen pixel. Only meaningful once flat. See ARCHITECTURE.md. */
   degPerPx: (atZoom?: number) => number;
   /**
    * How far around the globe a pixel offset from the centre actually is.
@@ -154,12 +139,8 @@ export function createControls(
   const distAt = (z: number): number => Math.max(DIST_FLOOR, (fit + (mapFit() - fit) * morph) / z);
   const dist = (): number => distAt(zoom);
 
-  /*
-   * How far out you may go, which is a different question on each view: a globe can be lost, a plane
-   * cannot, because it tiles. So derive the map's floor - the zoom where the frame is exactly 360 degrees
-   * wide - and take whichever is further out. Interpolate on morph, never switch, or leaving a zoomed-out
-   * map snaps the camera.
-   */
+  /* How far out you may go, which is a different question on each view: a globe can be lost, a plane
+     cannot, because it tiles. See ARCHITECTURE.md. */
   const zoomFloor = (): number => {
     const wholeWorld =
       (mapFit() * Math.tan((fovDeg / 2) * DEG) * camera.aspect) / MAP_HALF_WIDTH;
@@ -173,19 +154,7 @@ export function createControls(
    */
   const focalPx = (): number => canvas.clientHeight / (2 * Math.tan((fovDeg / 2) * DEG));
 
-  /*
-   * How far around the globe a pixel offset from centre actually is.
-   *
-   * Two wrong versions look fine in code. Dividing by the on-screen radius treats the sphere as flat, and
-   * `asin(px / R)` treats it as seen from infinity; this camera is 4.5 radii out, and the gap is d/(d-1),
-   * about 29%, which slides the coastline out from under the pointer.
-   *
-   *     px = focal * sin(sigma) / (d - cos(sigma))
-   *
-   * inverts, with u = px / focal, to
-   *
-   *     sigma = asin(u * d / sqrt(1 + u^2)) - atan(u)
-   */
+  /* How far around the globe a pixel offset from centre actually is. See ARCHITECTURE.md. */
   const exactAngle = (px: number, d: number, focal: number): number => {
     const u = px / focal;
     return Math.asin(Math.max(-1, Math.min(1, (u * d) / Math.sqrt(1 + u * u)))) - Math.atan(u);
@@ -449,12 +418,9 @@ export function createControls(
       const swept = (from: number, to: number, centre: number): number =>
         (angleAt(to - centre) - angleAt(from - centre)) / DEG;
 
-      /*
-       * Longitude is squeezed by latitude and the drag has to undo it: a horizontal drag moves the grabbed
-       * point along its parallel, which at latitude L is only cos(L) as long as the equator. Without this a
-       * 140px drag at 70 degrees left the coastline 69 pixels behind. Floored, or a small drag near the axis
-       * becomes a spin.
-       */
+      /* Longitude is squeezed by latitude and the drag has to undo it: a horizontal drag moves the grabbed
+         point along its parallel, which at latitude L is only cos(L) as long as the equator. See
+         ARCHITECTURE.md. */
       const lonScale = 1 / Math.max(0.25, Math.cos(lat * DEG));
       lon -= swept(prev.x, e.clientX, cx) * lonScale;
       lat = clampLat(lat + swept(prev.y, e.clientY, cy));

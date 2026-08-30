@@ -1,15 +1,8 @@
 import type { JSX } from "react";
 import { fitLine, type Sizes } from "./gutenberg";
 
-/*
- * How many earthquakes at each size, log up the side. Ten times as many, each magnitude down, since 1944.
- *
- * Draw nothing else. The two things a reader has to see are that the points are straight and where they
- * stop being straight.
- *
- * The bend at the left is about us, not the Earth: below that size the network stopped hearing them. The
- * sentence underneath has to say so.
- */
+/* How many earthquakes at each size, log up the side. Ten times as many, each magnitude down, since 1944.
+   See ARCHITECTURE.md. */
 
 const W = 260;
 const H = 96;

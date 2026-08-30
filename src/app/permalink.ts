@@ -6,14 +6,7 @@ import { nearestWindow } from "./windows";
 // Import the bounds, don't retype them. A retyped bound is what caused the clamp bug in `decode`.
 import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 
-/*
- * "Look at this" as a link.
- *
- * Everything lives in the fragment, so nothing is sent to a server and the deployment stays static.
- *
- * The chosen event travels as the agency's id, never ours. Our key is an arrival counter, so `q12` is a
- * different earthquake on every machine: the link would look like it worked and show the wrong thing.
- */
+/* "Look at this" as a link. See ARCHITECTURE.md. */
 
 export interface Permalink {
   lon: number;
@@ -39,12 +32,7 @@ export interface Permalink {
 // nobody can aim with.
 const round = (value: number, places: number): number =>
   Number(value.toFixed(places));
-/**
- * Longitude back into [-180, 180). The camera's is not.
- *
- * `lon` keeps counting: cross the date line and it gains a whole turn and never gives it back. Links
- * were coming out as `at=499.37`.
- */
+/** Longitude back into [-180, 180). The camera's is not. See ARCHITECTURE.md. */
 const wrapLon = (lon: number): number => {
   // Leave it alone when it already fits. The modulo turns 145.8 into 145.79999999999995, and then a
   // section stops equalling itself after a round trip.

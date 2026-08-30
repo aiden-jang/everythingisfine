@@ -1,29 +1,12 @@
 import { BufferAttribute } from "three";
 import type { BufferGeometry, Material, WebGLProgramParametersWithUniforms } from "three";
 
-/*
- * Globe to map, as one geometry.
- *
- * Two scenes cross-faded doubles every buffer and every place a layer can be forgotten, and the switch is a
- * dissolve, which says nothing. A planet unwrapping says what a projection is.
- *
- * So there is one set of positions, on the sphere, and the plane is derived from them in the vertex shader.
- */
+/* Globe to map, as one geometry. See ARCHITECTURE.md. */
 
 /** Half-width of the map, in the same units as the globe's radius. Equirectangular is 2:1. */
 export const MAP_HALF_WIDTH = 2;
 
-/**
- * How much of a layer's radial lift survives on the flat map.
- *
- * Flattened, a radial lift becomes a shift straight at the camera, and perspective magnifies whatever is
- * nearer. At 0.032 the coastline drew one percent larger than the fill and crept seven pixels outward at the
- * edge of the frame at zoom 2 - doubling with zoom, which is the signature of parallax. The markers were
- * worse at 0.048, while `project` places their hover ring at zero.
- *
- * So shrink the lift to the least that still orders the layers. 0.0002 between neighbours is a few hundred
- * depth-buffer steps here, and leaves the worst drift under half a pixel.
- */
+/** How much of a layer's radial lift survives on the flat map. See ARCHITECTURE.md. */
 const MAP_LAYER_LIFT = 0.2;
 
 /**
@@ -38,15 +21,9 @@ export const MORPH_GLSL = /* glsl */ `
   attribute vec2 aLonLat;
 
   vec3 fmProject(vec3 sphere) {
-    /*
-     * The plane comes from the attribute, never from the position.
-     *
-     * Never recover longitude with atan2. Densifying emits longitudes past 180 and earcut triangulates
-     * there, so atan2 folds 180.5 to -179.5 and a two-degree triangle spans the world. At a pole longitude
-     * does not exist, atan2(0, 0) is zero, and every meridian gets dragged onto the prime meridian.
-     *
-     * (No backticks in here. One of them ends the template literal.)
-     */
+    /* The plane comes from the attribute, never from the position. Never recover longitude with atan2.
+       Densifying emits longitudes past 180 and earcut triangulates there, so atan2 folds 180.5 to -179.5
+       and a two-degree triangle spans the world. See ARCHITECTURE.md. */
     float r = length(sphere);
     vec3 plane = vec3(
       aLonLat.x / 180.0 * ${MAP_HALF_WIDTH.toFixed(1)},
@@ -59,10 +36,7 @@ export const MORPH_GLSL = /* glsl */ `
 
 /**
  * Which copies of the map intersect the view, as inclusive integer offsets. Two most of the time, one when
- * zoomed in, three when the whole world plus both edges is on screen.
- *
- * Extracted because it is the part that fails quietly: an off-by-one leaves a strip of void at one edge that
- * looks like the end of the world rather than a missing draw call.
+ * zoomed in, three when the whole world plus both edges is on screen. See ARCHITECTURE.md.
  */
 export function visibleCopies(
   cameraX: number, halfWidth: number,
@@ -80,11 +54,8 @@ export function visibleCopies(
 }
 
 /**
- * Derives `aLonLat` for a sphere shell from its texture coordinates, not its positions.
- *
- * `atan2` fails the shells twice: the duplicated seam column reports -180 for one copy and +180 for the
- * other, and the pole rows have no longitude at all. The texture coordinate knows both, and only lines up
- * with longitude because the shells are built with the seam rotated to the antimeridian.
+ * Derives `aLonLat` for a sphere shell from its texture coordinates, not its positions. See
+ * ARCHITECTURE.md.
  */
 export function attachLonLat(geometry: BufferGeometry): void {
   const position = geometry.getAttribute("position");
@@ -98,14 +69,7 @@ export function attachLonLat(geometry: BufferGeometry): void {
     out[v * 2 + 1] = (Math.asin(y / r) * 180) / Math.PI;
   }
 
-  /*
-   * The pole fans collapse, so the map gets a straight edge. A fan cannot tile a straight line: flattened,
-   * each apex sits at its own column's longitude and the gap between neighbours is a notch, so ninety-six of
-   * them make a dashed line where the map should simply stop.
-   *
-   * Pulling each apex back to the ring below makes those triangles zero-height on the map. The globe is
-   * untouched: this is an attribute the plane reads and the sphere position ignores.
-   */
+  /* The pole fans collapse, so the map gets a straight edge. See ARCHITECTURE.md. */
   let ring = 0;
   for (let v = 0; v < position.count; v += 1) {
     const lat = Math.abs(out[v * 2 + 1]!);

@@ -11,12 +11,8 @@ import {
 import { category } from "../sources/cyclones";
 import { flame, spiral, volcano, waves } from "../globe/shapes";
 
-/*
- * One row of the key: a glyph, the line that names it, and the reasoning one press away.
- *
- * `details` rather than a button and state: natively focusable, so the row stays reachable without a
- * keyboard path being invented for it, and it matches the two disclosures the rail already uses.
- */
+/* One row of the key: a glyph, the line that names it, and the reasoning one press away. See
+   ARCHITECTURE.md. */
 /** One layer switch. These state their condition in their pressed state; the header's controls state it
  * in their label ("Sound off"). Two idioms for one job, worth settling in one direction eventually. */
 function LayerToggle(
@@ -64,13 +60,7 @@ function KeyRow(
   );
 }
 
-/*
- * The legend and the magnitude filter, which were two blocks and are one control.
- *
- * They were always about one quantity: the legend says what the colours mean and the filter says which
- * of them to draw. Running the slider along the ramp makes the track the scale and the thumb the
- * threshold, so neither half needs a label explaining the other.
- */
+/* The legend and the magnitude filter, which were two blocks and are one control. See ARCHITECTURE.md. */
 
 export interface MagnitudeFilterProps {
   ramp: RampName;
@@ -125,13 +115,7 @@ export interface MagnitudeFilterProps {
   children?: JSX.Element;
   /** Whether the key below the scale is open. Held outside so it survives a reload. */
   keyOpen: boolean;
-  /**
-   * Which half to draw.
-   *
-   * `controls` is the ramp, the feeds and the layers; `key` is the explanation of every mark. They render
-   * in different places - the rail and a panel of its own - so this splits rather than hides: two copies
-   * with one hidden would put a second `#mag` in the accessibility tree.
-   */
+  /** Which half to draw. See ARCHITECTURE.md. */
   part?: "controls" | "key";
   onKeyOpen: (open: boolean) => void;
   /** True on an archived day, which changes the tense of every layer sentence. */
@@ -183,15 +167,8 @@ export function MagnitudeFilter(
   if (part === "key") {
     return (
       <div data-ramp>
-      {/*
-        Everything below the scale is explanation and folds away. Controls above, commentary below.
-
-        Open by default. Remember only that somebody closed it: folding it shut out of the box would hide
-        the argument from everyone who never finds the toggle.
-
-        `preventDefault` on the summary so React owns `open`. React 18 does not listen for `toggle`, so the
-        browser's own state cannot be read back, and this state is persisted.
-      */}
+      {/* Everything below the scale is explanation and folds away. Controls above, commentary below. See
+          ARCHITECTURE.md. */}
       <details open={keyOpen}>
         <summary
           className="disclose text-[11px] text-faint hover:text-dim"
@@ -299,15 +276,8 @@ export function MagnitudeFilter(
         />
       ) : null}
 
-      {/*
-        The rings were the one mark nothing named. A ring appears when an event arrives, expands for fifteen
-        seconds and is gone, so a first-time viewer gets one look at it.
-
-        A sentence rather than a label, because the multiplier is part of what the mark is: a wavefront moving
-        at twenty times real speed with nothing saying so would be the one dishonest thing here.
-
-        `items-start`, since this is the only row that wraps and a glyph centred against two lines floats.
-      */}
+      {/* The rings were the one mark nothing named. A ring appears when an event arrives, expands for
+          fifteen seconds and is gone, so a first-time viewer gets one look at it. See ARCHITECTURE.md. */}
       {/* A spiral for a swatch, because the mark is a spiral. Light gets colour and marks get shapes, so
           this one is shape all the way down to its legend entry. */}
       {cyclones.length > 0 ? (
@@ -391,15 +361,8 @@ export function MagnitudeFilter(
         />
       ) : null}
 
-      {/*
-        Required, not optional: a dark patch appearing on the planet with nothing naming it is the exact
-        case this panel's rule exists for. Conditional like the storms, so it costs nothing on the days -
-        almost all of them - when there is no shadow.
-
-        It bounds its own claim. The position comes from an abridged lunar series through sixty Earth radii
-        of lever arm, so it is good to a few hundred kilometres and a shadow that looked precise would be
-        the one mark here somebody might plan around.
-      */}
+      {/* Required, not optional: a dark patch appearing on the planet with nothing naming it is the exact
+          case this panel's rule exists for. See ARCHITECTURE.md. */}
       {eclipse ? (
         <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
           <span
@@ -416,15 +379,7 @@ export function MagnitudeFilter(
         </div>
       ) : null}
 
-      {/*
-        Both rows say the fact a viewer would otherwise get wrong. Nobody expects a real catalogue behind a
-        globe of earthquakes, and the moon looks like a speck because that is the size the moon is - the
-        familiar enormous one is a long lens, so the sentence has to say "real size" or the layer reads as
-        a bug.
-
-        The phase went out of that line rather than wrapping onto a second row: a crescent explains itself
-        once it is a crescent, and the smallness is the part that needs defending.
-      */}
+      {/* Both rows say the fact a viewer would otherwise get wrong. See ARCHITECTURE.md. */}
       {sky ? (
         <>
           <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
@@ -539,13 +494,9 @@ export function MagnitudeFilter(
         ))}
       </div>
 
-      {/*
-        Feeds and layers fold, because they are set once and then never touched, and the rail is short by
-        about 400px with the timeline back in it. The ramp above stays open - that one gets dragged.
-
-        Layers live here rather than in the key, where they used to be: turning the slab on meant opening
-        a fold titled "What the marks mean", which is not where anybody looks for a control.
-      */}
+      {/* Feeds and layers fold, because they are set once and then never touched, and the rail is short by
+          about 400px with the timeline back in it. The ramp above stays open - that one gets dragged. See
+          ARCHITECTURE.md. */}
       <details className="mt-3">
         <summary className="label cursor-pointer select-none">Feeds and layers</summary>
         <div className="mt-2">

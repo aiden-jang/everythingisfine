@@ -1,11 +1,4 @@
-/*
- * Where the sun is overhead, right now.
- *
- * The globe was a navy disc: correct, unlit, and reading as a diagram of Earth rather than as Earth. A
- * terminator fixes that with a fact rather than with styling.
- *
- * NOAA's low-precision solar position algorithm, good to about 0.01 degrees over 1950-2050.
- */
+/* Where the sun is overhead, right now. See ARCHITECTURE.md. */
 
 const DEG = Math.PI / 180;
 
@@ -63,14 +56,7 @@ export function subsolarPoint(at: number): Subsolar {
   return { lon: ((((lon + 180) % 360) + 360) % 360) - 180, lat: declination };
 }
 
-/*
- * Two things the terminator already knew and nothing read. `subsolarPoint` is computed every minute to light
- * the globe, and it answers "what was it like there, then" for free: an earthquake at three in the morning
- * is a different event from the same rupture at three in the afternoon.
- *
- * Solar time rather than clock time, and that is the keyless answer rather than a lazy one. Civil time needs
- * timezone boundaries; this needs the sun, which is already here.
- */
+/* Two things the terminator already knew and nothing read. See ARCHITECTURE.md. */
 
 /**
  * Local apparent solar time at a longitude, in hours from midnight. Noon is where the true sun crosses the
@@ -101,14 +87,7 @@ export function sunElevation(lon: number, lat: number, at: number): number {
   return Math.asin(Math.max(-1, Math.min(1, cosZenith))) / DEG;
 }
 
-/**
- * Daylight, twilight or dark, on the conventional boundaries. Civil twilight is the sun within six degrees
- * of the horizon, the same figure the night shader spreads its terminator over, so the words and the band
- * agree by construction.
- *
- * Derived from elevation, not from the clock: at high latitude three in the morning is broad daylight for
- * months and a band read off the hour would say the opposite.
- */
+/** Daylight, twilight or dark, on the conventional boundaries. See ARCHITECTURE.md. */
 export function daylight(elevationDeg: number): "daylight" | "twilight" | "dark" {
   if (elevationDeg > 0) return "daylight";
   if (elevationDeg > -6) return "twilight";

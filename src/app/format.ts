@@ -273,13 +273,7 @@ export function wildfireNote(
     + `${fire.km2.toLocaleString("en-GB")} square kilometres alight${burning}.${floor}`;
 }
 
-/**
- * GDACS files every flood as severity 0, so nothing ranks them.
- *
- * The count is what GDACS currently flags, not a census. Its list is capped at 100 like the others - though
- * every *current* flood measured through the cap - and it lags: a Nepal flood on 2026-08-27 was in no GDACS
- * type at all two days later. See `sources/gdacs.ts`.
- */
+/** GDACS files every flood as severity 0, so nothing ranks them. See ARCHITECTURE.md. */
 export function floodNote(count: number, countries: number, archived = false): string | null {
   if (count === 0) return null;
   const where = countries > 1 ? ` across ${countries} countries` : "";

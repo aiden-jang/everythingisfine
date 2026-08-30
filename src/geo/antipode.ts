@@ -1,15 +1,6 @@
 import { DEG, EARTH_RADIUS_KM } from "./sphere";
 
-/*
- * The far side, which a globe can show and a map cannot.
- *
- * A wavefront on a sphere grows to a great circle a quarter of the world away and then shrinks to a point on
- * the opposite side. The front 150 degrees out is the same length as the one 30 degrees out - 20,015 km each,
- * against 40,030 at the widest.
- *
- * Claims no time. Timing the far side needs a path through the mantle, which `arrival.ts` already refused.
- * A figure, not an animation: where the front would be at fixed intervals of arc.
- */
+/* The far side, which a globe can show and a map cannot. See ARCHITECTURE.md. */
 
 /** Where a front from here closes back to a point. */
 export function antipodeOf(lon: number, lat: number): { lon: number; lat: number } {

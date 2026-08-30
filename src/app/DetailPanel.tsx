@@ -14,14 +14,7 @@ import {
   ago, boundaryNote, clock, coordinates, depth, farSideNote, magnitude, place, SOURCE_NAMES,
 } from "./format";
 
-/*
- * The pinned event, in full.
- *
- * This panel was 81% empty, because it only ever said what one feed reported and for 94% of events only
- * one feed reported. The project's whole subject - two agencies disagreeing - was invisible on almost
- * every event a person could click. So it answers the questions a reader actually has, from data already
- * held: how deep, what else happened around it, how far apart the two agencies put it, and how to share it.
- */
+/* The pinned event, in full. See ARCHITECTURE.md. */
 
 export interface DetailPanelProps {
   /** False while the panel is leaving. It stays mounted, holding its last event, to animate out. */
@@ -57,15 +50,7 @@ export interface DetailPanelProps {
   onSelect: (key: string) => void;
 }
 
-/*
- * How many people said they felt it, and how hard. The only human number in this app.
- *
- * Say "reported", never "felt". "Did You Feel It" is self-selected, so it counts where people live and
- * whether they went online afterwards.
- *
- * Round the intensity to a whole step. A community-determined 3.9 is an average of what people ticked on a
- * form, not a measurement to a tenth.
- */
+/* How many people said they felt it, and how hard. The only human number in this app. See ARCHITECTURE.md. */
 const SHAKING = [
   // USGS's own words for intensity I through X, not a paraphrase. Two and three are both "weak" there,
   // and inventing a word the scale does not use is how a borrowed scale stops being the scale.
@@ -101,15 +86,7 @@ export function DetailPanel({
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
   const r = quake.primary;
-  /*
-   * Recomputed on new data, not on the clock.
-   *
-   * This walks the whole buffer, and the panel re-renders every second because the rail's clock ticks:
-   * measured in a swarm at a full buffer, 56ms every second for an answer that had not changed.
-   *
-   * `now` is read inside and is deliberately not a dependency. Entering or leaving an archived day moves
-   * the revision anyway, since the store is cleared and refilled.
-   */
+  /* Recomputed on new data, not on the clock. See ARCHITECTURE.md. */
   const near = useMemo(
     () => findNearby(store, quake, filters, now),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -249,13 +226,8 @@ export function DetailPanel({
         {boundaryNote(boundaryKm) ? (
           <Field label="Boundary" value={boundaryNote(boundaryKm)!} />
         ) : null}
-        {/*
-          Only when somebody reported. This app cannot tell "nobody felt it" from "nobody wrote in", and
-          only the second is a thing it knows. USGS only: EMSC runs its own system and does not put it in
-          the feed this reads.
-
-          Labelled "Felt reports", not "Reported", which sat two rows above "Reported by - USGS".
-        */}
+        {/* Only when somebody reported. This app cannot tell "nobody felt it" from "nobody wrote in", and
+            only the second is a thing it knows. See ARCHITECTURE.md. */}
         {feltNote(r.felt) ? (
           <Field label="Felt reports" value={feltNote(r.felt)!} />
         ) : null}
@@ -274,26 +246,17 @@ export function DetailPanel({
             value={r.review === "automatic" ? "automatic, may still change" : "checked by a person"}
           />
         ) : null}
-        {/*
-          What the sky was doing there when it happened. An M6 at three in the morning is a different event
-          from the same rupture at three in the afternoon.
-
-          Solar time, not clock time, and that is the keyless answer rather than a lazy one: civil time
-          needs timezone boundaries, and this needs the sun. Labelled "solar" so nobody reads it as what a
-          watch there would have said. At the event's own origin, not at `now`.
-        */}
+        {/* What the sky was doing there when it happened. An M6 at three in the morning is a different
+            event from the same rupture at three in the afternoon. See ARCHITECTURE.md. */}
         <Field
           label="Solar time"
           value={`${solarClock(solarHour(r.lon, r.time))} · ${daylight(sunElevation(r.lon, r.lat, r.time))}`}
         />
         <Field
           label="Reported by"
-          /*
-            The relay, and in brackets whoever actually computed it. Both feeds aggregate: a Hawaiian
-            earthquake reported by USGS was solved at the Hawaiian Volcano Observatory.
-
-            Here rather than in the comparison table, which is already four columns in a 300px panel.
-          */
+          /* The relay, and in brackets whoever actually computed it. Both feeds aggregate: a Hawaiian
+             earthquake reported by USGS was solved at the Hawaiian Volcano Observatory. See
+             ARCHITECTURE.md. */
           value={quake.readings
             .map((x) => (x.network === undefined
               ? SOURCE_NAMES[x.source]
@@ -302,15 +265,9 @@ export function DetailPanel({
         />
       </div>
 
-      {/*
-        When it reached the nearest place with a name on it. A marker says an earthquake happened at a
-        point; it does not say the point is 7km from a town that felt it two seconds later.
-
-        The distance and the town are the agency's own words, parsed out of "38 km NW of Stanton, Texas".
-        Nothing is authored: a list of cities written from memory would make confident claims about real
-        towns from latitudes a tenth of a degree out, and a tenth of a degree is two seconds. Absent when
-        the agencies named only a region, because a centroid would be that same invention.
-      */}
+      {/* When it reached the nearest place with a name on it. A marker says an earthquake happened at a
+          point; it does not say the point is 7km from a town that felt it two seconds later. See
+          ARCHITECTURE.md. */}
       {arrival ? (
         <div className="mt-4">
           <p className="text-[11px] leading-relaxed text-dim">
@@ -398,14 +355,8 @@ export function DetailPanel({
               </button>
             ))}
             <Sequence nearby={near} magnitude={r.magnitude} ramp={ramp} />
-            {/*
-              Walking the sequence, which was the missing half of the strip: you could read the shape of a
-              swarm and not visit it.
-
-              Labelled with the neighbour's magnitude rather than "previous" and "next", because the useful
-              question in a swarm is how big the next one was. Hidden at either end rather than disabled:
-              a dead control is a question.
-            */}
+            {/* Walking the sequence, which was the missing half of the strip: you could read the shape of a
+                swarm and not visit it. See ARCHITECTURE.md. */}
             {(() => {
               const { earlier, later } = stepsFrom(near.sequence);
               if (!earlier && !later) return null;
@@ -480,14 +431,8 @@ export function DetailPanel({
         >
           Far side
         </button>
-        {/*
-          A seam, because the fourth button is not the same kind of thing as the first three. Fly, Slice and
-          Far side move the camera; Copy link changes nothing on screen.
-
-          `ml-auto` rather than a separator: this row wraps, and a divider landing at the end of a line is
-          an orphan. Not a wrapper either - grouping the first three would push them past the edge of a
-          phone as one unsplittable item.
-        */}
+        {/* A seam, because the fourth button is not the same kind of thing as the first three. Fly, Slice
+            and Far side move the camera; Copy link changes nothing on screen. See ARCHITECTURE.md. */}
         <button
           type="button"
           onClick={() => void copyLink()}

@@ -4,14 +4,9 @@ import type { Volcano } from "../sources/volcanoes";
 import type { Wildfire } from "../sources/wildfires";
 import { ago, latLon } from "./format";
 
-/*
- * What a storm, volcano, fire or flood says when you click it.
- *
- * Every line is a fact from the feed. If the feed does not carry something, drop the row - never show a dash.
- *
- * Not the earthquake panel. That one is built around two agencies disagreeing, and a wildfire has no depth,
- * no neighbours, no arrival time and no sequence.
- */
+/* What a storm, volcano, fire or flood says when you click it. Not the earthquake panel. That one is built
+   around two agencies disagreeing, and a wildfire has no depth, no neighbours, no arrival time and no
+   sequence. See ARCHITECTURE.md. */
 
 export type MarkSubject =
   | { kind: "cyclone"; subject: Cyclone }
@@ -53,11 +48,8 @@ export function findSubject(
 interface Line { label: string; value: string }
 
 /**
- * The rows for a subject, as facts. Split out from the markup so it can be asserted without a DOM.
- *
- * `archived` moves the tense. These notes read "running now" and "burning now", which was safe only while
- * an archived day withheld the four layers: now a card opened on 2026-05-15 would call a fire that ended
- * in May a fire burning this minute.
+ * The rows for a subject, as facts. Split out from the markup so it can be asserted without a DOM. See
+ * ARCHITECTURE.md.
  */
 export function linesFor(
   found: MarkSubject, now: number, archived = false,
