@@ -583,7 +583,11 @@
     overflow-y: auto;
     /* See `.zone-rail`: the other axis is pinned rather than left to compute to `auto`. */
     overflow-x: hidden;
-    overscroll-behavior: contain;
+    /*
+     * Chains to the rail on purpose, so no `overscroll-behavior` here. This is a 132px box inside a
+     * column that scrolls 3,000px: contained, a wheel that happens to be over it stops dead at the box's
+     * own end, and the way out is to move the pointer somewhere else first.
+     */
     contain: paint;
   }
 

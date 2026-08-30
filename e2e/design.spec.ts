@@ -399,6 +399,69 @@ test("the rail's controls stay above its fold", async ({ page }) => {
   }
 });
 
+/*
+ * One scrollbar in the rail, not two. The event list used to be its own scroll container inside a column
+ * that also scrolls: the rail's bar reached its end with 2,386px of list still inside it, so it lied about
+ * how much was left, and which of the two a wheel moved depended on where the pointer happened to be.
+ *
+ * Only at xl. Narrower, the list has its own grid column or the rail is a sheet under the globe, and there
+ * a box of its own is right.
+ */
+test("the desktop rail is the only thing in it that scrolls", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installFeeds(page, { count: 200 });
+  await page.goto("/");
+  await waitForData(page);
+  await page.waitForTimeout(800);
+
+  const seen = await page.evaluate(() => {
+    const rail = document.querySelector(".rail") as HTMLElement;
+    const nested = Array.from(rail.querySelectorAll("*")).filter((el) => {
+      const style = getComputedStyle(el);
+      return (style.overflowY === "auto" || style.overflowY === "scroll")
+        && el.scrollHeight > el.clientHeight + 1;
+    }).map((el) => (el.className || "").toString().slice(0, 24));
+    return { railMax: rail.scrollHeight - rail.clientHeight, nested };
+  });
+
+  // The regions box is the one exception: it is a sized widget with a drag handle, 132px tall.
+  expect(seen.nested.filter((c) => !c.includes("rail-regions")), "no second scroller").toEqual([]);
+  // And the rail's own scroll covers the list, rather than stopping short of it.
+  expect(seen.railMax, "the rail scrolls past the whole list").toBeGreaterThan(2_000);
+});
+
+/*
+ * The regions box chains out. It is 132px inside a column that scrolls three thousand, so `contain` there
+ * stops a wheel dead at its own end and the way out is to move the pointer somewhere else first.
+ */
+test("scrolling over the regions box carries on into the rail", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installFeeds(page, { count: 200 });
+  await page.goto("/");
+  await waitForData(page);
+  await page.waitForTimeout(1_200);
+
+  // At the bottom, where the box is on screen and already scrolled to its own top.
+  await page.locator(".rail-regions").scrollIntoViewIfNeeded();
+  await page.waitForTimeout(300);
+  const before = await page.evaluate(() => ({
+    rail: (document.querySelector(".rail") as HTMLElement).scrollTop,
+    box: (document.querySelector(".rail-regions") as HTMLElement).scrollTop,
+  }));
+  expect(before.rail, "the rail has somewhere to come back from").toBeGreaterThan(200);
+  expect(before.box, "the box starts at its own top").toBe(0);
+
+  // Wheel up, over the box. It cannot scroll up, so the gesture has to reach the rail behind it.
+  const box = (await page.locator(".rail-regions").boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  for (let i = 0; i < 6; i += 1) await page.mouse.wheel(0, -120);
+  await page.waitForTimeout(500);
+
+  const after = await page.evaluate(() =>
+    (document.querySelector(".rail") as HTMLElement).scrollTop);
+  expect(after, "the wheel carried on into the rail").toBeLessThan(before.rail);
+});
+
 test("the events are reachable, not clipped out of the rail", async ({ page }) => {
   /* The rail cannot hold everything at once. With the timeline in it the column runs about 600px past a
      900px screen, so the event list sits below the fold and you scroll to it - deliberate, because the
