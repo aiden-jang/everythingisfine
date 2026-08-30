@@ -19,12 +19,15 @@ export interface ResizerProps {
   /** Turns a pointer position into a new value, since only the caller knows what it is measuring. */
   measure: (event: PointerEvent) => number;
   onChange: (value: number) => void;
+  /** Draws a short bar across the middle instead of a hairline. For a handle nobody can hover: on a phone
+   * the hairline only appears on reach, and a touch never reaches. */
+  grip?: boolean;
   className?: string;
   style?: React.CSSProperties;
 }
 
 export function Resizer({
-  axis, label, value, min, max, measure, onChange, className, style,
+  axis, label, value, min, max, measure, onChange, grip = false, className, style,
 }: ResizerProps): JSX.Element {
   const dragging = useRef(false);
   const latest = useRef({ measure, onChange });
@@ -93,6 +96,17 @@ export function Resizer({
           horizontal ? "inset-x-0 top-[6px] h-px" : "inset-y-0 left-[6px] w-px"
         }`}
       />
+      {/* The bar, where hovering is not a thing that happens. Short and centred, which is what a sheet
+          edge looks like everywhere else, so it reads as a handle without a label saying so. */}
+      {grip ? (
+        <span
+          className={`pointer-events-none absolute rounded-full bg-dim ${
+            horizontal
+              ? "top-[4px] left-1/2 h-[4px] w-9 -translate-x-1/2"
+              : "top-1/2 left-[4px] h-9 w-[4px] -translate-y-1/2"
+          }`}
+        />
+      ) : null}
     </div>
   );
 }
