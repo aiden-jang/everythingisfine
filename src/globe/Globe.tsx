@@ -88,6 +88,9 @@ export interface GlobeProps {
  */
 const SCALE_BOTTOM = 76;
 
+/* Half of the 44px a finger is reckoned to need, so a marker's own radius makes up the rest. */
+const TOUCH_SLOP_PX = 18;
+
 /** The most a panel may swing the camera. Past this the lift costs more than the panel hid. */
 const MAX_LIFT_DEG = 22;
 /** How long a bar aims to be before rounding to a number a reader can halve. The actual width is whatever
@@ -190,6 +193,13 @@ export function Globe({
         // The pickable marks, so a browser test can point at a storm without knowing where storms are.
         // The hazard feeds are live even when the agencies are stubbed.
         __marks: () => live.current.marks.filter((m) => m.id !== undefined),
+        /*
+         * The pointer's own question, asked directly. A test cannot aim at a marker any other way:
+         * projecting a coordinate gives the surface point and markers are drawn at their depth, so the
+         * two are tens of pixels apart for anything deep.
+         */
+        __hitTest: (x: number, y: number, slopPx?: number) =>
+          globe.hitTest(x, y, feed.store, live.current.filters, Date.now(), slopPx),
         /*
          * One full scene draw, on demand, for measuring GPU frame time. The loop sleeps whenever nothing
          * is moving, so there are no frames to instrument otherwise. `DEV` only.
@@ -686,15 +696,23 @@ export function Globe({
       const travelled = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
       downAt = null;
       if (travelled > 5) return;
+      /*
+       * A finger gets a bigger target than a mouse. A magnitude 2 marker is about 3px across against 4px
+       * of slop, so on a phone the target was a 7px circle - and a miss does not merely do nothing, it
+       * falls through to `hitMark` and then clears whatever was open.
+       */
+      const slop = e.pointerType === "mouse" ? undefined : TOUCH_SLOP_PX;
       // Earthquakes first, then the other marks: the ramp belongs to earthquakes and so does the pointer.
       // A click that hits neither clears both selections.
-      const quake = globe.hitTest(e.clientX, e.clientY, feed.store, live.current.filters, Date.now());
+      const quake = globe.hitTest(
+        e.clientX, e.clientY, feed.store, live.current.filters, Date.now(), slop,
+      );
       if (quake) {
         onSelect(quake);
         onSelectMark?.(null);
         return;
       }
-      const mark = globe.hitMark(e.clientX, e.clientY);
+      const mark = globe.hitMark(e.clientX, e.clientY, slop);
       onSelectMark?.(mark);
       if (!mark) onSelect(null);
     };

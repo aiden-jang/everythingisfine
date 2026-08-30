@@ -1421,37 +1421,49 @@ test("a section can be opened from the panel, not only by a gesture", async ({ p
 });
 
 test("the key folds away and the controls do not go with it", async ({ page }) => {
-  // Five layers made the legend seven paragraphs. The risk in folding it is folding the wrong half: the slider
-  // and the source buttons are how you change what is on the globe, and they have to survive the fold.
+  // Five layers made the legend seven paragraphs. The risk in folding it is folding the wrong half: the
+  // slider is how you change what is on the globe, and it has to survive the fold.
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
 
-  const key = page.getByText("What the marks mean").first();
-  const explanation = page.getByText("size shows it too").first();
+  /*
+   * Filtered to the visible copy. The key is mounted twice - the canvas corner from `md` up, the rail on a
+   * phone - and only one is ever shown, so `.first()` picks by DOM order and lands on the hidden one.
+   */
+  const only = (text: string) => page.getByText(text).filter({ visible: true });
+  const key = only("What the marks mean");
+  const explanation = only("size shows it too");
   const slider = page.locator("#mag");
-  const usgs = page.getByRole("button", { name: "USGS" }).first();
 
   /*
-   * Closed by default now. It used to open, on the argument that no layer ships without the sentence
-   * explaining it - but it is 445px, and it opened over the map, the rail or the canvas corner by turns
-   * depending on width and projection. The sentence still ships: the summary naming it is on screen.
+   * Open by default. It was folded while it lived in the rail, where opening it shoved the column it
+   * shared; on its own corner there is nothing under it to shove.
    */
-  await expect(explanation).toBeHidden();
+  await expect(explanation).toBeVisible();
   await expect(slider).toBeVisible();
+
+  // The feeds fold on their own, because they are set once. Behind the fold, not gone.
+  const feeds = only("Feeds and layers");
+  await expect(feeds).toBeVisible();
+  // `exact`, or the accessible name of every event row that names its agency matches too.
+  const usgs = page.getByRole("button", { name: "USGS", exact: true });
+  await expect(usgs).toBeHidden();
+  await feeds.click();
   await expect(usgs).toBeVisible();
 
   await key.click();
-  await expect(explanation).toBeVisible();
+  await expect(explanation).toHaveCount(0);
+  await expect(slider).toBeVisible();
 
-  // Remembered, because a panel somebody opened is a preference too.
+  // Remembered, because a panel somebody closed is a preference too.
   await page.reload();
   await waitForData(page);
-  await expect(page.getByText("size shows it too").first()).toBeVisible();
+  await expect(only("size shows it too")).toHaveCount(0);
   await expect(page.locator("#mag")).toBeVisible();
 
-  await page.getByText("What the marks mean").first().click();
-  await expect(page.getByText("size shows it too").first()).toBeHidden();
+  await only("What the marks mean").click();
+  await expect(only("size shows it too")).toBeVisible();
 });
 
 /*
@@ -1745,4 +1757,75 @@ test("cinema hides every piece of chrome, and comes back when the browser leaves
   const after = await chrome();
   expect(after.rail, "the rail comes back").toBe(false);
   expect(after.full).toBe("");
+});
+
+/*
+ * Guards two separate bugs that together made earthquakes untappable.
+ *
+ * The globe reports a hit as `onSelect(quake)` then `onSelectMark(null)`, and `selectMark` used to clear
+ * the selection whichever way it was called, so the second call undid the first. And a magnitude 2 marker
+ * is 3px across against 4px of slop, so a finger was aiming at a 7px circle while marks had 18.
+ */
+test("a finger-width miss still opens the earthquake it was aimed at", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installFeeds(page, { count: 200 });
+  await page.goto("/");
+  await waitForData(page);
+  await page.waitForTimeout(1_200);
+
+  /*
+   * The first tap skips the intro, which otherwise clears the selection the second tap makes.
+   * Empty sky, so it selects nothing of its own.
+   */
+  const tap = (x: number, y: number) => page.evaluate(([px, py]) => {
+    const canvas = document.querySelector("canvas")!;
+    for (const type of ["pointerdown", "pointerup"]) {
+      canvas.dispatchEvent(new PointerEvent(type, {
+        pointerId: 1, pointerType: "touch", clientX: px, clientY: py, bubbles: true, isPrimary: true,
+      }));
+    }
+  }, [x, y]);
+  await tap(30, 90);
+  await page.waitForTimeout(600);
+
+  /*
+   * A marker with nothing else within a finger of it, found by asking the pointer's own question.
+   * Projecting a coordinate does not work here: markers are drawn at their depth, inside the planet, so
+   * the surface point is tens of pixels from the thing you can see.
+   */
+  const aim = await page.evaluate(() => {
+    const hit = (window as unknown as {
+      __hitTest: (x: number, y: number, slopPx?: number) => string | null;
+    }).__hitTest;
+    for (let y = 100; y < 540; y += 3) {
+      for (let x = 24; x < 360; x += 3) {
+        const key = hit(x, y);
+        // 4 was the slop before this test existed, 18 is a finger's half-width.
+        if (key && hit(x + 12, y, 4) === null && hit(x + 12, y, 18) === key) return { x, y, key };
+      }
+    }
+    return null;
+  });
+  expect(aim, "an earthquake with clear space beside it").not.toBeNull();
+
+  await tap(aim!.x + 12, aim!.y);
+  await expect(page.locator(".zone-panel", { hasText: "Pinned event" })).toBeVisible();
+});
+
+/* Below 1280 the key has no edge of its own to sit on, so it goes back into the rail. Exactly one copy
+   is ever in the tree, or the same paragraph is read out twice. */
+test("the marks key is reachable at every width", async ({ page }) => {
+  await installFeeds(page);
+  await page.goto("/");
+  await waitForData(page);
+
+  for (const [w, h] of [[390, 844], [768, 1024], [1024, 768], [1440, 900]] as const) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(400);
+    const shown = await page.evaluate(() =>
+      Array.from(document.querySelectorAll("summary"))
+        .filter((s) => /What the marks mean/.test(s.textContent || ""))
+        .filter((s) => (s as HTMLElement).checkVisibility()).length);
+    expect(shown, `visible copies of the key at ${w}x${h}`).toBe(1);
+  }
 });
