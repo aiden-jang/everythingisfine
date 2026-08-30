@@ -1,13 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { NOTABLE_DAYS } from "./notableDays";
 
-/*
- * The list's claims, against the catalogue that has to back them. Run it with `pnpm test:live`.
- *
- * A curated list is an assertion about somebody else's data, and the failure mode is a label that is quietly
- * wrong: the right day with the wrong magnitude, or a famous local date that is a different UTC day. Both
- * look fine in a screenshot.
- */
+/* The list's claims, against the catalogue that has to back them. Run it with `pnpm test:live`. See
+   ARCHITECTURE.md. */
 const QUERY = "https://earthquake.usgs.gov/fdsnws/event/1/query";
 
 describe("every notable day, against USGS", () => {

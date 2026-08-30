@@ -4,12 +4,8 @@ import {
 } from "./reconcile";
 import type { Reading } from "./types";
 
-/*
- * The one decision this whole app is about: whether two agencies are describing one earthquake.
- *
- * It had no direct test - only the store's behaviour around it - which for the project's central claim
- * is the wrong place to find out it changed.
- */
+/* The one decision this whole app is about: whether two agencies are describing one earthquake. See
+   ARCHITECTURE.md. */
 
 const at = (over: Partial<Reading> = {}): Reading => ({
   source: "usgs", id: "a1", magnitude: 5.0, scale: "mww", lon: 141.0, lat: 38.0, depthKm: 30,

@@ -4,22 +4,10 @@ import { createEmscSource } from "../sources/emsc";
 import { createUsgsSource, usgsSeedFor } from "../sources/usgs";
 import { browserRuntime, type GeoEventSource, type SourceStatus } from "../sources/types";
 
-/*
- * The two feeds, the store, and whoever needs to know something changed.
- *
- * Deliberately not a React store. The globe needs fifty thousand positions out of these events, and
- * routing that through React state would re-render a tree once per earthquake. So this owns the data and
- * announces that it moved; the canvas reads it directly and the interface subscribes for counts.
- */
+/* The two feeds, the store, and whoever needs to know something changed. See ARCHITECTURE.md. */
 
 export interface FeedSnapshot {
-  /**
-   * The archived span being shown, or null when live.
-   *
-   * On the snapshot rather than in App state, so nothing can read the store without also being able to see
-   * that it is not live. The one way to ship the bad version of this feature is to let some of the chrome
-   * go on saying live while the globe shows last March.
-   */
+  /** The archived span being shown, or null when live. See ARCHITECTURE.md. */
   archive: { from: number; to: number } | null;
   stats: StoreStats;
   statuses: Record<SourceId, SourceStatus>;
@@ -29,47 +17,22 @@ export interface FeedSnapshot {
    * arrival: totals alone cannot tell a new M5 from a revision to an existing one. */
   arrived: Quake[];
   /**
-   * True for the first announcement that actually carries events: the daily seed.
-   *
-   * Not "the first announcement". Those also fire on status changes, and a source going live beats its own
-   * first batch, so the very first one is reliably empty. Keyed off that, the seed's 227 events got 227
-   * wavefronts and the entrance replay never started.
+   * True for the first announcement that actually carries events: the daily seed. Not "the first
+   * announcement". Those also fire on status changes, and a source going live beats its own first batch,
+   * so the very first one is reliably empty. See ARCHITECTURE.md.
    */
   seeding: boolean;
   /**
-   * The timestamp from which this page believes it has complete coverage, or null before the seed.
-   *
-   * Reported by whichever source actually fetched a backlog, never inferred. Reading the earliest arrival
-   * says "still filling" forever, because both sources seed a whole day at once. Inferring it from the
-   * first delivery carrying events claimed a covered day off two stray socket pushes: "0 events, last 24
-   * hours". Only a source that fetched a backlog knows how far back it goes.
+   * The timestamp from which this page believes it has complete coverage, or null before the seed. See
+   * ARCHITECTURE.md.
    */
   coveredSince: number | null;
-  /**
-   * The same fact per agency, because the earliest of the two hides the disagreement.
-   *
-   * `coveredSince` is a min: right for the strip, wrong beside two feeds. EMSC returns its most recent page
-   * whatever window is asked for, so at a month USGS vouches for thirty days and EMSC for eighteen hours.
-   *
-   * Null means a source has not reported a backlog. That is not a source that reported a short one.
-   */
+  /** The same fact per agency, because the earliest of the two hides the disagreement. See ARCHITECTURE.md. */
   covered: Record<SourceId, number | null>;
 }
 
-/**
- * Which arrivals deserve a wavefront.
- *
- * A rule, not a rendering detail, and the canvas cannot be asked about it: announcements coalesce through
- * requestAnimationFrame, which a hidden tab suspends, so no test can observe this on a real cold load.
- *
- * The seed creates 227 quakes at once and none of them just happened. One front, the most recent.
- */
-/**
- * The most fronts one announcement may fire.
- *
- * Live traffic delivers one or two, so this changes nothing in normal running. It is for the resume case:
- * a backgrounded tab suspends rAF, so arrivals pile up behind one pending callback and land together.
- */
+/** Which arrivals deserve a wavefront. See ARCHITECTURE.md. */
+/** The most fronts one announcement may fire. See ARCHITECTURE.md. */
 export const MAX_LIVE_FRONTS = 3;
 
 export function frontsFor(snapshot: Pick<FeedSnapshot, "arrived" | "seeding">): Quake[] {
@@ -97,13 +60,7 @@ export interface Feed {
    * what is drawn, so narrowing needs no request and throwing the extra away means paying for it again.
    */
   setWindow: (windowMs: number) => boolean;
-  /**
-   * Replaces everything with an archived span, and stops listening to the present.
-   *
-   * The sources are stopped rather than filtered: a socket push arriving during an archived day would put a
-   * live event into a set from last month. Coverage is the span asked for, so the strip marks all of it
-   * observed. Announced as a seed, which it is - hundreds of events at once, none of which just happened.
-   */
+  /** Replaces everything with an archived span, and stops listening to the present. See ARCHITECTURE.md. */
   showArchive: (span: { from: number; to: number }, readings: readonly Reading[]) => void;
   /** Back to now: empties the archive and restarts the sources from scratch. */
   resumeLive: () => void;

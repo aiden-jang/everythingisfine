@@ -2,15 +2,8 @@ import { describe, expect, it } from "vitest";
 import { browserRuntime } from "./types";
 import { createUsgsSource, USGS_HOUR_FEED } from "./usgs";
 
-/*
- * The one test that touches the real internet. Excluded from the default run and from CI.
- *
- *   pnpm test:live
- *
- * Live-API tests are flaky by construction: they fail on a train and when an agency is doing maintenance.
- * Fixtures cover behaviour; this covers whether the feed still exists, answers, and has the shape the parser
- * expects. It asserts almost nothing about contents - the hourly feed is genuinely sometimes empty.
- */
+/* The one test that touches the real internet. Excluded from the default run and from CI. See
+   ARCHITECTURE.md. */
 
 describe("USGS, for real", () => {
   it("still answers, still allows a browser, and still parses", async () => {

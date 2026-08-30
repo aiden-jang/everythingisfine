@@ -1,14 +1,4 @@
-/*
- * Days worth seeing, because the archive's only way in was a blank date field.
- *
- * Dates are UTC, which is the trap. Loma Prieta is remembered as 17 October 1989 and struck at 00:04 UTC on
- * the 18th: ask for the 17th and you get an M6.3 in Papua New Guinea. A famous date is usually the local one.
- *
- * Every row was fetched before it was written down, and `notableDays.live.test.ts` re-checks the magnitudes.
- *
- * The oldest two look empty and are not: 1960-05-22 holds the largest earthquake ever recorded and six
- * events at M2.5+. That is the network of the day. `NOTABLE_NOTE` has to say so.
- */
+/* Days worth seeing, because the archive's only way in was a blank date field. See ARCHITECTURE.md. */
 
 export interface NotableDay {
   /** The UTC day, which is the span the archive loads. */
@@ -19,12 +9,7 @@ export interface NotableDay {
   magnitude: number;
 }
 
-/*
- * Largest first, because the two M9.1s are the reason to open this at all.
- *
- * A dozen, not seventy. A curated list stops being a way in once it needs its own search, and the test
- * below holds it under sixteen so growth has to be argued for.
- */
+/* Largest first, because the two M9.1s are the reason to open this at all. See ARCHITECTURE.md. */
 export const NOTABLE_DAYS: readonly NotableDay[] = [
   { day: "1960-05-22", what: "Valdivia, Chile", magnitude: 9.5 },
   { day: "1964-03-28", what: "Prince William Sound, Alaska", magnitude: 9.2 },

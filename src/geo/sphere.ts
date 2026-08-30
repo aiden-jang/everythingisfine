@@ -1,10 +1,4 @@
-/*
- * Turning degrees into points on a ball.
- *
- * Longitude increases east and the prime meridian faces +Z, so a camera parked on +Z looking at the
- * origin sees 0 degrees dead centre with east to the right. Everything downstream depends on that
- * convention, which is why it lives in one place rather than being re-derived per module.
- */
+/* Turning degrees into points on a ball. See ARCHITECTURE.md. */
 
 export const DEG = Math.PI / 180;
 
@@ -19,14 +13,7 @@ export function toVec3(lon: number, lat: number, r: number): [number, number, nu
 /** Mean Earth radius. The value the two agencies' own distance figures are quoted against. */
 export const EARTH_RADIUS_KM = 6371;
 
-/**
- * Great-circle distance in kilometres.
- *
- * Haversine rather than the shorter law-of-cosines form, which loses precision to floating point
- * at small separations. Small separations are the entire use here: deciding whether two agencies
- * are describing the same rupture turns on tens of kilometres, and that is exactly where the cheap
- * formula degrades.
- */
+/** Great-circle distance in kilometres. See ARCHITECTURE.md. */
 export function distanceKm(
   aLon: number, aLat: number, bLon: number, bLat: number,
 ): number {
@@ -52,10 +39,8 @@ export function spanDeg(aLon: number, aLat: number, bLon: number, bLat: number):
 }
 
 /**
- * Meridians and parallels at a fixed interval, as line segment pairs ready for a BufferGeometry.
- *
- * Present enough to give the sphere something to read against while it turns, quiet enough to
- * vanish once events are on it. Poles are skipped: a parallel at 90 degrees is a point.
+ * Meridians and parallels at a fixed interval, as line segment pairs ready for a BufferGeometry. See
+ * ARCHITECTURE.md.
  */
 export function graticule(
   stepDeg: number, radius: number,

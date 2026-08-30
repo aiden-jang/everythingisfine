@@ -1,12 +1,8 @@
 import { agoShort } from "./format";
 
-/*
- * How old a hazard is, and whether the window keeps it.
- *
- * Don't judge these on `iscurrent`: GDACS flags a three-week-old fire as burning, so a currency filter
- * governs one layer and not the others. Every layer is judged on its own date instead - storms, fires and
- * floods on their start, volcanoes on their episode end.
- */
+/* How old a hazard is, and whether the window keeps it. Don't judge these on `iscurrent`: GDACS flags a
+   three-week-old fire as burning, so a currency filter governs one layer and not the others. See
+   ARCHITECTURE.md. */
 
 /** A row's age. Ongoing events date from their start: how long it has been burning is the surprise. */
 export function spanWords(

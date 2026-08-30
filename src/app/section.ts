@@ -5,15 +5,7 @@ import type { Store } from "../data/store";
 import type { Filters, Quake } from "../data/types";
 import type { SlabPoint } from "../geo/slab";
 
-/*
- * A cross-section through the crust, along a line drawn on the map.
- *
- * Every other view answers "where". Depth is the dimension the data carries and the picture cannot show:
- * on a globe it is a filled or hollow ring. Drawn against distance, a line across Japan puts the Pacific
- * plate on screen diving west at forty-five degrees, because the earthquakes are the slab.
- *
- * This is the one thing the flat map is better at than the globe, which is the argument for the map.
- */
+/* A cross-section through the crust, along a line drawn on the map. See ARCHITECTURE.md. */
 
 export interface SectionLine {
   fromLon: number;
@@ -63,15 +55,7 @@ export const SECTION_DEFAULT_KM = 600;
 /** Kilometres in a degree of latitude, from the mean radius. Same figure the scale bar uses. */
 const KM_PER_DEGREE = (Math.PI * EARTH_RADIUS_KM) / 180;
 
-/**
- * A section through a point, across the local trend rather than along it.
- *
- * The orientation is the whole value. Earthquakes at a subduction zone lie along the trench, so slicing
- * across it puts the slab on screen and slicing along it is a smear.
- *
- * A null trend falls back to west-to-east: with no long axis every orientation is arbitrary, and that is
- * the direction a cross-section is read in.
- */
+/** A section through a point, across the local trend rather than along it. See ARCHITECTURE.md. */
 export function sectionThrough(
   lon: number, lat: number, trendDeg: number | null, lengthKm = SECTION_DEFAULT_KM,
 ): SectionLine {
@@ -84,13 +68,8 @@ export function sectionThrough(
   const scale = Math.max(0.02, Math.cos((lat * Math.PI) / 180));
   const dLon = (halfDeg * Math.sin(bearing)) / scale;
 
-  /*
-   * Always read west to east, and south to north when it is neither. Left to the bearing arithmetic, a
-   * north-south trench reads top to bottom while an east-west one reads left to right.
-   *
-   * The epsilon is doing real work: `sin` of 180 degrees is 1.2e-16, not 0, so a test for a negative east
-   * component never fires on the exactly-north-south case.
-   */
+  /* Always read west to east, and south to north when it is neither. Left to the bearing arithmetic, a
+     north-south trench reads top to bottom while an east-west one reads left to right. See ARCHITECTURE.md. */
   const EPS = 1e-9;
   const flip = dLon < -EPS || (Math.abs(dLon) <= EPS && dLat < 0);
   const eastward = flip ? -dLon : dLon;
@@ -106,15 +85,7 @@ export function sectionThrough(
   };
 }
 
-/**
- * The two edges of the corridor, as lines that can be drawn beside the centre.
- *
- * The panel prints "200 km either side" and the map drew only a centre line, so an event just outside the
- * corridor looked exactly like one just inside.
- *
- * A point at cross-track angle t off the great circle is `v cos t + n sin t`, the inverse of the `asin`
- * below, so the edges are exact on the sphere rather than a screen-space approximation that skews with latitude.
- */
+/** The two edges of the corridor, as lines that can be drawn beside the centre. See ARCHITECTURE.md. */
 export function sectionEdges(
   line: SectionLine, halfWidthKm = SECTION_HALF_WIDTH_KM,
 ): [SectionLine, SectionLine] {
@@ -196,13 +167,7 @@ export function sectionLengthKm(line: SectionLine): number {
 
 /**
  * Where the line crosses a plate boundary, as distances along it. The tick turns the picture into an
- * explanation: the earthquakes start at the boundary and descend away from it.
- *
- * Found by sign change in the cross-track offset, not by intersecting two great circles - the offset is
- * already computed for every event.
- *
- * The range check keeps the far side of the planet out. A great circle is a whole circle, so boundaries
- * cross it everywhere, and a crossing off the section falls outside nought to length.
+ * explanation: the earthquakes start at the boundary and descend away from it. See ARCHITECTURE.md.
  */
 export function plateCrossings(line: SectionLine, lengthKm: number): number[] {
   const out: number[] = [];

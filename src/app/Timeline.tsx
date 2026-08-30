@@ -3,14 +3,7 @@ import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { peakCount, type Bar } from "./histogram";
 import { WINDOWS } from "./windows";
 
-/*
- * The window as a strip of bars, with the transport under it.
- *
- * The scale is the track, like the magnitude filter: the histogram is the legend and the thumb is the edge.
- *
- * Name the window, never drag it. As a slider the strip showed a day and the globe showed part of it - the
- * two views disagreeing by construction - and it fixed a bar at an hour, which caps the window.
- */
+/* The window as a strip of bars, with the transport under it. See ARCHITECTURE.md. */
 
 export interface TimelineProps {
   bars: Bar[];
@@ -29,10 +22,8 @@ export interface TimelineProps {
   /** True while a wider backlog is still arriving, so the strip can say so rather than look empty. */
   fetching: boolean;
   /**
-   * True before any feed has vouched for the window, so an empty strip is not blamed on the filters.
-   *
-   * `fetching` is not this: that is a pending window change, so at first paint it is false while the strip
-   * is genuinely empty, and the readout would claim nothing matched when nothing had arrived.
+   * True before any feed has vouched for the window, so an empty strip is not blamed on the filters. See
+   * ARCHITECTURE.md.
    */
   waiting: boolean;
   /** Where the cursor sits across the strip, 0 at the old edge and 1 at now. Live reads as 1. */
@@ -92,12 +83,7 @@ const bucketAgo = (bucketsAgo: number, bucketMs: number): string => {
   return h >= 48 ? `${Math.round(h / 24)}d ago` : `${h}h ago`;
 };
 
-/**
- * What one bucket is, named the way `bucketAgo` names a distance.
- *
- * `BUCKETS` is fixed at 24 and the window is 24h, 7d or 30d, so a bucket is an hour on exactly one of the
- * three. Two strings here said "hours" flatly, which made both wrong on two windows out of three.
- */
+/** What one bucket is, named the way `bucketAgo` names a distance. See ARCHITECTURE.md. */
 const bucketUnit = (bucketMs: number): { one: string; many: string } => {
   const h = Math.round(bucketMs / HOUR_MS);
   if (h <= 1) return { one: "hour", many: "hours" };
@@ -124,15 +110,7 @@ export function Timeline({
   const held = focusHour === null ? null : bars.find((b) => b.bucketsAgo === focusHour) ?? null;
   const unit = bucketUnit(bucketMs);
 
-  /*
-   * The bars are real buttons, so holding an hour is not mouse-only.
-   *
-   * Focus is the hold, so there is no second state to keep in step with the pointer's. One tab stop for the
-   * whole strip on a roving `tabIndex`: twenty-four tab stops in front of the rail would be a worse barrier
-   * than the one this removes.
-   *
-   * `STRIP_PX` is 44, exactly the touch minimum, so this costs no layout.
-   */
+  /* The bars are real buttons, so holding an hour is not mouse-only. See ARCHITECTURE.md. */
   const [barAt, setBarAt] = useState(0);
   const barRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const focusBar = (index: number): void => {
@@ -275,12 +253,7 @@ export function Timeline({
           ))}
         </div>
 
-        {/*
-          The notable events, over the bars they belong to.
-
-          `pointer-events-none`, so the bar underneath still takes the click. The bars stop at 39px inside a
-          44px strip, and this sits in that gutter rather than costing the rail another row.
-        */}
+        {/* The notable events, over the bars they belong to. See ARCHITECTURE.md. */}
         {notable.map((bar) => (
           <span
             key={bar.lead!.key}
@@ -322,15 +295,7 @@ export function Timeline({
         <span>{archived ? "day end" : "now"}</span>
       </div>
 
-      {/*
-        How far back each feed reaches, against the axis above it.
-
-        The catalogue returns its most recent page whatever is asked of it, so at a month USGS vouches for
-        thirty days and EMSC for eighteen hours. Widening the window widens one bar and not the other.
-
-        Anchored right, because coverage reaches back from now. Both tracks are on screen from the first
-        frame, empty, so the load state and the steady state are one picture.
-      */}
+      {/* How far back each feed reaches, against the axis above it. See ARCHITECTURE.md. */}
       {/* Folded: provenance, not a control. Opened, still tight to the axis it measures. */}
       {reaches.length > 0 ? (
         <details className="mt-1">

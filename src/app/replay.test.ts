@@ -73,12 +73,8 @@ describe("how far back the entrance reaches", () => {
   });
 
   it("plays a day and no more when a month is held", () => {
-    /*
-     * It played from the oldest event held, which was the same thing as a day while a day was the only
-     * window. Measured against the real month feed: 215 events at M5 or above, fired over 2.8 seconds,
-     * is 77 fronts a second where `REPLAY_FRONT_MIN_MAG` was chosen for roughly three and this file calls
-     * six a firework. `MAX_RINGS` is 64, so most of them were dropped unseen.
-     */
+    /* It played from the oldest event held, which was the same thing as a day while a day was the only
+       window. See ARCHITECTURE.md. */
     expect(replayFrom(now - 30 * 24 * HOUR, now)).toBe(now - REPLAY_SPAN_MS);
     expect(replayFrom(now - 7 * 24 * HOUR, now)).toBe(now - REPLAY_SPAN_MS);
   });

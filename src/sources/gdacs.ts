@@ -1,17 +1,4 @@
-/*
- * The parts of GDACS every hazard layer needs, in one place.
- *
- * The list caps at 100 and there is no way past it: `limit`, `pagesize`, `count` and `page` are all ignored
- * and all return exactly 100. Angola alone returns a full hundred wildfires, so the global response is a
- * truncated slice of thousands.
- *
- * Volcanoes are 23 and complete. Floods also come back at exactly 100 and are therefore truncated - asking
- * for India alone returns 10 where the global list carries 3 - but every *current* flood survives the cut,
- * measured across the seven countries most likely to have one. That is why the flood count needs no floor
- * beside it on screen and the wildfire count does. `country=` is honoured, so it is how you re-check.
- *
- * One request per type. `eventlist=EQ;TC;FL;VO;DR;WF` returns 100 total, 69 of them wildfires.
- */
+/* The parts of GDACS every hazard layer needs, in one place. See ARCHITECTURE.md. */
 
 const ENDPOINT = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH";
 
@@ -71,10 +58,8 @@ export function events(payload: unknown): Event[] {
  * and floods split 19 to 81. */
 /**
  * Which agency reported it: `JTWC` for a Pacific typhoon, and so on. GDACS carries this on every event and
- * it was being dropped, while earthquakes have carried their provenance from the beginning.
- *
- * Trimmed and null rather than empty, so a blank never reaches a label as a dangling separator. Left as the
- * agency's own initials: expanding `JTWC` needs a lookup table of forecast centres that would go stale.
+ * it was being dropped, while earthquakes have carried their provenance from the beginning. See
+ * ARCHITECTURE.md.
  */
 export function reportedBy(props: Record<string, unknown>): string | null {
   const raw = props["source"];
@@ -87,15 +72,7 @@ export function isCurrent(props: Record<string, unknown>): boolean {
   return String(props["iscurrent"]).toLowerCase() === "true";
 }
 
-/**
- * One fetch, one type, failing to an empty list rather than into the app.
- *
- * `onAnswer` exists because an empty list and a dead feed drew the same globe: with GDACS down, a viewer read
- * "no storms today" off a page that had never been able to ask.
- *
- * A callback rather than a returned pair: the data shape is consumed by memos all through the app, and a
- * status channel has no business changing any of that.
- */
+/** One fetch, one type, failing to an empty list rather than into the app. See ARCHITECTURE.md. */
 export async function fetchList<T>(
   url: string,
   parse: (payload: unknown) => T[],

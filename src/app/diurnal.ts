@@ -2,15 +2,8 @@ import { matches } from "../data/filter";
 import { solarHour } from "../geo/sun";
 import type { Filters, Quake } from "../data/types";
 
-/*
- * Counts events by hour of day, on a 24-hour dial. Earthquakes have no time of day, so this shows nothing.
- *
- * Bin on solar time at each epicentre, never UTC. UTC smears a real signal across every longitude and
- * flattens it, so the dial would come out flat whether or not anything was there.
- *
- * Draw the noise band: 400 events in 24 bins is 17 each give or take 4, and bars wobbling by a quarter look
- * like a signal. Never print a verdict - with 24 bins, one strays past two sigma by luck alone.
- */
+/* Counts events by hour of day, on a 24-hour dial. Earthquakes have no time of day, so this shows nothing.
+   See ARCHITECTURE.md. */
 
 export const BINS = 24;
 
@@ -62,15 +55,7 @@ export function diurnal(
   return { counts, total, mean, sigma, worst };
 }
 
-/**
- * The dial's finding, as a number, or null when there is none.
- *
- * Say the number. `worst` was computed and tested and never drawn, so it reached nobody who could not read a
- * ring against a band by eye, and nobody at all through a screen reader.
- *
- * A number and no word. With 24 bins one strays past two sigma by luck, so any verdict is wrong a third of
- * the time.
- */
+/** The dial's finding, as a number, or null when there is none. See ARCHITECTURE.md. */
 export function worstNote(d: Diurnal): string | null {
   if (!Number.isFinite(d.worst) || d.sigma <= 0) return null;
   return `${d.worst.toFixed(1)}`;

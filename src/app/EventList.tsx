@@ -3,13 +3,7 @@ import type { Quake } from "../data/types";
 import { ago, agoShort, coordinates, depth, place, reportedBy, SOURCE_NAMES } from "./format";
 import { newsIn } from "./announce";
 
-/*
- * The list of recent events. One list, for everybody.
- *
- * This was two things: a visible globe and a screen-reader-only list carrying strictly more information
- * than any sighted person could reach. It is visible now and still the same list a screen reader gets:
- * same order, same content, one tab stop then arrow keys, selection shared with the globe.
- */
+/* The list of recent events. One list, for everybody. See ARCHITECTURE.md. */
 
 export interface EventListProps {
   quakes: readonly Quake[];
@@ -66,14 +60,7 @@ export function EventList({
   const announced = useRef(new Set<string>());
   const [announcement, setAnnouncement] = useState("");
 
-  /*
-   * The live region, gated by magnitude and by the clock.
-   *
-   * A busy feed delivers hundreds of events an hour, and announcing all of them floods a screen reader.
-   * The default threshold is deliberately high: silence that can be lowered is recoverable.
-   *
-   * See `announce.ts` for the clock half: an event being new to this list is not the same as it being new.
-   */
+  /* The live region, gated by magnitude and by the clock. See ARCHITECTURE.md. */
   useEffect(() => {
     /*
       The real clock here, not the archived one: this decides what genuinely arrived, which only happens
@@ -109,23 +96,11 @@ export function EventList({
   };
 
   return (
-    /*
-      A floor under the list, because `flex-1` gives zero when there is nothing left to give.
-
-      When the rail scrolls, `flex-1` resolved this section to height 0: the rows hung outside a zero-height
-      box, below the rail's scrollable extent, so nothing could bring them into view. `min-h-0` is still
-      what lets the scrollport shrink below its content; it just must not shrink to nothing.
-    */
+    /* A floor under the list, because `flex-1` gives zero when there is nothing left to give. See
+       ARCHITECTURE.md. */
     <section
       aria-label="Recent earthquakes"
-      /*
-        A share of the viewport in the two single-column layouts, not just a floor.
-
-        `flex-1` cannot help here: that column is over-subscribed, so there is no free space for a grow
-        factor to claim and this stayed at its 8.25rem floor - measured at 0% visible at 1440x900, every
-        earthquake in the app below the fold. Between 768 and 1279 the grid gives it a column of its own
-        and the floor is all it needs.
-      */
+      /* A share of the viewport in the two single-column layouts, not just a floor. See ARCHITECTURE.md. */
       className="flex min-h-[8.25rem] flex-1 flex-col max-md:min-h-[30dvh] xl:min-h-[30dvh]"
     >
       <div className="flex items-baseline justify-between">

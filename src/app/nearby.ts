@@ -3,14 +3,7 @@ import { matches } from "../data/filter";
 import type { Store } from "../data/store";
 import type { Filters, Quake } from "../data/types";
 
-/*
- * What else happened around here.
- *
- * A magnitude 3 alone is a magnitude 3; a magnitude 3 with forty neighbours inside a day is an aftershock
- * sequence, and the app already holds every one of them.
- *
- * Computed on selection rather than continuously: it is a full pass over the buffer.
- */
+/* What else happened around here. See ARCHITECTURE.md. */
 
 /** Wide enough to cover an aftershock sequence, narrow enough not to reach the next margin. */
 export const NEARBY_KM = 150;
@@ -33,11 +26,8 @@ export interface Nearby {
   /** Offset of the largest neighbour, so the panel can say whether the big one already happened. */
   largestAt: number | null;
   /**
-   * Which way the local seismicity runs, as a bearing in [0, 180), or null when it does not run.
-   *
-   * Earthquakes at a subduction zone lie along the trench, so the long axis of the scatter is the trench and
-   * the useful slice is the one across it. A fixed east-west section is right at Japan and useless along the
-   * Aleutians.
+   * Which way the local seismicity runs, as a bearing in [0, 180), or null when it does not run. See
+   * ARCHITECTURE.md.
    */
   trendDeg: number | null;
 }
@@ -51,13 +41,7 @@ const TREND_MIN_POINTS = 5;
  */
 const TREND_MIN_RATIO = 1.5;
 
-/**
- * The long axis of a scatter, from the sums of its second moments. Degrees are scaled by `cos(lat)` on the
- * way in, so east and north are comparable and the axis is not pulled toward east at high latitude.
- *
- * A bearing modulo 180, because a line has an orientation and no direction: a trench running north-east
- * runs south-west just as truly.
- */
+/** The long axis of a scatter, from the sums of its second moments. See ARCHITECTURE.md. */
 export function trendFrom(
   n: number, sx: number, sy: number, sxx: number, syy: number, sxy: number,
 ): number | null {
@@ -168,10 +152,8 @@ export function depthClass(depthKm: number): string | null {
 
 /**
  * The neighbours immediately either side of the pinned event in time. Nearest-in-time rather than
- * nearest-in-space, because a sequence unfolds: "the next one" means the next one to happen.
- *
- * Ties at the same instant resolve arbitrarily and harmlessly: two events sharing an origin time are two
- * events, and stepping visits both.
+ * nearest-in-space, because a sequence unfolds: "the next one" means the next one to happen. See
+ * ARCHITECTURE.md.
  */
 export function stepsFrom(
   sequence: readonly { key: string; at: number; magnitude: number }[],

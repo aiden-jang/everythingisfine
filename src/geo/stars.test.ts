@@ -71,12 +71,8 @@ describe("sidereal time", () => {
   });
 
   it("agrees with the sun, which this file computes no part of", () => {
-    /*
-     * The real check, and the only one here that could catch a wrong epoch or a sign slip. `sun.ts` places
-     * the subsolar point from the equation of time and knows nothing about sidereal time, so its longitude
-     * and this file's GMST must add back up to the sun's right ascension - which at a solstice or an equinox
-     * is a definition rather than a measurement.
-     */
+    /* The real check, and the only one here that could catch a wrong epoch or a sign slip. See
+       ARCHITECTURE.md. */
     const raOfSun = (at: number): number => ((subsolarPoint(at).lon + gmstDeg(at)) % 360 + 360) % 360;
 
     let june = { lat: -99, at: 0 };

@@ -2,12 +2,7 @@ import { describe, expect, it } from "vitest";
 import table from "./slab.json";
 import { SLAB_MIN_DEPTH_KM, SLAB_MIN_MAGNITUDE, type SlabPoint } from "./slab";
 
-/*
- * The committed table, checked against the claims the key makes about it.
- *
- * This is generated data, so the interesting failure is the file being regenerated against a different query
- * and the sentence beside it quietly becoming false.
- */
+/* The committed table, checked against the claims the key makes about it. See ARCHITECTURE.md. */
 const points = table as SlabPoint[];
 
 describe("the deep seismicity table", () => {
@@ -35,13 +30,8 @@ describe("the deep seismicity table", () => {
   });
 
   it("is concentrated in subduction margins rather than spread over the globe", () => {
-    /*
-     * The claim the layer is built on: below 300km, only a descending plate makes earthquakes. If a
-     * regeneration ever spread these evenly it would mean the depth filter had stopped working, and the
-     * picture would be a dusting over the whole planet rather than a set of arcs.
-     *
-     * Tonga-Fiji alone should hold a large share. Measured at 1,048 of 1,583 when generated.
-     */
+    /* The claim the layer is built on: below 300km, only a descending plate makes earthquakes. See
+       ARCHITECTURE.md. */
     const tonga = points.filter(([lon, lat]) => lat > -30 && lat < -10 && (lon > 170 || lon < -170));
     expect(tonga.length / points.length).toBeGreaterThan(0.3);
   });

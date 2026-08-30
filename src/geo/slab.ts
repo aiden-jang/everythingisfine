@@ -1,15 +1,4 @@
-/*
- * Where the world's slabs are, from five years of the catalogue.
- *
- * A real USGS day carries 237 events, 14 between 70 and 300km, and exactly two below 300. A subducted plate
- * reaches seven hundred kilometres down, and two points do not describe a sheet. This is the sample: 1,583
- * events at M4.5 and deeper than 300km, 2020 to 2025, with 1,048 in the Tonga-Fiji corner alone.
- *
- * Geography, not data, and drawn that way: no ramp colour, no magnitude size, the same treatment the plate
- * boundaries get. The boundaries say where two plates meet; this says where one of them went.
- *
- * Committed, not fetched. It does not change: 37kB of numbers, 12kB over the wire, its own chunk.
- */
+/* Where the world's slabs are, from five years of the catalogue. See ARCHITECTURE.md. */
 
 /** `[lon, lat, depthKm, magnitude]`, as generated. */
 export type SlabPoint = [number, number, number, number];

@@ -1,16 +1,9 @@
 import plates from "./plates.json";
 import { EARTH_RADIUS_KM } from "./sphere";
 
-/*
- * How far each earthquake is from the nearest plate boundary.
- *
- * Measured against a real day of USGS M2+: median 93 km, half within 100 km, and that band is 9.4% of the
- * surface - so the belts concentrate seismicity by about 5.4x. That is a floor, because a dense network
- * finds M2 events in Oklahoma while nobody is listening mid-Pacific.
- *
- * Not drawn on the marker. Colour and size are magnitude and the fill is depth, so this is a number in the
- * panel and a sentence in the rail.
- */
+/* How far each earthquake is from the nearest plate boundary. Measured against a real day of USGS M2+:
+   median 93 km, half within 100 km, and that band is 9.4% of the surface - so the belts concentrate
+   seismicity by about 5.4x. See ARCHITECTURE.md. */
 
 /** A boundary segment as two unit vectors' worth of arithmetic, prepared once. */
 export interface Segment {
@@ -47,16 +40,7 @@ function unit(lon: number, lat: number): [number, number, number] {
   return [c * Math.cos(lo), c * Math.sin(lo), Math.sin(la)];
 }
 
-/**
- * Great-circle distance to the nearest segment, in km.
- *
- * To the segment, never to a vertex. Vertices are 139 km apart, so a point halfway along a straight run of
- * ridge is 70 km from the nearest one and 0 from the line: measuring to vertices put the within-50km share
- * at 11% where it is 32%.
- *
- * To the arc, never to the chord. The chord runs through the inside of the planet, and a 10-degree segment
- * sags 24 km below the surface at its midpoint.
- */
+/** Great-circle distance to the nearest segment, in km. See ARCHITECTURE.md. */
 export function nearestBoundaryKm(
   lon: number, lat: number, segments: readonly Segment[],
 ): number | null {

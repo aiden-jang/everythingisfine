@@ -1,12 +1,8 @@
 import type { Reading, SourceId } from "./types";
 
-/*
- * A deterministic pretend planet, for the questions recorded responses cannot answer: what the store does over
- * four simulated hours, what happens when two agencies report the same rupture with the disagreement real
- * feeds show, and what happens at capacity.
- *
- * Seeded, so a failure reproduces exactly rather than turning up once a week in CI.
- */
+/* A deterministic pretend planet, for the questions recorded responses cannot answer: what the store does
+   over four simulated hours, what happens when two agencies report the same rupture with the disagreement
+   real feeds show, and what happens at capacity. See ARCHITECTURE.md. */
 
 /** mulberry32. Small, fast, and good enough for placing fake earthquakes. */
 export function seeded(seed: number): () => number {

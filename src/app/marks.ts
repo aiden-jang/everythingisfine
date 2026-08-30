@@ -7,14 +7,7 @@ import type { Flood } from "../sources/floods";
 import type { Volcano } from "../sources/volcanoes";
 import type { Wildfire } from "../sources/wildfires";
 
-/*
- * Which shapes exist, from what is happening.
- *
- * The one place that knows both the phenomena and the glyphs, so the scene can take polylines and know
- * nothing about storms, and `shapes.ts` can draw outlines and know nothing about feeds.
- *
- * Four outlines, no hue: spiral is storm, triangle volcano, flame fire, wavy lines flood.
- */
+/* Which shapes exist, from what is happening. See ARCHITECTURE.md. */
 
 export interface Happening {
   cyclones: readonly Cyclone[];
@@ -33,12 +26,7 @@ export interface Happening {
   here?: { lon: number; lat: number } | null;
 }
 
-/*
- * The reporting agency, appended to a label that already has words in it.
- *
- * Earthquakes carried their provenance from the start and the hazards carried none, while GDACS was sending
- * it on every event. Appended, not given a row: "who says" is a qualifier on a fact, not a fact.
- */
+/* The reporting agency, appended to a label that already has words in it. See ARCHITECTURE.md. */
 function by(label: string, source: string | null): string {
   return source === null ? label : `${label} · ${source}`;
 }
@@ -61,13 +49,7 @@ export function marksFor(
     const far = antipodeOf(farSide.lon, farSide.lat);
     for (const stroke of antipodeCross(far.lon, far.lat)) out.push({ points: stroke });
   }
-  /*
-   * Anchored, so it holds one size on screen: a symbol rather than a measured extent. Four strokes, four
-   * marks, one anchor between them, which is what keeps the ticks pointing at the same spot as the globe turns.
-   *
-   * Unlabelled and unpickable on purpose. The key names the city, which is better than a tooltip because it
-   * is on screen without anybody having to find the mark first.
-   */
+  /* Anchored, so it holds one size on screen: a symbol rather than a measured extent. See ARCHITECTURE.md. */
   if (here) {
     for (const tick of hereTicks(here.lon, here.lat)) {
       out.push({ points: tick, anchor: { lon: here.lon, lat: here.lat } });

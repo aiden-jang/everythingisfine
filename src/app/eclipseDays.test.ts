@@ -3,14 +3,8 @@ import { ECLIPSE_DAYS, eclipseMoment } from "./eclipseDays";
 import { lunarEclipse, solarEclipse } from "../geo/eclipse";
 
 describe("the eclipse list", () => {
-  /*
-   * The point of this file: every row is checked against the same geometry the globe draws with.
-   *
-   * These dates and minutes were written from memory, and a wrong one fails silently in the app - the day
-   * loads, the cursor moves, and there is simply no shadow. So the table is not trusted. If a row does not
-   * produce a shadow at its stated minute, either the minute is wrong or the model cannot see that
-   * eclipse, and both are reasons not to offer the row.
-   */
+  /* The point of this file: every row is checked against the same geometry the globe draws with. See
+     ARCHITECTURE.md. */
   it("has a shadow at every minute it claims", () => {
     for (const entry of ECLIPSE_DAYS) {
       const at = eclipseMoment(entry);

@@ -1,12 +1,6 @@
-/*
- * The view as a PNG, with the moment it is of written on it.
- *
- * Always stamp the moment, and take it from the cursor rather than the clock. An image of live data outlives
- * the data, and a still is shared by hand with no cache to blame.
- *
- * Compose it; never grab the canvas raw. The globe's context has a zero clear alpha, so a bare capture is a
- * globe on transparency, and the chrome that explains it is DOM sitting over the canvas.
- */
+/* The view as a PNG, with the moment it is of written on it. Always stamp the moment, and take it from the
+   cursor rather than the clock. An image of live data outlives the data, and a still is shared by hand with
+   no cache to blame. See ARCHITECTURE.md. */
 
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 
@@ -57,14 +51,7 @@ export function captionLines(
   ];
 }
 
-/**
- * The evidence line under the title. Every number is already in the snapshot.
- *
- * No volcanoes. GDACS flags none of them current, so a count beside "Live" would imply they are erupting.
- *
- * Fires take a `+` when the feed is capped at 100, because one country can fill it and a flat "100 fires"
- * would state a floor as a total.
- */
+/** The evidence line under the title. Every number is already in the snapshot. See ARCHITECTURE.md. */
 export function verdictLine(n: {
   quakes: number;
   cyclones: number;
@@ -90,15 +77,7 @@ export function verdictLine(n: {
   return `${parts.join(". ")}.`;
 }
 
-/**
- * The moment, as the caption states it.
- *
- * "Live" only when the cursor is not holding a moment and the app is actually live. Anything else is an
- * absolute time with its date, because a still is looked at later by definition and "18 minutes ago" ages
- * into a lie the instant the image is saved.
- *
- * The archive branch exists because this said "Live" about a day in July. An archived still names the day.
- */
+/** The moment, as the caption states it. See ARCHITECTURE.md. */
 export function stillMoment(
   cursor: number | null, now: number, archived = false, live = "Live",
 ): string {
@@ -125,15 +104,8 @@ export function drawStill(
   ctx.fillStyle = theme.background;
   ctx.fillRect(0, 0, STILL_WIDTH, STILL_HEIGHT);
 
-  /*
-   * Cropped to the frame, not letterboxed into it. What is scaled is the whole app canvas, with the globe
-   * in the middle and dark to spare, so fitting it fitted its margins too: the same sphere goes from 46% of
-   * the width to about 85%.
-   *
-   * Never cropped below the shorter side of the canvas, because that is the most the globe can span. A
-   * portrait canvas cannot satisfy that at this frame's shape, so it falls back to fitting rather than
-   * cutting the poles off a phone's still.
-   */
+  /* Cropped to the frame, not letterboxed into it. Never cropped below the shorter side of the canvas,
+     because that is the most the globe can span. See ARCHITECTURE.md. */
   const frameH = STILL_HEIGHT - CAPTION_H;
   const frameAspect = STILL_WIDTH / frameH;
   const shortest = Math.min(globeWidth, globeHeight);
@@ -169,14 +141,9 @@ export function drawStill(
   const width = ctx.measureText(provenance).width;
   ctx.fillText(provenance, STILL_WIDTH - 56 - width, baseline + 54);
 
-  /*
-   * The scale travels with the picture, because the picture is the part that leaves. Shared, the image was a
-   * field of coloured dots with a caption that counted them and never explained them.
-   *
-   * Eight stops rather than a two-colour gradient, because both ramps bend: `thermal` turns through red and
-   * orange and `cividis` through a desaturated middle, so interpolating end to end prints a key that does
-   * not match the marks above it.
-   */
+  /* The scale travels with the picture, because the picture is the part that leaves. Shared, the image was
+     a field of coloured dots with a caption that counted them and never explained them. See
+     ARCHITECTURE.md. */
   const scaleW = 190;
   const scaleRight = STILL_WIDTH - 56;
   const scaleLeft = scaleRight - scaleW;

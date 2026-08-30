@@ -6,13 +6,9 @@ import type { Store } from "../data/store";
 import { depth, magnitude, place } from "./format";
 import { useNarrow } from "./useNarrow";
 
-/*
- * The crust seen from the side: distance across, depth down, drawn at 1:1.
- *
- * Never stretch the depth axis quietly. The dip of the slab is the whole content, and stretching invents a
- * steeper one. When 1:1 will not fit - a 3,700km line against 150km of depth is four pixels tall - stretch
- * it and print the factor, so a reader can undo it.
- */
+/* The crust seen from the side: distance across, depth down, drawn at 1:1. Never stretch the depth axis
+   quietly. The dip of the slab is the whole content, and stretching invents a steeper one. See
+   ARCHITECTURE.md. */
 
 export interface CrossSectionProps {
   data: SectionData;
@@ -62,14 +58,8 @@ export function CrossSection({
    * eight hundred pixels tall. Fixing the width puts the exaggeration in one number that can be printed.
    */
   const trueHeight = (floorKm / lengthKm) * 1000;
-  /*
-   * The floor is taller where the panel is narrow, because these units are a fraction of its width. At 96
-   * units the rendered height is 110px on a desktop panel and 37px on a 390px phone, where the 9.5px depth
-   * labels land nine pixels apart and collide.
-   *
-   * Raising the floor rather than hiding the labels: the exaggeration this costs is already printed in the
-   * header, and hiding the labels would remove the thing that makes the axis readable.
-   */
+  /* The floor is taller where the panel is narrow, because these units are a fraction of its width. See
+     ARCHITECTURE.md. */
   const narrow = useNarrow();
   const height = Math.round(Math.max(narrow ? 256 : 96, Math.min(300, trueHeight)));
   const exaggeration = height / trueHeight;

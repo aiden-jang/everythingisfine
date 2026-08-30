@@ -5,13 +5,8 @@ import { MORPH_GLSL } from "./morph";
 import { DEG, EARTH_RADIUS_KM } from "../geo/sphere";
 import type { SlabPoint } from "../geo/slab";
 
-/*
- * The slab, filled once and left alone. Built from a committed table, so no filter applies: it is not a
- * reading anybody made today, it is the shape of a plate.
- *
- * The positions carry the depth already. `events.ts` sinks its markers in the shader because their depths
- * change every tick; these never change, so the trigonometry happens once on the CPU.
- */
+/* The slab, filled once and left alone. Built from a committed table, so no filter applies: it is not a
+   reading anybody made today, it is the shape of a plate. See ARCHITECTURE.md. */
 
 /*
  * The boundaries' family, lifted until it reads. At the plate line's own tone the field was there and could
@@ -20,12 +15,7 @@ import type { SlabPoint } from "../geo/slab";
  */
 const COLOR_SLAB = 0x7ba0c8;
 
-/**
- * The same lift applied to the colourblind palette's own boundary tone. This layer is drawn as geography, so
- * it has to change with the geography: as a constant it left the slab at chroma 77 on a palette whose
- * geography sits between 12 and 20, the only saturated thing on a screen chosen for people who cannot rely
- * on hue.
- */
+/** The same lift applied to the colourblind palette's own boundary tone. See ARCHITECTURE.md. */
 const COLOR_SLAB_NEUTRAL = 0x9ea2ae;
 
 /**
@@ -46,14 +36,7 @@ const SHADER = {
       vec3 surface = normalize(position);
       // Same test the markers use, fading out with the morph because a plane has no far side.
       vFacing = mix(dot(surface, normalize(cameraPosition - surface)), 1.0, uMorph);
-      /*
-       * Lifted back to the surface as the map unwraps, exactly as the markers are.
-       *
-       * The offset is added after the projection, never baked into the radius: on the plane radius is the
-       * layer index, so a point already sunk to 0.9 gets filed under the map and drawn behind the ocean.
-       *
-       * (No backticks in here. One of them ends the template literal.)
-       */
+      /* Lifted back to the surface as the map unwraps, exactly as the markers are. See ARCHITECTURE.md. */
       vec3 sunk = surface * (-aSink * (1.0 - uMorph));
       gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position) + sunk, 1.0);
       gl_PointSize = uSize * uPixelRatio;

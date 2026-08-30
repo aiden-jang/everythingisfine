@@ -1,12 +1,8 @@
 import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, waitForData } from "./feeds";
 
-/*
- * DESIGN.md section 13, as tests rather than as a list. An audit performed once is worth very little:
- * two of these rules were broken by accident during the build and neither by a decision.
- *
- * The rules that can be asserted are; the ones that need eyes are named at the bottom.
- */
+/* DESIGN.md section 13, as tests rather than as a list. An audit performed once is worth very little: two
+   of these rules were broken by accident during the build and neither by a decision. See ARCHITECTURE.md. */
 
 const BREAKPOINTS = [
   { name: "phone", width: 375, height: 812 },
@@ -25,10 +21,7 @@ const BREAKPOINTS = [
 
 /**
  * Chroma of every colour the chrome paints, measured from the rendered page. The canvas is excluded,
- * because that is where hue belongs.
- *
- * Absolute chroma, not HSV saturation. `Deck` is `#0D1420`, whose channels differ by 19 of 255, and
- * relative saturation calls that 0.59 because the colour is nearly black.
+ * because that is where hue belongs. See ARCHITECTURE.md.
  */
 async function chromeHues(
   page: Page,
@@ -340,13 +333,7 @@ test("the colourblind ramp survives a reload", async ({ page }) => {
     .toHaveAttribute("aria-pressed", "true");
 });
 
-/*
- * Left to eyes, deliberately. These are the section 13 rules a computer cannot judge:
- *
- *   - whether the globe reads as an instrument rather than a placeholder at tweet size;
- *   - whether the wavefront reads as arriving rather than decorating;
- *   - whether the copy contains a claim the data does not support.
- */
+/* Left to eyes, deliberately. These are the section 13 rules a computer cannot judge: See ARCHITECTURE.md. */
 
 /*
  * Where the rail's blocks sit, which nothing asserted until five regressions had shipped past a green
@@ -413,13 +400,9 @@ test("the rail's controls stay above its fold", async ({ page }) => {
 });
 
 test("the events are reachable, not clipped out of the rail", async ({ page }) => {
-  /*
-   * The rail cannot hold everything at once. With the timeline in it the column runs about 600px past a
-   * 900px screen, so the event list sits below the fold and you scroll to it - deliberate, because the
-   * alternative was pushing the transport under, and that one has regressed twice.
-   *
-   * What must never happen is the list being unreachable: clipped by a parent that does not scroll.
-   */
+  /* The rail cannot hold everything at once. With the timeline in it the column runs about 600px past a
+     900px screen, so the event list sits below the fold and you scroll to it - deliberate, because the
+     alternative was pushing the transport under, and that one has regressed twice. See ARCHITECTURE.md. */
   await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);

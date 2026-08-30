@@ -7,34 +7,16 @@ import { MAG_MIN, rampTexture, type RampName } from "./ramp";
 import { cellKey, cellSizeDeg } from "./cluster";
 import { MORPH_GLSL } from "./morph";
 
-/*
- * Depth is drawn as shape: a solid disc near the surface, a ring below 300km.
- *
- * Hue and radius both mean magnitude already, and a second hue is not allowed, so shape is the only
- * channel left. Deep events are rare on a single day - about one in eighty - so the legend prints the
- * counts rather than promising a picture that usually is not there.
- */
+/* Depth is drawn as shape: a solid disc near the surface, a ring below 300km. See ARCHITECTURE.md. */
 import { DEPTH_DEEP_KM, DEPTH_SHALLOW_KM } from "../data/depth";
 import { EARTH_RADIUS_KM } from "../geo/sphere";
 
-/*
- * Fifty thousand earthquakes in one draw call.
- *
- * `Points` with a custom shader, not instanced quads: a point sprite is already a camera-facing disc,
- * so instancing would rebuild what the hardware does for free. A filter change rewrites two
- * Float32Arrays and creates no objects, which is what keeps hour four as cheap as minute one.
- */
+/* Fifty thousand earthquakes in one draw call. See ARCHITECTURE.md. */
 
 /** Just clear of the coastline stroke, so a marker on a shoreline is never half-swallowed by it. */
 const RADIUS_EVENTS = 1.006;
 
-/**
- * Marker radius in CSS pixels: `BASE + SCALE * (magnitude - MAG_MIN) ^ EXPONENT`.
- *
- * The exponent is the whole design. At 1.0 an M7 covers the country it happened in. At 0.5 the entire
- * scale spanned 4.6px to 8.8px, so the key promised "size shows it too" and the globe showed dots.
- * 0.7 holds the small end still and opens the top to 13.5px.
- */
+/** Marker radius in CSS pixels: `BASE + SCALE * (magnitude - MAG_MIN) ^ EXPONENT`. See ARCHITECTURE.md. */
 const RADIUS_BASE = 1.0;
 const RADIUS_SCALE = 3.6;
 const RADIUS_EXPONENT = 0.7;
@@ -50,20 +32,9 @@ export function markerRadiusPx(magnitude: number, scale: number): number {
   return (RADIUS_BASE + RADIUS_SCALE * Math.pow(above, RADIUS_EXPONENT)) * scale;
 }
 
-/*
- * How far below the surface an event sits, in globe radii.
- *
- * Depth arrives twice on purpose. `aDepth` saturates at 300km, which is right for the hole in a marker
- * and useless as a position, because deep events run to 700. Shared with the hit test for the same
- * reason as `markerRadiusPx`.
- */
+/* How far below the surface an event sits, in globe radii. See ARCHITECTURE.md. */
 export function sinkFraction(depthKm: number): number {
-  /*
-   * One answer for every bad depth: draw it shallow.
-   *
-   * NaN, a negative, and a decimal point in the wrong place all mean the same thing, and the first
-   * version put two of them 6371km apart. Most catalogued earthquakes really are shallow.
-   */
+  /* One answer for every bad depth: draw it shallow. See ARCHITECTURE.md. */
   if (!(depthKm > 0) || depthKm > EARTH_RADIUS_KM) return 0;
   return depthKm / EARTH_RADIUS_KM;
 }
@@ -71,12 +42,7 @@ export function sinkFraction(depthKm: number): number {
 /** Globe radius the sizes above were chosen against: a desktop window at the framing shot. */
 const REFERENCE_RADIUS_PX = 300;
 
-/**
- * Markers hold their size on screen as the camera zooms.
- *
- * Growing them with the globe would magnify the crowding along with everything else, so zooming into a
- * dense margin would never separate anything.
- */
+/** Markers hold their size on screen as the camera zooms. See ARCHITECTURE.md. */
 const SHADER = {
   vertexShader: /* glsl */ `
     ${MORPH_GLSL}
@@ -120,17 +86,8 @@ const SHADER = {
       // A cluster is drawn a little wider to leave room for its ring. The fill still means magnitude.
       float radius = (uBase + uScale * pow(max(0.0, aMag - uMagMin), uExp)) * uSize + aCluster * 2.0;
 
-      /*
-        Sunk to the hypocentre, so the scatter resolves into the slab: orbit Chile and the events form a
-        plane dipping under the arc.
-
-        Add the offset AFTER fmProject, never by shrinking position first. On the flat map radius IS the
-        layer index - fmProject builds z from length(sphere) - 1.0 - so a marker pushed in to 0.89 gets filed
-        under the map and drawn behind the ocean.
-
-        (No backticks anywhere in this file's shaders. One ends the template literal, and the error lands
-        twenty lines from the comment that caused it.)
-      */
+      /* Sunk to the hypocentre, so the scatter resolves into the slab: orbit Chile and the events form a
+         plane dipping under the arc. See ARCHITECTURE.md. */
       // position, not world: the model matrix draws the flat map more than once.
       vec3 sunk = normalize(position) * (-aSink * uSink * (1.0 - uMorph));
       gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position) + sunk, 1.0);
@@ -199,21 +156,11 @@ export interface EventLayer {
   setRamp: (name: RampName) => void;
   setFocusFade: (value: number) => void;
   setPixelRatio: (ratio: number) => void;
-  /**
-   * Scales markers to the globe's size on screen, not to the zoom.
-   *
-   * Constant pixels across viewports is what breaks: at 600px wide the globe is 110px across and an M2
-   * marker was 9 of them, so 775 events buried the coastlines. Changes on resize, never while zooming.
-   */
+  /** Scales markers to the globe's size on screen, not to the zoom. See ARCHITECTURE.md. */
   setGlobeRadius: (px: number) => void;
   /** Surface or true depth: 0 or 1, eased between. A uniform, so nothing rewrites fifty thousand positions. */
   setDepthSink: (value: number) => void;
-  /**
-   * Writes the visible subset into the buffers. Returns how many are drawn.
-   *
-   * `revealUntil` is the entrance replay, and it is an argument rather than a `Filters` field because
-   * it is not a filter: a filter is a choice worth putting in a permalink, this is staging.
-   */
+  /** Writes the visible subset into the buffers. Returns how many are drawn. See ARCHITECTURE.md. */
   sync: (
     store: Store, filters: Filters, now: number, zoom: number, revealUntil?: number,
     focus?: FocusSpan | null,
@@ -221,12 +168,7 @@ export interface EventLayer {
   dispose: () => void;
 }
 
-/**
- * The slice of time the pointer is holding, as a span rather than a bucket index.
- *
- * A bucket is `windowMs / 24`, so at 30 days it is thirty hours, not one. The strip knows its own
- * bucket width and converts there; this layer must not guess.
- */
+/** The slice of time the pointer is holding, as a span rather than a bucket index. See ARCHITECTURE.md. */
 export interface FocusSpan {
   /** Oldest origin time in the held bucket, inclusive. */
   from: number;
@@ -294,21 +236,9 @@ export function createEventLayer(
     },
     transparent: true,
     depthWrite: false,
-    /*
-     * Not depth-tested, or markers get sliced flat near the limb.
-     *
-     * A point sprite is a screen-aligned square carrying one depth, its centre's. The sphere behind it
-     * curves away, so pixels a few across sit in front of ocean nearer the camera, fail the test, and
-     * leave a straight edge through the dot. The `vFacing` discard already hides the far side.
-     */
+    /* Not depth-tested, or markers get sliced flat near the limb. See ARCHITECTURE.md. */
     depthTest: false,
-    /*
-     * Normal blending, never additive.
-     *
-     * Twenty events stacked in the Flores Sea summed past the top of the ramp and clipped to white,
-     * which is the chrome colour: the densest data drew itself as interface. No opacity fixes that,
-     * it only moves the density where it breaks. Density is the clustering step's job.
-     */
+    /* Normal blending, never additive. See ARCHITECTURE.md. */
     blending: NormalBlending,
   });
 

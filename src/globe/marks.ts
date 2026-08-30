@@ -3,15 +3,8 @@ import { DEG } from "../geo/sphere";
 import { morphable } from "./morph";
 import type { Point } from "./shapes";
 
-/*
- * Every mark that is not an earthquake, in one layer. It knows nothing about storms or volcanoes: it draws
- * achromatic polylines in lon/lat, above the boundaries and below the markers. `shapes.ts` decides what a
- * phenomenon looks like, `app/marks.ts` decides which exist.
- *
- * A glyph holds its size on screen; a track does not. Built in degrees, a flame was five pixels of thin grey
- * line at the framing zoom. A cyclone track is measured geography and scales with the coastline.
- * `anchor` is what tells the two apart.
- */
+/* Every mark that is not an earthquake, in one layer. It knows nothing about storms or volcanoes: it draws
+   achromatic polylines in lon/lat, above the boundaries and below the markers. See ARCHITECTURE.md. */
 
 /** Above the plate boundaries these things sit on, below the land that contains them. */
 const RADIUS = 1.004;
@@ -84,21 +77,13 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
   const material = new LineBasicMaterial({ color: 0x9fb0cc, transparent: true, opacity: 0.72 });
   morphable(material, morph);
   const object = new LineSegments(geometry, material);
-  /*
-   * Above the night, like the earthquakes are. At 3.5 these sat under the coastline and under the night
-   * overlay while earthquakes draw at 5, so a storm faded at night and a quake beside it did not.
-   *
-   * 5.5 puts them with the earthquakes: over the geography, because a mark is data and a coastline is
-   * reference, and over the night, because legibility should not depend on the hour it is there.
-   */
+  /* Above the night, like the earthquakes are. At 3.5 these sat under the coastline and under the night
+     overlay while earthquakes draw at 5, so a storm faded at night and a quake beside it did not. See
+     ARCHITECTURE.md. */
   object.renderOrder = 5.5;
 
-  /*
-   * The hover highlight is the glyph's own shape, in ink, over itself. A ring round a spiral argued with the
-   * app's own rule that marks are told apart by shape.
-   *
-   * Its own buffers, sized for one glyph: a flood is three strokes sharing an id.
-   */
+  /* The hover highlight is the glyph's own shape, in ink, over itself. A ring round a spiral argued with
+     the app's own rule that marks are told apart by shape. See ARCHITECTURE.md. */
   const hotPositions = new Float32Array(HIGHLIGHT_CAPACITY * 6);
   const hotLonLats = new Float32Array(HIGHLIGHT_CAPACITY * 4);
   const hotGeometry = new BufferGeometry();

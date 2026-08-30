@@ -81,9 +81,12 @@ A comment here is a warning, not an essay. The bar is whether it records somethi
 somebody real time to rediscover: a trap that has actually bitten, a deviation from the code around
 it, a constraint that fails silently when broken, or why not the obvious alternative.
 
-Everything else went. The reasoning behind a feature lives in ARCHITECTURE.md, where it can be read
-in order and dated, rather than in a docstring where it rots. What survives reads like a note over
-your shoulder - hazard first, imperative, one idea per sentence:
+Everything else went, and in the last pass that became literal: every block that ran past a warning
+into an explanation was cut back to its opening sentence plus its hazard, and the explanation moved to
+[the appendix in ARCHITECTURE.md](ARCHITECTURE.md). The code keeps the sentence that stops somebody
+undoing a decision and points at the appendix for why - findable by that same sentence.
+
+What survives reads like a note over your shoulder - hazard first, imperative, one idea per sentence:
 
 - *Never recover longitude with `atan2`. At a pole longitude does not exist, `atan2(0, 0)` is zero,
   and every meridian gets dragged onto the prime meridian.*
@@ -92,10 +95,10 @@ your shoulder - hazard first, imperative, one idea per sentence:
 - *No backticks anywhere in this file's shaders. One ends the template literal, and the error lands
   twenty lines from the comment that caused it.*
 
-Three passes so far: 13,190 lines, then about 7,600, now about 6,350. The last one was aimed at four
-faults rather than at a percentage - a comment that had drifted away from the code it described, two or
-three piled above one line, a docstring that restated the signature under it, and a page of reasoning
-where a one-line warning would do. The reasoning did not disappear; it moved to ARCHITECTURE.md.
+Three passes: 13,190 lines, then about 7,600, now about 4,700. The last one fixed four faults - a
+comment that had drifted away from the code it described, two or three piled above one line, a docstring
+that restated the signature under it - and then moved 331 blocks of reasoning, about 2,100 lines, out to
+the appendix. Nothing was deleted in that move; it is one file further away and in one place.
 
 ## Design and decisions
 

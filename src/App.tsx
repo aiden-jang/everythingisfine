@@ -186,20 +186,11 @@ export function App(): JSX.Element {
     const id = window.setInterval(load, 10 * 60_000);
     return () => { alive = false; window.clearInterval(id); };
   }, []);
-  /*
-   * Keep this above every memo that calls it. Below them it is a temporal dead zone: tsc passes, the
-   * build passes, and the page renders nothing.
-   *
-   * The memos call this rather than depending on `now`, which changes every render and would re-sweep
-   * fifty thousand events a second.
-   */
+  /* Keep this above every memo that calls it. Below them it is a temporal dead zone: tsc passes, the build
+     passes, and the page renders nothing. See ARCHITECTURE.md. */
   const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
-  /*
-  * Hidden while an archived day is up, or today's storms are drawn over July's earthquakes.
-  *
-  * Hidden and not backdated because there is nothing to backdate to: GDACS lists cannot be queried by
-  * date. So this is an earthquake archive, which is what the banner says.
-  */
+  /* Hidden while an archived day is up, or today's storms are drawn over July's earthquakes. See
+     ARCHITECTURE.md. */
   const archived = snapshot.archive !== null;
   const loadedDay = snapshot.archive
     ? new Date(snapshot.archive.from).toISOString().slice(0, 10)
@@ -211,13 +202,7 @@ export function App(): JSX.Element {
     next: new Date(snapshot.archive.from + 86_400_000).toISOString().slice(0, 10),
   };
   const [archiveHazards, setArchiveHazards] = useState<History | null>(null);
-  /*
-  * In archive mode this is the end of the archived day, not the wall clock.
-  *
-  * Everything here filters on "the last N hours before now", so against the wall clock an archived day
-  * filtered to nothing: 702 events in the store and a headline of 0. The cost is that "3h ago" means
-  * that day, which is why the banner naming the date matters.
-  */
+  /* In archive mode this is the end of the archived day, not the wall clock. See ARCHITECTURE.md. */
   const now = snapshot.archive ? snapshot.archive.to : Date.now();
   const span = { from: now - filters.windowMs, to: now };
   // Clamp on the way out, never write it back: a render must not correct its own state.
@@ -510,16 +495,7 @@ export function App(): JSX.Element {
 
   // Replace, never push, or every filter nudge is a history entry and Back never leaves the page.
   useEffect(() => {
-    /*
-    * Never overwrite a hash this app did not write.
-    *
-    * Pasting a link queues a `hashchange` the handler below reloads on. Land a write in between and the
-    * app's own state goes back over the pasted link, the handler sees no change, and the link is
-    * swallowed. Caught as a 1-in-6 flake in the shared cross-section test.
-    *
-    * The guard is here and not at the three call sites because the rule is about the writer, not about
-    * who asked.
-    */
+    /* Never overwrite a hash this app did not write. See ARCHITECTURE.md. */
     const write = (): void => {
       if (window.location.hash !== lastWritten.current) return;
       const pinnedNow = selected ? feed.store.get(selected) : undefined;
@@ -740,25 +716,17 @@ export function App(): JSX.Element {
   /* Read through a ref: `selectMark` is memoised on `liftForPanel`, and the layers change under it. */
   const onGlobeRef = useRef(onGlobe);
   onGlobeRef.current = onGlobe;
-  /*
-  * How far above the middle a pinned event should sit, so the sheet describing it does not cover it.
-  *
-  * Zero on a desktop, measured rather than assumed: the rail takes 356px on the left and the panel 360
-  * on the right, so the free middle and the canvas middle are two pixels apart.
-  */
+  /* How far above the middle a pinned event should sit, so the sheet describing it does not cover it. See
+     ARCHITECTURE.md. */
   const liftForPanel = useCallback((): number => {
     if (window.matchMedia("(min-width: 768px)").matches) return 0;
     const canvas = document.querySelector("canvas");
     const zones = document.querySelector(".zones");
     if (!canvas || !zones) return 0;
-    /*
-    * Where the sheet's top edge will be, worked out rather than measured: the first pin is the one that
-    * opens it, so there is nothing to measure yet. Lifting by half the height it covers puts the middle
-    * of what is left where the camera's middle was.
-    *
-    * Do not go back to a fraction of the canvas. Twice tried: the bar is the same size on every phone
-    * and the canvas is not, so a quarter of a short one put the event 6px under the bar.
-    */
+    /* Where the sheet's top edge will be, worked out rather than measured: the first pin is the one that
+       opens it, so there is nothing to measure yet. Do not go back to a fraction of the canvas. Twice
+       tried: the bar is the same size on every phone and the canvas is not, so a quarter of a short one put
+       the event 6px under the bar. See ARCHITECTURE.md. */
     const box = canvas.getBoundingClientRect();
     const zoneBox = zones.getBoundingClientRect();
     const share = Number(getComputedStyle(document.documentElement)
@@ -805,12 +773,8 @@ export function App(): JSX.Element {
     if (selected && !feed.store.get(selected)) setSelected(null);
   }, [selected, snapshot.revision]);
 
-  /*
-  * Twenty ticks a second, not one a frame: every tick re-renders the rail and re-syncs the event layer.
-  *
-  * Step by measured time, never by the interval asked for. Each tick drags a React render behind it, so
-  * it fires late and a twelve second window took past fourteen.
-  */
+  /* Twenty ticks a second, not one a frame: every tick re-renders the rail and re-syncs the event layer.
+     See ARCHITECTURE.md. */
   const playedAt = useRef(0);
   useEffect(() => {
     if (!scrub.playing) return undefined;
@@ -843,13 +807,7 @@ export function App(): JSX.Element {
         if (query) setQuery("");
         else if (sectionLine) setSectionLine(null);
         else if (scrub.at !== null) setScrub(LIVE);
-        /*
-          Both panels on one rung, cleared without being read.
-
-          They share a slot, so at most one is open and clearing both is exact. Reading `markId` here
-          instead would need it in the dependency list, and the listener would go on closing over the
-          value it was armed with: escape did nothing to a mark card for exactly that reason.
-        */
+        /* Both panels on one rung, cleared without being read. See ARCHITECTURE.md. */
         else { setMarkId(null); setSelected(null); }
         return;
       }
@@ -888,13 +846,8 @@ export function App(): JSX.Element {
     });
   };
 
-  /*
-  * The store hands events back in arrival order, which is right for eviction and wrong for a list
-  * headed "newest first". Sorting the 400 most recently arrived was silently wrong once a month's seed
-  * became eleven thousand: USGS lists newest first, so the last 400 to arrive are the oldest.
-  *
-  * The store takes the filter too, so a cap can never throw away the answer before filtering.
-  */
+  /* The store hands events back in arrival order, which is right for eviction and wrong for a list headed
+     "newest first". See ARCHITECTURE.md. */
   const recent = useMemo(
     () => feed.store.newest(60, (q) => matches(q, filters, clockAt())),
     [filters, snapshot.revision],
@@ -964,16 +917,9 @@ export function App(): JSX.Element {
   const driven = replay !== null || view.at !== null;
   const headline = useRolling(replay ? replay.revealed : revealedNow ?? shown, !driven);
 
-  /*
-   * The count in the tab, so leaving the page open is worth something.
-   *
-   * Not during the replay: the count climbs through a whole day in 2.8 seconds, which is a flickering tab
-   * rather than a readout, and it is showing yesterday anyway.
-   *
-   * An archived day says which day, or the tab reads as a live figure for a date chosen hours ago.
-   *
-   * Number first, because a tab is truncated from the right.
-   */
+  /* The count in the tab, so leaving the page open is worth something. Not during the replay: the count
+     climbs through a whole day in 2.8 seconds, which is a flickering tab rather than a readout, and it is
+     showing yesterday anyway. See ARCHITECTURE.md. */
   useEffect(() => {
     const base = "Everything Is Fine";
     if (replay || snapshot.coveredSince === null) {
@@ -997,13 +943,8 @@ export function App(): JSX.Element {
   const failing = (Object.entries(snapshot.statuses) as [SourceId, SourceStatus][])
     .flatMap(([id, status]) => (status.kind === "failing" ? [[id, status] as const] : []));
 
-  /*
-  * A shared cursor the window cannot hold, or the recipient sees the present with no reason why.
-  *
-  * Compare against the shared value, not `view.at === null`. That test catches only the future branch;
-  * a moment older than the window is pinned to `span.from`, still held, just not where the link asked -
-  * which is the common case and the silent one.
-  */
+  /* A shared cursor the window cannot hold, or the recipient sees the present with no reason why. See
+     ARCHITECTURE.md. */
   const staleCursor = shared.cursor !== undefined
     && scrub.at === shared.cursor
     && view.at !== shared.cursor;
@@ -1053,14 +994,9 @@ export function App(): JSX.Element {
       return rankDay(comparableCount(feed.store, from, to), true, "day");
     }
     if (baselineSpan === null || !edge.complete) return null;
-    /*
-    * The ranking ignores the magnitude filter on purpose - one a reader can change by dragging a slider
-    * is worse than none - but it must still stand down when the filter empties the screen. M7 against a
-    * largest of 4.9 left the headline at 0 and this line claiming "5 at M4.5+".
-    *
-    * On `revealedNow ?? shown`, which is what the headline itself prints, or a parked cursor put "103 at
-    * M4.5+" under a headline reading 0.
-    */
+    /* The ranking ignores the magnitude filter on purpose - one a reader can change by dragging a slider is
+       worse than none - but it must still stand down when the filter empties the screen. See
+       ARCHITECTURE.md. */
     if ((revealedNow ?? shown) <= 0) return null;
     return rankDay(comparableCount(feed.store, edge.at, now), true, baselineSpan);
   }, [feed.store, snapshot.archive, snapshot.revision, filters.windowMs, edge.complete, edge.at, now, replay, shown, revealedNow]);
@@ -1137,13 +1073,8 @@ export function App(): JSX.Element {
         type="button"
         onClick={() => toggleSource(id)}
         aria-pressed={filters.sources.has(id)}
-        /*
-          Sized to their labels, not to the panel. `flex-1` gave each half the key's width,
-          making two secondary filters the heaviest things in it.
-
-          Pressed is `border-faint`, matching the detail panel and the window buttons. On
-          hover instead, the state you were about to enter looked like the state you were in.
-        */
+        /* Sized to their labels, not to the panel. `flex-1` gave each half the key's width, making two
+           secondary filters the heaviest things in it. See ARCHITECTURE.md. */
         className={`cursor-pointer border px-2.5 py-1 text-[11px] transition-colors ${
           filters.sources.has(id)
             ? "border-faint bg-raised text-ink"
@@ -1629,13 +1560,8 @@ export function App(): JSX.Element {
               </div>
             ) : (
               <>
-                {/*
-                  Counts what is on the globe, so during the replay it climbs as the day plays in.
-
-                  Rolled only when the change is discrete. The replay and a parked cursor already climb it a frame at a
-                  time and there it has to be exactly what is drawn; what was left snapping is a live arrival and a
-                  window change from 872 to 11,363.
-                */}
+                {/* Counts what is on the globe, so during the replay it climbs as the day plays in. See
+                    ARCHITECTURE.md. */}
                 <div className="mt-1.5 text-[38px] leading-none font-semibold tabular-nums">
                   {headline.toLocaleString("en-GB")}
                 </div>
@@ -2095,14 +2021,9 @@ export function App(): JSX.Element {
             aurora={onGlobe.aurora}
             marks={marks}
             scrubAt={view.at}
-            /*
-              Which moment the light is of. `clockAt` is the app's answer to what time is on screen, and a
-              held cursor overrides it with the same precedence `stillMoment` uses, so the terminator and the
-              caption cannot disagree.
-
-              Null on the live view rather than a timestamp, so the scene keeps its minute throttle instead
-              of re-aiming the sun every render for a change no eye could see.
-            */
+            /* Which moment the light is of. `clockAt` is the app's answer to what time is on screen, and a
+               held cursor overrides it with the same precedence `stillMoment` uses, so the terminator and
+               the caption cannot disagree. See ARCHITECTURE.md. */
             moment={litAt}
             flat={flat}
             depthSink={sinkOn}
@@ -2135,16 +2056,7 @@ export function App(): JSX.Element {
           </Suspense>
 
           <div
-            /*
-              Fixed to the rail's edge, and never moved by a panel.
-
-              It used to inset its right edge whenever one opened, which kept it clear but slid every piece
-              of it sideways each time somebody pinned an event. Pinning the width alone would not do: the
-              band was right-aligned, so a 380px panel covered the legend outright.
-
-              So the contents sit against the left edge instead - which is the rail, and a panel opening does
-              not move the rail. Nothing overlaps, and nothing shifts.
-            */
+            /* Fixed to the rail's edge, and never moved by a panel. See ARCHITECTURE.md. */
             className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
           >
             {/* The section joins the bottom band as a full-width line, last, so it is flush with the bottom
@@ -2155,14 +2067,7 @@ export function App(): JSX.Element {
                 half saturation the map's cluster glowed magenta through it and the slab's 1.6px dots were
                 lost outright.
               */
-              /*
-                The one thing in this band that still yields to a panel.
-
-                The band is pinned so the legend and the hints never slide, and everything else in it is
-                left-aligned and narrow enough that a panel cannot reach it. This is a drawing that spans
-                the full width, and a panel over it hides a fifth of the section - so it keeps the inset the
-                band gave up, as padding of its own.
-              */
+              /* The one thing in this band that still yields to a panel. See ARCHITECTURE.md. */
               <div
                 className={`order-9 -mx-4 -mb-4 w-[calc(100%+2rem)] bg-deck/70 px-4 pt-3 pb-4 backdrop-blur-2xl backdrop-saturate-0 ${
                   markSubject || (shownQuake && pinned) ? "xl:pr-[calc(var(--panel-w)+1rem)]" : ""
@@ -2178,12 +2083,8 @@ export function App(): JSX.Element {
                 />
               </div>
             ) : null}
-            {/*
-            Both keep the same `py-1.5`, or their two lines of text sit on different baselines.
-
-            Below `md` the credit stays in the flow: the chip is the full width of the band there, and out
-            of the flow the two are drawn on top of each other.
-            */}
+            {/* Both keep the same `py-1.5`, or their two lines of text sit on different baselines. See
+                ARCHITECTURE.md. */}
             <div className="relative order-2 flex w-full flex-wrap items-end gap-x-6 gap-y-2
               md:justify-center">
             <p className="py-1.5 text-[11px] text-faint md:absolute md:bottom-0 md:left-0">

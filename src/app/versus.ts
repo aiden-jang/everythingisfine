@@ -1,17 +1,7 @@
 import { energyOf } from "./histogram";
 import { NOTABLE_DAYS, type NotableDay } from "./notableDays";
 
-/*
- * Today's energy against the largest earthquake ever recorded.
- *
- * Nothing new is fetched: Valdivia's magnitude is in `NOTABLE_DAYS` and the window's total is already
- * accumulated in `histogram.ts`.
- *
- * One event against a whole window, and the wording has to carry that. It also makes the claim conservative,
- * since the real 1960 day was larger than its mainshock.
- *
- * Ratios only. `energyOf` is not joules, so a figure in any unit would invent precision.
- */
+/* Today's energy against the largest earthquake ever recorded. See ARCHITECTURE.md. */
 
 /** The largest instrumentally recorded earthquake, and the reason the list is sorted the way it is. */
 export const REFERENCE: NotableDay = NOTABLE_DAYS[0]!;

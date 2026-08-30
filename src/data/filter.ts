@@ -33,14 +33,7 @@ export function matches(quake: Quake, filters: Filters, now: number): boolean {
   );
 }
 
-/**
- * The window's honest left edge, as a timestamp. With no backend a requested window can reach back further
- * than anything the app holds, so this returns the later of the two and the rail prints whichever it is.
- *
- * `coveredSince` is coverage, not arrival. As the earliest arrival still held it was true when the seed
- * fetched an hour and became a permanent lie when it started fetching a day: every event in a full buffer
- * arrives at page open, so the rail said "still filling" forever.
- */
+/** The window's honest left edge, as a timestamp. See ARCHITECTURE.md. */
 export function windowStart(
   now: number, windowMs: number, coveredSince: number | null,
 ): { at: number; complete: boolean } {

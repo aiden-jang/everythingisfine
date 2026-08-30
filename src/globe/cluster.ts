@@ -1,19 +1,12 @@
 import { DEG } from "../geo/sphere";
 
-/*
- * Collapses dense margins into one marker until you zoom in. Measured: on a real seed, 149 of 228 events had
- * a neighbour within 40km, which is why the Ring of Fire renders as overlapping crescents.
- *
- * Bin on a lon/lat grid, not by distance. A grid is O(n) in one pass and stable frame to frame, where
- * distance-based clusters shimmer as membership flips - and stability matters more than optimal grouping
- * when the thing is being watched rather than analysed.
- */
+/* Collapses dense margins into one marker until you zoom in. Measured: on a real seed, 149 of 228 events
+   had a neighbour within 40km, which is why the Ring of Fire renders as overlapping crescents. See
+   ARCHITECTURE.md. */
 
 /**
- * Grid cell size in degrees, derived from zoom. Markers hold a constant size on screen, so how many can sit
- * side by side depends only on how many degrees a screen-width covers.
- *
- * Above `CLUSTER_UNTIL` nothing is binned: by then every event has room, and collapsing would hide data.
+ * Grid cell size in degrees, derived from zoom. Markers hold a constant size on screen, so how many can
+ * sit side by side depends only on how many degrees a screen-width covers. See ARCHITECTURE.md.
  */
 export const CLUSTER_UNTIL = 1.9;
 const BASE_CELL_DEG = 3.2;

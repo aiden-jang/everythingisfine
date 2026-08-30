@@ -1,18 +1,6 @@
 import { events, fetchList, isCurrent, listUrl, num, parseUtc, reportedBy } from "./gdacs";
 
-/*
- * Forest fires burning now: live, complete in its dates, incomplete in its count.
- *
- * Live is not in doubt - all hundred are flagged `iscurrent`, every `todate` is today, and burns run 3 to 15
- * days with a median of 9. That duration is what this layer brings: an earthquake is an instant and a fire
- * is a fortnight.
- *
- * The count is a floor, never a total. The feed stops at 100 and Angola alone can fill it, so the geography
- * is right and the number of marks in any one country means nothing. The legend has to say so.
- *
- * Burned area is real, in hectares, and never encoded in the size of the mark: size belongs to the magnitude
- * ramp, and at true scale the biggest fire on Earth is a fifth of a degree across.
- */
+/* Forest fires burning now: live, complete in its dates, incomplete in its count. See ARCHITECTURE.md. */
 
 export interface Wildfire {
   id: string;

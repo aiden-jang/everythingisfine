@@ -1,14 +1,6 @@
 import { DataTexture, LinearFilter, RGBAFormat, UnsignedByteType } from "three";
 
-/*
- * The only place hue is allowed to exist.
- *
- * The warm ramp and the colourblind ramp between them occupy most of the wheel, so keeping every stop in one
- * file makes the rule enforceable: if a colour is not here it is chrome, and chrome is achromatic.
- *
- * Uploaded as a 256-pixel texture. Switching ramps is one uniform swap rather than fifty thousand colour
- * rewrites, and the shader has no way to express a colour that is not on the ramp.
- */
+/* The only place hue is allowed to exist. See ARCHITECTURE.md. */
 
 export type RampName = "thermal" | "cividis";
 

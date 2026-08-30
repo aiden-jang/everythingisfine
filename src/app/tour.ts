@@ -1,15 +1,6 @@
 import type { RegionCount } from "./regions";
 
-/*
- * Flies the camera round the busiest regions, on request.
- *
- * The design bans motion that means nothing, and this passes only because it is built to: every stop is a
- * real place with a real count, the rail names both while the camera is there, and any interaction kills it.
- * A fixed slideshow of pretty margins would fail.
- *
- * No authored data. Stops come from `REGIONS` and the order from live counts, so it visits wherever today's
- * earthquakes are. Under reduced motion `flyTo` is instant, so this becomes a sequence of cuts by itself.
- */
+/* Flies the camera round the busiest regions, on request. See ARCHITECTURE.md. */
 
 /** Long enough to read the name and the count and look at the globe. */
 export const TOUR_DWELL_MS = 3500;

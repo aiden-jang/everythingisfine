@@ -3,35 +3,16 @@ import {
   backoffMs, type GeoEventSource, type Runtime, type SocketLike, type SourceHandlers, type TimerId,
 } from "./types";
 
-/*
- * EMSC, the push half of the pair.
- *
- * The seismic portal publishes a public WebSocket standing order - no key, no registration - and WebSocket
- * is exempt from CORS, so the browser reaches it directly and the deployment stays zero-invocation.
- *
- * Nothing about the data differs from the polling case. What differs is who decides when.
- */
+/* EMSC, the push half of the pair. See ARCHITECTURE.md. */
 
 export const EMSC_SOCKET = "wss://www.seismicportal.eu/standing_order/websocket";
 
-/**
- * The catalogue, fetched once when the socket opens.
- *
- * A push source has no history, so on a fresh load EMSC contributed nothing and the rail read `EMSC 0`
- * beside `USGS 227` - which hid the project's headline claim, since corroboration needs both agencies.
- *
- * FDSN fixes it in one request: 600 events over 24 hours in 327kB, keyless, CORS-open.
- */
+/** The catalogue, fetched once when the socket opens. See ARCHITECTURE.md. */
 export const EMSC_CATALOGUE = "https://www.seismicportal.eu/fdsnws/event/1/query";
 
 /** Matches the USGS daily seed, so the two agencies cover the same window on the first frame. */
 const SEED_HOURS = 24;
-/*
- * Held at 600 whatever the window, and the coverage report is what makes that honest. A wider window asks
- * FDSN for a wider `start` but not for more rows, and raising the cap would be guessing at a limit this
- * endpoint has never stated - where being wrong is a 400 that takes the seed out entirely. `onSeeded`
- * vouches only as far as its oldest row when a page comes back full.
- */
+/* Held at 600 whatever the window, and the coverage report is what makes that honest. See ARCHITECTURE.md. */
 export const SEED_LIMIT = 600;
 
 const BACKOFF_BASE_MS = 2_000;
@@ -137,13 +118,8 @@ export function parseEmscFrame(raw: unknown, receivedAt: number): EmscParsed | n
       place: typeof p?.flynn_region === "string" && p.flynn_region ? p.flynn_region
         : "location not given",
       kind: EVENT_TYPES[evtype] ?? (evtype || "earthquake"),
-      /*
-       * The authority that computed it, which EMSC relays rather than produces: `BMKG` for Indonesia,
-       * `AK` for the Alaska Earthquake Center. USGS carries the same fact under `net`.
-       *
-       * `source_catalog` is deliberately not read. It is always `EMSC-RTS`, and reading a review state out
-       * of a catalogue name is guessing about provenance.
-       */
+      /* The authority that computed it, which EMSC relays rather than produces: `BMKG` for Indonesia, `AK`
+         for the Alaska Earthquake Center. USGS carries the same fact under `net`. See ARCHITECTURE.md. */
       ...(typeof p?.auth === "string" && p.auth.trim() !== "" ? { network: p.auth.trim() } : {}),
       receivedAt,
     },
@@ -253,14 +229,8 @@ export function createEmscSource(
         readings.push(parsed.reading);
       }
       if (readings.length > 0) handlers.onReadings(readings);
-      /*
-       * How far back this seed actually reaches, which is not always the whole window. The request is capped
-       * at SEED_LIMIT, so a full page vouches only as far as its oldest event.
-       *
-       * A short page vouches for everything it asked for, and that is measured rather than assumed: the
-       * portal's own ceiling is 20,000 rows, so `SEED_LIMIT` is always the binding limit. Checked in
-       * `emsc.live.test.ts`.
-       */
+      /* How far back this seed actually reaches, which is not always the whole window. The request is
+         capped at SEED_LIMIT, so a full page vouches only as far as its oldest event. See ARCHITECTURE.md. */
       const full = payload.features.length >= SEED_LIMIT;
       /*
        * A truncated page nothing could be parsed out of vouches for nothing. Falling through to the full span

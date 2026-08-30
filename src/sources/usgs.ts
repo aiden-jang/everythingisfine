@@ -1,12 +1,7 @@
 import type { Reading } from "../data/types";
 import { backoffMs, type GeoEventSource, type Runtime, type SourceHandlers } from "./types";
 
-/*
- * USGS, asked once a minute.
- *
- * The polling half of the pair. No key, permissive CORS, and it is why DESIGN.md can promise that
- * the first frame is never empty: this feed answers immediately to anyone who clones the repo.
- */
+/* USGS, asked once a minute. See ARCHITECTURE.md. */
 
 const FEED = (window: string): string =>
   `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/${window}.geojson`;
@@ -14,23 +9,14 @@ const FEED = (window: string): string =>
 export const USGS_HOUR_FEED = FEED("all_hour");
 
 /**
- * The first request asks for a day; every one after asks for an hour.
- *
- * Seeding from the last hour was the plan until it was measured: the hourly feed held 8 earthquakes, four of
- * them above the default floor. The daily feed holds 227 in 163kB.
- *
- * Polling the day every minute would cost 163kB a minute to re-learn 8 events, so the seed is a one-off.
- *
- * Not the 2.5+ daily feed: the magnitude floor belongs to the viewer's filter, not to the fetch.
+ * The first request asks for a day; every one after asks for an hour. Not the 2.5+ daily feed: the
+ * magnitude floor belongs to the viewer's filter, not to the fetch. See ARCHITECTURE.md.
  */
 const USGS_DAY_FEED = FEED("all_day");
 
 /**
  * Which backlog to ask for, given how far back the viewer wants to see. Measured: the day is 0.23MB, the
- * week 1.5MB, the month 7.4MB. The 2.5+ month is 1.5MB for the same span and is rejected for the same
- * reason the 2.5+ day is - a baked-in floor makes the slider below it say something untrue.
- *
- * The cost lands on a click rather than on a page load, which is what makes it acceptable.
+ * week 1.5MB, the month 7.4MB. See ARCHITECTURE.md.
  */
 export const usgsSeedFor = (windowMs: number): string => {
   const days = windowMs / 86_400_000;
@@ -162,13 +148,9 @@ export function createUsgsSource(
   let failures = 0;
   let liveSince: number | null = null;
 
-  /*
-   * What we have already told the store about. Replaced wholesale each poll rather than accumulated: both
-   * feeds are rolling windows that restate themselves, so keeping every id ever seen grows forever.
-   *
-   * It shrinks from 227 to 8 on the first hourly poll after the daily seed, which is harmless both ways:
-   * the hour is a subset of the day, and a day-event that reappears is treated by the store as a revision.
-   */
+  /* What we have already told the store about. Replaced wholesale each poll rather than accumulated: both
+     feeds are rolling windows that restate themselves, so keeping every id ever seen grows forever. See
+     ARCHITECTURE.md. */
   let seen = new Map<string, number>();
 
   const emit = (payload: unknown): void => {
@@ -203,13 +185,7 @@ export function createUsgsSource(
     }, ms);
   };
 
-  /*
-   * One poll. The try block contains the transport and nothing else.
-   *
-   * Scheduling inside it meant that when `browserRuntime` turned out to use `window.setTimeout` and threw
-   * under Node, the catch reported a healthy feed as `failing` with an HTTP-shaped reason. A source that
-   * blames the network for its own bugs shows a lie and schedules a retry that will never help.
-   */
+  /* One poll. The try block contains the transport and nothing else. See ARCHITECTURE.md. */
   const poll = async (): Promise<void> => {
     if (!handlers) return;
     abort?.abort();

@@ -17,12 +17,8 @@ import type { SlabPoint } from "../geo/slab";
 import type { Mark } from "./marks";
 import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
 
-/*
- * The canvas, and the smallest possible amount of React around it. three.js owns everything inside it.
- *
- * The pinned ring and the hover tooltip are plain DOM written from the frame loop, not state: they move
- * every frame the camera does, and state would re-render the rail sixty times a second.
- */
+/* The canvas, and the smallest possible amount of React around it. three.js owns everything inside it. See
+   ARCHITECTURE.md. */
 
 export interface GlobeProps {
   feed: Feed;
@@ -33,13 +29,7 @@ export interface GlobeProps {
   onReady: (
     flyTo: (lon: number, lat: number, zoom?: number, liftPx?: number) => void,
   ) => void;
-  /**
-   * Hands out a function that renders and returns the canvas, for the still.
-   *
-   * The canvas, not a data URL: the context has no `preserveDrawingBuffer`, so the buffer is gone the
-   * moment the browser composites and a capture has to draw and be read in the same tick. The caller must
-   * use it synchronously.
-   */
+  /** Hands out a function that renders and returns the canvas, for the still. See ARCHITECTURE.md. */
   onCapture?: (capture: () => HTMLCanvasElement | null) => void;
   onSelectMark?: (id: string | null) => void;
   onCamera?: (state: { lon: number; lat: number; zoom: number }) => void;
@@ -140,19 +130,9 @@ export function Globe({
        */
       let lat = toLat;
       if (liftPx) {
-        /*
-         * Two traps in one line.
-         *
-         * Use `degForPx`, not `degPerPx * px`: the second is the flat map's straight line, and this camera is
-         * about two radii out, so the sphere's curve is what decides. It ran 34% long. And ask at `toZoom`,
-         * because distance is inversely proportional to zoom - asked at the start of a 1 to 1.9 flight the
-         * answer is nearly twice too big.
-         *
-         * They pull opposite ways, so wrong in both directions nearly cancelled and looked deliberate.
-         *
-         * The clamp is a backstop and should not bind. If it ever does it lands the event low, towards the
-         * sheet, which is the safe direction to be wrong in.
-         */
+        /* Two traps in one line. Use `degForPx`, not `degPerPx * px`: the second is the flat map's straight
+           line, and this camera is about two radii out, so the sphere's curve is what decides. It ran 34%
+           long. See ARCHITECTURE.md. */
         const deg = Math.min(globe.controls.degForPx(liftPx, toZoom), MAX_LIFT_DEG);
         lat = Math.max(-85, Math.min(85, toLat - deg));
       }
@@ -507,12 +487,8 @@ export function Globe({
     };
     el.addEventListener("pointerdown", onSectionDown, { capture: true });
 
-    /*
-     * The sky, once its own chunk lands. `stars.json` is 88kB and arrives a beat after the first frame.
-     *
-     * And it wakes the loop: a table landing after the entrance settles would fill buffers nobody draws,
-     * and the sky would stay black until the reader touched something.
-     */
+    /* The sky, once its own chunk lands. `stars.json` is 88kB and arrives a beat after the first frame. See
+       ARCHITECTURE.md. */
     let gone = false;
     void loadStars().then((table) => {
       if (gone) return;
@@ -834,13 +810,8 @@ export function Globe({
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 h-full w-full opacity-0 transition-opacity duration-150"
       >
-        {/*
-          The corridor first, so the centre line and its caps paint over it. Undashed: two more dashed
-          lines would read as three sections rather than one with a width.
-
-          `coast`, not `hairline`. The corridor exists to answer "why is that quake not in the plot", and
-          an edge you have to hunt for cannot answer it.
-        */}
+        {/* The corridor first, so the centre line and its caps paint over it. Undashed: two more dashed
+            lines would read as three sections rather than one with a width. See ARCHITECTURE.md. */}
         <line stroke="currentColor" strokeWidth={1} className="text-coast" />
         <line stroke="currentColor" strokeWidth={1} className="text-coast" />
         <line stroke="currentColor" strokeWidth={1} className="text-ink" strokeDasharray="5 4" />

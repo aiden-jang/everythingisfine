@@ -63,17 +63,8 @@ describe("where the planets are", () => {
   });
 
   it("swings each planet through the brightness range it really has", () => {
-    /*
-     * Two years of samples against the published extremes, which is where the phase term earns its place:
-     * without it Venus reached -5.9, brighter than it has ever been.
-     *
-     *   Mercury  -2.30 to  5.61   (real -2.5 to 5.7)
-     *   Venus    -4.64 to -3.89   (real -4.9 to -3.8)
-     *   Jupiter  -2.82 to -1.89   (real -2.9 to -1.9)
-     *   Saturn    0.68 to  1.20   (real  0.6 to  1.2)
-     *
-     * Mars is left out below: its true floor of -2.9 needs a perihelic opposition, which is not in this window.
-     */
+    /* Two years of samples against the published extremes, which is where the phase term earns its place:
+       without it Venus reached -5.9, brighter than it has ever been. See ARCHITECTURE.md. */
     const lo: Record<string, number> = {};
     const hi: Record<string, number> = {};
     const start = Date.UTC(2024, 0, 1);

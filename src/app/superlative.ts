@@ -2,16 +2,8 @@ import table from "./regionMax.json";
 import { contains, REGIONS } from "./regions";
 import type { Quake } from "../data/types";
 
-/*
- * The window's largest against what its region has managed this century.
- *
- * A magnitude alone has no scale beside it: "M6.1, Japan & Kurils" reads as enormous and is an ordinary week
- * there. On the rare day the window clears the record, the app has a real superlative.
- *
- * Say "since at least 2000", because that is where the table starts - Valdivia is not in it.
- *
- * Only inside a named region. Outside the eleven boxes it is mid-ocean, with no local record to compare to.
- */
+/* The window's largest against what its region has managed this century. Only inside a named region.
+   Outside the eleven boxes it is mid-ocean, with no local record to compare to. See ARCHITECTURE.md. */
 
 /** `[magnitude, day]` per region name, as generated. */
 type RegionMax = Record<string, readonly [number, string]>;
@@ -62,14 +54,7 @@ export function superlativeFor(
   const held = RECORDS[region];
   if (!held) return null;
   const [record, day] = held;
-  /*
-   * Never cite a record that had not happened yet. The table is a maximum over the whole span and knows
-   * nothing about the day on screen: loading 2001-06-23 read "Largest in Indonesia since 2000: M9.1,
-   * December 2004", offered as context for a day three years before it happened.
-   *
-   * Comparing against the whole span is still right whenever the record predates the day: if the maximum
-   * over 2000 to 2025 fell before that day, nothing between 2000 and it was larger either.
-   */
+  /* Never cite a record that had not happened yet. See ARCHITECTURE.md. */
   const happened = Date.parse(`${day}T00:00:00Z`);
   if (!Number.isFinite(happened) || happened > asOf) return null;
   return { region, record, day, beaten: magnitude > record };

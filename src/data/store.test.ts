@@ -270,14 +270,7 @@ describe("ring buffer", () => {
   });
 });
 
-/*
- * The failure that only shows up in a demo left running for hours. Four hours of events are pushed through
- * a store far too small to hold them, so eviction runs tens of thousands of times, and every internal index
- * is then checked for growth.
- *
- * Structural assertions rather than a heap reading: a leak here is "an index kept a key after its quake was
- * evicted", which is directly observable. The heap check is corroboration, not the gate.
- */
+/* The failure that only shows up in a demo left running for hours. See ARCHITECTURE.md. */
 describe("the long session", () => {
   it("stays flat across four simulated hours", () => {
     const capacity = 1_000;
@@ -330,17 +323,9 @@ describe("the long session", () => {
    * `skipIf` rather than an early return. Returning early with a console note reported green whether or not
    * it had measured anything, because the default reporter swallows stdout for passing tests.
    */
-  /*
-   * The warm-up has to fill the ring, or this measures the ring filling rather than the ring holding.
-   *
-   * The old one pushed 450 readings into 2,000 slots, so the 1.41MB it reported was mostly the first fill -
-   * a one-time cost that would have passed a store retaining 325 bytes per ingest. Filled properly, twelve
-   * further hours cost 0.044 to 0.085MB across eight runs.
-   *
-   * Absolute, not a ratio, unlike the CPU gate next door: retained bytes do not scale with contention.
-   *
-   * Checked by making it fail: one retained three-field object per ingest costs 2.302MB, 4.6x over.
-   */
+  /* The warm-up has to fill the ring, or this measures the ring filling rather than the ring holding.
+     Checked by making it fail: one retained three-field object per ingest costs 2.302MB, 4.6x over. See
+     ARCHITECTURE.md. */
   it.skipIf(!(globalThis as { gc?: () => void }).gc)("holds heap flat once the ring is full", () => {
     const gc = (globalThis as { gc?: () => void }).gc!;
     const store = createStore(2_000);

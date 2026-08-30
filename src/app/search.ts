@@ -4,14 +4,8 @@ import type { Store } from "../data/store";
 import { place } from "./format";
 import { REGIONS, type Region } from "./regions";
 
-/*
- * Searches two things: the eleven named regions, and the place strings the agencies wrote on events we hold.
- *
- * There is no gazetteer and there cannot be one - every geocoder needs a key. So "Paris" finds nothing,
- * because nothing has happened there, and the empty state has to say which of the two it means.
- *
- * Regions rank first. They work at zero count: a quiet Kamchatka is still somewhere to go and look.
- */
+/* Searches two things: the eleven named regions, and the place strings the agencies wrote on events we
+   hold. See ARCHITECTURE.md. */
 
 /** Places are grouped rather than listed: a sequence puts three hundred rows behind one name. */
 export interface PlaceHit {

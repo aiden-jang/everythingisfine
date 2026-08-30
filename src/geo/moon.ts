@@ -1,21 +1,7 @@
 import { DEG, EARTH_RADIUS_KM } from "./sphere";
 import { gmstDeg } from "./stars";
 
-/*
- * Where the moon is, in the same frame as everything else on this globe.
- *
- * At its real distance, which is only possible because that distance is small: 60 radii out, a quarter of a
- * radius across. It comes out half a degree wide and shifts against the stars as the camera moves.
- *
- * The phase is not computed. Light a sphere from where the sun already points and the crescent falls out,
- * including which way it faces.
- *
- * Fourteen terms of longitude and eight of latitude, and a consumer set that count. Seven and four is good
- * to a tenth of a degree, which was ample until `eclipse.ts` multiplied it by sixty Earth radii of lever arm
- * and put the 2024 April eclipse over New Mexico instead of Chihuahua.
- *
- * Still not an ephemeris: UTC stands in for Terrestrial Time, worth another 70km.
- */
+/* Where the moon is, in the same frame as everything else on this globe. See ARCHITECTURE.md. */
 
 /** Mean radius, in the same kilometres the globe's own radius is quoted in. */
 export const MOON_RADIUS_KM = 1737.4;

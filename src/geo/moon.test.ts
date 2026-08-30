@@ -19,12 +19,8 @@ const sunMoonGap = (at: number): number => {
 };
 
 describe("where the moon is", () => {
-  /*
-   * Checked against eclipses, which is the only way to test a lunar position without shipping a second
-   * ephemeris to test the first against. An eclipse is a dated published fact about the sun and the moon
-   * being in the same place, or exactly opposite ones, at a stated minute: it tests the position, the frame
-   * and the epoch at once, with `sun.ts` as the independent half.
-   */
+  /* Checked against eclipses, which is the only way to test a lunar position without shipping a second
+     ephemeris to test the first against. See ARCHITECTURE.md. */
   it("puts the moon on the sun during the April 2024 total solar eclipse", () => {
     // Greatest eclipse 2024-04-08 at 18:17 UTC. Geocentrically the two centres nearly coincide.
     const gap = sunMoonGap(Date.UTC(2024, 3, 8, 18, 17));
@@ -43,13 +39,8 @@ describe("where the moon is", () => {
   });
 
   it("comes back to the sun a synodic month later, and the month is the right length", () => {
-    /*
-     * Successive new moons, found by minimising the elongation rather than by being told when they are.
-     *
-     * The mean interval is 29.530588 days and no single one is that: the real spacing swings by a quarter of
-     * a day either side, so a year averaged to 29.42 and the first version failed on a true answer. Five
-     * years converges it.
-     */
+    /* Successive new moons, found by minimising the elongation rather than by being told when they are. See
+       ARCHITECTURE.md. */
     const newMoons: number[] = [];
     let previous = -1;
     let last = 999;

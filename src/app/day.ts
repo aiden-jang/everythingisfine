@@ -1,12 +1,4 @@
-/*
- * What counts as a day this app can load. Every path asks this one function.
- *
- * The rule used to live in three places, one of them a browser widget: the date field relied on `max`, so
- * Chrome was enforcing the ceiling for anything typed.
- *
- * "Has ended", not "is before now". `at < Date.now()` accepts today, and a banner reading "all day UTC"
- * over a day still in progress is the one claim the archive must not make.
- */
+/* What counts as a day this app can load. Every path asks this one function. See ARCHITECTURE.md. */
 
 /** Midnight-to-midnight in UTC, so a shared link means the same day everywhere. */
 const DAY_MS = 86_400_000;
@@ -30,15 +22,7 @@ export function isArchivableDay(iso: string, now: number): boolean {
   return isRealDay(iso) && hasEnded(iso, now);
 }
 
-/**
- * What the viewer typed, as far along an ISO day as it has got.
- *
- * Every date on screen here is ISO, so the field asks for what the app shows and a date can be copied out
- * of the notable list and pasted straight in.
- *
- * Digits are the input and the hyphens are ours, which is what makes backspace behave: the value is rebuilt
- * from the digits every keystroke, so deleting into a hyphen removes the digit before it.
- */
+/** What the viewer typed, as far along an ISO day as it has got. See ARCHITECTURE.md. */
 export function typedDay(raw: string): string {
   const digits = raw.replace(/\D/g, "").slice(0, 8);
   if (digits.length <= 4) return digits;

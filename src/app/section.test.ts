@@ -103,14 +103,8 @@ describe("a cross-section", () => {
   });
 });
 
-/*
- * Where the line crosses a plate boundary. The tick turns the section from a shape into an explanation, so a
- * wrong one is worse than none.
- *
- * The far side of the planet looks like it needs guarding and does not: the great circle through the two ends
- * is a whole circle, so boundaries cross it everywhere, and everywhere but the section lands outside nought
- * to length. Asserted below rather than assumed, since the first version carried a distance guard.
- */
+/* Where the line crosses a plate boundary. The tick turns the section from a shape into an explanation, so
+   a wrong one is worse than none. See ARCHITECTURE.md. */
 describe("plate boundaries along a section", () => {
   const crossings = (
     fromLon: number, fromLat: number, toLon: number, toLat: number,

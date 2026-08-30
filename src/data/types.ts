@@ -1,25 +1,9 @@
-/*
- * What an earthquake is, once two agencies have both described it.
- *
- * They disagree: same rupture, different identifiers, different magnitude scales, epicentres tens of
- * kilometres apart. Flattening that picks a winner at parse time and throws the disagreement away, and the
- * disagreement is the most interesting thing on screen.
- *
- * So a Reading is what one agency said and a Quake is the ground moving. Nothing collapses the two.
- */
+/* What an earthquake is, once two agencies have both described it. See ARCHITECTURE.md. */
 
 export type SourceId = "usgs" | "emsc";
 
 /** One agency's account of one earthquake. */
-/**
- * What an agency said before it changed its mind, attached by the store.
- *
- * Early magnitudes are automatic and get reviewed: an initial M6.1 becoming M6.4 is ordinary. Replacing the
- * reading outright meant the number changed and the marker resized with nothing said.
- *
- * Three fields rather than a trail. The store is bounded at fifty thousand events, and a busy event updated
- * all afternoon would grow an unbounded array inside it. The middle of a trail answers nothing anybody asks.
- */
+/** What an agency said before it changed its mind, attached by the store. See ARCHITECTURE.md. */
 export interface Revision {
   /** The magnitude in this agency's first reading of the event. */
   fromMagnitude: number;
@@ -59,43 +43,21 @@ export interface Reading {
    */
   kind: string;
   /**
-   * How many people told the agency they felt it, and how hard. The only human number in this app.
-   *
-   * USGS only, and self-selected: it measures where people live and whether they went online afterwards, so
-   * a magnitude 7 in open ocean gets nothing. EMSC runs its own system and does not put it in this feed.
-   *
-   * Absent rather than zero when nobody reported: "nobody felt it" and "the agency has no report" are
-   * different claims, and only the second is true.
+   * How many people told the agency they felt it, and how hard. The only human number in this app. See
+   * ARCHITECTURE.md.
    */
   felt?: { reports: number; intensity?: number };
   /**
-   * Whether a person has checked this reading yet. `revision` records that a number already moved; this says
-   * one may still move, because nobody has looked at it.
-   *
-   * USGS only. EMSC sends `auth` and `source_catalog` and no review state, and inferring one from a catalogue
-   * name would be guessing about provenance. Kept as the agency's own two words rather than a boolean, so a
-   * third value is absent rather than silently folded into one of these.
+   * Whether a person has checked this reading yet. `revision` records that a number already moved; this
+   * says one may still move, because nobody has looked at it. See ARCHITECTURE.md.
    */
   review?: "automatic" | "reviewed";
   /**
-   * The strongest shaking the agency's model thinks happened anywhere, on the same scale as `felt`.
-   *
-   * `felt.intensity` is what people ticked where they were standing; this is what a model says the worst of
-   * it was, whether or not anybody was there. They routinely disagree, which is why both are shown.
-   *
-   * A maximum, and the copy must say so, or it reads as "what it felt like". USGS only, and only on the
-   * events they build a map for - about one in thirteen at M4.5.
+   * The strongest shaking the agency's model thinks happened anywhere, on the same scale as `felt`. See
+   * ARCHITECTURE.md.
    */
   shaking?: number;
-  /**
-   * The network that actually computed this solution, when the agency names it.
-   *
-   * Both feeds are aggregators. USGS calls this `net` and sends `hv` for the Hawaiian Volcano Observatory;
-   * EMSC calls it `auth` and sends `BMKG`. Without it, a Hawaiian earthquake is credited to the relay.
-   *
-   * Kept as the agency's code. Expanding `hv` needs a table of seismic networks that would go stale, and the
-   * app already prints `mww` verbatim for the same reason.
-   */
+  /** The network that actually computed this solution, when the agency names it. See ARCHITECTURE.md. */
   network?: string;
   /** Set once this agency has revised its own magnitude or depth. The epicentre is revised too and is not
    * tracked: it moves a few kilometres on most revisions, and the position on screen already shows it. */

@@ -1,19 +1,7 @@
 import { DEG } from "./sphere";
 import { gmstDeg } from "./stars";
 
-/*
- * The five planets anybody can see, in the same frame as the stars behind them.
- *
- * Keplerian elements with linear rates, from the standard approximate table for 1800 to 2050. Good to about
- * a tenth of a degree, a fraction of a pixel on a dot this size.
- *
- * Magnitudes need the phase term. Without it Venus reached -5.9 against a real ceiling near -4.9: at
- * inferior conjunction it is closest and so brightest by distance alone, and in truth it is a thin crescent.
- * Saturn's rings are not modelled, worth up to half a magnitude.
- *
- * No Pluto, Uranus or Neptune. Uranus is magnitude 5.7 at best, inside the star table's own limit; a dot
- * labelled Neptune would be a claim about eyesight.
- */
+/* The five planets anybody can see, in the same frame as the stars behind them. See ARCHITECTURE.md. */
 
 /** Julian centuries since J2000.0, matching `sun.ts` and `moon.ts`. */
 function julianCentury(at: number): number {

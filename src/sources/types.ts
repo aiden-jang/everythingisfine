@@ -1,13 +1,6 @@
 import type { Reading, SourceId } from "../data/types";
 
-/*
- * What a source is, written before there are two of them.
- *
- * A contract written after the second source exists accidentally describes the first one. This interface has
- * to be satisfiable by a thing that asks every sixty seconds and by a thing that is told.
- *
- * The two transports differ in exactly one place, and it is not the data: it is who decides when.
- */
+/* What a source is, written before there are two of them. See ARCHITECTURE.md. */
 
 /** Milliseconds and a Response-shaped result, so tests never need a DOM. */
 export interface FetchResult {

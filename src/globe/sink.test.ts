@@ -32,13 +32,9 @@ describe("how far below the surface a marker is drawn", () => {
 });
 
 describe("deriving the hole's depth from the sink", () => {
-  /*
-   * `aDepth` was deleted and `vDepth` is now computed from `aSink` in the vertex shader, which halves the
-   * per-event writes in `sync`. That is only allowed if the two agree, so this pins the algebra.
-   *
-   * It cannot see the shader. A change to the constants moves both together; a change to the expression in
-   * `events.ts` would not fail here, and the screenshot check covers that half.
-   */
+  /* `aDepth` was deleted and `vDepth` is now computed from `aSink` in the vertex shader, which halves the
+     per-event writes in `sync`. That is only allowed if the two agree, so this pins the algebra. See
+     ARCHITECTURE.md. */
   const old = (depthKm: number): number => (Number.isFinite(depthKm)
     ? Math.max(0, Math.min(1, (depthKm - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM)))
     : 0);
@@ -60,12 +56,7 @@ describe("deriving the hole's depth from the sink", () => {
   });
 
   it("settles the one case they disagreed on, in favour of the stricter rule", () => {
-    /*
-     * A finite depth below the planet's own radius is not a reading. `sinkFraction` already called it
-     * shallow and refused to sink the mark, while the old normalisation clamped it to 1 and drew the mark
-     * hollow: the same absurd value read as deep for the hole and shallow for the offset. One source now
-     * gives one answer, and it is the conservative one.
-     */
+    /* A finite depth below the planet's own radius is not a reading. See ARCHITECTURE.md. */
     const absurd = EARTH_RADIUS_KM + 1;
     expect(old(absurd)).toBe(1);
     expect(derived(absurd)).toBe(0);

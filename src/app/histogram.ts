@@ -1,13 +1,7 @@
 import { passesMagnitude, passesSource } from "../data/filter";
 import type { Filters, Quake } from "../data/types";
 
-/*
- * The window as 24 bars, so the globe can answer "when" as well as "where".
- *
- * Twenty-four bars of whatever the window divides into, never twenty-four hours. Fixing a bar at an hour
- * caps the window: a month of hourly bars is 720 of them in 200 pixels. The count never changes, so the
- * geometry and the scaling carry over.
- */
+/* The window as 24 bars, so the globe can answer "when" as well as "where". See ARCHITECTURE.md. */
 
 /** Bars across the strip, whatever the window. Keeps the strip's geometry independent of its span. */
 export const BUCKETS = 24;
@@ -45,13 +39,8 @@ export interface Activity {
    * number from the same function. */
   energyTotal: number;
   /**
-   * Events inside the span both feeds cover, and how many of them both feeds reported.
-   *
-   * A bare `both` count invites the window's total as its denominator, and at a month that is wrong by a
-   * factor of fifty-five: corroboration reads as 0.9 percent of a 30-day window and is 49.5 percent inside
-   * the 21 hours EMSC actually reaches.
-   *
-   * Null when the two feeds have no overlap, which is a different statement from zero.
+   * Events inside the span both feeds cover, and how many of them both feeds reported. See
+   * ARCHITECTURE.md.
    */
   overlap: { events: number; both: number } | null;
 }
