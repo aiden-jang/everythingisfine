@@ -6755,3 +6755,15 @@ Two fixes, because either alone leaves the other half wrong:
 - The restored width is clamped to the drag handle's own `RAIL_MIN`/`RAIL_MAX`. The handle enforced them
   while dragging and the restore path went straight into state around it, so storage was believed
   unconditionally. Both now read the same three named constants.
+
+
+### The fold that made the bar thicker
+
+Reported as "on mobile, because of the collapse button, the top banner is thicker", and it was: at 390 the
+bar's own fold was the one control that would not fit, so it wrapped onto a line by itself and took the
+header from 46px to **80px**. A control for making the bar smaller, making the bar bigger.
+
+It sits in the overflow menu now, alongside the three that already fold away on a phone - `display:
+contents` from `md` up, so at 768 and 1024 it is still a plain button in the row and nothing about that
+width changed. At 390 the header is back to 68px, which is `py-3` either side of a 44px touch target and is
+its height at every width below 1280 whether the fold is drawn in the row or tucked in the menu.

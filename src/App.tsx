@@ -1949,6 +1949,22 @@ export function App(): JSX.Element {
           >
             {saving ? "Saving…" : "Still"}
           </button>
+          {/*
+            The bar's own fold, inside the overflow rather than beside it. As a button of its own it was the
+            one thing that would not fit: at 390 it wrapped onto a second line by itself and took the header
+            from 46px to 80px, which is the opposite of what folding the bar is for.
+          */}
+          {chromeFloats ? null : (
+            <button
+              type="button"
+              onClick={() => changeHeadOpen(false)}
+              aria-expanded={true}
+              aria-controls="chrome-head"
+              className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink"
+            >
+              Hide bar
+            </button>
+          )}
           </div>
           {/* The three above fold away on a phone. Five controls want 419px of a 390px header, and the wrap
               left "Still" and the status dot alone on a second line. Map and the ramp stay out: one is the
@@ -1988,24 +2004,6 @@ export function App(): JSX.Element {
               </span>
             )}
           </span>
-          {/*
-            The bar's own fold, last, because it acts on the thing it is at the end of. A glyph rather than
-            a word: everything else in this row is a label for what it controls, and "Bar" would read as
-            another view option rather than as this row folding away.
-          */}
-          {chromeFloats ? null : (
-          <button
-            type="button"
-            onClick={() => changeHeadOpen(false)}
-            aria-label="Hide the top bar"
-            aria-expanded={true}
-            aria-controls="chrome-head"
-            className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[11px]
-              leading-none text-faint transition-colors hover:bg-raised hover:text-ink"
-          >
-            &#8963;
-          </button>
-          )}
         </div>
       </header>
 
