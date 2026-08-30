@@ -152,7 +152,8 @@
     min-height: 0; /* or the canvas row refuses to shrink and the page grows a scrollbar */
     /* Phone: globe on top, rail becomes a sheet you scroll under it. A passive watchable
        visualization gets most of its shared links opened on a phone. */
-    grid-template-rows: 60dvh 1fr;
+    /* `--canvas-h` is the phone sheet's handle, unset until somebody drags it. */
+    grid-template-rows: var(--canvas-h, 60dvh) 1fr;
     grid-template-areas: "canvas" "rail";
     /*
      * One column, stated rather than left implicit.

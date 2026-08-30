@@ -359,6 +359,16 @@ export function App(): JSX.Element {
   useEffect(() => {
     store("rail", String(railWidth));
   }, [railWidth]);
+  /*
+   * How tall the phone's sheet is, in pixels, or 0 while nobody has said.
+   *
+   * Zero rather than a number, so the untouched app keeps the `60dvh` the stylesheet states and this does
+   * not become a second place that decides the split.
+   */
+  const [sheetCanvas, setSheetCanvas] = useState<number>(() => Number(stored("sheet")) || 0);
+  useEffect(() => {
+    if (sheetCanvas > 0) store("sheet", String(sheetCanvas));
+  }, [sheetCanvas]);
   const [regionsHeight, setRegionsHeight] = useState<number>(
     () => Number(stored("regions")) || 132,
   );
@@ -1522,8 +1532,33 @@ export function App(): JSX.Element {
         style={{
           "--rail-w": `${railWidth}px`,
           "--regions-h": `${regionsHeight}px`,
+          ...(sheetCanvas > 0 ? { "--canvas-h": `${sheetCanvas}px` } : {}),
         } as React.CSSProperties}
       >
+        {/*
+          The sheet's own edge, on a phone.
+
+          The rail is a scroll box under the globe there, and how much of the screen each deserves depends
+          on whether somebody is watching the planet or reading the list. The same `Resizer` the rail's
+          width and the regions' height already use, so the keyboard path comes with it.
+
+          Clamped so the canvas keeps 46dvh at the low end - the design contract asks for 44% and a handle
+          that can break a build test is not a handle - and 82dvh at the high end, past which the sheet is
+          too short to hold its own heading.
+        */}
+        {cinema ? null : (
+          <Resizer
+            axis="y"
+            label="Sheet height"
+            value={sheetCanvas > 0 ? sheetCanvas : Math.round(window.innerHeight * 0.6)}
+            min={Math.round(window.innerHeight * 0.46)}
+            max={Math.round(window.innerHeight * 0.82)}
+            measure={(e) => e.clientY}
+            onChange={setSheetCanvas}
+            className="absolute inset-x-0 z-[2] md:hidden"
+            style={{ top: `calc(var(--canvas-h, 60dvh) - 6px)` }}
+          />
+        )}
         <aside className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r" hidden={cinema}>
           <div className="titleblock">
           <div className="tb-cell tb-wide" data-rail="headline">
