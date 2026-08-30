@@ -192,7 +192,10 @@ export function MagnitudeFilter(
         `preventDefault` on the summary so React owns `open`. React 18 does not listen for `toggle`, so the
         browser's own state cannot be read back, and this state is persisted.
       */}
-      <details className="mt-2.5" open={keyOpen}>
+      {/* No top margin: this is the whole of the key half, so a margin above it only sits inside the
+          padding of whatever holds it. Closed, it put the label 22px from the top and 12px from the
+          bottom of a 51px box. */}
+      <details open={keyOpen}>
         <summary
           className="disclose text-[11px] text-faint hover:text-dim"
           onClick={(e) => { e.preventDefault(); onKeyOpen(!keyOpen); }}

@@ -6726,8 +6726,16 @@ Two details worth keeping:
 - **`--head-h` and `--rail-w` go to zero when their region folds.** Everything else is placed from them -
   the rail sits under the bar, the bottom band beside the rail, the key panel is capped against the head -
   so leaving them at their open values holds a gap open where the folded thing used to be. The rail fold
-  is offered only at `xl`, through `useFloatingRail`: below that the rail is a strip or a sheet, and on a
-  phone it is the page.
+  folds are offered at opposite widths, through `useFloatingChrome`, because they are worth opposite
+  things there. Measured: at 1440 the bar is absolute and transparent, 46px of the *rail's* height, and
+  the canvas is the full 900px either way - nothing to gain, against losing the app's name, the live
+  status and every control to a glyph in a corner. At 1024 it is an opaque row taking 68px out of a 439px
+  canvas, and on a phone 80px. So the bar folds below `xl` and not above it. The rail is the reverse: 356px
+  of a 1440px screen drawn over the globe, and below `xl` a strip or, on a phone, the page itself.
+
+  A fold remembered at one width must not strand a viewer at another, so `headShown` is `headOpen ||
+  chromeFloats` rather than `headOpen`: a stored `"0"` carried up to a desktop would otherwise hide the bar
+  with no control left to press.
 
 
 ### A one-pixel rail, from two keys with one name
