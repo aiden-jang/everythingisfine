@@ -2551,7 +2551,9 @@ export function App(): JSX.Element {
                   `inline-flex`, not inline. `min-height` has no effect on a non-replaced inline element, so
                   the 44px touch minimum slid straight off an inline `a` and the finger test caught it at 14px.
                 */
-                className="pointer-events-auto inline-flex min-h-11 items-center text-faint underline decoration-from-font underline-offset-2 transition-colors hover:text-dim"
+                /* The 44px minimum is for a finger. On a desktop it was 44px of band for one line of 11px text,
+                   and the band is over the planet. */
+                className="pointer-events-auto inline-flex items-center text-faint underline decoration-from-font underline-offset-2 transition-colors hover:text-dim max-md:min-h-11"
               >
                 aiden jang
               </a>
