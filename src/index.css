@@ -412,7 +412,10 @@
     /*
      * The events outrank the summary of them: the list was 0% visible while `regions` sat fully above it.
      * The tablet grid already ranks them this way. Its height is in `EventList` - a utility beats this file.
+     *
+     * `when` rides along, because it is the search box and `regions` is where its results are drawn.
      */
+    .rail > [data-rail="when"],
     .rail > [data-rail="regions"] { order: 1; }
   }
 
@@ -515,15 +518,17 @@
        *
        * `34dvh` stays exactly as it was. The globe's share was never what was wrong here.
        */
-      /* Three columns, not four: the timeline moved to the band across the canvas, where an axis of time
-         gets width instead of height. */
+      /* Every child needs a name here. One without an area auto-places into an implicit row below the
+         whole grid, and at 1024 that put the archive and the strip in the same invented cell. */
       grid-template-areas:
         "title  legend  list"
+        "clock  legend  list"
+        "day    regions list"
         "when   regions list"
         "notes  notes   notes";
       /* The short blocks take what they need, then the list takes the rest, then notes take what
          they need again. */
-      grid-template-rows: auto auto 1fr auto;
+      grid-template-rows: auto auto auto 1fr auto;
       align-items: start;
       gap: 0.7rem 2rem;
     }
@@ -531,6 +536,10 @@
     .rail > .titleblock { grid-area: title; }
     .rail > .tb-stack { grid-area: notes; }
     .rail > [data-rail="when"] { grid-area: when; }
+    /* Two different attributes, one letter apart: `data-rail="activity"` is the archive block, and
+       `data-activity` is the timeline strip, which is named that because it also renders in the band. */
+    .rail > [data-rail="activity"] { grid-area: day; }
+    .rail > [data-activity] { grid-area: clock; }
     .rail > [data-rail="legend"] { grid-area: legend; }
     .rail > [data-rail="regions"] { grid-area: regions; }
     .rail > section[aria-label="Recent earthquakes"] { grid-area: list; }

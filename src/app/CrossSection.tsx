@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { SECTION_HALF_WIDTH_KM, type Section as SectionData } from "./section";
 import { SLAB_FROM, SLAB_TO } from "../geo/slab";
 import type { Store } from "../data/store";
 import { depth, magnitude, place } from "./format";
+import { useNarrow } from "./useNarrow";
 
 /*
  * The crust seen from the side: distance across, depth down, drawn at 1:1.
@@ -36,20 +37,6 @@ function ticks(lengthKm: number): number[] {
   const out: number[] = [];
   for (let d = step; d < lengthKm; d += step) out.push(d);
   return out;
-}
-
-/** True where this panel is the full width of a phone, which is where the drawing collapses. Read from
- * `matchMedia`, because nothing above this component knows how tall its axis wants to be. */
-function useNarrow(): boolean {
-  const query = "(max-width: 767px)";
-  const [narrow, setNarrow] = useState(() => window.matchMedia(query).matches);
-  useEffect(() => {
-    const mq = window.matchMedia(query);
-    const onChange = (): void => setNarrow(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
-  return narrow;
 }
 
 export function CrossSection({

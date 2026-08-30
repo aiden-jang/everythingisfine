@@ -6634,3 +6634,71 @@ you touched a control. The cells now hold their place and state the result - "no
 "nothing in range to measure" - which is the same information the empty layout was trying to convey by
 absence. The mode gates around them (`!replay && !flat`) are unchanged: those are deliberate, and the cells
 are meant to be gone there.
+
+
+### Clearing a mark cleared the earthquake, on every tap
+
+Reported as "no pinned event pops up on mobile when I click on an earthquake, it does for other disaster",
+and it was not a mobile bug at all. The globe reports a hit as two calls in a row:
+
+    onSelect(quake); onSelectMark?.(null);
+
+`selectMark` had been given a `setSelected(null)` at the top when marks learned to fly the camera, so the
+second call undid the first. Every click on an earthquake, at every width, flew the camera to it and then
+showed no panel - which is exactly what made it look like a hit-testing problem. Marks were unaffected
+because nothing calls `onSelect(null)` after `onSelectMark(mark)`. `setSelected(null)` now sits after the
+`id === null` early return, so clearing a mark clears only the mark.
+
+Separately and genuinely: `HIT_SLOP_PX` was 4, and a magnitude 2 marker is about 3px across, so a finger
+was aiming at a 7px circle while storms and volcanoes had 18px of slop of their own. `hitTest` and
+`hitMark` now take a slop, and `Globe.tsx` passes `TOUCH_SLOP_PX` for anything that is not a mouse.
+
+Neither of these was reachable from a test until `__hitTest` joined the DEV hooks on `window`. A browser
+test cannot aim at a marker any other way: markers are drawn at their depth, *inside* the planet, so
+projecting the surface coordinate lands tens of pixels away for anything deep, and the sweep that finds one
+by hovering is slow and reports the marker under the *previous* frame. The regression test asks the pointer
+its own question to find an earthquake with clear space beside it, then taps 12px off centre. It fails on
+either bug put back.
+
+
+### Defaults: the key open, every layer on
+
+Both were folded or off on the argument that a viewer should meet a plain globe and add to it. That argument
+loses to what actually happens: nobody opens a fold to find out what they are looking at, and a viewer who
+never touches the controls got dots on a sphere rather than the picture the layers make. The key opens by
+default now that it has a corner of its own to open into, and depth, motion, slab and figures all ship on.
+
+The slab is the one that costs: 37kB of static table and 1,583 marks, now fetched on every first load. It is
+also the layer that pays for itself, because a real day carries two events below 300km and a dipping plane
+cannot be seen in two dots.
+
+Below `xl` the key takes the same canvas corner, capped at `46dvh`, because there the rail is a strip across
+the top and the canvas is only what is left: at 1024x768 the canvas is about 440px tall and the desktop cap
+of `100dvh - head - 6rem` ran the panel up over the rail. Only a phone keeps it in the column.
+
+### The search sits with its results
+
+`Find` was under the headline and its results are drawn inside `regions`, which `order: 1` puts after the
+event list. So typing produced an answer 700px below the box, off the bottom of the screen: you typed,
+nothing visibly happened, and the rail had to be scrolled to find out. `when` now carries the same `order: 1`
+and lands directly above `regions`.
+
+Two rules came out of the same pass. Every child of the tablet grid needs a named `grid-area` - one without
+an area auto-places into an implicit row below the whole grid, and at 1024 that dropped the archive block
+and the timeline strip into the same invented cell, drawn on top of each other. And `the rail's controls
+stay above its fold` was measuring against the viewport, which for a `contain: paint` scroll container is
+not the same question: a control 400px below the rail's fold still reports a position inside the window. It
+measures against the rail's own box now, and asks for reachability rather than presence below 1280, where
+the strip is capped at `34dvh` and was never going to hold everything at once.
+
+
+### A `hidden`/`block` pair is two copies, not one
+
+The key was mounted twice - the canvas corner shown from `md` up, the rail copy shown below it - on the
+reasoning that only one is ever visible so nothing is read out twice. True for a screen reader, which skips
+`display: none`. Not true for `textContent`, and `the legend says what a ring is` counts `×20` across the
+whole app and requires exactly one: a second copy of 445px of prose reads as a duplicated sentence.
+
+So it mounts once and picks its side at runtime, through `useNarrow`, which moved out of `CrossSection.tsx`
+into `app/useNarrow.ts` for the purpose. The rule worth keeping: a Tailwind visibility pair is fine for a
+control or a label, and wrong for a block of prose long enough that something might count it.

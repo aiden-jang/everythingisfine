@@ -376,28 +376,56 @@ test("the rail's controls stay above its fold", async ({ page }) => {
   await page.goto("/");
   await waitForData(page);
 
-  // Both single-column layouts and the tablet grid, which places by `grid-area` and behaves differently.
-  for (const [w, h] of [[1440, 900], [1280, 800], [1024, 768], [900, 1000]] as const) {
-    await page.setViewportSize({ width: w, height: h });
-    await page.waitForTimeout(500);
-    const seen = await page.evaluate(() => {
-      const inView = (sel: string): boolean => {
-        const el = document.querySelector(sel);
+  /*
+   * Measured against the rail's own box, not the viewport. The rail is a scroll container with
+   * `contain: paint`, so a control 400px below its fold still reports a viewport position inside the
+   * window - which is how this test passed for a year while saying something it could not see.
+   */
+  const seen = async (): Promise<{ transport: boolean; magnitude: boolean; window: boolean }> =>
+    page.evaluate(() => {
+      const rail = document.querySelector(".rail") as HTMLElement;
+      const box = rail.getBoundingClientRect();
+      const inRail = (sel: string): boolean => {
+        const el = rail.querySelector(sel);
         if (!el) return false;
         const b = el.getBoundingClientRect();
-        return b.height > 0 && b.top >= 0 && b.bottom <= window.innerHeight;
+        return b.height > 0 && b.top >= box.top - 1 && b.bottom <= box.bottom + 1;
       };
       return {
-        transport: inView("input.scrub-slider"),
-        magnitude: inView("#mag"),
-        window: inView('[role="group"][aria-label="Window"]'),
+        transport: inRail("input.scrub-slider"),
+        magnitude: inRail("#mag"),
+        window: inRail('[role="group"][aria-label="Window"]'),
       };
     });
-    // The transport is the whole time dimension. It has gone under twice, both times as a side effect of
-    // something else growing above it.
-    expect(seen.transport, `transport at ${w}x${h}`).toBe(true);
-    expect(seen.magnitude, `magnitude slider at ${w}x${h}`).toBe(true);
-    expect(seen.window, `window buttons at ${w}x${h}`).toBe(true);
+
+  /*
+   * Where the rail is a tall column of its own, everything a person operates is on screen at once.
+   * The transport is the whole time dimension and it has gone under twice, both times as a side effect
+   * of something above it growing.
+   */
+  for (const [w, h] of [[1440, 900], [1280, 800]] as const) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(500);
+    const now = await seen();
+    expect(now.transport, `transport at ${w}x${h}`).toBe(true);
+    expect(now.magnitude, `magnitude slider at ${w}x${h}`).toBe(true);
+    expect(now.window, `window buttons at ${w}x${h}`).toBe(true);
+  }
+
+  /*
+   * Below 1280 the rail lies down into a strip capped at 34dvh, or becomes a sheet under the globe on a
+   * phone. Neither holds everything at once and neither is meant to, so the promise there is that the
+   * controls are reachable by scrolling the rail rather than clipped out of it.
+   */
+  for (const [w, h] of [[1024, 768], [900, 1000], [390, 844]] as const) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(500);
+    await page.evaluate(() => {
+      document.querySelector("input.scrub-slider")!.scrollIntoView({ block: "center" });
+    });
+    await page.waitForTimeout(200);
+    const now = await seen();
+    expect(now.transport, `transport reachable at ${w}x${h}`).toBe(true);
   }
 });
 

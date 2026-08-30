@@ -4,6 +4,7 @@ import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { PLACE_LIMIT, search, type Hit } from "./app/search";
 import { useRolling } from "./app/roll";
+import { useNarrow } from "./app/useNarrow";
 import { store, stored } from "./app/stored";
 import { fetchAurora, type Aurora } from "./sources/aurora";
 import { fetchCyclones, type Cyclone } from "./sources/cyclones";
@@ -497,31 +498,32 @@ export function App(): JSX.Element {
   }, [backToLive]);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
   /*
-   * Closed, everywhere. It is 445px of explanation, and it opened over the map, the rail and the canvas
-   * corner by turns depending on width and projection - three arrangements, none of them asked for. A
-   * stored answer still wins, and only a real toggle stores one.
+   * Open, everywhere. It was folded while it lived in the rail and opening it shoved whatever shared the
+   * column; on its own corner there is nothing under it to shove. A stored answer still wins, and only a
+   * real toggle stores one.
    */
-  const [keyOpen, setKeyOpen] = useState<boolean>(() => stored("legendKey") === "1");
+  const [keyOpen, setKeyOpen] = useState<boolean>(() => stored("legendKey") !== "0");
   // Written on the press, never in an effect on the value. As an effect it fired on mount and persisted
   // the width-derived default, as though somebody had chosen it. Only a real toggle is a choice.
   const changeKeyOpen = useCallback((next: boolean) => {
     setKeyOpen(next);
     store("legendKey", next ? "1" : "0");
   }, []);
-  const [motionOn, setMotionOn] = useState<boolean>(() => stored("motion") === "1");
+  const [motionOn, setMotionOn] = useState<boolean>(() => stored("motion") !== "0");
   useEffect(() => { store("motion", motionOn ? "1" : "0"); }, [motionOn]);
-  /*
-   * The one view preference that defaults to on. The arrows add 231 marks; this moves marks already on
-   * screen to where the events actually were, and a scatter resolving into a dipping plane is the
-   * strongest thing the globe does. Off by default, nobody would find it.
-   */
   const [sinkOn, setSinkOn] = useState<boolean>(() => stored("depthSink") !== "0");
   useEffect(() => { store("depthSink", sinkOn ? "1" : "0"); }, [sinkOn]);
-  // Off until asked for: 37kB of static table and 1,583 marks. What it buys is a shape - a real day
-  // carries two events below 300km, which is right and far too thin to see anything in.
-  const [slabOn, setSlabOn] = useState<boolean>(() => stored("slab") === "1");
+  /*
+   * Every layer ships on. The globe is meant to be looked at before it is operated, and a viewer who never
+   * opens the fold should still get the picture the layers make rather than a scatter of dots.
+   *
+   * The slab costs the most: 37kB of static table and 1,583 marks, now fetched on every first load. It is
+   * also the layer that pays for itself - a real day carries two events below 300km, which is far too thin
+   * to see a dipping plane in on its own.
+   */
+  const [slabOn, setSlabOn] = useState<boolean>(() => stored("slab") !== "0");
   useEffect(() => { store("slab", slabOn ? "1" : "0"); }, [slabOn]);
-  const [figuresOn, setFiguresOn] = useState<boolean>(() => stored("figures") === "1");
+  const [figuresOn, setFiguresOn] = useState<boolean>(() => stored("figures") !== "0");
   useEffect(() => { store("figures", figuresOn ? "1" : "0"); }, [figuresOn]);
   // Not a toggle: the zone is readable by any page without a prompt and nothing is sent anywhere.
   // Fetched lazily all the same, because 13kB of coordinates has no business in the first frame.
@@ -943,9 +945,14 @@ export function App(): JSX.Element {
   /* The same rule as an earthquake: pick it and the camera goes, lifted clear of whatever is describing it.
      A flood behind the panel is the same defect as an earthquake behind it. */
   const selectMark = useCallback((id: string | null) => {
-    setSelected(null);
     setMarkId(id);
+    /*
+     * Clearing a mark must not clear an earthquake. The globe reports a hit as `onSelect(quake)` followed
+     * by `onSelectMark(null)`, so a `setSelected(null)` up here undid the selection on the same tap: every
+     * click on an earthquake flew the camera to it and then showed no panel.
+     */
     if (id === null) return;
+    setSelected(null);
     const where = findSubject(id, onGlobeRef.current)?.subject;
     if (where) flyTo.current(where.lon, where.lat, Math.max(camera.current.zoom, 2.2), liftForPanel());
   }, [liftForPanel]);
@@ -1297,6 +1304,12 @@ export function App(): JSX.Element {
    * The same props as the legend, because it is the same component drawing its other half - `part` splits
    * the render rather than duplicating it, so `#mag` is still written once.
    */
+  /*
+   * Which side of the split the key is mounted on. A `hidden`/`block` pair would put its 445px of text in
+   * the document twice, and a test that counts a phrase across the app cannot tell a second copy from a
+   * duplicated sentence.
+   */
+  const keyOnCanvas = useNarrow() === false;
   const marksKey = (
               <MagnitudeFilter
                 part="key"
@@ -2264,12 +2277,27 @@ export function App(): JSX.Element {
             ) : null}
           </div>
 
+          <div data-rail="legend">{legend}</div>
+          {/* The key's fallback home. A phone has no canvas corner to spare, so there it goes back into
+              the column. */}
+          {keyOnCanvas ? null : <div data-rail="key" className="mt-4">{marksKey}</div>}
+
+          {/*
+            Under the strip, not in the header: the window buttons choose how much of the recent past to
+            show and this chooses a different past entirely. In the header it would read as a view option.
+
+            The banner is what stands between this feature and a globe showing last March while the
+            interface says live, so it is the widest thing in the rail while it is up.
+          */}
+          {archiveBlock}
+          {timeline}
+
           {/*
             The search and the time-of-day fold share a cell.
 
-            `Find` was inside the regions block, so ranking the event list above `regions` sent a control
-            below the fold with it - the same mistake this reorder exists to undo. Paired here it stays
-            above, and the tablet grid still has one child to place rather than a fifth that auto-flows.
+            It sits here, just above the region list, because that list is where its results appear. Up
+            under the headline it was a field whose answers landed 700px below it, off the bottom of the
+            screen - you typed, nothing visibly happened, and the rail had to be scrolled to find out.
           */}
           <div data-rail="when">
               <div role="search" className="mb-1.5 flex flex-col gap-1 xl:flex-row xl:items-baseline xl:gap-2">
@@ -2311,28 +2339,6 @@ export function App(): JSX.Element {
             <Dial counts={clockBins} />
           </details>
           </div>
-
-          {/*
-            The key floats only where there is somewhere for it to float. On the globe that corner is ocean.
-            The flat map fills its whole rectangle, so a panel over it permanently hides part of the Pacific
-            and panning cannot get out from under it - so flattened, the key goes back to the rail.
-          */}
-          {/*
-            Docked, in both projections. It was 300px of panel over the subject on the globe and in the rail
-            on the flat map, for no reason the two views actually differed on. The timeline leaving the rail
-            is what made room for it.
-          */}
-          <div data-rail="legend">{legend}</div>
-
-          {/*
-            Under the strip, not in the header: the window buttons choose how much of the recent past to
-            show and this chooses a different past entirely. In the header it would read as a view option.
-
-            The banner is what stands between this feature and a globe showing last March while the
-            interface says live, so it is the widest thing in the rail while it is up.
-          */}
-          {archiveBlock}
-          {timeline}
 
           {/* All twelve in a resizable box. Truncating to four cut exactly the region with two events,
               which is what somebody scanning for where today is quiet came to see. */}
@@ -2546,13 +2552,19 @@ export function App(): JSX.Element {
           Stands down while a panel is up: they are the same edge, and two things claiming it would be two
           answers to one question. Desktop only - a phone has no spare edge, so there it stays in the rail.
         */}
-        {cinema || section || markSubject || (shownQuake && pinned) ? null : (
+        {!keyOnCanvas || cinema || section || markSubject || (shownQuake && pinned) ? null : (
           <div
-            /* Anchored at the bottom, so opening it grows upward out of the corner rather than downward
-               off the screen. `section` is in the gate above because it owns this corner too. */
-            className="pointer-events-auto absolute right-4 bottom-4 z-[1] hidden
-              max-h-[calc(100dvh_-_var(--head-h)_-_6rem)] w-[300px] overflow-y-auto bg-deck/40 p-3
-              backdrop-blur-2xl backdrop-saturate-50 xl:block"
+            /*
+              Anchored at the bottom, so opening it grows upward out of the corner rather than downward off
+              the screen. `section` is in the gate above because it owns this corner too.
+
+              Below `xl` the rail is a strip across the top and the canvas is what is left, so the cap is a
+              share of the viewport rather than all of it: at 1024x768 the canvas is about 440px tall and a
+              604px panel ran up over the rail.
+            */
+            className="pointer-events-auto absolute right-4 bottom-4 z-[1] max-h-[46dvh] w-[300px]
+              overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50
+              xl:max-h-[calc(100dvh_-_var(--head-h)_-_6rem)]"
           >
             {marksKey}
           </div>
@@ -2655,11 +2667,21 @@ export function App(): JSX.Element {
                 />
               </div>
             ) : null}
-            {/* First on the last line, with the key hints beside it. Both sit against the band's left edge,
-                which is the rail - and a panel opening does not move the rail, so neither of them moves. */}
-            {/* `py-1.5` matches the hints chip beside it. `items-end` lines up box bottoms, and the chip's
-                own padding then held its text 6px higher than this line. */}
-            <p className="order-2 py-1.5 text-[11px] text-faint">
+            {/*
+              One line, the credit at the left edge and the keys centred on the canvas.
+
+              From `md` up the credit is taken out of the flow so it does not push the chip off centre; both
+              keep the same `py-1.5` so their two text lines sit on the same baseline. Narrower than that
+              the chip is the full width of the band, so the credit stays in the flow or the two would be
+              drawn on top of each other.
+
+              Neither moves when a panel opens: this row is measured from the rail, which a panel does not
+              touch. Between 1280 and about 1460 an open panel does clip the last hint by around 20px,
+              which is the price of centring on the canvas rather than on the strip the panel leaves free.
+            */}
+            <div className="relative order-2 flex w-full flex-wrap items-end gap-x-6 gap-y-2
+              md:justify-center">
+            <p className="py-1.5 text-[11px] text-faint md:absolute md:bottom-0 md:left-0">
               made by{" "}
               <a
                 href="https://www.aidenjang.com"
@@ -2682,8 +2704,7 @@ export function App(): JSX.Element {
                 of chrome rather than console output lying on the planet. Square and unbordered: the corners
                 in this app are ticks or nothing.
               */
-              /* After the legend, and on its own line: see the wrapper above. */
-              className="key-hints pointer-events-auto order-2 bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50"
+              className="key-hints pointer-events-auto bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50"
             >
               {/* What the keys do here, not on the globe. Arrows orbit a sphere and pan a map, and a hint
                   row that says orbit while the drag pans is worse than none. */}
@@ -2716,6 +2737,7 @@ export function App(): JSX.Element {
                   {what}
                 </span>
               ))}
+            </div>
             </div>
 
           </div>

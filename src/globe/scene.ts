@@ -48,6 +48,13 @@ export interface HitQuake {
  * earthquake's marker is under four pixels across. Ties go to the larger event.
  */
 const HIT_SLOP_PX = 4;
+/*
+ * How far outside a mark's anchor a pointer still counts.
+ *
+ * Marks are outlines rather than filled discs, so requiring the pointer to land on a stroke would make
+ * them feel broken.
+ */
+const MARK_SLOP_PX = 18;
 
 /**
  * How many nearest events get projected before picking a winner. Great-circle distance and screen distance
@@ -264,10 +271,10 @@ export interface Globe {
   };
   /** Key of the drawn event nearest a client pixel, or null when the pointer is over nothing. */
   hitTest: (
-    clientX: number, clientY: number, store: HitStore, filters: Filters, now: number,
+    clientX: number, clientY: number, store: HitStore, filters: Filters, now: number, slopPx?: number,
   ) => string | null;
   /** The `kind:id` of the non-earthquake mark under the pointer, or null. */
-  hitMark: (clientX: number, clientY: number) => string | null;
+  hitMark: (clientX: number, clientY: number, slopPx?: number) => string | null;
   stats: LandGeometry["stats"];
 }
 
@@ -864,7 +871,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
      * and latitude makes the first pass a great-circle distance with no projection at all; only a handful
      * of candidates are projected to settle it, because near the limb angles and pixels disagree.
      */
-    hitTest: (clientX, clientY, store, filters, now) => {
+    hitTest: (clientX, clientY, store, filters, now, slopPx = HIT_SLOP_PX) => {
       const under = controls.pick(clientX, clientY);
       if (!under) return null;
 
@@ -896,7 +903,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         // Asked of the shader's own formula rather than copied from it. Writing the constants out twice is
         // what lets the pointer drift away from the picture.
         const radius = markerRadiusPx(candidate.magnitude, markerScale());
-        if (d > radius + HIT_SLOP_PX) continue;
+        if (d > radius + slopPx) continue;
         // Ranked by how far outside the marker the pointer is, so a big marker does not win simply for
         // being big when the pointer is squarely inside a small one on top of it.
         const score = d - radius;
@@ -907,11 +914,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       }
       return bestKey;
     },
-    /*
-     * Marks are picked by their anchor, at a wider slop than the markers. These are outlines rather than
-     * filled discs, so requiring the pointer to land on a stroke would make them feel broken.
-     */
-    hitMark: (clientX, clientY) => pickMark(heldMarks, { x: clientX, y: clientY }, controls.project, 18),
+    /* Picked by their anchor, at a wider slop than the markers. See `MARK_SLOP_PX`. */
+    hitMark: (clientX, clientY, slopPx = MARK_SLOP_PX) =>
+      pickMark(heldMarks, { x: clientX, y: clientY }, controls.project, slopPx),
     events,
     rings,
     setMarks: (next) => { heldMarks = next; marks.set(next); },
