@@ -56,6 +56,9 @@
   /* Declared, not measured: the desktop rail starts below the floating header, and a height read
      back from the DOM would be a resize observer feeding a layout that one number states outright. */
   --head-h: 46px;
+  /* How much of the viewport the phone's detail sheet may take. Named because two places need the same
+     number: the sheet's own cap, and the camera lift that has to clear it. */
+  --panel-share: 0.7;
   /* The pinned panel's width, so the bottom band can stop where it starts rather than run under it. */
   --panel-w: 360px;
 
@@ -201,8 +204,9 @@
       left: 0;
       /* Bounded so a long card scrolls rather than growing past the fold, and so some of the map
          stays visible behind it: a sheet that covers everything is a page, and `esc` is the only
-         way back. */
-      max-height: min(70dvh, 100%);
+         way back. `--panel-share` is read by `liftForPanel`, which has to know where the top of this
+         sheet will be before the sheet exists. */
+      max-height: min(calc(var(--panel-share) * 100dvh), 100%);
       overflow-y: auto;
       /* It is opaque, so nothing outside it needs repainting when it scrolls. */
       contain: paint;
