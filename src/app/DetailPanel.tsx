@@ -43,7 +43,6 @@ export interface DetailPanelProps {
   store: Store;
   filters: Filters;
   onClose: () => void;
-  onFlyTo: (lon: number, lat: number, zoom?: number) => void;
   /**
    * Opens a cross-section through this event, across the local trend. Shift-dragging the map was the only
    * way in: undiscoverable on a mouse and impossible on a touch screen, where there is no shift to hold.
@@ -102,7 +101,7 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
 }
 
 export function DetailPanel({
-  open, quake, store, filters, ramp, excluded, revision, now, archived = false, onClose, onFlyTo, onSection,
+  open, quake, store, filters, ramp, excluded, revision, now, archived = false, onClose, onSection,
   farSide, onFarSide, boundaryKm, onSelect,
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
@@ -463,16 +462,9 @@ export function DetailPanel({
         </p>
       ) : null}
 
-      {/* Wraps, because this row gained a fourth button and a clipped button is an action that does not
-          exist. Wrapping costs a second line on a narrow panel and nothing on a wide one. */}
+      {/* Wraps, because a clipped button is an action that does not exist. "Fly here" used to lead this
+          row; pinning an event now flies to it, so the button was asking for what had already happened. */}
       <div className="mt-5 flex flex-wrap gap-2 pb-1">
-        <button
-          type="button"
-          onClick={() => onFlyTo(r.lon, r.lat, 2.2)}
-          className="cursor-pointer border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
-        >
-          Fly here
-        </button>
         {/* The permalink existed for a whole phase with no way to reach it: the URL updated silently and
             nothing suggested it was worth copying. A feature nobody can find is not shipped. */}
         {/* Offered on either view, because taking it switches to the map. A section only exists there, so
