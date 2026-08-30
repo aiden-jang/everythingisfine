@@ -1768,7 +1768,9 @@ test("the bar and the panel fold on their own, and stay folded", async ({ page }
   await page.goto("/");
   await waitForData(page);
 
-  const chrome = (): Promise<{ head: boolean; rail: boolean; resizer: number; hintsCentre: number }> =>
+  const chrome = (): Promise<{
+    head: boolean; rail: boolean; resizer: number; hintsCentre: number; railWidth: number;
+  }> =>
     page.evaluate(() => {
       const shown = (sel: string): boolean => {
         const el = document.querySelector(sel);
@@ -1782,6 +1784,7 @@ test("the bar and the panel fold on their own, and stay folded", async ({ page }
         // measured once as a one-pixel bright line down a frame whose whole point is that it is empty.
         resizer: document.querySelector('[aria-label="Rail width"]')?.getBoundingClientRect().width ?? -1,
         hintsCentre: Math.round((hints.left + hints.right) / 2),
+        railWidth: Math.round(document.querySelector("#chrome-rail")!.getBoundingClientRect().width),
       };
     });
 
@@ -1815,6 +1818,33 @@ test("the bar and the panel fold on their own, and stay folded", async ({ page }
   expect(back.head).toBe(true);
   expect(back.rail).toBe(true);
   expect(back.hintsCentre).toBe(open.hintsCentre);
+
+  /*
+   * The rail comes back the width it was. It did not: the fold shipped storing "1" and "0" under `rail`,
+   * which is where the rail's *width* is kept, so folding and unfolding wrote a width of 1 - and the next
+   * load restored a 41px column with no handle to grab. Measured on the way out, because the damage only
+   * shows after a reload.
+   */
+  await page.reload();
+  await waitForData(page);
+  await page.waitForTimeout(600);
+  expect((await chrome()).railWidth, "the rail keeps its width across a fold").toBe(open.railWidth);
+});
+
+/* The other half of the same defect. The drag handle bounds the width while you drag it; the restore path
+   went straight into state and skipped that, so whatever was in storage was believed. */
+test("a stored rail width outside the handle's range is brought back inside it", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installFeeds(page);
+  await page.addInitScript(() => window.localStorage.setItem("eif.rail", "1"));
+  await page.goto("/");
+  await waitForData(page);
+  await page.waitForTimeout(600);
+
+  const width = await page.evaluate(() =>
+    Math.round(document.querySelector("#chrome-rail")!.getBoundingClientRect().width));
+  // 264 is the handle's own minimum. Anything under it is a column you cannot read or grab.
+  expect(width).toBeGreaterThanOrEqual(264);
 });
 
 /*
