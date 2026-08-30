@@ -32,7 +32,9 @@ export interface GlobeProps {
   ramp: RampName;
   onSelect: (key: string | null) => void;
   /** Handed a fly function once, so the rail can send the camera to a region. */
-  onReady: (flyTo: (lon: number, lat: number, zoom?: number) => void) => void;
+  onReady: (
+    flyTo: (lon: number, lat: number, zoom?: number, liftPx?: number) => void,
+  ) => void;
   /**
    * Hands out a function that renders and returns the canvas, for the still.
    *
@@ -85,6 +87,9 @@ export interface GlobeProps {
  * to hold a finger. At 40 the ruler was drawn straight through "made by aiden jang".
  */
 const SCALE_BOTTOM = 76;
+
+/** The most a panel may swing the camera. Past this the lift costs more than the panel hid. */
+const MAX_LIFT_DEG = 22;
 /** How long a bar aims to be before rounding to a number a reader can halve. The actual width is whatever
  * the round kilometre figure works out to, never this. */
 const SCALE_TARGET_PX = 110;
@@ -143,8 +148,28 @@ export function Globe({
      * something is usually animating and hid this; with the feeds quiet, clicking a region set a target
      * nothing integrated and the camera sat still.
      */
-    onReady((toLon, toLat, toZoom) => {
-      globe.controls.flyTo(toLon, toLat, toZoom);
+    onReady((toLon, toLat, toZoom, liftPx) => {
+      /*
+       * `liftPx` puts the target that many pixels above the middle instead of in it.
+       *
+       * A panel covers part of the canvas, and on a phone it covers most of it: aiming at the centre pins
+       * an event and then hides it behind the thing describing it. The camera centre goes south of the
+       * event by the same distance, which is what raises the event on screen.
+       *
+       * Degrees come from the camera rather than a constant, so this holds at any zoom. Clamped, because a
+       * lift near the poles otherwise aims past them.
+       */
+      let lat = toLat;
+      if (liftPx) {
+        /*
+         * Clamped hard, because degrees per pixel is a tangent at the middle and this is a sphere. On a
+         * 390px phone at this zoom the globe is a whole hemisphere wide, so a quarter-canvas lift came out
+         * as 76 degrees and threw the event past the limb - the strip above the panel rendered empty.
+         */
+        const deg = Math.min(globe.controls.degPerPx() * liftPx, MAX_LIFT_DEG);
+        lat = Math.max(-85, Math.min(85, toLat - deg));
+      }
+      globe.controls.flyTo(toLon, lat, toZoom);
       // Through the ref, not the closure: a shared link calls this during setup, before `wake` further
       // down has been initialised, and a temporal dead zone here takes the whole canvas with it.
       wakeRef.current();

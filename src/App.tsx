@@ -611,7 +611,7 @@ export function App(): JSX.Element {
   useEffect(() => {
     store("announceAbove", String(announceAbove));
   }, [announceAbove]);
-  const flyTo = useRef<(lon: number, lat: number, zoom?: number) => void>(() => {});
+  const flyTo = useRef<(lon: number, lat: number, zoom?: number, liftPx?: number) => void>(() => {});
   const lastWritten = useRef<string>(window.location.hash);
   const camera = useRef<{ lon: number; lat: number; zoom: number }>(
     { lon: shared.lon ?? 145, lat: shared.lat ?? 12, zoom: shared.zoom ?? 1 },
@@ -927,12 +927,42 @@ export function App(): JSX.Element {
   const markSubject = findSubject(markId, onGlobe);
   // Pinning an earthquake from anywhere clears the mark card. The rail's rows and the panel's sequence
   // steps all call `setSelected` directly, and a storm's card left beside it is two answers to one question.
+  /*
+   * How far above the middle a pinned event should sit, in pixels.
+   *
+   * The panel covers part of the canvas: a strip down the right on a desktop, most of it on a phone, where
+   * it leaves about a third of the canvas above it. Aiming at the centre pins an event and then hides it
+   * behind the thing describing it.
+   *
+   * Zero on a desktop and measured rather than assumed: the rail takes 356px on the left and the panel 360
+   * on the right, so the free area's middle and the canvas's middle are two pixels apart and a lift would
+   * be motion for its own sake.
+   */
+  const liftForPanel = useCallback((): number => {
+    if (window.matchMedia("(min-width: 768px)").matches) return 0;
+    const canvas = document.querySelector("canvas");
+    if (!canvas) return 0;
+    // A quarter of the canvas, which puts the event in the middle of the strip the panel leaves.
+    return Math.round(canvas.getBoundingClientRect().height * 0.25);
+  }, []);
   const selectQuake = useCallback((key: string | null) => {
     // Only on the way in. Dismissing is already confirmed by the panel leaving.
     if (key !== null) tick();
     setMarkId(null);
     setSelected(key);
-  }, []);
+    /*
+     * Fly to it, and never further out than it already is. A row could pin something on the far side of
+     * the planet and leave the camera where it was, so the answer was on screen and the subject was not.
+     * `Math.max` because somebody at 3x asked for that.
+     */
+    if (key === null) return;
+    const quake = feed.store.get(key);
+    if (!quake) return;
+    flyTo.current(
+      quake.primary.lon, quake.primary.lat,
+      Math.max(camera.current.zoom, 1.9), liftForPanel(),
+    );
+  }, [liftForPanel]);
   const marks = useMemo(
     () => marksFor({
       ...onGlobe, farSide, motion: motionOn ? motionData : [], here,
@@ -1295,7 +1325,11 @@ export function App(): JSX.Element {
                 eclipse={flat ? null : eclipse}
                 figuresOn={flat ? null : figuresOn}
                 onFigures={setFiguresOn}
-                slabOn={flat && sectionLine === null ? null : slabOn}
+                /* The one of the three that survives flattening: its layer takes the scene's morph and
+                   lies down with the geography. Depth cannot - the shader multiplies the sink by
+                   `1.0 - uMorph` - and the figures have no sky. It used to appear on the map only while a
+                   cross-section was open, which is the one place it was already proven to draw. */
+                slabOn={slabOn}
                 onSlab={setSlabOn}
                 slabCount={slabData.length}
               >
@@ -1555,6 +1589,7 @@ export function App(): JSX.Element {
             max={Math.round(window.innerHeight * 0.82)}
             measure={(e) => e.clientY}
             onChange={setSheetCanvas}
+            grip
             className="absolute inset-x-0 z-[2] md:hidden"
             style={{ top: `calc(var(--canvas-h, 60dvh) - 6px)` }}
           />
