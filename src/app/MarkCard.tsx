@@ -131,12 +131,10 @@ export interface MarkCardProps {
   /** True on an archived day, so the card describes then rather than now. */
   archived?: boolean;
   onClose: () => void;
-  onFlyTo: (lon: number, lat: number, zoom?: number) => void;
 }
 
-export function MarkCard({ found, now, archived = false, onClose, onFlyTo }: MarkCardProps): JSX.Element {
+export function MarkCard({ found, now, archived = false, onClose }: MarkCardProps): JSX.Element {
   const { title, note, lines } = linesFor(found, now, archived);
-  const where = found.subject;
   return (
     <aside className="zone-panel panel border-hairline bg-deck p-5 max-xl:border-t xl:border-l">
       <div className="flex items-baseline justify-between gap-3">
@@ -167,15 +165,6 @@ export function MarkCard({ found, now, archived = false, onClose, onFlyTo }: Mar
         ))}
       </dl>
 
-      <div className="mt-4">
-        <button
-          type="button"
-          onClick={() => onFlyTo(where.lon, where.lat, 2.2)}
-          className="cursor-pointer border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
-        >
-          Fly here
-        </button>
-      </div>
     </aside>
   );
 }

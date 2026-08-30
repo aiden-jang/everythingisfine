@@ -938,6 +938,9 @@ export function App(): JSX.Element {
     [onGlobe.cyclones, onGlobe.volcanoes, onGlobe.fires, onGlobe.floods, archived,
       Math.floor(now / 60_000)]);
   const markSubject = findSubject(markId, onGlobe);
+  /* Read through a ref: `selectMark` is memoised on `liftForPanel`, and the layers change under it. */
+  const onGlobeRef = useRef(onGlobe);
+  onGlobeRef.current = onGlobe;
   // Pinning an earthquake from anywhere clears the mark card. The rail's rows and the panel's sequence
   // steps all call `setSelected` directly, and a storm's card left beside it is two answers to one question.
   /*
@@ -955,9 +958,25 @@ export function App(): JSX.Element {
     if (window.matchMedia("(min-width: 768px)").matches) return 0;
     const canvas = document.querySelector("canvas");
     if (!canvas) return 0;
-    // A quarter of the canvas, which puts the event in the middle of the strip the panel leaves.
-    return Math.round(canvas.getBoundingClientRect().height * 0.25);
+    /*
+     * The middle of the strip the panel leaves, less the header's own height.
+     *
+     * A flat quarter of the canvas put events under the top bar on shorter phones, where the header is the
+     * same size and the canvas is not. Measuring both keeps the event between them.
+     */
+    const box = canvas.getBoundingClientRect();
+    const head = document.querySelector(".zone-head")?.getBoundingClientRect().height ?? 0;
+    return Math.max(0, Math.round(box.height * 0.25 - head * 0.5));
   }, []);
+  /* The same rule as an earthquake: pick it and the camera goes, lifted clear of whatever is describing it.
+     A flood behind the panel is the same defect as an earthquake behind it. */
+  const selectMark = useCallback((id: string | null) => {
+    setSelected(null);
+    setMarkId(id);
+    if (id === null) return;
+    const where = findSubject(id, onGlobeRef.current)?.subject;
+    if (where) flyTo.current(where.lon, where.lat, Math.max(camera.current.zoom, 2.2), liftForPanel());
+  }, [liftForPanel]);
   const selectQuake = useCallback((key: string | null) => {
     // Only on the way in. Dismissing is already confirmed by the panel leaving.
     if (key !== null) tick();
@@ -1780,6 +1799,10 @@ export function App(): JSX.Element {
             hanging under the header, which costs the canvas nothing.
           */}
           <div
+            /* Any press inside closes it. A menu that stays open after a choice makes the next tap land on
+               the menu instead of the thing behind it. Harmless from `md` up, where this is `contents` and
+               the flag is not read. */
+            onClick={() => setMoreOpen(false)}
             className={`contents max-md:absolute max-md:top-full max-md:right-4 max-md:z-10 max-md:flex max-md:flex-col max-md:items-stretch max-md:gap-1.5 max-md:border max-md:border-hairline max-md:bg-deck max-md:p-2 ${
               moreOpen ? "" : "max-md:hidden"
             }`}
@@ -1829,7 +1852,10 @@ export function App(): JSX.Element {
             type="button"
             onClick={() => setMoreOpen((o) => !o)}
             aria-expanded={moreOpen}
-            className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink md:hidden"
+            /* A fixed width, because the label changes. "more" and "less" are four characters and not the
+               same width, and this row is packed from the right - so opening the menu slid every button
+               beside it by six pixels. */
+            className="w-[3.25rem] shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-center text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink md:hidden"
           >
             {moreOpen ? "less" : "more"}
           </button>
@@ -1879,7 +1905,9 @@ export function App(): JSX.Element {
           that can break a build test is not a handle - and 82dvh at the high end, past which the sheet is
           too short to hold its own heading.
         */}
-        {cinema ? null : (
+        {/* Gone while a panel is up. The panel covers the sheet on a phone, and this handle sits at `z-[2]`
+            above it - a resize grip drawn across something it cannot resize. */}
+        {cinema || markSubject || (shownQuake && pinned) ? null : (
           <Resizer
             axis="y"
             label="Sheet height"
@@ -2472,7 +2500,7 @@ export function App(): JSX.Element {
             onSelect={selectQuake}
             onReady={onReady}
             onCapture={onCapture}
-            onSelectMark={setMarkId}
+            onSelectMark={selectMark}
             onCamera={(state) => {
               camera.current = state;
               /*
@@ -2651,7 +2679,6 @@ export function App(): JSX.Element {
             now={now}
             archived={archived}
             onClose={() => setMarkId(null)}
-            onFlyTo={(lon, lat, zoom) => flyTo.current(lon, lat, zoom)}
           />
         ) : shownQuake ? (
           <DetailPanel
@@ -2665,7 +2692,6 @@ export function App(): JSX.Element {
             now={now}
             archived={archived}
             onClose={() => setSelected(null)}
-            onFlyTo={(lon, lat, zoom) => flyTo.current(lon, lat, zoom)}
             /* A section has nowhere to be drawn but the map, so taking this goes there. Same as a shared
                link carrying one. */
             onSection={(line) => {
