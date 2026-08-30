@@ -6595,3 +6595,30 @@ The line the mode draws is not "everything goes". The header, the rail and the b
 is for looking rather than operating. The panel is the answer to "what is that dot" - content, not chrome -
 and it stays. The test asserts that it survives, so the next tidy-minded pass has to argue with a failure
 rather than a name.
+
+---
+
+## The rail cannot hold everything, and the choice of what goes under is the design
+
+The timeline came out of the rail because it is horizontal content in a 316px column: 13px a bucket there
+against 43px across the canvas. That was measured and correct, and it was also the wrong move, because the
+thing it produced was a horizontal band 322px tall - 30 to 45% of the screen, on an app whose whole subject
+is a globe. Width bought at that price is not bought.
+
+So the strip went back to the rail and **the key went to the right edge instead**. The key is 445px of
+explanation and it is read once; the timeline is scrubbed. Putting the read-once thing on an edge nothing
+else shares means it can open to whatever height it wants and disturb nothing, and it is folded shut by
+default at 51px. Below `xl` it stays in the rail, because a phone has no spare edge.
+
+What that leaves is a rail whose content runs about **600px past a 900px-tall screen**. Something is below
+the fold. The choice is between the transport - the play head and scrubber, the whole time dimension - and
+the event list, and the transport wins: it has regressed under the fold twice already, once caught by the
+author, and a scrubber you cannot see is a feature you do not know exists. A list you scroll to is still a
+list. `Feeds and layers` folded to buy back ~110px of that; the magnitude ramp stayed open, because the ramp
+is dragged and the feeds are set once.
+
+`design.spec.ts` now guards the honest version of this. The old test demanded event rows on screen without
+scrolling, which encoded the band layout; it asserts reachability instead - scroll the rail to the bottom,
+rows must appear - which still catches the real failure, a list clipped by a parent that does not scroll.
+The test that guarded the strip's canvas width was deleted rather than weakened, because it existed to
+defend an arrangement that is gone.
