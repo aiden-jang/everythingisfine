@@ -6605,7 +6605,8 @@ against 43px across the canvas. That was measured and correct, and it was also t
 thing it produced was a horizontal band 322px tall - 30 to 45% of the screen, on an app whose whole subject
 is a globe. Width bought at that price is not bought.
 
-So the strip went back to the rail and **the key went to the right edge instead**. The key is 445px of
+So the strip went back to the rail and **the key went to the bottom-right corner instead**, anchored at
+the bottom so that opening it grows upward out of the corner rather than downward off the screen. The key is 445px of
 explanation and it is read once; the timeline is scrubbed. Putting the read-once thing on an edge nothing
 else shares means it can open to whatever height it wants and disturb nothing, and it is folded shut by
 default at 51px. Below `xl` it stays in the rail, because a phone has no spare edge.
@@ -6622,3 +6623,14 @@ scrolling, which encoded the band layout; it asserts reachability instead - scro
 rows must appear - which still catches the real failure, a list clipped by a parent that does not scroll.
 The test that guarded the strip's canvas width was deleted rather than weakened, because it existed to
 defend an arrangement that is gone.
+
+
+### A filter whose effect is the answer vanishing
+
+Drag the magnitude ramp to 7.5 and nothing passes it, so `strongest` and `quiet.parts` both go null and the
+two cells under the headline stopped rendering: the titleblock collapsed 190px to 86px under the cursor that
+caused it. Correct, and it reads as a bug, because the thing you were looking at disappeared at the moment
+you touched a control. The cells now hold their place and state the result - "nothing at or above M7.5",
+"nothing in range to measure" - which is the same information the empty layout was trying to convey by
+absence. The mode gates around them (`!replay && !flat`) are unchanged: those are deliberate, and the cells
+are meant to be gone there.
