@@ -165,11 +165,21 @@ export function Globe({
       let lat = toLat;
       if (liftPx) {
         /*
-         * Clamped hard, because degrees per pixel is a tangent at the middle and this is a sphere. On a
-         * 390px phone at this zoom the globe is a whole hemisphere wide, so a quarter-canvas lift came out
-         * as 76 degrees and threw the event past the limb - the strip above the panel rendered empty.
+         * Two things this asks that the obvious version did not.
+         *
+         * `degForPx` and not `degPerPx * px`: the second is the flat map's straight line, and this camera
+         * is about two radii out, so the sphere's curve is what decides. It ran 34% long. And `toZoom`,
+         * because distance is inversely proportional to zoom - asked at the start of a 1 to 1.9 flight,
+         * the answer is nearly twice too big.
+         *
+         * Wrong in both directions at once, they nearly cancelled: a 360x640 phone lifted 186px for a
+         * request of 139 and parked the event 6px under the top bar.
+         *
+         * The clamp stays as a backstop. It should not bind now - a lift the size of half a phone's canvas
+         * comes out around 15 degrees - and if it ever does it lands the event low, towards the sheet,
+         * which is the safe direction to be wrong in.
          */
-        const deg = Math.min(globe.controls.degPerPx() * liftPx, MAX_LIFT_DEG);
+        const deg = Math.min(globe.controls.degForPx(liftPx, toZoom), MAX_LIFT_DEG);
         lat = Math.max(-85, Math.min(85, toLat - deg));
       }
       globe.controls.flyTo(toLon, lat, toZoom);

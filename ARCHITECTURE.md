@@ -6767,3 +6767,40 @@ It sits in the overflow menu now, alongside the three that already fold away on 
 contents` from `md` up, so at 768 and 1024 it is still a plain button in the row and nothing about that
 width changed. At 390 the header is back to 68px, which is `py-3` either side of a 44px touch target and is
 its height at every width below 1280 whether the fold is drawn in the row or tucked in the menu.
+
+
+## The camera lift was wrong twice, and the two errors nearly cancelled
+
+Reported as "on mobile, when you zoom in the event, sometimes it is covered by the top nav bar". Measured
+on a 360x640 phone: the strip the sheet leaves runs 85 to 192, and the pinned event landed at **91** - six
+pixels below the bar.
+
+Three separate faults, and each one alone would have looked like the layout's problem rather than the
+camera's.
+
+**The lift was a fraction of the canvas.** `canvasHeight * 0.25 - headHeight * 0.5`, tuned once against a
+390px phone. The bar is the same size on every phone and the canvas is not, so the fraction that centred
+an event on a tall phone put it against the bar on a short one. It is arithmetic now: the sheet is
+`bottom: 0` inside `.zones` capped at `--panel-share` of the viewport, so its top edge is known before it
+exists - which matters, because the first pin is the one that opens it - and lifting by half the covered
+height puts the middle of the uncovered strip where the camera's middle was. `--panel-share` is a custom
+property because the sheet's own `max-height` and this calculation are the same number in two places.
+
+**Pixels were converted with `degPerPx`.** That is the flat map's answer and it says so on the tin: a
+straight line, `90 * distance / focal`. This camera sits about two radii out and the sphere's own curve is
+what decides. `controls.ts` already had the exact inverse - `angleAt`, with its limb shoulder, written for
+dragging - and it now has a public `degForPx` over the same maths. The straight line ran 34% long.
+
+**And it was converted at the wrong zoom.** Distance is inversely proportional to zoom, and the lift is
+computed before a flight that ends at 1.9 from a default of 1, so the answer was nearly twice too big.
+`degPerPx` and `degForPx` both take an optional `atZoom` now.
+
+The last two pulled opposite ways and very nearly cancelled: fixing only the zoom moved the marker by
+zero pixels, which is exactly the kind of result that makes a fix look wrong. The event now lands within
+one pixel of the strip's centre at every phone size measured - 160 against 161, 138 against 139, 172
+against 172 - and the regression tests fail with either error put back on its own.
+
+`MAX_LIFT_DEG` stays as a backstop. It used to bind at 22 degrees and produce 193px of displacement for a
+139px request; with the exact inverse a lift the size of half a phone's canvas comes out around 15 degrees,
+so it should not bind, and if it ever does it lands the event low - towards the sheet, which is the safe
+direction to be wrong in.

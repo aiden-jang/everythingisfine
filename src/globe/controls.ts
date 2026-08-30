@@ -123,8 +123,21 @@ export interface Controls {
    *
    * The same in both axes, because the projection puts 90 degrees in a world unit either way. Degrees
    * and not kilometres, because a distance needs a latitude and this has no opinion about which.
+   *
+   * `atZoom` asks the question at a zoom the camera has not reached yet. Distance is inversely
+   * proportional to zoom, so a caller converting pixels for the *end* of a flight has to ask about the
+   * end of it: asked at the start of a 1 to 1.9 flight, the answer is nearly twice too big.
    */
-  degPerPx: () => number;
+  degPerPx: (atZoom?: number) => number;
+  /**
+   * How many degrees around the globe a pixel offset from the centre of the frame actually is.
+   *
+   * Not `degPerPx * px`. That is the flat map's answer and it is a straight line; this camera sits about
+   * two radii out, so the sphere's own curve is what decides, and the two disagree by a factor of three
+   * at the distances a panel lift asks about. `atZoom` asks at a zoom the camera has not reached, for a
+   * caller converting pixels for the end of a flight.
+   */
+  degForPx: (px: number, atZoom?: number) => number;
 }
 
 export function createControls(
@@ -172,7 +185,8 @@ export function createControls(
    */
   const DIST_FLOOR = RADIUS_ATMOSPHERE + 0.12;
   const mapFit = (): number => heightFit * MAP_FIT;
-  const dist = (): number => Math.max(DIST_FLOOR, (fit + (mapFit() - fit) * morph) / zoom);
+  const distAt = (z: number): number => Math.max(DIST_FLOOR, (fit + (mapFit() - fit) * morph) / z);
+  const dist = (): number => distAt(zoom);
 
   /*
    * How far out you may go, which is a different question on each view.
@@ -225,8 +239,8 @@ export function createControls(
    */
   const SHOULDER = 0.985;
 
-  const angleAt = (px: number): number => {
-    const d = dist();
+  const angleAt = (px: number, atDist?: number): number => {
+    const d = atDist ?? dist();
     const focal = focalPx();
     // Pixel offset at which the exact form reaches SHOULDER of the way to the limb.
     const limit = (focal * SHOULDER) / Math.sqrt(d * d - SHOULDER * SHOULDER);
@@ -758,7 +772,8 @@ export function createControls(
     state: () => ({ lon, lat, zoom }),
     // Visible height at distance d is 2 d tan(fov/2), and `focalPx` is the reciprocal half of that, so
     // a pixel is d/focalPx world units and a world unit is 90 degrees.
-    degPerPx: () => (90 * dist()) / focalPx(),
+    degPerPx: (atZoom) => (90 * (atZoom === undefined ? dist() : distAt(atZoom))) / focalPx(),
+    degForPx: (px, atZoom) => angleAt(px, atZoom === undefined ? undefined : distAt(atZoom)) / DEG,
     setFit: (d, byHeight) => {
       fit = d;
       heightFit = byHeight;

@@ -944,16 +944,24 @@ export function App(): JSX.Element {
   const liftForPanel = useCallback((): number => {
     if (window.matchMedia("(min-width: 768px)").matches) return 0;
     const canvas = document.querySelector("canvas");
-    if (!canvas) return 0;
+    const zones = document.querySelector(".zones");
+    if (!canvas || !zones) return 0;
     /*
-     * The middle of the strip the panel leaves, less the header's own height.
+     * Aim at the middle of the strip the sheet will leave, which means knowing where its top will be
+     * before it exists - the first pin is the one that opens it. It is `bottom: 0` inside `.zones`, capped
+     * at `--panel-share` of the viewport, so its top is arithmetic rather than a measurement.
      *
-     * A flat quarter of the canvas put events under the top bar on shorter phones, where the header is the
-     * same size and the canvas is not. Measuring both keeps the event between them.
+     * The strip runs from the canvas top to that edge, and lifting by half the covered height puts its
+     * middle where the camera's middle was. Fractions of the canvas were tried twice and neither held:
+     * the header is the same size on every phone and the canvas is not, so a quarter of a short one put
+     * the event 6px under the top bar.
      */
     const box = canvas.getBoundingClientRect();
-    const head = document.querySelector(".zone-head")?.getBoundingClientRect().height ?? 0;
-    return Math.max(0, Math.round(box.height * 0.25 - head * 0.5));
+    const zoneBox = zones.getBoundingClientRect();
+    const share = Number(getComputedStyle(document.documentElement)
+      .getPropertyValue("--panel-share")) || 0.7;
+    const sheetTop = zoneBox.bottom - Math.min(share * window.innerHeight, zoneBox.height);
+    return Math.max(0, Math.round((box.bottom - Math.min(box.bottom, sheetTop)) / 2));
   }, []);
   /* The same rule as an earthquake: pick it and the camera goes, lifted clear of whatever is describing it.
      A flood behind the panel is the same defect as an earthquake behind it. */

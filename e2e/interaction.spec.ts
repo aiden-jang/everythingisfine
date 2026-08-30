@@ -1988,3 +1988,47 @@ test("the marks key is reachable at every width", async ({ page }) => {
     expect(shown, `visible copies of the key at ${w}x${h}`).toBe(1);
   }
 });
+
+/*
+ * Where a pinned event lands on a phone, which is a question with a bar at one end and a sheet at the
+ * other. Two separate errors used to put it 6px under the top bar on a short phone, nearly cancelling
+ * each other into something that looked deliberate: the lift was converted with `degPerPx`, which is the
+ * flat map's straight line rather than the sphere's curve, and it was converted at the zoom the flight
+ * started from rather than the one it ends on.
+ */
+for (const [w, h] of [[390, 844], [360, 640], [412, 915]] as const) {
+  test(`a pinned event sits between the bar and the sheet at ${w}x${h}`, async ({ page }) => {
+    await page.setViewportSize({ width: w, height: h });
+    await installFeeds(page, { count: 200 });
+    await page.goto("/");
+    await waitForData(page);
+    await page.waitForTimeout(900);
+
+    const row = page.locator("section[aria-label='Recent earthquakes'] button").first();
+    await row.scrollIntoViewIfNeeded();
+    await row.click();
+    // Three seconds, because this is an eased flight and the assertion is about where it stops.
+    await page.waitForTimeout(3_200);
+
+    const seen = await page.evaluate(() => {
+      // The app's own pinned ring, so this measures where the camera actually put the event.
+      const pick = document.querySelector(".pick")!.getBoundingClientRect();
+      const canvas = document.querySelector("canvas")!.getBoundingClientRect();
+      const sheet = document.querySelector(".zone-panel")!.getBoundingClientRect();
+      const top = canvas.top;
+      const bottom = Math.min(canvas.bottom, sheet.top);
+      return {
+        marker: pick.top + pick.height / 2,
+        top,
+        bottom,
+        centre: (top + bottom) / 2,
+      };
+    });
+
+    // Inside the strip nothing covers, with room to spare at both ends.
+    expect(seen.marker, "clear of the top bar").toBeGreaterThan(seen.top + 24);
+    expect(seen.marker, "clear of the sheet").toBeLessThan(seen.bottom - 24);
+    // And centred in it: the lift is arithmetic, not a guess, so this is tight on purpose.
+    expect(Math.abs(seen.marker - seen.centre), "centred in the strip").toBeLessThan(8);
+  });
+}
