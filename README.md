@@ -25,8 +25,9 @@ nothing to sign up for and nothing to configure.
 
 Hover an event for a one-line summary, click to pin it, drag to orbit, scroll to zoom toward the
 cursor, search or click a region in the rail to fly there. Every filter answers as it moves; there is
-no apply button. `f` hides the chrome and leaves the planet; `Still` writes a PNG with the moment it
-is of stamped on it. A permalink carries the camera, the filters, the moment, the archived day, the
+no apply button. `f` goes fullscreen and takes nothing away, because a full screen showing a planet and
+nothing else is a screensaver; the top bar and the left panel fold on their own instead, each where it
+costs the picture something. `Still` writes a PNG with the moment it is of stamped on it. A permalink carries the camera, the filters, the moment, the archived day, the
 pinned event and any cross-section drawn on the map.
 
 ## The budget was $0, and it made the project better
@@ -91,8 +92,10 @@ your shoulder - hazard first, imperative, one idea per sentence:
 - *No backticks anywhere in this file's shaders. One ends the template literal, and the error lands
   twenty lines from the comment that caused it.*
 
-The tree went from 13,190 comment lines to about 7,600 across two passes, and the second was mostly
-about register rather than volume.
+Three passes so far: 13,190 lines, then about 7,600, now about 6,350. The last one was aimed at four
+faults rather than at a percentage - a comment that had drifted away from the code it described, two or
+three piled above one line, a docstring that restated the signature under it, and a page of reasoning
+where a one-line warning would do. The reasoning did not disappear; it moved to ARCHITECTURE.md.
 
 ## Design and decisions
 
@@ -103,7 +106,7 @@ about register rather than volume.
   rather than reconstructed. It keeps the wrong guesses and the measurements that killed them.
 - **[PLAN.md](PLAN.md)** is the build sequence, with the gate each step had to pass.
 
-DESIGN.md's banned list is not a list. It is [nine browser tests](e2e/design.spec.ts) asserting that
+DESIGN.md's banned list is not a list. It is [thirteen browser tests](e2e/design.spec.ts) asserting that
 no chrome element paints a hue, nothing overflows sideways, every updating number has tabular
 figures, and nothing is pure black, at three breakpoints.
 

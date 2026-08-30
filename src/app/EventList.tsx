@@ -167,8 +167,8 @@ export function EventList({
         </p>
       ) : null}
 
-      {/* One tab stop, then arrows. Tabbing through sixty earthquakes to reach the next control
-          would be its own accessibility failure. */}
+      {/* One tab stop, then arrows. Tabbing through sixty earthquakes to reach the next control would be
+          its own accessibility failure. */}
       {/*
         `contain: paint` is load-bearing, not a hint. Without it the sixty rows inflated
         `documentElement.scrollHeight` to 3,486px against an 820px viewport even though this box clips

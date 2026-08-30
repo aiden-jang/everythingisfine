@@ -6804,3 +6804,37 @@ against 172 - and the regression tests fail with either error put back on its ow
 139px request; with the exact inverse a lift the size of half a phone's canvas comes out around 15 degrees,
 so it should not bind, and if it ever does it lands the event low - towards the sheet, which is the safe
 direction to be wrong in.
+
+
+## A third comment pass, and what it found
+
+13,190 lines, then about 7,600, now about 6,350. The first two passes were about volume and register.
+This one was asked for the same way - "be really aggressive" - and the honest result is a smaller number
+than that instruction implies, so here is what it actually did and why it stopped where it did.
+
+**Four faults, not a percentage.**
+
+- **Drift.** A comment describing code that has since moved or gone. `App.tsx` had "divide by the biggest
+  region, never by a sum" sitting above a Tailwind class string, and "look the pin up by key every render"
+  fourteen lines above the lookup it describes. `Globe.tsx` had the morph's 1.1-second reasoning above
+  `let morph = flat ? 1 : 0`, where the duration is not. These are worse than no comment: a reader trusts
+  them and is wrong.
+- **Stacking.** Two or three independent one-liners piled above a single line, each about something else.
+  Forty-nine sites. `markId` carried six, five of which described a `figure` and a `flag` that no longer
+  exist in the expression.
+- **Restatement.** `/** The star table, once its own chunk has landed. */` over `setStars`. About thirty
+  of these went from the `Globe` and `Globe.tsx` prop lists.
+- **A page of reasoning where a warning would do.** `controls.ts` lost 78 lines this way and `scene.ts`
+  105, none of it information: the derivations live here, and the code keeps the sentence that stops
+  somebody undoing them.
+
+**Where it stopped.** The remaining bulk is 587 blocks of five lines or more, and sampling them says most
+are load-bearing by the same test that condemned the four above. `land.ts` carries the sagitta formula and
+"1,559 of 303,360 triangles faced inward"; `events.ts` carries "don't add the offset before `fmProject`",
+which files a marker under the flat map; `controls.ts` carries the exact inverse of the sphere projection
+and the two wrong versions that look fine in code. Cutting to a percentage would delete measured facts
+that cost days to find. So the pass took the faults and left the warnings, and the number is what it is.
+
+One thing worth recording as evidence rather than opinion: while rewriting the comment that says *no
+backticks anywhere in this shader, one of them ends the template literal*, I put backticks in it and broke
+the build. That comment has now earned its place twice.

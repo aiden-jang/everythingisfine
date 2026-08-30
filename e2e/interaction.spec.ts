@@ -11,13 +11,7 @@ interface Camera { lon: number; lat: number; zoom: number; morph: number }
 
 /* `morph` is sampled alongside the camera because the projection unwrap is the same kind of thing: a value
  * easing toward a target that a test must not read halfway through. */
-/**
- * Whether this run is against `dist` rather than the dev server.
- *
- * A handful of tests reach for `window.__globe`, which `Globe.tsx` exposes only under `import.meta.env.DEV`.
- * Those tests cannot run against a build by construction. Skipped rather than silently passed: a run that
- * did not check something should say so in the summary.
- */
+/** True when this run is against `dist`, where the DEV-only `window.__*` hooks do not exist. */
 const AGAINST_BUILD = process.env["EIF_BUILD"] === "1";
 
 /** Call at the top of a test that needs the DEV-only hooks. */
@@ -33,11 +27,8 @@ const cameraNow = (page: Page): Promise<Camera> => page.evaluate(() => {
 });
 
 /**
- * Waits for the camera to stop moving, and returns where it stopped.
- *
- * "Is it at the target yet, within N seconds" asks two questions at once and answers neither when it fails.
- * This one waits for motion to stop, however long the machine takes, by sampling until two readings agree;
- * the test then asserts where it came to rest. A slow machine makes the suite slower instead of red.
+ * Waits for the camera to stop moving, and returns where it stopped. Samples until two readings agree
+ * rather than waiting a fixed time, which is the same test on a fast and a slow machine.
  */
 async function cameraStill(page: Page): Promise<Camera> {
   let last: Camera | null = null;
@@ -488,12 +479,9 @@ test("the sequence says whether the big one has already happened", async ({ page
 test("notches compound off where the camera is heading", async ({ page }) => {
   needsDevHooks();
   /*
-   * Wheel zoom used to assign `zoom` straight onto the camera: one notch moved 14% in a single frame. It now
-   * sets a target.
-   *
-   * Two notches in quick succession must land on two notches, which is only true if each compounds off the
-   * pending target rather than off the animated value. The smoothness itself is not asserted: Playwright
-   * dispatches one notch as about eight wheel events, so frame counting cannot tell the two apart.
+   * Ten fast notches must travel ten notches. Assigning `zoom` straight onto the camera made each one a
+   * 14% step in a single frame; going through the spring fixed the staircase and, unguarded, let a burst
+   * race the animation and arrive short.
    */
   await installFeeds(page, { silent: true });
   await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
@@ -707,12 +695,8 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
   await largest.click();
   await expect(page.locator(".zone-panel")).toContainText("M 6.3");
   /*
-   * Compared as numbers within a degree, never against the rounded string.
-   *
-   * `at=` is written to two decimals off a spring that approaches its target asymptotically, so an exact
-   * match demands it settle inside 0.005 degrees before the poll gives up - and the poll carried its own
-   * 10s, which no CI setting widens. It read 119.92 and 119.95 on a runner: arrived, by any reading a
-   * person would give it, and failing. The claim is that the row flies to the event it names.
+   * Compared as numbers within a degree, never against the rounded string: the readout prints whole
+   * degrees, so a camera one degree out reads identical to one that arrived.
    */
   await expect
     .poll(async () => {
@@ -1535,15 +1519,9 @@ test("the tour names where the camera is, not where it is going", async ({ page 
   // Sampled in the page rather than by polling from here: a round trip per sample is slower than the stop it
   // is trying to observe, and a sparse series lands on the transitions and manufactures its own findings.
   /*
-   * Collected to a target rather than for a fixed 45 ticks, and the count is only a guard.
-   *
-   * The label appears only once the camera has arrived, so a fixed window really measures how much of it the
-   * machine spent in transit: a runner caught 2 and 3 labelled samples against a bar of 3, and counting
-   * distinct stops instead still came back 2 on a quiet local run. Neither number is the claim.
-   *
-   * The claim is the loop below - that every label names where the camera actually is - and the bug it
-   * guards against shows up on a single sample, because the label and the flight were set on the same tick.
-   * So collect a handful, prove narration happened at all, and let the comparison do the work.
+   * Collected to a target rather than for a fixed number of ticks. A count is a guard, not the
+   * assertion: what matters is that the cursor advances against the wall clock, so a slow machine takes
+   * longer and asserts the same thing.
    */
   const named = await page.evaluate(async () => {
     const seen: { name: string; lon: number }[] = [];

@@ -4,14 +4,12 @@ import { REPLAY_FRONT_MIN_MAG } from "../src/app/replay";
 /*
  * Both feeds, served from the test.
  *
- * Talking to USGS and EMSC for real was the one thing keeping this suite out of CI: across a single afternoon
- * the feeds became unreachable three times, and none of these tests assert anything about data - they time
- * out waiting for content, so a quiet network looked exactly like a broken app.
+ * Talking to USGS and EMSC for real was the one thing keeping this suite out of CI: none of these tests
+ * assert anything about the data, so they time out waiting for content and a quiet network looks exactly
+ * like a broken app.
  *
- * Deterministic rather than recorded. A browser test needs a plausible day positioned relative to now: fixed
- * timestamps would age out of the twenty-four hour window and the suite would rot quietly.
- *
- * The live contract is still checked, by `pnpm test:live`.
+ * Deterministic and positioned relative to now, or fixed timestamps age out of the window and the suite
+ * rots quietly. The live contract is still checked, by `pnpm test:live`.
  */
 
 /** mulberry32, so a failure reproduces exactly rather than turning up once a week. */
@@ -64,16 +62,14 @@ const B_VALUE = 1;
 const MIN_MAG = 2.5;
 
 /**
- * The ceiling, held just under the magnitude that spawns a wavefront, and it is load-bearing rather than tidy.
+ * Held just under the magnitude that spawns a wavefront, and derived rather than written down.
  *
- * The draw's old tail cut read `0.985`, which looks arbitrary and was holding the whole browser suite below
- * `REPLAY_FRONT_MIN_MAG` by accident: the old ceiling was M4.9. Raising it past 5 let the entrance replay
- * start firing fronts, each of which keeps the frame loop awake for about sixteen seconds, and three tests
- * went from roughly 20 seconds to 40, 45 and 66 - straight through the 45-second budget. Nothing was wrong
- * with the app and nothing was wrong with the tests.
+ * A ceiling above `REPLAY_FRONT_MIN_MAG` lets the entrance replay fire fronts, each of which keeps the
+ * frame loop awake about sixteen seconds: three tests went from roughly 20 seconds to 40, 45 and 66,
+ * straight through the budget, with nothing wrong with the app or the tests.
  *
- * So the coupling is written down and derived, rather than left as a number somebody would round off later.
- * The cost is that no browser test ever sees a wavefront, which was already true and is now at least visible.
+ * The cost is that no browser test ever sees a wavefront. That was already true and is now at least
+ * visible.
  */
 const MAX_MAG = REPLAY_FRONT_MIN_MAG - 0.05;
 
@@ -81,21 +77,15 @@ const MAX_MAG = REPLAY_FRONT_MIN_MAG - 0.05;
 const MAG_CUT = 1 - 10 ** (-(MAX_MAG - MIN_MAG) * B_VALUE);
 
 /**
- * A day of seismicity, newest last, drawn from Gutenberg-Richter. A uniform draw would put a magnitude 7 on
- * screen every few minutes and quietly make every magnitude filter test meaningless.
+ * A day of seismicity, newest last, drawn from Gutenberg-Richter. A uniform draw would put a magnitude
+ * 7 on screen every few minutes and quietly make every magnitude filter test meaningless.
  *
- * The slope read 0.625 for a long time, against the 0.8 to 1.2 real catalogues sit in - and the
- * size-distribution chart reads this back and quotes it, so the fixture was making the app print "about 5
- * times as many" where a real feed gives about 10.
+ * The slope matters because the app reads it back: the size-distribution chart estimates b from these
+ * events and quotes it. Measured across four seeds, this draw gives a largest of M4.4 to M4.9 and an
+ * estimated b of 0.87 to 0.95, inside the 0.8 to 1.2 real catalogues sit in.
  *
- * Measured across four seeds at the constants above: largest M4.4 to M4.9, and an estimated b of 0.87 to
- * 0.95. The old draw gave a largest of M4.8 and a b of 0.59.
- *
- * The app reads it back as **"about 12 times as many, each magnitude smaller"**, where it was saying about 5
- * and a real feed gives about 10. The remaining gap is the ceiling above: cutting the upper tail pulls the
- * mean magnitude down, and Aki's estimator is one over that distance, so it reads about 1.08 from a draw at
- * 1.0. Drawing at 0.93 to make the readout land on 10 would be tuning the generator to fool the estimator,
- * which is the same dishonesty in the other direction. 12 sits inside the 0.8 to 1.2 real catalogues span.
+ * Don't tune the draw to make the readout land on a rounder number. The gap is the ceiling above cutting
+ * the upper tail, and fooling the estimator is the same dishonesty in the other direction.
  */
 function day(seed = 4, count = 240): Quake[] {
   const rand = seeded(seed);
@@ -250,11 +240,8 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
   const quakes = empty ? [] : day(seed, count);
 
   /*
-   * Every backlog, not just the daily one. The window control can ask for `all_week` or `all_month`, and a
-   * pattern that only caught `all_day` quietly started pulling a live week down the moment a test clicked 7d.
-   *
-   * All three answer with the same fixture day: what the seeding path is being tested on is which URL it asks
-   * for and what it does with the reply.
+   * Every backlog, not just the daily one. The window control can ask for `all_week` or `all_month`, and
+   * a pattern catching only `all_day` quietly pulled a live week down the moment a test clicked 7d.
    */
   await page.route(/all_(day|week|month)\.geojson/, (route) => {
     const now = Date.now();
@@ -294,14 +281,11 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
     });
   });
   /*
-   * The archive, which was reaching the real internet for months.
+   * The archive asks `fdsnws/event/1/query?format=geojson&...`, which contains no literal `.geojson`, so
+   * it missed every pattern here and reached the real internet for months.
    *
-   * The archive asks `earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=...`, which contains
-   * no literal `.geojson`, so USGS archive requests missed every pattern. Every archived-day test was running
-   * on real events from that day mixed with fixtures dated near now.
-   *
-   * The fixtures are dated inside the requested day, because an archived day whose events are dated today
-   * cannot tell a correct clock from a broken one.
+   * These fixtures are dated inside the requested day: an archived day whose events are dated today cannot
+   * tell a correct clock from a broken one.
    */
   // The count method, which is a different method on the same service: the route below matches `query`, so
   // `count` went straight past it to the real agency. The number is derived from the day so it is stable per
@@ -353,12 +337,11 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
  * exist spends the full thirty seconds and then reports "element(s) not found".
  */
 /*
- * The hazard feeds, stubbed because they were never stubbed and nobody had measured the cost: 14 requests to
- * gdacs.org and 2 to services.swpc.noaa.gov on a single test, which is roughly a thousand calls per suite run
- * for data no test asserts on.
+ * The hazard feeds. Unstubbed they cost 14 requests to gdacs.org and 2 to swpc.noaa.gov per test, about
+ * a thousand a run, for data no test asserts on.
  *
- * Small fixed sets rather than empty responses, so screenshots keep showing a spiral, a triangle, a flame and
- * waves, and the same ones every run.
+ * Small fixed sets rather than empty replies, so screenshots keep showing a spiral, a triangle, a flame
+ * and waves, and the same ones every run.
  */
 const hazardEvent = (type: string, id: number, lon: number, lat: number, extra: object = {}) => ({
   type: "Feature",
