@@ -1842,7 +1842,7 @@ test("the bar folds where it is a row of its own, and stays folded", async ({ pa
   // The rail is a strip across the top here, not a column over the globe. Nothing to fold.
   await expect(page.getByLabel("Hide the panel")).toHaveCount(0);
 
-  await page.getByLabel("Hide the top bar").click();
+  await page.getByRole("button", { name: "Hide bar" }).click();
   await page.waitForTimeout(400);
   expect(await bar(), "the bar folds").toBe(false);
 
@@ -1853,6 +1853,40 @@ test("the bar folds where it is a row of its own, and stays folded", async ({ pa
   await page.getByLabel("Show the top bar").click();
   await page.waitForTimeout(400);
   expect(await bar()).toBe(true);
+});
+
+/*
+ * The fold has to cost the bar nothing to carry. As a button of its own it was the one control that would
+ * not fit at 390: it wrapped onto a second line by itself and took the header from 46px to 80px, which is
+ * the opposite of what folding the bar is for. It lives in the overflow menu now.
+ */
+test("the bar's own fold does not make the bar taller", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installFeeds(page, { count: 200 });
+  await page.goto("/");
+  await waitForData(page);
+  await page.waitForTimeout(600);
+
+  const rows = await page.evaluate(() => {
+    const head = document.querySelector("#chrome-head") as HTMLElement;
+    const tops = new Set<number>();
+    for (const child of Array.from(head.querySelectorAll("button, span"))) {
+      const box = child.getBoundingClientRect();
+      if (box.height > 0) tops.add(Math.round(box.top));
+    }
+    return { lines: tops.size, height: Math.round(head.getBoundingClientRect().height) };
+  });
+  // One line of controls. 68px is `py-3` either side of a 44px touch target, and is the height at every
+  // width below 1280 whether the fold is drawn in the row or tucked in the menu.
+  expect(rows.height, "the bar is one row tall").toBeLessThanOrEqual(68);
+
+  // Reachable all the same, behind `more`, alongside the other three that fold away on a phone.
+  await expect(page.getByRole("button", { name: "Hide bar" })).toBeHidden();
+  await page.getByRole("button", { name: "more" }).click();
+  await expect(page.getByRole("button", { name: "Hide bar" })).toBeVisible();
+  await page.getByRole("button", { name: "Hide bar" }).click();
+  await page.waitForTimeout(400);
+  await expect(page.locator("#chrome-head")).toBeHidden();
 });
 
 /* A fold remembered at one width must not strand a viewer at another. The bar has no fold control above
