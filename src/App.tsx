@@ -4,7 +4,7 @@ import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { PLACE_LIMIT, search, type Hit } from "./app/search";
 import { useRolling } from "./app/roll";
-import { useFloatingRail, useNarrow } from "./app/useNarrow";
+import { useFloatingChrome, useNarrow } from "./app/useNarrow";
 import { store, stored } from "./app/stored";
 import { fetchAurora, type Aurora } from "./sources/aurora";
 import { fetchCyclones, type Cyclone } from "./sources/cyclones";
@@ -1265,9 +1265,9 @@ export function App(): JSX.Element {
    * a planet and nothing else is a screensaver, so `f` now only makes the window bigger and these two say
    * what is drawn over it. Remembered, because a viewer who cleared the frame once meant it.
    *
-   * The rail's is only offered where the rail floats over the canvas. On a phone it is the page.
+   * Each is offered only where it buys something. See `useFloatingChrome`.
    */
-  const railFloats = useFloatingRail();
+  const chromeFloats = useFloatingChrome();
   const [headOpen, setHeadOpen] = useState<boolean>(() => stored("head") !== "0");
   const [railOpen, setRailOpen] = useState<boolean>(() => stored("railOpen") !== "0");
   const changeHeadOpen = useCallback((next: boolean) => {
@@ -1278,7 +1278,8 @@ export function App(): JSX.Element {
     setRailOpen(next);
     store("railOpen", next ? "1" : "0");
   }, []);
-  const railShown = railOpen || !railFloats;
+  const railShown = railOpen || !chromeFloats;
+  const headShown = headOpen || chromeFloats;
 
   const versus = useMemo(() => versusReference(energyTotal), [energyTotal]);
 
@@ -1797,7 +1798,7 @@ export function App(): JSX.Element {
     <div className="frame">
       {/* A top edge, so the frame closes. The rail has `xl:border-r` and the panel a `border-l`, and above
           1280 this header is transparent: without the hairline the chrome has two walls and no lid. */}
-      <header id="chrome-head" className="zone-head max-md:relative flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent" hidden={!headOpen}>
+      <header id="chrome-head" className="zone-head max-md:relative flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent" hidden={!headShown}>
         <button
           type="button"
           /* The wordmark is the way back to nothing, the way a masthead usually is. See `resetView`. */
@@ -1992,6 +1993,7 @@ export function App(): JSX.Element {
             a word: everything else in this row is a label for what it controls, and "Bar" would read as
             another view option rather than as this row folding away.
           */}
+          {chromeFloats ? null : (
           <button
             type="button"
             onClick={() => changeHeadOpen(false)}
@@ -2003,12 +2005,13 @@ export function App(): JSX.Element {
           >
             &#8963;
           </button>
+          )}
         </div>
       </header>
 
       {/* The way back. The control that folds the bar goes with it, so the one that unfolds it cannot live
           there - it sits where the bar was, at the corner the eye already went to. */}
-      {headOpen ? null : (
+      {headShown ? null : (
         <button
           type="button"
           onClick={() => changeHeadOpen(true)}
@@ -2028,7 +2031,7 @@ export function App(): JSX.Element {
         style={{
           /* Folded, they are worth nothing to the things placed from them: the rail sits under the bar and
              the band beside the rail, and both should take the space back rather than hold a gap open. */
-          ...(headOpen ? {} : { "--head-h": "0px" }),
+          ...(headShown ? {} : { "--head-h": "0px" }),
           "--rail-w": railShown ? `${railWidth}px` : "0px",
           "--regions-h": `${regionsHeight}px`,
           ...(sheetCanvas > 0 ? { "--canvas-h": `${sheetCanvas}px` } : {}),
@@ -2597,7 +2600,7 @@ export function App(): JSX.Element {
           rail's outer edge; closed, it is the same handle at the frame's, which is where a reader last saw
           the rail go. Only where the rail floats over the canvas - on a phone the rail is the page.
         */}
-        {railFloats ? (
+        {chromeFloats ? (
           <button
             type="button"
             onClick={() => changeRailOpen(!railOpen)}
@@ -2834,7 +2837,7 @@ export function App(): JSX.Element {
           Take the wording from `stillMoment` and the day from the snapshot, not the field, which is text
           somebody is still typing.
         */}
-        {!headOpen && (snapshot.archive !== null || view.at !== null) ? (
+        {!headShown && (snapshot.archive !== null || view.at !== null) ? (
           <div className="stamp pointer-events-none absolute bottom-4 left-4 z-[2] bg-deck/40 px-3 py-2 font-mono text-[11px] text-faint backdrop-blur-xl backdrop-saturate-50">
             {stillMoment(view.at, snapshot.archive ? snapshot.archive.from : clockAt(), snapshot.archive !== null)}
           </div>

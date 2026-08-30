@@ -1759,10 +1759,11 @@ test("fullscreen makes the window bigger and takes nothing away", async ({ page 
 });
 
 /*
- * The two folds that replaced it. Independent, remembered, and each reachable from where it left: the
- * control that folds the bar goes with the bar, so the one that unfolds it has to live somewhere else.
+ * The two folds that replaced it. Independent, remembered, and each offered only at the width where it
+ * buys something - see `useFloatingChrome`. Each is reachable from where it left, too: the control that
+ * folds a region goes with the region, so the one that unfolds it has to live somewhere else.
  */
-test("the bar and the panel fold on their own, and stay folded", async ({ page }) => {
+test("the panel folds where it covers the globe, and stays folded", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await installFeeds(page, { count: 200 });
   await page.goto("/");
@@ -1789,46 +1790,82 @@ test("the bar and the panel fold on their own, and stay folded", async ({ page }
     });
 
   const open = await chrome();
-  expect(open.head).toBe(true);
   expect(open.rail).toBe(true);
+  // The bar floats here, transparent, over a canvas that is the full height either way. Nothing to fold.
+  await expect(page.getByLabel("Hide the top bar")).toHaveCount(0);
 
   await page.getByLabel("Hide the panel").click();
   await page.waitForTimeout(400);
-  const noRail = await chrome();
-  expect(noRail.rail, "the panel folds").toBe(false);
-  expect(noRail.head, "and the bar does not go with it").toBe(true);
-  expect(noRail.resizer, "the rail's handle goes with the rail").toBe(0);
+  const folded = await chrome();
+  expect(folded.rail, "the panel folds").toBe(false);
+  expect(folded.head, "and the bar is still there").toBe(true);
+  expect(folded.resizer, "the rail's handle goes with the rail").toBe(0);
   // `--rail-w` is what the bottom band is measured from, so the keys recentre on the whole canvas.
-  expect(noRail.hintsCentre, "the hints recentre").toBeLessThan(open.hintsCentre);
-
-  await page.getByLabel("Hide the top bar").click();
-  await page.waitForTimeout(400);
-  expect((await chrome()).head, "the bar folds").toBe(false);
+  expect(folded.hintsCentre, "the hints recentre").toBeLessThan(open.hintsCentre);
 
   await page.reload();
   await waitForData(page);
-  const remembered = await chrome();
-  expect(remembered.head, "the bar is still folded").toBe(false);
-  expect(remembered.rail, "the panel is still folded").toBe(false);
+  expect((await chrome()).rail, "the panel is still folded").toBe(false);
 
-  await page.getByLabel("Show the top bar").click();
   await page.getByLabel("Show the panel").click();
   await page.waitForTimeout(400);
   const back = await chrome();
-  expect(back.head).toBe(true);
   expect(back.rail).toBe(true);
   expect(back.hintsCentre).toBe(open.hintsCentre);
 
   /*
    * The rail comes back the width it was. It did not: the fold shipped storing "1" and "0" under `rail`,
    * which is where the rail's *width* is kept, so folding and unfolding wrote a width of 1 - and the next
-   * load restored a 41px column with no handle to grab. Measured on the way out, because the damage only
-   * shows after a reload.
+   * load restored a 41px column with no handle to grab. Measured after a reload, because that is when the
+   * damage showed.
    */
   await page.reload();
   await waitForData(page);
   await page.waitForTimeout(600);
   expect((await chrome()).railWidth, "the rail keeps its width across a fold").toBe(open.railWidth);
+});
+
+test("the bar folds where it is a row of its own, and stays folded", async ({ page }) => {
+  // 1024, where the bar is opaque and in flow: 68px out of a 439px canvas, which is worth folding away.
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await installFeeds(page, { count: 200 });
+  await page.goto("/");
+  await waitForData(page);
+
+  const bar = (): Promise<boolean> =>
+    page.evaluate(() => {
+      const el = document.querySelector("#chrome-head");
+      return el !== null && (el as HTMLElement).checkVisibility();
+    });
+
+  expect(await bar()).toBe(true);
+  // The rail is a strip across the top here, not a column over the globe. Nothing to fold.
+  await expect(page.getByLabel("Hide the panel")).toHaveCount(0);
+
+  await page.getByLabel("Hide the top bar").click();
+  await page.waitForTimeout(400);
+  expect(await bar(), "the bar folds").toBe(false);
+
+  await page.reload();
+  await waitForData(page);
+  expect(await bar(), "and stays folded").toBe(false);
+
+  await page.getByLabel("Show the top bar").click();
+  await page.waitForTimeout(400);
+  expect(await bar()).toBe(true);
+});
+
+/* A fold remembered at one width must not strand a viewer at another. The bar has no fold control above
+   1280, so a stored "0" carried up there would hide it with nothing to press. */
+test("a bar folded on a narrow screen is still there on a wide one", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installFeeds(page);
+  await page.addInitScript(() => window.localStorage.setItem("eif.head", "0"));
+  await page.goto("/");
+  await waitForData(page);
+  await page.waitForTimeout(600);
+
+  await expect(page.locator("#chrome-head")).toBeVisible();
 });
 
 /* The other half of the same defect. The drag handle bounds the width while you drag it; the restore path

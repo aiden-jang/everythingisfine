@@ -23,8 +23,15 @@ export function useNarrow(): boolean {
   return useMedia("(max-width: 767px)");
 }
 
-/** True where the rail is a floating column beside the globe rather than a band above or below it. Only
- * there is collapsing it a sensible thing to offer: on a phone the rail is the page. */
-export function useFloatingRail(): boolean {
+/**
+ * True where the whole interface floats over the canvas rather than taking rows and columns from it.
+ *
+ * The two folds are opposites about this. The rail is 356px of a 1440px screen and covers the globe, so
+ * folding it is worth offering here and nowhere else - narrower, it is a strip or, on a phone, the page.
+ * The bar is the reverse: floating it is transparent and 46px of the rail's height, and the canvas is the
+ * full 900px either way, so there is nothing to gain. Narrower it is an opaque row taking 68px of a 768px
+ * screen and 80px of a phone, which is worth a fold.
+ */
+export function useFloatingChrome(): boolean {
   return useMedia("(min-width: 1280px)");
 }
