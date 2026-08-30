@@ -42,7 +42,7 @@ import {
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
-import { Timeline } from "./app/Timeline";
+import { Timeline, TimelineNotes } from "./app/Timeline";
 import { clamp as clampScrub, dragTo, fractionOf, LIVE, nudge, step as stepScrub, togglePlay,
   type Scrub } from "./app/scrub";
 import { Resizer } from "./app/Resizer";
@@ -1386,9 +1386,26 @@ export function App(): JSX.Element {
 
   /* `data-activity` rather than `data-rail`: this renders in the rail or in the band across the canvas
      depending on width, and a hook naming one of them would be wrong half the time. */
+  /* Hoisted, because the strip and its footnotes render in different places and must not drift apart. */
+  const reaches = (["usgs", "emsc"] as const).map((id) => ({
+    id,
+    label: SOURCE_NAMES[id],
+    fraction: reachFraction(snapshot.covered[id], now, filters.windowMs),
+    words: reachWords(
+      snapshot.covered[id],
+      snapshot.statuses[id].kind === "failing",
+      now,
+      filters.windowMs,
+    ),
+  }));
+  const timelineNotes = [
+    sourceNote,
+    corroborationNote(overlap, overlapFrom, now, filters.windowMs),
+  ].filter((n): n is string => n !== null);
   const timeline = (
     <div data-activity>
             <Timeline
+              compact={wideTimeline}
               bars={bars}
               onSelect={selectQuake}
               archived={archived}
@@ -1418,21 +1435,8 @@ export function App(): JSX.Element {
               onPlayToggle={() => setScrub(togglePlay(view, span))}
               onLive={() => setScrub(LIVE)}
               cursorLabel={view.at === null ? null : clock(view.at)}
-              reaches={(["usgs", "emsc"] as const).map((id) => ({
-                id,
-                label: SOURCE_NAMES[id],
-                fraction: reachFraction(snapshot.covered[id], now, filters.windowMs),
-                words: reachWords(
-                  snapshot.covered[id],
-                  snapshot.statuses[id].kind === "failing",
-                  now,
-                  filters.windowMs,
-                ),
-              }))}
-              notes={[
-                sourceNote,
-                corroborationNote(overlap, overlapFrom, now, filters.windowMs),
-              ].filter((n): n is string => n !== null)}
+              reaches={reaches}
+              notes={timelineNotes}
             >
               <details className="mt-3">
                 <summary className="disclose text-[11px] text-faint hover:text-dim">
@@ -2215,7 +2219,22 @@ export function App(): JSX.Element {
             interface says live, so it is the widest thing in the rail while it is up.
           */}
           {archiveBlock}
-          {wideTimeline ? null : timeline}
+          {/*
+            The strip is over the planet when it is wide, so what it is drawn from stays here. A footnote
+            about an instrument does not belong on top of the thing the instrument is about.
+          */}
+          {wideTimeline ? (
+            <div data-activity-rail>
+              <TimelineNotes bars={bars} reaches={reaches} notes={timelineNotes} bucketMs={bucketMs}>
+                <details className="mt-3">
+                  <summary className="disclose text-[11px] text-faint hover:text-dim">
+                    How the sizes stack up
+                  </summary>
+                  <SizeChart sizes={sizes} />
+                </details>
+              </TimelineNotes>
+            </div>
+          ) : timeline}
 
           {/* All twelve in a resizable box. Truncating to four cut exactly the region with two events,
               which is what somebody scanning for where today is quiet came to see. */}
@@ -2532,7 +2551,9 @@ export function App(): JSX.Element {
             */}
             {wideTimeline ? (
               <div
-                className={`pointer-events-auto order-1 w-full bg-deck/70 px-4 py-3 backdrop-blur-2xl backdrop-saturate-50 ${
+                /* No padding of its own beyond the ground it needs: the band already has `p-4`, and this sits
+                   over the planet where every pixel is the subject. */
+                className={`pointer-events-auto order-1 w-full bg-deck/70 px-4 py-2 backdrop-blur-2xl backdrop-saturate-50 ${
                   markSubject || (shownQuake && pinned) ? "xl:pr-[calc(var(--panel-w)+1rem)]" : ""
                 }`}
               >
