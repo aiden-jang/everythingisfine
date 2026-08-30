@@ -6728,3 +6728,22 @@ Two details worth keeping:
   so leaving them at their open values holds a gap open where the folded thing used to be. The rail fold
   is offered only at `xl`, through `useFloatingRail`: below that the rail is a strip or a sheet, and on a
   phone it is the page.
+
+
+### A one-pixel rail, from two keys with one name
+
+Reported as "the left panel expands really small", and it was: fold the rail, unfold it, reload, and the
+column came back **41px** wide with no handle to grab.
+
+`railWidth` had been persisted under `"rail"` since the resizer was written. The fold shipped the same day
+storing `"1"` and `"0"` under `"rail"` as well. So unfolding wrote a width of 1, and the next load restored
+it - `Number("1") || 356` is 1, because 1 is truthy and the fallback only catches 0 and NaN.
+
+Two fixes, because either alone leaves the other half wrong:
+
+- The fold moved to `"railOpen"`. Every other key in the app is used exactly twice, once to read and once
+  to write; `grep -o 'store\("[a-z]*"' | sort | uniq -c` said `rail` four times, which is the whole bug in
+  one line and is worth running whenever a key is added.
+- The restored width is clamped to the drag handle's own `RAIL_MIN`/`RAIL_MAX`. The handle enforced them
+  while dragging and the restore path went straight into state around it, so storage was believed
+  unconditionally. Both now read the same three named constants.

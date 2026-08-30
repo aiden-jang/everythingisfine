@@ -76,6 +76,12 @@ import {
  */
 const feed = createFeed();
 
+/* How wide the rail may be dragged, and where it starts. Named because the restore path and the drag
+   handle both have to agree: they did not, and a stored 1 got through as a one-pixel rail. */
+const RAIL_MIN = 264;
+const RAIL_MAX = 620;
+const RAIL_DEFAULT = 356;
+
 /** Subscribes to the feed without re-rendering per earthquake: announcements are already coalesced. */
 function useFeed(): FeedSnapshot {
   const [snapshot, setSnapshot] = useState(() => feed.snapshot());
@@ -339,8 +345,15 @@ export function App(): JSX.Element {
   useEffect(() => {
     store("flat", flat ? "1" : "0");
   }, [flat]);
+  /*
+   * Clamped on the way in, not only on the way out.
+   *
+   * The `Resizer` enforces these while dragging, but the restored value went straight into state and
+   * skipped it - so anything that wrote a small number to this key produced a rail one pixel wide with no
+   * way to grab it. Something did: the fold below shipped storing "1" and "0" under this same key.
+   */
   const [railWidth, setRailWidth] = useState<number>(
-    () => Number(stored("rail")) || 356,
+    () => Math.min(RAIL_MAX, Math.max(RAIL_MIN, Number(stored("rail")) || RAIL_DEFAULT)),
   );
   useEffect(() => {
     store("rail", String(railWidth));
@@ -1256,14 +1269,14 @@ export function App(): JSX.Element {
    */
   const railFloats = useFloatingRail();
   const [headOpen, setHeadOpen] = useState<boolean>(() => stored("head") !== "0");
-  const [railOpen, setRailOpen] = useState<boolean>(() => stored("rail") !== "0");
+  const [railOpen, setRailOpen] = useState<boolean>(() => stored("railOpen") !== "0");
   const changeHeadOpen = useCallback((next: boolean) => {
     setHeadOpen(next);
     store("head", next ? "1" : "0");
   }, []);
   const changeRailOpen = useCallback((next: boolean) => {
     setRailOpen(next);
-    store("rail", next ? "1" : "0");
+    store("railOpen", next ? "1" : "0");
   }, []);
   const railShown = railOpen || !railFloats;
 
@@ -2606,8 +2619,8 @@ export function App(): JSX.Element {
           axis="x"
           label="Rail width"
           value={railWidth}
-          min={264}
-          max={620}
+          min={RAIL_MIN}
+          max={RAIL_MAX}
           measure={(e) => e.clientX}
           onChange={setRailWidth}
           /* Hidden with the rail it resizes. The handle is a sibling, not a child, because the border lives
