@@ -300,11 +300,14 @@ export function App(): JSX.Element {
   /* The request. The span itself lives on the feed snapshot, and every claim of liveness in the chrome
   reads that rather than this. */
   const [archiveDay, setArchiveDay] = useState("");
-  /* Remembered, because a birthday does not change and typing it twice is a chore, not a feature. */
-  const [born, setBorn] = useState<string>(() => stored("born") ?? "");
-  const [bornDraft, setBornDraft] = useState<string>(() => stored("born") ?? "");
-  /* Coverage, not taste: the caveat has to appear while the day is still being typed. */
-  const bornEarly = /^\d{4}/.test(bornDraft) && Number(bornDraft.slice(0, 4)) < 1970;
+  /*
+   * Coverage, said while the day is still being typed rather than after it has loaded.
+   *
+   * Before about 1970 the networks were sparse and only large events were recorded anywhere, so a quiet
+   * day back there may mean nobody was listening rather than a quiet planet. Two of the notable days
+   * below are 1960 and 1964, so this is not a hypothetical.
+   */
+  const earlyDay = /^\d{4}/.test(archiveDay) && Number(archiveDay.slice(0, 4)) < 1970;
   const [moreOpen, setMoreOpen] = useState(false);
   /* Fetched when the list opens, not on load. `count` answers in forty bytes. */
   const [dayCounts, setDayCounts] = useState<Record<string, number | null>>({});
@@ -365,15 +368,6 @@ export function App(): JSX.Element {
     void loadArchive(shared.day);
   }, [loadArchive]);
   // Read the span from the feed, not from the rendered day: it goes stale between a step and its answer.
-  /* Set on the press, never in an effect on the value: an effect fires on mount and saves the empty
-     field over a real birthday. */
-  const goToBirthday = useCallback(() => {
-    if (!isArchivableDay(bornDraft, Date.now())) return;
-    setBorn(bornDraft);
-    store("born", bornDraft);
-    void loadArchive(bornDraft);
-  }, [bornDraft, loadArchive]);
-
   const stepDay = useCallback((days: number) => {
     const archive = feed.snapshot().archive;
     if (archive === null) return;
@@ -1199,13 +1193,7 @@ export function App(): JSX.Element {
                 </div>
                 <p className="mt-1.5 text-[11px] leading-relaxed text-ink">
                   {new Date(snapshot.archive.from).toISOString().slice(0, 10)}, all day UTC.
-                  {/* Named here rather than in the fold that loaded it: the fold is a door and this is the
-                      room. Compared against the day the feed actually holds, so a birthday typed and then
-                      abandoned for another day does not follow it around. */}
-                  {new Date(snapshot.archive.from).toISOString().slice(0, 10) === born
-                    ? " The day you were born."
-                    : ""}
-                  {" "}Nothing here is arriving now.
+ Nothing here is arriving now.
                 </p>
                 {/* Disabled while a day is in flight: two archive loads race, and the second answer is not
                 necessarily the second request. */}
@@ -1303,60 +1291,19 @@ export function App(): JSX.Element {
                   <p id="archive-day-fault" className="mt-1 text-[11px] leading-relaxed text-faint">
                     {dayFault}
                   </p>
-                ) : null}
+                ) : (
+                  /* The field takes any day that has ended, which includes the one anybody actually wants
+                     and would never think to try. One sentence, because the control for it already
+                     exists: a second field beside this one was the same field twice. */
+                  <p className="mt-1 text-[11px] leading-relaxed text-faint">
+                    {earlyDay
+                      ? "Before about 1970 only the large ones were recorded anywhere. A quiet day back"
+                        + " there may mean nobody was listening, not that the Earth was still."
+                      : "Any day that has ended, including the one you were born on."}
+                  </p>
+                )}
               </div>
             )}
-                {/*
-                  The archive's other door, and the one anybody actually walks through. The date field
-                  above can already load any day that has ended; nothing about it says that the day you
-                  were born is one of them.
-
-                  Remembered, because a birthday does not change. Stored on the press rather than in an
-                  effect, so an empty field never overwrites a real one.
-                */}
-                <details className="mt-2">
-                  <summary className="disclose text-[11px] text-faint hover:text-dim">
-                    The day you were born
-                  </summary>
-                  <div className="mt-1.5">
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        aria-label="The day you were born"
-                        placeholder="YYYY-MM-DD"
-                        autoComplete="bday"
-                        value={bornDraft}
-                        onChange={(e) => setBornDraft(typedDay(e.target.value))}
-                        onKeyDown={(e) => {
-                          if (e.key !== "Enter" || archiveBusy) return;
-                          if (!isArchivableDay(bornDraft, Date.now())) return;
-                          e.preventDefault();
-                          goToBirthday();
-                        }}
-                        className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[10.5px] text-dim placeholder:text-faint"
-                      />
-                      <button
-                        type="button"
-                        disabled={archiveBusy || !isArchivableDay(bornDraft, Date.now())}
-                        onClick={goToBirthday}
-                        className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:cursor-default disabled:text-faint"
-                      >
-                        {archiveBusy ? "…" : "go"}
-                      </button>
-                    </div>
-                    {/* The one thing this feature could get wrong. Before about 1970 the networks were
-                        sparse and only the large events were recorded anywhere, so a quiet birthday may
-                        mean nobody was listening rather than a quiet planet. */}
-                    <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
-                      {bornEarly
-                        ? "Before about 1970 only the large ones were recorded. A quiet day back there may"
-                          + " mean nobody was listening, not that the Earth was still."
-                        : "Any day that has ended. The globe becomes that day, with everything it reported."}
-                    </p>
-                  </div>
-                </details>
-
                 {/* Outside the archived/live branch: inside it the list vanished the moment a day loaded, so going
                 from one notable day to another meant going back to live and waiting for the feeds. */}
                 <details
