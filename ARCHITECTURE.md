@@ -6806,6 +6806,30 @@ so it should not bind, and if it ever does it lands the event low - towards the 
 direction to be wrong in.
 
 
+## Two features that leave the browser
+
+Both exist for the same reason: the app was good and nobody could tell, because nothing in it travelled.
+
+**The day you were born.** The date field could already load any day that has ended, and USGS serves back
+to 1960 - the notable list opens with Valdivia. Nothing about a field reading `YYYY-MM-DD` says that your
+own birthday is one of the days it takes. So the archive got a second door that says exactly that, and the
+day it loads is already ranked against 1,826 days of history by machinery that was sitting there: "quieter
+than 63% of days". The birthday is remembered, on the press rather than in an effect, because an effect
+fires on mount and saves an empty field over a real one.
+
+The honest part is the caveat, and it shows while the date is still being typed rather than after the day
+has loaded. Before about 1970 the networks were sparse and only large events were recorded anywhere, so a
+quiet birthday back there may mean nobody was listening.
+
+**The still reaches the share sheet.** `Still` wrote a PNG through `a.download`, which on a phone does
+close to nothing - and a phone is exactly where a picture of the planet is worth having. It goes to
+`navigator.share` now, with the download as the fallback.
+
+One trap, and it is the whole reason this is not a two-line change: `share()` needs the user gesture that
+started it to still be live, and `toBlob` hands its result back in a later task. On a phone that is long
+enough for the activation to lapse, and the share is refused silently. The PNG is encoded synchronously
+through `toDataURL` instead, which blocks for a few tens of milliseconds and keeps the gesture.
+
 ## The rail scrolled twice, and one of the two lied
 
 Reported as a scroll trap in the regions box and left undiagnosed for a session, because the first

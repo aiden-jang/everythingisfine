@@ -93,6 +93,16 @@
     overflow: clip;
   }
 
+  /*
+   * Geist is a variable font and the whole app used one weight of it.
+   *
+   * Hierarchy was carried entirely by three greys, which is one axis doing two jobs: a heading and a
+   * caption at the same weight differ only in how dim they are, and dimmer is also how this app says
+   * "less certain". Weight takes over the first job so colour can keep the second.
+   *
+   * Everything moves up rather than down. Light text on a dark ground blooms, so a thin cut that looks
+   * elegant against white goes soft here, and the faintest prose is exactly where that costs most.
+   */
   body {
     margin: 0;
     background: var(--color-void);
@@ -1011,8 +1021,16 @@
   }
 }
 
+/*
+ * The small uppercase label above nearly every block.
+ *
+ * 500, not 400. Uppercase letterforms have no ascenders or descenders to hold their shape, so at 10px
+ * they need more stroke than lowercase does to read as words rather than as texture - and on a dark
+ * ground the faint colour takes some of it back again.
+ */
 @utility label {
   font-size: 10px;
+  font-weight: 500;
   letter-spacing: 0.15em;
   color: var(--color-faint);
   text-transform: uppercase;

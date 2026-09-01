@@ -24,10 +24,12 @@ WebSocket. Both are keyless, so the repo renders a full first frame for anyone w
 nothing to sign up for and nothing to configure.
 
 Hover an event for a one-line summary, click to pin it, drag to orbit, scroll to zoom toward the
-cursor, search or click a region in the rail to fly there. Every filter answers as it moves; there is
+cursor, search or click a region in the rail to fly there. Type the day you were born and the globe
+becomes that day, ranked against every other day the archive holds. Every filter answers as it moves; there is
 no apply button. `f` goes fullscreen and takes nothing away, because a full screen showing a planet and
 nothing else is a screensaver; the top bar and the left panel fold on their own instead, each where it
-costs the picture something. `Still` writes a PNG with the moment it is of stamped on it. A permalink carries the camera, the filters, the moment, the archived day, the
+costs the picture something. `Still` writes a PNG with the moment it is of
+stamped on it and hands it to the share sheet where there is one. A permalink carries the camera, the filters, the moment, the archived day, the
 pinned event and any cross-section drawn on the map.
 
 ## The budget was $0, and it made the project better

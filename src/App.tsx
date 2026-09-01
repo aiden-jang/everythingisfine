@@ -300,6 +300,11 @@ export function App(): JSX.Element {
   /* The request. The span itself lives on the feed snapshot, and every claim of liveness in the chrome
   reads that rather than this. */
   const [archiveDay, setArchiveDay] = useState("");
+  /* Remembered, because a birthday does not change and typing it twice is a chore, not a feature. */
+  const [born, setBorn] = useState<string>(() => stored("born") ?? "");
+  const [bornDraft, setBornDraft] = useState<string>(() => stored("born") ?? "");
+  /* Coverage, not taste: the caveat has to appear while the day is still being typed. */
+  const bornEarly = /^\d{4}/.test(bornDraft) && Number(bornDraft.slice(0, 4)) < 1970;
   const [moreOpen, setMoreOpen] = useState(false);
   /* Fetched when the list opens, not on load. `count` answers in forty bytes. */
   const [dayCounts, setDayCounts] = useState<Record<string, number | null>>({});
@@ -360,6 +365,15 @@ export function App(): JSX.Element {
     void loadArchive(shared.day);
   }, [loadArchive]);
   // Read the span from the feed, not from the rendered day: it goes stale between a step and its answer.
+  /* Set on the press, never in an effect on the value: an effect fires on mount and saves the empty
+     field over a real birthday. */
+  const goToBirthday = useCallback(() => {
+    if (!isArchivableDay(bornDraft, Date.now())) return;
+    setBorn(bornDraft);
+    store("born", bornDraft);
+    void loadArchive(bornDraft);
+  }, [bornDraft, loadArchive]);
+
   const stepDay = useCallback((days: number) => {
     const archive = feed.snapshot().archive;
     if (archive === null) return;
@@ -579,18 +593,37 @@ export function App(): JSX.Element {
       host: window.location.host,
     }, { background: token("void"), ink: token("ink"), faint: token("faint"), ramp });
 
-    setSaving(true);
-    frame.toBlob((blob) => {
-      setSaving(false);
-      if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `everything-is-fine-${new Date(view.at ?? Date.now()).toISOString()
-        .replace(/[:.]/g, "-").slice(0, 19)}.png`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }, "image/png");
+    /*
+     * Encoded synchronously, through `toDataURL` rather than `toBlob`.
+     *
+     * `navigator.share` needs the user gesture that started this to still be live, and `toBlob` hands its
+     * result back in a later task - long enough on a phone for the activation to lapse and the share to be
+     * refused. This blocks for a few tens of milliseconds and keeps the gesture.
+     */
+    const name = `everything-is-fine-${new Date(view.at ?? Date.now()).toISOString()
+      .replace(/[:.]/g, "-").slice(0, 19)}.png`;
+    const url = frame.toDataURL("image/png");
+    const bytes = Uint8Array.from(atob(url.slice(url.indexOf(",") + 1)), (c) => c.charCodeAt(0));
+    const file = new File([bytes], name, { type: "image/png" });
+
+    /*
+     * The share sheet where there is one, a download where there is not. A phone cannot do anything useful
+     * with `a.download`, which is where this picture is most worth having: it is the whole way the app
+     * travels from somebody's screen into a conversation.
+     */
+    const share = navigator.share !== undefined && (navigator.canShare?.({ files: [file] }) ?? false);
+    if (share) {
+      setSaving(true);
+      // A dismissed sheet rejects with AbortError. That is somebody changing their mind, not a failure.
+      void navigator.share({ files: [file] }).catch(() => {}).finally(() => setSaving(false));
+      return;
+    }
+    const href = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(href);
   }, [filters.minMagnitude, filters.windowMs, view.at]);
   /* What the globe is actually drawing while the cursor is parked. Walked and not read off the bars,
   which are whole hours while the cursor is continuous. */
@@ -1165,8 +1198,14 @@ export function App(): JSX.Element {
                   </button>
                 </div>
                 <p className="mt-1.5 text-[11px] leading-relaxed text-ink">
-                  {new Date(snapshot.archive.from).toISOString().slice(0, 10)}, all day UTC. Nothing here
-                  is arriving now.
+                  {new Date(snapshot.archive.from).toISOString().slice(0, 10)}, all day UTC.
+                  {/* Named here rather than in the fold that loaded it: the fold is a door and this is the
+                      room. Compared against the day the feed actually holds, so a birthday typed and then
+                      abandoned for another day does not follow it around. */}
+                  {new Date(snapshot.archive.from).toISOString().slice(0, 10) === born
+                    ? " The day you were born."
+                    : ""}
+                  {" "}Nothing here is arriving now.
                 </p>
                 {/* Disabled while a day is in flight: two archive loads race, and the second answer is not
                 necessarily the second request. */}
@@ -1267,6 +1306,57 @@ export function App(): JSX.Element {
                 ) : null}
               </div>
             )}
+                {/*
+                  The archive's other door, and the one anybody actually walks through. The date field
+                  above can already load any day that has ended; nothing about it says that the day you
+                  were born is one of them.
+
+                  Remembered, because a birthday does not change. Stored on the press rather than in an
+                  effect, so an empty field never overwrites a real one.
+                */}
+                <details className="mt-2">
+                  <summary className="disclose text-[11px] text-faint hover:text-dim">
+                    The day you were born
+                  </summary>
+                  <div className="mt-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        aria-label="The day you were born"
+                        placeholder="YYYY-MM-DD"
+                        autoComplete="bday"
+                        value={bornDraft}
+                        onChange={(e) => setBornDraft(typedDay(e.target.value))}
+                        onKeyDown={(e) => {
+                          if (e.key !== "Enter" || archiveBusy) return;
+                          if (!isArchivableDay(bornDraft, Date.now())) return;
+                          e.preventDefault();
+                          goToBirthday();
+                        }}
+                        className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[10.5px] text-dim placeholder:text-faint"
+                      />
+                      <button
+                        type="button"
+                        disabled={archiveBusy || !isArchivableDay(bornDraft, Date.now())}
+                        onClick={goToBirthday}
+                        className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:cursor-default disabled:text-faint"
+                      >
+                        {archiveBusy ? "…" : "go"}
+                      </button>
+                    </div>
+                    {/* The one thing this feature could get wrong. Before about 1970 the networks were
+                        sparse and only the large events were recorded anywhere, so a quiet birthday may
+                        mean nobody was listening rather than a quiet planet. */}
+                    <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+                      {bornEarly
+                        ? "Before about 1970 only the large ones were recorded. A quiet day back there may"
+                          + " mean nobody was listening, not that the Earth was still."
+                        : "Any day that has ended. The globe becomes that day, with everything it reported."}
+                    </p>
+                  </div>
+                </details>
+
                 {/* Outside the archived/live branch: inside it the list vanished the moment a day loaded, so going
                 from one notable day to another meant going back to live and waiting for the feeds. */}
                 <details
@@ -1354,7 +1444,10 @@ export function App(): JSX.Element {
           aria-label="Everything Is Fine, back to the default view"
           /* `self-start` where the row wraps: `items-center` floated the wordmark between the two rows and
           left "Still" orphaned diagonally opposite. */
-          className="flex min-h-11 cursor-pointer items-center text-[10px] font-semibold tracking-[0.1em] whitespace-nowrap transition-colors hover:text-ink max-md:self-start md:text-[13px] md:tracking-[0.16em]"
+          /* 550 rather than 600. Letterspaced uppercase at 13px already reads as emphasis, and the extra
+             weight on top of it made the masthead the heaviest thing on a screen whose subject is the
+             globe behind it. */
+          className="flex min-h-11 cursor-pointer items-center text-[10px] font-[550] tracking-[0.1em] whitespace-nowrap transition-colors hover:text-ink max-md:self-start md:text-[13px] md:tracking-[0.16em]"
         >
           EVERYTHING IS FINE
         </button>
@@ -1562,7 +1655,10 @@ export function App(): JSX.Element {
               <>
                 {/* Counts what is on the globe, so during the replay it climbs as the day plays in. See
                     ARCHITECTURE.md. */}
-                <div className="mt-1.5 text-[38px] leading-none font-semibold tabular-nums">
+                {/* The one piece of display type here, so it is set like display type: heavier than the
+                    prose under it and closed up slightly, which large figures need and small ones do not.
+                    `tabular-nums` still decides the widths, so the tracking cannot make it twitch. */}
+                <div className="mt-1.5 text-[38px] leading-none font-[650] tracking-[-0.015em] tabular-nums">
                   {headline.toLocaleString("en-GB")}
                 </div>
                 {/* One slot, shared by the tour and the replay clock. Every tour stop says where it is and how much
