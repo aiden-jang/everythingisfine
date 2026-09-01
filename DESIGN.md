@@ -301,6 +301,25 @@ that looks twitchy.
 
 Body copy caps at 65 characters. There is very little body copy here and there should be.
 
+**The weights, written down, because "weight-driven hierarchy" sat in this document for a long time while
+the app used exactly one weight.** Geist Variable was loaded with its `wght` axis and everything on screen
+was 400 except three uses of `font-semibold`. Hierarchy was carried entirely by three greys, which is one
+axis doing two jobs: a heading and a caption differed only in how dim they were, and dimness is also how
+this app says "less certain".
+
+| | weight | tracking |
+|---|---|---|
+| Headline count, 38px | 650 | -0.015em |
+| Panel magnitude, 30px | 620 | -0.012em |
+| Wordmark, 13px uppercase | 550 | 0.16em |
+| `.label`, 10px uppercase | 500 | 0.15em |
+| Everything else | 400 | normal |
+
+Two rules behind that table. **Tracking closes as size grows and never the other way**: large figures need
+it, small ones are hurt by it, and `tabular-nums` still decides the widths so a live counter cannot twitch.
+And **weight only ever goes up from 400, never below.** Light text on a dark ground blooms, so a thin cut
+that looks elegant against white goes soft here, and the faintest prose is where that costs most.
+
 ---
 
 ### 5.1 Labels are rationed, and so are separators

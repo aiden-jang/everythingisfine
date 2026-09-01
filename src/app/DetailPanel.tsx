@@ -151,7 +151,9 @@ export function DetailPanel({
       </div>
 
       <div className="mt-2 flex items-baseline gap-2">
-        <span className="text-[30px] leading-none font-semibold">{magnitude(r)}</span>
+        {/* The panel's own display figure, one step under the rail's headline: this answers "which event"
+            and that one answers "how much is happening". */}
+        <span className="text-[30px] leading-none font-[620] tracking-[-0.012em]">{magnitude(r)}</span>
         {/* Hooked, like the ramp and the map scale. Which magnitude scale a reading was measured on is the
             field that proves this is a real catalogue entry, and "the first mono span in the panel" stopped
             being that when the close key became lowercase mono. */}
