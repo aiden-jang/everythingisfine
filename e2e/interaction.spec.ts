@@ -1963,55 +1963,7 @@ for (const [w, h] of [[390, 844], [360, 640], [412, 915]] as const) {
   });
 }
 
-/*
- * The archive's other door. The date field could already load any day that has ended; nothing about it
- * said that the day you were born is one of them, and that is the one day everybody wants to look at.
- */
-test("a birthday loads its own day, and the archive says whose day it is", async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await installFeeds(page, { count: 200 });
-  await page.goto("/");
-  await waitForData(page);
-  await page.waitForTimeout(900);
 
-  const fold = page.locator("details", { hasText: "The day you were born" }).first();
-  await page.getByText("The day you were born").first().click();
-  const field = page.getByLabel("The day you were born");
-  await field.fill("");
-  // Typed as digits, because that is how somebody types a date. The field formats it.
-  await field.type("20200214");
-  await expect(field).toHaveValue("2020-02-14");
-
-  /* Scoped to the fold and `exact`. A bare `name: "go"` matches by substring, which here is 26 buttons
-     including every bar on the activity strip. */
-  await fold.getByRole("button", { name: "go", exact: true }).click();
-  /* Against the archive banner, not the rail. The fold's own summary carries this wording too, so a rail
-     that never loaded anything would still match. */
-  const banner = page.locator(".stamp").first();
-  await expect(banner).toContainText("2020-02-14, all day UTC", { timeout: 20_000 });
-  await expect(banner).toContainText("The day you were born");
-
-  // Remembered, so it does not have to be typed twice.
-  await page.reload();
-  await waitForData(page);
-  await page.getByText("The day you were born").first().click();
-  await expect(page.getByLabel("The day you were born")).toHaveValue("2020-02-14");
-});
-
-/* Before about 1970 the networks were sparse, so a quiet birthday may mean nobody was listening. The
-   caveat has to be there while the date is still being typed, not after the day has loaded. */
-test("an early birthday says the record is thin, not that the Earth was still", async ({ page }) => {
-  await installFeeds(page);
-  await page.goto("/");
-  await waitForData(page);
-
-  await page.getByText("The day you were born").first().click();
-  const fold = page.locator("details", { hasText: "The day you were born" }).first();
-  await expect(fold).toContainText("Any day that has ended");
-
-  await page.getByLabel("The day you were born").type("1962");
-  await expect(fold).toContainText("nobody was listening");
-});
 
 /*
  * The still reaches the share sheet where there is one. A phone can do nothing useful with `a.download`,
@@ -2050,4 +2002,32 @@ test("Still hands the picture to the share sheet when there is one", async ({ pa
   expect(shared!.name).toMatch(/^everything-is-fine-.*\.png$/);
   // A real picture, not an empty canvas: the still is 1200 wide and carries its own caption.
   expect(shared!.size, "the PNG has something in it").toBeGreaterThan(20_000);
+});
+
+/*
+ * The archive's field takes any day that has ended, and nothing about a box reading `YYYY-MM-DD` says so.
+ * One sentence, not a second field: the first version of this shipped a duplicate control beside it.
+ *
+ * The caveat is the honest half. Before about 1970 only large events were recorded anywhere, and two of
+ * the notable days offered below are 1960 and 1964.
+ */
+test("the archive field says what it takes, and warns about the thin years", async ({ page }) => {
+  await installFeeds(page);
+  await page.goto("/");
+  await waitForData(page);
+
+  const field = page.getByLabel("Go to a day");
+  /* The outermost of the wrappers holding the field, or `.last()` lands on the row holding the input and
+     the go button, which is inside the block carrying the caption. */
+  const block = page.locator("div", { has: field }).first();
+  await expect(block).toContainText("including the one you were born on");
+
+  await field.fill("");
+  await field.type("1962");
+  await expect(block).toContainText("nobody was listening");
+
+  // And back, because the warning is about the year in the box rather than a state it latches.
+  await field.fill("");
+  await field.type("2020");
+  await expect(block).toContainText("including the one you were born on");
 });

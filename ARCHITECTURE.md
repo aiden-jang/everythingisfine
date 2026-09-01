@@ -6810,16 +6810,21 @@ direction to be wrong in.
 
 Both exist for the same reason: the app was good and nobody could tell, because nothing in it travelled.
 
-**The day you were born.** The date field could already load any day that has ended, and USGS serves back
-to 1960 - the notable list opens with Valdivia. Nothing about a field reading `YYYY-MM-DD` says that your
-own birthday is one of the days it takes. So the archive got a second door that says exactly that, and the
-day it loads is already ranked against 1,826 days of history by machinery that was sitting there: "quieter
-than 63% of days". The birthday is remembered, on the press rather than in an effect, because an effect
-fires on mount and saves an empty field over a real one.
+**The day you were born, which turned out to be one sentence.** The date field could already load any day
+that has ended, and USGS serves back to 1960 - the notable list opens with Valdivia. Nothing about a field
+reading `YYYY-MM-DD` says that your own birthday is one of the days it takes, and the payoff is already
+built: an archived day is ranked against 1,826 days of history, so it comes back as "quieter than 63% of
+days" with a largest event and a place.
 
-The honest part is the caveat, and it shows while the date is still being typed rather than after the day
-has loaded. Before about 1970 the networks were sparse and only large events were recorded anywhere, so a
-quiet birthday back there may mean nobody was listening.
+The first version of this shipped a second date field, with its own label, its own go button and its own
+remembered value, forty pixels under the first one. Two text inputs taking the same format and doing the
+same thing. It was caught by being looked at, which is the only way that class of mistake ever is: every
+part of it was defensible on its own and the whole was a duplicated control.
+
+What the feature actually needed was for somebody to be told, so it is now a line under the field that was
+already there. The other half is the caveat, and it earns its place: before about 1970 the networks were
+sparse and only large events were recorded anywhere, so a quiet day back there may mean nobody was
+listening rather than a quiet planet. Two of the notable days offered below it are 1960 and 1964.
 
 **The still reaches the share sheet.** `Still` wrote a PNG through `a.download`, which on a phone does
 close to nothing - and a phone is exactly where a picture of the planet is worth having. It goes to
