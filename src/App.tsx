@@ -470,19 +470,12 @@ export function App(): JSX.Element {
     flyTo.current(145, 12, 1);
     history.replaceState(null, "", window.location.pathname + window.location.search);
     // The writer only writes while the hash is the one it last wrote, which is what protects a pasted
-    // link. Emptying the hash without saying so left that test failing forever.
+    // link. Emptying it without saying so leaves the writer refusing to write again.
     lastWritten.current = window.location.hash;
   }, [backToLive]);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
-  /* Open by default: it has a corner of its own now, so opening it pushes nothing. A stored answer still
-     wins, and only a real toggle stores one. */
-  const [keyOpen, setKeyOpen] = useState<boolean>(() => stored("legendKey") !== "0");
-  // Write on the press, never in an effect. In an effect it fires on mount and saves the default as
-  // though somebody had chosen it.
-  const changeKeyOpen = useCallback((next: boolean) => {
-    setKeyOpen(next);
-    store("legendKey", next ? "1" : "0");
-  }, []);
+  /* Open by default: it has a corner of its own, so opening it pushes nothing. */
+  const [keyOpen, setKeyOpen] = useStoredFlag("legendKey", true);
   const [motionOn, setMotionOn] = useStoredFlag("motion", true);
   const [sinkOn, setSinkOn] = useStoredFlag("depthSink", true);
   /* On by default, so the slab's 37kB and 1,583 marks are on every first load. It earns it: a real day
@@ -1138,16 +1131,8 @@ export function App(): JSX.Element {
   /* Do not let `f` fold these: a full screen with a planet and nothing else is a screensaver. Each fold
   is offered only where it buys something - see `useFloatingChrome`. */
   const chromeFloats = useFloatingChrome();
-  const [headOpen, setHeadOpen] = useState<boolean>(() => stored("head") !== "0");
-  const [railOpen, setRailOpen] = useState<boolean>(() => stored("railOpen") !== "0");
-  const changeHeadOpen = useCallback((next: boolean) => {
-    setHeadOpen(next);
-    store("head", next ? "1" : "0");
-  }, []);
-  const changeRailOpen = useCallback((next: boolean) => {
-    setRailOpen(next);
-    store("railOpen", next ? "1" : "0");
-  }, []);
+  const [headOpen, setHeadOpen] = useStoredFlag("head", true);
+  const [railOpen, setRailOpen] = useStoredFlag("railOpen", true);
   const railShown = railOpen || !chromeFloats;
   const headShown = headOpen || chromeFloats;
 
@@ -1219,7 +1204,7 @@ export function App(): JSX.Element {
       floods={onGlobe.floods.length}
       floodCountries={countries(onGlobe.floods)}
       keyOpen={keyOpen}
-      onKeyOpen={changeKeyOpen}
+      onKeyOpen={setKeyOpen}
       archived={archived}
       motion={motion}
       depth={depth}
@@ -1658,7 +1643,7 @@ export function App(): JSX.Element {
             {chromeFloats ? null : (
               <button
                 type="button"
-                onClick={() => changeHeadOpen(false)}
+                onClick={() => setHeadOpen(false)}
                 aria-expanded={true}
                 aria-controls="chrome-head"
                 className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink"
@@ -1700,7 +1685,7 @@ export function App(): JSX.Element {
       {headShown ? null : (
         <button
           type="button"
-          onClick={() => changeHeadOpen(true)}
+          onClick={() => setHeadOpen(true)}
           aria-label="Show the top bar"
           aria-expanded={false}
           aria-controls="chrome-head"
@@ -2198,7 +2183,7 @@ export function App(): JSX.Element {
         {chromeFloats ? (
           <button
             type="button"
-            onClick={() => changeRailOpen(!railOpen)}
+            onClick={() => setRailOpen(!railOpen)}
             aria-label={railOpen ? "Hide the panel" : "Show the panel"}
             aria-expanded={railOpen}
             aria-controls="chrome-rail"
