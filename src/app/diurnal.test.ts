@@ -11,19 +11,34 @@ import type { Filters, Quake, Reading } from "../data/types";
 const now = Date.UTC(2026, 2, 15, 12, 0, 0);
 
 const filters: Filters = {
-  minMagnitude: 0, windowMs: 30 * 24 * 3_600_000, sources: new Set(["usgs", "emsc"]),
+  minMagnitude: 0,
+  windowMs: 30 * 24 * 3_600_000,
+  sources: new Set(["usgs", "emsc"]),
 };
 
 const quakeAt = (lon: number, time: number, i: number): Quake => {
   const r: Reading = {
-    source: "usgs", id: `q${i}`, magnitude: 4, scale: "ml", lon, lat: 0, depthKm: 10,
-    time, place: "Somewhere", kind: "earthquake", receivedAt: time,
+    source: "usgs",
+    id: `q${i}`,
+    magnitude: 4,
+    scale: "ml",
+    lon,
+    lat: 0,
+    depthKm: 10,
+    time,
+    place: "Somewhere",
+    kind: "earthquake",
+    receivedAt: time,
   };
   return { key: `k${i}`, readings: [r], primary: r };
 };
 
 /** A walker over a fixed list, shaped like the store's own. */
-const over = (quakes: Quake[]) => (fn: (q: Quake) => void): void => { quakes.forEach(fn); };
+const over =
+  (quakes: Quake[]) =>
+  (fn: (q: Quake) => void): void => {
+    quakes.forEach(fn);
+  };
 
 describe("binning on local solar time", () => {
   it("puts an event at its own solar hour, not its UTC hour", () => {
@@ -44,8 +59,7 @@ describe("binning on local solar time", () => {
   });
 
   it("counts everything once and keeps a total that matches", () => {
-    const qs = Array.from({ length: 96 }, (_, i) =>
-      quakeAt((i * 3.75) - 180, now - i * 3_600_000, i));
+    const qs = Array.from({ length: 96 }, (_, i) => quakeAt(i * 3.75 - 180, now - i * 3_600_000, i));
     const d = diurnal(over(qs), filters, now);
     expect(d.total).toBe(96);
     expect(d.counts.reduce((a, b) => a + b, 0)).toBe(96);
@@ -77,8 +91,7 @@ describe("binning on local solar time", () => {
 
 describe("the expected scatter", () => {
   it("is the Poisson width of an even spread", () => {
-    const qs = Array.from({ length: 240 }, (_, i) =>
-      quakeAt((i * 1.5) - 180, now - i * 600_000, i));
+    const qs = Array.from({ length: 240 }, (_, i) => quakeAt(i * 1.5 - 180, now - i * 600_000, i));
     const d = diurnal(over(qs), filters, now);
     expect(d.mean).toBeCloseTo(10, 9);
     expect(d.sigma).toBeCloseTo(Math.sqrt(10), 9);

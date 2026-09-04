@@ -10,21 +10,31 @@ import type { Quake, Reading } from "../data/types";
  */
 
 const reading = (over: Partial<Reading> = {}): Reading => ({
-  source: "usgs", id: "a1", magnitude: 4.2, scale: "ml", lon: 141.3, lat: 41.8, depthKm: 10,
-  time: 1_700_000_000_000, place: "40 km E of Hakodate, Japan", kind: "earthquake",
-  receivedAt: 1_700_000_020_000, ...over,
+  source: "usgs",
+  id: "a1",
+  magnitude: 4.2,
+  scale: "ml",
+  lon: 141.3,
+  lat: 41.8,
+  depthKm: 10,
+  time: 1_700_000_000_000,
+  place: "40 km E of Hakodate, Japan",
+  kind: "earthquake",
+  receivedAt: 1_700_000_020_000,
+  ...over,
 });
 
 const quake = (readings: Reading[]): Quake => ({
-  key: "k", readings, primary: readings[0]!,
+  key: "k",
+  readings,
+  primary: readings[0]!,
 });
 
 describe("reading a distance out of an agency's own words", () => {
   it("takes the real USGS shapes", () => {
     expect(parsePlace("38 km NW of Stanton, Texas")).toEqual({ km: 38, name: "Stanton, Texas" });
     expect(parsePlace("7 km SE of Julian, CA")).toEqual({ km: 7, name: "Julian, CA" });
-    expect(parsePlace("13 km NNW of Gustavus, Alaska"))
-      .toEqual({ km: 13, name: "Gustavus, Alaska" });
+    expect(parsePlace("13 km NNW of Gustavus, Alaska")).toEqual({ km: 13, name: "Gustavus, Alaska" });
   });
 
   it("takes a decimal distance, which the feed sometimes publishes", () => {
@@ -97,15 +107,13 @@ describe("the arrival", () => {
     // The marker may be drawn from EMSC while USGS is the one that named a town and a distance.
     const emsc = reading({ source: "emsc", id: "e1", place: "FLORES SEA" });
     const usgs = reading({ source: "usgs", id: "u1", place: "22 km SW of Maumere, Indonesia" });
-    expect(arrivalFor({ key: "k", readings: [emsc, usgs], primary: emsc })!.place)
-      .toBe("Maumere, Indonesia");
+    expect(arrivalFor({ key: "k", readings: [emsc, usgs], primary: emsc })!.place).toBe("Maumere, Indonesia");
   });
 
   it("prefers the primary, so the distance and the position are one agency's account", () => {
     const usgs = reading({ source: "usgs", id: "u1", place: "40 km E of Hakodate, Japan" });
     const emsc = reading({ source: "emsc", id: "e1", place: "9 km N of Somewhere Else" });
-    expect(arrivalFor({ key: "k", readings: [usgs, emsc], primary: usgs })!.place)
-      .toBe("Hakodate, Japan");
+    expect(arrivalFor({ key: "k", readings: [usgs, emsc], primary: usgs })!.place).toBe("Hakodate, Japan");
   });
 
   it("says nothing when no agency gave a distance", () => {

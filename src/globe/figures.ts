@@ -65,7 +65,9 @@ export function createFigures(): Figures {
   let loaded = false;
   let on = false;
   let morph = 1;
-  const show = (): void => { object.visible = loaded && on && morph > 0.001; };
+  const show = (): void => {
+    object.visible = loaded && on && morph > 0.001;
+  };
 
   return {
     object,
@@ -80,7 +82,8 @@ export function createFigures(): Figures {
       for (const line of table) {
         for (let i = 0; i + 3 < line.length; i += 2) {
           for (const [ra, dec] of [
-            [line[i]!, line[i + 1]!], [line[i + 2]!, line[i + 3]!],
+            [line[i]!, line[i + 1]!],
+            [line[i + 2]!, line[i + 3]!],
           ] as [number, number][]) {
             const [x, y, z] = starVector(ra, dec);
             positions[at] = x;

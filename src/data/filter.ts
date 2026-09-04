@@ -35,7 +35,9 @@ export function matches(quake: Quake, filters: Filters, now: number): boolean {
 
 /** The window's honest left edge, as a timestamp. See ARCHITECTURE.md. */
 export function windowStart(
-  now: number, windowMs: number, coveredSince: number | null,
+  now: number,
+  windowMs: number,
+  coveredSince: number | null,
 ): { at: number; complete: boolean } {
   const requested = now - windowMs;
   if (coveredSince === null) return { at: now, complete: false };

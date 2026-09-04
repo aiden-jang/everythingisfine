@@ -16,12 +16,23 @@ const NOW = 1_700_000_000_000;
 const NO_CLUSTER = 3;
 
 const filters = (windowMs: number): Filters => ({
-  minMagnitude: 0, windowMs, sources: new Set(["usgs", "emsc"]),
+  minMagnitude: 0,
+  windowMs,
+  sources: new Set(["usgs", "emsc"]),
 });
 
 const reading = (id: string, agoMs: number): Reading => ({
-  source: "usgs", id, magnitude: 4, scale: "ml", lon: (Number(id) % 60) - 30, lat: 0,
-  depthKm: 10, time: NOW - agoMs, place: "Somewhere", kind: "earthquake", receivedAt: NOW,
+  source: "usgs",
+  id,
+  magnitude: 4,
+  scale: "ml",
+  lon: (Number(id) % 60) - 30,
+  lat: 0,
+  depthKm: 10,
+  time: NOW - agoMs,
+  place: "Somewhere",
+  kind: "earthquake",
+  receivedAt: NOW,
 });
 
 /** One event per bucket of the window, oldest last, so a bucket index maps to a known event. */
@@ -35,9 +46,7 @@ const perBucket = (windowMs: number) => {
   return { store, bucketMs };
 };
 
-const focusedTimes = (
-  layer: ReturnType<typeof createEventLayer>, drawn: number,
-): number[] => {
+const focusedTimes = (layer: ReturnType<typeof createEventLayer>, drawn: number): number[] => {
   const focus = layer.object.geometry.getAttribute("aFocus");
   const lonLat = layer.object.geometry.getAttribute("aLonLat");
   const out: number[] = [];
@@ -91,7 +100,8 @@ describe("holding a bar lights the events that bar stands for", () => {
 
     const lit = (b: number): number[] => {
       const drawn = layer.sync(store, f, NOW, NO_CLUSTER, undefined, {
-        from: NOW - (b + 1) * bucketMs, to: NOW - b * bucketMs,
+        from: NOW - (b + 1) * bucketMs,
+        to: NOW - b * bucketMs,
       });
       return focusedTimes(layer, drawn);
     };

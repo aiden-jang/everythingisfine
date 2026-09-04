@@ -50,6 +50,5 @@ export function countByRegion(store: Store, filters: Filters, now: number): Regi
       if (contains(REGIONS[i]!, lon, lat)) counts[i] = counts[i]! + 1;
     }
   });
-  return REGIONS.map((region, i) => ({ region, count: counts[i]! }))
-    .sort((a, b) => b.count - a.count);
+  return REGIONS.map((region, i) => ({ region, count: counts[i]! })).sort((a, b) => b.count - a.count);
 }

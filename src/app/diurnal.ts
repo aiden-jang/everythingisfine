@@ -25,7 +25,9 @@ export interface Diurnal {
  * falls in a minute of its own. The obvious optimisation made it slower.
  */
 export function diurnal(
-  forEach: (fn: (quake: Quake) => void) => void, filters: Filters, now: number,
+  forEach: (fn: (quake: Quake) => void) => void,
+  filters: Filters,
+  now: number,
 ): Diurnal {
   const counts = new Array<number>(BINS).fill(0);
   let total = 0;
@@ -48,9 +50,7 @@ export function diurnal(
    * toward calling a real signal nothing, which is the direction an app showing a null result should err in.
    */
   const sigma = Math.sqrt(mean);
-  const worst = sigma > 0
-    ? counts.reduce((max, n) => Math.max(max, Math.abs(n - mean) / sigma), 0)
-    : 0;
+  const worst = sigma > 0 ? counts.reduce((max, n) => Math.max(max, Math.abs(n - mean) / sigma), 0) : 0;
 
   return { counts, total, mean, sigma, worst };
 }

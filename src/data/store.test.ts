@@ -34,7 +34,10 @@ describe("revisions", () => {
 
     expect(quake.primary.magnitude).toBe(6.4);
     expect(quake.primary.revision).toEqual({
-      fromMagnitude: 6.1, fromDepthKm: 40, count: 1, at: 1_700_003_600_000,
+      fromMagnitude: 6.1,
+      fromDepthKm: 40,
+      count: 1,
+      at: 1_700_003_600_000,
     });
     expect(store.stats().revised).toBe(1);
   });
@@ -105,15 +108,29 @@ describe("revisions", () => {
   it("counts each agency's own change once, not the event twice", () => {
     const store = createStore(100);
     store.ingest(reading({ magnitude: 6.1 }));
-    store.ingest(reading({
-      source: "emsc", id: "e9", magnitude: 5.9, scale: "mb",
-      lon: 141.44, lat: 41.79, time: 1_700_000_008_000,
-    }));
+    store.ingest(
+      reading({
+        source: "emsc",
+        id: "e9",
+        magnitude: 5.9,
+        scale: "mb",
+        lon: 141.44,
+        lat: 41.79,
+        time: 1_700_000_008_000,
+      }),
+    );
     store.ingest(reading({ magnitude: 6.4 }));
-    store.ingest(reading({
-      source: "emsc", id: "e9", magnitude: 6.2, scale: "mb",
-      lon: 141.44, lat: 41.79, time: 1_700_000_008_000,
-    }));
+    store.ingest(
+      reading({
+        source: "emsc",
+        id: "e9",
+        magnitude: 6.2,
+        scale: "mb",
+        lon: 141.44,
+        lat: 41.79,
+        time: 1_700_000_008_000,
+      }),
+    );
 
     // One event, both agencies revised. The stat counts events, so it is 1.
     expect(store.stats().revised).toBe(1);
@@ -124,15 +141,34 @@ describe("revisions", () => {
     // page is open, and one event at a time never shows it.
     const store = createStore(10);
     for (let i = 0; i < 200; i += 1) {
-      const base = { id: `u${i}`, lon: (i % 170) - 85, lat: (i % 80) - 40, time: 1_700_000_000_000 + i * 60_000 };
+      const base = {
+        id: `u${i}`,
+        lon: (i % 170) - 85,
+        lat: (i % 80) - 40,
+        time: 1_700_000_000_000 + i * 60_000,
+      };
       store.ingest(reading({ ...base, magnitude: 5.0 }));
       store.ingest(reading({ ...base, magnitude: 5.3 }));
-      store.ingest(reading({
-        ...base, source: "emsc", id: `e${i}`, magnitude: 4.8, scale: "mb", time: base.time + 5_000,
-      }));
-      store.ingest(reading({
-        ...base, source: "emsc", id: `e${i}`, magnitude: 5.1, scale: "mb", time: base.time + 5_000,
-      }));
+      store.ingest(
+        reading({
+          ...base,
+          source: "emsc",
+          id: `e${i}`,
+          magnitude: 4.8,
+          scale: "mb",
+          time: base.time + 5_000,
+        }),
+      );
+      store.ingest(
+        reading({
+          ...base,
+          source: "emsc",
+          id: `e${i}`,
+          magnitude: 5.1,
+          scale: "mb",
+          time: base.time + 5_000,
+        }),
+      );
     }
     expect(store.stats().revised).toBeLessThanOrEqual(store.stats().quakes);
   });
@@ -153,10 +189,17 @@ describe("association", () => {
     const store = createStore(100);
     const a = store.ingest(reading());
     // Eight seconds and about 12km apart: the disagreement two agencies actually show.
-    const b = store.ingest(reading({
-      source: "emsc", id: "e9", magnitude: 4.9, scale: "mb",
-      lon: 141.44, lat: 41.79, time: 1_700_000_008_000,
-    }));
+    const b = store.ingest(
+      reading({
+        source: "emsc",
+        id: "e9",
+        magnitude: 4.9,
+        scale: "mb",
+        lon: 141.44,
+        lat: 41.79,
+        time: 1_700_000_008_000,
+      }),
+    );
 
     expect(a.isNew).toBe(true);
     expect(b.isNew).toBe(false);
@@ -168,9 +211,16 @@ describe("association", () => {
   it("keeps both readings rather than picking a winner", () => {
     const store = createStore(100);
     store.ingest(reading());
-    const { quake } = store.ingest(reading({
-      source: "emsc", id: "e9", magnitude: 4.9, scale: "mb", lon: 141.44, lat: 41.79,
-    }));
+    const { quake } = store.ingest(
+      reading({
+        source: "emsc",
+        id: "e9",
+        magnitude: 4.9,
+        scale: "mb",
+        lon: 141.44,
+        lat: 41.79,
+      }),
+    );
 
     expect(quake.readings.map((r) => r.magnitude).sort()).toEqual([4.9, 5.2]);
     expect(quake.readings.map((r) => r.scale).sort()).toEqual(["Mww", "mb"]);
@@ -262,8 +312,13 @@ describe("ring buffer", () => {
     const store = createStore(5);
     expect(store.stats().since).toBeNull();
     for (let i = 0; i < 9; i += 1) {
-      store.ingest(reading({ id: `u${i}`, time: 1_700_000_000_000 + i * 600_000,
-        receivedAt: 1_700_000_030_000 + i * 600_000 }));
+      store.ingest(
+        reading({
+          id: `u${i}`,
+          time: 1_700_000_000_000 + i * 600_000,
+          receivedAt: 1_700_000_030_000 + i * 600_000,
+        }),
+      );
     }
     // Four have been evicted, so the earliest arrival still held is the fifth.
     expect(store.stats().since).toBe(1_700_000_030_000 + 4 * 600_000);
@@ -282,7 +337,11 @@ describe("the long session", () => {
     const samples: { at: number; byReadingId: number; buckets: number; slots: number }[] = [];
 
     for (const r of syntheticReadings({
-      start, durationMs: 4 * 60 * 60 * 1000, everySeconds: 4, corroboration: 0.55, seed: 7,
+      start,
+      durationMs: 4 * 60 * 60 * 1000,
+      everySeconds: 4,
+      corroboration: 0.55,
+      seed: 7,
     })) {
       if (store.ingest(r).isNew) created += 1;
       ingested += 1;
@@ -332,8 +391,13 @@ describe("the long session", () => {
     const start = 1_700_000_000_000;
     const push = (durationMs: number, seed: number): void => {
       for (const r of syntheticReadings({
-        start, durationMs, everySeconds: 4, corroboration: 0.55, seed,
-      })) store.ingest(r);
+        start,
+        durationMs,
+        everySeconds: 4,
+        corroboration: 0.55,
+        seed,
+      }))
+        store.ingest(r);
     };
 
     push(4 * 60 * 60 * 1000, 3);
@@ -434,8 +498,13 @@ describe("clearing the store, which archive mode leans on entirely", () => {
    */
   const fill = (store: ReturnType<typeof createStore>, start: number): void => {
     for (const r of syntheticReadings({
-      start, durationMs: 3 * 3_600_000, everySeconds: 600, corroboration: 0.5, seed: 7,
-    })) store.ingest(r);
+      start,
+      durationMs: 3 * 3_600_000,
+      everySeconds: 600,
+      corroboration: 0.5,
+      seed: 7,
+    }))
+      store.ingest(r);
   };
   const filled = (): ReturnType<typeof createStore> => {
     const store = createStore(64);

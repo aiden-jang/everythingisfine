@@ -11,8 +11,10 @@ import { spiral, volcano } from "./shapes";
 const count = (layer: { object: { geometry: { drawRange: { count: number } } } }): number =>
   layer.object.geometry.drawRange.count;
 
-const mark = (points: readonly { lon: number; lat: number }[], lon: number, lat: number) =>
-  ({ points, anchor: { lon, lat } });
+const mark = (points: readonly { lon: number; lat: number }[], lon: number, lat: number) => ({
+  points,
+  anchor: { lon, lat },
+});
 
 const spanOf = (layer: { object: { geometry: BufferGeometryLike } }): number => {
   const g = layer.object.geometry;
@@ -66,7 +68,15 @@ describe("the marks layer", () => {
 
   it("writes only finite positions, which a draw call needs", () => {
     const layer = createMarkLayer({ value: 0 });
-    layer.set([{ points: [{ lon: 179, lat: 10 }, { lon: 180, lat: 11 }] }, mark(volcano(0, 90), 0, 90)]);
+    layer.set([
+      {
+        points: [
+          { lon: 179, lat: 10 },
+          { lon: 180, lat: 11 },
+        ],
+      },
+      mark(volcano(0, 90), 0, 90),
+    ]);
     const pos = layer.object.geometry.getAttribute("position").array as Float32Array;
     expect([...pos.slice(0, count(layer) * 3)].every(Number.isFinite)).toBe(true);
     layer.dispose();
@@ -74,7 +84,14 @@ describe("the marks layer", () => {
 
   it("drops a leg that wraps the antimeridian instead of ruling a line across the map", () => {
     const layer = createMarkLayer({ value: 0 });
-    layer.set([{ points: [{ lon: 179, lat: 10 }, { lon: -179, lat: 11 }] }]);
+    layer.set([
+      {
+        points: [
+          { lon: 179, lat: 10 },
+          { lon: -179, lat: 11 },
+        ],
+      },
+    ]);
     expect(count(layer)).toBe(0);
     layer.dispose();
   });
@@ -88,7 +105,14 @@ describe("the marks layer", () => {
 
   it("splits a long leg, so a track is drawn on the sphere and not through it", () => {
     const layer = createMarkLayer({ value: 0 });
-    layer.set([{ points: [{ lon: 0, lat: 0 }, { lon: 30, lat: 0 }] }]);
+    layer.set([
+      {
+        points: [
+          { lon: 0, lat: 0 },
+          { lon: 30, lat: 0 },
+        ],
+      },
+    ]);
     // 30 degrees at a 1.5-degree step is twenty segments, not the one that was handed in.
     expect(count(layer)).toBe(20 * 2);
     layer.dispose();
@@ -122,7 +146,14 @@ describe("a glyph holds its size on screen, the way the markers do", () => {
 
   it("leaves a track alone, because a measured path is not a symbol", () => {
     const layer = createMarkLayer({ value: 0 });
-    layer.set([{ points: [{ lon: 0, lat: 0 }, { lon: 20, lat: 0 }] }]);
+    layer.set([
+      {
+        points: [
+          { lon: 0, lat: 0 },
+          { lon: 20, lat: 0 },
+        ],
+      },
+    ]);
     layer.setZoom(2.5);
     const near = spanOf(layer);
     layer.setZoom(0.2);

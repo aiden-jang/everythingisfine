@@ -45,9 +45,7 @@ describe("a cross-section", () => {
 
   it("places an event by how far along the line it is", () => {
     const store = storeWith([reading(0, 5, 30), reading(0, 1, 10)]);
-    const s = buildSection(
-      store, { fromLon: 0, fromLat: 0, toLon: 0, toLat: 10 }, DEFAULT_FILTERS, NOW,
-    );
+    const s = buildSection(store, { fromLon: 0, fromLat: 0, toLon: 0, toLat: 10 }, DEFAULT_FILTERS, NOW);
     const along = s.points.map((p) => Math.round(p.alongKm)).sort((a, b) => a - b);
     expect(along).toEqual([111, 556]);
     expect(s.points.every((p) => Math.abs(p.offsetKm) < 0.001)).toBe(true);
@@ -62,9 +60,7 @@ describe("a cross-section", () => {
       reading(0, 13, 10), // past the end
       reading(0, 5, 10), // on it
     ]);
-    const s = buildSection(
-      store, { fromLon: 0, fromLat: 0, toLon: 0, toLat: 10 }, DEFAULT_FILTERS, NOW,
-    );
+    const s = buildSection(store, { fromLon: 0, fromLat: 0, toLon: 0, toLat: 10 }, DEFAULT_FILTERS, NOW);
     expect(s.points).toHaveLength(1);
     expect(Math.round(s.points[0]!.alongKm)).toBe(556);
   });
@@ -73,9 +69,7 @@ describe("a cross-section", () => {
     // The line runs due north up the prime meridian, so east is a positive offset and west negative
     // for one of the two cross-product orientations. Which one matters less than that they differ.
     const store = storeWith([reading(1, 5, 10), reading(-1, 5, 10), reading(4, 5, 10)]);
-    const s = buildSection(
-      store, { fromLon: 0, fromLat: 0, toLon: 0, toLat: 10 }, DEFAULT_FILTERS, NOW, 200,
-    );
+    const s = buildSection(store, { fromLon: 0, fromLat: 0, toLon: 0, toLat: 10 }, DEFAULT_FILTERS, NOW, 200);
     // 4 degrees of longitude at 5 north is about 443km, well outside the corridor.
     expect(s.points).toHaveLength(2);
     const offsets = s.points.map((p) => p.offsetKm);
@@ -85,9 +79,7 @@ describe("a cross-section", () => {
 
   it("counts what it cannot plot instead of dropping it quietly", () => {
     const store = storeWith([reading(0, 5, Number.NaN), reading(0, 6, 20)]);
-    const s = buildSection(
-      store, { fromLon: 0, fromLat: 0, toLon: 0, toLat: 10 }, DEFAULT_FILTERS, NOW,
-    );
+    const s = buildSection(store, { fromLon: 0, fromLat: 0, toLon: 0, toLat: 10 }, DEFAULT_FILTERS, NOW);
     expect(s.points).toHaveLength(1);
     expect(s.withoutDepth).toBe(1);
   });
@@ -107,7 +99,10 @@ describe("a cross-section", () => {
    a wrong one is worse than none. See ARCHITECTURE.md. */
 describe("plate boundaries along a section", () => {
   const crossings = (
-    fromLon: number, fromLat: number, toLon: number, toLat: number,
+    fromLon: number,
+    fromLat: number,
+    toLon: number,
+    toLat: number,
   ): { length: number; at: number[] } => {
     const line = { fromLon, fromLat, toLon, toLat };
     const length = sectionLengthKm(line);
@@ -156,7 +151,10 @@ describe("plate boundaries along a section", () => {
     // Reached through the built section, since that is how the panel gets it and a helper nobody calls
     // is a helper that can quietly stop being called.
     const s = buildSection(
-      storeWith([]), { fromLon: 138, fromLat: 36, toLon: 146, toLat: 36 }, DEFAULT_FILTERS, NOW,
+      storeWith([]),
+      { fromLon: 138, fromLat: 36, toLon: 146, toLat: 36 },
+      DEFAULT_FILTERS,
+      NOW,
     );
     expect(s.crossings.length).toBeGreaterThan(0);
   });

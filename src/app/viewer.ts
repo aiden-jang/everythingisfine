@@ -68,7 +68,11 @@ export interface Closest {
  * `matches` the map draws with, so the event named is one that is actually on screen.
  */
 export function closestTo(
-  store: Store, at: { lon: number; lat: number }, filters: Filters, now: number, until = now,
+  store: Store,
+  at: { lon: number; lat: number },
+  filters: Filters,
+  now: number,
+  until = now,
 ): Closest | null {
   let best: Closest | null = null;
   store.forEach((quake) => {

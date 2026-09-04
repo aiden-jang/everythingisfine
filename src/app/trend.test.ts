@@ -11,9 +11,17 @@ import { distanceKm } from "../geo/sphere";
 
 /** Second moments of a scatter, the way `findNearby` accumulates them inside its walk. */
 const moments = (points: readonly [number, number][]) => {
-  let sx = 0; let sy = 0; let sxx = 0; let syy = 0; let sxy = 0;
+  let sx = 0;
+  let sy = 0;
+  let sxx = 0;
+  let syy = 0;
+  let sxy = 0;
   for (const [x, y] of points) {
-    sx += x; sy += y; sxx += x * x; syy += y * y; sxy += x * y;
+    sx += x;
+    sy += y;
+    sxx += x * x;
+    syy += y * y;
+    sxy += x * y;
   }
   return trendFrom(points.length, sx, sy, sxx, syy, sxy);
 };

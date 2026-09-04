@@ -18,7 +18,11 @@ function seeded(seed: number): () => number {
 /* Real margins, because the rail groups events into named regions and a uniform sphere would leave that
  * panel empty. Weighted so Indonesia dominates. */
 const BELTS: readonly {
-  lon: number; lat: number; place: string; weight: number; spread: readonly [number, number];
+  lon: number;
+  lat: number;
+  place: string;
+  weight: number;
+  spread: readonly [number, number];
 }[] = [
   // `spread` is the run of the margin in degrees. Blobs would collapse to one marker each under
   // clustering and leave a fixture planet with eight dots on it, which is not what a day looks like
@@ -94,7 +98,7 @@ function day(seed = 4, count = 240): Quake[] {
  * so this built its day at the runner's offset and skewed every archived day. Green in UTC, wrong elsewhere.
  */
 const fdsnTime = (raw: string | null): number =>
-  Date.parse(/([Zz]|[+-]\d\d:?\d\d)$/.test(raw ?? "") ? raw ?? "" : `${raw ?? ""}Z`);
+  Date.parse(/([Zz]|[+-]\d\d:?\d\d)$/.test(raw ?? "") ? (raw ?? "") : `${raw ?? ""}Z`);
 
 const usgsFeature = (q: Quake, now: number) => ({
   id: q.id,
@@ -231,9 +235,7 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
     const now = Date.now();
     route.fulfill({
       json: {
-        features: usgs ?? quakes
-          .filter((q) => q.ago < 3_600_000)
-          .map((q) => usgsFeature(q, now)),
+        features: usgs ?? quakes.filter((q) => q.ago < 3_600_000).map((q) => usgsFeature(q, now)),
       },
     });
   });
@@ -243,11 +245,16 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
     if (emscCappedHours !== undefined) {
       // Exactly a full page, spread evenly over the hours asked for. Full is what makes the source vouch for
       // its oldest row rather than for the window, so the count has to be the limit and not merely large.
-      const capped = Array.from({ length: EMSC_SEED_LIMIT }, (_, i) => emscFeature({
-        ...quakes[i % Math.max(1, quakes.length)]!,
-        id: `cap${i}`,
-        ago: Math.round((i / (EMSC_SEED_LIMIT - 1)) * emscCappedHours * 3_600_000),
-      }, now));
+      const capped = Array.from({ length: EMSC_SEED_LIMIT }, (_, i) =>
+        emscFeature(
+          {
+            ...quakes[i % Math.max(1, quakes.length)]!,
+            id: `cap${i}`,
+            ago: Math.round((i / (EMSC_SEED_LIMIT - 1)) * emscCappedHours * 3_600_000),
+          },
+          now,
+        ),
+      );
       route.fulfill({ json: { features: capped } });
       return;
     }
@@ -297,7 +304,6 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
 
   // Registered last on purpose: Playwright checks routes in reverse registration order, so the broad
   // `seismicportal.eu` host pattern above would otherwise keep catching the EMSC archive query.
-
 }
 
 /**
@@ -310,10 +316,15 @@ const hazardEvent = (type: string, id: number, lon: number, lat: number, extra: 
   type: "Feature",
   geometry: { type: "Point", coordinates: [lon, lat] },
   properties: {
-    eventtype: type, eventid: id, eventname: "", country: "Fixtureland",
+    eventtype: type,
+    eventid: id,
+    eventname: "",
+    country: "Fixtureland",
     fromdate: new Date(Date.now() - 6 * 86_400_000).toISOString(),
     todate: new Date(Date.now() + 2 * 86_400_000).toISOString(),
-    iscurrent: "true", alertlevel: "Green", severitydata: { severity: 0 },
+    iscurrent: "true",
+    alertlevel: "Green",
+    severitydata: { severity: 0 },
     /* The reporting agency. A plausible one rather than "FIXTURE": these reach a hover label, and
        "FIXTURE · FIXTURE" would not have caught the day the separator was left dangling. */
     source: type === "TC" ? "JTWC" : type === "VO" ? "GVP" : type === "WF" ? "EFFIS" : "DFO",
@@ -325,9 +336,12 @@ async function installHazards(page: Page): Promise<void> {
   await page.route(/gdacsapi\/api\/events\/geteventlist/, (route) => {
     const type = new URL(route.request().url()).searchParams.get("eventlist") ?? "";
     const rows: Record<string, unknown[]> = {
-      TC: [hazardEvent("TC", 9001, 132, 14, {
-        eventname: "FIXTURE", severitydata: { severity: 185 },
-      })],
+      TC: [
+        hazardEvent("TC", 9001, 132, 14, {
+          eventname: "FIXTURE",
+          severitydata: { severity: 185 },
+        }),
+      ],
       VO: [hazardEvent("VO", 9002, 15.0, 37.7, { eventname: "Fixture Volcano" })],
       WF: [hazardEvent("WF", 9003, 121.5, -8.2, { severitydata: { severity: 4200 } })],
       FL: [hazardEvent("FL", 9004, 100.5, 13.7)],
@@ -340,11 +354,20 @@ async function installHazards(page: Page): Promise<void> {
     route.fulfill({
       json: {
         type: "FeatureCollection",
-        features: [{
-          type: "Feature",
-          properties: { Class: "Line" },
-          geometry: { type: "LineString", coordinates: [[128, 11], [130, 12], [132, 14]] },
-        }],
+        features: [
+          {
+            type: "Feature",
+            properties: { Class: "Line" },
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [128, 11],
+                [130, 12],
+                [132, 14],
+              ],
+            },
+          },
+        ],
       },
     });
   });
@@ -373,24 +396,45 @@ async function installHazards(page: Page): Promise<void> {
     const start = Date.parse(`${url.searchParams.get("start") ?? ""}T00:00:00Z`);
     const at = new Date(Number.isFinite(start) ? start + 43_200_000 : Date.now()).toISOString();
     const point = (lon: number, lat: number, value?: number, unit?: string): unknown => ({
-      date: at, type: "Point", coordinates: [lon, lat],
+      date: at,
+      type: "Point",
+      coordinates: [lon, lat],
       ...(value === undefined ? {} : { magnitudeValue: value, magnitudeUnit: unit }),
     });
     route.fulfill({
       json: {
         events: [
-          { id: "EONET_F1", title: "Tropical Storm Fixture", closed: at,
+          {
+            id: "EONET_F1",
+            title: "Tropical Storm Fixture",
+            closed: at,
             categories: [{ id: "severeStorms" }],
-            geometry: [point(130, 12, 40, "kts"), point(132, 14, 55, "kts")] },
-          { id: "EONET_F2", title: "FIXTURE Wildfire, Owyhee, Idaho", closed: at,
-            categories: [{ id: "wildfires" }], geometry: [point(-116, 43, 1200, "acres")] },
-          { id: "EONET_F3", title: "Flood in Fixtureland 9", closed: at,
-            categories: [{ id: "floods" }], geometry: [point(100, 14)] },
+            geometry: [point(130, 12, 40, "kts"), point(132, 14, 55, "kts")],
+          },
+          {
+            id: "EONET_F2",
+            title: "FIXTURE Wildfire, Owyhee, Idaho",
+            closed: at,
+            categories: [{ id: "wildfires" }],
+            geometry: [point(-116, 43, 1200, "acres")],
+          },
+          {
+            id: "EONET_F3",
+            title: "Flood in Fixtureland 9",
+            closed: at,
+            categories: [{ id: "floods" }],
+            geometry: [point(100, 14)],
+          },
           // Volcanoes were the category this fixture left out, and the only one whose note does date
           // arithmetic. So the archived volcano line was the one reading no browser test could see, and it
           // was measuring from today.
-          { id: "EONET_F4", title: "Fixture Volcano", closed: at,
-            categories: [{ id: "volcanoes" }], geometry: [point(-155, 19)] },
+          {
+            id: "EONET_F4",
+            title: "Fixture Volcano",
+            closed: at,
+            categories: [{ id: "volcanoes" }],
+            geometry: [point(-155, 19)],
+          },
         ],
       },
     });
@@ -399,10 +443,15 @@ async function installHazards(page: Page): Promise<void> {
 
 export async function waitForData(page: Page): Promise<number> {
   const rail = page.locator(".zone-rail");
-  await expect(rail, "the rail never rendered: the page probably threw on load")
-    .toBeAttached({ timeout: 10_000 });
-  const counter = rail.locator("div").filter({ hasText: /^\d[\d,]*$/ }).first();
-  await expect(counter, "the rail's counter never left zero: no data arrived")
-    .not.toHaveText("0", { timeout: 30_000 });
+  await expect(rail, "the rail never rendered: the page probably threw on load").toBeAttached({
+    timeout: 10_000,
+  });
+  const counter = rail
+    .locator("div")
+    .filter({ hasText: /^\d[\d,]*$/ })
+    .first();
+  await expect(counter, "the rail's counter never left zero: no data arrived").not.toHaveText("0", {
+    timeout: 30_000,
+  });
   return Number((await counter.innerText()).replace(/,/g, ""));
 }

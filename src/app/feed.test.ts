@@ -6,8 +6,16 @@ import type { Quake, Reading } from "../data/types";
 
 const quake = (id: string, magnitude: number): Quake => {
   const primary: Reading = {
-    source: "usgs", id, magnitude, scale: "mb", lon: 140, lat: 35, depthKm: 10,
-    time: 1_700_000_000_000, place: "somewhere", kind: "earthquake",
+    source: "usgs",
+    id,
+    magnitude,
+    scale: "mb",
+    lon: 140,
+    lat: 35,
+    depthKm: 10,
+    time: 1_700_000_000_000,
+    place: "somewhere",
+    kind: "earthquake",
     receivedAt: 1_700_000_020_000,
   };
   return { key: id, readings: [primary], primary };
@@ -68,8 +76,7 @@ describe("a burst that arrived while the tab was hidden", () => {
   it("leaves ordinary live traffic alone", () => {
     const arrived = burst(2);
     expect(frontsFor({ arrived, seeding: false })).toEqual(arrived);
-    expect(frontsFor({ arrived: burst(MAX_LIVE_FRONTS), seeding: false }))
-      .toHaveLength(MAX_LIVE_FRONTS);
+    expect(frontsFor({ arrived: burst(MAX_LIVE_FRONTS), seeding: false })).toHaveLength(MAX_LIVE_FRONTS);
   });
 
   it("fires a few of the largest rather than all forty", () => {

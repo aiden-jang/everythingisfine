@@ -1,6 +1,4 @@
-import {
-  BufferAttribute, BufferGeometry, Color, Points, ShaderMaterial,
-} from "three";
+import { BufferAttribute, BufferGeometry, Color, Points, ShaderMaterial } from "three";
 import { MORPH_GLSL } from "./morph";
 import { DEG, EARTH_RADIUS_KM } from "../geo/sphere";
 import type { SlabPoint } from "../geo/slab";
@@ -127,8 +125,9 @@ export function createSlabLayer(morph = { value: 0 }): SlabLayer {
       material.uniforms["uPixelRatio"]!.value = ratio;
     },
     setRamp: (ramp) => {
-      (material.uniforms["uColor"]!.value as Color)
-        .setHex(ramp === "cividis" ? COLOR_SLAB_NEUTRAL : COLOR_SLAB);
+      (material.uniforms["uColor"]!.value as Color).setHex(
+        ramp === "cividis" ? COLOR_SLAB_NEUTRAL : COLOR_SLAB,
+      );
     },
     setOpacity: (value) => {
       const next = Math.max(0, Math.min(1, value));

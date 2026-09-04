@@ -5,7 +5,11 @@ import { spanDeg, toVec3 } from "./sphere";
 const segments = (a: Float32Array): string[] => {
   const out: string[] = [];
   for (let i = 0; i < a.length; i += 6) {
-    out.push(Array.from(a.subarray(i, i + 6)).map((n) => n.toFixed(5)).join(","));
+    out.push(
+      Array.from(a.subarray(i, i + 6))
+        .map((n) => n.toFixed(5))
+        .join(","),
+    );
   }
   return out;
 };
@@ -16,7 +20,10 @@ describe("plate boundaries", () => {
   it("reorders without losing or duplicating a segment", () => {
     // The reveal is a growing draw range over a reordered buffer, so the settled picture is only
     // identical to the unordered one if this holds exactly.
-    const ordered = orderByProximity(base, [{ lon: 120, lat: -5 }, { lon: -70, lat: -30 }]).position;
+    const ordered = orderByProximity(base, [
+      { lon: 120, lat: -5 },
+      { lon: -70, lat: -30 },
+    ]).position;
     expect(ordered.length).toBe(base.length);
     expect([...segments(ordered)].sort()).toEqual([...segments(base)].sort());
   });
@@ -100,9 +107,19 @@ describe("the plate geometry, at the seam and elsewhere", () => {
   it("drops a crossing rather than drawing it, on data that contains one", () => {
     // Nothing in the committed simplification reaches the guard - the widest step is 18.3 degrees against a
     // threshold of 170 - so it is fed a crossing directly. A precaution no test exercises gets deleted.
-    const crossing = buildPlates([[[179, 10], [-179, 10]]]);
+    const crossing = buildPlates([
+      [
+        [179, 10],
+        [-179, 10],
+      ],
+    ]);
     expect(crossing.position.length).toBe(0);
-    const ordinary = buildPlates([[[179, 10], [179.5, 10]]]);
+    const ordinary = buildPlates([
+      [
+        [179, 10],
+        [179.5, 10],
+      ],
+    ]);
     expect(ordinary.position.length).toBeGreaterThan(0);
   });
 

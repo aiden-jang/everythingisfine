@@ -3,7 +3,13 @@ import { boundarySegments, nearestBoundaryKm, toSegments, type Segment } from ".
 import { distanceKm } from "./sphere";
 
 /** A single straight run of "boundary" along the equator, 20 degrees long. */
-const equator: [number, number][][] = [[[0, 0], [10, 0], [20, 0]]];
+const equator: [number, number][][] = [
+  [
+    [0, 0],
+    [10, 0],
+    [20, 0],
+  ],
+];
 const segs = toSegments(equator);
 
 describe("distance to the nearest boundary", () => {
@@ -33,12 +39,26 @@ describe("distance to the nearest boundary", () => {
   it("takes the nearest of several boundaries", () => {
     /* 119.7 km, not the 111.2 that one degree of latitude would suggest, and the difference is the point.
        See ARCHITECTURE.md. */
-    const two = toSegments([[[0, 0], [20, 0]], [[0, 5], [20, 5]]]);
+    const two = toSegments([
+      [
+        [0, 0],
+        [20, 0],
+      ],
+      [
+        [0, 5],
+        [20, 5],
+      ],
+    ]);
     expect(nearestBoundaryKm(10, 4, two)!).toBeCloseTo(119.7, 0);
   });
 
   it("bulges the way a great circle does, not the way a parallel looks on a map", () => {
-    const arc = toSegments([[[0, 5], [20, 5]]]);
+    const arc = toSegments([
+      [
+        [0, 5],
+        [20, 5],
+      ],
+    ]);
     // On the arc's own latitude at its midpoint, and still 8.5 km south of it.
     expect(nearestBoundaryKm(10, 5, arc)!).toBeCloseTo(8.6, 0);
     // At its endpoints the arc really is at latitude 5.
@@ -53,8 +73,22 @@ describe("distance to the nearest boundary", () => {
 describe("preparing the segments", () => {
   it("drops a leg that wraps the antimeridian, like the boundary renderer does", () => {
     // Joining 179 to -179 is a line straight across the map and a chord through the planet.
-    expect(toSegments([[[179, 0], [-179, 0]]])).toHaveLength(0);
-    expect(toSegments([[[179, 0], [179.5, 0]]])).toHaveLength(1);
+    expect(
+      toSegments([
+        [
+          [179, 0],
+          [-179, 0],
+        ],
+      ]),
+    ).toHaveLength(0);
+    expect(
+      toSegments([
+        [
+          [179, 0],
+          [179.5, 0],
+        ],
+      ]),
+    ).toHaveLength(1);
   });
 
   it("makes one segment per pair, not per point", () => {

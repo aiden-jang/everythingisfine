@@ -24,12 +24,18 @@ describe("closing the gap", () => {
      */
     let one = 872;
     let ms = 0;
-    while (one !== 873 && ms < 2000) { one = stepToward(one, 873, 16); ms += 16; }
+    while (one !== 873 && ms < 2000) {
+      one = stepToward(one, 873, 16);
+      ms += 16;
+    }
     expect(ms).toBeLessThan(120);
 
     let many = 872;
     ms = 0;
-    while (many !== 11_363 && ms < 5000) { many = stepToward(many, 11_363, 16); ms += 16; }
+    while (many !== 11_363 && ms < 5000) {
+      many = stepToward(many, 11_363, 16);
+      ms += 16;
+    }
     // Long enough to read as counting, short enough not to be a readout arguing with itself. The first
     // time constant tried measured 1,194ms here, which was the second of turning digits that found it.
     expect(ms).toBeGreaterThan(300);

@@ -36,10 +36,7 @@ export function buildPlates(
         const lat0 = a[1] + (b[1] - a[1]) * t0;
         const lon1 = a[0] + (b[0] - a[0]) * t1;
         const lat1 = a[1] + (b[1] - a[1]) * t1;
-        out.push(
-          ...toVec3(lon0, lat0, RADIUS_PLATES),
-          ...toVec3(lon1, lat1, RADIUS_PLATES),
-        );
+        out.push(...toVec3(lon0, lat0, RADIUS_PLATES), ...toVec3(lon1, lat1, RADIUS_PLATES));
         ll.push(lon0, lat0, lon1, lat1);
       }
     }
@@ -61,7 +58,9 @@ export function orderByProximity(
   const pz = new Float32Array(points.length);
   for (let i = 0; i < points.length; i += 1) {
     const [x, y, z] = toVec3(points[i]!.lon, points[i]!.lat, 1);
-    px[i] = x; py[i] = y; pz[i] = z;
+    px[i] = x;
+    py[i] = y;
+    pz[i] = z;
   }
 
   // Squared chord length, never an angle: it is monotonic in the angle and costs no inverse trig
@@ -73,7 +72,9 @@ export function orderByProximity(
     let my = (positions[i + 1]! + positions[i + 4]!) / 2;
     let mz = (positions[i + 2]! + positions[i + 5]!) / 2;
     const len = Math.hypot(mx, my, mz) || 1;
-    mx /= len; my /= len; mz /= len;
+    mx /= len;
+    my /= len;
+    mz /= len;
 
     let best = Infinity;
     for (let e = 0; e < points.length; e += 1) {
@@ -86,8 +87,7 @@ export function orderByProximity(
     cost[s] = best;
   }
 
-  const order = Array.from({ length: segments }, (_, i) => i)
-    .sort((a, b) => cost[a]! - cost[b]!);
+  const order = Array.from({ length: segments }, (_, i) => i).sort((a, b) => cost[a]! - cost[b]!);
 
   const out = new Float32Array(positions.length);
   const outLl = lonLat ? new Float32Array(lonLat.length) : undefined;

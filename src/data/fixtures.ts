@@ -18,7 +18,14 @@ export function seeded(seed: number): () => number {
 
 /** Roughly where earthquakes are, so tests exercise real longitudes rather than a uniform sphere. */
 const SEISMIC_BELTS: readonly (readonly [number, number])[] = [
-  [142, 38], [130, -5], [-72, -33], [-122, 38], [155, 52], [26, 38], [70, 36], [-86, 12],
+  [142, 38],
+  [130, -5],
+  [-72, -33],
+  [-122, 38],
+  [155, 52],
+  [26, 38],
+  [70, 36],
+  [-86, 12],
 ];
 
 export interface SyntheticOptions {

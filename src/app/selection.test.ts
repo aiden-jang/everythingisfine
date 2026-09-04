@@ -10,9 +10,18 @@ import type { Filters, Reading } from "../data/types";
  */
 
 const reading = (over: Partial<Reading> = {}): Reading => ({
-  source: "usgs", id: "a1", magnitude: 5.2, scale: "Mww", lon: 141.3, lat: 41.8, depthKm: 40,
-  time: 1_700_000_000_000, place: "40 km E of Hakodate", kind: "earthquake",
-  receivedAt: 1_700_000_020_000, ...over,
+  source: "usgs",
+  id: "a1",
+  magnitude: 5.2,
+  scale: "Mww",
+  lon: 141.3,
+  lat: 41.8,
+  depthKm: 40,
+  time: 1_700_000_000_000,
+  place: "40 km E of Hakodate",
+  kind: "earthquake",
+  receivedAt: 1_700_000_020_000,
+  ...over,
 });
 
 describe("a pinned selection survives", () => {
@@ -73,13 +82,15 @@ describe("a pinned selection survives", () => {
 
 describe("regions", () => {
   const filters: Filters = {
-    minMagnitude: 0, windowMs: 24 * 3_600_000, sources: new Set(["usgs", "emsc"]),
+    minMagnitude: 0,
+    windowMs: 24 * 3_600_000,
+    sources: new Set(["usgs", "emsc"]),
   };
   const now = 1_700_000_000_000;
 
   it("counts an event into the margin it happened in", () => {
     const store = createStore(50);
-    store.ingest(reading({ lon: 142, lat: 38 }));       // Japan
+    store.ingest(reading({ lon: 142, lat: 38 })); // Japan
     store.ingest(reading({ id: "b", lon: -71, lat: -33 })); // Chile
     store.ingest(reading({ id: "c", lon: -70.5, lat: -30 }));
 
@@ -106,8 +117,9 @@ describe("regions", () => {
     store.ingest(reading({ id: "b", lon: 143, lat: 39, magnitude: 6 }));
 
     const low = countByRegion(store, filters, now).find((c) => c.region.name === "Japan & Kurils")!;
-    const high = countByRegion(store, { ...filters, minMagnitude: 5 }, now)
-      .find((c) => c.region.name === "Japan & Kurils")!;
+    const high = countByRegion(store, { ...filters, minMagnitude: 5 }, now).find(
+      (c) => c.region.name === "Japan & Kurils",
+    )!;
     expect(low.count).toBe(2);
     expect(high.count).toBe(1);
   });

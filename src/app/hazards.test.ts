@@ -16,38 +16,51 @@ const NOW = 1_000_000_000_000;
 
 describe("ordering each layer by the question it invites", () => {
   it("ranks storms by peak wind, hardest first", () => {
-    const [group] = hazardGroups({
-      ...none,
-      cyclones: [storm("a", "Weak", 90), storm("b", "Strong", 241), storm("c", "Middling", 150)],
-    }, NOW);
+    const [group] = hazardGroups(
+      {
+        ...none,
+        cyclones: [storm("a", "Weak", 90), storm("b", "Strong", 241), storm("c", "Middling", 150)],
+      },
+      NOW,
+    );
     expect(group!.rows.map((r) => r.name)).toEqual(["Strong", "Middling", "Weak"]);
     expect(group!.rows[0]!.measure).toBe("241 km/h");
   });
 
   it("ranks fires by burned area and states it in the legend's own unit", () => {
-    const [group] = hazardGroups({
-      ...none, fires: [fire("a", "Angola", 9_673), fire("b", "Australia", 139_348)],
-    }, NOW);
+    const [group] = hazardGroups(
+      {
+        ...none,
+        fires: [fire("a", "Angola", 9_673), fire("b", "Australia", 139_348)],
+      },
+      NOW,
+    );
     expect(group!.rows.map((r) => r.name)).toEqual(["Australia", "Angola"]);
     // km², matching the legend's total, so the two read as the same quantity.
     expect(group!.rows[0]!.measure).toBe("1,393 km²");
   });
 
   it("ranks floods newest first and offers no measure, because the feed has none", () => {
-    const [group] = hazardGroups({
-      ...none,
-      floods: [flood("a", "Peru", 1_000), flood("b", "Thailand", 5_000)],
-    }, NOW);
+    const [group] = hazardGroups(
+      {
+        ...none,
+        floods: [flood("a", "Peru", 1_000), flood("b", "Thailand", 5_000)],
+      },
+      NOW,
+    );
     expect(group!.rows.map((r) => r.name)).toEqual(["Thailand", "Peru"]);
     // Inventing a rank would imply a severity this feed files as magnitude zero for every row.
     expect(group!.rows.every((r) => r.measure === "")).toBe(true);
   });
 
   it("ranks volcanoes by how recent the episode was", () => {
-    const [group] = hazardGroups({
-      ...none,
-      volcanoes: [volcano("a", "Old", 1_000), volcano("b", "Recent", 9_000)],
-    }, NOW);
+    const [group] = hazardGroups(
+      {
+        ...none,
+        volcanoes: [volcano("a", "Old", 1_000), volcano("b", "Recent", 9_000)],
+      },
+      NOW,
+    );
     expect(group!.rows.map((r) => r.name)).toEqual(["Recent", "Old"]);
   });
 });
@@ -86,8 +99,12 @@ describe("what the list says about itself", () => {
 
 describe("saying that the window emptied a layer", () => {
   const DAY = 86_400_000;
-  const tally = (kind: "cyclone" | "fire" | "flood" | "volcano", held: number, shown: number,
-    newest: number | null = NOW - 10 * DAY) => ({ kind, held, shown, newest });
+  const tally = (
+    kind: "cyclone" | "fire" | "flood" | "volcano",
+    held: number,
+    shown: number,
+    newest: number | null = NOW - 10 * DAY,
+  ) => ({ kind, held, shown, newest });
 
   it("says nothing when every layer the feed holds is on screen", () => {
     expect(outsideWindowNote([tally("fire", 3, 3), tally("flood", 2, 2)], NOW)).toBeNull();
@@ -106,7 +123,8 @@ describe("saying that the window emptied a layer", () => {
 
   it("joins several layers into a sentence rather than a list", () => {
     const note = outsideWindowNote(
-      [tally("cyclone", 2, 0), tally("fire", 3, 0), tally("flood", 4, 0), tally("volcano", 1, 1)], NOW,
+      [tally("cyclone", 2, 0), tally("fire", 3, 0), tally("flood", 4, 0), tally("volcano", 1, 1)],
+      NOW,
     );
     expect(note).toContain("No storms, fires and floods are in this window");
     // The totals are added across the emptied layers only, so the number matches what widening would show.
@@ -115,7 +133,8 @@ describe("saying that the window emptied a layer", () => {
 
   it("speaks of the marks as a whole once the window has emptied all of them", () => {
     const note = outsideWindowNote(
-      [tally("cyclone", 2, 0), tally("fire", 3, 0), tally("flood", 4, 0), tally("volcano", 1, 0)], NOW,
+      [tally("cyclone", 2, 0), tally("fire", 3, 0), tally("flood", 4, 0), tally("volcano", 1, 0)],
+      NOW,
     );
     expect(note).toContain("None of the marks are in this window");
   });

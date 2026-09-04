@@ -41,14 +41,22 @@ export interface ParseResult {
 interface UsgsFeature {
   id?: unknown;
   properties?: {
-    mag?: unknown; place?: unknown; time?: unknown; updated?: unknown;
-    magType?: unknown; type?: unknown; felt?: unknown; cdi?: unknown; status?: unknown; mmi?: unknown; net?: unknown;
+    mag?: unknown;
+    place?: unknown;
+    time?: unknown;
+    updated?: unknown;
+    magType?: unknown;
+    type?: unknown;
+    felt?: unknown;
+    cdi?: unknown;
+    status?: unknown;
+    mmi?: unknown;
+    net?: unknown;
   };
   geometry?: { coordinates?: unknown };
 }
 
-const num = (v: unknown): number | null =>
-  typeof v === "number" && Number.isFinite(v) ? v : null;
+const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
 /**
  * GeoJSON to readings. Written defensively on purpose: this is the one place the app touches something it
@@ -105,11 +113,11 @@ export function parseUsgs(payload: unknown, receivedAt: number): ParseResult {
       ...(typeof p?.mmi === "number" && p.mmi > 0 ? { shaking: p.mmi } : {}),
       ...(typeof p?.felt === "number" && p.felt > 0
         ? {
-          felt: {
-            reports: Math.round(p.felt),
-            ...(typeof p?.cdi === "number" && p.cdi > 0 ? { intensity: p.cdi } : {}),
-          },
-        }
+            felt: {
+              reports: Math.round(p.felt),
+              ...(typeof p?.cdi === "number" && p.cdi > 0 ? { intensity: p.cdi } : {}),
+            },
+          }
         : {}),
       kind: typeof p?.type === "string" && p.type ? p.type : "earthquake",
       receivedAt,
@@ -131,16 +139,12 @@ export interface UsgsUrls {
   poll?: string;
 }
 
-export function createUsgsSource(
-  runtime: Runtime,
-  urls: string | UsgsUrls = {},
-): GeoEventSource {
+export function createUsgsSource(runtime: Runtime, urls: string | UsgsUrls = {}): GeoEventSource {
   // A bare string means "poll this and do not seed", which is what every test wants.
-  const pollUrl = typeof urls === "string" ? urls : urls.poll ?? USGS_HOUR_FEED;
-  const seedUrl = typeof urls === "string" ? null : urls.seed ?? USGS_DAY_FEED;
+  const pollUrl = typeof urls === "string" ? urls : (urls.poll ?? USGS_HOUR_FEED);
+  const seedUrl = typeof urls === "string" ? null : (urls.seed ?? USGS_DAY_FEED);
   /** How far back the chosen seed reaches, read off the feed's own name so the two cannot drift. */
-  const seedMs = (seedUrl?.includes("all_month") ? 30 : seedUrl?.includes("all_week") ? 7 : 1)
-    * 86_400_000;
+  const seedMs = (seedUrl?.includes("all_month") ? 30 : seedUrl?.includes("all_week") ? 7 : 1) * 86_400_000;
   let seeded = false;
   let handlers: SourceHandlers | null = null;
   let timer: number | null = null;

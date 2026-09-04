@@ -54,7 +54,10 @@ describe("the constellation figures", () => {
           if (Math.abs(stars[s + 1]! - dec) > 0.2) continue;
           let dRa = Math.abs(stars[s]! - ra);
           if (dRa > 180) dRa = 360 - dRa;
-          if (dRa * Math.cos(dec * (Math.PI / 180)) < 0.2) { near += 1; break; }
+          if (dRa * Math.cos(dec * (Math.PI / 180)) < 0.2) {
+            near += 1;
+            break;
+          }
         }
       }
     }

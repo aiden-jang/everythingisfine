@@ -53,9 +53,16 @@ describe("parsing a real USGS response", () => {
  * take it. Every one of them has appeared in a real USGS response. */
 describe("parsing what the feed does on a bad day", () => {
   const feature = (over: Record<string, unknown> = {}, geom: unknown = [141, 41, 30]) => ({
-    id: "us1", geometry: { coordinates: geom },
-    properties: { mag: 5, place: "somewhere", time: 1_700_000_000_000, magType: "mb",
-      type: "earthquake", ...over },
+    id: "us1",
+    geometry: { coordinates: geom },
+    properties: {
+      mag: 5,
+      place: "somewhere",
+      time: 1_700_000_000_000,
+      magType: "mb",
+      type: "earthquake",
+      ...over,
+    },
   });
   const parse = (features: unknown[]) => parseUsgs({ features }, 1_700_000_000_000);
 
@@ -96,15 +103,24 @@ describe("parsing what the feed does on a bad day", () => {
 describe("polling behaviour specific to USGS", () => {
   it("emits an event again once its solution is revised", async () => {
     let payload: unknown = {
-      features: [{ id: "us1", geometry: { coordinates: [141, 41, 30] },
-        properties: { mag: 5, place: "a", time: 1_000, updated: 1_000, magType: "mb" } }],
+      features: [
+        {
+          id: "us1",
+          geometry: { coordinates: [141, 41, 30] },
+          properties: { mag: 5, place: "a", time: 1_000, updated: 1_000, magType: "mb" },
+        },
+      ],
     };
     const runtime = createFakeRuntime({
       respond: async () => ({ ok: true, status: 200, json: async () => payload }),
     });
     const source = createUsgsSource(runtime, "https://example.invalid/feed");
     const seen: number[] = [];
-    source.start({ onReadings: (b) => seen.push(...b.map((r) => r.magnitude)), onStatus: () => {} , onSeeded: () => {} });
+    source.start({
+      onReadings: (b) => seen.push(...b.map((r) => r.magnitude)),
+      onStatus: () => {},
+      onSeeded: () => {},
+    });
 
     await runtime.flush();
     await runtime.advance(60_000);
@@ -113,8 +129,13 @@ describe("polling behaviour specific to USGS", () => {
     expect(seen).toEqual([5]);
 
     payload = {
-      features: [{ id: "us1", geometry: { coordinates: [141, 41, 30] },
-        properties: { mag: 5.4, place: "a", time: 1_000, updated: 2_000, magType: "mww" } }],
+      features: [
+        {
+          id: "us1",
+          geometry: { coordinates: [141, 41, 30] },
+          properties: { mag: 5.4, place: "a", time: 1_000, updated: 2_000, magType: "mww" },
+        },
+      ],
     };
     await runtime.advance(60_000);
     expect(seen).toEqual([5, 5.4]);
@@ -130,7 +151,7 @@ describe("polling behaviour specific to USGS", () => {
       },
     });
     const source = createUsgsSource(runtime, "https://example.invalid/feed");
-    source.start({ onReadings: () => {}, onStatus: () => {} , onSeeded: () => {} });
+    source.start({ onReadings: () => {}, onStatus: () => {}, onSeeded: () => {} });
     await runtime.flush();
 
     // A minute of empty globe on load would fail DESIGN.md section 8 outright.
@@ -151,11 +172,20 @@ describe("felt reports", () => {
     // app can make. A zero would be the first, printed as a fact, on every event in the ocean.
     const feed = {
       type: "FeatureCollection",
-      features: [{
-        id: "quiet",
-        properties: { mag: 5.1, magType: "mb", place: "somewhere", time: 1_700_000_000_000, felt: null, cdi: null },
-        geometry: { type: "Point", coordinates: [10, 20, 30] },
-      }],
+      features: [
+        {
+          id: "quiet",
+          properties: {
+            mag: 5.1,
+            magType: "mb",
+            place: "somewhere",
+            time: 1_700_000_000_000,
+            felt: null,
+            cdi: null,
+          },
+          geometry: { type: "Point", coordinates: [10, 20, 30] },
+        },
+      ],
     };
     const [reading] = parseUsgs(feed, 1_700_000_000_000).readings;
     expect(reading?.felt).toBeUndefined();
@@ -164,11 +194,20 @@ describe("felt reports", () => {
   it("refuses an intensity with no reports under it", () => {
     const feed = {
       type: "FeatureCollection",
-      features: [{
-        id: "odd",
-        properties: { mag: 5.1, magType: "mb", place: "somewhere", time: 1_700_000_000_000, felt: 0, cdi: 4.2 },
-        geometry: { type: "Point", coordinates: [10, 20, 30] },
-      }],
+      features: [
+        {
+          id: "odd",
+          properties: {
+            mag: 5.1,
+            magType: "mb",
+            place: "somewhere",
+            time: 1_700_000_000_000,
+            felt: 0,
+            cdi: 4.2,
+          },
+          geometry: { type: "Point", coordinates: [10, 20, 30] },
+        },
+      ],
     };
     const [reading] = parseUsgs(feed, 1_700_000_000_000).readings;
     expect(reading?.felt).toBeUndefined();
@@ -179,11 +218,13 @@ describe("the review state", () => {
   it("keeps the agency's own two words", () => {
     const make = (status: unknown) => ({
       type: "FeatureCollection",
-      features: [{
-        id: "x",
-        properties: { mag: 5, magType: "mb", place: "somewhere", time: 1_700_000_000_000, status },
-        geometry: { type: "Point", coordinates: [10, 20, 30] },
-      }],
+      features: [
+        {
+          id: "x",
+          properties: { mag: 5, magType: "mb", place: "somewhere", time: 1_700_000_000_000, status },
+          geometry: { type: "Point", coordinates: [10, 20, 30] },
+        },
+      ],
     });
     expect(parseUsgs(make("automatic"), 1).readings[0]?.review).toBe("automatic");
     expect(parseUsgs(make("reviewed"), 1).readings[0]?.review).toBe("reviewed");
@@ -194,11 +235,13 @@ describe("the review state", () => {
     // "the agency did not say" rather than being folded into one of the two that mean something.
     const make = (status: unknown) => ({
       type: "FeatureCollection",
-      features: [{
-        id: "x",
-        properties: { mag: 5, magType: "mb", place: "somewhere", time: 1_700_000_000_000, status },
-        geometry: { type: "Point", coordinates: [10, 20, 30] },
-      }],
+      features: [
+        {
+          id: "x",
+          properties: { mag: 5, magType: "mb", place: "somewhere", time: 1_700_000_000_000, status },
+          geometry: { type: "Point", coordinates: [10, 20, 30] },
+        },
+      ],
     });
     for (const odd of ["deleted", "REVIEWED", "", null, undefined, 1]) {
       expect(parseUsgs(make(odd), 1).readings[0]?.review, String(odd)).toBeUndefined();
@@ -215,11 +258,13 @@ describe("the review state", () => {
 describe("the modelled shaking", () => {
   const make = (mmi: unknown) => ({
     type: "FeatureCollection",
-    features: [{
-      id: "x",
-      properties: { mag: 5, magType: "mb", place: "somewhere", time: 1_700_000_000_000, mmi },
-      geometry: { type: "Point", coordinates: [10, 20, 30] },
-    }],
+    features: [
+      {
+        id: "x",
+        properties: { mag: 5, magType: "mb", place: "somewhere", time: 1_700_000_000_000, mmi },
+        geometry: { type: "Point", coordinates: [10, 20, 30] },
+      },
+    ],
   });
 
   it("keeps a real estimate", () => {
@@ -256,11 +301,13 @@ describe("the contributing network", () => {
   it("is absent rather than blank when the agency did not say", () => {
     const make = (net: unknown) => ({
       type: "FeatureCollection",
-      features: [{
-        id: "x",
-        properties: { mag: 5, magType: "mb", place: "somewhere", time: 1_700_000_000_000, net },
-        geometry: { type: "Point", coordinates: [10, 20, 30] },
-      }],
+      features: [
+        {
+          id: "x",
+          properties: { mag: 5, magType: "mb", place: "somewhere", time: 1_700_000_000_000, net },
+          geometry: { type: "Point", coordinates: [10, 20, 30] },
+        },
+      ],
     });
     for (const none of [null, undefined, "", "   ", 7]) {
       expect(parseUsgs(make(none), 1).readings[0]?.network, String(none)).toBeUndefined();

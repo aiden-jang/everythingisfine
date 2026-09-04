@@ -5,8 +5,12 @@ const usgsBody = (n: number) => ({
   features: Array.from({ length: n }, (_, i) => ({
     id: `us${i}`,
     properties: {
-      mag: 4.5, place: "10 km N of Somewhere", time: Date.parse("2026-07-04T05:00:00Z") + i,
-      updated: 1, magType: "mww", type: "earthquake",
+      mag: 4.5,
+      place: "10 km N of Somewhere",
+      time: Date.parse("2026-07-04T05:00:00Z") + i,
+      updated: 1,
+      magType: "mww",
+      type: "earthquake",
     },
     geometry: { coordinates: [140, 38, 30] },
   })),
@@ -15,9 +19,15 @@ const emscBody = (n: number) => ({
   features: Array.from({ length: n }, (_, i) => ({
     id: `em${i}`,
     properties: {
-      mag: 4.4, magtype: "mw", flynn_region: "SOMEWHERE",
-      time: "2026-07-04T05:00:01Z", lat: 38.05, lon: 140.05, depth: 28,
-      unid: `e${i}`, lastupdate: "2026-07-04T05:01:00Z",
+      mag: 4.4,
+      magtype: "mw",
+      flynn_region: "SOMEWHERE",
+      time: "2026-07-04T05:00:01Z",
+      lat: 38.05,
+      lon: 140.05,
+      depth: 28,
+      unid: `e${i}`,
+      lastupdate: "2026-07-04T05:01:00Z",
     },
   })),
 });
@@ -53,8 +63,7 @@ describe("asking both agencies for a day that has already happened", () => {
   });
 
   it("says when an answer came back at the row limit, rather than calling it a whole day", async () => {
-    const get = async (url: string) =>
-      ok(url.includes("usgs") ? usgsBody(ARCHIVE_LIMIT) : emscBody(1));
+    const get = async (url: string) => ok(url.includes("usgs") ? usgsBody(ARCHIVE_LIMIT) : emscBody(1));
     const got = await fetchArchive(0, 86_400_000, 2, get);
     expect(got.answered.usgs!.truncated).toBe(true);
     expect(got.answered.emsc!.truncated).toBe(false);

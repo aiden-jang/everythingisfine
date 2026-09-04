@@ -1,16 +1,23 @@
 import { describe, expect, it } from "vitest";
-import {
-  choosePrimary, DISTANCE_LIMIT_KM, MAGNITUDE_LIMIT, sameEvent, TIME_WINDOW_MS,
-} from "./reconcile";
+import { choosePrimary, DISTANCE_LIMIT_KM, MAGNITUDE_LIMIT, sameEvent, TIME_WINDOW_MS } from "./reconcile";
 import type { Reading } from "./types";
 
 /* The one decision this whole app is about: whether two agencies are describing one earthquake. See
    ARCHITECTURE.md. */
 
 const at = (over: Partial<Reading> = {}): Reading => ({
-  source: "usgs", id: "a1", magnitude: 5.0, scale: "mww", lon: 141.0, lat: 38.0, depthKm: 30,
-  time: 1_700_000_000_000, place: "somewhere", kind: "earthquake",
-  receivedAt: 1_700_000_000_000, ...over,
+  source: "usgs",
+  id: "a1",
+  magnitude: 5.0,
+  scale: "mww",
+  lon: 141.0,
+  lat: 38.0,
+  depthKm: 30,
+  time: 1_700_000_000_000,
+  place: "somewhere",
+  kind: "earthquake",
+  receivedAt: 1_700_000_000_000,
+  ...over,
 });
 
 describe("two agencies on one rupture", () => {
@@ -19,8 +26,13 @@ describe("two agencies on one rupture", () => {
     // where the scales differ most. Time and distance here are inside the measured p95s too.
     const usgs = at({ magnitude: 5.0, time: 1_700_000_000_000 });
     const emsc = at({
-      source: "emsc", id: "e1", magnitude: 5.4, scale: "ml",
-      time: 1_700_000_003_000, lon: 141.2, lat: 38.1,
+      source: "emsc",
+      id: "e1",
+      magnitude: 5.4,
+      scale: "ml",
+      time: 1_700_000_003_000,
+      lon: 141.2,
+      lat: 38.1,
     });
     expect(sameEvent(usgs, emsc)).toBe(true);
   });
@@ -53,7 +65,12 @@ describe("a mainshock and its aftershock", () => {
      */
     const mainshock = at({ magnitude: 6.8 });
     const aftershock = at({
-      source: "emsc", id: "e4", magnitude: 5.0, time: 1_700_000_005_000, lon: 141.3, lat: 38.2,
+      source: "emsc",
+      id: "e4",
+      magnitude: 5.0,
+      time: 1_700_000_005_000,
+      lon: 141.3,
+      lat: 38.2,
     });
     expect(sameEvent(mainshock, aftershock)).toBe(false);
   });

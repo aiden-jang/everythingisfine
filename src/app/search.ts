@@ -62,14 +62,11 @@ function atWordStart(hay: string, needle: string): boolean {
  * What the query matches, regions first, then places by relevance and then by size. One pass over the store:
  * the region counts and the place groups come out of the same walk.
  */
-export function search(
-  query: string, store: Store, filters: Filters, now: number,
-): Results {
+export function search(query: string, store: Store, filters: Filters, now: number): Results {
   const needle = fold(query);
   if (needle.length < 2) return { hits: [], more: 0 };
 
-  const regionHits = REGIONS
-    .map((region) => ({ region, folded: fold(region.name) }))
+  const regionHits = REGIONS.map((region) => ({ region, folded: fold(region.name) }))
     .filter(({ folded }) => folded.includes(needle))
     .map(({ region, folded }) => ({ region, lead: atWordStart(folded, needle) }));
 
@@ -102,13 +99,18 @@ export function search(
     .sort((a, b) => Number(b.lead) - Number(a.lead) || a.region.name.localeCompare(b.region.name))
     .map(({ region }) => ({ kind: "region", region, count: regionCounts.get(region.name) ?? 0 }));
 
-  const ranked = [...places.entries()]
-    .sort(([an, a], [bn, b]) => Number(b.lead) - Number(a.lead)
-      || b.strongest.primary.magnitude - a.strongest.primary.magnitude
-      || an.localeCompare(bn));
+  const ranked = [...places.entries()].sort(
+    ([an, a], [bn, b]) =>
+      Number(b.lead) - Number(a.lead) ||
+      b.strongest.primary.magnitude - a.strongest.primary.magnitude ||
+      an.localeCompare(bn),
+  );
 
   const placeHits: PlaceHit[] = ranked.slice(0, PLACE_LIMIT).map(([name, p]) => ({
-    kind: "place", name, count: p.count, strongest: p.strongest,
+    kind: "place",
+    name,
+    count: p.count,
+    strongest: p.strongest,
   }));
 
   return { hits: [...regions, ...placeHits], more: Math.max(0, ranked.length - PLACE_LIMIT) };

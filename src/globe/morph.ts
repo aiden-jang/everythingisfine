@@ -38,9 +38,7 @@ export const MORPH_GLSL = /* glsl */ `
  * Which copies of the map intersect the view, as inclusive integer offsets. Two most of the time, one when
  * zoomed in, three when the whole world plus both edges is on screen. See ARCHITECTURE.md.
  */
-export function visibleCopies(
-  cameraX: number, halfWidth: number,
-): { first: number; last: number } {
+export function visibleCopies(cameraX: number, halfWidth: number): { first: number; last: number } {
   /*
    * Which copy a point falls in, not how many periods away it is. Copy k covers a period centred on k and
    * those tile the line exactly, so it is the nearest multiple. Floor and ceil add a copy at each end that
@@ -94,7 +92,6 @@ export function morphable(material: Material, morph: { value: number }): void {
     shader.vertexShader = shader.vertexShader
       .replace("void main() {", `${MORPH_GLSL}\nvoid main() {`)
       .replace("#include <begin_vertex>", "vec3 transformed = fmProject(position);");
-
   };
   // Materials are cached by program key, and two that differ only in an injected shader hash to the same
   // key. Without this the second silently reuses the first one's program.

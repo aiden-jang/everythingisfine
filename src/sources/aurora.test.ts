@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  auroraAt, AURORA_LAT, AURORA_LON, fetchAurora, parseOvation,
-} from "./aurora";
+import { auroraAt, AURORA_LAT, AURORA_LON, fetchAurora, parseOvation } from "./aurora";
 
 /** A well-formed payload, in the order and range NOAA publishes. */
 const payload = (fill: (lon: number, lat: number) => number) => ({
@@ -100,7 +98,9 @@ describe("fetching it", () => {
 
   it("hands back null when the request fails outright", () => {
     // Optional by design, like the EMSC catalogue seed: a sky that fails to load is not a broken feed.
-    const boom = async (): Promise<Response> => { throw new Error("offline"); };
+    const boom = async (): Promise<Response> => {
+      throw new Error("offline");
+    };
     return expect(fetchAurora(boom)).resolves.toBeNull();
   });
 

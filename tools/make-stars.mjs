@@ -33,8 +33,13 @@ const SRC = "http://tdc-www.harvard.edu/catalogs/bsc5.dat.gz";
  * degree and a half out. Verified against Sirius, Polaris and Betelgeuse rather than trusted from the spec.
  */
 const FIELD = {
-  raH: [75, 2], raM: [77, 2], raS: [79, 4],
-  decSign: [83, 1], decD: [84, 2], decM: [86, 2], decS: [88, 2],
+  raH: [75, 2],
+  raM: [77, 2],
+  raS: [79, 4],
+  decSign: [83, 1],
+  decD: [84, 2],
+  decM: [86, 2],
+  decS: [88, 2],
   vmag: [102, 5],
 };
 const at = (line, [start, width]) => line.slice(start, start + width);
@@ -59,11 +64,9 @@ for (const line of lines) {
   if (mag > MAG_LIMIT) continue;
 
   const ra = (raH + Number(at(line, FIELD.raM)) / 60 + Number(at(line, FIELD.raS)) / 3600) * 15;
-  const dec = (at(line, FIELD.decSign) === "-" ? -1 : 1) * (
-    Number(at(line, FIELD.decD))
-    + Number(at(line, FIELD.decM)) / 60
-    + Number(at(line, FIELD.decS)) / 3600
-  );
+  const dec =
+    (at(line, FIELD.decSign) === "-" ? -1 : 1) *
+    (Number(at(line, FIELD.decD)) + Number(at(line, FIELD.decM)) / 60 + Number(at(line, FIELD.decS)) / 3600);
   if (!Number.isFinite(ra) || !Number.isFinite(dec) || Math.abs(dec) > 90) {
     skipped += 1;
     continue;
@@ -82,5 +85,7 @@ if (Math.abs(brightest.ra - 101.29) > 0.05 || Math.abs(brightest.dec + 16.72) > 
 const json = JSON.stringify(flat);
 await writeFile(OUT, `${json}\n`);
 console.log(`${count} stars to magnitude ${MAG_LIMIT}, ${skipped} without a usable position`);
-console.log(`brightest: magnitude ${brightest.mag} at ${brightest.ra.toFixed(2)}, ${brightest.dec.toFixed(2)}`);
+console.log(
+  `brightest: magnitude ${brightest.mag} at ${brightest.ra.toFixed(2)}, ${brightest.dec.toFixed(2)}`,
+);
 console.log(`wrote ${(json.length / 1024).toFixed(1)} kB -> ${OUT}`);

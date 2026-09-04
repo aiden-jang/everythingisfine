@@ -23,9 +23,10 @@ const MIN_MAGNITUDE = 4.5;
 const START = "2020-08-01";
 const END = "2025-08-01";
 
-const SRC = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv"
-  + `&minmagnitude=${MIN_MAGNITUDE}&mindepth=${MIN_DEPTH_KM}`
-  + `&starttime=${START}&endtime=${END}`;
+const SRC =
+  "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv" +
+  `&minmagnitude=${MIN_MAGNITUDE}&mindepth=${MIN_DEPTH_KM}` +
+  `&starttime=${START}&endtime=${END}`;
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "geo", "slab.json");
 
 const response = await fetch(SRC);
@@ -62,12 +63,7 @@ for (const line of lines.slice(1)) {
   }
   // Two decimals of position is about a kilometre, finer than the catalogue's own location error at these
   // depths. The feed's five decimals would be three times the bytes to state a precision nobody has.
-  points.push([
-    Number(lon.toFixed(2)),
-    Number(lat.toFixed(2)),
-    Math.round(depth),
-    Number(mag.toFixed(1)),
-  ]);
+  points.push([Number(lon.toFixed(2)), Number(lat.toFixed(2)), Math.round(depth), Number(mag.toFixed(1))]);
 }
 
 const json = JSON.stringify(points);

@@ -34,9 +34,7 @@ export function solarEclipse(at: number): Eclipse {
   const moonAt = toVec3(moon.lon, moon.lat, moonRadii(moon.distanceKm));
 
   // The axis, pointing away from the sun.
-  const away: [number, number, number] = [
-    moonAt[0] - sunAt[0], moonAt[1] - sunAt[1], moonAt[2] - sunAt[2],
-  ];
+  const away: [number, number, number] = [moonAt[0] - sunAt[0], moonAt[1] - sunAt[1], moonAt[2] - sunAt[2]];
   const awayLen = Math.hypot(away[0], away[1], away[2]);
   const dir: [number, number, number] = [away[0] / awayLen, away[1] / awayLen, away[2] / awayLen];
 
@@ -50,20 +48,26 @@ export function solarEclipse(at: number): Eclipse {
      ARCHITECTURE.md. */
   if (along <= 0) {
     const behind = Math.hypot(
-      moonAt[0] + along * dir[0], moonAt[1] + along * dir[1], moonAt[2] + along * dir[2],
+      moonAt[0] + along * dir[0],
+      moonAt[1] + along * dir[1],
+      moonAt[2] + along * dir[2],
     );
     const lit = toVec3(sun.lon, sun.lat, 1);
     return { centre: lit, umbra: 0, penumbra: 0, gap: behind, touching: false };
   }
   const closest: [number, number, number] = [
-    moonAt[0] + along * dir[0], moonAt[1] + along * dir[1], moonAt[2] + along * dir[2],
+    moonAt[0] + along * dir[0],
+    moonAt[1] + along * dir[1],
+    moonAt[2] + along * dir[2],
   ];
   const gap = Math.hypot(closest[0], closest[1], closest[2]);
 
   const inside = 1 - gap * gap;
   const reach = inside > 0 ? along - Math.sqrt(inside) : along;
   const hit: [number, number, number] = [
-    moonAt[0] + reach * dir[0], moonAt[1] + reach * dir[1], moonAt[2] + reach * dir[2],
+    moonAt[0] + reach * dir[0],
+    moonAt[1] + reach * dir[1],
+    moonAt[2] + reach * dir[2],
   ];
   const hitLen = Math.hypot(hit[0], hit[1], hit[2]) || 1;
   const centre: [number, number, number] = [hit[0] / hitLen, hit[1] / hitLen, hit[2] / hitLen];
@@ -112,7 +116,9 @@ export function lunarEclipse(at: number): LunarEclipse {
   const moonAt = toVec3(moon.lon, moon.lat, moonRadii(moon.distanceKm));
   const along = dot(moonAt, axis);
   const offset = Math.hypot(
-    moonAt[0] - along * axis[0], moonAt[1] - along * axis[1], moonAt[2] - along * axis[2],
+    moonAt[0] - along * axis[0],
+    moonAt[1] - along * axis[1],
+    moonAt[2] - along * axis[2],
   );
 
   // Behind the Earth or in front of it. A negative `along` puts the moon on the sunward side, where it

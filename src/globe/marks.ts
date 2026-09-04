@@ -153,34 +153,37 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
 
   /** One tessellation, written wherever it is told. The highlight must trace the same path as the mark. */
   const emit = (marks: readonly Mark[], write: typeof put): void => {
-      for (const mark of marks) {
-        // Scaled about its own anchor, so the glyph grows where it stands rather than drifting off the thing
-        // it marks. Latitude clamped: six times a flame at 88 degrees puts its tip past the pole.
-        const { anchor } = mark;
-        const shape = anchor === undefined || scale === 1
+    for (const mark of marks) {
+      // Scaled about its own anchor, so the glyph grows where it stands rather than drifting off the thing
+      // it marks. Latitude clamped: six times a flame at 88 degrees puts its tip past the pole.
+      const { anchor } = mark;
+      const shape =
+        anchor === undefined || scale === 1
           ? mark.points
           : mark.points.map((p) => ({
-            lon: anchor.lon + (p.lon - anchor.lon) * scale,
-            lat: Math.max(-89.9, Math.min(89.9, anchor.lat + (p.lat - anchor.lat) * scale)),
-          }));
-        for (let i = 1; i < shape.length; i += 1) {
-          const a = shape[i - 1]!;
-          const b = shape[i]!;
-          // Dropped rather than drawn, like `buildPlates` drops the same thing: joining 179 to -179 is a
-          // hairline straight across the map and a chord through the planet.
-          if (Math.abs(b.lon - a.lon) > WRAP_DEG) continue;
-          const span = Math.max(Math.abs(b.lon - a.lon), Math.abs(b.lat - a.lat));
-          const steps = Math.max(1, Math.ceil(span / DENSIFY_DEG));
-          for (let step = 0; step < steps; step += 1) {
-            const t0 = step / steps;
-            const t1 = (step + 1) / steps;
-            write(
-              a.lon + (b.lon - a.lon) * t0, a.lat + (b.lat - a.lat) * t0,
-              a.lon + (b.lon - a.lon) * t1, a.lat + (b.lat - a.lat) * t1,
-            );
-          }
+              lon: anchor.lon + (p.lon - anchor.lon) * scale,
+              lat: Math.max(-89.9, Math.min(89.9, anchor.lat + (p.lat - anchor.lat) * scale)),
+            }));
+      for (let i = 1; i < shape.length; i += 1) {
+        const a = shape[i - 1]!;
+        const b = shape[i]!;
+        // Dropped rather than drawn, like `buildPlates` drops the same thing: joining 179 to -179 is a
+        // hairline straight across the map and a chord through the planet.
+        if (Math.abs(b.lon - a.lon) > WRAP_DEG) continue;
+        const span = Math.max(Math.abs(b.lon - a.lon), Math.abs(b.lat - a.lat));
+        const steps = Math.max(1, Math.ceil(span / DENSIFY_DEG));
+        for (let step = 0; step < steps; step += 1) {
+          const t0 = step / steps;
+          const t1 = (step + 1) / steps;
+          write(
+            a.lon + (b.lon - a.lon) * t0,
+            a.lat + (b.lat - a.lat) * t0,
+            a.lon + (b.lon - a.lon) * t1,
+            a.lat + (b.lat - a.lat) * t1,
+          );
         }
       }
+    }
   };
 
   const build = (): void => {
@@ -194,7 +197,11 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
 
   const buildHot = (): void => {
     hotWritten = 0;
-    if (hovered !== null) emit(held.filter((m) => m.id === hovered), putHot);
+    if (hovered !== null)
+      emit(
+        held.filter((m) => m.id === hovered),
+        putHot,
+      );
     hotGeometry.setDrawRange(0, hotWritten * 2);
     hotPosAttr.needsUpdate = true;
     hotLlAttr.needsUpdate = true;
@@ -203,7 +210,10 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
   return {
     object,
     highlight,
-    set: (marks) => { held = marks; build(); },
+    set: (marks) => {
+      held = marks;
+      build();
+    },
     setHovered: (id) => {
       if (id === hovered) return;
       hovered = id;

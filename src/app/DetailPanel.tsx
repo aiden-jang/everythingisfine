@@ -11,7 +11,15 @@ import { arrivalFor, seconds } from "./arrival";
 import { daylight, solarClock, solarHour, sunElevation } from "../geo/sun";
 import { P_WAVE_KM_PER_S, S_WAVE_KM_PER_S } from "../geo/waves";
 import {
-  ago, boundaryNote, clock, coordinates, depth, farSideNote, magnitude, place, SOURCE_NAMES,
+  ago,
+  boundaryNote,
+  clock,
+  coordinates,
+  depth,
+  farSideNote,
+  magnitude,
+  place,
+  SOURCE_NAMES,
 } from "./format";
 
 /* The pinned event, in full. See ARCHITECTURE.md. */
@@ -54,7 +62,15 @@ export interface DetailPanelProps {
 const SHAKING = [
   // USGS's own words for intensity I through X, not a paraphrase. Two and three are both "weak" there,
   // and inventing a word the scale does not use is how a borrowed scale stops being the scale.
-  "not felt", "weak", "weak", "light", "moderate", "strong", "very strong", "severe", "violent",
+  "not felt",
+  "weak",
+  "weak",
+  "light",
+  "moderate",
+  "strong",
+  "very strong",
+  "severe",
+  "violent",
   "extreme",
 ];
 
@@ -81,8 +97,21 @@ function Field({ label, value }: { label: string; value: string }): JSX.Element 
 }
 
 export function DetailPanel({
-  open, quake, store, filters, ramp, excluded, revision, now, archived = false, onClose, onSection,
-  farSide, onFarSide, boundaryKm, onSelect,
+  open,
+  quake,
+  store,
+  filters,
+  ramp,
+  excluded,
+  revision,
+  now,
+  archived = false,
+  onClose,
+  onSection,
+  farSide,
+  onFarSide,
+  boundaryKm,
+  onSelect,
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
   const r = quake.primary;
@@ -95,7 +124,8 @@ export function DetailPanel({
   // Narrowed to a tuple rather than filtered in the markup, so the revision is non-optional by the time
   // it is read. A `revision!` inside a map survives a refactor and then stops being true.
   const revisions = quake.readings.flatMap((reading) =>
-    reading.revision ? [{ reading, revision: reading.revision }] : []);
+    reading.revision ? [{ reading, revision: reading.revision }] : [],
+  );
   const klass = depthClass(r.depthKm);
 
   // The disagreement, as a sentence, in the units a person thinks in. Only when there is genuinely a
@@ -105,13 +135,14 @@ export function DetailPanel({
   const arrival = arrivalFor(quake);
 
   const [a, b] = quake.readings;
-  const spread = a && b
-    ? {
-      km: distanceKm(a.lon, a.lat, b.lon, b.lat),
-      seconds: Math.abs(a.time - b.time) / 1000,
-      mag: Math.abs(a.magnitude - b.magnitude),
-    }
-    : null;
+  const spread =
+    a && b
+      ? {
+          km: distanceKm(a.lon, a.lat, b.lon, b.lat),
+          seconds: Math.abs(a.time - b.time) / 1000,
+          mag: Math.abs(a.magnitude - b.magnitude),
+        }
+      : null;
 
   const copyLink = async (): Promise<void> => {
     try {
@@ -157,7 +188,9 @@ export function DetailPanel({
         {/* Hooked, like the ramp and the map scale. Which magnitude scale a reading was measured on is the
             field that proves this is a real catalogue entry, and "the first mono span in the panel" stopped
             being that when the close key became lowercase mono. */}
-        <span data-magscale className="font-mono text-[12px] text-faint">{r.scale}</span>
+        <span data-magscale className="font-mono text-[12px] text-faint">
+          {r.scale}
+        </span>
       </div>
       <div className="mt-2 text-[13px] leading-snug text-dim">{place(r.place)}</div>
       <div className="mt-1 text-[11px] text-faint">
@@ -176,9 +209,10 @@ export function DetailPanel({
         <div className="mt-2 border-l border-hairline pl-2.5">
           {revisions.map(({ reading, revision }) => {
             const magMoved = revision.fromMagnitude !== reading.magnitude;
-            const depthMoved = revision.fromDepthKm !== null
-              && Number.isFinite(reading.depthKm)
-              && revision.fromDepthKm !== reading.depthKm;
+            const depthMoved =
+              revision.fromDepthKm !== null &&
+              Number.isFinite(reading.depthKm) &&
+              revision.fromDepthKm !== reading.depthKm;
             return (
               <div key={reading.source} className="text-[11px] leading-relaxed text-dim">
                 <span className="text-ink">{SOURCE_NAMES[reading.source]}</span> first said{" "}
@@ -205,8 +239,8 @@ export function DetailPanel({
             );
           })}
           <div className="mt-1.5 text-[11px] leading-relaxed text-faint">
-            First estimates are automatic. A reviewed magnitude arriving later is the system working,
-            not an error.
+            First estimates are automatic. A reviewed magnitude arriving later is the system working, not an
+            error.
           </div>
         </div>
       ) : null}
@@ -225,14 +259,10 @@ export function DetailPanel({
         {/* With the coordinates rather than in prose, because it is the same kind of fact. On its own it
             turns a place name into an explanation: "3,557 km from the nearest plate boundary" under
             Pahala, Hawaii is the hotspot, without the app having to claim one. */}
-        {boundaryNote(boundaryKm) ? (
-          <Field label="Boundary" value={boundaryNote(boundaryKm)!} />
-        ) : null}
+        {boundaryNote(boundaryKm) ? <Field label="Boundary" value={boundaryNote(boundaryKm)!} /> : null}
         {/* Only when somebody reported. This app cannot tell "nobody felt it" from "nobody wrote in", and
             only the second is a thing it knows. See ARCHITECTURE.md. */}
-        {feltNote(r.felt) ? (
-          <Field label="Felt reports" value={feltNote(r.felt)!} />
-        ) : null}
+        {feltNote(r.felt) ? <Field label="Felt reports" value={feltNote(r.felt)!} /> : null}
         {/* "May still change" is the whole reason to care: an automatic solution is a computer's answer
             minutes after the ground stopped, and this used to be drawn at the same confidence as one a
             seismologist had been through. */}
@@ -260,9 +290,9 @@ export function DetailPanel({
              earthquake reported by USGS was solved at the Hawaiian Volcano Observatory. See
              ARCHITECTURE.md. */
           value={quake.readings
-            .map((x) => (x.network === undefined
-              ? SOURCE_NAMES[x.source]
-              : `${SOURCE_NAMES[x.source]} (${x.network})`))
+            .map((x) =>
+              x.network === undefined ? SOURCE_NAMES[x.source] : `${SOURCE_NAMES[x.source]} (${x.network})`,
+            )
             .join(" + ")}
         />
       </div>
@@ -274,8 +304,8 @@ export function DetailPanel({
         <div className="mt-4">
           <p className="text-[11px] leading-relaxed text-dim">
             {arrival.place} is {arrival.km} km away. The first shake arrived about{" "}
-            <span className="text-ink">{seconds(arrival.p)}</span> after the rupture, and the stronger
-            S wave about {seconds(arrival.gap)} behind it.
+            <span className="text-ink">{seconds(arrival.p)}</span> after the rupture, and the stronger S wave
+            about {seconds(arrival.gap)} behind it.
           </p>
           <p className="mt-2 text-[11px] leading-relaxed text-faint">
             Timed straight through the crust at {P_WAVE_KM_PER_S} and {S_WAVE_KM_PER_S} km/s, over the
@@ -294,21 +324,18 @@ export function DetailPanel({
             <div className="text-[12px] leading-relaxed text-ink">
               {spread.km < 1 && spread.seconds < 1 && spread.mag < 0.05
                 ? "They agree to the precision they publish."
-                : `They place it ${spread.km.toFixed(1)} km and ${spread.seconds.toFixed(1)} s apart`
-                  + `${spread.mag < 0.05 ? ", on the same magnitude." : `, ${spread.mag.toFixed(1)} apart on magnitude.`}`}
+                : `They place it ${spread.km.toFixed(1)} km and ${spread.seconds.toFixed(1)} s apart` +
+                  `${spread.mag < 0.05 ? ", on the same magnitude." : `, ${spread.mag.toFixed(1)} apart on magnitude.`}`}
             </div>
             <div className="mt-2 text-[11px] leading-relaxed text-faint">
-              Neither reading is discarded. The marker is drawn from {SOURCE_NAMES[r.source]}, so it
-              does not move depending on which feed arrived first.
+              Neither reading is discarded. The marker is drawn from {SOURCE_NAMES[r.source]}, so it does not
+              move depending on which feed arrived first.
             </div>
           </div>
           {/* One dot, and columns for the rest. Three facts joined by two middle dots reads as a
               concatenation; the same three aligned down the panel read as a comparison. */}
           {quake.readings.map((reading, i) => (
-            <div
-              key={i}
-              className="mt-2 flex items-baseline gap-x-3 font-mono text-[10.5px] text-dim"
-            >
+            <div key={i} className="mt-2 flex items-baseline gap-x-3 font-mono text-[10.5px] text-dim">
               <span className="w-[40px] shrink-0 text-ink">{SOURCE_NAMES[reading.source]}</span>
               <span className="w-[74px] shrink-0">
                 M {reading.magnitude.toFixed(1)} {reading.scale}
@@ -323,9 +350,7 @@ export function DetailPanel({
       <div className="mt-4">
         <span className="text-[11px] text-faint">Within {NEARBY_KM} km</span>
         {near.count === 0 ? (
-          <p className="mt-2 text-[11px] text-faint">
-            Nothing else in this window. On its own, so far.
-          </p>
+          <p className="mt-2 text-[11px] text-faint">Nothing else in this window. On its own, so far.</p>
         ) : (
           <>
             <p className="mt-2 text-[11px] leading-relaxed text-dim">
@@ -351,9 +376,7 @@ export function DetailPanel({
                 <span className="min-w-0 flex-1 truncate text-[11px] text-dim">
                   {place(other.primary.place)}
                 </span>
-                <span className="shrink-0 font-mono text-[10.5px] text-faint">
-                  {Math.round(km)} km
-                </span>
+                <span className="shrink-0 font-mono text-[10.5px] text-faint">{Math.round(km)} km</span>
               </button>
             ))}
             <Sequence nearby={near} magnitude={r.magnitude} ramp={ramp} />

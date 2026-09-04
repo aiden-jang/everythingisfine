@@ -29,11 +29,7 @@ const ENDPOINT = "https://eonet.gsfc.nasa.gov/api/v3/events";
  * already being drawn by the live layers, and including it here would put a fire burning now onto a picture
  * of last July.
  */
-export async function fetchHistory(
-  from: number,
-  to: number,
-  get: typeof fetch = fetch,
-): Promise<History> {
+export async function fetchHistory(from: number, to: number, get: typeof fetch = fetch): Promise<History> {
   const day = (t: number): string => new Date(t).toISOString().slice(0, 10);
   const empty: History = { cyclones: [], volcanoes: [], fires: [], floods: [], answered: false };
   try {
@@ -56,11 +52,7 @@ const KTS_TO_KMH = 1.852;
 /** Acres, as IRWIN publishes burned area, into the hectares `Wildfire` carries. */
 const ACRES_TO_HECTARES = 0.404686;
 
-export function parseHistory(
-  payload: unknown,
-  from: number,
-  to: number,
-): Omit<History, "answered"> {
+export function parseHistory(payload: unknown, from: number, to: number): Omit<History, "answered"> {
   const out: Omit<History, "answered"> = { cyclones: [], volcanoes: [], fires: [], floods: [] };
   const events = (payload as { events?: unknown })?.events;
   if (!Array.isArray(events)) return out;
@@ -69,8 +61,11 @@ export function parseHistory(
     // A null in the array reads every guard below it as a property access on nothing.
     if (event === null || typeof event !== "object") continue;
     const e = event as {
-      id?: unknown; title?: unknown; closed?: unknown;
-      categories?: { id?: unknown }[]; geometry?: unknown;
+      id?: unknown;
+      title?: unknown;
+      closed?: unknown;
+      categories?: { id?: unknown }[];
+      geometry?: unknown;
     };
     const id = typeof e.id === "string" ? e.id : null;
     const title = typeof e.title === "string" ? e.title : "";
@@ -85,7 +80,10 @@ export function parseHistory(
      * show where a hurricane went on Friday.
      */
     const points = (Array.isArray(e.geometry) ? e.geometry : [])
-      .map((g) => g as { date?: unknown; coordinates?: unknown; magnitudeValue?: unknown; magnitudeUnit?: unknown })
+      .map(
+        (g) =>
+          g as { date?: unknown; coordinates?: unknown; magnitudeValue?: unknown; magnitudeUnit?: unknown },
+      )
       .filter((g) => Array.isArray(g.coordinates) && g.coordinates.length >= 2)
       .map((g) => ({
         at: typeof g.date === "string" ? Date.parse(g.date) : Number.NaN,
@@ -108,27 +106,51 @@ export function parseHistory(
       // The peak over the samples inside the day, which is what the live layer's number also means.
       const peaks = points.map((p) => p.magnitude).filter((m): m is number => m !== null);
       out.cyclones.push({
-        id, source: null, name: stormName(title), lon: last.lon, lat: last.lat,
+        id,
+        source: null,
+        name: stormName(title),
+        lon: last.lon,
+        lat: last.lat,
         peakKmh: peaks.length > 0 ? Math.round(Math.max(...peaks) * KTS_TO_KMH) : null,
         track: points.map((p) => ({ lon: p.lon, lat: p.lat })),
-        startedAt: points[0]!.at || null, endedAt,
+        startedAt: points[0]!.at || null,
+        endedAt,
       });
     } else if (kind === "volcano") {
       // No reporting agency. GDACS credits one on every live hazard; this archive comes from a different
       // feed that does not, so null is "the feed did not say".
       out.volcanoes.push({
-        id, source: null, name: stormName(title), country: place, lon: last.lon, lat: last.lat, endedAt,
+        id,
+        source: null,
+        name: stormName(title),
+        country: place,
+        lon: last.lon,
+        lat: last.lat,
+        endedAt,
       });
     } else if (kind === "fire") {
       const acres = points.map((p) => p.magnitude).filter((m): m is number => m !== null);
       out.fires.push({
-        id, source: null, country: place, lon: last.lon, lat: last.lat,
+        id,
+        source: null,
+        country: place,
+        lon: last.lon,
+        lat: last.lat,
         hectares: acres.length > 0 ? Math.round(Math.max(...acres) * ACRES_TO_HECTARES) : null,
-        startedAt: points[0]!.at || null, endedAt,
+        startedAt: points[0]!.at || null,
+        endedAt,
       });
     } else {
       // No measure, exactly as the live flood layer refuses one: this feed rates none of them either.
-      out.floods.push({ id, source: null, country: place, lon: last.lon, lat: last.lat, startedAt: points[0]!.at || null, endedAt });
+      out.floods.push({
+        id,
+        source: null,
+        country: place,
+        lon: last.lon,
+        lat: last.lat,
+        startedAt: points[0]!.at || null,
+        endedAt,
+      });
     }
   }
   return out;
@@ -151,7 +173,11 @@ export function stormName(title: string): string {
 /** Where it was, from a title written in one of two shapes by two upstreams. See ARCHITECTURE.md. */
 export function placeOf(title: string): string {
   if (title.includes(",")) {
-    const parts = title.split(",").slice(1).map((s) => s.trim()).filter(Boolean);
+    const parts = title
+      .split(",")
+      .slice(1)
+      .map((s) => s.trim())
+      .filter(Boolean);
     if (parts.length > 0) return parts[parts.length - 1]!;
   }
   // The id is theirs and means nothing to a reader, so it goes.

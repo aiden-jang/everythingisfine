@@ -3,20 +3,40 @@ import { findSubject, linesFor } from "./MarkCard";
 
 const NOW = Date.parse("2026-08-21T12:00:00Z");
 const cyclone = {
-  id: "TC1", name: "SAUDEL-26", lon: 130, lat: 18, peakKmh: 222,
-  track: [{ lon: 131, lat: 17 }, { lon: 130, lat: 18 }],
+  id: "TC1",
+  name: "SAUDEL-26",
+  lon: 130,
+  lat: 18,
+  peakKmh: 222,
+  track: [
+    { lon: 131, lat: 17 },
+    { lon: 130, lat: 18 },
+  ],
 } as never;
 const volcano = {
-  id: "VO1", name: "Etna", country: "Italy", lon: 15, lat: 37.7,
+  id: "VO1",
+  name: "Etna",
+  country: "Italy",
+  lon: 15,
+  lat: 37.7,
   endedAt: NOW - 9 * 86_400_000,
 } as never;
 const fire = {
-  id: "WF1", country: "Angola", lon: 18, lat: -12, hectares: 34_160,
-  startedAt: NOW - 9 * 86_400_000, endedAt: NOW,
+  id: "WF1",
+  country: "Angola",
+  lon: 18,
+  lat: -12,
+  hectares: 34_160,
+  startedAt: NOW - 9 * 86_400_000,
+  endedAt: NOW,
 } as never;
 const flood = {
-  id: "FL1", country: "Thailand", lon: 100.6, lat: 18.7,
-  startedAt: NOW - 3 * 86_400_000, endedAt: NOW,
+  id: "FL1",
+  country: "Thailand",
+  lon: 100.6,
+  lat: 18.7,
+  startedAt: NOW - 3 * 86_400_000,
+  endedAt: NOW,
 } as never;
 const data = { cyclones: [cyclone], volcanoes: [volcano], fires: [fire], floods: [flood] };
 
@@ -42,7 +62,8 @@ describe("finding what was clicked", () => {
     const shared = {
       cyclones: [{ ...(cyclone as object), id: "X" } as never],
       volcanoes: [{ ...(volcano as object), id: "X" } as never],
-      fires: [], floods: [],
+      fires: [],
+      floods: [],
     };
     expect(findSubject("volcano:X", shared)?.kind).toBe("volcano");
     expect(findSubject("cyclone:X", shared)?.kind).toBe("cyclone");
@@ -101,12 +122,13 @@ describe("an archived day changes the tense, not the facts", () => {
      * These notes were written when the archive withheld the four layers, so "running now" could not be
      * wrong. A past day draws them now, and the card is where somebody goes for the detail.
      */
-    expect(linesFor(findSubject("cyclone:TC1", data)!, NOW, true).note)
-      .toBe("Tropical cyclone, running that day.");
-    expect(linesFor(findSubject("fire:WF1", data)!, NOW, true).note)
-      .toBe("Forest fire burning that day.");
-    expect(linesFor(findSubject("flood:FL1", data)!, NOW, true).note)
-      .toBe("Flood running that day. This feed does not rate them.");
+    expect(linesFor(findSubject("cyclone:TC1", data)!, NOW, true).note).toBe(
+      "Tropical cyclone, running that day.",
+    );
+    expect(linesFor(findSubject("fire:WF1", data)!, NOW, true).note).toBe("Forest fire burning that day.");
+    expect(linesFor(findSubject("flood:FL1", data)!, NOW, true).note).toBe(
+      "Flood running that day. This feed does not rate them.",
+    );
   });
 
   it("keeps the volcano's refusal in both tenses, because that is the claim it must never make", () => {

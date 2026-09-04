@@ -4,9 +4,7 @@ import { loadStars, type FigureTable } from "../geo/stars";
 import { createGlobe } from "./scene";
 import type { FocusSpan } from "./events";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
-import {
-  createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay,
-} from "../app/replay";
+import { createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
 import type { Filters, Quake } from "../data/types";
 import { distanceLabel, magnitude } from "../app/format";
 import { between, seconds } from "../app/arrival";
@@ -26,9 +24,7 @@ export interface GlobeProps {
   selected: string | null;
   ramp: RampName;
   onSelect: (key: string | null) => void;
-  onReady: (
-    flyTo: (lon: number, lat: number, zoom?: number, liftPx?: number) => void,
-  ) => void;
+  onReady: (flyTo: (lon: number, lat: number, zoom?: number, liftPx?: number) => void) => void;
   /** Hands out a function that renders and returns the canvas, for the still. See ARCHITECTURE.md. */
   onCapture?: (capture: () => HTMLCanvasElement | null) => void;
   onSelectMark?: (id: string | null) => void;
@@ -71,10 +67,27 @@ const MAX_LIFT_DEG = 22;
 const SCALE_TARGET_PX = 110;
 
 export function Globe({
-  feed, filters, selected, ramp, onSelect, onReady, onCapture, onSelectMark, onCamera, onReplay,
-  focus = null, aurora = null, marks = [],
-  scrubAt = null, flat = false, depthSink = false, slab = null, figures = null, moment = null,
-  section = null, onSection,
+  feed,
+  filters,
+  selected,
+  ramp,
+  onSelect,
+  onReady,
+  onCapture,
+  onSelectMark,
+  onCamera,
+  onReplay,
+  focus = null,
+  aurora = null,
+  marks = [],
+  scrubAt = null,
+  flat = false,
+  depthSink = false,
+  slab = null,
+  figures = null,
+  moment = null,
+  section = null,
+  onSection,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
@@ -98,10 +111,32 @@ export function Globe({
    * dependencies would tear down the WebGL context and both feed subscriptions on every slider nudge.
    */
   const live = useRef({
-    filters, selected, focus, scrubAt, flat, depthSink, slab, figures, moment, section, aurora, marks,
+    filters,
+    selected,
+    focus,
+    scrubAt,
+    flat,
+    depthSink,
+    slab,
+    figures,
+    moment,
+    section,
+    aurora,
+    marks,
   });
   live.current = {
-    filters, selected, focus, scrubAt, flat, depthSink, slab, figures, moment, section, aurora, marks,
+    filters,
+    selected,
+    focus,
+    scrubAt,
+    flat,
+    depthSink,
+    slab,
+    figures,
+    moment,
+    section,
+    aurora,
+    marks,
   };
   const onSectionRef = useRef(onSection);
   onSectionRef.current = onSection;
@@ -153,7 +188,10 @@ export function Globe({
     if (import.meta.env.DEV) {
       console.info("[globe] geometry", globe.stats);
       Object.assign(window, {
-        __globe: globe.controls, __feed: feed, __events: globe.events, __rings: globe.rings,
+        __globe: globe.controls,
+        __feed: feed,
+        __events: globe.events,
+        __rings: globe.rings,
         // The pickable marks, so a browser test can point at a storm without knowing where storms are.
         // The hazard feeds are live even when the agencies are stubbed.
         __marks: () => live.current.marks.filter((m) => m.id !== undefined),
@@ -168,7 +206,9 @@ export function Globe({
          * One full scene draw, on demand, for measuring GPU frame time. The loop sleeps whenever nothing
          * is moving, so there are no frames to instrument otherwise. `DEV` only.
          */
-        __drawOnce: () => { globe.render(); },
+        __drawOnce: () => {
+          globe.render();
+        },
       });
     }
 
@@ -185,15 +225,18 @@ export function Globe({
       const box = el.getBoundingClientRect();
       // One resolver for both namespaces, so the overlays do not care which layer they point at. A mark's
       // label rides on the mark: this file knows about polylines and has no business knowing about cyclones.
-      const locate = (
-        t: { kind: "quake" | "mark"; id: string },
-      ): { lon: number; lat: number; label: string; quake: Quake | null } | null => {
+      const locate = (t: {
+        kind: "quake" | "mark";
+        id: string;
+      }): { lon: number; lat: number; label: string; quake: Quake | null } | null => {
         if (t.kind === "quake") {
           const q = feed.store.get(t.id);
           if (!q) return null;
           return {
-            lon: q.primary.lon, lat: q.primary.lat,
-            label: `${magnitude(q.primary)} ${q.primary.place}`, quake: q,
+            lon: q.primary.lon,
+            lat: q.primary.lat,
+            label: `${magnitude(q.primary)} ${q.primary.place}`,
+            quake: q,
           };
         }
         const mark = live.current.marks.find((m) => m.id === t.id && m.anchor !== undefined);
@@ -229,9 +272,10 @@ export function Globe({
            * because a place name may be truncated and a number must not be.
            */
           const pinned = live.current.selected ? feed.store.get(live.current.selected) : undefined;
-          const pair = pinned && pinned.key !== found.quake?.key
-            ? between(pinned.primary.lon, pinned.primary.lat, found.lon, found.lat)
-            : null;
+          const pair =
+            pinned && pinned.key !== found.quake?.key
+              ? between(pinned.primary.lon, pinned.primary.lat, found.lon, found.lat)
+              : null;
           node.replaceChildren();
           const name = document.createElement("div");
           name.className = "truncate";
@@ -242,9 +286,10 @@ export function Globe({
             gap.className = "font-mono text-dim tabular-nums";
             // Distance always, arrival time only between two earthquakes. A cyclone has no arrival time at
             // an earthquake, so printing seconds there would measure something that does not happen.
-            gap.textContent = pair.p !== null && found.quake !== null
-              ? `${distanceLabel(pair.km)} from the pin · ${seconds(pair.p)}`
-              : `${distanceLabel(pair.km)} from the pin`;
+            gap.textContent =
+              pair.p !== null && found.quake !== null
+                ? `${distanceLabel(pair.km)} from the pin · ${seconds(pair.p)}`
+                : `${distanceLabel(pair.km)} from the pin`;
             node.append(gap);
           }
         }
@@ -261,7 +306,7 @@ export function Globe({
         const draft = drag.current;
         // Map only. A great circle projects to a curve on a globe, so a straight screen line between two
         // projected points would be a wrong picture rather than a simplified one.
-        const line = globe.controls.morph() > 0.5 ? draft ?? live.current.section : null;
+        const line = globe.controls.morph() > 0.5 ? (draft ?? live.current.section) : null;
         const a = line ? globe.controls.project(line.fromLon, line.fromLat) : null;
         const b = line ? globe.controls.project(line.toLon, line.toLat) : null;
         svg.style.opacity = a && b ? "1" : "0";
@@ -309,9 +354,7 @@ export function Globe({
       if (bar) {
         const flat = globe.controls.morph() > 0.99;
         const { lat } = globe.controls.state();
-        const drawn = flat
-          ? niceScale(kmPerPixel(globe.controls.degPerPx(), lat), SCALE_TARGET_PX)
-          : null;
+        const drawn = flat ? niceScale(kmPerPixel(globe.controls.degPerPx(), lat), SCALE_TARGET_PX) : null;
         // Hidden on the globe, which carries its own scale by being a ball, and mid-morph, where a number
         // read off a half-flattened projection is a number about nothing.
         bar.style.opacity = drawn ? "1" : "0";
@@ -386,8 +429,12 @@ export function Globe({
         }
         replaying = true;
         globe.events.sync(
-          feed.store, live.current.filters, Date.now(),
-          globe.controls.state().zoom, replay.at() ?? undefined, live.current.focus,
+          feed.store,
+          live.current.filters,
+          Date.now(),
+          globe.controls.state().zoom,
+          replay.at() ?? undefined,
+          live.current.focus,
         );
         const at = replay.at();
         onReplayRef.current?.(replay.done() || at === null ? null : { at, revealed });
@@ -405,7 +452,8 @@ export function Globe({
         // 1.1 seconds, which is slow. Greenland swelling as it leaves the sphere is the whole argument for
         // the globe being the default view, and at 300ms nobody sees it happen.
         const step = reducedMotion.matches ? 1 : dt / 1.1;
-        morph = morphTarget > morph ? Math.min(morphTarget, morph + step) : Math.max(morphTarget, morph - step);
+        morph =
+          morphTarget > morph ? Math.min(morphTarget, morph + step) : Math.max(morphTarget, morph - step);
         globe.setMorph(morph);
         globe.controls.setMorph(morph);
         unwrapping = morph !== morphTarget;
@@ -415,9 +463,10 @@ export function Globe({
       let fading = false;
       if (focusFade !== focusTarget) {
         const step = reducedMotion.matches ? 1 : dt / 0.13;
-        focusFade = focusTarget > focusFade
-          ? Math.min(focusTarget, focusFade + step)
-          : Math.max(focusTarget, focusFade - step);
+        focusFade =
+          focusTarget > focusFade
+            ? Math.min(focusTarget, focusFade + step)
+            : Math.max(focusTarget, focusFade - step);
         globe.events.setFocusFade(focusFade);
         globe.rings.setDim(1 - 0.85 * focusFade);
         fading = focusFade !== focusTarget;
@@ -431,7 +480,11 @@ export function Globe({
         // Cheap: the layer decides for itself whether the change is worth a rebuild.
         globe.setMarkZoom(zoomNow);
         globe.events.sync(
-          feed.store, live.current.filters, Date.now(), zoomNow, revealUntil(),
+          feed.store,
+          live.current.filters,
+          Date.now(),
+          zoomNow,
+          revealUntil(),
           live.current.focus,
         );
       }
@@ -441,8 +494,7 @@ export function Globe({
       const revealing = revealStarted && plateReveal < 1;
       if (moving || expanding || replaying || fading || revealing || unwrapping) {
         requestAnimationFrame(frame);
-      }
-      else running = false;
+      } else running = false;
     };
 
     /*
@@ -461,7 +513,10 @@ export function Globe({
         const end = globe.controls.pick(m.clientX, m.clientY);
         if (!end) return;
         drag.current = {
-          fromLon: start.lon, fromLat: start.lat, toLon: end.lon, toLat: end.lat,
+          fromLon: start.lon,
+          fromLat: start.lat,
+          toLon: end.lon,
+          toLat: end.lat,
         };
         wakeRef.current();
       };
@@ -472,14 +527,17 @@ export function Globe({
         drag.current = null;
         // A shift-click with no drag clears rather than making a zero-length section, which would open the
         // panel to say nothing found. Shift-click is the undo for shift-drag.
-        const moved = line
-          && Math.hypot(u.clientX - e.clientX, u.clientY - e.clientY) > 12;
+        const moved = line && Math.hypot(u.clientX - e.clientX, u.clientY - e.clientY) > 12;
         // Stored left to right whichever way it was dragged. The panel plots zero at its left edge, so a
         // line dragged east to west put the map's right end on the panel's left with nothing saying so.
         const flip = moved && u.clientX < e.clientX;
-        onSectionRef.current?.(!moved ? null : flip
-          ? { fromLon: line.toLon, fromLat: line.toLat, toLon: line.fromLon, toLat: line.fromLat }
-          : line);
+        onSectionRef.current?.(
+          !moved
+            ? null
+            : flip
+              ? { fromLon: line.toLon, fromLat: line.toLat, toLon: line.fromLon, toLat: line.fromLat }
+              : line,
+        );
         wakeRef.current();
       };
       window.addEventListener("pointermove", move);
@@ -512,20 +570,27 @@ export function Globe({
 
     // The entrance wins while it is running and the cursor takes over after. Both drive `revealUntil`, so
     // one has to be chosen rather than combined.
-    const revealUntil = (): number | undefined =>
-      replay?.at() ?? live.current.scrubAt ?? undefined;
+    const revealUntil = (): number | undefined => replay?.at() ?? live.current.scrubAt ?? undefined;
 
     const redraw = (): void => {
       globe.events.sync(
-        feed.store, live.current.filters, Date.now(),
-        globe.controls.state().zoom, revealUntil(), live.current.focus,
+        feed.store,
+        live.current.filters,
+        Date.now(),
+        globe.controls.state().zoom,
+        revealUntil(),
+        live.current.focus,
       );
       globe.render();
       placeOverlays();
     };
     redrawRef.current = redraw;
-    auroraRef.current = (grid) => { globe.setAurora(grid); };
-    markRef.current = (next) => { globe.setMarks(next); };
+    auroraRef.current = (grid) => {
+      globe.setAurora(grid);
+    };
+    markRef.current = (next) => {
+      globe.setMarks(next);
+    };
     // The glyph scale is a function of zoom, so it has to be right before the first frame.
     globe.setMarkZoom(globe.controls.state().zoom);
     /*
@@ -571,7 +636,9 @@ export function Globe({
       // replay then wiped: a flash of the answer before the question.
       if (snapshot.seeding && snapshot.arrived.length > 0 && !replay && !reduced.matches) {
         let oldest = Infinity;
-        feed.store.forEach((q) => { oldest = Math.min(oldest, q.primary.time); });
+        feed.store.forEach((q) => {
+          oldest = Math.min(oldest, q.primary.time);
+        });
         if (Number.isFinite(oldest)) {
           const startedAt = Date.now();
           const from = replayFrom(oldest, startedAt);
@@ -582,7 +649,9 @@ export function Globe({
            * in the rail beside a globe holding eleven thousand.
            */
           revealed = 0;
-          feed.store.forEach((q) => { if (q.primary.time <= from) revealed += 1; });
+          feed.store.forEach((q) => {
+            if (q.primary.time <= from) revealed += 1;
+          });
           // Announced before the first frame. React otherwise renders one pass with the replay still null,
           // so the rail printed the full held total beside an empty globe for a quarter of a second. The
           // clamped start and the primed count, for the same reason.
@@ -597,8 +666,12 @@ export function Globe({
        * live arrival while parked mid-window revealed the whole window until something else moved.
        */
       globe.events.sync(
-        feed.store, live.current.filters, Date.now(),
-        globe.controls.state().zoom, revealUntil(), live.current.focus,
+        feed.store,
+        live.current.filters,
+        Date.now(),
+        globe.controls.state().zoom,
+        revealUntil(),
+        live.current.focus,
       );
       // A front per arrival, except on the seed. See `frontsFor`.
       const fronts = frontsFor(snapshot);
@@ -613,12 +686,13 @@ export function Globe({
       // Earthquakes first, then the other four, the same order the click uses: the ramp belongs to
       // earthquakes and so does the pointer when both are under it.
       const quake = globe.hitTest(e.clientX, e.clientY, feed.store, live.current.filters, Date.now());
-      const next: { kind: "quake" | "mark"; id: string } | null = quake !== null
-        ? { kind: "quake", id: quake }
-        : ((): { kind: "mark"; id: string } | null => {
-          const mark = globe.hitMark(e.clientX, e.clientY);
-          return mark === null ? null : { kind: "mark", id: mark };
-        })();
+      const next: { kind: "quake" | "mark"; id: string } | null =
+        quake !== null
+          ? { kind: "quake", id: quake }
+          : ((): { kind: "mark"; id: string } | null => {
+              const mark = globe.hitMark(e.clientX, e.clientY);
+              return mark === null ? null : { kind: "mark", id: mark };
+            })();
       if (next?.id !== hovered?.id || next?.kind !== hovered?.kind) {
         hovered = next;
         el.style.cursor = next ? "pointer" : "";
@@ -658,9 +732,7 @@ export function Globe({
       const slop = e.pointerType === "mouse" ? undefined : TOUCH_SLOP_PX;
       // Earthquakes first, then the other marks: the ramp belongs to earthquakes and so does the pointer.
       // A click that hits neither clears both selections.
-      const quake = globe.hitTest(
-        e.clientX, e.clientY, feed.store, live.current.filters, Date.now(), slop,
-      );
+      const quake = globe.hitTest(e.clientX, e.clientY, feed.store, live.current.filters, Date.now(), slop);
       if (quake) {
         onSelect(quake);
         onSelectMark?.(null);
@@ -799,10 +871,7 @@ export function Globe({
         <span ref={scaleText} className="block font-mono text-[10.5px] text-faint tabular-nums" />
         {/* Ticked at both ends. A bare line has no start or finish, and the eye measures from wherever it
             looks first. */}
-        <div
-          ref={scaleRule}
-          className="mt-1 h-[5px] border-x border-b border-dim"
-        />
+        <div ref={scaleRule} className="mt-1 h-[5px] border-x border-b border-dim" />
       </div>
       {/* Achromatic like every other piece of chrome: the section's own panel carries the ramp. */}
       <svg

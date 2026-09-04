@@ -76,8 +76,7 @@ describe("the flood waves", () => {
 
   it("stacks the rows upward from the point", () => {
     const rows = waves(0, 0, 1.4);
-    const mid = (r: readonly { lat: number }[]): number =>
-      r.reduce((s, p) => s + p.lat, 0) / r.length;
+    const mid = (r: readonly { lat: number }[]): number => r.reduce((s, p) => s + p.lat, 0) / r.length;
     expect(mid(rows[1]!)).toBeGreaterThan(mid(rows[0]!));
     expect(mid(rows[2]!)).toBeGreaterThan(mid(rows[1]!));
   });

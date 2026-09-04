@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
-  createRingLayer, MAX_DEG, PLAYBACK, P_WAVE_KM_PER_S, RATE_DEG_PER_S, RING_LIFETIME_S,
-  S_MAX_DEG, S_OVER_P, TRUE_RATE_DEG_PER_S,
+  createRingLayer,
+  MAX_DEG,
+  PLAYBACK,
+  P_WAVE_KM_PER_S,
+  RATE_DEG_PER_S,
+  RING_LIFETIME_S,
+  S_MAX_DEG,
+  S_OVER_P,
+  TRUE_RATE_DEG_PER_S,
 } from "./rings";
 import { S_WAVE_KM_PER_S } from "../geo/waves";
 import { EARTH_RADIUS_KM } from "../geo/sphere";
@@ -74,7 +81,13 @@ describe("the ring layer", () => {
     const layer = createRingLayer();
     // The pole is the case a naive basis built from the north vector gets wrong: the cross product
     // collapses and the ring degenerates to a point or fills with NaN.
-    for (const [lon, lat] of [[0, 90], [0, -90], [180, 0], [-179.9, 66.5], [0, 0]] as const) {
+    for (const [lon, lat] of [
+      [0, 90],
+      [0, -90],
+      [180, 0],
+      [-179.9, 66.5],
+      [0, 0],
+    ] as const) {
       layer.spawn(lon, lat, 6);
     }
     layer.step(3);
@@ -115,7 +128,7 @@ describe("the ring layer", () => {
 
   it("refuses to run more fronts than it has room for", () => {
     const layer = createRingLayer();
-    for (let i = 0; i < 500; i += 1) layer.spawn(i % 360 - 180, 0, 4);
+    for (let i = 0; i < 500; i += 1) layer.spawn((i % 360) - 180, 0, 4);
     // Dropped rather than allowed to overrun a fixed buffer. Global seismicity never approaches
     // this, and a burst that did would be a worse thing to crash on than to under-draw.
     expect(layer.active()).toBeLessThanOrEqual(64);

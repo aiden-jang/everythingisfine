@@ -40,9 +40,8 @@ export function parseOvation(payload: unknown): Aurora | null {
     if (probability > peak) peak = probability;
   }
 
-  const stamp = typeof body?.["Forecast Time"] === "string"
-    ? Date.parse(body["Forecast Time"] as string)
-    : Number.NaN;
+  const stamp =
+    typeof body?.["Forecast Time"] === "string" ? Date.parse(body["Forecast Time"] as string) : Number.NaN;
   return {
     grid,
     // The fetch time is a poor stand-in and is better than nothing: it is within minutes of the

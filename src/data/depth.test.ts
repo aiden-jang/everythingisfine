@@ -5,7 +5,9 @@ import type { Filters, Reading } from "./types";
 
 const NOW = Date.parse("2026-08-21T00:00:00Z");
 const FILTERS: Filters = {
-  minMagnitude: 2, windowMs: 86_400_000, sources: new Set(["usgs", "emsc"]),
+  minMagnitude: 2,
+  windowMs: 86_400_000,
+  sources: new Set(["usgs", "emsc"]),
 } as Filters;
 
 /** Spread apart in longitude, so nothing here is reconciled into one event by proximity. */
@@ -13,9 +15,17 @@ function storeWith(depths: (number | null)[]): Store {
   const store = createStore(100);
   depths.forEach((depthKm, i) => {
     const reading: Reading = {
-      source: "usgs", id: `e${i}`, magnitude: 4, scale: "Mww",
-      lon: 140 + i * 3, lat: 38, depthKm: depthKm === null ? Number.NaN : depthKm,
-      time: NOW - 60_000, place: "somewhere", kind: "earthquake", receivedAt: NOW,
+      source: "usgs",
+      id: `e${i}`,
+      magnitude: 4,
+      scale: "Mww",
+      lon: 140 + i * 3,
+      lat: 38,
+      depthKm: depthKm === null ? Number.NaN : depthKm,
+      time: NOW - 60_000,
+      place: "somewhere",
+      kind: "earthquake",
+      receivedAt: NOW,
     };
     store.ingest(reading);
   });
@@ -48,8 +58,13 @@ describe("the bands the markers draw", () => {
   });
 
   it("counts nothing for an empty window", () => {
-    expect(depthBands(createStore(), FILTERS, NOW))
-      .toEqual({ shallow: 0, intermediate: 0, deep: 0, unknown: 0, total: 0 });
+    expect(depthBands(createStore(), FILTERS, NOW)).toEqual({
+      shallow: 0,
+      intermediate: 0,
+      deep: 0,
+      unknown: 0,
+      total: 0,
+    });
   });
 
   it("respects the magnitude filter, so the counts match what is drawn", () => {

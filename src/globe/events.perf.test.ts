@@ -96,8 +96,8 @@ describe("update cost", () => {
       const ms = fastestMs(() => layer.sync(store, f, now, NO_CLUSTER), 40);
       const units = ms / ref;
       console.info(
-        `[perf] sync ${count} events: ${units.toFixed(2)} ref (budget ${BUDGET_REF[count]}), `
-        + `${ms.toFixed(3)}ms at ${ref.toFixed(3)}ms/ref`,
+        `[perf] sync ${count} events: ${units.toFixed(2)} ref (budget ${BUDGET_REF[count]}), ` +
+          `${ms.toFixed(3)}ms at ${ref.toFixed(3)}ms/ref`,
       );
 
       expect(layer.sync(store, f, now, NO_CLUSTER)).toBe(count);
@@ -188,8 +188,8 @@ describe("update cost with clustering on", () => {
     const drawn = layer.sync(store, f, now, CLUSTERED);
 
     console.info(
-      `[perf] clustered 50,000 into ${drawn} markers: ${clustered.toFixed(3)}ms `
-      + `(unclustered ${plain.toFixed(3)}ms, ${(clustered / ref).toFixed(2)} ref)`,
+      `[perf] clustered 50,000 into ${drawn} markers: ${clustered.toFixed(3)}ms ` +
+        `(unclustered ${plain.toFixed(3)}ms, ${(clustered / ref).toFixed(2)} ref)`,
     );
 
     // The point of clustering is fewer markers, so this failing would mean the grid is not binning.
@@ -201,8 +201,13 @@ describe("update cost with clustering on", () => {
   it("keeps the largest event in each cell, never the first", () => {
     const store = createStore(10);
     const base = {
-      source: "usgs" as const, scale: "mb", depthKm: 10, place: "x", kind: "earthquake",
-      time: 1_700_000_000_000, receivedAt: 1_700_000_020_000,
+      source: "usgs" as const,
+      scale: "mb",
+      depthKm: 10,
+      place: "x",
+      kind: "earthquake",
+      time: 1_700_000_000_000,
+      receivedAt: 1_700_000_020_000,
     };
     // Three events inside one cell, largest arriving in the middle.
     store.ingest({ ...base, id: "a", magnitude: 2, lon: 120, lat: -8 });

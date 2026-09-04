@@ -7,7 +7,12 @@ import { installFeeds, waitForData } from "./feeds";
  */
 
 /** The rail's event count is the app's own signal that both feeds have answered. */
-interface Camera { lon: number; lat: number; zoom: number; morph: number }
+interface Camera {
+  lon: number;
+  lat: number;
+  zoom: number;
+  morph: number;
+}
 
 /* `morph` is sampled alongside the camera because the projection unwrap is the same kind of thing: a value
  * easing toward a target that a test must not read halfway through. */
@@ -19,12 +24,15 @@ function needsDevHooks(): void {
   test.skip(AGAINST_BUILD, "reads window.__globe / __feed, which a production build does not expose");
 }
 
-const cameraNow = (page: Page): Promise<Camera> => page.evaluate(() => {
-  const globe = (window as unknown as {
-    __globe: { state: () => Omit<Camera, "morph">; morph: () => number };
-  }).__globe;
-  return { ...globe.state(), morph: globe.morph() };
-});
+const cameraNow = (page: Page): Promise<Camera> =>
+  page.evaluate(() => {
+    const globe = (
+      window as unknown as {
+        __globe: { state: () => Omit<Camera, "morph">; morph: () => number };
+      }
+    ).__globe;
+    return { ...globe.state(), morph: globe.morph() };
+  });
 
 /**
  * Waits for the camera to stop moving, and returns where it stopped. Samples until two readings agree
@@ -32,20 +40,25 @@ const cameraNow = (page: Page): Promise<Camera> => page.evaluate(() => {
  */
 async function cameraStill(page: Page): Promise<Camera> {
   let last: Camera | null = null;
-  await expect.poll(async () => {
-    const now = await cameraNow(page);
-    const previous = last;
-    last = now;
-    if (previous === null) return Number.POSITIVE_INFINITY;
-    return Math.max(
-      Math.abs(now.lon - previous.lon),
-      Math.abs(now.lat - previous.lat),
-      Math.abs(now.zoom - previous.zoom),
-      Math.abs(now.morph - previous.morph),
-    );
-    // Generous on purpose: the ceiling is here to catch a spring that never settles, not to time a
-    // machine. Reported as a movement-per-sample so a failure says how fast it was still going.
-  }, { timeout: 60_000, intervals: [250] }).toBeLessThan(1e-4);
+  await expect
+    .poll(
+      async () => {
+        const now = await cameraNow(page);
+        const previous = last;
+        last = now;
+        if (previous === null) return Number.POSITIVE_INFINITY;
+        return Math.max(
+          Math.abs(now.lon - previous.lon),
+          Math.abs(now.lat - previous.lat),
+          Math.abs(now.zoom - previous.zoom),
+          Math.abs(now.morph - previous.morph),
+        );
+        // Generous on purpose: the ceiling is here to catch a spring that never settles, not to time a
+        // machine. Reported as a movement-per-sample so a failure says how fast it was still going.
+      },
+      { timeout: 60_000, intervals: [250] },
+    )
+    .toBeLessThan(1e-4);
   return last!;
 }
 
@@ -86,7 +99,11 @@ test("a pinned selection survives a data refresh", async ({ page }) => {
   // Force real refreshes rather than waiting a minute for the poller. The store is the thing under test, and
   // re-ingesting everything it already holds is exactly what a USGS poll does.
   await page.evaluate(() => {
-    const feedHandle = (window as unknown as { __feed: { store: { forEach: (f: (q: unknown) => void) => void; ingest: (r: unknown) => void } } }).__feed;
+    const feedHandle = (
+      window as unknown as {
+        __feed: { store: { forEach: (f: (q: unknown) => void) => void; ingest: (r: unknown) => void } };
+      }
+    ).__feed;
     const readings: unknown[] = [];
     feedHandle.store.forEach((q) => {
       readings.push(...(q as { readings: unknown[] }).readings);
@@ -114,7 +131,9 @@ test("the globe is operable with the canvas hidden", async ({ page }) => {
 
   // Not merely aria-hidden: actually invisible, so nothing can be passing by accident through the
   // canvas that a screen reader user would never have reached.
-  await page.locator("canvas").evaluate((el) => { el.style.visibility = "hidden"; });
+  await page.locator("canvas").evaluate((el) => {
+    el.style.visibility = "hidden";
+  });
   // On the canvas, not on the region around it: that region also holds the legend now, which is
   // content and has to stay reachable.
   await expect(page.locator("canvas")).toHaveAttribute("aria-hidden", "true");
@@ -150,16 +169,16 @@ test("with reduced motion, there is no entrance and flying is instant", async ({
     await installFeeds(page);
     await page.goto("http://localhost:31600");
 
-    expect(await page.evaluate(
-      () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    )).toBe(true);
+    expect(await page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(
+      true,
+    );
 
     await waitForData(page);
 
-    const camera = (): Promise<{ lon: number; zoom: number }> => page.evaluate(
-      () => (window as unknown as { __globe: { state: () => { lon: number; zoom: number } } })
-        .__globe.state(),
-    );
+    const camera = (): Promise<{ lon: number; zoom: number }> =>
+      page.evaluate(() =>
+        (window as unknown as { __globe: { state: () => { lon: number; zoom: number } } }).__globe.state(),
+      );
 
     // The entrance starts 42 degrees back and springs forward. Skipped, not shortened, so the
     // camera is at the framing longitude from the very first frame.
@@ -169,8 +188,11 @@ test("with reduced motion, there is no entrance and flying is instant", async ({
 
     // Flying to a region arrives rather than travels.
     await page.evaluate(() => {
-      (window as unknown as { __globe: { flyTo: (a: number, b: number, c: number) => void } })
-        .__globe.flyTo(-71, -25, 1.8);
+      (window as unknown as { __globe: { flyTo: (a: number, b: number, c: number) => void } }).__globe.flyTo(
+        -71,
+        -25,
+        1.8,
+      );
     });
     const arrived = await camera();
     expect(arrived.lon).toBeCloseTo(-71, 1);
@@ -214,7 +236,8 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   const pinnedText = await page.locator(".zone-panel").innerText();
 
   await page.getByRole("button", { name: /colourblind ramp/i }).click();
-  await expect.poll(async () => page.evaluate(() => window.location.hash), { timeout: 5_000 })
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 5_000 })
     .toMatch(/e=(usgs|emsc):/);
 
   const link = await page.evaluate(() => window.location.href);
@@ -230,11 +253,12 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   await waitForData(fresh);
 
   await expect(fresh.locator(".zone-panel")).toBeVisible();
-  await expect(fresh.getByRole("button", { name: /colourblind ramp/i }))
-    .toHaveAttribute("aria-pressed", "true");
+  await expect(fresh.getByRole("button", { name: /colourblind ramp/i })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   // The same earthquake, not merely some earthquake.
-  expect(await fresh.locator(".zone-panel").innerText())
-    .toContain(pinnedText.match(/M \d+\.\d/)![0]);
+  expect(await fresh.locator(".zone-panel").innerText()).toContain(pinnedText.match(/M \d+\.\d/)![0]);
 
   await fresh.close();
 });
@@ -271,7 +295,10 @@ test("a swarm can be walked one event at a time", async ({ page }) => {
   await waitForData(page);
 
   // Into the densest region, where a pinned event certainly has neighbours either side of it in time.
-  await page.getByRole("button", { name: /Indonesia|Flores/ }).first().click();
+  await page
+    .getByRole("button", { name: /Indonesia|Flores/ })
+    .first()
+    .click();
   const row = page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first();
   await row.click();
 
@@ -301,18 +328,22 @@ test("the window buttons move the data and the headline follows", async ({ page 
   await waitForData(page);
 
   const headline = page.locator(".zone-rail .text-\\[38px\\]");
-  const count = async (): Promise<number> =>
-    Number((await headline.innerText()).replace(/[^0-9]/g, ""));
+  const count = async (): Promise<number> => Number((await headline.innerText()).replace(/[^0-9]/g, ""));
 
   // Settle before measuring. The two feeds seed independently, and a baseline taken from a moving total
   // made narrowing the window produce a larger number.
   let whole = 0;
-  await expect.poll(async () => {
-    const seen = await count();
-    const stable = seen > 0 && seen === whole;
-    whole = seen;
-    return stable;
-  }, { timeout: 30_000, intervals: [1_500] }).toBe(true);
+  await expect
+    .poll(
+      async () => {
+        const seen = await count();
+        const stable = seen > 0 && seen === whole;
+        whole = seen;
+        return stable;
+      },
+      { timeout: 30_000, intervals: [1_500] },
+    )
+    .toBe(true);
 
   // A week reaches further back than a day, so it can only hold more. The fixture is a day wide, so the count
   // need not grow, but the label and the permalink both have to follow the button.
@@ -320,7 +351,8 @@ test("the window buttons move the data and the headline follows", async ({ page 
   await expect(page.getByText("last 7 days")).toBeVisible();
   expect(await count()).toBeGreaterThanOrEqual(whole);
 
-  await expect.poll(async () => page.evaluate(() => window.location.hash), { timeout: 5_000 })
+  await expect
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 5_000 })
     .toMatch(/&w=168&/);
 
   // Back to the day. Narrowing refetches nothing, so this is the filter alone doing the work.
@@ -350,7 +382,7 @@ test("holding a bucket on the strip reads it, and lets go", async ({ page }) => 
   await expect(readout).toHaveText(/^\d+ events? · (latest|\d+[hd] ago)$/);
 
   // Off the strip entirely, which is what releases it.
-  await page.locator(".zone-rail [data-rail=\"headline\"]").hover();
+  await page.locator('.zone-rail [data-rail="headline"]').hover();
   await expect(readout).toHaveText(/^peak \d+ · /);
 });
 
@@ -363,8 +395,12 @@ test("a revised magnitude says what the agency first said", async ({ page }) => 
   const feature = (mag: number, updated: number, depthKm = 24.6) => ({
     id: "ak0219neksb",
     properties: {
-      mag, place: "88 km SW of Adak, Alaska", time: Date.now() - 20 * 60_000,
-      updated, magType: "mww", type: "earthquake",
+      mag,
+      place: "88 km SW of Adak, Alaska",
+      time: Date.now() - 20 * 60_000,
+      updated,
+      magType: "mww",
+      type: "earthquake",
     },
     geometry: { coordinates: [-177.3, 51.2, depthKm] },
   });
@@ -374,8 +410,7 @@ test("a revised magnitude says what the agency first said", async ({ page }) => 
   // Filtered to M6 and above so the routed event is the only thing that can be in the list.
   await page.goto("/#at=-177,51,1&m=6&w=24&s=usgs&r=thermal");
 
-  const row = page.getByRole("region", { name: "Recent earthquakes" })
-    .getByRole("button", { name: /Adak/ });
+  const row = page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button", { name: /Adak/ });
   await expect(row).toBeVisible({ timeout: 25_000 });
   await row.click();
 
@@ -414,7 +449,7 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
 
   // Both tracks on screen from the first frame, empty, and saying which state they are in. The sentence above
   // says the app is asking two agencies; these say which has replied.
-  const activity = page.locator('[data-activity]');
+  const activity = page.locator("[data-activity]");
   await expect(activity).toContainText("USGS");
   await expect(activity).toContainText("EMSC");
   // "waiting", not "no backlog": a feed still being waited for resolves itself and a refused one does
@@ -422,9 +457,12 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
   expect(await activity.locator("text=waiting").count()).toBe(2);
   await expect(activity).not.toContainText("no answer");
   // Nothing drawn on either track until a feed vouches for something.
-  const filled = await page.evaluate(() => Array
-    .from(document.querySelectorAll('[data-activity] .relative > span'))
-    .filter((el) => el.getBoundingClientRect().width > 0.5).length);
+  const filled = await page.evaluate(
+    () =>
+      Array.from(document.querySelectorAll("[data-activity] .relative > span")).filter(
+        (el) => el.getBoundingClientRect().width > 0.5,
+      ).length,
+  );
   expect(filled).toBe(0);
 });
 
@@ -437,8 +475,12 @@ test("the sequence says whether the big one has already happened", async ({ page
   const at = (mag: number, minutesAgo: number, id: string, dLat = 0) => ({
     id,
     properties: {
-      mag, place: `${id} near Ruteng, Indonesia`, time: Date.now() - minutesAgo * 60_000,
-      updated: 1, magType: "mww", type: "earthquake",
+      mag,
+      place: `${id} near Ruteng, Indonesia`,
+      time: Date.now() - minutesAgo * 60_000,
+      updated: 1,
+      magType: "mww",
+      type: "earthquake",
     },
     geometry: { coordinates: [120.5, -8.6 + dLat, 20] },
   });
@@ -454,7 +496,8 @@ test("the sequence says whether the big one has already happened", async ({ page
 
   await page.goto("/#at=120,-8,1&m=4&w=24&s=usgs&r=thermal");
 
-  const row = page.getByRole("region", { name: "Recent earthquakes" })
+  const row = page
+    .getByRole("region", { name: "Recent earthquakes" })
     .getByRole("button", { name: /pinned/ });
   await expect(row).toBeVisible({ timeout: 25_000 });
   await row.click();
@@ -589,18 +632,39 @@ test.describe("on a touch screen", () => {
       .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
       .not.toMatch(/^#at=140,/);
 
-    await page.evaluate(([x, y]) => {
-      const canvas = document.querySelector("canvas")!;
-      const send = (type: string, points: [number, number][]): void => {
-        points.forEach((p, i) => canvas.dispatchEvent(new PointerEvent(type, {
-          pointerId: i + 1, pointerType: "touch", clientX: p[0], clientY: p[1],
-          bubbles: true, isPrimary: i === 0,
-        })));
-      };
-      send("pointerdown", [[x - 40, y], [x + 40, y]]);
-      for (let k = 1; k <= 6; k += 1) send("pointermove", [[x - 40 - k * 12, y], [x + 40 + k * 12, y]]);
-      send("pointerup", [[x - 112, y], [x + 112, y]]);
-    }, [cx, cy]);
+    await page.evaluate(
+      ([x, y]) => {
+        const canvas = document.querySelector("canvas")!;
+        const send = (type: string, points: [number, number][]): void => {
+          points.forEach((p, i) =>
+            canvas.dispatchEvent(
+              new PointerEvent(type, {
+                pointerId: i + 1,
+                pointerType: "touch",
+                clientX: p[0],
+                clientY: p[1],
+                bubbles: true,
+                isPrimary: i === 0,
+              }),
+            ),
+          );
+        };
+        send("pointerdown", [
+          [x - 40, y],
+          [x + 40, y],
+        ]);
+        for (let k = 1; k <= 6; k += 1)
+          send("pointermove", [
+            [x - 40 - k * 12, y],
+            [x + 40 + k * 12, y],
+          ]);
+        send("pointerup", [
+          [x - 112, y],
+          [x + 112, y],
+        ]);
+      },
+      [cx, cy],
+    );
 
     // Spread fingers, so the globe comes closer rather than the page getting bigger.
     await expect
@@ -625,8 +689,12 @@ test("a pinned event the filters exclude says so", async ({ page }) => {
   const at = (mag: number, id: string) => ({
     id,
     properties: {
-      mag, place: `${id} near Ruteng, Indonesia`, time: Date.now() - 30 * 60_000,
-      updated: 1, magType: "mww", type: "earthquake",
+      mag,
+      place: `${id} near Ruteng, Indonesia`,
+      time: Date.now() - 30 * 60_000,
+      updated: 1,
+      magType: "mww",
+      type: "earthquake",
     },
     geometry: { coordinates: [120.5, -8.6, 20] },
   });
@@ -634,8 +702,7 @@ test("a pinned event the filters exclude says so", async ({ page }) => {
   await installFeeds(page, { usgs: [at(2.7, "small")] });
 
   await page.goto("/#at=120,-8,1&m=2&w=24&s=usgs&r=thermal");
-  const row = page.getByRole("region", { name: "Recent earthquakes" })
-    .getByRole("button", { name: /small/ });
+  const row = page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button", { name: /small/ });
   await expect(row).toBeVisible({ timeout: 25_000 });
   await row.click();
 
@@ -659,18 +726,18 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
   const at = (mag: number, id: string, agoMinutes: number, lon: number) => ({
     id,
     properties: {
-      mag, place: `${id} region`, time: Date.now() - agoMinutes * 60_000,
-      updated: 1, magType: "mww", type: "earthquake",
+      mag,
+      place: `${id} region`,
+      time: Date.now() - agoMinutes * 60_000,
+      updated: 1,
+      magType: "mww",
+      type: "earthquake",
     },
     geometry: { coordinates: [lon, -8.6, 20] },
   });
 
   await installFeeds(page, {
-    usgs: [
-      at(6.3, "mainshock", 480, 120),
-      at(2.4, "newer", 5, -70),
-      at(2.9, "newest", 2, -71),
-    ],
+    usgs: [at(6.3, "mainshock", 480, 120), at(2.4, "newer", 5, -70), at(2.9, "newest", 2, -71)],
   });
   await page.goto("/#at=0,0,1&m=2&w=24&s=usgs&r=thermal");
 
@@ -688,11 +755,14 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
    * degrees, so a camera one degree out reads identical to one that arrived.
    */
   await expect
-    .poll(async () => {
-      const at = new URLSearchParams((await page.evaluate(() => window.location.hash)).slice(1)).get("at");
-      const [lon, lat, zoom] = (at ?? "").split(",").map(Number);
-      return Math.max(Math.abs((lon ?? 0) - 120), Math.abs((lat ?? 0) + 8.6), Math.abs((zoom ?? 0) - 1.9));
-    }, { timeout: 30_000 })
+    .poll(
+      async () => {
+        const at = new URLSearchParams((await page.evaluate(() => window.location.hash)).slice(1)).get("at");
+        const [lon, lat, zoom] = (at ?? "").split(",").map(Number);
+        return Math.max(Math.abs((lon ?? 0) - 120), Math.abs((lat ?? 0) + 8.6), Math.abs((zoom ?? 0) - 1.9));
+      },
+      { timeout: 30_000 },
+    )
     .toBeLessThan(1);
 });
 
@@ -704,8 +774,9 @@ test("the globe unwraps into a map and back", async ({ page }) => {
   // the switch a dissolve, which says nothing.
   await installFeeds(page);
   await page.goto("/");
-  await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first())
-    .toBeVisible({ timeout: 25_000 });
+  await expect(
+    page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first(),
+  ).toBeVisible({ timeout: 25_000 });
   await cameraStill(page);
 
   const toggle = page.getByRole("button", { name: /^(Map|Globe)$/ });
@@ -809,10 +880,12 @@ test("the rail resizes in both directions, by pointer and by key", async ({ page
   // Both are remembered. Re-choosing a size on every visit is its own barrier.
   await page.reload();
   await waitForData(page);
-  expect(Number(await page.getByRole("separator", { name: "Rail width" })
-    .getAttribute("aria-valuenow"))).toBe(wide + 16);
-  expect(Number(await page.getByRole("separator", { name: "Regions height" })
-    .getAttribute("aria-valuenow"))).toBe(keyed + 32);
+  expect(
+    Number(await page.getByRole("separator", { name: "Rail width" }).getAttribute("aria-valuenow")),
+  ).toBe(wide + 16);
+  expect(
+    Number(await page.getByRole("separator", { name: "Regions height" }).getAttribute("aria-valuenow")),
+  ).toBe(keyed + 32);
 });
 
 /*
@@ -867,9 +940,9 @@ test("a line dragged across the map opens a section through it", async ({ page }
   // The same line dragged the other way reads the same way. Measured on where the marks land, not on the
   // stated length, which is the same either way round and made the first version a tautology.
   const centroid = async (): Promise<number> => {
-    const xs = await page.locator(".zone-canvas svg circle[fill]").evaluateAll(
-      (nodes) => nodes.map((n) => Number(n.getAttribute("cx"))),
-    );
+    const xs = await page
+      .locator(".zone-canvas svg circle[fill]")
+      .evaluateAll((nodes) => nodes.map((n) => Number(n.getAttribute("cx"))));
     expect(xs.length).toBeGreaterThan(3);
     return xs.reduce((a, b) => a + b, 0) / xs.length;
   };
@@ -901,9 +974,7 @@ test("a link carrying a section opens on the map with the line drawn", async ({ 
     await page.goto("http://localhost:31600");
     await page.evaluate(() => localStorage.setItem("eif.flat", "0"));
 
-    await page.goto(
-      "http://localhost:31600/#at=140,36,2.6&m=2&w=24&x=134.2,31.5,146.1,41.2",
-    );
+    await page.goto("http://localhost:31600/#at=140,36,2.6&m=2&w=24&x=134.2,31.5,146.1,41.2");
     await waitForData(page);
 
     await expect(page.getByText("Cross-section", { exact: true })).toBeVisible();
@@ -912,9 +983,7 @@ test("a link carrying a section opens on the map with the line drawn", async ({ 
     // And the line itself is on the canvas, not just the panel below it.
     const drawn = page.locator(".zone-canvas svg line[stroke-dasharray]");
     await expect(drawn).toHaveCount(1);
-    expect(Number(await drawn.getAttribute("x2"))).toBeGreaterThan(
-      Number(await drawn.getAttribute("x1")),
-    );
+    expect(Number(await drawn.getAttribute("x2"))).toBeGreaterThan(Number(await drawn.getAttribute("x1")));
 
     // Closing it takes it out of the link, so the next copy is not a section somebody dismissed.
     await page.keyboard.press("Escape");
@@ -986,8 +1055,13 @@ test("holding the cursor part way through draws part of the window", async ({ pa
   await page.waitForTimeout(700);
 
   const held = Number(
-    (await page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first().innerText())
-      .replace(/,/g, ""),
+    (
+      await page
+        .locator(".zone-rail div")
+        .filter({ hasText: /^\d[\d,]*$/ })
+        .first()
+        .innerText()
+    ).replace(/,/g, ""),
   );
   // Fewer than the whole window and more than none: forty percent of a day is a real count, and
   // both of the ways this breaks land on one of those two edges.
@@ -1013,13 +1087,23 @@ test("playing advances the cursor against the wall clock", async ({ page }) => {
   await page.getByRole("button", { name: "Play the window through" }).click();
   await page.waitForTimeout(800);
   const early = Number(
-    (await page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first().innerText())
-      .replace(/,/g, ""),
+    (
+      await page
+        .locator(".zone-rail div")
+        .filter({ hasText: /^\d[\d,]*$/ })
+        .first()
+        .innerText()
+    ).replace(/,/g, ""),
   );
   await page.waitForTimeout(2200);
   const later = Number(
-    (await page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first().innerText())
-      .replace(/,/g, ""),
+    (
+      await page
+        .locator(".zone-rail div")
+        .filter({ hasText: /^\d[\d,]*$/ })
+        .first()
+        .innerText()
+    ).replace(/,/g, ""),
   );
 
   // Two readings, not one. The first version stepped by the interval it asked for rather than by the time
@@ -1102,7 +1186,7 @@ test("the chrome says how far back each agency actually covers", async ({ page }
 
   // On the activity strip, against its own axis, rather than on the source toggles: the axis is what the
   // durations have to be read against, and both would be the same span measured twice.
-  const activity = page.locator('[data-activity]');
+  const activity = page.locator("[data-activity]");
   // USGS has no result cap, so a successful fetch of a feed vouches for the whole of it.
   await expect(activity).toContainText("24h");
   // Six hours of a twenty-four hour window, which is the fixture's cap and not the window.
@@ -1112,13 +1196,14 @@ test("the chrome says how far back each agency actually covers", async ({ page }
 
   // The bar has to be a fraction of the axis, not merely present. Widening the window widens USGS's bar and
   // leaves EMSC's where it was, and that difference is the whole point of drawing them.
-  const emscWidth = async (): Promise<number> => page.evaluate(() => {
-    const rows = Array.from(document.querySelectorAll('[data-activity] .relative'));
-    const row = rows.find((el) => el.parentElement?.textContent?.startsWith("EMSC"));
-    const fill = row?.firstElementChild as HTMLElement | undefined;
-    const track = row?.getBoundingClientRect().width ?? 1;
-    return (fill?.getBoundingClientRect().width ?? 0) / track;
-  });
+  const emscWidth = async (): Promise<number> =>
+    page.evaluate(() => {
+      const rows = Array.from(document.querySelectorAll("[data-activity] .relative"));
+      const row = rows.find((el) => el.parentElement?.textContent?.startsWith("EMSC"));
+      const fill = row?.firstElementChild as HTMLElement | undefined;
+      const track = row?.getBoundingClientRect().width ?? 1;
+      return (fill?.getBoundingClientRect().width ?? 0) / track;
+    });
   const atDay = await emscWidth();
   expect(atDay).toBeGreaterThan(0.15);
 
@@ -1135,7 +1220,7 @@ test("with both agencies covering the window, nothing is caveated", async ({ pag
   await page.goto("/");
   await waitForData(page);
 
-  const activity = page.locator('[data-activity]');
+  const activity = page.locator("[data-activity]");
   // Both bars full, and no caveat, because there is no asymmetry to caveat.
   await expect(activity).toContainText("USGS");
   await expect(activity).toContainText("EMSC");
@@ -1210,9 +1295,7 @@ test("the map carries a scale, and it names the latitude it is true at", async (
   const scale = page.locator("[data-scale]");
   // Asserted on opacity, not on visibility. The bar fades rather than unmounting, so Playwright rightly calls
   // an `opacity: 0` element visible.
-  const shown = () => page.evaluate(() => getComputedStyle(
-    document.querySelector("[data-scale]")!,
-  ).opacity);
+  const shown = () => page.evaluate(() => getComputedStyle(document.querySelector("[data-scale]")!).opacity);
   // Nothing on the globe: a ball carries its own size and nobody reads a distance off one.
   expect(await shown()).toBe("0");
 
@@ -1221,8 +1304,8 @@ test("the map carries a scale, and it names the latitude it is true at", async (
   await expect(scale).toContainText(/^[\d,]+ km at 0°$/);
   // The rule, by its own hook. Matching on the text instead found the Globe's root div, whose text
   // contains the label too, and measured the selection ring inside it: equal every time, for nothing.
-  const ruleWidth = () => page.evaluate(() => document
-    .querySelector("[data-scale] > div")?.getBoundingClientRect().width ?? 0);
+  const ruleWidth = () =>
+    page.evaluate(() => document.querySelector("[data-scale] > div")?.getBoundingClientRect().width ?? 0);
   const atEquator = await ruleWidth();
   expect(atEquator).toBeGreaterThan(20);
 
@@ -1316,8 +1399,13 @@ test("the largest event is a way in, in time as well as in space", async ({ page
   await page.waitForTimeout(4000);
 
   const live = Number(
-    (await page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first().innerText())
-      .replace(/,/g, ""),
+    (
+      await page
+        .locator(".zone-rail div")
+        .filter({ hasText: /^\d[\d,]*$/ })
+        .first()
+        .innerText()
+    ).replace(/,/g, ""),
   );
 
   const largest = page.locator('[data-rail="largest"]');
@@ -1337,8 +1425,13 @@ test("the largest event is a way in, in time as well as in space", async ({ page
   // And the globe is drawing that moment, not the end state. Twenty hours back of this fixture is the big one
   // and nothing else, against forty-one events live.
   const held = Number(
-    (await page.locator(".zone-rail div").filter({ hasText: /^\d[\d,]*$/ }).first().innerText())
-      .replace(/,/g, ""),
+    (
+      await page
+        .locator(".zone-rail div")
+        .filter({ hasText: /^\d[\d,]*$/ })
+        .first()
+        .innerText()
+    ).replace(/,/g, ""),
   );
   expect(held).toBeLessThan(live);
   expect(held).toBeGreaterThan(0);
@@ -1441,7 +1534,10 @@ test("a copied link reopens the same event, not merely the same view", async ({ 
   // The magnitude scale by its own hook, because that is the field that says which reading this is. Two events
   // in the same region at the same minute would agree on almost everything else.
   const scale = await panel.locator("[data-magscale]").textContent();
-  const place = await panel.locator("[data-magscale]").locator("xpath=../following-sibling::div[1]").textContent();
+  const place = await panel
+    .locator("[data-magscale]")
+    .locator("xpath=../following-sibling::div[1]")
+    .textContent();
   const href = await page.evaluate(() => window.location.href);
   expect(href).toContain("&e=");
 
@@ -1497,7 +1593,9 @@ test("the tour names where the camera is, not where it is going", async ({ page 
     while (Date.now() < deadline && seen.length < 12) {
       // 150ms, not 300. The arrived window inside a stop is under a second on a busy machine, and the
       // sampler has to land in it more than twice.
-      await new Promise((r) => { setTimeout(r, 150); });
+      await new Promise((r) => {
+        setTimeout(r, 150);
+      });
       const head = (document.querySelector("[data-rail=headline]")?.textContent ?? "").replace(/\s+/g, " ");
       const label = /\d\/\d\s*([^·]+)·/.exec(head);
       const globe = (window as unknown as { __globe?: { state: () => { lon: number } } }).__globe;
@@ -1512,9 +1610,16 @@ test("the tour names where the camera is, not where it is going", async ({ page 
 
   /** Where each region sits, from `regions.ts`. Only the ones the tour can reach on this fixture. */
   const at: Record<string, number> = {
-    "Japan & Kurils": 142, Kamchatka: 160, Indonesia: 118, Philippines: 124,
-    "Tonga & Kermadec": -175, "Alaska & Aleutians": -155, California: -120,
-    "Chile & Peru": -71, "Mediterranean & Turkey": 28, "Hindu Kush & Himalaya": 75,
+    "Japan & Kurils": 142,
+    Kamchatka: 160,
+    Indonesia: 118,
+    Philippines: 124,
+    "Tonga & Kermadec": -175,
+    "Alaska & Aleutians": -155,
+    California: -120,
+    "Chile & Peru": -71,
+    "Mediterranean & Turkey": 28,
+    "Hindu Kush & Himalaya": 75,
     "Mid-Atlantic Ridge": -30,
   };
   for (const sample of named) {
@@ -1615,7 +1720,10 @@ test("sound opens no audio device until it is asked to", async ({ page }) => {
     w.made = 0;
     const Real = w.AudioContext as new () => AudioContext;
     class Counted extends (Real as new () => AudioContext) {
-      constructor() { super(); w.made += 1; }
+      constructor() {
+        super();
+        w.made += 1;
+      }
     }
     w.AudioContext = Counted;
   });
@@ -1676,7 +1784,10 @@ test("fullscreen makes the window bigger and takes nothing away", async ({ page 
    */
   const canvas = page.locator("canvas").first();
   const box = (await canvas.boundingBox())!;
-  await canvas.click({ position: { x: Math.round(box.width / 2), y: Math.round(box.height / 2) }, force: true });
+  await canvas.click({
+    position: { x: Math.round(box.width / 2), y: Math.round(box.height / 2) },
+    force: true,
+  });
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.keyboard.press("f");
 
@@ -1711,7 +1822,11 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
   await waitForData(page);
 
   const chrome = (): Promise<{
-    head: boolean; rail: boolean; resizer: number; hintsCentre: number; railWidth: number;
+    head: boolean;
+    rail: boolean;
+    resizer: number;
+    hintsCentre: number;
+    railWidth: number;
   }> =>
     page.evaluate(() => {
       const shown = (sel: string): boolean => {
@@ -1854,7 +1969,8 @@ test("a stored rail width outside the handle's range is brought back inside it",
   await page.waitForTimeout(600);
 
   const width = await page.evaluate(() =>
-    Math.round(document.querySelector("#chrome-rail")!.getBoundingClientRect().width));
+    Math.round(document.querySelector("#chrome-rail")!.getBoundingClientRect().width),
+  );
   // 264 is the handle's own minimum. Anything under it is a column you cannot read or grab.
   expect(width).toBeGreaterThanOrEqual(264);
 });
@@ -1871,14 +1987,25 @@ test("a finger-width miss still opens the earthquake it was aimed at", async ({ 
    * The first tap skips the intro, which otherwise clears the selection the second tap makes.
    * Empty sky, so it selects nothing of its own.
    */
-  const tap = (x: number, y: number) => page.evaluate(([px, py]) => {
-    const canvas = document.querySelector("canvas")!;
-    for (const type of ["pointerdown", "pointerup"]) {
-      canvas.dispatchEvent(new PointerEvent(type, {
-        pointerId: 1, pointerType: "touch", clientX: px, clientY: py, bubbles: true, isPrimary: true,
-      }));
-    }
-  }, [x, y]);
+  const tap = (x: number, y: number) =>
+    page.evaluate(
+      ([px, py]) => {
+        const canvas = document.querySelector("canvas")!;
+        for (const type of ["pointerdown", "pointerup"]) {
+          canvas.dispatchEvent(
+            new PointerEvent(type, {
+              pointerId: 1,
+              pointerType: "touch",
+              clientX: px,
+              clientY: py,
+              bubbles: true,
+              isPrimary: true,
+            }),
+          );
+        }
+      },
+      [x, y],
+    );
   await tap(30, 90);
   await page.waitForTimeout(600);
 
@@ -1888,9 +2015,11 @@ test("a finger-width miss still opens the earthquake it was aimed at", async ({ 
    * the surface point is tens of pixels from the thing you can see.
    */
   const aim = await page.evaluate(() => {
-    const hit = (window as unknown as {
-      __hitTest: (x: number, y: number, slopPx?: number) => string | null;
-    }).__hitTest;
+    const hit = (
+      window as unknown as {
+        __hitTest: (x: number, y: number, slopPx?: number) => string | null;
+      }
+    ).__hitTest;
     for (let y = 100; y < 540; y += 3) {
       for (let x = 24; x < 360; x += 3) {
         const key = hit(x, y);
@@ -1913,20 +2042,31 @@ test("the marks key is reachable at every width", async ({ page }) => {
   await page.goto("/");
   await waitForData(page);
 
-  for (const [w, h] of [[390, 844], [768, 1024], [1024, 768], [1440, 900]] as const) {
+  for (const [w, h] of [
+    [390, 844],
+    [768, 1024],
+    [1024, 768],
+    [1440, 900],
+  ] as const) {
     await page.setViewportSize({ width: w, height: h });
     await page.waitForTimeout(400);
-    const shown = await page.evaluate(() =>
-      Array.from(document.querySelectorAll("summary"))
-        .filter((s) => /What the marks mean/.test(s.textContent || ""))
-        .filter((s) => (s as HTMLElement).checkVisibility()).length);
+    const shown = await page.evaluate(
+      () =>
+        Array.from(document.querySelectorAll("summary"))
+          .filter((s) => /What the marks mean/.test(s.textContent || ""))
+          .filter((s) => (s as HTMLElement).checkVisibility()).length,
+    );
     expect(shown, `visible copies of the key at ${w}x${h}`).toBe(1);
   }
 });
 
 /* Where a pinned event lands on a phone, which is a question with a bar at one end and a sheet at the
    other. See ARCHITECTURE.md. */
-for (const [w, h] of [[390, 844], [360, 640], [412, 915]] as const) {
+for (const [w, h] of [
+  [390, 844],
+  [360, 640],
+  [412, 915],
+] as const) {
   test(`a pinned event sits between the bar and the sheet at ${w}x${h}`, async ({ page }) => {
     await page.setViewportSize({ width: w, height: h });
     await installFeeds(page, { count: 200 });
@@ -1963,8 +2103,6 @@ for (const [w, h] of [[390, 844], [360, 640], [412, 915]] as const) {
   });
 }
 
-
-
 /*
  * The still reaches the share sheet where there is one. A phone can do nothing useful with `a.download`,
  * which is exactly where this picture is worth having.
@@ -1983,7 +2121,12 @@ test("Still hands the picture to the share sheet when there is one", async ({ pa
       value: (data: { files?: File[] }) => {
         const file = data.files?.[0];
         w.__shared = file
-          ? { name: file.name, type: file.type, size: file.size, transient: navigator.userActivation?.isActive }
+          ? {
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              transient: navigator.userActivation?.isActive,
+            }
           : null;
         return Promise.resolve();
       },
@@ -1994,8 +2137,11 @@ test("Still hands the picture to the share sheet when there is one", async ({ pa
   await page.waitForTimeout(1_200);
 
   await page.getByRole("button", { name: "Still" }).click();
-  const shared = await page.evaluate(() =>
-    (window as unknown as { __shared?: { name: string; type: string; size: number; transient?: boolean } }).__shared);
+  const shared = await page.evaluate(
+    () =>
+      (window as unknown as { __shared?: { name: string; type: string; size: number; transient?: boolean } })
+        .__shared,
+  );
 
   expect(shared, "the sheet was handed a file").toBeTruthy();
   expect(shared!.type).toBe("image/png");

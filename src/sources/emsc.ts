@@ -1,6 +1,11 @@
 import type { Reading } from "../data/types";
 import {
-  backoffMs, type GeoEventSource, type Runtime, type SocketLike, type SourceHandlers, type TimerId,
+  backoffMs,
+  type GeoEventSource,
+  type Runtime,
+  type SocketLike,
+  type SourceHandlers,
+  type TimerId,
 } from "./types";
 
 /* EMSC, the push half of the pair. See ARCHITECTURE.md. */
@@ -47,15 +52,21 @@ const EVENT_TYPES: Record<string, string> = {
 interface EmscFeature {
   id?: unknown;
   properties?: {
-    unid?: unknown; lat?: unknown; lon?: unknown; depth?: unknown; mag?: unknown;
-    magtype?: unknown; time?: unknown; lastupdate?: unknown; flynn_region?: unknown;
+    unid?: unknown;
+    lat?: unknown;
+    lon?: unknown;
+    depth?: unknown;
+    mag?: unknown;
+    magtype?: unknown;
+    time?: unknown;
+    lastupdate?: unknown;
+    flynn_region?: unknown;
     auth?: unknown;
     evtype?: unknown;
   };
 }
 
-const num = (v: unknown): number | null =>
-  typeof v === "number" && Number.isFinite(v) ? v : null;
+const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
 
 /** ISO 8601 to epoch ms. EMSC sends strings where USGS sends numbers. */
 const parseTime = (v: unknown): number | null => {
@@ -91,8 +102,7 @@ export function parseEmscFrame(raw: unknown, receivedAt: number): EmscParsed | n
   if (!feature || typeof feature !== "object") return null;
 
   const p = feature.properties;
-  const id = typeof p?.unid === "string" ? p.unid
-    : typeof feature.id === "string" ? feature.id : null;
+  const id = typeof p?.unid === "string" ? p.unid : typeof feature.id === "string" ? feature.id : null;
   const mag = num(p?.mag);
   const lat = num(p?.lat);
   const lon = num(p?.lon);
@@ -115,8 +125,7 @@ export function parseEmscFrame(raw: unknown, receivedAt: number): EmscParsed | n
       lat,
       depthKm: depth ?? Number.NaN,
       time,
-      place: typeof p?.flynn_region === "string" && p.flynn_region ? p.flynn_region
-        : "location not given",
+      place: typeof p?.flynn_region === "string" && p.flynn_region ? p.flynn_region : "location not given",
       kind: EVENT_TYPES[evtype] ?? (evtype || "earthquake"),
       /* The authority that computed it, which EMSC relays rather than produces: `BMKG` for Indonesia, `AK`
          for the Alaska Earthquake Center. USGS carries the same fact under `net`. See ARCHITECTURE.md. */
@@ -138,8 +147,8 @@ export function createEmscSource(
   /** How far back the seed asks. Defaults to the day the socket's own backlog was written against. */
   seedHours: number = SEED_HOURS,
 ): GeoEventSource {
-  const url = typeof urls === "string" ? urls : urls.socket ?? EMSC_SOCKET;
-  const catalogue = typeof urls === "string" ? null : urls.catalogue ?? EMSC_CATALOGUE;
+  const url = typeof urls === "string" ? urls : (urls.socket ?? EMSC_SOCKET);
+  const catalogue = typeof urls === "string" ? null : (urls.catalogue ?? EMSC_CATALOGUE);
   let handlers: SourceHandlers | null = null;
   let socket: SocketLike | null = null;
   let timer: TimerId | null = null;

@@ -30,10 +30,10 @@ function parseIso6709(text) {
   const match = /^([+-])(\d{2})(\d{2})(\d{2})?([+-])(\d{3})(\d{2})(\d{2})?$/.exec(text);
   if (!match) return null;
   const [, latSign, latDeg, latMin, latSec, lonSign, lonDeg, lonMin, lonSec] = match;
-  const lat = (Number(latDeg) + Number(latMin) / 60 + Number(latSec ?? 0) / 3600)
-    * (latSign === "-" ? -1 : 1);
-  const lon = (Number(lonDeg) + Number(lonMin) / 60 + Number(lonSec ?? 0) / 3600)
-    * (lonSign === "-" ? -1 : 1);
+  const lat =
+    (Number(latDeg) + Number(latMin) / 60 + Number(latSec ?? 0) / 3600) * (latSign === "-" ? -1 : 1);
+  const lon =
+    (Number(lonDeg) + Number(lonMin) / 60 + Number(lonSec ?? 0) / 3600) * (lonSign === "-" ? -1 : 1);
   return [Number(lon.toFixed(2)), Number(lat.toFixed(2))];
 }
 
@@ -61,5 +61,7 @@ const json = JSON.stringify(zones);
 await writeFile(OUT, `${json}\n`);
 console.log(`${legacy.length} legacy rows, ${modern.length} modern rows`);
 console.log(`wrote ${Object.keys(zones).length} zones, ${(json.length / 1024).toFixed(1)} kB -> ${OUT}`);
-console.log(`spot check: Australia/Sydney ${zones["Australia/Sydney"]}, `
-  + `America/New_York ${zones["America/New_York"]}`);
+console.log(
+  `spot check: Australia/Sydney ${zones["Australia/Sydney"]}, ` +
+    `America/New_York ${zones["America/New_York"]}`,
+);

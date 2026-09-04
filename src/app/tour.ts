@@ -20,15 +20,17 @@ export interface Stop {
 
 /** Where the tour goes, busiest first. Empty when nothing is happening anywhere, which is a real state:
  * the caller offers no tour rather than flying the camera around a planet with nothing on it. */
-export function tourStops(
-  regions: readonly RegionCount[], max: number = TOUR_MAX_STOPS,
-): Stop[] {
+export function tourStops(regions: readonly RegionCount[], max: number = TOUR_MAX_STOPS): Stop[] {
   return [...regions]
     .filter((r) => r.count > 0)
     .sort((a, b) => b.count - a.count || a.region.name.localeCompare(b.region.name))
     .slice(0, max)
     .map(({ region, count }) => ({
-      name: region.name, lon: region.lon, lat: region.lat, zoom: region.zoom, count,
+      name: region.name,
+      lon: region.lon,
+      lat: region.lat,
+      zoom: region.zoom,
+      count,
     }));
 }
 

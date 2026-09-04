@@ -96,18 +96,37 @@ const bucketUnit = (bucketMs: number): { one: string; many: string } => {
 
 /** The axis's left edge. The right is always now. */
 const spanLabel = (hours: number): string =>
-  (hours >= 48 ? `${Math.round(hours / 24)}d ago` : `${hours}h ago`);
+  hours >= 48 ? `${Math.round(hours / 24)}d ago` : `${hours}h ago`;
 
 export function Timeline({
-  bars, ramp, hours, focusHour, onHoursChange, onFocusHourChange, bucketMs, fetching, waiting,
-  cursor, parked, playing, onScrub, onStep, onPlayToggle, onLive, cursorLabel, reaches,
-  notes, archived = false, children, onSelect,
+  bars,
+  ramp,
+  hours,
+  focusHour,
+  onHoursChange,
+  onFocusHourChange,
+  bucketMs,
+  fetching,
+  waiting,
+  cursor,
+  parked,
+  playing,
+  onScrub,
+  onStep,
+  onPlayToggle,
+  onLive,
+  cursorLabel,
+  reaches,
+  notes,
+  archived = false,
+  children,
+  onSelect,
 }: TimelineProps): JSX.Element {
   const peak = peakCount(bars);
   const tallest = bars.find((b) => b.count === peak && peak > 0);
   const observed = bars.some((b) => b.observed);
   const unobserved = observed && bars.some((b) => !b.observed);
-  const held = focusHour === null ? null : bars.find((b) => b.bucketsAgo === focusHour) ?? null;
+  const held = focusHour === null ? null : (bars.find((b) => b.bucketsAgo === focusHour) ?? null);
   const unit = bucketUnit(bucketMs);
 
   /* The bars are real buttons, so holding an hour is not mouse-only. See ARCHITECTURE.md. */
@@ -153,9 +172,9 @@ export function Timeline({
               aria-pressed={hours === w.hours}
               className={`border px-1.5 py-0.5 font-mono text-[10.5px] ${
                 hours === w.hours
-                  // `border-hair` is not a token, so this fell back to `currentColor` and drew an `ink`
-                  // border - the brightest edge in the app, by accident.
-                  ? "border-faint bg-raised text-ink"
+                  ? // `border-hair` is not a token, so this fell back to `currentColor` and drew an `ink`
+                    // border - the brightest edge in the app, by accident.
+                    "border-faint bg-raised text-ink"
                   : "border-transparent text-faint hover:text-dim"
               }`}
             >
@@ -169,16 +188,16 @@ export function Timeline({
           {fetching
             ? "fetching the backlog"
             : held
-              ? `${held.count} ${held.count === 1 ? "event" : "events"} · `
-                + `${bucketAgo(held.bucketsAgo, bucketMs)}`
+              ? `${held.count} ${held.count === 1 ? "event" : "events"} · ` +
+                `${bucketAgo(held.bucketsAgo, bucketMs)}`
               : peak > 0 && tallest
                 ? `peak ${peak} · ${bucketAgo(tallest.bucketsAgo, bucketMs)}`
-                /*
+                : /*
                   An empty window says so, in the slot the peak was using. With nothing passing the filter
                   every bucket draws its 1px floor, so the strip becomes a row of twenty-four slivers under
                   an axis: a frame around nothing, which reads as a rendering fault rather than as zero.
                 */
-                : waiting
+                  waiting
                   ? ""
                   : "nothing in this window"}
         </span>
@@ -195,9 +214,21 @@ export function Timeline({
           className="flex h-full items-end gap-px"
           onKeyDown={(e) => {
             const step = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
-            if (step !== 0) { e.preventDefault(); focusBar(barAt + step); return; }
-            if (e.key === "Home") { e.preventDefault(); focusBar(0); return; }
-            if (e.key === "End") { e.preventDefault(); focusBar(bars.length - 1); return; }
+            if (step !== 0) {
+              e.preventDefault();
+              focusBar(barAt + step);
+              return;
+            }
+            if (e.key === "Home") {
+              e.preventDefault();
+              focusBar(0);
+              return;
+            }
+            if (e.key === "End") {
+              e.preventDefault();
+              focusBar(bars.length - 1);
+              return;
+            }
             // Let go without leaving the strip, which a pointer does by moving away and a keyboard
             // otherwise could not do at all.
             if (e.key === "Escape") onFocusHourChange(null);
@@ -211,18 +242,27 @@ export function Timeline({
           {bars.map((bar, i) => (
             <button
               key={bar.bucketsAgo}
-              ref={(node) => { barRefs.current[i] = node; }}
+              ref={(node) => {
+                barRefs.current[i] = node;
+              }}
               type="button"
               tabIndex={i === barAt ? 0 : -1}
               /* The same words the readout uses, so the two cannot drift, and an hour the buffer never
                  covered says so rather than reading as a quiet hour. */
-              aria-label={bar.observed
-                ? `${bar.count} ${bar.count === 1 ? "event" : "events"}, `
-                  + `${bucketAgo(bar.bucketsAgo, bucketMs)}`
-                  + (bar.lead === null ? "" : `, largest M${bar.lead.magnitude.toFixed(1)}`)
-                : `Not covered, ${bucketAgo(bar.bucketsAgo, bucketMs)}`}
-              onClick={() => { if (bar.lead !== null) onSelect(bar.lead.key); }}
-              onFocus={() => { setBarAt(i); onFocusHourChange(bar.bucketsAgo); }}
+              aria-label={
+                bar.observed
+                  ? `${bar.count} ${bar.count === 1 ? "event" : "events"}, ` +
+                    `${bucketAgo(bar.bucketsAgo, bucketMs)}` +
+                    (bar.lead === null ? "" : `, largest M${bar.lead.magnitude.toFixed(1)}`)
+                  : `Not covered, ${bucketAgo(bar.bucketsAgo, bucketMs)}`
+              }
+              onClick={() => {
+                if (bar.lead !== null) onSelect(bar.lead.key);
+              }}
+              onFocus={() => {
+                setBarAt(i);
+                onFocusHourChange(bar.bucketsAgo);
+              }}
               onPointerEnter={() => onFocusHourChange(bar.bucketsAgo)}
               className={`flex h-full flex-1 cursor-pointer items-end ${
                 // Chrome, not hue: the held hour is an interface state and the fills beside it are data.
@@ -236,9 +276,10 @@ export function Timeline({
                   className="w-full"
                   style={{
                     height: `${heightOf(bar.count)}px`,
-                    background: bar.peak === null
-                      ? "var(--color-faint)"
-                      : rampColorAt(ramp, (bar.peak - MAG_MIN) / (MAG_MAX - MAG_MIN)),
+                    background:
+                      bar.peak === null
+                        ? "var(--color-faint)"
+                        : rampColorAt(ramp, (bar.peak - MAG_MIN) / (MAG_MAX - MAG_MIN)),
                     opacity: bar.count === 0 ? 0.35 : 1,
                   }}
                 />
@@ -281,13 +322,9 @@ export function Timeline({
             style={{ left: `${cursor * 100}%` }}
           />
         ) : null}
-
       </div>
 
-      <div
-        id="window-scale"
-        className="mt-2 flex justify-between font-mono text-[10.5px] text-faint"
-      >
+      <div id="window-scale" className="mt-2 flex justify-between font-mono text-[10.5px] text-faint">
         {/* The axis, and only the axis. It carried "last N hours" in the middle, which is the sentence the
             headline already prints from the same number: two identical phrases in one rail, with nothing
             to tell you which one you had just changed. */}
@@ -306,30 +343,32 @@ export function Timeline({
               rules and the transport read as four peers, when they are one scale, two annotations and a
               control. */}
           <div className="mt-1">
-          {reaches.map((r) => (
-            <div key={r.id} className="flex items-center gap-2">
-              <span className="w-[34px] shrink-0 font-mono text-[10.5px] text-faint">{r.label}</span>
-              {/*
+            {reaches.map((r) => (
+              <div key={r.id} className="flex items-center gap-2">
+                <span className="w-[34px] shrink-0 font-mono text-[10.5px] text-faint">{r.label}</span>
+                {/*
                 A rule, not a track, because this one cannot be dragged. The two readouts were the heavier
                 pair - 3px on a filled `raised` track against the transport's 2px hairline - so they looked
                 more like controls than the control did. Weight now says what is touchable.
               */}
-              <span className="relative h-px min-w-0 flex-1 bg-hairline">
-                <span
-                  className="absolute inset-y-0 right-0 bg-dim"
-                  style={{ width: `${Math.max(r.fraction > 0 ? 1 : 0, r.fraction * 100)}%` }}
-                />
-              </span>
-              {/* `nowrap` so a longer word overflows rather than stacking and moving the rule. */}
-              <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] whitespace-nowrap text-faint tabular-nums">
-                {r.words}
-              </span>
-            </div>
-          ))}
-          {notes.map((note) => (
-            <p key={note} className="mt-2 text-[11px] leading-relaxed text-faint">{note}</p>
-          ))}
-        </div>
+                <span className="relative h-px min-w-0 flex-1 bg-hairline">
+                  <span
+                    className="absolute inset-y-0 right-0 bg-dim"
+                    style={{ width: `${Math.max(r.fraction > 0 ? 1 : 0, r.fraction * 100)}%` }}
+                  />
+                </span>
+                {/* `nowrap` so a longer word overflows rather than stacking and moving the rule. */}
+                <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] whitespace-nowrap text-faint tabular-nums">
+                  {r.words}
+                </span>
+              </div>
+            ))}
+            {notes.map((note) => (
+              <p key={note} className="mt-2 text-[11px] leading-relaxed text-faint">
+                {note}
+              </p>
+            ))}
+          </div>
         </details>
       ) : null}
 
@@ -363,9 +402,12 @@ export function Timeline({
            * moved and the picture did not.
            */
           onKeyDown={(e) => {
-            const by = e.key === "ArrowRight" || e.key === "ArrowUp" ? 1
-              : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -1
-                : 0;
+            const by =
+              e.key === "ArrowRight" || e.key === "ArrowUp"
+                ? 1
+                : e.key === "ArrowLeft" || e.key === "ArrowDown"
+                  ? -1
+                  : 0;
             if (by === 0) return;
             e.preventDefault();
             onStep(by);
@@ -388,9 +430,7 @@ export function Timeline({
             go live
           </button>
         ) : (
-          <span className="shrink-0 font-mono text-[10.5px] text-faint">
-            {archived ? "day end" : "live"}
-          </span>
+          <span className="shrink-0 font-mono text-[10.5px] text-faint">{archived ? "day end" : "live"}</span>
         )}
       </div>
 

@@ -4,8 +4,12 @@ import { FEED_CAP, fetchWildfires, parseWildfires, summarise } from "./wildfires
 const fire = (over: Record<string, unknown> = {}, lon = -52.7, lat = -15.1) => ({
   geometry: { type: "Point", coordinates: [lon, lat] },
   properties: {
-    eventid: 1030233, eventname: "Forest fires in Brazil", country: "Brazil",
-    iscurrent: "true", fromdate: "2026-08-06T00:00:00", todate: "2026-08-20T00:00:00",
+    eventid: 1030233,
+    eventname: "Forest fires in Brazil",
+    country: "Brazil",
+    iscurrent: "true",
+    fromdate: "2026-08-06T00:00:00",
+    todate: "2026-08-20T00:00:00",
     severitydata: { severity: 34160.0, severitytext: "Green impact", severityunit: "ha" },
     ...over,
   },
@@ -18,8 +22,7 @@ describe("only what is burning now", () => {
 
   it("drops the ones that are not, whatever their alert level", () => {
     // The stale ones are exactly the Orange and Red set: 14 complete, and none of them current.
-    expect(parseWildfires({ features: [fire({ iscurrent: "false", alertlevel: "Red" })] }))
-      .toEqual([]);
+    expect(parseWildfires({ features: [fire({ iscurrent: "false", alertlevel: "Red" })] })).toEqual([]);
   });
 
   it("reads the flag case-insensitively, since it arrives as a string and not a boolean", () => {
@@ -40,7 +43,7 @@ describe("burned area, the one real quantity", () => {
 
   it("totals in square kilometres, which is a unit a reader has a feel for", () => {
     const fires = parseWildfires({ features: [fire(), fire({ eventid: 2 })] });
-    expect(summarise(fires).km2).toBe(Math.round(34160 * 2 / 100));
+    expect(summarise(fires).km2).toBe(Math.round((34160 * 2) / 100));
   });
 
   it("ranks countries by area and not by event count, because the count is truncated", () => {
@@ -48,22 +51,26 @@ describe("burned area, the one real quantity", () => {
      * Angola returns more marks than Australia and Australia is burning harder per fire. Ranking by
      * count would name the country the cap happened to favour.
      */
-    const fires = parseWildfires({ features: [
-      fire({ country: "Angola", severitydata: { severity: 1000 } }, 18, -12),
-      fire({ country: "Angola", eventid: 2, severitydata: { severity: 1000 } }, 19, -12),
-      fire({ country: "Australia", eventid: 3, severitydata: { severity: 139348 } }, 135, -19),
-    ] });
+    const fires = parseWildfires({
+      features: [
+        fire({ country: "Angola", severitydata: { severity: 1000 } }, 18, -12),
+        fire({ country: "Angola", eventid: 2, severitydata: { severity: 1000 } }, 19, -12),
+        fire({ country: "Australia", eventid: 3, severitydata: { severity: 139348 } }, 135, -19),
+      ],
+    });
     expect(summarise(fires).leader).toBe("Australia");
   });
 });
 
 describe("how long it has been burning", () => {
   it("is the median span in days, which is the fact no other mark here carries", () => {
-    const fires = parseWildfires({ features: [
-      fire({ fromdate: "2026-08-17T00:00:00" }),
-      fire({ eventid: 2, fromdate: "2026-08-11T00:00:00" }),
-      fire({ eventid: 3, fromdate: "2026-08-05T00:00:00" }),
-    ] });
+    const fires = parseWildfires({
+      features: [
+        fire({ fromdate: "2026-08-17T00:00:00" }),
+        fire({ eventid: 2, fromdate: "2026-08-11T00:00:00" }),
+        fire({ eventid: 3, fromdate: "2026-08-05T00:00:00" }),
+      ],
+    });
     expect(summarise(fires).medianDays).toBe(9);
   });
 
@@ -88,7 +95,9 @@ describe("what it refuses", () => {
   });
 
   it("gives an empty list rather than throwing into the app", async () => {
-    const boom = async (): Promise<Response> => { throw new Error("offline"); };
+    const boom = async (): Promise<Response> => {
+      throw new Error("offline");
+    };
     await expect(fetchWildfires(boom)).resolves.toEqual([]);
   });
 

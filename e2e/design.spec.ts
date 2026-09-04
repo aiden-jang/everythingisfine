@@ -59,7 +59,12 @@ async function chromeHues(
         // 55 sits well above the whole chrome palette (Coastline and Instrument Faint tie at 37)
         // and far below anything that reads as a colour: a default browser accent is 255.
         if (s > 55) {
-          offenders.push({ tag: `${el.tagName.toLowerCase()}.${el.className}`.slice(0, 70), prop, colour: value, chroma: Number(s.toFixed(1)) });
+          offenders.push({
+            tag: `${el.tagName.toLowerCase()}.${el.className}`.slice(0, 70),
+            prop,
+            colour: value,
+            chroma: Number(s.toFixed(1)),
+          });
         }
       }
     }
@@ -97,7 +102,9 @@ for (const bp of BREAKPOINTS) {
     await page.mouse.wheel(0, 1_200);
     await page.waitForTimeout(200);
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
-    await page.evaluate(() => { window.scrollTo(0, 2_000); });
+    await page.evaluate(() => {
+      window.scrollTo(0, 2_000);
+    });
     expect(await page.evaluate(() => window.scrollY)).toBe(0);
   });
 
@@ -111,8 +118,11 @@ for (const bp of BREAKPOINTS) {
     const overflow = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
       inner: window.innerWidth,
-      widest: Math.max(...Array.from(document.querySelectorAll("body *"))
-        .map((el) => Math.round(el.getBoundingClientRect().right))),
+      widest: Math.max(
+        ...Array.from(document.querySelectorAll("body *")).map((el) =>
+          Math.round(el.getBoundingClientRect().right),
+        ),
+      ),
     }));
     expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.inner);
     expect(overflow.widest).toBeLessThanOrEqual(overflow.inner + 1);
@@ -140,11 +150,11 @@ for (const bp of BREAKPOINTS) {
       const scrollable = (el: Element): boolean => {
         for (let node: Element | null = el; node; node = node.parentElement) {
           const overflow = getComputedStyle(node).overflowY;
-          if ((overflow !== "auto" && overflow !== "scroll")
-            || node.scrollHeight <= node.clientHeight + 1) continue;
+          if ((overflow !== "auto" && overflow !== "scroll") || node.scrollHeight <= node.clientHeight + 1)
+            continue;
           const box = node.getBoundingClientRect();
-          if (box.top < window.innerHeight && box.bottom > 0
-            && box.left < window.innerWidth && box.right > 0) return true;
+          if (box.top < window.innerHeight && box.bottom > 0 && box.left < window.innerWidth && box.right > 0)
+            return true;
         }
         return false;
       };
@@ -160,12 +170,17 @@ for (const bp of BREAKPOINTS) {
         if (!(el as HTMLElement).checkVisibility()) continue;
         const box = el.getBoundingClientRect();
         if (box.height === 0 || box.width === 0) continue;
-        const inside = box.top >= -1 && box.bottom <= window.innerHeight + 1
-          && box.left >= -1 && box.right <= window.innerWidth + 1;
+        const inside =
+          box.top >= -1 &&
+          box.bottom <= window.innerHeight + 1 &&
+          box.left >= -1 &&
+          box.right <= window.innerWidth + 1;
         if (inside || scrollable(el)) continue;
         bad.push({
           tag: `${el.tagName.toLowerCase()} "${(el.textContent ?? "").trim().slice(0, 24)}"`,
-          text: el.id, top: Math.round(box.top), bottom: Math.round(box.bottom),
+          text: el.id,
+          top: Math.round(box.top),
+          bottom: Math.round(box.bottom),
         });
       }
       return bad;
@@ -247,7 +262,9 @@ test("no user-agent defaults left in the chrome", async ({ page }) => {
     for (const sheet of Array.from(document.styleSheets)) {
       try {
         for (const rule of Array.from(sheet.cssRules)) all.push(rule.cssText);
-      } catch { /* cross-origin sheet, none here */ }
+      } catch {
+        /* cross-origin sheet, none here */
+      }
     }
     return all.join("\n");
   });
@@ -284,12 +301,19 @@ test("the globe always gets a real share of the screen", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
 
-  for (const [w, h] of [[768, 640], [900, 700], [1279, 700], [1280, 820], [390, 844]] as const) {
+  for (const [w, h] of [
+    [768, 640],
+    [900, 700],
+    [1279, 700],
+    [1280, 820],
+    [390, 844],
+  ] as const) {
     await page.setViewportSize({ width: w, height: h });
     await page.waitForTimeout(500);
-    const share = await page.evaluate(() =>
-      (document.querySelector("canvas") as HTMLElement).getBoundingClientRect().height
-      / window.innerHeight);
+    const share = await page.evaluate(
+      () =>
+        (document.querySelector("canvas") as HTMLElement).getBoundingClientRect().height / window.innerHeight,
+    );
     // The desktop layout gives the globe nearly everything; the tablet band is the constrained one.
     expect(share, `canvas share at ${w}x${h}`).toBeGreaterThanOrEqual(0.44);
   }
@@ -329,8 +353,10 @@ test("the colourblind ramp survives a reload", async ({ page }) => {
   await page.reload();
   await waitForData(page);
   // Persisted, because re-choosing an accessibility setting every visit is its own barrier.
-  await expect(page.getByRole("button", { name: /colourblind ramp/i }))
-    .toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("button", { name: /colourblind ramp/i })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
 });
 
 /* Left to eyes, deliberately. These are the section 13 rules a computer cannot judge: See ARCHITECTURE.md. */
@@ -373,7 +399,10 @@ test("the rail's controls stay above its fold", async ({ page }) => {
    * The transport is the whole time dimension and it has gone under twice, both times as a side effect
    * of something above it growing.
    */
-  for (const [w, h] of [[1440, 900], [1280, 800]] as const) {
+  for (const [w, h] of [
+    [1440, 900],
+    [1280, 800],
+  ] as const) {
     await page.setViewportSize({ width: w, height: h });
     await page.waitForTimeout(500);
     const now = await seen();
@@ -387,7 +416,11 @@ test("the rail's controls stay above its fold", async ({ page }) => {
    * phone. Neither holds everything at once and neither is meant to, so the promise there is that the
    * controls are reachable by scrolling the rail rather than clipped out of it.
    */
-  for (const [w, h] of [[1024, 768], [900, 1000], [390, 844]] as const) {
+  for (const [w, h] of [
+    [1024, 768],
+    [900, 1000],
+    [390, 844],
+  ] as const) {
     await page.setViewportSize({ width: w, height: h });
     await page.waitForTimeout(500);
     await page.evaluate(() => {
@@ -416,16 +449,23 @@ test("the desktop rail is the only thing in it that scrolls", async ({ page }) =
 
   const seen = await page.evaluate(() => {
     const rail = document.querySelector(".rail") as HTMLElement;
-    const nested = Array.from(rail.querySelectorAll("*")).filter((el) => {
-      const style = getComputedStyle(el);
-      return (style.overflowY === "auto" || style.overflowY === "scroll")
-        && el.scrollHeight > el.clientHeight + 1;
-    }).map((el) => (el.className || "").toString().slice(0, 24));
+    const nested = Array.from(rail.querySelectorAll("*"))
+      .filter((el) => {
+        const style = getComputedStyle(el);
+        return (
+          (style.overflowY === "auto" || style.overflowY === "scroll") &&
+          el.scrollHeight > el.clientHeight + 1
+        );
+      })
+      .map((el) => (el.className || "").toString().slice(0, 24));
     return { railMax: rail.scrollHeight - rail.clientHeight, nested };
   });
 
   // The regions box is the one exception: it is a sized widget with a drag handle, 132px tall.
-  expect(seen.nested.filter((c) => !c.includes("rail-regions")), "no second scroller").toEqual([]);
+  expect(
+    seen.nested.filter((c) => !c.includes("rail-regions")),
+    "no second scroller",
+  ).toEqual([]);
   // And the rail's own scroll covers the list, rather than stopping short of it.
   expect(seen.railMax, "the rail scrolls past the whole list").toBeGreaterThan(2_000);
 });
@@ -457,8 +497,7 @@ test("scrolling over the regions box carries on into the rail", async ({ page })
   for (let i = 0; i < 6; i += 1) await page.mouse.wheel(0, -120);
   await page.waitForTimeout(500);
 
-  const after = await page.evaluate(() =>
-    (document.querySelector(".rail") as HTMLElement).scrollTop);
+  const after = await page.evaluate(() => (document.querySelector(".rail") as HTMLElement).scrollTop);
   expect(after, "the wheel carried on into the rail").toBeLessThan(before.rail);
 });
 
@@ -470,7 +509,11 @@ test("the events are reachable, not clipped out of the rail", async ({ page }) =
   await page.goto("/");
   await waitForData(page);
 
-  for (const [w, h] of [[1440, 900], [1512, 982], [1024, 768]] as const) {
+  for (const [w, h] of [
+    [1440, 900],
+    [1512, 982],
+    [1024, 768],
+  ] as const) {
     await page.setViewportSize({ width: w, height: h });
     await page.waitForTimeout(600);
     // Rows wholly inside the rail's own box, so a list that merely exists below the fold does not count.
@@ -488,4 +531,3 @@ test("the events are reachable, not clipped out of the rail", async ({ page }) =
     expect(rows, `event rows reachable at ${w}x${h}`).toBeGreaterThan(0);
   }
 });
-

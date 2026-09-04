@@ -4,8 +4,12 @@ import { countries, fetchFloods, parseFloods } from "./floods";
 const flood = (over: Record<string, unknown> = {}, lon = 100.6, lat = 18.7) => ({
   geometry: { type: "Point", coordinates: [lon, lat] },
   properties: {
-    eventid: 1104067, eventname: "Flood in Thailand", country: "Thailand",
-    iscurrent: "true", fromdate: "2026-07-30T01:00:00", todate: "2026-08-21T01:00:00",
+    eventid: 1104067,
+    eventname: "Flood in Thailand",
+    country: "Thailand",
+    iscurrent: "true",
+    fromdate: "2026-07-30T01:00:00",
+    todate: "2026-08-21T01:00:00",
     severitydata: { severity: 0.0, severitytext: "Magnitude 0 ", severityunit: "" },
     ...over,
   },
@@ -26,20 +30,22 @@ describe("only the floods running now", () => {
   });
 
   it("keeps a Red one no differently from a Green one, since neither is rated", () => {
-    const both = parseFloods({ features: [
-      flood({ alertlevel: "Red" }), flood({ eventid: 2, alertlevel: "Green" }, 19.1, 51.6),
-    ] });
+    const both = parseFloods({
+      features: [flood({ alertlevel: "Red" }), flood({ eventid: 2, alertlevel: "Green" }, 19.1, 51.6)],
+    });
     expect(both).toHaveLength(2);
   });
 });
 
 describe("the count that is worth stating", () => {
   it("counts distinct countries, which is what a spread this thin has to say", () => {
-    const floods = parseFloods({ features: [
-      flood({ country: "Peru" }, -76.9, -12.2),
-      flood({ country: "Peru", eventid: 2 }, -77.5, -11.0),
-      flood({ country: "Poland", eventid: 3 }, 19.1, 51.6),
-    ] });
+    const floods = parseFloods({
+      features: [
+        flood({ country: "Peru" }, -76.9, -12.2),
+        flood({ country: "Peru", eventid: 2 }, -77.5, -11.0),
+        flood({ country: "Poland", eventid: 3 }, 19.1, 51.6),
+      ],
+    });
     expect(floods).toHaveLength(3);
     expect(countries(floods)).toBe(2);
   });

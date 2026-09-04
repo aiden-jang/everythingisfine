@@ -94,7 +94,10 @@ export function histogram(
     const bucket = Math.max(0, bucketsAgo);
     counts[bucket] += 1;
     const m = quake.primary.magnitude;
-    if (peaks[bucket] === null || m > peaks[bucket]!) { peaks[bucket] = m; leaders[bucket] = quake; }
+    if (peaks[bucket] === null || m > peaks[bucket]!) {
+      peaks[bucket] = m;
+      leaders[bucket] = quake;
+    }
     if (strongest === null || m > strongest.primary.magnitude) {
       strongest = quake;
       topMagnitude = m;
@@ -116,12 +119,15 @@ export function histogram(
       bucketsAgo,
       count: counts[bucketsAgo]!,
       peak: peaks[bucketsAgo]!,
-      lead: lead === null ? null : {
-        key: lead.key,
-        magnitude: lead.primary.magnitude,
-        // Clamped: an origin time a second in the future would otherwise place a tick past the edge.
-        position: Math.max(0, Math.min(1, 1 - (now - lead.primary.time) / filters.windowMs)),
-      },
+      lead:
+        lead === null
+          ? null
+          : {
+              key: lead.key,
+              magnitude: lead.primary.magnitude,
+              // Clamped: an origin time a second in the future would otherwise place a tick past the edge.
+              position: Math.max(0, Math.min(1, 1 - (now - lead.primary.time) / filters.windowMs)),
+            },
       /*
        * The bar straddling the moment the page opened counts as unobserved. It holds real events and its
        * number is still wrong, because the app was absent for part of the span it claims to total.
@@ -132,9 +138,8 @@ export function histogram(
 
   // One division at the end rather than a share maintained through the walk: the strongest event changes
   // during the pass, so an incremental share would have to be recomputed every time it did.
-  const energyShare = energyTotal > 0 && Number.isFinite(topMagnitude)
-    ? energyOf(topMagnitude) / energyTotal
-    : null;
+  const energyShare =
+    energyTotal > 0 && Number.isFinite(topMagnitude) ? energyOf(topMagnitude) / energyTotal : null;
 
   return {
     bars,
@@ -147,13 +152,11 @@ export function histogram(
 }
 
 /** The tallest bar, for scaling. Zero when nothing passes, which callers must not divide by. */
-export const peakCount = (bars: Bar[]): number =>
-  bars.reduce((max, b) => Math.max(max, b.count), 0);
+export const peakCount = (bars: Bar[]): number => bars.reduce((max, b) => Math.max(max, b.count), 0);
 
 /**
  * How many events are inside the window, which is exactly what the globe is drawing. Derived from the bars
  * rather than counted again: the strip has already applied magnitude and source to every event and now
  * spans exactly the window, so the total across it is the same predicate `matches` applies.
  */
-export const totalIn = (bars: Bar[]): number =>
-  bars.reduce((total, b) => total + b.count, 0);
+export const totalIn = (bars: Bar[]): number => bars.reduce((total, b) => total + b.count, 0);

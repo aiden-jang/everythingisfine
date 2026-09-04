@@ -39,8 +39,8 @@ describe("the committed star table", () => {
     // Sirius, Polaris, Betelgeuse, Rigel.
     expect(find(101.29, -16.72)).toBeCloseTo(-1.46, 2);
     expect(find(37.95, 89.26)).toBeCloseTo(2.02, 2);
-    expect(find(88.79, 7.41)).toBeCloseTo(0.50, 1);
-    expect(find(78.63, -8.20)).toBeCloseTo(0.12, 1);
+    expect(find(88.79, 7.41)).toBeCloseTo(0.5, 1);
+    expect(find(78.63, -8.2)).toBeCloseTo(0.12, 1);
   });
 
   it("covers both hemispheres, which a sign error would not", () => {
@@ -73,7 +73,7 @@ describe("sidereal time", () => {
   it("agrees with the sun, which this file computes no part of", () => {
     /* The real check, and the only one here that could catch a wrong epoch or a sign slip. See
        ARCHITECTURE.md. */
-    const raOfSun = (at: number): number => ((subsolarPoint(at).lon + gmstDeg(at)) % 360 + 360) % 360;
+    const raOfSun = (at: number): number => (((subsolarPoint(at).lon + gmstDeg(at)) % 360) + 360) % 360;
 
     let june = { lat: -99, at: 0 };
     let december = { lat: 99, at: 0 };
@@ -90,7 +90,7 @@ describe("sidereal time", () => {
 
     // Signed, because the March answer lands just under 360 and a plain closeness test reads that as
     // the furthest possible miss rather than as zero.
-    const wrap = (d: number): number => ((d + 180) % 360 + 360) % 360 - 180;
+    const wrap = (d: number): number => ((((d + 180) % 360) + 360) % 360) - 180;
     expect(raOfSun(june.at)).toBeCloseTo(90, 0);
     expect(raOfSun(december.at)).toBeCloseTo(270, 0);
     expect(wrap(raOfSun(march.at))).toBeCloseTo(0, 0);
@@ -131,7 +131,12 @@ describe("placing a star before the sky is turned", () => {
   });
 
   it("returns unit vectors, since the layer scales them itself", () => {
-    for (const [ra, dec] of [[0, 0], [45, 30], [200, -60], [359, 89]] as [number, number][]) {
+    for (const [ra, dec] of [
+      [0, 0],
+      [45, 30],
+      [200, -60],
+      [359, 89],
+    ] as [number, number][]) {
       const [x, y, z] = starVector(ra, dec);
       expect(Math.hypot(x, y, z)).toBeCloseTo(1, 6);
     }

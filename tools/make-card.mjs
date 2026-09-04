@@ -36,9 +36,7 @@ const VIEW = "#at=105,18,1.05&m=7.5&r=thermal";
  *
  * Blocked at the network, not behind a new switch, so the app is unmodified. `m=7.5` is the second lock.
  */
-const FEEDS = [
-  "earthquake.usgs.gov", "www.seismicportal.eu", "www.gdacs.org", "services.swpc.noaa.gov",
-];
+const FEEDS = ["earthquake.usgs.gov", "www.seismicportal.eu", "www.gdacs.org", "services.swpc.noaa.gov"];
 
 const card = (globe, tokens) => `<!doctype html>
 <html><head><meta charset="utf-8" /><style>

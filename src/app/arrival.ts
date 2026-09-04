@@ -83,9 +83,7 @@ export interface Separation {
  * Distance between two events, and how long the first one's P wave took to reach the second. See
  * ARCHITECTURE.md.
  */
-export function between(
-  aLon: number, aLat: number, bLon: number, bLat: number,
-): Separation {
+export function between(aLon: number, aLat: number, bLon: number, bLat: number): Separation {
   const km = distanceKm(aLon, aLat, bLon, bLat);
   return { km, p: km <= MAX_KM ? km / P_WAVE_KM_PER_S : null };
 }

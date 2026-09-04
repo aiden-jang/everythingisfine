@@ -47,15 +47,24 @@ describe("the pinned panel's per-second cost", () => {
     // a neighbour: every event inside the radius is collected, sorted and mapped.
     for (let i = 0; i < 50_000; i += 1) {
       const reading: Reading = {
-        source: "usgs", id: `q${i}`, magnitude: 2 + random() * 3, scale: "mb",
-        lon: 120 + (random() - 0.5) * 0.6, lat: -8 + (random() - 0.5) * 0.6,
-        depthKm: 10, time: NOW - random() * 3_600_000, place: "Flores Sea",
-        kind: "earthquake", receivedAt: NOW,
+        source: "usgs",
+        id: `q${i}`,
+        magnitude: 2 + random() * 3,
+        scale: "mb",
+        lon: 120 + (random() - 0.5) * 0.6,
+        lat: -8 + (random() - 0.5) * 0.6,
+        depthKm: 10,
+        time: NOW - random() * 3_600_000,
+        place: "Flores Sea",
+        kind: "earthquake",
+        receivedAt: NOW,
       };
       store.ingest(reading);
     }
     const filters: Filters = {
-      minMagnitude: 0, windowMs: 24 * 3_600_000, sources: new Set(["usgs", "emsc"]),
+      minMagnitude: 0,
+      windowMs: 24 * 3_600_000,
+      sources: new Set(["usgs", "emsc"]),
     };
     const pinned = store.latest(1)[0]!;
 

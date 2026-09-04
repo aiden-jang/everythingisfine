@@ -19,7 +19,16 @@ export interface ResizerProps {
 }
 
 export function Resizer({
-  axis, label, value, min, max, measure, onChange, grip = false, className, style,
+  axis,
+  label,
+  value,
+  min,
+  max,
+  measure,
+  onChange,
+  grip = false,
+  className,
+  style,
 }: ResizerProps): JSX.Element {
   const dragging = useRef(false);
   const latest = useRef({ measure, onChange });

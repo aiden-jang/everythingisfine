@@ -8,8 +8,14 @@ describe("the timezone table", () => {
   it("carries the zones a browser actually reports", () => {
     // `zone1970.tab` alone omits 106 of these, which is why the generator merges the older file too.
     for (const zone of [
-      "Australia/Sydney", "America/New_York", "Europe/London", "Asia/Tokyo",
-      "Africa/Nairobi", "Africa/Accra", "America/Argentina/Buenos_Aires", "Asia/Kolkata",
+      "Australia/Sydney",
+      "America/New_York",
+      "Europe/London",
+      "Asia/Tokyo",
+      "Africa/Nairobi",
+      "Africa/Accra",
+      "America/Argentina/Buenos_Aires",
+      "Asia/Kolkata",
     ]) {
       expect(zones[zone], zone).toBeDefined();
     }
