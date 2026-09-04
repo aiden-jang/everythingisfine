@@ -1,0 +1,106 @@
+/*
+ * The gate on the gates, run first by `pnpm run verify`.
+ *
+ * Two ways a check stops checking without anybody noticing. It drifts out of CI, so a local run is
+ * green on a smaller set than the build; or it is invoked as `pnpm <name>` where pnpm has a command
+ * of its own, and pnpm's runs instead. This repo shipped the second one: `DEPLOY.md` and `README.md`
+ * both told you to run `pnpm deploy`, which deploys a workspace package to a directory and never
+ * touches wrangler.
+ */
+import { globSync, readFileSync } from "node:fs";
+
+/*
+ * pnpm commands that are not script shortcuts. `test`, `start`, `stop` and `restart` are left out on
+ * purpose: pnpm runs the script for those, and `pnpm test` was watched running this suite.
+ */
+const PNPM_OWN = new Set([
+  "add",
+  "audit",
+  "bin",
+  "config",
+  "create",
+  "deploy",
+  "dlx",
+  "docs",
+  "env",
+  "exec",
+  "fetch",
+  "import",
+  "init",
+  "install",
+  "licenses",
+  "link",
+  "list",
+  "ls",
+  "outdated",
+  "pack",
+  "patch",
+  "prune",
+  "publish",
+  "rebuild",
+  "remove",
+  "root",
+  "run",
+  "server",
+  "setup",
+  "store",
+  "unlink",
+  "update",
+  "why",
+]);
+
+const scripts = JSON.parse(readFileSync("package.json", "utf8")).scripts ?? {};
+const ci = readFileSync(".github/workflows/ci.yml", "utf8");
+const problems = [];
+
+const named = (text) => [...text.matchAll(/pnpm (run )?([\w:-]+)/g)];
+
+/* Neither installs anything nor gates anything: they are how a runner gets to the point of gating. */
+const PLUMBING = new Set(["install", "exec", "dlx", "add"]);
+
+const stepsIn = (text) =>
+  named(text)
+    .map((m) => m[2])
+    .filter((n) => !PLUMBING.has(n));
+
+/*
+ * The deploy job is deliberately not compared. It builds again on the way out, and anything else it
+ * grows is a release step rather than a gate.
+ */
+const gateJobs = ci.slice(0, ci.indexOf("\n  deploy:") === -1 ? undefined : ci.indexOf("\n  deploy:"));
+const ciSteps = new Set(
+  [...gateJobs.matchAll(/^\s*- run: (pnpm .+)$/gm)].flatMap((m) => stepsIn(m[1])),
+);
+const verifySteps = new Set(stepsIn(scripts.verify ?? ""));
+
+for (const name of [...verifySteps, ...ciSteps]) {
+  if (!scripts[name]) problems.push(`\`pnpm run ${name}\` is not a script in package.json`);
+}
+for (const name of verifySteps) {
+  if (!ciSteps.has(name)) problems.push(`verify runs \`${name}\` and ci.yml does not`);
+}
+for (const name of ciSteps) {
+  if (!verifySteps.has(name)) problems.push(`ci.yml runs \`${name}\` and verify does not`);
+}
+
+/* Every place a reader or a runner is told to invoke one of ours. */
+const invocations = [
+  ...Object.entries(scripts).map(([k, v]) => [`package.json ${k}`, v]),
+  [".github/workflows/ci.yml", ci],
+  ...globSync("*.md").map((f) => [f, readFileSync(f, "utf8")]),
+];
+for (const [where, text] of invocations) {
+  for (const [, run, name] of named(text)) {
+    if (run || !PNPM_OWN.has(name) || !scripts[name]) continue;
+    problems.push(`${where}: \`pnpm ${name}\` runs pnpm's own ${name}, not the script. Use \`pnpm run ${name}\`.`);
+  }
+}
+
+if (problems.length > 0) {
+  console.error("gate check failed:\n");
+  for (const p of [...new Set(problems)]) console.error(`  ${p}`);
+  console.error("");
+  process.exit(1);
+}
+
+console.log(`gates ok: verify and ci.yml run the same ${verifySteps.size} checks, none of them shadowed`);

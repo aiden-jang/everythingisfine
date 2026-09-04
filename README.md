@@ -12,8 +12,8 @@ Live at <https://everythingisfine.aidenjang.com>.
 ```bash
 pnpm install
 pnpm dev          # http://localhost:31600
-pnpm check        # typecheck + tests + build
-pnpm test:e2e     # browser tests, feeds served from e2e/feeds.ts
+pnpm verify       # every gate CI runs, in one command
+pnpm test:e2e     # browser tests on their own, feeds served from e2e/feeds.ts
 pnpm test:live    # hits USGS and EMSC for real
 ```
 
@@ -146,7 +146,7 @@ invoking a Worker at all, so the running cost is zero invocations rather than a 
 them. Both feeds are reached straight from the browser, which is what makes that possible.
 
 ```bash
-pnpm deploy
+pnpm run deploy
 ```
 
 **Merging to `main` deploys.** The workflow checks first - typecheck, unit tests with `--expose-gc` so
