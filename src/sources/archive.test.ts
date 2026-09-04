@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { ARCHIVE_LIMIT, dayRange, fetchArchive } from "./archive";
+import { ARCHIVE_LIMIT, countForDay, dayRange, fetchArchive } from "./archive";
 
 const usgsBody = (n: number) => ({
   features: Array.from({ length: n }, (_, i) => ({
@@ -122,5 +122,26 @@ describe("the day's end is exclusive, which has bitten once", () => {
     const span = dayRange("2026-05-15")!;
     expect(new Date(span.to).toISOString().slice(0, 10)).toBe("2026-05-16");
     expect(new Date(span.from).toISOString().slice(0, 10)).toBe("2026-05-15");
+  });
+});
+
+describe("counting one day, when the agency will not answer", () => {
+  /*
+   * A 500 carries a body. Without the status check the count is read straight out of it, and an
+   * error page that happens to hold a number becomes the number of earthquakes on that day.
+   */
+  it("takes no count from a response that failed", async () => {
+    const get = vi.fn(async () => new Response(JSON.stringify({ count: 9999 }), { status: 500 }));
+    expect(await countForDay("2026-07-04", 2.5, get)).toBeNull();
+  });
+
+  it("takes the count from one that worked", async () => {
+    const get = vi.fn(async () => new Response(JSON.stringify({ count: 12 }), { status: 200 }));
+    expect(await countForDay("2026-07-04", 2.5, get)).toBe(12);
+  });
+
+  it("says nothing rather than guessing when the count is not a number", async () => {
+    const get = vi.fn(async () => new Response(JSON.stringify({ count: "lots" }), { status: 200 }));
+    expect(await countForDay("2026-07-04", 2.5, get)).toBeNull();
   });
 });

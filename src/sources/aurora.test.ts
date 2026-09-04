@@ -111,3 +111,29 @@ describe("fetching it", () => {
     expect(a?.peak).toBe(30);
   });
 });
+
+describe("a row that is not a row", () => {
+  /*
+   * NOAA publishes 65,160 triples. The count is checked before the loop, so a payload can be the
+   * right length and still carry a row that is not one, and the grid write would read undefined.
+   */
+  const rowsWith = (bad: unknown) => {
+    const rows = Array.from({ length: AURORA_LON * AURORA_LAT }, (_, i) => [
+      i % AURORA_LON,
+      Math.floor(i / AURORA_LON) - 90,
+      0,
+    ]);
+    rows[500] = bad as number[];
+    return { "Forecast Time": "2026-08-20T20:52:00Z", coordinates: rows };
+  };
+
+  it("refuses the whole forecast rather than draw a partial one", () => {
+    expect(parseOvation(rowsWith([12, 34])), "two numbers, not three").toBeNull();
+    expect(parseOvation(rowsWith("40 60 3")), "the triple as a string").toBeNull();
+    expect(parseOvation(rowsWith(null))).toBeNull();
+  });
+
+  it("still reads a forecast where every row is a row", () => {
+    expect(parseOvation(rowsWith([1, 2, 3]))).not.toBeNull();
+  });
+});
