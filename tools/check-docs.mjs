@@ -54,6 +54,63 @@ if (/^- \[[\w/.-]+\]\(#[\w-]+\) &mdash;/m.test(doc)) {
   problems.push(`${DOC}: the file index is carrying counts again. Nothing keeps them true.`);
 }
 
+/*
+ * The docs that describe the app as it is now. `ARCHITECTURE.md` and `RECONCILIATION.md` are left out on
+ * purpose: they are logs, and past tense is their job. Both name a file that was renamed because the old
+ * name would have broken, a file in somebody else's repository, and a path inside a dependency. Asking a
+ * record of what happened to resolve against what exists today is asking it to stop being a record.
+ */
+const LIVE = globSync("*.md").filter(
+  (f) => !/^(ARCHITECTURE|RECONCILIATION)\.md$/.test(f) && !f.endsWith(".local.md"),
+);
+
+const onDisk = globSync("{src,e2e,tools,public,.github}/**/*", { withFileTypes: true })
+  .filter((d) => d.isFile())
+  .map((d) => `${d.parentPath}/${d.name}`)
+  .concat(globSync("*.{json,ts,mjs,toml,html,md}"));
+
+const scripts = new Set(Object.keys(JSON.parse(readFileSync("package.json", "utf8")).scripts ?? {}));
+const code = [...globSync("{src,e2e,tools}/**/*.{ts,tsx,mjs}"), "package.json", "vite.config.ts"]
+  .map((f) => readFileSync(f, "utf8"))
+  .join("\n");
+const named = (name) => new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(code);
+
+/* Named in a doc because they belong to somebody else, or because the doc is saying they are absent. */
+const NOT_OURS = new Set(["devDependencies", "dataLayer", "npmjs"]);
+
+for (const doc of LIVE) {
+  let fenced = false;
+  readFileSync(doc, "utf8")
+    .split("\n")
+    .forEach((line, i) => {
+      const at = `${doc}:${i + 1}`;
+      if (line.trimStart().startsWith("```")) fenced = !fenced;
+
+      for (const m of line.matchAll(/[\w./@-]*\w+\.(?:ts|tsx|css|mjs|toml|yml|html)\b/g)) {
+        const bare = m[0].replace(/^`|`$/g, "");
+        const tail = bare.split("/").pop();
+        if (!onDisk.some((f) => f.endsWith(bare) || f.endsWith(`/${tail}`))) {
+          problems.push(`${at}: no such file \`${bare}\``);
+        }
+      }
+
+      /* Only inside backticks or a fence. Prose says "a pnpm command of the same name", which is not one. */
+      const commands = fenced ? [line] : [...line.matchAll(/`([^`]+)`/g)].map((b) => b[1]);
+      for (const m of commands.join("\n").matchAll(/pnpm (?:run |exec )?([a-z][\w:-]*)/g)) {
+        const name = m[1];
+        if (["install", "exec", "add", "dlx", "create", "run", "audit", "why", "outdated"].includes(name))
+          continue;
+        if (!scripts.has(name)) problems.push(`${at}: \`pnpm ${name}\` is not a script`);
+      }
+
+      // Bare, not just `name()`: a rename can sit in a sentence with no parentheses and no backticks.
+      for (const m of line.matchAll(/(?<!\\)\b([a-z][a-z0-9]*(?:[A-Z][A-Za-z0-9]*)+)\b/g)) {
+        if (!NOT_OURS.has(m[1]) && !named(m[1]))
+          problems.push(`${at}: nothing named \`${m[1]}\` in the code`);
+      }
+    });
+}
+
 if (problems.length > 0) {
   console.error("docs check failed:\n");
   for (const p of [...new Set(problems)]) console.error(`  ${p}`);
@@ -61,4 +118,6 @@ if (problems.length > 0) {
   process.exit(1);
 }
 
-console.log(`docs ok: every note in the code names a section of ${DOC} that exists`);
+console.log(
+  `docs ok: ${LIVE.length} live docs resolve, and every note names a section of ${DOC} that exists`,
+);
