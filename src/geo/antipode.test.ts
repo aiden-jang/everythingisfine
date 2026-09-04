@@ -4,7 +4,12 @@ import { distanceKm, EARTH_RADIUS_KM } from "./sphere";
 
 describe("the point on the far side", () => {
   it("is half the planet away, whatever the input", () => {
-    for (const [lon, lat] of [[140, 38], [-70, -33], [0, 0], [12.5, 41.9]] as const) {
+    for (const [lon, lat] of [
+      [140, 38],
+      [-70, -33],
+      [0, 0],
+      [12.5, 41.9],
+    ] as const) {
       const a = antipodeOf(lon, lat);
       expect(distanceKm(lon, lat, a.lon, a.lat)).toBeCloseTo(Math.PI * EARTH_RADIUS_KM, 0);
     }

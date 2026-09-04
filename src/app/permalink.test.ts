@@ -3,18 +3,39 @@ import { decode, encode, type Permalink } from "./permalink";
 import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 
 const state: Permalink = {
-  lon: 145, lat: 12, zoom: 1, minMagnitude: 2, windowHours: 24,
-  sources: ["usgs", "emsc"], ramp: "thermal", event: null, section: null, cursor: null, day: null, mark: null,
+  lon: 145,
+  lat: 12,
+  zoom: 1,
+  minMagnitude: 2,
+  windowHours: 24,
+  sources: ["usgs", "emsc"],
+  ramp: "thermal",
+  event: null,
+  section: null,
+  cursor: null,
+  day: null,
+  mark: null,
 };
 
 describe("longitude on the way out", () => {
   it("wraps a camera that has been round the world", () => {
     // The spring takes the shortest way round, so crossing the date line adds a turn to `lon` and
     // nothing takes it off again. Links were coming out as at=499.37.
-    const at = (lon: number): string => encode({
-      lon, lat: 20, zoom: 1, minMagnitude: 2, windowHours: 24,
-      sources: ["usgs"], ramp: "thermal", event: null, section: null, cursor: null, day: null, mark: null,
-    }).split("&")[0]!;
+    const at = (lon: number): string =>
+      encode({
+        lon,
+        lat: 20,
+        zoom: 1,
+        minMagnitude: 2,
+        windowHours: 24,
+        sources: ["usgs"],
+        ramp: "thermal",
+        event: null,
+        section: null,
+        cursor: null,
+        day: null,
+        mark: null,
+      }).split("&")[0]!;
 
     expect(at(499.37)).toBe("at=139.37,20,1");
     expect(at(-190)).toBe("at=170,20,1");
@@ -26,12 +47,23 @@ describe("longitude on the way out", () => {
 describe("permalinks", () => {
   it("survives a round trip", () => {
     const full: Permalink = {
-      ...state, lon: -71.5, lat: -25.25, zoom: 1.8, minMagnitude: 4.5,
-      ramp: "cividis", event: "usgs:us7000abcd",
+      ...state,
+      lon: -71.5,
+      lat: -25.25,
+      zoom: 1.8,
+      minMagnitude: 4.5,
+      ramp: "cividis",
+      event: "usgs:us7000abcd",
     };
     expect(decode(encode(full))).toEqual({
-      lon: -71.5, lat: -25.25, zoom: 1.8, minMagnitude: 4.5, windowHours: 24,
-      sources: ["emsc", "usgs"], ramp: "cividis", event: "usgs:us7000abcd",
+      lon: -71.5,
+      lat: -25.25,
+      zoom: 1.8,
+      minMagnitude: 4.5,
+      windowHours: 24,
+      sources: ["emsc", "usgs"],
+      ramp: "cividis",
+      event: "usgs:us7000abcd",
     });
   });
 
@@ -121,8 +153,7 @@ describe("a cross-section in the link", () => {
   });
 
   it("clamps a latitude off the end of the world", () => {
-    expect(decode("x=0,-400,10,400").section)
-      .toEqual({ fromLon: 0, fromLat: -90, toLon: 10, toLat: 90 });
+    expect(decode("x=0,-400,10,400").section).toEqual({ fromLon: 0, fromLat: -90, toLon: 10, toLat: 90 });
   });
 });
 

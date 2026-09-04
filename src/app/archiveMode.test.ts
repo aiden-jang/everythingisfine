@@ -8,9 +8,18 @@ import type { Reading } from "../data/types";
  */
 
 const reading = (over: Partial<Reading> = {}): Reading => ({
-  source: "usgs", id: "a1", magnitude: 5.0, scale: "mww", lon: 141, lat: 38, depthKm: 30,
-  time: Date.parse("2026-07-04T05:00:00Z"), place: "somewhere", kind: "earthquake",
-  receivedAt: Date.now(), ...over,
+  source: "usgs",
+  id: "a1",
+  magnitude: 5.0,
+  scale: "mww",
+  lon: 141,
+  lat: 38,
+  depthKm: 30,
+  time: Date.parse("2026-07-04T05:00:00Z"),
+  place: "somewhere",
+  kind: "earthquake",
+  receivedAt: Date.now(),
+  ...over,
 });
 
 const SPAN = {
@@ -37,7 +46,9 @@ describe("showing an archived day", () => {
     feed.showArchive(SPAN, [reading({ id: "old1" }), reading({ id: "old2", lon: 10, lat: 10 })]);
     expect(feed.snapshot().stats.quakes).toBe(2);
     let ids: string[] = [];
-    feed.store.forEach((q) => { ids = ids.concat(q.readings.map((r) => r.id)); });
+    feed.store.forEach((q) => {
+      ids = ids.concat(q.readings.map((r) => r.id));
+    });
     expect(ids).not.toContain("live1");
   });
 
@@ -84,7 +95,9 @@ describe("coming back to live", () => {
     feed.store.ingest(reading({ id: "now", time: Date.now() }));
     feed.showArchive(SPAN, [reading({ id: "july" })]);
     let ids: string[] = [];
-    feed.store.forEach((q) => { ids = ids.concat(q.readings.map((r) => r.id)); });
+    feed.store.forEach((q) => {
+      ids = ids.concat(q.readings.map((r) => r.id));
+    });
     expect(ids).toEqual(["july"]);
   });
 });

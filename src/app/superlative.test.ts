@@ -4,9 +4,12 @@ import { REGIONS } from "./regions";
 import { recordWhen, regionOf, SINCE, superlativeFor } from "./superlative";
 import type { Quake } from "../data/types";
 
-const quake = (lon: number, lat: number, magnitude: number): Quake => ({
-  key: "k", readings: [], primary: { lon, lat, magnitude },
-} as unknown as Quake);
+const quake = (lon: number, lat: number, magnitude: number): Quake =>
+  ({
+    key: "k",
+    readings: [],
+    primary: { lon, lat, magnitude },
+  }) as unknown as Quake;
 
 describe("the generated records", () => {
   it("covers every region the rail counts by", () => {

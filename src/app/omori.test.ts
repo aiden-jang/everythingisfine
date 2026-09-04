@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  expectedFraction, MIN_AFTER, observed, OMORI_C_MS, OMORI_P, reference, staircase,
-} from "./omori";
+import { expectedFraction, MIN_AFTER, observed, OMORI_C_MS, OMORI_P, reference, staircase } from "./omori";
 
 const HOUR = 3_600_000;
 
@@ -13,7 +11,10 @@ const HOUR = 3_600_000;
 describe("what actually happened", () => {
   it("counts only what followed, since decay is not a thing that precedes an event", () => {
     const seq = [{ at: -2 * HOUR }, { at: -HOUR }, { at: HOUR }, { at: 3 * HOUR }];
-    expect(observed(seq)).toEqual([{ at: HOUR, n: 1 }, { at: 3 * HOUR, n: 2 }]);
+    expect(observed(seq)).toEqual([
+      { at: HOUR, n: 1 },
+      { at: 3 * HOUR, n: 2 },
+    ]);
   });
 
   it("climbs by one per event, in time order whatever order it arrived in", () => {
@@ -99,7 +100,10 @@ describe("the staircase", () => {
   });
 
   it("steps rather than slopes, so it never claims an arrival between arrivals", () => {
-    const steps = staircase([{ at: HR, n: 1 }, { at: 3 * HR, n: 2 }]);
+    const steps = staircase([
+      { at: HR, n: 1 },
+      { at: 3 * HR, n: 2 },
+    ]);
     expect(steps).toEqual([
       { at: 0, n: 0 },
       { at: HR, n: 0 },

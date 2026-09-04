@@ -68,7 +68,9 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
           {[
             nearby.before > 0 ? `${nearby.before} before` : null,
             nearby.after > 0 ? `${nearby.after} after` : null,
-          ].filter((part) => part !== null).join(" · ")}
+          ]
+            .filter((part) => part !== null)
+            .join(" · ")}
         </span>
       </div>
 
@@ -135,8 +137,8 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
           is carried by the dash, and a swatch legend for two strokes would be larger than the plot. */}
       {decay ? (
         <p className="mt-1 text-[11px] leading-relaxed text-faint">
-          The solid line is how the aftershocks actually arrived. The dashed one is Omori's law, which
-          says the rate falls as one over the time since, drawn to the same total.
+          The solid line is how the aftershocks actually arrived. The dashed one is Omori's law, which says
+          the rate falls as one over the time since, drawn to the same total.
         </p>
       ) : null}
 

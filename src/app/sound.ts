@@ -41,9 +41,7 @@ export interface Siren {
 
 /** Loudest first, capped. The cap exists so a swarm does not become a chord, and a swarm's largest event
  * is the one worth hearing. */
-export function chooseVoices(
-  magnitudes: readonly number[], max: number = MAX_VOICES,
-): number[] {
+export function chooseVoices(magnitudes: readonly number[], max: number = MAX_VOICES): number[] {
   return [...magnitudes].sort((a, b) => b - a).slice(0, max);
 }
 
@@ -74,6 +72,8 @@ export function createSiren(Ctx: typeof AudioContext = AudioContext): Siren {
         osc.stop(at + seconds + 0.02);
       }
     },
-    close: () => { void ctx.close(); },
+    close: () => {
+      void ctx.close();
+    },
   };
 }

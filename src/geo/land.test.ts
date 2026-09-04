@@ -13,10 +13,10 @@ describe("the land mesh", () => {
       for (let e = 0; e < 3; e += 1) {
         const a = land.index[t + e]!;
         const b = land.index[t + ((e + 1) % 3)]!;
-        longest = Math.max(longest, spanDeg(
-          land.lonLat[a * 2]!, land.lonLat[a * 2 + 1]!,
-          land.lonLat[b * 2]!, land.lonLat[b * 2 + 1]!,
-        ));
+        longest = Math.max(
+          longest,
+          spanDeg(land.lonLat[a * 2]!, land.lonLat[a * 2 + 1]!, land.lonLat[b * 2]!, land.lonLat[b * 2 + 1]!),
+        );
         const key = a < b ? a * 1e7 + b : b * 1e7 + a;
         owners.set(key, (owners.get(key) ?? 0) + 1);
       }
@@ -36,9 +36,15 @@ describe("the land mesh", () => {
       const a = land.index[i]! * 3;
       const b = land.index[i + 1]! * 3;
       const c = land.index[i + 2]! * 3;
-      const ux = p[b]! - p[a]!, uy = p[b + 1]! - p[a + 1]!, uz = p[b + 2]! - p[a + 2]!;
-      const vx = p[c]! - p[a]!, vy = p[c + 1]! - p[a + 1]!, vz = p[c + 2]! - p[a + 2]!;
-      const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+      const ux = p[b]! - p[a]!,
+        uy = p[b + 1]! - p[a + 1]!,
+        uz = p[b + 2]! - p[a + 2]!;
+      const vx = p[c]! - p[a]!,
+        vy = p[c + 1]! - p[a + 1]!,
+        vz = p[c + 2]! - p[a + 2]!;
+      const nx = uy * vz - uz * vy,
+        ny = uz * vx - ux * vz,
+        nz = ux * vy - uy * vx;
       if (nx * p[a]! + ny * p[a + 1]! + nz * p[a + 2]! < 0) inward += 1;
     }
     expect(inward).toBe(0);
@@ -53,12 +59,21 @@ describe("the land mesh", () => {
 /* The date line, checked in the ring rather than in the picture. See ARCHITECTURE.md. */
 describe("unwrapping a ring at the date line", () => {
   it("leaves an ordinary ring alone", () => {
-    const ring = [[10, 0], [20, 5], [15, 10]] as [number, number][];
+    const ring = [
+      [10, 0],
+      [20, 5],
+      [15, 10],
+    ] as [number, number][];
     expect(unwrap(ring).ring).toEqual(ring);
   });
 
   it("runs a crossing past 180 rather than jumping back", () => {
-    const { ring } = unwrap([[178, 60], [-179, 61], [-176, 62], [179, 59]]);
+    const { ring } = unwrap([
+      [178, 60],
+      [-179, 61],
+      [-176, 62],
+      [179, 59],
+    ]);
     const lons = ring.map(([lon]) => lon!);
     expect(lons).toEqual([178, 181, 184, 179]);
     // The property that matters: nothing downstream sees a step wider than half the world.

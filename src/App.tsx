@@ -29,23 +29,33 @@ import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotio
 import { loadSlab, type SlabPoint } from "./geo/slab";
 import { loadFigures, type FigureTable } from "./geo/stars";
 import { lunarEclipse, solarEclipse } from "./geo/eclipse";
+import { closestTo, loadZones, localZone, viewerPlace, type ZoneTable } from "./app/viewer";
 import {
-  closestTo, loadZones, localZone, viewerPlace, type ZoneTable,
-} from "./app/viewer";
-import {
-  BASELINE_DAYS, BASELINE_FROM, BASELINE_MIN_MAGNITUDE, BASELINE_TO, BASELINE_WEEKS,
-  comparableCount, rankDay, type Span as BaselineSpan,
+  BASELINE_DAYS,
+  BASELINE_FROM,
+  BASELINE_MIN_MAGNITUDE,
+  BASELINE_TO,
+  BASELINE_WEEKS,
+  comparableCount,
+  rankDay,
+  type Span as BaselineSpan,
   sharePercent,
 } from "./data/baseline";
-import {
-  boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE,
-} from "./geo/boundaryDistance";
+import { boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE } from "./geo/boundaryDistance";
 import { EventList } from "./app/EventList";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
 import { Timeline } from "./app/Timeline";
-import { clamp as clampScrub, dragTo, fractionOf, LIVE, nudge, step as stepScrub, togglePlay,
-  type Scrub } from "./app/scrub";
+import {
+  clamp as clampScrub,
+  dragTo,
+  fractionOf,
+  LIVE,
+  nudge,
+  step as stepScrub,
+  togglePlay,
+  type Scrub,
+} from "./app/scrub";
 import { Resizer } from "./app/Resizer";
 import { CrossSection } from "./app/CrossSection";
 import { buildSection, type SectionLine } from "./app/section";
@@ -63,12 +73,23 @@ import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
 import {
-  ago, agoShort, clock, compactSpan, corroborationNote, energyPercent, magnitude, place, quietNote, quietParts, silentFeeds,
-  reachFraction, reachNote,
-  reachWords, SOURCE_NAMES, windowLabel,
+  ago,
+  agoShort,
+  clock,
+  compactSpan,
+  corroborationNote,
+  energyPercent,
+  magnitude,
+  place,
+  quietNote,
+  quietParts,
+  silentFeeds,
+  reachFraction,
+  reachNote,
+  reachWords,
+  SOURCE_NAMES,
+  windowLabel,
 } from "./app/format";
-
-
 
 /* Built here and not in an effect. In an effect, StrictMode mounts twice and you get two WebSockets. */
 const feed = createFeed();
@@ -85,14 +106,22 @@ function useFeed(): FeedSnapshot {
   return snapshot;
 }
 
-function Row({ lead, label, trail, share, onClick }: {
-  lead?: string; label: string; trail: string; share?: number; onClick?: () => void;
+function Row({
+  lead,
+  label,
+  trail,
+  share,
+  onClick,
+}: {
+  lead?: string;
+  label: string;
+  trail: string;
+  share?: number;
+  onClick?: () => void;
 }): JSX.Element {
   const body = (
     <>
-      {lead ? (
-        <span className="w-[34px] shrink-0 font-mono text-[12px] text-ink">{lead}</span>
-      ) : null}
+      {lead ? <span className="w-[34px] shrink-0 font-mono text-[12px] text-ink">{lead}</span> : null}
       <span className="min-w-0 flex-1 truncate text-[12px] text-dim">{label}</span>
       <span className="shrink-0 font-mono text-[10.5px] text-faint">{trail}</span>
       {share === undefined || share <= 0 ? null : (
@@ -104,17 +133,17 @@ function Row({ lead, label, trail, share, onClick }: {
   );
 
   const shared = "relative flex w-full items-baseline gap-3 rounded-[2px] px-1.5 py-[7px] text-left";
-  return onClick
-    ? (
-      <button
-        type="button"
-        onClick={onClick}
-        className={`${shared} cursor-pointer transition-colors hover:bg-raised`}
-      >
-        {body}
-      </button>
-    )
-    : <div className={shared}>{body}</div>;
+  return onClick ? (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`${shared} cursor-pointer transition-colors hover:bg-raised`}
+    >
+      {body}
+    </button>
+  ) : (
+    <div className={shared}>{body}</div>
+  );
 }
 
 // Read before the first render. In an effect it shows the default globe first, then jumps.
@@ -124,9 +153,7 @@ export function App(): JSX.Element {
   const snapshot = useFeed();
   const [filters, setFilters] = useState<Filters>(() => ({
     minMagnitude: shared.minMagnitude ?? DEFAULT_FILTERS.minMagnitude,
-    windowMs: shared.windowHours === undefined
-      ? DEFAULT_FILTERS.windowMs
-      : shared.windowHours * 3_600_000,
+    windowMs: shared.windowHours === undefined ? DEFAULT_FILTERS.windowMs : shared.windowHours * 3_600_000,
     sources: new Set(shared.sources ?? [...DEFAULT_FILTERS.sources]),
   }));
   const [selected, setSelected] = useState<string | null>(null);
@@ -147,23 +174,32 @@ export function App(): JSX.Element {
   const [cyclones, setCyclones] = useState<readonly Cyclone[]>([]);
   /* Starts as "fine" so a page that has not asked yet never complains, and a later success clears it. */
   const [answered, setAnswered] = useState({
-    cyclones: true, volcanoes: true, fires: true, floods: true, aurora: true,
+    cyclones: true,
+    volcanoes: true,
+    fires: true,
+    floods: true,
+    aurora: true,
   });
   const answerFor = useCallback(
-    (layer: keyof typeof answered) => (ok: boolean): void => {
-      setAnswered((was) => (was[layer] === ok ? was : { ...was, [layer]: ok }));
-    },
+    (layer: keyof typeof answered) =>
+      (ok: boolean): void => {
+        setAnswered((was) => (was[layer] === ok ? was : { ...was, [layer]: ok }));
+      },
     [],
   );
   useEffect(() => {
     let alive = true;
     const load = (): void => {
-      void fetchAurora(fetch, answerFor("aurora"))
-        .then((next) => { if (alive && next) setAurora(next); });
+      void fetchAurora(fetch, answerFor("aurora")).then((next) => {
+        if (alive && next) setAurora(next);
+      });
     };
     load();
     const id = window.setInterval(load, 10 * 60_000);
-    return () => { alive = false; window.clearInterval(id); };
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
   }, []);
 
   /* Once, not on the ten-minute clock: the newest episode is weeks old, so polling learns nothing. */
@@ -175,16 +211,25 @@ export function App(): JSX.Element {
   useEffect(() => {
     let alive = true;
     const load = (): void => {
-      void fetchCyclones(fetch, answerFor("cyclones"))
-        .then((next) => { if (alive) setCyclones(next); });
-      void fetchWildfires(fetch, answerFor("fires")).then((next) => { if (alive) setFires(next); });
-      void fetchFloods(fetch, answerFor("floods")).then((next) => { if (alive) setFloods(next); });
+      void fetchCyclones(fetch, answerFor("cyclones")).then((next) => {
+        if (alive) setCyclones(next);
+      });
+      void fetchWildfires(fetch, answerFor("fires")).then((next) => {
+        if (alive) setFires(next);
+      });
+      void fetchFloods(fetch, answerFor("floods")).then((next) => {
+        if (alive) setFloods(next);
+      });
     };
     load();
-    void fetchVolcanoes(fetch, answerFor("volcanoes"))
-      .then((next) => { if (alive) setVolcanoes(next); });
+    void fetchVolcanoes(fetch, answerFor("volcanoes")).then((next) => {
+      if (alive) setVolcanoes(next);
+    });
     const id = window.setInterval(load, 10 * 60_000);
-    return () => { alive = false; window.clearInterval(id); };
+    return () => {
+      alive = false;
+      window.clearInterval(id);
+    };
   }, []);
   /* Keep this above every memo that calls it. Below them it is a temporal dead zone: tsc passes, the build
      passes, and the page renders nothing. See ARCHITECTURE.md. */
@@ -192,15 +237,16 @@ export function App(): JSX.Element {
   /* Hidden while an archived day is up, or today's storms are drawn over July's earthquakes. See
      ARCHITECTURE.md. */
   const archived = snapshot.archive !== null;
-  const loadedDay = snapshot.archive
-    ? new Date(snapshot.archive.from).toISOString().slice(0, 10)
-    : null;
+  const loadedDay = snapshot.archive ? new Date(snapshot.archive.from).toISOString().slice(0, 10) : null;
   // Yesterday. Read by both the date field and the stepper, so the two cannot disagree.
   const newestDay = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-  const neighbours = snapshot.archive === null ? null : {
-    prev: new Date(snapshot.archive.from - 86_400_000).toISOString().slice(0, 10),
-    next: new Date(snapshot.archive.from + 86_400_000).toISOString().slice(0, 10),
-  };
+  const neighbours =
+    snapshot.archive === null
+      ? null
+      : {
+          prev: new Date(snapshot.archive.from - 86_400_000).toISOString().slice(0, 10),
+          next: new Date(snapshot.archive.from + 86_400_000).toISOString().slice(0, 10),
+        };
   const [archiveHazards, setArchiveHazards] = useState<History | null>(null);
   /* In archive mode this is the end of the archived day, not the wall clock. See ARCHITECTURE.md. */
   const now = snapshot.archive ? snapshot.archive.to : Date.now();
@@ -221,20 +267,32 @@ export function App(): JSX.Element {
       });
     const started = (h: { startedAt: number | null }): number | null => h.startedAt;
     return {
-      cyclones: shown(archived ? archiveHazards?.cyclones ?? [] : cyclones, started),
-      volcanoes: shown(archived ? archiveHazards?.volcanoes ?? [] : volcanoes, (v) => v.endedAt),
-      fires: shown(archived ? archiveHazards?.fires ?? [] : fires, started),
-      floods: shown(archived ? archiveHazards?.floods ?? [] : floods, started),
+      cyclones: shown(archived ? (archiveHazards?.cyclones ?? []) : cyclones, started),
+      volcanoes: shown(archived ? (archiveHazards?.volcanoes ?? []) : volcanoes, (v) => v.endedAt),
+      fires: shown(archived ? (archiveHazards?.fires ?? []) : fires, started),
+      floods: shown(archived ? (archiveHazards?.floods ?? []) : floods, started),
       aurora: archived ? null : aurora,
     };
-  }, [archived, archiveHazards, cyclones, volcanoes, fires, floods, aurora,
-    filters.windowMs, revealAt, Math.floor(now / 60_000)]);
+  }, [
+    archived,
+    archiveHazards,
+    cyclones,
+    volcanoes,
+    fires,
+    floods,
+    aurora,
+    filters.windowMs,
+    revealAt,
+    Math.floor(now / 60_000),
+  ]);
   const hazardTally = useMemo(() => {
     const held = archived
       ? {
-        cyclones: archiveHazards?.cyclones ?? [], volcanoes: archiveHazards?.volcanoes ?? [],
-        fires: archiveHazards?.fires ?? [], floods: archiveHazards?.floods ?? [],
-      }
+          cyclones: archiveHazards?.cyclones ?? [],
+          volcanoes: archiveHazards?.volcanoes ?? [],
+          fires: archiveHazards?.fires ?? [],
+          floods: archiveHazards?.floods ?? [],
+        }
       : { cyclones, volcanoes, fires, floods };
     const newestOf = <T,>(list: readonly T[], dateOf: (h: T) => number | null): number | null =>
       list.reduce<number | null>((best, h) => {
@@ -243,33 +301,55 @@ export function App(): JSX.Element {
       }, null);
     const started = (h: { startedAt: number | null }): number | null => h.startedAt;
     return [
-      { kind: "cyclone" as const, held: held.cyclones.length, shown: onGlobe.cyclones.length,
-        newest: newestOf(held.cyclones, started) },
-      { kind: "fire" as const, held: held.fires.length, shown: onGlobe.fires.length,
-        newest: newestOf(held.fires, started) },
-      { kind: "flood" as const, held: held.floods.length, shown: onGlobe.floods.length,
-        newest: newestOf(held.floods, started) },
-      { kind: "volcano" as const, held: held.volcanoes.length, shown: onGlobe.volcanoes.length,
-        newest: newestOf(held.volcanoes, (v) => v.endedAt) },
+      {
+        kind: "cyclone" as const,
+        held: held.cyclones.length,
+        shown: onGlobe.cyclones.length,
+        newest: newestOf(held.cyclones, started),
+      },
+      {
+        kind: "fire" as const,
+        held: held.fires.length,
+        shown: onGlobe.fires.length,
+        newest: newestOf(held.fires, started),
+      },
+      {
+        kind: "flood" as const,
+        held: held.floods.length,
+        shown: onGlobe.floods.length,
+        newest: newestOf(held.floods, started),
+      },
+      {
+        kind: "volcano" as const,
+        held: held.volcanoes.length,
+        shown: onGlobe.volcanoes.length,
+        newest: newestOf(held.volcanoes, (v) => v.endedAt),
+      },
     ];
-  }, [archived, archiveHazards, cyclones, volcanoes, fires, floods,
-    onGlobe.cyclones, onGlobe.fires, onGlobe.floods, onGlobe.volcanoes]);
+  }, [
+    archived,
+    archiveHazards,
+    cyclones,
+    volcanoes,
+    fires,
+    floods,
+    onGlobe.cyclones,
+    onGlobe.fires,
+    onGlobe.floods,
+    onGlobe.volcanoes,
+  ]);
   const fireSummary = useMemo(() => summarise(onGlobe.fires), [onGlobe.fires]);
   // Keyed on the revision, not the clock: the rail re-renders every second and these only move when an
   // earthquake arrives. Same reason everywhere else in this file that keys on `snapshot.revision`.
-  const depth = useMemo(
-    () => depthBands(feed.store, filters, clockAt()), [filters, snapshot.revision],
-  );
-  const [flat, setFlat] = useState(
-    () => shared.section !== undefined || stored("flat") === "1",
-  );
+  const depth = useMemo(() => depthBands(feed.store, filters, clockAt()), [filters, snapshot.revision]);
+  const [flat, setFlat] = useState(() => shared.section !== undefined || stored("flat") === "1");
   useEffect(() => {
     store("flat", flat ? "1" : "0");
   }, [flat]);
   /* Clamp on the way in too. The `Resizer` bounds this while dragging and the restore path went around
      it, so a stored 1 came back as a rail one pixel wide with nothing to grab. */
-  const [railWidth, setRailWidth] = useState<number>(
-    () => Math.min(RAIL_MAX, Math.max(RAIL_MIN, Number(stored("rail")) || RAIL_DEFAULT)),
+  const [railWidth, setRailWidth] = useState<number>(() =>
+    Math.min(RAIL_MAX, Math.max(RAIL_MIN, Number(stored("rail")) || RAIL_DEFAULT)),
   );
   useEffect(() => {
     store("rail", String(railWidth));
@@ -279,9 +359,7 @@ export function App(): JSX.Element {
   useEffect(() => {
     if (sheetCanvas > 0) store("sheet", String(sheetCanvas));
   }, [sheetCanvas]);
-  const [regionsHeight, setRegionsHeight] = useState<number>(
-    () => Number(stored("regions")) || 132,
-  );
+  const [regionsHeight, setRegionsHeight] = useState<number>(() => Number(stored("regions")) || 132);
   useEffect(() => {
     store("regions", String(regionsHeight));
   }, [regionsHeight]);
@@ -291,12 +369,10 @@ export function App(): JSX.Element {
   const [ramp, setRamp] = useState<RampName>(
     () => shared.ramp ?? (stored("ramp") as RampName | null) ?? "thermal",
   );
-  const [announceAbove, setAnnounceAbove] = useState<number>(
-    () => Number(stored("announceAbove") ?? "4.5"),
-  );
+  const [announceAbove, setAnnounceAbove] = useState<number>(() => Number(stored("announceAbove") ?? "4.5"));
   // Dropped when the link also names a day: an archived day withholds the five layers, so the id would
   // resolve to nothing and the card would never open.
-  const [markId, setMarkId] = useState<string | null>(shared.day ? null : shared.mark ?? null);
+  const [markId, setMarkId] = useState<string | null>(shared.day ? null : (shared.mark ?? null));
   /* The request. The span itself lives on the feed snapshot, and every claim of liveness in the chrome
   reads that rather than this. */
   const [archiveDay, setArchiveDay] = useState("");
@@ -315,18 +391,21 @@ export function App(): JSX.Element {
   const askCounts = useCallback(() => {
     if (countsAsked.current) return;
     countsAsked.current = true;
-    void Promise.all(NOTABLE_DAYS.map(async (d) => {
-      const n = await countForDay(d.day, MAG_MIN);
-      setDayCounts((prev) => ({ ...prev, [d.day]: n }));
-    }));
+    void Promise.all(
+      NOTABLE_DAYS.map(async (d) => {
+        const n = await countForDay(d.day, MAG_MIN);
+        setDayCounts((prev) => ({ ...prev, [d.day]: n }));
+      }),
+    );
   }, []);
-  const dayFault = archiveDay.length < DAY_LENGTH
-    ? null
-    : !isRealDay(archiveDay)
-      ? `${archiveDay} is not a date.`
-      : !isArchivableDay(archiveDay, Date.now())
-        ? "That day has not finished yet. The archive draws whole UTC days, so today is the live view."
-        : null;
+  const dayFault =
+    archiveDay.length < DAY_LENGTH
+      ? null
+      : !isRealDay(archiveDay)
+        ? `${archiveDay} is not a date.`
+        : !isArchivableDay(archiveDay, Date.now())
+          ? "That day has not finished yet. The archive draws whole UTC days, so today is the live view."
+          : null;
   const [archiveBusy, setArchiveBusy] = useState(false);
   const [archiveNote, setArchiveNote] = useState<string | null>(null);
   // After the live feed has started, not before. `showArchive` stops the sources itself, and racing it
@@ -352,8 +431,8 @@ export function App(): JSX.Element {
       return `${SOURCE_NAMES[id]} ${answer.count}${answer.truncated ? " (truncated)" : ""}`;
     });
     if (hazards.answered) {
-      const n = hazards.cyclones.length + hazards.fires.length
-        + hazards.floods.length + hazards.volcanoes.length;
+      const n =
+        hazards.cyclones.length + hazards.fires.length + hazards.floods.length + hazards.volcanoes.length;
       said.push(`EONET ${n}`);
     } else said.push("EONET did not answer");
     setArchiveNote(said.join(" · "));
@@ -368,13 +447,16 @@ export function App(): JSX.Element {
     void loadArchive(shared.day);
   }, [loadArchive]);
   // Read the span from the feed, not from the rendered day: it goes stale between a step and its answer.
-  const stepDay = useCallback((days: number) => {
-    const archive = feed.snapshot().archive;
-    if (archive === null) return;
-    const iso = new Date(archive.from + days * 86_400_000).toISOString().slice(0, 10);
-    setArchiveDay(iso);
-    void loadArchive(iso);
-  }, [loadArchive]);
+  const stepDay = useCallback(
+    (days: number) => {
+      const archive = feed.snapshot().archive;
+      if (archive === null) return;
+      const iso = new Date(archive.from + days * 86_400_000).toISOString().slice(0, 10);
+      setArchiveDay(iso);
+      void loadArchive(iso);
+    },
+    [loadArchive],
+  );
   const backToLive = useCallback(() => {
     setArchiveDay("");
     setArchiveNote(null);
@@ -412,21 +494,35 @@ export function App(): JSX.Element {
     store("legendKey", next ? "1" : "0");
   }, []);
   const [motionOn, setMotionOn] = useState<boolean>(() => stored("motion") !== "0");
-  useEffect(() => { store("motion", motionOn ? "1" : "0"); }, [motionOn]);
+  useEffect(() => {
+    store("motion", motionOn ? "1" : "0");
+  }, [motionOn]);
   const [sinkOn, setSinkOn] = useState<boolean>(() => stored("depthSink") !== "0");
-  useEffect(() => { store("depthSink", sinkOn ? "1" : "0"); }, [sinkOn]);
+  useEffect(() => {
+    store("depthSink", sinkOn ? "1" : "0");
+  }, [sinkOn]);
   /* On by default, so the slab's 37kB and 1,583 marks are on every first load. It earns it: a real day
   has two events below 300km, and you cannot see a dipping plane in two dots. */
   const [slabOn, setSlabOn] = useState<boolean>(() => stored("slab") !== "0");
-  useEffect(() => { store("slab", slabOn ? "1" : "0"); }, [slabOn]);
+  useEffect(() => {
+    store("slab", slabOn ? "1" : "0");
+  }, [slabOn]);
   const [figuresOn, setFiguresOn] = useState<boolean>(() => stored("figures") !== "0");
-  useEffect(() => { store("figures", figuresOn ? "1" : "0"); }, [figuresOn]);
+  useEffect(() => {
+    store("figures", figuresOn ? "1" : "0");
+  }, [figuresOn]);
   // Lazy: 13kB of coordinates has no business in the first frame.
   const [zones, setZones] = useState<ZoneTable | null>(null);
   useEffect(() => {
     let alive = true;
-    void loadZones().then((next) => { if (alive) setZones(next); }).catch(() => {});
-    return () => { alive = false; };
+    void loadZones()
+      .then((next) => {
+        if (alive) setZones(next);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
   }, []);
   const here = useMemo(() => (zones ? viewerPlace(zones, localZone()) : null), [zones]);
   // Imported on first use. A failed import leaves the array empty, so it draws nothing instead of
@@ -435,15 +531,18 @@ export function App(): JSX.Element {
   // Cached per event, not per render: a month of events against every segment is a million tests, and
   // an epicentre never moves.
   const boundaryCache = useRef(new Map<string, number>());
-  const boundaryKmOf = useCallback((quake: Quake): number | null => {
-    if (segments.length === 0) return null;
-    const cached = boundaryCache.current.get(quake.key);
-    if (cached !== undefined) return cached;
-    const km = nearestBoundaryKm(quake.primary.lon, quake.primary.lat, segments);
-    if (km === null) return null;
-    boundaryCache.current.set(quake.key, km);
-    return km;
-  }, [segments]);
+  const boundaryKmOf = useCallback(
+    (quake: Quake): number | null => {
+      if (segments.length === 0) return null;
+      const cached = boundaryCache.current.get(quake.key);
+      if (cached !== undefined) return cached;
+      const km = nearestBoundaryKm(quake.primary.lon, quake.primary.lat, segments);
+      if (km === null) return null;
+      boundaryCache.current.set(quake.key, km);
+      return km;
+    },
+    [segments],
+  );
   /* Build the AudioContext on the press. Built without a user gesture it starts suspended and drops
   every later tone in silence: the toggle says on and nothing is heard. */
   const [sound, setSound] = useState(false);
@@ -454,8 +553,15 @@ export function App(): JSX.Element {
       siren.current = null;
       return undefined;
     }
-    try { siren.current = createSiren(); } catch { siren.current = null; }
-    return () => { siren.current?.close(); siren.current = null; };
+    try {
+      siren.current = createSiren();
+    } catch {
+      siren.current = null;
+    }
+    return () => {
+      siren.current?.close();
+      siren.current = null;
+    };
   }, [sound]);
   const onNews = useCallback((magnitudes: number[]) => {
     siren.current?.play(magnitudes);
@@ -464,33 +570,55 @@ export function App(): JSX.Element {
   useEffect(() => {
     if (!motionOn || motionData.length > 0) return;
     let alive = true;
-    void loadMotion().then((next) => { if (alive) setMotionData(next); }).catch(() => {});
-    return () => { alive = false; };
+    void loadMotion()
+      .then((next) => {
+        if (alive) setMotionData(next);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
   }, [motionOn, motionData.length]);
   const [slabData, setSlabData] = useState<readonly SlabPoint[]>([]);
   useEffect(() => {
     if (!slabOn || slabData.length > 0) return;
     let alive = true;
-    void loadSlab().then((next) => { if (alive) setSlabData(next); }).catch(() => {});
-    return () => { alive = false; };
+    void loadSlab()
+      .then((next) => {
+        if (alive) setSlabData(next);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
   }, [slabOn, slabData.length]);
   const [figureData, setFigureData] = useState<FigureTable>([]);
   useEffect(() => {
     if (!figuresOn || figureData.length > 0) return;
     let alive = true;
-    void loadFigures().then((next) => { if (alive) setFigureData(next); }).catch(() => {});
-    return () => { alive = false; };
+    void loadFigures()
+      .then((next) => {
+        if (alive) setFigureData(next);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
   }, [figuresOn, figureData.length]);
   const motion = motionOn && motionData.length > 0 ? summariseMotion(motionData) : null;
-  useEffect(() => { store("ramp", ramp); }, [ramp]);
+  useEffect(() => {
+    store("ramp", ramp);
+  }, [ramp]);
   useEffect(() => {
     store("announceAbove", String(announceAbove));
   }, [announceAbove]);
   const flyTo = useRef<(lon: number, lat: number, zoom?: number, liftPx?: number) => void>(() => {});
   const lastWritten = useRef<string>(window.location.hash);
-  const camera = useRef<{ lon: number; lat: number; zoom: number }>(
-    { lon: shared.lon ?? 145, lat: shared.lat ?? 12, zoom: shared.zoom ?? 1 },
-  );
+  const camera = useRef<{ lon: number; lat: number; zoom: number }>({
+    lon: shared.lon ?? 145,
+    lat: shared.lat ?? 12,
+    zoom: shared.zoom ?? 1,
+  });
   // Call and read this in the same tick. See `Globe.onCapture`.
   const capture = useRef<() => HTMLCanvasElement | null>(() => null);
   const onCapture = useCallback((fn: () => HTMLCanvasElement | null) => {
@@ -515,9 +643,7 @@ export function App(): JSX.Element {
         sources: [...filters.sources],
         ramp,
         event: reading ? `${reading.source}:${reading.id}` : null,
-        day: snapshot.archive
-          ? new Date(snapshot.archive.from).toISOString().slice(0, 10)
-          : null,
+        day: snapshot.archive ? new Date(snapshot.archive.from).toISOString().slice(0, 10) : null,
         mark: markId,
         section: sectionLine,
         // The moment being drawn, not the one the link asked for. `scrub` keeps the asked-for value so the
@@ -546,7 +672,6 @@ export function App(): JSX.Element {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
-
   const fetching = pendingRev !== null && snapshot.revision === pendingRev;
   /* Null on the live view, not a timestamp: the scene keeps its minute throttle instead of re-aiming
   the sun every render for a change no eye could see. */
@@ -573,19 +698,28 @@ export function App(): JSX.Element {
     if (!ctx) return;
     const style = getComputedStyle(document.documentElement);
     const token = (name: string): string => style.getPropertyValue(`--color-${name}`).trim();
-    drawStill(ctx, source, source.width, source.height, {
-      // The day's start, not the clock: `clockAt()` is the next midnight, so a still of the 15th was
-      // captioned the 16th.
-      moment: stillMoment(
-        view.at, feed.snapshot().archive?.from ?? clockAt(), feed.snapshot().archive !== null,
-      ),
-      // From `onGlobe`, not the raw feeds, or a still of an archived day counts layers it does not show.
-      verdict: verdictLine(stillCounts.current),
-      /* The requested window, not the covered one: `windowLabel` printed "nothing yet" onto a still that
+    drawStill(
+      ctx,
+      source,
+      source.width,
+      source.height,
+      {
+        // The day's start, not the clock: `clockAt()` is the next midnight, so a still of the 15th was
+        // captioned the 16th.
+        moment: stillMoment(
+          view.at,
+          feed.snapshot().archive?.from ?? clockAt(),
+          feed.snapshot().archive !== null,
+        ),
+        // From `onGlobe`, not the raw feeds, or a still of an archived day counts layers it does not show.
+        verdict: verdictLine(stillCounts.current),
+        /* The requested window, not the covered one: `windowLabel` printed "nothing yet" onto a still that
       showed a full day. */
-      filter: `M${filters.minMagnitude.toFixed(1)}+ · last ${compactSpan(filters.windowMs)}`,
-      host: window.location.host,
-    }, { background: token("void"), ink: token("ink"), faint: token("faint"), ramp });
+        filter: `M${filters.minMagnitude.toFixed(1)}+ · last ${compactSpan(filters.windowMs)}`,
+        host: window.location.host,
+      },
+      { background: token("void"), ink: token("ink"), faint: token("faint"), ramp },
+    );
 
     /*
      * Encoded synchronously, through `toDataURL` rather than `toBlob`.
@@ -594,8 +728,10 @@ export function App(): JSX.Element {
      * result back in a later task - long enough on a phone for the activation to lapse and the share to be
      * refused. This blocks for a few tens of milliseconds and keeps the gesture.
      */
-    const name = `everything-is-fine-${new Date(view.at ?? Date.now()).toISOString()
-      .replace(/[:.]/g, "-").slice(0, 19)}.png`;
+    const name = `everything-is-fine-${new Date(view.at ?? Date.now())
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .slice(0, 19)}.png`;
     const url = frame.toDataURL("image/png");
     const bytes = Uint8Array.from(atob(url.slice(url.indexOf(",") + 1)), (c) => c.charCodeAt(0));
     const file = new File([bytes], name, { type: "image/png" });
@@ -609,7 +745,10 @@ export function App(): JSX.Element {
     if (share) {
       setSaving(true);
       // A dismissed sheet rejects with AbortError. That is somebody changing their mind, not a failure.
-      void navigator.share({ files: [file] }).catch(() => {}).finally(() => setSaving(false));
+      void navigator
+        .share({ files: [file] })
+        .catch(() => {})
+        .finally(() => setSaving(false));
       return;
     }
     const href = URL.createObjectURL(file);
@@ -648,7 +787,9 @@ export function App(): JSX.Element {
   race between `pointerdown` ending the tour and the click starting it again. */
   const tourButton = useRef<HTMLButtonElement>(null);
   const route = useRef<ReturnType<typeof tourStops>>([]);
-  const stopTour = useCallback(() => { setTourAt(null); }, []);
+  const stopTour = useCallback(() => {
+    setTourAt(null);
+  }, []);
   const startTour = useCallback(() => {
     if (stops.length === 0) return;
     route.current = stops;
@@ -658,7 +799,10 @@ export function App(): JSX.Element {
   useEffect(() => {
     if (tourAt === null) return undefined;
     const stop = route.current[tourAt];
-    if (!stop) { setTourAt(null); return undefined; }
+    if (!stop) {
+      setTourAt(null);
+      return undefined;
+    }
     tourTarget.current = { lon: stop.lon, lat: stop.lat, index: tourAt };
     setTourArrived(null);
     flyTo.current(stop.lon, stop.lat, stop.zoom);
@@ -679,13 +823,20 @@ export function App(): JSX.Element {
       window.removeEventListener("keydown", end, { capture: true });
     };
   }, [tourAt]);
-  const touring = tourAt !== null && tourArrived === tourAt ? route.current[tourAt] ?? null : null;
+  const touring = tourAt !== null && tourArrived === tourAt ? (route.current[tourAt] ?? null) : null;
 
   const section = useMemo(
-    () => (sectionLine
-      ? buildSection(feed.store, sectionLine, filters, clockAt(), undefined,
-        slabOn && slabData.length > 0 ? slabData : [])
-      : null),
+    () =>
+      sectionLine
+        ? buildSection(
+            feed.store,
+            sectionLine,
+            filters,
+            clockAt(),
+            undefined,
+            slabOn && slabData.length > 0 ? slabData : [],
+          )
+        : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [feed.store, sectionLine, filters, snapshot.revision, slabOn, slabData],
   );
@@ -718,7 +869,8 @@ export function App(): JSX.Element {
   /* The 9.4% area share is measured on a cos-weighted grid in `boundaryDistance.ts`, so it means area
   and not a count of cells. */
   const quiet = useMemo((): {
-    note: string | null; parts: { percent: number; times: number } | null;
+    note: string | null;
+    parts: { percent: number; times: number } | null;
   } => {
     if (segments.length === 0) return { note: null, parts: null };
     let near = 0;
@@ -736,9 +888,10 @@ export function App(): JSX.Element {
   }, [snapshot.revision, filters, segments, boundaryKmOf]);
   // Looked up at render, not captured on click: the feeds refresh every ten minutes and a captured
   // card keeps describing a storm that is gone.
-  const hazards = useMemo(() => hazardGroups(onGlobe, now, archived),
-    [onGlobe.cyclones, onGlobe.volcanoes, onGlobe.fires, onGlobe.floods, archived,
-      Math.floor(now / 60_000)]);
+  const hazards = useMemo(
+    () => hazardGroups(onGlobe, now, archived),
+    [onGlobe.cyclones, onGlobe.volcanoes, onGlobe.fires, onGlobe.floods, archived, Math.floor(now / 60_000)],
+  );
   const markSubject = findSubject(markId, onGlobe);
   /* Read through a ref: `selectMark` is memoised on `liftForPanel`, and the layers change under it. */
   const onGlobeRef = useRef(onGlobe);
@@ -756,44 +909,59 @@ export function App(): JSX.Element {
        the event 6px under the bar. See ARCHITECTURE.md. */
     const box = canvas.getBoundingClientRect();
     const zoneBox = zones.getBoundingClientRect();
-    const share = Number(getComputedStyle(document.documentElement)
-      .getPropertyValue("--panel-share")) || 0.7;
+    const share = Number(getComputedStyle(document.documentElement).getPropertyValue("--panel-share")) || 0.7;
     const sheetTop = zoneBox.bottom - Math.min(share * window.innerHeight, zoneBox.height);
     return Math.max(0, Math.round((box.bottom - Math.min(box.bottom, sheetTop)) / 2));
   }, []);
   /* The same rule as an earthquake: pick it and the camera goes, lifted clear of whatever is describing it.
      A flood behind the panel is the same defect as an earthquake behind it. */
-  const selectMark = useCallback((id: string | null) => {
-    setMarkId(id);
-    /*
-     * Clearing a mark must not clear an earthquake. The globe reports a hit as `onSelect(quake)` followed
-     * by `onSelectMark(null)`, so a `setSelected(null)` up here undid the selection on the same tap: every
-     * click on an earthquake flew the camera to it and then showed no panel.
-     */
-    if (id === null) return;
-    setSelected(null);
-    const where = findSubject(id, onGlobeRef.current)?.subject;
-    if (where) flyTo.current(where.lon, where.lat, Math.max(camera.current.zoom, 2.2), liftForPanel());
-  }, [liftForPanel]);
-  const selectQuake = useCallback((key: string | null) => {
-    if (key !== null) tick();
-    setMarkId(null);
-    setSelected(key);
-    /* `Math.max`, so pinning never zooms somebody out of the view they chose. */
-    if (key === null) return;
-    const quake = feed.store.get(key);
-    if (!quake) return;
-    flyTo.current(
-      quake.primary.lon, quake.primary.lat,
-      Math.max(camera.current.zoom, 1.9), liftForPanel(),
-    );
-  }, [liftForPanel]);
+  const selectMark = useCallback(
+    (id: string | null) => {
+      setMarkId(id);
+      /*
+       * Clearing a mark must not clear an earthquake. The globe reports a hit as `onSelect(quake)` followed
+       * by `onSelectMark(null)`, so a `setSelected(null)` up here undid the selection on the same tap: every
+       * click on an earthquake flew the camera to it and then showed no panel.
+       */
+      if (id === null) return;
+      setSelected(null);
+      const where = findSubject(id, onGlobeRef.current)?.subject;
+      if (where) flyTo.current(where.lon, where.lat, Math.max(camera.current.zoom, 2.2), liftForPanel());
+    },
+    [liftForPanel],
+  );
+  const selectQuake = useCallback(
+    (key: string | null) => {
+      if (key !== null) tick();
+      setMarkId(null);
+      setSelected(key);
+      /* `Math.max`, so pinning never zooms somebody out of the view they chose. */
+      if (key === null) return;
+      const quake = feed.store.get(key);
+      if (!quake) return;
+      flyTo.current(quake.primary.lon, quake.primary.lat, Math.max(camera.current.zoom, 1.9), liftForPanel());
+    },
+    [liftForPanel],
+  );
   const marks = useMemo(
-    () => marksFor({
-      ...onGlobe, farSide, motion: motionOn ? motionData : [], here,
-    }),
-    [onGlobe.cyclones, onGlobe.volcanoes, onGlobe.fires, onGlobe.floods,
-      farSide?.lon, farSide?.lat, motionOn, motionData, here],
+    () =>
+      marksFor({
+        ...onGlobe,
+        farSide,
+        motion: motionOn ? motionData : [],
+        here,
+      }),
+    [
+      onGlobe.cyclones,
+      onGlobe.volcanoes,
+      onGlobe.fires,
+      onGlobe.floods,
+      farSide?.lon,
+      farSide?.lat,
+      motionOn,
+      motionData,
+      here,
+    ],
   );
   useEffect(() => {
     // Only if it genuinely fell out of the buffer. A refresh must never clear the panel.
@@ -817,9 +985,9 @@ export function App(): JSX.Element {
   }, [scrub.playing, filters.windowMs]);
 
   /*
-  * Space and the step keys only while nothing is focused, or space stops activating a focused button.
-  * Escape is not gated that way: it is an escape.
-  */
+   * Space and the step keys only while nothing is focused, or space stops activating a focused button.
+   * Escape is not gated that way: it is an escape.
+   */
   useEffect(() => {
     // Read at the press. A span captured when the listener was armed is stale by however long the tab
     // has been open.
@@ -835,7 +1003,10 @@ export function App(): JSX.Element {
         else if (sectionLine) setSectionLine(null);
         else if (scrub.at !== null) setScrub(LIVE);
         /* Both panels on one rung, cleared without being read. See ARCHITECTURE.md. */
-        else { setMarkId(null); setSelected(null); }
+        else {
+          setMarkId(null);
+          setSelected(null);
+        }
         return;
       }
       if (document.activeElement && document.activeElement !== document.body) return;
@@ -882,16 +1053,23 @@ export function App(): JSX.Element {
 
   // The later of the two feed edges, not the earlier: a corroboration rate needs the span where both
   // agencies had eyes on it.
-  const overlapFrom = snapshot.covered.usgs !== null && snapshot.covered.emsc !== null
-    ? Math.max(snapshot.covered.usgs, snapshot.covered.emsc)
-    : null;
+  const overlapFrom =
+    snapshot.covered.usgs !== null && snapshot.covered.emsc !== null
+      ? Math.max(snapshot.covered.usgs, snapshot.covered.emsc)
+      : null;
 
   const { bars, strongest, bucketMs, energyShare, energyTotal, overlap } = useMemo(
     () => histogram(feed.store.forEach, filters, now, snapshot.coveredSince, overlapFrom),
     // `now` is absent on purpose: it ticks every second and the bars only move on a bucket boundary.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filters.minMagnitude, filters.sources, filters.windowMs, snapshot.revision,
-      snapshot.coveredSince, overlapFrom],
+    [
+      filters.minMagnitude,
+      filters.sources,
+      filters.windowMs,
+      snapshot.revision,
+      snapshot.coveredSince,
+      overlapFrom,
+    ],
   );
 
   // `now` is absent on purpose: a second passing does not change what matches a query, and depending on
@@ -920,9 +1098,8 @@ export function App(): JSX.Element {
   /* A bucket is `windowMs / 24`, not an hour. Multiplying the index by an hour lit the same recent hour
   for every bar at a month. */
   const focusSpan = useMemo(
-    () => (focusHour === null
-      ? null
-      : { from: now - (focusHour + 1) * bucketMs, to: now - focusHour * bucketMs }),
+    () =>
+      focusHour === null ? null : { from: now - (focusHour + 1) * bucketMs, to: now - focusHour * bucketMs },
     // `now` is absent for the reason the bars exclude it: it would re-sync the marker layer every second.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [focusHour, bucketMs],
@@ -942,7 +1119,7 @@ export function App(): JSX.Element {
   // `useRolling` is handed the animate-or-jump distinction rather than inferring it, because the two
   // cases look identical from the value alone.
   const driven = replay !== null || view.at !== null;
-  const headline = useRolling(replay ? replay.revealed : revealedNow ?? shown, !driven);
+  const headline = useRolling(replay ? replay.revealed : (revealedNow ?? shown), !driven);
 
   /* The count in the tab, so leaving the page open is worth something. Not during the replay: the count
      climbs through a whole day in 2.8 seconds, which is a flickering tab rather than a readout, and it is
@@ -967,21 +1144,20 @@ export function App(): JSX.Element {
     floods: onGlobe.floods.length,
   };
 
-  const failing = (Object.entries(snapshot.statuses) as [SourceId, SourceStatus][])
-    .flatMap(([id, status]) => (status.kind === "failing" ? [[id, status] as const] : []));
+  const failing = (Object.entries(snapshot.statuses) as [SourceId, SourceStatus][]).flatMap(([id, status]) =>
+    status.kind === "failing" ? [[id, status] as const] : [],
+  );
 
   /* A shared cursor the window cannot hold, or the recipient sees the present with no reason why. See
      ARCHITECTURE.md. */
-  const staleCursor = shared.cursor !== undefined
-    && scrub.at === shared.cursor
-    && view.at !== shared.cursor;
+  const staleCursor = shared.cursor !== undefined && scrub.at === shared.cursor && view.at !== shared.cursor;
 
   const edge = windowStart(now, filters.windowMs, snapshot.coveredSince);
 
   /*
-  * Three gates: only at 24h, because the baseline counts calendar days; only once the window is
-  * covered, because a day still filling reads as quiet; and an archived day needs neither.
-  */
+   * Three gates: only at 24h, because the baseline counts calendar days; only once the window is
+   * covered, because a day still filling reads as quiet; and an archived day needs neither.
+   */
   const near = useMemo(() => {
     if (replay || here === null) return null;
     return closestTo(feed.store, here, filters, clockAt(), view.at ?? clockAt());
@@ -1011,9 +1187,8 @@ export function App(): JSX.Element {
     [strongest, snapshot.archive],
   );
 
-  const baselineSpan: BaselineSpan | null = filters.windowMs === 24 * 3_600_000
-    ? "day"
-    : filters.windowMs === 7 * 24 * 3_600_000 ? "week" : null;
+  const baselineSpan: BaselineSpan | null =
+    filters.windowMs === 24 * 3_600_000 ? "day" : filters.windowMs === 7 * 24 * 3_600_000 ? "week" : null;
   const baseline = useMemo(() => {
     if (replay) return null;
     if (snapshot.archive) {
@@ -1026,7 +1201,18 @@ export function App(): JSX.Element {
        ARCHITECTURE.md. */
     if ((revealedNow ?? shown) <= 0) return null;
     return rankDay(comparableCount(feed.store, edge.at, now), true, baselineSpan);
-  }, [feed.store, snapshot.archive, snapshot.revision, filters.windowMs, edge.complete, edge.at, now, replay, shown, revealedNow]);
+  }, [
+    feed.store,
+    snapshot.archive,
+    snapshot.revision,
+    filters.windowMs,
+    edge.complete,
+    edge.at,
+    now,
+    replay,
+    shown,
+    revealedNow,
+  ]);
   // Not memoised: the reach it names is a distance from now, and keyed on the revision it would freeze
   // at whatever it was when the last event landed.
   const sourceNote = reachNote(snapshot.covered, now, filters.windowMs);
@@ -1041,350 +1227,356 @@ export function App(): JSX.Element {
    * apart the first time one of them was edited.
    */
   const marksFilter = (
-  <MagnitudeFilter
-    ramp={ramp}
-    value={filters.minMagnitude}
-    onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
-    aurora={onGlobe.aurora}
-    cyclones={onGlobe.cyclones}
-    volcanoes={onGlobe.volcanoes.length}
-    outsideWindow={outsideWindowNote(hazardTally, now)}
-    volcanoesSince={newestEpisode(volcanoes)}
-    /*
+    <MagnitudeFilter
+      ramp={ramp}
+      value={filters.minMagnitude}
+      onChange={(v) => setFilters((f) => ({ ...f, minMagnitude: v }))}
+      aurora={onGlobe.aurora}
+      cyclones={onGlobe.cyclones}
+      volcanoes={onGlobe.volcanoes.length}
+      outsideWindow={outsideWindowNote(hazardTally, now)}
+      volcanoesSince={newestEpisode(volcanoes)}
+      /*
       The archived day's clock, not this minute's. `volcanoNote` counts days since the newest
       episode ended, and its `archived` flag only swapped the tense: the number still came
       from Date.now(), so a picture of 2026-05-15 read "ended 99 days ago".
     */
-    now={now}
-    fires={fireSummary}
-    fireCap={FEED_CAP}
-    floods={onGlobe.floods.length}
-    floodCountries={countries(onGlobe.floods)}
-    keyOpen={keyOpen}
-    onKeyOpen={changeKeyOpen}
-    archived={archived}
-    motion={motion}
-    depth={depth}
-    sound={sound ? announceAbove : null}
-    motionOn={motionOn}
-    onMotion={setMotionOn}
-    sinkOn={flat ? null : sinkOn}
-    onSink={setSinkOn}
-    /*
+      now={now}
+      fires={fireSummary}
+      fireCap={FEED_CAP}
+      floods={onGlobe.floods.length}
+      floodCountries={countries(onGlobe.floods)}
+      keyOpen={keyOpen}
+      onKeyOpen={changeKeyOpen}
+      archived={archived}
+      motion={motion}
+      depth={depth}
+      sound={sound ? announceAbove : null}
+      motionOn={motionOn}
+      onMotion={setMotionOn}
+      sinkOn={flat ? null : sinkOn}
+      onSink={setSinkOn}
+      /*
       Offered wherever it can change something. Hidden on the flat map was right until the
       cross-section started reading the same table, so on the map it appears exactly when a
       section is open - otherwise it is a button that does nothing.
     */
-    herePlace={here?.label ?? null}
-    sky={!flat}
-    eclipse={flat ? null : eclipse}
-    figuresOn={flat ? null : figuresOn}
-    onFigures={setFiguresOn}
-    /* The one of the three that survives flattening: its layer takes the scene's morph and
+      herePlace={here?.label ?? null}
+      sky={!flat}
+      eclipse={flat ? null : eclipse}
+      figuresOn={flat ? null : figuresOn}
+      onFigures={setFiguresOn}
+      /* The one of the three that survives flattening: its layer takes the scene's morph and
        lies down with the geography. Depth cannot - the shader multiplies the sink by
        `1.0 - uMorph` - and the figures have no sky. It used to appear on the map only while a
        cross-section was open, which is the one place it was already proven to draw. */
-    slabOn={slabOn}
-    onSlab={setSlabOn}
-    slabCount={slabData.length}
-  >
-  {/* Passed in as a child so the sources land above the folding key: at the bottom of a scrolling
+      slabOn={slabOn}
+      onSlab={setSlabOn}
+      slabCount={slabData.length}
+    >
+      {/* Passed in as a child so the sources land above the folding key: at the bottom of a scrolling
       column they were off the fold at 1280x720, a control reached by scrolling prose. */}
-  {/* The group needs a name, or two toggles are two unexplained pressed-states. */}
-  <div className="mt-3">
-  <span className="label block">Feeds</span>
-  <div role="group" aria-label="Feeds" className="mt-1 flex gap-1.5">
-    {(["usgs", "emsc"] as const).map((id) => (
-      <button
-        key={id}
-        type="button"
-        onClick={() => toggleSource(id)}
-        aria-pressed={filters.sources.has(id)}
-        /* Sized to their labels, not to the panel. `flex-1` gave each half the key's width, making two
+      {/* The group needs a name, or two toggles are two unexplained pressed-states. */}
+      <div className="mt-3">
+        <span className="label block">Feeds</span>
+        <div role="group" aria-label="Feeds" className="mt-1 flex gap-1.5">
+          {(["usgs", "emsc"] as const).map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => toggleSource(id)}
+              aria-pressed={filters.sources.has(id)}
+              /* Sized to their labels, not to the panel. `flex-1` gave each half the key's width, making two
            secondary filters the heaviest things in it. See ARCHITECTURE.md. */
-        className={`cursor-pointer border px-2.5 py-1 text-[11px] transition-colors ${
-          filters.sources.has(id)
-            ? "border-faint bg-raised text-ink"
-            : "border-hairline text-faint hover:bg-raised hover:text-dim"
-        }`}
-      >
-        {SOURCE_NAMES[id]}
-      </button>
-    ))}
-  </div>
-  </div>
-  </MagnitudeFilter>
+              className={`cursor-pointer border px-2.5 py-1 text-[11px] transition-colors ${
+                filters.sources.has(id)
+                  ? "border-faint bg-raised text-ink"
+                  : "border-hairline text-faint hover:bg-raised hover:text-dim"
+              }`}
+            >
+              {SOURCE_NAMES[id]}
+            </button>
+          ))}
+        </div>
+      </div>
+    </MagnitudeFilter>
   );
 
   const marksKey = cloneElement(marksFilter, { part: "key" });
-
-
 
   const reaches = (["usgs", "emsc"] as const).map((id) => ({
     id,
     label: SOURCE_NAMES[id],
     fraction: reachFraction(snapshot.covered[id], now, filters.windowMs),
-    words: reachWords(
-      snapshot.covered[id],
-      snapshot.statuses[id].kind === "failing",
-      now,
-      filters.windowMs,
-    ),
+    words: reachWords(snapshot.covered[id], snapshot.statuses[id].kind === "failing", now, filters.windowMs),
   }));
-  const timelineNotes = [
-    sourceNote,
-    corroborationNote(overlap, overlapFrom, now, filters.windowMs),
-  ].filter((n): n is string => n !== null);
+  const timelineNotes = [sourceNote, corroborationNote(overlap, overlapFrom, now, filters.windowMs)].filter(
+    (n): n is string => n !== null,
+  );
   const timeline = (
     <div data-activity>
-            <Timeline
-              bars={bars}
-              onSelect={selectQuake}
-              archived={archived}
-              ramp={ramp}
-              hours={hours}
-              focusHour={focusHour}
-              onFocusHourChange={setFocusHour}
-              onHoursChange={(h) => {
-                const windowMs = h * 3_600_000;
-                setFilters((f) => ({ ...f, windowMs }));
-                /* Release the cursor rather than clamping it: 40% through a day and 40% through a month are not the
+      <Timeline
+        bars={bars}
+        onSelect={selectQuake}
+        archived={archived}
+        ramp={ramp}
+        hours={hours}
+        focusHour={focusHour}
+        onFocusHourChange={setFocusHour}
+        onHoursChange={(h) => {
+          const windowMs = h * 3_600_000;
+          setFilters((f) => ({ ...f, windowMs }));
+          /* Release the cursor rather than clamping it: 40% through a day and 40% through a month are not the
                 same moment, so keeping the number moves the viewer in time without them touching anything. */
-                setScrub(LIVE);
-                if (feed.setWindow(windowMs)) setPendingRev(snapshot.revision);
-              }}
-              bucketMs={bucketMs}
-              fetching={fetching}
-              waiting={snapshot.coveredSince === null}
-              cursor={fractionOf(view, span)}
-              parked={view.at !== null}
-              playing={view.playing}
-              onScrub={(f) => setScrub(dragTo(f, span))}
-              onStep={(buckets) => setScrub(nudge(view, span, buckets))}
-              onPlayToggle={() => setScrub(togglePlay(view, span))}
-              onLive={() => setScrub(LIVE)}
-              cursorLabel={view.at === null ? null : clock(view.at)}
-              reaches={reaches}
-              notes={timelineNotes}
-            >
-              <details className="mt-3">
-                <summary className="disclose text-[11px] text-faint hover:text-dim">
-                  How the sizes stack up
-                </summary>
-                <SizeChart sizes={sizes} />
-              </details>
-            </Timeline>
+          setScrub(LIVE);
+          if (feed.setWindow(windowMs)) setPendingRev(snapshot.revision);
+        }}
+        bucketMs={bucketMs}
+        fetching={fetching}
+        waiting={snapshot.coveredSince === null}
+        cursor={fractionOf(view, span)}
+        parked={view.at !== null}
+        playing={view.playing}
+        onScrub={(f) => setScrub(dragTo(f, span))}
+        onStep={(buckets) => setScrub(nudge(view, span, buckets))}
+        onPlayToggle={() => setScrub(togglePlay(view, span))}
+        onLive={() => setScrub(LIVE)}
+        cursorLabel={view.at === null ? null : clock(view.at)}
+        reaches={reaches}
+        notes={timelineNotes}
+      >
+        <details className="mt-3">
+          <summary className="disclose text-[11px] text-faint hover:text-dim">How the sizes stack up</summary>
+          <SizeChart sizes={sizes} />
+        </details>
+      </Timeline>
     </div>
   );
 
   const archiveBlock = (
-          <div data-rail="activity">
-            {snapshot.archive ? (
-              <div className="stamp mb-3 bg-raised p-2.5">
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="label">Archive</span>
-                  <button
-                    type="button"
-                    onClick={backToLive}
-                    className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink"
-                  >
-                    back to live
-                  </button>
-                </div>
-                <p className="mt-1.5 text-[11px] leading-relaxed text-ink">
-                  {new Date(snapshot.archive.from).toISOString().slice(0, 10)}, all day UTC.
- Nothing here is arriving now.
-                </p>
-                {/* Disabled while a day is in flight: two archive loads race, and the second answer is not
+    <div data-rail="activity">
+      {snapshot.archive ? (
+        <div className="stamp mb-3 bg-raised p-2.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="label">Archive</span>
+            <button
+              type="button"
+              onClick={backToLive}
+              className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink"
+            >
+              back to live
+            </button>
+          </div>
+          <p className="mt-1.5 text-[11px] leading-relaxed text-ink">
+            {new Date(snapshot.archive.from).toISOString().slice(0, 10)}, all day UTC. Nothing here is
+            arriving now.
+          </p>
+          {/* Disabled while a day is in flight: two archive loads race, and the second answer is not
                 necessarily the second request. */}
-                {neighbours ? (
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <button
-                      type="button"
-                      disabled={archiveBusy}
-                      onClick={() => stepDay(-1)}
-                      className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink disabled:cursor-default disabled:text-faint"
-                    >
-                      ‹ {neighbours.prev}
-                    </button>
-                    <button
-                      type="button"
-                      disabled={archiveBusy || neighbours.next > newestDay}
-                      onClick={() => stepDay(1)}
-                      className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink disabled:cursor-default disabled:text-faint"
-                    >
-                      {neighbours.next} ›
-                    </button>
-                  </div>
-                ) : null}
-                <p className="mt-1 text-[11px] leading-relaxed text-faint">
-                  Storms, fires, floods and volcanoes come from NASA rather than the live feeds. No aurora:
-                  it is a forecast, so there is no past to ask for.
-                </p>
-                {archiveNote ? (
-                  <p className="mt-1 font-mono text-[10.5px] leading-relaxed text-faint">{archiveNote}</p>
-                ) : null}
-              </div>
-            ) : (
-              /* Label above, not beside: side by side left the date field 60px in the 768px strip. */
-              <div className="mb-3">
-                <label className="label" htmlFor="archive-day">Go to a day</label>
-                <div className="mt-1 flex items-center gap-1.5">
-                {/* ISO text, not `type="date"`: the native widget wants `mm/dd/yyyy`, which this app never prints,
+          {neighbours ? (
+            <div className="mt-2 flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={archiveBusy}
+                onClick={() => stepDay(-1)}
+                className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink disabled:cursor-default disabled:text-faint"
+              >
+                ‹ {neighbours.prev}
+              </button>
+              <button
+                type="button"
+                disabled={archiveBusy || neighbours.next > newestDay}
+                onClick={() => stepDay(1)}
+                className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink disabled:cursor-default disabled:text-faint"
+              >
+                {neighbours.next} ›
+              </button>
+            </div>
+          ) : null}
+          <p className="mt-1 text-[11px] leading-relaxed text-faint">
+            Storms, fires, floods and volcanoes come from NASA rather than the live feeds. No aurora: it is a
+            forecast, so there is no past to ask for.
+          </p>
+          {archiveNote ? (
+            <p className="mt-1 font-mono text-[10.5px] leading-relaxed text-faint">{archiveNote}</p>
+          ) : null}
+        </div>
+      ) : (
+        /* Label above, not beside: side by side left the date field 60px in the 768px strip. */
+        <div className="mb-3">
+          <label className="label" htmlFor="archive-day">
+            Go to a day
+          </label>
+          <div className="mt-1 flex items-center gap-1.5">
+            {/* ISO text, not `type="date"`: the native widget wants `mm/dd/yyyy`, which this app never prints,
                 so a day could not be copied out of the list below and pasted in. */}
-                <input
-                  id="archive-day"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="off"
-                  spellCheck={false}
-                  placeholder="YYYY-MM-DD"
-                  aria-describedby={dayFault ? "archive-day-fault" : undefined}
-                  value={archiveDay}
-                  onChange={(e) => setArchiveDay(typedDay(e.target.value))}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !archiveBusy && isArchivableDay(archiveDay, Date.now())) {
-                      e.preventDefault();
-                      void loadArchive(archiveDay);
-                    }
-                  }}
-                  className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[10.5px] text-dim placeholder:text-faint"
+            <input
+              id="archive-day"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="YYYY-MM-DD"
+              aria-describedby={dayFault ? "archive-day-fault" : undefined}
+              value={archiveDay}
+              onChange={(e) => setArchiveDay(typedDay(e.target.value))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !archiveBusy && isArchivableDay(archiveDay, Date.now())) {
+                  e.preventDefault();
+                  void loadArchive(archiveDay);
+                }
+              }}
+              className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[10.5px] text-dim placeholder:text-faint"
+            />
+            <span className="relative inline-flex size-[26px] shrink-0 items-center justify-center border border-hairline text-faint hover:text-ink">
+              <svg viewBox="0 0 14 14" aria-hidden="true" className="size-[11px]">
+                <rect
+                  x="1"
+                  y="2.5"
+                  width="12"
+                  height="10.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
                 />
-                <span className="relative inline-flex size-[26px] shrink-0 items-center justify-center border border-hairline text-faint hover:text-ink">
-                  <svg viewBox="0 0 14 14" aria-hidden="true" className="size-[11px]">
-                    <rect x="1" y="2.5" width="12" height="10.5" fill="none"
-                      stroke="currentColor" strokeWidth="1.2" />
-                    <path d="M1 6 H13 M4.5 1 V4 M9.5 1 V4" fill="none"
-                      stroke="currentColor" strokeWidth="1.2" />
-                  </svg>
-                  <input
-                    type="date"
-                    aria-label="Pick a day from a calendar"
-                    max={newestDay}
-                    value={isArchivableDay(archiveDay, Date.now()) ? archiveDay : ""}
-                    onChange={(e) => {
-                      const picked = e.target.value;
-                      if (!picked) return;
-                      setArchiveDay(picked);
-                      if (isArchivableDay(picked, Date.now())) void loadArchive(picked);
-                    }}
-                    /* `showPicker` throws where it is unsupported, and the browser's own icon is invisible here. */
-                    onClick={(e) => {
-                      const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
-                      try { el.showPicker?.(); } catch { /* the field still takes a typed date */ }
-                    }}
-                    className="absolute inset-0 cursor-pointer opacity-0"
-                  />
-                </span>
-                <button
-                  type="button"
-                  disabled={archiveBusy || !isArchivableDay(archiveDay, Date.now())}
-                  onClick={() => void loadArchive(archiveDay)}
-                  className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:cursor-default disabled:text-faint"
-                >
-                  {archiveBusy ? "…" : "go"}
-                </button>
-                </div>
-                {/* Said here, not through `archiveNote`: that renders in the other branch of this ternary, so a
+                <path d="M1 6 H13 M4.5 1 V4 M9.5 1 V4" fill="none" stroke="currentColor" strokeWidth="1.2" />
+              </svg>
+              <input
+                type="date"
+                aria-label="Pick a day from a calendar"
+                max={newestDay}
+                value={isArchivableDay(archiveDay, Date.now()) ? archiveDay : ""}
+                onChange={(e) => {
+                  const picked = e.target.value;
+                  if (!picked) return;
+                  setArchiveDay(picked);
+                  if (isArchivableDay(picked, Date.now())) void loadArchive(picked);
+                }}
+                /* `showPicker` throws where it is unsupported, and the browser's own icon is invisible here. */
+                onClick={(e) => {
+                  const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
+                  try {
+                    el.showPicker?.();
+                  } catch {
+                    /* the field still takes a typed date */
+                  }
+                }}
+                className="absolute inset-0 cursor-pointer opacity-0"
+              />
+            </span>
+            <button
+              type="button"
+              disabled={archiveBusy || !isArchivableDay(archiveDay, Date.now())}
+              onClick={() => void loadArchive(archiveDay)}
+              className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:cursor-default disabled:text-faint"
+            >
+              {archiveBusy ? "…" : "go"}
+            </button>
+          </div>
+          {/* Said here, not through `archiveNote`: that renders in the other branch of this ternary, so a
                 day refused while live set a message nobody ever saw. */}
-                {dayFault ? (
-                  <p id="archive-day-fault" className="mt-1 text-[11px] leading-relaxed text-faint">
-                    {dayFault}
-                  </p>
-                ) : (
-                  /* The field takes any day that has ended, which includes the one anybody actually wants
+          {dayFault ? (
+            <p id="archive-day-fault" className="mt-1 text-[11px] leading-relaxed text-faint">
+              {dayFault}
+            </p>
+          ) : (
+            /* The field takes any day that has ended, which includes the one anybody actually wants
                      and would never think to try. One sentence, because the control for it already
                      exists: a second field beside this one was the same field twice. */
-                  <p className="mt-1 text-[11px] leading-relaxed text-faint">
-                    {earlyDay
-                      ? "Before about 1970 only the large ones were recorded anywhere. A quiet day back"
-                        + " there may mean nobody was listening, not that the Earth was still."
-                      : "Any day that has ended, including the one you were born on."}
-                  </p>
-                )}
-              </div>
-            )}
-                {/* Outside the archived/live branch: inside it the list vanished the moment a day loaded, so going
+            <p className="mt-1 text-[11px] leading-relaxed text-faint">
+              {earlyDay
+                ? "Before about 1970 only the large ones were recorded anywhere. A quiet day back" +
+                  " there may mean nobody was listening, not that the Earth was still."
+                : "Any day that has ended, including the one you were born on."}
+            </p>
+          )}
+        </div>
+      )}
+      {/* Outside the archived/live branch: inside it the list vanished the moment a day loaded, so going
                 from one notable day to another meant going back to live and waiting for the feeds. */}
-                <details
-                  className="mt-2"
-                  onToggle={(e) => { if ((e.currentTarget as HTMLDetailsElement).open) askCounts(); }}
-                >
-                  <summary className="disclose text-[11px] text-faint hover:text-dim">
-                    Days worth seeing
-                  </summary>
-                  <div className="mt-1">
-                    {NOTABLE_DAYS.map((d) => (
-                      <button
-                        key={d.day}
-                        type="button"
-                        disabled={archiveBusy}
-                        onClick={() => { setArchiveDay(d.day); void loadArchive(d.day); }}
-                        aria-label={`${d.what}, magnitude ${d.magnitude}, ${d.day}`
-                          + (typeof dayCounts[d.day] === "number"
-                            ? `, ${dayCounts[d.day]!.toLocaleString("en-GB")} events`
-                            : "")}
-                        aria-current={loadedDay === d.day ? "true" : undefined}
-                        className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left transition-colors hover:bg-raised disabled:cursor-default ${
-                          loadedDay === d.day ? "bg-raised" : ""
-                        }`}
-                      >
-                        <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
-                          {d.day}
-                        </span>
-                        <span className="min-w-0 flex-1 truncate text-[11px] text-dim">{d.what}</span>
-                        <span className="shrink-0 font-mono text-[10.5px] text-dim tabular-nums">
-                          M{d.magnitude.toFixed(1)}
-                        </span>
-                        <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] text-faint tabular-nums">
-                          {dayCounts[d.day] === undefined || dayCounts[d.day] === null
-                            ? ""
-                            : dayCounts[d.day]!.toLocaleString("en-GB")}
-                        </span>
-                      </button>
-                    ))}
-                    <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{NOTABLE_NOTE}</p>
-                  </div>
-                </details>
-                {/* Sets the cursor as well as the day: a shadow lasts a few hours and an archived day opens at its
+      <details
+        className="mt-2"
+        onToggle={(e) => {
+          if ((e.currentTarget as HTMLDetailsElement).open) askCounts();
+        }}
+      >
+        <summary className="disclose text-[11px] text-faint hover:text-dim">Days worth seeing</summary>
+        <div className="mt-1">
+          {NOTABLE_DAYS.map((d) => (
+            <button
+              key={d.day}
+              type="button"
+              disabled={archiveBusy}
+              onClick={() => {
+                setArchiveDay(d.day);
+                void loadArchive(d.day);
+              }}
+              aria-label={
+                `${d.what}, magnitude ${d.magnitude}, ${d.day}` +
+                (typeof dayCounts[d.day] === "number"
+                  ? `, ${dayCounts[d.day]!.toLocaleString("en-GB")} events`
+                  : "")
+              }
+              aria-current={loadedDay === d.day ? "true" : undefined}
+              className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left transition-colors hover:bg-raised disabled:cursor-default ${
+                loadedDay === d.day ? "bg-raised" : ""
+              }`}
+            >
+              <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">{d.day}</span>
+              <span className="min-w-0 flex-1 truncate text-[11px] text-dim">{d.what}</span>
+              <span className="shrink-0 font-mono text-[10.5px] text-dim tabular-nums">
+                M{d.magnitude.toFixed(1)}
+              </span>
+              <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] text-faint tabular-nums">
+                {dayCounts[d.day] === undefined || dayCounts[d.day] === null
+                  ? ""
+                  : dayCounts[d.day]!.toLocaleString("en-GB")}
+              </span>
+            </button>
+          ))}
+          <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{NOTABLE_NOTE}</p>
+        </div>
+      </details>
+      {/* Sets the cursor as well as the day: a shadow lasts a few hours and an archived day opens at its
                 right edge, so loading only the day lands after the thing the row names. The times are checked
                 against the geometry in `eclipseDays.test.ts`, because a wrong minute fails silently. */}
-                <details className="mt-2">
-                  <summary className="disclose text-[11px] text-faint hover:text-dim">
-                    Eclipses
-                  </summary>
-                  <div className="mt-1">
-                    {ECLIPSE_DAYS.map((e) => (
-                      <button
-                        key={e.day}
-                        type="button"
-                        disabled={archiveBusy}
-                        onClick={() => {
-                          setArchiveDay(e.day);
-                          void loadArchive(e.day);
-                          setScrub({ at: eclipseMoment(e), playing: false });
-                        }}
-                        aria-label={`${e.what}, ${e.kind} eclipse, ${e.day} at ${e.at} UTC`}
-                        aria-current={loadedDay === e.day ? "true" : undefined}
-                        className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left text-[11px] transition-colors hover:bg-raised disabled:cursor-default ${
-                          loadedDay === e.day ? "bg-raised text-ink" : "text-faint"
-                        }`}
-                      >
-                        <span className="w-[62px] shrink-0 font-mono text-[10.5px] tabular-nums">
-                          {e.day.slice(0, 7)}
-                        </span>
-                        <span className="grow">{e.what}</span>
-                      </button>
-                    ))}
-                  </div>
-                </details>
-
-          </div>
+      <details className="mt-2">
+        <summary className="disclose text-[11px] text-faint hover:text-dim">Eclipses</summary>
+        <div className="mt-1">
+          {ECLIPSE_DAYS.map((e) => (
+            <button
+              key={e.day}
+              type="button"
+              disabled={archiveBusy}
+              onClick={() => {
+                setArchiveDay(e.day);
+                void loadArchive(e.day);
+                setScrub({ at: eclipseMoment(e), playing: false });
+              }}
+              aria-label={`${e.what}, ${e.kind} eclipse, ${e.day} at ${e.at} UTC`}
+              aria-current={loadedDay === e.day ? "true" : undefined}
+              className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left text-[11px] transition-colors hover:bg-raised disabled:cursor-default ${
+                loadedDay === e.day ? "bg-raised text-ink" : "text-faint"
+              }`}
+            >
+              <span className="w-[62px] shrink-0 font-mono text-[10.5px] tabular-nums">
+                {e.day.slice(0, 7)}
+              </span>
+              <span className="grow">{e.what}</span>
+            </button>
+          ))}
+        </div>
+      </details>
+    </div>
   );
 
   return (
     <div className="frame">
-      <header id="chrome-head" className="zone-head max-md:relative flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent" hidden={!headShown}>
+      <header
+        id="chrome-head"
+        className="zone-head max-md:relative flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent"
+        hidden={!headShown}
+      >
         <button
           type="button"
           onClick={resetView}
@@ -1401,26 +1593,30 @@ export function App(): JSX.Element {
         {/* These ignore the filters, so each has to say whose number it is: at magnitude 4 the headline read
             5 while this row read 160. Wide screens only - from `sm` up they took ~380px of a 768px header. */}
         <div className={`hidden items-baseline gap-5 ${snapshot.coveredSince === null ? "" : "xl:flex"}`}>
-          {([
-            ["reported", snapshot.stats.quakes.toLocaleString("en-GB")],
-            ["seen by both", snapshot.stats.corroborated.toLocaleString("en-GB")],
-            ...(snapshot.stats.revised > 0
-              ? [["revised", snapshot.stats.revised.toLocaleString("en-GB")] as const]
-              : []),
-          ] as const).map(([k, v]) => (
+          {(
+            [
+              ["reported", snapshot.stats.quakes.toLocaleString("en-GB")],
+              ["seen by both", snapshot.stats.corroborated.toLocaleString("en-GB")],
+              ...(snapshot.stats.revised > 0
+                ? [["revised", snapshot.stats.revised.toLocaleString("en-GB")] as const]
+                : []),
+            ] as const
+          ).map(([k, v]) => (
             <span key={k} className="flex items-baseline gap-1.5">
               <span className="font-mono text-[13px] text-ink tabular-nums">{v}</span>
               <span className="text-[11px] text-faint">{k}</span>
             </span>
           ))}
           <span className="text-[11px] text-faint">
-            USGS <span className="font-mono text-[10.5px] tabular-nums">
+            USGS{" "}
+            <span className="font-mono text-[10.5px] tabular-nums">
               {snapshot.stats.readings.usgs.toLocaleString("en-GB")}
             </span>
             {" · EMSC "}
             <span className="font-mono text-[10.5px] tabular-nums">
               {snapshot.stats.readings.emsc.toLocaleString("en-GB")}
-            </span> readings
+            </span>{" "}
+            readings
           </span>
         </div>
         {/* Never `whitespace-nowrap` here. It does not shrink, it overflows, and one extra button pushed
@@ -1443,9 +1639,7 @@ export function App(): JSX.Element {
             }`}
           >
             <span className="lg:hidden">Ramp {ramp === "cividis" ? "CB" : "std"}</span>
-            <span className="hidden lg:inline">
-              Colourblind ramp {ramp === "cividis" ? "on" : "off"}
-            </span>
+            <span className="hidden lg:inline">Colourblind ramp {ramp === "cividis" ? "on" : "off"}</span>
           </button>
           {/* A menu, not more header: unhiding in place wrapped the row and grew the header over the canvas.
           `display: contents` from `md` up, so on a desktop these are still plain buttons in this row. */}
@@ -1456,50 +1650,50 @@ export function App(): JSX.Element {
               moreOpen ? "" : "max-md:hidden"
             }`}
           >
-          <button
-            type="button"
-            onClick={() => setSound((on) => !on)}
-            aria-pressed={sound}
-            className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
-              sound ? "bg-raised text-ink" : "text-faint"
-            }`}
-          >
-            {sound ? "Sound on" : "Sound off"}
-          </button>
-          {stops.length > 0 ? (
             <button
-              ref={tourButton}
               type="button"
-              onClick={() => (tourAt === null ? startTour() : stopTour())}
-              aria-pressed={tourAt !== null}
+              onClick={() => setSound((on) => !on)}
+              aria-pressed={sound}
               className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
-                tourAt !== null ? "bg-raised text-ink" : "text-faint"
+                sound ? "bg-raised text-ink" : "text-faint"
               }`}
             >
-              {tourAt !== null ? "Stop" : "Tour"}
+              {sound ? "Sound on" : "Sound off"}
             </button>
-          ) : null}
-          <button
-            type="button"
-            onClick={saveStill}
-            disabled={saving}
-            className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink disabled:cursor-default"
-          >
-            {saving ? "Saving…" : "Still"}
-          </button>
-          {/* Keep the fold inside the overflow. As a button of its own at 390 it wrapped onto a line by
-          itself and took the header from 46px to 80px, which is the opposite of folding the bar. */}
-          {chromeFloats ? null : (
+            {stops.length > 0 ? (
+              <button
+                ref={tourButton}
+                type="button"
+                onClick={() => (tourAt === null ? startTour() : stopTour())}
+                aria-pressed={tourAt !== null}
+                className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
+                  tourAt !== null ? "bg-raised text-ink" : "text-faint"
+                }`}
+              >
+                {tourAt !== null ? "Stop" : "Tour"}
+              </button>
+            ) : null}
             <button
               type="button"
-              onClick={() => changeHeadOpen(false)}
-              aria-expanded={true}
-              aria-controls="chrome-head"
-              className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink"
+              onClick={saveStill}
+              disabled={saving}
+              className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink disabled:cursor-default"
             >
-              Hide bar
+              {saving ? "Saving…" : "Still"}
             </button>
-          )}
+            {/* Keep the fold inside the overflow. As a button of its own at 390 it wrapped onto a line by
+          itself and took the header from 46px to 80px, which is the opposite of folding the bar. */}
+            {chromeFloats ? null : (
+              <button
+                type="button"
+                onClick={() => changeHeadOpen(false)}
+                aria-expanded={true}
+                aria-controls="chrome-head"
+                className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink"
+              >
+                Hide bar
+              </button>
+            )}
           </div>
           <button
             type="button"
@@ -1520,9 +1714,7 @@ export function App(): JSX.Element {
             {/* The date always shows and only the live phrase folds. "Everything is normal" is reassurance and
             the dot carries it; "this is not what you think" is a correction, and absence is its failure. */}
             {snapshot.archive ? (
-              <span className="font-mono">
-                {new Date(snapshot.archive.from).toISOString().slice(0, 10)}
-              </span>
+              <span className="font-mono">{new Date(snapshot.archive.from).toISOString().slice(0, 10)}</span>
             ) : (
               <span className="hidden sm:inline">
                 {live === 2 ? "both feeds live" : live === 1 ? "one feed live" : "connecting"}
@@ -1550,14 +1742,16 @@ export function App(): JSX.Element {
 
       <div
         className="zones"
-        style={{
-          /* Zero when folded. Everything else is placed from these, so leaving them holds a gap open where
+        style={
+          {
+            /* Zero when folded. Everything else is placed from these, so leaving them holds a gap open where
           the folded thing used to be. */
-          ...(headShown ? {} : { "--head-h": "0px" }),
-          "--rail-w": railShown ? `${railWidth}px` : "0px",
-          "--regions-h": `${regionsHeight}px`,
-          ...(sheetCanvas > 0 ? { "--canvas-h": `${sheetCanvas}px` } : {}),
-        } as React.CSSProperties}
+            ...(headShown ? {} : { "--head-h": "0px" }),
+            "--rail-w": railShown ? `${railWidth}px` : "0px",
+            "--regions-h": `${regionsHeight}px`,
+            ...(sheetCanvas > 0 ? { "--canvas-h": `${sheetCanvas}px` } : {}),
+          } as React.CSSProperties
+        }
       >
         {/* Clamped so the canvas keeps 46dvh - the design contract asks 44%, and a handle that can break a
             build test is not a handle - and 82dvh the other way, past which the sheet cannot hold its own
@@ -1577,135 +1771,138 @@ export function App(): JSX.Element {
             style={{ top: `calc(var(--canvas-h, 60dvh) - 6px)` }}
           />
         )}
-        <aside id="chrome-rail" className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r" hidden={!railShown}>
+        <aside
+          id="chrome-rail"
+          className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r"
+          hidden={!railShown}
+        >
           <div className="titleblock">
-          {/* `data-rail="headline"` has no stylesheet rule: it is a browser test's handle for somewhere in
+            {/* `data-rail="headline"` has no stylesheet rule: it is a browser test's handle for somewhere in
               the rail that is not the strip. Deleting it as dead looked right and broke two tests. */}
-          <div className="tb-cell tb-wide" data-rail="headline">
-            {/* Before any coverage exists there is no count, and a big 0 over "nothing yet" was two
+            <div className="tb-cell tb-wide" data-rail="headline">
+              {/* Before any coverage exists there is no count, and a big 0 over "nothing yet" was two
                 disclaimers under a number that meant nothing. */}
-            {snapshot.coveredSince === null ? (
-              <div className="mt-2 max-w-[30ch] text-[14px] leading-snug text-dim">
-                {/* Reads `archiveDay`, which is set before the fetch starts. `archive` and `coveredSince` are both
+              {snapshot.coveredSince === null ? (
+                <div className="mt-2 max-w-[30ch] text-[14px] leading-snug text-dim">
+                  {/* Reads `archiveDay`, which is set before the fetch starts. `archive` and `coveredSince` are both
                     set by the success handler, so a page opened straight at a past day said "the last day" about 2011
                     until the answer landed. */}
-                {/* "Asking" stops being true once both feeds have answered no: eighteen seconds into a total outage
+                  {/* "Asking" stops being true once both feeds have answered no: eighteen seconds into a total outage
                     the rail read "Asking USGS and EMSC" above "USGS is not answering". Only when both fail - one feed
                     down is a caveat the notice already carries. */}
-                {snapshot.statuses.usgs.kind === "failing" && snapshot.statuses.emsc.kind === "failing"
-                  ? "Neither feed is answering yet."
-                  : archiveBusy && archiveDay
-                    ? `Asking USGS and EMSC for ${archiveDay}.`
-                    : "Asking USGS and EMSC for the last day."}
-              </div>
-            ) : (
-              <>
-                {/* Counts what is on the globe, so during the replay it climbs as the day plays in. See
+                  {snapshot.statuses.usgs.kind === "failing" && snapshot.statuses.emsc.kind === "failing"
+                    ? "Neither feed is answering yet."
+                    : archiveBusy && archiveDay
+                      ? `Asking USGS and EMSC for ${archiveDay}.`
+                      : "Asking USGS and EMSC for the last day."}
+                </div>
+              ) : (
+                <>
+                  {/* Counts what is on the globe, so during the replay it climbs as the day plays in. See
                     ARCHITECTURE.md. */}
-                {/* The one piece of display type here, so it is set like display type: heavier than the
+                  {/* The one piece of display type here, so it is set like display type: heavier than the
                     prose under it and closed up slightly, which large figures need and small ones do not.
                     `tabular-nums` still decides the widths, so the tracking cannot make it twitch. */}
-                <div className="mt-1.5 text-[38px] leading-none font-[650] tracking-[-0.015em] tabular-nums">
-                  {headline.toLocaleString("en-GB")}
-                </div>
-                {/* One slot, shared by the tour and the replay clock. Every tour stop says where it is and how much
+                  <div className="mt-1.5 text-[38px] leading-none font-[650] tracking-[-0.015em] tabular-nums">
+                    {headline.toLocaleString("en-GB")}
+                  </div>
+                  {/* One slot, shared by the tour and the replay clock. Every tour stop says where it is and how much
                     is there, which keeps the camera movement from being a screensaver. */}
-                {touring ? (
-                  <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
-                    <span className="font-mono text-ink tabular-nums">
-                      {tourAt !== null ? tourAt + 1 : 0}/{route.current.length}
-                    </span>
-                    <span className="text-faint">
-                      {tourLabel(touring, tourAt ?? 0, route.current.length)
-                        .replace(/^\d+ of \d+ · /, "")}
-                    </span>
-                  </div>
-                ) : replay ? (
-                  <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
-                    <span className="font-mono text-ink">{clock(replay.at)}</span>
-                    <span className="text-faint">replaying the last day</span>
-                  </div>
-                ) : view.at !== null ? (
-                  /*
+                  {touring ? (
+                    <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
+                      <span className="font-mono text-ink tabular-nums">
+                        {tourAt !== null ? tourAt + 1 : 0}/{route.current.length}
+                      </span>
+                      <span className="text-faint">
+                        {tourLabel(touring, tourAt ?? 0, route.current.length).replace(/^\d+ of \d+ · /, "")}
+                      </span>
+                    </div>
+                  ) : replay ? (
+                    <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
+                      <span className="font-mono text-ink">{clock(replay.at)}</span>
+                      <span className="text-faint">replaying the last day</span>
+                    </div>
+                  ) : view.at !== null ? (
+                    /*
                     The cursor's own clock. "Last 24 hours" over a count of half of them would describe the
                     window while the number describes the picture.
                   */
-                  <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
-                    <span className="font-mono text-ink">{clock(view.at)}</span>
-                    <span className="text-faint">{view.playing ? "playing" : "held"}</span>
-                  </div>
-                ) : (
-                  <div className="mt-1.5 text-[11px] text-dim">
-                    {windowLabel(now, filters.windowMs, snapshot.coveredSince, archived)}
-                    {edge.complete ? "" : " · still filling"}
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+                    <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
+                      <span className="font-mono text-ink">{clock(view.at)}</span>
+                      <span className="text-faint">{view.playing ? "playing" : "held"}</span>
+                    </div>
+                  ) : (
+                    <div className="mt-1.5 text-[11px] text-dim">
+                      {windowLabel(now, filters.windowMs, snapshot.coveredSince, archived)}
+                      {edge.complete ? "" : " · still filling"}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
 
-          {!strongest && !replay && !flat ? (
-            /* Hold the place and say what happened. Letting these vanish collapsed the titleblock from 190px
+            {!strongest && !replay && !flat ? (
+              /* Hold the place and say what happened. Letting these vanish collapsed the titleblock from 190px
             to 86px under the cursor that caused it, which reads as a bug. */
-            <div className="tb-cell tb-wide" data-rail="largest">
-              <span className="label block">Largest</span>
-              <span className="text-[11px] text-faint">
-                nothing at or above M{filters.minMagnitude.toFixed(1)}
-              </span>
-            </div>
-          ) : null}
-          {strongest && !replay && !flat ? (
-            <button
-              type="button"
-              onClick={() => {
-                setSelected(strongest.key);
-                flyTo.current(strongest.primary.lon, strongest.primary.lat, 1.9);
-                // Through `clamp`, or pinning the newest event parks the cursor a moment behind the present.
-                setScrub(clampScrub({ at: strongest.primary.time, playing: false }, span));
-              }}
-              aria-label={`Largest: magnitude ${strongest.primary.magnitude.toFixed(1)}, `
-                + `${place(strongest.primary.place)}, ${ago(strongest.primary.time, now, archived)}. `
-                + "Go there and hold the window at that moment."}
-              data-rail="largest"
-              className="tb-cell tb-wide cursor-pointer text-left transition-colors hover:bg-raised"
-            >
-              <span className="flex items-baseline justify-between gap-2">
-                <span className="label">Largest</span>
-                <span className="shrink-0 font-mono text-[10.5px] text-faint">
-                  {agoShort(strongest.primary.time, now, archived)}
+              <div className="tb-cell tb-wide" data-rail="largest">
+                <span className="label block">Largest</span>
+                <span className="text-[11px] text-faint">
+                  nothing at or above M{filters.minMagnitude.toFixed(1)}
                 </span>
-              </span>
-              <span className="flex items-baseline gap-2">
-              <span
-                data-ramp
-                className="font-mono text-[14px] leading-none"
-                style={{ color: rampColorAt(ramp, (strongest.primary.magnitude - 1) / 6.5) }}
+              </div>
+            ) : null}
+            {strongest && !replay && !flat ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelected(strongest.key);
+                  flyTo.current(strongest.primary.lon, strongest.primary.lat, 1.9);
+                  // Through `clamp`, or pinning the newest event parks the cursor a moment behind the present.
+                  setScrub(clampScrub({ at: strongest.primary.time, playing: false }, span));
+                }}
+                aria-label={
+                  `Largest: magnitude ${strongest.primary.magnitude.toFixed(1)}, ` +
+                  `${place(strongest.primary.place)}, ${ago(strongest.primary.time, now, archived)}. ` +
+                  "Go there and hold the window at that moment."
+                }
+                data-rail="largest"
+                className="tb-cell tb-wide cursor-pointer text-left transition-colors hover:bg-raised"
               >
-                {strongest.primary.magnitude.toFixed(1)}
-              </span>
-              <span className="min-w-0 flex-1 truncate text-[11px] text-dim">
-                {place(strongest.primary.place)}
-              </span>
-              </span>
-            </button>
-          ) : null}
-          {!replay && !flat && quiet.parts === null ? (
-            <div className="tb-cell tb-wide">
-              <span className="label block">On edge</span>
-              <span className="text-[11px] text-faint">nothing in range to measure</span>
-            </div>
-          ) : null}
-          {!replay && !flat && quiet.parts !== null ? (
-            <div className="tb-cell tb-wide">
-              <span className="label">On edge</span>
-              <span className="flex items-baseline gap-1.5">
-                <span className="font-mono text-[13px] tabular-nums text-ink">
-                  {quiet.parts.percent}%
+                <span className="flex items-baseline justify-between gap-2">
+                  <span className="label">Largest</span>
+                  <span className="shrink-0 font-mono text-[10.5px] text-faint">
+                    {agoShort(strongest.primary.time, now, archived)}
+                  </span>
                 </span>
-                <span className="text-[11px] text-dim">within {QUIET_BAND_KM} km</span>
-              </span>
-            </div>
-          ) : null}
+                <span className="flex items-baseline gap-2">
+                  <span
+                    data-ramp
+                    className="font-mono text-[14px] leading-none"
+                    style={{ color: rampColorAt(ramp, (strongest.primary.magnitude - 1) / 6.5) }}
+                  >
+                    {strongest.primary.magnitude.toFixed(1)}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate text-[11px] text-dim">
+                    {place(strongest.primary.place)}
+                  </span>
+                </span>
+              </button>
+            ) : null}
+            {!replay && !flat && quiet.parts === null ? (
+              <div className="tb-cell tb-wide">
+                <span className="label block">On edge</span>
+                <span className="text-[11px] text-faint">nothing in range to measure</span>
+              </div>
+            ) : null}
+            {!replay && !flat && quiet.parts !== null ? (
+              <div className="tb-cell tb-wide">
+                <span className="label">On edge</span>
+                <span className="flex items-baseline gap-1.5">
+                  <span className="font-mono text-[13px] tabular-nums text-ink">{quiet.parts.percent}%</span>
+                  <span className="text-[11px] text-dim">within {QUIET_BAND_KM} km</span>
+                </span>
+              </div>
+            ) : null}
           </div>
 
           {/* One tenant only: the tablet grid names `.tb-notes` and nothing else, so a second block auto-places
@@ -1725,23 +1922,23 @@ export function App(): JSX.Element {
             ) : null}
             {strongest && !replay && edge.complete && energyShare !== null && energyShare > 0.5 ? (
               <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
-                That one event is{" "}
-                <span className="text-dim tabular-nums">{energyPercent(energyShare)}</span> of the energy
-                released in the window. Magnitude is logarithmic: two points of it is a thousand times the
-                energy.
+                That one event is <span className="text-dim tabular-nums">{energyPercent(energyShare)}</span>{" "}
+                of the energy released in the window. Magnitude is logarithmic: two points of it is a thousand
+                times the energy.
               </p>
             ) : null}
             {baseline ? (
               <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
                 <span className="text-dim tabular-nums">{baseline.count}</span>
-                {" at M"}<span className="tabular-nums">{BASELINE_MIN_MAGNITUDE}</span>{"+: "}
+                {" at M"}
+                <span className="tabular-nums">{BASELINE_MIN_MAGNITUDE}</span>
+                {"+: "}
                 {baseline.direction} than{" "}
                 <span className="text-dim tabular-nums">{sharePercent(baseline.share)}%</span> of the{" "}
                 <span className="tabular-nums">
                   {(baselineSpan === "week" ? BASELINE_WEEKS : BASELINE_DAYS).toLocaleString("en")}
                 </span>{" "}
-                {baselineSpan === "week" ? "weeks" : "days"} from{" "}
-                {BASELINE_FROM} to {BASELINE_TO}.
+                {baselineSpan === "week" ? "weeks" : "days"} from {BASELINE_FROM} to {BASELINE_TO}.
               </p>
             ) : null}
             {/* Silent when nothing is drawn, or a cursor parked before anything arrived names a region beside
@@ -1750,16 +1947,31 @@ export function App(): JSX.Element {
               <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
                 {ceiling.beaten ? (
                   <>
-                    {"Larger than anything in "}{ceiling.region}{" from "}{SINCE}{" to "}{UNTIL}
+                    {"Larger than anything in "}
+                    {ceiling.region}
+                    {" from "}
+                    {SINCE}
+                    {" to "}
+                    {UNTIL}
                     {". Previous best: M"}
                     <span className="text-dim tabular-nums">{ceiling.record.toFixed(1)}</span>
-                    {", "}{recordWhen(ceiling.day)}{"."}
+                    {", "}
+                    {recordWhen(ceiling.day)}
+                    {"."}
                   </>
                 ) : (
                   <>
-                    {"Largest in "}{ceiling.region}{", "}{SINCE}{" to "}{UNTIL}{": M"}
+                    {"Largest in "}
+                    {ceiling.region}
+                    {", "}
+                    {SINCE}
+                    {" to "}
+                    {UNTIL}
+                    {": M"}
                     <span className="text-dim tabular-nums">{ceiling.record.toFixed(1)}</span>
-                    {", "}{recordWhen(ceiling.day)}{"."}
+                    {", "}
+                    {recordWhen(ceiling.day)}
+                    {"."}
                   </>
                 )}
               </p>
@@ -1780,9 +1992,7 @@ export function App(): JSX.Element {
                 Closest to {here.label} was{" "}
                 <span className="text-dim tabular-nums">{magnitude(near.quake.primary)}</span>{" "}
                 {place(near.quake.primary.place)},{" "}
-                <span className="text-dim tabular-nums">
-                  {Math.round(near.km).toLocaleString("en")}
-                </span>
+                <span className="text-dim tabular-nums">{Math.round(near.km).toLocaleString("en")}</span>
                 {" km away."}
                 {near.p === null ? null : (
                   <>
@@ -1805,8 +2015,10 @@ export function App(): JSX.Element {
           {/* Directly above the region list, because that is where its results are drawn. Under the headline
           the answers landed 700px below the box, off the bottom of the screen. */}
           <div data-rail="when">
-              <div role="search" className="mb-1.5 flex flex-col gap-1 xl:flex-row xl:items-baseline xl:gap-2">
-              <label htmlFor="find" className="label shrink-0">Find</label>
+            <div role="search" className="mb-1.5 flex flex-col gap-1 xl:flex-row xl:items-baseline xl:gap-2">
+              <label htmlFor="find" className="label shrink-0">
+                Find
+              </label>
               <input
                 id="find"
                 /* Text, not `type="search"`: that brings a user-agent cancel button into chrome whose whole rule
@@ -1826,12 +2038,10 @@ export function App(): JSX.Element {
                   text-[12px] text-ink placeholder:text-faint"
               />
             </div>
-          <details>
-            <summary className="disclose text-[11px] text-faint hover:text-dim">
-              Time of day
-            </summary>
-            <Dial counts={clockBins} />
-          </details>
+            <details>
+              <summary className="disclose text-[11px] text-faint hover:text-dim">Time of day</summary>
+              <Dial counts={clockBins} />
+            </details>
           </div>
 
           {/* The hazard list stays on the flat map even though the region index does not: a glyph cannot be
@@ -1840,68 +2050,70 @@ export function App(): JSX.Element {
             <div data-rail="regions" className="relative">
               {regions.length > 0 && !flat ? (
                 <>
-              {/* Label above until the column is wide enough. Sharing a row, the label takes its width first: at
+                  {/* Label above until the column is wide enough. Sharing a row, the label takes its width first: at
               768px the field was left 87px for a 134px placeholder and read "a region or a pla". */}
-              <div ref={regionsRef} className="rail-regions scroll-fade">
-                {query ? (
-                  results.hits.length > 0 ? (
-                    <>
-                      {results.hits.map((hit) => (hit.kind === "region" ? (
-                        <Row
-                          key={`r:${hit.region.name}`}
-                          label={hit.region.name}
-                          trail={`${hit.count}`}
-                          onClick={() => pick(hit)}
-                        />
+                  <div ref={regionsRef} className="rail-regions scroll-fade">
+                    {query ? (
+                      results.hits.length > 0 ? (
+                        <>
+                          {results.hits.map((hit) =>
+                            hit.kind === "region" ? (
+                              <Row
+                                key={`r:${hit.region.name}`}
+                                label={hit.region.name}
+                                trail={`${hit.count}`}
+                                onClick={() => pick(hit)}
+                              />
+                            ) : (
+                              <Row
+                                key={`p:${hit.name}`}
+                                label={hit.name}
+                                trail={`${hit.count} · M${hit.strongest.primary.magnitude.toFixed(1)}`}
+                                onClick={() => pick(hit)}
+                              />
+                            ),
+                          )}
+                          {results.more > 0 ? (
+                            <p className="px-1.5 pt-1.5 text-[11px] leading-relaxed text-faint">
+                              {`${PLACE_LIMIT} of ${PLACE_LIMIT + results.more} places. `}
+                              Narrow the query to see the rest.
+                            </p>
+                          ) : null}
+                        </>
                       ) : (
-                        <Row
-                          key={`p:${hit.name}`}
-                          label={hit.name}
-                          trail={`${hit.count} · M${hit.strongest.primary.magnitude.toFixed(1)}`}
-                          onClick={() => pick(hit)}
-                        />
-                      )))}
-                      {results.more > 0 ? (
-                        <p className="px-1.5 pt-1.5 text-[11px] leading-relaxed text-faint">
-                          {`${PLACE_LIMIT} of ${PLACE_LIMIT + results.more} places. `}
-                          Narrow the query to see the rest.
-                        </p>
-                      ) : null}
-                    </>
-                  ) : (
-                    /* Say which nothing this is. There is no gazetteer and cannot be one keylessly, so a real place
+                        /* Say which nothing this is. There is no gazetteer and cannot be one keylessly, so a real place
                     with no seismicity looks exactly like a typo. */
-                    <p className="px-1.5 py-1 text-[11px] leading-relaxed text-faint">
-                      Nothing in the {hours >= 48 ? `${Math.round(hours / 24)} days` : `${hours} hours`}
-                      {" "}on screen. This searches the named regions and the places these two agencies
-                      put on the events it holds, not a map of the world.
-                    </p>
-                  )
-                ) : (
-                  <>
-                    <div className="label">Regions</div>
-                    {regions.map(({ region, count }) => (
-                      <Row
-                        key={region.name}
-                        label={region.name}
-                        trail={count.toLocaleString("en-GB")}
-                        share={busiest > 0 ? count / busiest : 0}
-                        onClick={() => flyTo.current(region.lon, region.lat, region.zoom)}
-                      />
-                    ))}
-                  </>
-                )}
-              </div>
-              <Resizer
-                axis="y"
-                label="Regions height"
-                value={regionsHeight}
-                min={64}
-                max={360}
-                measure={(e) => e.clientY - (regionsRef.current?.getBoundingClientRect().top ?? 0)}
-                onChange={setRegionsHeight}
-                className="absolute inset-x-0 -bottom-2 hidden xl:block"
-              />
+                        <p className="px-1.5 py-1 text-[11px] leading-relaxed text-faint">
+                          Nothing in the {hours >= 48 ? `${Math.round(hours / 24)} days` : `${hours} hours`}{" "}
+                          on screen. This searches the named regions and the places these two agencies put on
+                          the events it holds, not a map of the world.
+                        </p>
+                      )
+                    ) : (
+                      <>
+                        <div className="label">Regions</div>
+                        {regions.map(({ region, count }) => (
+                          <Row
+                            key={region.name}
+                            label={region.name}
+                            trail={count.toLocaleString("en-GB")}
+                            share={busiest > 0 ? count / busiest : 0}
+                            onClick={() => flyTo.current(region.lon, region.lat, region.zoom)}
+                          />
+                        ))}
+                      </>
+                    )}
+                  </div>
+                  <Resizer
+                    axis="y"
+                    label="Regions height"
+                    value={regionsHeight}
+                    min={64}
+                    max={360}
+                    measure={(e) => e.clientY - (regionsRef.current?.getBoundingClientRect().top ?? 0)}
+                    onChange={setRegionsHeight}
+                    className="absolute inset-x-0 -bottom-2 hidden xl:block"
+                  />
                 </>
               ) : null}
 
@@ -1930,9 +2142,7 @@ export function App(): JSX.Element {
                               markId === row.id ? "bg-raised" : ""
                             }`}
                           >
-                            <span className="min-w-0 flex-1 truncate text-[11px] text-dim">
-                              {row.name}
-                            </span>
+                            <span className="min-w-0 flex-1 truncate text-[11px] text-dim">{row.name}</span>
                             {row.measure ? (
                               <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
                                 {row.measure}
@@ -1954,7 +2164,10 @@ export function App(): JSX.Element {
           ) : null}
 
           {failing.length > 0 ? (
-            <div data-rail="notice" className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
+            <div
+              data-rail="notice"
+              className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim"
+            >
               {failing.map(([id, status]) => (
                 <div key={id}>
                   <span className="text-ink">{SOURCE_NAMES[id]}</span> is not answering: {status.reason}.
@@ -1966,24 +2179,30 @@ export function App(): JSX.Element {
           ) : null}
 
           {staleCursor ? (
-            <p data-rail="notice" className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
+            <p
+              data-rail="notice"
+              className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim"
+            >
               {/* Two refusals, two sentences: "the present instead" is false when the clamp pinned the cursor to
               the oldest edge rather than releasing it. */}
               {view.at === null
                 ? "The moment in this link is outside the window, so this is the present instead."
-                : "The moment in this link is older than the window, so this is the oldest moment the "
-                  + "buffer still holds."}
+                : "The moment in this link is older than the window, so this is the oldest moment the " +
+                  "buffer still holds."}
             </p>
           ) : null}
 
           {missingShared && !pinned && snapshot.stats.quakes > 0 ? (
-            <p data-rail="notice" className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim">
+            <p
+              data-rail="notice"
+              className="border-l border-hairline pl-2.5 text-[11px] leading-relaxed text-dim"
+            >
               {/* An archived day does not slide, so "no longer in the window" is the wrong sentence there. */}
               {archived
-                ? `The event in this link is not in ${loadedDay ?? "this day"}. `
-                  + "The whole day is loaded, so this is not a gap in coverage."
-                : "The event in this link is no longer in the window. The buffer holds the last day, "
-                  + "and it starts when the page opens."}
+                ? `The event in this link is not in ${loadedDay ?? "this day"}. ` +
+                  "The whole day is loaded, so this is not a gap in coverage."
+                : "The event in this link is no longer in the window. The buffer holds the last day, " +
+                  "and it starts when the page opens."}
             </p>
           ) : null}
 
@@ -2000,7 +2219,6 @@ export function App(): JSX.Element {
             now={now}
             archived={archived}
           />
-
         </aside>
 
         {/* One control in one place: the handle sits at the rail's outer edge open, and at the frame's
@@ -2055,47 +2273,47 @@ export function App(): JSX.Element {
           {/* Split out so the rail paints before three.js parses. The fallback is the void the globe
               sits on, so nothing appears and is then replaced. */}
           <Suspense fallback={null}>
-          <Globe
-            feed={feed}
-            filters={filters}
-            selected={selected}
-            ramp={ramp}
-            focus={focusSpan}
-            aurora={onGlobe.aurora}
-            marks={marks}
-            scrubAt={view.at}
-            /* Which moment the light is of. `clockAt` is the app's answer to what time is on screen, and a
+            <Globe
+              feed={feed}
+              filters={filters}
+              selected={selected}
+              ramp={ramp}
+              focus={focusSpan}
+              aurora={onGlobe.aurora}
+              marks={marks}
+              scrubAt={view.at}
+              /* Which moment the light is of. `clockAt` is the app's answer to what time is on screen, and a
                held cursor overrides it with the same precedence `stillMoment` uses, so the terminator and
                the caption cannot disagree. See ARCHITECTURE.md. */
-            moment={litAt}
-            flat={flat}
-            depthSink={sinkOn}
-            slab={slabOn && slabData.length > 0 ? slabData : null}
-            figures={figuresOn && figureData.length > 0 ? figureData : null}
-            section={sectionLine}
-            onSection={setSectionLine}
-            onSelect={selectQuake}
-            onReady={onReady}
-            onCapture={onCapture}
-            onSelectMark={selectMark}
-            onCamera={(state) => {
-              camera.current = state;
-              /*
+              moment={litAt}
+              flat={flat}
+              depthSink={sinkOn}
+              slab={slabOn && slabData.length > 0 ? slabData : null}
+              figures={figuresOn && figureData.length > 0 ? figureData : null}
+              section={sectionLine}
+              onSection={setSectionLine}
+              onSelect={selectQuake}
+              onReady={onReady}
+              onCapture={onCapture}
+              onSelectMark={selectMark}
+              onCamera={(state) => {
+                camera.current = state;
+                /*
                 Arrival by geometry, not by a timer: the flight is a spring, so its duration depends on how
                 far it went. Four degrees of tolerance, because the spring approaches asymptotically and a
                 tight threshold leaves the narration permanently unspoken.
               */
-              const target = tourTarget.current;
-              if (!target) return;
-              let dLon = Math.abs(state.lon - target.lon) % 360;
-              if (dLon > 180) dLon = 360 - dLon;
-              if (dLon < 4 && Math.abs(state.lat - target.lat) < 4) {
-                tourTarget.current = null;
-                setTourArrived(target.index);
-              }
-            }}
-            onReplay={setReplay}
-          />
+                const target = tourTarget.current;
+                if (!target) return;
+                let dLon = Math.abs(state.lon - target.lon) % 360;
+                if (dLon > 180) dLon = 360 - dLon;
+                if (dLon < 4 && Math.abs(state.lat - target.lat) < 4) {
+                  tourTarget.current = null;
+                  setTourArrived(target.index);
+                }
+              }}
+              onReplay={setReplay}
+            />
           </Suspense>
 
           <div
@@ -2128,48 +2346,49 @@ export function App(): JSX.Element {
             ) : null}
             {/* Both keep the same `py-1.5`, or their two lines of text sit on different baselines. See
                 ARCHITECTURE.md. */}
-            <div className="relative order-2 flex w-full flex-wrap items-end gap-x-6 gap-y-2
-              md:justify-center">
-            <p className="py-1.5 text-[11px] text-faint md:absolute md:bottom-0 md:left-0">
-              made by{" "}
-              <a
-                href="https://www.aidenjang.com"
-                target="_blank"
-                rel="noreferrer"
-                /* `inline-flex`, not inline: `min-height` does nothing to an inline element, so the 44px touch
-                minimum slid straight off and the finger test caught it at 14px. */
-                className="pointer-events-auto inline-flex items-center text-faint underline decoration-from-font underline-offset-2 transition-colors hover:text-dim max-md:min-h-11"
-              >
-                aiden jang
-              </a>
-            </p>
             <div
-              className="key-hints pointer-events-auto bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50"
+              className="relative order-2 flex w-full flex-wrap items-end gap-x-6 gap-y-2
+              md:justify-center"
             >
-              {/* What the keys do in this projection: a row saying orbit while the drag pans is worse than none. */}
-              {([
-                ["arrows", flat ? "pan" : "orbit"],
-                ["+ -", "zoom"],
-                ["0", "reset"],
-                ["space", view.playing ? "pause" : "play"],
-                [", .", "step"],
-                ...(archived ? [["[ ]", "day"] as const] : []),
-                ...(flat ? [["shift-drag", "section"] as const] : []),
-                ["f", "full"],
-                /* Only when there is something to clear, or the app offers `esc` on every first load. `markId`
+              <p className="py-1.5 text-[11px] text-faint md:absolute md:bottom-0 md:left-0">
+                made by{" "}
+                <a
+                  href="https://www.aidenjang.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  /* `inline-flex`, not inline: `min-height` does nothing to an inline element, so the 44px touch
+                minimum slid straight off and the finger test caught it at 14px. */
+                  className="pointer-events-auto inline-flex items-center text-faint underline decoration-from-font underline-offset-2 transition-colors hover:text-dim max-md:min-h-11"
+                >
+                  aiden jang
+                </a>
+              </p>
+              <div className="key-hints pointer-events-auto bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50">
+                {/* What the keys do in this projection: a row saying orbit while the drag pans is worse than none. */}
+                {(
+                  [
+                    ["arrows", flat ? "pan" : "orbit"],
+                    ["+ -", "zoom"],
+                    ["0", "reset"],
+                    ["space", view.playing ? "pause" : "play"],
+                    [", .", "step"],
+                    ...(archived ? [["[ ]", "day"] as const] : []),
+                    ...(flat ? [["shift-drag", "section"] as const] : []),
+                    ["f", "full"],
+                    /* Only when there is something to clear, or the app offers `esc` on every first load. `markId`
                 belongs in this list and in the ladder: a mark card is a pin. */
-                ...(query || sectionLine || view.at !== null || selected || markId
-                  ? [["esc", "clear"] as const]
-                  : []),
-              ] as const).map(([key, what]) => (
-                <span key={key} className="mr-3 inline-flex items-baseline gap-1.5">
-                  <span className="text-dim">{key}</span>
-                  {what}
-                </span>
-              ))}
+                    ...(query || sectionLine || view.at !== null || selected || markId
+                      ? [["esc", "clear"] as const]
+                      : []),
+                  ] as const
+                ).map(([key, what]) => (
+                  <span key={key} className="mr-3 inline-flex items-baseline gap-1.5">
+                    <span className="text-dim">{key}</span>
+                    {what}
+                  </span>
+                ))}
+              </div>
             </div>
-            </div>
-
           </div>
         </main>
 
@@ -2180,7 +2399,11 @@ export function App(): JSX.Element {
         */}
         {!headShown && (snapshot.archive !== null || view.at !== null) ? (
           <div className="stamp pointer-events-none absolute bottom-4 left-4 z-[2] bg-deck/40 px-3 py-2 font-mono text-[11px] text-faint backdrop-blur-xl backdrop-saturate-50">
-            {stillMoment(view.at, snapshot.archive ? snapshot.archive.from : clockAt(), snapshot.archive !== null)}
+            {stillMoment(
+              view.at,
+              snapshot.archive ? snapshot.archive.from : clockAt(),
+              snapshot.archive !== null,
+            )}
           </div>
         ) : null}
 
@@ -2189,12 +2412,7 @@ export function App(): JSX.Element {
         {/* Never folds with the chrome - this is content. Escape belongs to the browser in fullscreen, so the
             panel's own `esc` control is how it closes there. */}
         {markSubject ? (
-          <MarkCard
-            found={markSubject}
-            now={now}
-            archived={archived}
-            onClose={() => setMarkId(null)}
-          />
+          <MarkCard found={markSubject} now={now} archived={archived} onClose={() => setMarkId(null)} />
         ) : shownQuake ? (
           <DetailPanel
             open={pinned !== undefined}

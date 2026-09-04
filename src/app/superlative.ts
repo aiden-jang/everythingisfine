@@ -43,9 +43,7 @@ export function regionOf(lon: number, lat: number): string | null {
  * The comparison for one event, or null when there is nothing to compare against. Null for a region with no
  * record in the table, which is better as silence than as a sentence with a hole in it.
  */
-export function superlativeFor(
-  quake: Quake | null, asOf: number = Date.now(),
-): Superlative | null {
+export function superlativeFor(quake: Quake | null, asOf: number = Date.now()): Superlative | null {
   if (quake === null) return null;
   const { lon, lat, magnitude } = quake.primary;
   if (!Number.isFinite(magnitude)) return null;
@@ -65,6 +63,8 @@ export function recordWhen(day: string): string {
   const at = Date.parse(`${day}T00:00:00Z`);
   if (!Number.isFinite(at)) return day;
   return new Date(at).toLocaleDateString("en-GB", {
-    month: "long", year: "numeric", timeZone: "UTC",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
   });
 }

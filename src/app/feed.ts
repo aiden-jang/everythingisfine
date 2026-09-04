@@ -42,9 +42,7 @@ export function frontsFor(snapshot: Pick<FeedSnapshot, "arrived" | "seeding">): 
   // The largest, then back into arrival order: which ones is a question about what is worth announcing,
   // and the order they go out in is a separate question.
   const largest = new Set(
-    [...snapshot.arrived]
-      .sort((a, b) => b.primary.magnitude - a.primary.magnitude)
-      .slice(0, MAX_LIVE_FRONTS),
+    [...snapshot.arrived].sort((a, b) => b.primary.magnitude - a.primary.magnitude).slice(0, MAX_LIVE_FRONTS),
   );
   return snapshot.arrived.filter((q) => largest.has(q));
 }
@@ -202,8 +200,7 @@ export function createFeed(capacity = 50_000): Feed {
          */
         announced = false;
         wire();
-      }
-      else sources = next;
+      } else sources = next;
       return true;
     },
     showArchive: (span, readings) => {

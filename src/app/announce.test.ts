@@ -6,8 +6,17 @@ const now = 1_700_000_000_000;
 
 const quake = (id: string, magnitude: number, agoMs: number): Quake => {
   const primary: Reading = {
-    source: "usgs", id, magnitude, scale: "mww", lon: 141, lat: 38, depthKm: 20,
-    time: now - agoMs, place: "Somewhere", kind: "earthquake", receivedAt: now,
+    source: "usgs",
+    id,
+    magnitude,
+    scale: "mww",
+    lon: 141,
+    lat: 38,
+    depthKm: 20,
+    time: now - agoMs,
+    place: "Somewhere",
+    kind: "earthquake",
+    receivedAt: now,
   };
   return { key: id, readings: [primary], primary };
 };
@@ -73,7 +82,9 @@ describe("what the live region is allowed to call new", () => {
   it("puts the newest first, so a multi-event announcement leads with the latest", () => {
     const fresh = newsIn(
       [quake("old", 5, 10 * MINUTE), quake("new", 5, MINUTE), quake("mid", 5, 5 * MINUTE)],
-      new Set(), 4.5, now,
+      new Set(),
+      4.5,
+      now,
     );
     expect(fresh.map((q) => q.key)).toEqual(["new", "mid", "old"]);
   });

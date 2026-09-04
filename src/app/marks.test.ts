@@ -2,36 +2,72 @@ import { describe, expect, it } from "vitest";
 import { marksFor, type Happening } from "./marks";
 
 const nothing: Happening = { cyclones: [], volcanoes: [], fires: [], floods: [] };
-const storm = (over = {}): never => ({
-  id: "1", name: "Fung-wong", lon: 150, lat: 10, peakKmh: 185, track: [], ...over,
-} as never);
-const mountain = (over = {}): never => ({
-  id: "1", name: "Etna", country: "Italy", lon: 15, lat: 37.7, endedAt: null, ...over,
-} as never);
-const fire = (over = {}): never => ({
-  id: "1", country: "Angola", lon: 18, lat: -12, hectares: 9673,
-  startedAt: null, endedAt: null, ...over,
-} as never);
-const flood = (over = {}): never => ({
-  id: "1", country: "Thailand", lon: 100.6, lat: 18.7, startedAt: null, endedAt: null, ...over,
-} as never);
+const storm = (over = {}): never =>
+  ({
+    id: "1",
+    name: "Fung-wong",
+    lon: 150,
+    lat: 10,
+    peakKmh: 185,
+    track: [],
+    ...over,
+  }) as never;
+const mountain = (over = {}): never =>
+  ({
+    id: "1",
+    name: "Etna",
+    country: "Italy",
+    lon: 15,
+    lat: 37.7,
+    endedAt: null,
+    ...over,
+  }) as never;
+const fire = (over = {}): never =>
+  ({
+    id: "1",
+    country: "Angola",
+    lon: 18,
+    lat: -12,
+    hectares: 9673,
+    startedAt: null,
+    endedAt: null,
+    ...over,
+  }) as never;
+const flood = (over = {}): never =>
+  ({
+    id: "1",
+    country: "Thailand",
+    lon: 100.6,
+    lat: 18.7,
+    startedAt: null,
+    endedAt: null,
+    ...over,
+  }) as never;
 
 describe("what gets a shape", () => {
   it("gives a storm a spiral, and a second polyline once it has been somewhere", () => {
     expect(marksFor({ ...nothing, cyclones: [storm()] })).toHaveLength(1);
-    expect(marksFor({ ...nothing, cyclones: [
-      storm({ track: [{ lon: 155, lat: 8 }, { lon: 148, lat: 14 }] }),
-    ] })).toHaveLength(2);
+    expect(
+      marksFor({
+        ...nothing,
+        cyclones: [
+          storm({
+            track: [
+              { lon: 155, lat: 8 },
+              { lon: 148, lat: 14 },
+            ],
+          }),
+        ],
+      }),
+    ).toHaveLength(2);
   });
 
   it("does not emit a track of one point, which is a line with nothing to join", () => {
-    expect(marksFor({ ...nothing, cyclones: [storm({ track: [{ lon: 155, lat: 8 }] })] }))
-      .toHaveLength(1);
+    expect(marksFor({ ...nothing, cyclones: [storm({ track: [{ lon: 155, lat: 8 }] })] })).toHaveLength(1);
   });
 
   it("gives each volcano one triangle and each fire one flame", () => {
-    expect(marksFor({ ...nothing, volcanoes: [mountain(), mountain({ name: "Fuego" })] }))
-      .toHaveLength(2);
+    expect(marksFor({ ...nothing, volcanoes: [mountain(), mountain({ name: "Fuego" })] })).toHaveLength(2);
     expect(marksFor({ ...nothing, fires: [fire(), fire({ id: "2" })] })).toHaveLength(2);
   });
 
@@ -52,9 +88,14 @@ describe("what gets a shape", () => {
   });
 
   it("draws every layer together rather than one winning", () => {
-    expect(marksFor({
-      cyclones: [storm()], volcanoes: [mountain()], fires: [fire()], floods: [flood()],
-    })).toHaveLength(1 + 1 + 1 + 3);
+    expect(
+      marksFor({
+        cyclones: [storm()],
+        volcanoes: [mountain()],
+        fires: [fire()],
+        floods: [flood()],
+      }),
+    ).toHaveLength(1 + 1 + 1 + 3);
   });
 
   it("is nothing when nothing is happening", () => {
@@ -62,9 +103,17 @@ describe("what gets a shape", () => {
   });
 
   it("anchors a glyph and leaves a track unanchored, which is what decides scaling", () => {
-    const marks = marksFor({ ...nothing, cyclones: [
-      storm({ track: [{ lon: 155, lat: 8 }, { lon: 148, lat: 14 }] }),
-    ] });
+    const marks = marksFor({
+      ...nothing,
+      cyclones: [
+        storm({
+          track: [
+            { lon: 155, lat: 8 },
+            { lon: 148, lat: 14 },
+          ],
+        }),
+      ],
+    });
     const [track, glyph] = marks;
     expect(track!.anchor).toBeUndefined();
     expect(glyph!.anchor).toEqual({ lon: 150, lat: 10 });
@@ -99,7 +148,9 @@ describe("the far-side figure", () => {
 
   it("draws beside the live layers rather than instead of them", () => {
     const marks = marksFor({
-      ...nothing, volcanoes: [mountain()], farSide: { lon: 140, lat: 38 },
+      ...nothing,
+      volcanoes: [mountain()],
+      farSide: { lon: 140, lat: 38 },
     });
     expect(marks).toHaveLength(1 + 5 + 2);
   });
@@ -184,18 +235,28 @@ describe("who reported a hazard", () => {
   // Provenance was a first-class fact for earthquakes and absent from every hazard, while GDACS sent it on
   // all of them. These pin the shape of the fix rather than the wording of any one label.
   const storm = {
-    id: "s1", name: "SAUDEL-26", lon: 130, lat: 20, peakKmh: 213, track: [], source: "JTWC",
+    id: "s1",
+    name: "SAUDEL-26",
+    lon: 130,
+    lat: 20,
+    peakKmh: 213,
+    track: [],
+    source: "JTWC",
   };
 
   it("appends the agency to a label that already has words", () => {
-    const [mark] = marksFor({ ...nothing, cyclones: [storm] as never }).filter((m) => m.id?.startsWith("cyclone:"));
+    const [mark] = marksFor({ ...nothing, cyclones: [storm] as never }).filter((m) =>
+      m.id?.startsWith("cyclone:"),
+    );
     expect(mark?.label).toBe("SAUDEL-26 · 213 km/h · JTWC");
   });
 
   it("says nothing when the feed did not say, rather than leaving a dangling separator", () => {
     // Every hazard on an archived day: the history feed carries no reporting agency.
     const quiet = { ...storm, source: null };
-    const [mark] = marksFor({ ...nothing, cyclones: [quiet] as never }).filter((m) => m.id?.startsWith("cyclone:"));
+    const [mark] = marksFor({ ...nothing, cyclones: [quiet] as never }).filter((m) =>
+      m.id?.startsWith("cyclone:"),
+    );
     expect(mark?.label).toBe("SAUDEL-26 · 213 km/h");
   });
 

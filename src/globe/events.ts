@@ -162,7 +162,11 @@ export interface EventLayer {
   setDepthSink: (value: number) => void;
   /** Writes the visible subset into the buffers. Returns how many are drawn. See ARCHITECTURE.md. */
   sync: (
-    store: Store, filters: Filters, now: number, zoom: number, revealUntil?: number,
+    store: Store,
+    filters: Filters,
+    now: number,
+    zoom: number,
+    revealUntil?: number,
     focus?: FocusSpan | null,
   ) => number;
   dispose: () => void;
@@ -177,7 +181,9 @@ export interface FocusSpan {
 }
 
 export function createEventLayer(
-  capacity: number, ramp: RampName = "thermal", morph = { value: 0 },
+  capacity: number,
+  ramp: RampName = "thermal",
+  morph = { value: 0 },
 ): EventLayer {
   // Allocated once at full capacity. Growing means a new upload exactly when a burst arrives.
   const positions = new Float32Array(capacity * 3);
@@ -356,4 +362,3 @@ export function createEventLayer(
     },
   };
 }
-

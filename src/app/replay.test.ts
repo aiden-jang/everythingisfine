@@ -19,7 +19,10 @@ describe("the entrance replay", () => {
   it("takes about the stated number of seconds", () => {
     const replay = createReplay({ from: FROM, to: TO });
     let ticks = 0;
-    while (!replay.done() && ticks < 10_000) { replay.step(1 / 60); ticks += 1; }
+    while (!replay.done() && ticks < 10_000) {
+      replay.step(1 / 60);
+      ticks += 1;
+    }
     expect(ticks / 60).toBeCloseTo(REPLAY_SECONDS, 0);
   });
 

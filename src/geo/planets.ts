@@ -35,36 +35,72 @@ interface Elements {
  * same rates is what stops the two halves of that subtraction coming from different sources.
  */
 const EARTH: Elements = {
-  name: "Earth", h: 0, phase: [],
-  a: [1.00000261, 0.00000562], e: [0.01671123, -0.00004392], i: [-0.00001531, -0.01294668],
-  l: [100.46457166, 35_999.37244981], peri: [102.93768193, 0.32327364], node: [0, 0],
+  name: "Earth",
+  h: 0,
+  phase: [],
+  a: [1.00000261, 0.00000562],
+  e: [0.01671123, -0.00004392],
+  i: [-0.00001531, -0.01294668],
+  l: [100.46457166, 35_999.37244981],
+  peri: [102.93768193, 0.32327364],
+  node: [0, 0],
 };
 
 const PLANETS: readonly Elements[] = [
   {
-    name: "Mercury", h: -0.42, phase: [0.0380, -0.000273, 0.000002],
-    a: [0.38709927, 0.00000037], e: [0.20563593, 0.00001906], i: [7.00497902, -0.00594749],
-    l: [252.25032350, 149_472.67411175], peri: [77.45779628, 0.16047689], node: [48.33076593, -0.12534081],
+    name: "Mercury",
+    h: -0.42,
+    phase: [0.038, -0.000273, 0.000002],
+    a: [0.38709927, 0.00000037],
+    e: [0.20563593, 0.00001906],
+    i: [7.00497902, -0.00594749],
+    l: [252.2503235, 149_472.67411175],
+    peri: [77.45779628, 0.16047689],
+    node: [48.33076593, -0.12534081],
   },
   {
-    name: "Venus", h: -4.40, phase: [0.0009, 0.000239, -0.00000065],
-    a: [0.72333566, 0.00000390], e: [0.00677672, -0.00004107], i: [3.39467605, -0.00078890],
-    l: [181.97909950, 58_517.81538729], peri: [131.60246718, 0.00268329], node: [76.67984255, -0.27769418],
+    name: "Venus",
+    h: -4.4,
+    phase: [0.0009, 0.000239, -0.00000065],
+    a: [0.72333566, 0.0000039],
+    e: [0.00677672, -0.00004107],
+    i: [3.39467605, -0.0007889],
+    l: [181.9790995, 58_517.81538729],
+    peri: [131.60246718, 0.00268329],
+    node: [76.67984255, -0.27769418],
   },
   {
-    name: "Mars", h: -1.52, phase: [0.016],
-    a: [1.52371034, 0.00001847], e: [0.09339410, 0.00007882], i: [1.84969142, -0.00813131],
-    l: [-4.55343205, 19_140.30268499], peri: [-23.94362959, 0.44441088], node: [49.55953891, -0.29257343],
+    name: "Mars",
+    h: -1.52,
+    phase: [0.016],
+    a: [1.52371034, 0.00001847],
+    e: [0.0933941, 0.00007882],
+    i: [1.84969142, -0.00813131],
+    l: [-4.55343205, 19_140.30268499],
+    peri: [-23.94362959, 0.44441088],
+    node: [49.55953891, -0.29257343],
   },
   {
-    name: "Jupiter", h: -9.40, phase: [0.005],
-    a: [5.20288700, -0.00011607], e: [0.04838624, -0.00013253], i: [1.30439695, -0.00183714],
-    l: [34.39644051, 3_034.74612775], peri: [14.72847983, 0.21252668], node: [100.47390909, 0.20469106],
+    name: "Jupiter",
+    h: -9.4,
+    phase: [0.005],
+    a: [5.202887, -0.00011607],
+    e: [0.04838624, -0.00013253],
+    i: [1.30439695, -0.00183714],
+    l: [34.39644051, 3_034.74612775],
+    peri: [14.72847983, 0.21252668],
+    node: [100.47390909, 0.20469106],
   },
   {
-    name: "Saturn", h: -8.88, phase: [],
-    a: [9.53667594, -0.00125060], e: [0.05386179, -0.00050991], i: [2.48599187, 0.00193609],
-    l: [49.95424423, 1_222.49362201], peri: [92.59887831, -0.41897216], node: [113.66242448, -0.28867794],
+    name: "Saturn",
+    h: -8.88,
+    phase: [],
+    a: [9.53667594, -0.0012506],
+    e: [0.05386179, -0.00050991],
+    i: [2.48599187, 0.00193609],
+    l: [49.95424423, 1_222.49362201],
+    peri: [92.59887831, -0.41897216],
+    node: [113.66242448, -0.28867794],
   },
 ];
 
@@ -103,11 +139,7 @@ function heliocentric(el: Elements, t: number): [number, number, number] {
   const sn = sin(node);
   const xa = px * ca - py * sa;
   const ya = px * sa + py * ca;
-  return [
-    cn * xa - sn * ya * ci,
-    sn * xa + cn * ya * ci,
-    ya * si,
-  ];
+  return [cn * xa - sn * ya * ci, sn * xa + cn * ya * ci, ya * si];
 }
 
 export interface Planet {
@@ -145,15 +177,16 @@ export function planetPositions(at: number): Planet[] {
     // The phase angle at the planet, between the sun and us. Straight from the triangle the three bodies
     // make, which is why `EARTH` is in the same table.
     const earthSun = Math.hypot(earth[0], earth[1], earth[2]);
-    const cosPhase = (sunDistance * sunDistance + distanceAu * distanceAu - earthSun * earthSun)
-      / (2 * sunDistance * distanceAu);
+    const cosPhase =
+      (sunDistance * sunDistance + distanceAu * distanceAu - earthSun * earthSun) /
+      (2 * sunDistance * distanceAu);
     const phaseDeg = Math.acos(Math.max(-1, Math.min(1, cosPhase))) / DEG;
     let lit = 0;
     for (let k = 0; k < el.phase.length; k += 1) lit += el.phase[k]! * phaseDeg ** (k + 1);
     const magnitude = el.h + 5 * Math.log10(sunDistance * distanceAu) + lit;
 
     let lon = ra - gmst;
-    lon = ((lon % 360) + 540) % 360 - 180;
+    lon = (((lon % 360) + 540) % 360) - 180;
     return { name: el.name, lon, lat: dec, magnitude, distanceAu };
   });
 }

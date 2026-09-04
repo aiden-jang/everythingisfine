@@ -115,9 +115,12 @@ export function createControls(
    * `arc` hangs off the target, not beside it. Six other places assign or clear the target, so a
    * flight interrupted by a drag drops its arc without anything having to remember to cancel it.
    */
-  let target:
-    | { lon: number; lat: number; zoom: number; arc?: { span: number; pull: number; fromZoom: number } }
-    | null = null;
+  let target: {
+    lon: number;
+    lat: number;
+    zoom: number;
+    arc?: { span: number; pull: number; fromZoom: number };
+  } | null = null;
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   const pointers = new Map<number, { x: number; y: number }>();
@@ -142,8 +145,7 @@ export function createControls(
   /* How far out you may go, which is a different question on each view: a globe can be lost, a plane
      cannot, because it tiles. See ARCHITECTURE.md. */
   const zoomFloor = (): number => {
-    const wholeWorld =
-      (mapFit() * Math.tan((fovDeg / 2) * DEG) * camera.aspect) / MAP_HALF_WIDTH;
+    const wholeWorld = (mapFit() * Math.tan((fovDeg / 2) * DEG) * camera.aspect) / MAP_HALF_WIDTH;
     return ZOOM_MIN + (Math.min(ZOOM_MIN, wholeWorld) - ZOOM_MIN) * morph;
   };
 
@@ -199,7 +201,7 @@ export function createControls(
       const y = o.y + d.y * t;
       if (Math.abs(y) > 1) return null;
       return {
-        lon: ((((((x / MAP_HALF_WIDTH) * 180) + 180) % 360) + 360) % 360) - 180,
+        lon: (((((x / MAP_HALF_WIDTH) * 180 + 180) % 360) + 360) % 360) - 180,
         lat: y * 90,
       };
     }
@@ -211,7 +213,10 @@ export function createControls(
     const disc = b * b - c;
     if (disc < 0) return null;
 
-    hit.copy(d).multiplyScalar(-b - Math.sqrt(disc)).add(o);
+    hit
+      .copy(d)
+      .multiplyScalar(-b - Math.sqrt(disc))
+      .add(o);
     return {
       lon: Math.atan2(hit.x, hit.z) / DEG,
       lat: Math.asin(Math.max(-1, Math.min(1, hit.y))) / DEG,
@@ -263,9 +268,7 @@ export function createControls(
    */
   /* Compounds off where the camera is heading, not where it is. Off the animated value, two quick
      notches land on 1.59 rather than 1.70. */
-  const aim = (
-    dest: { lon: number; lat: number; zoom: number }, instant = reduced.matches,
-  ): void => {
+  const aim = (dest: { lon: number; lat: number; zoom: number }, instant = reduced.matches): void => {
     if (instant) {
       lon = dest.lon;
       lat = dest.lat;
@@ -472,14 +475,31 @@ export function createControls(
 
       const step = e.shiftKey ? 24 : 8;
       switch (e.key) {
-        case "ArrowLeft": nudge(-step, 0); break;
-        case "ArrowRight": nudge(step, 0); break;
-        case "ArrowUp": nudge(0, step); break;
-        case "ArrowDown": nudge(0, -step); break;
-        case "+": case "=": nudge(0, 0, 1.25); break;
-        case "-": case "_": nudge(0, 0, 1 / 1.25); break;
-        case "0": flyTo(framing.lon, framing.lat, 1); break;
-        default: return;
+        case "ArrowLeft":
+          nudge(-step, 0);
+          break;
+        case "ArrowRight":
+          nudge(step, 0);
+          break;
+        case "ArrowUp":
+          nudge(0, step);
+          break;
+        case "ArrowDown":
+          nudge(0, -step);
+          break;
+        case "+":
+        case "=":
+          nudge(0, 0, 1.25);
+          break;
+        case "-":
+        case "_":
+          nudge(0, 0, 1 / 1.25);
+          break;
+        case "0":
+          flyTo(framing.lon, framing.lat, 1);
+          break;
+        default:
+          return;
       }
       e.preventDefault();
       onChange();
@@ -536,9 +556,11 @@ export function createControls(
     /* Zoom is out of the arrival test while an arc flies, or it never passes: position settles at 0.05
        degrees of slack while the lift holds zoom 0.002 off against a 0.001 threshold. */
     const settled =
-      Math.abs(shortest) < 0.05 && Math.abs(target.lat - lat) < 0.05 &&
+      Math.abs(shortest) < 0.05 &&
+      Math.abs(target.lat - lat) < 0.05 &&
       (target.arc ? true : Math.abs(target.zoom - zoom) < 0.001) &&
-      Math.abs(vLon) < 0.5 && Math.abs(vLat) < 0.5;
+      Math.abs(vLon) < 0.5 &&
+      Math.abs(vLat) < 0.5;
     if (settled) {
       lon = target.lon;
       lat = target.lat;
@@ -593,9 +615,7 @@ export function createControls(
     const span = spanDeg(lon, lat, clamped.lon, clamped.lat);
     const reach = (span - ARC_MIN_DEG) / (ARC_FULL_DEG - ARC_MIN_DEG);
     const pull = ARC_PULLBACK * Math.max(0, Math.min(1, reach));
-    target = pull > 0
-      ? { ...clamped, arc: { span, pull, fromZoom: zoom } }
-      : clamped;
+    target = pull > 0 ? { ...clamped, arc: { span, pull, fromZoom: zoom } } : clamped;
   }
 
   return {

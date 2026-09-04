@@ -6,7 +6,10 @@ import { agoShort } from "./format";
 
 /** A row's age. Ongoing events date from their start: how long it has been burning is the surprise. */
 export function spanWords(
-  startedAt: number | null, endedAt: number | null, now: number, current: boolean,
+  startedAt: number | null,
+  endedAt: number | null,
+  now: number,
+  current: boolean,
 ): string {
   if (current) {
     if (startedAt === null) return "ongoing";

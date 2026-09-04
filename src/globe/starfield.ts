@@ -1,6 +1,4 @@
-import {
-  AdditiveBlending, BufferAttribute, BufferGeometry, Color, Points, ShaderMaterial,
-} from "three";
+import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, Points, ShaderMaterial } from "three";
 import { DEG } from "../geo/sphere";
 import { starBrightness, starVector, type StarTable } from "../geo/stars";
 import { SKY_DISTANCE, SKY_GLSL } from "./sky";

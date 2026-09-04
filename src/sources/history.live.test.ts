@@ -20,9 +20,7 @@ describe("EONET, for real", () => {
   it("actually filters by date, which is the claim the whole feature rests on", async () => {
     const a = day("2024-08-01");
     const b = day("2026-05-15");
-    const [one, two] = await Promise.all([
-      fetchHistory(a.from, a.to), fetchHistory(b.from, b.to),
-    ]);
+    const [one, two] = await Promise.all([fetchHistory(a.from, a.to), fetchHistory(b.from, b.to)]);
     expect(one.answered && two.answered).toBe(true);
     const ids = (h: Awaited<ReturnType<typeof fetchHistory>>): string[] =>
       [...h.cyclones, ...h.volcanoes, ...h.fires, ...h.floods].map((x) => x.id).sort();

@@ -1,11 +1,16 @@
 import type { ReactElement, ReactNode } from "react";
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { PLAYBACK } from "../geo/waves";
+import { SLAB_FROM, SLAB_MIN_DEPTH_KM, SLAB_MIN_MAGNITUDE, SLAB_TO } from "../geo/slab";
 import {
-  SLAB_FROM, SLAB_MIN_DEPTH_KM, SLAB_MIN_MAGNITUDE, SLAB_TO,
-} from "../geo/slab";
-import {
-  auroraNote, cycloneNote, depthNote, floodNote, motionNote, soundNote, splitNote, volcanoNote,
+  auroraNote,
+  cycloneNote,
+  depthNote,
+  floodNote,
+  motionNote,
+  soundNote,
+  splitNote,
+  volcanoNote,
   wildfireNote,
 } from "./format";
 import { category } from "../sources/cyclones";
@@ -15,18 +20,22 @@ import { flame, spiral, volcano, waves } from "../globe/shapes";
    ARCHITECTURE.md. */
 /** One layer switch. These state their condition in their pressed state; the header's controls state it
  * in their label ("Sound off"). Two idioms for one job, worth settling in one direction eventually. */
-function LayerToggle(
-  { label, on, onChange }: { label: string; on: boolean; onChange: (on: boolean) => void },
-): JSX.Element {
+function LayerToggle({
+  label,
+  on,
+  onChange,
+}: {
+  label: string;
+  on: boolean;
+  onChange: (on: boolean) => void;
+}): JSX.Element {
   return (
     <button
       type="button"
       aria-pressed={on}
       onClick={() => onChange(!on)}
       className={`cursor-pointer border px-2 py-1 text-[11px] transition-colors ${
-        on
-          ? "border-faint bg-raised text-ink"
-          : "border-hairline text-faint hover:bg-raised hover:text-dim"
+        on ? "border-faint bg-raised text-ink" : "border-hairline text-faint hover:bg-raised hover:text-dim"
       }`}
     >
       {label}
@@ -34,9 +43,7 @@ function LayerToggle(
   );
 }
 
-function KeyRow(
-  { glyph, note }: { glyph?: ReactNode; note: string | null },
-): ReactElement | null {
+function KeyRow({ glyph, note }: { glyph?: ReactNode; note: string | null }): ReactElement | null {
   // Takes the null the note functions already return for an empty layer, so no caller has to prove
   // non-null twice next to the count it is already gated on.
   if (note === null) return null;
@@ -46,7 +53,12 @@ function KeyRow(
   // under its swatch.
   const indent = glyph === undefined ? "pl-[23px]" : "";
   if (rest === null) {
-    return <div className={`mt-2 ${line} ${indent}`}>{glyph}<span>{head}</span></div>;
+    return (
+      <div className={`mt-2 ${line} ${indent}`}>
+        {glyph}
+        <span>{head}</span>
+      </div>
+    );
   }
   return (
     <details className="mt-2">
@@ -138,28 +150,53 @@ function path(points: readonly { lon: number; lat: number }[]): string {
   return points.map((p, i) => `${i === 0 ? "M" : "L"} ${p.lon.toFixed(2)} ${(-p.lat).toFixed(2)}`).join(" ");
 }
 
-export function MagnitudeFilter(
-  {
-    ramp, value, onChange, aurora, cyclones, volcanoes, volcanoesSince, now, outsideWindow = null,
-    fires, fireCap, floods, floodCountries, keyOpen, onKeyOpen, archived = false,
-    motion, motionOn, onMotion, sinkOn, onSink, slabOn, onSlab, slabCount,
-    figuresOn, onFigures, sky = false, eclipse = null, herePlace = null, depth, sound, children,
-    part = "controls",
-  }: MagnitudeFilterProps,
-): JSX.Element {
+export function MagnitudeFilter({
+  ramp,
+  value,
+  onChange,
+  aurora,
+  cyclones,
+  volcanoes,
+  volcanoesSince,
+  now,
+  outsideWindow = null,
+  fires,
+  fireCap,
+  floods,
+  floodCountries,
+  keyOpen,
+  onKeyOpen,
+  archived = false,
+  motion,
+  motionOn,
+  onMotion,
+  sinkOn,
+  onSink,
+  slabOn,
+  onSlab,
+  slabCount,
+  figuresOn,
+  onFigures,
+  sky = false,
+  eclipse = null,
+  herePlace = null,
+  depth,
+  sound,
+  children,
+  part = "controls",
+}: MagnitudeFilterProps): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
   /*
    * Null is not the same as off. The flat map has no inside for the depth sink and no sky for the figures,
    * so those controls are absent rather than disabled: one that cannot do anything is worse than none.
    */
   const switches = [
-    sinkOn === null ? null
-      : <LayerToggle key="depth" label="depth" on={sinkOn} onChange={onSink} />,
+    sinkOn === null ? null : <LayerToggle key="depth" label="depth" on={sinkOn} onChange={onSink} />,
     <LayerToggle key="motion" label="motion" on={motionOn} onChange={onMotion} />,
-    slabOn === null ? null
-      : <LayerToggle key="slab" label="slab" on={slabOn} onChange={onSlab} />,
-    figuresOn === null || figuresOn === undefined || !onFigures ? null
-      : <LayerToggle key="figures" label="figures" on={figuresOn} onChange={onFigures} />,
+    slabOn === null ? null : <LayerToggle key="slab" label="slab" on={slabOn} onChange={onSlab} />,
+    figuresOn === null || figuresOn === undefined || !onFigures ? null : (
+      <LayerToggle key="figures" label="figures" on={figuresOn} onChange={onFigures} />
+    ),
   ].filter((v) => v !== null);
   // Where the threshold sits along the scale, as a percentage of the track.
   const cut = Math.max(0, Math.min(100, ((value - MAG_MIN) / (MAG_MAX - MAG_MIN)) * 100));
@@ -167,291 +204,340 @@ export function MagnitudeFilter(
   if (part === "key") {
     return (
       <div data-ramp>
-      {/* Everything below the scale is explanation and folds away. Controls above, commentary below. See
+        {/* Everything below the scale is explanation and folds away. Controls above, commentary below. See
           ARCHITECTURE.md. */}
-      <details open={keyOpen}>
-        <summary
-          className="disclose text-[11px] text-faint hover:text-dim"
-          onClick={(e) => { e.preventDefault(); onKeyOpen(!keyOpen); }}
-        >
-          What the marks mean
-        </summary>
+        <details open={keyOpen}>
+          <summary
+            className="disclose text-[11px] text-faint hover:text-dim"
+            onClick={(e) => {
+              e.preventDefault();
+              onKeyOpen(!keyOpen);
+            }}
+          >
+            What the marks mean
+          </summary>
 
-      {/* Size carries the same value, so a colourblind viewer and a small screen both still read it. */}
-      <div className="mt-2.5 flex items-center gap-2.5 text-[11px] text-faint">
-        <span className="flex items-baseline gap-1.5">
-          {[2, 4, 6].map((m) => (
-            <span
-              key={m}
-              className="inline-block rounded-full"
-              style={{
-                width: `${2 * (1.7 + 2.9 * Math.sqrt(m - 1))}px`,
-                height: `${2 * (1.7 + 2.9 * Math.sqrt(m - 1))}px`,
-                background: rampColorAt(ramp, (m - MAG_MIN) / (MAG_MAX - MAG_MIN)),
-              }}
-            />
-          ))}
-        </span>
-        <span>size shows it too</span>
-      </div>
+          {/* Size carries the same value, so a colourblind viewer and a small screen both still read it. */}
+          <div className="mt-2.5 flex items-center gap-2.5 text-[11px] text-faint">
+            <span className="flex items-baseline gap-1.5">
+              {[2, 4, 6].map((m) => (
+                <span
+                  key={m}
+                  className="inline-block rounded-full"
+                  style={{
+                    width: `${2 * (1.7 + 2.9 * Math.sqrt(m - 1))}px`,
+                    height: `${2 * (1.7 + 2.9 * Math.sqrt(m - 1))}px`,
+                    background: rampColorAt(ramp, (m - MAG_MIN) / (MAG_MAX - MAG_MIN)),
+                  }}
+                />
+              ))}
+            </span>
+            <span>size shows it too</span>
+          </div>
 
-      {/* Depth, explained. An encoding nobody can read is decoration, and a marker with a hole in it
+          {/* Depth, explained. An encoding nobody can read is decoration, and a marker with a hole in it
           looks like a rendering artefact until something says otherwise. */}
-      <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-        <span className="flex items-baseline gap-1.5">
-          {[0, 0.55, 1].map((depth) => (
-            <span
-              key={depth}
-              className="inline-block rounded-full"
-              style={{
-                width: "12px",
-                height: "12px",
-                background: rampColorAt(ramp, 0.55),
-                // The same carve the shader makes: a hole opening to 0.30 of the sprite at depth.
-                mask: depth > 0.02
-                  ? `radial-gradient(circle, transparent ${depth * 30 * 2}%, #000 ${depth * 30 * 2 + 8}%)`
-                  : undefined,
-                WebkitMask: depth > 0.02
-                  ? `radial-gradient(circle, transparent ${depth * 30 * 2}%, #000 ${depth * 30 * 2 + 8}%)`
-                  : undefined,
-              }}
-            />
-          ))}
-        </span>
-        <span>solid is shallow, hollow is deep</span>
-      </div>
+          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+            <span className="flex items-baseline gap-1.5">
+              {[0, 0.55, 1].map((depth) => (
+                <span
+                  key={depth}
+                  className="inline-block rounded-full"
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    background: rampColorAt(ramp, 0.55),
+                    // The same carve the shader makes: a hole opening to 0.30 of the sprite at depth.
+                    mask:
+                      depth > 0.02
+                        ? `radial-gradient(circle, transparent ${depth * 30 * 2}%, #000 ${depth * 30 * 2 + 8}%)`
+                        : undefined,
+                    WebkitMask:
+                      depth > 0.02
+                        ? `radial-gradient(circle, transparent ${depth * 30 * 2}%, #000 ${depth * 30 * 2 + 8}%)`
+                        : undefined,
+                  }}
+                />
+              ))}
+            </span>
+            <span>solid is shallow, hollow is deep</span>
+          </div>
 
-      {/* The counts stay, the reasoning folds. "66 above 70 km, 54 between 70 and 300" is the part anybody
+          {/* The counts stay, the reasoning folds. "66 above 70 km, 54 between 70 and 300" is the part anybody
           reads, and the slab explanation behind it is two more lines. */}
-      <KeyRow note={depthNote(depth)} />
+          <KeyRow note={depthNote(depth)} />
 
-      {/* With the sink on, a marker is over the hypocentre rather than the epicentre, which for a deep
+          {/* With the sink on, a marker is over the hypocentre rather than the epicentre, which for a deep
           event is a visible distance inland of the point the catalogue names. Everything else in this key
           explains an encoding; this explains a position, which cannot go unsaid. */}
-      {sinkOn ? (
-        <KeyRow note="Each one is drawn at its own depth, so a deep event sits inside the surface point it is listed at. Orbit and they separate." />
-      ) : null}
+          {sinkOn ? (
+            <KeyRow note="Each one is drawn at its own depth, so a deep event sits inside the surface point it is listed at. Orbit and they separate." />
+          ) : null}
 
-      {/* An unexplained line on a data visualisation is a question mark, and somebody could read these as
+          {/* An unexplained line on a data visualisation is a question mark, and somebody could read these as
           a second data layer rather than as the geography the events follow.
 
           The motion toggle hangs off this row because it is a second reading of these exact lines, not
           another layer. Off by default: 231 arrows is a mark in every margin on the planet. */}
-      <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-        <span className="inline-block h-px w-[38px] shrink-0 bg-plate opacity-90" />
-        <span>plate boundaries</span>
-      </div>
+          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+            <span className="inline-block h-px w-[38px] shrink-0 bg-plate opacity-90" />
+            <span>plate boundaries</span>
+          </div>
 
-      {motion ? (
-        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-          <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-            <path d="M -7 6 L 5 -6 M 5 -6 L -1 -6 M 5 -6 L 5 0" fill="none" stroke="currentColor"
-              strokeWidth={1.6} className="text-dim" />
-          </svg>
-          <span>{motionNote(motion)}</span>
-        </div>
-      ) : null}
+          {motion ? (
+            <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+              <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                <path
+                  d="M -7 6 L 5 -6 M 5 -6 L -1 -6 M 5 -6 L 5 0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  className="text-dim"
+                />
+              </svg>
+              <span>{motionNote(motion)}</span>
+            </div>
+          ) : null}
 
-      {/* Its own row, not hung off the boundaries: this is a second population of events - older,
+          {/* Its own row, not hung off the boundaries: this is a second population of events - older,
           differently thresholded, not from today - which is exactly what a viewer must not mistake for the
           marks beside it. So the row says how many, how deep, how big, and over what years. */}
-      {slabOn ? (
-        <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-          <span
-            className="inline-block size-[7px] shrink-0 rounded-full"
-            style={{ background: "var(--color-plate)" }}
-          />
-          {/* Dated, not relative: the table stops at 2025-08-01 and does not move, so "over five years"
+          {slabOn ? (
+            <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+              <span
+                className="inline-block size-[7px] shrink-0 rounded-full"
+                style={{ background: "var(--color-plate)" }}
+              />
+              {/* Dated, not relative: the table stops at 2025-08-01 and does not move, so "over five years"
               is wrong by however long since the generator ran, and silently gets wronger. */}
-          <span>the deep ones, {SLAB_FROM} to {SLAB_TO}</span>
-        </div>
-      ) : null}
+              <span>
+                the deep ones, {SLAB_FROM} to {SLAB_TO}
+              </span>
+            </div>
+          ) : null}
 
-      {slabOn && slabCount > 0 ? (
-        <KeyRow
-          note={`${slabCount.toLocaleString("en")} events below ${SLAB_MIN_DEPTH_KM} km, `
-            + `M${SLAB_MIN_MAGNITUDE} and up. Nothing that deep happens `
-            + `outside a subducting plate, so this is where the plates went. Not today's earthquakes, `
-            + `which is why they carry no colour.`}
-        />
-      ) : null}
+          {slabOn && slabCount > 0 ? (
+            <KeyRow
+              note={
+                `${slabCount.toLocaleString("en")} events below ${SLAB_MIN_DEPTH_KM} km, ` +
+                `M${SLAB_MIN_MAGNITUDE} and up. Nothing that deep happens ` +
+                `outside a subducting plate, so this is where the plates went. Not today's earthquakes, ` +
+                `which is why they carry no colour.`
+              }
+            />
+          ) : null}
 
-      {/* The rings were the one mark nothing named. A ring appears when an event arrives, expands for
+          {/* The rings were the one mark nothing named. A ring appears when an event arrives, expands for
           fifteen seconds and is gone, so a first-time viewer gets one look at it. See ARCHITECTURE.md. */}
-      {/* A spiral for a swatch, because the mark is a spiral. Light gets colour and marks get shapes, so
+          {/* A spiral for a swatch, because the mark is a spiral. Light gets colour and marks get shapes, so
           this one is shape all the way down to its legend entry. */}
-      {cyclones.length > 0 ? (
-        <KeyRow
-          note={cycloneNote(cyclones, category, archived)}
-          glyph={<svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-            <path d={SPIRAL_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
-              className="text-dim" />
-          </svg>}
-        />
-      ) : null}
+          {cyclones.length > 0 ? (
+            <KeyRow
+              note={cycloneNote(cyclones, category, archived)}
+              glyph={
+                <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                  <path
+                    d={SPIRAL_PATH}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.6}
+                    className="text-dim"
+                  />
+                </svg>
+              }
+            />
+          ) : null}
 
-      {/* A triangle, which cannot be read as a magnitude dot. Under the storms because it is the one layer
+          {/* A triangle, which cannot be read as a magnitude dot. Under the storms because it is the one layer
           here that is not live, and the line beside it says so. */}
-      {volcanoes > 0 ? (
-        <KeyRow
-          note={volcanoNote(volcanoes, volcanoesSince, now, archived)}
-          glyph={<svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-            <path d={VOLCANO_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
-              className="text-dim" />
-          </svg>}
-        />
-      ) : null}
+          {volcanoes > 0 ? (
+            <KeyRow
+              note={volcanoNote(volcanoes, volcanoesSince, now, archived)}
+              glyph={
+                <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                  <path
+                    d={VOLCANO_PATH}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.6}
+                    className="text-dim"
+                  />
+                </svg>
+              }
+            />
+          ) : null}
 
-      {/* A flame and the wavy lines water gets, both achromatic. The sentences carry the honesty each feed
+          {/* A flame and the wavy lines water gets, both achromatic. The sentences carry the honesty each feed
           needs - the fire count is a floor, the flood severity does not exist - because a glyph cannot
           caveat itself. */}
-      {fires.count > 0 ? (
-        <KeyRow
-          note={wildfireNote(fires, fireCap, archived)}
-          glyph={<svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-            <path d={FLAME_PATH} fill="none" stroke="currentColor" strokeWidth={1.6}
-              className="text-dim" />
-          </svg>}
-        />
-      ) : null}
+          {fires.count > 0 ? (
+            <KeyRow
+              note={wildfireNote(fires, fireCap, archived)}
+              glyph={
+                <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                  <path
+                    d={FLAME_PATH}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.6}
+                    className="text-dim"
+                  />
+                </svg>
+              }
+            />
+          ) : null}
 
-      {floods > 0 ? (
-        <KeyRow
-          note={floodNote(floods, floodCountries, archived)}
-          glyph={
-            <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-              {WAVE_PATHS.map((d) => (
-                <path key={d} d={d} fill="none" stroke="currentColor" strokeWidth={1.4}
-                  className="text-dim" />
-              ))}
-            </svg>
-          }
-        />
-      ) : null}
+          {floods > 0 ? (
+            <KeyRow
+              note={floodNote(floods, floodCountries, archived)}
+              glyph={
+                <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                  {WAVE_PATHS.map((d) => (
+                    <path
+                      key={d}
+                      d={d}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.4}
+                      className="text-dim"
+                    />
+                  ))}
+                </svg>
+              }
+            />
+          ) : null}
 
-      {/* Last of the layer rows, and the only one that appears because a layer is absent. Without it, a
+          {/* Last of the layer rows, and the only one that appears because a layer is absent. Without it, a
           24-hour window silently deletes all four and the globe just looks empty. */}
-      <KeyRow note={outsideWindow} />
+          <KeyRow note={outsideWindow} />
 
-      {/* The sound leads with what it is not. A tone presented as what an earthquake sounds like would be
+          {/* The sound leads with what it is not. A tone presented as what an earthquake sounds like would be
           the one outright falsehood here: real ground motion is below hearing. */}
-      {sound !== null ? (
-        <KeyRow
-          note={soundNote(sound)}
-          glyph={
-            <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-              <path d="M -8 0 L -3 0 L 2 -7 L 2 7 L -3 0 M 5 -4 Q 8 0 5 4" fill="none"
-                stroke="currentColor" strokeWidth={1.5} className="text-dim" />
-            </svg>
-          }
-        />
-      ) : null}
+          {sound !== null ? (
+            <KeyRow
+              note={soundNote(sound)}
+              glyph={
+                <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                  <path
+                    d="M -8 0 L -3 0 L 2 -7 L 2 7 L -3 0 M 5 -4 Q 8 0 5 4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                    className="text-dim"
+                  />
+                </svg>
+              }
+            />
+          ) : null}
 
-      {/* Below the marks rather than among them, because it is light and they are data. The swatch is a
+          {/* Below the marks rather than among them, because it is light and they are data. The swatch is a
           wash instead of a glyph for the same reason. */}
-      {aurora ? (
-        <KeyRow
-          note={auroraNote(aurora.peak, aurora.forecastAt, Date.now())}
-          glyph={
-            <span
-              className="mt-[3px] inline-block h-[9px] w-[13px] shrink-0 rounded-[2px]"
-              style={{ background: "linear-gradient(180deg, #7fc9a6 0%, rgba(127,201,166,0) 100%)" }}
+          {aurora ? (
+            <KeyRow
+              note={auroraNote(aurora.peak, aurora.forecastAt, Date.now())}
+              glyph={
+                <span
+                  className="mt-[3px] inline-block h-[9px] w-[13px] shrink-0 rounded-[2px]"
+                  style={{ background: "linear-gradient(180deg, #7fc9a6 0%, rgba(127,201,166,0) 100%)" }}
+                />
+              }
             />
-          }
-        />
-      ) : null}
+          ) : null}
 
-      {/* Required, not optional: a dark patch appearing on the planet with nothing naming it is the exact
+          {/* Required, not optional: a dark patch appearing on the planet with nothing naming it is the exact
           case this panel's rule exists for. See ARCHITECTURE.md. */}
-      {eclipse ? (
-        <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-          <span
-            className="mt-[4px] inline-block size-[7px] shrink-0 rounded-full"
-            style={{ background: eclipse.kind === "lunar" ? "var(--color-eclipsed)" : "var(--color-void)" }}
-          />
-          <span>
-            {eclipse.kind === "total"
-              ? "the dark spot is the moon's shadow, placed to a few hundred km"
-              : eclipse.kind === "annular"
-                ? "the moon's shadow, too far out to cover the sun: a ring, not a blackout"
-                : "the moon is red because it is in the Earth's shadow, lit through our sunsets"}
-          </span>
-        </div>
-      ) : null}
+          {eclipse ? (
+            <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+              <span
+                className="mt-[4px] inline-block size-[7px] shrink-0 rounded-full"
+                style={{
+                  background: eclipse.kind === "lunar" ? "var(--color-eclipsed)" : "var(--color-void)",
+                }}
+              />
+              <span>
+                {eclipse.kind === "total"
+                  ? "the dark spot is the moon's shadow, placed to a few hundred km"
+                  : eclipse.kind === "annular"
+                    ? "the moon's shadow, too far out to cover the sun: a ring, not a blackout"
+                    : "the moon is red because it is in the Earth's shadow, lit through our sunsets"}
+              </span>
+            </div>
+          ) : null}
 
-      {/* Both rows say the fact a viewer would otherwise get wrong. See ARCHITECTURE.md. */}
-      {sky ? (
-        <>
-          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-            <span
-              className="inline-block size-[5px] shrink-0 rounded-full"
-              style={{ background: "var(--color-star)" }}
-            />
-            <span>the stars are the real ones, down to magnitude 6</span>
-          </div>
-          {/* The planets are drawn as stars on purpose, so the sentence has to carry what the picture
+          {/* Both rows say the fact a viewer would otherwise get wrong. See ARCHITECTURE.md. */}
+          {sky ? (
+            <>
+              <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+                <span
+                  className="inline-block size-[5px] shrink-0 rounded-full"
+                  style={{ background: "var(--color-star)" }}
+                />
+                <span>the stars are the real ones, down to magnitude 6</span>
+              </div>
+              {/* The planets are drawn as stars on purpose, so the sentence has to carry what the picture
               deliberately does not: five of them are not stars and will have moved by next week. */}
-          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-            <span
-              className="inline-block size-[7px] shrink-0 rounded-full"
-              style={{ background: "var(--color-star)" }}
-            />
-            <span>five of them are planets, and they wander</span>
-          </div>
-          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-            <span
-              className="inline-block size-[9px] shrink-0 rounded-full"
-              style={{ background: "var(--color-moon)" }}
-            />
-            <span>the small disc is the moon, at its real size</span>
-          </div>
-        </>
-      ) : null}
+              <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+                <span
+                  className="inline-block size-[7px] shrink-0 rounded-full"
+                  style={{ background: "var(--color-star)" }}
+                />
+                <span>five of them are planets, and they wander</span>
+              </div>
+              <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+                <span
+                  className="inline-block size-[9px] shrink-0 rounded-full"
+                  style={{ background: "var(--color-moon)" }}
+                />
+                <span>the small disc is the moon, at its real size</span>
+              </div>
+            </>
+          ) : null}
 
-      {/* The only row here describing something nobody measured. There is no honest number to print beside
+          {/* The only row here describing something nobody measured. There is no honest number to print beside
           a constellation, so the row says whose idea it is rather than what it counts. */}
-      {figuresOn ? (
-        <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-          <span className="inline-block h-[1px] w-[7px] shrink-0 bg-current opacity-60" />
-          <span>the lines are the constellations people drew</span>
-        </div>
-      ) : null}
+          {figuresOn ? (
+            <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+              <span className="inline-block h-[1px] w-[7px] shrink-0 bg-current opacity-60" />
+              <span>the lines are the constellations people drew</span>
+            </div>
+          ) : null}
 
-      {/* The rings' words were JSX rather than a note, so the row could interpolate the playback
+          {/* The rings' words were JSX rather than a note, so the row could interpolate the playback
           multiplier. A template string carries that and lets the row take the same shape as the rest. */}
-      <KeyRow
-        // The pair is the head; why they are sped up and what the gap measures are the body.
-        note={"two rings leave each new epicentre. "
-          + "The P-wave, and the slower S behind it. "
-          + `Sped up \u00d7${PLAYBACK} or they would not appear to move, and the gap between them is `
-          + "how distance to a quake is measured."}
-        glyph={
-          /* Two circles, which is literally what is drawn: the outer is the P front and the inner the S.
+          <KeyRow
+            // The pair is the head; why they are sped up and what the gap measures are the body.
+            note={
+              "two rings leave each new epicentre. " +
+              "The P-wave, and the slower S behind it. " +
+              `Sped up \u00d7${PLAYBACK} or they would not appear to move, and the gap between them is ` +
+              "how distance to a quake is measured."
+            }
+            glyph={
+              /* Two circles, which is literally what is drawn: the outer is the P front and the inner the S.
              On the ramp like the markers, since a ring carries its own event's magnitude colour. */
-          <span className="relative mt-[3px] inline-block size-[13px] shrink-0">
-            <span
-              className="absolute inset-[3.5px] rounded-full border"
-              style={{ borderColor: rampColorAt(ramp, 0.55) }}
-            />
-            <span
-              className="absolute inset-0 rounded-full border opacity-45"
-              style={{ borderColor: rampColorAt(ramp, 0.55) }}
-            />
-          </span>
-        }
-      />
+              <span className="relative mt-[3px] inline-block size-[13px] shrink-0">
+                <span
+                  className="absolute inset-[3.5px] rounded-full border"
+                  style={{ borderColor: rampColorAt(ramp, 0.55) }}
+                />
+                <span
+                  className="absolute inset-0 rounded-full border opacity-45"
+                  style={{ borderColor: rampColorAt(ramp, 0.55) }}
+                />
+              </span>
+            }
+          />
 
-      {/* The city goes in the row rather than in a tooltip, because a tooltip needs the mark found first
+          {/* The city goes in the row rather than in a tooltip, because a tooltip needs the mark found first
           and this mark exists to be found. "Roughly" is not modesty: a timezone can be a thousand
           kilometres wide, so somebody in Vancouver gets a tick over Los Angeles. */}
-      {herePlace ? (
-        <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-          <span className="inline-block size-[9px] shrink-0 border border-current opacity-70" />
-          <span>the four ticks are roughly you, near {herePlace}</span>
-        </div>
-      ) : null}
-
-      </details>
+          {herePlace ? (
+            <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+              <span className="inline-block size-[9px] shrink-0 border border-current opacity-70" />
+              <span>the four ticks are roughly you, near {herePlace}</span>
+            </div>
+          ) : null}
+        </details>
       </div>
     );
   }
@@ -471,10 +557,7 @@ export function MagnitudeFilter(
         />
         {/* The excluded range is dimmed, not removed, so the scale stays whole. Cutting the track short
             would make the legend change length every time the filter moved. */}
-        <div
-          className="absolute inset-y-0 left-0 rounded-l-[1px] bg-deck/78"
-          style={{ width: `${cut}%` }}
-        />
+        <div className="absolute inset-y-0 left-0 rounded-l-[1px] bg-deck/78" style={{ width: `${cut}%` }} />
         <input
           id="mag"
           type="range"
@@ -515,8 +598,6 @@ export function MagnitudeFilter(
       {/* The split, drawn. Without a rule the source buttons sat 10px above the commentary with the same
           gap that separates the slider from its ticks, so the panel read as one undifferentiated stack. */}
       <hr className="mt-3.5 border-t border-hairline" />
-
-
     </div>
   );
 }

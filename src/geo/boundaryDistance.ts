@@ -7,8 +7,12 @@ import { EARTH_RADIUS_KM } from "./sphere";
 
 /** A boundary segment as two unit vectors' worth of arithmetic, prepared once. */
 export interface Segment {
-  ax: number; ay: number; az: number;
-  bx: number; by: number; bz: number;
+  ax: number;
+  ay: number;
+  az: number;
+  bx: number;
+  by: number;
+  bz: number;
 }
 
 /** Beyond this a segment is a wrap across the antimeridian rather than a real edge, as in `plates.ts`. */
@@ -16,9 +20,7 @@ const WRAP_DEG = 170;
 const DEG = Math.PI / 180;
 
 /** The boundary lines, flattened into segments in three-space so the hot loop has no trigonometry. */
-export function toSegments(
-  lines: readonly (readonly (readonly [number, number])[])[],
-): Segment[] {
+export function toSegments(lines: readonly (readonly (readonly [number, number])[])[]): Segment[] {
   const out: Segment[] = [];
   for (const line of lines) {
     for (let i = 0; i < line.length - 1; i += 1) {
@@ -41,9 +43,7 @@ function unit(lon: number, lat: number): [number, number, number] {
 }
 
 /** Great-circle distance to the nearest segment, in km. See ARCHITECTURE.md. */
-export function nearestBoundaryKm(
-  lon: number, lat: number, segments: readonly Segment[],
-): number | null {
+export function nearestBoundaryKm(lon: number, lat: number, segments: readonly Segment[]): number | null {
   if (segments.length === 0) return null;
   const [px, py, pz] = unit(lon, lat);
   let best = Infinity;
@@ -62,8 +62,7 @@ export function nearestBoundaryKm(
     if (nLen > 1e-12 && pa >= ab && pb >= ab) {
       angle = Math.asin(Math.min(1, Math.abs((px * nx + py * ny + pz * nz) / nLen)));
     } else {
-      angle = Math.min(Math.acos(Math.max(-1, Math.min(1, pa))),
-        Math.acos(Math.max(-1, Math.min(1, pb))));
+      angle = Math.min(Math.acos(Math.max(-1, Math.min(1, pa))), Math.acos(Math.max(-1, Math.min(1, pb))));
     }
     if (angle < best) best = angle;
   }

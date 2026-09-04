@@ -1,9 +1,7 @@
 import { describe, expect, it } from "vitest";
 import pair from "./fixtures/one-quake-both-feeds.json";
 import captured from "./fixtures/emsc-socket-frames.json";
-import {
-  createFakeRuntime, describeSourceContract, type FakeRuntime, type FakeSocket,
-} from "./contract";
+import { createFakeRuntime, describeSourceContract, type FakeRuntime, type FakeSocket } from "./contract";
 import { createEmscSource, parseEmscFrame, SEED_LIMIT } from "./emsc";
 import { createUsgsSource } from "./usgs";
 import { createStore } from "../data/store";
@@ -69,9 +67,7 @@ describe("frames captured off the live socket", () => {
   });
 
   it("keeps magnitude scales the recording contains that no other fixture does", () => {
-    const scales = captured.frames.map(
-      (f) => parseEmscFrame(JSON.stringify(f), 1)!.reading.scale,
-    );
+    const scales = captured.frames.map((f) => parseEmscFrame(JSON.stringify(f), 1)!.reading.scale);
     // The live socket sent a bare "m", which is not a scale any hand-written fixture would have
     // thought to include, and is exactly why recordings are kept alongside invented edge cases.
     expect(scales).toContain("m");
@@ -102,28 +98,62 @@ describe("parsing a real EMSC frame", () => {
   });
 
   it("spells out the event type code", () => {
-    expect(parseEmscFrame(JSON.stringify({
-      action: "create",
-      data: { properties: { unid: "x", lat: 0, lon: 0, mag: 5, time: "2026-01-01T00:00:00Z",
-        evtype: "se", magtype: "mb" } },
-    }), at)!.reading.kind).toBe("suspected explosion");
+    expect(
+      parseEmscFrame(
+        JSON.stringify({
+          action: "create",
+          data: {
+            properties: {
+              unid: "x",
+              lat: 0,
+              lon: 0,
+              mag: 5,
+              time: "2026-01-01T00:00:00Z",
+              evtype: "se",
+              magtype: "mb",
+            },
+          },
+        }),
+        at,
+      )!.reading.kind,
+    ).toBe("suspected explosion");
   });
 
   it("passes an unrecognised type code through rather than calling it an earthquake", () => {
-    expect(parseEmscFrame(JSON.stringify({
-      action: "create",
-      data: { properties: { unid: "x", lat: 0, lon: 0, mag: 5, time: "2026-01-01T00:00:00Z",
-        evtype: "zz", magtype: "mb" } },
-    }), at)!.reading.kind).toBe("zz");
+    expect(
+      parseEmscFrame(
+        JSON.stringify({
+          action: "create",
+          data: {
+            properties: {
+              unid: "x",
+              lat: 0,
+              lon: 0,
+              mag: 5,
+              time: "2026-01-01T00:00:00Z",
+              evtype: "zz",
+              magtype: "mb",
+            },
+          },
+        }),
+        at,
+      )!.reading.kind,
+    ).toBe("zz");
   });
 
   it("returns null for frames that are not events, rather than throwing", () => {
     expect(parseEmscFrame("not json", at)).toBeNull();
     expect(parseEmscFrame(JSON.stringify({ action: "ping" }), at)).toBeNull();
     expect(parseEmscFrame(JSON.stringify({ action: "create", data: {} }), at)).toBeNull();
-    expect(parseEmscFrame(JSON.stringify({ action: "create",
-      data: { properties: { unid: "x", lat: 999, lon: 0, mag: 5, time: "2026-01-01T00:00:00Z" } },
-    }), at)).toBeNull();
+    expect(
+      parseEmscFrame(
+        JSON.stringify({
+          action: "create",
+          data: { properties: { unid: "x", lat: 999, lon: 0, mag: 5, time: "2026-01-01T00:00:00Z" } },
+        }),
+        at,
+      ),
+    ).toBeNull();
     expect(parseEmscFrame(null, at)).toBeNull();
   });
 });
@@ -133,18 +163,35 @@ describe("push-specific behaviour", () => {
     const runtime = makeRuntime("healthy");
     const source = createEmscSource(runtime, "wss://example.invalid/socket");
     let count = 0;
-    source.start({ onReadings: (b) => { count += b.length; }, onStatus: () => {} , onSeeded: () => {} });
+    source.start({
+      onReadings: (b) => {
+        count += b.length;
+      },
+      onStatus: () => {},
+      onSeeded: () => {},
+    });
     const socket = runtime.sockets[0]!;
     socket.emit("open", {});
 
     // Far more distinct events than a page would ever see, to prove the seen-set is capped. A
     // polling source can replace its seen-set each cycle; a socket accumulates until told not to.
     for (let i = 0; i < 25_000; i += 1) {
-      socket.emit("message", { data: JSON.stringify({
-        action: "create",
-        data: { properties: { unid: `e${i}`, lat: 10, lon: 20, mag: 4, magtype: "mb",
-          time: "2026-01-01T00:00:00Z", lastupdate: "2026-01-01T00:00:01Z" } },
-      }) });
+      socket.emit("message", {
+        data: JSON.stringify({
+          action: "create",
+          data: {
+            properties: {
+              unid: `e${i}`,
+              lat: 10,
+              lon: 20,
+              mag: 4,
+              magtype: "mb",
+              time: "2026-01-01T00:00:00Z",
+              lastupdate: "2026-01-01T00:00:01Z",
+            },
+          },
+        }),
+      });
     }
     await runtime.flush();
     expect(count).toBe(25_000);
@@ -155,15 +202,29 @@ describe("push-specific behaviour", () => {
     const runtime = makeRuntime("healthy");
     const source = createEmscSource(runtime, "wss://example.invalid/socket");
     const mags: number[] = [];
-    source.start({ onReadings: (b) => mags.push(...b.map((r) => r.magnitude)), onStatus: () => {} , onSeeded: () => {} });
+    source.start({
+      onReadings: (b) => mags.push(...b.map((r) => r.magnitude)),
+      onStatus: () => {},
+      onSeeded: () => {},
+    });
     const socket = runtime.sockets[0]!;
     socket.emit("open", {});
 
-    const frame = (mag: number, updated: string) => JSON.stringify({
-      action: "create",
-      data: { properties: { unid: "e1", lat: 10, lon: 20, mag, magtype: "mb",
-        time: "2026-01-01T00:00:00Z", lastupdate: updated } },
-    });
+    const frame = (mag: number, updated: string) =>
+      JSON.stringify({
+        action: "create",
+        data: {
+          properties: {
+            unid: "e1",
+            lat: 10,
+            lon: 20,
+            mag,
+            magtype: "mb",
+            time: "2026-01-01T00:00:00Z",
+            lastupdate: updated,
+          },
+        },
+      });
 
     socket.emit("message", { data: frame(4.2, "2026-01-01T00:00:10Z") });
     socket.emit("message", { data: frame(4.2, "2026-01-01T00:00:10Z") }); // identical resend
@@ -178,7 +239,7 @@ describe("push-specific behaviour", () => {
     const runtime = makeRuntime("healthy");
     const source = createEmscSource(runtime, "wss://example.invalid/socket");
     const statuses: string[] = [];
-    source.start({ onReadings: () => {}, onStatus: (s) => statuses.push(s.kind) , onSeeded: () => {} });
+    source.start({ onReadings: () => {}, onStatus: (s) => statuses.push(s.kind), onSeeded: () => {} });
     runtime.sockets[0]!.emit("open", {});
     await runtime.flush();
 
@@ -206,12 +267,12 @@ describe("one real earthquake, two agencies", () => {
       respond: async () => ({ ok: true, status: 200, json: async () => pair.usgs }),
     });
     const usgs = createUsgsSource(usgsRuntime, "https://example.invalid/feed");
-    usgs.start({ onReadings: (b) => readings.push(...b), onStatus: () => {} , onSeeded: () => {} });
+    usgs.start({ onReadings: (b) => readings.push(...b), onStatus: () => {}, onSeeded: () => {} });
     await usgsRuntime.flush();
 
     const emscRuntime = makeRuntime("healthy");
     const emsc = createEmscSource(emscRuntime, "wss://example.invalid/socket");
-    emsc.start({ onReadings: (b) => readings.push(...b), onStatus: () => {} , onSeeded: () => {} });
+    emsc.start({ onReadings: (b) => readings.push(...b), onStatus: () => {}, onSeeded: () => {} });
     emscRuntime.sockets[0]!.emit("open", {});
     emscRuntime.sockets[0]!.emit("message", { data: FRAME });
     await emscRuntime.flush();
@@ -274,23 +335,25 @@ describe("how far back a seed says it reaches", () => {
   /** A catalogue page of `count` events, newest first, one minute apart, as FDSN answers it. */
   const page = (count: number, now: number, opts: { parseable?: boolean } = {}) => ({
     features: Array.from({ length: count }, (_, i) => ({
-      properties: opts.parseable === false
-        ? { unid: `bad${i}` }
-        : {
-          unid: `e${i}`,
-          lat: 10,
-          lon: 20,
-          mag: 4,
-          magtype: "mb",
-          time: new Date(now - i * 60_000).toISOString(),
-          lastupdate: new Date(now - i * 60_000).toISOString(),
-        },
+      properties:
+        opts.parseable === false
+          ? { unid: `bad${i}` }
+          : {
+              unid: `e${i}`,
+              lat: 10,
+              lon: 20,
+              mag: 4,
+              magtype: "mb",
+              time: new Date(now - i * 60_000).toISOString(),
+              lastupdate: new Date(now - i * 60_000).toISOString(),
+            },
     })),
   });
 
   /** Runs one seed against a catalogue response and hands back what it vouched for. */
   const seedWith = async (
-    body: unknown, seedHours: number,
+    body: unknown,
+    seedHours: number,
   ): Promise<{ covered: number | null; now: number }> => {
     const sockets: FakeSocket[] = [];
     const runtime = createFakeRuntime({
@@ -299,14 +362,17 @@ describe("how far back a seed says it reaches", () => {
     }) as SocketRuntime;
     runtime.sockets = sockets;
     const source = createEmscSource(
-      runtime, { socket: "wss://example.invalid/socket", catalogue: "https://example.invalid/query" },
+      runtime,
+      { socket: "wss://example.invalid/socket", catalogue: "https://example.invalid/query" },
       seedHours,
     );
     let covered: number | null = null;
     source.start({
       onReadings: () => {},
       onStatus: () => {},
-      onSeeded: (from) => { covered = from; },
+      onSeeded: (from) => {
+        covered = from;
+      },
     });
     await runtime.flush();
     await runtime.flush();
@@ -331,9 +397,7 @@ describe("how far back a seed says it reaches", () => {
   it("vouches for nothing when a full page yielded no events at all", async () => {
     // The one combination where falling back to the whole span is exactly wrong: the page was cut short and
     // there is no way to know where, so claiming the month claims it on zero events.
-    const { covered } = await seedWith(
-      page(SEED_LIMIT, 1_700_000_000_000, { parseable: false }), 30 * 24,
-    );
+    const { covered } = await seedWith(page(SEED_LIMIT, 1_700_000_000_000, { parseable: false }), 30 * 24);
     expect(covered).toBeNull();
   });
 
@@ -349,20 +413,26 @@ describe("how far back a seed says it reaches", () => {
     }) as SocketRuntime;
     runtime.sockets = sockets;
     const source = createEmscSource(
-      runtime, { socket: "wss://example.invalid/socket", catalogue: "https://example.invalid/query" },
+      runtime,
+      { socket: "wss://example.invalid/socket", catalogue: "https://example.invalid/query" },
       30 * 24,
     );
     let covered: number | null = null;
     source.start({
       onReadings: () => {},
       onStatus: () => {},
-      onSeeded: (from) => { covered = from; },
+      onSeeded: (from) => {
+        covered = from;
+      },
     });
     // The oldest row on the page, pushed over the socket first, so the seed treats it as already seen.
     sockets[0]!.emit("open", {});
-    sockets[0]!.emit("message", { data: JSON.stringify({
-      action: "create", data: body.features[SEED_LIMIT - 1],
-    }) });
+    sockets[0]!.emit("message", {
+      data: JSON.stringify({
+        action: "create",
+        data: body.features[SEED_LIMIT - 1],
+      }),
+    });
     await runtime.flush();
     await runtime.flush();
     source.stop();
@@ -373,8 +443,9 @@ describe("how far back a seed says it reaches", () => {
 describe("the authority behind an EMSC solution", () => {
   it("names who computed it, not who relayed it", () => {
     // BMKG is Indonesia's agency; EMSC passed their answer on. Both facts are now on screen.
-    const nets = (captured.frames as { data: unknown }[])
-      .map((f) => parseEmscFrame(JSON.stringify(f), 1_700_000_000_000)?.reading.network);
+    const nets = (captured.frames as { data: unknown }[]).map(
+      (f) => parseEmscFrame(JSON.stringify(f), 1_700_000_000_000)?.reading.network,
+    );
     expect(nets).toContain("BMKG");
     expect(nets.every((n) => n === undefined || n.trim() === n)).toBe(true);
   });
@@ -384,8 +455,14 @@ describe("the authority behind an EMSC solution", () => {
       action: "create",
       data: {
         properties: {
-          unid: "x", mag: 5, magtype: "mb", lat: 10, lon: 20, depth: 5,
-          time: "2026-08-17T00:00:00Z", auth: "   ",
+          unid: "x",
+          mag: 5,
+          magtype: "mb",
+          lat: 10,
+          lon: 20,
+          depth: 5,
+          time: "2026-08-17T00:00:00Z",
+          auth: "   ",
         },
         geometry: { coordinates: [20, 10, -5] },
       },

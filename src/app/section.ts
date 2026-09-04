@@ -57,7 +57,10 @@ const KM_PER_DEGREE = (Math.PI * EARTH_RADIUS_KM) / 180;
 
 /** A section through a point, across the local trend rather than along it. See ARCHITECTURE.md. */
 export function sectionThrough(
-  lon: number, lat: number, trendDeg: number | null, lengthKm = SECTION_DEFAULT_KM,
+  lon: number,
+  lat: number,
+  trendDeg: number | null,
+  lengthKm = SECTION_DEFAULT_KM,
 ): SectionLine {
   // Across the trend, not along it. A null trend leaves this at 90, which is due east.
   const bearing = ((trendDeg ?? 0) + 90) * (Math.PI / 180);
@@ -87,7 +90,8 @@ export function sectionThrough(
 
 /** The two edges of the corridor, as lines that can be drawn beside the centre. See ARCHITECTURE.md. */
 export function sectionEdges(
-  line: SectionLine, halfWidthKm = SECTION_HALF_WIDTH_KM,
+  line: SectionLine,
+  halfWidthKm = SECTION_HALF_WIDTH_KM,
 ): [SectionLine, SectionLine] {
   const a = toVec3(line.fromLon, line.fromLat, 1);
   const b = toVec3(line.toLon, line.toLat, 1);
@@ -95,7 +99,9 @@ export function sectionEdges(
   let ny = a[2] * b[0] - a[0] * b[2];
   let nz = a[0] * b[1] - a[1] * b[0];
   const nLen = Math.hypot(nx, ny, nz) || 1;
-  nx /= nLen; ny /= nLen; nz /= nLen;
+  nx /= nLen;
+  ny /= nLen;
+  nz /= nLen;
 
   const t = halfWidthKm / EARTH_RADIUS_KM;
   const cos = Math.cos(t);
@@ -105,10 +111,7 @@ export function sectionEdges(
     const y = v[1] * cos + ny * side * sin;
     const z = v[2] * cos + nz * side * sin;
     const r = Math.hypot(x, y, z) || 1;
-    return [
-      Math.atan2(x / r, z / r) / DEG,
-      Math.asin(Math.max(-1, Math.min(1, y / r))) / DEG,
-    ];
+    return [Math.atan2(x / r, z / r) / DEG, Math.asin(Math.max(-1, Math.min(1, y / r))) / DEG];
   };
   const edge = (side: number): SectionLine => {
     const [fromLon, fromLat] = shift(a, side);
@@ -123,9 +126,7 @@ export function sectionEdges(
  * `atan2`, a wrapped difference of angles and an `asin` whose sign has to be reasoned about; this needs a
  * cross product and two dot products, and gets the sign for free.
  */
-function project(
-  line: SectionLine, lon: number, lat: number,
-): { alongKm: number; offsetKm: number } {
+function project(line: SectionLine, lon: number, lat: number): { alongKm: number; offsetKm: number } {
   const a = toVec3(line.fromLon, line.fromLat, 1);
   const b = toVec3(line.toLon, line.toLat, 1);
   const p = toVec3(lon, lat, 1);
@@ -135,7 +136,9 @@ function project(
   let ny = a[2] * b[0] - a[0] * b[2];
   let nz = a[0] * b[1] - a[1] * b[0];
   const nLen = Math.hypot(nx, ny, nz) || 1;
-  nx /= nLen; ny /= nLen; nz /= nLen;
+  nx /= nLen;
+  ny /= nLen;
+  nz /= nLen;
 
   // Distance off the plane is the angle out of it, which is what the dot product with the normal is.
   const offAngle = Math.asin(Math.max(-1, Math.min(1, p[0] * nx + p[1] * ny + p[2] * nz)));
@@ -148,10 +151,7 @@ function project(
   const qx = ny * a[2] - nz * a[1];
   const qy = nz * a[0] - nx * a[2];
   const qz = nx * a[1] - ny * a[0];
-  const alongAngle = Math.atan2(
-    px * qx + py * qy + pz * qz,
-    px * a[0] + py * a[1] + pz * a[2],
-  );
+  const alongAngle = Math.atan2(px * qx + py * qy + pz * qz, px * a[0] + py * a[1] + pz * a[2]);
 
   return {
     alongKm: alongAngle * EARTH_RADIUS_KM,
@@ -176,11 +176,11 @@ export function plateCrossings(line: SectionLine, lengthKm: number): number[] {
     for (const [lon, lat] of polyline) {
       const here = project(line, lon, lat);
       if (
-        prev
-        && Math.sign(prev.offsetKm) !== Math.sign(here.offsetKm)
+        prev &&
+        Math.sign(prev.offsetKm) !== Math.sign(here.offsetKm) &&
         // `atan2` breaks at the antipode of the start, so a segment straddling it has one end near
         // +20,000km and the other near -20,000km. Interpolating lands at zero, which looks deliberate.
-        && Math.abs(here.alongKm - prev.alongKm) < 10_000
+        Math.abs(here.alongKm - prev.alongKm) < 10_000
       ) {
         const t = Math.abs(prev.offsetKm) / (Math.abs(prev.offsetKm) + Math.abs(here.offsetKm));
         const at = prev.alongKm + (here.alongKm - prev.alongKm) * t;
@@ -198,8 +198,12 @@ export function plateCrossings(line: SectionLine, lengthKm: number): number[] {
  * depth axis drawn flat, and a dipping plane reads as one from any angle.
  */
 export function buildSection(
-  store: Store, line: SectionLine, filters: Filters, now: number,
-  halfWidthKm = SECTION_HALF_WIDTH_KM, slabTable: readonly SlabPoint[] = [],
+  store: Store,
+  line: SectionLine,
+  filters: Filters,
+  now: number,
+  halfWidthKm = SECTION_HALF_WIDTH_KM,
+  slabTable: readonly SlabPoint[] = [],
 ): Section {
   const lengthKm = sectionLengthKm(line);
   const points: SectionPoint[] = [];
@@ -219,7 +223,11 @@ export function buildSection(
       return;
     }
     points.push({
-      key: quake.key, alongKm, offsetKm, depthKm: r.depthKm, magnitude: r.magnitude,
+      key: quake.key,
+      alongKm,
+      offsetKm,
+      depthKm: r.depthKm,
+      magnitude: r.magnitude,
     });
     if (r.depthKm > deepestKm) deepestKm = r.depthKm;
   });
@@ -241,7 +249,12 @@ export function buildSection(
   }
 
   return {
-    lengthKm, halfWidthKm, points, deepestKm, withoutDepth, slab,
+    lengthKm,
+    halfWidthKm,
+    points,
+    deepestKm,
+    withoutDepth,
+    slab,
     crossings: plateCrossings(line, lengthKm),
   };
 }

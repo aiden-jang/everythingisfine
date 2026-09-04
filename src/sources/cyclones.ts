@@ -3,8 +3,9 @@ import { parseUtc, reportedBy } from "./gdacs";
    hurricane; drawn as a track it explains itself, curving poleward as every cyclone does. Only what is
    happening now. GDACS lists 99 and flags 3 `iscurrent`; the other 96 are dead storms. See ARCHITECTURE.md. */
 
-const LIST = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH"
-  + "?eventlist=TC&alertlevel=Green;Orange;Red";
+const LIST =
+  "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH" +
+  "?eventlist=TC&alertlevel=Green;Orange;Red";
 
 const GEOMETRY = "https://www.gdacs.org/gdacsapi/api/polygons/getgeometry";
 
@@ -130,19 +131,19 @@ export async function fetchCyclones(
     // The list answered, which is what this reports. A storm whose track request fails is still a storm and
     // still drawn where it is, so a missing tail is not a dead feed.
     onAnswer?.(true);
-    return await Promise.all(current.map(async (storm) => {
-      const episode = (storm as unknown as { episode?: string }).episode ?? "";
-      try {
-        const geo = await get(
-          `${GEOMETRY}?eventtype=TC&eventid=${storm.id}&episodeid=${episode}`,
-        );
-        if (!geo.ok) return { ...storm, track: [] };
-        return { ...storm, track: parseTrack(await geo.json()) };
-      } catch {
-        // A storm without its track is still a storm, and still drawn where it is.
-        return { ...storm, track: [] };
-      }
-    }));
+    return await Promise.all(
+      current.map(async (storm) => {
+        const episode = (storm as unknown as { episode?: string }).episode ?? "";
+        try {
+          const geo = await get(`${GEOMETRY}?eventtype=TC&eventid=${storm.id}&episodeid=${episode}`);
+          if (!geo.ok) return { ...storm, track: [] };
+          return { ...storm, track: parseTrack(await geo.json()) };
+        } catch {
+          // A storm without its track is still a storm, and still drawn where it is.
+          return { ...storm, track: [] };
+        }
+      }),
+    );
   } catch {
     onAnswer?.(false);
     return [];

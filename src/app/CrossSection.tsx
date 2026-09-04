@@ -36,7 +36,12 @@ function ticks(lengthKm: number): number[] {
 }
 
 export function CrossSection({
-  data, ramp, store, selected, onSelect, onClose,
+  data,
+  ramp,
+  store,
+  selected,
+  onSelect,
+  onClose,
 }: CrossSectionProps): JSX.Element {
   const [hovered, setHovered] = useState<string | null>(null);
   const hoveredReading = hovered ? store.get(hovered)?.primary : undefined;
@@ -80,15 +85,14 @@ export function CrossSection({
             following the cursor inside a 120px band covers the marks either side of the one it names. */}
         {hoveredReading ? (
           <span className="min-w-0 truncate font-mono text-[10.5px] text-dim">
-            <span className="text-ink">{magnitude(hoveredReading)}</span> ·{" "}
-            {depth(hoveredReading)} · {place(hoveredReading.place)}
+            <span className="text-ink">{magnitude(hoveredReading)}</span> · {depth(hoveredReading)} ·{" "}
+            {place(hoveredReading.place)}
           </span>
         ) : (
           /* The length is on the axis below, so it is not up here as well. This printed "1,438 km long"
              while the axis printed "1,438 km" at its right end. */
           <span className="font-mono text-[10.5px] text-faint">
-            {SECTION_HALF_WIDTH_KM} km either
-            side ·{" "}
+            {SECTION_HALF_WIDTH_KM} km either side ·{" "}
             {exaggeration < 1.05 && exaggeration > 0.95
               ? "1:1"
               : `${exaggeration.toFixed(exaggeration < 10 ? 1 : 0)}\u00d7 vertical`}
@@ -98,9 +102,7 @@ export function CrossSection({
           {withoutDepth > 0 ? (
             // Named rather than dropped. A section is a claim about depth, so events with no depth published
             // are the one omission a reader has to be told about.
-            <span className="text-[11px] text-faint">
-              {withoutDepth} without a published depth
-            </span>
+            <span className="text-[11px] text-faint">{withoutDepth} without a published depth</span>
           ) : null}
           {/* Keys are written the way they are printed on a keyboard, lowercase and mono, not wearing
               `.label`. The touch target is top-aligned for the same reason as the others: a button centres
@@ -121,14 +123,14 @@ export function CrossSection({
          * and a slab running its length draws a dense arc, and every other drawing here is about the window.
          */
         <p className="mb-1.5 max-w-[52ch] text-[11px] leading-relaxed text-dim">
-          Nothing from this window is inside the corridor. Everything drawn is the deep record for{" "}
-          {SLAB_FROM} to {SLAB_TO}.
+          Nothing from this window is inside the corridor. Everything drawn is the deep record for {SLAB_FROM}{" "}
+          to {SLAB_TO}.
         </p>
       ) : null}
       {drawn === 0 ? (
         <p className="max-w-[52ch] text-[11px] leading-relaxed text-dim">
-          Nothing inside this corridor in the current window. Margins are where the depth is: try a
-          line across a plate boundary, at right angles to it.
+          Nothing inside this corridor in the current window. Margins are where the depth is: try a line
+          across a plate boundary, at right angles to it.
         </p>
       ) : (
         <div className="relative w-full">
@@ -202,55 +204,61 @@ export function CrossSection({
             ))}
             {/* Deepest last, so a 600km event is not hidden behind the shallow swarm above it. By depth
                 rather than by magnitude, because depth is what this picture is for. */}
-            {[...points].sort((a, b) => a.depthKm - b.depthKm).map((p) => (
-              <circle
-                key={p.key}
-                cx={x(p.alongKm)}
-                cy={y(p.depthKm)}
-                r={r(p.magnitude)}
-                fill={rampColorAt(ramp, rampAt(p.magnitude))}
-                /* Fades with how far off the line it is, so the corridor reads as a corridor rather
+            {[...points]
+              .sort((a, b) => a.depthKm - b.depthKm)
+              .map((p) => (
+                <circle
+                  key={p.key}
+                  cx={x(p.alongKm)}
+                  cy={y(p.depthKm)}
+                  r={r(p.magnitude)}
+                  fill={rampColorAt(ramp, rampAt(p.magnitude))}
+                  /* Fades with how far off the line it is, so the corridor reads as a corridor rather
                    than as a slice with hard edges. */
-                opacity={0.35 + 0.55 * (1 - Math.abs(p.offsetKm) / data.halfWidthKm)}
-                /*
-                 * Clickable, like every other view of an event. The hit area is the mark itself and marks
-                 * overlap, so the deepest is on top for the same reason it is drawn last.
-                 */
-                className="cursor-pointer"
-                onPointerEnter={() => setHovered(p.key)}
-                onPointerLeave={() => setHovered((h) => (h === p.key ? null : h))}
-                onClick={() => onSelect(p.key === selected ? null : p.key)}
-              />
-            ))}
+                  opacity={0.35 + 0.55 * (1 - Math.abs(p.offsetKm) / data.halfWidthKm)}
+                  /*
+                   * Clickable, like every other view of an event. The hit area is the mark itself and marks
+                   * overlap, so the deepest is on top for the same reason it is drawn last.
+                   */
+                  className="cursor-pointer"
+                  onPointerEnter={() => setHovered(p.key)}
+                  onPointerLeave={() => setHovered((h) => (h === p.key ? null : h))}
+                  onClick={() => onSelect(p.key === selected ? null : p.key)}
+                />
+              ))}
             {/* The pinned and hovered marks, ringed. Achromatic: a coloured ring would be a hue meaning
                 nothing beside hues that mean magnitude. */}
-            {points.filter((p) => p.key === selected || p.key === hovered).map((p) => (
-              <circle
-                key={`r${p.key}`}
-                cx={x(p.alongKm)}
-                cy={y(p.depthKm)}
-                r={r(p.magnitude) + 3}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={p.key === selected ? 1.6 : 1}
-                className={p.key === selected ? "text-ink" : "text-dim"}
-                vectorEffect="non-scaling-stroke"
-                pointerEvents="none"
-              />
-            ))}
+            {points
+              .filter((p) => p.key === selected || p.key === hovered)
+              .map((p) => (
+                <circle
+                  key={`r${p.key}`}
+                  cx={x(p.alongKm)}
+                  cy={y(p.depthKm)}
+                  r={r(p.magnitude) + 3}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={p.key === selected ? 1.6 : 1}
+                  className={p.key === selected ? "text-ink" : "text-dim"}
+                  vectorEffect="non-scaling-stroke"
+                  pointerEvents="none"
+                />
+              ))}
           </svg>
 
           {/* Labels in HTML rather than SVG, so they keep one size whatever the aspect ratio does to the
               drawing. Positioned in percentages of the same box. */}
-          {grid(floorKm).filter((d) => d > 0 && d < floorKm).map((d) => (
-            <span
-              key={d}
-              className="pointer-events-none absolute left-1 -translate-y-1/2 font-mono text-[9.5px] text-faint"
-              style={{ top: `${(y(d) / height) * 100}%` }}
-            >
-              {d}
-            </span>
-          ))}
+          {grid(floorKm)
+            .filter((d) => d > 0 && d < floorKm)
+            .map((d) => (
+              <span
+                key={d}
+                className="pointer-events-none absolute left-1 -translate-y-1/2 font-mono text-[9.5px] text-faint"
+                style={{ top: `${(y(d) / height) * 100}%` }}
+              >
+                {d}
+              </span>
+            ))}
         </div>
       )}
 

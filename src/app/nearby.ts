@@ -43,7 +43,12 @@ const TREND_MIN_RATIO = 1.5;
 
 /** The long axis of a scatter, from the sums of its second moments. See ARCHITECTURE.md. */
 export function trendFrom(
-  n: number, sx: number, sy: number, sxx: number, syy: number, sxy: number,
+  n: number,
+  sx: number,
+  sy: number,
+  sxx: number,
+  syy: number,
+  sxy: number,
 ): number | null {
   if (n < TREND_MIN_POINTS) return null;
   // About the centroid, not about the pinned event: the event sits somewhere on the trend, and measuring
@@ -71,9 +76,7 @@ export function trendFrom(
   return ((bearing % 180) + 180) % 180;
 }
 
-export function findNearby(
-  store: Store, quake: Quake, filters: Filters, now: number,
-): Nearby {
+export function findNearby(store: Store, quake: Quake, filters: Filters, now: number): Nearby {
   const found: { quake: Quake; km: number }[] = [];
   const { lon, lat } = quake.primary;
   // Second moments accumulated inside the walk that is already happening. A separate pass would be a second
@@ -155,9 +158,10 @@ export function depthClass(depthKm: number): string | null {
  * nearest-in-space, because a sequence unfolds: "the next one" means the next one to happen. See
  * ARCHITECTURE.md.
  */
-export function stepsFrom(
-  sequence: readonly { key: string; at: number; magnitude: number }[],
-): { earlier: { key: string; magnitude: number } | null; later: { key: string; magnitude: number } | null } {
+export function stepsFrom(sequence: readonly { key: string; at: number; magnitude: number }[]): {
+  earlier: { key: string; magnitude: number } | null;
+  later: { key: string; magnitude: number } | null;
+} {
   let earlier: { key: string; magnitude: number } | null = null;
   let later: { key: string; magnitude: number } | null = null;
   let earlierAt = -Infinity;

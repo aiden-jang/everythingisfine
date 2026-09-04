@@ -13,8 +13,8 @@ import { writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-const SRC = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/original/"
-  + "PB2002_steps.dat.txt";
+const SRC =
+  "https://raw.githubusercontent.com/fraxen/tectonicplates/master/original/" + "PB2002_steps.dat.txt";
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "geo", "plateMotion.json");
 
 /*
@@ -49,7 +49,10 @@ for (const line of lines) {
 
   // Accumulated per boundary, not globally, so a short boundary still gets an arrow of its own.
   const run = (carried.get(id) ?? 0) + lengthKm;
-  if (run < SPACING_KM) { carried.set(id, run); continue; }
+  if (run < SPACING_KM) {
+    carried.set(id, run);
+    continue;
+  }
   carried.set(id, 0);
 
   const lon1 = Number(cut(line, 13, 20));

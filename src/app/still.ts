@@ -40,15 +40,8 @@ const CAPTION_H = 118;
  * The caption's three lines of text, in the order they are drawn. Separated from the drawing so it can be
  * asserted without a canvas: what a still claims is the part worth testing, and `fillText` is not.
  */
-export function captionLines(
-  caption: StillCaption,
-): [string, string | null, string, string] {
-  return [
-    "EVERYTHING IS FINE",
-    caption.verdict,
-    caption.moment,
-    `${caption.filter} · ${caption.host}`,
-  ];
+export function captionLines(caption: StillCaption): [string, string | null, string, string] {
+  return ["EVERYTHING IS FINE", caption.verdict, caption.moment, `${caption.filter} · ${caption.host}`];
 }
 
 /** The evidence line under the title. Every number is already in the snapshot. See ARCHITECTURE.md. */
@@ -62,8 +55,7 @@ export function verdictLine(n: {
   // Grouped, because a poster is read rather than glanced at. A busy day printed "6000 earthquakes" while
   // every figure in the rail beside it read "6,000".
   const group = (count: number): string => count.toLocaleString("en-GB");
-  const plural = (count: number, word: string): string =>
-    `${group(count)} ${word}${count === 1 ? "" : "s"}`;
+  const plural = (count: number, word: string): string => `${group(count)} ${word}${count === 1 ? "" : "s"}`;
   const parts: string[] = [];
   if (n.quakes > 0) parts.push(plural(n.quakes, "earthquake"));
   if (n.cyclones > 0) parts.push(plural(n.cyclones, "cyclone"));
@@ -78,9 +70,7 @@ export function verdictLine(n: {
 }
 
 /** The moment, as the caption states it. See ARCHITECTURE.md. */
-export function stillMoment(
-  cursor: number | null, now: number, archived = false, live = "Live",
-): string {
+export function stillMoment(cursor: number | null, now: number, archived = false, live = "Live"): string {
   const at = cursor ?? now;
   const iso = new Date(at).toISOString();
   const stamp = `${iso.slice(0, 10)} ${iso.slice(11, 16)} UTC`;

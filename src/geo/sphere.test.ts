@@ -17,8 +17,10 @@ describe("the graticule", () => {
 
   it("puts every vertex on the sphere it was asked for", () => {
     for (let i = 0; i < grid.position.length; i += 3) {
-      expect(Math.hypot(grid.position[i]!, grid.position[i + 1]!, grid.position[i + 2]!))
-        .toBeCloseTo(RADIUS, 6);
+      expect(Math.hypot(grid.position[i]!, grid.position[i + 1]!, grid.position[i + 2]!)).toBeCloseTo(
+        RADIUS,
+        6,
+      );
     }
   });
 

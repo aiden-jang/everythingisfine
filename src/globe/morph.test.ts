@@ -11,10 +11,12 @@ describe("which copies of the map are on screen", () => {
   /** Does every point the camera can see fall inside some drawn copy? */
   const covers = (cameraX: number, halfWidth: number): boolean => {
     const { first, last } = visibleCopies(cameraX, halfWidth);
-    const left = Math.min(...Array.from({ length: last - first + 1 }, (_, i) =>
-      (first + i) * period - MAP_HALF_WIDTH));
-    const right = Math.max(...Array.from({ length: last - first + 1 }, (_, i) =>
-      (first + i) * period + MAP_HALF_WIDTH));
+    const left = Math.min(
+      ...Array.from({ length: last - first + 1 }, (_, i) => (first + i) * period - MAP_HALF_WIDTH),
+    );
+    const right = Math.max(
+      ...Array.from({ length: last - first + 1 }, (_, i) => (first + i) * period + MAP_HALF_WIDTH),
+    );
     return left <= cameraX - halfWidth && right >= cameraX + halfWidth;
   };
 

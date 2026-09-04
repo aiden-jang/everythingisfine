@@ -35,18 +35,28 @@ export interface EventListProps {
 function sentence(quake: Quake, now: number, archived = false): string {
   const r = quake.primary;
   const kind = r.kind === "earthquake" ? "earthquake" : r.kind;
-  const revised = quake.readings.flatMap((x) => (x.revision
-    ? [`${SOURCE_NAMES[x.source]} first reported ${x.revision.fromMagnitude.toFixed(1)}`]
-    : []));
-  return `Magnitude ${r.magnitude.toFixed(1)} ${kind}, ${place(r.place)}, ${ago(r.time, now, archived)}, `
-    + `${depth(r)} deep, reported by ${reportedBy(quake)}.`
+  const revised = quake.readings.flatMap((x) =>
+    x.revision ? [`${SOURCE_NAMES[x.source]} first reported ${x.revision.fromMagnitude.toFixed(1)}`] : [],
+  );
+  return (
+    `Magnitude ${r.magnitude.toFixed(1)} ${kind}, ${place(r.place)}, ${ago(r.time, now, archived)}, ` +
+    `${depth(r)} deep, reported by ${reportedBy(quake)}.` +
     // The announcement carries the value where the row carries only the word. A row can be pinned to find
     // out what changed; an announcement has already gone by.
-    + (revised.length > 0 ? ` Revised: ${revised.join(", ")}.` : "");
+    (revised.length > 0 ? ` Revised: ${revised.join(", ")}.` : "")
+  );
 }
 
 export function EventList({
-  quakes, selected, onSelect, announceAbove, onAnnounceAboveChange, onNews, waiting, reported, now,
+  quakes,
+  selected,
+  onSelect,
+  announceAbove,
+  onAnnounceAboveChange,
+  onNews,
+  waiting,
+  reported,
+  now,
   archived = false,
 }: EventListProps): JSX.Element {
   const [cursor, setCursor] = useState(0);
@@ -76,8 +86,8 @@ export function EventList({
     setAnnouncement(
       fresh.length === 1
         ? sentence(fresh[0]!, spoken)
-        : `${fresh.length} new earthquakes above magnitude ${announceAbove.toFixed(1)}. Largest: `
-          + sentence([...fresh].sort((a, b) => b.primary.magnitude - a.primary.magnitude)[0]!, spoken),
+        : `${fresh.length} new earthquakes above magnitude ${announceAbove.toFixed(1)}. Largest: ` +
+            sentence([...fresh].sort((a, b) => b.primary.magnitude - a.primary.magnitude)[0]!, spoken),
     );
   }, [quakes, announceAbove, onNews]);
 
@@ -89,10 +99,19 @@ export function EventList({
   };
 
   const onKeyDown = (e: React.KeyboardEvent): void => {
-    if (e.key === "ArrowDown") { e.preventDefault(); focusAt(cursorRef.current + 1); }
-    else if (e.key === "ArrowUp") { e.preventDefault(); focusAt(cursorRef.current - 1); }
-    else if (e.key === "Home") { e.preventDefault(); focusAt(0); }
-    else if (e.key === "End") { e.preventDefault(); focusAt(quakes.length - 1); }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      focusAt(cursorRef.current + 1);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      focusAt(cursorRef.current - 1);
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      focusAt(0);
+    } else if (e.key === "End") {
+      e.preventDefault();
+      focusAt(quakes.length - 1);
+    }
   };
 
   return (
@@ -167,10 +186,15 @@ export function EventList({
           <li key={quake.key}>
             <button
               type="button"
-              ref={(node) => { items.current[i] = node; }}
+              ref={(node) => {
+                items.current[i] = node;
+              }}
               tabIndex={i === cursor ? 0 : -1}
               aria-current={quake.key === selected ? "true" : undefined}
-              onFocus={() => { cursorRef.current = i; setCursor(i); }}
+              onFocus={() => {
+                cursorRef.current = i;
+                setCursor(i);
+              }}
               onClick={() => onSelect(quake.key === selected ? null : quake.key)}
               className={`flex w-full cursor-pointer items-start gap-3 rounded-[2px] px-1.5 py-[7px] text-left transition-colors hover:bg-raised ${
                 quake.key === selected ? "bg-raised" : ""
@@ -191,9 +215,7 @@ export function EventList({
                       keep the dot; the agencies are a different kind of fact, so they get distance. */}
                   {agoShort(quake.primary.time, now, archived)}
                   {` · ${depth(quake.primary)}`}
-                  <span className="pl-3">
-                    {quake.readings.map((r) => SOURCE_NAMES[r.source]).join(" ")}
-                  </span>
+                  <span className="pl-3">{quake.readings.map((r) => SOURCE_NAMES[r.source]).join(" ")}</span>
                   {/* Says which rows the header's "revised" count is about. A word rather than a mark: the
                       row is a button with no `aria-label`, so its accessible name is computed from this
                       content and the word is spoken with the rest of it. */}
@@ -210,7 +232,9 @@ export function EventList({
         ))}
       </ul>
 
-      <div aria-live="polite" aria-atomic="true" className="sr-only">{announcement}</div>
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </div>
     </section>
   );
 }

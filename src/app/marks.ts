@@ -31,9 +31,15 @@ function by(label: string, source: string | null): string {
   return source === null ? label : `${label} · ${source}`;
 }
 
-export function marksFor(
-  { cyclones, volcanoes, fires, floods, farSide = null, motion = [], here = null }: Happening,
-): Mark[] {
+export function marksFor({
+  cyclones,
+  volcanoes,
+  fires,
+  floods,
+  farSide = null,
+  motion = [],
+  here = null,
+}: Happening): Mark[] {
   const out: Mark[] = [];
   // Unanchored, like the far-side arcs: an arrow's length is its speed, so holding it at a constant size on
   // screen would delete the only quantity it carries.
@@ -62,7 +68,9 @@ export function marksFor(
     /* Name and peak wind. Their own label describes a different moment - a storm measured at 259 km/h is
        filed as "Tropical Storm" - so the number is GDACS's wind and never their word for it. */
     out.push({
-      points: spiral(storm.lon, storm.lat), anchor: at(storm), id: `cyclone:${storm.id}`,
+      points: spiral(storm.lon, storm.lat),
+      anchor: at(storm),
+      id: `cyclone:${storm.id}`,
       label: by(
         storm.peakKmh === null ? storm.name : `${storm.name} · ${Math.round(storm.peakKmh)} km/h`,
         storm.source,
@@ -73,17 +81,21 @@ export function marksFor(
     // No date in the label. The one thing that has to be said about a volcano here is that it is not live,
     // and that is a sentence rather than a tooltip.
     out.push({
-      points: volcano(v.lon, v.lat), anchor: at(v), id: `volcano:${v.id}`,
+      points: volcano(v.lon, v.lat),
+      anchor: at(v),
+      id: `volcano:${v.id}`,
       label: by(v.country ? `${v.name} · ${v.country}` : v.name, v.source),
     });
   }
   for (const f of fires) {
     out.push({
-      points: flame(f.lon, f.lat), anchor: at(f), id: `fire:${f.id}`,
+      points: flame(f.lon, f.lat),
+      anchor: at(f),
+      id: `fire:${f.id}`,
       // Area in km2 to match the legend's unit, from hectares, and omitted rather than guessed at zero.
       label: by(
         f.hectares === null
-          ? (f.country || "Forest fire")
+          ? f.country || "Forest fire"
           : `${f.country || "Forest fire"} · ${Math.round(f.hectares / 100).toLocaleString("en")} km²`,
         f.source,
       ),
@@ -95,7 +107,9 @@ export function marksFor(
       // No measure: every flood in this feed is filed as magnitude zero, so the label says where and nothing
       // about how bad, exactly as the legend refuses to.
       out.push({
-        points: row, anchor: at(f), id: `flood:${f.id}`,
+        points: row,
+        anchor: at(f),
+        id: `flood:${f.id}`,
         label: by(f.country || "Flood", f.source),
       });
     }
@@ -103,5 +117,4 @@ export function marksFor(
   return out;
 }
 
-const at = (p: { lon: number; lat: number }): { lon: number; lat: number } =>
-  ({ lon: p.lon, lat: p.lat });
+const at = (p: { lon: number; lat: number }): { lon: number; lat: number } => ({ lon: p.lon, lat: p.lat });

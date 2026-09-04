@@ -4,11 +4,10 @@ import { moonPosition, moonRadii, MOON_RADIUS_KM } from "./moon";
 import { subsolarPoint } from "./sun";
 
 /** True angular separation between two points given as geographic longitude and latitude. */
-function separation(
-  aLon: number, aLat: number, bLon: number, bLat: number,
-): number {
-  const c = Math.sin(aLat * DEG) * Math.sin(bLat * DEG)
-    + Math.cos(aLat * DEG) * Math.cos(bLat * DEG) * Math.cos((bLon - aLon) * DEG);
+function separation(aLon: number, aLat: number, bLon: number, bLat: number): number {
+  const c =
+    Math.sin(aLat * DEG) * Math.sin(bLat * DEG) +
+    Math.cos(aLat * DEG) * Math.cos(bLat * DEG) * Math.cos((bLon - aLon) * DEG);
   return Math.acos(Math.max(-1, Math.min(1, c))) / DEG;
 }
 
@@ -103,7 +102,7 @@ describe("where the moon is", () => {
     expect(moonRadii(MOON_RADIUS_KM)).toBeCloseTo(0.273, 3);
     expect(moonRadii(384_400)).toBeCloseTo(60.3, 1);
     // Which comes out at the half a degree wide that the moon is.
-    const apparent = 2 * Math.atan(moonRadii(MOON_RADIUS_KM) / moonRadii(384_400)) / DEG;
+    const apparent = (2 * Math.atan(moonRadii(MOON_RADIUS_KM) / moonRadii(384_400))) / DEG;
     expect(apparent).toBeCloseTo(0.518, 2);
   });
 });

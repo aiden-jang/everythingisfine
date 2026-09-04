@@ -18,8 +18,10 @@ export type MarkSubject =
 export function findSubject(
   id: string | null,
   data: {
-    cyclones: readonly Cyclone[]; volcanoes: readonly Volcano[];
-    fires: readonly Wildfire[]; floods: readonly Flood[];
+    cyclones: readonly Cyclone[];
+    volcanoes: readonly Volcano[];
+    fires: readonly Wildfire[];
+    floods: readonly Flood[];
   },
 ): MarkSubject | null {
   if (!id) return null;
@@ -45,14 +47,19 @@ export function findSubject(
   return null;
 }
 
-interface Line { label: string; value: string }
+interface Line {
+  label: string;
+  value: string;
+}
 
 /**
  * The rows for a subject, as facts. Split out from the markup so it can be asserted without a DOM. See
  * ARCHITECTURE.md.
  */
 export function linesFor(
-  found: MarkSubject, now: number, archived = false,
+  found: MarkSubject,
+  now: number,
+  archived = false,
 ): { title: string; note: string; lines: Line[] } {
   if (found.kind === "cyclone") {
     const c = found.subject;
@@ -62,12 +69,16 @@ export function linesFor(
       note: `Tropical cyclone, running ${archived ? "that day" : "now"}.`,
       lines: [
         { label: "Position", value: latLon(c.lon, c.lat) },
-        ...(c.peakKmh === null ? [] : [{
-          label: "Peak wind",
-          // The number and the scale together: GDACS's own text classifies a different moment, so a
-          // storm measured at 259 km/h is filed under "Tropical Storm". See `cyclones.ts`.
-          value: `${Math.round(c.peakKmh)} km/h${rank ? ` · ${rank}` : ""}`,
-        }]),
+        ...(c.peakKmh === null
+          ? []
+          : [
+              {
+                label: "Peak wind",
+                // The number and the scale together: GDACS's own text classifies a different moment, so a
+                // storm measured at 259 km/h is filed under "Tropical Storm". See `cyclones.ts`.
+                value: `${Math.round(c.peakKmh)} km/h${rank ? ` · ${rank}` : ""}`,
+              },
+            ]),
         ...(c.track.length > 1 ? [{ label: "Track", value: `${c.track.length} points` }] : []),
       ],
     };
@@ -88,19 +99,25 @@ export function linesFor(
   }
   if (found.kind === "fire") {
     const f = found.subject;
-    const days = f.startedAt !== null && f.endedAt !== null
-      ? Math.max(0, Math.round((f.endedAt - f.startedAt) / 86_400_000))
-      : null;
+    const days =
+      f.startedAt !== null && f.endedAt !== null
+        ? Math.max(0, Math.round((f.endedAt - f.startedAt) / 86_400_000))
+        : null;
     return {
       title: f.country || "Forest fire",
       note: `Forest fire burning ${archived ? "that day" : "now"}.`,
       lines: [
         { label: "Position", value: latLon(f.lon, f.lat) },
-        ...(f.hectares === null ? [] : [{
-          label: "Burned",
-          value: `${Math.round(f.hectares).toLocaleString("en")} ha`
-            + ` · ${Math.round(f.hectares / 100).toLocaleString("en")} km²`,
-        }]),
+        ...(f.hectares === null
+          ? []
+          : [
+              {
+                label: "Burned",
+                value:
+                  `${Math.round(f.hectares).toLocaleString("en")} ha` +
+                  ` · ${Math.round(f.hectares / 100).toLocaleString("en")} km²`,
+              },
+            ]),
         ...(days === null ? [] : [{ label: "Burning", value: `${days} day${days === 1 ? "" : "s"}` }]),
       ],
     };
@@ -156,7 +173,6 @@ export function MarkCard({ found, now, archived = false, onClose }: MarkCardProp
           </div>
         ))}
       </dl>
-
     </aside>
   );
 }

@@ -8,7 +8,7 @@ import { MORPH_GLSL } from "./morph";
 
 /** Degrees of arc the front covers per real second. Derived, never typed in: writing 0.054 directly is how
  * it survives a change to either input without anyone noticing. */
-export const TRUE_RATE_DEG_PER_S = (P_WAVE_KM_PER_S / EARTH_RADIUS_KM) / DEG;
+export const TRUE_RATE_DEG_PER_S = P_WAVE_KM_PER_S / EARTH_RADIUS_KM / DEG;
 
 export const RATE_DEG_PER_S = TRUE_RATE_DEG_PER_S * PLAYBACK;
 
@@ -140,7 +140,12 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
    * when the epicentre is the pole - so the fallback axis comes from the centre's smallest component.
    */
   const writeCircle = (
-    at: number, lon: number, lat: number, theta: number, rampAt: number, fade: number,
+    at: number,
+    lon: number,
+    lat: number,
+    theta: number,
+    rampAt: number,
+    fade: number,
   ): void => {
     const phi = lat * DEG;
     const lam = lon * DEG;
@@ -235,9 +240,7 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
          * than a claim about amplitude - an S arrival is usually the larger one on a seismogram. Two circles
          * of equal weight expanding from one point read as two earthquakes in the same place.
          */
-        writeCircle(
-          written, ring.lon, ring.lat, deg * S_OVER_P * DEG, ring.ramp, fade * 0.7,
-        );
+        writeCircle(written, ring.lon, ring.lat, deg * S_OVER_P * DEG, ring.ramp, fade * 0.7);
         written += SEGMENTS * 2;
       }
 

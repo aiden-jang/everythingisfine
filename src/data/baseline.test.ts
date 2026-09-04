@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import table from "./baseline.json";
-import {
-  BASELINE_DAYS, BASELINE_MIN_MAGNITUDE, BASELINE_WEEKS, rankDay, sharePercent,
-} from "./baseline";
+import { BASELINE_DAYS, BASELINE_MIN_MAGNITUDE, BASELINE_WEEKS, rankDay, sharePercent } from "./baseline";
 
 const { days: counts, weeks } = table as { days: number[]; weeks: number[] };
 

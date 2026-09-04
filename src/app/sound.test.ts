@@ -69,19 +69,37 @@ describe("how many play at once", () => {
 
 describe("the siren itself", () => {
   const fakeCtx = () => {
-    const osc = { type: "", frequency: { value: 0 }, connect: vi.fn(() => gain), start: vi.fn(), stop: vi.fn() };
+    const osc = {
+      type: "",
+      frequency: { value: 0 },
+      connect: vi.fn(() => gain),
+      start: vi.fn(),
+      stop: vi.fn(),
+    };
     const gain: Record<string, unknown> = {
       gain: {
-        setValueAtTime: vi.fn(), exponentialRampToValueAtTime: vi.fn(),
+        setValueAtTime: vi.fn(),
+        exponentialRampToValueAtTime: vi.fn(),
       },
       connect: vi.fn(),
     };
     const ctx = {
-      state: "running", currentTime: 0, destination: {},
-      createOscillator: vi.fn(() => osc), createGain: vi.fn(() => gain),
-      resume: vi.fn(), close: vi.fn(),
+      state: "running",
+      currentTime: 0,
+      destination: {},
+      createOscillator: vi.fn(() => osc),
+      createGain: vi.fn(() => gain),
+      resume: vi.fn(),
+      close: vi.fn(),
     };
-    return { ctx, osc, gain, Ctx: function () { return ctx; } as unknown as typeof AudioContext };
+    return {
+      ctx,
+      osc,
+      gain,
+      Ctx: function () {
+        return ctx;
+      } as unknown as typeof AudioContext,
+    };
   };
 
   it("makes one oscillator per voice", () => {

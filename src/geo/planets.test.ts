@@ -5,8 +5,9 @@ import { DEG } from "./sphere";
 
 /** True angular separation between two bodies given as the points they stand over. */
 function apart(a: { lon: number; lat: number }, b: { lon: number; lat: number }): number {
-  const c = Math.sin(a.lat * DEG) * Math.sin(b.lat * DEG)
-    + Math.cos(a.lat * DEG) * Math.cos(b.lat * DEG) * Math.cos((b.lon - a.lon) * DEG);
+  const c =
+    Math.sin(a.lat * DEG) * Math.sin(b.lat * DEG) +
+    Math.cos(a.lat * DEG) * Math.cos(b.lat * DEG) * Math.cos((b.lon - a.lon) * DEG);
   return Math.acos(Math.max(-1, Math.min(1, c))) / DEG;
 }
 const find = (at: number, name: string): { lon: number; lat: number; magnitude: number } =>

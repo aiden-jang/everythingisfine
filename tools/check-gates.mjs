@@ -68,9 +68,7 @@ const stepsIn = (text) =>
  * grows is a release step rather than a gate.
  */
 const gateJobs = ci.slice(0, ci.indexOf("\n  deploy:") === -1 ? undefined : ci.indexOf("\n  deploy:"));
-const ciSteps = new Set(
-  [...gateJobs.matchAll(/^\s*- run: (pnpm .+)$/gm)].flatMap((m) => stepsIn(m[1])),
-);
+const ciSteps = new Set([...gateJobs.matchAll(/^\s*- run: (pnpm .+)$/gm)].flatMap((m) => stepsIn(m[1])));
 const verifySteps = new Set(stepsIn(scripts.verify ?? ""));
 
 for (const name of [...verifySteps, ...ciSteps]) {
@@ -92,7 +90,9 @@ const invocations = [
 for (const [where, text] of invocations) {
   for (const [, run, name] of named(text)) {
     if (run || !PNPM_OWN.has(name) || !scripts[name]) continue;
-    problems.push(`${where}: \`pnpm ${name}\` runs pnpm's own ${name}, not the script. Use \`pnpm run ${name}\`.`);
+    problems.push(
+      `${where}: \`pnpm ${name}\` runs pnpm's own ${name}, not the script. Use \`pnpm run ${name}\`.`,
+    );
   }
 }
 

@@ -35,13 +35,19 @@ describe("deriving the hole's depth from the sink", () => {
   /* `aDepth` was deleted and `vDepth` is now computed from `aSink` in the vertex shader, which halves the
      per-event writes in `sync`. That is only allowed if the two agree, so this pins the algebra. See
      ARCHITECTURE.md. */
-  const old = (depthKm: number): number => (Number.isFinite(depthKm)
-    ? Math.max(0, Math.min(1, (depthKm - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM)))
-    : 0);
+  const old = (depthKm: number): number =>
+    Number.isFinite(depthKm)
+      ? Math.max(0, Math.min(1, (depthKm - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM)))
+      : 0;
   /** What the vertex shader now does, in the same order. */
-  const derived = (depthKm: number): number => Math.max(0, Math.min(1,
-    (sinkFraction(depthKm) * EARTH_RADIUS_KM - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM),
-  ));
+  const derived = (depthKm: number): number =>
+    Math.max(
+      0,
+      Math.min(
+        1,
+        (sinkFraction(depthKm) * EARTH_RADIUS_KM - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM),
+      ),
+    );
 
   it("agrees with the attribute it replaced, everywhere a depth is real", () => {
     for (const km of [0, 1, 10, 35, 69, 70, 71, 150, 299, 300, 301, 500, 700, 1000, 6371]) {

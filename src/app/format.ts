@@ -44,15 +44,19 @@ export function depth(reading: Reading): string {
 /** USGS writes "72 km E of Petropavlovsk", EMSC SHOUTS. Case is how a name is set, never what it says. */
 export function place(text: string): string {
   if (text !== text.toUpperCase()) return text;
-  return text.toLowerCase().replace(/(^|[\s(,\-/])([a-z])/g, (_, lead: string, c: string) =>
-    lead + c.toUpperCase());
+  return text
+    .toLowerCase()
+    .replace(/(^|[\s(,\-/])([a-z])/g, (_, lead: string, c: string) => lead + c.toUpperCase());
 }
 
 export const SOURCE_NAMES: Record<SourceId, string> = { usgs: "USGS", emsc: "EMSC" };
 
 /** The coverage the sources brought, not the earliest arrival held. The difference is a demo against a claim. */
 export function windowLabel(
-  now: number, windowMs: number, coveredSince: number | null, archived = false,
+  now: number,
+  windowMs: number,
+  coveredSince: number | null,
+  archived = false,
 ): string {
   if (coveredSince === null) return "nothing yet";
   // An archived day is that day, not "the last 24 hours". Every age is measured from the day's end.
@@ -102,7 +106,9 @@ export function reach(from: number | null, now: number, windowMs: number): strin
  * Truncated and missing are different facts and get different words.
  */
 export function reachNote(
-  covered: Record<SourceId, number | null>, now: number, windowMs: number,
+  covered: Record<SourceId, number | null>,
+  now: number,
+  windowMs: number,
 ): string | null {
   const ids = Object.keys(covered) as SourceId[];
   const edge = now - windowMs;
@@ -120,11 +126,13 @@ export function reachNote(
   if (truncated.length > 0) {
     // The furthest back any truncated source got. Naming the shallowest would understate what is held.
     const deepest = Math.min(...truncated.map((id) => covered[id]!));
-    parts.push(truncated.length === 1
-      ? `${named(truncated)} returns its most recent page whatever the window, so it reaches only as `
-        + `far back as ${agoShort(deepest, now)}.`
-      : `${named(truncated)} return their most recent page whatever the window, so they reach only `
-        + `as far back as ${agoShort(deepest, now)}.`);
+    parts.push(
+      truncated.length === 1
+        ? `${named(truncated)} returns its most recent page whatever the window, so it reaches only as ` +
+            `far back as ${agoShort(deepest, now)}.`
+        : `${named(truncated)} return their most recent page whatever the window, so they reach only ` +
+            `as far back as ${agoShort(deepest, now)}.`,
+    );
   }
   if (missing.length > 0) {
     parts.push(`${named(missing)} ${missing.length === 1 ? "has" : "have"} returned no backlog.`);
@@ -159,9 +167,7 @@ export function reachFraction(from: number | null, now: number, windowMs: number
 }
 
 /** A feed still being waited for and one that refused are different facts. `reach` alone says neither. */
-export function reachWords(
-  from: number | null, failing: boolean, now: number, windowMs: number,
-): string {
+export function reachWords(from: number | null, failing: boolean, now: number, windowMs: number): string {
   if (from !== null) return reach(from, now, windowMs);
   // One word: the column is 38px and "no answer" wraps, which pushes both coverage rows taller.
   return failing ? "silent" : "waiting";
@@ -182,18 +188,22 @@ export function corroborationNote(
   // Within a whisker of the whole window: nothing to explain, and the header is already right.
   if (covered >= windowMs * 0.98) return null;
   const pct = Math.round((overlap.both / overlap.events) * 100);
-  return `Both feeds only overlap for the last ${compactSpan(covered)}. Inside it, `
-    + `${overlap.both.toLocaleString("en-GB")} of ${overlap.events.toLocaleString("en-GB")} events `
-    + `(${pct}%) were reported by both.`;
+  return (
+    `Both feeds only overlap for the last ${compactSpan(covered)}. Inside it, ` +
+    `${overlap.both.toLocaleString("en-GB")} of ${overlap.events.toLocaleString("en-GB")} events ` +
+    `(${pct}%) were reported by both.`
+  );
 }
 
 export function auroraNote(peak: number, forecastAt: number, now: number): string {
   const strength = peak >= 40 ? "strong" : peak >= 15 ? "active" : "quiet";
   const age = Math.max(0, Math.round((now - forecastAt) / 60_000));
   const when = age < 1 ? "for this minute" : `forecast ${age} minute${age === 1 ? "" : "s"} ago`;
-  return `the green is the aurora. `
-    + `Only where it is dark enough to see it, ${strength} tonight, peaking at `
-    + `${Math.round(peak)}% chance, ${when}.`;
+  return (
+    `the green is the aurora. ` +
+    `Only where it is dark enough to see it, ${strength} tonight, peaking at ` +
+    `${Math.round(peak)}% chance, ${when}.`
+  );
 }
 
 export function cycloneNote(
@@ -203,36 +213,46 @@ export function cycloneNote(
 ): string | null {
   if (storms.length === 0) return null;
   // Tense follows the clock. "Running now" is false on an archived day.
-  const count = `${storms.length} tropical cyclone${storms.length === 1 ? "" : "s"} `
-    + `${archived ? "that day" : "running"}`;
+  const count =
+    `${storms.length} tropical cyclone${storms.length === 1 ? "" : "s"} ` +
+    `${archived ? "that day" : "running"}`;
   const strongest = [...storms].sort((a, b) => (b.peakKmh ?? 0) - (a.peakKmh ?? 0))[0]!;
-  const named = strongest.peakKmh === null
-    ? ""
-    : ` Strongest is ${strongest.name} at ${Math.round(strongest.peakKmh)} km/h`
-      + `${categoryOf(strongest.peakKmh) ? `, ${categoryOf(strongest.peakKmh)}` : ""} at its peak.`;
-  return `the spirals are storms, ${count}. `
-    + `The tail behind each is where it has been, and none of them are on the equator: the spin that `
-    + `starts one is zero there.${named}`;
+  const named =
+    strongest.peakKmh === null
+      ? ""
+      : ` Strongest is ${strongest.name} at ${Math.round(strongest.peakKmh)} km/h` +
+        `${categoryOf(strongest.peakKmh) ? `, ${categoryOf(strongest.peakKmh)}` : ""} at its peak.`;
+  return (
+    `the spirals are storms, ${count}. ` +
+    `The tail behind each is where it has been, and none of them are on the equator: the spin that ` +
+    `starts one is zero there.${named}`
+  );
 }
 
 /** Lead with the age: GDACS flags no volcano current, and one that looks live and is not would mislead. */
 export function volcanoNote(
-  count: number, newest: number | null, now: number, archived = false,
+  count: number,
+  newest: number | null,
+  now: number,
+  archived = false,
 ): string | null {
   if (count === 0) return null;
   const days = newest === null ? null : Math.max(0, Math.round((now - newest) / 86_400_000));
   // "Today" and "ago" are spoken from now; the archived clock is not now.
   const plural = days === 1 ? "" : "s";
-  const when = days === null
-    ? "Undated"
-    : days === 0
-      ? `The newest episode ended ${archived ? "that day" : "today"}`
-      : `The newest ended ${days} day${plural} ${archived ? "earlier" : "ago"}`;
-  return `the triangles are volcanoes, ${count} of them. `
-    + `Each has a logged eruption episode. `
+  const when =
+    days === null
+      ? "Undated"
+      : days === 0
+        ? `The newest episode ended ${archived ? "that day" : "today"}`
+        : `The newest ended ${days} day${plural} ${archived ? "earlier" : "ago"}`;
+  return (
+    `the triangles are volcanoes, ${count} of them. ` +
+    `Each has a logged eruption episode. ` +
     // "this minute" is a claim about now, which is the wrong clock over a picture of a past day.
-    + `${when}, so none of this ${archived ? "was erupting then" : "is erupting this minute"}. `
-    + `They sit along the same lines the earthquakes do, which is the whole of why either happens.`;
+    `${when}, so none of this ${archived ? "was erupting then" : "is erupting this minute"}. ` +
+    `They sit along the same lines the earthquakes do, which is the whole of why either happens.`
+  );
 }
 
 /** GDACS caps its list at 100 and cannot be paged, so this count is a slice of thousands, not the world's. */
@@ -241,8 +261,18 @@ export function volcanoNote(
  * GDACS already capitalises "The Democratic Republic of Congo", so check for one first.
  */
 const COMMON_NOUN_HEADS = [
-  "federation", "republic", "kingdom", "states", "islands", "emirates",
-  "netherlands", "philippines", "gambia", "bahamas", "maldives", "comoros",
+  "federation",
+  "republic",
+  "kingdom",
+  "states",
+  "islands",
+  "emirates",
+  "netherlands",
+  "philippines",
+  "gambia",
+  "bahamas",
+  "maldives",
+  "comoros",
 ];
 
 export function theOf(country: string): string {
@@ -259,52 +289,61 @@ export function wildfireNote(
   archived = false,
 ): string | null {
   if (fire.count === 0) return null;
-  const burning = fire.medianDays === null
-    ? ""
-    : `, burning ${fire.medianDays} day${fire.medianDays === 1 ? "" : "s"} at the median`;
+  const burning =
+    fire.medianDays === null
+      ? ""
+      : `, burning ${fire.medianDays} day${fire.medianDays === 1 ? "" : "s"} at the median`;
   // The cap is a fact about the live feed. The archive is a different upstream with room to spare.
-  const floor = !archived && fire.count >= cap
-    ? ` The feed stops at ${cap} and ${fire.leader === null ? "one country" : theOf(fire.leader)} `
-      + `alone has more than that, so the `
-      + `count is a floor: every mark is real, their number is not the world's.`
-    : "";
-  return `the flames are forest fires, ${fire.count} of them. `
-    + `${archived ? "They burned that day" : "Burning now"}, `
-    + `${fire.km2.toLocaleString("en-GB")} square kilometres alight${burning}.${floor}`;
+  const floor =
+    !archived && fire.count >= cap
+      ? ` The feed stops at ${cap} and ${fire.leader === null ? "one country" : theOf(fire.leader)} ` +
+        `alone has more than that, so the ` +
+        `count is a floor: every mark is real, their number is not the world's.`
+      : "";
+  return (
+    `the flames are forest fires, ${fire.count} of them. ` +
+    `${archived ? "They burned that day" : "Burning now"}, ` +
+    `${fire.km2.toLocaleString("en-GB")} square kilometres alight${burning}.${floor}`
+  );
 }
 
 /** GDACS files every flood as severity 0, so nothing ranks them. See ARCHITECTURE.md. */
 export function floodNote(count: number, countries: number, archived = false): string | null {
   if (count === 0) return null;
   const where = countries > 1 ? ` across ${countries} countries` : "";
-  return `the waves are floods, ${count} of them${where}. `
-    + `${archived ? "They ran that day" : "Running now"}, and nothing here rates them: every flood in `
-    + `this feed is filed as magnitude zero, so the mark says where and not how bad.`;
+  return (
+    `the waves are floods, ${count} of them${where}. ` +
+    `${archived ? "They ran that day" : "Running now"}, and nothing here rates them: every flood in ` +
+    `this feed is filed as magnitude zero, so the mark says where and not how bad.`
+  );
 }
 
 export function farSideNote(
-  arcs: readonly number[], lengthOf: (arcDeg: number) => number,
+  arcs: readonly number[],
+  lengthOf: (arcDeg: number) => number,
   far: { lon: number; lat: number },
 ): string {
   const widest = Math.max(...arcs.map(lengthOf));
   const first = arcs[0]!;
   const last = arcs[arcs.length - 1]!;
   const km = (v: number): string => `${Math.round(v).toLocaleString("en")} km`;
-  return `The arcs are where the front would be at ${arcs.join(", ")} degrees from here. `
-    + `It is widest on the great circle, ${km(widest)} of front, and the ${last}-degree arc is the same `
-    + `length as the ${first} because by then it is closing rather than growing. It closes to the point `
-    + `marked at ${latLon(far.lon, far.lat)}. No time is drawn: the wavefronts above fade at 17 degrees, `
-    + `and the far side is most of an hour away.`;
+  return (
+    `The arcs are where the front would be at ${arcs.join(", ")} degrees from here. ` +
+    `It is widest on the great circle, ${km(widest)} of front, and the ${last}-degree arc is the same ` +
+    `length as the ${first} because by then it is closing rather than growing. It closes to the point ` +
+    `marked at ${latLon(far.lon, far.lat)}. No time is drawn: the wavefronts above fade at 17 degrees, ` +
+    `and the far side is most of an hour away.`
+  );
 }
 
 /** Say "relative". Each arrow is one plate against the other; read as motion over the mantle it is wrong. */
-export function motionNote(
-  motion: { arrows: number; fastest: number; converging: number },
-): string {
-  return `the arrows are how fast the plates are moving, one side relative to the other, sampled every `
-    + `800km. Across a line is opening, into it is closing, along it is sliding. ${motion.converging} of `
-    + `the ${motion.arrows} are closing, and the fastest runs at ${Math.round(motion.fastest)} mm a year, `
-    + `which is a metre every four years.`;
+export function motionNote(motion: { arrows: number; fastest: number; converging: number }): string {
+  return (
+    `the arrows are how fast the plates are moving, one side relative to the other, sampled every ` +
+    `800km. Across a line is opening, into it is closing, along it is sliding. ${motion.converging} of ` +
+    `the ${motion.arrows} are closing, and the fastest runs at ${Math.round(motion.fastest)} mm a year, ` +
+    `which is a metre every four years.`
+  );
 }
 
 /** Distance to the nearest plate edge. Under a threshold it says "on it" rather than a false precision. */
@@ -316,17 +355,19 @@ export function boundaryNote(km: number | null): string | null {
   return `${Math.round(km).toLocaleString("en")} km away`;
 }
 
-export function quietNote(
-  near: number, total: number, bandKm: number, bandShare: number,
-): string | null {
+export function quietNote(near: number, total: number, bandKm: number, bandShare: number): string | null {
   const parts = quietParts(near, total, bandShare);
   if (parts === null) return null;
-  return `That ${bandKm} km band is ${(bandShare * 100).toFixed(1)}% of the surface, so at least `
-    + `${parts.times.toFixed(1)} times the seismicity per square kilometre.`;
+  return (
+    `That ${bandKm} km band is ${(bandShare * 100).toFixed(1)}% of the surface, so at least ` +
+    `${parts.times.toFixed(1)} times the seismicity per square kilometre.`
+  );
 }
 
 export function quietParts(
-  near: number, total: number, bandShare: number,
+  near: number,
+  total: number,
+  bandShare: number,
 ): { percent: number; times: number } | null {
   if (total === 0) return null;
   const share = near / total;
@@ -335,7 +376,11 @@ export function quietParts(
 
 /** How many deep events are actually present, since the depth encoding needs some to show anything. */
 export function depthNote(bands: {
-  shallow: number; intermediate: number; deep: number; unknown: number; total: number;
+  shallow: number;
+  intermediate: number;
+  deep: number;
+  unknown: number;
+  total: number;
 }): string | null {
   if (bands.total === 0) return null;
   // Group these: a 30-day window puts "1188 above 70 km" beside a headline reading "1,188".
@@ -344,15 +389,19 @@ export function depthNote(bands: {
   if (bands.intermediate > 0) parts.push(`${n(bands.intermediate)} between 70 and 300`);
   parts.push(`${n(bands.deep)} below 300`);
   if (bands.unknown > 0) parts.push(`${n(bands.unknown)} with no depth given`);
-  return `${parts.join(", ")}. Deep events sit inside a descending slab, so a margin only resolves `
-    + `into rings when enough of them land.`;
+  return (
+    `${parts.join(", ")}. Deep events sit inside a descending slab, so a margin only resolves ` +
+    `into rings when enough of them land.`
+  );
 }
 
 /** Two disclosures: it is a transposition, not a recording, and loudness is not energy. */
 export function soundNote(above: number): string {
-  return `one tone per arrival above M${above.toFixed(1)}, lower for bigger, which is the direction a `
-    + `real rupture goes. It is not a recording: ground motion is below hearing, under about 10 Hz. And `
-    + `loudness is not energy, because three points of magnitude is thirty thousand times as much of it.`;
+  return (
+    `one tone per arrival above M${above.toFixed(1)}, lower for bigger, which is the direction a ` +
+    `real rupture goes. It is not a recording: ground motion is below hearing, under about 10 Hz. And ` +
+    `loudness is not energy, because three points of magnitude is thirty thousand times as much of it.`
+  );
 }
 
 /*
@@ -367,18 +416,26 @@ export function splitNote(note: string): { head: string; rest: string | null } {
 
 /** Name the layers that could not be asked, or a dead host reads as a calm planet. */
 export function silentFeeds(answered: {
-  cyclones: boolean; volcanoes: boolean; fires: boolean; floods: boolean; aurora: boolean;
+  cyclones: boolean;
+  volcanoes: boolean;
+  fires: boolean;
+  floods: boolean;
+  aurora: boolean;
 }): string | null {
   const names: [keyof typeof answered, string][] = [
-    ["cyclones", "storms"], ["fires", "fires"], ["floods", "floods"],
-    ["volcanoes", "volcanoes"], ["aurora", "the aurora"],
+    ["cyclones", "storms"],
+    ["fires", "fires"],
+    ["floods", "floods"],
+    ["volcanoes", "volcanoes"],
+    ["aurora", "the aurora"],
   ];
   const missing = names.filter(([key]) => !answered[key]).map(([, label]) => label);
   if (missing.length === 0) return null;
   // All five is one fact about the network, not five facts about layers.
   if (missing.length === names.length) return "No feed answered for any layer, so none are drawn.";
-  const listed = missing.length === 1
-    ? missing[0]!
-    : `${missing.slice(0, -1).join(", ")} and ${missing[missing.length - 1]!}`;
+  const listed =
+    missing.length === 1
+      ? missing[0]!
+      : `${missing.slice(0, -1).join(", ")} and ${missing[missing.length - 1]!}`;
   return `No answer for ${listed}: absent here does not mean absent.`;
 }

@@ -30,8 +30,7 @@ export interface Permalink {
 
 // Two places, not fourteen. A URL claiming the camera to fourteen decimals is claiming precision
 // nobody can aim with.
-const round = (value: number, places: number): number =>
-  Number(value.toFixed(places));
+const round = (value: number, places: number): number => Number(value.toFixed(places));
 /** Longitude back into [-180, 180). The camera's is not. See ARCHITECTURE.md. */
 const wrapLon = (lon: number): number => {
   // Leave it alone when it already fits. The modulo turns 145.8 into 145.79999999999995, and then a
@@ -56,8 +55,8 @@ export function encode(state: Permalink): string {
   if (state.section) {
     const { fromLon, fromLat, toLon, toLat } = state.section;
     parts.push(
-      `x=${round(wrapLon(fromLon), 2)},${round(fromLat, 2)}`
-      + `,${round(wrapLon(toLon), 2)},${round(toLat, 2)}`,
+      `x=${round(wrapLon(fromLon), 2)},${round(fromLat, 2)}` +
+        `,${round(wrapLon(toLon), 2)},${round(toLat, 2)}`,
     );
   }
   return parts.join("&");
@@ -66,8 +65,7 @@ export function encode(state: Permalink): string {
 const SOURCES: readonly string[] = ["usgs", "emsc"];
 const RAMPS: readonly string[] = ["thermal", "cividis"];
 
-const clamp = (value: number, lo: number, hi: number): number =>
-  Math.max(lo, Math.min(hi, value));
+const clamp = (value: number, lo: number, hi: number): number => Math.max(lo, Math.min(hi, value));
 
 /** A fragment back into state. Treat every field as untrusted: people edit URLs and chat clients cut them off. */
 export function decode(fragment: string): Partial<Permalink> {

@@ -26,7 +26,10 @@ export interface Point {
 /** The observed count over time, as a staircase. Only what followed: counting neighbours from before the
  * pinned event would put a rising line to the left of an event that had not happened yet. */
 export function observed(sequence: readonly { at: number }[]): Point[] {
-  const after = sequence.filter((e) => e.at > 0).map((e) => e.at).sort((a, b) => a - b);
+  const after = sequence
+    .filter((e) => e.at > 0)
+    .map((e) => e.at)
+    .sort((a, b) => a - b);
   return after.map((at, i) => ({ at, n: i + 1 }));
 }
 

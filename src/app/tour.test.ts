@@ -3,7 +3,8 @@ import { tourLabel, tourStops, TOUR_MAX_STOPS } from "./tour";
 import type { RegionCount } from "./regions";
 
 const row = (name: string, count: number): RegionCount => ({
-  region: { name, lon: 1, lat: 2, bounds: [0, 0, 0, 0], zoom: 2 }, count,
+  region: { name, lon: 1, lat: 2, bounds: [0, 0, 0, 0], zoom: 2 },
+  count,
 });
 
 describe("where the tour goes", () => {

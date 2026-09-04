@@ -5,23 +5,34 @@ import type { Filters, Reading } from "../data/types";
 
 const NOW = 1_700_000_000_000;
 const base = {
-  source: "usgs" as const, scale: "mb", depthKm: 10, place: "x", kind: "earthquake",
+  source: "usgs" as const,
+  scale: "mb",
+  depthKm: 10,
+  place: "x",
+  kind: "earthquake",
   receivedAt: NOW,
 };
 const reading = (id: string, lon: number, lat: number, magnitude: number, dt = 0): Reading => ({
-  ...base, id, lon, lat, magnitude, time: NOW - dt,
+  ...base,
+  id,
+  lon,
+  lat,
+  magnitude,
+  time: NOW - dt,
 });
 const filters: Filters = {
-  minMagnitude: 0, windowMs: 24 * 3_600_000, sources: new Set(["usgs", "emsc"]),
+  minMagnitude: 0,
+  windowMs: 24 * 3_600_000,
+  sources: new Set(["usgs", "emsc"]),
 };
 
 describe("nearby activity", () => {
   it("counts neighbours inside the radius and ignores the rest", () => {
     const store = createStore(50);
     const target = store.ingest(reading("a", 120, -8, 5)).quake;
-    store.ingest(reading("b", 120.5, -8.2, 3, 1_000));      // ~60km
-    store.ingest(reading("c", 121, -8.4, 4, 2_000));        // ~120km
-    store.ingest(reading("d", 130, -8, 6, 3_000));          // far away
+    store.ingest(reading("b", 120.5, -8.2, 3, 1_000)); // ~60km
+    store.ingest(reading("c", 121, -8.4, 4, 2_000)); // ~120km
+    store.ingest(reading("d", 130, -8, 6, 3_000)); // far away
 
     const near = findNearby(store, target, filters, NOW);
     expect(near.count).toBe(2);
@@ -77,8 +88,14 @@ describe("depth class", () => {
 });
 
 describe("the sequence around a pinned event", () => {
-  const at = (minutes: number, magnitude: number, id: string): Reading =>
-    ({ ...base, id, lon: 120.1, lat: -5.1, magnitude, time: NOW + minutes * 60_000 });
+  const at = (minutes: number, magnitude: number, id: string): Reading => ({
+    ...base,
+    id,
+    lon: 120.1,
+    lat: -5.1,
+    magnitude,
+    time: NOW + minutes * 60_000,
+  });
 
   it("orders neighbours in time and signs them against the pinned event", () => {
     const store = createStore(100);
@@ -119,10 +136,14 @@ describe("stepping through a sequence", () => {
     entries.map(([key, at, magnitude]) => ({ key, at, magnitude }));
 
   it("takes the nearest event on each side in time, not the nearest in the list", () => {
-    const { earlier, later } = stepsFrom(seq(
-      ["far-past", -9_000, 5.1], ["just-before", -60, 2.4],
-      ["just-after", 120, 3.3], ["far-future", 9_000, 6.0],
-    ));
+    const { earlier, later } = stepsFrom(
+      seq(
+        ["far-past", -9_000, 5.1],
+        ["just-before", -60, 2.4],
+        ["just-after", 120, 3.3],
+        ["far-future", 9_000, 6.0],
+      ),
+    );
     expect(earlier).toEqual({ key: "just-before", magnitude: 2.4 });
     expect(later).toEqual({ key: "just-after", magnitude: 3.3 });
   });

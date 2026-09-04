@@ -9,13 +9,24 @@ import { fold, PLACE_LIMIT, search } from "./search";
 const now = 1_700_000_000_000;
 
 const reading = (over: Partial<Reading> = {}): Reading => ({
-  source: "usgs", id: "a1", magnitude: 4.0, scale: "Mww", lon: 141.3, lat: 41.8, depthKm: 40,
-  time: now - 60_000, place: "40 km E of Hakodate, Japan", kind: "earthquake",
-  receivedAt: now - 30_000, ...over,
+  source: "usgs",
+  id: "a1",
+  magnitude: 4.0,
+  scale: "Mww",
+  lon: 141.3,
+  lat: 41.8,
+  depthKm: 40,
+  time: now - 60_000,
+  place: "40 km E of Hakodate, Japan",
+  kind: "earthquake",
+  receivedAt: now - 30_000,
+  ...over,
 });
 
 const filters: Filters = {
-  minMagnitude: 0, windowMs: 24 * 3_600_000, sources: new Set(["usgs", "emsc"]),
+  minMagnitude: 0,
+  windowMs: 24 * 3_600_000,
+  sources: new Set(["usgs", "emsc"]),
 };
 
 const withEvents = (readings: Reading[]) => {
@@ -40,8 +51,7 @@ describe("folding, because no two agencies write a place the same way", () => {
 describe("what a query finds", () => {
   it("finds an authored region by name", () => {
     const r = search("japan", withEvents([]), filters, now);
-    expect(r.hits.map((h) => (h.kind === "region" ? h.region.name : h.name)))
-      .toContain("Japan & Kurils");
+    expect(r.hits.map((h) => (h.kind === "region" ? h.region.name : h.name))).toContain("Japan & Kurils");
   });
 
   it("offers a region even with nothing in it, because it is still somewhere to go", () => {
@@ -74,9 +84,17 @@ describe("what a query finds", () => {
   });
 
   it("groups a sequence under one row rather than listing it", () => {
-    const store = withEvents(Array.from({ length: 300 }, (_, i) => reading({
-      id: `s${i}`, place: "Flores Sea", lon: 122 + i * 0.01, lat: -6, magnitude: 2 + (i % 20) / 10,
-    })));
+    const store = withEvents(
+      Array.from({ length: 300 }, (_, i) =>
+        reading({
+          id: `s${i}`,
+          place: "Flores Sea",
+          lon: 122 + i * 0.01,
+          lat: -6,
+          magnitude: 2 + (i % 20) / 10,
+        }),
+      ),
+    );
     const r = search("flores", store, filters, now);
     const hit = r.hits.find((h) => h.kind === "place");
     expect(hit!.kind === "place" && hit!.count).toBe(300);
@@ -105,8 +123,9 @@ describe("what a query finds", () => {
       reading({ id: "buried", place: "Bridgetown, Barbados", lon: -59, lat: 13, magnitude: 6.9 }),
       reading({ id: "lead", place: "Carlsberg Ridge", lon: 60, lat: -5, magnitude: 3.0 }),
     ]);
-    const names = search("ridge", store, filters, now).hits
-      .filter((h) => h.kind === "place").map((h) => (h.kind === "place" ? h.name : ""));
+    const names = search("ridge", store, filters, now)
+      .hits.filter((h) => h.kind === "place")
+      .map((h) => (h.kind === "place" ? h.name : ""));
     expect(names[0]).toBe("Carlsberg Ridge");
     expect(names).toContain("Bridgetown, Barbados");
   });
@@ -136,9 +155,16 @@ describe("what it will not do", () => {
 
   it("caps the place rows and says how many it left out", () => {
     // A silent cap reads as "that is everything", which is the one thing it is not.
-    const store = withEvents(Array.from({ length: PLACE_LIMIT + 5 }, (_, i) => reading({
-      id: `p${i}`, place: `Ridge Sector ${i}`, lon: i, lat: 0,
-    })));
+    const store = withEvents(
+      Array.from({ length: PLACE_LIMIT + 5 }, (_, i) =>
+        reading({
+          id: `p${i}`,
+          place: `Ridge Sector ${i}`,
+          lon: i,
+          lat: 0,
+        }),
+      ),
+    );
     const r = search("ridge", store, filters, now);
     expect(r.hits.filter((h) => h.kind === "place")).toHaveLength(PLACE_LIMIT);
     expect(r.more).toBe(5);

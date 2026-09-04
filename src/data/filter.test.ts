@@ -7,9 +7,18 @@ const HOUR = 3_600_000;
 
 const quake = (over: Partial<Reading> = {}): Quake => {
   const primary: Reading = {
-    source: "usgs", id: "a1", magnitude: 5.2, scale: "Mww", lon: 141.3, lat: 41.8,
-    depthKm: 40, time: NOW - HOUR, place: "somewhere", kind: "earthquake",
-    receivedAt: NOW - HOUR + 20_000, ...over,
+    source: "usgs",
+    id: "a1",
+    magnitude: 5.2,
+    scale: "Mww",
+    lon: 141.3,
+    lat: 41.8,
+    depthKm: 40,
+    time: NOW - HOUR,
+    place: "somewhere",
+    kind: "earthquake",
+    receivedAt: NOW - HOUR + 20_000,
+    ...over,
   };
   return { key: "q1", readings: [primary], primary };
 };
@@ -49,7 +58,8 @@ describe("filters", () => {
 describe("the honest left edge", () => {
   it("reports the requested window once it has genuinely filled", () => {
     expect(windowStart(NOW, 24 * HOUR, NOW - 30 * HOUR)).toEqual({
-      at: NOW - 24 * HOUR, complete: true,
+      at: NOW - 24 * HOUR,
+      complete: true,
     });
   });
 

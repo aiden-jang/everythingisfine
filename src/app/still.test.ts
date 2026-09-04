@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { captionLines, stillMoment, STILL_HEIGHT, STILL_WIDTH, verdictLine} from "./still";
+import { captionLines, stillMoment, STILL_HEIGHT, STILL_WIDTH, verdictLine } from "./still";
 
 const NOW = Date.parse("2026-08-21T04:12:30Z");
 
@@ -29,8 +29,7 @@ describe("what the still says it is of", () => {
   it("is UTC, so a still shared across timezones means one moment", () => {
     // Midnight UTC, which is the previous evening in the Americas: the stamp must not drift with the
     // viewer's offset the way a zoneless GDACS date does.
-    expect(stillMoment(Date.parse("2026-08-21T00:00:00Z"), NOW))
-      .toBe("Held at 2026-08-21 00:00 UTC");
+    expect(stillMoment(Date.parse("2026-08-21T00:00:00Z"), NOW)).toBe("Held at 2026-08-21 00:00 UTC");
   });
 });
 
@@ -59,8 +58,9 @@ describe("the verdict, which is the half the poster was missing", () => {
   const base = { quakes: 0, cyclones: 0, fires: 0, firesCapped: false, floods: 0 };
 
   it("states every layer that has something, in the order the app names them", () => {
-    expect(verdictLine({ quakes: 120, cyclones: 4, fires: 87, firesCapped: false, floods: 9 }))
-      .toBe("120 earthquakes. 4 cyclones. 87 fires. 9 floods.");
+    expect(verdictLine({ quakes: 120, cyclones: 4, fires: 87, firesCapped: false, floods: 9 })).toBe(
+      "120 earthquakes. 4 cyclones. 87 fires. 9 floods.",
+    );
   });
 
   it("groups a thousand the way the rest of the app does", () => {
@@ -92,8 +92,9 @@ describe("the verdict, which is the half the poster was missing", () => {
   });
 
   it("counts one of a thing as one", () => {
-    expect(verdictLine({ ...base, quakes: 1, cyclones: 1, fires: 1, floods: 1 }))
-      .toBe("1 earthquake. 1 cyclone. 1 fire. 1 flood.");
+    expect(verdictLine({ ...base, quakes: 1, cyclones: 1, fires: 1, floods: 1 })).toBe(
+      "1 earthquake. 1 cyclone. 1 fire. 1 flood.",
+    );
   });
 
   it("has nothing to say about an empty planet rather than writing the word nothing", () => {

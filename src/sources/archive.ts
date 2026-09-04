@@ -33,15 +33,18 @@ export interface Archive {
 /** One day from each agency, merged. Failures are per agency and reported rather than thrown: one service
  * being down gives a day from the other with the gap stated. */
 export async function fetchArchive(
-  from: number, to: number, minMagnitude: number,
+  from: number,
+  to: number,
+  minMagnitude: number,
   get: (url: string) => Promise<Response> = fetch,
 ): Promise<Archive> {
   const at = Date.now();
   const readings: Reading[] = [];
   const answered: Record<SourceId, ArchiveAnswer | null> = { usgs: null, emsc: null };
 
-  const usgsUrl = `${USGS_QUERY}?format=geojson&limit=${ARCHIVE_LIMIT}`
-    + `&starttime=${stamp(from)}&endtime=${stamp(to)}&minmagnitude=${minMagnitude}`;
+  const usgsUrl =
+    `${USGS_QUERY}?format=geojson&limit=${ARCHIVE_LIMIT}` +
+    `&starttime=${stamp(from)}&endtime=${stamp(to)}&minmagnitude=${minMagnitude}`;
   try {
     const res = await get(usgsUrl);
     if (res.ok) {
@@ -49,10 +52,13 @@ export async function fetchArchive(
       readings.push(...parsed.readings);
       answered.usgs = { count: parsed.readings.length, truncated: parsed.readings.length >= ARCHIVE_LIMIT };
     }
-  } catch { /* reported as null, not as zero */ }
+  } catch {
+    /* reported as null, not as zero */
+  }
 
-  const emscUrl = `${EMSC_QUERY}?format=json&limit=${ARCHIVE_LIMIT}`
-    + `&starttime=${stamp(from)}&endtime=${stamp(to)}&minmag=${minMagnitude}`;
+  const emscUrl =
+    `${EMSC_QUERY}?format=json&limit=${ARCHIVE_LIMIT}` +
+    `&starttime=${stamp(from)}&endtime=${stamp(to)}&minmag=${minMagnitude}`;
   try {
     const res = await get(emscUrl);
     if (res.ok) {
@@ -72,7 +78,9 @@ export async function fetchArchive(
         };
       }
     }
-  } catch { /* as above */ }
+  } catch {
+    /* as above */
+  }
 
   return { from, to, readings, answered };
 }
@@ -83,11 +91,14 @@ export async function fetchArchive(
  * See ARCHITECTURE.md.
  */
 export async function countForDay(
-  iso: string, minMagnitude: number, get: typeof fetch = fetch,
+  iso: string,
+  minMagnitude: number,
+  get: typeof fetch = fetch,
 ): Promise<number | null> {
   try {
-    const url = `${USGS_COUNT}?format=geojson&starttime=${iso}T00:00:00`
-      + `&endtime=${iso}T23:59:59&minmagnitude=${minMagnitude}`;
+    const url =
+      `${USGS_COUNT}?format=geojson&starttime=${iso}T00:00:00` +
+      `&endtime=${iso}T23:59:59&minmagnitude=${minMagnitude}`;
     const response = await get(url);
     if (!response.ok) return null;
     const body = (await response.json()) as { count?: unknown };

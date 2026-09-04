@@ -159,9 +159,10 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
         let stored = reading;
         // NaN is how both feeds spell "no depth given", and NaN !== NaN, so a plain comparison reports a
         // revision on every re-poll of an event that never had one.
-        const depthMoved = Number.isFinite(old.depthKm) || Number.isFinite(reading.depthKm)
-          ? old.depthKm !== reading.depthKm
-          : false;
+        const depthMoved =
+          Number.isFinite(old.depthKm) || Number.isFinite(reading.depthKm)
+            ? old.depthKm !== reading.depthKm
+            : false;
         if (old.magnitude !== reading.magnitude || depthMoved) {
           /*
            * Once per event, not once per agency, because eviction refunds it once per event. Incrementing
@@ -173,8 +174,7 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
             ...reading,
             revision: {
               fromMagnitude: old.revision?.fromMagnitude ?? old.magnitude,
-              fromDepthKm: old.revision?.fromDepthKm
-                ?? (Number.isFinite(old.depthKm) ? old.depthKm : null),
+              fromDepthKm: old.revision?.fromDepthKm ?? (Number.isFinite(old.depthKm) ? old.depthKm : null),
               count: (old.revision?.count ?? 0) + 1,
               at: reading.receivedAt,
             },

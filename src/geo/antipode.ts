@@ -6,7 +6,7 @@ import { DEG, EARTH_RADIUS_KM } from "./sphere";
 export function antipodeOf(lon: number, lat: number): { lon: number; lat: number } {
   const flipped = lon + 180;
   // Wrapped into -180..180 so it sits in the same range every other coordinate here uses.
-  const wrapped = ((flipped + 180) % 360 + 360) % 360 - 180;
+  const wrapped = ((((flipped + 180) % 360) + 360) % 360) - 180;
   return { lon: wrapped, lat: -lat };
 }
 
@@ -29,7 +29,10 @@ const STEPS = 120;
  * ellipse around the centre.
  */
 export function smallCircle(
-  lon: number, lat: number, arcDeg: number, steps: number = STEPS,
+  lon: number,
+  lat: number,
+  arcDeg: number,
+  steps: number = STEPS,
 ): { lon: number; lat: number }[] {
   const phi = lat * DEG;
   const lambda = lon * DEG;
@@ -42,10 +45,8 @@ export function smallCircle(
   for (let i = 0; i <= steps; i += 1) {
     const bearing = (i / steps) * Math.PI * 2;
     const lat2 = Math.asin(sinPhi * cosTheta + cosPhi * sinTheta * Math.cos(bearing));
-    const lon2 = lambda + Math.atan2(
-      Math.sin(bearing) * sinTheta * cosPhi,
-      cosTheta - sinPhi * Math.sin(lat2),
-    );
+    const lon2 =
+      lambda + Math.atan2(Math.sin(bearing) * sinTheta * cosPhi, cosTheta - sinPhi * Math.sin(lat2));
     out.push({ lon: ((lon2 / DEG + 540) % 360) - 180, lat: lat2 / DEG });
   }
   return out;
@@ -56,7 +57,13 @@ export function antipodeCross(lon: number, lat: number, sizeDeg = 3): { lon: num
   const stretch = 1 / Math.max(0.25, Math.cos(lat * DEG));
   const w = sizeDeg * stretch;
   return [
-    [{ lon: lon - w, lat }, { lon: lon + w, lat }],
-    [{ lon, lat: Math.max(-89.9, lat - sizeDeg) }, { lon, lat: Math.min(89.9, lat + sizeDeg) }],
+    [
+      { lon: lon - w, lat },
+      { lon: lon + w, lat },
+    ],
+    [
+      { lon, lat: Math.max(-89.9, lat - sizeDeg) },
+      { lon, lat: Math.min(89.9, lat + sizeDeg) },
+    ],
   ];
 }

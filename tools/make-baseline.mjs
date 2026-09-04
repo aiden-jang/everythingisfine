@@ -24,8 +24,9 @@ const END = "2025-08-01";
 const OUT = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "data", "baseline.json");
 const DAY_MS = 86_400_000;
 
-const url = (from, to) => "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv"
-  + `&minmagnitude=${MIN_MAGNITUDE}&starttime=${from}&endtime=${to}`;
+const url = (from, to) =>
+  "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv" +
+  `&minmagnitude=${MIN_MAGNITUDE}&starttime=${from}&endtime=${to}`;
 
 /** One bucket per UTC calendar day, so a day with nothing in it still counts as a day. */
 const byDay = new Map();
@@ -91,8 +92,12 @@ await writeFile(OUT, `${json}\n`);
 
 const median = counts[Math.floor(counts.length / 2)];
 console.log(`${total} events over ${counts.length} days, ${outside} outside the span`);
-console.log(`wrote ${counts.length} daily and ${weeks.length} weekly counts, `
-  + `${(json.length / 1024).toFixed(1)} kB -> ${OUT}`);
+console.log(
+  `wrote ${counts.length} daily and ${weeks.length} weekly counts, ` +
+    `${(json.length / 1024).toFixed(1)} kB -> ${OUT}`,
+);
 console.log(`days: quietest ${counts[0]}, median ${median}, busiest ${counts[counts.length - 1]}`);
-console.log(`weeks: quietest ${weeks[0]}, median ${weeks[Math.floor(weeks.length / 2)]}, `
-  + `busiest ${weeks[weeks.length - 1]}`);
+console.log(
+  `weeks: quietest ${weeks[0]}, median ${weeks[Math.floor(weeks.length / 2)]}, ` +
+    `busiest ${weeks[weeks.length - 1]}`,
+);

@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { BUCKETS } from "./histogram";
-import {
-  atFraction, clamp, dragTo, fractionOf, LIVE, nudge, PLAY_SECONDS, step, togglePlay,
-} from "./scrub";
+import { atFraction, clamp, dragTo, fractionOf, LIVE, nudge, PLAY_SECONDS, step, togglePlay } from "./scrub";
 
 const HOUR = 3_600_000;
 const span = { from: 1_000_000_000_000, to: 1_000_000_000_000 + 24 * HOUR };

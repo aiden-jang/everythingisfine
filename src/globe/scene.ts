@@ -1,10 +1,30 @@
 import {
-  AdditiveBlending, BackSide, BufferAttribute, BufferGeometry, Color, DoubleSide, FrontSide, Group,
-  LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene,
-  PlaneGeometry, ShaderMaterial, SphereGeometry, Vector3, WebGLRenderer,
+  AdditiveBlending,
+  BackSide,
+  BufferAttribute,
+  BufferGeometry,
+  Color,
+  DoubleSide,
+  FrontSide,
+  Group,
+  LineBasicMaterial,
+  LineSegments,
+  Mesh,
+  MeshBasicMaterial,
+  PerspectiveCamera,
+  Scene,
+  PlaneGeometry,
+  ShaderMaterial,
+  SphereGeometry,
+  Vector3,
+  WebGLRenderer,
 } from "three";
 import {
-  buildLand, RADIUS_ATMOSPHERE, RADIUS_GRATICULE, RADIUS_NIGHT, RADIUS_SPHERE,
+  buildLand,
+  RADIUS_ATMOSPHERE,
+  RADIUS_GRATICULE,
+  RADIUS_NIGHT,
+  RADIUS_SPHERE,
   type LandGeometry,
 } from "../geo/land";
 import type { RampName } from "./ramp";
@@ -18,7 +38,12 @@ import { createMoon } from "./moon";
 import { createFigures } from "./figures";
 import { createPlanets } from "./planets";
 import {
-  attachLonLat, MAP_HALF_WIDTH, MORPH_GLSL, morphable, SPHERE_PHI_START, visibleCopies,
+  attachLonLat,
+  MAP_HALF_WIDTH,
+  MORPH_GLSL,
+  morphable,
+  SPHERE_PHI_START,
+  visibleCopies,
 } from "./morph";
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
@@ -64,7 +89,11 @@ const COLOR_PLATES = 0x316a97;
    separate thing you can see. Re-pick these by eye; scaling the blue ones down does not work. See
    ARCHITECTURE.md. */
 const NEUTRAL = {
-  sphere: 0x0a101c, land: 0x25334e, graticule: 0x243149, coast: 0x555663, plates: 0x646478,
+  sphere: 0x0a101c,
+  land: 0x25334e,
+  graticule: 0x243149,
+  coast: 0x555663,
+  plates: 0x646478,
 } as const;
 
 /* The graticule faded into its colour rather than its alpha, because it is opaque. See `grat` below. */
@@ -77,8 +106,11 @@ const GRATICULE_ON = (palette: { sphere: number; graticule: number }): number =>
   return (mix(16) << 16) | (mix(8) << 8) | mix(0);
 };
 const BLUEPRINT = {
-  sphere: COLOR_SPHERE, land: COLOR_LAND, graticule: COLOR_GRATICULE,
-  coast: COLOR_COAST, plates: COLOR_PLATES,
+  sphere: COLOR_SPHERE,
+  land: COLOR_LAND,
+  graticule: COLOR_GRATICULE,
+  coast: COLOR_COAST,
+  plates: COLOR_PLATES,
 } as const;
 const COLOR_RIM = new Color(0x7896be);
 const COLOR_GLINT = new Color(0xa8c4e4);
@@ -188,7 +220,12 @@ export interface Globe {
     reveal: (t: number) => void;
   };
   hitTest: (
-    clientX: number, clientY: number, store: HitStore, filters: Filters, now: number, slopPx?: number,
+    clientX: number,
+    clientY: number,
+    store: HitStore,
+    filters: Filters,
+    now: number,
+    slopPx?: number,
   ) => string | null;
   hitMark: (clientX: number, clientY: number, slopPx?: number) => string | null;
   stats: LandGeometry["stats"];
@@ -228,10 +265,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
   const oceanGeom = new SphereGeometry(RADIUS_SPHERE, 96, 64, SPHERE_PHI_START);
   attachLonLat(oceanGeom);
-  const ocean = new Mesh(
-    oceanGeom,
-    new MeshBasicMaterial({ color: COLOR_SPHERE }),
-  );
+  const ocean = new Mesh(oceanGeom, new MeshBasicMaterial({ color: COLOR_SPHERE }));
   morphable(ocean.material, morph);
   ocean.renderOrder = 0;
   spin.add(ocean);
@@ -248,11 +282,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   fillGeom.setAttribute("position", new BufferAttribute(land.position, 3));
   fillGeom.setIndex(new BufferAttribute(land.index, 1));
   fillGeom.setAttribute("aLonLat", new BufferAttribute(land.lonLat, 2));
-  const fill = new Mesh(fillGeom, new MeshBasicMaterial({
-    color: COLOR_LAND,
-    depthTest: false,
-    depthWrite: false,
-  }));
+  const fill = new Mesh(
+    fillGeom,
+    new MeshBasicMaterial({
+      color: COLOR_LAND,
+      depthTest: false,
+      depthWrite: false,
+    }),
+  );
   morphable(fill.material, morph);
   fill.renderOrder = 1;
   spin.add(fill);
@@ -263,9 +300,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   gratGeom.setAttribute("aLonLat", new BufferAttribute(grid.lonLat, 2));
   /* Drawn before the land, which is the only way it ends up behind it: the land writes no depth, so nothing
      occludes the graticule and it drew a starburst across Siberia. See ARCHITECTURE.md. */
-  const grat = new LineSegments(gratGeom, new LineBasicMaterial({
-    color: GRATICULE_ON({ sphere: COLOR_SPHERE, graticule: COLOR_GRATICULE }),
-  }));
+  const grat = new LineSegments(
+    gratGeom,
+    new LineBasicMaterial({
+      color: GRATICULE_ON({ sphere: COLOR_SPHERE, graticule: COLOR_GRATICULE }),
+    }),
+  );
   morphable(grat.material, morph);
   grat.renderOrder = 0.5;
   spin.add(grat);
@@ -560,7 +600,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
   /* Nothing under `world` is culled against its own bounds, because those bounds are the wrong shape. See
      ARCHITECTURE.md. */
-  world.traverse((o) => { o.frustumCulled = false; });
+  world.traverse((o) => {
+    o.frustumCulled = false;
+  });
 
   const controls = createControls(camera, canvas, FRAMING, FOV);
   let markerScale = (): number => 1;
@@ -661,8 +703,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         const km = distanceKm(under.lon, under.lat, lon, lat);
         if (near.length >= SHORTLIST && km >= worst) return;
         near.push({ key: quake.key, lon, lat, magnitude, depthKm });
-        near.sort((a, b) => distanceKm(under.lon, under.lat, a.lon, a.lat)
-          - distanceKm(under.lon, under.lat, b.lon, b.lat));
+        near.sort(
+          (a, b) =>
+            distanceKm(under.lon, under.lat, a.lon, a.lat) - distanceKm(under.lon, under.lat, b.lon, b.lat),
+        );
         if (near.length > SHORTLIST) near.pop();
         const last = near[near.length - 1]!;
         worst = distanceKm(under.lon, under.lat, last.lon, last.lat);
@@ -674,7 +718,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         // Projected at the depth it is drawn at, so the pointer agrees with the marker rather than with the
         // epicentre above it. Flat, the sink is off and this is the surface again.
         const at = controls.project(
-          candidate.lon, candidate.lat, 1 - sinkFraction(candidate.depthKm) * sink * (1 - controls.morph()),
+          candidate.lon,
+          candidate.lat,
+          1 - sinkFraction(candidate.depthKm) * sink * (1 - controls.morph()),
         );
         if (!at) continue;
         const d = Math.hypot(at.x - clientX, at.y - clientY);
@@ -697,9 +743,16 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       pickMark(heldMarks, { x: clientX, y: clientY }, controls.project, slopPx),
     events,
     rings,
-    setMarks: (next) => { heldMarks = next; marks.set(next); },
-    setMarkZoom: (zoom) => { marks.setZoom(zoom); },
-    setMarkHover: (id) => { marks.setHovered(id); },
+    setMarks: (next) => {
+      heldMarks = next;
+      marks.set(next);
+    },
+    setMarkZoom: (zoom) => {
+      marks.setZoom(zoom);
+    },
+    setMarkHover: (id) => {
+      marks.setHovered(id);
+    },
     setSlab: (points) => {
       if (points === null) {
         slab.setOpacity(0);
@@ -786,8 +839,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       }
 
       mapBase.visible = true;
-      (mapBase.material as MeshBasicMaterial).color
-        .copy(COLOR_VOID_C).lerp(COLOR_SPHERE_C, morph.value);
+      (mapBase.material as MeshBasicMaterial).color.copy(COLOR_VOID_C).lerp(COLOR_SPHERE_C, morph.value);
 
       /* The map repeats by drawing the world again beside itself. Only the copies that intersect the view
          are drawn: two most of the time, one zoomed in. See ARCHITECTURE.md. */

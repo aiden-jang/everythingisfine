@@ -1,8 +1,27 @@
 import { describe, expect, it } from "vitest";
 import {
-  compactSpan, corroborationNote, floodNote, reach, reachFraction, reachNote, reachWords,
-  boundaryNote, depthNote, farSideNote, motionNote, quietNote, soundNote, theOf,
-  wildfireNote, quietParts, cycloneNote, volcanoNote, windowLabel, ago, agoShort} from "./format";
+  compactSpan,
+  corroborationNote,
+  floodNote,
+  reach,
+  reachFraction,
+  reachNote,
+  reachWords,
+  boundaryNote,
+  depthNote,
+  farSideNote,
+  motionNote,
+  quietNote,
+  soundNote,
+  theOf,
+  wildfireNote,
+  quietParts,
+  cycloneNote,
+  volcanoNote,
+  windowLabel,
+  ago,
+  agoShort,
+} from "./format";
 
 /*
  * The reach labels, which exist because two feeds do not cover the same span. Every case here is a sentence
@@ -50,8 +69,8 @@ describe("the note under the pair", () => {
   it("names the truncated agency, its reach, and who covers the rest", () => {
     const note = reachNote({ usgs: now - MONTH, emsc: now - 18 * HOUR }, now, MONTH);
     expect(note).toBe(
-      "EMSC returns its most recent page whatever the window, so it reaches only as far back as 18h."
-      + " Older events are USGS alone.",
+      "EMSC returns its most recent page whatever the window, so it reaches only as far back as 18h." +
+        " Older events are USGS alone.",
     );
   });
 
@@ -67,8 +86,8 @@ describe("the note under the pair", () => {
   it("drops the who-covers-the-rest clause when nobody does", () => {
     const note = reachNote({ usgs: now - 2 * HOUR, emsc: now - 18 * HOUR }, now, MONTH);
     expect(note).toBe(
-      "USGS and EMSC return their most recent page whatever the window, so they reach only as far"
-      + " back as 18h.",
+      "USGS and EMSC return their most recent page whatever the window, so they reach only as far" +
+        " back as 18h.",
     );
   });
 
@@ -239,10 +258,12 @@ describe("the article a country name needs", () => {
 
   it("reads the head of a composite name, not the whole of it", () => {
     // A Republic appears in this one, and Zambia is what heads it.
-    expect(theOf("Zambia, The Democratic Republic of Congo"))
-      .toBe("Zambia, The Democratic Republic of Congo");
-    expect(theOf("The Democratic Republic of Congo, Angola"))
-      .toBe("The Democratic Republic of Congo, Angola");
+    expect(theOf("Zambia, The Democratic Republic of Congo")).toBe(
+      "Zambia, The Democratic Republic of Congo",
+    );
+    expect(theOf("The Democratic Republic of Congo, Angola")).toBe(
+      "The Democratic Republic of Congo, Angola",
+    );
   });
 });
 
@@ -277,8 +298,9 @@ describe("the plate-motion sentence", () => {
   it("says the word that stops the arrows meaning something else", () => {
     // Read as absolute motion over the mantle these would be wrong everywhere, and an arrow cannot
     // carry the word "relative" by itself.
-    expect(motionNote({ arrows: 231, fastest: 227.2, converging: 90 }))
-      .toContain("one side relative to the other");
+    expect(motionNote({ arrows: 231, fastest: 227.2, converging: 90 })).toContain(
+      "one side relative to the other",
+    );
   });
 
   it("gives the angle its reading, since nobody would look for it", () => {
@@ -365,8 +387,9 @@ describe("the depth sentence, which counts instead of promising", () => {
   it("always states the deep count, even when it is zero", () => {
     // The whole point of the row. On a typical day one event of seventy-nine is deep enough to be a ring,
     // so "0 below 300" is the useful reading rather than an omission.
-    expect(depthNote({ shallow: 40, intermediate: 0, deep: 0, unknown: 0, total: 40 })!)
-      .toContain("0 below 300");
+    expect(depthNote({ shallow: 40, intermediate: 0, deep: 0, unknown: 0, total: 40 })!).toContain(
+      "0 below 300",
+    );
   });
 
   it("drops the intermediate clause when there are none, rather than printing a zero for it", () => {
@@ -375,8 +398,9 @@ describe("the depth sentence, which counts instead of promising", () => {
   });
 
   it("reports a missing depth rather than folding it into shallow", () => {
-    expect(depthNote({ shallow: 4, intermediate: 0, deep: 0, unknown: 3, total: 7 })!)
-      .toContain("3 with no depth given");
+    expect(depthNote({ shallow: 4, intermediate: 0, deep: 0, unknown: 3, total: 7 })!).toContain(
+      "3 with no depth given",
+    );
   });
 
   it("says nothing for an empty window", () => {
@@ -425,10 +449,12 @@ describe("the layer sentences on an archived day", () => {
     expect(floodNote(4, 4, true)).toContain("They ran that day");
     expect(floodNote(4, 4)).toContain("Running now");
 
-    expect(volcanoNote(3, Date.parse("2026-05-01T00:00:00Z"), Date.parse("2026-05-15T00:00:00Z"), true))
-      .toContain("was erupting then");
-    expect(volcanoNote(3, Date.parse("2026-05-01T00:00:00Z"), Date.parse("2026-05-15T00:00:00Z")))
-      .toContain("is erupting this minute");
+    expect(
+      volcanoNote(3, Date.parse("2026-05-01T00:00:00Z"), Date.parse("2026-05-15T00:00:00Z"), true),
+    ).toContain("was erupting then");
+    expect(volcanoNote(3, Date.parse("2026-05-01T00:00:00Z"), Date.parse("2026-05-15T00:00:00Z"))).toContain(
+      "is erupting this minute",
+    );
 
     // The distance, not only the tense. The two assertions above pass whichever clock the day count was
     // measured against, which is how "ended 101 days ago, so none of this was erupting then" survived.
@@ -484,7 +510,9 @@ describe("ago on a finished day", () => {
 
   it("leaves every longer gap exactly as it was", () => {
     for (const [gap, live] of [
-      [5 * 60_000, "5 minutes ago"], [3 * 3_600_000, "3 hours ago"], [2 * 86_400_000, "2 days ago"],
+      [5 * 60_000, "5 minutes ago"],
+      [3 * 3_600_000, "3 hours ago"],
+      [2 * 86_400_000, "2 days ago"],
     ] as const) {
       expect(ago(END - gap, END, true)).toBe(live);
       expect(ago(END - gap, END)).toBe(live);

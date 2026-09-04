@@ -10,9 +10,16 @@ function storeOf(magnitudes: readonly number[]): ReturnType<typeof createStore> 
   const store = createStore(200_000);
   magnitudes.forEach((magnitude, i) => {
     const r: Reading = {
-      source: "usgs", id: `q${i}`, magnitude, scale: "mb",
-      lon: (i * 37) % 360 - 180, lat: (i * 17) % 160 - 80, depthKm: 10,
-      time: NOW - (i % 3600) * 1000, place: "somewhere", kind: "earthquake",
+      source: "usgs",
+      id: `q${i}`,
+      magnitude,
+      scale: "mb",
+      lon: ((i * 37) % 360) - 180,
+      lat: ((i * 17) % 160) - 80,
+      depthKm: 10,
+      time: NOW - (i % 3600) * 1000,
+      place: "somewhere",
+      kind: "earthquake",
       receivedAt: NOW,
     };
     store.ingest(r);
@@ -51,7 +58,11 @@ describe("how the sizes stack up", () => {
      * Real catalogues roll off over several tenths rather than stopping dead.
      */
     for (const floor of [2.5, 3.2, 4.0]) {
-      const sizes = sizesOf(storeOf(powerLaw(20_000, 1, floor)), { ...DEFAULT_FILTERS, minMagnitude: 0 }, NOW);
+      const sizes = sizesOf(
+        storeOf(powerLaw(20_000, 1, floor)),
+        { ...DEFAULT_FILTERS, minMagnitude: 0 },
+        NOW,
+      );
       expect(Math.abs(sizes.complete - floor), `floor ${floor}`).toBeLessThanOrEqual(0.1001);
     }
   });
@@ -69,7 +80,9 @@ describe("how the sizes stack up", () => {
   it("refuses to quote a slope from a handful of events", () => {
     // Twenty is already generous for a maximum-likelihood b. Null rather than a wide number, because there
     // is no honest error bar to print beside it.
-    expect(sizesOf(storeOf([4.1, 4.4, 5.0, 5.2, 6.1]), { ...DEFAULT_FILTERS, minMagnitude: 0 }, NOW).b).toBeNull();
+    expect(
+      sizesOf(storeOf([4.1, 4.4, 5.0, 5.2, 6.1]), { ...DEFAULT_FILTERS, minMagnitude: 0 }, NOW).b,
+    ).toBeNull();
     expect(sizesOf(storeOf([]), DEFAULT_FILTERS, NOW).b).toBeNull();
   });
 

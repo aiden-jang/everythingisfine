@@ -22,7 +22,9 @@ describe("the tap tick", () => {
      * Some engines reject `vibrate` outright when the document has never been interacted with. A picked
      * marker must not be able to take the panel down with it.
      */
-    const vibrate = vi.fn(() => { throw new Error("not allowed"); });
+    const vibrate = vi.fn(() => {
+      throw new Error("not allowed");
+    });
     expect(() => tick({ vibrate } as unknown as Navigator)).not.toThrow();
     expect(vibrate).toHaveBeenCalled();
   });

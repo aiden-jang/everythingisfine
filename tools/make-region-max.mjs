@@ -22,15 +22,18 @@ const END = "2025-08-01";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const OUT = join(here, "..", "src", "app", "regionMax.json");
-const SRC = "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv"
-  + `&minmagnitude=${MIN_MAGNITUDE}&starttime=${START}&endtime=${END}`;
+const SRC =
+  "https://earthquake.usgs.gov/fdsnws/event/1/query?format=csv" +
+  `&minmagnitude=${MIN_MAGNITUDE}&starttime=${START}&endtime=${END}`;
 
 /* The region boxes, read out of the TypeScript rather than copied. A duplicated table drifts silently:
  * nothing would fail, the sentences would simply start describing boxes the rail no longer counts by. */
 const source = await readFile(join(here, "..", "src", "app", "regions.ts"), "utf8");
-const regions = [...source.matchAll(
-  /\{\s*name:\s*"([^"]+)",\s*lon:\s*[-\d.]+,\s*lat:\s*[-\d.]+,\s*bounds:\s*\[([-\d.,\s]+)\]/g,
-)].map((m) => {
+const regions = [
+  ...source.matchAll(
+    /\{\s*name:\s*"([^"]+)",\s*lon:\s*[-\d.]+,\s*lat:\s*[-\d.]+,\s*bounds:\s*\[([-\d.,\s]+)\]/g,
+  ),
+].map((m) => {
   const [w, s, e, n] = m[2].split(",").map((v) => Number(v.trim()));
   return { name: m[1], w, s, e, n };
 });

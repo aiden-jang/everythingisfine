@@ -14,9 +14,7 @@ export function toVec3(lon: number, lat: number, r: number): [number, number, nu
 export const EARTH_RADIUS_KM = 6371;
 
 /** Great-circle distance in kilometres. See ARCHITECTURE.md. */
-export function distanceKm(
-  aLon: number, aLat: number, bLon: number, bLat: number,
-): number {
+export function distanceKm(aLon: number, aLat: number, bLon: number, bLat: number): number {
   const dLat = (bLat - aLat) * DEG;
   const dLon = (bLon - aLon) * DEG;
   const s1 = Math.sin(dLat / 2);
@@ -42,9 +40,7 @@ export function spanDeg(aLon: number, aLat: number, bLon: number, bLat: number):
  * Meridians and parallels at a fixed interval, as line segment pairs ready for a BufferGeometry. See
  * ARCHITECTURE.md.
  */
-export function graticule(
-  stepDeg: number, radius: number,
-): { position: Float32Array; lonLat: Float32Array } {
+export function graticule(stepDeg: number, radius: number): { position: Float32Array; lonLat: Float32Array } {
   const out: number[] = [];
   const ll: number[] = [];
   const push = (lon: number, lat: number): void => {

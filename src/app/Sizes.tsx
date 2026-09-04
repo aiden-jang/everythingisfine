@@ -29,8 +29,8 @@ export function SizeChart({ sizes }: { sizes: Sizes }): JSX.Element | null {
         aria-label={
           b === null
             ? "How many earthquakes there were at each size, on a logarithmic scale."
-            : `How many earthquakes at each size. Ten to the power ${b.toFixed(2)} times as many `
-              + `for each magnitude smaller, complete above magnitude ${complete.toFixed(1)}.`
+            : `How many earthquakes at each size. Ten to the power ${b.toFixed(2)} times as many ` +
+              `for each magnitude smaller, complete above magnitude ${complete.toFixed(1)}.`
         }
       >
         {/* The straight line the law predicts, under the points so they sit on it. Only from completeness
@@ -90,8 +90,7 @@ export function SizeChart({ sizes }: { sizes: Sizes }): JSX.Element | null {
       ) : (
         <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
           About <span className="text-dim tabular-nums">{Math.round(10 ** b)}</span> times as many, each
-          magnitude smaller. Straight since 1944 and on every catalogue anybody has drawn.
-          {" "}
+          magnitude smaller. Straight since 1944 and on every catalogue anybody has drawn.{" "}
           <span className="text-dim">The bend below M{complete.toFixed(1)}</span> is not the Earth: it is
           where these two agencies stop hearing everything.
         </p>

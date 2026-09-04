@@ -37,9 +37,7 @@ describe("EMSC, for real", () => {
      ARCHITECTURE.md. */
   it("has a row ceiling far above the seed limit, so a short page is a short catalogue", async () => {
     const since = new Date(Date.now() - 30 * 24 * 3_600_000).toISOString().slice(0, 19);
-    const res = await fetch(
-      `${EMSC_CATALOGUE}?limit=${SEED_LIMIT * 4}&format=json&start=${since}`,
-    );
+    const res = await fetch(`${EMSC_CATALOGUE}?limit=${SEED_LIMIT * 4}&format=json&start=${since}`);
     expect(res.ok).toBe(true);
     const payload = (await res.json()) as { features: unknown[] };
 

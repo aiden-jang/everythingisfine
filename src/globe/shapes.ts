@@ -3,7 +3,10 @@ import { DEG } from "../geo/sphere";
 /* The glyphs, as polylines in lon/lat. Light gets colour and marks get shapes, so everything that is not an
    earthquake is told apart by outline. See ARCHITECTURE.md. */
 
-export interface Point { lon: number; lat: number }
+export interface Point {
+  lon: number;
+  lat: number;
+}
 
 const stretchAt = (lat: number): number => 1 / Math.max(0.25, Math.cos(lat * DEG));
 
@@ -28,10 +31,22 @@ export function here(lon: number, lat: number, radiusDeg = 1.5): Point[][] {
   const stretch = stretchAt(lat);
   const gap = radiusDeg * 0.45;
   return [
-    [{ lon, lat: lat + gap }, { lon, lat: lat + radiusDeg }],
-    [{ lon, lat: lat - gap }, { lon, lat: lat - radiusDeg }],
-    [{ lon: lon + gap * stretch, lat }, { lon: lon + radiusDeg * stretch, lat }],
-    [{ lon: lon - gap * stretch, lat }, { lon: lon - radiusDeg * stretch, lat }],
+    [
+      { lon, lat: lat + gap },
+      { lon, lat: lat + radiusDeg },
+    ],
+    [
+      { lon, lat: lat - gap },
+      { lon, lat: lat - radiusDeg },
+    ],
+    [
+      { lon: lon + gap * stretch, lat },
+      { lon: lon + radiusDeg * stretch, lat },
+    ],
+    [
+      { lon: lon - gap * stretch, lat },
+      { lon: lon - radiusDeg * stretch, lat },
+    ],
   ];
 }
 
@@ -52,11 +67,19 @@ export function volcano(lon: number, lat: number, radiusDeg = 1.6): Point[] {
  * and at true scale the largest fire on Earth is a fifth of a degree across. */
 export function flame(lon: number, lat: number, radiusDeg = 1.2): Point[] {
   const stretch = stretchAt(lat);
-  const at = (x: number, y: number): Point =>
-    ({ lon: lon + x * radiusDeg * stretch, lat: lat + y * radiusDeg });
+  const at = (x: number, y: number): Point => ({
+    lon: lon + x * radiusDeg * stretch,
+    lat: lat + y * radiusDeg,
+  });
   return [
-    at(-0.55, 0), at(-0.8, 0.5), at(-0.35, 1.05), at(0.15, 1.85),
-    at(0.5, 1.1), at(0.8, 0.5), at(0.55, 0), at(-0.55, 0),
+    at(-0.55, 0),
+    at(-0.8, 0.5),
+    at(-0.35, 1.05),
+    at(0.15, 1.85),
+    at(0.5, 1.1),
+    at(0.8, 0.5),
+    at(0.55, 0),
+    at(-0.55, 0),
   ];
 }
 

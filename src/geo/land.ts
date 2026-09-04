@@ -47,8 +47,7 @@ type Ring = number[][];
 export function rings(): Ring[][] {
   const topo = topology as unknown as Topology;
   const land = feature(topo, topo.objects.land as GeometryObject) as
-    | Feature<Polygon | MultiPolygon>
-    | FeatureCollection<Polygon | MultiPolygon>;
+    Feature<Polygon | MultiPolygon> | FeatureCollection<Polygon | MultiPolygon>;
 
   const features = land.type === "FeatureCollection" ? land.features : [land];
   const out: Ring[][] = [];
@@ -152,8 +151,12 @@ function subdivide(verts: number[], tris: number[]): { verts: number[]; tris: nu
   };
 
   for (let t = 0; t < tris.length; t += 3) {
-    const a = tris[t]!, b = tris[t + 1]!, c = tris[t + 2]!;
-    const ab = mid(a, b), bc = mid(b, c), ca = mid(c, a);
+    const a = tris[t]!,
+      b = tris[t + 1]!,
+      c = tris[t + 2]!;
+    const ab = mid(a, b),
+      bc = mid(b, c),
+      ca = mid(c, a);
     out.push(a, ab, ca, ab, b, bc, ca, bc, c, ab, bc, ca);
   }
   return { verts, tris: out };
@@ -200,9 +203,7 @@ const MAX_EDGE_DEG = 4;
  * Splits long edges until none exceeds `MAX_EDGE_DEG`, without leaving T-junctions. Red-green refinement,
  * with marks on the edge rather than on the triangle, which is what makes both owners agree.
  */
-function capEdges(
-  verts: number[], tris: number[],
-): { verts: number[]; tris: number[]; split: number } {
+function capEdges(verts: number[], tris: number[]): { verts: number[]; tris: number[]; split: number } {
   const key = (i: number, j: number): number => (i < j ? i * 1e7 + j : j * 1e7 + i);
   const len = (i: number, j: number): number =>
     spanDeg(verts[i * 2]!, verts[i * 2 + 1]!, verts[j * 2]!, verts[j * 2 + 1]!);
@@ -224,7 +225,10 @@ function capEdges(
       if (!e.some((k) => marked.has(k))) continue;
       const d = [len(a, b), len(b, c), len(c, a)];
       const longest = d[0]! >= d[1]! && d[0]! >= d[2]! ? 0 : d[1]! >= d[2]! ? 1 : 2;
-      if (!marked.has(e[longest]!)) { marked.add(e[longest]!); changed = true; }
+      if (!marked.has(e[longest]!)) {
+        marked.add(e[longest]!);
+        changed = true;
+      }
     }
     if (!changed) break;
   }
@@ -245,7 +249,10 @@ function capEdges(
     let [a, b, c] = [tris[t]!, tris[t + 1]!, tris[t + 2]!];
     let [ab, bc, ca] = [marked.has(key(a, b)), marked.has(key(b, c)), marked.has(key(c, a))];
     const count = Number(ab) + Number(bc) + Number(ca);
-    if (count === 0) { out.push(a, b, c); continue; }
+    if (count === 0) {
+      out.push(a, b, c);
+      continue;
+    }
     if (count === 3) {
       const [p, q, r] = [mid(a, b), mid(b, c), mid(c, a)];
       out.push(a, p, r, p, b, q, r, q, c, p, q, r);
@@ -258,7 +265,10 @@ function capEdges(
       [ab, bc, ca] = [bc, ca, ab];
     }
     const p = mid(a, b);
-    if (count === 1) { out.push(a, p, c, p, b, c); continue; }
+    if (count === 1) {
+      out.push(a, p, c, p, b, c);
+      continue;
+    }
     const q = mid(b, c);
     out.push(a, p, c, p, b, q, p, q, c);
   }
@@ -351,13 +361,11 @@ export function buildLand(): LandGeometry {
       const m = bisect(a, b);
       emit(a, m, c, depth - 1);
       emit(m, b, c, depth - 1);
-    }
-    else if (bc >= ca) {
+    } else if (bc >= ca) {
       const m = bisect(b, c);
       emit(b, m, a, depth - 1);
       emit(m, c, a, depth - 1);
-    }
-    else {
+    } else {
       const m = bisect(c, a);
       emit(c, m, b, depth - 1);
       emit(m, a, b, depth - 1);
@@ -416,7 +424,10 @@ export function buildLand(): LandGeometry {
       const a = mesh.tris[t + e]!;
       const b = mesh.tris[t + ((e + 1) % 3)]!;
       const s = spanDeg(
-        mesh.verts[a * 2]!, mesh.verts[a * 2 + 1]!, mesh.verts[b * 2]!, mesh.verts[b * 2 + 1]!,
+        mesh.verts[a * 2]!,
+        mesh.verts[a * 2 + 1]!,
+        mesh.verts[b * 2]!,
+        mesh.verts[b * 2 + 1]!,
       );
       if (s > maxEdgeDeg) maxEdgeDeg = s;
     }

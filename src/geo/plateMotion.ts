@@ -28,7 +28,10 @@ export function arrowLengthDeg(mmPerYear: number): number {
  * longitude points the wrong way everywhere except the equator - by a factor of two at 60 north.
  */
 export function motionArrow(
-  lon: number, lat: number, azimuthDeg: number, mmPerYear: number,
+  lon: number,
+  lat: number,
+  azimuthDeg: number,
+  mmPerYear: number,
 ): { lon: number; lat: number }[][] {
   const length = arrowLengthDeg(mmPerYear);
   const tip = walk(lon, lat, azimuthDeg, length);
@@ -41,19 +44,19 @@ export function motionArrow(
 }
 
 /** Destination point at a bearing and an arc distance. The same formula `antipode.ts` circles with. */
-function walk(
-  lon: number, lat: number, bearingDeg: number, arcDeg: number,
-): { lon: number; lat: number } {
+function walk(lon: number, lat: number, bearingDeg: number, arcDeg: number): { lon: number; lat: number } {
   const phi = lat * DEG;
   const theta = arcDeg * DEG;
   const bearing = bearingDeg * DEG;
   const lat2 = Math.asin(
     Math.sin(phi) * Math.cos(theta) + Math.cos(phi) * Math.sin(theta) * Math.cos(bearing),
   );
-  const lon2 = lon * DEG + Math.atan2(
-    Math.sin(bearing) * Math.sin(theta) * Math.cos(phi),
-    Math.cos(theta) - Math.sin(phi) * Math.sin(lat2),
-  );
+  const lon2 =
+    lon * DEG +
+    Math.atan2(
+      Math.sin(bearing) * Math.sin(theta) * Math.cos(phi),
+      Math.cos(theta) - Math.sin(phi) * Math.sin(lat2),
+    );
   return { lon: ((lon2 / DEG + 540) % 360) - 180, lat: lat2 / DEG };
 }
 
