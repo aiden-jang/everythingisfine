@@ -202,8 +202,25 @@ describe("naming the strength", () => {
     expect(category(111)).toBe("tropical storm");
   });
 
+  /* Every rung, from both sides. Two of the five were never named, so either could move unnoticed. */
+  it("puts each boundary on the right side of itself", () => {
+    const rungs: [number, string][] = [
+      [63, "tropical storm"],
+      [119, "category 1"],
+      [154, "category 2"],
+      [178, "category 3"],
+      [209, "category 4"],
+      [252, "category 5"],
+    ];
+    for (const [kmh, name] of rungs) expect(category(kmh), `${kmh} km/h`).toBe(name);
+    for (const [kmh, name] of rungs.slice(1)) {
+      expect(category(kmh - 1), `just under ${kmh}`).not.toBe(name);
+    }
+  });
+
   it("declines to name a depression or a missing number", () => {
     expect(category(56)).toBeNull();
+    expect(category(62)).toBeNull();
     expect(category(null)).toBeNull();
     expect(category(Number.NaN)).toBeNull();
   });

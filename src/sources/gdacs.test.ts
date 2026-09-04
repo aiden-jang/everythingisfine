@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { reportedBy } from "./gdacs";
+import { parseUtc, reportedBy } from "./gdacs";
 
 describe("who reported it", () => {
   it("reads the agency GDACS credits", () => {
@@ -14,5 +14,27 @@ describe("who reported it", () => {
       expect(reportedBy({ source: bad } as Record<string, unknown>), String(bad)).toBeNull();
     }
     expect(reportedBy({})).toBeNull();
+  });
+});
+
+describe("a GDACS timestamp", () => {
+  it("reads a zoneless stamp as UTC, not as wherever the viewer is", () => {
+    expect(parseUtc("2026-08-11T21:25:00")).toBe(Date.parse("2026-08-11T21:25:00Z"));
+  });
+
+  it("leaves a stamp that already carries a zone alone", () => {
+    expect(parseUtc("2026-08-11T21:25:00Z")).toBe(Date.parse("2026-08-11T21:25:00Z"));
+    expect(parseUtc("2026-08-11T21:25:00+02:00")).toBe(Date.parse("2026-08-11T19:25:00Z"));
+  });
+
+  /*
+   * Empty is the one that matters. `Date.parse("Z")` is not a number on every engine, but an empty
+   * field arriving as a date at the epoch would put the event in 1970 and draw it there.
+   */
+  it("gives back nothing for a field that is not a stamp", () => {
+    expect(parseUtc("")).toBeNull();
+    expect(parseUtc(null)).toBeNull();
+    expect(parseUtc(1_754_000_000_000)).toBeNull();
+    expect(parseUtc("not a date")).toBeNull();
   });
 });

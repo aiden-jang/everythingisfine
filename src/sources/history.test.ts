@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { parseHistory, placeOf, stormName } from "./history";
+import { describe, expect, it, vi } from "vitest";
+import { fetchHistory, parseHistory, placeOf, stormName } from "./history";
 
 const DAY = Date.parse("2024-08-01T00:00:00Z");
 const TO = DAY + 3 * 86_400_000;
@@ -163,5 +163,32 @@ describe("the names in those titles", () => {
     expect(placeOf("Wildfire in Russian Federation 1028720")).toBe("Russian Federation");
     expect(placeOf("Flood in United States 1103888")).toBe("United States");
     expect(placeOf("Tropical Storm Fabio")).toBe("");
+  });
+});
+
+describe("asking EONET for a day it will not give", () => {
+  /*
+   * An error carrying JSON is the case the status check exists for. Parsed anyway it yields four
+   * empty layers and `answered: true`, which the app cannot tell from a genuinely quiet day.
+   */
+  it("does not call a failed request an answer", async () => {
+    const get = vi.fn(async () => new Response(JSON.stringify({ error: "down" }), { status: 500 }));
+    const out = await fetchHistory(DAY, TO, get);
+    expect(out.answered).toBe(false);
+    expect(out.cyclones).toEqual([]);
+  });
+
+  it("does not call a refused connection an answer either", async () => {
+    const get = vi.fn(async () => {
+      throw new Error("network");
+    });
+    expect((await fetchHistory(DAY, TO, get)).answered).toBe(false);
+  });
+
+  it("calls an empty day an answer, because that is what it is", async () => {
+    const get = vi.fn(async () => new Response(JSON.stringify({ events: [] }), { status: 200 }));
+    const out = await fetchHistory(DAY, TO, get);
+    expect(out.answered).toBe(true);
+    expect(out.cyclones).toEqual([]);
   });
 });

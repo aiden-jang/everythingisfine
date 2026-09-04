@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import recorded from "./fixtures/usgs-all-hour.json";
 import { createFakeRuntime, describeSourceContract, type FakeRuntime } from "./contract";
-import { createUsgsSource, parseUsgs } from "./usgs";
+import { createUsgsSource, parseUsgs, usgsSeedFor } from "./usgs";
 
 /* `recorded` is a real USGS hourly response, saved once and committed. Live-API tests are flaky and burn
  * quota, so exactly one exists and it is excluded from CI. */
@@ -312,5 +312,25 @@ describe("the contributing network", () => {
     for (const none of [null, undefined, "", "   ", 7]) {
       expect(parseUsgs(make(none), 1).readings[0]?.network, String(none)).toBeUndefined();
     }
+  });
+});
+
+describe("which backlog to ask for", () => {
+  const DAY = 86_400_000;
+
+  /*
+   * The day is 0.23MB, the week 1.5MB, the month 7.4MB. A rung in the wrong place is a thirty-fold
+   * download for a window that never needed it, on an app whose whole premise is costing nothing.
+   */
+  it("asks for the smallest file that covers the window", () => {
+    expect(usgsSeedFor(DAY), "a day wants the day").toContain("all_day");
+    expect(usgsSeedFor(2 * DAY), "over a day wants the week").toContain("all_week");
+    expect(usgsSeedFor(7 * DAY), "a week still fits in the week").toContain("all_week");
+    expect(usgsSeedFor(8 * DAY), "over a week wants the month").toContain("all_month");
+    expect(usgsSeedFor(30 * DAY)).toContain("all_month");
+  });
+
+  it("never asks for more than the month, however far back the viewer goes", () => {
+    expect(usgsSeedFor(365 * DAY)).toContain("all_month");
   });
 });
