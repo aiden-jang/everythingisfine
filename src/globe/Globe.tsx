@@ -25,7 +25,7 @@ export interface GlobeProps {
   ramp: RampName;
   onSelect: (key: string | null) => void;
   onReady: (flyTo: (lon: number, lat: number, zoom?: number, liftPx?: number) => void) => void;
-  /** Hands out a function that renders and returns the canvas, for the still. See ARCHITECTURE.md. */
+  /** Hands out a function that renders and returns the canvas, for the still. See ARCHITECTURE.md#srcglobeglobetsx. */
   onCapture?: (capture: () => HTMLCanvasElement | null) => void;
   onSelectMark?: (id: string | null) => void;
   onCamera?: (state: { lon: number; lat: number; zoom: number }) => void;
@@ -167,7 +167,7 @@ export function Globe({
       if (liftPx) {
         /* Two traps in one line. Use `degForPx`, not `degPerPx * px`: the second is the flat map's straight
            line, and this camera is about two radii out, so the sphere's curve is what decides. It ran 34%
-           long. See ARCHITECTURE.md. */
+           long. See ARCHITECTURE.md#srcglobeglobetsx. */
         const deg = Math.min(globe.controls.degForPx(liftPx, toZoom), MAX_LIFT_DEG);
         lat = Math.max(-85, Math.min(85, toLat - deg));
       }
@@ -880,7 +880,7 @@ export function Globe({
         className="pointer-events-none absolute inset-0 h-full w-full opacity-0 transition-opacity duration-150"
       >
         {/* The corridor first, so the centre line and its caps paint over it. Undashed: two more dashed
-            lines would read as three sections rather than one with a width. See ARCHITECTURE.md. */}
+            lines would read as three sections rather than one with a width. See ARCHITECTURE.md#srcglobeglobetsx. */}
         <line stroke="currentColor" strokeWidth={1} className="text-coast" />
         <line stroke="currentColor" strokeWidth={1} className="text-coast" />
         <line stroke="currentColor" strokeWidth={1} className="text-ink" strokeDasharray="5 4" />

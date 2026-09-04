@@ -3,7 +3,7 @@ import type { Quake } from "../data/types";
 import { ago, agoShort, coordinates, depth, place, reportedBy, SOURCE_NAMES } from "./format";
 import { newsIn } from "./announce";
 
-/* The list of recent events. One list, for everybody. See ARCHITECTURE.md. */
+/* The list of recent events. One list, for everybody. See ARCHITECTURE.md#srcappeventlisttsx. */
 
 export interface EventListProps {
   quakes: readonly Quake[];
@@ -70,7 +70,7 @@ export function EventList({
   const announced = useRef(new Set<string>());
   const [announcement, setAnnouncement] = useState("");
 
-  /* The live region, gated by magnitude and by the clock. See ARCHITECTURE.md. */
+  /* The live region, gated by magnitude and by the clock. See ARCHITECTURE.md#srcappeventlisttsx. */
   useEffect(() => {
     /*
       The real clock here, not the archived one: this decides what genuinely arrived, which only happens
@@ -119,7 +119,7 @@ export function EventList({
        ARCHITECTURE.md. */
     <section
       aria-label="Recent earthquakes"
-      /* A share of the viewport in the two single-column layouts, not just a floor. See ARCHITECTURE.md. */
+      /* A share of the viewport in the two single-column layouts, not just a floor. See ARCHITECTURE.md#srcappeventlisttsx. */
       className="flex min-h-[8.25rem] flex-1 flex-col max-md:min-h-[30dvh] xl:min-h-0 xl:flex-none"
     >
       <div className="flex items-baseline justify-between">

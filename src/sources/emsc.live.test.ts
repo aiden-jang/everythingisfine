@@ -42,7 +42,7 @@ describe("EMSC, for real", () => {
     const payload = (await res.json()) as { features: unknown[] };
 
     /* Asking for four times the limit has to return more than the limit. Measured at 14,958 events over
-       thirty days on 2026-08-19, against a portal ceiling of 20,000. See ARCHITECTURE.md. */
+       thirty days on 2026-08-19, against a portal ceiling of 20,000. See ARCHITECTURE.md#srcsourcesemsclivetestts. */
     expect(payload.features.length).toBeGreaterThan(SEED_LIMIT);
   }, 60_000);
 

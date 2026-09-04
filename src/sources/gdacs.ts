@@ -1,4 +1,4 @@
-/* The parts of GDACS every hazard layer needs, in one place. See ARCHITECTURE.md. */
+/* The parts of GDACS every hazard layer needs, in one place. See ARCHITECTURE.md#srcsourcesgdacsts. */
 
 const ENDPOINT = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH";
 
@@ -72,7 +72,7 @@ export function isCurrent(props: Record<string, unknown>): boolean {
   return String(props["iscurrent"]).toLowerCase() === "true";
 }
 
-/** One fetch, one type, failing to an empty list rather than into the app. See ARCHITECTURE.md. */
+/** One fetch, one type, failing to an empty list rather than into the app. See ARCHITECTURE.md#srcsourcesgdacsts. */
 export async function fetchList<T>(
   url: string,
   parse: (payload: unknown) => T[],

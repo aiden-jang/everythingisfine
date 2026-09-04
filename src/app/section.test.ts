@@ -96,7 +96,7 @@ describe("a cross-section", () => {
 });
 
 /* Where the line crosses a plate boundary. The tick turns the section from a shape into an explanation, so
-   a wrong one is worse than none. See ARCHITECTURE.md. */
+   a wrong one is worse than none. See ARCHITECTURE.md#srcappsectiontestts. */
 describe("plate boundaries along a section", () => {
   const crossings = (
     fromLon: number,

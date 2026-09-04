@@ -22,7 +22,7 @@ import {
   SOURCE_NAMES,
 } from "./format";
 
-/* The pinned event, in full. See ARCHITECTURE.md. */
+/* The pinned event, in full. See ARCHITECTURE.md#srcappdetailpaneltsx. */
 
 export interface DetailPanelProps {
   /** False while the panel is leaving. It stays mounted, holding its last event, to animate out. */
@@ -58,7 +58,7 @@ export interface DetailPanelProps {
   onSelect: (key: string) => void;
 }
 
-/* How many people said they felt it, and how hard. The only human number in this app. See ARCHITECTURE.md. */
+/* How many people said they felt it, and how hard. The only human number in this app. See ARCHITECTURE.md#srcappdetailpaneltsx. */
 const SHAKING = [
   // USGS's own words for intensity I through X, not a paraphrase. Two and three are both "weak" there,
   // and inventing a word the scale does not use is how a borrowed scale stops being the scale.
@@ -115,7 +115,7 @@ export function DetailPanel({
 }: DetailPanelProps): JSX.Element {
   const [copied, setCopied] = useState(false);
   const r = quake.primary;
-  /* Recomputed on new data, not on the clock. See ARCHITECTURE.md. */
+  /* Recomputed on new data, not on the clock. See ARCHITECTURE.md#srcappdetailpaneltsx. */
   const near = useMemo(
     () => findNearby(store, quake, filters, now),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -261,7 +261,7 @@ export function DetailPanel({
             Pahala, Hawaii is the hotspot, without the app having to claim one. */}
         {boundaryNote(boundaryKm) ? <Field label="Boundary" value={boundaryNote(boundaryKm)!} /> : null}
         {/* Only when somebody reported. This app cannot tell "nobody felt it" from "nobody wrote in", and
-            only the second is a thing it knows. See ARCHITECTURE.md. */}
+            only the second is a thing it knows. See ARCHITECTURE.md#srcappdetailpaneltsx. */}
         {feltNote(r.felt) ? <Field label="Felt reports" value={feltNote(r.felt)!} /> : null}
         {/* "May still change" is the whole reason to care: an automatic solution is a computer's answer
             minutes after the ground stopped, and this used to be drawn at the same confidence as one a
@@ -279,7 +279,7 @@ export function DetailPanel({
           />
         ) : null}
         {/* What the sky was doing there when it happened. An M6 at three in the morning is a different
-            event from the same rupture at three in the afternoon. See ARCHITECTURE.md. */}
+            event from the same rupture at three in the afternoon. See ARCHITECTURE.md#srcappdetailpaneltsx. */}
         <Field
           label="Solar time"
           value={`${solarClock(solarHour(r.lon, r.time))} · ${daylight(sunElevation(r.lon, r.lat, r.time))}`}
@@ -381,7 +381,7 @@ export function DetailPanel({
             ))}
             <Sequence nearby={near} magnitude={r.magnitude} ramp={ramp} />
             {/* Walking the sequence, which was the missing half of the strip: you could read the shape of a
-                swarm and not visit it. See ARCHITECTURE.md. */}
+                swarm and not visit it. See ARCHITECTURE.md#srcappdetailpaneltsx. */}
             {(() => {
               const { earlier, later } = stepsFrom(near.sequence);
               if (!earlier && !later) return null;
@@ -457,7 +457,7 @@ export function DetailPanel({
           Far side
         </button>
         {/* A seam, because the fourth button is not the same kind of thing as the first three. Fly, Slice
-            and Far side move the camera; Copy link changes nothing on screen. See ARCHITECTURE.md. */}
+            and Far side move the camera; Copy link changes nothing on screen. See ARCHITECTURE.md#srcappdetailpaneltsx. */}
         <button
           type="button"
           onClick={() => void copyLink()}

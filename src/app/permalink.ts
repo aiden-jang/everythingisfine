@@ -6,7 +6,7 @@ import { nearestWindow } from "./windows";
 // Import the bounds, don't retype them. A retyped bound is what caused the clamp bug in `decode`.
 import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 
-/* "Look at this" as a link. See ARCHITECTURE.md. */
+/* "Look at this" as a link. See ARCHITECTURE.md#srcapppermalinkts. */
 
 export interface Permalink {
   lon: number;
@@ -31,7 +31,7 @@ export interface Permalink {
 // Two places, not fourteen. A URL claiming the camera to fourteen decimals is claiming precision
 // nobody can aim with.
 const round = (value: number, places: number): number => Number(value.toFixed(places));
-/** Longitude back into [-180, 180). The camera's is not. See ARCHITECTURE.md. */
+/** Longitude back into [-180, 180). The camera's is not. See ARCHITECTURE.md#srcapppermalinkts. */
 const wrapLon = (lon: number): number => {
   // Leave it alone when it already fits. The modulo turns 145.8 into 145.79999999999995, and then a
   // section stops equalling itself after a round trip.

@@ -5,7 +5,7 @@ import { spanDeg } from "./sphere";
 describe("the land mesh", () => {
   const land = buildLand();
 
-  /* The guard for a bug reported four times and misdiagnosed three. See ARCHITECTURE.md. */
+  /* The guard for a bug reported four times and misdiagnosed three. See ARCHITECTURE.md#srcgeolandtestts. */
   it("keeps every edge short enough that a stranded vertex cannot open a visible gap", () => {
     let longest = 0;
     const owners = new Map<number, number>();
@@ -56,7 +56,7 @@ describe("the land mesh", () => {
   });
 });
 
-/* The date line, checked in the ring rather than in the picture. See ARCHITECTURE.md. */
+/* The date line, checked in the ring rather than in the picture. See ARCHITECTURE.md#srcgeolandtestts. */
 describe("unwrapping a ring at the date line", () => {
   it("leaves an ordinary ring alone", () => {
     const ring = [

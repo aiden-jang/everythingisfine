@@ -4,15 +4,15 @@ import { createStore } from "../data/store";
 import type { Filters, Reading } from "../data/types";
 
 /* You cannot gate CI on frame time. A shared runner has no GPU and falls back to software rendering, so the
-   number is noise wearing a unit and any threshold loose enough to pass never fails. See ARCHITECTURE.md. */
+   number is noise wearing a unit and any threshold loose enough to pass never fails. See ARCHITECTURE.md#srcglobeeventsperftestts. */
 
-/* Budgets in reference units, not milliseconds. See ARCHITECTURE.md. */
+/* Budgets in reference units, not milliseconds. See ARCHITECTURE.md#srcglobeeventsperftestts. */
 /* Calibrated, not guessed. Quiet is 0.07, 0.71 and 4.10 reference units; six saturated cores move the ratio
    13% where the milliseconds moved 20%. These sit about 45% above quiet. Not immune: the worst seen was
-   +82% in milliseconds with browsers resident, which is memory pressure. See ARCHITECTURE.md. */
+   +82% in milliseconds with browsers resident, which is memory pressure. See ARCHITECTURE.md#srcglobeeventsperftestts. */
 const BUDGET_REF: Record<number, number> = { 1_000: 0.15, 10_000: 1.05, 50_000: 7.0 };
 
-/* The held-hour variant gets its own number. See ARCHITECTURE.md. */
+/* The held-hour variant gets its own number. See ARCHITECTURE.md#srcglobeeventsperftestts. */
 const BUDGET_REF_HELD = 7.0;
 
 /**
@@ -69,7 +69,7 @@ const filters = (over: Partial<Filters> = {}): Filters => ({
 
 /**
  * Fastest of repeated runs, not the median. As a median, the same 50,000-event sync measured 14.99ms in
- * one test and 8.89ms in the next test of the same file, for identical work. See ARCHITECTURE.md.
+ * one test and 8.89ms in the next test of the same file, for identical work. See ARCHITECTURE.md#srcglobeeventsperftestts.
  */
 function fastestMs(run: () => void, samples: number): number {
   let best = Infinity;

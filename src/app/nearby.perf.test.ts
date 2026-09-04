@@ -4,7 +4,7 @@ import { createStore } from "../data/store";
 import { seeded } from "../data/fixtures";
 import type { Filters, Reading } from "../data/types";
 
-/* The panel's cost, measured rather than assumed. See ARCHITECTURE.md. */
+/* The panel's cost, measured rather than assumed. See ARCHITECTURE.md#srcappnearbyperftestts. */
 
 /*
  * The one Node global this file needs, declared rather than imported, exactly as `store.test.ts` does it.

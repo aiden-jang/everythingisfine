@@ -2,7 +2,7 @@ import type { Reading, SourceId } from "../data/types";
 import { parseUsgs } from "./usgs";
 import { parseEmscFrame } from "./emsc";
 
-/* A day that has already happened, from both agencies. See ARCHITECTURE.md. */
+/* A day that has already happened, from both agencies. See ARCHITECTURE.md#srcsourcesarchivets. */
 
 const USGS_QUERY = "https://earthquake.usgs.gov/fdsnws/event/1/query";
 /** Same service, different method: `count` answers with a number instead of a payload. */
@@ -88,7 +88,7 @@ export async function fetchArchive(
 /**
  * How many events a day holds, without fetching them. FDSN has a `count` method beside `query` that
  * answers `{"count":684}` in forty bytes, so asking about twelve days costs less than one day's events.
- * See ARCHITECTURE.md.
+ * See ARCHITECTURE.md#srcsourcesarchivets.
  */
 export async function countForDay(
   iso: string,

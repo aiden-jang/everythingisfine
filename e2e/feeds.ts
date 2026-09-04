@@ -1,7 +1,7 @@
 import { expect, type Page } from "@playwright/test";
 import { REPLAY_FRONT_MIN_MAG } from "../src/app/replay";
 
-/* Both feeds, served from the test. See ARCHITECTURE.md. */
+/* Both feeds, served from the test. See ARCHITECTURE.md#e2efeedsts. */
 
 /** mulberry32, so a failure reproduces exactly rather than turning up once a week. */
 function seeded(seed: number): () => number {
@@ -69,7 +69,7 @@ const MAG_CUT = 1 - 10 ** (-(MAX_MAG - MIN_MAG) * B_VALUE);
  * A day of seismicity, newest last, drawn from Gutenberg-Richter. A uniform draw would put a magnitude 7
  * on screen every few minutes and quietly make every magnitude filter test meaningless. Don't tune the
  * draw to make the readout land on a rounder number. The gap is the ceiling above cutting the upper tail,
- * and fooling the estimator is the same dishonesty in the other direction. See ARCHITECTURE.md.
+ * and fooling the estimator is the same dishonesty in the other direction. See ARCHITECTURE.md#e2efeedsts.
  */
 function day(seed = 4, count = 240): Quake[] {
   const rand = seeded(seed);
@@ -173,7 +173,7 @@ export interface FeedOptions {
 /** Matches `SEED_LIMIT` in `src/sources/emsc.ts`, which is what decides that a page was truncated. */
 const EMSC_SEED_LIMIT = 600;
 
-/** Routes both feeds and stubs the socket. Call before `page.goto`. See ARCHITECTURE.md. */
+/** Routes both feeds and stubs the socket. Call before `page.goto`. See ARCHITECTURE.md#e2efeedsts. */
 export async function installFeeds(page: Page, options: FeedOptions = {}): Promise<void> {
   const { usgs, empty, silent, dead, seed, count, emscCappedHours } = options;
 
@@ -263,7 +263,7 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
     });
   });
   /* The archive asks `fdsnws/event/1/query?format=geojson&...`, which contains no literal `.geojson`, so it
-     missed every pattern here and reached the real internet for months. See ARCHITECTURE.md. */
+     missed every pattern here and reached the real internet for months. See ARCHITECTURE.md#e2efeedsts. */
   // The count method, which is a different method on the same service: the route below matches `query`, so
   // `count` went straight past it to the real agency. The number is derived from the day so it is stable per
   // date and different between dates.
@@ -311,7 +311,7 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
  * ARCHITECTURE.md.
  */
 /* The hazard feeds. Unstubbed they cost 14 requests to gdacs.org and 2 to swpc.noaa.gov per test, about a
-   thousand a run, for data no test asserts on. See ARCHITECTURE.md. */
+   thousand a run, for data no test asserts on. See ARCHITECTURE.md#e2efeedsts. */
 const hazardEvent = (type: string, id: number, lon: number, lat: number, extra: object = {}) => ({
   type: "Feature",
   geometry: { type: "Point", coordinates: [lon, lat] },

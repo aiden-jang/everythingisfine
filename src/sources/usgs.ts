@@ -1,7 +1,7 @@
 import type { Reading } from "../data/types";
 import { backoffMs, type GeoEventSource, type Runtime, type SourceHandlers } from "./types";
 
-/* USGS, asked once a minute. See ARCHITECTURE.md. */
+/* USGS, asked once a minute. See ARCHITECTURE.md#srcsourcesusgsts. */
 
 const FEED = (window: string): string =>
   `https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/${window}.geojson`;
@@ -10,13 +10,13 @@ export const USGS_HOUR_FEED = FEED("all_hour");
 
 /**
  * The first request asks for a day; every one after asks for an hour. Not the 2.5+ daily feed: the
- * magnitude floor belongs to the viewer's filter, not to the fetch. See ARCHITECTURE.md.
+ * magnitude floor belongs to the viewer's filter, not to the fetch. See ARCHITECTURE.md#srcsourcesusgsts.
  */
 const USGS_DAY_FEED = FEED("all_day");
 
 /**
  * Which backlog to ask for, given how far back the viewer wants to see. Measured: the day is 0.23MB, the
- * week 1.5MB, the month 7.4MB. See ARCHITECTURE.md.
+ * week 1.5MB, the month 7.4MB. See ARCHITECTURE.md#srcsourcesusgsts.
  */
 export const usgsSeedFor = (windowMs: number): string => {
   const days = windowMs / 86_400_000;
@@ -189,7 +189,7 @@ export function createUsgsSource(runtime: Runtime, urls: string | UsgsUrls = {})
     }, ms);
   };
 
-  /* One poll. The try block contains the transport and nothing else. See ARCHITECTURE.md. */
+  /* One poll. The try block contains the transport and nothing else. See ARCHITECTURE.md#srcsourcesusgsts. */
   const poll = async (): Promise<void> => {
     if (!handlers) return;
     abort?.abort();

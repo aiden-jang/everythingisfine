@@ -1,8 +1,8 @@
-/* What an earthquake is, once two agencies have both described it. See ARCHITECTURE.md. */
+/* What an earthquake is, once two agencies have both described it. See ARCHITECTURE.md#srcdatatypests. */
 
 export type SourceId = "usgs" | "emsc";
 
-/** What an agency said before it changed its mind, attached by the store. See ARCHITECTURE.md. */
+/** What an agency said before it changed its mind, attached by the store. See ARCHITECTURE.md#srcdatatypests. */
 export interface Revision {
   /** The magnitude in this agency's first reading of the event. */
   fromMagnitude: number;
@@ -49,7 +49,7 @@ export interface Reading {
   felt?: { reports: number; intensity?: number };
   /**
    * Whether a person has checked this reading yet. `revision` records that a number already moved; this
-   * says one may still move, because nobody has looked at it. See ARCHITECTURE.md.
+   * says one may still move, because nobody has looked at it. See ARCHITECTURE.md#srcdatatypests.
    */
   review?: "automatic" | "reviewed";
   /**
@@ -57,7 +57,7 @@ export interface Reading {
    * ARCHITECTURE.md.
    */
   shaking?: number;
-  /** The network that actually computed this solution, when the agency names it. See ARCHITECTURE.md. */
+  /** The network that actually computed this solution, when the agency names it. See ARCHITECTURE.md#srcdatatypests. */
   network?: string;
   /** Set once this agency has revised its own magnitude or depth. The epicentre is revised too and is not
    * tracked: it moves a few kilometres on most revisions, and the position on screen already shows it. */

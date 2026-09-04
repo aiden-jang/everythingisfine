@@ -1,4 +1,4 @@
-/* Where the world's slabs are, from five years of the catalogue. See ARCHITECTURE.md. */
+/* Where the world's slabs are, from five years of the catalogue. See ARCHITECTURE.md#srcgeoslabts. */
 
 /** `[lon, lat, depthKm, magnitude]`, as generated. */
 export type SlabPoint = [number, number, number, number];

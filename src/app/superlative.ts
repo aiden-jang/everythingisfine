@@ -3,7 +3,7 @@ import { contains, REGIONS } from "./regions";
 import type { Quake } from "../data/types";
 
 /* The window's largest against what its region has managed this century. Only inside a named region.
-   Outside the eleven boxes it is mid-ocean, with no local record to compare to. See ARCHITECTURE.md. */
+   Outside the eleven boxes it is mid-ocean, with no local record to compare to. See ARCHITECTURE.md#srcappsuperlativets. */
 
 /** `[magnitude, day]` per region name, as generated. */
 type RegionMax = Record<string, readonly [number, string]>;
@@ -52,7 +52,7 @@ export function superlativeFor(quake: Quake | null, asOf: number = Date.now()): 
   const held = RECORDS[region];
   if (!held) return null;
   const [record, day] = held;
-  /* Never cite a record that had not happened yet. See ARCHITECTURE.md. */
+  /* Never cite a record that had not happened yet. See ARCHITECTURE.md#srcappsuperlativets. */
   const happened = Date.parse(`${day}T00:00:00Z`);
   if (!Number.isFinite(happened) || happened > asOf) return null;
   return { region, record, day, beaten: magnitude > record };

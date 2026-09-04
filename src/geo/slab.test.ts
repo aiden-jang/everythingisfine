@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import table from "./slab.json";
 import { SLAB_MIN_DEPTH_KM, SLAB_MIN_MAGNITUDE, type SlabPoint } from "./slab";
 
-/* The committed table, checked against the claims the key makes about it. See ARCHITECTURE.md. */
+/* The committed table, checked against the claims the key makes about it. See ARCHITECTURE.md#srcgeoslabtestts. */
 const points = table as SlabPoint[];
 
 describe("the deep seismicity table", () => {

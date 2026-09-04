@@ -1,5 +1,5 @@
 /* The real sky, turned to the moment on screen. The procedural field this replaces looked convincing and
-   Orion was not there to be found. See ARCHITECTURE.md. */
+   Orion was not there to be found. See ARCHITECTURE.md#srcgeostarsts. */
 import { DEG } from "./sphere";
 
 /** `[rightAscensionDeg, declinationDeg, visualMagnitude, ...]`, three numbers per star. */

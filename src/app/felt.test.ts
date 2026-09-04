@@ -10,7 +10,7 @@ describe("what the felt row says", () => {
 
   it("names the shaking in words, at the step the number deserves", () => {
     /* A community-determined intensity is a mean of what people ticked on a form, so a tenth of a step is
-       not a thing it knows. See ARCHITECTURE.md. */
+       not a thing it knows. See ARCHITECTURE.md#srcappfelttestts. */
     expect(feltNote({ reports: 77, intensity: 3.9 })).toBe("77 people, light");
     expect(feltNote({ reports: 5, intensity: 2.1 })).toBe("5 people, weak");
     expect(feltNote({ reports: 900, intensity: 6.4 })).toBe("900 people, strong");

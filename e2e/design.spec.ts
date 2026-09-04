@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, waitForData } from "./feeds";
 
 /* DESIGN.md section 13, as tests rather than as a list. An audit performed once is worth very little: two
-   of these rules were broken by accident during the build and neither by a decision. See ARCHITECTURE.md. */
+   of these rules were broken by accident during the build and neither by a decision. See ARCHITECTURE.md#e2edesignspects. */
 
 const BREAKPOINTS = [
   { name: "phone", width: 375, height: 812 },
@@ -21,7 +21,7 @@ const BREAKPOINTS = [
 
 /**
  * Chroma of every colour the chrome paints, measured from the rendered page. The canvas is excluded,
- * because that is where hue belongs. See ARCHITECTURE.md.
+ * because that is where hue belongs. See ARCHITECTURE.md#e2edesignspects.
  */
 async function chromeHues(
   page: Page,
@@ -359,7 +359,7 @@ test("the colourblind ramp survives a reload", async ({ page }) => {
   );
 });
 
-/* Left to eyes, deliberately. These are the section 13 rules a computer cannot judge: See ARCHITECTURE.md. */
+/* Left to eyes, deliberately. These are the section 13 rules a computer cannot judge: See ARCHITECTURE.md#e2edesignspects. */
 
 /*
  * Where the rail's blocks sit, which nothing asserted until five regressions had shipped past a green
@@ -504,7 +504,7 @@ test("scrolling over the regions box carries on into the rail", async ({ page })
 test("the events are reachable, not clipped out of the rail", async ({ page }) => {
   /* The rail cannot hold everything at once. With the timeline in it the column runs about 600px past a
      900px screen, so the event list sits below the fold and you scroll to it - deliberate, because the
-     alternative was pushing the transport under, and that one has regressed twice. See ARCHITECTURE.md. */
+     alternative was pushing the transport under, and that one has regressed twice. See ARCHITECTURE.md#e2edesignspects. */
   await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);

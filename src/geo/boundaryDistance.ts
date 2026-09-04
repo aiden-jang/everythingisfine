@@ -3,7 +3,7 @@ import { EARTH_RADIUS_KM } from "./sphere";
 
 /* How far each earthquake is from the nearest plate boundary. Measured against a real day of USGS M2+:
    median 93 km, half within 100 km, and that band is 9.4% of the surface - so the belts concentrate
-   seismicity by about 5.4x. See ARCHITECTURE.md. */
+   seismicity by about 5.4x. See ARCHITECTURE.md#srcgeoboundarydistancets. */
 
 /** A boundary segment as two unit vectors' worth of arithmetic, prepared once. */
 export interface Segment {
@@ -42,7 +42,7 @@ function unit(lon: number, lat: number): [number, number, number] {
   return [c * Math.cos(lo), c * Math.sin(lo), Math.sin(la)];
 }
 
-/** Great-circle distance to the nearest segment, in km. See ARCHITECTURE.md. */
+/** Great-circle distance to the nearest segment, in km. See ARCHITECTURE.md#srcgeoboundarydistancets. */
 export function nearestBoundaryKm(lon: number, lat: number, segments: readonly Segment[]): number | null {
   if (segments.length === 0) return null;
   const [px, py, pz] = unit(lon, lat);

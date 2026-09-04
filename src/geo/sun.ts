@@ -1,4 +1,4 @@
-/* Where the sun is overhead, right now. See ARCHITECTURE.md. */
+/* Where the sun is overhead, right now. See ARCHITECTURE.md#srcgeosunts. */
 
 const DEG = Math.PI / 180;
 
@@ -54,7 +54,7 @@ export function subsolarPoint(at: number): Subsolar {
   return { lon: ((((lon + 180) % 360) + 360) % 360) - 180, lat: declination };
 }
 
-/* Two things the terminator already knew and nothing read. See ARCHITECTURE.md. */
+/* Two things the terminator already knew and nothing read. See ARCHITECTURE.md#srcgeosunts. */
 
 /**
  * Local apparent solar time at a longitude, in hours from midnight. Noon is where the true sun crosses the
@@ -84,7 +84,7 @@ export function sunElevation(lon: number, lat: number, at: number): number {
   return Math.asin(Math.max(-1, Math.min(1, cosZenith))) / DEG;
 }
 
-/** Daylight, twilight or dark, on the conventional boundaries. See ARCHITECTURE.md. */
+/** Daylight, twilight or dark, on the conventional boundaries. See ARCHITECTURE.md#srcgeosunts. */
 export function daylight(elevationDeg: number): "daylight" | "twilight" | "dark" {
   if (elevationDeg > 0) return "daylight";
   if (elevationDeg > -6) return "twilight";

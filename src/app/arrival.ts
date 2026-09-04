@@ -2,7 +2,7 @@ import { P_WAVE_KM_PER_S, S_WAVE_KM_PER_S } from "../geo/waves";
 import type { Quake, Reading } from "../data/types";
 import { distanceKm } from "../geo/sphere";
 
-/* When the shaking reached the nearest named place. See ARCHITECTURE.md. */
+/* When the shaking reached the nearest named place. See ARCHITECTURE.md#srcapparrivalts. */
 
 /** Beyond this the constant-velocity assumption stops being an approximation and starts being wrong: a
  * 2000km path arrives materially before distance over 6 would say. A backstop, not a limit anybody meets. */
@@ -32,7 +32,7 @@ export function parsePlace(place: string): { km: number; name: string } | null {
   return { km, name: m[2]! };
 }
 
-/** Path length from the hypocentre to the place, which is not the distance on the map. See ARCHITECTURE.md. */
+/** Path length from the hypocentre to the place, which is not the distance on the map. See ARCHITECTURE.md#srcapparrivalts. */
 export function pathKm(epicentralKm: number, depthKm: number): number {
   const depth = Number.isFinite(depthKm) ? Math.max(0, depthKm) : 0;
   return Math.sqrt(epicentralKm * epicentralKm + depth * depth);

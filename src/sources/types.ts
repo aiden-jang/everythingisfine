@@ -1,6 +1,6 @@
 import type { Reading, SourceId } from "../data/types";
 
-/* What a source is, written before there are two of them. See ARCHITECTURE.md. */
+/* What a source is, written before there are two of them. See ARCHITECTURE.md#srcsourcestypests. */
 
 /** Milliseconds and a Response-shaped result, so tests never need a DOM. */
 export interface FetchResult {

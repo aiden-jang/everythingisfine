@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fetchHistory } from "./history";
 
-/* EONET, for real. Run it deliberately: pnpm test:live See ARCHITECTURE.md. */
+/* EONET, for real. Run it deliberately: pnpm test:live See ARCHITECTURE.md#srcsourceshistorylivetestts. */
 
 const day = (iso: string): { from: number; to: number } => {
   const from = Date.parse(`${iso}T00:00:00Z`);

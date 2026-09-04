@@ -1,7 +1,7 @@
 import { parseUtc, reportedBy } from "./gdacs";
 /* Tropical cyclones, as tracks rather than dots. A storm drawn as a point is a dot that happens to be a
    hurricane; drawn as a track it explains itself, curving poleward as every cyclone does. Only what is
-   happening now. GDACS lists 99 and flags 3 `iscurrent`; the other 96 are dead storms. See ARCHITECTURE.md. */
+   happening now. GDACS lists 99 and flags 3 `iscurrent`; the other 96 are dead storms. See ARCHITECTURE.md#srcsourcescyclonests. */
 
 const LIST =
   "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH" +
@@ -20,7 +20,7 @@ export interface Cyclone {
   /** Where it is now. */
   lon: number;
   lat: number;
-  /** Strongest wind over the storm's life, in km/h, or null when not published. See ARCHITECTURE.md. */
+  /** Strongest wind over the storm's life, in km/h, or null when not published. See ARCHITECTURE.md#srcsourcescyclonests. */
   peakKmh: number | null;
   /** Where it has been, oldest first, as one polyline. Empty when the track could not be had. */
   track: { lon: number; lat: number }[];
@@ -65,7 +65,7 @@ export function parseCycloneList(payload: unknown): Omit<Cyclone, "track">[] {
   return out;
 }
 
-/** The track out of a storm's geometry payload, oldest point first. See ARCHITECTURE.md. */
+/** The track out of a storm's geometry payload, oldest point first. See ARCHITECTURE.md#srcsourcescyclonests. */
 export function parseTrack(payload: unknown): { lon: number; lat: number }[] {
   const features = (payload as { features?: unknown })?.features;
   if (!Array.isArray(features)) return [];

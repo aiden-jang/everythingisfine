@@ -4,10 +4,10 @@
  */
 
 /* Far enough that everything real is in front of it, near enough that the camera's far plane never clips.
-   See ARCHITECTURE.md. */
+   See ARCHITECTURE.md#srcglobeskyts. */
 export const SKY_DISTANCE = 80;
 
-/* Placing a direction in the sky: the sidereal turn, then the skybox offset. See ARCHITECTURE.md. */
+/* Placing a direction in the sky: the sidereal turn, then the skybox offset. See ARCHITECTURE.md#srcglobeskyts. */
 export const SKY_GLSL = /* glsl */ `
   uniform float uSpin;
   uniform float uDistance;

@@ -5,7 +5,7 @@ import { place } from "./format";
 import { REGIONS, type Region } from "./regions";
 
 /* Searches two things: the eleven named regions, and the place strings the agencies wrote on events we
-   hold. See ARCHITECTURE.md. */
+   hold. See ARCHITECTURE.md#srcappsearchts. */
 
 /** Places are grouped rather than listed: a sequence puts three hundred rows behind one name. */
 export interface PlaceHit {

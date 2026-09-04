@@ -1,6 +1,6 @@
 import { BUCKETS } from "./histogram";
 
-/* The window, as somewhere you can stand rather than only a total. See ARCHITECTURE.md. */
+/* The window, as somewhere you can stand rather than only a total. See ARCHITECTURE.md#srcappscrubts. */
 
 /**
  * How long a play-through of the whole window takes, in seconds. Linear, and slower than the entrance
@@ -42,7 +42,7 @@ export function atFraction(fraction: number, span: Span): number {
 
 /**
  * Advances a playing cursor, and hands back to live when it catches up. Stopping one pixel short of the
- * present and calling it the present is how a live app stops being one. See ARCHITECTURE.md.
+ * present and calling it the present is how a live app stops being one. See ARCHITECTURE.md#srcappscrubts.
  */
 export function step(scrub: Scrub, span: Span, dt: number): Scrub {
   if (!scrub.playing || scrub.at === null) return scrub;
@@ -81,7 +81,7 @@ export function clamp(scrub: Scrub, span: Span): Scrub {
 
 /**
  * Moves the cursor one bar at a time. Do not snap to a boundary. Bars are anchored to `now`, so the grid
- * slides between one press and the next. See ARCHITECTURE.md.
+ * slides between one press and the next. See ARCHITECTURE.md#srcappscrubts.
  */
 export function nudge(scrub: Scrub, span: Span, buckets: number): Scrub {
   const width = span.to - span.from;

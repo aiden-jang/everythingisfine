@@ -4,7 +4,7 @@ import { DEG, EARTH_RADIUS_KM } from "../geo/sphere";
 import type { SlabPoint } from "../geo/slab";
 
 /* The slab, filled once and left alone. Built from a committed table, so no filter applies: it is not a
-   reading anybody made today, it is the shape of a plate. See ARCHITECTURE.md. */
+   reading anybody made today, it is the shape of a plate. See ARCHITECTURE.md#srcglobeslabts. */
 
 /*
  * The boundaries' family, lifted until it reads. At the plate line's own tone the field was there and could
@@ -13,7 +13,7 @@ import type { SlabPoint } from "../geo/slab";
  */
 const COLOR_SLAB = 0x7ba0c8;
 
-/** The same lift applied to the colourblind palette's own boundary tone. See ARCHITECTURE.md. */
+/** The same lift applied to the colourblind palette's own boundary tone. See ARCHITECTURE.md#srcglobeslabts. */
 const COLOR_SLAB_NEUTRAL = 0x9ea2ae;
 
 /**
@@ -34,7 +34,7 @@ const SHADER = {
       vec3 surface = normalize(position);
       // Same test the markers use, fading out with the morph because a plane has no far side.
       vFacing = mix(dot(surface, normalize(cameraPosition - surface)), 1.0, uMorph);
-      /* Lifted back to the surface as the map unwraps, exactly as the markers are. See ARCHITECTURE.md. */
+      /* Lifted back to the surface as the map unwraps, exactly as the markers are. See ARCHITECTURE.md#srcglobeslabts. */
       vec3 sunk = surface * (-aSink * (1.0 - uMorph));
       gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position) + sunk, 1.0);
       gl_PointSize = uSize * uPixelRatio;

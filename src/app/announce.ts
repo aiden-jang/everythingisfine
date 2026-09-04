@@ -1,8 +1,8 @@
 import type { Quake } from "../data/types";
 
-/* What counts as news, for the one interface that speaks. See ARCHITECTURE.md. */
+/* What counts as news, for the one interface that speaks. See ARCHITECTURE.md#srcappannouncets. */
 
-/** How recently an event must have happened to be worth announcing. See ARCHITECTURE.md. */
+/** How recently an event must have happened to be worth announcing. See ARCHITECTURE.md#srcappannouncets. */
 export const NEWS_WINDOW_MS = 30 * 60_000;
 
 /** The events worth speaking, newest first. `seen` is still consulted, because a re-render must not repeat

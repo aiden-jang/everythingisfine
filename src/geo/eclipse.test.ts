@@ -3,7 +3,7 @@ import { eclipseAt, lunarEclipse, solarEclipse } from "./eclipse";
 
 describe("the moon's shadow on the Earth", () => {
   /* Checked against published eclipse paths, so the tolerance comes from the result rather than from hope:
-     See ARCHITECTURE.md. */
+     See ARCHITECTURE.md#srcgeoeclipsetestts. */
   it("puts the shadow over Mexico at the 2024 April total eclipse", () => {
     // Greatest eclipse 2024-04-08 18:17 UTC, at 25.3N 104.1W.
     const e = solarEclipse(Date.UTC(2024, 3, 8, 18, 17));
@@ -94,7 +94,7 @@ describe("the Earth's shadow on the moon", () => {
 
   it("comes out mid-range at a deep partial, which is the case worth having", () => {
     /* A partial has to read as a partial. A model returning only 0 or 1 would pass every other test here
-       and still be unable to draw one. See ARCHITECTURE.md. */
+       and still be unable to draw one. See ARCHITECTURE.md#srcgeoeclipsetestts. */
     const e = lunarEclipse(Date.UTC(2019, 6, 16, 21, 31));
     expect(e.umbral).toBeGreaterThan(0.1);
     expect(e.umbral).toBeLessThan(0.9);
@@ -124,7 +124,7 @@ describe("the Earth's shadow on the moon", () => {
 });
 
 describe("the two shadows cannot both be falling", () => {
-  /* The case the browser found and this file missed. See ARCHITECTURE.md. */
+  /* The case the browser found and this file missed. See ARCHITECTURE.md#srcgeoeclipsetestts. */
   it("reports no solar eclipse during a total lunar eclipse", () => {
     const at = Date.UTC(2025, 8, 7, 18, 11);
     expect(lunarEclipse(at).umbral).toBe(1);

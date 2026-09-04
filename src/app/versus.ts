@@ -1,7 +1,7 @@
 import { energyOf } from "./histogram";
 import { NOTABLE_DAYS, type NotableDay } from "./notableDays";
 
-/* Today's energy against the largest earthquake ever recorded. See ARCHITECTURE.md. */
+/* Today's energy against the largest earthquake ever recorded. See ARCHITECTURE.md#srcappversusts. */
 
 /** The largest instrumentally recorded earthquake, and the reason the list is sorted the way it is. */
 export const REFERENCE: NotableDay = NOTABLE_DAYS[0]!;

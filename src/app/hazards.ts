@@ -5,7 +5,7 @@ import type { Flood } from "../sources/floods";
 import type { Volcano } from "../sources/volcanoes";
 import type { Wildfire } from "../sources/wildfires";
 
-/* The five layers as a list, because a glyph cannot be reached by keyboard. See ARCHITECTURE.md. */
+/* The five layers as a list, because a glyph cannot be reached by keyboard. See ARCHITECTURE.md#srcapphazardsts. */
 
 export interface HazardRow {
   /** `kind:id`, the same identity the globe picks by, so the two cannot disagree. */

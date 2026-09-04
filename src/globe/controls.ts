@@ -4,7 +4,7 @@ import { DEG, spanDeg } from "../geo/sphere";
 import { MAP_HALF_WIDTH } from "./morph";
 
 /* Orbiting the globe, hand-written. OrbitControls slides a pan target, and on a sphere there is no target
-   to slide - only a rotation that puts the same coastline back under the pointer. See ARCHITECTURE.md. */
+   to slide - only a rotation that puts the same coastline back under the pointer. See ARCHITECTURE.md#srcglobecontrolsts. */
 
 /** Beyond this the up vector flips and the globe rolls over. */
 const LAT_LIMIT = 85;
@@ -80,9 +80,9 @@ export interface Controls {
   /** 0 globe, 1 map. Drag becomes a pan and the facing tests fade out as this reaches 1. */
   setMorph: (t: number) => void;
   morph: () => number;
-  /** Screen position of a geographic point, or null when it is round the back. See ARCHITECTURE.md. */
+  /** Screen position of a geographic point, or null when it is round the back. See ARCHITECTURE.md#srcglobecontrolsts. */
   project: (lon: number, lat: number, radius?: number) => { x: number; y: number } | null;
-  /** Degrees of map covered by one screen pixel. Only meaningful once flat. See ARCHITECTURE.md. */
+  /** Degrees of map covered by one screen pixel. Only meaningful once flat. See ARCHITECTURE.md#srcglobecontrolsts. */
   degPerPx: (atZoom?: number) => number;
   /**
    * How far around the globe a pixel offset from the centre actually is.
@@ -143,7 +143,7 @@ export function createControls(
   const dist = (): number => distAt(zoom);
 
   /* How far out you may go, which is a different question on each view: a globe can be lost, a plane
-     cannot, because it tiles. See ARCHITECTURE.md. */
+     cannot, because it tiles. See ARCHITECTURE.md#srcglobecontrolsts. */
   const zoomFloor = (): number => {
     const wholeWorld = (mapFit() * Math.tan((fovDeg / 2) * DEG) * camera.aspect) / MAP_HALF_WIDTH;
     return ZOOM_MIN + (Math.min(ZOOM_MIN, wholeWorld) - ZOOM_MIN) * morph;
@@ -156,7 +156,7 @@ export function createControls(
    */
   const focalPx = (): number => canvas.clientHeight / (2 * Math.tan((fovDeg / 2) * DEG));
 
-  /* How far around the globe a pixel offset from centre actually is. See ARCHITECTURE.md. */
+  /* How far around the globe a pixel offset from centre actually is. See ARCHITECTURE.md#srcglobecontrolsts. */
   const exactAngle = (px: number, d: number, focal: number): number => {
     const u = px / focal;
     return Math.asin(Math.max(-1, Math.min(1, (u * d) / Math.sqrt(1 + u * u)))) - Math.atan(u);

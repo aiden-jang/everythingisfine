@@ -4,7 +4,7 @@ import { morphable } from "./morph";
 import type { Point } from "./shapes";
 
 /* Every mark that is not an earthquake, in one layer. It knows nothing about storms or volcanoes: it draws
-   achromatic polylines in lon/lat, above the boundaries and below the markers. See ARCHITECTURE.md. */
+   achromatic polylines in lon/lat, above the boundaries and below the markers. See ARCHITECTURE.md#srcglobemarksts. */
 
 /** Above the plate boundaries these things sit on, below the land that contains them. */
 const RADIUS = 1.004;
@@ -83,7 +83,7 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
   object.renderOrder = 5.5;
 
   /* The hover highlight is the glyph's own shape, in ink, over itself. A ring round a spiral argued with
-     the app's own rule that marks are told apart by shape. See ARCHITECTURE.md. */
+     the app's own rule that marks are told apart by shape. See ARCHITECTURE.md#srcglobemarksts. */
   const hotPositions = new Float32Array(HIGHLIGHT_CAPACITY * 6);
   const hotLonLats = new Float32Array(HIGHLIGHT_CAPACITY * 4);
   const hotGeometry = new BufferGeometry();

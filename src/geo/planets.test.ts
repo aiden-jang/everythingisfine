@@ -65,7 +65,7 @@ describe("where the planets are", () => {
 
   it("swings each planet through the brightness range it really has", () => {
     /* Two years of samples against the published extremes, which is where the phase term earns its place:
-       without it Venus reached -5.9, brighter than it has ever been. See ARCHITECTURE.md. */
+       without it Venus reached -5.9, brighter than it has ever been. See ARCHITECTURE.md#srcgeoplanetstestts. */
     const lo: Record<string, number> = {};
     const hi: Record<string, number> = {};
     const start = Date.UTC(2024, 0, 1);

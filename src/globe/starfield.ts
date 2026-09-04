@@ -4,12 +4,12 @@ import { starBrightness, starVector, type StarTable } from "../geo/stars";
 import { SKY_DISTANCE, SKY_GLSL } from "./sky";
 
 /* The sky, as 5,080 real stars rather than a hash of the view direction. Orion is over the Pacific in
-   January and findable, which a generated field can never be. See ARCHITECTURE.md. */
+   January and findable, which a generated field can never be. See ARCHITECTURE.md#srcglobestarfieldts. */
 
 /** Slightly under Instrument, so a star is never as bright as a focus ring. Matches the old field. */
 export const COLOR_STARS = new Color(0xc8d2e2);
 
-/* Magnitude spent on size and on opacity together, each on its own curve. See ARCHITECTURE.md. */
+/* Magnitude spent on size and on opacity together, each on its own curve. See ARCHITECTURE.md#srcglobestarfieldts. */
 const SIZE_MIN_PX = 2.6;
 const SIZE_MAX_PX = 5.4;
 const SIZE_GAMMA = 0.5;

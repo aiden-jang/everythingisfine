@@ -1,4 +1,4 @@
-/* Turning degrees into points on a ball. See ARCHITECTURE.md. */
+/* Turning degrees into points on a ball. See ARCHITECTURE.md#srcgeospherets. */
 
 export const DEG = Math.PI / 180;
 
@@ -13,7 +13,7 @@ export function toVec3(lon: number, lat: number, r: number): [number, number, nu
 /** Mean Earth radius. The value the two agencies' own distance figures are quoted against. */
 export const EARTH_RADIUS_KM = 6371;
 
-/** Great-circle distance in kilometres. See ARCHITECTURE.md. */
+/** Great-circle distance in kilometres. See ARCHITECTURE.md#srcgeospherets. */
 export function distanceKm(aLon: number, aLat: number, bLon: number, bLat: number): number {
   const dLat = (bLat - aLat) * DEG;
   const dLon = (bLon - aLon) * DEG;

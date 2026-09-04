@@ -1,18 +1,18 @@
 import { distanceKm } from "../geo/sphere";
 import type { Reading, SourceId } from "./types";
 
-/* Deciding whether two agencies are talking about the same earthquake. See ARCHITECTURE.md. */
+/* Deciding whether two agencies are talking about the same earthquake. See ARCHITECTURE.md#srcdatareconcilets. */
 
 /* Both windows are measured, not guessed. Over 24 hours of real M2.5+ activity, 50 of 53 USGS events had an
-   EMSC counterpart: See ARCHITECTURE.md. */
+   EMSC counterpart: See ARCHITECTURE.md#srcdatareconcilets. */
 export const TIME_WINDOW_MS = 30_000;
 export const DISTANCE_LIMIT_KM = 150;
 
 /* The third axis. In time and distance, genuine pairs and aftershocks overlap. Magnitude is where they do
-   not, because two agencies describing one rupture agree about its size: See ARCHITECTURE.md. */
+   not, because two agencies describing one rupture agree about its size: See ARCHITECTURE.md#srcdatareconcilets. */
 export const MAGNITUDE_LIMIT = 1.0;
 
-/** True when two readings plausibly describe one earthquake. See ARCHITECTURE.md. */
+/** True when two readings plausibly describe one earthquake. See ARCHITECTURE.md#srcdatareconcilets. */
 export function sameEvent(a: Reading, b: Reading): boolean {
   // Same agency, same identifier is an identity, not a guess: it is a revision of one record.
   if (a.source === b.source) return a.id === b.id;

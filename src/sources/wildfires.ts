@@ -1,6 +1,6 @@
 import { events, fetchList, isCurrent, listUrl, num, parseUtc, reportedBy } from "./gdacs";
 
-/* Forest fires burning now: live, complete in its dates, incomplete in its count. See ARCHITECTURE.md. */
+/* Forest fires burning now: live, complete in its dates, incomplete in its count. See ARCHITECTURE.md#srcsourceswildfirests. */
 
 export interface Wildfire {
   id: string;

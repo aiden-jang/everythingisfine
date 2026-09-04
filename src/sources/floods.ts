@@ -1,6 +1,6 @@
 import { events, fetchList, isCurrent, listUrl, parseUtc, reportedBy } from "./gdacs";
 
-/* Floods happening now, which for once is a straightforward claim. See ARCHITECTURE.md. */
+/* Floods happening now, which for once is a straightforward claim. See ARCHITECTURE.md#srcsourcesfloodsts. */
 
 export interface Flood {
   id: string;

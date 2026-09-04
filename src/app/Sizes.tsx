@@ -2,7 +2,7 @@ import type { JSX } from "react";
 import { fitLine, type Sizes } from "./gutenberg";
 
 /* How many earthquakes at each size, log up the side. Ten times as many, each magnitude down, since 1944.
-   See ARCHITECTURE.md. */
+   See ARCHITECTURE.md#srcappsizestsx. */
 
 const W = 260;
 const H = 96;

@@ -33,7 +33,7 @@ export function matches(quake: Quake, filters: Filters, now: number): boolean {
   );
 }
 
-/** The window's honest left edge, as a timestamp. See ARCHITECTURE.md. */
+/** The window's honest left edge, as a timestamp. See ARCHITECTURE.md#srcdatafilterts. */
 export function windowStart(
   now: number,
   windowMs: number,

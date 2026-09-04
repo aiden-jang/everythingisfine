@@ -1,4 +1,4 @@
-/* What counts as a day this app can load. Every path asks this one function. See ARCHITECTURE.md. */
+/* What counts as a day this app can load. Every path asks this one function. See ARCHITECTURE.md#srcappdayts. */
 
 /** Midnight-to-midnight in UTC, so a shared link means the same day everywhere. */
 const DAY_MS = 86_400_000;
@@ -22,7 +22,7 @@ export function isArchivableDay(iso: string, now: number): boolean {
   return isRealDay(iso) && hasEnded(iso, now);
 }
 
-/** What the viewer typed, as far along an ISO day as it has got. See ARCHITECTURE.md. */
+/** What the viewer typed, as far along an ISO day as it has got. See ARCHITECTURE.md#srcappdayts. */
 export function typedDay(raw: string): string {
   const digits = raw.replace(/\D/g, "").slice(0, 8);
   if (digits.length <= 4) return digits;

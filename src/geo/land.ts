@@ -5,7 +5,7 @@ import type { Feature, FeatureCollection, MultiPolygon, Polygon } from "geojson"
 import topology from "world-atlas/land-110m.json";
 import { spanDeg, toVec3 } from "./sphere";
 
-/* Natural Earth 110m, as a filled land mesh and a coastline stroke. See ARCHITECTURE.md. */
+/* Natural Earth 110m, as a filled land mesh and a coastline stroke. See ARCHITECTURE.md#srcgeolandts. */
 
 /** Ring edges longer than this get points inserted, so the coastline hugs the sphere. */
 const DENSIFY_DEG = 1.5;
@@ -78,7 +78,7 @@ export function unwrap(ring: Ring): { ring: Ring; mean: number } {
   return { ring: out, mean: sum / out.length };
 }
 
-/** Whole turns to add so a hole sits in the frame of the outline that contains it. See ARCHITECTURE.md. */
+/** Whole turns to add so a hole sits in the frame of the outline that contains it. See ARCHITECTURE.md#srcgeolandts. */
 function reframe(mean: number, outlineMean: number): number {
   const turns = Math.round((outlineMean - mean) / 360);
   // Not `turns * 360` unguarded: that gives negative zero for the common case, which compares unequal.
@@ -328,7 +328,7 @@ export function buildLand(): LandGeometry {
     for (const v of flat) verts.push(v);
   }
 
-  /* Split wide triangles here, before anything subdivides them. See ARCHITECTURE.md. */
+  /* Split wide triangles here, before anything subdivides them. See ARCHITECTURE.md#srcgeolandts. */
   const flatTris: number[] = [];
   let split = 0;
   const splitMids = new Map<number, number>();
@@ -433,7 +433,7 @@ export function buildLand(): LandGeometry {
     }
   }
 
-  /* Every triangle wound so its face points away from the centre. See ARCHITECTURE.md. */
+  /* Every triangle wound so its face points away from the centre. See ARCHITECTURE.md#srcgeolandts. */
   const lonLat = new Float32Array(mesh.verts);
   const index = new Uint32Array(mesh.tris);
   let flipped = 0;

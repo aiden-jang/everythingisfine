@@ -2,7 +2,7 @@ import counts from "./baseline.json";
 import type { Store } from "./store";
 
 /* Whether today is a lot, against five years of days: 1,826 of them, quietest 3, median 18, busiest 422.
-   See ARCHITECTURE.md. */
+   See ARCHITECTURE.md#srcdatabaselinets. */
 
 /** Both sorted ascending. See the note in the generator on why that is the entire structure. */
 const { days: DAYS, weeks: WEEKS } = counts as { days: number[]; weeks: number[] };
