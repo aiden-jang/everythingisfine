@@ -2,7 +2,6 @@
 
 export type SourceId = "usgs" | "emsc";
 
-/** One agency's account of one earthquake. */
 /** What an agency said before it changed its mind, attached by the store. See ARCHITECTURE.md. */
 export interface Revision {
   /** The magnitude in this agency's first reading of the event. */
@@ -17,6 +16,7 @@ export interface Revision {
   at: number;
 }
 
+/** One agency's account of one earthquake. */
 export interface Reading {
   source: SourceId;
   /** The agency's own identifier. Unique within that source, meaningless across sources. */

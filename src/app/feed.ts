@@ -31,10 +31,10 @@ export interface FeedSnapshot {
   covered: Record<SourceId, number | null>;
 }
 
-/** Which arrivals deserve a wavefront. See ARCHITECTURE.md. */
 /** The most fronts one announcement may fire. See ARCHITECTURE.md. */
 export const MAX_LIVE_FRONTS = 3;
 
+/** Which arrivals deserve a wavefront. See ARCHITECTURE.md. */
 export function frontsFor(snapshot: Pick<FeedSnapshot, "arrived" | "seeding">): Quake[] {
   if (snapshot.seeding) return snapshot.arrived.slice(-1);
   if (snapshot.arrived.length <= MAX_LIVE_FRONTS) return snapshot.arrived;
