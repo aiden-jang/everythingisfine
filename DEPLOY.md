@@ -83,7 +83,7 @@ secret, and taken the zero with it.
 ## Deploying by hand
 
 ```bash
-pnpm deploy      # builds, then wrangler deploy
+pnpm run deploy  # builds, then wrangler deploy. The bare form runs pnpm's own command instead.
 ```
 
 Needs `wrangler login` or `CLOUDFLARE_API_TOKEN` in the environment. Useful for a first deploy or a

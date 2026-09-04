@@ -18,11 +18,12 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
+      - run: pnpm run gates
+      - run: pnpm run typecheck
       # test:heap rather than test. The heap measurement skips itself when gc is unreachable, and a
       # CI run that quietly skips its own memory gate is worse than one that does not have it.
-      - run: pnpm test:heap
-      - run: pnpm build
+      - run: pnpm run test:heap
+      - run: pnpm run build
 
   # The browser suite, which stayed out of CI while it talked to two real agencies: a quiet planet or an
   # agency doing maintenance would have failed the build for reasons that are not the code's fault.
@@ -59,7 +60,7 @@ jobs:
       # Chromium only, because the config declares no `projects` and the default is one browser. Installing
       # all three would be three downloads to run the same tests once.
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm test:e2e
+      - run: pnpm run test:e2e
       # `test-results/`, not `playwright-report/`. The config sets `trace: "retain-on-failure"` and names no
       # HTML reporter, so traces land in the former and the latter is never created. The first CI run failed
       # three tests and uploaded nothing, which is how a red build ends up undiagnosable.
@@ -72,10 +73,9 @@ jobs:
 
   # Auto-deploy on merge to main, only after both gates above pass.
   #
-  # `e2e` gates this before it has ever been green on a runner, which is deliberate: the suite covers the
-  # claims only a browser can settle, and a deploy that ships past a red one is the outcome the job exists
-  # to stop. Expect it to block until the last known failure - a link carrying a cross-section - is either
-  # explained by its trace or gone.
+  # `e2e` gates this deliberately: the suite covers the claims only a browser can settle, and a deploy
+  # that ships past a red one is the outcome the job exists to stop. It has not yet been green on a
+  # runner, which has fewer cores and software-rendered WebGL than the machine it passes on.
   #
   # Needs a CLOUDFLARE_API_TOKEN repo secret with Workers Scripts:Edit. No D1 permission, because
   # there is no database and no migration step. Wrangler infers the account from the token.
@@ -96,7 +96,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - run: pnpm run build
       - uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
