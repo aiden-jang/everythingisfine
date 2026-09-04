@@ -23,7 +23,7 @@ const MAX_STATE = 12;
  * into, which is how the file got here.
  */
 const ALREADY_OVER = {
-  "src/App.tsx": { lines: 2447, state: 45 },
+  "src/App.tsx": { lines: 2419, state: 36 },
   "src/globe/Globe.tsx": { lines: 900 },
   "src/globe/scene.ts": { lines: 881 },
   "src/globe/controls.ts": { lines: 691 },

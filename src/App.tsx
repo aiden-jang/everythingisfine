@@ -6,6 +6,7 @@ import { PLACE_LIMIT, search, type Hit } from "./app/search";
 import { useRolling } from "./app/roll";
 import { useFloatingChrome, useNarrow } from "./app/useNarrow";
 import { store, stored } from "./app/stored";
+import { useStoredFlag, useStoredName, useStoredNumber } from "./app/useStored";
 import { fetchAurora, type Aurora } from "./sources/aurora";
 import { fetchCyclones, type Cyclone } from "./sources/cyclones";
 import { fetchVolcanoes, newestEpisode, type Volcano } from "./sources/volcanoes";
@@ -342,34 +343,23 @@ export function App(): JSX.Element {
   // Keyed on the revision, not the clock: the rail re-renders every second and these only move when an
   // earthquake arrives. Same reason everywhere else in this file that keys on `snapshot.revision`.
   const depth = useMemo(() => depthBands(feed.store, filters, clockAt()), [filters, snapshot.revision]);
-  const [flat, setFlat] = useState(() => shared.section !== undefined || stored("flat") === "1");
-  useEffect(() => {
-    store("flat", flat ? "1" : "0");
-  }, [flat]);
+  const [flat, setFlat] = useStoredFlag("flat", false, shared.section !== undefined || undefined);
   /* Clamp on the way in too. The `Resizer` bounds this while dragging and the restore path went around
      it, so a stored 1 came back as a rail one pixel wide with nothing to grab. */
-  const [railWidth, setRailWidth] = useState<number>(() =>
-    Math.min(RAIL_MAX, Math.max(RAIL_MIN, Number(stored("rail")) || RAIL_DEFAULT)),
+  const [railWidth, setRailWidth] = useStoredNumber("rail", RAIL_DEFAULT, (n) =>
+    Math.min(RAIL_MAX, Math.max(RAIL_MIN, n)),
   );
-  useEffect(() => {
-    store("rail", String(railWidth));
-  }, [railWidth]);
   /* 0 means "nobody has dragged it", so the stylesheet's `60dvh` stays the only place that decides. */
   const [sheetCanvas, setSheetCanvas] = useState<number>(() => Number(stored("sheet")) || 0);
   useEffect(() => {
     if (sheetCanvas > 0) store("sheet", String(sheetCanvas));
   }, [sheetCanvas]);
-  const [regionsHeight, setRegionsHeight] = useState<number>(() => Number(stored("regions")) || 132);
-  useEffect(() => {
-    store("regions", String(regionsHeight));
-  }, [regionsHeight]);
+  const [regionsHeight, setRegionsHeight] = useStoredNumber("regions", 132);
   const regionsRef = useRef<HTMLDivElement>(null);
   const [sectionLine, setSectionLine] = useState<SectionLine | null>(shared.section ?? null);
   // Read lazily, so the first paint has the right ramp instead of flashing the default one.
-  const [ramp, setRamp] = useState<RampName>(
-    () => shared.ramp ?? (stored("ramp") as RampName | null) ?? "thermal",
-  );
-  const [announceAbove, setAnnounceAbove] = useState<number>(() => Number(stored("announceAbove") ?? "4.5"));
+  const [ramp, setRamp] = useStoredName<RampName>("ramp", "thermal", shared.ramp);
+  const [announceAbove, setAnnounceAbove] = useStoredNumber("announceAbove", 4.5);
   // Dropped when the link also names a day: an archived day withholds the five layers, so the id would
   // resolve to nothing and the card would never open.
   const [markId, setMarkId] = useState<string | null>(shared.day ? null : (shared.mark ?? null));
@@ -493,24 +483,12 @@ export function App(): JSX.Element {
     setKeyOpen(next);
     store("legendKey", next ? "1" : "0");
   }, []);
-  const [motionOn, setMotionOn] = useState<boolean>(() => stored("motion") !== "0");
-  useEffect(() => {
-    store("motion", motionOn ? "1" : "0");
-  }, [motionOn]);
-  const [sinkOn, setSinkOn] = useState<boolean>(() => stored("depthSink") !== "0");
-  useEffect(() => {
-    store("depthSink", sinkOn ? "1" : "0");
-  }, [sinkOn]);
+  const [motionOn, setMotionOn] = useStoredFlag("motion", true);
+  const [sinkOn, setSinkOn] = useStoredFlag("depthSink", true);
   /* On by default, so the slab's 37kB and 1,583 marks are on every first load. It earns it: a real day
   has two events below 300km, and you cannot see a dipping plane in two dots. */
-  const [slabOn, setSlabOn] = useState<boolean>(() => stored("slab") !== "0");
-  useEffect(() => {
-    store("slab", slabOn ? "1" : "0");
-  }, [slabOn]);
-  const [figuresOn, setFiguresOn] = useState<boolean>(() => stored("figures") !== "0");
-  useEffect(() => {
-    store("figures", figuresOn ? "1" : "0");
-  }, [figuresOn]);
+  const [slabOn, setSlabOn] = useStoredFlag("slab", true);
+  const [figuresOn, setFiguresOn] = useStoredFlag("figures", true);
   // Lazy: 13kB of coordinates has no business in the first frame.
   const [zones, setZones] = useState<ZoneTable | null>(null);
   useEffect(() => {
@@ -606,12 +584,6 @@ export function App(): JSX.Element {
     };
   }, [figuresOn, figureData.length]);
   const motion = motionOn && motionData.length > 0 ? summariseMotion(motionData) : null;
-  useEffect(() => {
-    store("ramp", ramp);
-  }, [ramp]);
-  useEffect(() => {
-    store("announceAbove", String(announceAbove));
-  }, [announceAbove]);
   const flyTo = useRef<(lon: number, lat: number, zoom?: number, liftPx?: number) => void>(() => {});
   const lastWritten = useRef<string>(window.location.hash);
   const camera = useRef<{ lon: number; lat: number; zoom: number }>({

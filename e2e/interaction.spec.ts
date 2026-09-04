@@ -2177,3 +2177,19 @@ test("the archive field says what it takes, and warns about the thin years", asy
   await field.type("2020");
   await expect(block).toContainText("including the one you were born on");
 });
+
+test("a first visit saves no preference the visitor never chose", async ({ page }) => {
+  /*
+   * Every switch and slider persists itself. Saved on mount, a default is written as though it had been
+   * chosen, and the day a default changes every existing visitor keeps the old one forever.
+   *
+   * The other direction, that a real choice is saved, is what the two fold tests above already show by
+   * reloading and finding the fold where they left it.
+   */
+  await installFeeds(page);
+  await page.goto("/");
+  await waitForData(page);
+
+  const saved = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("eif.")));
+  expect(saved, "nothing was touched, so nothing is remembered").toEqual([]);
+});
