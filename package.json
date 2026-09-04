@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview --port 31600",
     "gates": "node tools/check-gates.mjs",
-    "verify": "pnpm run gates && pnpm run typecheck && pnpm run test:heap && pnpm run build && pnpm run test:e2e",
+    "lint": "eslint .",
+    "verify": "pnpm run gates && pnpm run typecheck && pnpm run lint && pnpm run test:heap && pnpm run build && pnpm run test:e2e",
     "deploy": "pnpm build && wrangler deploy",
     "test": "vitest run",
     "test:heap": "NODE_OPTIONS=--expose-gc vitest run --pool=forks",
@@ -29,6 +30,7 @@
     "world-atlas": "^2.0.2"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.62.1",
     "@preact/preset-vite": "^2.10.6",
     "@tailwindcss/vite": "^4.0.0",
@@ -38,8 +40,12 @@
     "@types/three": "^0.185.4",
     "@types/topojson-client": "^3.1.5",
     "@types/topojson-specification": "^1.0.5",
+    "eslint": "^10",
+    "eslint-plugin-react-hooks": "^7",
+    "prettier": "^3",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8",
     "vite": "^6.0.5",
     "vitest": "^4.1.10",
     "wrangler": "^4.123.0"
