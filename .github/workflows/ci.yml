@@ -20,6 +20,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run gates
       - run: pnpm run typecheck
+      - run: pnpm run lint
       # test:heap rather than test. The heap measurement skips itself when gc is unreachable, and a
       # CI run that quietly skips its own memory gate is worse than one that does not have it.
       - run: pnpm run test:heap
