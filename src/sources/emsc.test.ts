@@ -328,7 +328,7 @@ describe("one real earthquake, two agencies", () => {
 
 /* The coverage claim, which nothing checked: every test in this file passed `onSeeded` an empty function,
    so the one branch that decides whether the app claims a month or eighteen hours of it had no test at all.
-   See ARCHITECTURE.md. */
+   See ARCHITECTURE.md#srcsourcesemsctestts. */
 describe("how far back a seed says it reaches", () => {
   const HOUR = 3_600_000;
 

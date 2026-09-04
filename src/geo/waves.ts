@@ -1,4 +1,4 @@
-/* Seismic wave speeds, and the one number that decides how they are played back. See ARCHITECTURE.md. */
+/* Seismic wave speeds, and the one number that decides how they are played back. See ARCHITECTURE.md#srcgeowavests. */
 
 /** P-wave through continental crust. The number the ring rate and every arrival time derive from. */
 export const P_WAVE_KM_PER_S = 6;
@@ -14,5 +14,5 @@ export const S_WAVE_KM_PER_S = 3.5;
  * directly is how it survives a change to either velocity without anyone noticing. */
 export const S_OVER_P = S_WAVE_KM_PER_S / P_WAVE_KM_PER_S;
 
-/** Playback multiplier for the wavefronts, printed on screen rather than hidden. See ARCHITECTURE.md. */
+/** Playback multiplier for the wavefronts, printed on screen rather than hidden. See ARCHITECTURE.md#srcgeowavests. */
 export const PLAYBACK = 20;

@@ -1,6 +1,6 @@
 import { DEG, EARTH_RADIUS_KM } from "./sphere";
 
-/* The far side, which a globe can show and a map cannot. See ARCHITECTURE.md. */
+/* The far side, which a globe can show and a map cannot. See ARCHITECTURE.md#srcgeoantipodets. */
 
 /** Where a front from here closes back to a point. */
 export function antipodeOf(lon: number, lat: number): { lon: number; lat: number } {

@@ -1,7 +1,7 @@
 import { DEG } from "./sphere";
 
 /* How fast the plates move, and which way, at 231 points along their edges. Along a ridge the arrows run
-   across it, at a trench they point into it, on a transform they lie along it. See ARCHITECTURE.md. */
+   across it, at a trench they point into it, on a transform they lie along it. See ARCHITECTURE.md#srcgeoplatemotionts. */
 
 /** `[lon, lat, azimuthDeg, mmPerYear, divergentSign, class]`, as generated. */
 export type MotionSample = [number, number, number, number, number, string];

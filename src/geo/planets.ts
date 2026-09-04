@@ -1,7 +1,7 @@
 import { DEG } from "./sphere";
 import { gmstDeg } from "./stars";
 
-/* The five planets anybody can see, in the same frame as the stars behind them. See ARCHITECTURE.md. */
+/* The five planets anybody can see, in the same frame as the stars behind them. See ARCHITECTURE.md#srcgeoplanetsts. */
 
 /** Julian centuries since J2000.0, matching `sun.ts` and `moon.ts`. */
 function julianCentury(at: number): number {

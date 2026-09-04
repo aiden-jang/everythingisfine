@@ -1,7 +1,7 @@
 import { BINS, departure, dialPoint, worstNote, type Diurnal as Counts } from "./diurnal";
 
 /* The window folded onto a 24-hour dial. Behind a disclosure because its payload is a null result:
-   interesting once, and not something anybody monitors. See ARCHITECTURE.md. */
+   interesting once, and not something anybody monitors. See ARCHITECTURE.md#srcappdialtsx. */
 
 export interface DialProps {
   counts: Counts;

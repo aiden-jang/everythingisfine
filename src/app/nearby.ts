@@ -3,7 +3,7 @@ import { matches } from "../data/filter";
 import type { Store } from "../data/store";
 import type { Filters, Quake } from "../data/types";
 
-/* What else happened around here. See ARCHITECTURE.md. */
+/* What else happened around here. See ARCHITECTURE.md#srcappnearbyts. */
 
 /** Wide enough to cover an aftershock sequence, narrow enough not to reach the next margin. */
 export const NEARBY_KM = 150;
@@ -41,7 +41,7 @@ const TREND_MIN_POINTS = 5;
  */
 const TREND_MIN_RATIO = 1.5;
 
-/** The long axis of a scatter, from the sums of its second moments. See ARCHITECTURE.md. */
+/** The long axis of a scatter, from the sums of its second moments. See ARCHITECTURE.md#srcappnearbyts. */
 export function trendFrom(
   n: number,
   sx: number,

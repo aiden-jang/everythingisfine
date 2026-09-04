@@ -1,7 +1,7 @@
 import { choosePrimary, sameEvent, TIME_WINDOW_MS } from "./reconcile";
 import type { Quake, Reading, SourceId } from "./types";
 
-/* Holds the events and lets go of them. See ARCHITECTURE.md. */
+/* Holds the events and lets go of them. See ARCHITECTURE.md#srcdatastorets. */
 
 const DEFAULT_CAPACITY = 50_000;
 

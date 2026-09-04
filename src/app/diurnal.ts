@@ -3,7 +3,7 @@ import { solarHour } from "../geo/sun";
 import type { Filters, Quake } from "../data/types";
 
 /* Counts events by hour of day, on a 24-hour dial. Earthquakes have no time of day, so this shows nothing.
-   See ARCHITECTURE.md. */
+   See ARCHITECTURE.md#srcappdiurnalts. */
 
 export const BINS = 24;
 
@@ -55,7 +55,7 @@ export function diurnal(
   return { counts, total, mean, sigma, worst };
 }
 
-/** The dial's finding, as a number, or null when there is none. See ARCHITECTURE.md. */
+/** The dial's finding, as a number, or null when there is none. See ARCHITECTURE.md#srcappdiurnalts. */
 export function worstNote(d: Diurnal): string | null {
   if (!Number.isFinite(d.worst) || d.sigma <= 0) return null;
   return `${d.worst.toFixed(1)}`;

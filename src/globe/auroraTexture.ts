@@ -1,7 +1,7 @@
 import { DataTexture, LinearFilter, RGBAFormat, UnsignedByteType } from "three";
 import { AURORA_LAT, AURORA_LON, type Aurora } from "../sources/aurora";
 
-/* The aurora grid as something a shader can sample. See ARCHITECTURE.md. */
+/* The aurora grid as something a shader can sample. See ARCHITECTURE.md#srcglobeauroratexturets. */
 
 export function auroraTexture(): DataTexture {
   const texture = new DataTexture(

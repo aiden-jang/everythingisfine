@@ -160,7 +160,7 @@ test("the globe is operable with the canvas hidden", async ({ page }) => {
   await expect(page.locator(".zone-panel")).toBeVisible();
 });
 
-/* The one claim written down since step 3 and never observed. See ARCHITECTURE.md. */
+/* The one claim written down since step 3 and never observed. See ARCHITECTURE.md#e2einteractionspects. */
 test("with reduced motion, there is no entrance and flying is instant", async ({ browser }) => {
   needsDevHooks();
   const context = await browser.newContext({ reducedMotion: "reduce" });
@@ -585,7 +585,7 @@ test("the globe is operable from the keyboard, and the keys are written down", a
 
 test("a dead feed says so, and does not claim a covered day", async ({ page }) => {
   /* Two bugs in one state. DESIGN.md 6 specifies a hairline notice naming the source and the retry, and
-     `SourceStatus` carried both while nothing read them. See ARCHITECTURE.md. */
+     `SourceStatus` carried both while nothing read them. See ARCHITECTURE.md#e2einteractionspects. */
   await installFeeds(page, { dead: true });
   await page.goto("/");
 
@@ -768,7 +768,7 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
 
 test("the globe unwraps into a map and back", async ({ page }) => {
   needsDevHooks();
-  /* Double the budget, because this test costs about a full one. See ARCHITECTURE.md. */
+  /* Double the budget, because this test costs about a full one. See ARCHITECTURE.md#e2einteractionspects. */
   test.setTimeout(90_000);
   // One geometry, projected in the vertex shader. Two scenes cross-faded would double every buffer and make
   // the switch a dissolve, which says nothing.
@@ -862,7 +862,7 @@ test("the rail resizes in both directions, by pointer and by key", async ({ page
   expect(Number(await height.getAttribute("aria-valuenow"))).toBeGreaterThan(before + 60);
   expect(await visibleRows()).toBeGreaterThan(shownBefore);
 
-  /* Arrow keys, not just a pointer. Shift is the coarse step. See ARCHITECTURE.md. */
+  /* Arrow keys, not just a pointer. Shift is the coarse step. See ARCHITECTURE.md#e2einteractionspects. */
   await height.focus();
   for (let i = 0; i < 4; i += 1) await page.keyboard.press("ArrowUp");
   const keyed = Number(await height.getAttribute("aria-valuenow"));
@@ -964,7 +964,7 @@ test("a line dragged across the map opens a section through it", async ({ page }
 });
 
 /* A section survives being sent to somebody. It carries its own view, which no other field does: a section
-   has nowhere to be drawn except the map. See ARCHITECTURE.md. */
+   has nowhere to be drawn except the map. See ARCHITECTURE.md#e2einteractionspects. */
 test("a link carrying a section opens on the map with the line drawn", async ({ browser }) => {
   needsDevHooks();
   const context = await browser.newContext({ viewport: { width: 1600, height: 900 } });
@@ -1350,7 +1350,7 @@ test("the legend says what a ring is, since nothing else did", async ({ page }) 
 
 test("the largest event is a way in, in time as well as in space", async ({ page }) => {
   /* The app opens on the present, which at a wide window is the least interesting moment it holds. The rail
-     already named the strongest event and flew to it, and left the cursor live. See ARCHITECTURE.md. */
+     already named the strongest event and flew to it, and left the cursor live. See ARCHITECTURE.md#e2einteractionspects. */
   const now = Date.now();
   const features = [
     ...Array.from({ length: 40 }, (_, i) => ({
@@ -1975,7 +1975,7 @@ test("a stored rail width outside the handle's range is brought back inside it",
   expect(width).toBeGreaterThanOrEqual(264);
 });
 
-/* Guards two separate bugs that together made earthquakes untappable. See ARCHITECTURE.md. */
+/* Guards two separate bugs that together made earthquakes untappable. See ARCHITECTURE.md#e2einteractionspects. */
 test("a finger-width miss still opens the earthquake it was aimed at", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await installFeeds(page, { count: 200 });
@@ -2061,7 +2061,7 @@ test("the marks key is reachable at every width", async ({ page }) => {
 });
 
 /* Where a pinned event lands on a phone, which is a question with a bar at one end and a sheet at the
-   other. See ARCHITECTURE.md. */
+   other. See ARCHITECTURE.md#e2einteractionspects. */
 for (const [w, h] of [
   [390, 844],
   [360, 640],

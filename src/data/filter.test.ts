@@ -71,7 +71,7 @@ describe("the honest left edge", () => {
 
   it("is not complete before any coverage exists", () => {
     /* This asserted `true` and was written when the argument was the earliest arrival: nothing held meant
-       nothing to contradict the window. See ARCHITECTURE.md. */
+       nothing to contradict the window. See ARCHITECTURE.md#srcdatafiltertestts. */
     expect(windowStart(NOW, HOUR, null)).toEqual({ at: NOW, complete: false });
   });
 });

@@ -1,5 +1,5 @@
 /* A short buzz when a mark is picked. On a phone the fingertip covers the mark, so nothing else confirms
-   the tap landed. See ARCHITECTURE.md. */
+   the tap landed. See ARCHITECTURE.md#srcapptouchts. */
 
 /** Short enough to read as contact rather than as a notification. */
 export const TICK_MS = 12;

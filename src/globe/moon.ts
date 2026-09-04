@@ -2,13 +2,13 @@ import { Color, Mesh, ShaderMaterial, SphereGeometry, type Vector3 } from "three
 import { moonPosition, moonRadii, MOON_RADIUS_KM } from "../geo/moon";
 import { toVec3 } from "../geo/sphere";
 
-/* The moon, at its real distance, size and phase. See ARCHITECTURE.md. */
+/* The moon, at its real distance, size and phase. See ARCHITECTURE.md#srcglobemoonts. */
 
 /** Lunar grey, faintly warm, and kept well inside the chroma the interface allows anything painted. */
 const COLOR_MOON = new Color(0xb8b4ae);
 
 /* The eclipsed moon, and the one warm hue this app admits on purpose. Not a second exception to the hue ban
-   - the same one from the far end of the ray. See ARCHITECTURE.md. */
+   - the same one from the far end of the ray. See ARCHITECTURE.md#srcglobemoonts. */
 const COLOR_ECLIPSED = new Color(0x6e3a2c);
 
 /** In globe radii, from the real numbers. */
@@ -48,7 +48,7 @@ const MOON = {
       float shade = mix(0.72, 1.0, pow(max(lit, 0.0), 0.35));
       if (day < 0.004) discard;
 
-      /* The Earth's shadow, which does not care which way the moon is facing. See ARCHITECTURE.md. */
+      /* The Earth's shadow, which does not care which way the moon is facing. See ARCHITECTURE.md#srcglobemoonts. */
       vec3 body = mix(uColor * shade, uEclipsed * mix(1.0, 0.55, uUmbral), uUmbral);
       gl_FragColor = vec4(body, day * uOpacity);
     }`,

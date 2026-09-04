@@ -7,16 +7,16 @@ import { MAG_MIN, rampTexture, type RampName } from "./ramp";
 import { cellKey, cellSizeDeg } from "./cluster";
 import { MORPH_GLSL } from "./morph";
 
-/* Depth is drawn as shape: a solid disc near the surface, a ring below 300km. See ARCHITECTURE.md. */
+/* Depth is drawn as shape: a solid disc near the surface, a ring below 300km. See ARCHITECTURE.md#srcglobeeventsts. */
 import { DEPTH_DEEP_KM, DEPTH_SHALLOW_KM } from "../data/depth";
 import { EARTH_RADIUS_KM } from "../geo/sphere";
 
-/* Fifty thousand earthquakes in one draw call. See ARCHITECTURE.md. */
+/* Fifty thousand earthquakes in one draw call. See ARCHITECTURE.md#srcglobeeventsts. */
 
 /** Just clear of the coastline stroke, so a marker on a shoreline is never half-swallowed by it. */
 const RADIUS_EVENTS = 1.006;
 
-/** Marker radius in CSS pixels: `BASE + SCALE * (magnitude - MAG_MIN) ^ EXPONENT`. See ARCHITECTURE.md. */
+/** Marker radius in CSS pixels: `BASE + SCALE * (magnitude - MAG_MIN) ^ EXPONENT`. See ARCHITECTURE.md#srcglobeeventsts. */
 const RADIUS_BASE = 1.0;
 const RADIUS_SCALE = 3.6;
 const RADIUS_EXPONENT = 0.7;
@@ -32,9 +32,9 @@ export function markerRadiusPx(magnitude: number, scale: number): number {
   return (RADIUS_BASE + RADIUS_SCALE * Math.pow(above, RADIUS_EXPONENT)) * scale;
 }
 
-/* How far below the surface an event sits, in globe radii. See ARCHITECTURE.md. */
+/* How far below the surface an event sits, in globe radii. See ARCHITECTURE.md#srcglobeeventsts. */
 export function sinkFraction(depthKm: number): number {
-  /* One answer for every bad depth: draw it shallow. See ARCHITECTURE.md. */
+  /* One answer for every bad depth: draw it shallow. See ARCHITECTURE.md#srcglobeeventsts. */
   if (!(depthKm > 0) || depthKm > EARTH_RADIUS_KM) return 0;
   return depthKm / EARTH_RADIUS_KM;
 }
@@ -42,7 +42,7 @@ export function sinkFraction(depthKm: number): number {
 /** Globe radius the sizes above were chosen against: a desktop window at the framing shot. */
 const REFERENCE_RADIUS_PX = 300;
 
-/** Markers hold their size on screen as the camera zooms. See ARCHITECTURE.md. */
+/** Markers hold their size on screen as the camera zooms. See ARCHITECTURE.md#srcglobeeventsts. */
 const SHADER = {
   vertexShader: /* glsl */ `
     ${MORPH_GLSL}
@@ -87,7 +87,7 @@ const SHADER = {
       float radius = (uBase + uScale * pow(max(0.0, aMag - uMagMin), uExp)) * uSize + aCluster * 2.0;
 
       /* Sunk to the hypocentre, so the scatter resolves into the slab: orbit Chile and the events form a
-         plane dipping under the arc. See ARCHITECTURE.md. */
+         plane dipping under the arc. See ARCHITECTURE.md#srcglobeeventsts. */
       // position, not world: the model matrix draws the flat map more than once.
       vec3 sunk = normalize(position) * (-aSink * uSink * (1.0 - uMorph));
       gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position) + sunk, 1.0);
@@ -156,11 +156,11 @@ export interface EventLayer {
   setRamp: (name: RampName) => void;
   setFocusFade: (value: number) => void;
   setPixelRatio: (ratio: number) => void;
-  /** Scales markers to the globe's size on screen, not to the zoom. See ARCHITECTURE.md. */
+  /** Scales markers to the globe's size on screen, not to the zoom. See ARCHITECTURE.md#srcglobeeventsts. */
   setGlobeRadius: (px: number) => void;
   /** Surface or true depth: 0 or 1, eased between. A uniform, so nothing rewrites fifty thousand positions. */
   setDepthSink: (value: number) => void;
-  /** Writes the visible subset into the buffers. Returns how many are drawn. See ARCHITECTURE.md. */
+  /** Writes the visible subset into the buffers. Returns how many are drawn. See ARCHITECTURE.md#srcglobeeventsts. */
   sync: (
     store: Store,
     filters: Filters,
@@ -172,7 +172,7 @@ export interface EventLayer {
   dispose: () => void;
 }
 
-/** The slice of time the pointer is holding, as a span rather than a bucket index. See ARCHITECTURE.md. */
+/** The slice of time the pointer is holding, as a span rather than a bucket index. See ARCHITECTURE.md#srcglobeeventsts. */
 export interface FocusSpan {
   /** Oldest origin time in the held bucket, inclusive. */
   from: number;
@@ -242,9 +242,9 @@ export function createEventLayer(
     },
     transparent: true,
     depthWrite: false,
-    /* Not depth-tested, or markers get sliced flat near the limb. See ARCHITECTURE.md. */
+    /* Not depth-tested, or markers get sliced flat near the limb. See ARCHITECTURE.md#srcglobeeventsts. */
     depthTest: false,
-    /* Normal blending, never additive. See ARCHITECTURE.md. */
+    /* Normal blending, never additive. See ARCHITECTURE.md#srcglobeeventsts. */
     blending: NormalBlending,
   });
 

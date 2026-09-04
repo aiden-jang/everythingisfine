@@ -1,7 +1,7 @@
 import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 
 /* One earthquake, one tone. Not a recording - real ground motion is below hearing, so this is a
-   transposition. See ARCHITECTURE.md. */
+   transposition. See ARCHITECTURE.md#srcappsoundts. */
 
 /** Two octaves, high for the smallest event and low for the largest. */
 const HIGH_HZ = 440;

@@ -2,7 +2,7 @@ import type { Store } from "../data/store";
 import type { Filters } from "../data/types";
 import { matches } from "../data/filter";
 
-/* Named seismic regions, so the rail has somewhere to fly to. See ARCHITECTURE.md. */
+/* Named seismic regions, so the rail has somewhere to fly to. See ARCHITECTURE.md#srcappregionsts. */
 
 export interface Region {
   name: string;
@@ -40,7 +40,7 @@ export interface RegionCount {
   count: number;
 }
 
-/** Counts per region, largest first, over exactly what is on screen. See ARCHITECTURE.md. */
+/** Counts per region, largest first, over exactly what is on screen. See ARCHITECTURE.md#srcappregionsts. */
 export function countByRegion(store: Store, filters: Filters, now: number): RegionCount[] {
   const counts = new Array<number>(REGIONS.length).fill(0);
   store.forEach((quake) => {

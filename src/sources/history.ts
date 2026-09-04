@@ -3,7 +3,7 @@ import type { Volcano } from "./volcanoes";
 import type { Wildfire } from "./wildfires";
 import type { Flood } from "./floods";
 
-/* The four non-earthquake layers, for a day that has already happened. See ARCHITECTURE.md. */
+/* The four non-earthquake layers, for a day that has already happened. See ARCHITECTURE.md#srcsourceshistoryts. */
 
 /** EONET's category ids, mapped to the four layers this app draws. */
 const KINDS = {
@@ -170,7 +170,7 @@ export function stormName(title: string): string {
   return stripped.length > 0 ? stripped : head;
 }
 
-/** Where it was, from a title written in one of two shapes by two upstreams. See ARCHITECTURE.md. */
+/** Where it was, from a title written in one of two shapes by two upstreams. See ARCHITECTURE.md#srcsourceshistoryts. */
 export function placeOf(title: string): string {
   if (title.includes(",")) {
     const parts = title

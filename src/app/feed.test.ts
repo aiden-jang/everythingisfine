@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { frontsFor, MAX_LIVE_FRONTS } from "./feed";
 import type { Quake, Reading } from "../data/types";
 
-/* The gate for PLAN.md step 8, tested as a rule rather than as a screenshot. See ARCHITECTURE.md. */
+/* The gate for PLAN.md step 8, tested as a rule rather than as a screenshot. See ARCHITECTURE.md#srcappfeedtestts. */
 
 const quake = (id: string, magnitude: number): Quake => {
   const primary: Reading = {

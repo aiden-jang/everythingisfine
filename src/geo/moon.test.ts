@@ -19,7 +19,7 @@ const sunMoonGap = (at: number): number => {
 
 describe("where the moon is", () => {
   /* Checked against eclipses, which is the only way to test a lunar position without shipping a second
-     ephemeris to test the first against. See ARCHITECTURE.md. */
+     ephemeris to test the first against. See ARCHITECTURE.md#srcgeomoontestts. */
   it("puts the moon on the sun during the April 2024 total solar eclipse", () => {
     // Greatest eclipse 2024-04-08 at 18:17 UTC. Geocentrically the two centres nearly coincide.
     const gap = sunMoonGap(Date.UTC(2024, 3, 8, 18, 17));

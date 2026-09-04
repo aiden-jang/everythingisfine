@@ -4,10 +4,10 @@ import { createEmscSource } from "../sources/emsc";
 import { createUsgsSource, usgsSeedFor } from "../sources/usgs";
 import { browserRuntime, type GeoEventSource, type SourceStatus } from "../sources/types";
 
-/* The two feeds, the store, and whoever needs to know something changed. See ARCHITECTURE.md. */
+/* The two feeds, the store, and whoever needs to know something changed. See ARCHITECTURE.md#srcappfeedts. */
 
 export interface FeedSnapshot {
-  /** The archived span being shown, or null when live. See ARCHITECTURE.md. */
+  /** The archived span being shown, or null when live. See ARCHITECTURE.md#srcappfeedts. */
   archive: { from: number; to: number } | null;
   stats: StoreStats;
   statuses: Record<SourceId, SourceStatus>;
@@ -19,7 +19,7 @@ export interface FeedSnapshot {
   /**
    * True for the first announcement that actually carries events: the daily seed. Not "the first
    * announcement". Those also fire on status changes, and a source going live beats its own first batch,
-   * so the very first one is reliably empty. See ARCHITECTURE.md.
+   * so the very first one is reliably empty. See ARCHITECTURE.md#srcappfeedts.
    */
   seeding: boolean;
   /**
@@ -27,14 +27,14 @@ export interface FeedSnapshot {
    * ARCHITECTURE.md.
    */
   coveredSince: number | null;
-  /** The same fact per agency, because the earliest of the two hides the disagreement. See ARCHITECTURE.md. */
+  /** The same fact per agency, because the earliest of the two hides the disagreement. See ARCHITECTURE.md#srcappfeedts. */
   covered: Record<SourceId, number | null>;
 }
 
-/** The most fronts one announcement may fire. See ARCHITECTURE.md. */
+/** The most fronts one announcement may fire. See ARCHITECTURE.md#srcappfeedts. */
 export const MAX_LIVE_FRONTS = 3;
 
-/** Which arrivals deserve a wavefront. See ARCHITECTURE.md. */
+/** Which arrivals deserve a wavefront. See ARCHITECTURE.md#srcappfeedts. */
 export function frontsFor(snapshot: Pick<FeedSnapshot, "arrived" | "seeding">): Quake[] {
   if (snapshot.seeding) return snapshot.arrived.slice(-1);
   if (snapshot.arrived.length <= MAX_LIVE_FRONTS) return snapshot.arrived;
@@ -58,7 +58,7 @@ export interface Feed {
    * what is drawn, so narrowing needs no request and throwing the extra away means paying for it again.
    */
   setWindow: (windowMs: number) => boolean;
-  /** Replaces everything with an archived span, and stops listening to the present. See ARCHITECTURE.md. */
+  /** Replaces everything with an archived span, and stops listening to the present. See ARCHITECTURE.md#srcappfeedts. */
   showArchive: (span: { from: number; to: number }, readings: readonly Reading[]) => void;
   /** Back to now: empties the archive and restarts the sources from scratch. */
   resumeLive: () => void;

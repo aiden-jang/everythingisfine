@@ -1,6 +1,6 @@
 /* The view as a PNG, with the moment it is of written on it. Always stamp the moment, and take it from the
    cursor rather than the clock. An image of live data outlives the data, and a still is shared by hand with
-   no cache to blame. See ARCHITECTURE.md. */
+   no cache to blame. See ARCHITECTURE.md#srcappstillts. */
 
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 
@@ -44,7 +44,7 @@ export function captionLines(caption: StillCaption): [string, string | null, str
   return ["EVERYTHING IS FINE", caption.verdict, caption.moment, `${caption.filter} · ${caption.host}`];
 }
 
-/** The evidence line under the title. Every number is already in the snapshot. See ARCHITECTURE.md. */
+/** The evidence line under the title. Every number is already in the snapshot. See ARCHITECTURE.md#srcappstillts. */
 export function verdictLine(n: {
   quakes: number;
   cyclones: number;
@@ -69,7 +69,7 @@ export function verdictLine(n: {
   return `${parts.join(". ")}.`;
 }
 
-/** The moment, as the caption states it. See ARCHITECTURE.md. */
+/** The moment, as the caption states it. See ARCHITECTURE.md#srcappstillts. */
 export function stillMoment(cursor: number | null, now: number, archived = false, live = "Live"): string {
   const at = cursor ?? now;
   const iso = new Date(at).toISOString();
@@ -95,7 +95,7 @@ export function drawStill(
   ctx.fillRect(0, 0, STILL_WIDTH, STILL_HEIGHT);
 
   /* Cropped to the frame, not letterboxed into it. Never cropped below the shorter side of the canvas,
-     because that is the most the globe can span. See ARCHITECTURE.md. */
+     because that is the most the globe can span. See ARCHITECTURE.md#srcappstillts. */
   const frameH = STILL_HEIGHT - CAPTION_H;
   const frameAspect = STILL_WIDTH / frameH;
   const shortest = Math.min(globeWidth, globeHeight);

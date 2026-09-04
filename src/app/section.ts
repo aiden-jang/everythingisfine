@@ -5,7 +5,7 @@ import type { Store } from "../data/store";
 import type { Filters, Quake } from "../data/types";
 import type { SlabPoint } from "../geo/slab";
 
-/* A cross-section through the crust, along a line drawn on the map. See ARCHITECTURE.md. */
+/* A cross-section through the crust, along a line drawn on the map. See ARCHITECTURE.md#srcappsectionts. */
 
 export interface SectionLine {
   fromLon: number;
@@ -55,7 +55,7 @@ export const SECTION_DEFAULT_KM = 600;
 /** Kilometres in a degree of latitude, from the mean radius. Same figure the scale bar uses. */
 const KM_PER_DEGREE = (Math.PI * EARTH_RADIUS_KM) / 180;
 
-/** A section through a point, across the local trend rather than along it. See ARCHITECTURE.md. */
+/** A section through a point, across the local trend rather than along it. See ARCHITECTURE.md#srcappsectionts. */
 export function sectionThrough(
   lon: number,
   lat: number,
@@ -72,7 +72,7 @@ export function sectionThrough(
   const dLon = (halfDeg * Math.sin(bearing)) / scale;
 
   /* Always read west to east, and south to north when it is neither. Left to the bearing arithmetic, a
-     north-south trench reads top to bottom while an east-west one reads left to right. See ARCHITECTURE.md. */
+     north-south trench reads top to bottom while an east-west one reads left to right. See ARCHITECTURE.md#srcappsectionts. */
   const EPS = 1e-9;
   const flip = dLon < -EPS || (Math.abs(dLon) <= EPS && dLat < 0);
   const eastward = flip ? -dLon : dLon;
@@ -88,7 +88,7 @@ export function sectionThrough(
   };
 }
 
-/** The two edges of the corridor, as lines that can be drawn beside the centre. See ARCHITECTURE.md. */
+/** The two edges of the corridor, as lines that can be drawn beside the centre. See ARCHITECTURE.md#srcappsectionts. */
 export function sectionEdges(
   line: SectionLine,
   halfWidthKm = SECTION_HALF_WIDTH_KM,
@@ -167,7 +167,7 @@ export function sectionLengthKm(line: SectionLine): number {
 
 /**
  * Where the line crosses a plate boundary, as distances along it. The tick turns the picture into an
- * explanation: the earthquakes start at the boundary and descend away from it. See ARCHITECTURE.md.
+ * explanation: the earthquakes start at the boundary and descend away from it. See ARCHITECTURE.md#srcappsectionts.
  */
 export function plateCrossings(line: SectionLine, lengthKm: number): number[] {
   const out: number[] = [];

@@ -1,4 +1,4 @@
-/* Days worth seeing, because the archive's only way in was a blank date field. See ARCHITECTURE.md. */
+/* Days worth seeing, because the archive's only way in was a blank date field. See ARCHITECTURE.md#srcappnotabledaysts. */
 
 export interface NotableDay {
   /** The UTC day, which is the span the archive loads. */
@@ -9,7 +9,7 @@ export interface NotableDay {
   magnitude: number;
 }
 
-/* Largest first, because the two M9.1s are the reason to open this at all. See ARCHITECTURE.md. */
+/* Largest first, because the two M9.1s are the reason to open this at all. See ARCHITECTURE.md#srcappnotabledaysts. */
 export const NOTABLE_DAYS: readonly NotableDay[] = [
   { day: "1960-05-22", what: "Valdivia, Chile", magnitude: 9.5 },
   { day: "1964-03-28", what: "Prince William Sound, Alaska", magnitude: 9.2 },

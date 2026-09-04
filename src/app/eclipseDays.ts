@@ -1,5 +1,5 @@
 /* Eclipses worth opening. The shadow only draws inside a few hours that happen two or three times a year,
-   so left to chance nobody ever sees one. See ARCHITECTURE.md. */
+   so left to chance nobody ever sees one. See ARCHITECTURE.md#srcappeclipsedaysts. */
 
 export interface EclipseDay {
   /** The UTC day, which is the span the archive loads. */

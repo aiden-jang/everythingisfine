@@ -1,6 +1,6 @@
 import { DataTexture, LinearFilter, RGBAFormat, UnsignedByteType } from "three";
 
-/* The only place hue is allowed to exist. See ARCHITECTURE.md. */
+/* The only place hue is allowed to exist. See ARCHITECTURE.md#srcgloberampts. */
 
 export type RampName = "thermal" | "cividis";
 

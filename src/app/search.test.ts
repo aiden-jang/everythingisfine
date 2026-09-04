@@ -4,7 +4,7 @@ import type { Filters, Reading } from "../data/types";
 import { fold, PLACE_LIMIT, search } from "./search";
 
 /* Search over the only two things this app can honestly search: the authored regions, and the place strings
-   the agencies wrote on the events currently held. See ARCHITECTURE.md. */
+   the agencies wrote on the events currently held. See ARCHITECTURE.md#srcappsearchtestts. */
 
 const now = 1_700_000_000_000;
 

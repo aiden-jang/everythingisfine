@@ -1,7 +1,7 @@
 import { DEG, EARTH_RADIUS_KM } from "./sphere";
 import { gmstDeg } from "./stars";
 
-/* Where the moon is, in the same frame as everything else on this globe. See ARCHITECTURE.md. */
+/* Where the moon is, in the same frame as everything else on this globe. See ARCHITECTURE.md#srcgeomoonts. */
 
 /** Mean radius, in the same kilometres the globe's own radius is quoted in. */
 export const MOON_RADIUS_KM = 1737.4;

@@ -18,7 +18,7 @@ describe("distance to the nearest boundary", () => {
   });
 
   it("measures to the segment, not to the nearest vertex", () => {
-    /* The bug that made the first measurement of this feature wrong. See ARCHITECTURE.md. */
+    /* The bug that made the first measurement of this feature wrong. See ARCHITECTURE.md#srcgeoboundarydistancetestts. */
     const mid = nearestBoundaryKm(5, 0, segs)!;
     expect(mid).toBeCloseTo(0, 6);
     expect(distanceKm(5, 0, 0, 0)).toBeGreaterThan(500);
@@ -38,7 +38,7 @@ describe("distance to the nearest boundary", () => {
 
   it("takes the nearest of several boundaries", () => {
     /* 119.7 km, not the 111.2 that one degree of latitude would suggest, and the difference is the point.
-       See ARCHITECTURE.md. */
+       See ARCHITECTURE.md#srcgeoboundarydistancetestts. */
     const two = toSegments([
       [
         [0, 0],

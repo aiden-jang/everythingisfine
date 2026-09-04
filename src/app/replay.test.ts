@@ -77,7 +77,7 @@ describe("how far back the entrance reaches", () => {
 
   it("plays a day and no more when a month is held", () => {
     /* It played from the oldest event held, which was the same thing as a day while a day was the only
-       window. See ARCHITECTURE.md. */
+       window. See ARCHITECTURE.md#srcappreplaytestts. */
     expect(replayFrom(now - 30 * 24 * HOUR, now)).toBe(now - REPLAY_SPAN_MS);
     expect(replayFrom(now - 7 * 24 * HOUR, now)).toBe(now - REPLAY_SPAN_MS);
   });

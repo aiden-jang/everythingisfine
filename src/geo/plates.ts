@@ -2,7 +2,7 @@ import plates from "./plates.json";
 import { toVec3, spanDeg } from "./sphere";
 
 /* The tectonic plate boundaries. The earthquakes were always tracing these and nothing said so, so the Ring
-   of Fire read as a coincidence of where dots land. See ARCHITECTURE.md. */
+   of Fire read as a coincidence of where dots land. See ARCHITECTURE.md#srcgeoplatests. */
 
 /** Between the graticule and the land, so continents sit on top of the boundaries they contain. */
 export const RADIUS_PLATES = 1.0035;
@@ -25,7 +25,7 @@ export function buildPlates(
       const a = line[i]!;
       const b = line[i + 1]!;
       /* A boundary that leaves at +180 and re-enters at -180 is one line in the source data, and joining
-         those two points draws a chord straight through the planet. See ARCHITECTURE.md. */
+         those two points draws a chord straight through the planet. See ARCHITECTURE.md#srcgeoplatests. */
       if (Math.abs(b[0] - a[0]) > WRAP_DEG) continue;
 
       const steps = Math.max(1, Math.ceil(spanDeg(a[0], a[1], b[0], b[1]) / DENSIFY_DEG));
@@ -44,7 +44,7 @@ export function buildPlates(
   return { position: new Float32Array(out), lonLat: new Float32Array(ll) };
 }
 
-/** Reorders segments nearest-first from a set of points, for the entrance reveal. See ARCHITECTURE.md. */
+/** Reorders segments nearest-first from a set of points, for the entrance reveal. See ARCHITECTURE.md#srcgeoplatests. */
 export function orderByProximity(
   positions: Float32Array,
   points: readonly { lon: number; lat: number }[],

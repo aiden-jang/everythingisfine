@@ -2,7 +2,7 @@ import { matches } from "./filter";
 import type { Store } from "./store";
 import type { Filters } from "./types";
 
-/* The depth bands, and how many events are in each. See ARCHITECTURE.md. */
+/* The depth bands, and how many events are in each. See ARCHITECTURE.md#srcdatadepthts. */
 
 /** Above this an event is shallow, and shallow events do the damage. */
 export const DEPTH_SHALLOW_KM = 70;

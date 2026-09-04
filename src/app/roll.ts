@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 /* Numbers that roll rather than jump. Only on a discrete change. A rolling readout eases toward a target,
    so pointing it at something already moving frame by frame - the replay, the cursor - makes it a late copy
-   rather than a smooth one. See ARCHITECTURE.md. */
+   rather than a smooth one. See ARCHITECTURE.md#srcapprollts. */
 
 /**
  * How fast the gap closes, as the time constant of an exponential approach in milliseconds. See
@@ -33,7 +33,7 @@ export function shouldRoll(previous: number | null, reducedMotion: boolean): boo
   return previous !== null && !reducedMotion;
 }
 
-/** A number that eases to its target, or the target itself when it must not. See ARCHITECTURE.md. */
+/** A number that eases to its target, or the target itself when it must not. See ARCHITECTURE.md#srcapprollts. */
 export function useRolling(value: number, live: boolean): number {
   const [shown, setShown] = useState(value);
   const previous = useRef<number | null>(null);

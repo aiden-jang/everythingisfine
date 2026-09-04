@@ -233,7 +233,7 @@ export function App(): JSX.Element {
     };
   }, []);
   /* Keep this above every memo that calls it. Below them it is a temporal dead zone: tsc passes, the build
-     passes, and the page renders nothing. See ARCHITECTURE.md. */
+     passes, and the page renders nothing. See ARCHITECTURE.md#srcapptsx. */
   const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
   /* Hidden while an archived day is up, or today's storms are drawn over July's earthquakes. See
      ARCHITECTURE.md. */
@@ -249,7 +249,7 @@ export function App(): JSX.Element {
           next: new Date(snapshot.archive.from + 86_400_000).toISOString().slice(0, 10),
         };
   const [archiveHazards, setArchiveHazards] = useState<History | null>(null);
-  /* In archive mode this is the end of the archived day, not the wall clock. See ARCHITECTURE.md. */
+  /* In archive mode this is the end of the archived day, not the wall clock. See ARCHITECTURE.md#srcapptsx. */
   const now = snapshot.archive ? snapshot.archive.to : Date.now();
   const span = { from: now - filters.windowMs, to: now };
   // Clamp on the way out, never write it back: a render must not correct its own state.
@@ -596,7 +596,7 @@ export function App(): JSX.Element {
 
   // Replace, never push, or every filter nudge is a history entry and Back never leaves the page.
   useEffect(() => {
-    /* Never overwrite a hash this app did not write. See ARCHITECTURE.md. */
+    /* Never overwrite a hash this app did not write. See ARCHITECTURE.md#srcapptsx. */
     const write = (): void => {
       if (window.location.hash !== lastWritten.current) return;
       const pinnedNow = selected ? feed.store.get(selected) : undefined;
@@ -871,7 +871,7 @@ export function App(): JSX.Element {
     /* Where the sheet's top edge will be, worked out rather than measured: the first pin is the one that
        opens it, so there is nothing to measure yet. Do not go back to a fraction of the canvas. Twice
        tried: the bar is the same size on every phone and the canvas is not, so a quarter of a short one put
-       the event 6px under the bar. See ARCHITECTURE.md. */
+       the event 6px under the bar. See ARCHITECTURE.md#srcapptsx. */
     const box = canvas.getBoundingClientRect();
     const zoneBox = zones.getBoundingClientRect();
     const share = Number(getComputedStyle(document.documentElement).getPropertyValue("--panel-share")) || 0.7;
@@ -934,7 +934,7 @@ export function App(): JSX.Element {
   }, [selected, snapshot.revision]);
 
   /* Twenty ticks a second, not one a frame: every tick re-renders the rail and re-syncs the event layer.
-     See ARCHITECTURE.md. */
+     See ARCHITECTURE.md#srcapptsx. */
   const playedAt = useRef(0);
   useEffect(() => {
     if (!scrub.playing) return undefined;
@@ -967,7 +967,7 @@ export function App(): JSX.Element {
         if (query) setQuery("");
         else if (sectionLine) setSectionLine(null);
         else if (scrub.at !== null) setScrub(LIVE);
-        /* Both panels on one rung, cleared without being read. See ARCHITECTURE.md. */
+        /* Both panels on one rung, cleared without being read. See ARCHITECTURE.md#srcapptsx. */
         else {
           setMarkId(null);
           setSelected(null);
@@ -1010,7 +1010,7 @@ export function App(): JSX.Element {
   };
 
   /* The store hands events back in arrival order, which is right for eviction and wrong for a list headed
-     "newest first". See ARCHITECTURE.md. */
+     "newest first". See ARCHITECTURE.md#srcapptsx. */
   const recent = useMemo(
     () => feed.store.newest(60, (q) => matches(q, filters, clockAt())),
     [filters, snapshot.revision],
@@ -1088,7 +1088,7 @@ export function App(): JSX.Element {
 
   /* The count in the tab, so leaving the page open is worth something. Not during the replay: the count
      climbs through a whole day in 2.8 seconds, which is a flickering tab rather than a readout, and it is
-     showing yesterday anyway. See ARCHITECTURE.md. */
+     showing yesterday anyway. See ARCHITECTURE.md#srcapptsx. */
   useEffect(() => {
     const base = "Everything Is Fine";
     if (replay || snapshot.coveredSince === null) {
@@ -1244,7 +1244,7 @@ export function App(): JSX.Element {
               onClick={() => toggleSource(id)}
               aria-pressed={filters.sources.has(id)}
               /* Sized to their labels, not to the panel. `flex-1` gave each half the key's width, making two
-           secondary filters the heaviest things in it. See ARCHITECTURE.md. */
+           secondary filters the heaviest things in it. See ARCHITECTURE.md#srcapptsx. */
               className={`cursor-pointer border px-2.5 py-1 text-[11px] transition-colors ${
                 filters.sources.has(id)
                   ? "border-faint bg-raised text-ink"
@@ -2241,7 +2241,7 @@ export function App(): JSX.Element {
               scrubAt={view.at}
               /* Which moment the light is of. `clockAt` is the app's answer to what time is on screen, and a
                held cursor overrides it with the same precedence `stillMoment` uses, so the terminator and
-               the caption cannot disagree. See ARCHITECTURE.md. */
+               the caption cannot disagree. See ARCHITECTURE.md#srcapptsx. */
               moment={litAt}
               flat={flat}
               depthSink={sinkOn}
@@ -2274,7 +2274,7 @@ export function App(): JSX.Element {
           </Suspense>
 
           <div
-            /* Fixed to the rail's edge, and never moved by a panel. See ARCHITECTURE.md. */
+            /* Fixed to the rail's edge, and never moved by a panel. See ARCHITECTURE.md#srcapptsx. */
             className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
           >
             {/* The section joins the bottom band as a full-width line, last, so it is flush with the bottom
@@ -2285,7 +2285,7 @@ export function App(): JSX.Element {
                 half saturation the map's cluster glowed magenta through it and the slab's 1.6px dots were
                 lost outright.
               */
-              /* The one thing in this band that still yields to a panel. See ARCHITECTURE.md. */
+              /* The one thing in this band that still yields to a panel. See ARCHITECTURE.md#srcapptsx. */
               <div
                 className={`order-9 -mx-4 -mb-4 w-[calc(100%+2rem)] bg-deck/70 px-4 pt-3 pb-4 backdrop-blur-2xl backdrop-saturate-0 ${
                   markSubject || (shownQuake && pinned) ? "xl:pr-[calc(var(--panel-w)+1rem)]" : ""

@@ -3,10 +3,10 @@ import { starVector, type FigureTable } from "../geo/stars";
 import { SKY_DISTANCE, SKY_GLSL } from "./sky";
 
 /* The constellation lines, over the stars they join. A sky nobody can find anything in is still a backdrop.
-   See ARCHITECTURE.md. */
+   See ARCHITECTURE.md#srcglobefigurests. */
 
 /* The star colour, at the weight a guide line deserves. Not a colour of its own: these belong to the stars,
-   and reading as a different material would make them a third thing on screen. See ARCHITECTURE.md. */
+   and reading as a different material would make them a third thing on screen. See ARCHITECTURE.md#srcglobefigurests. */
 const COLOR_FIGURES = new Color(0xc8d2e2);
 const FIGURE_OPACITY = 0.3;
 

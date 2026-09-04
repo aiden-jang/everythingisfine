@@ -6,7 +6,7 @@ import { ago, latLon } from "./format";
 
 /* What a storm, volcano, fire or flood says when you click it. Not the earthquake panel. That one is built
    around two agencies disagreeing, and a wildfire has no depth, no neighbours, no arrival time and no
-   sequence. See ARCHITECTURE.md. */
+   sequence. See ARCHITECTURE.md#srcappmarkcardtsx. */
 
 export type MarkSubject =
   | { kind: "cyclone"; subject: Cyclone }

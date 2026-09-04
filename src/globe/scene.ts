@@ -74,7 +74,7 @@ const MARK_SLOP_PX = 18;
 /* Nearest on the sphere is not nearest on screen near the limb, so a few candidates get projected. */
 const SHORTLIST = 8;
 
-/* The globe's palette, brightest last: sea, land, graticule, coast, plates. See ARCHITECTURE.md. */
+/* The globe's palette, brightest last: sea, land, graticule, coast, plates. See ARCHITECTURE.md#srcglobescenets. */
 const COLOR_SPHERE = 0x031120;
 /* Must equal `--color-void` in `index.css`. Nothing checks it, and the canvas fades to this. */
 const COLOR_VOID_C = new Color(0x050b16);
@@ -299,7 +299,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   gratGeom.setAttribute("position", new BufferAttribute(grid.position, 3));
   gratGeom.setAttribute("aLonLat", new BufferAttribute(grid.lonLat, 2));
   /* Drawn before the land, which is the only way it ends up behind it: the land writes no depth, so nothing
-     occludes the graticule and it drew a starburst across Siberia. See ARCHITECTURE.md. */
+     occludes the graticule and it drew a starburst across Siberia. See ARCHITECTURE.md#srcglobescenets. */
   const grat = new LineSegments(
     gratGeom,
     new LineBasicMaterial({
@@ -388,7 +388,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         void main() {
           /* On the map, rebuild the direction per fragment. Flattening stretches these triangles, and an
              interpolated normal is only exact at their corners: a crease ran along every shared diagonal.
-             See ARCHITECTURE.md. */
+             See ARCHITECTURE.md#srcglobescenets. */
           float lam = radians(vLonLat.x);
           float phi = radians(vLonLat.y);
           float c = cos(phi);
@@ -405,7 +405,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
           /* The moon's shadow, on the few days there is one. uPenumbraAng is zero otherwise, so almost
              every frame pays one compare for it. Move night and day together. Dimming the day alone leaves
-             a grey shadow, which is not what being inside one looks like. See ARCHITECTURE.md. */
+             a grey shadow, which is not what being inside one looks like. See ARCHITECTURE.md#srcglobescenets. */
           float cover = 0.0;
           if (uPenumbraAng > 0.0) {
             float away = acos(clamp(dot(normalize(mix(normalize(vNormal), fromLonLat, uMorph)), uEclipse), -1.0, 1.0));
@@ -418,14 +418,14 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           night = max(night, cover);
 
           /* Falls off toward the limb, or the lit side is a flat circle rather than a sphere. Take the day
-             wash away rather than adding shadow. See ARCHITECTURE.md. */
+             wash away rather than adding shadow. See ARCHITECTURE.md#srcglobescenets. */
           vec3 toEye = normalize(cameraPosition - vNormal * ${RADIUS_NIGHT});
           float edge = (1.0 - clamp(dot(vNormal, toEye), 0.0, 1.0)) * (1.0 - uMorph);
           day *= mix(1.0, 0.32, smoothstep(0.30, 0.94, edge));
 
           /* The aurora, in the one shader that already knows where night is. No backticks in here - one of
              them ends the shader. The morph module warns about this in as many words and I walked into it
-             anyway. See ARCHITECTURE.md. */
+             anyway. See ARCHITECTURE.md#srcglobescenets. */
           vec2 auv = vec2(fract(vLonLat.x / 360.0), (vLonLat.y + 90.0) / 180.0);
           float glow = clamp(texture2D(uAurora, auv).r * 3.0, 0.0, 1.0) * night * uAuroraOn;
 
@@ -450,7 +450,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         uDayColor: { value: new Color(0x9fb0cc) },
         /* Deep enough to read as night, shallow enough that the geography survives it. At 0.38 land in
            shadow against ocean in daylight measured 1.084:1, so the lighting out-contrasted what it was
-           lighting. See ARCHITECTURE.md. */
+           lighting. See ARCHITECTURE.md#srcglobescenets. */
         uDepth: { value: 0.44 },
         uLift: { value: 0.11 },
         uAurora: { value: aurora },
@@ -482,7 +482,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   let slabOn = false;
 
   let sunMinute = -1;
-  /* The instant the sun, sky and moon are aimed at, or null to follow the wall clock. See ARCHITECTURE.md. */
+  /* The instant the sun, sky and moon are aimed at, or null to follow the wall clock. See ARCHITECTURE.md#srcglobescenets. */
   let moment: number | null = null;
   const aimSun = (at: number): void => {
     const { lon, lat } = subsolarPoint(at);
@@ -690,7 +690,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         plateEdge.geometry.setDrawRange(settled * 2, (drawn - settled) * 2);
       },
     },
-    /* What is under the pointer, answered geographically first and in pixels second. See ARCHITECTURE.md. */
+    /* What is under the pointer, answered geographically first and in pixels second. See ARCHITECTURE.md#srcglobescenets. */
     hitTest: (clientX, clientY, store, filters, now, slopPx = HIT_SLOP_PX) => {
       const under = controls.pick(clientX, clientY);
       if (!under) return null;
@@ -766,7 +766,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
      * Loaded from `Globe.tsx` rather than here, because the caller is the only one holding `wake`. A layer
      * that filled itself while the loop was asleep would stay invisible until something else moved.
      */
-    /* Which moment the sky is of. See ARCHITECTURE.md. */
+    /* Which moment the sky is of. See ARCHITECTURE.md#srcglobescenets. */
     setMoment: (at: number | null) => {
       moment = at;
       // Immediately, not on the next minute boundary, or a scrub drags the marks and leaves the light.
@@ -822,7 +822,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       (glint.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.55 * (1 - morph.value);
       glint.visible = morph.value < 0.999;
 
-      /* The fill is culled on the globe and not on the map. See ARCHITECTURE.md. */
+      /* The fill is culled on the globe and not on the map. See ARCHITECTURE.md#srcglobescenets. */
       const wantSide = morph.value > 0.9 ? DoubleSide : FrontSide;
       const fillMaterial = fill.material as MeshBasicMaterial;
       if (fillMaterial.side !== wantSide) {
@@ -842,7 +842,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       (mapBase.material as MeshBasicMaterial).color.copy(COLOR_VOID_C).lerp(COLOR_SPHERE_C, morph.value);
 
       /* The map repeats by drawing the world again beside itself. Only the copies that intersect the view
-         are drawn: two most of the time, one zoomed in. See ARCHITECTURE.md. */
+         are drawn: two most of the time, one zoomed in. See ARCHITECTURE.md#srcglobescenets. */
       const period = 2 * MAP_HALF_WIDTH;
       const halfHeight = camera.position.z * Math.tan((FOV / 2) * (Math.PI / 180));
       const { first, last } = visibleCopies(camera.position.x, halfHeight * camera.aspect);

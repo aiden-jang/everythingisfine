@@ -4,7 +4,7 @@ import { starBrightness, starVector } from "../geo/stars";
 import { COLOR_STARS } from "./starfield";
 import { SKY_DISTANCE, SKY_GLSL } from "./sky";
 
-/* The planets, drawn as the brightest things in the star field. See ARCHITECTURE.md. */
+/* The planets, drawn as the brightest things in the star field. See ARCHITECTURE.md#srcglobeplanetsts. */
 
 /** Sirius is -1.46 and the sky's ramp tops out there, so a brighter Venus simply saturates. */
 const PLANET_SIZE_BOOST = 1.35;

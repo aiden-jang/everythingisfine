@@ -7,7 +7,7 @@ import type { Flood } from "../sources/floods";
 import type { Volcano } from "../sources/volcanoes";
 import type { Wildfire } from "../sources/wildfires";
 
-/* Which shapes exist, from what is happening. See ARCHITECTURE.md. */
+/* Which shapes exist, from what is happening. See ARCHITECTURE.md#srcappmarksts. */
 
 export interface Happening {
   cyclones: readonly Cyclone[];
@@ -26,7 +26,7 @@ export interface Happening {
   here?: { lon: number; lat: number } | null;
 }
 
-/* The reporting agency, appended to a label that already has words in it. See ARCHITECTURE.md. */
+/* The reporting agency, appended to a label that already has words in it. See ARCHITECTURE.md#srcappmarksts. */
 function by(label: string, source: string | null): string {
   return source === null ? label : `${label} · ${source}`;
 }
@@ -55,7 +55,7 @@ export function marksFor({
     const far = antipodeOf(farSide.lon, farSide.lat);
     for (const stroke of antipodeCross(far.lon, far.lat)) out.push({ points: stroke });
   }
-  /* Anchored, so it holds one size on screen: a symbol rather than a measured extent. See ARCHITECTURE.md. */
+  /* Anchored, so it holds one size on screen: a symbol rather than a measured extent. See ARCHITECTURE.md#srcappmarksts. */
   if (here) {
     for (const tick of hereTicks(here.lon, here.lat)) {
       out.push({ points: tick, anchor: { lon: here.lon, lat: here.lat } });

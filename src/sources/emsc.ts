@@ -8,16 +8,16 @@ import {
   type TimerId,
 } from "./types";
 
-/* EMSC, the push half of the pair. See ARCHITECTURE.md. */
+/* EMSC, the push half of the pair. See ARCHITECTURE.md#srcsourcesemscts. */
 
 export const EMSC_SOCKET = "wss://www.seismicportal.eu/standing_order/websocket";
 
-/** The catalogue, fetched once when the socket opens. See ARCHITECTURE.md. */
+/** The catalogue, fetched once when the socket opens. See ARCHITECTURE.md#srcsourcesemscts. */
 export const EMSC_CATALOGUE = "https://www.seismicportal.eu/fdsnws/event/1/query";
 
 /** Matches the USGS daily seed, so the two agencies cover the same window on the first frame. */
 const SEED_HOURS = 24;
-/* Held at 600 whatever the window, and the coverage report is what makes that honest. See ARCHITECTURE.md. */
+/* Held at 600 whatever the window, and the coverage report is what makes that honest. See ARCHITECTURE.md#srcsourcesemscts. */
 export const SEED_LIMIT = 600;
 
 const BACKOFF_BASE_MS = 2_000;
@@ -128,7 +128,7 @@ export function parseEmscFrame(raw: unknown, receivedAt: number): EmscParsed | n
       place: typeof p?.flynn_region === "string" && p.flynn_region ? p.flynn_region : "location not given",
       kind: EVENT_TYPES[evtype] ?? (evtype || "earthquake"),
       /* The authority that computed it, which EMSC relays rather than produces: `BMKG` for Indonesia, `AK`
-         for the Alaska Earthquake Center. USGS carries the same fact under `net`. See ARCHITECTURE.md. */
+         for the Alaska Earthquake Center. USGS carries the same fact under `net`. See ARCHITECTURE.md#srcsourcesemscts. */
       ...(typeof p?.auth === "string" && p.auth.trim() !== "" ? { network: p.auth.trim() } : {}),
       receivedAt,
     },
@@ -239,7 +239,7 @@ export function createEmscSource(
       }
       if (readings.length > 0) handlers.onReadings(readings);
       /* How far back this seed actually reaches, which is not always the whole window. The request is
-         capped at SEED_LIMIT, so a full page vouches only as far as its oldest event. See ARCHITECTURE.md. */
+         capped at SEED_LIMIT, so a full page vouches only as far as its oldest event. See ARCHITECTURE.md#srcsourcesemscts. */
       const full = payload.features.length >= SEED_LIMIT;
       /*
        * A truncated page nothing could be parsed out of vouches for nothing. Falling through to the full span

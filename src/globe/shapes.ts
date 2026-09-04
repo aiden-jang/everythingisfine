@@ -1,7 +1,7 @@
 import { DEG } from "../geo/sphere";
 
 /* The glyphs, as polylines in lon/lat. Light gets colour and marks get shapes, so everything that is not an
-   earthquake is told apart by outline. See ARCHITECTURE.md. */
+   earthquake is told apart by outline. See ARCHITECTURE.md#srcglobeshapests. */
 
 export interface Point {
   lon: number;
@@ -26,7 +26,7 @@ export function spiral(lon: number, lat: number, radiusDeg = 3): Point[] {
 
 /** A volcano: the map symbol, a triangle sitting on the point rather than centred on it. On the point,
  * because a centred triangle puts half the mark in the sea for anything coastal. */
-/** Where the reader is: four ticks around a gap, pointing in. See ARCHITECTURE.md. */
+/** Where the reader is: four ticks around a gap, pointing in. See ARCHITECTURE.md#srcglobeshapests. */
 export function here(lon: number, lat: number, radiusDeg = 1.5): Point[][] {
   const stretch = stretchAt(lat);
   const gap = radiusDeg * 0.45;

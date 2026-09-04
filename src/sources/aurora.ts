@@ -1,4 +1,4 @@
-/* The aurora oval, from NOAA's OVATION model. See ARCHITECTURE.md. */
+/* The aurora oval, from NOAA's OVATION model. See ARCHITECTURE.md#srcsourcesaurorats. */
 
 /** Aurora probability on a one-degree grid, updated every few minutes. */
 const AURORA_URL = "https://services.swpc.noaa.gov/json/ovation_aurora_latest.json";
@@ -22,7 +22,7 @@ interface Payload {
   ["Forecast Time"]?: unknown;
 }
 
-/** The published grid into a raster, or null when the shape is wrong. See ARCHITECTURE.md. */
+/** The published grid into a raster, or null when the shape is wrong. See ARCHITECTURE.md#srcsourcesaurorats. */
 export function parseOvation(payload: unknown): Aurora | null {
   const body = payload as Payload | null;
   const rows = body?.coordinates;

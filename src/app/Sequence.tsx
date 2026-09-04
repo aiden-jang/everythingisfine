@@ -2,7 +2,7 @@ import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import type { Nearby } from "./nearby";
 import { MIN_AFTER, observed, reference, staircase } from "./omori";
 
-/* The pinned event inside its own sequence. See ARCHITECTURE.md. */
+/* The pinned event inside its own sequence. See ARCHITECTURE.md#srcappsequencetsx. */
 
 export interface SequenceProps {
   nearby: Nearby;

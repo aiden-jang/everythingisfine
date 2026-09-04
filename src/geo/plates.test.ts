@@ -54,7 +54,7 @@ describe("plate boundaries", () => {
 });
 
 /* The seam audit, matching the one the land mesh already had. The plate lines and the graticule cross the
-   same antimeridian and had no geometry test between them. See ARCHITECTURE.md. */
+   same antimeridian and had no geometry test between them. See ARCHITECTURE.md#srcgeoplatestestts. */
 describe("the plate geometry, at the seam and elsewhere", () => {
   const built = buildPlates();
 

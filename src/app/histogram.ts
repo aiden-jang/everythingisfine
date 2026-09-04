@@ -1,7 +1,7 @@
 import { passesMagnitude, passesSource } from "../data/filter";
 import type { Filters, Quake } from "../data/types";
 
-/* The window as 24 bars, so the globe can answer "when" as well as "where". See ARCHITECTURE.md. */
+/* The window as 24 bars, so the globe can answer "when" as well as "where". See ARCHITECTURE.md#srcapphistogramts. */
 
 /** Bars across the strip, whatever the window. Keeps the strip's geometry independent of its span. */
 export const BUCKETS = 24;

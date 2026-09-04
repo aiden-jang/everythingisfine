@@ -325,7 +325,7 @@ describe("ring buffer", () => {
   });
 });
 
-/* The failure that only shows up in a demo left running for hours. See ARCHITECTURE.md. */
+/* The failure that only shows up in a demo left running for hours. See ARCHITECTURE.md#srcdatastoretestts. */
 describe("the long session", () => {
   it("stays flat across four simulated hours", () => {
     const capacity = 1_000;

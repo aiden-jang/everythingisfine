@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-/* A draggable edge, horizontal or vertical. See ARCHITECTURE.md. */
+/* A draggable edge, horizontal or vertical. See ARCHITECTURE.md#srcappresizertsx. */
 
 export interface ResizerProps {
   axis: "x" | "y";

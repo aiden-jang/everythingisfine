@@ -72,7 +72,7 @@ function KeyRow({ glyph, note }: { glyph?: ReactNode; note: string | null }): Re
   );
 }
 
-/* The legend and the magnitude filter, which were two blocks and are one control. See ARCHITECTURE.md. */
+/* The legend and the magnitude filter, which were two blocks and are one control. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */
 
 export interface MagnitudeFilterProps {
   ramp: RampName;
@@ -127,7 +127,7 @@ export interface MagnitudeFilterProps {
   children?: JSX.Element;
   /** Whether the key below the scale is open. Held outside so it survives a reload. */
   keyOpen: boolean;
-  /** Which half to draw. See ARCHITECTURE.md. */
+  /** Which half to draw. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */
   part?: "controls" | "key";
   onKeyOpen: (open: boolean) => void;
   /** True on an archived day, which changes the tense of every layer sentence. */
@@ -328,7 +328,7 @@ export function MagnitudeFilter({
           ) : null}
 
           {/* The rings were the one mark nothing named. A ring appears when an event arrives, expands for
-          fifteen seconds and is gone, so a first-time viewer gets one look at it. See ARCHITECTURE.md. */}
+          fifteen seconds and is gone, so a first-time viewer gets one look at it. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
           {/* A spiral for a swatch, because the mark is a spiral. Light gets colour and marks get shapes, so
           this one is shape all the way down to its legend entry. */}
           {cyclones.length > 0 ? (
@@ -445,7 +445,7 @@ export function MagnitudeFilter({
           ) : null}
 
           {/* Required, not optional: a dark patch appearing on the planet with nothing naming it is the exact
-          case this panel's rule exists for. See ARCHITECTURE.md. */}
+          case this panel's rule exists for. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
           {eclipse ? (
             <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
               <span
@@ -464,7 +464,7 @@ export function MagnitudeFilter({
             </div>
           ) : null}
 
-          {/* Both rows say the fact a viewer would otherwise get wrong. See ARCHITECTURE.md. */}
+          {/* Both rows say the fact a viewer would otherwise get wrong. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
           {sky ? (
             <>
               <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">

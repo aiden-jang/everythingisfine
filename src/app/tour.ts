@@ -1,6 +1,6 @@
 import type { RegionCount } from "./regions";
 
-/* Flies the camera round the busiest regions, on request. See ARCHITECTURE.md. */
+/* Flies the camera round the busiest regions, on request. See ARCHITECTURE.md#srcapptourts. */
 
 /** Long enough to read the name and the count and look at the globe. */
 export const TOUR_DWELL_MS = 3500;

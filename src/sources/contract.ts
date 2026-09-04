@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Reading } from "../data/types";
 import type { FetchResult, GeoEventSource, Runtime, SocketLike, SourceStatus } from "./types";
 
-/* The suite every source must pass, written while there is only one source. See ARCHITECTURE.md. */
+/* The suite every source must pass, written while there is only one source. See ARCHITECTURE.md#srcsourcescontractts. */
 
 /** A clock and network the test drives by hand. Shared so both adapters are exercised identically. */
 export interface FakeRuntime extends Runtime {

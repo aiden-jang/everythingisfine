@@ -1,10 +1,10 @@
 /* Plays the last day in when the page opens, so the first thing anybody sees is the globe doing something.
-   See ARCHITECTURE.md. */
+   See ARCHITECTURE.md#srcappreplayts. */
 
 /** Long enough to read as a day passing, short enough that nobody waits through it twice. */
 export const REPLAY_SECONDS = 2.8;
 
-/** The most history the entrance will play, however much is held. See ARCHITECTURE.md. */
+/** The most history the entrance will play, however much is held. See ARCHITECTURE.md#srcappreplayts. */
 export const REPLAY_SPAN_MS = 24 * 3_600_000;
 
 /** Where the entrance should start, given the oldest thing held: the later of the buffer's start and a
@@ -15,7 +15,7 @@ export function replayFrom(oldest: number, now: number): number {
 
 /**
  * Fronts are spawned only above this magnitude during the replay. A day holds several hundred events and a
- * front for each would be noise. See ARCHITECTURE.md.
+ * front for each would be noise. See ARCHITECTURE.md#srcappreplayts.
  */
 export const REPLAY_FRONT_MIN_MAG = 5;
 

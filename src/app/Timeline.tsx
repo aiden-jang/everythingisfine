@@ -3,7 +3,7 @@ import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { peakCount, type Bar } from "./histogram";
 import { WINDOWS } from "./windows";
 
-/* The window as a strip of bars, with the transport under it. See ARCHITECTURE.md. */
+/* The window as a strip of bars, with the transport under it. See ARCHITECTURE.md#srcapptimelinetsx. */
 
 export interface TimelineProps {
   bars: Bar[];
@@ -83,7 +83,7 @@ const bucketAgo = (bucketsAgo: number, bucketMs: number): string => {
   return h >= 48 ? `${Math.round(h / 24)}d ago` : `${h}h ago`;
 };
 
-/** What one bucket is, named the way `bucketAgo` names a distance. See ARCHITECTURE.md. */
+/** What one bucket is, named the way `bucketAgo` names a distance. See ARCHITECTURE.md#srcapptimelinetsx. */
 const bucketUnit = (bucketMs: number): { one: string; many: string } => {
   const h = Math.round(bucketMs / HOUR_MS);
   if (h <= 1) return { one: "hour", many: "hours" };
@@ -129,7 +129,7 @@ export function Timeline({
   const held = focusHour === null ? null : (bars.find((b) => b.bucketsAgo === focusHour) ?? null);
   const unit = bucketUnit(bucketMs);
 
-  /* The bars are real buttons, so holding an hour is not mouse-only. See ARCHITECTURE.md. */
+  /* The bars are real buttons, so holding an hour is not mouse-only. See ARCHITECTURE.md#srcapptimelinetsx. */
   const [barAt, setBarAt] = useState(0);
   const barRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const focusBar = (index: number): void => {
@@ -294,7 +294,7 @@ export function Timeline({
           ))}
         </div>
 
-        {/* The notable events, over the bars they belong to. See ARCHITECTURE.md. */}
+        {/* The notable events, over the bars they belong to. See ARCHITECTURE.md#srcapptimelinetsx. */}
         {notable.map((bar) => (
           <span
             key={bar.lead!.key}
@@ -332,7 +332,7 @@ export function Timeline({
         <span>{archived ? "day end" : "now"}</span>
       </div>
 
-      {/* How far back each feed reaches, against the axis above it. See ARCHITECTURE.md. */}
+      {/* How far back each feed reaches, against the axis above it. See ARCHITECTURE.md#srcapptimelinetsx. */}
       {/* Folded: provenance, not a control. Opened, still tight to the axis it measures. */}
       {reaches.length > 0 ? (
         <details className="mt-1">

@@ -1,4 +1,4 @@
-/* A scale bar on the map, and the reason it has to name a latitude. See ARCHITECTURE.md. */
+/* A scale bar on the map, and the reason it has to name a latitude. See ARCHITECTURE.md#srcglobescalets. */
 
 /** Kilometres in one degree of latitude, from the mean Earth radius. Mean rather than equatorial: the
  * difference is 0.3 percent, well inside the rounding a scale bar does anyway. */
@@ -6,7 +6,7 @@ export const KM_PER_DEGREE = (Math.PI * 6371) / 180;
 
 /**
  * The lengths a bar is allowed to be. A bar reading "1,483 km" is a measurement and a scale bar is a
- * ruler: the reader halves it by eye, so it has to be a number that halves. See ARCHITECTURE.md.
+ * ruler: the reader halves it by eye, so it has to be a number that halves. See ARCHITECTURE.md#srcglobescalets.
  */
 const STEPS = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10_000] as const;
 
@@ -29,7 +29,7 @@ export function niceScale(kmPerPx: number, targetPx: number): ScaleBar | null {
     if (Math.abs(Math.log(step / wanted)) < Math.abs(Math.log(best / wanted))) best = step;
   }
   const px = best / kmPerPx;
-  /* Nothing rather than nonsense, when the table cannot reach the view. See ARCHITECTURE.md. */
+  /* Nothing rather than nonsense, when the table cannot reach the view. See ARCHITECTURE.md#srcglobescalets. */
   if (px > targetPx * 8 || px < targetPx / 8) return null;
   return { km: best, px };
 }

@@ -62,7 +62,7 @@ describe("deriving the hole's depth from the sink", () => {
   });
 
   it("settles the one case they disagreed on, in favour of the stricter rule", () => {
-    /* A finite depth below the planet's own radius is not a reading. See ARCHITECTURE.md. */
+    /* A finite depth below the planet's own radius is not a reading. See ARCHITECTURE.md#srcglobesinktestts. */
     const absurd = EARTH_RADIUS_KM + 1;
     expect(old(absurd)).toBe(1);
     expect(derived(absurd)).toBe(0);

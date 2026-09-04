@@ -3,7 +3,7 @@ import { moonPosition, moonRadii, MOON_RADIUS_KM } from "./moon";
 import { subsolarPoint } from "./sun";
 
 /* Where the moon's shadow falls on the Earth. Nothing new is measured: the sun's direction and the moon's
-   position are both already on screen, and an eclipse is those two multiplied. See ARCHITECTURE.md. */
+   position are both already on screen, and an eclipse is those two multiplied. See ARCHITECTURE.md#srcgeoeclipsets. */
 
 /** Mean Earth-sun distance in globe radii. The 1.7% annual variation moves the umbra by under a km. */
 const SUN_DISTANCE = 149_597_870 / EARTH_RADIUS_KM;

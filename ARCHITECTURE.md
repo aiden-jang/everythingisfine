@@ -6901,132 +6901,132 @@ the sentence that stops somebody undoing a decision, and points at this appendix
 Find an entry by the sentence still in the code: the headings are per file, and each note is titled with
 the line the code kept.
 
-**Files below**, and how many notes each carries:
+**Files below.** Each is linked from the code by a `See ARCHITECTURE.md#anchor` note.
 
-- [e2e/design.spec.ts](#e2edesignspects) &mdash; 4
-- [e2e/feeds.ts](#e2efeedsts) &mdash; 7
-- [e2e/interaction.spec.ts](#e2einteractionspects) &mdash; 9
-- [src/App.tsx](#srcapptsx) &mdash; 18
-- [src/app/CrossSection.tsx](#srcappcrosssectiontsx) &mdash; 2
-- [src/app/DetailPanel.tsx](#srcappdetailpaneltsx) &mdash; 9
-- [src/app/Dial.tsx](#srcappdialtsx) &mdash; 1
-- [src/app/EventList.tsx](#srcappeventlisttsx) &mdash; 4
-- [src/app/MagnitudeFilter.tsx](#srcappmagnitudefiltertsx) &mdash; 8
-- [src/app/MarkCard.tsx](#srcappmarkcardtsx) &mdash; 2
-- [src/app/Resizer.tsx](#srcappresizertsx) &mdash; 1
-- [src/app/Sequence.tsx](#srcappsequencetsx) &mdash; 1
-- [src/app/Sizes.tsx](#srcappsizestsx) &mdash; 1
-- [src/app/Timeline.tsx](#srcapptimelinetsx) &mdash; 6
-- [src/app/age.ts](#srcappagets) &mdash; 1
-- [src/app/announce.ts](#srcappannouncets) &mdash; 2
-- [src/app/arrival.ts](#srcapparrivalts) &mdash; 3
-- [src/app/day.ts](#srcappdayts) &mdash; 2
-- [src/app/diurnal.ts](#srcappdiurnalts) &mdash; 2
-- [src/app/eclipseDays.test.ts](#srcappeclipsedaystestts) &mdash; 1
-- [src/app/eclipseDays.ts](#srcappeclipsedaysts) &mdash; 1
-- [src/app/feed.test.ts](#srcappfeedtestts) &mdash; 1
-- [src/app/feed.ts](#srcappfeedts) &mdash; 8
-- [src/app/felt.test.ts](#srcappfelttestts) &mdash; 1
-- [src/app/format.ts](#srcappformatts) &mdash; 1
-- [src/app/gutenberg.ts](#srcappgutenbergts) &mdash; 1
-- [src/app/hazards.ts](#srcapphazardsts) &mdash; 1
-- [src/app/histogram.ts](#srcapphistogramts) &mdash; 2
-- [src/app/marks.ts](#srcappmarksts) &mdash; 3
-- [src/app/nearby.perf.test.ts](#srcappnearbyperftestts) &mdash; 2
-- [src/app/nearby.ts](#srcappnearbyts) &mdash; 4
-- [src/app/notableDays.live.test.ts](#srcappnotabledayslivetestts) &mdash; 1
-- [src/app/notableDays.ts](#srcappnotabledaysts) &mdash; 2
-- [src/app/omori.ts](#srcappomorits) &mdash; 2
-- [src/app/permalink.test.ts](#srcapppermalinktestts) &mdash; 1
-- [src/app/permalink.ts](#srcapppermalinkts) &mdash; 2
-- [src/app/regions.ts](#srcappregionsts) &mdash; 2
-- [src/app/replay.test.ts](#srcappreplaytestts) &mdash; 1
-- [src/app/replay.ts](#srcappreplayts) &mdash; 3
-- [src/app/roll.ts](#srcapprollts) &mdash; 3
-- [src/app/scrub.ts](#srcappscrubts) &mdash; 3
-- [src/app/search.test.ts](#srcappsearchtestts) &mdash; 1
-- [src/app/search.ts](#srcappsearchts) &mdash; 1
-- [src/app/section.test.ts](#srcappsectiontestts) &mdash; 1
-- [src/app/section.ts](#srcappsectionts) &mdash; 5
-- [src/app/sound.ts](#srcappsoundts) &mdash; 1
-- [src/app/still.ts](#srcappstillts) &mdash; 5
-- [src/app/stored.ts](#srcappstoredts) &mdash; 1
-- [src/app/superlative.ts](#srcappsuperlativets) &mdash; 2
-- [src/app/touch.ts](#srcapptouchts) &mdash; 1
-- [src/app/tour.ts](#srcapptourts) &mdash; 1
-- [src/app/useNarrow.ts](#srcappusenarrowts) &mdash; 2
-- [src/app/versus.ts](#srcappversusts) &mdash; 1
-- [src/app/viewer.ts](#srcappviewerts) &mdash; 1
-- [src/app/windows.ts](#srcappwindowsts) &mdash; 2
-- [src/data/baseline.ts](#srcdatabaselinets) &mdash; 1
-- [src/data/depth.ts](#srcdatadepthts) &mdash; 1
-- [src/data/filter.test.ts](#srcdatafiltertestts) &mdash; 1
-- [src/data/filter.ts](#srcdatafilterts) &mdash; 1
-- [src/data/fixtures.ts](#srcdatafixturests) &mdash; 1
-- [src/data/reconcile.test.ts](#srcdatareconciletestts) &mdash; 1
-- [src/data/reconcile.ts](#srcdatareconcilets) &mdash; 4
-- [src/data/store.test.ts](#srcdatastoretestts) &mdash; 2
-- [src/data/store.ts](#srcdatastorets) &mdash; 1
-- [src/data/types.ts](#srcdatatypests) &mdash; 6
-- [src/geo/antipode.ts](#srcgeoantipodets) &mdash; 1
-- [src/geo/boundaryDistance.test.ts](#srcgeoboundarydistancetestts) &mdash; 2
-- [src/geo/boundaryDistance.ts](#srcgeoboundarydistancets) &mdash; 2
-- [src/geo/eclipse.test.ts](#srcgeoeclipsetestts) &mdash; 3
-- [src/geo/eclipse.ts](#srcgeoeclipsets) &mdash; 2
-- [src/geo/figures.test.ts](#srcgeofigurestestts) &mdash; 1
-- [src/geo/land.test.ts](#srcgeolandtestts) &mdash; 2
-- [src/geo/land.ts](#srcgeolandts) &mdash; 8
-- [src/geo/moon.test.ts](#srcgeomoontestts) &mdash; 2
-- [src/geo/moon.ts](#srcgeomoonts) &mdash; 1
-- [src/geo/planets.test.ts](#srcgeoplanetstestts) &mdash; 1
-- [src/geo/planets.ts](#srcgeoplanetsts) &mdash; 1
-- [src/geo/plateMotion.ts](#srcgeoplatemotionts) &mdash; 1
-- [src/geo/plates.test.ts](#srcgeoplatestestts) &mdash; 1
-- [src/geo/plates.ts](#srcgeoplatests) &mdash; 3
-- [src/geo/slab.test.ts](#srcgeoslabtestts) &mdash; 2
-- [src/geo/slab.ts](#srcgeoslabts) &mdash; 1
-- [src/geo/sphere.test.ts](#srcgeospheretestts) &mdash; 1
-- [src/geo/sphere.ts](#srcgeospherets) &mdash; 3
-- [src/geo/stars.test.ts](#srcgeostarstestts) &mdash; 1
-- [src/geo/stars.ts](#srcgeostarsts) &mdash; 2
-- [src/geo/sun.ts](#srcgeosunts) &mdash; 3
-- [src/geo/waves.ts](#srcgeowavests) &mdash; 2
-- [src/globe/Globe.tsx](#srcglobeglobetsx) &mdash; 5
-- [src/globe/auroraTexture.ts](#srcglobeauroratexturets) &mdash; 1
-- [src/globe/cluster.ts](#srcglobeclusterts) &mdash; 2
-- [src/globe/controls.ts](#srcglobecontrolsts) &mdash; 6
-- [src/globe/events.perf.test.ts](#srcglobeeventsperftestts) &mdash; 6
-- [src/globe/events.ts](#srcglobeeventsts) &mdash; 12
-- [src/globe/figures.ts](#srcglobefigurests) &mdash; 2
-- [src/globe/marks.ts](#srcglobemarksts) &mdash; 3
-- [src/globe/moon.ts](#srcglobemoonts) &mdash; 3
-- [src/globe/morph.ts](#srcglobemorphts) &mdash; 6
-- [src/globe/planets.ts](#srcglobeplanetsts) &mdash; 1
-- [src/globe/ramp.ts](#srcgloberampts) &mdash; 1
-- [src/globe/rings.ts](#srcgloberingsts) &mdash; 1
-- [src/globe/scale.ts](#srcglobescalets) &mdash; 3
-- [src/globe/scene.ts](#srcglobescenets) &mdash; 15
-- [src/globe/shapes.ts](#srcglobeshapests) &mdash; 2
-- [src/globe/sink.test.ts](#srcglobesinktestts) &mdash; 2
-- [src/globe/sky.ts](#srcglobeskyts) &mdash; 2
-- [src/globe/slab.ts](#srcglobeslabts) &mdash; 3
-- [src/globe/starfield.ts](#srcglobestarfieldts) &mdash; 2
-- [src/sources/archive.ts](#srcsourcesarchivets) &mdash; 2
-- [src/sources/aurora.ts](#srcsourcesaurorats) &mdash; 2
-- [src/sources/contract.ts](#srcsourcescontractts) &mdash; 2
-- [src/sources/cyclones.ts](#srcsourcescyclonests) &mdash; 3
-- [src/sources/emsc.live.test.ts](#srcsourcesemsclivetestts) &mdash; 3
-- [src/sources/emsc.test.ts](#srcsourcesemsctestts) &mdash; 1
-- [src/sources/emsc.ts](#srcsourcesemscts) &mdash; 5
-- [src/sources/floods.ts](#srcsourcesfloodsts) &mdash; 1
-- [src/sources/gdacs.ts](#srcsourcesgdacsts) &mdash; 3
-- [src/sources/history.live.test.ts](#srcsourceshistorylivetestts) &mdash; 1
-- [src/sources/history.ts](#srcsourceshistoryts) &mdash; 2
-- [src/sources/types.ts](#srcsourcestypests) &mdash; 1
-- [src/sources/usgs.live.test.ts](#srcsourcesusgslivetestts) &mdash; 1
-- [src/sources/usgs.ts](#srcsourcesusgsts) &mdash; 5
-- [src/sources/volcanoes.ts](#srcsourcesvolcanoests) &mdash; 1
-- [src/sources/wildfires.ts](#srcsourceswildfirests) &mdash; 1
+- [e2e/design.spec.ts](#e2edesignspects)
+- [e2e/feeds.ts](#e2efeedsts)
+- [e2e/interaction.spec.ts](#e2einteractionspects)
+- [src/App.tsx](#srcapptsx)
+- [src/app/CrossSection.tsx](#srcappcrosssectiontsx)
+- [src/app/DetailPanel.tsx](#srcappdetailpaneltsx)
+- [src/app/Dial.tsx](#srcappdialtsx)
+- [src/app/EventList.tsx](#srcappeventlisttsx)
+- [src/app/MagnitudeFilter.tsx](#srcappmagnitudefiltertsx)
+- [src/app/MarkCard.tsx](#srcappmarkcardtsx)
+- [src/app/Resizer.tsx](#srcappresizertsx)
+- [src/app/Sequence.tsx](#srcappsequencetsx)
+- [src/app/Sizes.tsx](#srcappsizestsx)
+- [src/app/Timeline.tsx](#srcapptimelinetsx)
+- [src/app/age.ts](#srcappagets)
+- [src/app/announce.ts](#srcappannouncets)
+- [src/app/arrival.ts](#srcapparrivalts)
+- [src/app/day.ts](#srcappdayts)
+- [src/app/diurnal.ts](#srcappdiurnalts)
+- [src/app/eclipseDays.test.ts](#srcappeclipsedaystestts)
+- [src/app/eclipseDays.ts](#srcappeclipsedaysts)
+- [src/app/feed.test.ts](#srcappfeedtestts)
+- [src/app/feed.ts](#srcappfeedts)
+- [src/app/felt.test.ts](#srcappfelttestts)
+- [src/app/format.ts](#srcappformatts)
+- [src/app/gutenberg.ts](#srcappgutenbergts)
+- [src/app/hazards.ts](#srcapphazardsts)
+- [src/app/histogram.ts](#srcapphistogramts)
+- [src/app/marks.ts](#srcappmarksts)
+- [src/app/nearby.perf.test.ts](#srcappnearbyperftestts)
+- [src/app/nearby.ts](#srcappnearbyts)
+- [src/app/notableDays.live.test.ts](#srcappnotabledayslivetestts)
+- [src/app/notableDays.ts](#srcappnotabledaysts)
+- [src/app/omori.ts](#srcappomorits)
+- [src/app/permalink.test.ts](#srcapppermalinktestts)
+- [src/app/permalink.ts](#srcapppermalinkts)
+- [src/app/regions.ts](#srcappregionsts)
+- [src/app/replay.test.ts](#srcappreplaytestts)
+- [src/app/replay.ts](#srcappreplayts)
+- [src/app/roll.ts](#srcapprollts)
+- [src/app/scrub.ts](#srcappscrubts)
+- [src/app/search.test.ts](#srcappsearchtestts)
+- [src/app/search.ts](#srcappsearchts)
+- [src/app/section.test.ts](#srcappsectiontestts)
+- [src/app/section.ts](#srcappsectionts)
+- [src/app/sound.ts](#srcappsoundts)
+- [src/app/still.ts](#srcappstillts)
+- [src/app/stored.ts](#srcappstoredts)
+- [src/app/superlative.ts](#srcappsuperlativets)
+- [src/app/touch.ts](#srcapptouchts)
+- [src/app/tour.ts](#srcapptourts)
+- [src/app/useNarrow.ts](#srcappusenarrowts)
+- [src/app/versus.ts](#srcappversusts)
+- [src/app/viewer.ts](#srcappviewerts)
+- [src/app/windows.ts](#srcappwindowsts)
+- [src/data/baseline.ts](#srcdatabaselinets)
+- [src/data/depth.ts](#srcdatadepthts)
+- [src/data/filter.test.ts](#srcdatafiltertestts)
+- [src/data/filter.ts](#srcdatafilterts)
+- [src/data/fixtures.ts](#srcdatafixturests)
+- [src/data/reconcile.test.ts](#srcdatareconciletestts)
+- [src/data/reconcile.ts](#srcdatareconcilets)
+- [src/data/store.test.ts](#srcdatastoretestts)
+- [src/data/store.ts](#srcdatastorets)
+- [src/data/types.ts](#srcdatatypests)
+- [src/geo/antipode.ts](#srcgeoantipodets)
+- [src/geo/boundaryDistance.test.ts](#srcgeoboundarydistancetestts)
+- [src/geo/boundaryDistance.ts](#srcgeoboundarydistancets)
+- [src/geo/eclipse.test.ts](#srcgeoeclipsetestts)
+- [src/geo/eclipse.ts](#srcgeoeclipsets)
+- [src/geo/figures.test.ts](#srcgeofigurestestts)
+- [src/geo/land.test.ts](#srcgeolandtestts)
+- [src/geo/land.ts](#srcgeolandts)
+- [src/geo/moon.test.ts](#srcgeomoontestts)
+- [src/geo/moon.ts](#srcgeomoonts)
+- [src/geo/planets.test.ts](#srcgeoplanetstestts)
+- [src/geo/planets.ts](#srcgeoplanetsts)
+- [src/geo/plateMotion.ts](#srcgeoplatemotionts)
+- [src/geo/plates.test.ts](#srcgeoplatestestts)
+- [src/geo/plates.ts](#srcgeoplatests)
+- [src/geo/slab.test.ts](#srcgeoslabtestts)
+- [src/geo/slab.ts](#srcgeoslabts)
+- [src/geo/sphere.test.ts](#srcgeospheretestts)
+- [src/geo/sphere.ts](#srcgeospherets)
+- [src/geo/stars.test.ts](#srcgeostarstestts)
+- [src/geo/stars.ts](#srcgeostarsts)
+- [src/geo/sun.ts](#srcgeosunts)
+- [src/geo/waves.ts](#srcgeowavests)
+- [src/globe/Globe.tsx](#srcglobeglobetsx)
+- [src/globe/auroraTexture.ts](#srcglobeauroratexturets)
+- [src/globe/cluster.ts](#srcglobeclusterts)
+- [src/globe/controls.ts](#srcglobecontrolsts)
+- [src/globe/events.perf.test.ts](#srcglobeeventsperftestts)
+- [src/globe/events.ts](#srcglobeeventsts)
+- [src/globe/figures.ts](#srcglobefigurests)
+- [src/globe/marks.ts](#srcglobemarksts)
+- [src/globe/moon.ts](#srcglobemoonts)
+- [src/globe/morph.ts](#srcglobemorphts)
+- [src/globe/planets.ts](#srcglobeplanetsts)
+- [src/globe/ramp.ts](#srcgloberampts)
+- [src/globe/rings.ts](#srcgloberingsts)
+- [src/globe/scale.ts](#srcglobescalets)
+- [src/globe/scene.ts](#srcglobescenets)
+- [src/globe/shapes.ts](#srcglobeshapests)
+- [src/globe/sink.test.ts](#srcglobesinktestts)
+- [src/globe/sky.ts](#srcglobeskyts)
+- [src/globe/slab.ts](#srcglobeslabts)
+- [src/globe/starfield.ts](#srcglobestarfieldts)
+- [src/sources/archive.ts](#srcsourcesarchivets)
+- [src/sources/aurora.ts](#srcsourcesaurorats)
+- [src/sources/contract.ts](#srcsourcescontractts)
+- [src/sources/cyclones.ts](#srcsourcescyclonests)
+- [src/sources/emsc.live.test.ts](#srcsourcesemsclivetestts)
+- [src/sources/emsc.test.ts](#srcsourcesemsctestts)
+- [src/sources/emsc.ts](#srcsourcesemscts)
+- [src/sources/floods.ts](#srcsourcesfloodsts)
+- [src/sources/gdacs.ts](#srcsourcesgdacsts)
+- [src/sources/history.live.test.ts](#srcsourceshistorylivetestts)
+- [src/sources/history.ts](#srcsourceshistoryts)
+- [src/sources/types.ts](#srcsourcestypests)
+- [src/sources/usgs.live.test.ts](#srcsourcesusgslivetestts)
+- [src/sources/usgs.ts](#srcsourcesusgsts)
+- [src/sources/volcanoes.ts](#srcsourcesvolcanoests)
+- [src/sources/wildfires.ts](#srcsourceswildfirests)
 
 
 ### e2e/design.spec.ts

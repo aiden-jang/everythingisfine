@@ -307,7 +307,7 @@ export function wildfireNote(
   );
 }
 
-/** GDACS files every flood as severity 0, so nothing ranks them. See ARCHITECTURE.md. */
+/** GDACS files every flood as severity 0, so nothing ranks them. See ARCHITECTURE.md#srcappformatts. */
 export function floodNote(count: number, countries: number, archived = false): string | null {
   if (count === 0) return null;
   const where = countries > 1 ? ` across ${countries} countries` : "";

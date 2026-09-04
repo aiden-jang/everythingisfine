@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { graticule, spanDeg, toVec3 } from "./sphere";
 
-/* The graticule, which had no test of any kind. See ARCHITECTURE.md. */
+/* The graticule, which had no test of any kind. See ARCHITECTURE.md#srcgeospheretestts. */
 
 const RADIUS = 1.002;
 

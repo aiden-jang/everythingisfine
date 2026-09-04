@@ -1,12 +1,12 @@
 import { BufferAttribute } from "three";
 import type { BufferGeometry, Material, WebGLProgramParametersWithUniforms } from "three";
 
-/* Globe to map, as one geometry. See ARCHITECTURE.md. */
+/* Globe to map, as one geometry. See ARCHITECTURE.md#srcglobemorphts. */
 
 /** Half-width of the map, in the same units as the globe's radius. Equirectangular is 2:1. */
 export const MAP_HALF_WIDTH = 2;
 
-/** How much of a layer's radial lift survives on the flat map. See ARCHITECTURE.md. */
+/** How much of a layer's radial lift survives on the flat map. See ARCHITECTURE.md#srcglobemorphts. */
 const MAP_LAYER_LIFT = 0.2;
 
 /**
@@ -23,7 +23,7 @@ export const MORPH_GLSL = /* glsl */ `
   vec3 fmProject(vec3 sphere) {
     /* The plane comes from the attribute, never from the position. Never recover longitude with atan2.
        Densifying emits longitudes past 180 and earcut triangulates there, so atan2 folds 180.5 to -179.5
-       and a two-degree triangle spans the world. See ARCHITECTURE.md. */
+       and a two-degree triangle spans the world. See ARCHITECTURE.md#srcglobemorphts. */
     float r = length(sphere);
     vec3 plane = vec3(
       aLonLat.x / 180.0 * ${MAP_HALF_WIDTH.toFixed(1)},
@@ -36,7 +36,7 @@ export const MORPH_GLSL = /* glsl */ `
 
 /**
  * Which copies of the map intersect the view, as inclusive integer offsets. Two most of the time, one when
- * zoomed in, three when the whole world plus both edges is on screen. See ARCHITECTURE.md.
+ * zoomed in, three when the whole world plus both edges is on screen. See ARCHITECTURE.md#srcglobemorphts.
  */
 export function visibleCopies(cameraX: number, halfWidth: number): { first: number; last: number } {
   /*
@@ -67,7 +67,7 @@ export function attachLonLat(geometry: BufferGeometry): void {
     out[v * 2 + 1] = (Math.asin(y / r) * 180) / Math.PI;
   }
 
-  /* The pole fans collapse, so the map gets a straight edge. See ARCHITECTURE.md. */
+  /* The pole fans collapse, so the map gets a straight edge. See ARCHITECTURE.md#srcglobemorphts. */
   let ring = 0;
   for (let v = 0; v < position.count; v += 1) {
     const lat = Math.abs(out[v * 2 + 1]!);

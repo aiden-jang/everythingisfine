@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-/** Whether a media query matches, kept current. See ARCHITECTURE.md. */
+/** Whether a media query matches, kept current. See ARCHITECTURE.md#srcappusenarrowts. */
 function useMedia(query: string): boolean {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
   useEffect(() => {
