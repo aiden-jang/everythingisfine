@@ -110,3 +110,28 @@ whether the world still looks the way the fixtures say it does.
 `App.tsx`, `Globe.tsx`, `scene.ts` and `controls.ts` are all far over the ceiling and listed as such.
 `App.tsx` is the one worth chipping at: it still holds most of the app's state, and the way through is to
 lift a cohesive cluster into a hook, ratchet its entry down, and leave the rest alone.
+
+## How the code is commented
+
+A comment here is a warning, not an essay. The bar is whether it records something that would cost
+somebody real time to rediscover: a trap that has actually bitten, a deviation from the code around
+it, a constraint that fails silently when broken, or why not the obvious alternative.
+
+Everything else went, and in the last pass that became literal: every block that ran past a warning
+into an explanation was cut back to its opening sentence plus its hazard, and the explanation moved to
+[the appendix in ARCHITECTURE.md](ARCHITECTURE.md). The code keeps the sentence that stops somebody
+undoing a decision and points at the appendix for why - findable by that same sentence.
+
+What survives reads like a note over your shoulder - hazard first, imperative, one idea per sentence:
+
+- *Never recover longitude with `atan2`. At a pole longitude does not exist, `atan2(0, 0)` is zero,
+  and every meridian gets dragged onto the prime meridian.*
+- *Evict by arrival order, never by origin time. With no backend the window really does start when
+  the page loads, which is why the rail says "since 21:40".*
+- *No backticks anywhere in this file's shaders. One ends the template literal, and the error lands
+  twenty lines from the comment that caused it.*
+
+Three passes: 13,190 lines, then about 7,600, now about 4,700. The last one fixed four faults - a
+comment that had drifted away from the code it described, two or three piled above one line, a docstring
+that restated the signature under it - and then moved 331 blocks of reasoning, about 2,100 lines, out to
+the appendix. Nothing was deleted in that move; it is one file further away and in one place.
