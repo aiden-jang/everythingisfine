@@ -19,7 +19,7 @@
     "deploy": "pnpm build && wrangler deploy",
     "test": "vitest run",
     "test:heap": "NODE_OPTIONS=--expose-gc vitest run --pool=forks",
-    "test:live": "EIF_LIVE=1 vitest run src/sources/usgs.live.test.ts src/sources/emsc.live.test.ts",
+    "test:live": "EIF_LIVE=1 vitest run live.test",
     "test:e2e": "playwright test",
     "test:e2e:build": "EIF_BUILD=1 playwright test",
     "card": "node tools/make-card.mjs"
