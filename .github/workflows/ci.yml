@@ -20,6 +20,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run gates
       - run: pnpm run size
+      - run: pnpm run comments
       - run: pnpm run docs
       - run: pnpm run typecheck
       - run: pnpm run lint
