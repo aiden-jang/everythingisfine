@@ -95,7 +95,6 @@ export function eclipseAt(centre: readonly [number, number, number]): { lon: num
  * and the numbers come out completely differently - the Earth's umbra is 0.72 radii wide where the moon
  * crosses it and the moon is 0.27 across, which is why a total lunar eclipse lasts an hour.
  */
-
 export interface LunarEclipse {
   /** How much of the moon's face is inside the umbra: 0 clear, 1 wholly swallowed. */
   umbral: number;
