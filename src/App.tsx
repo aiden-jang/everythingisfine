@@ -1689,8 +1689,8 @@ export function App(): JSX.Element {
           aria-label="Show the top bar"
           aria-expanded={false}
           aria-controls="chrome-head"
-          className="absolute top-3 right-4 z-[3] cursor-pointer bg-deck/40 px-2 py-1 font-mono
-            text-[11px] leading-none text-faint backdrop-blur-xl backdrop-saturate-50
+          className="absolute top-3 right-4 z-[3] cursor-pointer bg-deck/60 px-2.5 py-2 font-mono
+            text-[15px] leading-none text-dim backdrop-blur-xl backdrop-saturate-50
             transition-colors hover:text-ink"
         >
           &#8964;
