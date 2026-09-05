@@ -60,8 +60,9 @@ if (/^- \[[\w/.-]+\]\(#[\w-]+\) &mdash;/m.test(doc)) {
  * name would have broken, a file in somebody else's repository, and a path inside a dependency. Asking a
  * record of what happened to resolve against what exists today is asking it to stop being a record.
  */
+/* AGENTS.md is a symlink to CLAUDE.md, so listing it would report every problem twice. */
 const LIVE = globSync("*.md").filter(
-  (f) => !/^(ARCHITECTURE|RECONCILIATION)\.md$/.test(f) && !f.endsWith(".local.md"),
+  (f) => !/^(ARCHITECTURE|RECONCILIATION|AGENTS)\.md$/.test(f) && !f.endsWith(".local.md"),
 );
 
 const onDisk = globSync("{src,e2e,tools,public,.github}/**/*", { withFileTypes: true })
