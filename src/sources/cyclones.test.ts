@@ -202,7 +202,7 @@ describe("naming the strength", () => {
     expect(category(111)).toBe("tropical storm");
   });
 
-  /* Every rung, from both sides. Two of the five were never named, so either could move unnoticed. */
+  /* Every rung, from both sides, or a threshold can move without anything noticing. */
   it("puts each boundary on the right side of itself", () => {
     const rungs: [number, string][] = [
       [63, "tropical storm"],
