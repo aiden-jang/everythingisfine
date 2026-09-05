@@ -21,6 +21,7 @@ jobs:
       - run: pnpm run gates
       - run: pnpm run size
       - run: pnpm run comments
+      - run: pnpm run css-vars
       - run: pnpm run docs
       - run: pnpm run typecheck
       - run: pnpm run lint
