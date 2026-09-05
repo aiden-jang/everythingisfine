@@ -16,7 +16,7 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "verify": "pnpm run gates && pnpm run size && pnpm run comments && pnpm run css-vars && pnpm run docs && pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run test:heap && pnpm run build && pnpm run test:e2e",
+    "verify": "pnpm run gates && pnpm run size && pnpm run comments && pnpm run css-vars && pnpm run docs && pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run test:heap && pnpm run build && pnpm run dead-classes && pnpm run test:e2e",
     "deploy": "pnpm build && wrangler deploy",
     "test": "vitest run",
     "test:heap": "NODE_OPTIONS=--expose-gc vitest run --pool=forks",
@@ -24,7 +24,8 @@
     "test:e2e": "playwright test",
     "test:e2e:build": "EIF_BUILD=1 playwright test",
     "card": "node tools/make-card.mjs",
-    "css-vars": "node tools/check-css-vars.mjs"
+    "css-vars": "node tools/check-css-vars.mjs",
+    "dead-classes": "node tools/dead-classes.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.5",
