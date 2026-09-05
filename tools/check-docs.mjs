@@ -8,6 +8,7 @@
  * A pointer nobody checks is how a document nobody trusts gets written.
  */
 import { globSync, readFileSync } from "node:fs";
+import { report } from "./gate.mjs";
 
 const DOC = "ARCHITECTURE.md";
 const doc = readFileSync(DOC, "utf8");
@@ -112,12 +113,7 @@ for (const doc of LIVE) {
     });
 }
 
-if (problems.length > 0) {
-  console.error("docs check failed:\n");
-  for (const p of [...new Set(problems)]) console.error(`  ${p}`);
-  console.error("");
-  process.exit(1);
-}
+report("docs", problems);
 
 console.log(
   `docs ok: ${LIVE.length} live docs resolve, and every note names a section of ${DOC} that exists`,

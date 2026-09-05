@@ -1,13 +1,11 @@
 /*
  * One rule matters here, and the rest is there to keep it honest.
  *
- * owewell shipped a `useEffect` below a component's early returns. The first render bailed out before
- * reaching it and the next render ran one hook more, which is React error #310, and it took out every
- * group page the instant its data arrived. Typecheck, build and the whole suite stayed green. Nothing
- * but a static rule sees that.
+ * A `useEffect` below a component's early returns took out every page of a sibling app: the first render
+ * bailed before reaching it and the next ran one hook more. Typecheck, build and the whole suite stayed
+ * green throughout. Nothing but a static rule sees that.
  *
- * This app is Preact, and `preact/hooks` has the same contract and the same failure. `App.tsx` alone
- * holds dozens of hooks across dozens of effects, which is where that bug lives.
+ * `preact/hooks` has the same contract and the same failure, so the rule belongs here too.
  */
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";

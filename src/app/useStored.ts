@@ -9,23 +9,27 @@ import { store, stored } from "./stored";
  * fires on mount and saves the default as though somebody had chosen it, which quietly freezes every
  * viewer on whatever the default was the day they first opened the page.
  */
-function useSaved<T>(initial: () => T, save: (value: T) => void): [T, Dispatch<SetStateAction<T>>] {
+function useSaved<T>(
+  key: string,
+  initial: () => T,
+  encode: (value: T) => string,
+): [T, Dispatch<SetStateAction<T>>] {
   const [value, setValue] = useState(initial);
   const mounted = useRef(false);
-  const latest = useRef(save);
-  // Assigned in an effect, not during render, and declared first so it lands before the one below.
-  useEffect(() => {
-    latest.current = save;
-  });
   useEffect(() => {
     if (!mounted.current) {
       mounted.current = true;
       return;
     }
-    latest.current(value);
-  }, [value]);
+    store(key, encode(value));
+  }, [key, encode, value]);
   return [value, setValue];
 }
+
+/* Module scope, so each is the same function on every render and the effect above can name it. */
+const asFlag = (on: boolean): string => (on ? "1" : "0");
+const asNumber = (n: number): string => String(n);
+const asName = (name: string): string => name;
 
 /** A switch. `whenUnset` is what it means for the preference never to have been written. */
 export function useStoredFlag(
@@ -33,10 +37,7 @@ export function useStoredFlag(
   whenUnset: boolean,
   override?: boolean,
 ): [boolean, Dispatch<SetStateAction<boolean>>] {
-  return useSaved(
-    () => override ?? (whenUnset ? stored(key) !== "0" : stored(key) === "1"),
-    (on) => store(key, on ? "1" : "0"),
-  );
+  return useSaved(key, () => override ?? (whenUnset ? stored(key) !== "0" : stored(key) === "1"), asFlag);
 }
 
 /** A measurement. `bound` is applied on the way in as well, so a stored value out of range comes back inside it. */
@@ -45,10 +46,7 @@ export function useStoredNumber(
   fallback: number,
   bound: (n: number) => number = (n) => n,
 ): [number, Dispatch<SetStateAction<number>>] {
-  return useSaved(
-    () => bound(Number(stored(key)) || fallback),
-    (n) => store(key, String(n)),
-  );
+  return useSaved(key, () => bound(Number(stored(key)) || fallback), asNumber);
 }
 
 /** One of a fixed set of names, such as a colour ramp. */
@@ -57,8 +55,5 @@ export function useStoredName<T extends string>(
   fallback: T,
   override?: T,
 ): [T, Dispatch<SetStateAction<T>>] {
-  return useSaved(
-    () => override ?? (stored(key) as T | null) ?? fallback,
-    (name) => store(key, name),
-  );
+  return useSaved(key, () => override ?? (stored(key) as T | null) ?? fallback, asName);
 }

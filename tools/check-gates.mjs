@@ -8,6 +8,7 @@
  * touches wrangler.
  */
 import { globSync, readFileSync } from "node:fs";
+import { report } from "./gate.mjs";
 
 /*
  * pnpm commands that are not script shortcuts. `test`, `start`, `stop` and `restart` are left out on
@@ -104,11 +105,6 @@ for (const [where, text] of invocations) {
   }
 }
 
-if (problems.length > 0) {
-  console.error("gate check failed:\n");
-  for (const p of [...new Set(problems)]) console.error(`  ${p}`);
-  console.error("");
-  process.exit(1);
-}
+report("gate", problems);
 
 console.log(`gates ok: verify and ci.yml run the same ${verifySteps.size} checks, none of them shadowed`);
