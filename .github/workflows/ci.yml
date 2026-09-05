@@ -30,6 +30,9 @@ jobs:
       # CI run that quietly skips its own memory gate is worse than one that does not have it.
       - run: pnpm run test:heap
       - run: pnpm run build
+      # After the build, because most classes here are Tailwind utilities that only exist in the
+      # output once Tailwind has seen them used.
+      - run: pnpm run dead-classes
 
   # The browser suite, which stayed out of CI while it talked to two real agencies: a quiet planet or an
   # agency doing maintenance would have failed the build for reasons that are not the code's fault.
