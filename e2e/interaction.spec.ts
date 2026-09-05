@@ -878,6 +878,15 @@ test("the rail resizes in both directions, by pointer and by key", async ({ page
   expect(Number(await width.getAttribute("aria-valuenow"))).toBe(wide + 16);
 
   // Both are remembered. Re-choosing a size on every visit is its own barrier.
+  //
+  // Wait for the write, not for a moment. Saving happens in an effect, so a reload fired straight after
+  // the keypress can land before the effect has run and read back the size nobody chose.
+  await expect
+    .poll(async () => await page.evaluate(() => localStorage.getItem("eif.rail")))
+    .toBe(String(wide + 16));
+  await expect
+    .poll(async () => await page.evaluate(() => localStorage.getItem("eif.regions")))
+    .toBe(String(keyed + 32));
   await page.reload();
   await waitForData(page);
   expect(

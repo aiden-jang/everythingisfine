@@ -27,10 +27,6 @@ describe("a GDACS timestamp", () => {
     expect(parseUtc("2026-08-11T21:25:00+02:00")).toBe(Date.parse("2026-08-11T19:25:00Z"));
   });
 
-  /*
-   * Empty is the one that matters. `Date.parse("Z")` is not a number on every engine, but an empty
-   * field arriving as a date at the epoch would put the event in 1970 and draw it there.
-   */
   it("gives back nothing for a field that is not a stamp", () => {
     expect(parseUtc("")).toBeNull();
     expect(parseUtc(null)).toBeNull();
