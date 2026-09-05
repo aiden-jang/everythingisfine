@@ -51,6 +51,9 @@ const PNPM_OWN = new Set([
 
 const scripts = JSON.parse(readFileSync("package.json", "utf8")).scripts ?? {};
 const ci = readFileSync(".github/workflows/ci.yml", "utf8");
+/* Every workflow, not only the gate. A scheduled one names scripts too, and a typo there is invisible
+   until the schedule fires. */
+const workflows = globSync(".github/workflows/*.yml").map((f) => [f, readFileSync(f, "utf8")]);
 const problems = [];
 
 const named = (text) => [...text.matchAll(/pnpm (run )?([\w:-]+)/g)];
@@ -71,8 +74,13 @@ const gateJobs = ci.slice(0, ci.indexOf("\n  deploy:") === -1 ? undefined : ci.i
 const ciSteps = new Set([...gateJobs.matchAll(/^\s*- run: (pnpm .+)$/gm)].flatMap((m) => stepsIn(m[1])));
 const verifySteps = new Set(stepsIn(scripts.verify ?? ""));
 
-for (const name of [...verifySteps, ...ciSteps]) {
-  if (!scripts[name]) problems.push(`\`pnpm run ${name}\` is not a script in package.json`);
+for (const name of verifySteps) {
+  if (!scripts[name]) problems.push(`verify runs \`pnpm run ${name}\`, which is not a script`);
+}
+for (const [file, text] of workflows) {
+  for (const name of stepsIn(text)) {
+    if (!scripts[name]) problems.push(`${file} runs \`pnpm run ${name}\`, which is not a script`);
+  }
 }
 for (const name of verifySteps) {
   if (!ciSteps.has(name)) problems.push(`verify runs \`${name}\` and ci.yml does not`);
@@ -84,7 +92,7 @@ for (const name of ciSteps) {
 /* Every place a reader or a runner is told to invoke one of ours. */
 const invocations = [
   ...Object.entries(scripts).map(([k, v]) => [`package.json ${k}`, v]),
-  [".github/workflows/ci.yml", ci],
+  ...workflows,
   ...globSync("*.md").map((f) => [f, readFileSync(f, "utf8")]),
 ];
 for (const [where, text] of invocations) {

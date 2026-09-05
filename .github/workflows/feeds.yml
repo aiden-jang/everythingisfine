@@ -1,0 +1,38 @@
+name: Feeds
+
+# A canary, not a gate. Nothing waits on it and nothing deploys behind it.
+#
+# The unit suite proves the parsers work against recorded fixtures. It cannot prove the fixtures still
+# describe what USGS, EMSC and EONET actually send, and a feed that quietly changes shape is invisible
+# here until the globe is empty for somebody. This asks the real agencies once a day.
+#
+# Deliberately not part of `verify` or the PR gate. A suite that fails because an agency is doing
+# maintenance would block a build for a reason that is not the code's fault, which is the same
+# reasoning `vitest.config.ts` gives for keeping these out of the default run.
+on:
+  schedule:
+    # 06:20 UTC. Off the hour, because everything else in the world is scheduled on it.
+    - cron: "20 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Twice before it complains. One agency being down for ten minutes is not news, and a canary
+      # that cries wolf gets muted, which is worse than not having one.
+      - id: first
+        continue-on-error: true
+        run: pnpm run test:live
+      - if: steps.first.outcome == 'failure'
+        run: pnpm run test:live
