@@ -2187,8 +2187,8 @@ export function App(): JSX.Element {
             aria-label={railOpen ? "Hide the panel" : "Show the panel"}
             aria-expanded={railOpen}
             aria-controls="chrome-rail"
-            className="absolute top-[calc(var(--head-h)_+_1rem)] z-[2] cursor-pointer bg-deck/40 px-1.5
-              py-2.5 font-mono text-[11px] leading-none text-faint backdrop-blur-xl backdrop-saturate-50
+            className="absolute top-[calc(var(--head-h)_+_1rem)] z-[2] cursor-pointer bg-deck/60 px-2.5
+              py-3 font-mono text-[15px] leading-none text-dim backdrop-blur-xl backdrop-saturate-50
               transition-colors hover:text-ink"
             /* Clear of the resize handle, or the button eats the top of the drag target. */
             style={{ left: railOpen ? railWidth + 6 : 0 }}
