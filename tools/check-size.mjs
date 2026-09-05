@@ -2,25 +2,23 @@
  * Ceilings on file length and component state, run by `pnpm run verify`.
  *
  * Nothing else here notices a file growing, and a god-file is never added: it accretes twenty lines at
- * a time, no single diff looks wrong, and one component ends up holding forty-five of the fifty-two
- * pieces of state in the whole app.
+ * a time and no single diff looks wrong.
  *
- * 400 is not arbitrary. Nine files in ten are already under it, so the ceiling sits above the shape of
- * this codebase rather than cutting through the middle of it. Lines are the proxy; the state count is
- * the signal. Splitting the file is almost always the right answer to a failure.
+ * 400 was picked from the shape of this codebase rather than imposed on it: the great majority of files
+ * were already under it the day the gate went in. Lines are the proxy; the state count is the signal.
  */
 import { globSync, readFileSync } from "node:fs";
+import { report } from "./gate.mjs";
 
 const MAX_LINES = 400;
 const MAX_STATE = 12;
 
 /*
- * Already over, and being decomposed. Listed at the size they were on the day the gate went in rather
- * than the ceiling being raised for everyone, so nothing else can grow past 400 meanwhile.
+ * Already over, and being decomposed. Listed at their own size rather than the ceiling being raised for
+ * everyone, so nothing else can grow past it meanwhile.
  *
- * An entry that sits above its file is a failure too, so shrinking one is not something anybody has to
- * remember. Left to drift, the headroom a decomposition just won is quietly available to grow back
- * into, which is how the file got here.
+ * An entry sitting above its file fails too, so shrinking one is not something anybody has to remember.
+ * Left to drift, the headroom a decomposition just won is free to grow back into.
  */
 const ALREADY_OVER = {
   "src/App.tsx": { lines: 2404, state: 33 },
@@ -72,12 +70,7 @@ for (const file of Object.keys(ALREADY_OVER)) {
   if (!files.includes(file)) problems.push(`${file} is listed as being decomposed but does not exist`);
 }
 
-if (problems.length > 0) {
-  console.error("size check failed:\n");
-  for (const p of problems) console.error(`  ${p}`);
-  console.error("");
-  process.exit(1);
-}
+report("size", problems);
 
 const decomposing = Object.keys(ALREADY_OVER).length;
 console.log(
