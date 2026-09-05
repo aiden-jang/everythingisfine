@@ -6892,6 +6892,162 @@ the build. That comment has now earned its place twice.
 
 ---
 
+
+# What the app does, and why it looks the way it does
+
+*Moved out of the README, which is the front door and was carrying the whole house.*
+
+## Nothing on screen claims more than it knows
+
+- **The window states its own left edge.** With no backend the buffer starts when the page loads, so
+  the rail reads `since 19:40` until 24 hours have genuinely passed, then switches.
+- **Magnitudes carry their scale.** `M 5.2 Mww`, never a bare number, because the two agencies
+  disagree and a bare number implies a precision that does not exist.
+- **Deduplication is named.** The rail shows both raw counts, the distinct total, and how many
+  events both agencies reported.
+- **Collapsed markers say so.** A cluster wears a chrome ring, because radius and hue both already
+  mean magnitude and neither was free to mean "several".
+- **Quarry blasts stay quarry blasts.** USGS publishes a seismic feed, not an earthquake feed.
+- **The wavefront's playback rate is printed.** Real P-wave velocity advances the front 0.16 pixels
+  per second, which reads as a still image, so it plays at ×20 and the rail says ×20.
+
+## The accessibility layer is a feature, not a checklist
+
+The canvas is `aria-hidden`, so for a screen reader the parallel event list **is** the product. It
+carries the same information rather than a summary, ordered by recency because arrow-keying around a
+sphere spatially is disorienting. One tab stop, then arrows. A polite live region announces events
+above a threshold the viewer sets, defaulting high, because a busy feed floods a screen reader until
+the person closes the page.
+
+Every control answers a keyboard, including the two the canvas made easy to forget: the camera keys
+live on the window rather than the canvas, and the activity strip's twenty-four bars are real buttons
+on one tab stop, so "which of these happened at 05:00" is not a pointer-only question.
+
+A browser test drives the whole app with the canvas set to `visibility: hidden`.
+
+## Design and decisions
+
+- **[DESIGN.md](DESIGN.md)** is the visual authority. Its central rule is that the interface carries
+  **no hue at all**: the warm default ramp and the colourblind-safe ramp together occupy most of the
+  wheel, so achromatic chrome is the only choice that survives both.
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** is the decision log, written the day each decision was made
+  rather than reconstructed. It keeps the wrong guesses and the measurements that killed them.
+- **[PLAN.md](PLAN.md)** is the build sequence, with the gate each step had to pass.
+
+DESIGN.md's banned list is not a list. It is [thirteen browser tests](e2e/design.spec.ts) asserting that
+no chrome element paints a hue, nothing overflows sideways, every updating number has tabular
+figures, and nothing is pure black, at three breakpoints.
+
+## Performance
+
+CI gates on **CPU update cost**, not on frame time. A shared runner has no GPU, so a frame time
+measured there is noise wearing a unit, and a threshold loose enough to pass is loose enough never
+to fail. What regresses in code is the per-frame work: filter predicates, projection maths, buffer
+writes.
+
+Budgets are in **reference units**, not milliseconds: a fixed synthetic workload is timed in the same
+process moments earlier and the budget is a ratio against it. Both numbers move together when the
+machine is busy and the ratio does not, which is the property an absolute threshold never had - it
+failed three times on unchanged code.
+
+| Events | Budget | Measured |
+|---|---|---|
+| 1,000 | under 0.15 ref | 0.10 ref, 0.16ms |
+| 10,000 | under 1.05 ref | 0.96 ref, 1.57ms |
+| 50,000 | under 7.0 ref | 4.45 to 4.91 ref, 7.3 to 8.1ms |
+| 50,000, hour held | under 7.0 ref | 5.24 to 5.35 ref |
+
+Fastest of 40 runs on an Apple Silicon Mac under Node 22. The fastest rather than the median,
+because every slower sample is the code plus interference and the interference is never the thing
+under test. Memory is asserted flat across twelve simulated hours, against a 0.5MB budget checked by
+making it fail.
+
+## Globe and map
+
+One geometry, projected in the vertex shader, so switching unwraps the planet rather than cross-fading
+two scenes. The globe is the default; the map is for comparing margins that a sphere makes you turn to
+see. Every layer carries the longitude and latitude it was built from, rather than recovering them
+from the sphere, because recovering them breaks wherever a shape crosses the date line or touches a
+pole.
+
+Shift-drag a line across the map for a cross-section, and the link carries it: distance along, depth down, drawn at 1:1 where
+it fits and with the vertical exaggeration printed where it does not. It is the only view that shows
+depth as structure rather than as a filled or hollow ring, and across a subduction zone the
+earthquakes draw the slab. Plate boundaries are ticked along the distance axis, so the picture says why
+the slab is there, and any mark can be clicked to pin the event it stands for.
+
+The map has no edges: pan east past Kamchatka and the Aleutians come round again. The world is drawn
+once per copy that reaches the screen rather than wrapped per vertex, which cannot tear the triangles
+that straddle the seam.
+
+## Day and night
+
+The globe is lit from the real subsolar point, computed from the clock with NOAA's solar position
+algorithm. The geography dims on the night side; the earthquakes do not, because one at 3am is not a
+smaller earthquake.
+
+## Time
+
+The window is 24 hours, 7 days or 30 days, chosen by name rather than dragged. The activity strip
+below it is always exactly that window, divided into 24 bars, so the strip and the globe can never
+disagree about what is on screen. Five ticks over the bars mark the largest events in the window, and
+clicking a bar opens the largest inside it - the bars answer "how much" and could never answer "which".
+
+**The window judges every layer, each on the date it actually has.** It used to govern earthquakes
+alone, which made it a control that quietly meant one thing for the dots and nothing for the other
+five layers: GDACS flags a three-week-old fire as still burning, so at 24 hours the map drew fires
+that started weeks outside the span the reader had asked for. Storms, fires and floods are now judged
+on when they started and volcanoes on their episode end, and when the filter empties a layer the key
+says which one and names the window that would bring it back, rather than letting four rows vanish.
+
+**It opens on a week**, because hardly any storm, fire or flood starts inside a given day: measured
+live, a day held 2 hazards against 25 over a week, so opening on a day meant opening with five of the
+app's layers empty.
+
+A cursor under the strip parks the globe at a moment inside the window and plays forward from there.
+It is the entrance replay made permanent: the event layer already takes a reveal limit, so nothing
+here invents an event, reorders one or changes a time. `,` and `.` step it a bar at a time, because
+the arrow keys are the camera.
+
+**Any past day can be loaded**, from both agencies' FDSN endpoints, which take an arbitrary date
+keylessly. The risk in that feature is a chrome that goes on saying "live" over a globe showing last
+March, so it is a mode: the live sources stop, the set is replaced, and every claim of liveness in
+the interface reads the snapshot and stands down. A dozen notable days are listed as the way in,
+each with its own event count, because 1960-05-22 holds the largest earthquake ever recorded and six
+events at M2.5+ - which is the network of the day, not a quiet planet.
+
+## The sky
+
+Real stars, from the Yale Bright Star Catalogue down to magnitude 6, turned by sidereal time so
+Orion is over the Pacific in January and can be found. The moon is at its real distance and its real
+size, which is half a degree and looks small, and its phase is not computed anywhere: lighting a
+sphere from the direction the sun already points gives the crescent for free, including which way the
+horns face. Five planets move against it. On the few days there is one, the moon's shadow falls on the
+Earth, which is the sun's direction and the moon's position multiplied together.
+
+Constellation figures are behind a toggle, because they are the one layer here that measures nothing.
+Nobody discovered that seven stars are a plough.
+
+## Sequences
+
+Pinning an event shows what happened around it on one axis: time. Every event within 150km appears as a
+tick placed against the pinned one, so you can see whether the largest has already been. It is stated
+as well as drawn, because "the largest nearby was M 4.9, 1.1h after it" is the fact somebody wants and
+a picture of it is not the same thing.
+
+## Revisions
+
+An agency's first magnitude is automatic; a reviewed one arrives later and is often different. Rather
+than swapping the number silently, the panel says what it first said, the row is marked, and the
+header counts how many events have changed. Only a changed magnitude counts as a revision, because
+both USGS feeds re-serve every event they hold on every poll.
+
+Magnitude and depth are both tracked, and the panel prints whichever moved. The epicentre is revised
+too and is not: it shifts a few kilometres on most revisions, which is not worth a line, and the
+position on screen already shows it.
+
+
+
 # Appendix: the reasoning, moved out of the code
 
 Every comment in `src/` and `e2e/` that ran past a warning into an explanation was cut back to its opening
