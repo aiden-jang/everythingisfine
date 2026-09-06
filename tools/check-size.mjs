@@ -21,8 +21,8 @@ const MAX_STATE = 12;
  * Left to drift, the headroom a decomposition just won is free to grow back into.
  */
 const ALREADY_OVER = {
-  "src/App.tsx": { lines: 2393, state: 33 },
-  "src/globe/Globe.tsx": { lines: 900 },
+  "src/App.tsx": { lines: 2338, state: 27 },
+  "src/globe/Globe.tsx": { lines: 899 },
   "src/globe/scene.ts": { lines: 881 },
   "src/globe/controls.ts": { lines: 691 },
   "src/app/MagnitudeFilter.tsx": { lines: 603 },

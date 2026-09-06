@@ -81,6 +81,14 @@ export const browserRuntime: Runtime = {
   openSocket: (url) => new WebSocket(url),
 };
 
+/* One-shot fetches with no retry loop, so a request that never settles leaves its layer pending for
+   the life of the page and reports nothing. GDACS has been measured at eighteen seconds for a track:
+   the bound is there for the hang, not the wait. */
+export const HAZARD_TIMEOUT_MS = 25_000;
+
+export const timedFetch = (url: string): Promise<Response> =>
+  fetch(url, { signal: AbortSignal.timeout(HAZARD_TIMEOUT_MS) });
+
 /** Shared by every adapter, so backoff behaviour is one implementation rather than one per source. */
 export function backoffMs(consecutiveFailures: number, baseMs: number, capMs: number): number {
   return Math.min(capMs, baseMs * 2 ** Math.max(0, consecutiveFailures - 1));

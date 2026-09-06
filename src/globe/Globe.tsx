@@ -759,7 +759,6 @@ export function Globe({
       placeOverlays();
     });
     const unsubscribe = feed.subscribe(redrawFromData);
-    feed.start();
     redraw();
 
     // The one entrance, started after the first draw so the globe is already painted when it moves.

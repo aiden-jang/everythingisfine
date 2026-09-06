@@ -29,11 +29,15 @@ export function feedStatus(
     arrived,
     total,
     settling,
-    phrase: settling
-      ? "connecting"
-      : arrived === total
-        ? "all feeds live"
-        : `${arrived} of ${total} feeds live`,
+    /* "connecting" only while nothing at all has arrived. The hazard layers come from GDACS, which
+       routinely takes ten to eighteen seconds, and letting the slowest source own the words meant the
+       header disowned a planet already covered in earthquakes. The dot still blinks until all are in. */
+    phrase:
+      arrived === 0
+        ? "connecting"
+        : arrived === total
+          ? "all feeds live"
+          : `${arrived} of ${total} feeds live`,
     silent: silentFeeds(
       Object.fromEntries(Object.entries(answered).map(([k, v]) => [k, v !== "failed"])) as Record<
         HazardLayer,

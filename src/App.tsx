@@ -7,11 +7,9 @@ import { useRolling } from "./app/roll";
 import { useFloatingChrome, useNarrow } from "./app/useNarrow";
 import { store, stored } from "./app/stored";
 import { useStoredFlag, useStoredName, useStoredNumber } from "./app/useStored";
-import { fetchAurora, type Aurora } from "./sources/aurora";
-import { fetchCyclones, type Cyclone } from "./sources/cyclones";
-import { fetchVolcanoes, newestEpisode, type Volcano } from "./sources/volcanoes";
-import { fetchWildfires, summarise, FEED_CAP, type Wildfire } from "./sources/wildfires";
-import { countries, fetchFloods, type Flood } from "./sources/floods";
+import { newestEpisode } from "./sources/volcanoes";
+import { summarise, FEED_CAP } from "./sources/wildfires";
+import { countries } from "./sources/floods";
 import { marksFor } from "./app/marks";
 import { depthBands } from "./data/depth";
 import { drawStill, stillMoment, verdictLine, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
@@ -46,6 +44,7 @@ import { boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE } 
 import { EventList } from "./app/EventList";
 import { FeedDot } from "./app/FeedDot";
 import { feedStatus } from "./app/feedStatus";
+import { useHazardLayers } from "./app/useHazardLayers";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
 import { Timeline } from "./app/Timeline";
@@ -86,7 +85,6 @@ import {
   place,
   quietNote,
   quietParts,
-  type HazardLayer,
   reachFraction,
   reachNote,
   reachWords,
@@ -173,69 +171,7 @@ export function App(): JSX.Element {
   // Never in the permalink. A link arriving with 23 of its 24 hours dimmed looks broken, not shared.
   const [focusHour, setFocusHour] = useState<number | null>(null);
   /* Ten minutes, not the model's five: the grid is 900kB and the oval barely moves in five. */
-  const [aurora, setAurora] = useState<Aurora | null>(null);
-  const [cyclones, setCyclones] = useState<readonly Cyclone[]>([]);
-  /* Three states, not two. A boolean starting at `true` means "has not failed", which cannot say
-     whether a layer has arrived. */
-  const [answered, setAnswered] = useState<Record<HazardLayer, "pending" | "ok" | "failed">>({
-    cyclones: "pending",
-    volcanoes: "pending",
-    fires: "pending",
-    floods: "pending",
-    aurora: "pending",
-  });
-  const answerFor = useCallback(
-    (layer: HazardLayer) =>
-      (ok: boolean): void => {
-        const next = ok ? "ok" : "failed";
-        setAnswered((was) => (was[layer] === next ? was : { ...was, [layer]: next }));
-      },
-    [],
-  );
-  useEffect(() => {
-    let alive = true;
-    const load = (): void => {
-      void fetchAurora(fetch, answerFor("aurora")).then((next) => {
-        if (alive && next) setAurora(next);
-      });
-    };
-    load();
-    const id = window.setInterval(load, 10 * 60_000);
-    return () => {
-      alive = false;
-      window.clearInterval(id);
-    };
-  }, []);
-
-  /* Once, not on the ten-minute clock: the newest episode is weeks old, so polling learns nothing. */
-  const [volcanoes, setVolcanoes] = useState<readonly Volcano[]>([]);
-  /* Both parsers must filter on their own dates, not on `iscurrent`. Measured: every fire is flagged
-  current, and 81 of a hundred floods were up to a year old. */
-  const [fires, setFires] = useState<readonly Wildfire[]>([]);
-  const [floods, setFloods] = useState<readonly Flood[]>([]);
-  useEffect(() => {
-    let alive = true;
-    const load = (): void => {
-      void fetchCyclones(fetch, answerFor("cyclones")).then((next) => {
-        if (alive) setCyclones(next);
-      });
-      void fetchWildfires(fetch, answerFor("fires")).then((next) => {
-        if (alive) setFires(next);
-      });
-      void fetchFloods(fetch, answerFor("floods")).then((next) => {
-        if (alive) setFloods(next);
-      });
-    };
-    load();
-    void fetchVolcanoes(fetch, answerFor("volcanoes")).then((next) => {
-      if (alive) setVolcanoes(next);
-    });
-    const id = window.setInterval(load, 10 * 60_000);
-    return () => {
-      alive = false;
-      window.clearInterval(id);
-    };
-  }, []);
+  const { aurora, cyclones, fires, floods, volcanoes, answered } = useHazardLayers();
   /* Keep this above every memo that calls it. Below them it is a temporal dead zone: tsc passes, the build
      passes, and the page renders nothing. See ARCHITECTURE.md#srcapptsx. */
   const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
@@ -434,6 +370,15 @@ export function App(): JSX.Element {
     setSelected(null);
     setMarkId(null);
   }, []);
+  /*
+   * Not in the globe's mount effect, which is behind a lazy chunk carrying three.js: the seed waited
+   * for a planet to be built before it left the browser, measured at 1074ms against 259ms for the
+   * hazard layers, and it scales with the device.
+   *
+   * Above the archive effect on purpose: `showArchive` clears `running`, so a `start()` landing after
+   * it turns the live feed back on over the archived day.
+   */
+  useEffect(() => feed.start(), []);
   useEffect(() => {
     if (!shared.day || arrivedOnADay.current) return;
     arrivedOnADay.current = true;
