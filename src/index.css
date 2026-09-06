@@ -154,9 +154,43 @@
 @layer components {
   .frame {
     display: grid;
-    position: relative; /* the desktop header is absolute against this */
+    position: relative; /* the floating header is absolute against this */
     height: 100dvh; /* never 100vh: the iOS Safari URL bar makes it jump */
     grid-template-rows: auto 1fr;
+  }
+
+  /*
+   * The header floats on the planet on a phone as well as on a desktop, and sits in the layout in the
+   * band between.
+   *
+   * It was a grid row below 1280, so a phone opened on a 46px band of deck with the globe starting
+   * under it. Making it transparent there without taking it out of flow shows the page behind it
+   * rather than the planet, which is a stripe of nothing: the float is what the transparency is for.
+   *
+   * Not in the tablet band, where the rail is a strip along the top rather than a column: floating the
+   * header there drops it straight onto the rail's first row. That band puts its own controls where the
+   * header would be, so it is the one width with nothing to float over.
+   *
+   * `pointer-events` matters more on a phone than it did on a desktop. The bar is mostly empty, and the
+   * strip it covers is the top of a globe you drag to spin.
+   */
+  @media (max-width: 767px), (min-width: 1280px) {
+    .frame {
+      grid-template-rows: 1fr;
+    }
+
+    .zone-head {
+      position: absolute;
+      z-index: 2;
+      top: 0;
+      right: 0;
+      left: 0;
+      pointer-events: none;
+    }
+
+    .zone-head > * {
+      pointer-events: auto;
+    }
   }
 
   .zones {
@@ -254,29 +288,11 @@
      * value read from the DOM would be a resize observer feeding a layout that a variable states
      * outright.
      */
-    .frame {
-      grid-template-rows: 1fr;
-    }
-
-    /*
-     * `position` here is load-bearing and a utility class will beat it. `relative` was added in the markup
-     * to anchor the phone's menu and silently overrode this, dropping the header back into flow and pushing
-     * the rail 160px down the window. That anchor is scoped to `max-md` for this reason.
-     */
     .zone-head {
-      position: absolute;
-      z-index: 2;
-      top: 0;
-      right: 0;
-      left: 0;
+      /* Declared rather than measured, because the rail starts below it and a value read from the DOM
+         would be a resize observer feeding a layout a variable can state. Only here: below 1280 the
+         row wraps to two lines and nothing offsets against it, so a fixed height would just clip. */
       height: var(--head-h);
-      /* The bar is mostly empty, and an invisible strip that eats a drag is a dead zone across the
-         top of the map. The controls take their own clicks back. */
-      pointer-events: none;
-    }
-
-    .zone-head > * {
-      pointer-events: auto;
     }
 
     .zone-rail,
