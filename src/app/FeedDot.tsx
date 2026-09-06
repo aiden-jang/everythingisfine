@@ -1,12 +1,8 @@
 import type { JSX } from "react";
 import type { FeedStatus } from "./feedStatus";
 
-/**
- * How much of the planet is actually being drawn, in one dot and one phrase.
- *
- * Brightness says how much is in and the blink says more is coming. Achromatic, because DESIGN.md 3.1
- * keeps hue for the data: a green dot here is the chrome borrowing the alphabet the ramp uses.
- */
+/* Achromatic, because DESIGN.md 3.1 keeps hue for the data: a green dot here is the chrome borrowing
+   the alphabet the ramp uses. Brightness says how much is in, the blink says more is coming. */
 const DOT = {
   archived: "bg-faint",
   settling: "bg-dim motion-safe:animate-pulse",

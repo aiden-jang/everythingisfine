@@ -160,14 +160,11 @@
   }
 
   /*
-   * The header floats on the planet at every width.
+   * Transparent needs floating: in flow it shows the page behind it, which is a stripe of nothing
+   * rather than the planet.
    *
-   * It was a grid row below 1280, so a phone opened on a 46px band of deck with the globe starting
-   * under it. Making it transparent without taking it out of flow shows the page behind it rather
-   * than the planet, which is a stripe of nothing: the float is what the transparency is for.
-   *
-   * `pointer-events` matters more on a phone than on a desktop. The bar is mostly empty, and the strip
-   * it covers is the top of a globe you drag to spin.
+   * `pointer-events` off, because the bar is mostly empty and the strip it covers is the top of a
+   * globe you drag to spin. The controls take their own clicks back below.
    */
   .zone-head {
     position: absolute;
