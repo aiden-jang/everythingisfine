@@ -70,7 +70,7 @@ test("the first frame is already live", async ({ page }) => {
   // Not "some data eventually": a globe with four dots on it is what sent the seed window from an
   // hour to a day, and this is the assertion that stops it drifting back.
   expect(held).toBeGreaterThan(50);
-  await expect(page.getByText("BOTH FEEDS LIVE")).toBeVisible();
+  await expect(page.getByText(/feeds live/i)).toBeVisible();
   // The window states its own left edge rather than claiming a full 24 hours it does not have.
   // Any live span, not one particular window: this is about the first frame being live.
   await expect(page.locator(".zone-rail")).toContainText(/since \d\d:\d\d|last 24 hours|last 7 days/);
@@ -1891,8 +1891,9 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
 });
 
 test("the bar folds where it is a row of its own, and stays folded", async ({ page }) => {
-  // 1024, where the bar is opaque and in flow: 68px out of a 439px canvas, which is worth folding away.
-  await page.setViewportSize({ width: 1024, height: 768 });
+  /* A phone, which is the only width where the bar is a row of its own. From `md` up the chrome floats
+     over a full-frame globe, so there is no row to reclaim and no fold offered. */
+  await page.setViewportSize({ width: 390, height: 844 });
   await installFeeds(page, { count: 200 });
   await page.goto("/");
   await waitForData(page);
@@ -1904,9 +1905,11 @@ test("the bar folds where it is a row of its own, and stays folded", async ({ pa
     });
 
   expect(await bar()).toBe(true);
-  // The rail is a strip across the top here, not a column over the globe. Nothing to fold.
+  // The rail is a sheet under the globe here, not a column over it, so it has no fold of its own.
   await expect(page.getByLabel("Hide the panel")).toHaveCount(0);
 
+  // The fold lives in the overflow menu at this width: as a button of its own it wrapped the header.
+  await page.getByRole("button", { name: "more" }).click();
   await page.getByRole("button", { name: "Hide bar" }).click();
   await page.waitForTimeout(400);
   expect(await bar(), "the bar folds").toBe(false);
