@@ -414,15 +414,12 @@ export function splitNote(note: string): { head: string; rest: string | null } {
   return { head: note.slice(0, at + 1), rest: rest.length > 0 ? rest : null };
 }
 
+/** The hazard layers, which are polled one at a time rather than streamed like the two quake feeds. */
+export type HazardLayer = "cyclones" | "volcanoes" | "fires" | "floods" | "aurora";
+
 /** Name the layers that could not be asked, or a dead host reads as a calm planet. */
-export function silentFeeds(answered: {
-  cyclones: boolean;
-  volcanoes: boolean;
-  fires: boolean;
-  floods: boolean;
-  aurora: boolean;
-}): string | null {
-  const names: [keyof typeof answered, string][] = [
+export function silentFeeds(answered: Record<HazardLayer, boolean>): string | null {
+  const names: [HazardLayer, string][] = [
     ["cyclones", "storms"],
     ["fires", "fires"],
     ["floods", "floods"],

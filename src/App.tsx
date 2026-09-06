@@ -44,6 +44,8 @@ import {
 } from "./data/baseline";
 import { boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE } from "./geo/boundaryDistance";
 import { EventList } from "./app/EventList";
+import { FeedDot } from "./app/FeedDot";
+import { feedStatus } from "./app/feedStatus";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
 import { Timeline } from "./app/Timeline";
@@ -84,7 +86,7 @@ import {
   place,
   quietNote,
   quietParts,
-  silentFeeds,
+  type HazardLayer,
   reachFraction,
   reachNote,
   reachWords,
@@ -173,18 +175,20 @@ export function App(): JSX.Element {
   /* Ten minutes, not the model's five: the grid is 900kB and the oval barely moves in five. */
   const [aurora, setAurora] = useState<Aurora | null>(null);
   const [cyclones, setCyclones] = useState<readonly Cyclone[]>([]);
-  /* Starts as "fine" so a page that has not asked yet never complains, and a later success clears it. */
-  const [answered, setAnswered] = useState({
-    cyclones: true,
-    volcanoes: true,
-    fires: true,
-    floods: true,
-    aurora: true,
+  /* Three states, not two. A boolean starting at `true` means "has not failed", which cannot say
+     whether a layer has arrived. */
+  const [answered, setAnswered] = useState<Record<HazardLayer, "pending" | "ok" | "failed">>({
+    cyclones: "pending",
+    volcanoes: "pending",
+    fires: "pending",
+    floods: "pending",
+    aurora: "pending",
   });
   const answerFor = useCallback(
-    (layer: keyof typeof answered) =>
+    (layer: HazardLayer) =>
       (ok: boolean): void => {
-        setAnswered((was) => (was[layer] === ok ? was : { ...was, [layer]: ok }));
+        const next = ok ? "ok" : "failed";
+        setAnswered((was) => (was[layer] === next ? was : { ...was, [layer]: next }));
       },
     [],
   );
@@ -1173,7 +1177,7 @@ export function App(): JSX.Element {
   // Not memoised: the reach it names is a distance from now, and keyed on the revision it would freeze
   // at whatever it was when the last event landed.
   const sourceNote = reachNote(snapshot.covered, now, filters.windowMs);
-  const live = Object.values(snapshot.statuses).filter((s) => s.kind === "live").length;
+  const feeds = feedStatus(snapshot.statuses, answered);
 
   /* Pick a side rather than using a `hidden`/`block` pair: that would put 445px of text in the document
   twice, and a test counting a phrase across the app cannot tell a copy from a duplicated sentence. */
@@ -1531,7 +1535,7 @@ export function App(): JSX.Element {
     <div className="frame">
       <header
         id="chrome-head"
-        className="zone-head max-md:relative flex items-center gap-6 bg-deck px-5 py-3 xl:border-b xl:border-hairline xl:bg-transparent"
+        className="zone-head flex items-center gap-6 bg-deck px-5 py-3 max-md:bg-transparent xl:border-b xl:border-hairline xl:bg-transparent"
         hidden={!headShown}
       >
         <button
@@ -1662,22 +1666,7 @@ export function App(): JSX.Element {
           >
             {moreOpen ? "less" : "more"}
           </button>
-          <span className="flex items-center gap-2 text-[11px] whitespace-nowrap text-dim">
-            <span
-              className={`inline-block size-[6px] rounded-full ${
-                snapshot.archive ? "bg-faint" : live === 2 ? "bg-ink" : live === 1 ? "bg-dim" : "bg-faint"
-              }`}
-            />
-            {/* The date always shows and only the live phrase folds. "Everything is normal" is reassurance and
-            the dot carries it; "this is not what you think" is a correction, and absence is its failure. */}
-            {snapshot.archive ? (
-              <span className="font-mono">{new Date(snapshot.archive.from).toISOString().slice(0, 10)}</span>
-            ) : (
-              <span className="hidden sm:inline">
-                {live === 2 ? "both feeds live" : live === 1 ? "one feed live" : "connecting"}
-              </span>
-            )}
-          </span>
+          <FeedDot feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
         </div>
       </header>
 
@@ -1871,10 +1860,10 @@ export function App(): JSX.Element {
                 <p className="text-[11px] leading-relaxed text-faint">{quiet.note}</p>
               </div>
             ) : null}
-            {!archived && silentFeeds(answered) ? (
+            {!archived && feeds.silent ? (
               <div className="tb-notes">
                 <span className="label">Feeds</span>
-                <p className="text-[11px] leading-relaxed text-faint">{silentFeeds(answered)}</p>
+                <p className="text-[11px] leading-relaxed text-faint">{feeds.silent}</p>
               </div>
             ) : null}
             {strongest && !replay && edge.complete && energyShare !== null && energyShare > 0.5 ? (
