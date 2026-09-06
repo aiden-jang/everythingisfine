@@ -90,11 +90,18 @@ for (const name of ciSteps) {
   if (!verifySteps.has(name)) problems.push(`ci.yml runs \`${name}\` and verify does not`);
 }
 
-/* Every place a reader or a runner is told to invoke one of ours. */
+/*
+ * Every place a reader or a runner is told to invoke one of ours.
+ *
+ * Prose is not an instruction, only a fenced block is: a doc that warns bare `pnpm deploy` is a pnpm
+ * builtin and will fail is the correct thing to write, and would otherwise be reported as the very
+ * mistake it warns about. Scripts and workflows are scanned whole, because those run.
+ */
+const fencedOnly = (markdown) => [...markdown.matchAll(/```[\s\S]*?```/g)].map((m) => m[0]).join("\n");
 const invocations = [
   ...Object.entries(scripts).map(([k, v]) => [`package.json ${k}`, v]),
   ...workflows,
-  ...globSync("*.md").map((f) => [f, readFileSync(f, "utf8")]),
+  ...globSync("*.md").map((f) => [f, fencedOnly(readFileSync(f, "utf8"))]),
 ];
 for (const [where, text] of invocations) {
   for (const [, run, name] of named(text)) {

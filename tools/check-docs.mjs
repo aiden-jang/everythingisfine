@@ -97,7 +97,11 @@ for (const doc of LIVE) {
       }
 
       /* Only inside backticks or a fence. Prose says "a pnpm command of the same name", which is not one. */
-      const commands = fenced ? [line] : [...line.matchAll(/`([^`]+)`/g)].map((b) => b[1]);
+      /* Inside a fence a `#` starts a shell comment: "corepack enable  # makes pnpm available" is
+         English about pnpm, not an invocation of a script called `available`. */
+      const commands = fenced
+        ? [line.replace(/#.*$/, "")]
+        : [...line.matchAll(/`([^`]+)`/g)].map((b) => b[1]);
       for (const m of commands.join("\n").matchAll(/pnpm (?:run |exec )?([a-z][\w:-]*)/g)) {
         const name = m[1];
         if (["install", "exec", "add", "dlx", "create", "run", "audit", "why", "outdated"].includes(name))
