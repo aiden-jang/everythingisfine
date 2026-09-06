@@ -23,6 +23,8 @@ jobs:
       - run: pnpm run comments
       - run: pnpm run css-vars
       - run: pnpm run docs
+      # An export nothing imports and a dependency nothing uses are both dead weight nobody notices.
+      - run: pnpm run knip
       - run: pnpm run typecheck
       - run: pnpm run lint
       - run: pnpm run format:check
