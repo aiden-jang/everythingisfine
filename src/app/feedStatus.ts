@@ -5,24 +5,16 @@ import { silentFeeds, type HazardLayer } from "./format";
 export type LayerAnswer = "pending" | "ok" | "failed";
 
 export interface FeedStatus {
-  /** Sources that have delivered, out of every source the app draws from. */
   arrived: number;
   total: number;
-  /** Something is still in flight, so a count of what is in would be a count of what is early. */
+  /** Something is still in flight, so a count of what is in is a count of what is early. */
   settling: boolean;
   /** What went quiet, or null. Pending layers are not named: they have not gone quiet yet. */
   silent: string | null;
-  /** What the header says out loud, when it is not showing an archived date instead. */
   phrase: string;
 }
 
-/**
- * What the header dot is allowed to claim.
- *
- * It counted `statuses` alone, which holds the two streaming quake feeds and nothing else, so "both
- * feeds live" was a true statement about two sevenths of the planet: storms, fires, floods, volcanoes
- * and the aurora could all be missing behind it.
- */
+/** `statuses` holds the two streaming quake feeds only; the other five layers are in `answered`. */
 export function feedStatus(
   statuses: Record<SourceId, SourceStatus>,
   answered: Record<HazardLayer, LayerAnswer>,
