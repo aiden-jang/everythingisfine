@@ -42,8 +42,14 @@ describe("what the header dot may claim", () => {
 });
 
 describe("the phrase under the dot", () => {
-  it("says connecting rather than a count while anything is in flight", () => {
-    expect(feedStatus(streams(LIVE, LIVE), layers("pending")).phrase).toBe("connecting");
+  it("says connecting only while nothing at all has arrived", () => {
+    expect(feedStatus(streams({ kind: "idle" }, { kind: "idle" }), layers("pending")).phrase).toBe(
+      "connecting",
+    );
+  });
+
+  it("counts what is in while the slow layers are still coming", () => {
+    expect(feedStatus(streams(LIVE, LIVE), layers("pending")).phrase).toBe("2 of 7 feeds live");
   });
 
   it("names the shortfall once everything has answered", () => {
