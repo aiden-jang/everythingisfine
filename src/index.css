@@ -154,43 +154,32 @@
 @layer components {
   .frame {
     display: grid;
-    position: relative; /* the floating header is absolute against this */
+    position: relative; /* the header and the floating panels are absolute against this */
     height: 100dvh; /* never 100vh: the iOS Safari URL bar makes it jump */
-    grid-template-rows: auto 1fr;
+    grid-template-rows: 1fr;
   }
 
   /*
-   * The header floats on the planet on a phone as well as on a desktop, and sits in the layout in the
-   * band between.
+   * The header floats on the planet at every width.
    *
    * It was a grid row below 1280, so a phone opened on a 46px band of deck with the globe starting
-   * under it. Making it transparent there without taking it out of flow shows the page behind it
-   * rather than the planet, which is a stripe of nothing: the float is what the transparency is for.
+   * under it. Making it transparent without taking it out of flow shows the page behind it rather
+   * than the planet, which is a stripe of nothing: the float is what the transparency is for.
    *
-   * Not in the tablet band, where the rail is a strip along the top rather than a column: floating the
-   * header there drops it straight onto the rail's first row. That band puts its own controls where the
-   * header would be, so it is the one width with nothing to float over.
-   *
-   * `pointer-events` matters more on a phone than it did on a desktop. The bar is mostly empty, and the
-   * strip it covers is the top of a globe you drag to spin.
+   * `pointer-events` matters more on a phone than on a desktop. The bar is mostly empty, and the strip
+   * it covers is the top of a globe you drag to spin.
    */
-  @media (max-width: 767px), (min-width: 1280px) {
-    .frame {
-      grid-template-rows: 1fr;
-    }
+  .zone-head {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    right: 0;
+    left: 0;
+    pointer-events: none;
+  }
 
-    .zone-head {
-      position: absolute;
-      z-index: 2;
-      top: 0;
-      right: 0;
-      left: 0;
-      pointer-events: none;
-    }
-
-    .zone-head > * {
-      pointer-events: auto;
-    }
+  .zone-head > * {
+    pointer-events: auto;
   }
 
   .zones {
@@ -213,16 +202,6 @@
      * instead, which is what "single column" already promised.
      */
     grid-template-columns: 1fr;
-  }
-
-  @media (min-width: 768px) {
-    .zones {
-      grid-template-rows: auto 1fr;
-      grid-template-areas: "rail" "canvas";
-      /* Same reason as above: the panel has no area here either, so it stacks rather than inventing
-         a column beside the canvas. */
-      grid-template-columns: 1fr;
-    }
   }
 
   /*
@@ -269,42 +248,38 @@
    * the rail rather than dodging it. That is the point: a planet that ends where a panel begins is a
    * picture of a planet.
    */
-  @media (min-width: 1280px) {
+  @media (min-width: 768px) {
     .zones {
       grid-template-rows: 1fr;
       grid-template-columns: 1fr;
       grid-template-areas: "canvas";
     }
 
-    /*
-     * The header floats on the planet rather than sitting on a bar above it.
-     *
-     * Removing its border left it on a strip of deck the same colour as the rail, which is still a
-     * band across the top: the planet started 44px down and the app read as a page with a globe in
-     * it. Taking it out of the grid lets the canvas run to the top of the window, which is the same
-     * argument the rail already won.
-     *
-     * Its height is declared rather than measured because the rail has to start below it, and a
-     * value read from the DOM would be a resize observer feeding a layout that a variable states
-     * outright.
-     */
     .zone-head {
       /* Declared rather than measured, because the rail starts below it and a value read from the DOM
-         would be a resize observer feeding a layout a variable can state. Only here: below 1280 the
-         row wraps to two lines and nothing offsets against it, so a fixed height would just clip. */
+         would be a resize observer feeding a layout a variable can state. Not on a phone, where the row
+         wraps to two lines and nothing offsets against it, so a fixed height would only clip. */
       height: var(--head-h);
     }
 
-    .zone-rail,
-    .zone-panel {
-      top: var(--head-h);
-    }
-
-    .zone-rail,
-    .zone-panel {
+    /*
+     * The rail floats on the planet as a column, from a tablet up.
+     *
+     * It used to lie down into a strip across the top here, which was never a decision: the first commit
+     * scaffolded it that way and the desktop moved on without it. Everything the strip needed was repair
+     * -- a fixed `34dvh` so it would stop eating half the viewport, a mask to hide it slicing four
+     * columns mid-line, a four-column grid to keep the transport above the fold. A column needs none of
+     * it, which is why neither the phone sheet nor the desktop ever did.
+     */
+    .zone-rail {
       position: absolute;
       z-index: 1;
+      top: var(--head-h);
       bottom: 0;
+      left: 0;
+      border-right: 0;
+      /* Set by the resizer and remembered. The border lives on the handle, so it can light up. */
+      width: var(--rail-w, 356px);
       /* Its own scroll container, since it no longer has a grid row to be bounded by. */
       overflow-y: auto;
       contain: paint;
@@ -324,26 +299,13 @@
       backdrop-filter: blur(28px) saturate(0.45);
     }
 
-    .zone-rail {
-      left: 0;
-      border-right: 0;
-      /* Set by the resizer and remembered. The border lives on the handle, so it can light up. */
-      width: var(--rail-w, 356px);
-    }
-
-    .zone-panel {
-      right: 0;
-      border-left: 0;
-    }
-
     /*
      * The count stays while you read the evidence.
      *
      * This rail is a scroll container, and the title block was the first thing to leave it: scrolling to
      * the event list took the number the whole app exists to report off the screen, so the answer and the
-     * evidence for it could not be looked at together. Pinned only here, because this is the one layout
-     * where the rail is a tall column of its own - on a phone it is a sheet under the globe and the whole
-     * page scrolls, and in the tablet strip it is a grid cell with nothing to scroll past.
+     * evidence for it could not be looked at together. Not on a phone, where it is a sheet under the
+     * globe and the whole page scrolls.
      *
      * The cells were already opaque `deck` against a 44% rail, so pinning changes no colour. What it does
      * change is those 1px dividers: the frame is drawn by letting a translucent hairline show through the
@@ -356,6 +318,22 @@
       /* Above later siblings, which paint over a same-index sticky element by document order. */
       z-index: 2;
       background: linear-gradient(var(--color-hairline), var(--color-hairline)), var(--color-deck);
+    }
+  }
+
+  /* The panel stays a sheet until there is width for a second column beside the rail. */
+  @media (min-width: 1280px) {
+    .zone-panel {
+      position: absolute;
+      z-index: 1;
+      top: var(--head-h);
+      right: 0;
+      bottom: 0;
+      border-left: 0;
+      overflow-y: auto;
+      contain: paint;
+      background: color-mix(in srgb, var(--color-deck) 44%, transparent);
+      backdrop-filter: blur(28px) saturate(0.45);
     }
   }
 
@@ -432,25 +410,20 @@
     gap: 1.125rem;
   }
 
-  @media (max-width: 767px), (min-width: 1280px) {
-    /*
-     * Notes last, as the tablet grid already does. Stacked second they pushed the transport under the fold.
-     * `order` rather than a markup move: the tablet grid places by `grid-area`, which ignores it.
-     */
-    .rail > .tb-stack {
-      order: 2;
-    }
+  /* Notes last: stacked second they pushed the transport under the fold. */
+  .rail > .tb-stack {
+    order: 2;
+  }
 
-    /*
-     * The events outrank the summary of them: the list was 0% visible while `regions` sat fully above it.
-     * The tablet grid already ranks them this way. Its height is in `EventList` - a utility beats this file.
-     *
-     * `when` rides along, because it is the search box and `regions` is where its results are drawn.
-     */
-    .rail > [data-rail="when"],
-    .rail > [data-rail="regions"] {
-      order: 1;
-    }
+  /*
+   * The events outrank the summary of them: the list was 0% visible while `regions` sat fully above it.
+   * Its height is in `EventList` - a utility beats this file.
+   *
+   * `when` rides along, because it is the search box and `regions` is where its results are drawn.
+   */
+  .rail > [data-rail="when"],
+  .rail > [data-rail="regions"] {
+    order: 1;
   }
 
   /*
@@ -466,151 +439,6 @@
    * first, so the strip is exactly as tall as those three and nothing has a gap beneath it. The two
    * tall blocks that scroll show more of themselves for the height rather than banking it as slack.
    */
-  @media (min-width: 768px) and (max-width: 1279px) {
-    /*
-     * A definite height, and the globe gets the rest.
-     *
-     * The row was plain `auto`, so it took whatever its content needed. On a 900 by 700 laptop that
-     * left the canvas **153px**: the globe reduced to a strip by the controls describing it, and every
-     * screenshot of this band had been taken tall enough to hide it.
-     *
-     * Definite rather than a maximum, and not `minmax(0, auto)` on the row. A cap is not something a
-     * percentage height can resolve against, so the regions box inside read as `auto`, grew to all
-     * twelve, and pushed the strip back to half the viewport. `minmax(0, auto)` does not give a
-     * smaller row either, it gives an overlapping one: the grid sizes it to min-content, the rows
-     * collapse, and the list keeps its own height and spills onto the key hints.
-     *
-     * Scoped to this band and no further. Written as a bare `min-width: 768px` it also caught the
-     * desktop rail, where the whole point is that it runs the full height of the window: three tests
-     * went red on a rail that had stopped reaching the bottom of a 1280px screen.
-     */
-    .zone-rail {
-      height: 34dvh;
-      min-height: 0;
-      overflow-y: auto;
-      contain: paint;
-      /*
-       * The same fade the phone gets, for the same reason and a worse case.
-       *
-       * This band is a fixed 34dvh with four columns scrolling inside it, so its bottom edge cuts
-       * whatever happens to be there - measured at 1024x768 it sliced "GO TO A DAY" through the middle
-       * of the letters and cut the recent list mid-row. On the phone that edge meets the globe; here it
-       * meets four columns at once, so it is four sliced lines rather than one.
-       *
-       * The mask was written for the phone and scoped to `max-width: 767px`, which is why this layout
-       * never got it. It applies here for the same reason it applied there, and not above 1280 where the
-       * rail is a frosted panel whose own background the mask would erode.
-       */
-      mask-image: linear-gradient(
-        to bottom,
-        transparent 0,
-        #000 12px,
-        #000 calc(100% - 12px),
-        transparent 100%
-      );
-    }
-
-    .rail {
-      display: grid;
-      /* The first column is widest because it has three tenants, one of which is a place name that
-         truncates rather than wrapping. The legend wraps gracefully, so it gives up the room. */
-      grid-template-columns: minmax(0, 1.13fr) minmax(0, 0.78fr) minmax(0, 0.94fr) minmax(0, 1.15fr);
-      /*
-       * Every cell named, and named after what is actually in it.
-       *
-       * The title block replaced two separate blocks here, and because the rules below match direct
-       * children the old `headline` and `largest` selectors stopped matching anything: both the block
-       * and its notes fell to `grid-area: auto`, auto-placed into column one, and pushed `activity` to
-       * 349px inside a strip 348px tall. The whole activity strip went below the fold, and the
-       * reachability test did not catch it because this rail scrolls, so "reachable" was still true.
-       *
-       * `when` is new rather than moved: the time-of-day disclosure had never been named at all and had
-       * been auto-placing since it was added, which was survivable only because it is 17px tall.
-       */
-      /*
-       * Notes run the full width at the bottom, which is where a drawing sheet puts them anyway.
-       *
-       * In column one they were 125px of prose three words to a line, and they pushed the activity
-       * strip past the bottom of a strip this short. Spanning the sheet they are two lines and the
-       * column above them gets that height back.
-       */
-      /*
-       * Every control at the top of a column, and the two lists are what scroll.
-       *
-       * `activity` used to be stacked third, under the title block and the time-of-day row, so it began
-       * 299px into a strip 340px tall: the histogram, the coverage bars and the transport were below the
-       * fold at every tablet size measured - the whole time dimension, in 92 visible pixels. It has its
-       * own column now and its 295px fits.
-       *
-       * The first attempt put the legend in the position `activity` vacated and that was a bad trade,
-       * measured rather than guessed: at 1024x768 it moved the magnitude slider and the feed toggles below
-       * the fold, which is controls for controls. Above `regions` instead, both survive - `regions` is a
-       * scroll box with its own resizer and is designed to be short, so it is the right thing to give up
-       * the room. Measured at 900x1000, 1024x768 and 820x1180: the ramp, the feeds, the key's disclosure,
-       * the window buttons and the transport are all above the fold at every one of them.
-       *
-       * `34dvh` stays exactly as it was. The globe's share was never what was wrong here.
-       */
-      /* Every child needs a name here. One without an area auto-places into an implicit row below the
-         whole grid, and at 1024 that put the archive and the strip in the same invented cell. */
-      grid-template-areas:
-        "title  legend  list"
-        "clock  legend  list"
-        "day    regions list"
-        "when   regions list"
-        "notes  notes   notes";
-      /* The short blocks take what they need, then the list takes the rest, then notes take what
-         they need again. */
-      grid-template-rows: auto auto auto 1fr auto;
-      align-items: start;
-      gap: 0.7rem 2rem;
-    }
-
-    .rail > .titleblock {
-      grid-area: title;
-    }
-    .rail > .tb-stack {
-      grid-area: notes;
-    }
-    .rail > [data-rail="when"] {
-      grid-area: when;
-    }
-    /* Two different attributes, one letter apart: `data-rail="activity"` is the archive block, and
-       `data-activity` is the timeline strip, which is named that because it also renders in the band. */
-    .rail > [data-rail="activity"] {
-      grid-area: day;
-    }
-    .rail > [data-activity] {
-      grid-area: clock;
-    }
-    .rail > [data-rail="legend"] {
-      grid-area: legend;
-    }
-    .rail > [data-rail="regions"] {
-      grid-area: regions;
-    }
-    .rail > section[aria-label="Recent earthquakes"] {
-      grid-area: list;
-    }
-
-    /* The two that scroll, stretched so the box inside gets the whole column rather than its own
-       content height. */
-    .rail > [data-rail="regions"],
-    .rail > section[aria-label="Recent earthquakes"] {
-      align-self: stretch;
-      min-height: 0;
-    }
-
-    /* Rare, and when they happen they take the short blocks' width and leave the list alone. */
-    .rail > [data-rail="notice"] {
-      grid-column: 1 / 4;
-    }
-
-    /* The column it was given, rather than the height the desktop resizer remembers. */
-    .rail-regions {
-      height: 100%;
-    }
-  }
   /*
    * The regions box is sized, not truncated.
    *

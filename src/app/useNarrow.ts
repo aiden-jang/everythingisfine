@@ -23,5 +23,5 @@ export function useNarrow(): boolean {
  * ARCHITECTURE.md.
  */
 export function useFloatingChrome(): boolean {
-  return useMedia("(min-width: 1280px)");
+  return useMedia("(min-width: 768px)");
 }

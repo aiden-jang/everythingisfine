@@ -1535,7 +1535,7 @@ export function App(): JSX.Element {
     <div className="frame">
       <header
         id="chrome-head"
-        className="zone-head flex items-center gap-6 bg-deck px-5 py-3 max-md:bg-transparent xl:border-b xl:border-hairline xl:bg-transparent"
+        className="zone-head flex items-center gap-6 px-5 py-3 xl:border-b xl:border-hairline"
         hidden={!headShown}
       >
         <button
@@ -1719,7 +1719,7 @@ export function App(): JSX.Element {
         )}
         <aside
           id="chrome-rail"
-          className="zone-rail rail border-hairline bg-deck p-5 max-xl:border-b xl:border-r"
+          className="zone-rail rail border-hairline bg-deck p-5 max-md:border-b md:border-r"
           hidden={!railShown}
         >
           <div className="titleblock">
@@ -2205,11 +2205,11 @@ export function App(): JSX.Element {
         {!keyOnCanvas || section || markSubject || (shownQuake && pinned) ? null : (
           <div
             /* Anchored at the bottom, so opening grows it upward out of the corner instead of off the screen.
-            Below `xl` the cap is a share of the viewport: at 1024x768 the canvas is about 440px tall and a
-            604px panel ran up over the rail. */
+            The share-of-viewport cap is the phone's, where the canvas is a 60dvh row with the rail under
+            it. From `md` the rail floats and the canvas is the whole frame, so the key gets desktop room. */
             className="pointer-events-auto absolute right-4 bottom-4 z-[1] max-h-[46dvh] w-[300px]
               overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50
-              xl:max-h-[calc(100dvh_-_var(--head-h)_-_6rem)]"
+              md:max-h-[calc(100dvh_-_var(--head-h)_-_6rem)]"
           >
             {marksKey}
           </div>
