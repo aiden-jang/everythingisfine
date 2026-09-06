@@ -1,0 +1,25 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // One package, not a workspace. The app entry comes from index.html, which knip reads for itself.
+  "entry": ["tools/*.mjs", "e2e/**/*.spec.ts", "src/**/*.test.{ts,tsx}"],
+  "project": ["src/**/*.{ts,tsx}", "tools/*.mjs", "e2e/**/*.ts"],
+  /*
+   * Four things knip cannot see from the imports alone.
+   *
+   * `preact` is what is installed; the source imports "react" throughout and @preact/preset-vite maps
+   * it to preact/compat at build time, so knip reads the dependency as unused and the import as
+   * unlisted — the same fact twice, from both ends. The fonts and tailwind arrive through `@import`
+   * in index.css, which is not a file knip follows.
+   */
+  "ignoreDependencies": [
+    "preact",
+    "react",
+    "react-dom",
+    "@fontsource-variable/geist",
+    "@fontsource-variable/geist-mono",
+    "tailwindcss",
+  ],
+  // Plenty here is exported so a sibling test can reach it while still being used only inside its
+  // own file. Reporting those buries the finding that matters: a symbol used nowhere at all.
+  "ignoreExportsUsedInFile": true,
+}
