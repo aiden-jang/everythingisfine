@@ -22,6 +22,3 @@ directory = "dist"
 # One route, so anything else should land on it rather than 404. Permalinks are fragment-encoded
 # (DESIGN.md section 12) and never reach the server, but a stray path still should not 404.
 not_found_handling = "single-page-application"
-
-[observability]
-enabled = true
