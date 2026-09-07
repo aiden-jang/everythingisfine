@@ -17,6 +17,11 @@ interface Camera {
 /* `morph` is sampled alongside the camera because the projection unwrap is the same kind of thing: a value
  * easing toward a target that a test must not read halfway through. */
 /** True when this run is against `dist`, where the DEV-only `window.__*` hooks do not exist. */
+/* A spring stepped with a dt clamped at 50ms, so its wall-clock length scales with the frame rate,
+   plus a hash rewritten on a 1s interval rather than per frame. Measured warm: camera settled at
+   2799ms, hash at 3338ms. The old 8s left barely twice that, and CI came in over it. */
+const CAMERA_SETTLE_MS = 20_000;
+
 const AGAINST_BUILD = process.env["EIF_BUILD"] === "1";
 
 /** Call at the top of a test that needs the DEV-only hooks. */
@@ -537,7 +542,7 @@ test("notches compound off where the camera is heading", async ({ page }) => {
   await cameraStill(page);
   // exp(0.264) twice is 1.696, and zoom is written to two places.
   await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
     .toMatch(/,1\.7&/);
 });
 
@@ -562,17 +567,17 @@ test("the globe is operable from the keyboard, and the keys are written down", a
 
   await page.keyboard.press("ArrowRight");
   await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
     .toMatch(/^#at=148,20,1&/);
 
   await page.keyboard.press("Equal");
   await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
     .toMatch(/,1\.25&/);
 
   await page.keyboard.press("Digit0");
   await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
     .toMatch(/^#at=145,12,1&/);
 
   // A focused control keeps its own arrows. One global handler that fired regardless of focus would
@@ -629,7 +634,7 @@ test.describe("on a touch screen", () => {
     await page.mouse.move(cx + 90, cy, { steps: 8 });
     await page.mouse.up();
     await expect
-      .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+      .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
       .not.toMatch(/^#at=140,/);
 
     await page.evaluate(
@@ -668,7 +673,7 @@ test.describe("on a touch screen", () => {
 
     // Spread fingers, so the globe comes closer rather than the page getting bigger.
     await expect
-      .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+      .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
       .toMatch(/,2\.\d&/);
   });
 
@@ -1474,7 +1479,7 @@ test("a section can be opened from the panel, not only by a gesture", async ({ p
   await expect(page.locator(".zones")).toContainText(/Cross-section|Section/);
   // And it is in the permalink, so the slice somebody found this way is shareable.
   await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 8_000 })
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
     .toMatch(/[&#]x=/);
 });
 
