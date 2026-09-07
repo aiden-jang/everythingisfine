@@ -6367,7 +6367,7 @@ for. And an automated scan for one-line comments that merely restate the identif
 not: "in globe radii", "or null when sound is off", "as `YYYY-MM-DD`". There was nothing left to take.
 
 The rule is written down where somebody adding a file will see it before they write one: README.md
-at the time, CLAUDE.md now that the readme has been cut back to a front door.
+at the time, CONVENTIONS.md now that the readme has been cut back to a front door.
 
 ### The browser suite's first CI run, and three tests that were measuring the machine
 
