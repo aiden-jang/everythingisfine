@@ -16,7 +16,7 @@ runtime; a script name silently resolved to an npm builtin, so a check reported 
 without ever executing.
 
 So: an impossibly clean result means suspect the scan first. And **green is not proof unless you
-have seen that check fail** — break the thing it guards, watch it go red, then believe it.
+have seen that check fail**: break the thing it guards, watch it go red, then believe it.
 
 ## Writing a new check
 
@@ -40,7 +40,7 @@ past change is different, and fine.
 - A comment that logs successive changes is a changelog. Git has it, and the log drifts out of step
   with the value it describes.
 - After moving code, re-read every comment near the seam. A move strands them on the wrong function.
-- Never raise a comment budget to fit prose. Trim instead — no script can enforce that about itself.
+- Never raise a comment budget to fit prose. Trim instead; no script can enforce that about itself.
 
 ## The budget is the design
 
