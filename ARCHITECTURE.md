@@ -6366,7 +6366,8 @@ for. And an automated scan for one-line comments that merely restate the identif
 34 candidates, every one of which turned out to carry a unit, a null case or a range the identifier does
 not: "in globe radii", "or null when sound is off", "as `YYYY-MM-DD`". There was nothing left to take.
 
-The rule is now written down in README.md, where somebody adding a file will see it before they write one.
+The rule is written down where somebody adding a file will see it before they write one: README.md
+at the time, CLAUDE.md now that the readme has been cut back to a front door.
 
 ### The browser suite's first CI run, and three tests that were measuring the machine
 
