@@ -43,6 +43,9 @@ export default defineConfig({
    */
   timeout: process.env["CI"] ? 90_000 : 45_000,
   expect: { timeout: process.env["CI"] ? 30_000 : 15_000 },
+  /* Named, because the CI default is `dot`, which writes middots to one unterminated line: GitHub
+     renders nothing until it breaks at eighty, so a 14-minute run reads as hung. */
+  reporter: process.env["CI"] ? [["github"], ["list"]] : [["list"]],
   use: {
     baseURL: "http://localhost:31600",
     trace: "retain-on-failure",
