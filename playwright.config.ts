@@ -46,6 +46,15 @@ export default defineConfig({
   /* Named, because the CI default is `dot`, which writes middots to one unterminated line: GitHub
      renders nothing until it breaks at eighty, so a 14-minute run reads as hung. */
   reporter: process.env["CI"] ? [["github"], ["list"]] : [["list"]],
+  /* From the environment, not a flag: a forwarded `--shard` gets dropped and every shard then runs the
+     whole suite. One string, `1/3`, so the workflow's matrix is the only place the count is written. */
+  shard: (() => {
+    const raw = process.env["E2E_SHARD"];
+    if (!raw) return null;
+    const [current, total] = raw.split("/").map(Number);
+    if (!current || !total) throw new Error(`E2E_SHARD should look like 1/3, got ${raw}`);
+    return { current, total };
+  })(),
   use: {
     baseURL: "http://localhost:31600",
     trace: "retain-on-failure",
