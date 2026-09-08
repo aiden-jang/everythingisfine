@@ -561,8 +561,9 @@ test("the globe is operable from the keyboard, and the keys are written down", a
 
   // After the entrance has landed. Pressing during the flight compounds off a moving target, which is
   // correct behaviour and makes the destination depend on when the key arrived.
+  // CAMERA_SETTLE_MS, not a shorter one of its own: on CI the eased flight was still 0.07 short at 15s.
   await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 15_000 })
+    .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
     .toMatch(/^#at=140,20,1&/);
 
   await page.keyboard.press("ArrowRight");
