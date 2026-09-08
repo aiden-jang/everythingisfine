@@ -51,9 +51,9 @@ export interface TimelineProps {
    * footnotes to the same picture, and a caveat belongs under the picture it is about. */
   notes: readonly string[];
   /**
-   * More about the same events, under the footnotes and above the transport. The size distribution goes
-   * here: these bars are counts against time and that chart is counts against magnitude, and it used to
-   * sit at the bottom of the rail with the play controls between the two.
+   * More about the same events, under the footnotes and above the transport. The size distribution
+   * goes here: these bars are counts against time and that chart is counts against magnitude, so
+   * they belong together rather than with the play controls between them.
    */
   children?: ReactNode;
 }
