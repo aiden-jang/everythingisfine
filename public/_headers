@@ -1,0 +1,5 @@
+# Hashed bundles live under /a (vite assetsDir). They cannot change under a given name, so a year
+# and immutable. Workers Assets defaults to max-age=0, must-revalidate, which spends a round trip
+# per chunk on every repeat visit. index.html keeps its name and must still revalidate.
+/a/*
+  Cache-Control: public, max-age=31536000, immutable
