@@ -24,8 +24,8 @@ const RADIUS_EXPONENT = 0.7;
 /**
  * The radius the shader will draw. The hit test imports it.
  *
- * Don't write the formula out a second time. The copy that used to live in the hit test would have
- * drifted on this very change, and the pointer would pick at a radius nobody can see.
+ * Don't write the formula out a second time. A second copy in the hit test drifts on a change like
+ * this one, and the pointer then picks at a radius nobody can see.
  */
 export function markerRadiusPx(magnitude: number, scale: number): number {
   const above = Math.max(0, magnitude - MAG_MIN);
