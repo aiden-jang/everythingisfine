@@ -564,9 +564,9 @@ export function App(): JSX.Element {
         // notice can say it was refused; writing that value back out spread it on every re-share.
         cursor: view.at,
       });
-      history.replaceState(null, "", `#${fragment}`);
-      // Only when a write actually happened. Set beside the call sites, a blocked write still adopts the
-      // pasted hash and the swallow above comes back.
+      if (`#${fragment}` !== window.location.hash) history.replaceState(null, "", `#${fragment}`);
+      // Skipping the no-op write matters: this runs every second and the SPA beacon counts each
+      // replaceState as a page view. Set beside the call site, a pasted hash is still adopted.
       lastWritten.current = window.location.hash;
     };
     write();
