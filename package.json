@@ -39,7 +39,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "^1.63.0",
     "@preact/preset-vite": "^2.10.6",
     "@tailwindcss/vite": "^4.0.0",
     "@types/geojson": "^7946.0.16",
@@ -56,7 +56,7 @@
     "typescript": "^5.7.2",
     "typescript-eslint": "^8",
     "vite": "^6.0.5",
-    "vitest": "^4.1.10",
-    "wrangler": "^4.123.0"
+    "vitest": "^4.1.11",
+    "wrangler": "^4.129.0"
   }
 }
