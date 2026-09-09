@@ -91,7 +91,7 @@ jobs:
       # HTML reporter, so traces land in the former and the latter is never created. The first CI run failed
       # three tests and uploaded nothing, which is how a red build ends up undiagnosable.
       - if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           # Per shard, or three uploads collide on one name and only one survives.
           name: playwright-traces-shard-${{ strategy.job-index }}
