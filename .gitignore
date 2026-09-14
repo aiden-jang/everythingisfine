@@ -7,4 +7,6 @@ dist
 .wrangler
 test-results
 playwright-report
-.claude
+# launch.json is committed so the repo says how to run itself; local settings are per-machine
+# permission grants with absolute paths in them.
+.claude/settings.local.json
