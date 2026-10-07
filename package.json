@@ -31,32 +31,32 @@
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.5",
     "@fontsource-variable/geist-mono": "^5.2.5",
-    "earcut": "^3.2.3",
+    "earcut": "^3.2.4",
     "preact": "^10.29.8",
-    "three": "^0.185.1",
+    "three": "^0.186.1",
     "topojson-client": "^3.1.0",
     "world-atlas": "^2.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.62.1",
+    "@playwright/test": "^1.63.0",
     "@preact/preset-vite": "^2.10.6",
     "@tailwindcss/vite": "^4.0.0",
     "@types/geojson": "^7946.0.16",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
-    "@types/three": "^0.185.4",
+    "@types/three": "^0.186.0",
     "@types/topojson-client": "^3.1.5",
     "@types/topojson-specification": "^1.0.5",
     "eslint": "^10",
     "eslint-plugin-react-hooks": "^7",
-    "knip": "^6.34.0",
+    "knip": "^6.39.0",
     "prettier": "^3",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8",
     "vite": "^6.0.5",
-    "vitest": "^4.1.10",
-    "wrangler": "^4.123.0"
+    "vitest": "^4.1.11",
+    "wrangler": "^4.147.0"
   }
 }
