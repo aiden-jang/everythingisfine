@@ -1549,10 +1549,7 @@ test("a copied link reopens the same event, not merely the same view", async ({ 
   // The magnitude scale by its own hook, because that is the field that says which reading this is. Two events
   // in the same region at the same minute would agree on almost everything else.
   const scale = await panel.locator("[data-magscale]").textContent();
-  const place = await panel
-    .locator("[data-magscale]")
-    .locator("xpath=../following-sibling::div[1]")
-    .textContent();
+  const place = await panel.locator(".event-place").textContent();
   const href = await page.evaluate(() => window.location.href);
   expect(href).toContain("&e=");
 
@@ -1564,7 +1561,7 @@ test("a copied link reopens the same event, not merely the same view", async ({ 
   const reopened = opened.locator('.zone-panel[data-open="true"]');
   await expect(reopened).toBeVisible({ timeout: 30_000 });
   await expect(reopened.locator("[data-magscale]")).toHaveText(scale ?? "");
-  if (place) await expect(reopened).toContainText(place.trim());
+  await expect(reopened.locator(".event-place")).toHaveText(place ?? "");
   /*
    * The same event id, which is the promise. Deliberately not the same camera: a link carrying an event flies
    * to it during setup, so the sender's framing is a starting point rather than a guarantee, and a test that
