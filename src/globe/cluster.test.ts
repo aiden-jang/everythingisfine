@@ -113,8 +113,8 @@ describe("clustering across the antimeridian", () => {
 
   it("never lets two distant cells collide onto one key", () => {
     // The key packs latitude and longitude bands into one integer with 4096 of room for the longitude
-    // side. The tightest cell the app ever uses is 1.68 degrees, which is 215 bands at the equator.
-    const tightest = 3.2 / 1.9;
+    // side. The tightest cells must still leave room for the longitude bands at the equator.
+    const tightest = cellSizeDeg(CLUSTER_UNTIL - 0.001);
     expect(360 / tightest).toBeLessThan(4096);
     expect(cellKey(-180, -90, tightest)).not.toBe(cellKey(180, -90 + tightest, tightest));
   });

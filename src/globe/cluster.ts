@@ -8,8 +8,8 @@ import { DEG } from "../geo/sphere";
  * Grid cell size in degrees, derived from zoom. Markers hold a constant size on screen, so how many can
  * sit side by side depends only on how many degrees a screen-width covers. See ARCHITECTURE.md#srcglobeclusterts.
  */
-export const CLUSTER_UNTIL = 1.9;
-const BASE_CELL_DEG = 3.2;
+export const CLUSTER_UNTIL = 2.2;
+const BASE_CELL_DEG = 4;
 
 export function cellSizeDeg(zoom: number): number {
   if (zoom >= CLUSTER_UNTIL) return 0;

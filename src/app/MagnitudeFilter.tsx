@@ -186,16 +186,15 @@ export function MagnitudeFilter({
   part = "controls",
 }: MagnitudeFilterProps): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
-  /*
-   * Null is not the same as off. The flat map has no inside for the depth sink and no sky for the figures,
-   * so those controls are absent rather than disabled: one that cannot do anything is worse than none.
-   */
+  // Flat maps have neither an interior nor a sky; omit layers they cannot show.
   const switches = [
     sinkOn === null ? null : <LayerToggle key="depth" label="depth" on={sinkOn} onChange={onSink} />,
-    <LayerToggle key="motion" label="motion" on={motionOn} onChange={onMotion} />,
-    slabOn === null ? null : <LayerToggle key="slab" label="slab" on={slabOn} onChange={onSlab} />,
+    <LayerToggle key="motion" label="Plate movement" on={motionOn} onChange={onMotion} />,
+    slabOn === null ? null : (
+      <LayerToggle key="slab" label="Deep earthquakes" on={slabOn} onChange={onSlab} />
+    ),
     figuresOn === null || figuresOn === undefined || !onFigures ? null : (
-      <LayerToggle key="figures" label="figures" on={figuresOn} onChange={onFigures} />
+      <LayerToggle key="figures" label="Constellations" on={figuresOn} onChange={onFigures} />
     ),
   ].filter((v) => v !== null);
   // Where the threshold sits along the scale, as a percentage of the track.

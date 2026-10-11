@@ -976,3 +976,12 @@ keeps its visual encoding examples and folds the plate-motion explanation separa
 
 The favicon is a simplified globe and orbital dot. The share card uses the same
 sentence-case wordmark and self-hosted Geist, with geography and no live event marks.
+
+### Globe legibility
+
+Overview clustering uses wider cells and persists slightly further into zoom, reducing
+overlapping marks along dense seismic margins. Cluster rings still represent grouped
+events; zooming in resolves individual readings. Selection keeps its distinct corner
+brackets, with a heavier stroke and neutral shadow for contrast over geography.
+Layer controls use Plate movement, Deep earthquakes and Constellations; stored
+preferences and the layers themselves keep their existing behavior.

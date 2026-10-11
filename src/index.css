@@ -949,14 +949,15 @@
    */
   .pick {
     background:
-      linear-gradient(var(--color-ink), var(--color-ink)) 0 0 / 7px 1px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 0 0 / 1px 7px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 100% 0 / 7px 1px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 100% 0 / 1px 7px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 0 100% / 7px 1px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 0 100% / 1px 7px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 100% 100% / 7px 1px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 100% 100% / 1px 7px no-repeat;
+      linear-gradient(var(--color-ink), var(--color-ink)) 0 0 / 8px 2px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 0 0 / 2px 8px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 100% 0 / 8px 2px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 100% 0 / 2px 8px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 0 100% / 8px 2px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 0 100% / 2px 8px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 100% 100% / 8px 2px no-repeat,
+      linear-gradient(var(--color-ink), var(--color-ink)) 100% 100% / 2px 8px no-repeat;
+    filter: drop-shadow(0 1px 1px var(--color-deck)) drop-shadow(0 -1px 1px var(--color-deck));
   }
 
   /*
