@@ -41,6 +41,7 @@ import {
   sharePercent,
 } from "./data/baseline";
 import { boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE } from "./geo/boundaryDistance";
+import { MobileNavigation } from "./app/MobileNavigation";
 import { EventList } from "./app/EventList";
 import { FeedDot } from "./app/FeedDot";
 import { feedStatus } from "./app/feedStatus";
@@ -425,11 +426,11 @@ export function App(): JSX.Element {
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
   /* The glossary opens on request; the magnitude scale stays visible in the rail. */
   const [keyOpen, setKeyOpen] = useStoredFlag("legendKey", false);
-  const [motionOn, setMotionOn] = useStoredFlag("motion", true);
+  const [motionOn, setMotionOn] = useStoredFlag("motion", false);
   const [sinkOn, setSinkOn] = useStoredFlag("depthSink", true);
   /* On by default, so the slab's 37kB and 1,583 marks are on every first load. It earns it: a real day
   has two events below 300km, and you cannot see a dipping plane in two dots. */
-  const [slabOn, setSlabOn] = useStoredFlag("slab", true);
+  const [slabOn, setSlabOn] = useStoredFlag("slab", false);
   const [figuresOn, setFiguresOn] = useStoredFlag("figures", false);
   // Lazy: 13kB of coordinates has no business in the first frame.
   const [zones, setZones] = useState<ZoneTable | null>(null);
@@ -1644,10 +1645,7 @@ export function App(): JSX.Element {
           } as React.CSSProperties
         }
       >
-        {/* Clamped so the canvas keeps 46dvh - the design contract asks 44%, and a handle that can break a
-            build test is not a handle - and 82dvh the other way, past which the sheet cannot hold its own
-            heading. */}
-        {/* Gone while a panel is up: at `z-[2]` it would be a grip drawn across something it cannot resize. */}
+        {/* Keep enough space for both the globe and the sheet heading. */}
         {markSubject || (shownQuake && pinned) ? null : (
           <Resizer
             axis="y"
@@ -1662,6 +1660,9 @@ export function App(): JSX.Element {
             style={{ top: `calc(var(--canvas-h, 60dvh) - 6px)` }}
           />
         )}
+        {!markSubject && !(shownQuake && pinned) && railShown ? (
+          <MobileNavigation onResize={setSheetCanvas} />
+        ) : null}
         <aside
           id="chrome-rail"
           className="zone-rail rail border-hairline bg-deck p-5 max-md:border-b md:border-r"
@@ -2111,8 +2112,7 @@ export function App(): JSX.Element {
           />
         </aside>
 
-        {/* One control in one place: the handle sits at the rail's outer edge open, and at the frame's
-        edge closed, which is where a reader last saw the rail go. */}
+        {/* Keep the toggle at the edge where the rail folds. */}
         {chromeFloats ? (
           <button
             type="button"

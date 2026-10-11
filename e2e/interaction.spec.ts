@@ -2211,3 +2211,22 @@ test("a first visit saves no preference the visitor never chose", async ({ page 
   const saved = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("eif.")));
   expect(saved, "nothing was touched, so nothing is remembered").toEqual([]);
 });
+
+test("mobile exploration switches between globe space and recent events", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await installFeeds(page);
+  await page.goto("/");
+  await waitForData(page);
+  const navigation = page.getByRole("navigation", { name: "Explore" });
+  await navigation.getByRole("button", { name: "View globe", exact: true }).click();
+  const globeHeight = await page
+    .getByRole("separator", { name: "Sheet height" })
+    .getAttribute("aria-valuenow");
+  await navigation.getByRole("button", { name: "Recent earthquakes", exact: true }).click();
+  const recentHeight = await page
+    .getByRole("separator", { name: "Sheet height" })
+    .getAttribute("aria-valuenow");
+  expect(Number(globeHeight)).toBeGreaterThan(Number(recentHeight));
+  const recent = page.getByRole("region", { name: "Recent earthquakes" });
+  await expect(recent.getByRole("heading", { name: "Recent", exact: true })).toBeInViewport();
+});

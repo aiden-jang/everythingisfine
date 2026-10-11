@@ -985,3 +985,12 @@ events; zooming in resolves individual readings. Selection keeps its distinct co
 brackets, with a heavier stroke and neutral shadow for contrast over geography.
 Layer controls use Plate movement, Deep earthquakes and Constellations; stored
 preferences and the layers themselves keep their existing behavior.
+
+### Mobile exploration and default layers
+
+New viewers start with plate arrows and historical deep seismicity off, keeping live
+earthquake marks in focus. Depth remains visible and saved layer choices still win.
+Phones expose View globe and Recent earthquakes above the sheet: the first expands
+the canvas, the second opens more list space and scrolls to recent events. The drag
+handle still allows intermediate heights. Pinned details keep their existing close
+control and return to the list's preserved position.
