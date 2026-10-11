@@ -26,14 +26,19 @@ export function FeedDot({
           ? "complete"
           : "partial";
   return (
-    <span className="flex items-center gap-2 text-[11px] whitespace-nowrap text-dim">
+    <span title={feeds.phrase} className="flex items-center gap-2 text-[11px] whitespace-nowrap text-dim">
       <span className={`inline-block size-[6px] rounded-full ${DOT[state]}`} />
       {/* The date always shows and only the live phrase folds. "Everything is normal" is reassurance and
         the dot carries it; "this is not what you think" is a correction, and absence is its failure. */}
       {archiveFrom !== null ? (
         <span className="font-mono">{new Date(archiveFrom).toISOString().slice(0, 10)}</span>
       ) : (
-        <span className="hidden sm:inline">{feeds.phrase}</span>
+        <>
+          <span className="hidden sm:inline">{feeds.phrase}</span>
+          <span className="sm:hidden" aria-label={feeds.phrase}>
+            {feeds.arrived}/{feeds.total}
+          </span>
+        </>
       )}
     </span>
   );

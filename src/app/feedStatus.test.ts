@@ -49,14 +49,18 @@ describe("the phrase under the dot", () => {
   });
 
   it("counts what is in while the slow layers are still coming", () => {
-    expect(feedStatus(streams(LIVE, LIVE), layers("pending")).phrase).toBe("2 of 7 feeds live");
+    expect(feedStatus(streams(LIVE, LIVE), layers("pending")).phrase).toBe("2 of 7 feeds live · loading");
   });
 
   it("names the shortfall once everything has answered", () => {
-    expect(feedStatus(streams(LIVE, DOWN), layers("ok")).phrase).toBe("6 of 7 feeds live");
+    expect(feedStatus(streams(LIVE, DOWN), layers("ok")).phrase).toBe("6 of 7 feeds live · unavailable");
   });
 
   it("does not count when there is nothing to count against", () => {
     expect(feedStatus(streams(LIVE, LIVE), layers("ok")).phrase).toBe("all feeds live");
   });
+});
+
+it("does not call failed feeds connecting when every request has answered", () => {
+  expect(feedStatus(streams(DOWN, DOWN), layers("failed")).phrase).toBe("feeds unavailable");
 });

@@ -994,3 +994,12 @@ Phones expose View globe and Recent earthquakes above the sheet: the first expan
 the canvas, the second opens more list space and scrolls to recent events. The drag
 handle still allows intermediate heights. Pinned details keep their existing close
 control and return to the list's preserved position.
+
+### Final interface consistency
+
+Layer switches carry adjacent short explanations and accessible descriptions. Feed
+status distinguishes responses still loading from unavailable sources, with a compact
+answered/total readout on phones. Hazard sheets share the earthquake panel's Close
+control and 20px place/title scale, retaining each hazard's own facts and caveats.
+
+Empty phone lists shrink to their status message rather than reserving rows for absent events.

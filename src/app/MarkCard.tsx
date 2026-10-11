@@ -151,17 +151,12 @@ export function MarkCard({ found, now, archived = false, onClose }: MarkCardProp
         <button
           type="button"
           onClick={onClose}
-          // Top-aligned inside its own touch target. A coarse pointer gives every button `min-height: 44px`
-          // and a button centres its content, so the box put "esc" fourteen pixels below the label beside it.
-          className="flex cursor-pointer items-start font-mono text-[10.5px] text-faint transition-colors hover:text-ink"
+          className="cursor-pointer px-2.5 text-[11px] text-dim transition-colors hover:text-ink"
         >
-          esc
+          Close
         </button>
       </div>
-      {/* The same size the panel's other tenant uses, because it is the same slot. A pinned earthquake put
-          its magnitude here at 30px and a mark put its name at 22px, so the header changed size depending
-          on what you had clicked. 30 is a step the scale already has; 22 was its only use. */}
-      <h2 className="mt-2 text-[30px] leading-tight text-ink">{title}</h2>
+      <h2 className="mt-2 text-[20px] leading-tight text-ink">{title}</h2>
       <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{note}</p>
 
       {/* One rule above the group rather than under every row. See the note on `Field` in DetailPanel. */}

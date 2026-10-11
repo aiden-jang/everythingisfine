@@ -34,10 +34,12 @@ export function feedStatus(
        header disowned a planet already covered in earthquakes. The dot still blinks until all are in. */
     phrase:
       arrived === 0
-        ? "connecting"
+        ? settling
+          ? "connecting"
+          : "feeds unavailable"
         : arrived === total
           ? "all feeds live"
-          : `${arrived} of ${total} feeds live`,
+          : `${arrived} of ${total} feeds live · ${settling ? "loading" : "unavailable"}`,
     silent: silentFeeds(
       Object.fromEntries(Object.entries(answered).map(([k, v]) => [k, v !== "failed"])) as Record<
         HazardLayer,

@@ -1,3 +1,4 @@
+import { LayerToggle } from "./LayerToggle";
 import type { ReactElement, ReactNode } from "react";
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 import { PLAYBACK } from "../geo/waves";
@@ -18,30 +19,6 @@ import { flame, spiral, volcano, waves } from "../globe/shapes";
 
 /* One row of the key: a glyph, the line that names it, and the reasoning one press away. See
    ARCHITECTURE.md. */
-/** One layer switch. These state their condition in their pressed state; the header's controls state it
- * in their label ("Sound off"). Two idioms for one job, worth settling in one direction eventually. */
-function LayerToggle({
-  label,
-  on,
-  onChange,
-}: {
-  label: string;
-  on: boolean;
-  onChange: (on: boolean) => void;
-}): JSX.Element {
-  return (
-    <button
-      type="button"
-      aria-pressed={on}
-      onClick={() => onChange(!on)}
-      className={`cursor-pointer border px-2 py-1 text-[11px] transition-colors ${
-        on ? "border-faint bg-raised text-ink" : "border-hairline text-faint hover:bg-raised hover:text-dim"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
 
 function KeyRow({ glyph, note }: { glyph?: ReactNode; note: string | null }): ReactElement | null {
   // Takes the null the note functions already return for an empty layer, so no caller has to prove
@@ -586,7 +563,7 @@ export function MagnitudeFilter({
           {switches.length === 0 ? null : (
             <div className="mt-3">
               <span className="label block">Layers</span>
-              <div role="group" aria-label="Layers" className="mt-1 flex flex-wrap gap-1.5">
+              <div role="group" aria-label="Layers" className="layer-options mt-1">
                 {switches}
               </div>
             </div>

@@ -119,6 +119,7 @@ export function EventList({
        ARCHITECTURE.md. */
     <section
       aria-label="Recent earthquakes"
+      data-empty={quakes.length === 0 || undefined}
       /* A share of the viewport in the two single-column layouts, not just a floor. See ARCHITECTURE.md#srcappeventlisttsx. */
       className="flex min-h-[8.25rem] flex-1 flex-col max-md:min-h-[30dvh] xl:min-h-0 xl:flex-none"
     >

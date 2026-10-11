@@ -1260,3 +1260,31 @@
     scroll-padding-top: 64px;
   }
 }
+
+.layer-options {
+  display: grid;
+  gap: 10px;
+}
+.layer-option {
+  display: grid;
+  grid-template-columns: 116px 1fr;
+  align-items: center;
+  gap: 12px;
+}
+.layer-option button {
+  min-height: 44px;
+  border-radius: 7px;
+  text-align: left;
+}
+.layer-option p {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--color-faint);
+}
+
+@media (width < 768px) {
+  [aria-label="Recent earthquakes"][data-empty] {
+    min-height: 0;
+    flex: none;
+  }
+}
