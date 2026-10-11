@@ -10,15 +10,7 @@
 @import "@fontsource-variable/geist-mono/wght.css";
 
 @theme {
-  /* Chrome. Blue on purpose, and bounded on purpose.
-     The default magnitude ramp is warm and the colourblind-safe ramp runs blue to yellow; between
-     them they occupy most of the wheel, so chrome that competes with either one is unreadable. The
-     constraint that follows from that is a *ceiling*, not the absence of hue: chroma, meaning
-     max(rgb) - min(rgb), stays at or under 55, which `design.spec.ts` enforces on every painted
-     element outside the canvas and the legend.
-     This palette used to sit at 37 and read grey, because the blue was all in the dim tones while
-     the ink you actually read measured 13. The blue is in the ink now and every value still clears
-     the ceiling: 33, 49 and 53 against 55. See DESIGN.md section 3. */
+  /* Chrome stays below the chroma ceiling; brighter text keeps small readouts legible. */
   --color-void: #050b16;
   --color-sphere: #0a101c;
   --color-land: #1e293f;
@@ -43,11 +35,10 @@
   --color-deck: #0a1322;
   --color-raised: #101d33;
   --color-hairline: rgb(148 163 184 / 0.14);
-  --color-ink: #d6e4f7;
-  --color-dim: #9fb4d0;
-  /* Raised from #55617a, which measured 2.97 against the deck and failed AA for normal text. This
-     is 4.69, so the least important labels became readable as a side effect of the palette. */
-  --color-faint: #6f80a4;
+  --color-ink: #e8edf5;
+  --color-dim: #a9b5c7;
+  /* Secondary text must remain readable against the deck, including small timestamps. */
+  --color-faint: #8997ae;
 
   /* The one named exception, per DESIGN.md 3.1: it sits on the silhouette where no marker is drawn
      and never encodes a value. Named because an unstated exception becomes a precedent. */
@@ -55,7 +46,7 @@
 
   /* Declared, not measured: the desktop rail starts below the floating header, and a height read
      back from the DOM would be a resize observer feeding a layout that one number states outright. */
-  --head-h: 46px;
+  --head-h: 60px;
   /* How much of the viewport the phone's detail sheet may take. Named because two places need the same
      number: the sheet's own cap, and the camera lift that has to clear it. */
   --panel-share: 0.7;
@@ -1069,5 +1060,103 @@
     align-items: start;
     /* Part of the title block's group rather than a section of its own. */
     margin-top: 0.125rem;
+  }
+}
+
+/* Controls stay neutral so the event ramp remains the only signal with hue. */
+.wordmark {
+  gap: 1px;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.045em;
+}
+.zone-head {
+  background: color-mix(in srgb, var(--color-void) 82%, transparent);
+  backdrop-filter: blur(20px) saturate(0.45);
+}
+.zone-head button:not(.wordmark) {
+  min-height: 32px;
+  border-radius: 7px;
+  padding-inline: 12px;
+  font-size: 12px;
+}
+.zone-head button[aria-pressed="true"] {
+  border-color: var(--color-dim);
+  background: var(--color-raised);
+  color: var(--color-ink);
+}
+.zone-rail input:not([type="range"]) {
+  min-height: 36px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--color-raised) 70%, transparent);
+  padding-inline: 10px;
+  font-size: 12px;
+}
+.zone-rail input::placeholder {
+  color: var(--color-faint);
+}
+.zone-rail .disclose {
+  min-height: 28px;
+  font-size: 12px;
+}
+.zone-rail .titleblock {
+  border: 0;
+  background: transparent;
+  gap: 0;
+}
+.zone-rail .titleblock::before,
+.zone-rail .titleblock::after {
+  display: none;
+}
+.zone-rail .tb-cell {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-hairline);
+  background: transparent;
+}
+.zone-rail .tb-cell:first-child {
+  padding-top: 4px;
+  padding-bottom: 18px;
+}
+[aria-label="Recent earthquakes"] li button {
+  border-radius: 7px;
+  padding-block: 10px;
+}
+[aria-label="Recent earthquakes"] li button[aria-current="true"] {
+  box-shadow: inset 2px 0 var(--color-ink);
+}
+@media (max-width: 767px) {
+  .wordmark {
+    font-size: 16px;
+  }
+  .zone-head {
+    gap: 12px;
+    padding-inline: 16px;
+  }
+  .zone-head button:not(.wordmark) {
+    padding-inline: 8px;
+  }
+  .zone-rail {
+    border-radius: 20px 20px 0 0;
+  }
+}
+
+/* Live activity comes before archive browsing; an active archive keeps its date upfront. */
+.rail > [data-rail="activity"]:not(:has(.stamp)) {
+  order: 2;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+@media (min-width: 768px) {
+  .zone-rail > .titleblock {
+    background: var(--color-deck);
+  }
+}
+
+@media (pointer: coarse) {
+  .zone-head button:not(.wordmark),
+  .zone-rail .disclose,
+  .zone-rail input:not([type="range"]) {
+    min-height: 44px;
   }
 }

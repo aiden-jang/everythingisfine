@@ -423,14 +423,14 @@ export function App(): JSX.Element {
     lastWritten.current = window.location.hash;
   }, [backToLive]);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
-  /* Open by default: it has a corner of its own, so opening it pushes nothing. */
-  const [keyOpen, setKeyOpen] = useStoredFlag("legendKey", true);
+  /* The glossary opens on request; the magnitude scale stays visible in the rail. */
+  const [keyOpen, setKeyOpen] = useStoredFlag("legendKey", false);
   const [motionOn, setMotionOn] = useStoredFlag("motion", true);
   const [sinkOn, setSinkOn] = useStoredFlag("depthSink", true);
   /* On by default, so the slab's 37kB and 1,583 marks are on every first load. It earns it: a real day
   has two events below 300km, and you cannot see a dipping plane in two dots. */
   const [slabOn, setSlabOn] = useStoredFlag("slab", true);
-  const [figuresOn, setFiguresOn] = useStoredFlag("figures", true);
+  const [figuresOn, setFiguresOn] = useStoredFlag("figures", false);
   // Lazy: 13kB of coordinates has no business in the first frame.
   const [zones, setZones] = useState<ZoneTable | null>(null);
   useEffect(() => {
@@ -1489,16 +1489,16 @@ export function App(): JSX.Element {
           aria-label="Everything Is Fine, back to the default view"
           /* `self-start` where the row wraps: `items-center` floated the wordmark between the two rows and
           left "Still" orphaned diagonally opposite. */
-          /* 550 rather than 600. Letterspaced uppercase at 13px already reads as emphasis, and the extra
-             weight on top of it made the masthead the heaviest thing on a screen whose subject is the
-             globe behind it. */
-          className="flex min-h-11 cursor-pointer items-center text-[10px] font-[550] tracking-[0.1em] whitespace-nowrap transition-colors hover:text-ink max-md:self-start md:text-[13px] md:tracking-[0.16em]"
+          /* Sentence case belongs to the masthead; tracked capitals remain for instrument labels.
+             The accessible name stays stable for reset controls and shared navigation.
+             The period is decorative, so it is excluded from the spoken label. */
+          className="wordmark flex min-h-11 cursor-pointer items-center whitespace-nowrap max-md:self-start"
         >
-          EVERYTHING IS FINE
+          Everything is fine<span aria-hidden="true">.</span>
         </button>
         {/* These ignore the filters, so each has to say whose number it is: at magnitude 4 the headline read
             5 while this row read 160. Wide screens only - from `sm` up they took ~380px of a 768px header. */}
-        <div className={`hidden items-baseline gap-5 ${snapshot.coveredSince === null ? "" : "xl:flex"}`}>
+        <div className={`hidden items-baseline gap-5 ${snapshot.coveredSince === null ? "" : "2xl:flex"}`}>
           {(
             [
               ["reported", snapshot.stats.quakes.toLocaleString("en-GB")],
@@ -1694,7 +1694,7 @@ export function App(): JSX.Element {
                   {/* The one piece of display type here, so it is set like display type: heavier than the
                     prose under it and closed up slightly, which large figures need and small ones do not.
                     `tabular-nums` still decides the widths, so the tracking cannot make it twitch. */}
-                  <div className="mt-1.5 text-[38px] leading-none font-[650] tracking-[-0.015em] tabular-nums">
+                  <div className="mt-1.5 text-[48px] leading-none font-[650] tracking-[-0.015em] tabular-nums">
                     {headline.toLocaleString("en-GB")}
                   </div>
                   {/* One slot, shared by the tour and the replay clock. Every tour stop says where it is and how much

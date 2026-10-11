@@ -943,3 +943,22 @@ looping bed under the globe, and any tone presented as what an earthquake sounds
   quakes asserts a relationship that does not exist. See 3.3.
 - Losing a pinned selection when the feed refreshes.
 - Publishing a frame rate without naming the hardware it was measured on.
+
+
+## October 11 interface revision
+
+The globe, data ramps, fixed viewport and responsive rail remain the product's frame.
+The masthead now uses sentence case at 18px (16px on phones), weight 600 and tight
+tracking. A 60px desktop header gives the 32px controls room. Controls use 7px corners,
+with brightness and a neutral border identifying selected states. The headline is 48px.
+The summary uses open rows and internal rules rather than a surrounding box and corner ticks.
+Instrument is #E8EDF5, Dim #A9B5C7 and Faint #8997AE for clearer small text.
+These deliberately supersede the earlier masthead, 38px headline and summary frame specifications.
+
+The glossary starts folded; the magnitude scale remains visible. Constellation figures
+start off, as an interpretation layer requested by the viewer. Remembered preferences
+still take precedence, and feed, filter, selection and archive behavior are unchanged.
+
+On a live view, archive browsing follows the recent list and place search. An active
+archive keeps its date and return-to-live control near the top. This gives live events
+priority without concealing which historical day is being shown.
