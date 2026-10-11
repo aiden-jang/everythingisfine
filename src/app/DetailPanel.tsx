@@ -165,26 +165,19 @@ export function DetailPanel({
     >
       <div className="flex items-start justify-between">
         <div className="label">Pinned event</div>
-        {/* Keys are lowercase and mono here, because that is what is printed on them. Wearing `.label` this
-            announced "ESC" as a section heading while the hint row over the globe said "esc". */}
         <button
           type="button"
           onClick={onClose}
-          /*
-            Top-aligned inside its own touch target. A coarse pointer gives every button `min-height: 44px`
-            and a button centres its content, so the box put "esc" fourteen pixels below the label beside
-            it. The target keeps its size and the text moves to the top of it.
-          */
-          className="flex cursor-pointer items-start font-mono text-[10.5px] text-faint transition-colors hover:text-ink"
+          className="flex cursor-pointer items-center justify-center text-[12px] text-dim transition-colors hover:text-ink"
         >
-          esc
+          Close
         </button>
       </div>
 
       <div className="mt-2 flex items-baseline gap-2">
         {/* The panel's own display figure, one step under the rail's headline: this answers "which event"
             and that one answers "how much is happening". */}
-        <span className="text-[30px] leading-none font-[620] tracking-[-0.012em]">{magnitude(r)}</span>
+        <span className="text-[40px] leading-none font-[620] tracking-[-0.012em]">{magnitude(r)}</span>
         {/* Hooked, like the ramp and the map scale. Which magnitude scale a reading was measured on is the
             field that proves this is a real catalogue entry, and "the first mono span in the panel" stopped
             being that when the close key became lowercase mono. */}
@@ -192,11 +185,10 @@ export function DetailPanel({
           {r.scale}
         </span>
       </div>
-      <div className="mt-2 text-[13px] leading-snug text-dim">{place(r.place)}</div>
+      <h2 className="event-place mt-3 text-[20px] leading-snug font-medium text-ink">{place(r.place)}</h2>
       <div className="mt-1 text-[11px] text-faint">
         {clock(r.time)} · {ago(r.time, now, archived)}
       </div>
-
       {/* A pinned event the filters now exclude. Kept rather than closed, because losing a pin to a nudged
           slider is worse than holding one - and named, rather than kept quietly. */}
       {excluded ? (
@@ -332,16 +324,17 @@ export function DetailPanel({
               move depending on which feed arrived first.
             </div>
           </div>
-          {/* One dot, and columns for the rest. Three facts joined by two middle dots reads as a
-              concatenation; the same three aligned down the panel read as a comparison. */}
           {quake.readings.map((reading, i) => (
-            <div key={i} className="mt-2 flex items-baseline gap-x-3 font-mono text-[10.5px] text-dim">
-              <span className="w-[40px] shrink-0 text-ink">{SOURCE_NAMES[reading.source]}</span>
-              <span className="w-[74px] shrink-0">
+            <div
+              key={i}
+              className="agency-reading mt-2 grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-[12px] text-dim"
+            >
+              <span className="text-ink">{SOURCE_NAMES[reading.source]}</span>
+              <span className="text-right">
                 M {reading.magnitude.toFixed(1)} {reading.scale}
               </span>
-              <span className="min-w-0 flex-1 truncate">{coordinates(reading)}</span>
-              <span className="shrink-0 text-faint">{clock(reading.time)}</span>
+              <span className="min-w-0 text-[10.5px]">{coordinates(reading)}</span>
+              <span className="text-right text-[10.5px] text-faint">{clock(reading.time)}</span>
             </div>
           ))}
         </div>

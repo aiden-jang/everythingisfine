@@ -1552,7 +1552,7 @@ export function App(): JSX.Element {
           <div
             /* Any press inside closes it, or the next tap lands on the menu instead of what is behind it. */
             onClick={() => setMoreOpen(false)}
-            className={`contents max-md:absolute max-md:top-full max-md:right-4 max-md:z-10 max-md:flex max-md:flex-col max-md:items-stretch max-md:gap-1.5 max-md:border max-md:border-hairline max-md:bg-deck max-md:p-2 ${
+            className={`utility-controls flex items-center gap-2 max-md:absolute max-md:top-full max-md:right-4 max-md:z-10 max-md:flex max-md:flex-col max-md:items-stretch max-md:gap-1.5 max-md:border max-md:border-hairline max-md:bg-deck max-md:p-2 ${
               moreOpen ? "" : "max-md:hidden"
             }`}
           >
@@ -1796,19 +1796,18 @@ export function App(): JSX.Element {
             ) : null}
           </div>
 
-          {/* One tenant only: the tablet grid names `.tb-notes` and nothing else, so a second block auto-places
-              into a row of its own. One extra paragraph added 54px to a strip already 250px over. */}
-          <div className="tb-stack">
+          {!archived && feeds.silent ? (
+            <div className="tb-notes">
+              <span className="label">Feeds</span>
+              <p className="text-[11px] leading-relaxed text-faint">{feeds.silent}</p>
+            </div>
+          ) : null}
+          <details className="tb-stack context-fold">
+            <summary className="disclose text-dim">More context</summary>
             {!replay && quiet.note ? (
               <div className="tb-notes">
                 <span className="label">Notes</span>
                 <p className="text-[11px] leading-relaxed text-faint">{quiet.note}</p>
-              </div>
-            ) : null}
-            {!archived && feeds.silent ? (
-              <div className="tb-notes">
-                <span className="label">Feeds</span>
-                <p className="text-[11px] leading-relaxed text-faint">{feeds.silent}</p>
               </div>
             ) : null}
             {strongest && !replay && edge.complete && energyShare !== null && energyShare > 0.5 ? (
@@ -1894,7 +1893,7 @@ export function App(): JSX.Element {
                 )}
               </p>
             ) : null}
-          </div>
+          </details>
 
           <div data-rail="legend">{marksFilter}</div>
           {/* A phone has no canvas corner to spare, so there the key goes back into the column. */}

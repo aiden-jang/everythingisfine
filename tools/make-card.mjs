@@ -12,7 +12,7 @@
 // `@playwright/test`, not `playwright`: the bare package is not a dependency here, so the import this
 // script shipped with threw ERR_MODULE_NOT_FOUND and `pnpm card` had never actually run.
 import { chromium } from "@playwright/test";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -38,11 +38,12 @@ const VIEW = "#at=105,18,1.05&m=7.5&r=thermal";
  */
 const FEEDS = ["earthquake.usgs.gov", "www.seismicportal.eu", "www.gdacs.org", "services.swpc.noaa.gov"];
 
-const card = (globe, tokens) => `<!doctype html>
+const card = (globe, tokens, font) => `<!doctype html>
 <html><head><meta charset="utf-8" /><style>
   @font-face {
     font-family: "Geist";
-    src: local("Geist"), local("Inter"), local("Helvetica Neue");
+    src: url("data:font/woff2;base64,${font}") format("woff2");
+    font-weight: 100 900;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -58,16 +59,15 @@ const card = (globe, tokens) => `<!doctype html>
     background-image: url("${globe}");
     background-size: contain; background-repeat: no-repeat; background-position: center;
   }
-  // A wash left to right, so type on the left never sits on the coastlines. Sized to the type rather than to
-  // the image: it has to stop before the globe's limb or the card gets a vertical seam across it.
+  /* The wash stops before the globe limb so it never draws a vertical seam. */
   .veil {
     position: absolute; inset: 0;
     background: linear-gradient(90deg, ${tokens.void} 0%, ${tokens.void} 34%, transparent 62%);
   }
   .type { position: absolute; left: 72px; top: 50%; transform: translateY(-50%); width: 480px; }
-  .mark { font-size: 26px; font-weight: 600; letter-spacing: 0.16em; }
+  .mark { font-size: 54px; line-height: 1.05; font-weight: 600; letter-spacing: -0.045em; }
   .rule { width: 44px; height: 1px; background: ${tokens.coast}; margin: 26px 0; }
-  .line { font-size: 30px; line-height: 1.32; color: ${tokens.ink}; letter-spacing: -0.01em; }
+  .line { font-size: 23px; line-height: 1.45; color: ${tokens.ink}; letter-spacing: -0.01em; }
   .feeds {
     position: absolute; left: 72px; bottom: 56px;
     font-size: 15px; letter-spacing: 0.1em; color: ${tokens.faint};
@@ -77,7 +77,7 @@ const card = (globe, tokens) => `<!doctype html>
   <div class="globe"></div>
   <div class="veil"></div>
   <div class="type">
-    <div class="mark">EVERYTHING IS FINE</div>
+    <div class="mark">Everything is fine.</div>
     <div class="rule"></div>
     <!--
       One sentence, and not the same one as og:description. The description sits directly beneath the
@@ -109,12 +109,10 @@ try {
    */
   await page.waitForTimeout(11_000);
 
-  /*
-   * The key hints, hidden for the shot. `locator.screenshot()` clips the page to the element's box rather
-   * than isolating the element, so the hint row landed across the bottom of the globe. Hidden here rather
-   * than in the app, because it is right on screen and wrong only in a photograph of it.
-   */
-  await page.addStyleTag({ content: ".key-hints { display: none !important; }" });
+  // A canvas screenshot also captures its overlapping chrome; the share image carries geography only.
+  await page.addStyleTag({
+    content: ".zone-head, .key-hints, .zones > *:not(.zone-canvas) { visibility: hidden !important; }",
+  });
 
   // The palette, asked of the app rather than copied here, so the card cannot drift from it.
   const tokens = await page.evaluate(() => {
@@ -127,7 +125,10 @@ try {
   const shot = `data:image/png;base64,${globe.toString("base64")}`;
 
   const composer = await browser.newPage({ viewport: { width: 1200, height: 630 } });
-  await composer.setContent(card(shot, tokens), { waitUntil: "load" });
+  const font = await readFile(
+    join(HERE, "..", "node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2"),
+  );
+  await composer.setContent(card(shot, tokens, font.toString("base64")), { waitUntil: "load" });
   await composer.waitForTimeout(300);
   await writeFile(OUT, await composer.screenshot());
   console.log(`wrote ${OUT}`);

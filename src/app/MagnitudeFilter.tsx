@@ -232,7 +232,7 @@ export function MagnitudeFilter({
                 />
               ))}
             </span>
-            <span>size shows it too</span>
+            <span>Larger marks = higher magnitude</span>
           </div>
 
           {/* Depth, explained. An encoding nobody can read is decoration, and a marker with a hole in it
@@ -267,11 +267,8 @@ export function MagnitudeFilter({
           reads, and the slab explanation behind it is two more lines. */}
           <KeyRow note={depthNote(depth)} />
 
-          {/* With the sink on, a marker is over the hypocentre rather than the epicentre, which for a deep
-          event is a visible distance inland of the point the catalogue names. Everything else in this key
-          explains an encoding; this explains a position, which cannot go unsaid. */}
           {sinkOn ? (
-            <KeyRow note="Each one is drawn at its own depth, so a deep event sits inside the surface point it is listed at. Orbit and they separate." />
+            <KeyRow note="Deep events sit inside the globe. Orbit to see their distance below the surface." />
           ) : null}
 
           {/* An unexplained line on a data visualisation is a question mark, and somebody could read these as
@@ -285,18 +282,21 @@ export function MagnitudeFilter({
           </div>
 
           {motion ? (
-            <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-              <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-                <path
-                  d="M -7 6 L 5 -6 M 5 -6 L -1 -6 M 5 -6 L 5 0"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.6}
-                  className="text-dim"
-                />
-              </svg>
-              <span>{motionNote(motion)}</span>
-            </div>
+            <details className="mt-2">
+              <summary className="disclose text-[11px] text-faint">Plate motion</summary>
+              <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+                <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                  <path
+                    d="M -7 6 L 5 -6 M 5 -6 L -1 -6 M 5 -6 L 5 0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.6}
+                    className="text-dim"
+                  />
+                </svg>
+                <span>{motionNote(motion)}</span>
+              </div>
+            </details>
           ) : null}
 
           {/* Its own row, not hung off the boundaries: this is a second population of events - older,

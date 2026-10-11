@@ -430,7 +430,7 @@ test("a revised magnitude says what the agency first said", async ({ page }) => 
   // Both halves, and only the halves that moved.
   await expect(panel).toContainText("USGS first said M 6.1 → M 6.4, 25 km → 41 km deep");
   // The current value is what the headline and the marker use, not the first one.
-  await expect(panel.locator(".text-\\[30px\\]")).toContainText("6.4");
+  await expect(panel.locator(".text-\\[40px\\]")).toContainText("6.4");
   await expect(page.locator("header")).toContainText("revised");
 });
 
@@ -1497,7 +1497,7 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
    */
   const only = (text: string) => page.getByText(text).filter({ visible: true });
   const key = only("What the marks mean");
-  const explanation = only("size shows it too");
+  const explanation = only("Larger marks = higher magnitude");
   const slider = page.locator("#mag");
 
   // The glossary starts folded; the filter remains visible before and after opening it.
@@ -1523,11 +1523,11 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   // Remembered, because a panel somebody closed is a preference too.
   await page.reload();
   await waitForData(page);
-  await expect(only("size shows it too")).toHaveCount(0);
+  await expect(only("Larger marks = higher magnitude")).toHaveCount(0);
   await expect(page.locator("#mag")).toBeVisible();
 
   await only("What the marks mean").click();
-  await expect(only("size shows it too")).toBeVisible();
+  await expect(only("Larger marks = higher magnitude")).toBeVisible();
 });
 
 /*

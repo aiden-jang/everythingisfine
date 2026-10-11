@@ -87,7 +87,7 @@ export function Resizer({
       }}
       // Wider than it looks: a 1px line is the correct visual weight and an unusable target, so the
       // hit area straddles the border and only the border is painted.
-      className={`group z-[2] ${horizontal ? "h-3 cursor-row-resize" : "w-3 cursor-col-resize"} ${className ?? ""}`}
+      className={`group z-[2] ${grip ? "sheet-grip" : ""} ${horizontal ? "h-3 cursor-row-resize" : "w-3 cursor-col-resize"} ${className ?? ""}`}
       style={style}
     >
       {/* Barely there until reached for. A permanent rule through the interface is the seam the

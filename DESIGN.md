@@ -962,3 +962,17 @@ still take precedence, and feed, filter, selection and archive behavior are unch
 On a live view, archive browsing follows the recent list and place search. An active
 archive keeps its date and return-to-live control near the top. This gives live events
 priority without concealing which historical day is being shown.
+
+
+### Second interface pass
+
+The rail's analysis lives under More context; feed silence warnings remain outside
+that fold. The selected event uses a 40px magnitude and a 20px place heading. Agency
+readings use two aligned rows per source so scale, coordinates and time remain legible
+without truncating the comparison. Desktop utility actions are grouped apart from
+view controls. The phone sheet retains its drag and keyboard behavior with a wider,
+44px handle target, and selected-event sheets use rounded upper corners. The map key
+keeps its visual encoding examples and folds the plate-motion explanation separately.
+
+The favicon is a simplified globe and orbital dot. The share card uses the same
+sentence-case wordmark and self-hosted Geist, with geography and no live event marks.
