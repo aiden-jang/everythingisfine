@@ -1528,7 +1528,7 @@ export function App(): JSX.Element {
         </div>
         {/* Never `whitespace-nowrap` here. It does not shrink, it overflows, and one extra button pushed
         the header 120px past a phone viewport. */}
-        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-2">
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 max-md:gap-x-1.5">
           <button
             type="button"
             onClick={() => setFlat((f) => !f)}
