@@ -418,7 +418,6 @@ export function Timeline({
           aria-keyshortcuts="ArrowLeft ArrowRight Home End Comma Period"
           className="scrub-slider flex-1"
         />
-        {/* A held cursor offers a return to live, or to the archived day's end. */}
         {parked ? (
           <button
             type="button"
