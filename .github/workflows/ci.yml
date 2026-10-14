@@ -40,7 +40,7 @@ jobs:
       - run: pnpm run test:heap
       - run: pnpm run build
       - run: pnpm run dead-classes
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: production-assets
           path: dist/
@@ -70,7 +70,7 @@ jobs:
         env:
           E2E_SHARD: ${{ matrix.shard }}
       - if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: browser-results-${{ strategy.job-index }}
           path: test-results/
