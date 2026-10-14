@@ -17,8 +17,7 @@ import {
 import { category } from "../sources/cyclones";
 import { flame, spiral, volcano, waves } from "../globe/shapes";
 
-/* One row of the key: a glyph, the line that names it, and the reasoning one press away. See
-   ARCHITECTURE.md. */
+/* One row of the key: a glyph, the line that names it, and the reasoning one press away. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */
 
 function KeyRow({ glyph, note }: { glyph?: ReactNode; note: string | null }): ReactElement | null {
   // Takes the null the note functions already return for an empty layer, so no caller has to prove
@@ -180,8 +179,7 @@ export function MagnitudeFilter({
   if (part === "key") {
     return (
       <div data-ramp>
-        {/* Everything below the scale is explanation and folds away. Controls above, commentary below. See
-          ARCHITECTURE.md. */}
+        {/* Everything below the scale is explanation and folds away. Controls above, commentary below. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
         <details open={keyOpen}>
           <summary
             className="disclose text-[11px] text-faint hover:text-dim"
@@ -554,8 +552,7 @@ export function MagnitudeFilter({
       </div>
 
       {/* Feeds and layers fold, because they are set once and then never touched, and the rail is short by
-          about 400px with the timeline back in it. The ramp above stays open - that one gets dragged. See
-          ARCHITECTURE.md. */}
+          about 400px with the timeline back in it. The ramp above stays open - that one gets dragged. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
       <details className="mt-3">
         <summary className="label cursor-pointer select-none">Feeds and layers</summary>
         <div className="mt-2">

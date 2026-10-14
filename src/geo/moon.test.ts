@@ -38,8 +38,7 @@ describe("where the moon is", () => {
   });
 
   it("comes back to the sun a synodic month later, and the month is the right length", () => {
-    /* Successive new moons, found by minimising the elongation rather than by being told when they are. See
-       ARCHITECTURE.md. */
+    /* Successive new moons, found by minimising the elongation rather than by being told when they are. See ARCHITECTURE.md#srcgeomoontestts. */
     const newMoons: number[] = [];
     let previous = -1;
     let last = 999;

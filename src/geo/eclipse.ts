@@ -44,8 +44,7 @@ export function solarEclipse(at: number): Eclipse {
    */
   const along = -dot(moonAt, dir);
 
-  /* The moon has to be between the sun and the Earth, and a distance check alone does not say so. See
-     ARCHITECTURE.md. */
+  /* The moon has to be between the sun and the Earth, and a distance check alone does not say so. See ARCHITECTURE.md#srcgeoeclipsets. */
   if (along <= 0) {
     const behind = Math.hypot(
       moonAt[0] + along * dir[0],

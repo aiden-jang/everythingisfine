@@ -311,3 +311,21 @@ describe("a shared mark", () => {
     expect(encode({ ...state, mark: null })).not.toContain("k=");
   });
 });
+
+describe("historical archive cursors", () => {
+  it.each(["1960-05-22T19:11:00Z", "1970-01-01T00:00:00Z", "1999-12-31T12:30:00Z"])(
+    "preserves the held moment on %s",
+    (iso) => {
+      const at = Date.parse(iso);
+      const link = encode({ ...state, day: iso.slice(0, 10), cursor: at });
+      expect(decode(link).cursor).toBe(at);
+    },
+  );
+
+  it("requires a real completed archive day and a nonempty numeric cursor", () => {
+    expect(decode("d=1960-02-31&c=-315619200").cursor).toBeUndefined();
+    expect(decode("d=2999-01-01&c=0").cursor).toBeUndefined();
+    expect(decode("d=1960-05-22&c=").cursor).toBeUndefined();
+    expect(decode("d=1960-05-22&c=Infinity").cursor).toBeUndefined();
+  });
+});

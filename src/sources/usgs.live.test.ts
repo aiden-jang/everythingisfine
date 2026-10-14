@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { browserRuntime } from "./types";
 import { createUsgsSource, USGS_HOUR_FEED } from "./usgs";
 
-/* The one test that touches the real internet. Excluded from the default run and from CI. See
-   ARCHITECTURE.md. */
+/* The one test that touches the real internet. Excluded from the default run and from CI. See ARCHITECTURE.md#srcsourcesusgslivetestts. */
 
 describe("USGS, for real", () => {
   it("still answers, still allows a browser, and still parses", async () => {

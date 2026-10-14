@@ -33,8 +33,7 @@ describe("how far below the surface a marker is drawn", () => {
 
 describe("deriving the hole's depth from the sink", () => {
   /* `aDepth` was deleted and `vDepth` is now computed from `aSink` in the vertex shader, which halves the
-     per-event writes in `sync`. That is only allowed if the two agree, so this pins the algebra. See
-     ARCHITECTURE.md. */
+     per-event writes in `sync`. That is only allowed if the two agree, so this pins the algebra. See ARCHITECTURE.md#srcglobesinktestts. */
   const old = (depthKm: number): number =>
     Number.isFinite(depthKm)
       ? Math.max(0, Math.min(1, (depthKm - DEPTH_SHALLOW_KM) / (DEPTH_DEEP_KM - DEPTH_SHALLOW_KM)))

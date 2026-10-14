@@ -1,27 +1,37 @@
-import { cloneElement, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { GlobeLoading } from "./globe/GlobeLoading";
+import { stillMoment } from "./app/still";
+import { useStill } from "./app/useStill";
+import { Row } from "./app/Row";
+import { ArchiveControls } from "./app/ArchiveControls";
+import { useArchive } from "./app/useArchive";
+import {
+  cloneElement,
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 const Globe = lazy(() => import("./globe/Globe").then((m) => ({ default: m.Globe })));
 import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { PLACE_LIMIT, search, type Hit } from "./app/search";
 import { useRolling } from "./app/roll";
 import { useFloatingChrome, useNarrow } from "./app/useNarrow";
-import { store, stored } from "./app/stored";
 import { useStoredFlag, useStoredName, useStoredNumber } from "./app/useStored";
 import { newestEpisode } from "./sources/volcanoes";
 import { summarise, FEED_CAP } from "./sources/wildfires";
 import { countries } from "./sources/floods";
 import { marksFor } from "./app/marks";
 import { depthBands } from "./data/depth";
-import { drawStill, stillMoment, verdictLine, STILL_HEIGHT, STILL_WIDTH } from "./app/still";
 import { findSubject, MarkCard } from "./app/MarkCard";
 import { hazardCount, hazardGroups, outsideWindowNote } from "./app/hazards";
 import { withinWindow } from "./app/age";
-import { countForDay, dayRange, fetchArchive } from "./sources/archive";
-import { NOTABLE_DAYS, NOTABLE_NOTE } from "./app/notableDays";
 import { sizesOf } from "./app/gutenberg";
 import { SizeChart } from "./app/Sizes";
-import { ECLIPSE_DAYS, eclipseMoment } from "./app/eclipseDays";
-import { fetchHistory, type History } from "./sources/history";
 import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
 import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
@@ -65,13 +75,12 @@ import { buildSection, type SectionLine } from "./app/section";
 import { BUCKETS, histogram, totalIn } from "./app/histogram";
 import { diurnal } from "./app/diurnal";
 import { Dial } from "./app/Dial";
-import { DAY_LENGTH, isArchivableDay, isRealDay, typedDay } from "./app/day";
 import { decode, encode } from "./app/permalink";
 import { seconds } from "./app/arrival";
 import { timesLabel, versusReference } from "./app/versus";
 import { tick } from "./app/touch";
 import { recordWhen, SINCE, superlativeFor, UNTIL } from "./app/superlative";
-import { MAG_MIN, rampColorAt, type RampName } from "./globe/ramp";
+import { rampColorAt, type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
 import type { SourceStatus } from "./sources/types";
@@ -79,7 +88,6 @@ import {
   ago,
   agoShort,
   clock,
-  compactSpan,
   corroborationNote,
   energyPercent,
   magnitude,
@@ -108,46 +116,6 @@ function useFeed(): FeedSnapshot {
   return snapshot;
 }
 
-function Row({
-  lead,
-  label,
-  trail,
-  share,
-  onClick,
-}: {
-  lead?: string;
-  label: string;
-  trail: string;
-  share?: number;
-  onClick?: () => void;
-}): JSX.Element {
-  const body = (
-    <>
-      {lead ? <span className="w-[34px] shrink-0 font-mono text-[12px] text-ink">{lead}</span> : null}
-      <span className="min-w-0 flex-1 truncate text-[12px] text-dim">{label}</span>
-      <span className="shrink-0 font-mono text-[10.5px] text-faint">{trail}</span>
-      {share === undefined || share <= 0 ? null : (
-        <span aria-hidden className="pointer-events-none absolute inset-x-1.5 bottom-[3px]">
-          <span className="block h-px bg-dim" style={{ width: `${Math.max(2, share * 100)}%` }} />
-        </span>
-      )}
-    </>
-  );
-
-  const shared = "relative flex w-full items-baseline gap-3 rounded-[2px] px-1.5 py-[7px] text-left";
-  return onClick ? (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`${shared} cursor-pointer transition-colors hover:bg-raised`}
-    >
-      {body}
-    </button>
-  ) : (
-    <div className={shared}>{body}</div>
-  );
-}
-
 // Read before the first render. In an effect it shows the default globe first, then jumps.
 const shared = decode(window.location.hash);
 
@@ -161,7 +129,7 @@ export function App(): JSX.Element {
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [replay, setReplay] = useState<{ at: number; revealed: number } | null>(null);
-  // Never goes in the permalink: a cursor mid-playback is a hand on a control, not a view to send.
+  // Playback stays local; a shared cursor opens as a held view.
   const [scrub, setScrub] = useState<Scrub>(
     shared.cursor === undefined ? LIVE : { at: shared.cursor, playing: false },
   );
@@ -173,25 +141,19 @@ export function App(): JSX.Element {
   const [focusHour, setFocusHour] = useState<number | null>(null);
   /* Ten minutes, not the model's five: the grid is 900kB and the oval barely moves in five. */
   const { aurora, cyclones, fires, floods, volcanoes, answered } = useHazardLayers();
-  /* Keep this above every memo that calls it. Below them it is a temporal dead zone: tsc passes, the build
-     passes, and the page renders nothing. See ARCHITECTURE.md#srcapptsx. */
+  // Memos run during render; define their clock first. See ARCHITECTURE.md#srcapptsx.
   const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
-  /* Hidden while an archived day is up, or today's storms are drawn over July's earthquakes. See
-     ARCHITECTURE.md. */
+  /* Hidden while an archived day is up, or today's storms are drawn over July's earthquakes. See ARCHITECTURE.md#srcapptsx. */
   const archived = snapshot.archive !== null;
-  const loadedDay = snapshot.archive ? new Date(snapshot.archive.from).toISOString().slice(0, 10) : null;
-  // Yesterday. Read by both the date field and the stepper, so the two cannot disagree.
-  const newestDay = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-  const neighbours =
-    snapshot.archive === null
-      ? null
-      : {
-          prev: new Date(snapshot.archive.from - 86_400_000).toISOString().slice(0, 10),
-          next: new Date(snapshot.archive.from + 86_400_000).toISOString().slice(0, 10),
-        };
-  const [archiveHazards, setArchiveHazards] = useState<History | null>(null);
+  const archiveState = useArchive(feed, snapshot.archive, shared.day, (returnedToLive) => {
+    setSelected(null);
+    setMarkId(null);
+    if (returnedToLive) setScrub(LIVE);
+  });
+  const { archiveHazards, backToLive, stepDay, archiveBusy, archiveDay, loadedDay } = archiveState;
   /* In archive mode this is the end of the archived day, not the wall clock. See ARCHITECTURE.md#srcapptsx. */
   const now = snapshot.archive ? snapshot.archive.to : Date.now();
+  const minuteClock = Math.floor(now / 60_000) * 60_000;
   const span = { from: now - filters.windowMs, to: now };
   // Clamp on the way out, never write it back: a render must not correct its own state.
   const view = clampScrub(scrub, span);
@@ -204,7 +166,7 @@ export function App(): JSX.Element {
     const shown = <T,>(list: readonly T[], dateOf: (h: T) => number | null): readonly T[] =>
       list.filter((h) => {
         const at = dateOf(h);
-        if (!withinWindow(at, now, filters.windowMs)) return false;
+        if (!withinWindow(at, minuteClock, filters.windowMs)) return false;
         return revealAt === null || at === null || at <= revealAt;
       });
     const started = (h: { startedAt: number | null }): number | null => h.startedAt;
@@ -225,7 +187,7 @@ export function App(): JSX.Element {
     aurora,
     filters.windowMs,
     revealAt,
-    Math.floor(now / 60_000),
+    minuteClock,
   ]);
   const hazardTally = useMemo(() => {
     const held = archived
@@ -283,7 +245,12 @@ export function App(): JSX.Element {
   const fireSummary = useMemo(() => summarise(onGlobe.fires), [onGlobe.fires]);
   // Keyed on the revision, not the clock: the rail re-renders every second and these only move when an
   // earthquake arrives. Same reason everywhere else in this file that keys on `snapshot.revision`.
-  const depth = useMemo(() => depthBands(feed.store, filters, clockAt()), [filters, snapshot.revision]);
+  const depth = useMemo(
+    () => depthBands(feed.store, filters, clockAt()),
+    // Data revisions invalidate depth bands while the store identity stays fixed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filters, snapshot.revision, clockAt],
+  );
   const [flat, setFlat] = useStoredFlag("flat", false, shared.section !== undefined || undefined);
   /* Clamp on the way in too. The `Resizer` bounds this while dragging and the restore path went around
      it, so a stored 1 came back as a rail one pixel wide with nothing to grab. */
@@ -291,10 +258,7 @@ export function App(): JSX.Element {
     Math.min(RAIL_MAX, Math.max(RAIL_MIN, n)),
   );
   /* 0 means "nobody has dragged it", so the stylesheet's `60dvh` stays the only place that decides. */
-  const [sheetCanvas, setSheetCanvas] = useState<number>(() => Number(stored("sheet")) || 0);
-  useEffect(() => {
-    if (sheetCanvas > 0) store("sheet", String(sheetCanvas));
-  }, [sheetCanvas]);
+  const [sheetCanvas, setSheetCanvas] = useStoredNumber("sheet", 0, (n) => Math.max(0, n));
   const [regionsHeight, setRegionsHeight] = useStoredNumber("regions", 132);
   const regionsRef = useRef<HTMLDivElement>(null);
   const [sectionLine, setSectionLine] = useState<SectionLine | null>(shared.section ?? null);
@@ -304,107 +268,7 @@ export function App(): JSX.Element {
   // Dropped when the link also names a day: an archived day withholds the five layers, so the id would
   // resolve to nothing and the card would never open.
   const [markId, setMarkId] = useState<string | null>(shared.day ? null : (shared.mark ?? null));
-  /* The request. The span itself lives on the feed snapshot, and every claim of liveness in the chrome
-  reads that rather than this. */
-  const [archiveDay, setArchiveDay] = useState("");
-  /*
-   * Coverage, said while the day is still being typed rather than after it has loaded.
-   *
-   * Before about 1970 the networks were sparse and only large events were recorded anywhere, so a quiet
-   * day back there may mean nobody was listening rather than a quiet planet. Two of the notable days
-   * below are 1960 and 1964, so this is not a hypothetical.
-   */
-  const earlyDay = /^\d{4}/.test(archiveDay) && Number(archiveDay.slice(0, 4)) < 1970;
   const [moreOpen, setMoreOpen] = useState(false);
-  /* Fetched when the list opens, not on load. `count` answers in forty bytes. */
-  const [dayCounts, setDayCounts] = useState<Record<string, number | null>>({});
-  const countsAsked = useRef(false);
-  const askCounts = useCallback(() => {
-    if (countsAsked.current) return;
-    countsAsked.current = true;
-    void Promise.all(
-      NOTABLE_DAYS.map(async (d) => {
-        const n = await countForDay(d.day, MAG_MIN);
-        setDayCounts((prev) => ({ ...prev, [d.day]: n }));
-      }),
-    );
-  }, []);
-  const dayFault =
-    archiveDay.length < DAY_LENGTH
-      ? null
-      : !isRealDay(archiveDay)
-        ? `${archiveDay} is not a date.`
-        : !isArchivableDay(archiveDay, Date.now())
-          ? "That day has not finished yet. The archive draws whole UTC days, so today is the live view."
-          : null;
-  const [archiveBusy, setArchiveBusy] = useState(false);
-  const [archiveNote, setArchiveNote] = useState<string | null>(null);
-  // After the live feed has started, not before. `showArchive` stops the sources itself, and racing it
-  // lets them refill the archive.
-  const arrivedOnADay = useRef(false);
-  const loadArchive = useCallback(async (iso: string) => {
-    const span = dayRange(iso);
-    /* Check the ceiling here, where all four ways in meet: typed, pasted in a link, picked from the
-    notable list, stepped to from a neighbour. On the date field it guarded only the first. */
-    if (!span || !isArchivableDay(iso, Date.now())) return;
-    setArchiveBusy(true);
-    setArchiveNote(null);
-    setArchiveHazards(null);
-    const [got, hazards] = await Promise.all([
-      fetchArchive(span.from, span.to, MAG_MIN),
-      fetchHistory(span.from, span.to),
-    ]);
-    feed.showArchive(span, got.readings);
-    setArchiveHazards(hazards);
-    const said = (["usgs", "emsc"] as const).map((id) => {
-      const answer = got.answered[id];
-      if (!answer) return `${SOURCE_NAMES[id]} did not answer`;
-      return `${SOURCE_NAMES[id]} ${answer.count}${answer.truncated ? " (truncated)" : ""}`;
-    });
-    if (hazards.answered) {
-      const n =
-        hazards.cyclones.length + hazards.fires.length + hazards.floods.length + hazards.volcanoes.length;
-      said.push(`EONET ${n}`);
-    } else said.push("EONET did not answer");
-    setArchiveNote(said.join(" · "));
-    setArchiveBusy(false);
-    setSelected(null);
-    setMarkId(null);
-  }, []);
-  /*
-   * Not in the globe's mount effect, which is behind a lazy chunk carrying three.js: the seed waited
-   * for a planet to be built before it left the browser, measured at 1074ms against 259ms for the
-   * hazard layers, and it scales with the device.
-   *
-   * Above the archive effect on purpose: `showArchive` clears `running`, so a `start()` landing after
-   * it turns the live feed back on over the archived day.
-   */
-  useEffect(() => feed.start(), []);
-  useEffect(() => {
-    if (!shared.day || arrivedOnADay.current) return;
-    arrivedOnADay.current = true;
-    setArchiveDay(shared.day);
-    void loadArchive(shared.day);
-  }, [loadArchive]);
-  // Read the span from the feed, not from the rendered day: it goes stale between a step and its answer.
-  const stepDay = useCallback(
-    (days: number) => {
-      const archive = feed.snapshot().archive;
-      if (archive === null) return;
-      const iso = new Date(archive.from + days * 86_400_000).toISOString().slice(0, 10);
-      setArchiveDay(iso);
-      void loadArchive(iso);
-    },
-    [loadArchive],
-  );
-  const backToLive = useCallback(() => {
-    setArchiveDay("");
-    setArchiveNote(null);
-    setArchiveHazards(null);
-    setSelected(null);
-    setMarkId(null);
-    feed.resumeLive();
-  }, []);
   /* Never reload here. There is no backend, so the buffer is every event on screen. */
   const resetView = useCallback(() => {
     setQuery("");
@@ -424,12 +288,10 @@ export function App(): JSX.Element {
     lastWritten.current = window.location.hash;
   }, [backToLive]);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
-  /* The glossary opens on request; the magnitude scale stays visible in the rail. */
   const [keyOpen, setKeyOpen] = useStoredFlag("legendKey", false);
   const [motionOn, setMotionOn] = useStoredFlag("motion", false);
   const [sinkOn, setSinkOn] = useStoredFlag("depthSink", true);
-  /* On by default, so the slab's 37kB and 1,583 marks are on every first load. It earns it: a real day
-  has two events below 300km, and you cannot see a dipping plane in two dots. */
+  // Load the slab only when requested; the depth markers alone need no extra geometry.
   const [slabOn, setSlabOn] = useStoredFlag("slab", false);
   const [figuresOn, setFiguresOn] = useStoredFlag("figures", false);
   // Lazy: 13kB of coordinates has no business in the first frame.
@@ -535,17 +397,17 @@ export function App(): JSX.Element {
     zoom: shared.zoom ?? 1,
   });
   // Call and read this in the same tick. See `Globe.onCapture`.
-  const capture = useRef<() => HTMLCanvasElement | null>(() => null);
-  const onCapture = useCallback((fn: () => HTMLCanvasElement | null) => {
-    capture.current = fn;
-  }, []);
   const onReady = useCallback((fn: typeof flyTo.current) => {
     flyTo.current = fn;
     if (shared.lon !== undefined) fn(shared.lon, shared.lat ?? 12, shared.zoom ?? 1);
   }, []);
 
-  // Replace, never push, or every filter nudge is a history entry and Back never leaves the page.
-  useEffect(() => {
+  const heldCursor = view.playing ? null : view.at;
+  const sharedCursor = useRef(view.at);
+  sharedCursor.current = view.at;
+
+  // Publish changed controls before paint so an immediate copy carries the visible settings.
+  useLayoutEffect(() => {
     /* Never overwrite a hash this app did not write. See ARCHITECTURE.md#srcapptsx. */
     const write = (): void => {
       if (window.location.hash !== lastWritten.current) return;
@@ -563,7 +425,7 @@ export function App(): JSX.Element {
         section: sectionLine,
         // The moment being drawn, not the one the link asked for. `scrub` keeps the asked-for value so the
         // notice can say it was refused; writing that value back out spread it on every re-share.
-        cursor: view.at,
+        cursor: sharedCursor.current,
       });
       if (`#${fragment}` !== window.location.hash) history.replaceState(null, "", `#${fragment}`);
       // Skipping the no-op write matters: this runs every second and the SPA beacon counts each
@@ -575,7 +437,7 @@ export function App(): JSX.Element {
     return () => window.clearInterval(timer);
     // `snapshot.archive` is a dependency: the interval keeps calling the closure it was made with, and
     // without it entering an archive leaves the link saying live.
-  }, [filters, selected, ramp, sectionLine, snapshot.archive, markId]);
+  }, [filters, selected, ramp, sectionLine, snapshot.archive, markId, heldCursor]);
 
   /* Somebody pasting a link into an open tab. A fragment change does not reload, and the permalink is
   read once at module load, so the address bar and the globe would disagree. */
@@ -597,82 +459,7 @@ export function App(): JSX.Element {
     if (solar.touching) return { kind: solar.umbra > 0 ? "total" : "annular" } as const;
     return lunarEclipse(eclipseKey).umbral > 0 ? ({ kind: "lunar" } as const) : null;
   }, [eclipseKey]);
-  /* Keep everything between the capture and the `drawImage` synchronous: the globe's drawing buffer is
-  gone the moment the browser composites. */
-  const [saving, setSaving] = useState(false);
-  /* Read the counts at capture. They cannot be dependencies - `headline` is declared far below - and
-  leaving them stale gave a poster with a blank evidence line from the first empty render. */
-  const stillCounts = useRef({ quakes: 0, cyclones: 0, fires: 0, firesCapped: false, floods: 0 });
-  const saveStill = useCallback(() => {
-    const source = capture.current();
-    if (!source) return;
-    const frame = document.createElement("canvas");
-    frame.width = STILL_WIDTH;
-    frame.height = STILL_HEIGHT;
-    const ctx = frame.getContext("2d");
-    if (!ctx) return;
-    const style = getComputedStyle(document.documentElement);
-    const token = (name: string): string => style.getPropertyValue(`--color-${name}`).trim();
-    drawStill(
-      ctx,
-      source,
-      source.width,
-      source.height,
-      {
-        // The day's start, not the clock: `clockAt()` is the next midnight, so a still of the 15th was
-        // captioned the 16th.
-        moment: stillMoment(
-          view.at,
-          feed.snapshot().archive?.from ?? clockAt(),
-          feed.snapshot().archive !== null,
-        ),
-        // From `onGlobe`, not the raw feeds, or a still of an archived day counts layers it does not show.
-        verdict: verdictLine(stillCounts.current),
-        /* The requested window, not the covered one: `windowLabel` printed "nothing yet" onto a still that
-      showed a full day. */
-        filter: `M${filters.minMagnitude.toFixed(1)}+ · last ${compactSpan(filters.windowMs)}`,
-        host: window.location.host,
-      },
-      { background: token("void"), ink: token("ink"), faint: token("faint"), ramp },
-    );
-
-    /*
-     * Encoded synchronously, through `toDataURL` rather than `toBlob`.
-     *
-     * `navigator.share` needs the user gesture that started this to still be live, and `toBlob` hands its
-     * result back in a later task - long enough on a phone for the activation to lapse and the share to be
-     * refused. This blocks for a few tens of milliseconds and keeps the gesture.
-     */
-    const name = `everything-is-fine-${new Date(view.at ?? Date.now())
-      .toISOString()
-      .replace(/[:.]/g, "-")
-      .slice(0, 19)}.png`;
-    const url = frame.toDataURL("image/png");
-    const bytes = Uint8Array.from(atob(url.slice(url.indexOf(",") + 1)), (c) => c.charCodeAt(0));
-    const file = new File([bytes], name, { type: "image/png" });
-
-    /*
-     * The share sheet where there is one, a download where there is not. A phone cannot do anything useful
-     * with `a.download`, which is where this picture is most worth having: it is the whole way the app
-     * travels from somebody's screen into a conversation.
-     */
-    const share = navigator.share !== undefined && (navigator.canShare?.({ files: [file] }) ?? false);
-    if (share) {
-      setSaving(true);
-      // A dismissed sheet rejects with AbortError. That is somebody changing their mind, not a failure.
-      void navigator
-        .share({ files: [file] })
-        .catch(() => {})
-        .finally(() => setSaving(false));
-      return;
-    }
-    const href = URL.createObjectURL(file);
-    const a = document.createElement("a");
-    a.href = href;
-    a.download = name;
-    a.click();
-    URL.revokeObjectURL(href);
-  }, [filters.minMagnitude, filters.windowMs, view.at]);
+  const { saving, stillCounts, saveStill, onCapture } = useStill(feed, filters, ramp, view.at);
   /* What the globe is actually drawing while the cursor is parked. Walked and not read off the bars,
   which are whole hours while the cursor is continuous. */
   const revealedNow = ((): number | null => {
@@ -687,7 +474,9 @@ export function App(): JSX.Element {
   })();
   const regions = useMemo(
     () => countByRegion(feed.store, filters, clockAt()).filter((r) => r.count > 0),
-    [filters, snapshot.revision],
+    // Arrivals change regional counts without replacing the external store.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filters, snapshot.revision, clockAt],
   );
 
   // Captured at the start, not read per tick, so an arrival mid-tour cannot reorder the route.
@@ -780,7 +569,11 @@ export function App(): JSX.Element {
   event's position, and it is gated on that event still being pinned - the toggle is in the panel, so
   dismissed, the arcs would have no explanation and no way off. */
   const traced = farSideOf && farSideOf === selected ? feed.store.get(farSideOf) : undefined;
-  const farSide = traced ? { lon: traced.primary.lon, lat: traced.primary.lat } : null;
+  const tracedReading = traced?.primary;
+  const farSide = useMemo(
+    () => (tracedReading ? { lon: tracedReading.lon, lat: tracedReading.lat } : null),
+    [tracedReading],
+  );
   /* The 9.4% area share is measured on a cos-weighted grid in `boundaryDistance.ts`, so it means area
   and not a count of cells. */
   const quiet = useMemo((): {
@@ -800,19 +593,20 @@ export function App(): JSX.Element {
       note: quietNote(near, total, QUIET_BAND_KM, QUIET_BAND_SHARE),
       parts: quietParts(near, total, QUIET_BAND_SHARE),
     };
-  }, [snapshot.revision, filters, segments, boundaryKmOf]);
+    // New readings change this spatial tally under unchanged filters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshot.revision, filters, segments, boundaryKmOf, clockAt]);
   // Looked up at render, not captured on click: the feeds refresh every ten minutes and a captured
   // card keeps describing a storm that is gone.
   const hazards = useMemo(
-    () => hazardGroups(onGlobe, now, archived),
-    [onGlobe.cyclones, onGlobe.volcanoes, onGlobe.fires, onGlobe.floods, archived, Math.floor(now / 60_000)],
+    () => hazardGroups(onGlobe, minuteClock, archived),
+    [onGlobe, archived, minuteClock],
   );
   const markSubject = findSubject(markId, onGlobe);
   /* Read through a ref: `selectMark` is memoised on `liftForPanel`, and the layers change under it. */
   const onGlobeRef = useRef(onGlobe);
   onGlobeRef.current = onGlobe;
-  /* How far above the middle a pinned event should sit, so the sheet describing it does not cover it. See
-     ARCHITECTURE.md. */
+  /* How far above the middle a pinned event should sit, so the sheet describing it does not cover it. See ARCHITECTURE.md#srcapptsx. */
   const liftForPanel = useCallback((): number => {
     if (window.matchMedia("(min-width: 768px)").matches) return 0;
     const canvas = document.querySelector("canvas");
@@ -866,17 +660,7 @@ export function App(): JSX.Element {
         motion: motionOn ? motionData : [],
         here,
       }),
-    [
-      onGlobe.cyclones,
-      onGlobe.volcanoes,
-      onGlobe.fires,
-      onGlobe.floods,
-      farSide?.lon,
-      farSide?.lat,
-      motionOn,
-      motionData,
-      here,
-    ],
+    [onGlobe, farSide, motionOn, motionData, here],
   );
   useEffect(() => {
     // Only if it genuinely fell out of the buffer. A refresh must never clear the panel.
@@ -963,7 +747,9 @@ export function App(): JSX.Element {
      "newest first". See ARCHITECTURE.md#srcapptsx. */
   const recent = useMemo(
     () => feed.store.newest(60, (q) => matches(q, filters, clockAt())),
-    [filters, snapshot.revision],
+    // A revision invalidates this selection of the newest arrivals.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filters, snapshot.revision, clockAt],
   );
 
   // The later of the two feed edges, not the earlier: a corroboration rate needs the span where both
@@ -1063,8 +849,7 @@ export function App(): JSX.Element {
     status.kind === "failing" ? [[id, status] as const] : [],
   );
 
-  /* A shared cursor the window cannot hold, or the recipient sees the present with no reason why. See
-     ARCHITECTURE.md. */
+  /* A shared cursor the window cannot hold, or the recipient sees the present with no reason why. See ARCHITECTURE.md#srcapptsx. */
   const staleCursor = shared.cursor !== undefined && scrub.at === shared.cursor && view.at !== shared.cursor;
 
   const edge = windowStart(now, filters.windowMs, snapshot.coveredSince);
@@ -1076,7 +861,9 @@ export function App(): JSX.Element {
   const near = useMemo(() => {
     if (replay || here === null) return null;
     return closestTo(feed.store, here, filters, clockAt(), view.at ?? clockAt());
-  }, [feed.store, here, filters, snapshot.revision, replay, view.at]);
+    // The nearest event can change on a feed revision while the viewer stays still.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [here, filters, snapshot.revision, replay, view.at, clockAt]);
 
   /* Do not let `f` fold these: a full screen with a planet and nothing else is a screensaver. Each fold
   is offered only where it buys something - see `useFloatingChrome`. */
@@ -1091,7 +878,7 @@ export function App(): JSX.Element {
   const ceiling = useMemo(
     // As of the day on screen: an archived day must not be handed a record from its own future.
     () => superlativeFor(strongest, snapshot.archive ? snapshot.archive.from : clockAt()),
-    [strongest, snapshot.archive],
+    [strongest, snapshot.archive, clockAt],
   );
 
   const baselineSpan: BaselineSpan | null =
@@ -1104,15 +891,15 @@ export function App(): JSX.Element {
     }
     if (baselineSpan === null || !edge.complete) return null;
     /* The ranking ignores the magnitude filter on purpose - one a reader can change by dragging a slider is
-       worse than none - but it must still stand down when the filter empties the screen. See
-       ARCHITECTURE.md. */
+       worse than none - but it must still stand down when the filter empties the screen. See ARCHITECTURE.md#srcapptsx. */
     if ((revealedNow ?? shown) <= 0) return null;
     return rankDay(comparableCount(feed.store, edge.at, now), true, baselineSpan);
+    // Catalogue revisions affect the rank even when filters have not changed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    feed.store,
     snapshot.archive,
     snapshot.revision,
-    filters.windowMs,
+    baselineSpan,
     edge.complete,
     edge.at,
     now,
@@ -1125,14 +912,9 @@ export function App(): JSX.Element {
   const sourceNote = reachNote(snapshot.covered, now, filters.windowMs);
   const feeds = feedStatus(snapshot.statuses, answered);
 
-  /* Pick a side rather than using a `hidden`/`block` pair: that would put 445px of text in the document
-  twice, and a test counting a phrase across the app cannot tell a copy from a duplicated sentence. */
+  // Keep each key in one place so its explanatory text cannot be duplicated.
   const keyOnCanvas = useNarrow() === false;
-  /*
-   * One element, mounted twice by `part`: the ramp and the feeds in the rail, the key of every mark
-   * on the canvas corner. The props are identical, so they are written once here - two copies drifted
-   * apart the first time one of them was edited.
-   */
+  // Compose shared legend props once so the rail and canvas cannot drift apart.
   const marksFilter = (
     <MagnitudeFilter
       ramp={ramp}
@@ -1143,11 +925,7 @@ export function App(): JSX.Element {
       volcanoes={onGlobe.volcanoes.length}
       outsideWindow={outsideWindowNote(hazardTally, now)}
       volcanoesSince={newestEpisode(volcanoes)}
-      /*
-      The archived day's clock, not this minute's. `volcanoNote` counts days since the newest
-      episode ended, and its `archived` flag only swapped the tense: the number still came
-      from Date.now(), so a picture of 2026-05-15 read "ended 99 days ago".
-    */
+      // Use the archived day's clock so volcano ages do not advance with today.
       now={now}
       fires={fireSummary}
       fireCap={FEED_CAP}
@@ -1257,223 +1035,6 @@ export function App(): JSX.Element {
           <SizeChart sizes={sizes} />
         </details>
       </Timeline>
-    </div>
-  );
-
-  const archiveBlock = (
-    <div data-rail="activity">
-      {snapshot.archive ? (
-        <div className="stamp mb-3 bg-raised p-2.5">
-          <div className="flex items-baseline justify-between gap-2">
-            <span className="label">Archive</span>
-            <button
-              type="button"
-              onClick={backToLive}
-              className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink"
-            >
-              back to live
-            </button>
-          </div>
-          <p className="mt-1.5 text-[11px] leading-relaxed text-ink">
-            {new Date(snapshot.archive.from).toISOString().slice(0, 10)}, all day UTC. Nothing here is
-            arriving now.
-          </p>
-          {/* Disabled while a day is in flight: two archive loads race, and the second answer is not
-                necessarily the second request. */}
-          {neighbours ? (
-            <div className="mt-2 flex items-center gap-1.5">
-              <button
-                type="button"
-                disabled={archiveBusy}
-                onClick={() => stepDay(-1)}
-                className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink disabled:cursor-default disabled:text-faint"
-              >
-                ‹ {neighbours.prev}
-              </button>
-              <button
-                type="button"
-                disabled={archiveBusy || neighbours.next > newestDay}
-                onClick={() => stepDay(1)}
-                className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink disabled:cursor-default disabled:text-faint"
-              >
-                {neighbours.next} ›
-              </button>
-            </div>
-          ) : null}
-          <p className="mt-1 text-[11px] leading-relaxed text-faint">
-            Storms, fires, floods and volcanoes come from NASA rather than the live feeds. No aurora: it is a
-            forecast, so there is no past to ask for.
-          </p>
-          {archiveNote ? (
-            <p className="mt-1 font-mono text-[10.5px] leading-relaxed text-faint">{archiveNote}</p>
-          ) : null}
-        </div>
-      ) : (
-        /* Label above, not beside: side by side left the date field 60px in the 768px strip. */
-        <div className="mb-3">
-          <label className="label" htmlFor="archive-day">
-            Go to a day
-          </label>
-          <div className="mt-1 flex items-center gap-1.5">
-            {/* ISO text, not `type="date"`: the native widget wants `mm/dd/yyyy`, which this app never prints,
-                so a day could not be copied out of the list below and pasted in. */}
-            <input
-              id="archive-day"
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="YYYY-MM-DD"
-              aria-describedby={dayFault ? "archive-day-fault" : undefined}
-              value={archiveDay}
-              onChange={(e) => setArchiveDay(typedDay(e.target.value))}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !archiveBusy && isArchivableDay(archiveDay, Date.now())) {
-                  e.preventDefault();
-                  void loadArchive(archiveDay);
-                }
-              }}
-              className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[10.5px] text-dim placeholder:text-faint"
-            />
-            <span className="relative inline-flex size-[26px] shrink-0 items-center justify-center border border-hairline text-faint hover:text-ink">
-              <svg viewBox="0 0 14 14" aria-hidden="true" className="size-[11px]">
-                <rect
-                  x="1"
-                  y="2.5"
-                  width="12"
-                  height="10.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                />
-                <path d="M1 6 H13 M4.5 1 V4 M9.5 1 V4" fill="none" stroke="currentColor" strokeWidth="1.2" />
-              </svg>
-              <input
-                type="date"
-                aria-label="Pick a day from a calendar"
-                max={newestDay}
-                value={isArchivableDay(archiveDay, Date.now()) ? archiveDay : ""}
-                onChange={(e) => {
-                  const picked = e.target.value;
-                  if (!picked) return;
-                  setArchiveDay(picked);
-                  if (isArchivableDay(picked, Date.now())) void loadArchive(picked);
-                }}
-                /* `showPicker` throws where it is unsupported, and the browser's own icon is invisible here. */
-                onClick={(e) => {
-                  const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
-                  try {
-                    el.showPicker?.();
-                  } catch {
-                    /* the field still takes a typed date */
-                  }
-                }}
-                className="absolute inset-0 cursor-pointer opacity-0"
-              />
-            </span>
-            <button
-              type="button"
-              disabled={archiveBusy || !isArchivableDay(archiveDay, Date.now())}
-              onClick={() => void loadArchive(archiveDay)}
-              className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:cursor-default disabled:text-faint"
-            >
-              {archiveBusy ? "…" : "go"}
-            </button>
-          </div>
-          {/* Said here, not through `archiveNote`: that renders in the other branch of this ternary, so a
-                day refused while live set a message nobody ever saw. */}
-          {dayFault ? (
-            <p id="archive-day-fault" className="mt-1 text-[11px] leading-relaxed text-faint">
-              {dayFault}
-            </p>
-          ) : (
-            /* The field takes any day that has ended, which includes the one anybody actually wants
-                     and would never think to try. One sentence, because the control for it already
-                     exists: a second field beside this one was the same field twice. */
-            <p className="mt-1 text-[11px] leading-relaxed text-faint">
-              {earlyDay
-                ? "Before about 1970 only the large ones were recorded anywhere. A quiet day back" +
-                  " there may mean nobody was listening, not that the Earth was still."
-                : "Any day that has ended, including the one you were born on."}
-            </p>
-          )}
-        </div>
-      )}
-      {/* Outside the archived/live branch: inside it the list vanished the moment a day loaded, so going
-                from one notable day to another meant going back to live and waiting for the feeds. */}
-      <details
-        className="mt-2"
-        onToggle={(e) => {
-          if ((e.currentTarget as HTMLDetailsElement).open) askCounts();
-        }}
-      >
-        <summary className="disclose text-[11px] text-faint hover:text-dim">Days worth seeing</summary>
-        <div className="mt-1">
-          {NOTABLE_DAYS.map((d) => (
-            <button
-              key={d.day}
-              type="button"
-              disabled={archiveBusy}
-              onClick={() => {
-                setArchiveDay(d.day);
-                void loadArchive(d.day);
-              }}
-              aria-label={
-                `${d.what}, magnitude ${d.magnitude}, ${d.day}` +
-                (typeof dayCounts[d.day] === "number"
-                  ? `, ${dayCounts[d.day]!.toLocaleString("en-GB")} events`
-                  : "")
-              }
-              aria-current={loadedDay === d.day ? "true" : undefined}
-              className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left transition-colors hover:bg-raised disabled:cursor-default ${
-                loadedDay === d.day ? "bg-raised" : ""
-              }`}
-            >
-              <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">{d.day}</span>
-              <span className="min-w-0 flex-1 truncate text-[11px] text-dim">{d.what}</span>
-              <span className="shrink-0 font-mono text-[10.5px] text-dim tabular-nums">
-                M{d.magnitude.toFixed(1)}
-              </span>
-              <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] text-faint tabular-nums">
-                {dayCounts[d.day] === undefined || dayCounts[d.day] === null
-                  ? ""
-                  : dayCounts[d.day]!.toLocaleString("en-GB")}
-              </span>
-            </button>
-          ))}
-          <p className="mt-1.5 text-[11px] leading-relaxed text-faint">{NOTABLE_NOTE}</p>
-        </div>
-      </details>
-      {/* Sets the cursor as well as the day: a shadow lasts a few hours and an archived day opens at its
-                right edge, so loading only the day lands after the thing the row names. The times are checked
-                against the geometry in `eclipseDays.test.ts`, because a wrong minute fails silently. */}
-      <details className="mt-2">
-        <summary className="disclose text-[11px] text-faint hover:text-dim">Eclipses</summary>
-        <div className="mt-1">
-          {ECLIPSE_DAYS.map((e) => (
-            <button
-              key={e.day}
-              type="button"
-              disabled={archiveBusy}
-              onClick={() => {
-                setArchiveDay(e.day);
-                void loadArchive(e.day);
-                setScrub({ at: eclipseMoment(e), playing: false });
-              }}
-              aria-label={`${e.what}, ${e.kind} eclipse, ${e.day} at ${e.at} UTC`}
-              aria-current={loadedDay === e.day ? "true" : undefined}
-              className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left text-[11px] transition-colors hover:bg-raised disabled:cursor-default ${
-                loadedDay === e.day ? "bg-raised text-ink" : "text-faint"
-              }`}
-            >
-              <span className="w-[62px] shrink-0 font-mono text-[10.5px] tabular-nums">
-                {e.day.slice(0, 7)}
-              </span>
-              <span className="grow">{e.what}</span>
-            </button>
-          ))}
-        </div>
-      </details>
     </div>
   );
 
@@ -1690,8 +1251,7 @@ export function App(): JSX.Element {
                 </div>
               ) : (
                 <>
-                  {/* Counts what is on the globe, so during the replay it climbs as the day plays in. See
-                    ARCHITECTURE.md. */}
+                  {/* Counts what is on the globe, so during the replay it climbs as the day plays in. See ARCHITECTURE.md#srcapptsx. */}
                   {/* The one piece of display type here, so it is set like display type: heavier than the
                     prose under it and closed up slightly, which large figures need and small ones do not.
                     `tabular-nums` still decides the widths, so the tracking cannot make it twitch. */}
@@ -1900,7 +1460,11 @@ export function App(): JSX.Element {
           {/* A phone has no canvas corner to spare, so there the key goes back into the column. */}
           {keyOnCanvas ? null : <div className="mt-4">{marksKey}</div>}
 
-          {archiveBlock}
+          <ArchiveControls
+            archive={snapshot.archive}
+            state={archiveState}
+            onCursor={(at) => setScrub({ at, playing: false })}
+          />
           {timeline}
 
           {/* Directly above the region list, because that is where its results are drawn. Under the headline
@@ -2162,7 +1726,7 @@ export function App(): JSX.Element {
         <main className="zone-canvas relative bg-void">
           {/* Split out so the rail paints before three.js parses. The fallback is the void the globe
               sits on, so nothing appears and is then replaced. */}
-          <Suspense fallback={null}>
+          <Suspense fallback={<GlobeLoading />}>
             <Globe
               feed={feed}
               filters={filters}
@@ -2234,8 +1798,7 @@ export function App(): JSX.Element {
                 />
               </div>
             ) : null}
-            {/* Both keep the same `py-1.5`, or their two lines of text sit on different baselines. See
-                ARCHITECTURE.md. */}
+            {/* Both keep the same `py-1.5`, or their two lines of text sit on different baselines. See ARCHITECTURE.md#srcapptsx. */}
             <div
               className="relative order-2 flex w-full flex-wrap items-end gap-x-6 gap-y-2
               md:justify-center"

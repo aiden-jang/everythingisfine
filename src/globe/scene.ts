@@ -86,8 +86,7 @@ const COLOR_GRATICULE = 0x13334e;
 const COLOR_PLATES = 0x316a97;
 
 /* Greyer geography, for the colourblind ramp. That ramp is blue, and blue geography behind it stops being a
-   separate thing you can see. Re-pick these by eye; scaling the blue ones down does not work. See
-   ARCHITECTURE.md. */
+   separate thing you can see. Re-pick these by eye; scaling the blue ones down does not work. See ARCHITECTURE.md#srcglobescenets. */
 const NEUTRAL = {
   sphere: 0x0a101c,
   land: 0x25334e,
@@ -430,8 +429,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           float glow = clamp(texture2D(uAurora, auv).r * 3.0, 0.0, 1.0) * night * uAuroraOn;
 
           /* A quarter of a level of noise, because this overlay's alpha changes by less than 1/255 over
-             tens of pixels and an 8-bit framebuffer turns that into flat bands across Russia. See
-             ARCHITECTURE.md. */
+             tens of pixels and an 8-bit framebuffer turns that into flat bands across Russia. See ARCHITECTURE.md#srcglobescenets. */
           float grain = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
           float dither = (grain - 0.5) / 255.0;
           gl_FragColor = vec4(
@@ -598,8 +596,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const slab = createSlabLayer(morph);
   world.add(slab.object);
 
-  /* Nothing under `world` is culled against its own bounds, because those bounds are the wrong shape. See
-     ARCHITECTURE.md. */
+  /* Nothing under `world` is culled against its own bounds, because those bounds are the wrong shape. See ARCHITECTURE.md#srcglobescenets. */
   world.traverse((o) => {
     o.frustumCulled = false;
   });

@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { choosePrimary, DISTANCE_LIMIT_KM, MAGNITUDE_LIMIT, sameEvent, TIME_WINDOW_MS } from "./reconcile";
 import type { Reading } from "./types";
 
-/* The one decision this whole app is about: whether two agencies are describing one earthquake. See
-   ARCHITECTURE.md. */
+/* The one decision this whole app is about: whether two agencies are describing one earthquake. See ARCHITECTURE.md#srcdatareconciletestts. */
 
 const at = (over: Partial<Reading> = {}): Reading => ({
   source: "usgs",

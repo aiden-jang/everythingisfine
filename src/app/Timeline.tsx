@@ -38,8 +38,7 @@ export interface TimelineProps {
   onLive: () => void;
   /** The cursor's clock, already formatted, for the readout beside the transport. */
   cursorLabel: string | null;
-  /** True on an archived day, which has no right-hand edge called "now". The axis said "now" and the
-   * transport said "live" over a picture of a finished day. */
+  /** An archive's right edge is its day end, never the present. */
   archived?: boolean;
   /**
    * How far back each feed can vouch, as a fraction of the window and a duration in words. Drawn here
@@ -396,12 +395,14 @@ export function Timeline({
           step={1}
           value={Math.round(cursor * 1000)}
           onChange={(e) => onScrub(Number(e.target.value) / 1000)}
-          /*
-           * Arrows step a bucket, not a thousandth of the window. The track is 0 to 1000 so a pointer drag
-           * is smooth, which made one arrow press 86 seconds at a day and 43 minutes at a month: the cursor
-           * moved and the picture did not.
-           */
+          // Step by buckets so keyboard changes are visible even across a month.
           onKeyDown={(e) => {
+            if (e.key === "Home" || e.key === "End") {
+              e.preventDefault();
+              if (e.key === "Home") onScrub(0);
+              else onLive();
+              return;
+            }
             const by =
               e.key === "ArrowRight" || e.key === "ArrowUp"
                 ? 1
@@ -414,11 +415,9 @@ export function Timeline({
           }}
           aria-label="Time in the window"
           aria-valuetext={cursorLabel ?? "Live"}
-          aria-keyshortcuts="Comma Period"
+          aria-keyshortcuts="ArrowLeft ArrowRight Home End Comma Period"
           className="scrub-slider flex-1"
         />
-        {/* Reads "live" rather than a clock when it is live, because null is not a time. On an archived day
-            there is no live edge to be at, so the unparked state says where the cursor actually is. */}
         {parked ? (
           <button
             type="button"

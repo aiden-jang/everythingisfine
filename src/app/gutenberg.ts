@@ -2,8 +2,7 @@ import type { Store } from "../data/store";
 import { matches } from "../data/filter";
 import type { Filters } from "../data/types";
 
-/* How many earthquakes there are at each size. Ten times as many, each magnitude down, since 1944. See
-   ARCHITECTURE.md. */
+/* How many earthquakes there are at each size. Ten times as many, each magnitude down, since 1944. See ARCHITECTURE.md#srcappgutenbergts. */
 
 /** Bin width in magnitude units. 0.1 is the precision the feeds report at. */
 const BIN = 0.1;

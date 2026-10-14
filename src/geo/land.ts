@@ -377,8 +377,7 @@ export function buildLand(): LandGeometry {
   let mesh = { verts, tris: flatTris };
   for (let i = 0; i < SUBDIVISIONS; i += 1) mesh = subdivide(mesh.verts, mesh.tris);
 
-  /* No edge longer than `MAX_EDGE_DEG`, and every split shared by both triangles owning the edge. See
-     ARCHITECTURE.md. */
+  /* No edge longer than `MAX_EDGE_DEG`, and every split shared by both triangles owning the edge. See ARCHITECTURE.md#srcgeolandts. */
   // To a fixed point, because one pass only halves. The bound is a backstop; the loop stops as soon as a
   // pass finds nothing left to mark.
   for (let pass = 0; pass < 6; pass += 1) {
@@ -387,8 +386,7 @@ export function buildLand(): LandGeometry {
     if (capped.split === 0) break;
   }
 
-  /* Repeat whole triangles across the seam, so the mesh is periodic like the map that draws it. See
-     ARCHITECTURE.md. */
+  /* Repeat whole triangles across the seam, so the mesh is periodic like the map that draws it. See ARCHITECTURE.md#srcgeolandts. */
   let wrapped = 0;
   {
     // The original triangles only. Appending to the array being walked reruns the duplicates, and each one

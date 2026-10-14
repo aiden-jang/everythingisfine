@@ -77,7 +77,10 @@ export function trendFrom(
 }
 
 export function findNearby(store: Store, quake: Quake, filters: Filters, now: number): Nearby {
-  const found: { quake: Quake; km: number }[] = [];
+  const notable: { quake: Quake; km: number }[] = [];
+  const sequence: Nearby["sequence"] = [];
+  const origin = quake.primary.time;
+  let before = 0;
   const { lon, lat } = quake.primary;
   // Second moments accumulated inside the walk that is already happening. A separate pass would be a second
   // sweep of the buffer for one angle.
@@ -94,7 +97,16 @@ export function findNearby(store: Store, quake: Quake, filters: Filters, now: nu
     if (!matches(other, filters, now)) return;
     const km = distanceKm(lon, lat, other.primary.lon, other.primary.lat);
     if (km > NEARBY_KM) return;
-    found.push({ quake: other, km });
+    const at = other.primary.time - origin;
+    sequence.push({ key: other.key, at, magnitude: other.primary.magnitude });
+    if (at < 0) before += 1;
+    // Keep only the four display candidates; a dense swarm needs no second object per neighbour.
+    const mag = other.primary.magnitude;
+    if (notable.length < 4 || mag > notable[3]!.quake.primary.magnitude) {
+      const index = notable.findIndex((entry) => mag > entry.quake.primary.magnitude);
+      notable.splice(index === -1 ? notable.length : index, 0, { quake: other, km });
+      if (notable.length > 4) notable.pop();
+    }
     // Wrapped, so a neighbourhood straddling the date line is not measured as 360 degrees wide.
     let dLon = other.primary.lon - lon;
     dLon -= Math.round(dLon / 360) * 360;
@@ -108,35 +120,17 @@ export function findNearby(store: Store, quake: Quake, filters: Filters, now: nu
     sxy += x * y;
   });
 
-  // The four largest by selection, not by sorting all of them: sorting to take four is O(n log n) for a
-  // fixed-size answer, and in a swarm `found` is the whole buffer. Measured at 56ms, paid every second.
-  const notable: { quake: Quake; km: number }[] = [];
-  for (const candidate of found) {
-    const mag = candidate.quake.primary.magnitude;
-    if (notable.length === 4 && mag <= notable[3]!.quake.primary.magnitude) continue;
-    const at = notable.findIndex((n) => mag > n.quake.primary.magnitude);
-    notable.splice(at === -1 ? notable.length : at, 0, candidate);
-    if (notable.length > 4) notable.pop();
-  }
   const biggest = notable[0];
-
-  const origin = quake.primary.time;
-  // Already in arrival order from the store's walk, which is not origin order, so this sort stays.
-  const sequence = found
-    .map(({ quake: other }) => ({
-      key: other.key,
-      at: other.primary.time - origin,
-      magnitude: other.primary.magnitude,
-    }))
-    .sort((a, b) => a.at - b.at);
+  // Arrival order is not origin order; the timeline needs every neighbour in origin order.
+  sequence.sort((a, b) => a.at - b.at);
 
   return {
-    count: found.length,
+    count: n,
     notable,
     largest: biggest ? biggest.quake.primary.magnitude : null,
     sequence,
-    before: sequence.filter((e) => e.at < 0).length,
-    after: sequence.length - sequence.filter((e) => e.at < 0).length,
+    before,
+    after: n - before,
     largestAt: biggest ? biggest.quake.primary.time - origin : null,
     trendDeg: trendFrom(n, sx, sy, sxx, syy, sxy),
   };

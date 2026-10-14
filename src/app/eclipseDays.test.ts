@@ -3,8 +3,7 @@ import { ECLIPSE_DAYS, eclipseMoment } from "./eclipseDays";
 import { lunarEclipse, solarEclipse } from "../geo/eclipse";
 
 describe("the eclipse list", () => {
-  /* The point of this file: every row is checked against the same geometry the globe draws with. See
-     ARCHITECTURE.md. */
+  /* The point of this file: every row is checked against the same geometry the globe draws with. See ARCHITECTURE.md#srcappeclipsedaystestts. */
   it("has a shadow at every minute it claims", () => {
     for (const entry of ECLIPSE_DAYS) {
       const at = eclipseMoment(entry);

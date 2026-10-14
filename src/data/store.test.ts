@@ -383,8 +383,7 @@ describe("the long session", () => {
    * it had measured anything, because the default reporter swallows stdout for passing tests.
    */
   /* The warm-up has to fill the ring, or this measures the ring filling rather than the ring holding.
-     Checked by making it fail: one retained three-field object per ingest costs 2.302MB, 4.6x over. See
-     ARCHITECTURE.md. */
+     Checked by making it fail: one retained three-field object per ingest costs 2.302MB, 4.6x over. See ARCHITECTURE.md#srcdatastoretestts. */
   it.skipIf(!(globalThis as { gc?: () => void }).gc)("holds heap flat once the ring is full", () => {
     const gc = (globalThis as { gc?: () => void }).gc!;
     const store = createStore(2_000);

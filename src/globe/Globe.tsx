@@ -1,4 +1,6 @@
-import { useEffect, useRef } from "react";
+import { GlobeUnavailable } from "./GlobeUnavailable";
+import { animationDelta } from "./animation";
+import { useEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
 import { loadStars, type FigureTable } from "../geo/stars";
 import { createGlobe } from "./scene";
@@ -15,8 +17,7 @@ import type { SlabPoint } from "../geo/slab";
 import type { Mark } from "./marks";
 import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
 
-/* The canvas, and the smallest possible amount of React around it. three.js owns everything inside it. See
-   ARCHITECTURE.md. */
+/* The canvas, and the smallest possible amount of React around it. three.js owns everything inside it. See ARCHITECTURE.md#srcglobeglobetsx. */
 
 export interface GlobeProps {
   feed: Feed;
@@ -146,18 +147,24 @@ export function Globe({
   const onReplayRef = useRef(onReplay);
   onReplayRef.current = onReplay;
 
+  const [unavailable, setUnavailable] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
   useEffect(() => {
     const el = canvas.current;
     if (!el) return undefined;
 
-    const globe = createGlobe(el);
+    let globe: ReturnType<typeof createGlobe>;
+    try {
+      globe = createGlobe(el);
+    } catch {
+      setUnavailable(true);
+      return undefined;
+    }
+    setUnavailable(false);
     globe.resize();
     globe.render();
-    /*
-     * Wrapped, because `flyTo` aims the camera and does not start the loop that moves it. On the globe
-     * something is usually animating and hid this; with the feeds quiet, clicking a region set a target
-     * nothing integrated and the camera sat still.
-     */
+    // A camera target must also wake the renderer when the globe is idle.
     onReady((toLon, toLat, toZoom, liftPx) => {
       /*
        * `liftPx` puts the target that many pixels above the middle instead of in it, so the sheet describing
@@ -266,11 +273,7 @@ export function Globe({
           node.style.height = `${size}px`;
         }
         if (node === tooltip.current) {
-          /*
-           * Two events measured, with no new state: one is pinned and one is hovered, so the pair exists
-           * whenever somebody has done both. The place goes on its own line and the number on a second,
-           * because a place name may be truncated and a number must not be.
-           */
+          // Show the distance to a distinct pinned event alongside the hovered place.
           const pinned = live.current.selected ? feed.store.get(live.current.selected) : undefined;
           const pair =
             pinned && pinned.key !== found.quake?.key
@@ -365,18 +368,16 @@ export function Globe({
       }
     };
 
-    /*
-     * The loop runs only while something is moving and stops itself when nothing is. An idle globe has
-     * nothing to redraw, so a permanent loop would spend every idle frame drawing an identical picture.
-     */
+    // Sleep when nothing moves; redraw only when motion or changed data needs a frame.
     let running = false;
+    let frameId = 0;
     let last = 0;
     let lastZoom = globe.controls.state().zoom;
     // Eased here rather than in CSS, because the value is a shader uniform. Set on redraw instead, the
     // whole planet cut between two brightness levels in one frame.
     let focusFade = 0;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let morph = flat ? 1 : 0;
+    let morph = live.current.flat ? 1 : 0;
     globe.setMorph(morph);
     globe.controls.setMorph(morph);
 
@@ -403,13 +404,9 @@ export function Globe({
     const revealFallback = window.setTimeout(startReveal, 8_000);
 
     const frame = (now: number): void => {
-      /*
-       * Two deltas. The camera's is clamped at 50ms so a backgrounded tab does not lurch. The replay's is
-       * not: it plays a fixed span of history against the wall clock, and clamped it ran at whatever
-       * fraction of real time the frame rate hit - 12 seconds against a 7-second setting on a slow machine.
-       */
+      // Replay follows wall time; visual motion caps pauses without slowing ordinary low-frame-rate rendering.
       const rawDt = (now - last) / 1000;
-      const dt = Math.min(rawDt, 0.05);
+      const dt = animationDelta(rawDt);
       last = now;
       const moving = globe.controls.step(dt);
       globe.controls.apply();
@@ -493,7 +490,7 @@ export function Globe({
       onCameraRef.current?.(globe.controls.state());
       const revealing = revealStarted && plateReveal < 1;
       if (moving || expanding || replaying || fading || revealing || unwrapping) {
-        requestAnimationFrame(frame);
+        frameId = requestAnimationFrame(frame);
       } else running = false;
     };
 
@@ -545,8 +542,7 @@ export function Globe({
     };
     el.addEventListener("pointerdown", onSectionDown, { capture: true });
 
-    /* The sky, once its own chunk lands. `stars.json` is 88kB and arrives a beat after the first frame. See
-       ARCHITECTURE.md. */
+    /* The sky, once its own chunk lands. `stars.json` is 88kB and arrives a beat after the first frame. See ARCHITECTURE.md#srcglobeglobetsx. */
     let gone = false;
     void loadStars().then((table) => {
       if (gone) return;
@@ -558,7 +554,7 @@ export function Globe({
       if (running) return;
       running = true;
       last = performance.now();
-      requestAnimationFrame(frame);
+      frameId = requestAnimationFrame(frame);
     };
     wakeRef.current = wake;
 
@@ -773,6 +769,8 @@ export function Globe({
     if (parent) ro.observe(parent);
 
     return () => {
+      cancelAnimationFrame(frameId);
+      wakeRef.current = () => {};
       window.clearTimeout(revealFallback);
       ro.disconnect();
       unsubscribe();
@@ -786,7 +784,7 @@ export function Globe({
       gone = true;
       globe.dispose();
     };
-  }, [feed, onReady, onSelect]);
+  }, [feed, onReady, onSelect, onCapture, onSelectMark, attempt]);
 
   // A filter move, a new selection or a held hour redraws rather than rebuilds. Hover only changes whole
   // hours, so this fires once per bar crossed, not per mouse move.
@@ -835,6 +833,7 @@ export function Globe({
 
   return (
     <div className="relative h-full w-full">
+      {unavailable ? <GlobeUnavailable onRetry={() => setAttempt((n) => n + 1)} /> : null}
       {/* `touch-action: none`, so every gesture on the globe belongs to the globe. On `auto` the browser
           claims a pinch for page zoom before the pointer events reach the pinch handler. */}
       {/* `aria-hidden` sits on the canvas, not the region around it: the region also holds the legend,

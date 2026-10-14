@@ -33,7 +33,7 @@ const problems = [];
 
 for (const file of files) {
   const source = readFileSync(file, "utf8");
-  const notes = [...source.matchAll(/See ARCHITECTURE\.md(#[\w-]*)?/g)];
+  const notes = [...source.matchAll(/See\s+ARCHITECTURE\.md(#[\w-]*)?/g)];
   if (notes.length === 0) continue;
 
   for (const [, anchor] of notes) {
@@ -62,7 +62,7 @@ if (/^- \[[\w/.-]+\]\(#[\w-]+\) &mdash;/m.test(doc)) {
  * record of what happened to resolve against what exists today is asking it to stop being a record.
  */
 /* CLAUDE.md and AGENTS.md are symlinks to CONVENTIONS.md; listing them would report twice. */
-const LIVE = globSync("*.md").filter(
+const LIVE = [...globSync("*.md"), ...globSync(".github/**/*.md")].filter(
   (f) => !/^(ARCHITECTURE|RECONCILIATION|AGENTS|CLAUDE)\.md$/.test(f) && !f.endsWith(".local.md"),
 );
 
@@ -102,7 +102,7 @@ for (const doc of LIVE) {
       const commands = fenced
         ? [line.replace(/#.*$/, "")]
         : [...line.matchAll(/`([^`]+)`/g)].map((b) => b[1]);
-      for (const m of commands.join("\n").matchAll(/pnpm (?:run |exec )?([a-z][\w:-]*)/g)) {
+      for (const m of commands.join("\n").matchAll(/pnpm (?:run )?([a-z][\w:-]*)/g)) {
         const name = m[1];
         if (["install", "exec", "add", "dlx", "create", "run", "audit", "why", "outdated"].includes(name))
           continue;
@@ -110,7 +110,7 @@ for (const doc of LIVE) {
       }
 
       // Bare, not just `name()`: a rename can sit in a sentence with no parentheses and no backticks.
-      for (const m of line.matchAll(/(?<!\\)\b([a-z][a-z0-9]*(?:[A-Z][A-Za-z0-9]*)+)\b/g)) {
+      for (const m of line.matchAll(/(?<!\\)\b([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)\b/g)) {
         if (!NOT_OURS.has(m[1]) && !named(m[1]))
           problems.push(`${at}: nothing named \`${m[1]}\` in the code`);
       }

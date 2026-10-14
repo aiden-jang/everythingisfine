@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { browserRuntime } from "./types";
 import { createEmscSource, EMSC_CATALOGUE, EMSC_SOCKET, SEED_LIMIT } from "./emsc";
 
-/* The second and last test that touches the real internet. Excluded from the default run and CI. See
-   ARCHITECTURE.md. */
+/* The second and last test that touches the real internet. Excluded from the default run and CI. See ARCHITECTURE.md#srcsourcesemsclivetestts. */
 
 describe("EMSC, for real", () => {
   it("still accepts an anonymous connection", async () => {
@@ -33,8 +32,7 @@ describe("EMSC, for real", () => {
   }, 25_000);
 
   /* The two facts the coverage claim rests on, argued rather than measured for a long time: a short page is
-     a complete catalogue for the span asked for, and a full one is truncated at its oldest row. See
-     ARCHITECTURE.md. */
+     a complete catalogue for the span asked for, and a full one is truncated at its oldest row. See ARCHITECTURE.md#srcsourcesemsclivetestts. */
   it("has a row ceiling far above the seed limit, so a short page is a short catalogue", async () => {
     const since = new Date(Date.now() - 30 * 24 * 3_600_000).toISOString().slice(0, 19);
     const res = await fetch(`${EMSC_CATALOGUE}?limit=${SEED_LIMIT * 4}&format=json&start=${since}`);

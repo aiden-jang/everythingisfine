@@ -47,6 +47,7 @@ export default defineConfig({
       "**/dist/**",
       // Playwright owns these; vitest would import @playwright/test and fail on the first line.
       "**/e2e/**",
+      "tools/**/*.test.mjs",
       ...(includeLive ? [] : ["**/*.live.test.ts"]),
     ],
   },

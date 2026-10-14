@@ -7,8 +7,7 @@ import { depth, magnitude, place } from "./format";
 import { useNarrow } from "./useNarrow";
 
 /* The crust seen from the side: distance across, depth down, drawn at 1:1. Never stretch the depth axis
-   quietly. The dip of the slab is the whole content, and stretching invents a steeper one. See
-   ARCHITECTURE.md. */
+   quietly. The dip of the slab is the whole content, and stretching invents a steeper one. See ARCHITECTURE.md#srcappcrosssectiontsx. */
 
 export interface CrossSectionProps {
   data: SectionData;
@@ -63,8 +62,7 @@ export function CrossSection({
    * eight hundred pixels tall. Fixing the width puts the exaggeration in one number that can be printed.
    */
   const trueHeight = (floorKm / lengthKm) * 1000;
-  /* The floor is taller where the panel is narrow, because these units are a fraction of its width. See
-     ARCHITECTURE.md. */
+  /* The floor is taller where the panel is narrow, because these units are a fraction of its width. See ARCHITECTURE.md#srcappcrosssectiontsx. */
   const narrow = useNarrow();
   const height = Math.round(Math.max(narrow ? 256 : 96, Math.min(300, trueHeight)));
   const exaggeration = height / trueHeight;

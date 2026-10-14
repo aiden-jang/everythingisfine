@@ -66,6 +66,32 @@ describe("nearby activity", () => {
     expect(findNearby(store, target, { ...filters, minMagnitude: 3 }, NOW).count).toBe(0);
   });
 
+  it("keeps the four largest with stable ties while retaining every sequence entry", () => {
+    const store = createStore(20);
+    const target = store.ingest(reading("pin", 120, -8, 5)).quake;
+    for (const [id, mag, dt] of [
+      ["first", 4, 1000],
+      ["second", 4, 2000],
+      ["small", 2, 3000],
+      ["largest", 6, -1000],
+      ["third", 4, -2000],
+      ["fourth", 4, 0],
+    ] as const)
+      store.ingest(reading(id, 120.1, -8, mag, dt));
+    const near = findNearby(store, target, filters, NOW);
+    expect(near.count).toBe(6);
+    expect(near.notable.map((entry) => entry.quake.primary.id)).toEqual([
+      "largest",
+      "first",
+      "second",
+      "third",
+    ]);
+    expect(near.sequence.map((entry) => entry.at)).toEqual([-3000, -2000, -1000, 0, 1000, 2000]);
+    expect(near.before).toBe(3);
+    expect(near.after).toBe(3);
+    expect(near.largestAt).toBe(1000);
+  });
+
   it("uses a radius wide enough for a sequence and narrower than a margin", () => {
     expect(NEARBY_KM).toBeGreaterThan(50);
     expect(NEARBY_KM).toBeLessThan(400);
