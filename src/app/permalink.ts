@@ -116,9 +116,14 @@ export function decode(fragment: string): Partial<Permalink> {
   const e = params.get("e");
   if (e && /^(usgs|emsc):[\w.-]{1,64}$/.test(e)) out.event = e;
 
-  // Range-checked, not clamped. There is no nearest valid moment to drag 1970 to, so drop it instead.
+  // Earlier epochs belong to explicit, validated archive days; undated moments retain the live bounds.
   const c = Number(params.get("c"));
-  if (params.has("c") && Number.isFinite(c) && c > 1_000_000_000 && c < 100_000_000_000) {
+  if (
+    params.get("c")?.trim() &&
+    Number.isFinite(c) &&
+    Math.abs(c) < 100_000_000_000 &&
+    (c > 1_000_000_000 || out.day !== undefined)
+  ) {
     out.cursor = c * 1000;
   }
 
