@@ -1,6 +1,6 @@
 # Contributing
 
-Use Node.js 22.17 or newer and the pinned pnpm version. Follow the setup in [README.md](README.md)
+Use Node.js 22 (22.17 or newer within that major) and the pinned pnpm version. Follow the setup in [README.md](README.md)
 and the code guidance in [CONVENTIONS.md](CONVENTIONS.md).
 
 ## Changes

@@ -52,6 +52,7 @@ The still exporter copies the drawing buffer before the browser composites it.
 
 ## Validation and history
 
+The supported tooling runtime is pinned to Node 22, matching CI and the performance-gate calibration.
 `pnpm run verify` mirrors CI. Unit tests cover pure behavior, source contracts, retention, and
 performance. Browser fixtures cover actual WebGL, CSS, accessibility states, camera movement,
 sharing, and responsive layouts. Daily live checks are informational and separate from merge checks.

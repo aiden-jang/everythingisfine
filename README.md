@@ -10,8 +10,9 @@ Explore a region, compare two agencies' earthquake readings, revisit a past day,
 
 ## Run locally
 
-Use Node.js 22.17 or newer and pnpm 9.15.0. The package-manager version is pinned in
-`package.json`. No API keys, accounts, environment file, or backend are needed to run the app.
+Use Node.js 22 (22.17 or newer within that major) and pnpm 9.15.0. The package-manager version is pinned in
+`package.json`; `.nvmrc` selects the Node version used by CI. With nvm installed, run `nvm use`
+before installing dependencies. No API keys, accounts, environment file, or backend are needed to run the app.
 
 ```bash
 corepack enable
