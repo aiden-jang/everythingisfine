@@ -49,6 +49,7 @@ Replay retains wall-clock time. Reduced motion remains a separate user preferenc
 WebGL startup failures have a retry surface; they do not remove the event list and filters.
 Scene callbacks use current refs so changing a selection does not recreate WebGL resources.
 The still exporter copies the drawing buffer before the browser composites it.
+Shared controls update the URL before paint; moving playback keeps its periodic URL cadence.
 
 ## Validation and history
 

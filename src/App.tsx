@@ -4,7 +4,17 @@ import { useStill } from "./app/useStill";
 import { Row } from "./app/Row";
 import { ArchiveControls } from "./app/ArchiveControls";
 import { useArchive } from "./app/useArchive";
-import { cloneElement, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  cloneElement,
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 const Globe = lazy(() => import("./globe/Globe").then((m) => ({ default: m.Globe })));
 import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
@@ -119,7 +129,7 @@ export function App(): JSX.Element {
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [replay, setReplay] = useState<{ at: number; revealed: number } | null>(null);
-  // Never goes in the permalink: a cursor mid-playback is a hand on a control, not a view to send.
+  // Playback stays local; a shared cursor opens as a held view.
   const [scrub, setScrub] = useState<Scrub>(
     shared.cursor === undefined ? LIVE : { at: shared.cursor, playing: false },
   );
@@ -131,8 +141,7 @@ export function App(): JSX.Element {
   const [focusHour, setFocusHour] = useState<number | null>(null);
   /* Ten minutes, not the model's five: the grid is 900kB and the oval barely moves in five. */
   const { aurora, cyclones, fires, floods, volcanoes, answered } = useHazardLayers();
-  /* Keep this above every memo that calls it. Below them it is a temporal dead zone: tsc passes, the build
-     passes, and the page renders nothing. See ARCHITECTURE.md#srcapptsx. */
+  // Memos run during render; define their clock first. See ARCHITECTURE.md#srcapptsx.
   const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
   /* Hidden while an archived day is up, or today's storms are drawn over July's earthquakes. See ARCHITECTURE.md#srcapptsx. */
   const archived = snapshot.archive !== null;
@@ -279,7 +288,6 @@ export function App(): JSX.Element {
     lastWritten.current = window.location.hash;
   }, [backToLive]);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
-  /* The glossary opens on request; the magnitude scale stays visible in the rail. */
   const [keyOpen, setKeyOpen] = useStoredFlag("legendKey", false);
   const [motionOn, setMotionOn] = useStoredFlag("motion", false);
   const [sinkOn, setSinkOn] = useStoredFlag("depthSink", true);
@@ -394,11 +402,12 @@ export function App(): JSX.Element {
     if (shared.lon !== undefined) fn(shared.lon, shared.lat ?? 12, shared.zoom ?? 1);
   }, []);
 
+  const heldCursor = view.playing ? null : view.at;
   const sharedCursor = useRef(view.at);
   sharedCursor.current = view.at;
 
-  // Replace, never push, or every filter nudge is a history entry and Back never leaves the page.
-  useEffect(() => {
+  // Publish changed controls before paint so an immediate copy carries the visible settings.
+  useLayoutEffect(() => {
     /* Never overwrite a hash this app did not write. See ARCHITECTURE.md#srcapptsx. */
     const write = (): void => {
       if (window.location.hash !== lastWritten.current) return;
@@ -428,7 +437,7 @@ export function App(): JSX.Element {
     return () => window.clearInterval(timer);
     // `snapshot.archive` is a dependency: the interval keeps calling the closure it was made with, and
     // without it entering an archive leaves the link saying live.
-  }, [filters, selected, ramp, sectionLine, snapshot.archive, markId]);
+  }, [filters, selected, ramp, sectionLine, snapshot.archive, markId, heldCursor]);
 
   /* Somebody pasting a link into an open tab. A fragment change does not reload, and the permalink is
   read once at module load, so the address bar and the globe would disagree. */
@@ -903,14 +912,9 @@ export function App(): JSX.Element {
   const sourceNote = reachNote(snapshot.covered, now, filters.windowMs);
   const feeds = feedStatus(snapshot.statuses, answered);
 
-  /* Pick a side rather than using a `hidden`/`block` pair: that would put 445px of text in the document
-  twice, and a test counting a phrase across the app cannot tell a copy from a duplicated sentence. */
+  // Keep each key in one place so its explanatory text cannot be duplicated.
   const keyOnCanvas = useNarrow() === false;
-  /*
-   * One element, mounted twice by `part`: the ramp and the feeds in the rail, the key of every mark
-   * on the canvas corner. The props are identical, so they are written once here - two copies drifted
-   * apart the first time one of them was edited.
-   */
+  // Compose shared legend props once so the rail and canvas cannot drift apart.
   const marksFilter = (
     <MagnitudeFilter
       ramp={ramp}
@@ -921,11 +925,7 @@ export function App(): JSX.Element {
       volcanoes={onGlobe.volcanoes.length}
       outsideWindow={outsideWindowNote(hazardTally, now)}
       volcanoesSince={newestEpisode(volcanoes)}
-      /*
-      The archived day's clock, not this minute's. `volcanoNote` counts days since the newest
-      episode ended, and its `archived` flag only swapped the tense: the number still came
-      from Date.now(), so a picture of 2026-05-15 read "ended 99 days ago".
-    */
+      // Use the archived day's clock so volcano ages do not advance with today.
       now={now}
       fires={fireSummary}
       fireCap={FEED_CAP}
