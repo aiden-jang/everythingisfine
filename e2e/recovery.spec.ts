@@ -55,10 +55,7 @@ test("an archive response cannot undo returning to live", async ({ page }) => {
   await waitForData(page);
   await expect(page.getByRole("button", { name: "back to live", exact: true })).toBeHidden();
   await expect(page.getByLabel("Go to a day", { exact: true })).toHaveValue("");
-  await expect(page.getByRole("slider", { name: "Time in the window", exact: true })).toHaveAttribute(
-    "aria-valuenow",
-    "1000",
-  );
+  await expect(page.getByRole("slider", { name: "Time in the window", exact: true })).toHaveValue("1000");
   await expect(page.getByText("Nothing here is arriving now.", { exact: false })).toBeHidden();
 });
 

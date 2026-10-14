@@ -32,6 +32,7 @@ requested directly from the browser.
 - On a phone, switch between globe space and recent events using the bottom navigation.
 - Use **Still** to share or download a captioned image. The URL retains the view and selection.
 - Press `f` for fullscreen, Space to play the window, and `,` / `.` to step through it.
+  On the time slider, Home selects the start and End returns to live (or the archived day end).
 
 ## Validate
 

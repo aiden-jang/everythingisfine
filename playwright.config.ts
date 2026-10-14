@@ -12,7 +12,7 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   // WebGL falls back to software on CI. Separate runners avoid competing renderers.
-  workers: ci ? 1 : 2,
+  workers: 1,
   timeout: ci ? 90_000 : 45_000,
   expect: { timeout: ci ? 30_000 : 15_000 },
   reporter: ci ? [["github"], ["list"], ["json", { outputFile: "test-results/results.json" }]] : [["list"]],

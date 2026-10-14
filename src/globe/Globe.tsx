@@ -164,11 +164,7 @@ export function Globe({
     setUnavailable(false);
     globe.resize();
     globe.render();
-    /*
-     * Wrapped, because `flyTo` aims the camera and does not start the loop that moves it. On the globe
-     * something is usually animating and hid this; with the feeds quiet, clicking a region set a target
-     * nothing integrated and the camera sat still.
-     */
+    // A camera target must also wake the renderer when the globe is idle.
     onReady((toLon, toLat, toZoom, liftPx) => {
       /*
        * `liftPx` puts the target that many pixels above the middle instead of in it, so the sheet describing
@@ -374,6 +370,7 @@ export function Globe({
 
     // Sleep when nothing moves; redraw only when motion or changed data needs a frame.
     let running = false;
+    let frameId = 0;
     let last = 0;
     let lastZoom = globe.controls.state().zoom;
     // Eased here rather than in CSS, because the value is a shader uniform. Set on redraw instead, the
@@ -493,7 +490,7 @@ export function Globe({
       onCameraRef.current?.(globe.controls.state());
       const revealing = revealStarted && plateReveal < 1;
       if (moving || expanding || replaying || fading || revealing || unwrapping) {
-        requestAnimationFrame(frame);
+        frameId = requestAnimationFrame(frame);
       } else running = false;
     };
 
@@ -557,7 +554,7 @@ export function Globe({
       if (running) return;
       running = true;
       last = performance.now();
-      requestAnimationFrame(frame);
+      frameId = requestAnimationFrame(frame);
     };
     wakeRef.current = wake;
 
@@ -772,6 +769,8 @@ export function Globe({
     if (parent) ro.observe(parent);
 
     return () => {
+      cancelAnimationFrame(frameId);
+      wakeRef.current = () => {};
       window.clearTimeout(revealFallback);
       ro.disconnect();
       unsubscribe();

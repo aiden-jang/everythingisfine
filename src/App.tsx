@@ -1,3 +1,4 @@
+import { GlobeLoading } from "./globe/GlobeLoading";
 import { stillMoment } from "./app/still";
 import { useStill } from "./app/useStill";
 import { Row } from "./app/Row";
@@ -1725,7 +1726,7 @@ export function App(): JSX.Element {
         <main className="zone-canvas relative bg-void">
           {/* Split out so the rail paints before three.js parses. The fallback is the void the globe
               sits on, so nothing appears and is then replaced. */}
-          <Suspense fallback={null}>
+          <Suspense fallback={<GlobeLoading />}>
             <Globe
               feed={feed}
               filters={filters}
