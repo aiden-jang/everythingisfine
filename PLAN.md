@@ -1,4 +1,7 @@
-# Everything Is Fine: build plan
+# Everything Is Fine: original build plan
+
+This is the historical build sequence, not the current backlog. See [SYSTEM.md](SYSTEM.md)
+for the implemented architecture and [CONTRIBUTING.md](CONTRIBUTING.md) for changes.
 
 The source doc is the layer above the code and explicitly defers the build sequence. This is that
 sequence. [DESIGN.md](DESIGN.md) is the visual authority and is not restated here.

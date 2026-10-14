@@ -1,6 +1,5 @@
 /* Saved preferences, behind one prefix instead of ten string literals. Read falls back to the old prefix
-   once and writes the new one, which migrates a preference the first time its owner opens the page. See
-   ARCHITECTURE.md. */
+   once and writes the new one, which migrates a preference the first time its owner opens the page. See ARCHITECTURE.md#srcappstoredts. */
 
 const PREFIX = "eif.";
 /** The name this app shipped under before it grew past earthquakes. */

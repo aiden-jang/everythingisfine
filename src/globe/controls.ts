@@ -422,8 +422,7 @@ export function createControls(
         (angleAt(to - centre) - angleAt(from - centre)) / DEG;
 
       /* Longitude is squeezed by latitude and the drag has to undo it: a horizontal drag moves the grabbed
-         point along its parallel, which at latitude L is only cos(L) as long as the equator. See
-         ARCHITECTURE.md. */
+         point along its parallel, which at latitude L is only cos(L) as long as the equator. See ARCHITECTURE.md#srcglobecontrolsts. */
       const lonScale = 1 / Math.max(0.25, Math.cos(lat * DEG));
       lon -= swept(prev.x, e.clientX, cx) * lonScale;
       lat = clampLat(lat + swept(prev.y, e.clientY, cy));

@@ -1,6 +1,5 @@
 /* Omori's law, drawn against what happened. Aftershocks slow down as one over elapsed time, so the running
-   count is a logarithm: steep, then almost flat. A swarm climbs in a straight line instead. See
-   ARCHITECTURE.md. */
+   count is a logarithm: steep, then almost flat. A swarm climbs in a straight line instead. See ARCHITECTURE.md#srcappomorits. */
 
 /**
  * Omori's `c`, the offset that keeps the rate finite at the origin. Real catalogues put it between seconds

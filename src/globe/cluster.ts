@@ -1,8 +1,7 @@
 import { DEG } from "../geo/sphere";
 
 /* Collapses dense margins into one marker until you zoom in. Measured: on a real seed, 149 of 228 events
-   had a neighbour within 40km, which is why the Ring of Fire renders as overlapping crescents. See
-   ARCHITECTURE.md. */
+   had a neighbour within 40km, which is why the Ring of Fire renders as overlapping crescents. See ARCHITECTURE.md#srcglobeclusterts. */
 
 /**
  * Grid cell size in degrees, derived from zoom. Markers hold a constant size on screen, so how many can

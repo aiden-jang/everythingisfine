@@ -76,8 +76,7 @@ describe("the pinned panel's per-second cost", () => {
 
     /* Two budgets, because this is the one ratio here that does not cancel across machines. Measured,
        before settling for a second number: reshaping the reference to walk an object graph tightens the
-       quiet spread from 10% to 2.6% and cuts worst-case drift under load from +27% to +19%. See
-       ARCHITECTURE.md. */
+       quiet spread from 10% to 2.6% and cuts worst-case drift under load from +27% to +19%. See ARCHITECTURE.md#srcappnearbyperftestts. */
     expect(units).toBeLessThan(process.env["CI"] ? 32 : 22);
   });
 });

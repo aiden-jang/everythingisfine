@@ -1,0 +1,14 @@
+name: Feature request
+description: Suggest an improvement to exploring or understanding the data.
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What would this help you do?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Suggested behavior
+      description: Describe the interaction or information you would like to see.

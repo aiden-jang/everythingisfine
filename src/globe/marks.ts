@@ -78,8 +78,7 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
   morphable(material, morph);
   const object = new LineSegments(geometry, material);
   /* Above the night, like the earthquakes are. At 3.5 these sat under the coastline and under the night
-     overlay while earthquakes draw at 5, so a storm faded at night and a quake beside it did not. See
-     ARCHITECTURE.md. */
+     overlay while earthquakes draw at 5, so a storm faded at night and a quake beside it did not. See ARCHITECTURE.md#srcglobemarksts. */
   object.renderOrder = 5.5;
 
   /* The hover highlight is the glyph's own shape, in ink, over itself. A ring round a spiral argued with

@@ -132,8 +132,7 @@ export function drawStill(
   ctx.fillText(provenance, STILL_WIDTH - 56 - width, baseline + 54);
 
   /* The scale travels with the picture, because the picture is the part that leaves. Shared, the image was
-     a field of coloured dots with a caption that counted them and never explained them. See
-     ARCHITECTURE.md. */
+     a field of coloured dots with a caption that counted them and never explained them. See ARCHITECTURE.md#srcappstillts. */
   const scaleW = 190;
   const scaleRight = STILL_WIDTH - 56;
   const scaleLeft = scaleRight - scaleW;

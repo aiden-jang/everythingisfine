@@ -115,8 +115,7 @@ export function EventList({
   };
 
   return (
-    /* A floor under the list, because `flex-1` gives zero when there is nothing left to give. See
-       ARCHITECTURE.md. */
+    /* A floor under the list, because `flex-1` gives zero when there is nothing left to give. See ARCHITECTURE.md#srcappeventlisttsx. */
     <section
       aria-label="Recent earthquakes"
       data-empty={quakes.length === 0 || undefined}

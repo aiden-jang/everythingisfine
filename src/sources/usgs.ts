@@ -153,8 +153,7 @@ export function createUsgsSource(runtime: Runtime, urls: string | UsgsUrls = {})
   let liveSince: number | null = null;
 
   /* What we have already told the store about. Replaced wholesale each poll rather than accumulated: both
-     feeds are rolling windows that restate themselves, so keeping every id ever seen grows forever. See
-     ARCHITECTURE.md. */
+     feeds are rolling windows that restate themselves, so keeping every id ever seen grows forever. See ARCHITECTURE.md#srcsourcesusgsts. */
   let seen = new Map<string, number>();
 
   const emit = (payload: unknown): void => {

@@ -30,8 +30,7 @@ describe("the deep seismicity table", () => {
   });
 
   it("is concentrated in subduction margins rather than spread over the globe", () => {
-    /* The claim the layer is built on: below 300km, only a descending plate makes earthquakes. See
-       ARCHITECTURE.md. */
+    /* The claim the layer is built on: below 300km, only a descending plate makes earthquakes. See ARCHITECTURE.md#srcgeoslabtestts. */
     const tonga = points.filter(([lon, lat]) => lat > -30 && lat < -10 && (lon > 170 || lon < -170));
     expect(tonga.length / points.length).toBeGreaterThan(0.3);
   });

@@ -17,9 +17,7 @@ interface Camera {
 /* `morph` is sampled alongside the camera because the projection unwrap is the same kind of thing: a value
  * easing toward a target that a test must not read halfway through. */
 /** True when this run is against `dist`, where the DEV-only `window.__*` hooks do not exist. */
-/* A spring stepped with a dt clamped at 50ms, so its wall-clock length scales with the frame rate,
-   plus a hash rewritten on a 1s interval rather than per frame. Measured warm: camera settled at
-   2799ms, hash at 3338ms. The old 8s left barely twice that, and CI came in over it. */
+// Allow for software-rendered camera motion and the URL writer's sampling interval.
 const CAMERA_SETTLE_MS = 20_000;
 
 const AGAINST_BUILD = process.env["EIF_BUILD"] === "1";
@@ -1647,8 +1645,7 @@ test("the tour names where the camera is, not where it is going", async ({ page 
 });
 
 /* The two ways the panel moves the camera, and the fact that they pull opposite ways. Opening it flies to
-   the epicentre; "Far side" draws five circles spanning the planet, so it has to pull back. See
-   ARCHITECTURE.md. */
+   the epicentre; "Far side" draws five circles spanning the planet, so it has to pull back. See ARCHITECTURE.md#e2einteractionspects. */
 test("pinning flies in, and the far side pulls back to the same place", async ({ page }) => {
   // Three eased flights in one test, each of which has to settle before the next is measured.
   test.setTimeout(120_000);

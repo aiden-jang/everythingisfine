@@ -1,7 +1,6 @@
 import { events, fetchList, listUrl, parseUtc, reportedBy } from "./gdacs";
 
-/* Volcanoes with an eruption episode on record, which is not the same as volcanoes erupting now. See
-   ARCHITECTURE.md. */
+/* Volcanoes with an eruption episode on record, which is not the same as volcanoes erupting now. See ARCHITECTURE.md#srcsourcesvolcanoests. */
 
 export interface Volcano {
   id: string;

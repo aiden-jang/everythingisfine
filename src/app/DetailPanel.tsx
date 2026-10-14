@@ -279,8 +279,7 @@ export function DetailPanel({
         <Field
           label="Reported by"
           /* The relay, and in brackets whoever actually computed it. Both feeds aggregate: a Hawaiian
-             earthquake reported by USGS was solved at the Hawaiian Volcano Observatory. See
-             ARCHITECTURE.md. */
+             earthquake reported by USGS was solved at the Hawaiian Volcano Observatory. See ARCHITECTURE.md#srcappdetailpaneltsx. */
           value={quake.readings
             .map((x) =>
               x.network === undefined ? SOURCE_NAMES[x.source] : `${SOURCE_NAMES[x.source]} (${x.network})`,
@@ -290,8 +289,7 @@ export function DetailPanel({
       </div>
 
       {/* When it reached the nearest place with a name on it. A marker says an earthquake happened at a
-          point; it does not say the point is 7km from a town that felt it two seconds later. See
-          ARCHITECTURE.md. */}
+          point; it does not say the point is 7km from a town that felt it two seconds later. See ARCHITECTURE.md#srcappdetailpaneltsx. */}
       {arrival ? (
         <div className="mt-4">
           <p className="text-[11px] leading-relaxed text-dim">

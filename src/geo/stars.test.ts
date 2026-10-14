@@ -71,8 +71,7 @@ describe("sidereal time", () => {
   });
 
   it("agrees with the sun, which this file computes no part of", () => {
-    /* The real check, and the only one here that could catch a wrong epoch or a sign slip. See
-       ARCHITECTURE.md. */
+    /* The real check, and the only one here that could catch a wrong epoch or a sign slip. See ARCHITECTURE.md#srcgeostarstestts. */
     const raOfSun = (at: number): number => (((subsolarPoint(at).lon + gmstDeg(at)) % 360) + 360) % 360;
 
     let june = { lat: -99, at: 0 };

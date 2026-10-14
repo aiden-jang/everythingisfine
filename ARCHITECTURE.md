@@ -7063,6 +7063,8 @@ the line the code kept.
 - [e2e/design.spec.ts](#e2edesignspects)
 - [e2e/feeds.ts](#e2efeedsts)
 - [e2e/interaction.spec.ts](#e2einteractionspects)
+- [src/app/ArchiveControls.tsx](#srcapparchivecontrolstsx)
+- [src/app/useStill.ts](#srcappusestillts)
 - [src/App.tsx](#srcapptsx)
 - [src/app/CrossSection.tsx](#srcappcrosssectiontsx)
 - [src/app/DetailPanel.tsx](#srcappdetailpaneltsx)
@@ -10471,3 +10473,13 @@ is right and the number of marks in any one country means nothing. The legend ha
 
 Burned area is real, in hectares, and never encoded in the size of the mark: size belongs to the magnitude
 ramp, and at true scale the biggest fire on Earth is a fifth of a degree across.
+
+## src/app/ArchiveControls.tsx
+
+Archive entry, calendar, notable days, and eclipse controls share one component. The archive
+hook owns loading and date navigation; this component does not fetch independently.
+
+## src/app/useStill.ts
+
+Capture, caption, encoding, and sharing happen in one hook. Copy the WebGL drawing buffer
+synchronously, and keep native sharing inside the initiating user gesture.
