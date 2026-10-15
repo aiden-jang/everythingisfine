@@ -91,3 +91,7 @@ The app serves static assets without a Worker script or database. See [DEPLOY.md
 
 Code is [MIT licensed](LICENSE). Report vulnerabilities through
 [private reporting](https://github.com/aiden-jang/everythingisfine/security/advisories/new).
+
+The SVG globe mark in `public/icon.svg` also has committed 32px browser and
+180px Apple touch PNGs. Keep the Apple variant opaque and square; iOS applies its
+own mask. The PNGs are raster derivatives of that SVG, without changing the globe.
