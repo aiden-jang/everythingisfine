@@ -1,6 +1,5 @@
-import { CitationActions } from "./CitationActions";
+import { CopyLink } from "./CopyLink";
 import { EventTime } from "./EventTime";
-import { quakeCitation } from "./citation";
 import { useMemo } from "react";
 import type { Filters, Quake } from "../data/types";
 import type { RampName } from "../globe/ramp";
@@ -426,11 +425,7 @@ export function DetailPanel({
         >
           Far side
         </button>
-        <CitationActions
-          citation={() => quakeCitation(quake, location.href)}
-          scope={JSON.stringify(quake.readings)}
-          withLink
-        />
+        <CopyLink key={quake.key} />
       </div>
     </aside>
   );

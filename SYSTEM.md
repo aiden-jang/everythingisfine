@@ -26,7 +26,7 @@ It has no backend, API keys, database, or server-side cache.
 | `src/app/useStill.ts` | Synchronous canvas capture, caption, native sharing, download fallback |
 | `src/app/useHazardLayers.ts` | Live hazard loading and answered state |
 | `src/app/useStored.ts` | Remember preferences only when the visitor changes them |
-| `src/app/citation.ts`, `src/app/CitationActions.tsx` | Source citations with per-provider facts, clipboard feedback and manual recovery |
+| `src/app/CopyLink.tsx` | Pinned-event link copying and recovery when clipboard access is refused |
 | `src/app/permalink.ts` | Parse and encode a shareable view without persisting playback motion |
 | `src/globe/animation.ts` | Bound long pauses while retaining elapsed time on slow displays |
 

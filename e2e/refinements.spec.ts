@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds, waitForData } from "./feeds";
 
-test("source citation recovery retains the exact provider text", async ({ page }) => {
+test("event links remain copyable when clipboard access is refused", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 900 });
   const now = Date.now();
@@ -11,12 +11,10 @@ test("source citation recovery retains the exact provider text", async ({ page }
     Object.defineProperty(navigator, "clipboard", {
       value: {
         writeText: async (text: string) => {
-          sessionStorage.setItem("citation-attempt-url", location.href);
           if (!sessionStorage.getItem("allow-test-copy")) {
             throw new DOMException("Blocked", "NotAllowedError");
           }
-          sessionStorage.setItem("copied-citation", text);
-          sessionStorage.setItem("copied-citation-url", location.href);
+          sessionStorage.setItem("copied-event-link", text);
         },
       },
     });
@@ -25,41 +23,32 @@ test("source citation recovery retains the exact provider text", async ({ page }
   await waitForData(page);
   await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
   await expect(page).toHaveURL(/[&#]e=usgs:/);
-  await page.getByRole("button", { name: "Copy citation", exact: true }).click();
-  const text = page.getByRole("textbox", { name: "Citation to copy" });
-  await expect(text).toBeVisible();
-  await expect(text).toHaveValue(/Origin: .*Received: /s);
-  await expect(text).toHaveValue(/Source: https:\/\//);
-  const firstView = await page.evaluate(() => sessionStorage.getItem("citation-attempt-url"));
-  expect(await text.inputValue()).toContain(`\n\nView: ${firstView}`);
+  await expect(page.getByRole("button", { name: "Copy citation", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Copy link", exact: true }).click();
+  const link = page.getByRole("textbox", { name: "Link to copy" });
+  await expect(link).toBeVisible();
+  await expect(link).toHaveValue(page.url());
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 });
-    await text.scrollIntoViewIfNeeded();
+    await link.scrollIntoViewIfNeeded();
     await page.screenshot({
-      path: test.info().outputPath(`refinement-citation-${width}.png`),
+      path: test.info().outputPath(`trim-sharing-${width}.png`),
       animations: "disabled",
     });
   }
-  const citation = await text.inputValue();
   await page.evaluate(() => {
     sessionStorage.setItem("allow-test-copy", "1");
     const next = new URL(location.href);
-    next.searchParams.set("citation-check", "retry");
+    next.searchParams.set("sharing-check", "retry");
     history.replaceState(null, "", next);
   });
-  await page.getByRole("button", { name: "Copy citation", exact: true }).click();
-  await expect(page.getByRole("status")).toHaveText("Citation copied");
-  await expect(text).toHaveCount(0);
-  const copied = await page.evaluate(() => ({
-    text: sessionStorage.getItem("copied-citation"),
-    url: sessionStorage.getItem("copied-citation-url"),
-  }));
-  expect(new URL(copied.url!).searchParams.get("citation-check")).toBe("retry");
-  const providerText = citation.slice(0, citation.lastIndexOf("\n\nView: "));
-  expect(copied.text).toBe(`${providerText}\n\nView: ${copied.url}`);
+  await page.getByRole("button", { name: "Copy link", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Link copied", exact: true })).toBeVisible();
+  await expect(link).toHaveCount(0);
+  expect(await page.evaluate(() => sessionStorage.getItem("copied-event-link"))).toBe(page.url());
 });
 
-test("forced colors keep event selection and citation controls usable", async ({ page }) => {
+test("forced colors keep event selection and sharing usable", async ({ page }) => {
   await installFeeds(page);
   await page.emulateMedia({ forcedColors: "active", reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -88,7 +77,7 @@ test("forced colors keep event selection and citation controls usable", async ({
   await expect(activity.getByRole("button").first()).toHaveCSS("border-left-width", "0px");
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 });
-    const copy = page.getByRole("button", { name: "Copy citation", exact: true });
+    const copy = page.getByRole("button", { name: "Copy link", exact: true });
     await copy.focus();
     await page.keyboard.press("Tab");
     await page.keyboard.press("Shift+Tab");
