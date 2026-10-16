@@ -7098,6 +7098,7 @@ the line the code kept.
 - [src/app/omori.ts](#srcappomorits)
 - [src/app/permalink.test.ts](#srcapppermalinktestts)
 - [src/app/permalink.ts](#srcapppermalinkts)
+- [src/app/viewLocation.ts](#srcappviewlocationts)
 - [src/app/regions.ts](#srcappregionsts)
 - [src/app/replay.test.ts](#srcappreplaytestts)
 - [src/app/replay.ts](#srcappreplayts)
@@ -8291,6 +8292,14 @@ Longitude back into [-180, 180). The camera's is not.
 
 `lon` keeps counting: cross the date line and it gains a whole turn and never gives it back. Links
 were coming out as `at=499.37`.
+
+### src/app/viewLocation.ts
+
+`replaceState` does not emit a browser navigation event. The shared-view writer publishes its
+changes through `replaceViewLocation`; `useViewLocation` subscribes copying controls to that
+address as well as browser Back/Forward and fragment edits. A manual-copy field therefore stays
+current while the camera moves even when the application clock is unchanged. The module owns
+notification and subscription cleanup; permalink parsing remains pure.
 
 ### src/app/regions.ts
 

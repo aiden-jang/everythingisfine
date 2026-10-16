@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
+import { useViewLocation } from "./viewLocation";
 
 export function CopyLink() {
+  const href = useViewLocation();
   const busy = useRef(false);
   const [result, setResult] = useState({ url: "", failed: false, pending: false });
-  const current = result.url === location.href;
+  const current = result.url === href;
   const copy = async () => {
     if (busy.current) return;
     busy.current = true;
@@ -28,14 +30,14 @@ export function CopyLink() {
       >
         {current && !result.failed && !result.pending ? "Link copied" : "Copy link"}
       </button>
-      {current && result.failed && !result.pending && (
+      {result.failed && !result.pending && (
         <div className="w-full text-[11px] text-dim" role="status">
           Couldn’t copy. You can copy the link below.
           <input
             className="mt-2 min-h-11 w-full border border-hairline bg-deck p-2 text-ink"
             aria-label="Link to copy"
             readOnly
-            value={result.url}
+            value={href}
             onFocus={(event) => event.currentTarget.select()}
           />
         </div>

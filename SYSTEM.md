@@ -27,6 +27,7 @@ It has no backend, API keys, database, or server-side cache.
 | `src/app/useHazardLayers.ts` | Live hazard loading and answered state |
 | `src/app/useStored.ts` | Remember preferences only when the visitor changes them |
 | `src/app/CopyLink.tsx` | Pinned-event link copying and recovery when clipboard access is refused |
+| `src/app/viewLocation.ts` | Publish same-document URL changes and subscribe copy controls to the current address |
 | `src/app/permalink.ts` | Parse and encode a shareable view without persisting playback motion |
 | `src/globe/animation.ts` | Bound long pauses while retaining elapsed time on slow displays |
 

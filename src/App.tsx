@@ -76,6 +76,7 @@ import { BUCKETS, histogram, totalIn } from "./app/histogram";
 import { diurnal } from "./app/diurnal";
 import { Dial } from "./app/Dial";
 import { decode, encode } from "./app/permalink";
+import { replaceViewLocation } from "./app/viewLocation";
 import { seconds } from "./app/arrival";
 import { timesLabel, versusReference } from "./app/versus";
 import { tick } from "./app/touch";
@@ -282,7 +283,7 @@ export function App(): JSX.Element {
     if (feed.snapshot().archive !== null) backToLive();
     if (feed.setWindow(DEFAULT_FILTERS.windowMs)) setPendingRev(feed.snapshot().revision);
     flyTo.current(145, 12, 1);
-    history.replaceState(null, "", window.location.pathname + window.location.search);
+    replaceViewLocation(window.location.pathname + window.location.search);
     // The writer only writes while the hash is the one it last wrote, which is what protects a pasted
     // link. Emptying it without saying so leaves the writer refusing to write again.
     lastWritten.current = window.location.hash;
@@ -427,9 +428,8 @@ export function App(): JSX.Element {
         // notice can say it was refused; writing that value back out spread it on every re-share.
         cursor: sharedCursor.current,
       });
-      if (`#${fragment}` !== window.location.hash) history.replaceState(null, "", `#${fragment}`);
-      // Skipping the no-op write matters: this runs every second and the SPA beacon counts each
-      // replaceState as a page view. Set beside the call site, a pasted hash is still adopted.
+      if (`#${fragment}` !== window.location.hash) replaceViewLocation(`#${fragment}`);
+      // Skip no-op writes: the SPA beacon counts each replacement as a page view.
       lastWritten.current = window.location.hash;
     };
     write();

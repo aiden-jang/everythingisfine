@@ -451,8 +451,10 @@ export async function waitForData(page: Page): Promise<number> {
     .locator("div")
     .filter({ hasText: /^\d[\d,]*$/ })
     .first();
-  await expect(counter, "the rail's counter never left zero: no data arrived").not.toHaveText("0", {
-    timeout: 30_000,
-  });
-  return Number((await counter.innerText()).replace(/,/g, ""));
+  let held = 0;
+  await expect(async () => {
+    held = Number((await counter.textContent({ timeout: 1000 }))?.replace(/,/g, "") ?? 0);
+    expect(held, "the rail's counter never left zero: no data arrived").toBeGreaterThan(0);
+  }).toPass({ timeout: 30_000 });
+  return held;
 }

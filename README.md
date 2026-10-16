@@ -49,6 +49,9 @@ CI runs browser shards on separate runners so each has its own software-rendered
 Every shard must pass. Results and failure traces are retained as artifacts. Live feed checks
 run separately on a daily schedule and do not block pull requests.
 
+The [October 16 flow review](docs/ui-review/flow-audit-oct16/README.md) records browser-timing
+fixes, manual-copy recovery on resize and the limits of phone emulation.
+
 ## Data and attribution
 
 | Layer | Source |

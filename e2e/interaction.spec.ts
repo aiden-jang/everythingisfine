@@ -677,6 +677,7 @@ test.describe("on a touch screen", () => {
   });
 
   test("the key hints are not offered to a device with no keys", async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: "reduce" });
     // Every entry names something touch cannot do. The row describes what works in the current view, so on a
     // phone the honest version is empty. The desktop test above asserts the pair: hidden here has to mean
     // "no keyboard", not "narrow".
@@ -1127,11 +1128,11 @@ test("playing advances the cursor against the wall clock", async ({ page }) => {
 test("the transport has a keyboard path, and the keys are written down", async ({ page }) => {
   // The cursor and its play control shipped reachable by pointer only. Tab reaches both, but tabbing to a
   // clock to move it one bar is not a path anybody uses.
+  // The entrance replay has separate coverage; keyboard controls start at the live edge.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);
-  // Past the entrance, which drives the same reveal and would otherwise be the thing under test.
-  await page.waitForTimeout(4000);
 
   const zones = page.locator(".zones");
   await expect(zones).toContainText("play");
@@ -1158,18 +1159,26 @@ test("the transport has a keyboard path, and the keys are written down", async (
   await expect(cursor).toHaveValue("1000");
   await expect(page.getByText("held", { exact: true })).toBeHidden();
 
+  // Freeze only the transport phase; startup keeps its real timers.
+  await page.clock.install();
+  // Leave more than the test deadline between reading the clock and pausing it.
+  await page.clock.pauseAt(new Date(Date.now() + test.info().timeout + 1000));
+
   // Space is the play button. From live it starts at the old edge, so the cursor is somewhere it was
   // not, and moving.
   await page.keyboard.press(" ");
-  await page.waitForTimeout(700);
+  await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+  await page.clock.runFor(50);
+  await page.clock.fastForward(700);
   const playing = Number(await cursor.inputValue());
   expect(playing).toBeLessThan(1000);
-  await page.waitForTimeout(1200);
+  await page.clock.fastForward(1200);
   expect(Number(await cursor.inputValue())).toBeGreaterThan(playing);
 
   await page.keyboard.press(" ");
+  await expect(page.getByRole("button", { name: "Play the window through", exact: true })).toBeVisible();
   const paused = Number(await cursor.inputValue());
-  await page.waitForTimeout(1000);
+  await page.clock.fastForward(1000);
   // Within a unit, not equal: a parked cursor's fraction drifts as `to` moves under it, which is the
   // window sliding rather than the cursor going anywhere.
   expect(Math.abs(Number(await cursor.inputValue()) - paused)).toBeLessThan(2);
@@ -1296,6 +1305,7 @@ test("enter takes the first result, so the box does not swallow the query", asyn
 });
 
 test("the map carries a scale, and it names the latitude it is true at", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   /*
    * The flat map gave nothing to read a distance against. The interesting half is that on equirectangular a
    * horizontal bar is only true where it is drawn: the same pixels cover half the ground at sixty degrees.
@@ -1303,7 +1313,6 @@ test("the map carries a scale, and it names the latitude it is true at", async (
   await installFeeds(page, { count: 200, silent: false });
   await page.goto("/#at=140,0,0.9&m=6");
   await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
-  await page.waitForTimeout(4000);
 
   const scale = page.locator("[data-scale]");
   // Asserted on opacity, not on visibility. The bar fades rather than unmounting, so Playwright rightly calls
@@ -1326,7 +1335,6 @@ test("the map carries a scale, and it names the latitude it is true at", async (
   // still had, so the blur is the part that makes this test test anything.
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   for (let i = 0; i < 6; i += 1) await page.keyboard.press("ArrowUp");
-  await page.waitForTimeout(1200);
 
   await expect(scale).toContainText(/km at \d+°N$/);
   const atLatitude = await ruleWidth();
@@ -1362,6 +1370,7 @@ test("the legend says what a ring is, since nothing else did", async ({ page }) 
 });
 
 test("the largest event is a way in, in time as well as in space", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   /* The app opens on the present, which at a wide window is the least interesting moment it holds. The rail
      already named the strongest event and flew to it, and left the cursor live. See ARCHITECTURE.md#e2einteractionspects. */
   const now = Date.now();
@@ -1408,23 +1417,11 @@ test("the largest event is a way in, in time as well as in space", async ({ page
   ];
   await installFeeds(page, { usgs: features });
   await page.goto("/");
-  await waitForData(page);
-  await page.waitForTimeout(4000);
-
-  const live = Number(
-    (
-      await page
-        .locator(".zone-rail div")
-        .filter({ hasText: /^\d[\d,]*$/ })
-        .first()
-        .innerText()
-    ).replace(/,/g, ""),
-  );
+  const live = await waitForData(page);
 
   const largest = page.locator('[data-rail="largest"]');
   await expect(largest).toContainText("6.4");
   await largest.click();
-  await page.waitForTimeout(900);
 
   // Space: the panel opens on the event it named.
   const panel = page.locator(".zone-panel");
@@ -1437,32 +1434,29 @@ test("the largest event is a way in, in time as well as in space", async ({ page
   await expect(page.getByRole("button", { name: "go live" })).toBeVisible();
   // And the globe is drawing that moment, not the end state. Twenty hours back of this fixture is the big one
   // and nothing else, against forty-one events live.
-  const held = Number(
-    (
-      await page
-        .locator(".zone-rail div")
-        .filter({ hasText: /^\d[\d,]*$/ })
-        .first()
-        .innerText()
-    ).replace(/,/g, ""),
-  );
+  let held = live;
+  await expect
+    .poll(async () => {
+      held = await waitForData(page);
+      return held;
+    })
+    .toBeLessThan(live);
   expect(held).toBeLessThan(live);
   expect(held).toBeGreaterThan(0);
 
   // Escape gives the present back and keeps the pin: one rung at a time, innermost first.
   await page.keyboard.press("Escape");
-  await page.waitForTimeout(700);
   await expect(page.getByText("held", { exact: true })).toBeHidden();
   await expect(panel).toContainText("M 6.4");
 });
 
 test("a section can be opened from the panel, not only by a gesture", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   // `CrossSection` was reachable by shift-dragging the map and by nothing else: undiscoverable with a mouse
   // and impossible on a touch screen, where there is no shift to hold.
   await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);
-  await page.waitForTimeout(4000);
 
   // From the largest, which is in a margin and so has a trend to cut across.
   await page.locator('[data-rail="largest"]').click();
@@ -1470,7 +1464,6 @@ test("a section can be opened from the panel, not only by a gesture", async ({ p
   await expect(panel).toBeVisible();
 
   await panel.getByRole("button", { name: "Slice here" }).click();
-  await page.waitForTimeout(1200);
 
   // A section only exists on the map, so taking it goes there rather than opening over a globe with
   // no line on it. Same reasoning a shared link carrying a section already follows.

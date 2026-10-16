@@ -27,9 +27,16 @@ test("event links remain copyable when clipboard access is refused", async ({ pa
   await page.getByRole("button", { name: "Copy link", exact: true }).click();
   const link = page.getByRole("textbox", { name: "Link to copy" });
   await expect(link).toBeVisible();
-  await expect(link).toHaveValue(page.url());
+  await expect.poll(async () => (await link.inputValue()) === page.url()).toBe(true);
+  const beforeMove = page.url();
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press("ArrowUp");
+  await expect(page).not.toHaveURL(beforeMove);
+  await expect.poll(async () => (await link.inputValue()) === page.url()).toBe(true);
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 900 });
+    await expect(link).toBeVisible();
+    await expect.poll(async () => (await link.inputValue()) === page.url()).toBe(true);
     await link.scrollIntoViewIfNeeded();
     await page.screenshot({
       path: test.info().outputPath(`trim-sharing-${width}.png`),
