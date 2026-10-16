@@ -10,6 +10,9 @@ test("pinned event timestamps name the local date and offset", async ({ page }) 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await waitForData(page);
+  await expect(page.getByRole("link", { name: "aiden jang", exact: true })).toHaveAccessibleDescription(
+    "Opens in a new tab",
+  );
   await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
   const panel = page.locator('.zone-panel[data-open="true"]');
   const time = panel.locator("time").first();

@@ -1808,9 +1808,9 @@ export function App(): JSX.Element {
                 <a
                   href="https://www.aidenjang.com"
                   target="_blank"
+                  aria-describedby="external-link-hint"
                   rel="noreferrer"
-                  /* `inline-flex`, not inline: `min-height` does nothing to an inline element, so the 44px touch
-                minimum slid straight off and the finger test caught it at 14px. */
+                  // Inline-flex lets the mobile minimum height apply to the link.
                   className="pointer-events-auto inline-flex items-center text-faint underline decoration-from-font underline-offset-2 transition-colors hover:text-dim max-md:min-h-11"
                 >
                   aiden jang
