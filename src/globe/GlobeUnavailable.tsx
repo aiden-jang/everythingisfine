@@ -2,7 +2,7 @@ export function GlobeUnavailable({ onRetry }: { onRetry: () => void }): JSX.Elem
   return (
     <div
       role="status"
-      className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-void px-6 text-center text-dim"
+      className="absolute inset-0 z-0 flex flex-col items-center justify-center gap-3 bg-void px-6 text-center text-dim"
     >
       <p className="text-[14px]">The globe could not start.</p>
       <p className="max-w-[30ch] text-[12px] text-faint">

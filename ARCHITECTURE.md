@@ -9508,6 +9508,15 @@ becomes a spin.
 You cannot gate CI on frame time. A shared runner has no GPU and falls back to software rendering, so the
 number is noise wearing a unit and any threshold loose enough to pass never fails.
 
+Performance files run first in their own Vitest process, followed by all remaining unit files.
+This keeps earlier unit workloads from changing the benchmark process’s JIT and heap state.
+The partition runs every default test; performance budgets, workloads and deadlines are unchanged.
+
+The allocation check prepares and warms its store in a fixture, then measures the unchanged steady-state
+workload with explicit garbage collection. The default test command runs the heap-enabled suite;
+a missing collector fails the memory check. Store traversal follows Map insertion order directly,
+which is the same arrival order retained by the eviction ring.
+
 Gate on per-frame CPU work instead - filter predicates, projection maths, buffer writes - which is
 deterministic and needs no GPU. GPU frame time is measured by hand and recorded with the machine named.
 

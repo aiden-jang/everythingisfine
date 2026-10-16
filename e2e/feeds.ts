@@ -152,6 +152,7 @@ const emscFeature = (q: Quake, now: number) => ({
 });
 
 export interface FeedOptions {
+  now?: number;
   /** Exact USGS features, for a test that needs one specific event rather than a plausible day. */
   usgs?: unknown[];
   /** A day with nothing in it. The feeds answer; they simply have no events. */
@@ -175,7 +176,7 @@ const EMSC_SEED_LIMIT = 600;
 
 /** Routes both feeds and stubs the socket. Call before `page.goto`. See ARCHITECTURE.md#e2efeedsts. */
 export async function installFeeds(page: Page, options: FeedOptions = {}): Promise<void> {
-  const { usgs, empty, silent, dead, seed, count, emscCappedHours } = options;
+  const { usgs, empty, silent, dead, seed, count, emscCappedHours, now: fixedNow } = options;
 
   await installHazards(page);
 
@@ -223,7 +224,7 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
    * a pattern catching only `all_day` quietly pulled a live week down the moment a test clicked 7d.
    */
   await page.route(/all_(day|week|month)\.geojson/, (route) => {
-    const now = Date.now();
+    const now = fixedNow ?? Date.now();
     route.fulfill({
       json: { features: usgs ?? quakes.map((q) => usgsFeature(q, now)) },
     });
@@ -232,7 +233,7 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
   // The hourly poll is a subset of the day, which is what the real feed does and what makes the
   // store treat a re-delivered event as a revision rather than as something new.
   await page.route(/all_hour\.geojson/, (route) => {
-    const now = Date.now();
+    const now = fixedNow ?? Date.now();
     route.fulfill({
       json: {
         features: usgs ?? quakes.filter((q) => q.ago < 3_600_000).map((q) => usgsFeature(q, now)),
@@ -241,7 +242,7 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
   });
 
   await page.route(/seismicportal\.eu/, (route) => {
-    const now = Date.now();
+    const now = fixedNow ?? Date.now();
     if (emscCappedHours !== undefined) {
       // Exactly a full page, spread evenly over the hours asked for. Full is what makes the source vouch for
       // its oldest row rather than for the window, so the count has to be the limit and not merely large.

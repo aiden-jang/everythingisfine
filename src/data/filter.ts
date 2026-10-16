@@ -22,7 +22,10 @@ export function passesWindow(quake: Quake, now: number, windowMs: number): boole
 
 /** Shown if any source that reported it is enabled. */
 export function passesSource(quake: Quake, enabled: Filters["sources"]): boolean {
-  return quake.readings.some((r) => enabled.has(r.source));
+  for (const reading of quake.readings) {
+    if (enabled.has(reading.source)) return true;
+  }
+  return false;
 }
 
 export function matches(quake: Quake, filters: Filters, now: number): boolean {

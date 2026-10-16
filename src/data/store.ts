@@ -242,12 +242,8 @@ export function createStore(capacity: number = DEFAULT_CAPACITY): Store {
   };
 
   const forEach = (fn: (quake: Quake) => void): void => {
-    for (let i = 0; i < count; i += 1) {
-      const key = slots[(head + i) % capacity];
-      if (!key) continue;
-      const q = byKey.get(key);
-      if (q) fn(q);
-    }
+    // Map insertion order matches arrival order; revisions update the existing quake in place.
+    byKey.forEach((quake) => fn(quake));
   };
 
   return {

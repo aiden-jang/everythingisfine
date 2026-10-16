@@ -16,9 +16,10 @@ test("WebGL failure leaves events usable and can recover", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("The globe could not start.", { exact: true })).toBeVisible();
   await waitForData(page);
-  await expect(
-    page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first(),
-  ).toBeAttached();
+  const event = page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first();
+  await expect(event).toBeVisible();
+  await event.click();
+  await expect(page.getByRole("button", { name: "Copy citation", exact: true })).toBeVisible();
   await page.evaluate(() => (window as unknown as { restoreGraphics: () => void }).restoreGraphics());
   await page.getByRole("button", { name: "Try the globe again", exact: true }).click();
   await expect(page.getByText("The globe could not start.", { exact: true })).toBeHidden();

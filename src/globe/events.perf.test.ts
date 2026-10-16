@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createEventLayer } from "./events";
 import { createStore } from "../data/store";
 import type { Filters, Reading } from "../data/types";
@@ -145,27 +145,28 @@ describe("update cost", () => {
     layer.dispose();
   });
 
-  it("allocates nothing per sync once it is warm", () => {
-    const gc = (globalThis as { gc?: () => void }).gc;
-    if (!gc) return;
-
-    const store = fill(50_000);
-    const layer = createEventLayer(50_000);
+  describe("steady-state allocations", () => {
+    let store: ReturnType<typeof createStore>;
+    let layer: ReturnType<typeof createEventLayer>;
     const f = filters();
     const now = 1_700_000_000_000;
-    for (let i = 0; i < 10; i += 1) layer.sync(store, f, now, NO_CLUSTER);
-
-    gc();
-    const before = process.memoryUsage().heapUsed;
-    for (let i = 0; i < 200; i += 1) layer.sync(store, f, now, NO_CLUSTER);
-    gc();
-    const growthMb = (process.memoryUsage().heapUsed - before) / 1024 / 1024;
-
-    // Two hundred syncs is over three seconds of continuous slider dragging at 60fps. One small array per
-    // event here is tens of megabytes.
-    console.info(`[perf] 200 syncs of 50,000 events grew the heap by ${growthMb.toFixed(2)}MB`);
-    expect(growthMb).toBeLessThan(2);
-    layer.dispose();
+    beforeAll(() => {
+      store = fill(50_000);
+      layer = createEventLayer(50_000);
+      for (let i = 0; i < 10; i += 1) layer.sync(store, f, now, NO_CLUSTER);
+    });
+    afterAll(() => layer.dispose());
+    it("allocates nothing per sync once it is warm", () => {
+      const gc = (globalThis as { gc?: () => void }).gc;
+      if (!gc) throw new Error("Run this check with pnpm run test:heap so garbage collection is available.");
+      gc();
+      const before = process.memoryUsage().heapUsed;
+      for (let i = 0; i < 200; i += 1) layer.sync(store, f, now, NO_CLUSTER);
+      gc();
+      const growthMb = (process.memoryUsage().heapUsed - before) / 1024 / 1024;
+      console.info(`[perf] 200 syncs of 50,000 events grew the heap by ${growthMb.toFixed(2)}MB`);
+      expect(growthMb).toBeLessThan(2);
+    });
   });
 });
 

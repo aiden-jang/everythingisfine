@@ -561,3 +561,14 @@ describe("clearing the store, which archive mode leans on entirely", () => {
     expect(store.newest(50).length).toBe(store.size());
   });
 });
+
+it("visits retained arrivals once with only the quake argument after revisions and eviction", () => {
+  const store = createStore(2);
+  const first = store.ingest(reading({ id: "first", time: 1_700_000_000_000 })).quake;
+  const second = store.ingest(reading({ id: "second", time: 1_700_000_600_000 })).quake;
+  store.ingest(reading({ id: "first", time: first.primary.time, magnitude: 6 }));
+  const third = store.ingest(reading({ id: "third", time: 1_700_001_200_000 })).quake;
+  const seen: unknown[][] = [];
+  store.forEach((...args) => seen.push(args));
+  expect(seen).toEqual([[second], [third]]);
+});
