@@ -7537,6 +7537,10 @@ header, and hiding the labels would remove the thing that makes the axis readabl
 
 ### src/app/DetailPanel.tsx
 
+Pinned event times show the viewer’s full local date and UTC offset. `EventTime.tsx`
+keeps the machine-readable instant alongside the label. The offset distinguishes repeated
+clock times when daylight saving ends; each provider’s compact time retains the full title.
+
 **The pinned event, in full**
 
 The pinned event, in full.

@@ -1,4 +1,5 @@
 import { CitationActions } from "./CitationActions";
+import { EventTime } from "./EventTime";
 import { quakeCitation } from "./citation";
 import { useMemo } from "react";
 import type { Filters, Quake } from "../data/types";
@@ -12,17 +13,7 @@ import { sectionThrough, type SectionLine } from "./section";
 import { arrivalFor, seconds } from "./arrival";
 import { daylight, solarClock, solarHour, sunElevation } from "../geo/sun";
 import { P_WAVE_KM_PER_S, S_WAVE_KM_PER_S } from "../geo/waves";
-import {
-  ago,
-  boundaryNote,
-  clock,
-  coordinates,
-  depth,
-  farSideNote,
-  magnitude,
-  place,
-  SOURCE_NAMES,
-} from "./format";
+import { ago, boundaryNote, coordinates, depth, farSideNote, magnitude, place, SOURCE_NAMES } from "./format";
 
 /* The pinned event, in full. See ARCHITECTURE.md#srcappdetailpaneltsx. */
 
@@ -177,7 +168,7 @@ export function DetailPanel({
       </div>
       <h2 className="event-place mt-3 text-[20px] leading-snug font-medium text-ink">{place(r.place)}</h2>
       <div className="mt-1 text-[11px] text-faint">
-        {clock(r.time)} · {ago(r.time, now, archived)}
+        <EventTime at={r.time} /> · {ago(r.time, now, archived)}
       </div>
       {/* A pinned event the filters now exclude. Kept rather than closed, because losing a pin to a nudged
           slider is worse than holding one - and named, rather than kept quietly. */}
@@ -322,7 +313,9 @@ export function DetailPanel({
                 M {reading.magnitude.toFixed(1)} {reading.scale}
               </span>
               <span className="min-w-0 text-[10.5px]">{coordinates(reading)}</span>
-              <span className="text-right text-[10.5px] text-faint">{clock(reading.time)}</span>
+              <span className="text-right text-[10.5px] text-faint">
+                <EventTime at={reading.time} compact />
+              </span>
             </div>
           ))}
         </div>
