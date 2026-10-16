@@ -1,3 +1,5 @@
+import { CitationActions } from "./CitationActions";
+import { markCitation } from "./citation";
 import { category, type Cyclone } from "../sources/cyclones";
 import type { Flood } from "../sources/floods";
 import type { Volcano } from "../sources/volcanoes";
@@ -168,6 +170,10 @@ export function MarkCard({ found, now, archived = false, onClose }: MarkCardProp
           </div>
         ))}
       </dl>
+      <CitationActions
+        citation={() => markCitation(found, { title, note, lines }, location.href)}
+        scope={JSON.stringify(found)}
+      />
     </aside>
   );
 }

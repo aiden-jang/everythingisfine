@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { CitationActions } from "./CitationActions";
+import { quakeCitation } from "./citation";
+import { useMemo } from "react";
 import type { Filters, Quake } from "../data/types";
 import type { RampName } from "../globe/ramp";
 import type { Store } from "../data/store";
@@ -113,7 +115,6 @@ export function DetailPanel({
   boundaryKm,
   onSelect,
 }: DetailPanelProps): JSX.Element {
-  const [copied, setCopied] = useState(false);
   const r = quake.primary;
   /* Recomputed on new data, not on the clock. See ARCHITECTURE.md#srcappdetailpaneltsx. */
   const near = useMemo(
@@ -143,17 +144,6 @@ export function DetailPanel({
           mag: Math.abs(a.magnitude - b.magnitude),
         }
       : null;
-
-  const copyLink = async (): Promise<void> => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // Clipboard access can be refused. The address bar already holds the link, so this is a convenience
-      // failing rather than the feature failing.
-    }
-  };
 
   return (
     <aside
@@ -420,8 +410,6 @@ export function DetailPanel({
         </p>
       ) : null}
 
-      {/* Wraps, because a clipped button is an action that does not exist. "Fly here" used to lead this
-          row; pinning an event now flies to it, so the button was asking for what had already happened. */}
       <div className="mt-5 flex flex-wrap gap-2 pb-1">
         {/* Offered on either view, because taking it switches to the map. A section only exists there, so
             this names a slice rather than choosing a projection. */}
@@ -432,9 +420,7 @@ export function DetailPanel({
         >
           Slice here
         </button>
-        {/* The far side, offered rather than drawn: five circles spanning the planet is not something to
-            hand somebody who clicked an event to read its depth. It claims no timing - the live rings fade
-            at 17 degrees, and the far side is 55 minutes of travel this app refuses to model. */}
+        {/* Far-side rings show geometry, without claiming a modeled arrival time. */}
         <button
           type="button"
           aria-pressed={farSide}
@@ -447,15 +433,11 @@ export function DetailPanel({
         >
           Far side
         </button>
-        {/* A seam, because the fourth button is not the same kind of thing as the first three. Fly, Slice
-            and Far side move the camera; Copy link changes nothing on screen. See ARCHITECTURE.md#srcappdetailpaneltsx. */}
-        <button
-          type="button"
-          onClick={() => void copyLink()}
-          className="ml-auto cursor-pointer border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
-        >
-          {copied ? "Link copied" : "Copy link"}
-        </button>
+        <CitationActions
+          citation={() => quakeCitation(quake, location.href)}
+          scope={JSON.stringify(quake.readings)}
+          withLink
+        />
       </div>
     </aside>
   );

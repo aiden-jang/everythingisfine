@@ -1288,3 +1288,15 @@
     flex: none;
   }
 }
+
+input:is(:autofill, :-webkit-autofill),
+textarea:is(:autofill, :-webkit-autofill) {
+  -webkit-text-fill-color: var(--color-ink);
+  caret-color: var(--color-ink);
+  box-shadow: 0 0 0 1000px var(--color-deck) inset;
+}
+
+input::selection,
+textarea::selection {
+  -webkit-text-fill-color: var(--color-ink);
+}

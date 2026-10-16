@@ -27,7 +27,7 @@ const ALREADY_OVER = {
   "src/globe/controls.ts": { lines: 690 },
   "src/app/MagnitudeFilter.tsx": { lines: 576 },
   "src/geo/land.ts": { lines: 477 },
-  "src/app/DetailPanel.tsx": { lines: 462 },
+  "src/app/DetailPanel.tsx": { lines: 444 },
   "src/app/Timeline.tsx": { lines: 456 },
   "src/app/format.ts": { lines: 438 },
 };
