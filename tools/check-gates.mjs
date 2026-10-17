@@ -1,12 +1,4 @@
-/*
- * The gate on the gates, run first by `pnpm run verify`.
- *
- * Two ways a check stops checking without anybody noticing. It drifts out of CI, so a local run is
- * green on a smaller set than the build; or it is invoked as `pnpm <name>` where pnpm has a command
- * of its own, and pnpm's runs instead. This repo shipped the second one: `DEPLOY.md` and `README.md`
- * both told you to run `pnpm deploy`, which deploys a workspace package to a directory and never
- * touches wrangler.
- */
+// Check that verification and CI run the same real scripts with unambiguous command names.
 import { globSync, readFileSync } from "node:fs";
 import { report } from "./gate.mjs";
 

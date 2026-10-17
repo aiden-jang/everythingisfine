@@ -24,6 +24,8 @@ It has no backend, API keys, database, or server-side cache.
 | `src/app/useArchive.ts` | Archive request ownership, stale-response protection, date navigation, source coverage |
 | `src/app/ArchiveControls.tsx` | Date entry, calendar, notable days, and eclipse controls |
 | `src/app/useStill.ts` | Synchronous canvas capture, caption, native sharing, download fallback |
+| `src/app/useGlobeResources.ts` | Deferred geometry and timezone data, retained while disabled, with completion cleanup |
+| `src/app/useGlobeTour.ts` | Captured tour route, dwell timers, interaction cancellation, and camera-arrival narration |
 | `src/app/useHazardLayers.ts` | Live hazard loading and answered state |
 | `src/app/useStored.ts` | Remember preferences only when the visitor changes them |
 | `src/app/CopyLink.tsx` | Pinned-event link copying and recovery when clipboard access is refused |

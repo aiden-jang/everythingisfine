@@ -1,12 +1,4 @@
-/*
- * The link between the code and the reasoning behind it, run by `pnpm run verify`.
- *
- * `ARCHITECTURE.md` carries the long form and the code carries a note pointing into it. Nothing read
- * either end, so both drifted: 247 notes said only "See ARCHITECTURE.md", which is a search through ten
- * thousand lines, and 45 of the index's 121 entries counted notes that had already been deleted.
- *
- * A pointer nobody checks is how a document nobody trusts gets written.
- */
+// Validate documented paths, scripts, routes, symbols, and local links.
 import { globSync, readFileSync } from "node:fs";
 import { report } from "./gate.mjs";
 

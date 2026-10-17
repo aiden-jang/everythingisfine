@@ -1,18 +1,4 @@
-/*
- * A ceiling on comments, run by `pnpm run verify`, because a cleanup pass is a moment and drift is
- * permanent.
- *
- * A share of the code rather than a line count. A count charges a new module for its own header, so
- * it blocks a genuine explanation exactly as hard as it blocks padding.
- *
- * The share here is high next to the other repos and that is deliberate. This app's non-obvious
- * decisions are numeric and physical: why the Gutenberg-Richter constant is dropped, why an
- * unobserved bucket is not an empty one, why 2000 is the carrier year for a date with no year. None
- * of that is recoverable from the code, and the comments were read before the number was set.
- *
- * What it catches is prose added to code that already exists, and the two shapes a density check
- * cannot see: the same comment in two places, and one that has drifted off its subject.
- */
+// Check comment budgets, repeated explanations, and comments stranded by moves.
 import { globSync, readFileSync } from "node:fs";
 import { report } from "./gate.mjs";
 
@@ -20,16 +6,7 @@ const CEILING = { src: 0.25, tools: 0.32, e2e: 0.28 };
 /* Long enough that two files saying `// eslint-disable-next-line` are not called duplication. */
 const DUP_MIN_CHARS = 45;
 
-/*
- * Repeated on purpose: one line describing the same field or the same idiom in sibling modules, where
- * a reader in one of them should not have to find another file. Named rather than matched by shape,
- * because the two worst comments this check has found were also one line and also in two files: one
- * described the field above it instead of the field it sat on, and one explained a storage failure
- * while sitting on a font that failed to load.
- *
- * Everything else appearing twice is a comment copied along with the code under it, which stopped
- * describing one of the two the moment either changed.
- */
+// Allow repeated contract notes and local failure explanations; flag other copied prose.
 const REPEATED_ON_PURPOSE = [
   "Split, never grouped",
   "The agency that reported it",
@@ -90,11 +67,7 @@ for (const [area, files] of Object.entries(areas)) {
     let afterDeclaration = false;
     for (let i = 1; i < lines.length - 2; i++) {
       if (/^\}\)?;?$/.test(lines[i])) afterDeclaration = true;
-      /*
-       * A doc block with nothing under it but a closing brace. `/**` exists to describe the next
-       * declaration, so one describing a brace documents a prop or a field that has been removed.
-       * Ungated: the first interface in a file is where this happens.
-       */
+      // A doc block followed only by a closing delimiter has lost its subject.
       if (/\*\/\s*$/.test(lines[i])) {
         let open = i;
         while (open >= 0 && !lines[open].includes("/*")) open--;

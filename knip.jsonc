@@ -3,13 +3,8 @@
   // One package, not a workspace. The app entry comes from index.html, which knip reads for itself.
   "entry": ["tools/*.mjs", "e2e/**/*.spec.ts", "src/**/*.test.{ts,tsx}"],
   "project": ["src/**/*.{ts,tsx,css}", "tools/*.mjs", "e2e/**/*.ts"],
-  /*
-   * `preact` is what is installed; the source imports "react" throughout and @preact/preset-vite
-   * maps it to preact/compat at build time, so knip reads the dependency as unused and the import
-   * as unlisted, the same fact twice from both ends.
-   */
+  // Vite aliases React imports to Preact; both dependency warnings describe that intentional alias.
   "ignoreDependencies": ["preact", "react", "react-dom"],
-  // Plenty here is exported so a sibling test can reach it while still being used only inside its
-  // own file. Reporting those buries the finding that matters: a symbol used nowhere at all.
+  // Include exports used only by their own file or tests; report symbols with no consumers.
   "ignoreExportsUsedInFile": true,
 }

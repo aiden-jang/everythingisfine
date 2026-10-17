@@ -5,12 +5,8 @@
     "moduleResolution": "Bundler",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
-    /* React's types, preact's runtime, and no path mapping between them.
-       `preact/compat` ships its types at `src/index.d.ts` and none at all for its jsx-runtime, so a paths
-       mapping cannot hand TypeScript a JSX namespace: it silently falls through to preact's own, which
-       spells `spellcheck` where React spells `spellCheck` and leaves `e.target` untyped. `@types/react`
-       stays as a dev dependency and costs nothing in the bundle - compat implements this API, so React's
-       types are an accurate description of it. Vite does the swap; see the note in vite.config.ts. */
+    /* Use React's JSX types with Preact's runtime. Mapping types to preact/compat loses
+       compatible JSX declarations; Vite owns the runtime alias. */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

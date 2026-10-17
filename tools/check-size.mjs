@@ -1,27 +1,13 @@
-/*
- * Ceilings on file length and component state, run by `pnpm run verify`.
- *
- * Nothing else here notices a file growing, and a god-file is never added: it accretes twenty lines at
- * a time and no single diff looks wrong.
- *
- * 400 was picked from the shape of this codebase rather than imposed on it: the great majority of files
- * were already under it the day the gate went in. Lines are the proxy; the state count is the signal.
- */
+// Enforce module and local-state budgets; existing exceptions may only shrink.
 import { globSync, readFileSync } from "node:fs";
 import { report } from "./gate.mjs";
 
 const MAX_LINES = 400;
 const MAX_STATE = 12;
 
-/*
- * Already over, and being decomposed. Listed at their own size rather than the ceiling being raised for
- * everyone, so nothing else can grow past it meanwhile.
- *
- * An entry sitting above its file fails too, so shrinking one is not something anybody has to remember.
- * Left to drift, the headroom a decomposition just won is free to grow back into.
- */
+// Existing exceptions are pinned and must shrink with their files.
 const ALREADY_OVER = {
-  "src/App.tsx": { lines: 1900, state: 20 },
+  "src/App.tsx": { lines: 1799, state: 14 },
   "src/globe/Globe.tsx": { lines: 898 },
   "src/globe/scene.ts": { lines: 878 },
   "src/globe/controls.ts": { lines: 690 },

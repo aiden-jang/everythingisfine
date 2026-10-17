@@ -1,12 +1,4 @@
-/*
- * One rule matters here, and the rest is there to keep it honest.
- *
- * A `useEffect` below a component's early returns took out every page of a sibling app: the first render
- * bailed before reaching it and the next ran one hook more. Typecheck, build and the whole suite stayed
- * green throughout. Nothing but a static rule sees that.
- *
- * `preact/hooks` has the same contract and the same failure, so the rule belongs here too.
- */
+// Enforce hook order for React and preact/hooks; types cannot detect conditional-hook failures.
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";

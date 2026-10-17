@@ -1,3 +1,5 @@
+import { useGlobeResources } from "./app/useGlobeResources";
+import { useGlobeTour } from "./app/useGlobeTour";
 import { GlobeLoading } from "./globe/GlobeLoading";
 import { stillMoment } from "./app/still";
 import { useStill } from "./app/useStill";
@@ -32,13 +34,10 @@ import { hazardCount, hazardGroups, outsideWindowNote } from "./app/hazards";
 import { withinWindow } from "./app/age";
 import { sizesOf } from "./app/gutenberg";
 import { SizeChart } from "./app/Sizes";
-import { tourLabel, tourStops, TOUR_DWELL_MS } from "./app/tour";
+import { tourLabel, tourStops } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
-import { loadMotion, summariseMotion, type MotionSample } from "./geo/plateMotion";
-import { loadSlab, type SlabPoint } from "./geo/slab";
-import { loadFigures, type FigureTable } from "./geo/stars";
 import { lunarEclipse, solarEclipse } from "./geo/eclipse";
-import { closestTo, loadZones, localZone, viewerPlace, type ZoneTable } from "./app/viewer";
+import { closestTo, localZone, viewerPlace } from "./app/viewer";
 import {
   BASELINE_DAYS,
   BASELINE_FROM,
@@ -140,7 +139,6 @@ export function App(): JSX.Element {
   const [missingShared, setMissingShared] = useState<string | null>(shared.event ?? null);
   // Never in the permalink. A link arriving with 23 of its 24 hours dimmed looks broken, not shared.
   const [focusHour, setFocusHour] = useState<number | null>(null);
-  /* Ten minutes, not the model's five: the grid is 900kB and the oval barely moves in five. */
   const { aurora, cyclones, fires, floods, volcanoes, answered } = useHazardLayers();
   // Memos run during render; define their clock first. See ARCHITECTURE.md#srcapptsx.
   const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
@@ -295,22 +293,12 @@ export function App(): JSX.Element {
   // Load the slab only when requested; the depth markers alone need no extra geometry.
   const [slabOn, setSlabOn] = useStoredFlag("slab", false);
   const [figuresOn, setFiguresOn] = useStoredFlag("figures", false);
-  // Lazy: 13kB of coordinates has no business in the first frame.
-  const [zones, setZones] = useState<ZoneTable | null>(null);
-  useEffect(() => {
-    let alive = true;
-    void loadZones()
-      .then((next) => {
-        if (alive) setZones(next);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, []);
+  const { zones, motionData, motion, slabData, figureData } = useGlobeResources({
+    motionOn,
+    slabOn,
+    figuresOn,
+  });
   const here = useMemo(() => (zones ? viewerPlace(zones, localZone()) : null), [zones]);
-  // Imported on first use. A failed import leaves the array empty, so it draws nothing instead of
-  // throwing. Same for the slab below.
   const segments = useMemo(() => boundarySegments(), []);
   // Cached per event, not per render: a month of events against every segment is a million tests, and
   // an epicentre never moves.
@@ -350,46 +338,6 @@ export function App(): JSX.Element {
   const onNews = useCallback((magnitudes: number[]) => {
     siren.current?.play(magnitudes);
   }, []);
-  const [motionData, setMotionData] = useState<readonly MotionSample[]>([]);
-  useEffect(() => {
-    if (!motionOn || motionData.length > 0) return;
-    let alive = true;
-    void loadMotion()
-      .then((next) => {
-        if (alive) setMotionData(next);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [motionOn, motionData.length]);
-  const [slabData, setSlabData] = useState<readonly SlabPoint[]>([]);
-  useEffect(() => {
-    if (!slabOn || slabData.length > 0) return;
-    let alive = true;
-    void loadSlab()
-      .then((next) => {
-        if (alive) setSlabData(next);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [slabOn, slabData.length]);
-  const [figureData, setFigureData] = useState<FigureTable>([]);
-  useEffect(() => {
-    if (!figuresOn || figureData.length > 0) return;
-    let alive = true;
-    void loadFigures()
-      .then((next) => {
-        if (alive) setFigureData(next);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [figuresOn, figureData.length]);
-  const motion = motionOn && motionData.length > 0 ? summariseMotion(motionData) : null;
   const flyTo = useRef<(lon: number, lat: number, zoom?: number, liftPx?: number) => void>(() => {});
   const lastWritten = useRef<string>(window.location.hash);
   const camera = useRef<{ lon: number; lat: number; zoom: number }>({
@@ -482,52 +430,15 @@ export function App(): JSX.Element {
   // Captured at the start, not read per tick, so an arrival mid-tour cannot reorder the route.
   const stops = useMemo(() => tourStops(regions), [regions]);
   const busiest = regions[0]?.count ?? 0;
-  const [tourAt, setTourAt] = useState<number | null>(null);
-  /* Where the camera has reached, not where it is going. Naming the destination made the rail read
-  "Japan & Kurils" at longitude -82.8, which is Chile. */
-  const tourTarget = useRef<{ lon: number; lat: number; index: number } | null>(null);
-  const [tourArrived, setTourArrived] = useState<number | null>(null);
-  /* Keep the tour's own button out of the end-on-interaction listener below, or pressing Stop is a
-  race between `pointerdown` ending the tour and the click starting it again. */
-  const tourButton = useRef<HTMLButtonElement>(null);
-  const route = useRef<ReturnType<typeof tourStops>>([]);
-  const stopTour = useCallback(() => {
-    setTourAt(null);
-  }, []);
-  const startTour = useCallback(() => {
-    if (stops.length === 0) return;
-    route.current = stops;
-    setTourAt(0);
-  }, [stops]);
-  // Capture phase, so a click on a rail button ends the tour as well as doing its own job.
-  useEffect(() => {
-    if (tourAt === null) return undefined;
-    const stop = route.current[tourAt];
-    if (!stop) {
-      setTourAt(null);
-      return undefined;
-    }
-    tourTarget.current = { lon: stop.lon, lat: stop.lat, index: tourAt };
-    setTourArrived(null);
-    flyTo.current(stop.lon, stop.lat, stop.zoom);
-    const next = window.setTimeout(() => {
-      setTourAt((at) => (at === null || at + 1 >= route.current.length ? null : at + 1));
-    }, TOUR_DWELL_MS);
-    const end = (event: Event): void => {
-      if (tourButton.current?.contains(event.target as Node)) return;
-      setTourAt(null);
-    };
-    window.addEventListener("pointerdown", end, { capture: true });
-    window.addEventListener("wheel", end, { capture: true, passive: true });
-    window.addEventListener("keydown", end, { capture: true });
-    return () => {
-      window.clearTimeout(next);
-      window.removeEventListener("pointerdown", end, { capture: true });
-      window.removeEventListener("wheel", end, { capture: true });
-      window.removeEventListener("keydown", end, { capture: true });
-    };
-  }, [tourAt]);
-  const touring = tourAt !== null && tourArrived === tourAt ? (route.current[tourAt] ?? null) : null;
+  const {
+    tourAt,
+    touring,
+    tourButton,
+    startTour,
+    stopTour,
+    tourLength,
+    onCamera: observeTourCamera,
+  } = useGlobeTour(stops, flyTo);
 
   const section = useMemo(
     () =>
@@ -1263,10 +1174,10 @@ export function App(): JSX.Element {
                   {touring ? (
                     <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
                       <span className="font-mono text-ink tabular-nums">
-                        {tourAt !== null ? tourAt + 1 : 0}/{route.current.length}
+                        {tourAt !== null ? tourAt + 1 : 0}/{tourLength}
                       </span>
                       <span className="text-faint">
-                        {tourLabel(touring, tourAt ?? 0, route.current.length).replace(/^\d+ of \d+ · /, "")}
+                        {tourLabel(touring, tourAt ?? 0, tourLength).replace(/^\d+ of \d+ · /, "")}
                       </span>
                     </div>
                   ) : replay ? (
@@ -1752,19 +1663,7 @@ export function App(): JSX.Element {
               onSelectMark={selectMark}
               onCamera={(state) => {
                 camera.current = state;
-                /*
-                Arrival by geometry, not by a timer: the flight is a spring, so its duration depends on how
-                far it went. Four degrees of tolerance, because the spring approaches asymptotically and a
-                tight threshold leaves the narration permanently unspoken.
-              */
-                const target = tourTarget.current;
-                if (!target) return;
-                let dLon = Math.abs(state.lon - target.lon) % 360;
-                if (dLon > 180) dLon = 360 - dLon;
-                if (dLon < 4 && Math.abs(state.lat - target.lat) < 4) {
-                  tourTarget.current = null;
-                  setTourArrived(target.index);
-                }
+                observeTourCamera(state);
               }}
               onReplay={setReplay}
             />

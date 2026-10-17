@@ -1,17 +1,4 @@
-/*
- * Find class names the stylesheet never defines.
- *
- * There is a gap no other check covers: TypeScript does not read CSS, eslint does not read CSS, and
- * an undefined class is legal HTML that renders as nothing. One was live when this was written:
- * MarkCard carried `panel` alongside `zone-panel`, left over from before the class was renamed, and
- * its sibling DetailPanel — the same slot, the same look — never had it.
- *
- * The check needs the built CSS rather than index.css, because most classes here are Tailwind
- * utilities that only exist once Tailwind has seen them used. A token missing from the build output
- * is a token that produces no CSS anywhere.
- *
- *   pnpm run build && node tools/dead-classes.mjs
- */
+// Check referenced classes against the built CSS, including generated utilities.
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";

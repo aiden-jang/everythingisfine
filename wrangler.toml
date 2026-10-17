@@ -1,16 +1,9 @@
 name = "everythingisfine"
 compatibility_date = "2026-08-01"
 
-# No `main`.
-#
-# There is no backend and there is not going to be one. Both feeds are reached straight from the
-# browser: USGS returns `access-control-allow-origin: *`, and the EMSC WebSocket is exempt from CORS
-# by construction, so neither needs a proxy. With no Worker script, asset requests are answered
-# without invoking a Worker at all, which is why the running cost is zero invocations rather than a
-# small number of them. That is the whole hosting story, and it is what the $0 budget bought.
+# Static hosting without a Worker script. The browser reaches the feeds directly through their supported transports.
 
-# Served only on the custom domain, matching the other apps. A second guessable *.workers.dev
-# address would be a different origin for no benefit.
+# Serve only on the custom domain.
 workers_dev = false
 
 [[routes]]
@@ -19,6 +12,5 @@ custom_domain = true
 
 [assets]
 directory = "dist"
-# One route, so anything else should land on it rather than 404. Permalinks are fragment-encoded
-# (DESIGN.md section 12) and never reach the server, but a stray path still should not 404.
+# Fall back to the SPA for stray paths. Permalink fragments stay in the browser.
 not_found_handling = "single-page-application"

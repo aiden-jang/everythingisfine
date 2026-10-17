@@ -7099,6 +7099,8 @@ the line the code kept.
 - [src/app/permalink.test.ts](#srcapppermalinktestts)
 - [src/app/permalink.ts](#srcapppermalinkts)
 - [src/app/viewLocation.ts](#srcappviewlocationts)
+- [src/app/useGlobeResources.ts](#srcappusegloberesourcests)
+- [src/app/useGlobeTour.ts](#srcappuseglobetourts)
 - [src/app/regions.ts](#srcappregionsts)
 - [src/app/replay.test.ts](#srcappreplaytestts)
 - [src/app/replay.ts](#srcappreplayts)
@@ -8292,6 +8294,20 @@ Longitude back into [-180, 180). The camera's is not.
 
 `lon` keeps counting: cross the date line and it gains a whole turn and never gives it back. Links
 were coming out as `at=499.37`.
+
+### src/app/useGlobeResources.ts
+
+Optional plate motion, slab, and star-figure data load when enabled. Loaded arrays remain available
+when a layer is disabled. Timezone coordinates load independently. Each request ignores completion
+after effect cleanup, and failures leave the optional overlay empty. Rendering and preferences
+remain owned by their existing components.
+
+### src/app/useGlobeTour.ts
+
+A started tour captures its stop list so feed arrivals cannot reorder the route mid-flight. The hook
+owns its dwell timer and capture-phase cancellation listeners, excluding its own button. Camera
+coordinates determine arrival and narration; the spring flight has no fixed arrival duration.
+Stopping or unmounting clears the timer and listeners.
 
 ### src/app/viewLocation.ts
 
