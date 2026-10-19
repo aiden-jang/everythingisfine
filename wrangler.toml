@@ -1,7 +1,8 @@
 name = "everythingisfine"
+main = "worker/index.ts"
 compatibility_date = "2026-08-01"
 
-# Static hosting without a Worker script. The browser reaches the feeds directly through their supported transports.
+# Static assets and a small anonymous aggregate-events endpoint. Feed requests still go directly to their supported transports.
 
 # Serve only on the custom domain.
 workers_dev = false
@@ -12,5 +13,20 @@ custom_domain = true
 
 [assets]
 directory = "dist"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
 # Fall back to the SPA for stray paths. Permalink fragments stay in the browser.
 not_found_handling = "single-page-application"
+
+[[analytics_engine_datasets]]
+binding = "EVENTS"
+dataset = "aidenjang_events"
+
+# Anonymous analytics has its own rate bucket, separate from sign-in and room actions.
+[[ratelimits]]
+name = "EVENT_LIMITER"
+namespace_id = "9001"
+simple = { limit = 60, period = 60 }
+
+[observability]
+enabled = true

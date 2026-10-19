@@ -1,5 +1,13 @@
 # Everything Is Fine: decisions
 
+Current analytics: `analytics/` holds the fixed browser/Worker event contract, bounded
+anonymous ingestion and credential-free transport. See [Analytics](docs/ANALYTICS.md) for
+coverage, privacy and dashboard queries. Private app paths are not traffic dimensions.
+The globe remains a static client of public feeds. A small Worker serves only the
+aggregate `/api/analytics` endpoint and delegates all other requests to static assets;
+it does not proxy feeds or persist globe/user state.
+
+
 Written on the day each decision was made, not reconstructed at the end. A reconstructed log reads
 as reconstructed: every alternative loses for a clean reason and nothing was ever tried and
 abandoned. The entries worth keeping are the ones where a measurement contradicted the reasoning,
@@ -7063,6 +7071,7 @@ the line the code kept.
 - [e2e/design.spec.ts](#e2edesignspects)
 - [e2e/feeds.ts](#e2efeedsts)
 - [e2e/interaction.spec.ts](#e2einteractionspects)
+- [src/app/panelLift.ts](#srcapppanelliftts)
 - [src/app/ArchiveControls.tsx](#srcapparchivecontrolstsx)
 - [src/app/useStill.ts](#srcappusestillts)
 - [src/App.tsx](#srcapptsx)
@@ -10521,3 +10530,10 @@ hook owns loading and date navigation; this component does not fetch independent
 
 Capture, caption, encoding, and sharing happen in one hook. Copy the WebGL drawing buffer
 synchronously, and keep native sharing inside the initiating user gesture.
+
+## src/app/panelLift.ts
+
+The phone focus offset uses the canvas and available zone bounds so a selected event
+stays above the detail sheet. The geometry moved unchanged from App into this pure
+DOM helper while adding analytics, keeping the orchestration budget from growing.
+Desktop and missing-layout cases still return zero.

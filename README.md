@@ -90,7 +90,7 @@ if it cannot start, the event list and filters remain available.
 [DESIGN.md](DESIGN.md) defines the visual system. [PLAN.md](PLAN.md) records the original build sequence.
 
 Merging a verified pull request into `main` triggers the existing Cloudflare deployment.
-The app serves static assets without a Worker script or database. See [DEPLOY.md](DEPLOY.md).
+The app serves static assets with a small anonymous aggregate-analytics Worker and no database. Public feed requests stay in the browser. See [DEPLOY.md](DEPLOY.md).
 
 Code is [MIT licensed](LICENSE). Report vulnerabilities through
 [private reporting](https://github.com/aiden-jang/everythingisfine/security/advisories/new).
@@ -98,3 +98,5 @@ Code is [MIT licensed](LICENSE). Report vulnerabilities through
 The SVG globe mark in `public/icon.svg` also has committed 32px browser and
 180px Apple touch PNGs. Keep the Apple variant opaque and square; iOS applies its
 own mask. The PNGs are raster derivatives of that SVG, without changing the globe.
+
+Aggregate traffic and feature-event coverage, privacy boundaries and queries: [Analytics](docs/ANALYTICS.md).

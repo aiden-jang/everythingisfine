@@ -1,3 +1,6 @@
+import { liftForPanel } from "./app/panelLift";
+import { useReplayAnalytics } from "./app/useReplayAnalytics";
+import { reportAnalytics } from "../analytics/browser";
 import { useGlobeResources } from "./app/useGlobeResources";
 import { useGlobeTour } from "./app/useGlobeTour";
 import { GlobeLoading } from "./globe/GlobeLoading";
@@ -129,6 +132,7 @@ export function App(): JSX.Element {
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [replay, setReplay] = useState<{ at: number; revealed: number } | null>(null);
+  const receiveReplay = useReplayAnalytics(setReplay);
   // Playback stays local; a shared cursor opens as a held view.
   const [scrub, setScrub] = useState<Scrub>(
     shared.cursor === undefined ? LIVE : { at: shared.cursor, playing: false },
@@ -514,55 +518,37 @@ export function App(): JSX.Element {
     [onGlobe, archived, minuteClock],
   );
   const markSubject = findSubject(markId, onGlobe);
-  /* Read through a ref: `selectMark` is memoised on `liftForPanel`, and the layers change under it. */
+  /* Read through a ref: `selectMark` is stable, and the layers change under it. */
   const onGlobeRef = useRef(onGlobe);
   onGlobeRef.current = onGlobe;
-  /* How far above the middle a pinned event should sit, so the sheet describing it does not cover it. See ARCHITECTURE.md#srcapptsx. */
-  const liftForPanel = useCallback((): number => {
-    if (window.matchMedia("(min-width: 768px)").matches) return 0;
-    const canvas = document.querySelector("canvas");
-    const zones = document.querySelector(".zones");
-    if (!canvas || !zones) return 0;
-    /* Where the sheet's top edge will be, worked out rather than measured: the first pin is the one that
-       opens it, so there is nothing to measure yet. Do not go back to a fraction of the canvas. Twice
-       tried: the bar is the same size on every phone and the canvas is not, so a quarter of a short one put
-       the event 6px under the bar. See ARCHITECTURE.md#srcapptsx. */
-    const box = canvas.getBoundingClientRect();
-    const zoneBox = zones.getBoundingClientRect();
-    const share = Number(getComputedStyle(document.documentElement).getPropertyValue("--panel-share")) || 0.7;
-    const sheetTop = zoneBox.bottom - Math.min(share * window.innerHeight, zoneBox.height);
-    return Math.max(0, Math.round((box.bottom - Math.min(box.bottom, sheetTop)) / 2));
-  }, []);
   /* The same rule as an earthquake: pick it and the camera goes, lifted clear of whatever is describing it.
      A flood behind the panel is the same defect as an earthquake behind it. */
-  const selectMark = useCallback(
-    (id: string | null) => {
-      setMarkId(id);
-      /*
-       * Clearing a mark must not clear an earthquake. The globe reports a hit as `onSelect(quake)` followed
-       * by `onSelectMark(null)`, so a `setSelected(null)` up here undid the selection on the same tap: every
-       * click on an earthquake flew the camera to it and then showed no panel.
-       */
-      if (id === null) return;
-      setSelected(null);
-      const where = findSubject(id, onGlobeRef.current)?.subject;
-      if (where) flyTo.current(where.lon, where.lat, Math.max(camera.current.zoom, 2.2), liftForPanel());
-    },
-    [liftForPanel],
-  );
-  const selectQuake = useCallback(
-    (key: string | null) => {
-      if (key !== null) tick();
-      setMarkId(null);
-      setSelected(key);
-      /* `Math.max`, so pinning never zooms somebody out of the view they chose. */
-      if (key === null) return;
-      const quake = feed.store.get(key);
-      if (!quake) return;
-      flyTo.current(quake.primary.lon, quake.primary.lat, Math.max(camera.current.zoom, 1.9), liftForPanel());
-    },
-    [liftForPanel],
-  );
+  const selectMark = useCallback((id: string | null) => {
+    setMarkId(id);
+    /*
+     * Clearing a mark must not clear an earthquake. The globe reports a hit as `onSelect(quake)` followed
+     * by `onSelectMark(null)`, so a `setSelected(null)` up here undid the selection on the same tap: every
+     * click on an earthquake flew the camera to it and then showed no panel.
+     */
+    if (id === null) return;
+    setSelected(null);
+    const where = findSubject(id, onGlobeRef.current)?.subject;
+    if (where) {
+      reportAnalytics({ name: "event_opened" });
+      flyTo.current(where.lon, where.lat, Math.max(camera.current.zoom, 2.2), liftForPanel());
+    }
+  }, []);
+  const selectQuake = useCallback((key: string | null) => {
+    if (key !== null) tick();
+    setMarkId(null);
+    setSelected(key);
+    /* `Math.max`, so pinning never zooms somebody out of the view they chose. */
+    if (key === null) return;
+    const quake = feed.store.get(key);
+    if (!quake) return;
+    reportAnalytics({ name: "event_opened" });
+    flyTo.current(quake.primary.lon, quake.primary.lat, Math.max(camera.current.zoom, 1.9), liftForPanel());
+  }, []);
   const marks = useMemo(
     () =>
       marksFor({
@@ -646,6 +632,7 @@ export function App(): JSX.Element {
   }, [sectionLine, scrub.at, filters.windowMs, query, stepDay]);
 
   const toggleSource = (id: SourceId): void => {
+    reportAnalytics({ name: "source_filter_changed" });
     setFilters((f) => {
       const sources = new Set(f.sources);
       if (sources.has(id)) sources.delete(id);
@@ -1665,7 +1652,7 @@ export function App(): JSX.Element {
                 camera.current = state;
                 observeTourCamera(state);
               }}
-              onReplay={setReplay}
+              onReplay={receiveReplay}
             />
           </Suspense>
 

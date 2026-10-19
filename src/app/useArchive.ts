@@ -1,3 +1,4 @@
+import { reportAnalytics } from "../../analytics/browser";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { countForDay, dayRange, fetchArchive } from "../sources/archive";
 import { fetchHistory, type History } from "../sources/history";
@@ -52,6 +53,7 @@ export function useArchive(
         // A newer request, return to live, or unmount supersedes this answer.
         if (current !== request.current) return;
         feed.showArchive(span, got.readings);
+        reportAnalytics({ name: "archive_opened" });
         setArchiveHazards(hazards);
         const said = (["usgs", "emsc"] as const).map((id) => {
           const answer = got.answered[id];

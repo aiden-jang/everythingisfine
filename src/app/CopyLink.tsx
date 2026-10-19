@@ -1,3 +1,4 @@
+import { reportAnalytics } from "../../analytics/browser";
 import { useRef, useState } from "react";
 import { useViewLocation } from "./viewLocation";
 
@@ -13,6 +14,7 @@ export function CopyLink() {
     setResult({ url, failed: false, pending: true });
     try {
       await navigator.clipboard.writeText(url);
+      reportAnalytics({ name: "share_created" });
       setResult({ url, failed: false, pending: false });
     } catch {
       setResult({ url, failed: true, pending: false });
