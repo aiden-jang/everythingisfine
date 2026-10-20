@@ -23,7 +23,9 @@ const ALREADY_OVER = {
  * something different. `e2e/interaction.spec.ts` is the long one and splitting it costs a browser
  * context per file.
  */
-const files = globSync("{src,tools}/**/*.{ts,tsx,mjs}").filter((f) => !/\.(test|spec)\.tsx?$/.test(f));
+const files = globSync("{src,tools,worker,analytics}/**/*.{ts,tsx,mjs}").filter(
+  (f) => !/\.(test|spec)\.tsx?$/.test(f),
+);
 const problems = [];
 
 for (const file of files) {

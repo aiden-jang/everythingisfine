@@ -9,7 +9,7 @@ Create a branch from current `main`. Keep changes focused and use Conventional C
 a scope: `fix: preserve selection after reconnect`, `docs: explain archive coverage`, or
 `ci: reduce browser test contention`.
 
-Preserve the keyless, static architecture, original agency readings, visible feed failures,
+Preserve the keyless browser data flow, original agency readings, visible feed failures,
 and browser-local preferences. Put pure decisions in `src/data`, `src/geo`, or `src/app` modules;
 keep network adapters in `src/sources` and rendering in `src/globe`.
 

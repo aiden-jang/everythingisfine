@@ -35,7 +35,7 @@ function comments(source, isCss) {
 
 // The gates' own source counts. A check that does not cover itself stops being checked.
 const areas = {
-  src: globSync("src/**/*.{ts,tsx,css}").filter((f) => !/\.(test|spec)\.tsx?$/.test(f)),
+  src: globSync("{src,worker,analytics}/**/*.{ts,tsx,css}").filter((f) => !/\.(test|spec)\.tsx?$/.test(f)),
   tools: globSync("tools/*.mjs"),
   e2e: globSync("e2e/*.ts").filter((f) => !/\.spec\.ts$/.test(f)),
 };

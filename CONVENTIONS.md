@@ -22,9 +22,10 @@ avoids software WebGL contention; sharding divides the suite across machines.
 
 ## Product constraints
 
-Keep the app keyless and static. A person cloning it must not need an account or secret.
-`wrangler.toml` has no Worker script, and feeds are reached directly from the browser.
-A backend or paid provider changes the architecture and needs an explicit product decision.
+Keep the globe keyless: a person cloning it must not need an account or secret.
+Public feeds are reached directly from the browser. `worker/index.ts` serves the bounded
+anonymous aggregate-events endpoint; it owns no feed proxy, account data or database.
+Adding a data backend or paid provider changes the product boundary and needs an explicit decision.
 
 USGS and EMSC may describe the same earthquake differently. Preserve both accounts and their
 magnitude scales; do not average them into a number neither agency published. Association uses

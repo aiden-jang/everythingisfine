@@ -2,7 +2,8 @@
 
 Everything Is Fine is a static TypeScript app built with Vite, Preact through React-compatible
 imports, Tailwind, and three.js. Public providers are reached directly from the browser.
-It has no backend, API keys, database, or server-side cache.
+The globe needs no API key, account, database or server-side feed cache. A small Worker
+serves the anonymous aggregate-events endpoint alongside static assets; it does not proxy feeds.
 
 ## Data flow
 
@@ -21,6 +22,8 @@ It has no backend, API keys, database, or server-side cache.
 
 | Module | Responsibility |
 | --- | --- |
+| `worker/index.ts` | Static-asset fallback and bounded anonymous analytics ingestion |
+| `analytics/` | Closed event schema, privacy-aware browser transport and aggregate dataset writes |
 | `src/app/useArchive.ts` | Archive request ownership, stale-response protection, date navigation, source coverage |
 | `src/app/ArchiveControls.tsx` | Date entry, calendar, notable days, and eclipse controls |
 | `src/app/useStill.ts` | Synchronous canvas capture, caption, native sharing, download fallback |

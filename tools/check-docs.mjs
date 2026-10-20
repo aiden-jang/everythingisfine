@@ -58,13 +58,17 @@ const LIVE = [...globSync("*.md"), ...globSync(".github/**/*.md")].filter(
   (f) => !/^(ARCHITECTURE|RECONCILIATION|AGENTS|CLAUDE)\.md$/.test(f) && !f.endsWith(".local.md"),
 );
 
-const onDisk = globSync("{src,e2e,tools,public,.github}/**/*", { withFileTypes: true })
+const onDisk = globSync("{src,e2e,tools,worker,analytics,public,.github}/**/*", { withFileTypes: true })
   .filter((d) => d.isFile())
   .map((d) => `${d.parentPath}/${d.name}`)
   .concat(globSync("*.{json,ts,mjs,toml,html,md}"));
 
 const scripts = new Set(Object.keys(JSON.parse(readFileSync("package.json", "utf8")).scripts ?? {}));
-const code = [...globSync("{src,e2e,tools}/**/*.{ts,tsx,mjs}"), "package.json", "vite.config.ts"]
+const code = [
+  ...globSync("{src,e2e,tools,worker,analytics}/**/*.{ts,tsx,mjs}"),
+  "package.json",
+  "vite.config.ts",
+]
   .map((f) => readFileSync(f, "utf8"))
   .join("\n");
 const named = (name) => new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(code);

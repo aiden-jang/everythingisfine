@@ -10,6 +10,7 @@ if (rawShard && (!shard || Number(shard[1]) < 1 || Number(shard[1]) > Number(sha
 
 export default defineConfig({
   testDir: "./e2e",
+  forbidOnly: ci,
   fullyParallel: true,
   // WebGL falls back to software on CI. Separate runners avoid competing renderers.
   workers: 1,
