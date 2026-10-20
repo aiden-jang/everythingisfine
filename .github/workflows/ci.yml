@@ -27,20 +27,9 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm run gates
-      - run: pnpm run security:check
-      - run: pnpm run size
-      - run: pnpm run comments
-      - run: pnpm run css-vars
-      - run: pnpm run docs
-      - run: pnpm run knip
-      - run: pnpm run typecheck
-      - run: pnpm run lint
-      - run: pnpm run format:check
-      - run: pnpm run test:heap
-      - run: pnpm run build
-      - run: pnpm run dead-classes
+      - run: pnpm run verify:core
       - uses: actions/upload-artifact@v4
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           name: production-assets
           path: dist/
@@ -69,27 +58,15 @@ jobs:
       - run: pnpm run test:e2e
         env:
           E2E_SHARD: ${{ matrix.shard }}
-      - if: always()
+      - if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: browser-results-${{ strategy.job-index }}
           path: test-results/
           retention-days: 7
 
-  # One stable required status covers every shard, even if a matrix job is cancelled.
-  browser-check:
-    if: always()
-    needs: e2e
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - name: Require every browser shard
-        env:
-          RESULT: ${{ needs.e2e.result }}
-        run: test "$RESULT" = success
-
   deploy:
-    needs: [check, browser-check]
+    needs: [check, e2e]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10

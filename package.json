@@ -17,7 +17,7 @@
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "verify": "pnpm run gates && pnpm run security:check && pnpm run size && pnpm run comments && pnpm run css-vars && pnpm run docs && pnpm run knip && pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run test:heap && pnpm run build && pnpm run dead-classes && pnpm run test:e2e",
+    "verify": "pnpm run verify:core && pnpm run test:e2e",
     "deploy": "pnpm build && wrangler deploy",
     "test": "pnpm run test:heap",
     "test:heap": "node --test tools/*.test.mjs && NODE_OPTIONS=--expose-gc vitest run .perf.test.ts --pool=forks && NODE_OPTIONS=--expose-gc vitest run --pool=forks --exclude \"**/*.perf.test.ts\"",
@@ -27,7 +27,8 @@
     "card": "node tools/make-card.mjs",
     "css-vars": "node tools/check-css-vars.mjs",
     "dead-classes": "node tools/dead-classes.mjs",
-    "security:check": "pnpm audit --audit-level=low"
+    "security:check": "pnpm audit --audit-level=low",
+    "verify:core": "pnpm run gates && pnpm run security:check && pnpm run size && pnpm run comments && pnpm run css-vars && pnpm run docs && pnpm run knip && pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm run test:heap && pnpm run build && pnpm run dead-classes"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

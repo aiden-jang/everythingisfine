@@ -60,13 +60,15 @@ const stepsIn = (text) =>
     .filter((n) => !PLUMBING.has(n));
 
 /*
- * The deploy job is deliberately not compared. It builds again on the way out, and anything else it
- * grows is a release step rather than a gate.
+ * Deployment consumes the verified build; its release commands are not verification gates.
  */
 const gateJobs = ci.slice(0, ci.indexOf("\n  deploy:") === -1 ? undefined : ci.indexOf("\n  deploy:"));
 const ciSteps = new Set([...gateJobs.matchAll(/^\s*- run: (pnpm .+)$/gm)].flatMap((m) => stepsIn(m[1])));
 const verifySteps = new Set(stepsIn(scripts.verify ?? ""));
 
+for (const name of stepsIn(scripts["verify:core"] ?? "")) {
+  if (!scripts[name]) problems.push(`verify:core runs \`pnpm run ${name}\`, which is not a script`);
+}
 for (const name of verifySteps) {
   if (!scripts[name]) problems.push(`verify runs \`pnpm run ${name}\`, which is not a script`);
 }

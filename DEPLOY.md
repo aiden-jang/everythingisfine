@@ -1,6 +1,6 @@
 # Deployment
 
-Merging to `main` starts the existing Cloudflare deployment after the quality checks and every
+Pushing to `main` starts the existing Cloudflare deployment after the quality checks and every
 browser shard pass. Pull requests run the same checks without deploying.
 
 ## Workflow
@@ -12,10 +12,10 @@ unused code, types, lint, formatting, unit tests with garbage collection, the pr
 emitted CSS classes, and browser journeys.
 
 The browser matrix distributes tests across isolated runners, each using one Chromium worker.
-The aggregate `browser-check` status requires all shards to succeed. It fails if a shard fails
-or is cancelled. Test results include durations; failure artifacts include screenshots and traces.
+Every shard must succeed before deployment can start; a failed, skipped or cancelled shard blocks
+release. Test results include durations; failure artifacts include screenshots and traces.
 
-Deployment depends on both `check` and `browser-check`. It downloads the production assets built
+Deployment depends directly on `check` and the complete `e2e` matrix. It downloads the production assets built
 by `check`, then deploys them through Wrangler. The artifact belongs to the same workflow run,
 so deployment publishes the bundle that passed the build and CSS checks.
 
@@ -24,9 +24,8 @@ concurrency group so two successful merges do not publish out of order.
 
 ## Hosting and credentials
 
-`wrangler.toml` contains the custom domain and static asset configuration. It has no `main`,
-Worker script, database, or migration step. Data requests go directly from the browser to the
-public feeds.
+`wrangler.toml` configures static assets and the small anonymous analytics Worker. It has no
+database or migration step. Feed requests go directly from the browser to public providers.
 
 The repository secret `CLOUDFLARE_API_TOKEN` needs Workers Scripts:Edit for this deployment.
 Wrangler infers the account from the token. Keep the token in GitHub secrets; never put it in

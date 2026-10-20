@@ -24,10 +24,9 @@ Describe the problem, resulting behavior, and validation in the pull request. In
 and narrow-screen evidence for visible changes. Update relevant docs and re-read comments at
 moved boundaries. Avoid live test counts in documentation.
 
-Protected `main` requires a pull request, passing `check` and `browser-check` statuses, an
-up-to-date branch, and resolved conversations. It blocks force pushes and deletion. There is
-no mandatory external reviewer for this single-maintainer repository. A merge triggers the
-existing deployment.
+The main safeguards allow direct commits and require linear history. They block force pushes
+and deletion. CI runs for pushes and pull requests; deployment waits for the core checks and
+every browser shard.
 
 Report vulnerabilities privately using [SECURITY.md](.github/SECURITY.md). Use the issue templates
 for ordinary bugs and product suggestions.
