@@ -17,13 +17,13 @@
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "verify": "pnpm run verify:core && pnpm run test:e2e",
+    "verify": "pnpm run verify:core && EIF_BUILD_READY=1 pnpm run test:e2e",
     "deploy": "pnpm build && wrangler deploy",
     "test": "pnpm run test:heap",
     "test:heap": "node --test tools/*.test.mjs && NODE_OPTIONS=--expose-gc vitest run .perf.test.ts --pool=forks && NODE_OPTIONS=--expose-gc vitest run --pool=forks --exclude \"**/*.perf.test.ts\"",
     "test:live": "EIF_LIVE=1 vitest run live.test",
     "test:e2e": "playwright test",
-    "test:e2e:build": "EIF_BUILD=1 playwright test",
+    "test:e2e:build": "playwright test --project=release",
     "card": "node tools/make-card.mjs",
     "css-vars": "node tools/check-css-vars.mjs",
     "dead-classes": "node tools/dead-classes.mjs",
@@ -40,6 +40,7 @@
     "world-atlas": "^2.0.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.64.1",
     "@preact/preset-vite": "^2.10.6",
@@ -50,19 +51,19 @@
     "@types/three": "^0.185.4",
     "@types/topojson-client": "^3.1.5",
     "@types/topojson-specification": "^1.0.5",
-    "eslint": "^10.12.0",
+    "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
-    "knip": "^6.41.0",
+    "knip": "^6.43.0",
     "prettier": "^3.9.10",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.71.2",
-    "vite": "^6.4.4",
-    "vitest": "^4.1.11",
-    "wrangler": "^4.151.0"
+    "typescript-eslint": "^8.72.1",
+    "vite": "^6.4.5",
+    "vitest": "^4.1.12",
+    "wrangler": "^4.153.0"
   },
   "packageManager": "pnpm@9.15.0",
   "engines": {
-    "node": ">=22.17.0 <23"
+    "node": ">=22.22.2 <23"
   }
 }

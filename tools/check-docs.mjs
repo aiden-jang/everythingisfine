@@ -1,5 +1,6 @@
 // Validate documented paths, scripts, routes, symbols, and local links.
-import { globSync, readFileSync } from "node:fs";
+import { existsSync, globSync, readFileSync } from "node:fs";
+import { dirname, resolve } from "node:path";
 import { report } from "./gate.mjs";
 
 const DOC = "ARCHITECTURE.md";
@@ -54,7 +55,7 @@ if (/^- \[[\w/.-]+\]\(#[\w-]+\) &mdash;/m.test(doc)) {
  * record of what happened to resolve against what exists today is asking it to stop being a record.
  */
 /* CLAUDE.md and AGENTS.md are symlinks to CONVENTIONS.md; listing them would report twice. */
-const LIVE = [...globSync("*.md"), ...globSync(".github/**/*.md")].filter(
+const LIVE = [...globSync("*.md"), ...globSync("docs/*.md"), ...globSync(".github/**/*.md")].filter(
   (f) => !/^(ARCHITECTURE|RECONCILIATION|AGENTS|CLAUDE)\.md$/.test(f) && !f.endsWith(".local.md"),
 );
 
@@ -77,40 +78,43 @@ const named = (name) => new RegExp(`\\b${name.replace(/[.*+?^${}()|[\]\\]/g, "\\
 const NOT_OURS = new Set(["devDependencies", "dataLayer", "npmjs"]);
 
 for (const doc of LIVE) {
+  const source = readFileSync(doc, "utf8");
+  for (const match of source.matchAll(/\]\((?:<([^>]+)>|([^\s)]+))\)/g)) {
+    const target = (match[1] ?? match[2]).split(/[?#]/)[0];
+    if (!target || /^[a-z][a-z\d+.-]*:/i.test(target)) continue;
+    if (!existsSync(resolve(dirname(doc), decodeURIComponent(target)))) {
+      problems.push(`${doc}: no local link target \`${target}\``);
+    }
+  }
   let fenced = false;
-  readFileSync(doc, "utf8")
-    .split("\n")
-    .forEach((line, i) => {
-      const at = `${doc}:${i + 1}`;
-      if (line.trimStart().startsWith("```")) fenced = !fenced;
+  source.split("\n").forEach((line, i) => {
+    const at = `${doc}:${i + 1}`;
+    if (line.trimStart().startsWith("```")) fenced = !fenced;
 
-      for (const m of line.matchAll(/[\w./@-]*\w+\.(?:ts|tsx|css|mjs|toml|yml|html)\b/g)) {
-        const bare = m[0].replace(/^`|`$/g, "");
-        const tail = bare.split("/").pop();
-        if (!onDisk.some((f) => f.endsWith(bare) || f.endsWith(`/${tail}`))) {
-          problems.push(`${at}: no such file \`${bare}\``);
-        }
+    for (const m of line.matchAll(/[\w./@-]*\w+\.(?:ts|tsx|css|mjs|toml|yml|html)\b/g)) {
+      const bare = m[0].replace(/^`|`$/g, "");
+      const tail = bare.split("/").pop();
+      if (!onDisk.some((f) => f.endsWith(bare) || f.endsWith(`/${tail}`))) {
+        problems.push(`${at}: no such file \`${bare}\``);
       }
+    }
 
-      /* Only inside backticks or a fence. Prose says "a pnpm command of the same name", which is not one. */
-      /* Inside a fence a `#` starts a shell comment: "corepack enable  # makes pnpm available" is
+    /* Only inside backticks or a fence. Prose says "a pnpm command of the same name", which is not one. */
+    /* Inside a fence a `#` starts a shell comment: "corepack enable  # makes pnpm available" is
          English about pnpm, not an invocation of a script called `available`. */
-      const commands = fenced
-        ? [line.replace(/#.*$/, "")]
-        : [...line.matchAll(/`([^`]+)`/g)].map((b) => b[1]);
-      for (const m of commands.join("\n").matchAll(/pnpm (?:run )?([a-z][\w:-]*)/g)) {
-        const name = m[1];
-        if (["install", "exec", "add", "dlx", "create", "run", "audit", "why", "outdated"].includes(name))
-          continue;
-        if (!scripts.has(name)) problems.push(`${at}: \`pnpm ${name}\` is not a script`);
-      }
+    const commands = fenced ? [line.replace(/#.*$/, "")] : [...line.matchAll(/`([^`]+)`/g)].map((b) => b[1]);
+    for (const m of commands.join("\n").matchAll(/pnpm (?:run )?([a-z][\w:-]*)/g)) {
+      const name = m[1];
+      if (["install", "exec", "add", "dlx", "create", "run", "audit", "why", "outdated"].includes(name))
+        continue;
+      if (!scripts.has(name)) problems.push(`${at}: \`pnpm ${name}\` is not a script`);
+    }
 
-      // Bare, not just `name()`: a rename can sit in a sentence with no parentheses and no backticks.
-      for (const m of line.matchAll(/(?<!\\)\b([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)\b/g)) {
-        if (!NOT_OURS.has(m[1]) && !named(m[1]))
-          problems.push(`${at}: nothing named \`${m[1]}\` in the code`);
-      }
-    });
+    // Bare, not just `name()`: a rename can sit in a sentence with no parentheses and no backticks.
+    for (const m of line.matchAll(/(?<!\\)\b([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)\b/g)) {
+      if (!NOT_OURS.has(m[1]) && !named(m[1])) problems.push(`${at}: nothing named \`${m[1]}\` in the code`);
+    }
+  });
 }
 
 report("docs", problems);

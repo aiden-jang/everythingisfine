@@ -10,7 +10,7 @@ Explore a region, compare two agencies' earthquake readings, revisit a past day,
 
 ## Run locally
 
-Use Node.js 22 (22.17 or newer within that major) and pnpm 9.15.0. The package-manager version is pinned in
+Use Node.js 22 (22.22.2 or newer within that major) and pnpm 9.15.0. The package-manager version is pinned in
 `package.json`; `.nvmrc` selects the Node version used by CI. With nvm installed, run `nvm use`
 before installing dependencies. No API keys, accounts, environment file, or backend are needed to run the app.
 
@@ -31,26 +31,30 @@ requested directly from the browser.
 - Switch to the flat map to draw a cross-section with Shift-drag.
 - Browse any completed UTC day, including notable earthquakes and eclipses.
 - On a phone, switch between globe space and recent events using the bottom navigation.
-- Use **Still** to share or download a captioned image. The URL retains the view and selection.
+- Use **Still** to share or download a captioned image. If native sharing fails, **Download image**
+  keeps that captured frame available. Cancelling the share sheet leaves the page alone.
+  The URL retains the view and selection.
 - Press `f` for fullscreen, Space to play the window, and `,` / `.` to step through it.
   On the time slider, Home selects the start and End returns to live (or the archived day end).
 
 ## Validate
 
 ```bash
-pnpm run verify          # the complete CI checks and browser suite
+pnpm run verify          # repository checks and the complete browser suite
 pnpm run test:heap       # unit and performance tests with the memory gate enabled
-pnpm run test:e2e        # isolated browser tests against recorded feeds
-pnpm run test:e2e:build  # production bundle; tests needing development hooks skip
+pnpm run test:e2e        # release journeys and separate development-only camera probes
+pnpm run test:e2e:build  # release journeys only, against the production bundle
 pnpm run test:live       # deliberate check against real agency endpoints
 ```
 
 CI runs browser shards on separate runners so each has its own software-rendered globe.
-Every shard must pass. Results and failure traces are retained as artifacts. Live feed checks
+Every shard must pass. Job logs record durations; failed runs retain results and traces as artifacts. Live feed checks
 run separately on a daily schedule and do not block pull requests.
+The ordinary journeys run against the release bundle; only camera/store instrumentation uses
+the development server. [Quality checks](docs/quality.md) explains the two origins and local captures.
 
-The [October 16 flow review](docs/ui-review/flow-audit-oct16/README.md) records browser-timing
-fixes, manual-copy recovery on resize and the limits of phone emulation.
+The [October 26 review](docs/ui-review/october-26/README.md) records this recovery and responsive pass.
+Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-visit observations.
 
 ## Data and attribution
 
@@ -89,7 +93,7 @@ if it cannot start, the event list and filters remain available.
 [ARCHITECTURE.md](ARCHITECTURE.md) retains the engineering decisions and indexed reasoning.
 [DESIGN.md](DESIGN.md) defines the visual system. [PLAN.md](PLAN.md) records the original build sequence.
 
-Merging a verified pull request into `main` triggers the existing Cloudflare deployment.
+Pushing to `main` triggers the existing Cloudflare deployment after verification succeeds.
 The app serves static assets with a small anonymous aggregate-analytics Worker and no database. Public feed requests stay in the browser. See [DEPLOY.md](DEPLOY.md).
 
 Code is [MIT licensed](LICENSE). Report vulnerabilities through

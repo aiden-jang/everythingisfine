@@ -10530,6 +10530,9 @@ hook owns loading and date navigation; this component does not fetch independent
 
 Capture, caption, encoding, and sharing happen in one hook. Copy the WebGL drawing buffer
 synchronously, and keep native sharing inside the initiating user gesture.
+Native cancellation is silent. A refusal retains the already-rendered file for an explicit download;
+failed capture reports a recoverable notice. The download link is attached during activation and its
+object URL survives until a later task. Pending completion cannot update an unmounted exporter.
 
 ## src/app/panelLift.ts
 

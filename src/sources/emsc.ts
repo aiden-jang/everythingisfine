@@ -148,8 +148,10 @@ export function createEmscSource(
   seedHours: number = SEED_HOURS,
 ): GeoEventSource {
   const url = typeof urls === "string" ? urls : (urls.socket ?? EMSC_SOCKET);
-  const catalogue = typeof urls === "string" ? null : (urls.catalogue ?? EMSC_CATALOGUE);
+  const catalogue =
+    typeof urls === "string" ? null : urls.catalogue === undefined ? EMSC_CATALOGUE : urls.catalogue;
   let handlers: SourceHandlers | null = null;
+  let generation = 0;
   let socket: SocketLike | null = null;
   let timer: TimerId | null = null;
   let failures = 0;
@@ -176,7 +178,11 @@ export function createEmscSource(
     // Nulled before closing, so the close handler this triggers sees no current socket and does not treat
     // our own teardown as a dropped connection worth reconnecting from.
     socket = null;
-    doomed?.close();
+    try {
+      doomed?.close();
+    } catch {
+      /* Cleanup must not interrupt another source's startup. */
+    }
   };
 
   const scheduleReconnect = (): void => {
@@ -214,13 +220,14 @@ export function createEmscSource(
    */
   const seed = async (): Promise<void> => {
     if (!catalogue) return;
+    const lifetime = generation;
     const since = new Date(runtime.now() - seedHours * 3_600_000).toISOString().slice(0, 19);
     const query = `${catalogue}?limit=${SEED_LIMIT}&format=json&start=${since}`;
     try {
       const res = await runtime.fetch(query);
-      if (!res.ok || !handlers) return;
+      if (!res.ok || !handlers || lifetime !== generation) return;
       const payload = (await res.json()) as { features?: unknown };
-      if (!handlers || !Array.isArray(payload?.features)) return;
+      if (!handlers || lifetime !== generation || !Array.isArray(payload?.features)) return;
 
       const readings: Reading[] = [];
       // Tracked over the page, not over what was delivered from it. The delivered list is the page minus
@@ -255,7 +262,13 @@ export function createEmscSource(
 
   function connect(): void {
     if (!handlers || !runtime.openSocket) return;
-    const active = runtime.openSocket(url);
+    let active: SocketLike;
+    try {
+      active = runtime.openSocket(url);
+    } catch {
+      scheduleReconnect();
+      return;
+    }
     socket = active;
 
     active.addEventListener("open", () => {
@@ -272,7 +285,7 @@ export function createEmscSource(
     // separately double-counts the failure and halves the backoff.
     const dropped = (): void => {
       if (socket !== active) return;
-      socket = null;
+      teardownSocket();
       scheduleReconnect();
     };
     active.addEventListener("error", dropped);
@@ -284,6 +297,7 @@ export function createEmscSource(
     transport: "push",
     start: (h) => {
       if (handlers) return;
+      generation += 1;
       handlers = h;
       failures = 0;
       liveSince = null;
@@ -292,6 +306,7 @@ export function createEmscSource(
       void seed();
     },
     stop: () => {
+      generation += 1;
       handlers = null;
       clearTimer();
       teardownSocket();

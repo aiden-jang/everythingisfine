@@ -145,7 +145,10 @@ export interface MarkCardProps {
 export function MarkCard({ found, now, archived = false, onClose }: MarkCardProps): JSX.Element {
   const { title, note, lines } = linesFor(found, now, archived);
   return (
-    <aside className="zone-panel border-hairline bg-deck p-5 max-xl:border-t xl:border-l">
+    <aside
+      aria-label="Pinned event"
+      className="zone-panel border-hairline bg-deck p-5 max-xl:border-t xl:border-l"
+    >
       <div className="flex items-baseline justify-between gap-3">
         <span className="label">{found.kind}</span>
         <button

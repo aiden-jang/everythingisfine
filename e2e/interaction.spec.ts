@@ -16,16 +16,8 @@ interface Camera {
 
 /* `morph` is sampled alongside the camera because the projection unwrap is the same kind of thing: a value
  * easing toward a target that a test must not read halfway through. */
-/** True when this run is against `dist`, where the DEV-only `window.__*` hooks do not exist. */
 // Allow for software-rendered camera motion and the URL writer's sampling interval.
 const CAMERA_SETTLE_MS = 20_000;
-
-const AGAINST_BUILD = process.env["EIF_BUILD"] === "1";
-
-/** Call at the top of a test that needs the DEV-only hooks. */
-function needsDevHooks(): void {
-  test.skip(AGAINST_BUILD, "reads window.__globe / __feed, which a production build does not expose");
-}
 
 const cameraNow = (page: Page): Promise<Camera> =>
   page.evaluate(() => {
@@ -65,22 +57,28 @@ async function cameraStill(page: Page): Promise<Camera> {
   return last!;
 }
 
-test("the first frame is already live", async ({ page }) => {
+test("the first live seed includes a useful backlog", async ({ page }) => {
+  await page.setViewportSize({ width: 1600, height: 900 });
   await installFeeds(page);
   await page.goto("/");
-  const held = await waitForData(page);
+  await waitForData(page);
 
-  // Not "some data eventually": a globe with four dots on it is what sent the seed window from an
-  // hour to a day, and this is the assertion that stops it drifting back.
-  expect(held).toBeGreaterThan(50);
+  // The seed count is independent of the entrance replay's gradually revealed events.
+  const reported = page
+    .locator("#chrome-head")
+    .getByText("reported", { exact: true })
+    .locator("..")
+    .locator("span")
+    .first();
+  await expect(reported).toBeVisible();
+  expect(Number((await reported.textContent())?.replace(/,/g, ""))).toBeGreaterThan(50);
   await expect(page.getByText(/feeds live/i)).toBeVisible();
   // The window states its own left edge rather than claiming a full 24 hours it does not have.
   // Any live span, not one particular window: this is about the first frame being live.
   await expect(page.locator(".zone-rail")).toContainText(/since \d\d:\d\d|last 24 hours|last 7 days/);
 });
 
-test("a pinned selection survives a data refresh", async ({ page }) => {
-  needsDevHooks();
+test("a pinned selection survives a data refresh", { tag: "@dev" }, async ({ page }) => {
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
@@ -164,53 +162,53 @@ test("the globe is operable with the canvas hidden", async ({ page }) => {
 });
 
 /* The one claim written down since step 3 and never observed. See ARCHITECTURE.md#e2einteractionspects. */
-test("with reduced motion, there is no entrance and flying is instant", async ({ browser }) => {
-  needsDevHooks();
-  const context = await browser.newContext({ reducedMotion: "reduce" });
-  const page = await context.newPage();
-  try {
-    await installFeeds(page);
-    await page.goto("http://localhost:31600");
+test(
+  "with reduced motion, there is no entrance and flying is instant",
+  { tag: "@dev" },
+  async ({ browser }) => {
+    const context = await browser.newContext({ reducedMotion: "reduce" });
+    const page = await context.newPage();
+    try {
+      await installFeeds(page);
+      await page.goto(test.info().project.use.baseURL!);
 
-    expect(await page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(
-      true,
-    );
-
-    await waitForData(page);
-
-    const camera = (): Promise<{ lon: number; zoom: number }> =>
-      page.evaluate(() =>
-        (window as unknown as { __globe: { state: () => { lon: number; zoom: number } } }).__globe.state(),
+      expect(await page.evaluate(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches)).toBe(
+        true,
       );
 
-    // The entrance starts 42 degrees back and springs forward. Skipped, not shortened, so the
-    // camera is at the framing longitude from the very first frame.
-    const atLoad = await camera();
-    expect(atLoad.lon).toBeCloseTo(145, 1);
-    expect(atLoad.zoom).toBeCloseTo(1, 2);
+      await waitForData(page);
 
-    // Flying to a region arrives rather than travels.
-    await page.evaluate(() => {
-      (window as unknown as { __globe: { flyTo: (a: number, b: number, c: number) => void } }).__globe.flyTo(
-        -71,
-        -25,
-        1.8,
-      );
-    });
-    const arrived = await camera();
-    expect(arrived.lon).toBeCloseTo(-71, 1);
-    expect(arrived.zoom).toBeCloseTo(1.8, 2);
-  } finally {
-    await context.close();
-  }
-});
+      const camera = (): Promise<{ lon: number; zoom: number }> =>
+        page.evaluate(() =>
+          (window as unknown as { __globe: { state: () => { lon: number; zoom: number } } }).__globe.state(),
+        );
+
+      // The entrance starts 42 degrees back and springs forward. Skipped, not shortened, so the
+      // camera is at the framing longitude from the very first frame.
+      const atLoad = await camera();
+      expect(atLoad.lon).toBeCloseTo(145, 1);
+      expect(atLoad.zoom).toBeCloseTo(1, 2);
+
+      // Flying to a region arrives rather than travels.
+      await page.evaluate(() => {
+        (
+          window as unknown as { __globe: { flyTo: (a: number, b: number, c: number) => void } }
+        ).__globe.flyTo(-71, -25, 1.8);
+      });
+      const arrived = await camera();
+      expect(arrived.lon).toBeCloseTo(-71, 1);
+      expect(arrived.zoom).toBeCloseTo(1.8, 2);
+    } finally {
+      await context.close();
+    }
+  },
+);
 
 /*
  * The entrance, at normal motion, must arrive without a bounce. Chasing why the camera sat past its
  * destination turned up an integrator that overshot by up to fifteen degrees when frames were slow.
  */
-test("the entrance settles exactly on the framing shot", async ({ page }) => {
-  needsDevHooks();
+test("the entrance settles exactly on the framing shot", { tag: "@dev" }, async ({ page }) => {
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
@@ -516,8 +514,7 @@ test("the sequence says whether the big one has already happened", async ({ page
   await expect(panel.locator("[data-ramp] > div.relative > span")).toHaveCount(4);
 });
 
-test("notches compound off where the camera is heading", async ({ page }) => {
-  needsDevHooks();
+test("notches compound off where the camera is heading", { tag: "@dev" }, async ({ page }) => {
   /*
    * Ten fast notches must travel ten notches. Assigning `zoom` straight onto the camera made each one a
    * 14% step in a single frame; going through the spring fixed the staircase and, unguarded, let a burst
@@ -611,8 +608,7 @@ test("a dead feed says so, and does not claim a covered day", async ({ page }) =
 test.describe("on a touch screen", () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
 
-  test("one finger orbits and two fingers zoom the globe", async ({ page }) => {
-    needsDevHooks();
+  test("one finger orbits and two fingers zoom the globe", { tag: "@dev" }, async ({ page }) => {
     // Touch had no coverage at all. The drag worked; the pinch was zooming the document, because the canvas
     // was `touch-action: auto` and the browser claims a two-finger gesture first.
     test.setTimeout(120_000);
@@ -771,8 +767,7 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
     .toBeLessThan(1);
 });
 
-test("the globe unwraps into a map and back", async ({ page }) => {
-  needsDevHooks();
+test("the globe unwraps into a map and back", { tag: "@dev" }, async ({ page }) => {
   /* Double the budget, because this test costs about a full one. See ARCHITECTURE.md#e2einteractionspects. */
   test.setTimeout(90_000);
   // One geometry, projected in the vertex shader. Two scenes cross-faded would double every buffer and make
@@ -980,15 +975,14 @@ test("a line dragged across the map opens a section through it", async ({ page }
 /* A section survives being sent to somebody. It carries its own view, which no other field does: a section
    has nowhere to be drawn except the map. See ARCHITECTURE.md#e2einteractionspects. */
 test("a link carrying a section opens on the map with the line drawn", async ({ browser }) => {
-  needsDevHooks();
   const context = await browser.newContext({ viewport: { width: 1600, height: 900 } });
   const page = await context.newPage();
   try {
     await installFeeds(page, { count: 400 });
-    await page.goto("http://localhost:31600");
+    await page.goto(test.info().project.use.baseURL!);
     await page.evaluate(() => localStorage.setItem("eif.flat", "0"));
 
-    await page.goto("http://localhost:31600/#at=140,36,2.6&m=2&w=24&x=134.2,31.5,146.1,41.2");
+    await page.goto(`${test.info().project.use.baseURL}/#at=140,36,2.6&m=2&w=24&x=134.2,31.5,146.1,41.2`);
     await waitForData(page);
 
     await expect(page.getByText("Cross-section", { exact: true })).toBeVisible();
@@ -1061,9 +1055,10 @@ test("holding the cursor part way through draws part of the window", async ({ pa
   // strip reveals nothing. This test is about the cursor.
   await installFeeds(page, { count: 400 });
   await page.goto("/#w=24");
+  await waitForData(page);
+  // Measure the whole window after the entrance stops revealing it.
+  await expect(page.getByText("replaying the last day", { exact: true })).toBeHidden();
   const live = await waitForData(page);
-  // Past the entrance, which drives the same reveal and would be the thing under test otherwise.
-  await page.waitForTimeout(4000);
 
   await page.getByRole("slider", { name: "Time in the window" }).fill("400");
   await page.waitForTimeout(700);
@@ -1568,13 +1563,13 @@ test("a copied link reopens the same event, not merely the same view", async ({ 
  * set on the same tick, so for the first few seconds of every stop the rail named the destination while the
  * globe still showed the last one: "Japan & Kurils · 685 events" at longitude -82.8, which is Chile.
  */
-test("the tour names where the camera is, not where it is going", async ({ page }) => {
+test("the tour names where the camera is, not where it is going", { tag: "@dev" }, async ({ page }) => {
   /*
    * Reads the live camera rather than the hash. Sampling `location.hash` failed at "California" with the
    * camera at -83, which looked like the bug returning and was the throttle: the hash trails the camera by
    * enough to pair a fresh label with a stale position.
    */
-  needsDevHooks();
+
   // A tour stop is about six seconds, so seeing several of them takes longer than the default allows.
   test.setTimeout(120_000);
   await installFeeds(page, { count: 6000 });
@@ -1639,7 +1634,7 @@ test("the tour names where the camera is, not where it is going", async ({ page 
 
 /* The two ways the panel moves the camera, and the fact that they pull opposite ways. Opening it flies to
    the epicentre; "Far side" draws five circles spanning the planet, so it has to pull back. See ARCHITECTURE.md#e2einteractionspects. */
-test("pinning flies in, and the far side pulls back to the same place", async ({ page }) => {
+test("pinning flies in, and the far side pulls back to the same place", { tag: "@dev" }, async ({ page }) => {
   // Three eased flights in one test, each of which has to settle before the next is measured.
   test.setTimeout(120_000);
   await installFeeds(page, { count: 400 });
@@ -1981,7 +1976,7 @@ test("a stored rail width outside the handle's range is brought back inside it",
 });
 
 /* Guards two separate bugs that together made earthquakes untappable. See ARCHITECTURE.md#e2einteractionspects. */
-test("a finger-width miss still opens the earthquake it was aimed at", async ({ page }) => {
+test("a finger-width miss still opens the earthquake it was aimed at", { tag: "@dev" }, async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await installFeeds(page, { count: 200 });
   await page.goto("/");
@@ -2151,6 +2146,7 @@ test("Still hands the picture to the share sheet when there is one", async ({ pa
   expect(shared, "the sheet was handed a file").toBeTruthy();
   expect(shared!.type).toBe("image/png");
   expect(shared!.name).toMatch(/^everything-is-fine-.*\.png$/);
+  expect(shared!.transient, "sharing retains the initiating click").toBe(true);
   // A real picture, not an empty canvas: the still is 1200 wide and carries its own caption.
   expect(shared!.size, "the PNG has something in it").toBeGreaterThan(20_000);
 });

@@ -64,3 +64,24 @@ test("package executables are not mistaken for repository scripts", () => {
   const result = check("```bash\npnpm exec playwright show-trace trace.zip\n```\n");
   assert.equal(result.status, 0, result.stderr);
 });
+
+test("a missing local Markdown link fails verification", () => {
+  const result = check("Read [the guide](missing-guide.md).\n");
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stderr, /no local link target `missing-guide.md`/);
+});
+
+test("current nested guides are checked relative to their own directory", () => {
+  mkdirSync(join(root, "docs"), { recursive: true });
+  writeFileSync(join(root, "docs/quality.md"), "Read [the guide](missing.md).\n");
+  try {
+    const result = check("");
+    assert.equal(result.status, 1, result.stderr);
+    assert.match(result.stderr, /docs\/quality.md: no local link target `missing.md`/);
+    writeFileSync(join(root, "docs/quality.md"), "Read [the introduction](../README.md).\n");
+    const recovered = check("");
+    assert.equal(recovered.status, 0, recovered.stderr);
+  } finally {
+    rmSync(join(root, "docs/quality.md"));
+  }
+});

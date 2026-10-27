@@ -54,14 +54,30 @@ export function useStoredNumber(
   fallback: number,
   bound: (n: number) => number = (n) => n,
 ): [number, Dispatch<SetStateAction<number>>] {
-  return useSaved(key, () => bound(Number(stored(key)) || fallback), asNumber);
+  return useSaved(
+    key,
+    () => {
+      const saved = stored(key);
+      const value = saved === null || saved.trim() === "" ? fallback : Number(saved);
+      return bound(Number.isFinite(value) ? value : fallback);
+    },
+    asNumber,
+  );
 }
 
 /** One of a fixed set of names, such as a colour ramp. */
 export function useStoredName<T extends string>(
   key: string,
   fallback: T,
+  choices: readonly T[],
   override?: T,
 ): [T, Dispatch<SetStateAction<T>>] {
-  return useSaved(key, () => override ?? (stored(key) as T | null) ?? fallback, asName);
+  return useSaved(
+    key,
+    () => {
+      const value = override ?? stored(key);
+      return choices.includes(value as T) ? (value as T) : fallback;
+    },
+    asName,
+  );
 }

@@ -1,6 +1,6 @@
 # Contributing
 
-Use Node.js 22 (22.17 or newer within that major) and the pinned pnpm version. Follow the setup in [README.md](README.md)
+Use Node.js 22 (22.22.2 or newer within that major) and the pinned pnpm version. Follow the setup in [README.md](README.md)
 and the code guidance in [CONVENTIONS.md](CONVENTIONS.md).
 
 ## Changes
@@ -15,8 +15,8 @@ keep network adapters in `src/sources` and rendering in `src/globe`.
 
 ## Review and verification
 
-Run `pnpm run verify` before opening a pull request. Browser tests use fixtures, and their
-local server must be free to bind port 31600. New guards must reject an intentionally introduced
+Run `pnpm run verify` before committing or opening a pull request. Browser tests use fixtures, and their
+local servers must be free to bind ports 31600 and 31601. New guards must reject an intentionally introduced
 failure; restore the source and confirm the working tree contains only intended changes.
 Do not relax assertions, retry counts, timeouts, or budgets to make a check pass.
 
@@ -27,6 +27,7 @@ moved boundaries. Avoid live test counts in documentation.
 The main safeguards allow direct commits and require linear history. They block force pushes
 and deletion. CI runs for pushes and pull requests; deployment waits for the core checks and
 every browser shard.
+See [quality checks](docs/quality.md) and the [visitor walkthrough](docs/visitor-review.md).
 
 Report vulnerabilities privately using [SECURITY.md](.github/SECURITY.md). Use the issue templates
 for ordinary bugs and product suggestions.

@@ -42,6 +42,7 @@ export function Resizer({
       change(Math.max(min, Math.min(max, m(e))));
     };
     const onUp = (): void => {
+      if (!dragging.current) return;
       dragging.current = false;
       document.body.style.cursor = "";
       // Text selection is off during a drag, because dragging across a list of place names otherwise
@@ -52,9 +53,14 @@ export function Resizer({
     // handle behind, and the drag would stop the moment the cursor overtook it.
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
+    window.addEventListener("pointercancel", onUp);
+    window.addEventListener("blur", onUp);
     return () => {
+      onUp();
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onUp);
+      window.removeEventListener("blur", onUp);
     };
   }, [min, max]);
 

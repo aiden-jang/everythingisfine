@@ -137,9 +137,9 @@ export function DetailPanel({
 
   return (
     <aside
+      aria-label="Pinned earthquake"
       data-open={open}
-      // Out of the reading order the moment it starts leaving. `display: none` lands at the end of the
-      // transition, so for those 300ms it is still a real panel describing an event nobody pinned.
+      // Leave the reading order before the exit transition finishes.
       aria-hidden={!open}
       className="zone-panel flex w-[var(--panel-w)] flex-col overflow-y-auto border-l border-hairline bg-deck p-5 max-xl:w-full"
     >
@@ -364,7 +364,7 @@ export function DetailPanel({
                     <button
                       type="button"
                       onClick={() => onSelect(earlier.key)}
-                      aria-label={`Go to the previous event in this sequence, magnitude ${earlier.magnitude.toFixed(1)}`}
+                      aria-label={`← M${earlier.magnitude.toFixed(1)}. Go to the previous event in this sequence.`}
                       className="flex-1 cursor-pointer border border-hairline px-2 py-1.5 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink"
                     >
                       &larr; M{earlier.magnitude.toFixed(1)}
@@ -374,7 +374,7 @@ export function DetailPanel({
                     <button
                       type="button"
                       onClick={() => onSelect(later.key)}
-                      aria-label={`Go to the next event in this sequence, magnitude ${later.magnitude.toFixed(1)}`}
+                      aria-label={`M${later.magnitude.toFixed(1)} →. Go to the next event in this sequence.`}
                       className="flex-1 cursor-pointer border border-hairline px-2 py-1.5 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink"
                     >
                       M{later.magnitude.toFixed(1)} &rarr;

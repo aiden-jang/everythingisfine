@@ -1,6 +1,5 @@
 import { defineConfig } from "@playwright/test";
 
-const againstBuild = process.env["EIF_BUILD"] === "1";
 const ci = Boolean(process.env["CI"]);
 const rawShard = process.env["E2E_SHARD"];
 const shard = rawShard ? /^(\d+)\/(\d+)$/.exec(rawShard) : null;
@@ -24,11 +23,24 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   retries: 1,
-  webServer: {
-    command: againstBuild ? "pnpm run build && pnpm run preview" : "pnpm run dev",
-    url: "http://localhost:31600",
-    // A manual dev server must never stand in for the server owned by this test run.
-    reuseExistingServer: false,
-    timeout: againstBuild ? 120_000 : 60_000,
-  },
+  projects: [
+    { name: "release", grepInvert: /@dev/ },
+    { name: "development", grep: /@dev/, use: { baseURL: "http://localhost:31601" } },
+  ],
+  webServer: [
+    {
+      command:
+        process.env["EIF_BUILD_READY"] === "1" ? "pnpm run preview" : "pnpm run build && pnpm run preview",
+      url: "http://localhost:31600",
+      // A manual dev server must never stand in for the server owned by this test run.
+      reuseExistingServer: false,
+      timeout: 120_000,
+    },
+    {
+      command: "pnpm run dev --port 31601",
+      url: "http://localhost:31601",
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+  ],
 });

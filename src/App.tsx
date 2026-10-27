@@ -6,6 +6,8 @@ import { useGlobeTour } from "./app/useGlobeTour";
 import { GlobeLoading } from "./globe/GlobeLoading";
 import { stillMoment } from "./app/still";
 import { useStill } from "./app/useStill";
+import { StillNotice } from "./app/StillNotice";
+import { Utilities } from "./app/Utilities";
 import { Row } from "./app/Row";
 import { ArchiveControls } from "./app/ArchiveControls";
 import { useArchive } from "./app/useArchive";
@@ -266,12 +268,11 @@ export function App(): JSX.Element {
   const regionsRef = useRef<HTMLDivElement>(null);
   const [sectionLine, setSectionLine] = useState<SectionLine | null>(shared.section ?? null);
   // Read lazily, so the first paint has the right ramp instead of flashing the default one.
-  const [ramp, setRamp] = useStoredName<RampName>("ramp", "thermal", shared.ramp);
+  const [ramp, setRamp] = useStoredName<RampName>("ramp", "thermal", ["thermal", "cividis"], shared.ramp);
   const [announceAbove, setAnnounceAbove] = useStoredNumber("announceAbove", 4.5);
   // Dropped when the link also names a day: an archived day withholds the five layers, so the id would
   // resolve to nothing and the card would never open.
   const [markId, setMarkId] = useState<string | null>(shared.day ? null : (shared.mark ?? null));
-  const [moreOpen, setMoreOpen] = useState(false);
   /* Never reload here. There is no backend, so the buffer is every event on screen. */
   const resetView = useCallback(() => {
     setQuery("");
@@ -411,7 +412,12 @@ export function App(): JSX.Element {
     if (solar.touching) return { kind: solar.umbra > 0 ? "total" : "annular" } as const;
     return lunarEclipse(eclipseKey).umbral > 0 ? ({ kind: "lunar" } as const) : null;
   }, [eclipseKey]);
-  const { saving, stillCounts, saveStill, onCapture } = useStill(feed, filters, ramp, view.at);
+  const { saving, stillCounts, saveStill, onCapture, notice, download, dismiss } = useStill(
+    feed,
+    filters,
+    ramp,
+    view.at,
+  );
   /* What the globe is actually drawing while the cursor is parked. Walked and not read off the bars,
   which are whole hours while the cursor is continuous. */
   const revealedNow = ((): number | null => {
@@ -937,7 +943,8 @@ export function App(): JSX.Element {
   );
 
   return (
-    <div className="frame">
+    <main className="frame">
+      <h1 className="sr-only">Everything Is Fine</h1>
       <header
         id="chrome-head"
         className="zone-head flex items-center gap-6 px-5 py-3 xl:border-b xl:border-hairline"
@@ -947,11 +954,6 @@ export function App(): JSX.Element {
           type="button"
           onClick={resetView}
           aria-label="Everything Is Fine, back to the default view"
-          /* `self-start` where the row wraps: `items-center` floated the wordmark between the two rows and
-          left "Still" orphaned diagonally opposite. */
-          /* Sentence case belongs to the masthead; tracked capitals remain for instrument labels.
-             The accessible name stays stable for reset controls and shared navigation.
-             The period is decorative, so it is excluded from the spoken label. */
           className="wordmark flex min-h-11 cursor-pointer items-center whitespace-nowrap max-md:self-start"
         >
           Everything is fine<span aria-hidden="true">.</span>
@@ -1007,15 +1009,7 @@ export function App(): JSX.Element {
             <span className="lg:hidden">Ramp {ramp === "cividis" ? "CB" : "std"}</span>
             <span className="hidden lg:inline">Colourblind ramp {ramp === "cividis" ? "on" : "off"}</span>
           </button>
-          {/* A menu, not more header: unhiding in place wrapped the row and grew the header over the canvas.
-          `display: contents` from `md` up, so on a desktop these are still plain buttons in this row. */}
-          <div
-            /* Any press inside closes it, or the next tap lands on the menu instead of what is behind it. */
-            onClick={() => setMoreOpen(false)}
-            className={`utility-controls flex items-center gap-2 max-md:absolute max-md:top-full max-md:right-4 max-md:z-10 max-md:flex max-md:flex-col max-md:items-stretch max-md:gap-1.5 max-md:border max-md:border-hairline max-md:bg-deck max-md:p-2 ${
-              moreOpen ? "" : "max-md:hidden"
-            }`}
-          >
+          <Utilities>
             <button
               type="button"
               onClick={() => setSound((on) => !on)}
@@ -1040,6 +1034,7 @@ export function App(): JSX.Element {
               </button>
             ) : null}
             <button
+              id="capture-still"
               type="button"
               onClick={saveStill}
               disabled={saving}
@@ -1060,19 +1055,10 @@ export function App(): JSX.Element {
                 Hide bar
               </button>
             )}
-          </div>
-          <button
-            type="button"
-            onClick={() => setMoreOpen((o) => !o)}
-            aria-expanded={moreOpen}
-            /* Fixed width: "more" and "less" are not the same width, and this row packs from the right, so
-            opening the menu slid every button beside it. */
-            className="w-[3.25rem] shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-center text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink md:hidden"
-          >
-            {moreOpen ? "less" : "more"}
-          </button>
+          </Utilities>
           <FeedDot feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
         </div>
+        <StillNotice message={notice} download={download} dismiss={dismiss} />
       </header>
 
       {/* The way back. The fold control goes with the bar, so the unfold cannot live there. */}
@@ -1123,6 +1109,7 @@ export function App(): JSX.Element {
           <MobileNavigation onResize={setSheetCanvas} />
         ) : null}
         <aside
+          aria-label="Event filters and recent activity"
           id="chrome-rail"
           className="zone-rail rail border-hairline bg-deck p-5 max-md:border-b md:border-r"
           hidden={!railShown}
@@ -1210,9 +1197,8 @@ export function App(): JSX.Element {
                   // Through `clamp`, or pinning the newest event parks the cursor a moment behind the present.
                   setScrub(clampScrub({ at: strongest.primary.time, playing: false }, span));
                 }}
-                aria-label={
-                  `Largest: magnitude ${strongest.primary.magnitude.toFixed(1)}, ` +
-                  `${place(strongest.primary.place)}, ${ago(strongest.primary.time, now, archived)}. ` +
+                aria-description={
+                  `Magnitude ${strongest.primary.magnitude.toFixed(1)}, ${ago(strongest.primary.time, now, archived)}. ` +
                   "Go there and hold the window at that moment."
                 }
                 data-rail="largest"
@@ -1621,7 +1607,7 @@ export function App(): JSX.Element {
           </div>
         )}
 
-        <main className="zone-canvas relative bg-void">
+        <section aria-label="Globe" className="zone-canvas relative bg-void">
           {/* Split out so the rail paints before three.js parses. The fallback is the void the globe
               sits on, so nothing appears and is then replaced. */}
           <Suspense fallback={<GlobeLoading />}>
@@ -1729,7 +1715,7 @@ export function App(): JSX.Element {
               </div>
             </div>
           </div>
-        </main>
+        </section>
 
         {/*
         Folding the bar must not hide which day this is. It carried all four statements of the date, and
@@ -1781,6 +1767,6 @@ export function App(): JSX.Element {
           />
         ) : null}
       </div>
-    </div>
+    </main>
   );
 }

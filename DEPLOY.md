@@ -12,6 +12,8 @@ unused code, types, lint, formatting, unit tests with garbage collection, the pr
 emitted CSS classes, and browser journeys.
 
 The browser matrix distributes tests across isolated runners, each using one Chromium worker.
+Ordinary journeys load the production build. The tagged camera and store probes use a separate
+development origin, so internal instrumentation never becomes part of the release bundle.
 Every shard must succeed before deployment can start; a failed, skipped or cancelled shard blocks
 release. Test results include durations; failure artifacts include screenshots and traces.
 
@@ -42,12 +44,12 @@ pnpm exec playwright show-trace /absolute/path/to/trace.zip
 ```
 
 Reproduce browser failures with `pnpm run test:e2e`. The run owns its local server and refuses
-to reuse a manual server on port 31600. Agency availability cannot affect these tests because
+to reuse a manual server on ports 31600 and 31601. Agency availability cannot affect these tests because
 `e2e/feeds.ts` supplies recorded responses.
 
 The separate Feeds workflow deliberately checks public endpoints. Its failures describe
 provider availability or contract drift, and do not block the fixture-backed CI suite.
 
-For an intentional rollback, revert the affected commit through a pull request and let the
+For an intentional rollback, revert the affected commit on main and let the
 same checks and automatic deployment run. Manual `pnpm run deploy` is available for maintenance;
 normal releases require no local deployment command.

@@ -147,6 +147,7 @@ export function createUsgsSource(runtime: Runtime, urls: string | UsgsUrls = {})
   const seedMs = (seedUrl?.includes("all_month") ? 30 : seedUrl?.includes("all_week") ? 7 : 1) * 86_400_000;
   let seeded = false;
   let handlers: SourceHandlers | null = null;
+  let generation = 0;
   let timer: number | null = null;
   let abort: AbortController | null = null;
   let failures = 0;
@@ -191,6 +192,7 @@ export function createUsgsSource(runtime: Runtime, urls: string | UsgsUrls = {})
   /* One poll. The try block contains the transport and nothing else. See ARCHITECTURE.md#srcsourcesusgsts. */
   const poll = async (): Promise<void> => {
     if (!handlers) return;
+    const lifetime = generation;
     abort?.abort();
     abort = new AbortController();
 
@@ -205,7 +207,7 @@ export function createUsgsSource(runtime: Runtime, urls: string | UsgsUrls = {})
       failure = err instanceof Error ? err.message : "request failed";
     }
 
-    if (!handlers) return; // stopped while the request was in flight
+    if (!handlers || lifetime !== generation) return;
 
     if (failure === null) {
       // The day feed has no result cap, so a successful fetch of it vouches for the whole day.
@@ -234,6 +236,7 @@ export function createUsgsSource(runtime: Runtime, urls: string | UsgsUrls = {})
     transport: "poll",
     start: (h) => {
       if (handlers) return;
+      generation += 1;
       handlers = h;
       failures = 0;
       liveSince = null;
@@ -243,6 +246,7 @@ export function createUsgsSource(runtime: Runtime, urls: string | UsgsUrls = {})
       void poll();
     },
     stop: () => {
+      generation += 1;
       // Nulled first, so anything already in flight sees it and returns without calling back.
       handlers = null;
       if (timer !== null) runtime.clearTimer(timer);
