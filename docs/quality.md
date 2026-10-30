@@ -36,10 +36,18 @@ EIF_CAPTURE_UI=/private/tmp/eif-review pnpm exec playwright test e2e/quality.spe
 
 Review the actual images for hierarchy, readable labels, canvas space, clipping and notice placement.
 Geometric assertions support that review; they cannot establish whether the interface feels good.
-Do not overwrite previous dated review evidence with a new run.
+Keep each run in an ignored local output directory; historical reviews remain in Git history.
 
 ## Remaining observations
 
 Chromium automation does not prove native phone sharing, touch behavior on real hardware, spoken
 screen-reader output or current agency availability. Use the [visitor walkthrough](visitor-review.md),
 record the device and revision, and separate observed results from unanswered questions.
+
+## Review artifacts
+
+Keep generated screenshot sets, videos, traces and run reports in ignored
+`test-results/` output or a temporary local directory. CI artifacts should expire.
+Commit authored design references and a small curated set of README images only;
+keep runtime and installation assets separate. Earlier audit records remain in Git
+history. Use synthetic data and remove private information from shared evidence.

@@ -53,3 +53,5 @@ are historical records; current operating instructions live in README, SYSTEM, C
 
 Do not put live test totals, file lengths, or gate totals in documentation. Let checks print them.
 Historical measurements must identify the revision or conditions under which they were observed.
+
+Keep generated review output out of Git; follow the [artifact policy](docs/quality.md#review-artifacts).

@@ -53,7 +53,7 @@ run separately on a daily schedule and do not block pull requests.
 The ordinary journeys run against the release bundle; only camera/store instrumentation uses
 the development server. [Quality checks](docs/quality.md) explains the two origins and local captures.
 
-The [October 26 review](docs/ui-review/october-26/README.md) records this recovery and responsive pass.
+See [quality checks](docs/quality.md) for recovery and responsive coverage.
 Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-visit observations.
 
 ## Data and attribution
