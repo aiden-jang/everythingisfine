@@ -989,12 +989,12 @@ export function App(): JSX.Element {
         </div>
         {/* Never `whitespace-nowrap` here. It does not shrink, it overflows, and one extra button pushed
         the header 120px past a phone viewport. */}
-        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 max-md:gap-x-1.5">
+        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 max-md:gap-x-1">
           <button
             type="button"
             onClick={() => setFlat((f) => !f)}
             aria-pressed={flat}
-            className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink"
+            className="min-w-[60px] shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink max-md:min-w-[52px]"
           >
             {flat ? "Globe" : "Map"}
           </button>

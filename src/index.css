@@ -826,7 +826,7 @@
     font-size: 16px;
   }
   .zone-head {
-    gap: 12px;
+    gap: 8px;
     padding-inline: 16px;
   }
   .zone-head button:not(.wordmark) {
