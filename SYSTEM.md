@@ -18,6 +18,19 @@ serves the anonymous aggregate-events endpoint alongside static assets; it does 
    camera movement and picking. `src/globe/Globe.tsx` bridges the scene and app, redrawing only while
    motion or changed data requires it.
 
+## Reconciliation
+
+`src/data/reconcile.ts` associates different agencies' readings when origin times
+are within 30 seconds, epicentres within 150 km and finite magnitudes within 1.0.
+A missing magnitude does not prevent association. Within one agency, an identical
+provider ID identifies a revision rather than a second event.
+
+These thresholds express a matching policy, not proof of physical identity. Nearby
+ruptures can still be confused. Preserve each agency's original magnitude, scale,
+location and time; never average them. USGS supplies the primary marker when both
+are available so arrival order does not move it. The detail panel exposes both
+accounts and the rail distinguishes raw readings from distinct events.
+
 ## Boundaries
 
 | Module | Responsibility |
@@ -68,7 +81,7 @@ Sharing starts in the same click. A refused sheet retains its file behind an exp
 action; cancellation does not create a download. Capability probing and capture failures stay recoverable.
 Shared controls update the URL before paint; moving playback keeps its periodic URL cadence.
 
-## Validation and history
+## Validation
 
 The supported tooling runtime is pinned to Node 22, matching CI and the performance-gate calibration.
 `pnpm run verify` mirrors CI. Unit tests cover pure behavior, source contracts, retention, and
@@ -77,5 +90,4 @@ sharing, and responsive layouts. Release journeys and development-only instrumen
 separate origins. Daily live checks are informational and separate from merge checks.
 
 [DEPLOY.md](DEPLOY.md) describes CI and release behavior. [DESIGN.md](DESIGN.md) owns visual rules.
-[ARCHITECTURE.md](ARCHITECTURE.md) is the historical decision log and the indexed appendix for
-non-obvious constraints; use this document for the current system map.
+[ARCHITECTURE.md](ARCHITECTURE.md) indexes non-obvious constraints referenced by source and tests.

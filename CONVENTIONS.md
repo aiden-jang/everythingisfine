@@ -48,8 +48,9 @@ at a moved boundary. Never raise a comment budget to keep prose.
 
 Long reasoning belongs in the indexed appendix in [ARCHITECTURE.md](ARCHITECTURE.md).
 A code pointer must name the actual section, and moved modules need corresponding index entries.
-The docs check reads wrapped pointers too. The decision log and [RECONCILIATION.md](RECONCILIATION.md)
-are historical records; current operating instructions live in README, SYSTEM, CONTRIBUTING, and DEPLOY.
+The docs check reads wrapped pointers too. Current operating instructions live in
+README, SYSTEM, CONTRIBUTING, and DEPLOY. Keep documentation about the maintained
+system; remove superseded plans and use Git history for implementation diaries.
 
 Do not put live test totals, file lengths, or gate totals in documentation. Let checks print them.
 Historical measurements must identify the revision or conditions under which they were observed.

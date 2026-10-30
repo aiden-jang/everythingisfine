@@ -76,7 +76,7 @@ magnitude; other hazards use distinct shapes, with neutral interface controls.
 ## Limits
 
 The reconciliation rule can combine nearby aftershocks with a mainshock. Both agencies'
-readings remain visible; [RECONCILIATION.md](RECONCILIATION.md) explains the tradeoff.
+readings remain visible; [reconciliation policy](SYSTEM.md#reconciliation) explains the tradeoff.
 An unanswered feed is shown separately from a feed that reports no events.
 
 Historical coverage is uneven, especially before 1970. Archived hazards use EONET rather than
@@ -90,8 +90,8 @@ if it cannot start, the event list and filters remain available.
 ## Repository
 
 [SYSTEM.md](SYSTEM.md) describes the current boundaries and data flow.
-[ARCHITECTURE.md](ARCHITECTURE.md) retains the engineering decisions and indexed reasoning.
-[DESIGN.md](DESIGN.md) defines the visual system. [PLAN.md](PLAN.md) records the original build sequence.
+[ARCHITECTURE.md](ARCHITECTURE.md) explains indexed engineering constraints.
+[DESIGN.md](DESIGN.md) defines the visual system.
 
 Pushing to `main` triggers the existing Cloudflare deployment after verification succeeds.
 The app serves static assets with a small anonymous aggregate-analytics Worker and no database. Public feed requests stay in the browser. See [DEPLOY.md](DEPLOY.md).

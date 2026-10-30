@@ -4,7 +4,7 @@ import { countByRegion, contains, REGIONS } from "./regions";
 import type { Filters, Reading } from "../data/types";
 
 /*
- * The gate for PLAN.md step 9. Losing a pinned selection on refresh is easy to write by accident: the
+ * Pinned-selection persistence. Losing a pinned selection on refresh is easy to write by accident: the
  * accident is holding the selection as an object or an index instead of a key, and it only shows up once a
  * refresh lands while somebody is reading the panel. Asserted against the store, where it is decided.
  */

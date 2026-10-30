@@ -255,7 +255,7 @@ describe("push-specific behaviour", () => {
 });
 
 /*
- * The gate for PLAN.md step 6. `one-quake-both-feeds.json` is one real earthquake recorded from both agencies
+ * Cross-source reconciliation contract. `one-quake-both-feeds.json` is one real earthquake recorded from both agencies
  * on the same day, with nothing edited: the two accounts disagree, and the app has to hold both.
  */
 describe("one real earthquake, two agencies", () => {

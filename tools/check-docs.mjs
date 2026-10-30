@@ -48,15 +48,9 @@ if (/^- \[[\w/.-]+\]\(#[\w-]+\) &mdash;/m.test(doc)) {
   problems.push(`${DOC}: the file index is carrying counts again. Nothing keeps them true.`);
 }
 
-/*
- * The docs that describe the app as it is now. `ARCHITECTURE.md` and `RECONCILIATION.md` are left out on
- * purpose: they are logs, and past tense is their job. Both name a file that was renamed because the old
- * name would have broken, a file in somebody else's repository, and a path inside a dependency. Asking a
- * record of what happened to resolve against what exists today is asking it to stop being a record.
- */
 /* CLAUDE.md and AGENTS.md are symlinks to CONVENTIONS.md; listing them would report twice. */
 const LIVE = [...globSync("*.md"), ...globSync("docs/*.md"), ...globSync(".github/**/*.md")].filter(
-  (f) => !/^(ARCHITECTURE|RECONCILIATION|AGENTS|CLAUDE)\.md$/.test(f) && !f.endsWith(".local.md"),
+  (f) => !/^(AGENTS|CLAUDE)\.md$/.test(f) && !f.endsWith(".local.md"),
 );
 
 const onDisk = globSync("{src,e2e,tools,worker,analytics,public,.github}/**/*", { withFileTypes: true })
