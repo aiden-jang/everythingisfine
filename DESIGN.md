@@ -68,6 +68,8 @@ Depth uses shape: shallow discs, progressively opened holes and deep rings.
 Missing depth retains its explicit unknown description. Clusters have their own
 neutral ring and resolve into individual readings as the viewer zooms. Opacity
 expresses transient interaction state rather than another permanent quantity.
+The glossary's optional depth diagram uses neutral linework and is explicitly
+labeled schematic and not to scale. It illustrates the view, without sample observations.
 
 ### 3.3 Wavefronts
 

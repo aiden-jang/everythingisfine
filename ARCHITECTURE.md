@@ -619,6 +619,9 @@ and the floor is all it needs.
 
 ### src/app/MagnitudeFilter.tsx
 
+`DepthKey.tsx` owns the depth swatches and optional section diagram. The swatches
+retain the globe's depth mask; the neutral schematic carries no observation data.
+
 **One row of the key: a glyph, the line that names it, and the reasoning one press away**
 
 One row of the key: a glyph, the line that names it, and the reasoning one press away.

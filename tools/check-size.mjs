@@ -11,7 +11,7 @@ const ALREADY_OVER = {
   "src/globe/Globe.tsx": { lines: 898 },
   "src/globe/scene.ts": { lines: 878 },
   "src/globe/controls.ts": { lines: 690 },
-  "src/app/MagnitudeFilter.tsx": { lines: 576 },
+  "src/app/MagnitudeFilter.tsx": { lines: 551 },
   "src/geo/land.ts": { lines: 477 },
   "src/app/DetailPanel.tsx": { lines: 432 },
   "src/app/Timeline.tsx": { lines: 456 },

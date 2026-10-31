@@ -36,6 +36,18 @@ for (const width of [320, 390, 768, 1024, 1440]) {
       }
     };
     await capture("live");
+    const marks = page.getByText("What the marks mean", { exact: true }).filter({ visible: true });
+    await marks.click();
+    await page.getByText("Depth, in section", { exact: true }).filter({ visible: true }).click();
+    const diagram = page
+      .locator("figure")
+      .filter({ hasText: "Depth view · schematic, not to scale." })
+      .filter({ visible: true });
+    await diagram.scrollIntoViewIfNeeded();
+    await expect(diagram).toBeVisible();
+    expect((await diagram.boundingBox())!.width).toBeLessThanOrEqual(width);
+    await capture("depth-key");
+    await marks.click();
     if (width < 768) {
       await page.getByRole("button", { name: "more", exact: true }).click();
       await capture("utilities");
