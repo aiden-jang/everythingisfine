@@ -65,5 +65,10 @@
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=22.22.2 <23"
+  },
+  "pnpm": {
+    "overrides": {
+      "minimatch@<11.0.1": "^11.0.1"
+    }
   }
 }
