@@ -196,3 +196,34 @@ test("a missing globe explains why a still cannot be captured", async ({ page })
     page.getByText("The globe is not ready. Try again after it appears.", { exact: true }),
   ).toBeVisible();
 });
+
+test("copy feedback belongs to the pinned link that requested it", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page);
+  await page.addInitScript(() => {
+    let rejectCopy: (() => void) | undefined;
+    Object.defineProperty(window, "failCopy", { value: () => rejectCopy?.() });
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: () =>
+          new Promise<void>((_resolve, reject) => {
+            rejectCopy = () => reject(new DOMException("Denied", "NotAllowedError"));
+          }),
+      },
+    });
+  });
+  await page.goto("/");
+  await waitForData(page);
+  const events = page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button");
+  await events.nth(0).click();
+  await page.getByRole("button", { name: "Copy link", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Copying…", exact: true })).toBeDisabled();
+  await events.nth(1).click();
+  await page.evaluate(() => (window as unknown as { failCopy: () => void }).failCopy());
+  await expect(page.getByRole("button", { name: "Copy link", exact: true })).toBeEnabled();
+  await expect(page.getByRole("textbox", { name: "Link to copy" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Copy link", exact: true }).click();
+  await page.evaluate(() => (window as unknown as { failCopy: () => void }).failCopy());
+  await expect(page.getByRole("textbox", { name: "Link to copy" })).toHaveValue(page.url());
+});

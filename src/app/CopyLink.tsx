@@ -28,11 +28,12 @@ export function CopyLink() {
         type="button"
         className="min-h-11 cursor-pointer border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:opacity-50"
         disabled={result.pending}
+        aria-busy={result.pending}
         onClick={() => void copy()}
       >
-        {current && !result.failed && !result.pending ? "Link copied" : "Copy link"}
+        {result.pending ? "Copying…" : current && !result.failed ? "Link copied" : "Copy link"}
       </button>
-      {result.failed && !result.pending && (
+      {current && result.failed && !result.pending && (
         <div className="w-full text-[11px] text-dim" role="status">
           Couldn’t copy. You can copy the link below.
           <input
