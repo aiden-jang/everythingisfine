@@ -862,7 +862,7 @@ export function Globe({
   }, [marks]);
 
   return (
-    <div className="relative h-full w-full">
+    <div className="relative h-full w-full [--scene-hud-top:76px]">
       {unavailable ? <GlobeUnavailable onRetry={() => setAttempt((n) => n + 1)} /> : null}
       {/* `touch-action: none`, so every gesture on the globe belongs to the globe. On `auto` the browser
           claims a pinch for page zoom before the pointer events reach the pinch handler. */}

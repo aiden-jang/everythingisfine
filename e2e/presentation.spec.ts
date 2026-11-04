@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds, waitForData } from "./feeds";
 
-for (const width of [1440, 390]) {
+for (const width of [1440, 390, 320]) {
   test(`regional inspection stays usable at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ reducedMotion: "reduce" });

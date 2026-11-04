@@ -34,12 +34,12 @@ export function GlobeOverlays({
         data-orbit-readout
         data-visible="false"
         aria-hidden="true"
-        className="orbit-readout pointer-events-none absolute top-[76px] left-4 xl:ml-[var(--rail-w)] xl:translate-x-8 border border-hairline bg-deck/90 px-2 py-1 font-mono text-[10px] text-dim tabular-nums"
+        className="orbit-readout pointer-events-none absolute top-[var(--scene-hud-top)] left-4 xl:ml-[var(--rail-w)] xl:translate-x-8 border border-hairline bg-deck/90 px-2 py-1 font-mono text-[10px] text-dim tabular-nums"
       />
       {cutaway ? (
         <div
           role="status"
-          className="cutaway-note pointer-events-none absolute top-[76px] left-4 max-w-[220px] border border-hairline bg-deck/95 p-2 text-[10px] text-dim xl:ml-[var(--rail-w)] xl:translate-x-8"
+          className="cutaway-note pointer-events-none absolute top-[var(--scene-hud-top)] left-4 max-w-[220px] border border-hairline bg-deck/95 p-2 text-[10px] text-dim xl:ml-[var(--rail-w)] xl:translate-x-8"
         >
           <span className="label block">Regional cutaway · true scale</span>
           <span className="mt-1 block font-mono tabular-nums">{geographicCoordinates(cutaway)}</span>

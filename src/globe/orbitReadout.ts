@@ -11,6 +11,7 @@ export function orbitCoordinates(state: CameraState): string {
 
 // Imperative text avoids a component render per camera frame; fading uses CSS, never another frame loop.
 export function createOrbitReadout(node: HTMLElement | null) {
+  const untrack = trackHudOffset(node?.parentElement ?? null);
   let timer = 0,
     visible = false;
   return {
@@ -29,6 +30,22 @@ export function createOrbitReadout(node: HTMLElement | null) {
     },
     dispose(): void {
       window.clearTimeout(timer);
+      untrack();
     },
   };
+}
+
+// Both overlays follow the real header, including its narrow-phone wrap and folded state.
+function trackHudOffset(root: HTMLElement | null): () => void {
+  const header = document.getElementById("chrome-head");
+  if (!root || !header) return () => {};
+  const update = (): void => {
+    const top = Math.max(16, header.getBoundingClientRect().bottom - root.getBoundingClientRect().top + 16);
+    root.style.setProperty("--scene-hud-top", `${top}px`);
+  };
+  const observer = new ResizeObserver(update);
+  observer.observe(header);
+  observer.observe(root);
+  update();
+  return () => observer.disconnect();
 }

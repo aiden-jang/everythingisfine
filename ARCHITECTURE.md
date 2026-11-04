@@ -2381,7 +2381,8 @@ Still exports label the reference cutaway when it is enabled, so the exported vi
 Screen overlays share the renderer's existing refs. The selected bracket's inner element is keyed
 by the pinned event, allowing its finite entrance without disturbing the outer projected position.
 The orbit readout temporarily replaces the cutaway caption so the two cannot overlap. Both remain
-inside the canvas area, clear of the mobile credit and keyboard controls.
+inside the canvas area, clear of the mobile credit and keyboard controls. A shared offset follows
+the header's measured height with a ResizeObserver, including narrow-phone wrapping and folding.
 
 ### src/globe/Globe.tsx
 
