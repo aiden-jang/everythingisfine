@@ -33,7 +33,7 @@ export function CopyLink() {
       >
         {result.pending ? "Copying…" : current && !result.failed ? "Link copied" : "Copy link"}
       </button>
-      {current && result.failed && !result.pending && (
+      {result.failed && !result.pending && (
         <div className="w-full text-[11px] text-dim" role="status">
           Couldn’t copy. You can copy the link below.
           <input

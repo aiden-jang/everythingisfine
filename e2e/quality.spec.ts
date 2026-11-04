@@ -202,13 +202,14 @@ test("copy feedback belongs to the pinned link that requested it", async ({ page
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page);
   await page.addInitScript(() => {
-    let rejectCopy: (() => void) | undefined;
-    Object.defineProperty(window, "failCopy", { value: () => rejectCopy?.() });
+    let finishCopy: ((success: boolean) => void) | undefined;
+    Object.defineProperty(window, "finishCopy", { value: (success: boolean) => finishCopy?.(success) });
     Object.defineProperty(navigator, "clipboard", {
       value: {
         writeText: () =>
-          new Promise<void>((_resolve, reject) => {
-            rejectCopy = () => reject(new DOMException("Denied", "NotAllowedError"));
+          new Promise<void>((resolve, reject) => {
+            finishCopy = (success) =>
+              success ? resolve() : reject(new DOMException("Denied", "NotAllowedError"));
           }),
       },
     });
@@ -220,10 +221,14 @@ test("copy feedback belongs to the pinned link that requested it", async ({ page
   await page.getByRole("button", { name: "Copy link", exact: true }).click();
   await expect(page.getByRole("button", { name: "Copying…", exact: true })).toBeDisabled();
   await events.nth(1).click();
-  await page.evaluate(() => (window as unknown as { failCopy: () => void }).failCopy());
+  await page.evaluate(() =>
+    (window as unknown as { finishCopy: (success: boolean) => void }).finishCopy(true),
+  );
   await expect(page.getByRole("button", { name: "Copy link", exact: true })).toBeEnabled();
   await expect(page.getByRole("textbox", { name: "Link to copy" })).toHaveCount(0);
   await page.getByRole("button", { name: "Copy link", exact: true }).click();
-  await page.evaluate(() => (window as unknown as { failCopy: () => void }).failCopy());
+  await page.evaluate(() =>
+    (window as unknown as { finishCopy: (success: boolean) => void }).finishCopy(false),
+  );
   await expect(page.getByRole("textbox", { name: "Link to copy" })).toHaveValue(page.url());
 });
