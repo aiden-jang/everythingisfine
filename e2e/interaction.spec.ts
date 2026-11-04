@@ -19,13 +19,14 @@ interface Camera {
 // Allow for software-rendered camera motion and the URL writer's sampling interval.
 const CAMERA_SETTLE_MS = 20_000;
 
-const cameraNow = (page: Page): Promise<Camera> =>
+const cameraNow = (page: Page): Promise<Camera | null> =>
   page.evaluate(() => {
     const globe = (
       window as unknown as {
         __globe: { state: () => Omit<Camera, "morph">; morph: () => number };
       }
     ).__globe;
+    if (!globe) return null;
     return { ...globe.state(), morph: globe.morph() };
   });
 
@@ -39,6 +40,8 @@ async function cameraStill(page: Page): Promise<Camera> {
     .poll(
       async () => {
         const now = await cameraNow(page);
+        // The canvas can paint before the lazy scene finishes setup.
+        if (now === null) return Number.POSITIVE_INFINITY;
         const previous = last;
         last = now;
         if (previous === null) return Number.POSITIVE_INFINITY;

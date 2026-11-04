@@ -85,16 +85,25 @@ test("scene effects settle and skip decorative motion when requested", async ({ 
     page.evaluate(
       () => (window as unknown as { presentationFrames: { frames: number } }).presentationFrames.frames,
     );
-  await expect
-    .poll(
-      async () => {
-        const before = await frames();
-        await page.waitForTimeout(500);
-        return (await frames()) - before;
-      },
-      { timeout: 20_000 },
-    )
-    .toBeLessThanOrEqual(2);
+  const waitForRest = async (): Promise<void> => {
+    await expect
+      .poll(
+        async () => {
+          const before = await frames();
+          await page.waitForTimeout(500);
+          return (await frames()) - before;
+        },
+        { timeout: 20_000 },
+      )
+      .toBeLessThanOrEqual(2);
+  };
+  await waitForRest();
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await waitForRest();
+  await expect(page.locator(".cutaway-note")).toHaveCount(0);
+  await page.getByRole("button", { name: "Globe", exact: true }).click();
+  await waitForRest();
+  await expect(page.locator(".cutaway-note")).toBeVisible();
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator(".pick-corners")).toHaveCSS("animation-name", "none");
   await expect(page.locator("[data-orbit-readout]")).toHaveCSS("transition-duration", "0s");

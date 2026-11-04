@@ -2359,7 +2359,8 @@ Here rather than beside the ring layer: the legend prints it and has no business
 neutral reference shape, not a geological model: its floor is 900 km below the unit sphere and its
 wall guides are 300 km apart. Quake depths use the existing true-scale sink, without exaggeration.
 Opening uses the pinned epicentre or the current view centre; orbiting does not move that anchor.
-The flat map suspends the opening, and switching depth off closes it. Inspection is transient and
+The well closes before unwrapping and opens after returning to the sphere, so its spherical reference
+geometry never floats across a partially flattened map. Switching depth off closes it. Inspection is transient and
 is not encoded in shared links or saved as a preference.
 
 `regroup.ts` crossfades two marker buffers during zoom. Both sets retain their recorded positions,

@@ -158,9 +158,16 @@ export function createCutaway() {
         object.quaternion.setFromUnitVectors(new Vector3(0, 1, 0), center.value);
       }
     },
+    isOpen: (): boolean => progress > 0,
     step(dt: number, reduced: boolean, morph: number): boolean {
       const step = reduced ? 1 : dt / 0.55;
-      progress = target > progress ? Math.min(target, progress + step) : Math.max(target, progress - step);
+      // This reference well has spherical geometry; open it only after the globe has returned.
+      progress =
+        target === 1 && morph > 0
+          ? 0
+          : target > progress
+            ? Math.min(target, progress + step)
+            : Math.max(target, progress - step);
       const eased = progress * progress * (3 - 2 * progress);
       const angle = ANGLE * eased * (1 - morph);
       threshold.value = Math.cos(angle);
@@ -168,7 +175,7 @@ export function createCutaway() {
       enabled.value = angle > 0.0001 ? 1 : 0;
       // Reveal the well through the same aperture; the surface hides the rest while it opens.
       object.visible = angle > 0.0001;
-      return progress !== target;
+      return progress !== target && morph === 0;
     },
   };
 }

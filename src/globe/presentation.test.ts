@@ -50,7 +50,10 @@ describe("finite scene presentation", () => {
     );
     expect(Math.min(...radii)).toBeCloseTo(1 - CUTAWAY_DEPTH_KM / EARTH_RADIUS_KM, 6);
     cutaway.step(0, true, 1);
+    expect(cutaway.isOpen()).toBe(false);
     expect(cutaway.object.visible).toBe(false);
+    expect(cutaway.step(0.2, false, 0.5)).toBe(false);
+    expect(cutaway.isOpen()).toBe(false);
     expect(uniforms["uCutEnabled"]!.value).toBe(0);
     cutaway.step(0, true, 0);
     expect(cutaway.object.visible).toBe(true);

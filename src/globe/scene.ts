@@ -146,6 +146,7 @@ export interface Globe {
   setMarkHover: (id: string | null) => void;
   setMorph: (t: number) => void;
   setCutaway: (focus: CutawayFocus | null) => void;
+  cutawayOpen: () => boolean;
   beginRegroup: (reduced: boolean) => void;
   cancelRegroup: () => void;
   stepPresentation: (dt: number, reduced: boolean) => boolean;
@@ -582,6 +583,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     resize,
     controls,
     setCutaway: cutaway.set,
+    cutawayOpen: cutaway.isOpen,
     beginRegroup: regroup.begin,
     cancelRegroup: regroup.cancel,
     stepPresentation: (dt, reduced) => {
@@ -590,8 +592,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       const grouping = regroup.step(dt, reduced);
       return cutting || tracing || grouping;
     },
-    /** Swaps the geography palette. Called with the ramp rather than a palette name, because which ramp the
-     * marks are drawn from is the only reason to choose. See `NEUTRAL` for the measurement. */
+    // Geography follows the ramp's contrast requirements; see NEUTRAL for the measurement.
     markerRadius: (magnitude: number): number => markerRadiusPx(magnitude, markerScale()),
     setGeography: (ramp: RampName): void => {
       const palette = ramp === "cividis" ? NEUTRAL : BLUEPRINT;
@@ -605,7 +606,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       // The map's backdrop fades to the sphere colour, so it has to move with it.
       COLOR_SPHERE_C.setHex(palette.sphere);
     },
-    /** 0 is the globe, 1 is the flat map. Everything on the canvas reads the same value. */
     setDepthSink: (on: boolean): void => {
       sink = on ? 1 : 0;
       if (!on) cutaway.set(null);

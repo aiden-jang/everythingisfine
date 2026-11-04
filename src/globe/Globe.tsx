@@ -33,8 +33,7 @@ export interface GlobeProps {
   onCapture?: (capture: () => HTMLCanvasElement | null) => void;
   onSelectMark?: (id: string | null) => void;
   onCamera?: (state: { lon: number; lat: number; zoom: number }) => void;
-  /** The replay clock and how many *events* have been revealed. Not markers: clustering collapses those,
-   * so a day of 789 counted up to 105 under a heading reading EVENTS. */
+  /** Replay counts events, rather than the smaller number of clustered markers. */
   onReplay?: (state: { at: number; revealed: number } | null) => void;
   flat?: boolean;
   /** Draw earthquakes at their own depth. Only means anything on the globe, and the shader fades it with
@@ -455,7 +454,7 @@ export function Globe({
       if (morph !== morphTarget) {
         // 1.1 seconds, which is slow. Greenland swelling as it leaves the sphere is the whole argument for
         // the globe being the default view, and at 300ms nobody sees it happen.
-        const step = reducedMotion.matches ? 1 : dt / 1.1;
+        const step = reducedMotion.matches ? 1 : morphTarget === 1 && globe.cutawayOpen() ? 0 : dt / 1.1;
         morph =
           morphTarget > morph ? Math.min(morphTarget, morph + step) : Math.max(morphTarget, morph - step);
         globe.setMorph(morph);
