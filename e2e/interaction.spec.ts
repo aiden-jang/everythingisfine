@@ -97,6 +97,9 @@ test("a pinned selection survives a data refresh", { tag: "@dev" }, async ({ pag
   expect(magnitude).toBeTruthy();
   expect(chosen).toContain(magnitude!);
 
+  // The feed UI can render before the lazy globe exposes its development controls.
+  await page.waitForFunction(() => (window as unknown as { __feed?: unknown }).__feed !== undefined);
+
   // Force real refreshes rather than waiting a minute for the poller. The store is the thing under test, and
   // re-ingesting everything it already holds is exactly what a USGS poll does.
   await page.evaluate(() => {
