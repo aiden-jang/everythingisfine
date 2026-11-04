@@ -1,4 +1,6 @@
 const descriptions: Record<string, string> = {
+  "Regional cutaway":
+    "Open the pinned region, or the view centre. Orbit to inspect true depth; 300 km guide rings.",
   depth: "Place deep events below the surface.",
   "Plate movement": "Arrows show how tectonic plates move.",
   "Deep earthquakes": "Historical seismicity traces descending plates.",

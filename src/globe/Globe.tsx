@@ -1,10 +1,13 @@
+import { createOrbitReadout } from "./orbitReadout";
+import { type CutawayFocus } from "./cutaway";
+import { GlobeOverlays } from "./GlobeOverlays";
 import { GlobeUnavailable } from "./GlobeUnavailable";
 import { animationDelta } from "./animation";
 import { useEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
 import { loadStars, type FigureTable } from "../geo/stars";
 import { createGlobe } from "./scene";
-import type { FocusSpan } from "./events";
+import { sinkFraction, type FocusSpan } from "./events";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 import { createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
 import type { Filters, Quake } from "../data/types";
@@ -37,6 +40,7 @@ export interface GlobeProps {
   /** Draw earthquakes at their own depth. Only means anything on the globe, and the shader fades it with
    * the morph, so unwrapping the map lifts every event back to the surface as one motion. */
   depthSink?: boolean;
+  cutaway?: CutawayFocus | null;
   figures?: FigureTable | null;
   /** Null rather than `Date.now()` on the live view, so the scene keeps its once-a-minute throttle. */
   moment?: number | null;
@@ -54,10 +58,6 @@ export interface GlobeProps {
    * plain drag already pans and a "now draw a line" button would be a mode to get stuck in. */
   onSection?: (line: SectionLine | null) => void;
 }
-
-/* Clear of the credit's line, which is 44px tall because a link has to hold a finger. At 40 the ruler
-   was drawn straight through "made by aiden jang". */
-const SCALE_BOTTOM = 76;
 
 /* Half of the 44px a finger is reckoned to need, so a marker's own radius makes up the rest. */
 const TOUCH_SLOP_PX = 18;
@@ -84,6 +84,7 @@ export function Globe({
   scrubAt = null,
   flat = false,
   depthSink = false,
+  cutaway = null,
   slab = null,
   figures = null,
   moment = null,
@@ -91,6 +92,7 @@ export function Globe({
   onSection,
 }: GlobeProps): JSX.Element {
   const canvas = useRef<HTMLCanvasElement>(null);
+  const orbit = useRef<HTMLDivElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
   const marker = useRef<HTMLDivElement>(null);
   const sectionLine = useRef<SVGSVGElement>(null);
@@ -101,6 +103,7 @@ export function Globe({
   const redrawRef = useRef<() => void>(() => {});
   const wakeRef = useRef<() => void>(() => {});
   const rampRef = useRef<(name: RampName) => void>(() => {});
+  const cutawayRef = useRef<(focus: CutawayFocus | null) => void>(() => {});
   const sinkRef = useRef<(on: boolean) => void>(() => {});
   const figuresRef = useRef<(table: FigureTable | null) => void>(() => {});
   const momentRef = useRef<(at: number | null) => void>(() => {});
@@ -118,6 +121,7 @@ export function Globe({
     scrubAt,
     flat,
     depthSink,
+    cutaway,
     slab,
     figures,
     moment,
@@ -132,6 +136,7 @@ export function Globe({
     scrubAt,
     flat,
     depthSink,
+    cutaway,
     slab,
     figures,
     moment,
@@ -162,6 +167,7 @@ export function Globe({
       return undefined;
     }
     setUnavailable(false);
+    const readout = createOrbitReadout(orbit.current);
     globe.resize();
     globe.render();
     // A camera target must also wake the renderer when the globe is idle.
@@ -257,7 +263,11 @@ export function Globe({
       ): void => {
         if (!node) return;
         const found = target ? locate(target) : null;
-        const at = found ? globe.controls.project(found.lon, found.lat) : null;
+        const radius =
+          found?.quake && live.current.depthSink
+            ? 1 - sinkFraction(found.quake.primary.depthKm) * (1 - globe.controls.morph())
+            : 1;
+        const at = found ? globe.controls.project(found.lon, found.lat, radius) : null;
         node.style.opacity = at ? "1" : "0";
         if (!at || !found) return;
         /*
@@ -473,6 +483,7 @@ export function Globe({
       // Clustering depends on zoom, so a zoom has to redraw the layer, not merely the camera.
       const zoomNow = globe.controls.state().zoom;
       if (Math.abs(zoomNow - lastZoom) > 0.001) {
+        globe.beginRegroup(reducedMotion.matches);
         lastZoom = zoomNow;
         // Cheap: the layer decides for itself whether the change is worth a rebuild.
         globe.setMarkZoom(zoomNow);
@@ -485,11 +496,13 @@ export function Globe({
           live.current.focus,
         );
       }
+      const presenting = globe.stepPresentation(dt, reducedMotion.matches);
       globe.render();
       placeOverlays();
+      readout.update(globe.controls.state());
       onCameraRef.current?.(globe.controls.state());
       const revealing = revealStarted && plateReveal < 1;
-      if (moving || expanding || replaying || fading || revealing || unwrapping) {
+      if (moving || expanding || replaying || fading || revealing || unwrapping || presenting) {
         frameId = requestAnimationFrame(frame);
       } else running = false;
     };
@@ -551,7 +564,7 @@ export function Globe({
     });
 
     const wake = (): void => {
-      if (running) return;
+      if (running || document.hidden) return;
       running = true;
       last = performance.now();
       frameId = requestAnimationFrame(frame);
@@ -569,6 +582,7 @@ export function Globe({
     const revealUntil = (): number | undefined => replay?.at() ?? live.current.scrubAt ?? undefined;
 
     const redraw = (): void => {
+      globe.cancelRegroup();
       globe.events.sync(
         feed.store,
         live.current.filters,
@@ -613,8 +627,14 @@ export function Globe({
     figuresRef.current = (table) => {
       if (table !== null) globe.setFigures(table);
       globe.setFiguresOn(table !== null);
+      globe.stepPresentation(0, reducedMotion.matches);
       redraw();
     };
+    cutawayRef.current = (next) => {
+      globe.setCutaway(next);
+      wake();
+    };
+    globe.setCutaway(live.current.cutaway);
     globe.setSlab(live.current.slab ?? null);
     globe.setDepthSink(live.current.depthSink);
     rampRef.current = (name) => {
@@ -751,6 +771,7 @@ export function Globe({
     el.addEventListener("pointerleave", onLeave);
 
     const detach = globe.controls.attach(() => {
+      readout.show();
       wake();
       placeOverlays();
     });
@@ -761,6 +782,13 @@ export function Globe({
     globe.controls.enter();
     wake();
 
+    const onVisibility = (): void => {
+      if (document.hidden) {
+        cancelAnimationFrame(frameId);
+        running = false;
+      } else wake();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
     const ro = new ResizeObserver(() => {
       globe.resize();
       redraw();
@@ -773,6 +801,7 @@ export function Globe({
       wakeRef.current = () => {};
       window.clearTimeout(revealFallback);
       ro.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
       unsubscribe();
       detach();
       el.removeEventListener("pointermove", onMove);
@@ -782,6 +811,7 @@ export function Globe({
       el.removeEventListener("pointerdown", onSectionDown, { capture: true });
       // Before dispose, so a table landing after unmount cannot write to a scene that is gone.
       gone = true;
+      readout.dispose();
       globe.dispose();
     };
   }, [feed, onReady, onSelect, onCapture, onSelectMark, attempt]);
@@ -800,6 +830,10 @@ export function Globe({
   useEffect(() => {
     sinkRef.current(depthSink);
   }, [depthSink]);
+
+  useEffect(() => {
+    cutawayRef.current(cutaway);
+  }, [cutaway]);
 
   // Same route and the same reason as the slab: the loop is asleep when a lazy chunk lands.
   useEffect(() => {
@@ -843,55 +877,17 @@ export function Globe({
         aria-hidden="true"
         className="block h-full w-full touch-none cursor-grab active:cursor-grabbing"
       />
-      {/* Achromatic: a coloured ring would be a hue meaning nothing beside hues that mean magnitude. */}
-      <div
-        ref={marker}
-        className="pick pointer-events-none absolute top-0 left-0 size-7 opacity-0 transition-opacity duration-150"
-      />
-      {/* Lighter than the selection ring, because hovering is not choosing. */}
-      <div
-        ref={hoverRing}
-        className="pointer-events-none absolute top-0 left-0 size-5 rounded-full border border-dim opacity-0 transition-opacity duration-100"
-      />
-      {/* A ruler rather than a readout: the rule is the measurement and the text names it, so the bar's
-          width changes and the number stays round. `aria-hidden`, because the feed already gives
-          distances per event and a ruler is a thing you hold against a picture. */}
-      <div
-        ref={scaleBar}
-        data-scale
-        aria-hidden="true"
-        style={{ bottom: `${SCALE_BOTTOM}px` }}
-        /* Offset past the rail, like the bottom band. The canvas is full-bleed and the rail floats over
-           it, so a bar at the container's own left edge is drawn underneath the rail. */
-        className="pointer-events-none absolute left-4 opacity-0 transition-opacity duration-200
-          xl:ml-[var(--rail-w)]"
-      >
-        <span ref={scaleText} className="block font-mono text-[10.5px] text-faint tabular-nums" />
-        {/* Ticked at both ends. A bare line has no start or finish, and the eye measures from wherever it
-            looks first. */}
-        <div ref={scaleRule} className="mt-1 h-[5px] border-x border-b border-dim" />
-      </div>
-      {/* Achromatic like every other piece of chrome: the section's own panel carries the ramp. */}
-      <svg
-        ref={sectionLine}
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 h-full w-full opacity-0 transition-opacity duration-150"
-      >
-        {/* The corridor first, so the centre line and its caps paint over it. Undashed: two more dashed
-            lines would read as three sections rather than one with a width. See ARCHITECTURE.md#srcglobeglobetsx. */}
-        <line stroke="currentColor" strokeWidth={1} className="text-coast" />
-        <line stroke="currentColor" strokeWidth={1} className="text-coast" />
-        <line stroke="currentColor" strokeWidth={1} className="text-ink" strokeDasharray="5 4" />
-        <circle r={3.5} fill="none" stroke="currentColor" strokeWidth={1} className="text-ink" />
-        <circle r={3.5} fill="none" stroke="currentColor" strokeWidth={1} className="text-ink" />
-      </svg>
-      <div
-        ref={tooltip}
-        /* `truncate` belongs on the name inside, not on the box: on the box it clips to one line and the
-           measurement line existed but was never shown. */
-        /* On the sans step, like every other piece of prose here. This is the label you read at arm's
-           length while the pointer moves, so half a step below body size was the wrong pixel to save. */
-        className="pointer-events-none absolute top-0 left-0 max-w-[260px] border border-hairline bg-raised px-2 py-1 text-[11px] leading-snug text-ink opacity-0"
+      <GlobeOverlays
+        selected={selected}
+        orbit={orbit}
+        cutaway={flat ? null : cutaway}
+        marker={marker}
+        hoverRing={hoverRing}
+        scaleBar={scaleBar}
+        scaleText={scaleText}
+        scaleRule={scaleRule}
+        sectionLine={sectionLine}
+        tooltip={tooltip}
       />
     </div>
   );

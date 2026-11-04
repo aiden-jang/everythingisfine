@@ -159,6 +159,13 @@ pull back proportionally and settle with arrival; short hops do not add a flouri
 Camera keys, pointer, touch and wheel preserve the same bounds and motion policy.
 Lost focus, backgrounding and dialog changes release held input.
 
+Selection brackets may settle once, panels may catch a brief neutral edge light, and zoom regrouping
+may crossfade recorded marker positions. These effects must not invent intermediate epicentres or
+change magnitude encoding. Optional constellation lines trace their catalogue connections once on
+opening. A regional cutaway uses actual earthquake depths and clearly labelled reference guides;
+it is not a model of the crust. Camera coordinates appear briefly during user input. Every effect
+finishes and releases the frame loop, with no permanent background animation.
+
 Respect reduced motion completely: skip entrance rotation, camera easing and
 secondary travel rather than merely shortening them. Keep events and every action
 available. Replay, held time, archive mode and the sky share the displayed moment.

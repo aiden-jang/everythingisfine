@@ -1,4 +1,4 @@
-import { LayerToggle } from "./LayerToggle";
+import { LayerOptions } from "./LayerOptions";
 import { DepthKey } from "./DepthKey";
 import type { ReactElement, ReactNode } from "react";
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
@@ -85,6 +85,8 @@ export interface MagnitudeFilterProps {
   /** Whether earthquakes are drawn at their own depth. Null hides the control, on the flat map. */
   sinkOn: boolean | null;
   onSink: (on: boolean) => void;
+  cutawayOn: boolean | null;
+  onCutaway: (on: boolean) => void;
   /** Whether there is a sky at all, which the flat map has not. Gates the two rows that describe it. */
   sky?: boolean;
   /** The city the reader's timezone resolved to, or null. Names the ticks on the globe. */
@@ -148,6 +150,8 @@ export function MagnitudeFilter({
   motionOn,
   onMotion,
   sinkOn,
+  cutawayOn,
+  onCutaway,
   onSink,
   slabOn,
   onSlab,
@@ -163,17 +167,6 @@ export function MagnitudeFilter({
   part = "controls",
 }: MagnitudeFilterProps): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
-  // Flat maps have neither an interior nor a sky; omit layers they cannot show.
-  const switches = [
-    sinkOn === null ? null : <LayerToggle key="depth" label="depth" on={sinkOn} onChange={onSink} />,
-    <LayerToggle key="motion" label="Plate movement" on={motionOn} onChange={onMotion} />,
-    slabOn === null ? null : (
-      <LayerToggle key="slab" label="Deep earthquakes" on={slabOn} onChange={onSlab} />
-    ),
-    figuresOn === null || figuresOn === undefined || !onFigures ? null : (
-      <LayerToggle key="figures" label="Constellations" on={figuresOn} onChange={onFigures} />
-    ),
-  ].filter((v) => v !== null);
   // Where the threshold sits along the scale, as a percentage of the track.
   const cut = Math.max(0, Math.min(100, ((value - MAG_MIN) / (MAG_MAX - MAG_MIN)) * 100));
 
@@ -532,14 +525,20 @@ export function MagnitudeFilter({
         <summary className="label cursor-pointer select-none">Feeds and layers</summary>
         <div className="mt-2">
           {children}
-          {switches.length === 0 ? null : (
-            <div className="mt-3">
-              <span className="label block">Layers</span>
-              <div role="group" aria-label="Layers" className="layer-options mt-1">
-                {switches}
-              </div>
-            </div>
-          )}
+          <LayerOptions
+            {...{
+              sinkOn,
+              onSink,
+              cutawayOn,
+              onCutaway,
+              motionOn,
+              onMotion,
+              slabOn,
+              onSlab,
+              figuresOn,
+              onFigures,
+            }}
+          />
         </div>
       </details>
 

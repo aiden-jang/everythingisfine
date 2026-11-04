@@ -13,13 +13,19 @@ const FIGURE_OPACITY = 0.3;
 const FIGURES = {
   vertexShader: /* glsl */ `
     ${SKY_GLSL}
+    attribute float aTrace;
+    varying float vTrace;
     void main() {
+      vTrace = aTrace;
       gl_Position = projectionMatrix * viewMatrix * vec4(skyPoint(position), 1.0);
     }`,
   fragmentShader: /* glsl */ `
     uniform vec3 uColor;
     uniform float uOpacity;
+    uniform float uTrace;
+    varying float vTrace;
     void main() {
+      if (vTrace > uTrace) discard;
       gl_FragColor = vec4(uColor, uOpacity);
     }`,
 };
@@ -34,6 +40,7 @@ export interface Figures {
   setOpacity: (value: number) => void;
   /** The reader's own choice, since this layer is an interpretation and not a reading. */
   setOn: (on: boolean) => void;
+  step: (dt: number, reduced: boolean) => boolean;
   dispose: () => void;
 }
 
@@ -48,6 +55,7 @@ export function createFigures(): Figures {
     uniforms: {
       uColor: { value: COLOR_FIGURES },
       uOpacity: { value: FIGURE_OPACITY },
+      uTrace: { value: 1 },
       uSpin: { value: 0 },
       uDistance: { value: SKY_DISTANCE },
     },
@@ -63,6 +71,8 @@ export function createFigures(): Figures {
   object.renderOrder = -2.1;
 
   let loaded = false;
+  let held: FigureTable | null = null;
+  let trace = 1;
   let on = false;
   let morph = 1;
   const show = (): void => {
@@ -72,12 +82,16 @@ export function createFigures(): Figures {
   return {
     object,
     setFigures: (table) => {
+      if (held === table) return;
+      held = table;
+      trace = 0;
       // Polylines expanded to segments here rather than in the committed file. Writing them out as
       // independent segments would duplicate every interior point on the wire; `LineSegments` wants the
       // duplicates, so they are made at load.
       let vertices = 0;
       for (const line of table) vertices += Math.max(0, line.length / 2 - 1) * 2;
       const positions = new Float32Array(vertices * 3);
+      const traces = new Float32Array(vertices);
       let at = 0;
       for (const line of table) {
         for (let i = 0; i + 3 < line.length; i += 2) {
@@ -89,11 +103,14 @@ export function createFigures(): Figures {
             positions[at] = x;
             positions[at + 1] = y;
             positions[at + 2] = z;
+            traces[at / 3] = (i / 2 + ((at / 3) % 2)) / (line.length / 2 - 1);
             at += 3;
           }
         }
       }
       geometry.setAttribute("position", new BufferAttribute(positions, 3));
+      geometry.setAttribute("aTrace", new BufferAttribute(traces, 1));
+      material.uniforms["uTrace"]!.value = trace;
       loaded = true;
       show();
     },
@@ -106,8 +123,15 @@ export function createFigures(): Figures {
       show();
     },
     setOn: (next) => {
+      if (next && !on) trace = 0;
       on = next;
+      material.uniforms["uTrace"]!.value = trace;
       show();
+    },
+    step: (dt, reduced) => {
+      trace = reduced || !on || morph <= 0.001 ? 1 : Math.min(1, trace + dt / 0.85);
+      material.uniforms["uTrace"]!.value = trace;
+      return loaded && on && trace < 1;
     },
     dispose: () => {
       geometry.dispose();

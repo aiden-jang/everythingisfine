@@ -101,6 +101,7 @@ index to the matching implementation note.
 - [src/geo/sun.ts](#srcgeosunts)
 - [src/geo/waves.ts](#srcgeowavests)
 - [src/globe/Globe.tsx](#srcglobeglobetsx)
+- [src/globe/GlobeOverlays.tsx](#srcglobeglobeoverlaystsx)
 - [src/globe/auroraTexture.ts](#srcglobeauroratexturets)
 - [src/globe/cluster.ts](#srcglobeclusterts)
 - [src/globe/controls.ts](#srcglobecontrolsts)
@@ -2351,6 +2352,35 @@ Playback multiplier for the wavefronts, printed on screen rather than hidden.
 At true rate a front advances 0.16 pixels per second on a 400px globe, which reads as a still image.
 
 Here rather than beside the ring layer: the legend prints it and has no business importing a renderer.
+
+### Scene presentation and regional inspection
+
+`cutaway.ts` clips only the geographic surface around a fixed geographic anchor. The well is a
+neutral reference shape, not a geological model: its floor is 900 km below the unit sphere and its
+wall guides are 300 km apart. Quake depths use the existing true-scale sink, without exaggeration.
+Opening uses the pinned epicentre or the current view centre; orbiting does not move that anchor.
+The flat map suspends the opening, and switching depth off closes it. Inspection is transient and
+is not encoded in shared links or saved as a preference.
+
+`regroup.ts` crossfades two marker buffers during zoom. Both sets retain their recorded positions,
+magnitude, depth and focus. It snapshots once per zoom gesture, shares the live shader uniforms,
+and stops drawing the outgoing buffer after settling. A filter or feed redraw cancels the old set.
+No extra event-store scan runs per animation frame. `figures.ts` traces each catalogue polyline
+concurrently, preserving the star field's sidereal placement. `surfaceLight.ts` holds the existing
+atmosphere and sea-glint shaders separately from scene assembly.
+
+All three effects advance through the existing globe frame loop and return whether more work is
+needed. Reduced motion resolves them immediately. The orbit readout uses the controls' actual
+coordinates, DOM text updates and a single expiry timer; it starts only on user camera input.
+Selection brackets and panel catchlights use finite, neutral CSS effects in `motion.css`.
+Still exports label the reference cutaway when it is enabled, so the exported view retains context.
+
+### src/globe/GlobeOverlays.tsx
+
+Screen overlays share the renderer's existing refs. The selected bracket's inner element is keyed
+by the pinned event, allowing its finite entrance without disturbing the outer projected position.
+The orbit readout temporarily replaces the cutaway caption so the two cannot overlap. Both remain
+inside the canvas area, clear of the mobile credit and keyboard controls.
 
 ### src/globe/Globe.tsx
 

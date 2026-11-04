@@ -6,7 +6,13 @@ import type { Feed } from "./feed";
 import type { Filters } from "../data/types";
 import type { RampName } from "../globe/ramp";
 
-export function useStill(feed: Feed, filters: Filters, ramp: RampName, cursor: number | null) {
+export function useStill(
+  feed: Feed,
+  filters: Filters,
+  ramp: RampName,
+  cursor: number | null,
+  inspection: string | null = null,
+) {
   const capture = useRef<() => HTMLCanvasElement | null>(() => null);
   const onCapture = useCallback((fn: () => HTMLCanvasElement | null) => {
     capture.current = fn;
@@ -70,7 +76,9 @@ export function useStill(feed: Feed, filters: Filters, ramp: RampName, cursor: n
           // From `onGlobe`, not the raw feeds, or a still of an archived day counts layers it does not show.
           verdict: verdictLine(stillCounts.current),
           // Caption the requested span even while its feeds are still filling.
-          filter: `M${filters.minMagnitude.toFixed(1)}+ · last ${compactSpan(filters.windowMs)}`,
+          filter: [`M${filters.minMagnitude.toFixed(1)}+ · last ${compactSpan(filters.windowMs)}`, inspection]
+            .filter(Boolean)
+            .join(" · "),
           host: window.location.host,
         },
         { background: token("void"), ink: token("ink"), faint: token("faint"), ramp },
@@ -115,7 +123,7 @@ export function useStill(feed: Feed, filters: Filters, ramp: RampName, cursor: n
       failed();
       finished();
     }
-  }, [feed, filters.minMagnitude, filters.windowMs, cursor, ramp]);
+  }, [feed, filters.minMagnitude, filters.windowMs, cursor, ramp, inspection]);
   const dismiss = (): void => {
     setNotice(null);
     setFallback(null);

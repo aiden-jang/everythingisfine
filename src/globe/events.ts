@@ -151,7 +151,7 @@ const SHADER = {
 };
 
 export interface EventLayer {
-  object: Points;
+  object: Points<BufferGeometry, ShaderMaterial>;
   /** Swaps the entire data palette. One uniform, not fifty thousand rewrites. */
   setRamp: (name: RampName) => void;
   setFocusFade: (value: number) => void;

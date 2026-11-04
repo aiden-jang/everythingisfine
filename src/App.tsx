@@ -1,3 +1,4 @@
+import { useCutaway } from "./app/useCutaway";
 import { liftForPanel } from "./app/panelLift";
 import { useReplayAnalytics } from "./app/useReplayAnalytics";
 import { reportAnalytics } from "../analytics/browser";
@@ -350,6 +351,10 @@ export function App(): JSX.Element {
     lat: shared.lat ?? 12,
     zoom: shared.zoom ?? 1,
   });
+  const { cutaway, onCutaway, onSink } = useCutaway(
+    () => (selected ? feed.store.get(selected)?.primary : null) ?? camera.current,
+    setSinkOn,
+  );
   // Call and read this in the same tick. See `Globe.onCapture`.
   const onReady = useCallback((fn: typeof flyTo.current) => {
     flyTo.current = fn;
@@ -417,9 +422,9 @@ export function App(): JSX.Element {
     filters,
     ramp,
     view.at,
+    cutaway && !flat ? "reference cutaway · true scale" : null,
   );
-  /* What the globe is actually drawing while the cursor is parked. Walked and not read off the bars,
-  which are whole hours while the cursor is continuous. */
+  // Count the displayed subset, not whole timeline bins.
   const revealedNow = ((): number | null => {
     if (view.at === null) return null;
     const limit = view.at;
@@ -844,21 +849,14 @@ export function App(): JSX.Element {
       motionOn={motionOn}
       onMotion={setMotionOn}
       sinkOn={flat ? null : sinkOn}
-      onSink={setSinkOn}
-      /*
-      Offered wherever it can change something. Hidden on the flat map was right until the
-      cross-section started reading the same table, so on the map it appears exactly when a
-      section is open - otherwise it is a button that does nothing.
-    */
+      onSink={onSink}
+      cutawayOn={flat ? null : cutaway !== null}
+      onCutaway={onCutaway}
       herePlace={here?.label ?? null}
       sky={!flat}
       eclipse={flat ? null : eclipse}
       figuresOn={flat ? null : figuresOn}
       onFigures={setFiguresOn}
-      /* The one of the three that survives flattening: its layer takes the scene's morph and
-       lies down with the geography. Depth cannot - the shader multiplies the sink by
-       `1.0 - uMorph` - and the figures have no sky. It used to appear on the map only while a
-       cross-section was open, which is the one place it was already proven to draw. */
       slabOn={slabOn}
       onSlab={setSlabOn}
       slabCount={slabData.length}
@@ -1626,6 +1624,7 @@ export function App(): JSX.Element {
               moment={litAt}
               flat={flat}
               depthSink={sinkOn}
+              cutaway={flat ? null : cutaway}
               slab={slabOn && slabData.length > 0 ? slabData : null}
               figures={figuresOn && figureData.length > 0 ? figureData : null}
               section={sectionLine}

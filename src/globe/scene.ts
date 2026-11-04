@@ -1,3 +1,6 @@
+import { createCutaway, type CutawayFocus } from "./cutaway";
+import { createRegroup } from "./regroup";
+import { ATMOSPHERE, GLINT, GLINT_RADIUS } from "./surfaceLight";
 import {
   AdditiveBlending,
   BackSide,
@@ -121,77 +124,6 @@ const FOV = 32;
 /** Fraction of the smaller viewport dimension the globe fills. */
 const FILL = 0.86;
 
-/*
- * The blue haze on the rim. The one hue in this app that means nothing; DESIGN.md 3.1 allows it.
- *
- * Don't rewrite it as a fresnel term. Fresnel peaks at the shell's edge, not the planet's, which draws a
- * bright ring floating off the globe with a dark gap inside it.
- */
-const ATMOSPHERE = {
-  vertexShader: /* glsl */ `
-    varying vec3 vWorld;
-    void main() {
-      vWorld = (modelMatrix * vec4(position, 1.0)).xyz;
-      gl_Position = projectionMatrix * viewMatrix * vec4(vWorld, 1.0);
-    }`,
-  fragmentShader: /* glsl */ `
-    uniform vec3 uColor;
-    uniform float uIntensity;
-    uniform float uOuter;
-    uniform vec3 uSun;
-    varying vec3 vWorld;
-    void main() {
-      vec3 dir = normalize(vWorld - cameraPosition);
-      float b = length(cross(dir, cameraPosition));
-      float t = clamp((b - 1.0) / (uOuter - 1.0), 0.0, 1.0);
-
-      /*
-       * Brighter where the air is in sunlight, or the halo reads as a decal stuck on the planet. Brightness
-       * only: warming it toward orange would be a big non-data orange next to a scale made of colour.
-       *
-       * No backticks anywhere in this shader. One of them ends the template literal holding it.
-       */
-      vec3 nearest = normalize(cameraPosition + dir * -dot(cameraPosition, dir));
-      float sun = mix(0.34, 1.0, smoothstep(-0.28, 0.42, dot(nearest, uSun)));
-
-      gl_FragColor = vec4(uColor, pow(1.0 - t, 2.6) * uIntensity * sun);
-    }`,
-};
-
-const GLINT_RADIUS = 1.0015;
-
-const GLINT = {
-  vertexShader: /* glsl */ `
-    ${MORPH_GLSL}
-    varying vec3 vNormal;
-    varying vec3 vWorld;
-    void main() {
-      // Object space: the model matrix repeats the flat map sideways and would move the sun on every copy.
-      vNormal = normalize(position);
-      vec3 projected = fmProject(position);
-      vWorld = (modelMatrix * vec4(projected, 1.0)).xyz;
-      gl_Position = projectionMatrix * viewMatrix * vec4(vWorld, 1.0);
-    }`,
-  fragmentShader: /* glsl */ `
-    uniform vec3 uColor;
-    uniform vec3 uSun;
-    uniform float uIntensity;
-    uniform float uPower;
-    varying vec3 vNormal;
-    varying vec3 vWorld;
-
-    void main() {
-      vec3 n = normalize(vNormal);
-      vec3 toEye = normalize(cameraPosition - vWorld);
-      if (dot(n, toEye) <= 0.0) discard;
-      /* A wide exponent on purpose: a mirror gives a point of light and a real sea gives a broad lobe.
-         No backticks in here - one of them ends the template literal. */
-      float spec = pow(max(dot(reflect(-normalize(uSun), n), toEye), 0.0), uPower);
-      if (spec <= 0.002) discard;
-      gl_FragColor = vec4(uColor, spec * uIntensity);
-    }`,
-};
-
 export interface Globe {
   resize: () => void;
   render: () => void;
@@ -212,6 +144,10 @@ export interface Globe {
   setMarkZoom: (zoom: number) => void;
   setMarkHover: (id: string | null) => void;
   setMorph: (t: number) => void;
+  setCutaway: (focus: CutawayFocus | null) => void;
+  beginRegroup: (reduced: boolean) => void;
+  cancelRegroup: () => void;
+  stepPresentation: (dt: number, reduced: boolean) => boolean;
   /** Surface or true depth. Held here too, because the hit test cannot read a shader uniform. */
   setDepthSink: (on: boolean) => void;
   plates: {
@@ -633,9 +569,26 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     markerScale = () => Math.max(0.45, Math.min(1, radiusPx / 300));
   };
 
+  const cutaway = createCutaway();
+  world.add(cutaway.object);
+  for (const layer of [ocean, fill, grat, plateLines, plateEdge, coast, night, glint]) {
+    cutaway.patch(layer.material);
+  }
+  const regroup = createRegroup(events.object);
+  world.add(regroup.object);
+
   return {
     resize,
     controls,
+    setCutaway: cutaway.set,
+    beginRegroup: regroup.begin,
+    cancelRegroup: regroup.cancel,
+    stepPresentation: (dt, reduced) => {
+      const cutting = cutaway.step(dt, reduced, morph.value);
+      const tracing = figures.step(dt, reduced);
+      const grouping = regroup.step(dt, reduced);
+      return cutting || tracing || grouping;
+    },
     /** Swaps the geography palette. Called with the ramp rather than a palette name, because which ramp the
      * marks are drawn from is the only reason to choose. See `NEUTRAL` for the measurement. */
     markerRadius: (magnitude: number): number => markerRadiusPx(magnitude, markerScale()),
@@ -654,6 +607,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     /** 0 is the globe, 1 is the flat map. Everything on the canvas reads the same value. */
     setDepthSink: (on: boolean): void => {
       sink = on ? 1 : 0;
+      if (!on) cutaway.set(null);
       events.setDepthSink(sink);
     },
     setMorph: (t: number): void => {
@@ -752,6 +706,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     setSlab: (points) => {
       if (points === null) {
+        slabOn = false;
         slab.setOpacity(0);
         return;
       }
@@ -855,6 +810,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       world.position.x = 0;
     },
     dispose: () => {
+      regroup.dispose();
       events.dispose();
       slab.dispose();
       starfield.dispose();

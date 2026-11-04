@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./motion.css";
 
 /* Self-hosted rather than linked from a font CDN. Geist over Inter: Inter is the default-looking
    choice and reads as unconsidered. Geist Mono carries every coordinate, timestamp and magnitude. */
@@ -655,15 +656,19 @@
 
   /* Corner ticks distinguish selection from circular data markers; hover retains a ring. */
   .pick {
+    color: var(--color-ink);
+  }
+
+  .pick-corners {
     background:
-      linear-gradient(var(--color-ink), var(--color-ink)) 0 0 / 8px 2px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 0 0 / 2px 8px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 100% 0 / 8px 2px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 100% 0 / 2px 8px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 0 100% / 8px 2px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 0 100% / 2px 8px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 100% 100% / 8px 2px no-repeat,
-      linear-gradient(var(--color-ink), var(--color-ink)) 100% 100% / 2px 8px no-repeat;
+      linear-gradient(currentColor, currentColor) 0 0 / 8px 2px no-repeat,
+      linear-gradient(currentColor, currentColor) 0 0 / 2px 8px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 0 / 8px 2px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 0 / 2px 8px no-repeat,
+      linear-gradient(currentColor, currentColor) 0 100% / 8px 2px no-repeat,
+      linear-gradient(currentColor, currentColor) 0 100% / 2px 8px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 100% / 8px 2px no-repeat,
+      linear-gradient(currentColor, currentColor) 100% 100% / 2px 8px no-repeat;
     filter: drop-shadow(0 1px 1px var(--color-deck)) drop-shadow(0 -1px 1px var(--color-deck));
   }
 
