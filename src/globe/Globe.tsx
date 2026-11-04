@@ -205,14 +205,11 @@ export function Globe({
         __feed: feed,
         __events: globe.events,
         __rings: globe.rings,
+        __slab: globe.slab,
         // The pickable marks, so a browser test can point at a storm without knowing where storms are.
         // The hazard feeds are live even when the agencies are stubbed.
         __marks: () => live.current.marks.filter((m) => m.id !== undefined),
-        /*
-         * The pointer's own question, asked directly. A test cannot aim at a marker any other way:
-         * projecting a coordinate gives the surface point and markers are drawn at their depth, so the
-         * two are tens of pixels apart for anything deep.
-         */
+        // Resolve against the drawn markers, including depth, radius and touch slop.
         __hitTest: (x: number, y: number, slopPx?: number) =>
           globe.hitTest(x, y, feed.store, live.current.filters, Date.now(), slopPx),
         /*
@@ -648,8 +645,8 @@ export function Globe({
     };
 
     const redrawFromData = (snapshot: FeedSnapshot): void => {
-      // Decided before anything is drawn. Syncing first painted one frame of the entire day, which the
-      // replay then wiped: a flash of the answer before the question.
+      // Start replay before syncing so events do not flash ahead of the cursor.
+      globe.cancelRegroup();
       if (snapshot.seeding && snapshot.arrived.length > 0 && !replay && !reduced.matches) {
         let oldest = Infinity;
         feed.store.forEach((q) => {

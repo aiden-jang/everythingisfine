@@ -131,6 +131,7 @@ export interface Globe {
   controls: Controls;
   events: EventLayer;
   rings: RingLayer;
+  slab: ReturnType<typeof createSlabLayer>;
   setSlab: (points: readonly SlabPoint[] | null) => void;
   setAurora: (grid: Aurora | null) => void;
   setMoment: (at: number | null) => void;
@@ -694,6 +695,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       pickMark(heldMarks, { x: clientX, y: clientY }, controls.project, slopPx),
     events,
     rings,
+    slab,
     setMarks: (next) => {
       heldMarks = next;
       marks.set(next);
@@ -718,7 +720,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
      * Loaded from `Globe.tsx` rather than here, because the caller is the only one holding `wake`. A layer
      * that filled itself while the loop was asleep would stay invisible until something else moved.
      */
-    /* Which moment the sky is of. See ARCHITECTURE.md#srcglobescenets. */
     setMoment: (at: number | null) => {
       moment = at;
       // Immediately, not on the next minute boundary, or a scrub drags the marks and leaves the light.
@@ -726,7 +727,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       else sunMinute = -1;
     },
     setStars: (t: StarTable) => starfield.setStars(t),
-    /** The figures' table, fetched only once the reader turns the layer on. */
     setFigures: (t: FigureTable) => figures.setFigures(t),
     setFiguresOn: (on: boolean) => figures.setOn(on),
     setAurora: (grid) => {

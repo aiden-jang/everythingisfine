@@ -14,8 +14,10 @@
   }
 }
 
-.zone-panel {
-  position: relative;
+@layer components {
+  .zone-panel {
+    position: relative;
+  }
 }
 
 .zone-panel::before {

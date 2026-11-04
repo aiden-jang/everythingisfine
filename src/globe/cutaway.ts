@@ -1,6 +1,7 @@
 import {
   BufferAttribute,
   BufferGeometry,
+  Color,
   DoubleSide,
   Group,
   LineBasicMaterial,
@@ -24,6 +25,8 @@ const INNER_RADIUS = 1 - CUTAWAY_DEPTH_KM / EARTH_RADIUS_KM;
 function wellGeometry(): BufferGeometry {
   const positions: number[] = [];
   const colors: number[] = [];
+  const rim = new Color(0.16, 0.19, 0.22).convertSRGBToLinear();
+  const floor = new Color(0.04, 0.06, 0.085).convertSRGBToLinear();
   const point = (r: number, angle: number, phi: number): number[] => [
     r * Math.sin(angle) * Math.cos(phi),
     r * Math.cos(angle),
@@ -33,7 +36,11 @@ function wellGeometry(): BufferGeometry {
     positions.push(...vertices.flat());
     for (const vertex of vertices) {
       const depth = Math.min(1, (1 - Math.hypot(...vertex)) / (1 - INNER_RADIUS));
-      colors.push(0.16 - 0.12 * depth, 0.19 - 0.13 * depth, 0.22 - 0.135 * depth);
+      colors.push(
+        rim.r + (floor.r - rim.r) * depth,
+        rim.g + (floor.g - rim.g) * depth,
+        rim.b + (floor.b - rim.b) * depth,
+      );
     }
   };
   for (let i = 0; i < 96; i++) {

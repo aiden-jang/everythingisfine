@@ -47,6 +47,10 @@ for (const width of [1440, 390]) {
     await expect(note).toHaveCount(0);
     await expect(cutaway).toHaveAttribute("aria-pressed", "false");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    await feeds.click();
+    if (width < 768) await page.getByRole("button", { name: "Recent earthquakes", exact: true }).click();
+    await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
+    if (width < 1280) await expect(page.locator(".zone-panel")).toHaveCSS("position", "absolute");
     expect(errors).toEqual([]);
   });
 }
@@ -103,19 +107,35 @@ test("scene effects settle and skip decorative motion when requested", async ({ 
   await capture.saveAs(test.info().outputPath("cutaway-still.png"));
 });
 
-test("switching the historical depth layer off removes its markers", async ({ page }) => {
+test("switching the historical depth layer off removes its markers @dev", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  const now = Date.now();
-  await page.clock.setFixedTime(new Date(now));
-  await installFeeds(page, { now });
+  await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
   await page.getByText("Feeds and layers", { exact: true }).filter({ visible: true }).click();
-  const canvas = page.locator("canvas");
-  const before = await canvas.screenshot();
-  await page.getByRole("button", { name: "Deep earthquakes", exact: true }).filter({ visible: true }).click();
-  await expect.poll(async () => before.equals(await canvas.screenshot())).toBe(false);
-  await page.getByRole("button", { name: "Deep earthquakes", exact: true }).filter({ visible: true }).click();
-  await expect.poll(async () => before.equals(await canvas.screenshot())).toBe(true);
+  const layer = () =>
+    page.evaluate(() => {
+      const slab = (
+        window as unknown as {
+          __slab: {
+            object: { visible: boolean; geometry: { attributes: { position?: { count: number } } } };
+          };
+        }
+      ).__slab.object;
+      return { visible: slab.visible, points: slab.geometry.attributes.position?.count ?? 0 };
+    });
+  const toggle = page
+    .getByRole("button", { name: "Deep earthquakes", exact: true })
+    .filter({ visible: true });
+  await toggle.click();
+  await expect.poll(layer).toMatchObject({ visible: true });
+  expect((await layer()).points).toBeGreaterThan(1000);
+  await toggle.click();
+  await expect.poll(layer).toMatchObject({ visible: false });
+  await page.locator("body").click({ position: { x: 1000, y: 200 } });
+  const beforeOrbit = page.url();
+  await page.keyboard.press("ArrowRight");
+  await expect(page).not.toHaveURL(beforeOrbit);
+  expect((await layer()).visible).toBe(false);
 });
