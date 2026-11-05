@@ -79,7 +79,7 @@ import {
 } from "./app/scrub";
 import { Resizer } from "./app/Resizer";
 import { CrossSection } from "./app/CrossSection";
-import { buildSection, type SectionLine } from "./app/section";
+import { buildSection, type SectionHinge, type SectionLine } from "./app/section";
 import { BUCKETS, histogram, totalIn } from "./app/histogram";
 import { diurnal } from "./app/diurnal";
 import { Dial } from "./app/Dial";
@@ -285,7 +285,9 @@ export function App(): JSX.Element {
   const [sheetCanvas, setSheetCanvas] = useStoredNumber("sheet", 0, (n) => Math.max(0, n));
   const [regionsHeight, setRegionsHeight] = useStoredNumber("regions", 132);
   const regionsRef = useRef<HTMLDivElement>(null);
-  const [sectionLine, setSectionLine] = useState<SectionLine | null>(shared.section ?? null);
+  const [sectionLine, setSectionLine] = useState<(SectionLine & { hinge?: SectionHinge }) | null>(
+    shared.section ?? null,
+  );
   // Read lazily, so the first paint has the right ramp instead of flashing the default one.
   const [ramp, setRamp] = useStoredName<RampName>("ramp", "thermal", ["thermal", "cividis"], shared.ramp);
   const [announceAbove, setAnnounceAbove] = useStoredNumber("announceAbove", 4.5);
@@ -1642,7 +1644,7 @@ export function App(): JSX.Element {
                   : null
               }
               section={sectionLine}
-              onSection={setSectionLine}
+              onSection={(line, hinge) => setSectionLine(line && hinge ? { ...line, hinge } : line)}
               onSelect={selectQuake}
               onReady={onReady}
               onCapture={onCapture}
@@ -1659,29 +1661,17 @@ export function App(): JSX.Element {
             /* Fixed to the rail's edge, and never moved by a panel. See ARCHITECTURE.md#srcapptsx. */
             className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
           >
-            {/* The section joins the bottom band as a full-width line, last, so it is flush with the bottom
-                edge. Placed first it floated mid-canvas and read as the map having been cut in half. */}
             {section ? (
-              /*
-                Fully desaturated and deeper than the other rail panels, because this one is a drawing. At
-                half saturation the map's cluster glowed magenta through it and the slab's 1.6px dots were
-                lost outright.
-              */
-              /* The one thing in this band that still yields to a panel. See ARCHITECTURE.md#srcapptsx. */
-              <div
-                className={`order-9 -mx-4 -mb-4 w-[calc(100%+2rem)] bg-deck/70 px-4 pt-3 pb-4 backdrop-blur-2xl backdrop-saturate-0 ${
-                  markSubject || (shownQuake && pinned) ? "xl:pr-[calc(var(--panel-w)+1rem)]" : ""
-                }`}
-              >
-                <CrossSection
-                  data={section}
-                  ramp={ramp}
-                  store={feed.store}
-                  selected={selected}
-                  onSelect={selectQuake}
-                  onClose={() => setSectionLine(null)}
-                />
-              </div>
+              <CrossSection
+                data={section}
+                hinge={sectionLine?.hinge}
+                inset={Boolean(markSubject || (shownQuake && pinned))}
+                ramp={ramp}
+                store={feed.store}
+                selected={selected}
+                onSelect={selectQuake}
+                onClose={() => setSectionLine(null)}
+              />
             ) : null}
             <CanvasFooter
               flat={flat}

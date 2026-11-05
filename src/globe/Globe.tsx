@@ -5,6 +5,7 @@ import { type CutawayFocus } from "./cutaway";
 import { GlobeOverlays } from "./GlobeOverlays";
 import { GlobeUnavailable } from "./GlobeUnavailable";
 import { animationDelta } from "./animation";
+import { attachSectionDrawing, type SectionCommit } from "./sectionDrawing";
 import { useEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
 import { loadStars, type FigureTable } from "../geo/stars";
@@ -58,7 +59,7 @@ export interface GlobeProps {
   section?: SectionLine | null;
   /** Map only: picking two points on a sphere somebody is rotating is a guess. Shift and drag, because a
    * plain drag already pans and a "now draw a line" button would be a mode to get stuck in. */
-  onSection?: (line: SectionLine | null) => void;
+  onSection?: SectionCommit;
 }
 
 /* Half of the 44px a finger is reckoned to need, so a marker's own radius makes up the rest. */
@@ -494,53 +495,9 @@ export function Globe({
       } else running = false;
     };
 
-    /*
-     * Shift and drag draws a section. Capture phase, so it takes the gesture before the camera does:
-     * `controls` listens on this same canvas, and capture runs before bubbling whatever order they were
-     * added in. Stopping propagation here is the whole of "this drag is not a pan".
-     */
-    const onSectionDown = (e: PointerEvent): void => {
-      if (!e.shiftKey || globe.controls.morph() !== 1 || !onSectionRef.current) return;
-      const start = globe.controls.pick(e.clientX, e.clientY);
-      if (!start) return;
-      e.preventDefault();
-      e.stopPropagation();
-
-      const move = (m: PointerEvent): void => {
-        const end = globe.controls.pick(m.clientX, m.clientY);
-        if (!end) return;
-        drag.current = {
-          fromLon: start.lon,
-          fromLat: start.lat,
-          toLon: end.lon,
-          toLat: end.lat,
-        };
-        wakeRef.current();
-      };
-      const up = (u: PointerEvent): void => {
-        window.removeEventListener("pointermove", move);
-        window.removeEventListener("pointerup", up);
-        const line = drag.current;
-        drag.current = null;
-        // A shift-click with no drag clears rather than making a zero-length section, which would open the
-        // panel to say nothing found. Shift-click is the undo for shift-drag.
-        const moved = line && Math.hypot(u.clientX - e.clientX, u.clientY - e.clientY) > 12;
-        // Stored left to right whichever way it was dragged. The panel plots zero at its left edge, so a
-        // line dragged east to west put the map's right end on the panel's left with nothing saying so.
-        const flip = moved && u.clientX < e.clientX;
-        onSectionRef.current?.(
-          !moved
-            ? null
-            : flip
-              ? { fromLon: line.toLon, fromLat: line.toLat, toLon: line.fromLon, toLat: line.fromLat }
-              : line,
-        );
-        wakeRef.current();
-      };
-      window.addEventListener("pointermove", move);
-      window.addEventListener("pointerup", up);
-    };
-    el.addEventListener("pointerdown", onSectionDown, { capture: true });
+    const detachSection = attachSectionDrawing(el, globe.controls, drag, onSectionRef, () =>
+      wakeRef.current(),
+    );
 
     /* The sky, once its own chunk lands. `stars.json` is 88kB and arrives a beat after the first frame. See ARCHITECTURE.md#srcglobeglobetsx. */
     let gone = false;
@@ -797,7 +754,7 @@ export function Globe({
       el.removeEventListener("pointerdown", onDown);
       el.removeEventListener("pointerup", onUp);
       el.removeEventListener("pointerleave", onLeave);
-      el.removeEventListener("pointerdown", onSectionDown, { capture: true });
+      detachSection();
       // Before dispose, so a table landing after unmount cannot write to a scene that is gone.
       gone = true;
       readout.dispose();

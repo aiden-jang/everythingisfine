@@ -1,16 +1,19 @@
 import { useState } from "react";
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
-import { SECTION_HALF_WIDTH_KM, type Section as SectionData } from "./section";
+import { SECTION_HALF_WIDTH_KM, type Section as SectionData, type SectionHinge } from "./section";
 import { SLAB_FROM, SLAB_TO } from "../geo/slab";
 import type { Store } from "../data/store";
 import { depth, magnitude, place } from "./format";
 import { useNarrow } from "./useNarrow";
+import { useSectionFold } from "./useSectionFold";
 
 /* The crust seen from the side: distance across, depth down, drawn at 1:1. Never stretch the depth axis
    quietly. The dip of the slab is the whole content, and stretching invents a steeper one. See ARCHITECTURE.md#srcappcrosssectiontsx. */
 
 export interface CrossSectionProps {
   data: SectionData;
+  hinge: SectionHinge | undefined;
+  inset: boolean;
   ramp: RampName;
   store: Store;
   selected: string | null;
@@ -36,12 +39,15 @@ function ticks(lengthKm: number): number[] {
 
 export function CrossSection({
   data,
+  hinge,
+  inset,
   ramp,
   store,
   selected,
   onSelect,
   onClose,
 }: CrossSectionProps): JSX.Element {
+  const { panelRef, plotRef } = useSectionFold(hinge);
   const [hovered, setHovered] = useState<string | null>(null);
   const hoveredReading = hovered ? store.get(hovered)?.primary : undefined;
   const { lengthKm, points, deepestKm, withoutDepth, crossings, slab } = data;
@@ -75,208 +81,230 @@ export function CrossSection({
     1.6 + (Math.sqrt(Math.max(0, m - MAG_MIN)) / Math.sqrt(MAG_MAX - MAG_MIN)) * 9;
 
   return (
-    // Paints the magnitude ramp outside the canvas. See DESIGN.md 3.1.
-    <div data-ramp className="pointer-events-auto w-full">
-      <div className="mb-1.5 flex items-baseline gap-3">
-        <span className="label">Cross-section</span>
-        {/* The hovered mark takes the metadata line's place rather than getting a floating tooltip. A label
+    <div
+      ref={panelRef}
+      data-section-panel
+      className={`order-9 -mx-4 -mb-4 w-[calc(100%+2rem)] bg-deck/70 px-4 pt-3 pb-4 backdrop-blur-2xl backdrop-saturate-0 ${
+        inset ? "xl:pr-[calc(var(--panel-w)+1rem)]" : ""
+      }`}
+    >
+      <div data-ramp className="pointer-events-auto w-full">
+        <div data-section-ink className="mb-1.5 flex items-baseline gap-3">
+          <span className="label">Cross-section</span>
+          {/* The hovered mark takes the metadata line's place rather than getting a floating tooltip. A label
             following the cursor inside a 120px band covers the marks either side of the one it names. */}
-        {hoveredReading ? (
-          <span className="min-w-0 truncate font-mono text-[10.5px] text-dim">
-            <span className="text-ink">{magnitude(hoveredReading)}</span> · {depth(hoveredReading)} ·{" "}
-            {place(hoveredReading.place)}
-          </span>
-        ) : (
-          /* The length is on the axis below, so it is not up here as well. This printed "1,438 km long"
+          {hoveredReading ? (
+            <span className="min-w-0 truncate font-mono text-[10.5px] text-dim">
+              <span className="text-ink">{magnitude(hoveredReading)}</span> · {depth(hoveredReading)} ·{" "}
+              {place(hoveredReading.place)}
+            </span>
+          ) : (
+            /* The length is on the axis below, so it is not up here as well. This printed "1,438 km long"
              while the axis printed "1,438 km" at its right end. */
-          <span className="font-mono text-[10.5px] text-faint">
-            {SECTION_HALF_WIDTH_KM} km either side ·{" "}
-            {exaggeration < 1.05 && exaggeration > 0.95
-              ? "1:1"
-              : `${exaggeration.toFixed(exaggeration < 10 ? 1 : 0)}\u00d7 vertical`}
-          </span>
-        )}
-        <span className="ml-auto flex items-baseline gap-3">
-          {withoutDepth > 0 ? (
-            // Named rather than dropped. A section is a claim about depth, so events with no depth published
-            // are the one omission a reader has to be told about.
-            <span className="text-[11px] text-faint">{withoutDepth} without a published depth</span>
-          ) : null}
-          {/* Keys are written the way they are printed on a keyboard, lowercase and mono, not wearing
+            <span className="font-mono text-[10.5px] text-faint">
+              {SECTION_HALF_WIDTH_KM} km either side ·{" "}
+              {exaggeration < 1.05 && exaggeration > 0.95
+                ? "1:1"
+                : `${exaggeration.toFixed(exaggeration < 10 ? 1 : 0)}\u00d7 vertical`}
+            </span>
+          )}
+          <span className="ml-auto flex items-baseline gap-3">
+            {withoutDepth > 0 ? (
+              // Named rather than dropped. A section is a claim about depth, so events with no depth published
+              // are the one omission a reader has to be told about.
+              <span className="text-[11px] text-faint">{withoutDepth} without a published depth</span>
+            ) : null}
+            {/* Keys are written the way they are printed on a keyboard, lowercase and mono, not wearing
               `.label`. The touch target is top-aligned for the same reason as the others: a button centres
               its content, and on a coarse pointer that content sits in a 44px box. */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex cursor-pointer items-start font-mono text-[10.5px] text-faint transition-colors hover:text-ink"
-          >
-            esc
-          </button>
-        </span>
-      </div>
-
-      {points.length === 0 && slab.length > 0 ? (
-        /*
-         * Said out loud, because this picture can lie by looking busy: a corridor with no events this window
-         * and a slab running its length draws a dense arc, and every other drawing here is about the window.
-         */
-        <p className="mb-1.5 max-w-[52ch] text-[11px] leading-relaxed text-dim">
-          Nothing from this window is inside the corridor. Everything drawn is the deep record for {SLAB_FROM}{" "}
-          to {SLAB_TO}.
-        </p>
-      ) : null}
-      {drawn === 0 ? (
-        <p className="max-w-[52ch] text-[11px] leading-relaxed text-dim">
-          Nothing inside this corridor in the current window. Margins are where the depth is: try a line
-          across a plate boundary, at right angles to it.
-        </p>
-      ) : (
-        <div className="relative w-full">
-          <svg
-            viewBox={`0 0 1000 ${height}`}
-            className="block h-auto w-full"
-            /*
-             * Out of the reading order, like the canvas. The event list is the accessible view of the same
-             * events and shares this panel's selection, so a second keyboard path through a scatter plot
-             * would be a worse version of a list that already exists.
-             */
-            aria-hidden="true"
-          >
-            {/* Depth gridlines, under everything. Only the surface at zero gets full weight: it is the
-                datum, the rest are a scale. */}
-            {grid(floorKm).map((d) => (
-              <line
-                key={d}
-                x1={0}
-                x2={1000}
-                y1={y(d)}
-                y2={y(d)}
-                stroke="currentColor"
-                strokeWidth={d === 0 ? 1.2 : 0.6}
-                className={d === 0 ? "text-coast" : "text-hairline"}
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
-            {/* Where the line crosses a plate boundary. Full height and brighter than the distance grid,
-                because it is the reason the picture has a shape. */}
-            {crossings.map((d, i) => (
-              <line
-                key={`x${i}`}
-                x1={x(d)}
-                x2={x(d)}
-                y1={0}
-                y2={height}
-                stroke="currentColor"
-                strokeWidth={1}
-                className="text-plate"
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
-            {ticks(lengthKm).map((d) => (
-              <line
-                key={d}
-                x1={x(d)}
-                x2={x(d)}
-                y1={0}
-                y2={height}
-                stroke="currentColor"
-                strokeWidth={0.6}
-                className="text-hairline"
-                vectorEffect="non-scaling-stroke"
-              />
-            ))}
-            {/* The slab first, so this window's events sit on top of it. Drawn as geography, exactly as on
-                the globe: one dim tone, one fixed radius, no ramp and no hit area. It is five years of deep
-                seismicity, and the one thing it must not look like is the marks above it. */}
-            {data.slab.map((p) => (
-              <circle
-                key={p.key}
-                cx={x(p.alongKm)}
-                cy={y(p.depthKm)}
-                r={1.6}
-                fill="currentColor"
-                className="text-plate"
-                opacity={0.25 + 0.35 * (1 - Math.abs(p.offsetKm) / data.halfWidthKm)}
-                pointerEvents="none"
-              />
-            ))}
-            {/* Deepest last, so a 600km event is not hidden behind the shallow swarm above it. By depth
-                rather than by magnitude, because depth is what this picture is for. */}
-            {[...points]
-              .sort((a, b) => a.depthKm - b.depthKm)
-              .map((p) => (
-                <circle
-                  key={p.key}
-                  cx={x(p.alongKm)}
-                  cy={y(p.depthKm)}
-                  r={r(p.magnitude)}
-                  fill={rampColorAt(ramp, rampAt(p.magnitude))}
-                  /* Fades with how far off the line it is, so the corridor reads as a corridor rather
-                   than as a slice with hard edges. */
-                  opacity={0.35 + 0.55 * (1 - Math.abs(p.offsetKm) / data.halfWidthKm)}
-                  /*
-                   * Clickable, like every other view of an event. The hit area is the mark itself and marks
-                   * overlap, so the deepest is on top for the same reason it is drawn last.
-                   */
-                  className="cursor-pointer"
-                  onPointerEnter={() => setHovered(p.key)}
-                  onPointerLeave={() => setHovered((h) => (h === p.key ? null : h))}
-                  onClick={() => onSelect(p.key === selected ? null : p.key)}
-                />
-              ))}
-            {/* The pinned and hovered marks, ringed. Achromatic: a coloured ring would be a hue meaning
-                nothing beside hues that mean magnitude. */}
-            {points
-              .filter((p) => p.key === selected || p.key === hovered)
-              .map((p) => (
-                <circle
-                  key={`r${p.key}`}
-                  cx={x(p.alongKm)}
-                  cy={y(p.depthKm)}
-                  r={r(p.magnitude) + 3}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={p.key === selected ? 1.6 : 1}
-                  className={p.key === selected ? "text-ink" : "text-dim"}
-                  vectorEffect="non-scaling-stroke"
-                  pointerEvents="none"
-                />
-              ))}
-          </svg>
-
-          {/* Labels in HTML rather than SVG, so they keep one size whatever the aspect ratio does to the
-              drawing. Positioned in percentages of the same box. */}
-          {grid(floorKm)
-            .filter((d) => d > 0 && d < floorKm)
-            .map((d) => (
-              <span
-                key={d}
-                className="pointer-events-none absolute left-1 -translate-y-1/2 font-mono text-[9.5px] text-faint"
-                style={{ top: `${(y(d) / height) * 100}%` }}
-              >
-                {d}
-              </span>
-            ))}
-        </div>
-      )}
-
-      {drawn > 0 ? (
-        // In flow rather than absolutely positioned: the panel is flush with the bottom of the window, so
-        // anything hanging under it hangs off the screen.
-        <div className="mt-1 flex justify-between font-mono text-[9.5px] text-faint">
-          <span>0 km</span>
-          <span>
-            {crossings.length > 0 ? (
-              // Only when there are any. A permanent key for a mark that is not on screen is a line of
-              // chrome explaining nothing.
-              <span className="mr-3 text-plate">
-                {crossings.length === 1 ? "plate boundary" : "plate boundaries"}
-              </span>
-            ) : null}
-            {Math.round(lengthKm).toLocaleString("en-GB")} km · {floorKm} km deep
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex cursor-pointer items-start font-mono text-[10.5px] text-faint transition-colors hover:text-ink"
+            >
+              esc
+            </button>
           </span>
         </div>
-      ) : null}
+
+        {points.length === 0 && slab.length > 0 ? (
+          /*
+           * Said out loud, because this picture can lie by looking busy: a corridor with no events this window
+           * and a slab running its length draws a dense arc, and every other drawing here is about the window.
+           */
+          <p className="mb-1.5 max-w-[52ch] text-[11px] leading-relaxed text-dim">
+            Nothing from this window is inside the corridor. Everything drawn is the deep record for{" "}
+            {SLAB_FROM} to {SLAB_TO}.
+          </p>
+        ) : null}
+        {drawn === 0 ? (
+          <p className="max-w-[52ch] text-[11px] leading-relaxed text-dim">
+            Nothing inside this corridor in the current window. Margins are where the depth is: try a line
+            across a plate boundary, at right angles to it.
+          </p>
+        ) : (
+          <div ref={plotRef} className="relative w-full">
+            <svg
+              viewBox={`0 0 1000 ${height}`}
+              className="block h-auto w-full"
+              /*
+               * Out of the reading order, like the canvas. The event list is the accessible view of the same
+               * events and shares this panel's selection, so a second keyboard path through a scatter plot
+               * would be a worse version of a list that already exists.
+               */
+              aria-hidden="true"
+            >
+              {/* Depth gridlines, under everything. Only the surface at zero gets full weight: it is the
+                datum, the rest are a scale. */}
+              <line
+                data-section-datum
+                x1={0}
+                x2={1000}
+                y1={0}
+                y2={0}
+                stroke="currentColor"
+                strokeWidth={1.2}
+                className="text-coast"
+                vectorEffect="non-scaling-stroke"
+              />
+              <g data-section-ink>
+                {grid(floorKm)
+                  .filter((d) => d > 0)
+                  .map((d) => (
+                    <line
+                      key={d}
+                      x1={0}
+                      x2={1000}
+                      y1={y(d)}
+                      y2={y(d)}
+                      stroke="currentColor"
+                      strokeWidth={0.6}
+                      className="text-hairline"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  ))}
+                {/* Where the line crosses a plate boundary. Full height and brighter than the distance grid,
+                because it is the reason the picture has a shape. */}
+                {crossings.map((d, i) => (
+                  <line
+                    key={`x${i}`}
+                    x1={x(d)}
+                    x2={x(d)}
+                    y1={0}
+                    y2={height}
+                    stroke="currentColor"
+                    strokeWidth={1}
+                    className="text-plate"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ))}
+                {ticks(lengthKm).map((d) => (
+                  <line
+                    key={d}
+                    x1={x(d)}
+                    x2={x(d)}
+                    y1={0}
+                    y2={height}
+                    stroke="currentColor"
+                    strokeWidth={0.6}
+                    className="text-hairline"
+                    vectorEffect="non-scaling-stroke"
+                  />
+                ))}
+                {/* The slab first, so this window's events sit on top of it. Drawn as geography, exactly as on
+                the globe: one dim tone, one fixed radius, no ramp and no hit area. It is five years of deep
+                seismicity, and the one thing it must not look like is the marks above it. */}
+                {data.slab.map((p) => (
+                  <circle
+                    key={p.key}
+                    cx={x(p.alongKm)}
+                    cy={y(p.depthKm)}
+                    r={1.6}
+                    fill="currentColor"
+                    className="text-plate"
+                    opacity={0.25 + 0.35 * (1 - Math.abs(p.offsetKm) / data.halfWidthKm)}
+                    pointerEvents="none"
+                  />
+                ))}
+                {/* Deepest last, so a 600km event is not hidden behind the shallow swarm above it. By depth
+                rather than by magnitude, because depth is what this picture is for. */}
+                {[...points]
+                  .sort((a, b) => a.depthKm - b.depthKm)
+                  .map((p) => (
+                    <circle
+                      key={p.key}
+                      cx={x(p.alongKm)}
+                      cy={y(p.depthKm)}
+                      r={r(p.magnitude)}
+                      fill={rampColorAt(ramp, rampAt(p.magnitude))}
+                      /* Fades with how far off the line it is, so the corridor reads as a corridor rather
+                   than as a slice with hard edges. */
+                      opacity={0.35 + 0.55 * (1 - Math.abs(p.offsetKm) / data.halfWidthKm)}
+                      /*
+                       * Clickable, like every other view of an event. The hit area is the mark itself and marks
+                       * overlap, so the deepest is on top for the same reason it is drawn last.
+                       */
+                      className="cursor-pointer"
+                      onPointerEnter={() => setHovered(p.key)}
+                      onPointerLeave={() => setHovered((h) => (h === p.key ? null : h))}
+                      onClick={() => onSelect(p.key === selected ? null : p.key)}
+                    />
+                  ))}
+                {/* The pinned and hovered marks, ringed. Achromatic: a coloured ring would be a hue meaning
+                nothing beside hues that mean magnitude. */}
+                {points
+                  .filter((p) => p.key === selected || p.key === hovered)
+                  .map((p) => (
+                    <circle
+                      key={`r${p.key}`}
+                      cx={x(p.alongKm)}
+                      cy={y(p.depthKm)}
+                      r={r(p.magnitude) + 3}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={p.key === selected ? 1.6 : 1}
+                      className={p.key === selected ? "text-ink" : "text-dim"}
+                      vectorEffect="non-scaling-stroke"
+                      pointerEvents="none"
+                    />
+                  ))}
+              </g>
+            </svg>
+
+            {/* Labels in HTML rather than SVG, so they keep one size whatever the aspect ratio does to the
+              drawing. Positioned in percentages of the same box. */}
+            {grid(floorKm)
+              .filter((d) => d > 0 && d < floorKm)
+              .map((d) => (
+                <span
+                  key={d}
+                  className="pointer-events-none absolute left-1 -translate-y-1/2 font-mono text-[9.5px] text-faint"
+                  style={{ top: `${(y(d) / height) * 100}%` }}
+                >
+                  {d}
+                </span>
+              ))}
+          </div>
+        )}
+
+        {drawn > 0 ? (
+          // In flow rather than absolutely positioned: the panel is flush with the bottom of the window, so
+          // anything hanging under it hangs off the screen.
+          <div data-section-ink className="mt-1 flex justify-between font-mono text-[9.5px] text-faint">
+            <span>0 km</span>
+            <span>
+              {crossings.length > 0 ? (
+                // Only when there are any. A permanent key for a mark that is not on screen is a line of
+                // chrome explaining nothing.
+                <span className="mr-3 text-plate">
+                  {crossings.length === 1 ? "plate boundary" : "plate boundaries"}
+                </span>
+              ) : null}
+              {Math.round(lengthKm).toLocaleString("en-GB")} km · {floorKm} km deep
+            </span>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

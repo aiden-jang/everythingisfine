@@ -14,6 +14,11 @@ export interface SectionLine {
   toLat: number;
 }
 
+export interface SectionHinge {
+  from: { x: number; y: number };
+  to: { x: number; y: number };
+}
+
 export interface SectionPoint {
   key: string;
   /** Kilometres from the start of the line, along it. */

@@ -58,6 +58,8 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/globe/depthDive.ts` | Oblique cutaway framing after geographic arrival, including interruption and exit |
 | `src/globe/cameraProjection.ts` | Geographic projection for overlays and limb-safe perspective angles for input |
 | `src/globe/morph.ts` | Reversible sheet geometry, shared geographic projection, and map repeat spacing |
+| `src/globe/sectionDrawing.ts` | Map drag capture and projected hinge endpoints |
+| `src/app/useSectionFold.ts` | Finite fold from the map hinge to the settled depth chart |
 | `src/globe/useGlobeLayers.ts` | Layer and presentation updates through stable refs, waking the existing renderer |
 | `src/globe/starExposure.ts` | Bounded photographic trails from consecutive rendered camera matrices |
 | `src/globe/surfaceLayers.ts` | Atmosphere, ocean glint and finite reveal exposure |

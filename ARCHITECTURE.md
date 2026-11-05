@@ -15,6 +15,7 @@ index to the matching implementation note.
 - [src/app/useStill.ts](#srcappusestillts)
 - [src/App.tsx](#srcapptsx)
 - [src/app/CrossSection.tsx](#srcappcrosssectiontsx)
+- [src/app/useSectionFold.ts](#srcappusesectionfoldts)
 - [src/app/DetailPanel.tsx](#srcappdetailpaneltsx)
 - [src/app/Dial.tsx](#srcappdialtsx)
 - [src/app/EventList.tsx](#srcappeventlisttsx)
@@ -124,6 +125,7 @@ index to the matching implementation note.
 - [src/globe/rings.ts](#srcgloberingsts)
 - [src/globe/scale.ts](#srcglobescalets)
 - [src/globe/scene.ts](#srcglobescenets)
+- [src/globe/sectionDrawing.ts](#srcglobesectiondrawingts)
 - [src/globe/nightSurface.ts](#srcglobenightsurfacets)
 - [src/globe/shapes.ts](#srcglobeshapests)
 - [src/globe/sink.test.ts](#srcglobesinktestts)
@@ -494,6 +496,23 @@ labels land nine pixels apart and collide.
 
 Raising the floor rather than hiding the labels: the exaggeration this costs is already printed in the
 header, and hiding the labels would remove the thing that makes the axis readable.
+
+### src/app/useSectionFold.ts
+
+A completed map drag supplies both projected endpoints as a transient hinge. The plot's zero-depth
+axis starts at those endpoints while the chart opens around it, then the same panel settles into
+its normal layout. Depth ink resolves during the fold. The motion uses the real chart and its
+existing controls, so the settled scale and hit targets come from the regular layout.
+
+The transform is measured before paint. A different hinge cancels the old motion, as do resize,
+motion preference changes, and unmount. A shared line or a section opened from an event has no
+screen hinge and opens directly. The hinge has no place in the shared URL.
+
+### src/globe/sectionDrawing.ts
+
+The map captures Shift-drag before orbit controls see it. The gesture orders the line from left
+to right before projecting the hinge, so the same point starts the map line and chart.
+Pointer cancellation and teardown release the window listeners.
 
 ### src/app/DetailPanel.tsx
 
