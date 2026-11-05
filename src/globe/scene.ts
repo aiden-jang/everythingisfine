@@ -1,3 +1,5 @@
+import { NIGHT_SURFACE } from "./nightSurface";
+import { lightSurface } from "./surfaceMaterial";
 import { createCutaway, type CutawayFocus } from "./cutaway";
 import { createRegroup } from "./regroup";
 import { ATMOSPHERE, GLINT, GLINT_RADIUS } from "./surfaceLight";
@@ -40,14 +42,7 @@ import { createStarfield } from "./starfield";
 import { createMoon } from "./moon";
 import { createFigures } from "./figures";
 import { createPlanets } from "./planets";
-import {
-  attachLonLat,
-  MAP_HALF_WIDTH,
-  MORPH_GLSL,
-  morphable,
-  SPHERE_PHI_START,
-  visibleCopies,
-} from "./morph";
+import { attachLonLat, MAP_HALF_WIDTH, morphable, SPHERE_PHI_START, visibleCopies } from "./morph";
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
@@ -82,7 +77,7 @@ const COLOR_SPHERE = 0x031120;
 /* Must equal `--color-void` in `index.css`. Nothing checks it, and the canvas fades to this. */
 const COLOR_VOID_C = new Color(0x050b16);
 const COLOR_SPHERE_C = new Color(COLOR_SPHERE);
-const COLOR_LAND = 0x153456;
+const COLOR_LAND = 0x1c3d52;
 const COLOR_COAST = 0x245b83;
 const COLOR_GRATICULE = 0x13334e;
 /* Brighter than the coastline on purpose: the boundary is why the earthquakes are in a line. */
@@ -296,85 +291,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const night = new Mesh(
     nightGeom,
     new ShaderMaterial({
-      vertexShader: /* glsl */ `
-        ${MORPH_GLSL}
-        varying vec3 vNormal;
-        varying vec2 vLonLat;
-        void main() {
-          // Object space: where the sun is depends on where a point is on Earth, not on where the projection
-          // drew it, and the model matrix repeats the flat map sideways.
-          vNormal = normalize(position);
-          vLonLat = aLonLat;
-          gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position), 1.0);
-        }`,
-      fragmentShader: /* glsl */ `
-        uniform vec3 uEclipse;
-        uniform float uPenumbraAng;
-        uniform float uUmbraAng;
-        uniform vec3 uSun;
-        uniform vec3 uDayColor;
-        uniform float uDepth;
-        uniform float uLift;
-        uniform float uMorph;
-        uniform sampler2D uAurora;
-        uniform float uAuroraOn;
-        uniform vec3 uAuroraColor;
-        varying vec3 vNormal;
-        varying vec2 vLonLat;
-
-        void main() {
-          /* On the map, rebuild the direction per fragment. Flattening stretches these triangles, and an
-             interpolated normal is only exact at their corners: a crease ran along every shared diagonal.
-             See ARCHITECTURE.md#srcglobescenets. */
-          float lam = radians(vLonLat.x);
-          float phi = radians(vLonLat.y);
-          float c = cos(phi);
-          vec3 fromLonLat = vec3(c * sin(lam), sin(phi), c * cos(lam));
-          float sun = dot(normalize(mix(normalize(vNormal), fromLonLat, uMorph)), normalize(uSun));
-
-          /*
-           * Darkens one side and lifts the other. Darkening alone reads as a disc with a shadow, not a lit ball.
-           *
-           * The two factors must not overlap. Where they do, a band of mid-grey reads as haze on the lens.
-           */
-          float night = smoothstep(0.10, -0.30, sun);
-          float day = smoothstep(0.10, 0.55, sun);
-
-          /* The moon's shadow, on the few days there is one. uPenumbraAng is zero otherwise, so almost
-             every frame pays one compare for it. Move night and day together. Dimming the day alone leaves
-             a grey shadow, which is not what being inside one looks like. See ARCHITECTURE.md#srcglobescenets. */
-          float cover = 0.0;
-          if (uPenumbraAng > 0.0) {
-            float away = acos(clamp(dot(normalize(mix(normalize(vNormal), fromLonLat, uMorph)), uEclipse), -1.0, 1.0));
-            cover = smoothstep(uPenumbraAng, uPenumbraAng * 0.08, away) * 0.88;
-            if (uUmbraAng > 0.0) {
-              cover = max(cover, smoothstep(uUmbraAng * 2.2, uUmbraAng, away));
-            }
-          }
-          day *= 1.0 - cover;
-          night = max(night, cover);
-
-          /* Falls off toward the limb, or the lit side is a flat circle rather than a sphere. Take the day
-             wash away rather than adding shadow. See ARCHITECTURE.md#srcglobescenets. */
-          vec3 toEye = normalize(cameraPosition - vNormal * ${RADIUS_NIGHT});
-          float edge = (1.0 - clamp(dot(vNormal, toEye), 0.0, 1.0)) * (1.0 - uMorph);
-          day *= mix(1.0, 0.32, smoothstep(0.30, 0.94, edge));
-
-          /* The aurora, in the one shader that already knows where night is. No backticks in here - one of
-             them ends the shader. The morph module warns about this in as many words and I walked into it
-             anyway. See ARCHITECTURE.md#srcglobescenets. */
-          vec2 auv = vec2(fract(vLonLat.x / 360.0), (vLonLat.y + 90.0) / 180.0);
-          float glow = clamp(texture2D(uAurora, auv).r * 3.0, 0.0, 1.0) * night * uAuroraOn;
-
-          /* A quarter of a level of noise, because this overlay's alpha changes by less than 1/255 over
-             tens of pixels and an 8-bit framebuffer turns that into flat bands across Russia. See ARCHITECTURE.md#srcglobescenets. */
-          float grain = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
-          float dither = (grain - 0.5) / 255.0;
-          gl_FragColor = vec4(
-            uDayColor * day + uAuroraColor * glow,
-            night * uDepth + day * uLift + glow * 0.30 + dither
-          );
-        }`,
+      ...NIGHT_SURFACE,
       uniforms: {
         uMorph: morph,
         uSun: { value: new Vector3(0, 0, 1) },
@@ -411,6 +328,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   let heldMarks: readonly Mark[] = [];
 
   const sunDir = new Vector3();
+  lightSurface(ocean.material, sunDir, morph, true);
+  lightSurface(fill.material, sunDir, morph, false);
   const eclipseDir = new Vector3(0, 0, 1);
   /** 0 surface, 1 hypocentre. Read by the hit test, written by the setter below. */
   let sink = 0;
@@ -468,7 +387,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       uniforms: {
         uColor: { value: COLOR_RIM },
         // Lifted with the night it sits against, so the limb still reads once the edge is darker.
-        uIntensity: { value: 0.55 },
+        uIntensity: { value: 0.34 },
         uOuter: { value: 1.22 },
         // The same vector the night side reads, handed over once. `aimSun` writes through it.
         uSun: { value: sunDir },
@@ -513,7 +432,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         uColor: { value: COLOR_GLINT },
         uSun: { value: sunDir },
         uIntensity: { value: 0 },
-        uPower: { value: 22 },
+        uPower: { value: 34 },
         uMorph: morph,
       },
       transparent: true,
@@ -752,7 +671,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
        * origin on the flat map as a soft blue disc reading as an empty sea across Russia. Faded out with the
        * morph rather than hidden at the end, because it has to be gone before the geography is flat.
        */
-      (rim.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.42 * (1 - morph.value);
+      (rim.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.3 * (1 - morph.value);
       rim.visible = morph.value < 0.999;
       /*
        * Gone by the time the map is flat. A star field around a rectangle is a view from space of a thing
@@ -771,7 +690,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
        * Leaves with the globe. A specular lobe depends on a surface curving away from the eye, and the plane
        * has stopped doing that.
        */
-      (glint.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.55 * (1 - morph.value);
+      (glint.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.3 * (1 - morph.value);
       glint.visible = morph.value < 0.999;
 
       /* The fill is culled on the globe and not on the map. See ARCHITECTURE.md#srcglobescenets. */

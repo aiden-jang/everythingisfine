@@ -1,3 +1,4 @@
+import { LAT_LIMIT, ZOOM_MIN, ZOOM_MAX } from "./framing";
 import { Raycaster, Vector2, Vector3, type PerspectiveCamera } from "three";
 import { RADIUS_ATMOSPHERE } from "../geo/land";
 import { DEG, spanDeg } from "../geo/sphere";
@@ -5,9 +6,6 @@ import { MAP_HALF_WIDTH } from "./morph";
 
 /* Orbiting the globe, hand-written. OrbitControls slides a pan target, and on a sphere there is no target
    to slide - only a rotation that puts the same coastline back under the pointer. See ARCHITECTURE.md#srcglobecontrolsts. */
-
-/** Beyond this the up vector flips and the globe rolls over. */
-const LAT_LIMIT = 85;
 
 /* Zoom is magnification: 1 is the framing shot, 2 is twice as close, distance is fit/zoom. Don't store
    it as a multiple of the distance - the wheel handler duly zoomed out when scrolled up. */
@@ -17,9 +15,6 @@ const ARC_MIN_DEG = 25;
 const ARC_FULL_DEG = 110;
 /** Extra distance at the top of the arc, as a fraction of the flight's own magnification. */
 const ARC_PULLBACK = 0.45;
-
-const ZOOM_MIN = 0.75;
-const ZOOM_MAX = 3;
 
 /* The map is the ball unrolled to 4 by 2, so it needs its own fraction. Measure against the
    height-only fit: fitting by the tighter dimension is right for a ball and, on a phone, framed the

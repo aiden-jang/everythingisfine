@@ -1587,54 +1587,32 @@ test("the tour names where the camera is, not where it is going", { tag: "@dev" 
   // Sampled in the page rather than by polling from here: a round trip per sample is slower than the stop it
   // is trying to observe, and a sparse series lands on the transitions and manufactures its own findings.
   /*
-   * Collected to a target rather than for a fixed number of ticks. A count is a guard, not the
-   * assertion: what matters is that the cursor advances against the wall clock, so a slow machine takes
-   * longer and asserts the same thing.
+   * Travel deliberately has no place caption. Collect only arrived narration, bounding the work by a
+   * sample count while the deadline allows a slow first arrival.
    */
   const named = await page.evaluate(async () => {
-    const seen: { name: string; lon: number }[] = [];
+    const seen: { wantLon: number; wantLat: number; lon: number; lat: number }[] = [];
     const deadline = Date.now() + 45_000;
     while (Date.now() < deadline && seen.length < 12) {
-      // 150ms, not 300. The arrived window inside a stop is under a second on a busy machine, and the
-      // sampler has to land in it more than twice.
-      await new Promise((r) => {
-        setTimeout(r, 150);
-      });
-      const head = (document.querySelector("[data-rail=headline]")?.textContent ?? "").replace(/\s+/g, " ");
-      const label = /\d\/\d\s*([^·]+)·/.exec(head);
-      const globe = (window as unknown as { __globe?: { state: () => { lon: number } } }).__globe;
-      if (label && globe) seen.push({ name: label[1]!.trim(), lon: globe.state().lon });
+      await new Promise((resolve) => setTimeout(resolve, 150));
+      const location = document.querySelector<HTMLElement>(".observatory-location");
+      const globe = (window as unknown as { __globe?: { state: () => { lon: number; lat: number } } })
+        .__globe;
+      if (!location || !globe) continue;
+      const [wantLon, wantLat] = location.dataset["tourLocation"]!.split(",").map(Number);
+      seen.push({ wantLon: wantLon!, wantLat: wantLat!, ...globe.state() });
     }
     return seen;
   });
-
-  // Above zero, not above two. The count is only proof the tour narrated; how many samples land inside an
-  // arrived window is a fact about the machine, and a runner caught exactly 2. The loop below is the test.
   expect(named.length, "the tour never narrated at all").toBeGreaterThan(0);
-
-  /** Where each region sits, from `regions.ts`. Only the ones the tour can reach on this fixture. */
-  const at: Record<string, number> = {
-    "Japan & Kurils": 142,
-    Kamchatka: 160,
-    Indonesia: 118,
-    Philippines: 124,
-    "Tonga & Kermadec": -175,
-    "Alaska & Aleutians": -155,
-    California: -120,
-    "Chile & Peru": -71,
-    "Mediterranean & Turkey": 28,
-    "Hindu Kush & Himalaya": 75,
-    "Mid-Atlantic Ridge": -30,
-  };
   for (const sample of named) {
-    const want = at[sample.name];
-    if (want === undefined) continue;
-    // Shortest way round, so a stop at 175E is not judged 350 degrees from one at 175W.
-    let off = Math.abs(sample.lon - want) % 360;
+    let off = Math.abs(sample.lon - sample.wantLon) % 360;
     if (off > 180) off = 360 - off;
-    // Ten degrees, which is tight enough to mean something: the narration is gated on the camera being within
-    // four of the stop. The failure this exists for was a hemisphere.
-    expect(off, `narrated "${sample.name}" while the camera was at ${sample.lon}`).toBeLessThan(10);
+    expect(off, "the narrated longitude matches the arrived camera").toBeLessThan(10);
+    expect(
+      Math.abs(sample.lat - sample.wantLat),
+      "the narrated latitude matches the arrived camera",
+    ).toBeLessThan(10);
   }
 });
 
@@ -2193,7 +2171,7 @@ test("a first visit saves no preference the visitor never chose", async ({ page 
    * The other direction, that a real choice is saved, is what the two fold tests above already show by
    * reloading and finding the fold where they left it.
    */
-  await installFeeds(page);
+  await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
   await waitForData(page);
 

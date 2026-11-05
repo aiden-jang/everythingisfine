@@ -1,3 +1,9 @@
+import { CanvasFooter } from "./app/CanvasFooter";
+import { Observatory } from "./app/Observatory";
+import { journeyFor, observatorySummary, observatoryFeedNote } from "./app/journeys";
+import { subsolarPoint } from "./geo/sun";
+import { GlobeHeader } from "./app/GlobeHeader";
+import { useObservatory } from "./app/useObservatory";
 import { useCutaway } from "./app/useCutaway";
 import { liftForPanel } from "./app/panelLift";
 import { useReplayAnalytics } from "./app/useReplayAnalytics";
@@ -7,8 +13,6 @@ import { useGlobeTour } from "./app/useGlobeTour";
 import { GlobeLoading } from "./globe/GlobeLoading";
 import { stillMoment } from "./app/still";
 import { useStill } from "./app/useStill";
-import { StillNotice } from "./app/StillNotice";
-import { Utilities } from "./app/Utilities";
 import { Row } from "./app/Row";
 import { ArchiveControls } from "./app/ArchiveControls";
 import { useArchive } from "./app/useArchive";
@@ -40,7 +44,6 @@ import { hazardCount, hazardGroups, outsideWindowNote } from "./app/hazards";
 import { withinWindow } from "./app/age";
 import { sizesOf } from "./app/gutenberg";
 import { SizeChart } from "./app/Sizes";
-import { tourLabel, tourStops } from "./app/tour";
 import { createSiren, type Siren } from "./app/sound";
 import { lunarEclipse, solarEclipse } from "./geo/eclipse";
 import { closestTo, localZone, viewerPlace } from "./app/viewer";
@@ -58,7 +61,6 @@ import {
 import { boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE } from "./geo/boundaryDistance";
 import { MobileNavigation } from "./app/MobileNavigation";
 import { EventList } from "./app/EventList";
-import { FeedDot } from "./app/FeedDot";
 import { feedStatus } from "./app/feedStatus";
 import { useHazardLayers } from "./app/useHazardLayers";
 import { DetailPanel } from "./app/DetailPanel";
@@ -127,6 +129,9 @@ const shared = decode(window.location.hash);
 
 export function App(): JSX.Element {
   const snapshot = useFeed();
+  const historyIntent = useRef<string | null>(null);
+  const observatory = useObservatory(shared);
+  const { enterExplore, enterObserve, chooseScene, setReady: setGlobeReady } = observatory;
   const [filters, setFilters] = useState<Filters>(() => ({
     minMagnitude: shared.minMagnitude ?? DEFAULT_FILTERS.minMagnitude,
     windowMs: shared.windowHours === undefined ? DEFAULT_FILTERS.windowMs : shared.windowHours * 3_600_000,
@@ -155,6 +160,17 @@ export function App(): JSX.Element {
     setSelected(null);
     setMarkId(null);
     if (returnedToLive) setScrub(LIVE);
+    const day = historyIntent.current;
+    historyIntent.current = null;
+    const archive = feed.snapshot().archive;
+    if (day && !returnedToLive && archive && new Date(archive.from).toISOString().slice(0, 10) === day) {
+      let largest: Quake | null = null;
+      feed.store.forEach((q) => {
+        if (!largest || q.primary.magnitude > largest.primary.magnitude) largest = q;
+      });
+      const key = (largest as Quake | null)?.key;
+      if (key) selectQuake(key);
+    }
   });
   const { archiveHazards, backToLive, stepDay, archiveBusy, archiveDay, loadedDay } = archiveState;
   /* In archive mode this is the end of the archived day, not the wall clock. See ARCHITECTURE.md#srcapptsx. */
@@ -257,7 +273,8 @@ export function App(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [filters, snapshot.revision, clockAt],
   );
-  const [flat, setFlat] = useStoredFlag("flat", false, shared.section !== undefined || undefined);
+  const [mapOn, setFlat] = useStoredFlag("flat", false, shared.section !== undefined || undefined);
+  const flat = observatory.observing ? false : mapOn;
   /* Clamp on the way in too. The `Resizer` bounds this while dragging and the restore path went around
      it, so a stored 1 came back as a rail one pixel wide with nothing to grab. */
   const [railWidth, setRailWidth] = useStoredNumber("rail", RAIL_DEFAULT, (n) =>
@@ -301,8 +318,8 @@ export function App(): JSX.Element {
   const [figuresOn, setFiguresOn] = useStoredFlag("figures", false);
   const { zones, motionData, motion, slabData, figureData } = useGlobeResources({
     motionOn,
-    slabOn,
-    figuresOn,
+    slabOn: slabOn || observatory.depth,
+    figuresOn: figuresOn || observatory.night,
   });
   const here = useMemo(() => (zones ? viewerPlace(zones, localZone()) : null), [zones]);
   const segments = useMemo(() => boundarySegments(), []);
@@ -356,10 +373,14 @@ export function App(): JSX.Element {
     setSinkOn,
   );
   // Call and read this in the same tick. See `Globe.onCapture`.
-  const onReady = useCallback((fn: typeof flyTo.current) => {
-    flyTo.current = fn;
-    if (shared.lon !== undefined) fn(shared.lon, shared.lat ?? 12, shared.zoom ?? 1);
-  }, []);
+  const onReady = useCallback(
+    (fn: typeof flyTo.current) => {
+      flyTo.current = fn;
+      setGlobeReady(true);
+      if (shared.lon !== undefined) fn(shared.lon, shared.lat ?? 12, shared.zoom ?? 1);
+    },
+    [setGlobeReady],
+  );
 
   const heldCursor = view.playing ? null : view.at;
   const sharedCursor = useRef(view.at);
@@ -422,7 +443,7 @@ export function App(): JSX.Element {
     filters,
     ramp,
     view.at,
-    cutaway && !flat ? "reference cutaway · true scale" : null,
+    (cutaway || observatory.depthFocus) && !flat ? "reference cutaway · true scale" : null,
   );
   // Count the displayed subset, not whole timeline bins.
   const revealedNow = ((): number | null => {
@@ -443,17 +464,55 @@ export function App(): JSX.Element {
   );
 
   // Captured at the start, not read per tick, so an arrival mid-tour cannot reorder the route.
-  const stops = useMemo(() => tourStops(regions), [regions]);
+  const journey = useMemo(
+    () => journeyFor(feed.store, filters, clockAt(), regions, view.at),
+    // Data revisions own the external store's identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filters, snapshot.revision, regions, clockAt, view.at],
+  );
+  const stops = journey.stops;
   const busiest = regions[0]?.count ?? 0;
   const {
     tourAt,
     touring,
     tourButton,
-    startTour,
+    startTour: beginTour,
     stopTour,
+    tourControls,
+    paused: tourPaused,
+    nextTour,
+    previousTour,
+    togglePause,
     tourLength,
     onCamera: observeTourCamera,
-  } = useGlobeTour(stops, flyTo);
+  } = useGlobeTour(stops, flyTo, observatory.setTourStop);
+  const startTour = useCallback(() => {
+    chooseScene("live");
+    setSelected(null);
+    setMarkId(null);
+    setSectionLine(null);
+    setQuery("");
+    enterObserve();
+    beginTour();
+  }, [beginTour, chooseScene, enterObserve]);
+  const chooseEarthScene = (scene: "live" | "depth" | "night"): void => {
+    stopTour();
+    if (scene === "depth" && journey.deepest) {
+      chooseScene(scene, journey.deepest);
+      flyTo.current(journey.deepest.lon, journey.deepest.lat, 1.65);
+    } else if (scene === "night") {
+      const sun = subsolarPoint(view.at ?? clockAt());
+      chooseScene(scene);
+      flyTo.current(sun.lon + 180, -sun.lat, 0.92);
+    } else {
+      chooseScene("live");
+      if (snapshot.archive !== null) backToLive();
+      flyTo.current(145, 12, 1);
+    }
+  };
+  useLayoutEffect(() => {
+    if (observatory.observing && (selected || markId || sectionLine)) enterExplore();
+  }, [observatory.observing, selected, markId, sectionLine, enterExplore]);
 
   const section = useMemo(
     () =>
@@ -565,10 +624,10 @@ export function App(): JSX.Element {
       marksFor({
         ...onGlobe,
         farSide,
-        motion: motionOn ? motionData : [],
+        motion: motionOn && !observatory.observing ? motionData : [],
         here,
       }),
-    [onGlobe, farSide, motionOn, motionData, here],
+    [onGlobe, farSide, motionOn, motionData, here, observatory.observing],
   );
   useEffect(() => {
     // Only if it genuinely fell out of the buffer. A refresh must never clear the panel.
@@ -779,8 +838,8 @@ export function App(): JSX.Element {
   const chromeFloats = useFloatingChrome();
   const [headOpen, setHeadOpen] = useStoredFlag("head", true);
   const [railOpen, setRailOpen] = useStoredFlag("railOpen", true);
-  const railShown = railOpen || !chromeFloats;
-  const headShown = headOpen || chromeFloats;
+  const railShown = !observatory.observing && (railOpen || !chromeFloats);
+  const headShown = observatory.observing || headOpen || chromeFloats;
 
   const versus = useMemo(() => versusReference(energyTotal), [energyTotal]);
 
@@ -941,139 +1000,45 @@ export function App(): JSX.Element {
   );
 
   return (
-    <main className="frame">
+    <main className="frame" data-presentation={observatory.presentation}>
       <h1 className="sr-only">Everything Is Fine</h1>
-      <header
-        id="chrome-head"
-        className="zone-head flex items-center gap-6 px-5 py-3 xl:border-b xl:border-hairline"
-        hidden={!headShown}
-      >
-        <button
-          type="button"
-          onClick={resetView}
-          aria-label="Everything Is Fine, back to the default view"
-          className="wordmark flex min-h-11 cursor-pointer items-center whitespace-nowrap max-md:self-start"
-        >
-          Everything is fine<span aria-hidden="true">.</span>
-        </button>
-        {/* These ignore the filters, so each has to say whose number it is: at magnitude 4 the headline read
-            5 while this row read 160. Wide screens only - from `sm` up they took ~380px of a 768px header. */}
-        <div className={`hidden items-baseline gap-5 ${snapshot.coveredSince === null ? "" : "2xl:flex"}`}>
-          {(
-            [
-              ["reported", snapshot.stats.quakes.toLocaleString("en-GB")],
-              ["seen by both", snapshot.stats.corroborated.toLocaleString("en-GB")],
-              ...(snapshot.stats.revised > 0
-                ? [["revised", snapshot.stats.revised.toLocaleString("en-GB")] as const]
-                : []),
-            ] as const
-          ).map(([k, v]) => (
-            <span key={k} className="flex items-baseline gap-1.5">
-              <span className="font-mono text-[13px] text-ink tabular-nums">{v}</span>
-              <span className="text-[11px] text-faint">{k}</span>
-            </span>
-          ))}
-          <span className="text-[11px] text-faint">
-            USGS{" "}
-            <span className="font-mono text-[10.5px] tabular-nums">
-              {snapshot.stats.readings.usgs.toLocaleString("en-GB")}
-            </span>
-            {" · EMSC "}
-            <span className="font-mono text-[10.5px] tabular-nums">
-              {snapshot.stats.readings.emsc.toLocaleString("en-GB")}
-            </span>{" "}
-            readings
-          </span>
-        </div>
-        {/* Never `whitespace-nowrap` here. It does not shrink, it overflows, and one extra button pushed
-        the header 120px past a phone viewport. */}
-        <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 max-md:gap-x-1">
-          <button
-            type="button"
-            onClick={() => setFlat((f) => !f)}
-            aria-pressed={flat}
-            className="min-w-[60px] shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink max-md:min-w-[52px]"
-          >
-            {flat ? "Globe" : "Map"}
-          </button>
-          <button
-            type="button"
-            onClick={() => setRamp((r) => (r === "thermal" ? "cividis" : "thermal"))}
-            aria-pressed={ramp === "cividis"}
-            className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised ${
-              ramp === "cividis" ? "bg-raised text-ink" : "text-faint"
-            }`}
-          >
-            <span className="lg:hidden">Ramp {ramp === "cividis" ? "CB" : "std"}</span>
-            <span className="hidden lg:inline">Colourblind ramp {ramp === "cividis" ? "on" : "off"}</span>
-          </button>
-          <Utilities>
-            <button
-              type="button"
-              onClick={() => setSound((on) => !on)}
-              aria-pressed={sound}
-              className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
-                sound ? "bg-raised text-ink" : "text-faint"
-              }`}
-            >
-              {sound ? "Sound on" : "Sound off"}
-            </button>
-            {stops.length > 0 ? (
-              <button
-                ref={tourButton}
-                type="button"
-                onClick={() => (tourAt === null ? startTour() : stopTour())}
-                aria-pressed={tourAt !== null}
-                className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
-                  tourAt !== null ? "bg-raised text-ink" : "text-faint"
-                }`}
-              >
-                {tourAt !== null ? "Stop" : "Tour"}
-              </button>
-            ) : null}
-            <button
-              id="capture-still"
-              type="button"
-              onClick={saveStill}
-              disabled={saving}
-              className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink disabled:cursor-default"
-            >
-              {saving ? "Saving…" : "Still"}
-            </button>
-            {/* Keep the fold inside the overflow. As a button of its own at 390 it wrapped onto a line by
-          itself and took the header from 46px to 80px, which is the opposite of folding the bar. */}
-            {chromeFloats ? null : (
-              <button
-                type="button"
-                onClick={() => setHeadOpen(false)}
-                aria-expanded={true}
-                aria-controls="chrome-head"
-                className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink"
-              >
-                Hide bar
-              </button>
-            )}
-          </Utilities>
-          <FeedDot feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
-        </div>
-        <StillNotice message={notice} download={download} dismiss={dismiss} />
-      </header>
-
-      {/* The way back. The fold control goes with the bar, so the unfold cannot live there. */}
-      {headShown ? null : (
-        <button
-          type="button"
-          onClick={() => setHeadOpen(true)}
-          aria-label="Show the top bar"
-          aria-expanded={false}
-          aria-controls="chrome-head"
-          className="absolute top-3 right-4 z-[3] cursor-pointer bg-deck/60 px-2.5 py-2 font-mono
-            text-[15px] leading-none text-dim backdrop-blur-xl backdrop-saturate-50
-            transition-colors hover:text-ink"
-        >
-          &#8964;
-        </button>
-      )}
+      <GlobeHeader
+        ready={observatory.ready}
+        observing={observatory.observing}
+        onExplore={() => {
+          stopTour();
+          observatory.exploreScene();
+        }}
+        onHome={() => {
+          stopTour();
+          resetView();
+          chooseScene("live");
+          observatory.observeScene();
+        }}
+        {...{
+          headShown,
+          chromeFloats,
+          setHeadOpen,
+          snapshot,
+          flat,
+          setFlat,
+          ramp,
+          setRamp,
+          sound,
+          setSound,
+          tourAt,
+          startTour,
+          stopTour,
+          tourButton,
+          saving,
+          saveStill,
+          feeds,
+          notice,
+          download,
+          dismiss,
+        }}
+        tourDisabled={stops.length === 0 || !observatory.ready}
+      />
 
       <div
         className="zones"
@@ -1088,8 +1053,61 @@ export function App(): JSX.Element {
           } as React.CSSProperties
         }
       >
+        {observatory.observing ? (
+          <Observatory
+            scene={observatory.scene}
+            ready={observatory.ready}
+            waiting={snapshot.coveredSince === null}
+            summary={observatorySummary({
+              count: shown,
+              minMagnitude: filters.minMagnitude,
+              windowMs: filters.windowMs,
+              sources: filters.sources,
+              day: archived ? loadedDay : null,
+            })}
+            feedNote={observatoryFeedNote(snapshot.statuses, feeds.silent)}
+            deepAvailable={journey.deepest !== null}
+            onScene={chooseEarthScene}
+            onExplore={() => {
+              stopTour();
+              observatory.exploreScene();
+            }}
+            onHistory={(day) => {
+              stopTour();
+              enterExplore();
+              historyIntent.current = day;
+              setScrub(LIVE);
+              setSectionLine(null);
+              archiveState.setArchiveDay(day);
+              void archiveState.loadArchive(day);
+            }}
+            tour={{
+              at: tourAt,
+              stop: touring,
+              length: tourLength,
+              paused: tourPaused,
+              button: tourButton,
+              controls: tourControls,
+              start: startTour,
+              stopTour,
+              next: nextTour,
+              previous: previousTour,
+              pause: togglePause,
+              available: stops.length > 0,
+              inspect:
+                touring?.key && feed.store.get(touring.key)
+                  ? () => {
+                      const key = touring.key!;
+                      stopTour();
+                      enterExplore();
+                      selectQuake(key);
+                    }
+                  : null,
+            }}
+          />
+        ) : null}
         {/* Keep enough space for both the globe and the sheet heading. */}
-        {markSubject || (shownQuake && pinned) ? null : (
+        {observatory.observing || markSubject || (shownQuake && pinned) ? null : (
           <Resizer
             axis="y"
             label="Sheet height"
@@ -1141,18 +1159,7 @@ export function App(): JSX.Element {
                   <div className="mt-1.5 text-[48px] leading-none font-[650] tracking-[-0.015em] tabular-nums">
                     {headline.toLocaleString("en-GB")}
                   </div>
-                  {/* One slot, shared by the tour and the replay clock. Every tour stop says where it is and how much
-                    is there, which keeps the camera movement from being a screensaver. */}
-                  {touring ? (
-                    <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
-                      <span className="font-mono text-ink tabular-nums">
-                        {tourAt !== null ? tourAt + 1 : 0}/{tourLength}
-                      </span>
-                      <span className="text-faint">
-                        {tourLabel(touring, tourAt ?? 0, tourLength).replace(/^\d+ of \d+ · /, "")}
-                      </span>
-                    </div>
-                  ) : replay ? (
+                  {replay ? (
                     <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
                       <span className="font-mono text-ink">{clock(replay.at)}</span>
                       <span className="text-faint">replaying the last day</span>
@@ -1559,7 +1566,7 @@ export function App(): JSX.Element {
         </aside>
 
         {/* Keep the toggle at the edge where the rail folds. */}
-        {chromeFloats ? (
+        {chromeFloats && !observatory.observing ? (
           <button
             type="button"
             onClick={() => setRailOpen(!railOpen)}
@@ -1592,7 +1599,7 @@ export function App(): JSX.Element {
 
         {/* Stands down while a panel is up: same edge, and two things claiming it are two answers to one
         question. */}
-        {!keyOnCanvas || section || markSubject || (shownQuake && pinned) ? null : (
+        {observatory.observing || !keyOnCanvas || section || markSubject || (shownQuake && pinned) ? null : (
           <div
             /* Anchored at the bottom, so opening grows it upward out of the corner instead of off the screen.
             The share-of-viewport cap is the phone's, where the canvas is a 60dvh row with the rail under
@@ -1623,10 +1630,18 @@ export function App(): JSX.Element {
                the caption cannot disagree. See ARCHITECTURE.md#srcapptsx. */
               moment={litAt}
               flat={flat}
-              depthSink={sinkOn}
-              cutaway={flat ? null : cutaway}
-              slab={slabOn && slabData.length > 0 ? slabData : null}
-              figures={figuresOn && figureData.length > 0 ? figureData : null}
+              depthSink={observatory.depth || sinkOn}
+              cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}
+              slab={
+                ((!observatory.observing && slabOn) || observatory.depth) && slabData.length > 0
+                  ? slabData
+                  : null
+              }
+              figures={
+                ((!observatory.observing && figuresOn) || observatory.night) && figureData.length > 0
+                  ? figureData
+                  : null
+              }
               section={sectionLine}
               onSection={setSectionLine}
               onSelect={selectQuake}
@@ -1669,50 +1684,12 @@ export function App(): JSX.Element {
                 />
               </div>
             ) : null}
-            {/* Both keep the same `py-1.5`, or their two lines of text sit on different baselines. See ARCHITECTURE.md#srcapptsx. */}
-            <div
-              className="relative order-2 flex w-full flex-wrap items-end gap-x-6 gap-y-2
-              md:justify-center"
-            >
-              <p className="py-1.5 text-[11px] text-faint md:absolute md:bottom-0 md:left-0">
-                made by{" "}
-                <a
-                  href="https://www.aidenjang.com"
-                  target="_blank"
-                  aria-describedby="external-link-hint"
-                  rel="noreferrer"
-                  // Inline-flex lets the mobile minimum height apply to the link.
-                  className="pointer-events-auto inline-flex items-center text-faint underline decoration-from-font underline-offset-2 transition-colors hover:text-dim max-md:min-h-11"
-                >
-                  aiden jang
-                </a>
-              </p>
-              <div className="key-hints pointer-events-auto bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50">
-                {/* What the keys do in this projection: a row saying orbit while the drag pans is worse than none. */}
-                {(
-                  [
-                    ["arrows", flat ? "pan" : "orbit"],
-                    ["+ -", "zoom"],
-                    ["0", "reset"],
-                    ["space", view.playing ? "pause" : "play"],
-                    [", .", "step"],
-                    ...(archived ? [["[ ]", "day"] as const] : []),
-                    ...(flat ? [["shift-drag", "section"] as const] : []),
-                    ["f", "full"],
-                    /* Only when there is something to clear, or the app offers `esc` on every first load. `markId`
-                belongs in this list and in the ladder: a mark card is a pin. */
-                    ...(query || sectionLine || view.at !== null || selected || markId
-                      ? [["esc", "clear"] as const]
-                      : []),
-                  ] as const
-                ).map(([key, what]) => (
-                  <span key={key} className="mr-3 inline-flex items-baseline gap-1.5">
-                    <span className="text-dim">{key}</span>
-                    {what}
-                  </span>
-                ))}
-              </div>
-            </div>
+            <CanvasFooter
+              flat={flat}
+              playing={view.playing}
+              archived={archived}
+              clearable={Boolean(query || sectionLine || view.at !== null || selected || markId)}
+            />
           </div>
         </section>
 

@@ -84,7 +84,7 @@ viewer action and must identify what it measures.
 
 ## 4. Globe, map and sky
 
-The canvas fills the viewport behind responsive panels. Vector geography and
+The explorer canvas fills the viewport behind responsive panels. Vector geography and
 readable event marks replace photographic Earth textures. Day/night follows the
 displayed moment's real subsolar point; geography dims while observations remain
 legible. The atmospheric rim adds form without competing with data.
@@ -130,6 +130,27 @@ empty result. A failing source is named with its reason and retry, and must not
 blank working layers. An empty filter result has a useful widening/reset action.
 Empty phone lists occupy their status height rather than reserving absent rows.
 
+## Observatory presentation
+
+A fresh visit leads with the planet and “Meanwhile, on Earth.” The editorial heading uses Geist,
+with larger, tighter type than the scientific controls. It remains neutral and readable. Existing
+saved layouts stay in Explore; direct content links expose their content without an intro in front.
+
+On wide screens, the introduction and globe occupy separate columns. On phones, the planet sits
+above a bounded introduction with owned scrolling. Controls stay reachable in short landscape views.
+Live Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
+Their temporary overrides do not overwrite saved scientific settings. The observatory retains source
+status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
+
+Guided narration uses captured primary readings and regional counts. Explain magnitude scales,
+reported depth, historical reference points and the time scope; never manufacture a journey between
+unrelated earthquakes. Reading time begins at camera arrival and pauses in hidden tabs. Viewer
+interaction ends the tour except within its narration and controls. Escape always stops it.
+
+Surface lighting may use the displayed sun and the sphere's actual normals to improve form. It must
+not fabricate topography, add photographic textures, dim earthquake measurements, or alter the
+flat-map palette. Presentation crossfades are finite and skipped under reduced motion.
+
 ## 7. Layout
 
 Keep a fixed viewport with owned scrolling regions; horizontal page overflow is
@@ -138,7 +159,7 @@ The 60px header groups view controls separately from utility actions. Folding a
 region has an independently reachable restore control and never strands a stored
 preference after resizing. Fullscreen expands the window without hiding its tools.
 
-The rail shows recent live events and search before archive browsing. In archive
+In Explore, the rail shows recent live events and search before archive browsing. In archive
 mode the chosen date and return-to-live action stay prominent. The glossary starts
 folded and the magnitude scale remains visible. New viewers start with plate
 movement arrows, deep seismicity and constellation figures off; saved choices win.

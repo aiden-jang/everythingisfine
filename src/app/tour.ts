@@ -1,14 +1,10 @@
-import type { RegionCount } from "./regions";
+import { LAT_LIMIT, ZOOM_MIN, ZOOM_MAX } from "../globe/framing";
+import type { Reading } from "../data/types";
 
-/* Flies the camera round the busiest regions, on request. See ARCHITECTURE.md#srcapptourts. */
+/* Captured waypoints and their summary labels. See ARCHITECTURE.md#srcapptourts. */
 
 /** Long enough to read the name and the count and look at the globe. */
-export const TOUR_DWELL_MS = 3500;
-
-/** Six, so a tour is twenty-one seconds rather than forty. The rail's own list is uncapped, because hiding
- * quiet regions there would hide the interesting fact that they are quiet; a tour costs the viewer time per
- * entry, so it stops after the ones worth the trip. */
-export const TOUR_MAX_STOPS = 6;
+export const TOUR_DWELL_MS = 6000;
 
 export interface Stop {
   name: string;
@@ -16,28 +12,20 @@ export interface Stop {
   lat: number;
   zoom: number;
   count: number;
+  purpose?: "largest" | "depth" | "region" | "overview";
+  heading?: string;
+  description?: string;
+  key?: string;
+  reading?: Reading;
 }
 
-/** Where the tour goes, busiest first. Empty when nothing is happening anywhere, which is a real state:
- * the caller offers no tour rather than flying the camera around a planet with nothing on it. */
-export function tourStops(regions: readonly RegionCount[], max: number = TOUR_MAX_STOPS): Stop[] {
-  return [...regions]
-    .filter((r) => r.count > 0)
-    .sort((a, b) => b.count - a.count || a.region.name.localeCompare(b.region.name))
-    .slice(0, max)
-    .map(({ region, count }) => ({
-      name: region.name,
-      lon: region.lon,
-      lat: region.lat,
-      zoom: region.zoom,
-      count,
-    }));
-}
-
-/** What the rail says while the camera is there. The narration is what makes the motion mean something. */
-export function tourLabel(stop: Stop, index: number, total: number): string {
-  // Grouped, like every other figure the app prints. Caught reading "2481 events" in a rail whose
-  // headline directly above it said "6,000" - the same slip the still export had.
-  const events = `${stop.count.toLocaleString("en-GB")} ${stop.count === 1 ? "event" : "events"}`;
-  return `${index + 1} of ${total} · ${stop.name} · ${events}`;
+export function tourArrivedAt(
+  state: { lon: number; lat: number; zoom: number },
+  target: { lon: number; lat: number; zoom: number },
+): boolean {
+  let longitude = Math.abs(state.lon - target.lon) % 360;
+  if (longitude > 180) longitude = 360 - longitude;
+  const latitude = Math.max(-LAT_LIMIT, Math.min(LAT_LIMIT, target.lat));
+  const zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, target.zoom));
+  return longitude < 4 && Math.abs(state.lat - latitude) < 4 && Math.abs(state.zoom - zoom) < 0.08;
 }

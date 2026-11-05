@@ -23,6 +23,24 @@ pnpm run dev
 Open <http://localhost:31600>. Fonts and map geometry are bundled; public data feeds are
 requested directly from the browser.
 
+## Observe and explore
+
+A fresh visit opens the observatory: a full globe, a short introduction, and three scenes.
+**Explore** opens the scientific controls. The wordmark returns to the observatory and resets the view.
+Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
+
+- **Live Earth** frames the current activity; selecting it from an archive returns to live.
+- **Below the Surface** opens the deepest visible earthquake with true-scale reference guides and
+  historical seismicity. It is available when the view contains a reported depth of at least 70 km.
+- **After Dark** starts on the displayed moment's night side and enables constellation guides.
+- **Take a tour** visits a captured selection of readings and regions. Narration waits for arrival;
+  Pause, Previous, Next, Stop, and Read this event remain available. Hidden tabs pause its reading time.
+- **Revisit a day** loads an archived day and frames its largest available event.
+- **Save view** uses the existing captioned image export, including the reference-cutaway label.
+
+Scenes are temporary: returning to Explore restores the saved layer and projection choices. Choosing
+Observe or Explore remembers that presentation; opening the app alone saves no new preference.
+
 ## Explore
 
 - Drag to orbit, scroll to zoom, or use the arrow keys and `+` / `-`. Press `0` to reset the camera.

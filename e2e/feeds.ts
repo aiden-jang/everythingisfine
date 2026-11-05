@@ -152,6 +152,7 @@ const emscFeature = (q: Quake, now: number) => ({
 });
 
 export interface FeedOptions {
+  presentation?: "fresh" | "explore";
   now?: number;
   /** Exact USGS features, for a test that needs one specific event rather than a plausible day. */
   usgs?: unknown[];
@@ -177,6 +178,13 @@ const EMSC_SEED_LIMIT = 600;
 /** Routes both feeds and stubs the socket. Call before `page.goto`. See ARCHITECTURE.md#e2efeedsts. */
 export async function installFeeds(page: Page, options: FeedOptions = {}): Promise<void> {
   const { usgs, empty, silent, dead, seed, count, emscCappedHours, now: fixedNow } = options;
+
+  // Existing instrument journeys opt in; observatory journeys explicitly test a fresh visit.
+  if (options.presentation !== "fresh")
+    await page.addInitScript(() => {
+      if (localStorage.getItem("eif.presentation") === null)
+        localStorage.setItem("eif.presentation", "explore");
+    });
 
   await installHazards(page);
 

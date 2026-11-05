@@ -1,0 +1,221 @@
+import { expect, test } from "@playwright/test";
+import { installFeeds, waitForData } from "./feeds";
+
+for (const [width, height] of [
+  [320, 640],
+  [390, 844],
+  [768, 1024],
+  [812, 375],
+  [1024, 768],
+  [1440, 900],
+]) {
+  test(`the observatory fits at ${width}x${height}`, async ({ page }) => {
+    await page.setViewportSize({ width: width!, height: height! });
+    await page.emulateMedia({ reducedMotion: "reduce", forcedColors: width === 768 ? "active" : "none" });
+    await installFeeds(page, { presentation: "fresh" });
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    page.on("console", (message) => {
+      if (message.type() === "error" && /shader|WebGLProgram/i.test(message.text()))
+        errors.push(message.text());
+    });
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+    await expect(page.locator("#chrome-rail")).toBeHidden();
+    const explore = page.getByRole("button", { name: "Explore the globe" });
+    await expect(explore).toBeVisible();
+    const depth = page.getByRole("button", { name: "Below the Surface", exact: true });
+    await expect(depth).toBeEnabled();
+    const bounds = await page.evaluate(() => {
+      const canvas = document.querySelector("canvas")!.getBoundingClientRect();
+      return {
+        overflow: document.documentElement.scrollWidth > innerWidth,
+        height: document.documentElement.scrollHeight,
+        canvas: { x: canvas.x, y: canvas.y, width: canvas.width, height: canvas.height },
+      };
+    });
+    expect(bounds.overflow).toBe(false);
+    expect(bounds.height).toBeLessThanOrEqual(height!);
+    expect(bounds.canvas.width).toBeGreaterThan(150);
+    expect(bounds.canvas.height).toBeGreaterThan(150);
+    await page.screenshot({ path: test.info().outputPath(`observe-live-${width}.png`) });
+    await page.getByRole("button", { name: "After Dark", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "The other side of day." })).toBeVisible();
+    await expect(page.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await depth.click();
+    await expect(page.getByRole("heading", { name: "Beneath the surface." })).toBeVisible();
+    await expect(depth).toHaveAttribute("aria-pressed", "true");
+    await page.screenshot({ path: test.info().outputPath(`observe-depth-${width}.png`) });
+    await explore.click();
+    await expect(page.locator("#chrome-rail")).toBeVisible();
+    await expect(page.getByRole("region", { name: "Recent earthquakes" })).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+}
+
+test("scenes preserve existing preferences and shared event links open the explorer", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh" });
+  await page.addInitScript(() => {
+    localStorage.setItem("eif.flat", "1");
+    localStorage.setItem("eif.railOpen", "0");
+    localStorage.setItem("eif.depthSink", "0");
+    localStorage.setItem("eif.ramp", "cividis");
+  });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Everything Is Fine, back to the default view" }).click();
+  await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await expect(page.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show the panel", exact: true })).toBeVisible();
+  expect(
+    await page.evaluate(() => ({
+      depth: localStorage.getItem("eif.depthSink"),
+      ramp: localStorage.getItem("eif.ramp"),
+      figures: localStorage.getItem("eif.figures"),
+    })),
+  ).toEqual({ depth: "0", ramp: "cividis", figures: null });
+  await page.goto("/#e=usgs:missing-shared-event");
+  await expect(page.locator("main")).toHaveAttribute("data-presentation", "explore");
+});
+
+test("tour controls pause, advance, stop and leave the readings accessible", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh" });
+  await page.goto("/");
+  const tour = page.getByRole("button", { name: "Take a tour" });
+  await expect(tour).toBeEnabled();
+  await tour.click();
+  await expect(page.locator(".observatory-location")).toBeVisible();
+  const first = await page.locator(".observatory-location").getAttribute("data-tour-location");
+  await page.getByRole("button", { name: "Pause tour", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Resume tour", exact: true })).toBeVisible();
+  await page.waitForTimeout(6500);
+  await expect(page.locator(".observatory-location")).toHaveAttribute("data-tour-location", first!);
+  await page.getByRole("button", { name: "Next tour stop", exact: true }).click();
+  await expect(page.locator(".observatory-location")).not.toHaveAttribute("data-tour-location", first!);
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await expect(tour).toBeVisible();
+  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await waitForData(page);
+});
+
+test("presentation changes keep the same WebGL scene with ordinary motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installFeeds(page, { presentation: "fresh" });
+  await page.addInitScript(() => {
+    const get = HTMLCanvasElement.prototype.getContext;
+    const scene = { contexts: 0 };
+    Object.assign(window, { observatoryScene: scene });
+    HTMLCanvasElement.prototype.getContext = function (kind: string, ...args: unknown[]) {
+      if (/webgl/.test(kind)) scene.contexts += 1;
+      return Reflect.apply(get, this, [kind, ...args]);
+    } as typeof get;
+  });
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Take a tour" })).toBeEnabled();
+  const contexts = () =>
+    page.evaluate(
+      () => (window as unknown as { observatoryScene: { contexts: number } }).observatoryScene.contexts,
+    );
+  const original = await contexts();
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await expect(page.locator("#chrome-rail")).toBeVisible();
+  await expect(page.locator("#view-projection")).toBeFocused();
+  await page.getByRole("button", { name: "Everything Is Fine, back to the default view" }).click();
+  await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+  expect(await contexts()).toBe(original);
+  expect(errors).toEqual([]);
+});
+
+test("a historical shortcut frames an actual archived event and keeps capture available", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await installFeeds(page, { presentation: "fresh" });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Save view", exact: true })).toBeEnabled();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Save view", exact: true }).click();
+  expect((await download).suggestedFilename()).toMatch(/\.png$/);
+  await page.getByText("Revisit a day", { exact: true }).click();
+  await page.getByRole("button", { name: "Japan, 2011 ↗", exact: true }).click();
+  await expect(page).toHaveURL(/d=2011-03-11/);
+  await expect(page.getByRole("complementary", { name: "Pinned earthquake" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "back to live", exact: true })).toBeVisible();
+});
+
+test("an empty view stays honest and keeps exploration available", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { empty: true, presentation: "fresh" });
+  await page.goto("/");
+  await expect(page.locator(".observatory-summary")).toContainText("0 earthquakes");
+  await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await expect(page.locator("#chrome-rail")).toBeVisible();
+});
+
+test("unavailable earthquake feeds do not masquerade as an empty or loading view", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { dead: true, presentation: "fresh" });
+  await page.goto("/");
+  await expect(page.locator(".observatory-source-note")).toContainText("USGS and EMSC are not answering");
+  await expect(page.locator(".observatory-summary")).toContainText("aren’t available yet");
+  await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
+  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await expect(page.locator("#chrome-rail")).toBeVisible();
+});
+
+test("the observatory keeps capture recovery and home navigation available", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh" });
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "canShare", { value: () => true, configurable: true });
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: () => Promise.reject(new DOMException("Refused", "NotAllowedError")),
+    });
+  });
+  await page.goto("/");
+  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await page.getByRole("button", { name: "Save view", exact: true }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Sharing is unavailable" })).toBeVisible();
+  const downloaded = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download image", exact: true }).click();
+  expect((await downloaded).suggestedFilename()).toMatch(/\.png$/);
+  await page.getByRole("button", { name: "Dismiss", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Save view", exact: true })).toBeFocused();
+  await page.getByRole("button", { name: "Everything Is Fine, back to the default view" }).click();
+  await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+});
+
+test("a missing WebGL context still offers the source readings", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh" });
+  await page.addInitScript(() => {
+    const get = HTMLCanvasElement.prototype.getContext;
+    HTMLCanvasElement.prototype.getContext = function (kind: string, ...args: unknown[]) {
+      if (/webgl/.test(kind)) return null;
+      return Reflect.apply(get, this, [kind, ...args]);
+    } as typeof get;
+  });
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Explore the globe" })).toBeVisible();
+  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await waitForData(page);
+});

@@ -1,3 +1,4 @@
+import { LAT_LIMIT } from "../globe/framing";
 import type { SourceId } from "../data/types";
 import type { RampName } from "../globe/ramp";
 import type { SectionLine } from "./section";
@@ -75,7 +76,7 @@ export function decode(fragment: string): Partial<Permalink> {
   const at = params.get("at")?.split(",").map(Number);
   if (at && at.length === 3 && at.every((n) => Number.isFinite(n))) {
     out.lon = wrapLon(at[0]!);
-    out.lat = clamp(at[1]!, -85, 85);
+    out.lat = clamp(at[1]!, -LAT_LIMIT, LAT_LIMIT);
     /*
      * Sanity only. The real floor depends on the viewport, which the decoder does not have: it is 0.64
      * on a desktop map and 0.19 on a phone. `flyTo` re-clamps every shared camera against the live frame.

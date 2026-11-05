@@ -116,6 +116,7 @@ index to the matching implementation note.
 - [src/globe/rings.ts](#srcgloberingsts)
 - [src/globe/scale.ts](#srcglobescalets)
 - [src/globe/scene.ts](#srcglobescenets)
+- [src/globe/nightSurface.ts](#srcglobenightsurfacets)
 - [src/globe/shapes.ts](#srcglobeshapests)
 - [src/globe/sink.test.ts](#srcglobesinktestts)
 - [src/globe/sky.ts](#srcglobeskyts)
@@ -1579,16 +1580,19 @@ Twelve milliseconds. Longer reads as a notification.
 
 ### src/app/tour.ts
 
-**Flies the camera round the busiest regions, on request**
+Tour stops are captured from the current filtered view by `journeys.ts`. Primary readings retain their
+provider, scale, depth, location and internal store key. A largest event, distinct deep event, named
+region and overview supply different reasons to look. Region-only counts are omitted for a held
+cursor because they cover the whole window. Empty views have no route. Arrival uses the camera's
+shared bounds, including the polar latitude limit, without changing the event's recorded coordinates.
 
-Flies the camera round the busiest regions, on request.
+`useGlobeTour.ts` starts reading time after longitude, latitude and zoom reach the stop. The timer owns
+a per-stop remaining-time object so cleanup for the old stop cannot subtract time from a new one.
+Pause and tab visibility retain that remainder. A captured route cannot reorder with new arrivals;
+captions explicitly state that their rankings and counts were sampled when the tour began.
+Narration and controls allow reading, scrolling and keyboard activation. Orbit input or Escape ends
+it; stopping freezes the camera at its observed position. Explicit inspection returns to Explore.
 
-The design bans motion that means nothing, and this passes only because it is built to: every stop is a
-real place with a real count, the rail names both while the camera is there, and any interaction kills it.
-A fixed slideshow of pretty margins would fail.
-
-No authored data. Stops come from `REGIONS` and the order from live counts, so it visits wherever today's
-earthquakes are. Under reduced motion `flyTo` is instant, so this becomes a sequence of cuts by itself.
 
 ### src/app/useNarrow.ts
 
@@ -2880,6 +2884,29 @@ Nothing rather than nonsense, when the table cannot reach the view. `> 0` is not
 like: `Math.cos` of ninety degrees is 6.1e-17, so a pole-on view passed it and asked for a bar 1.5e14
 pixels wide. A bar is never more than about 1.6 times off the target, so eight times off means the view
 is outside the table entirely.
+
+### src/globe/nightSurface.ts
+
+The geography overlay shares the displayed moment's sun, eclipse geometry and aurora forecast.
+On the map, it reconstructs direction from interpolated longitude/latitude rather than interpolating
+spherical normals, avoiding diagonal creases. Day and night blends do not overlap; eclipse coverage
+moves them together. Aurora intensity uses the geographic night mask and is not fabricated animation.
+Sub-level dithering prevents alpha banding across large geographic areas. The underlying surface
+shading in `surfaceMaterial.ts` composes with morph and cutaway patches, uses radial normals and the
+same sun vector, and fades to a factor of one on the flat map.
+
+### Observatory lifetime
+
+`useObservatory.ts` reads existing saved layout preferences before deciding the initial presentation.
+Direct content links open Explore, and initialization never stores a new default. Presets override
+rendered layers and framing temporarily. Explore restores saved choices. Mode changes use a finite
+view transition when supported, with a synchronous state commit and a resize-render opportunity
+before the new snapshot; reduced motion and unsupported browsers update directly.
+
+The globe instance survives presentation and grid changes. Header and footer composition live in
+`GlobeHeader.tsx` and `CanvasFooter.tsx`; no camera or source subscription depends on those elements.
+Historical shortcuts reuse the archive request owner. Only a successful matching day consumes the
+intent and selects the largest available event, so a late answer cannot move a newer view.
 
 ### src/globe/scene.ts
 

@@ -13,7 +13,7 @@ serves the anonymous aggregate-events endpoint alongside static assets; it does 
    accounts from different agencies while preserving their published magnitude and scale.
 3. `src/app/feed.ts` owns source lifecycle, coverage, retention, and switching between live and archive.
 4. `src/App.tsx` composes the view, filters, selected event, timeline, and shared URL.
-   It passes data and callbacks into the rail, detail sheet, and globe.
+   It passes data and callbacks into the observatory, rail, detail sheet, and globe.
 5. `src/globe/scene.ts` owns WebGL resources and scene layers. `src/globe/controls.ts` owns geographic
    camera movement and picking. `src/globe/Globe.tsx` bridges the scene and app, redrawing only while
    motion or changed data requires it.
@@ -43,7 +43,15 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/stillDelivery.ts` | Attached download links and deferred object URL cleanup |
 | `src/app/Utilities.tsx` | Mobile disclosure focus, outside dismissal, Escape and resize lifetime |
 | `src/app/useGlobeResources.ts` | Deferred geometry and timezone data, retained while disabled, with completion cleanup |
-| `src/app/useGlobeTour.ts` | Captured tour route, dwell timers, interaction cancellation, and camera-arrival narration |
+| `src/app/useObservatory.ts` | First-visit and saved presentation, temporary scene overrides, reduced-motion-aware view transitions |
+| `src/app/Observatory.tsx` | Intro, scene choices, captured-story narration and tour controls |
+| `src/app/GlobeHeader.tsx` | Shared masthead, capture, source status and explorer tools |
+| `src/app/CanvasFooter.tsx` | Explorer credit and input hints |
+| `src/app/journeys.ts` | Filtered reading selection, factual captions and scoped summary |
+| `src/app/useGlobeTour.ts` | Captured route, arrival-aware reading time, pause/step controls and interaction cancellation |
+| `src/globe/surfaceMaterial.ts` | Displayed-sun surface shading, fading to the unchanged flat-map palette |
+| `src/globe/nightSurface.ts` | Night, eclipse and aurora surface shader |
+| `src/globe/framing.ts` | Shared camera latitude and zoom bounds |
 | `src/app/useHazardLayers.ts` | Live hazard loading and answered state |
 | `src/app/useStored.ts` | Remember preferences only when the visitor changes them |
 | `src/app/CopyLink.tsx` | Pinned-event link copying and recovery when clipboard access is refused |
