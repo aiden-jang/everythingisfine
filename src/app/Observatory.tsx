@@ -1,6 +1,7 @@
 import { useLayoutEffect, type RefObject } from "react";
 import { ObservatoryStage, OBSERVATORY_SCENES, SceneDiagram } from "./ObservatoryStage";
 import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
+import { RuptureReveal, TOHOKU_DAY } from "./rupture/RuptureReveal";
 import type { EarthScene } from "./useObservatory";
 import type { Stop } from "./tour";
 import { geographicCoordinates } from "../globe/orbitReadout";
@@ -180,9 +181,10 @@ export function Observatory({
           <details className="observatory-history">
             <summary>Revisit a day</summary>
             <div className="observatory-history-links">
-              <button type="button" onClick={() => onHistory("2011-03-11")}>
+              <button type="button" onClick={() => onHistory(TOHOKU_DAY)}>
                 Japan, 2011 ↗
               </button>
+              <RuptureReveal />
               <button type="button" onClick={() => onHistory("2013-05-24")}>
                 Deep beneath Okhotsk ↗
               </button>

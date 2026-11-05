@@ -39,6 +39,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Take a tour** visits a captured selection of readings and regions. Narration waits for arrival;
   Pause, Previous, Next, Stop, and Read this event remain available. Hidden tabs pause its reading time.
 - **Revisit a day** loads an archived day and frames its largest available event.
+- **Watch Tōhoku rupture** follows the 2011 earthquake from its epicenter to the modeled fault
+  beneath the ocean and then to estimated shaking across Japan. Choose **Fault slip** or
+  **Shaking** to inspect either view. Reduced motion opens the finished fault view.
 - **Save view** uses the existing captioned image export, including the reference-cutaway label.
 
 The opening pulls back from the horizon into orbit. Long camera flights bank gently, bright stars
@@ -64,6 +67,7 @@ Observe or Explore remembers that presentation; opening the app alone saves no n
   within 700 km.
 - Choose **Replay sequence** in a pinned earthquake’s nearby activity to see the recorded events
   appear in order. The UTC timeline can be scrubbed, including in the fixed reduced-motion view.
+- Open **Watch Tōhoku rupture** from the 11 March 2011 archive or the pinned mainshock.
 - On a phone, switch between globe space and recent events using the bottom navigation.
 - Use **Still** to share or download a captioned image. If native sharing fails, **Download image**
   keeps that captured frame available. Cancelling the share sheet leaves the page alone.
@@ -101,12 +105,16 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Aurora forecast | NOAA SWPC OVATION |
 | Coastlines and replay cities | Natural Earth, public domain |
 | Plate boundaries | PB2002, Bird (2003), simplified for display |
+| Tōhoku rupture and shaking | USGS finite-fault model and preferred ShakeMap Atlas MMI contours |
 | Stars | Yale Bright Star Catalogue, BSC5 |
 | Constellation figures | d3-celestial, copyright (c) 2015 Olaf Frohn, BSD 3-Clause |
 
 The sun, moon, planets, and eclipse geometry are calculated locally. The 8 April 2024 replay uses
 NASA’s two-minute path predictions from 16:40 to 19:54 UTC, with approximate shading.
 [Bundled path samples and NASA source](src/geo/aprilEclipseData.ts).
+
+The Tōhoku view compresses the modeled rupture times and exaggerates depth by four to make the
+fault visible. The shaking contours show estimated intensity for the event. [USGS Tōhoku record](https://earthquake.usgs.gov/earthquakes/eventpage/usc0001xgp).
 
 Colour represents magnitude. Other hazards use distinct shapes, with neutral interface controls.
 

@@ -41,6 +41,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/ArchiveControls.tsx` | Date entry, calendar, notable days, and eclipse controls |
 | `src/app/useEclipsePlayback.ts` | Eclipse replay clock, scrubbing and interruption |
 | `src/geo/aprilEclipse.ts` | Interpolation of NASA’s April 2024 path samples |
+| `src/app/rupture/` | On-demand Tōhoku archive scene, regional projection and finite reveal clock |
 | `src/app/useStill.ts` | Synchronous canvas capture, caption, native sharing, download fallback |
 | `src/app/stillDelivery.ts` | Attached download links and deferred object URL cleanup |
 | `src/app/Utilities.tsx` | Mobile disclosure focus, outside dismissal, Escape and resize lifetime |
@@ -99,6 +100,10 @@ action descriptions supplement visible button names instead of replacing them.
 Camera springs integrate fixed slices for stability. The frame loop accepts slow-display elapsed
 time up to a bounded pause, keeping movement from stretching with software-rendered frames.
 Replay retains wall-clock time. Reduced motion remains a separate user preference.
+
+Tōhoku loads a separate regional canvas and pinned USGS data on request. The model clock orders
+fault patches using their rupture start and rise times. ShakeMap contours appear in a separate
+surface view. Regenerate the packed asset with [make-tohoku.mjs](tools/make-tohoku.mjs).
 
 WebGL startup failures have a retry surface; they do not remove the event list and filters.
 Scene callbacks use current refs so changing a selection does not recreate WebGL resources.

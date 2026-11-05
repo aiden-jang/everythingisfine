@@ -1,4 +1,4 @@
-import { WaveChooser } from "./WaveChooser";
+import { EventScience } from "./EventScience";
 import type { StartInspection } from "./useEventInspection";
 import { CopyLink } from "./CopyLink";
 import { EventTime } from "./EventTime";
@@ -11,9 +11,7 @@ import { depthClass, findNearby, NEARBY_KM, stepsFrom } from "./nearby";
 import { antipodeOf, FRONT_ARCS, frontLengthKm } from "../geo/antipode";
 import { Sequence } from "./Sequence";
 import { sectionThrough, type SectionLine } from "./section";
-import { arrivalFor, seconds } from "./arrival";
 import { daylight, solarClock, solarHour, sunElevation } from "../geo/sun";
-import { P_WAVE_KM_PER_S, S_WAVE_KM_PER_S } from "../geo/waves";
 import { ago, boundaryNote, coordinates, depth, farSideNote, magnitude, place, SOURCE_NAMES } from "./format";
 
 /* The pinned event, in full. See ARCHITECTURE.md#srcappdetailpaneltsx. */
@@ -122,8 +120,6 @@ export function DetailPanel({
     reading.revision ? [{ reading, revision: reading.revision }] : [],
   );
   const klass = depthClass(r.depthKm);
-
-  const arrival = arrivalFor(quake);
 
   const [a, b] = quake.readings;
   const spread =
@@ -268,21 +264,7 @@ export function DetailPanel({
         />
       </div>
 
-      {arrival ? (
-        <div className="mt-4">
-          <p className="text-[11px] leading-relaxed text-dim">
-            {arrival.place} is {arrival.km} km away. The first shake arrived about{" "}
-            <span className="text-ink">{seconds(arrival.p)}</span> after the rupture, and the stronger S wave
-            about {seconds(arrival.gap)} behind it.
-          </p>
-          <p className="mt-2 text-[11px] leading-relaxed text-faint">
-            Timed straight through the crust at {P_WAVE_KM_PER_S} and {S_WAVE_KM_PER_S} km/s, over the
-            distance corrected for depth. Not a modelled travel time.
-          </p>
-        </div>
-      ) : null}
-
-      {onInspect && <WaveChooser key={quake.key} quake={quake} onFollow={onInspect} />}
+      <EventScience quake={quake} onInspect={onInspect ?? null} />
 
       {spread ? (
         <div className="mt-4">

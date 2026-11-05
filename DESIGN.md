@@ -196,6 +196,11 @@ Below the Surface approaches the selected region and lowers the camera toward th
 after the camera settles, then the reference guides trace downward. Steering can interrupt the shot,
 and reduced motion starts at the finished composition. The depth scale and geographic anchor stay fixed.
 
+The Tōhoku archive reveal holds the epicenter across a regional camera dive and the return to an
+overhead map. The fault view uses USGS model timing and metres of slip, with fourfold depth exaggeration.
+The surface view uses the preferred USGS ShakeMap contours and a separate intensity legend.
+The motion pauses in hidden tabs, and either finished view can be opened directly.
+
 The globe opens into a curved sheet from its map seam. The camera pulls back to show the curl, then
 settles at the selected map location. The same path wraps the sheet back into the globe, and changing
 direction continues from the displayed frame. Reduced motion switches directly between the projections.

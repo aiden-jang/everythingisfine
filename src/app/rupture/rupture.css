@@ -1,0 +1,274 @@
+.rupture-dialog {
+  inset: 0;
+  box-sizing: border-box;
+  width: min(100% - 48px, 1400px);
+  height: min(100% - 48px, 920px);
+  max-width: none;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--color-hairline);
+  border-radius: 12px;
+  background: var(--color-void);
+  color: var(--color-ink);
+}
+
+.rupture-dialog[open] {
+  display: grid;
+  grid-template-rows: auto minmax(260px, 1fr) auto auto;
+}
+
+.rupture-dialog::backdrop {
+  background: rgb(5 11 22 / 0.85);
+}
+
+.rupture-header,
+.rupture-console,
+.rupture-credits {
+  padding-inline: clamp(16px, 3vw, 42px);
+}
+
+.rupture-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: clamp(16px, 3vh, 30px);
+}
+
+.rupture-header h2 {
+  margin: 0;
+  font-size: clamp(1.7rem, 3.6vw, 3.2rem);
+  font-weight: 600;
+  letter-spacing: -0.038em;
+  line-height: 1.04;
+  text-wrap: balance;
+}
+
+.rupture-header p {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 16px;
+  margin-top: 10px;
+  color: var(--color-dim);
+  font: 0.72rem/1.5 var(--font-mono);
+}
+
+.rupture-map {
+  position: relative;
+  min-height: 0;
+  margin: 0;
+  overflow: hidden;
+  border-block: 1px solid var(--color-hairline);
+  background: radial-gradient(ellipse at 50% 43%, #172941, var(--color-void) 73%);
+}
+
+.rupture-map canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.rupture-map figcaption {
+  position: absolute;
+  inset: auto clamp(16px, 3vw, 42px) 12px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--color-dim);
+  font: 0.68rem/1.5 var(--font-mono);
+  text-shadow: 0 1px 4px var(--color-void);
+  pointer-events: none;
+}
+
+.rupture-console {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px 28px;
+  padding-block: 16px 18px;
+  background: var(--color-deck);
+}
+
+.rupture-caption h3 {
+  font-size: 1.04rem;
+  font-weight: 600;
+}
+
+.rupture-caption p {
+  max-width: 55ch;
+  margin-top: 4px;
+  color: var(--color-dim);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.rupture-actions {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+}
+
+.rupture-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rupture-button {
+  min-height: 44px;
+  padding-inline: 12px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  background: var(--color-deck);
+  color: var(--color-ink);
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.rupture-button:is(:hover, [aria-pressed="true"]) {
+  border-color: var(--color-faint);
+  background: var(--color-raised);
+}
+
+.rupture-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  min-height: 18px;
+  color: var(--color-dim);
+  font: 0.68rem/1.4 var(--font-mono);
+}
+
+.rupture-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rupture-legend i {
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 2px;
+}
+
+.rupture-credits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding-block: 9px;
+  border-top: 1px solid var(--color-hairline);
+  color: var(--color-dim);
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.rupture-credits a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.rupture-loading {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: var(--color-dim);
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .rupture-dialog {
+    width: calc(100% - 20px);
+    height: calc(100% - 20px);
+  }
+
+  .rupture-dialog[open] {
+    grid-template-rows: auto minmax(195px, 1fr) auto auto;
+  }
+
+  .rupture-console {
+    flex-direction: column;
+    padding-block: 12px;
+  }
+
+  .rupture-actions {
+    justify-items: start;
+    gap: 8px;
+  }
+
+  .rupture-button {
+    padding-inline: 10px;
+  }
+}
+
+@media (forced-colors: active) {
+  .rupture-map canvas {
+    forced-color-adjust: none;
+  }
+
+  .rupture-button[aria-pressed="true"] {
+    border-color: Highlight;
+  }
+}
+
+.rupture-caption {
+  min-height: 4rem;
+}
+
+@media (max-width: 700px) {
+  .rupture-caption {
+    min-height: 5rem;
+  }
+}
+
+@media (max-height: 520px) and (min-width: 620px) {
+  .rupture-dialog {
+    width: calc(100% - 20px);
+    height: calc(100% - 20px);
+  }
+
+  .rupture-dialog[open] {
+    grid-template: auto minmax(0, 1fr) auto / minmax(0, 1fr) minmax(210px, 30%);
+  }
+
+  .rupture-header,
+  .rupture-credits {
+    grid-column: 1 / -1;
+  }
+
+  .rupture-header {
+    padding-block: 12px;
+  }
+
+  .rupture-header h2 {
+    font-size: clamp(1.5rem, 3.3vw, 2.3rem);
+  }
+
+  .rupture-header p {
+    margin-top: 4px;
+  }
+
+  .rupture-console {
+    flex-direction: column;
+    justify-content: flex-start;
+    overflow: auto;
+    padding: 12px 16px;
+  }
+
+  .rupture-actions {
+    justify-items: start;
+  }
+
+  .rupture-legend > span:first-child {
+    flex-basis: 100%;
+  }
+
+  .rupture-map {
+    border-inline-end: 1px solid var(--color-hairline);
+  }
+}
