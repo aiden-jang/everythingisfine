@@ -451,6 +451,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     controls,
     beginArrival: lights.begin,
     setCutaway: (focus) => {
+      controls.setDive(focus?.dive === true);
       cutaway.set(focus);
       if (focus) lights.begin();
     },
@@ -460,16 +461,15 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     stepPresentation: (dt, reduced) => {
       quietMotion = reduced;
       const illuminating = lights.step(dt, reduced);
-      const cutting = cutaway.step(dt, reduced, morph.value);
+      const cutting = cutaway.step(dt, reduced, morph.value, !controls.diveReady());
       const tracing = figures.step(dt, reduced, !controls.skyReady());
       const grouping = regroup.step(dt, reduced);
-      return cutting || tracing || grouping || illuminating || (morph.value === 0 && !controls.skyReady());
+      const settling = morph.value === 0 && !controls.framingReady();
+      return cutting || tracing || grouping || illuminating || settling;
     },
-    // Geography follows the ramp's contrast requirements; see NEUTRAL for the measurement.
     markerRadius: (magnitude: number): number => markerRadiusPx(magnitude, markerScale()),
     setGeography: (ramp: RampName): void => {
       const palette = ramp === "cividis" ? NEUTRAL : BLUEPRINT;
-      // The slab is geography too, and was the one layer here that did not know it.
       slab.setRamp(ramp === "cividis" ? "cividis" : "thermal");
       (ocean.material as MeshBasicMaterial).color.setHex(palette.sphere);
       (fill.material as MeshBasicMaterial).color.setHex(palette.land);

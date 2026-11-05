@@ -443,7 +443,7 @@ export function Globe({
         // the globe being the default view, and at 300ms nobody sees it happen.
         const step = reducedMotion.matches
           ? 1
-          : morphTarget === 1 && (globe.cutawayOpen() || !globe.controls.skyReady())
+          : morphTarget === 1 && (globe.cutawayOpen() || !globe.controls.framingReady())
             ? 0
             : dt / 1.1;
         morph =

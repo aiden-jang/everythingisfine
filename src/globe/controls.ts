@@ -1,5 +1,6 @@
 import { createPlanetarium } from "./planetarium";
-import { perspectiveAngle } from "./cameraProjection";
+import { createGeographicProjection, perspectiveAngle } from "./cameraProjection";
+import { createDepthDive } from "./depthDive";
 import { createCameraRig } from "./cameraRig";
 import {
   advanceCameraSpring,
@@ -77,6 +78,9 @@ export interface Controls {
   morph: () => number;
   setPlanetarium: (on: boolean) => void;
   skyReady: () => boolean;
+  setDive: (on: boolean) => void;
+  diveReady: () => boolean;
+  framingReady: () => boolean;
   /** Screen position of a geographic point, or null when it is round the back. See ARCHITECTURE.md#srcglobecontrolsts. */
   project: (lon: number, lat: number, radius?: number) => { x: number; y: number } | null;
   /** Degrees of map covered by one screen pixel. Only meaningful once flat. See ARCHITECTURE.md#srcglobecontrolsts. */
@@ -111,6 +115,7 @@ export function createControls(
   let target: CameraTarget | null = null;
   const rig = createCameraRig(camera, canvas);
   const sky = createPlanetarium(camera);
+  const dive = createDepthDive(camera);
   const flightPose = { lon, lat, zoom },
     flightVelocity = { lon: 0, lat: 0, zoom: 0 };
 
@@ -124,7 +129,17 @@ export function createControls(
   const raycaster = new Raycaster();
   const ndc = new Vector2();
   const hit = new Vector3();
-  const world = new Vector3();
+  const project = createGeographicProjection(camera, canvas);
+  const interruptFraming = (): void => {
+    sky.interrupt();
+    dive.interrupt();
+  };
+  const stepFraming = (dt: number): boolean => {
+    if (morph !== 0) return false;
+    const revealing = sky.step(dt, reduced.matches);
+    const diving = dive.step(dt, reduced.matches, target === null);
+    return revealing || diving;
+  };
 
   /**
    * A hard floor that does not rely on the zoom clamp being right. At ZOOM_MAX the camera stops 0.19
@@ -226,6 +241,7 @@ export function createControls(
 
     camera.position.set(orbitX, orbitY, orbitZ);
     camera.lookAt(0, 0, 0);
+    dive.apply();
     rig.apply(false);
     sky.apply();
     // Required. `lookAt` writes the quaternion but leaves matrixWorld stale until something renders,
@@ -261,7 +277,7 @@ export function createControls(
 
   /** One key press of camera movement, in degrees and in zoom factor. */
   const nudge = (dLon: number, dLat: number, factor = 1): void => {
-    sky.interrupt();
+    interruptFraming();
     const base = intended();
     aim({
       lon: base.lon + dLon,
@@ -276,7 +292,7 @@ export function createControls(
    * what lets ten fast notches travel ten notches instead of racing the animation.
    */
   const zoomAt = (factor: number, clientX: number, clientY: number): void => {
-    sky.interrupt();
+    interruptFraming();
     const before = pick(clientX, clientY);
     const base = intended();
     const nextZoom = clampZoom(base.zoom * factor);
@@ -331,7 +347,7 @@ export function createControls(
         /* drag still works, it just ends at the canvas edge */
       }
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      sky.interrupt();
+      interruptFraming();
       // Touching the globe stops it dead. Coasting through a grab feels broken.
       vLon = 0;
       vLat = 0;
@@ -503,7 +519,7 @@ export function createControls(
   };
 
   const step = (dt: number): boolean => {
-    const skyMoving = morph === 0 && sky.step(dt, reduced.matches);
+    const framingMoving = stepFraming(dt);
     const rigMoving = rig.step(dt, cameraRigTarget(target, { lon, lat, zoom }), reduced.matches || morph > 0);
     if (target) {
       if (reduced.matches) {
@@ -525,7 +541,7 @@ export function createControls(
       }
       return true;
     }
-    let moving = rigMoving || skyMoving;
+    let moving = rigMoving || framingMoving;
 
     if (Math.abs(vLon) > MOMENTUM_FLOOR || Math.abs(vLat) > MOMENTUM_FLOOR) {
       lon += vLon * dt;
@@ -569,8 +585,9 @@ export function createControls(
     pick,
     flyTo,
     enter: () => {
-      if (sky.wanted()) return;
+      if (sky.wanted() || dive.wanted()) return;
       sky.clear();
+      dive.clear();
       // Skipped under reduced motion, not shortened. A brief version of a motion somebody asked not to
       // see is still the motion.
       if (reduced.matches) return;
@@ -586,40 +603,11 @@ export function createControls(
       rig.snap(lens.bank, lens.lift);
       apply();
     },
-    project: (pLon, pLat, radius = 1) => {
-      const r = canvas.getBoundingClientRect();
-
-      /* On the map, project onto the plane. Every piece of chrome over the canvas comes through here, and on
-         the sphere they all sat where the event would have been on a globe nobody was looking at. */
-      if (morph > 0.5) {
-        let dLon = pLon - lon;
-        dLon -= Math.round(dLon / 360) * 360;
-        world.set(((lon + dLon) / 180) * MAP_HALF_WIDTH, pLat / 90, 0);
-        world.project(camera);
-        return {
-          x: r.left + ((world.x + 1) / 2) * r.width,
-          y: r.top + ((1 - world.y) / 2) * r.height,
-        };
-      }
-
-      const phi = pLat * DEG;
-      const lam = pLon * DEG;
-      const c = Math.cos(phi);
-      world.set(c * Math.sin(lam), Math.sin(phi), c * Math.cos(lam));
-      // Behind the horizon: the surface normal faces away from the eye. Asked at the surface even when
-      // a depth was given, because that is the question the shader asks.
-      if (world.dot(camera.position.clone().sub(world)) <= 0) return null;
-      if (radius !== 1) world.multiplyScalar(radius);
-      world.project(camera);
-      return {
-        x: r.left + ((world.x + 1) / 2) * r.width,
-        y: r.top + ((1 - world.y) / 2) * r.height,
-      };
-    },
+    project: (pLon, pLat, radius = 1) => project(pLon, pLat, radius, morph, lon),
     setMorph: (t) => {
       if (t > 0 && target?.intro) target = null;
       morph = Math.max(0, Math.min(1, t));
-      if (morph === 0) sky.step(0, reduced.matches);
+      stepFraming(0);
       // The floor moves with the morph, so a camera parked beyond the globe's has to be brought back
       // as the map rolls up. The pending target too, or the spring drags it straight back out.
       zoom = clampZoom(zoom);
@@ -633,6 +621,13 @@ export function createControls(
       apply();
     },
     skyReady: sky.ready,
+    setDive: (on) => {
+      dive.set(on);
+      stepFraming(0);
+      apply();
+    },
+    diveReady: dive.ready,
+    framingReady: () => sky.ready() && dive.ready(),
     state: () => ({ lon, lat, zoom }),
     // Visible height at distance d is 2 d tan(fov/2), and `focalPx` is the reciprocal half of that, so
     // a pixel is d/focalPx world units and a world unit is 90 degrees.

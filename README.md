@@ -30,8 +30,9 @@ A fresh visit opens the observatory: a full globe, a short introduction, and thr
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
 
 - **Live Earth** frames the current activity; selecting it from an archive returns to live.
-- **Below the Surface** opens the deepest visible earthquake with true-scale reference guides and
-  historical seismicity. It is available when the view contains a reported depth of at least 70 km.
+- **Below the Surface** flies to the deepest visible earthquake, settles at an angle, and opens
+  a cutaway with true-scale reference guides and historical seismicity. It is available when the
+  view contains a reported depth of at least 70 km.
 - **After Dark** opens the displayed moment's night sky above Earth's curved horizon, then traces
   constellation guides. Reduced motion keeps the same view without the flight.
 - **Take a tour** visits a captured selection of readings and regions. Narration waits for arrival;

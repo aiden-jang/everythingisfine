@@ -16,6 +16,7 @@ import { DEG, EARTH_RADIUS_KM } from "../geo/sphere";
 export interface CutawayFocus {
   lon: number;
   lat: number;
+  dive?: true;
 }
 export const CUTAWAY_DEPTH_KM = 900;
 const ANGLE = 20 * DEG;
@@ -185,18 +186,19 @@ export function createCutaway() {
       }
     },
     isOpen: (): boolean => progress > 0,
-    step(dt: number, reduced: boolean, morph: number): boolean {
+    step(dt: number, reduced: boolean, morph: number, waitingForDive = false): boolean {
+      const openingTarget = waitingForDive && !reduced ? 0 : target;
       const step = reduced ? 1 : dt / 0.55;
       // This reference well has spherical geometry; open it only after the globe has returned.
       progress =
-        target === 1 && morph > 0
+        openingTarget === 1 && morph > 0
           ? 0
-          : target > progress
-            ? Math.min(target, progress + step)
-            : Math.max(target, progress - step);
+          : openingTarget > progress
+            ? Math.min(openingTarget, progress + step)
+            : Math.max(openingTarget, progress - step);
       guideProgress = reduced
-        ? target
-        : target === 0 || morph > 0
+        ? openingTarget
+        : openingTarget === 0 || morph > 0
           ? 0
           : Math.min(1, guideProgress + dt / 1.0);
       guideTrace.value = guideProgress;
@@ -207,7 +209,7 @@ export function createCutaway() {
       enabled.value = angle > 0.0001 ? 1 : 0;
       // Reveal the well through the same aperture; the surface hides the rest while it opens.
       object.visible = angle > 0.0001;
-      return (progress !== target || (target === 1 && guideProgress < 1)) && morph === 0;
+      return (progress !== openingTarget || (openingTarget === 1 && guideProgress < 1)) && morph === 0;
     },
   };
 }

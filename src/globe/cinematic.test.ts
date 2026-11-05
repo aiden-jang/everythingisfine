@@ -4,13 +4,20 @@ import { entranceFrom, entrancePose, entranceDone, cameraRigTarget, type CameraT
 import { createFlightTarget } from "./cameraTarget";
 import type { Controls } from "./controls";
 import { createCameraRig } from "./cameraRig";
+import { createDepthDive } from "./depthDive";
 import { createStarExposure } from "./starExposure";
 import { createSurfaceLayers } from "./surfaceLayers";
 import { Color, Vector3 } from "three";
 
 describe("cinematic camera and light", () => {
   it("replays arrival only on request and retains perspective-correct panel lift", () => {
-    const controls = { flyTo: vi.fn(), enter: vi.fn(), setPlanetarium: vi.fn(), degForPx: vi.fn(() => 30) };
+    const controls = {
+      flyTo: vi.fn(),
+      enter: vi.fn(),
+      setPlanetarium: vi.fn(),
+      setDive: vi.fn(),
+      degForPx: vi.fn(() => 30),
+    };
     const wake = vi.fn(),
       reveal = vi.fn();
     const fly = createFlightTarget(controls as unknown as Controls, wake, reveal);
@@ -23,8 +30,42 @@ describe("cinematic camera and light", () => {
     expect(controls.flyTo).toHaveBeenLastCalledWith(145, 12, 1);
     expect(controls.enter).toHaveBeenCalledTimes(1);
     expect(controls.setPlanetarium).toHaveBeenLastCalledWith(false);
+    expect(controls.setDive).toHaveBeenLastCalledWith(false);
     expect(reveal).toHaveBeenCalledTimes(1);
     expect(wake).toHaveBeenCalledTimes(2);
+  });
+  it("waits for approach, holds an interrupted dive, and clears the tilt on exit", () => {
+    const camera = new PerspectiveCamera(32, 1);
+    const dive = createDepthDive(camera);
+    const depthGap = (): number => {
+      camera.position.set(0, 0, 2.15);
+      camera.lookAt(0, 0, 0);
+      dive.apply();
+      camera.updateMatrixWorld();
+      const surface = new Vector3(0, 0, 1).project(camera);
+      const deep = new Vector3(0, 0, 0.86).project(camera);
+      return Math.abs(surface.y - deep.y);
+    };
+    dive.set(true);
+    expect(dive.step(2, false, false)).toBe(true);
+    expect(depthGap()).toBe(0);
+    expect(dive.step(0.4, false, true)).toBe(true);
+    const partial = depthGap();
+    expect(partial).toBeGreaterThan(0);
+    dive.interrupt();
+    expect(dive.step(2, false, true)).toBe(false);
+    expect(depthGap()).toBe(partial);
+    dive.set(false);
+    expect(dive.step(0.75, false, false)).toBe(false);
+    expect(depthGap()).toBe(0);
+    dive.set(true);
+    expect(dive.step(0, true, false)).toBe(false);
+    expect(depthGap()).toBeGreaterThan(0.1);
+    camera.position.set(0, -2.14, 0.1);
+    camera.lookAt(0, 0, 0);
+    const right = new Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+    dive.apply();
+    expect(new Vector3(1, 0, 0).applyQuaternion(camera.quaternion).dot(right)).toBeCloseTo(1);
   });
   it("reaches the original shared framing at different refresh rates", () => {
     for (const dt of [1 / 120, 1 / 60, 1 / 5]) {

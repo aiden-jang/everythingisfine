@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Permalink } from "./permalink";
 import { stored, store } from "./stored";
 import type { Stop } from "./tour";
+import type { CutawayFocus } from "../globe/cutaway";
 
 export type EarthScene = "live" | "depth" | "night";
 export type Presentation = "observe" | "explore";
@@ -29,7 +30,7 @@ export function initialPresentation(shared: Partial<Permalink>, read = stored): 
 export function useObservatory(shared: Partial<Permalink>) {
   const [presentation, setPresentation] = useState(() => initialPresentation(shared));
   const [scene, setScene] = useState<EarthScene>("live");
-  const [focus, setFocus] = useState<{ lon: number; lat: number } | null>(null);
+  const [focus, setFocus] = useState<CutawayFocus | null>(null);
   const [tourStop, setTourStop] = useState<Stop | null>(null);
   const [ready, setReady] = useState(false);
   const transition = useRef<ViewTransition | null>(null);
@@ -71,7 +72,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const enterObserve = useCallback(() => changePresentation("observe", false), [changePresentation]);
   const exploreScene = useCallback(() => changePresentation("explore", true), [changePresentation]);
   const observeScene = useCallback(() => changePresentation("observe", true), [changePresentation]);
-  const chooseScene = useCallback((next: EarthScene, at: { lon: number; lat: number } | null = null) => {
+  const chooseScene = useCallback((next: EarthScene, at: CutawayFocus | null = null) => {
     setScene(next);
     setFocus(at);
     setTourStop(null);

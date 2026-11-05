@@ -55,7 +55,8 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/globe/cameraRig.ts` | Interruptible lens bank and horizon offset, cleared on the map and under reduced motion |
 | `src/globe/cameraTarget.ts` | Shared camera callback, perspective panel lift and explicit arrival replay |
 | `src/globe/planetarium.ts` | Finite After Dark pitch, input interruption and reduced-motion sky framing |
-| `src/globe/cameraProjection.ts` | Limb-safe perspective angle for drag anchoring and panel lift |
+| `src/globe/depthDive.ts` | Oblique cutaway framing after geographic arrival, including interruption and exit |
+| `src/globe/cameraProjection.ts` | Geographic projection for overlays and limb-safe perspective angles for input |
 | `src/globe/useGlobeLayers.ts` | Layer and presentation updates through stable refs, waking the existing renderer |
 | `src/globe/starExposure.ts` | Bounded photographic trails from consecutive rendered camera matrices |
 | `src/globe/surfaceLayers.ts` | Atmosphere, ocean glint and finite reveal exposure |

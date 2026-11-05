@@ -37,6 +37,8 @@ describe("finite scene presentation", () => {
     material.onBeforeCompile(shader as never, {} as never);
     const uniforms = shader.uniforms as Record<string, { value: number | Vector3 }>;
     cutaway.set({ lon: 90, lat: 0 });
+    expect(cutaway.step(1, false, 0, true)).toBe(false);
+    expect(cutaway.object.visible).toBe(false);
     expect(cutaway.step(0.1, false, 0)).toBe(true);
     const center = uniforms["uCutCenter"]!.value as Vector3;
     expect(center.x).toBeCloseTo(1);

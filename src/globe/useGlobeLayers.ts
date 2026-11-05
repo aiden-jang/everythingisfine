@@ -36,7 +36,7 @@ export function useGlobeLayers(
   useEffect(() => {
     sinkRef.current(depthSink ?? false);
   }, [depthSink, sinkRef]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     cutawayRef.current(cutaway ?? null);
   }, [cutaway, cutawayRef]);
   // Lazy tables and displayed-time changes must wake the sleeping renderer.

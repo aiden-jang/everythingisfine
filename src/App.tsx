@@ -502,8 +502,8 @@ export function App(): JSX.Element {
   const chooseEarthScene = (scene: "live" | "depth" | "night"): void => {
     stopTour();
     if (scene === "depth" && journey.deepest) {
-      chooseScene(scene, journey.deepest);
-      flyTo.current(journey.deepest.lon, journey.deepest.lat, 1.65);
+      chooseScene(scene, { ...journey.deepest, dive: true });
+      flyTo.current(journey.deepest.lon, journey.deepest.lat, 1.9);
     } else if (scene === "night") {
       const sun = subsolarPoint(view.at ?? clockAt());
       chooseScene(scene);

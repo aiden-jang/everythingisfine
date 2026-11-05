@@ -109,6 +109,7 @@ index to the matching implementation note.
 - [src/globe/cameraTarget.ts](#srcglobecameratargetts)
 - [src/globe/cameraProjection.ts](#srcglobecameraprojectionts)
 - [src/globe/planetarium.ts](#srcglobeplanetariumts)
+- [src/globe/depthDive.ts](#srcglobedepthdivets)
 - [src/globe/useGlobeLayers.ts](#srcglobeuseglobelayersts)
 - [src/globe/controls.ts](#srcglobecontrolsts)
 - [src/globe/events.perf.test.ts](#srcglobeeventsperftestts)
@@ -2490,13 +2491,14 @@ reduced motion clear the lens; no separate animation loop is created.
 The callback resolves wake through its caller at invocation time: shared-link setup can call it before
 the frame loop exists. Pixel lift uses the sphere's perspective angle and the existing latitude/lift
 limits. Only an explicit arrival request replays the shot and reveal lighting; normal inspection
-and tour flights remain navigation. That explicit replay also clears the planetarium pitch.
+and tour flights remain navigation. That explicit replay also clears any scene framing.
 
 ### src/globe/cameraProjection.ts
 
 The sphere's perspective inverse uses the camera distance and focal length, with a linear continuation
 at the limb. Both drag anchoring and panel lift use it. The derivation remains under
 [controls](#srcglobecontrolsts), where those geographic interactions are coordinated.
+Overlays project through the same camera as the canvas, including the dive's displaced eye.
 
 ### src/globe/planetarium.ts
 
@@ -2511,6 +2513,15 @@ the sphere; returning to a map settles it before flattening. Guide tracing waits
 then completes through the existing frame loop. Hidden map guides do not hold that loop awake.
 Bootstrap arrival leaves an active sky request intact; the app restores its current geographic camera
 when graphics startup is retried.
+
+### src/globe/depthDive.ts
+
+The explicit depth scene waits for the geographic flight to arrive, then moves the eye around the
+sphere and aims inside the reference well. Once the camera settles, the aperture and depth guides
+can reveal through the existing frame loop. The camera lens changes the view of the well while its
+geographic anchor and depth radii stay fixed. Input holds the displayed angle and lets the well open.
+The angle eases out on departure before flattening a saved map. Reduced motion applies the final
+angle directly. Explore's cutaway and the tour use their existing framing.
 
 ### src/globe/useGlobeLayers.ts
 

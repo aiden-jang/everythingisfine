@@ -63,7 +63,27 @@ for (const [width, height] of [
       await page.screenshot({ path: test.info().outputPath(`night-flight-${width}.png`) });
       await page.getByRole("button", { name: "Below the Surface", exact: true }).click();
       await expect(page.getByRole("heading", { name: "Beneath the surface." })).toBeVisible();
-      await page.waitForTimeout(900);
+      const depthView = () =>
+        page.evaluate(() => {
+          const { __globe: globe } = window as unknown as {
+            __globe: {
+              state: () => { lon: number; lat: number };
+              project: (lon: number, lat: number, radius?: number) => { y: number } | null;
+              diveReady: () => boolean;
+            };
+          };
+          const { lon, lat } = globe.state();
+          const surface = globe.project(lon, lat);
+          const deep = globe.project(lon, lat, 0.86);
+          const height = document.querySelector("canvas")!.getBoundingClientRect().height;
+          return {
+            gap: surface && deep ? Math.abs(surface.y - deep.y) / height : 0,
+            settled: globe.diveReady(),
+          };
+        });
+      await expect.poll(async () => (await depthView()).settled).toBe(true);
+      expect((await depthView()).gap).toBeGreaterThan(0.04);
+      await page.waitForTimeout(1050);
       await page.screenshot({ path: test.info().outputPath(`depth-reveal-${width}.png`) });
       await page.getByRole("button", { name: "Explore the globe" }).click();
       await expect(page.locator("#chrome-rail")).toBeVisible();
@@ -71,6 +91,13 @@ for (const [width, height] of [
       await expect.poll(async () => (await pose()).zoom).toBeGreaterThan(1.2);
       await expect.poll(async () => (await pose()).lon).toBe(145);
       await expect.poll(async () => (await pose()).zoom).toBe(1);
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      const dive = page.getByRole("button", { name: "Below the Surface", exact: true });
+      await dive.click();
+      await expect(dive).toHaveAttribute("aria-pressed", "true");
+      const reduced = await depthView();
+      expect(reduced.settled).toBe(true);
+      expect(reduced.gap).toBeGreaterThan(0.04);
       expect(errors).toEqual([]);
     },
   );

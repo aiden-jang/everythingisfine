@@ -188,6 +188,10 @@ Earth's framing; returning to a saved map settles the pitch before unwrapping. S
 the reveal at its displayed position. Reduced motion uses the final sky composition immediately.
 The sky catalogue keeps its displayed-time orientation throughout; no stars move to decorate the shot.
 
+Below the Surface approaches the selected region and lowers the camera toward the rim. The well opens
+after the camera settles, then the reference guides trace downward. Steering can interrupt the shot,
+and reduced motion starts at the finished composition. The depth scale and geographic anchor stay fixed.
+
 Selection brackets may settle once, panels may catch a brief neutral edge light, and zoom regrouping
 may crossfade recorded marker positions. These effects must not invent intermediate epicentres or
 change magnitude encoding. Optional constellation lines trace their catalogue connections with a brief leading glint on
