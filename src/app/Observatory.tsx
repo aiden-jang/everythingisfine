@@ -1,4 +1,4 @@
-import { useLayoutEffect, type RefObject } from "react";
+import { Fragment, useLayoutEffect, type RefObject, type CSSProperties } from "react";
 import type { EarthScene } from "./useObservatory";
 import type { Stop } from "./tour";
 import { geographicCoordinates } from "../globe/orbitReadout";
@@ -80,8 +80,23 @@ export function Observatory({
             ? `A closer look · ${Math.min((tour.at ?? 0) + 1, tour.length)} / ${tour.length}`
             : "A window onto our planet"}
         </p>
-        <h2>{title}</h2>
-        <p className="observatory-description">{description}</p>
+        <h2 key={title} aria-label={title}>
+          {title.split(" ").map((word, index, words) => (
+            <Fragment key={index}>
+              <span
+                aria-hidden="true"
+                className="observatory-word"
+                style={{ "--word-index": index } as CSSProperties}
+              >
+                {word}
+              </span>
+              {index + 1 < words.length ? " " : null}
+            </Fragment>
+          ))}
+        </h2>
+        <p key={description} className="observatory-description">
+          {description}
+        </p>
         {active && tour.stop ? (
           <p className="observatory-location" data-tour-location={`${tour.stop.lon},${tour.stop.lat}`}>
             {tour.stop.name} <span>{geographicCoordinates(tour.stop)}</span>

@@ -26,7 +26,7 @@ requested directly from the browser.
 ## Observe and explore
 
 A fresh visit opens the observatory: a full globe, a short introduction, and three scenes.
-**Explore** opens the scientific controls. The wordmark returns to the observatory and resets the view.
+**Explore** opens the scientific controls. The wordmark returns to the observatory, resets the view, and replays its horizon-to-orbit arrival.
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
 
 - **Live Earth** frames the current activity; selecting it from an archive returns to live.
@@ -37,6 +37,11 @@ Existing saved layouts and links to an event, archive, section, or held moment o
   Pause, Previous, Next, Stop, and Read this event remain available. Hidden tabs pause its reading time.
 - **Revisit a day** loads an archived day and frames its largest available event.
 - **Save view** uses the existing captioned image export, including the reference-cutaway label.
+
+The opening pulls back from the horizon into orbit. Long camera flights bank gently, bright stars
+leave short photographic trails during travel, and scene reveals briefly lift the atmosphere's light.
+Constellation guides trace with a leading glint; cutaway reference rings draw in sequence. Headline
+words arrive with a staggered reveal. These are finite presentation effects; reduced motion skips them.
 
 Scenes are temporary: returning to Explore restores the saved layer and projection choices. Choosing
 Observe or Explore remembers that presentation; opening the app alone saves no new preference.

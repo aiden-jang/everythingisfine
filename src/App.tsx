@@ -1,3 +1,4 @@
+import type { FlyTo } from "./globe/cameraTarget";
 import { CanvasFooter } from "./app/CanvasFooter";
 import { Observatory } from "./app/Observatory";
 import { journeyFor, observatorySummary, observatoryFeedNote } from "./app/journeys";
@@ -303,7 +304,7 @@ export function App(): JSX.Element {
     // Only when there is an archive to leave: `resumeLive` clears the store.
     if (feed.snapshot().archive !== null) backToLive();
     if (feed.setWindow(DEFAULT_FILTERS.windowMs)) setPendingRev(feed.snapshot().revision);
-    flyTo.current(145, 12, 1);
+    flyTo.current(145, 12, 1, 0, true);
     replaceViewLocation(window.location.pathname + window.location.search);
     // The writer only writes while the hash is the one it last wrote, which is what protects a pasted
     // link. Emptying it without saying so leaves the writer refusing to write again.
@@ -361,7 +362,7 @@ export function App(): JSX.Element {
   const onNews = useCallback((magnitudes: number[]) => {
     siren.current?.play(magnitudes);
   }, []);
-  const flyTo = useRef<(lon: number, lat: number, zoom?: number, liftPx?: number) => void>(() => {});
+  const flyTo = useRef<FlyTo>(() => {});
   const lastWritten = useRef<string>(window.location.hash);
   const camera = useRef<{ lon: number; lat: number; zoom: number }>({
     lon: shared.lon ?? 145,
@@ -463,7 +464,6 @@ export function App(): JSX.Element {
     [filters, snapshot.revision, clockAt],
   );
 
-  // Captured at the start, not read per tick, so an arrival mid-tour cannot reorder the route.
   const journey = useMemo(
     () => journeyFor(feed.store, filters, clockAt(), regions, view.at),
     // Data revisions own the external store's identity.

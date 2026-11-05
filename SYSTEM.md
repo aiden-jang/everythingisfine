@@ -51,6 +51,11 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/useGlobeTour.ts` | Captured route, arrival-aware reading time, pause/step controls and interaction cancellation |
 | `src/globe/surfaceMaterial.ts` | Displayed-sun surface shading, fading to the unchanged flat-map palette |
 | `src/globe/nightSurface.ts` | Night, eclipse and aurora surface shader |
+| `src/globe/cameraFlight.ts` | Finite arrival path, spring integration and flight-bank targets |
+| `src/globe/cameraRig.ts` | Interruptible lens bank and horizon offset, cleared on the map and under reduced motion |
+| `src/globe/cameraTarget.ts` | Shared camera callback, perspective panel lift and explicit arrival replay |
+| `src/globe/starExposure.ts` | Bounded photographic trails from consecutive rendered camera matrices |
+| `src/globe/surfaceLayers.ts` | Atmosphere, ocean glint and finite reveal exposure |
 | `src/globe/framing.ts` | Shared camera latitude and zoom bounds |
 | `src/app/useHazardLayers.ts` | Live hazard loading and answered state |
 | `src/app/useStored.ts` | Remember preferences only when the visitor changes them |

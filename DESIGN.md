@@ -175,16 +175,21 @@ and tablet views need their own reflow checks, not only portrait-phone coverage.
 No ambient globe spin or perpetual chrome loops. The entrance is finite and data
 appears promptly; do not delay initial fetching until an interval or animation ends.
 
-Camera movement uses critically damped springs without overshoot. Long flights
-pull back proportionally and settle with arrival; short hops do not add a flourish.
+The opening is a finite horizon-to-orbit shot with a close lens, a vertical framing offset and a
+settling bank. The wordmark can replay it. Navigation retains critically damped springs: long
+flights pull back and bank proportionally; short hops remain direct. Grabbing or steering interrupts
+the shot, and its lens offset settles independently. The flat map clears the cinematic lens.
 Camera keys, pointer, touch and wheel preserve the same bounds and motion policy.
 Lost focus, backgrounding and dialog changes release held input.
 
 Selection brackets may settle once, panels may catch a brief neutral edge light, and zoom regrouping
 may crossfade recorded marker positions. These effects must not invent intermediate epicentres or
-change magnitude encoding. Optional constellation lines trace their catalogue connections once on
-opening. A regional cutaway uses actual earthquake depths and clearly labelled reference guides;
-it is not a model of the crust. Camera coordinates appear briefly during user input. Every effect
+change magnitude encoding. Optional constellation lines trace their catalogue connections with a brief leading glint on
+opening. Bright stars may leave short photographic exposure trails along camera travel; catalogue
+directions and resting brightness remain unchanged. Reset the exposure after idle, tab pauses and
+viewport changes. Scene lighting may briefly catch the surface and atmosphere during a reveal;
+this is a display treatment, not another measurement layer. A regional cutaway uses actual earthquake depths and clearly labelled reference guides;
+it is not a model of the crust. Its depth guides draw in sequence at their true radii. Camera coordinates appear briefly during user input. Every effect
 finishes and releases the frame loop, with no permanent background animation.
 
 Respect reduced motion completely: skip entrance rotation, camera easing and

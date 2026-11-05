@@ -26,7 +26,8 @@ const FIGURES = {
     varying float vTrace;
     void main() {
       if (vTrace > uTrace) discard;
-      gl_FragColor = vec4(uColor, uOpacity);
+      float head = uTrace < 0.999 ? smoothstep(uTrace - 0.07, uTrace, vTrace) : 0.0;
+      gl_FragColor = vec4(uColor, uOpacity * (1.0 + head * 2.4));
     }`,
 };
 
@@ -129,7 +130,7 @@ export function createFigures(): Figures {
       show();
     },
     step: (dt, reduced) => {
-      trace = reduced || !on || morph <= 0.001 ? 1 : Math.min(1, trace + dt / 0.85);
+      trace = reduced || !on || morph <= 0.001 ? 1 : Math.min(1, trace + dt / 1.05);
       material.uniforms["uTrace"]!.value = trace;
       return loaded && on && trace < 1;
     },

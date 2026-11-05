@@ -75,11 +75,13 @@ export function createCutaway() {
   floor.renderOrder = 0.1;
   object.add(floor);
   const positions: number[] = [];
-  for (const km of [0, 300, 600, CUTAWAY_DEPTH_KM]) {
+  const traces: number[] = [];
+  for (const [ring, km] of [0, 300, 600, CUTAWAY_DEPTH_KM].entries()) {
     const r = 1 - km / EARTH_RADIUS_KM;
     for (let i = 0; i < 96; i++) {
       for (const at of [i, i + 1]) {
         const phi = (at / 96) * 2 * Math.PI;
+        traces.push((ring + at / 96) / 4);
         positions.push(
           r * Math.sin(ANGLE) * Math.cos(phi),
           r * Math.cos(ANGLE),
@@ -90,6 +92,8 @@ export function createCutaway() {
   }
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new BufferAttribute(new Float32Array(positions), 3));
+  geometry.setAttribute("aGuideTrace", new BufferAttribute(new Float32Array(traces), 1));
+  const guideTrace = { value: 0 };
   const guide = new LineSegments(
     geometry,
     new LineBasicMaterial({ color: 0x66717c, transparent: true, opacity: 0.5 }),
@@ -101,6 +105,25 @@ export function createCutaway() {
   for (const material of [floor.material, guide.material]) {
     material.onBeforeCompile = (shader) => {
       shader.uniforms["uOpening"] = opening;
+      if (material === guide.material) {
+        shader.uniforms["uGuideTrace"] = guideTrace;
+        shader.vertexShader = shader.vertexShader.replace(
+          "void main() {",
+          "attribute float aGuideTrace; varying float vGuideTrace;\nvoid main() { vGuideTrace = aGuideTrace;",
+        );
+        shader.fragmentShader = shader.fragmentShader.replace(
+          "void main() {",
+          "varying float vGuideTrace; uniform float uGuideTrace;\nvoid main() { if (vGuideTrace > uGuideTrace) discard;",
+        );
+        shader.fragmentShader = shader.fragmentShader.replace(
+          "#include <color_fragment>",
+          `
+          #include <color_fragment>
+          float head = uGuideTrace < 0.999 ? smoothstep(uGuideTrace - 0.045, uGuideTrace, vGuideTrace) : 0.0;
+          diffuseColor.rgb *= 1.0 + head * 1.8;
+        `,
+        );
+      }
       shader.vertexShader = shader.vertexShader.replace(
         "void main() {",
         "uniform float uOpening;\nvoid main() {",
@@ -115,10 +138,12 @@ export function createCutaway() {
       `,
       );
     };
-    material.customProgramCacheKey = () => "cutaway-well";
+    material.customProgramCacheKey = () =>
+      material === guide.material ? "cutaway-well-guides" : "cutaway-well-floor";
   }
   let target = 0,
     progress = 0;
+  let guideProgress = 0;
   return {
     object,
     patch(material: Material): void {
@@ -151,6 +176,7 @@ export function createCutaway() {
     },
     set(focus: CutawayFocus | null): void {
       target = focus ? 1 : 0;
+      if (focus && progress === 0) guideProgress = 0;
       if (focus) {
         const lat = focus.lat * DEG,
           lon = focus.lon * DEG;
@@ -168,6 +194,12 @@ export function createCutaway() {
           : target > progress
             ? Math.min(target, progress + step)
             : Math.max(target, progress - step);
+      guideProgress = reduced
+        ? target
+        : target === 0 || morph > 0
+          ? 0
+          : Math.min(1, guideProgress + dt / 1.0);
+      guideTrace.value = guideProgress;
       const eased = progress * progress * (3 - 2 * progress);
       const angle = ANGLE * eased * (1 - morph);
       threshold.value = Math.cos(angle);
@@ -175,7 +207,7 @@ export function createCutaway() {
       enabled.value = angle > 0.0001 ? 1 : 0;
       // Reveal the well through the same aperture; the surface hides the rest while it opens.
       object.visible = angle > 0.0001;
-      return progress !== target && morph === 0;
+      return (progress !== target || (target === 1 && guideProgress < 1)) && morph === 0;
     },
   };
 }

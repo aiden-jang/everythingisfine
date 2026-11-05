@@ -1,3 +1,12 @@
+import { createCameraRig } from "./cameraRig";
+import {
+  advanceCameraSpring,
+  cameraRigTarget,
+  entranceFrom,
+  entrancePose,
+  entranceDone,
+  type CameraTarget,
+} from "./cameraFlight";
 import { LAT_LIMIT, ZOOM_MIN, ZOOM_MAX } from "./framing";
 import { Raycaster, Vector2, Vector3, type PerspectiveCamera } from "three";
 import { RADIUS_ATMOSPHERE } from "../geo/land";
@@ -30,17 +39,6 @@ const MOMENTUM_FLOOR = 0.6; // deg/sec, below which it has stopped
  */
 const MOMENTUM_MAX = 200;
 
-/** How far back the entrance starts. Forty-two degrees is about a second, not a title sequence. */
-const ENTRANCE_DEG = 42;
-const ENTRANCE_ZOOM = 0.88;
-
-/** DESIGN.md section 8. Damping 20 against stiffness 100 is exactly critical: no overshoot. */
-const SPRING_STIFFNESS = 100;
-const SPRING_DAMPING = 20;
-
-/** Largest slice the spring is integrated over. See the note in `step`. */
-const MAX_SPRING_STEP = 1 / 120;
-
 export interface Framing {
   lon: number;
   lat: number;
@@ -70,7 +68,7 @@ export interface Controls {
   state: () => CameraState;
   /** Springs the camera to a place. Instant under reduced motion, per DESIGN.md section 8. */
   flyTo: (lon: number, lat: number, zoom?: number) => void;
-  /** The one entrance. Does nothing at all under reduced motion, which is the correct nothing. */
+  /** Starts a finite horizon pullback. Skipped completely under reduced motion. */
   enter: () => void;
   /** 0 globe, 1 map. Drag becomes a pan and the facing tests fade out as this reaches 1. */
   setMorph: (t: number) => void;
@@ -105,17 +103,13 @@ export function createControls(
   let vLon = 0;
   let vLat = 0;
   let vZoom = 0;
-  /** Where the camera is being pulled, or null. Double-click reset and fly-to are one mechanism, so they feel the same. */
-  /*
-   * `arc` hangs off the target, not beside it. Six other places assign or clear the target, so a
-   * flight interrupted by a drag drops its arc without anything having to remember to cancel it.
-   */
-  let target: {
-    lon: number;
-    lat: number;
-    zoom: number;
-    arc?: { span: number; pull: number; fromZoom: number };
-  } | null = null;
+  // Reset, arc and arrival share one target so steering cancels the whole shot.
+  let target: CameraTarget | null = null;
+  const rig = createCameraRig(camera, canvas);
+  const flightPose = { lon, lat, zoom },
+    flightVelocity = { lon: 0, lat: 0, zoom: 0 };
+
+  const intended = (): CameraState => (target && !target.intro ? target : { lon, lat, zoom });
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   const pointers = new Map<number, { x: number; y: number }>();
@@ -242,12 +236,14 @@ export function createControls(
         orbitZ + (flatZ - orbitZ) * morph,
       );
       camera.lookAt(flatX * morph, flatY * morph, 0);
+      rig.apply(true);
       camera.updateMatrixWorld();
       return;
     }
 
     camera.position.set(orbitX, orbitY, orbitZ);
     camera.lookAt(0, 0, 0);
+    rig.apply(false);
     // Required. `lookAt` writes the quaternion but leaves matrixWorld stale until something renders,
     // and `pick` raycasts through matrixWorld. Skip it and the anchoring below measures from where the
     // camera used to be, off by tens of degrees.
@@ -270,6 +266,7 @@ export function createControls(
       zoom = dest.zoom;
       target = null;
       vLon = vLat = vZoom = 0;
+      rig.snap();
       apply();
       return;
     }
@@ -280,7 +277,7 @@ export function createControls(
 
   /** One key press of camera movement, in degrees and in zoom factor. */
   const nudge = (dLon: number, dLat: number, factor = 1): void => {
-    const base = target ?? { lon, lat, zoom };
+    const base = intended();
     aim({
       lon: base.lon + dLon,
       lat: clampLat(base.lat + dLat),
@@ -295,7 +292,7 @@ export function createControls(
    */
   const zoomAt = (factor: number, clientX: number, clientY: number): void => {
     const before = pick(clientX, clientY);
-    const base = target ?? { lon, lat, zoom };
+    const base = intended();
     const nextZoom = clampZoom(base.zoom * factor);
 
     const wasLon = lon;
@@ -518,66 +515,29 @@ export function createControls(
     };
   };
 
-  /** One fixed slice of the flight. Critically damped, so it arrives without a bounce. */
-  const stepSpring = (h: number): void => {
-    if (!target) return;
-    // Shortest way round, so 179E to 179W crosses the date line instead of going through Greenwich.
-    let shortest = target.lon - lon;
-    shortest -= Math.round(shortest / 360) * 360;
-    const acc = (gap: number, v: number): number => SPRING_STIFFNESS * gap - SPRING_DAMPING * v;
-
-    vLon += acc(shortest, vLon) * h;
-    vLat += acc(target.lat - lat, vLat) * h;
-    lon += vLon * h;
-    lat += vLat * h;
-
-    if (target.arc) {
-      /*
-       * Zoom is a function of distance covered, not a fourth spring. Chasing a moving zoom target with
-       * its own spring lags it, so the pullback came out shallow and the climb and descent did not match.
-       */
-      const { span, pull, fromZoom } = target.arc;
-      const progress = Math.max(0, Math.min(1, 1 - spanDeg(lon, lat, target.lon, target.lat) / span));
-      // Zero at both ends, one over the middle, so departure and arrival are untouched.
-      const lift = Math.sin(Math.PI * progress);
-      zoom = clampZoom((fromZoom + (target.zoom - fromZoom) * progress) / (1 + pull * lift));
-      vZoom = 0;
-    } else {
-      vZoom += acc(target.zoom - zoom, vZoom) * h;
-      zoom += vZoom * h;
-    }
-
-    /* Zoom is out of the arrival test while an arc flies, or it never passes: position settles at 0.05
-       degrees of slack while the lift holds zoom 0.002 off against a 0.001 threshold. */
-    const settled =
-      Math.abs(shortest) < 0.05 &&
-      Math.abs(target.lat - lat) < 0.05 &&
-      (target.arc ? true : Math.abs(target.zoom - zoom) < 0.001) &&
-      Math.abs(vLon) < 0.5 &&
-      Math.abs(vLat) < 0.5;
-    if (settled) {
-      lon = target.lon;
-      lat = target.lat;
-      zoom = target.zoom;
-      vLon = vLat = vZoom = 0;
-      target = null;
-    }
-  };
-
   const step = (dt: number): boolean => {
-    let moving = false;
-
+    const rigMoving = rig.step(dt, cameraRigTarget(target, { lon, lat, zoom }), reduced.matches || morph > 0);
     if (target) {
-      /*
-       * Fixed slices, not one step of whatever the frame took. Semi-implicit Euler is only stable while
-       * stiffness * dt^2 stays small, and the 50ms frame clamp is not small enough: the entrance overshot by
-       * up to 15 degrees, varying with frame rate. Slicing makes 15fps and 120fps identical.
-       */
-      const slices = Math.min(64, Math.max(1, Math.ceil(dt / MAX_SPRING_STEP)));
-      const h = dt / slices;
-      for (let i = 0; i < slices && target; i += 1) stepSpring(h);
+      if (reduced.matches) {
+        ({ lon, lat, zoom } = target);
+        target = null;
+        vLon = vLat = vZoom = 0;
+        rig.snap();
+        return false;
+      }
+      if (target.intro) {
+        ({ lon, lat, zoom } = entrancePose(target, dt));
+        if (entranceDone(target)) target = null;
+      } else {
+        Object.assign(flightPose, { lon, lat, zoom });
+        Object.assign(flightVelocity, { lon: vLon, lat: vLat, zoom: vZoom });
+        if (!advanceCameraSpring(flightPose, flightVelocity, target, dt, clampZoom)) target = null;
+        ({ lon, lat, zoom } = flightPose);
+        ({ lon: vLon, lat: vLat, zoom: vZoom } = flightVelocity);
+      }
       return true;
     }
+    let moving = rigMoving;
 
     if (Math.abs(vLon) > MOMENTUM_FLOOR || Math.abs(vLat) > MOMENTUM_FLOOR) {
       lon += vLon * dt;
@@ -600,6 +560,7 @@ export function createControls(
       ({ lon, lat, zoom } = clamped);
       target = null;
       vLon = vLat = vZoom = 0;
+      rig.snap();
       apply();
       return;
     }
@@ -625,12 +586,14 @@ export function createControls(
       /* Wherever the camera is already aimed, not the default framing. A permalink calls `flyTo` during
          setup and `enter` runs after the first draw, so naming the framing here threw away every shared
          camera - silently, which is why it survived. */
+      vLon = vLat = vZoom = 0;
       const to = target ?? { lon, lat, zoom };
-      lon = to.lon - ENTRANCE_DEG;
-      lat = to.lat;
-      zoom = ENTRANCE_ZOOM;
+      const from = entranceFrom(to);
+      ({ lon, lat, zoom } = from);
+      target = { lon: to.lon, lat: to.lat, zoom: to.zoom, intro: { elapsed: 0, from } };
+      const lens = cameraRigTarget(target, from);
+      rig.snap(lens.bank, lens.lift);
       apply();
-      target = to;
     },
     project: (pLon, pLat, radius = 1) => {
       const r = canvas.getBoundingClientRect();
@@ -663,6 +626,7 @@ export function createControls(
       };
     },
     setMorph: (t) => {
+      if (t > 0 && target?.intro) target = null;
       morph = Math.max(0, Math.min(1, t));
       // The floor moves with the morph, so a camera parked beyond the globe's has to be brought back
       // as the map rolls up. The pending target too, or the spring drags it straight back out.

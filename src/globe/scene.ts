@@ -2,10 +2,8 @@ import { NIGHT_SURFACE } from "./nightSurface";
 import { lightSurface } from "./surfaceMaterial";
 import { createCutaway, type CutawayFocus } from "./cutaway";
 import { createRegroup } from "./regroup";
-import { ATMOSPHERE, GLINT, GLINT_RADIUS } from "./surfaceLight";
+import { createSurfaceLayers } from "./surfaceLayers";
 import {
-  AdditiveBlending,
-  BackSide,
   BufferAttribute,
   BufferGeometry,
   Color,
@@ -24,14 +22,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from "three";
-import {
-  buildLand,
-  RADIUS_ATMOSPHERE,
-  RADIUS_GRATICULE,
-  RADIUS_NIGHT,
-  RADIUS_SPHERE,
-  type LandGeometry,
-} from "../geo/land";
+import { buildLand, RADIUS_GRATICULE, RADIUS_NIGHT, RADIUS_SPHERE, type LandGeometry } from "../geo/land";
 import type { RampName } from "./ramp";
 import { DEG, distanceKm, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
@@ -140,6 +131,7 @@ export interface Globe {
   setMarkZoom: (zoom: number) => void;
   setMarkHover: (id: string | null) => void;
   setMorph: (t: number) => void;
+  beginArrival: () => void;
   setCutaway: (focus: CutawayFocus | null) => void;
   cutawayOpen: () => boolean;
   beginRegroup: (reduced: boolean) => void;
@@ -328,8 +320,13 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   let heldMarks: readonly Mark[] = [];
 
   const sunDir = new Vector3();
-  lightSurface(ocean.material, sunDir, morph, true);
-  lightSurface(fill.material, sunDir, morph, false);
+  const lights = createSurfaceLayers(sunDir, morph, COLOR_RIM, COLOR_GLINT);
+  const { rim, glint } = lights;
+  scene.add(rim);
+  spin.add(glint);
+  let quietMotion = false;
+  lightSurface(ocean.material, sunDir, morph, true, lights.reveal);
+  lightSurface(fill.material, sunDir, morph, false, lights.reveal);
   const eclipseDir = new Vector3(0, 0, 1);
   /** 0 surface, 1 hypocentre. Read by the hit test, written by the setter below. */
   let sink = 0;
@@ -346,8 +343,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     const c = Math.cos(phi);
     sunDir.set(c * Math.sin(lam), Math.sin(phi), c * Math.cos(lam));
     (night.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
-    (rim.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
-    (glint.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
 
     /* Aimed from the same instant as everything else: tonight's shadow over an archived April is nonsense. */
     const shadow = solarEclipse(at);
@@ -378,32 +373,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     planets.setTime(at);
   };
 
-  // The shell is a container. It has to be wider than uOuter so the falloff is not clipped by its own
-  // geometry; beyond that its radius does not affect the picture.
-  const rim = new Mesh(
-    new SphereGeometry(RADIUS_ATMOSPHERE, 64, 48),
-    new ShaderMaterial({
-      ...ATMOSPHERE,
-      uniforms: {
-        uColor: { value: COLOR_RIM },
-        // Lifted with the night it sits against, so the limb still reads once the edge is darker.
-        uIntensity: { value: 0.34 },
-        uOuter: { value: 1.22 },
-        // The same vector the night side reads, handed over once. `aimSun` writes through it.
-        uSun: { value: sunDir },
-      },
-      side: BackSide,
-      blending: AdditiveBlending,
-      transparent: true,
-      depthWrite: false,
-    }),
-  );
-  scene.add(rim);
-
-  /*
-   * The real sky, as points. `starfield.ts` owns the reasoning. It needs no per-frame hook: the shader places
-   * every star relative to `cameraPosition`, so orbiting sweeps it without the loop knowing it exists.
-   */
+  // Catalogue directions stay fixed; photographic exposure follows the rendered camera.
   const starfield = createStarfield();
   scene.add(starfield.object);
 
@@ -421,28 +391,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   // the sun is aimed, from the same clock.
   const planets = createPlanets();
   scene.add(planets.object);
-
-  const glintGeom = new SphereGeometry(GLINT_RADIUS, 96, 64, SPHERE_PHI_START);
-  attachLonLat(glintGeom);
-  const glint = new Mesh(
-    glintGeom,
-    new ShaderMaterial({
-      ...GLINT,
-      uniforms: {
-        uColor: { value: COLOR_GLINT },
-        uSun: { value: sunDir },
-        uIntensity: { value: 0 },
-        uPower: { value: 34 },
-        uMorph: morph,
-      },
-      transparent: true,
-      blending: AdditiveBlending,
-      depthWrite: false,
-    }),
-  );
-  // Above the ocean, below the land fill at 1, which is what keeps the highlight off the continents.
-  glint.renderOrder = 0.75;
-  spin.add(glint);
 
   // Added to the scene root, not to `spin`: the globe group carries no transform, and hanging the events
   // off it would invite somebody to rotate one and not the other.
@@ -501,15 +449,21 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   return {
     resize,
     controls,
-    setCutaway: cutaway.set,
+    beginArrival: lights.begin,
+    setCutaway: (focus) => {
+      cutaway.set(focus);
+      if (focus) lights.begin();
+    },
     cutawayOpen: cutaway.isOpen,
     beginRegroup: regroup.begin,
     cancelRegroup: regroup.cancel,
     stepPresentation: (dt, reduced) => {
+      quietMotion = reduced;
+      const illuminating = lights.step(dt, reduced);
       const cutting = cutaway.step(dt, reduced, morph.value);
       const tracing = figures.step(dt, reduced);
       const grouping = regroup.step(dt, reduced);
-      return cutting || tracing || grouping;
+      return cutting || tracing || grouping || illuminating;
     },
     // Geography follows the ramp's contrast requirements; see NEUTRAL for the measurement.
     markerRadius: (magnitude: number): number => markerRadiusPx(magnitude, markerScale()),
@@ -647,7 +601,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     setStars: (t: StarTable) => starfield.setStars(t),
     setFigures: (t: FigureTable) => figures.setFigures(t),
-    setFiguresOn: (on: boolean) => figures.setOn(on),
+    setFiguresOn: (on: boolean) => {
+      figures.setOn(on);
+      if (on) lights.begin();
+    },
     setAurora: (grid) => {
       const material = night.material as ShaderMaterial;
       if (grid === null) {
@@ -666,13 +623,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         }
       }
 
-      /*
-       * The atmosphere is a halo rather than geography, so it sits outside the morph - which left it at the
-       * origin on the flat map as a soft blue disc reading as an empty sea across Russia. Faded out with the
-       * morph rather than hidden at the end, because it has to be gone before the geography is flat.
-       */
-      (rim.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.3 * (1 - morph.value);
-      rim.visible = morph.value < 0.999;
+      lights.apply();
+      starfield.prepare(camera, canvas.width, canvas.height, quietMotion || morph.value > 0);
       /*
        * Gone by the time the map is flat. A star field around a rectangle is a view from space of a thing
        * that cannot be seen from space.
@@ -686,12 +638,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
        * collapses onto the epicentre it sits under. Depth is the only reason the layer exists.
        */
       if (slabOn) slab.setOpacity(1 - morph.value);
-      /*
-       * Leaves with the globe. A specular lobe depends on a surface curving away from the eye, and the plane
-       * has stopped doing that.
-       */
-      (glint.material as ShaderMaterial).uniforms["uIntensity"]!.value = 0.3 * (1 - morph.value);
-      glint.visible = morph.value < 0.999;
 
       /* The fill is culled on the globe and not on the map. See ARCHITECTURE.md#srcglobescenets. */
       const wantSide = morph.value > 0.9 ? DoubleSide : FrontSide;

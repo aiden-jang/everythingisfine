@@ -6,6 +6,7 @@ export function lightSurface(
   sun: Vector3,
   morph: { value: number },
   ocean: boolean,
+  reveal: { value: number },
 ): void {
   const compile = material.onBeforeCompile;
   const key = material.customProgramCacheKey();
@@ -13,6 +14,7 @@ export function lightSurface(
     compile.call(material, shader, renderer);
     shader.uniforms["uSurfaceSun"] = { value: sun };
     shader.uniforms["uSurfaceMorph"] = morph;
+    shader.uniforms["uSurfaceReveal"] = reveal;
     shader.vertexShader = shader.vertexShader.replace(
       "void main() {",
       `
@@ -28,6 +30,7 @@ export function lightSurface(
       `
       uniform vec3 uSurfaceSun;
       uniform float uSurfaceMorph;
+      uniform float uSurfaceReveal;
       varying vec3 vSurfaceDirection;
       varying vec3 vSurfaceWorld;
       void main() {
@@ -43,6 +46,8 @@ export function lightSurface(
       float facing = max(0.0, dot(n, eye));
       float body = mix(0.74, 1.16, daylight) * mix(0.58, 1.0, pow(facing, 0.35));
       ${ocean ? "body *= mix(0.9, 1.08, smoothstep(0.1, 0.9, daylight));" : ""}
+      float catchlight = 1.0 - smoothstep(0.015, 0.15, abs(n.y - mix(-1.2, 1.2, uSurfaceReveal)));
+      body += catchlight * 0.35 * sin(3.14159265 * uSurfaceReveal);
       diffuseColor.rgb *= mix(body, 1.0, uSurfaceMorph);
     `,
     );

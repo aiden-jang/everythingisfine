@@ -104,6 +104,9 @@ index to the matching implementation note.
 - [src/globe/GlobeOverlays.tsx](#srcglobeglobeoverlaystsx)
 - [src/globe/auroraTexture.ts](#srcglobeauroratexturets)
 - [src/globe/cluster.ts](#srcglobeclusterts)
+- [src/globe/cameraFlight.ts](#srcglobecameraflightts)
+- [src/globe/cameraRig.ts](#srcglobecamerarigts)
+- [src/globe/cameraTarget.ts](#srcglobecameratargetts)
 - [src/globe/controls.ts](#srcglobecontrolsts)
 - [src/globe/events.perf.test.ts](#srcglobeeventsperftestts)
 - [src/globe/events.ts](#srcglobeeventsts)
@@ -121,7 +124,9 @@ index to the matching implementation note.
 - [src/globe/sink.test.ts](#srcglobesinktestts)
 - [src/globe/sky.ts](#srcglobeskyts)
 - [src/globe/slab.ts](#srcglobeslabts)
+- [src/globe/starExposure.ts](#srcglobestarexposurets)
 - [src/globe/starfield.ts](#srcglobestarfieldts)
+- [src/globe/surfaceLayers.ts](#srcglobesurfacelayersts)
 - [src/sources/archive.ts](#srcsourcesarchivets)
 - [src/sources/aurora.ts](#srcsourcesaurorats)
 - [src/sources/contract.ts](#srcsourcescontractts)
@@ -2463,6 +2468,27 @@ side by side depends only on how many degrees a screen-width covers.
 
 Above `CLUSTER_UNTIL` nothing is binned: by then every event has room, and collapsing would hide data.
 
+### src/globe/cameraFlight.ts
+
+`advanceCameraSpring` owns fixed-slice integration for navigation, preserving the geographic settle
+threshold and the arc's distance-based zoom. The arrival is a separate finite path: it begins close
+to the horizon and reaches the original destination exactly, including shared camera positions.
+The target owns its arrival clock, so any ordinary input that replaces the target interrupts it.
+
+### src/globe/cameraRig.ts
+
+The lens holds bank and horizon offset independently from the geographic pose. Its independent exponential
+settle prevents grabbing a flight from snapping the optical frame. It applies through the actual
+camera matrices, so projection, ray picking and overlays share the displayed lens. The map and
+reduced motion clear the lens; no separate animation loop is created.
+
+### src/globe/cameraTarget.ts
+
+The callback resolves wake through its caller at invocation time: shared-link setup can call it before
+the frame loop exists. Pixel lift uses the sphere's perspective angle and the existing latitude/lift
+limits. Only an explicit arrival request replays the shot and reveal lighting; normal inspection
+and tour flights remain navigation.
+
 ### src/globe/controls.ts
 
 **Orbiting the globe, hand-written. OrbitControls slides a pan target, and on a sphere there**
@@ -3135,6 +3161,22 @@ layer index, so a point already sunk to 0.9 gets filed under the map and drawn b
 
 (No backticks in here. One of them ends the template literal.)
 
+### src/globe/starExposure.ts
+
+The exposure cache keeps the preceding projection-view matrix and eye position. The shader projects
+the same current catalogue direction through both views; only camera travel produces a trail.
+Its short shutter interval is bounded, weighted toward bright stars, and capped in physical pixels.
+The current star remains at the leading end with its catalogue-based core size. Reduced motion,
+resizing, same-task captures and gaps after idle/backgrounding reset exposure rather than streaking
+from an unrelated old frame. The cache only runs when the existing renderer draws.
+
+### src/globe/surfaceLayers.ts
+
+Atmosphere and ocean glint share the displayed sun vector. Arrival and scene changes can briefly
+raise display exposure and sweep a catchlight over geography; earthquake colors and measurements
+are untouched. The progress uniform is shared with the surface shaders. It returns to resting
+exposure and releases the existing frame loop, and the flat map hides these spherical light layers.
+
 ### src/globe/starfield.ts
 
 **The sky, as 5,080 real stars rather than a hash of the view direction. Orion is over the P**
@@ -3142,8 +3184,9 @@ layer index, so a point already sunk to 0.9 gets filed under the map and drawn b
 The sky, as 5,080 real stars rather than a hash of the view direction. Orion is over the Pacific in
 January and findable, which a generated field can never be.
 
-A skybox without a skybox, and no per-frame work: the vertex shader adds `cameraPosition` to the star's own
-direction, so every star sits a fixed distance from the eye and nothing updates as the camera moves.
+The vertex shader adds `cameraPosition` to each catalogue direction, keeping stars at a fixed distance
+from the eye. The exposure helper reads consecutive rendered camera matrices to add brief trails
+during travel. It does not move catalogue coordinates or integrate fabricated stellar velocities.
 
 Depth-tested, deliberately. Three.js draws opaque before transparent, so a transparent layer with the test
 off paints over the planet however low its `renderOrder`. The ocean writes depth first and `STAR_DISTANCE`

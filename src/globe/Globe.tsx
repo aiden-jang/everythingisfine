@@ -1,3 +1,4 @@
+import { createFlightTarget, type FlyTo } from "./cameraTarget";
 import { createOrbitReadout } from "./orbitReadout";
 import { type CutawayFocus } from "./cutaway";
 import { GlobeOverlays } from "./GlobeOverlays";
@@ -28,7 +29,7 @@ export interface GlobeProps {
   selected: string | null;
   ramp: RampName;
   onSelect: (key: string | null) => void;
-  onReady: (flyTo: (lon: number, lat: number, zoom?: number, liftPx?: number) => void) => void;
+  onReady: (flyTo: FlyTo) => void;
   /** Hands out a function that renders and returns the canvas, for the still. See ARCHITECTURE.md#srcglobeglobetsx. */
   onCapture?: (capture: () => HTMLCanvasElement | null) => void;
   onSelectMark?: (id: string | null) => void;
@@ -61,8 +62,6 @@ export interface GlobeProps {
 /* Half of the 44px a finger is reckoned to need, so a marker's own radius makes up the rest. */
 const TOUCH_SLOP_PX = 18;
 
-/** The most a panel may swing the camera. Past this the lift costs more than the panel hid. */
-const MAX_LIFT_DEG = 22;
 /** What the scale bar aims for before rounding to a round number of kilometres. */
 const SCALE_TARGET_PX = 110;
 
@@ -169,25 +168,7 @@ export function Globe({
     const readout = createOrbitReadout(orbit.current);
     globe.resize();
     globe.render();
-    // A camera target must also wake the renderer when the globe is idle.
-    onReady((toLon, toLat, toZoom, liftPx) => {
-      /*
-       * `liftPx` puts the target that many pixels above the middle instead of in it, so the sheet describing
-       * an event does not cover the event. The camera aims that far south of it.
-       */
-      let lat = toLat;
-      if (liftPx) {
-        /* Two traps in one line. Use `degForPx`, not `degPerPx * px`: the second is the flat map's straight
-           line, and this camera is about two radii out, so the sphere's curve is what decides. It ran 34%
-           long. See ARCHITECTURE.md#srcglobeglobetsx. */
-        const deg = Math.min(globe.controls.degForPx(liftPx, toZoom), MAX_LIFT_DEG);
-        lat = Math.max(-85, Math.min(85, toLat - deg));
-      }
-      globe.controls.flyTo(toLon, lat, toZoom);
-      // Through the ref, not the closure: a shared link calls this during setup, before `wake` further
-      // down has been initialised, and a temporal dead zone here takes the whole canvas with it.
-      wakeRef.current();
-    });
+    onReady(createFlightTarget(globe.controls, () => wakeRef.current(), globe.beginArrival));
 
     onCapture?.(() => {
       const el2 = canvas.current;
@@ -774,7 +755,7 @@ export function Globe({
     const unsubscribe = feed.subscribe(redrawFromData);
     redraw();
 
-    // The one entrance, started after the first draw so the globe is already painted when it moves.
+    // Start after the first draw, so the globe is painted before the horizon pullback moves it.
     globe.controls.enter();
     wake();
 

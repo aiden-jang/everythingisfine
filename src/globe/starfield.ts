@@ -1,3 +1,11 @@
+import {
+  createStarExposure,
+  EXPOSURE_VERTEX,
+  EXPOSE_STAR,
+  EXPOSURE_FRAGMENT,
+  EXPOSE_DISC,
+} from "./starExposure";
+import type { PerspectiveCamera } from "three";
 import { AdditiveBlending, BufferAttribute, BufferGeometry, Color, Points, ShaderMaterial } from "three";
 import { DEG } from "../geo/sphere";
 import { starBrightness, starVector, type StarTable } from "../geo/stars";
@@ -20,6 +28,7 @@ const ALPHA_GAMMA = 0.6;
 const STARFIELD = {
   vertexShader: /* glsl */ `
     ${SKY_GLSL}
+    ${EXPOSURE_VERTEX}
     attribute float aBright;
     uniform float uPixelRatio;
     varying float vBright;
@@ -39,20 +48,16 @@ const STARFIELD = {
       */
       gl_PointSize = mix(${SIZE_MIN_PX.toFixed(2)}, ${SIZE_MAX_PX.toFixed(2)},
         pow(aBright, ${SIZE_GAMMA.toFixed(2)})) * uPixelRatio;
+      ${EXPOSE_STAR}
     }`,
   fragmentShader: /* glsl */ `
+    ${EXPOSURE_FRAGMENT}
     uniform vec3 uColor;
     uniform float uOpacity;
     varying float vBright;
 
     void main() {
-      /*
-        Round, and softened only at the very edge. A point sprite is a square, so the disc is cut out here.
-        These are one to four pixels across, and a gentle gradient across a two-pixel dot removes the dot.
-      */
-      float d = length(gl_PointCoord - vec2(0.5));
-      if (d > 0.5) discard;
-      float disc = smoothstep(0.5, 0.34, d);
+      ${EXPOSE_DISC}
 
       float alpha = mix(${ALPHA_MIN.toFixed(2)}, ${ALPHA_MAX.toFixed(2)},
         pow(vBright, ${ALPHA_GAMMA.toFixed(2)}));
@@ -70,6 +75,7 @@ export interface Starfield {
   setOpacity: (value: number) => void;
   /** Star sizes are in CSS pixels, so the shader needs the ratio the renderer actually used. */
   setPixelRatio: (value: number) => void;
+  prepare: (camera: PerspectiveCamera, width: number, height: number, reduced: boolean) => void;
   dispose: () => void;
 }
 
@@ -82,9 +88,11 @@ export function createStarfield(): Starfield {
    */
   geometry.boundingSphere = null;
 
+  const exposure = createStarExposure();
   const material = new ShaderMaterial({
     ...STARFIELD,
     uniforms: {
+      ...exposure.uniforms,
       uColor: { value: COLOR_STARS },
       uOpacity: { value: 1 },
       uPixelRatio: { value: 1 },
@@ -113,6 +121,7 @@ export function createStarfield(): Starfield {
 
   return {
     object,
+    prepare: exposure.prepare,
     setStars: (table) => {
       const count = Math.floor(table.length / 3);
       const positions = new Float32Array(count * 3);
