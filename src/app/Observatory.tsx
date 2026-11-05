@@ -1,4 +1,5 @@
 import { Fragment, useLayoutEffect, type RefObject, type CSSProperties } from "react";
+import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import type { EarthScene } from "./useObservatory";
 import type { Stop } from "./tour";
 import { geographicCoordinates } from "../globe/orbitReadout";
@@ -192,6 +193,9 @@ export function Observatory({
             </button>
             <button type="button" onClick={() => onHistory("2013-05-24")}>
               Deep beneath Okhotsk ↗
+            </button>
+            <button type="button" onClick={() => onHistory(APRIL_ECLIPSE_DAY)}>
+              Total eclipse, 2024 ↗
             </button>
           </div>
         </details>

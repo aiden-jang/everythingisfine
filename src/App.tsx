@@ -15,6 +15,11 @@ import { GlobeLoading } from "./globe/GlobeLoading";
 import { stillMoment } from "./app/still";
 import { useStill } from "./app/useStill";
 import { Row } from "./app/Row";
+import { APRIL_ECLIPSE_DAY } from "./geo/aprilEclipse";
+import { eclipseClock } from "./app/eclipseReplay";
+import { EclipseReplayControls } from "./app/EclipseReplayControls";
+import { useEclipsePlayback } from "./app/useEclipsePlayback";
+import { useTimelinePlayback } from "./app/useTimelinePlayback";
 import { ArchiveControls } from "./app/ArchiveControls";
 import { useArchive } from "./app/useArchive";
 import {
@@ -67,16 +72,7 @@ import { useHazardLayers } from "./app/useHazardLayers";
 import { DetailPanel } from "./app/DetailPanel";
 import { MagnitudeFilter } from "./app/MagnitudeFilter";
 import { Timeline } from "./app/Timeline";
-import {
-  clamp as clampScrub,
-  dragTo,
-  fractionOf,
-  LIVE,
-  nudge,
-  step as stepScrub,
-  togglePlay,
-  type Scrub,
-} from "./app/scrub";
+import { clamp as clampScrub, dragTo, fractionOf, LIVE, nudge, togglePlay, type Scrub } from "./app/scrub";
 import { Resizer } from "./app/Resizer";
 import { CrossSection } from "./app/CrossSection";
 import { buildSection, type SectionHinge, type SectionLine } from "./app/section";
@@ -142,20 +138,15 @@ export function App(): JSX.Element {
   const [query, setQuery] = useState("");
   const [replay, setReplay] = useState<{ at: number; revealed: number } | null>(null);
   const receiveReplay = useReplayAnalytics(setReplay);
-  // Playback stays local; a shared cursor opens as a held view.
   const [scrub, setScrub] = useState<Scrub>(
     shared.cursor === undefined ? LIVE : { at: shared.cursor, playing: false },
   );
-  // Derived, not a boolean an effect clears. The arriving events are the answer, so a flag beside them
-  // would be the same fact written twice.
   const [pendingRev, setPendingRev] = useState<number | null>(null);
   const [missingShared, setMissingShared] = useState<string | null>(shared.event ?? null);
-  // Never in the permalink. A link arriving with 23 of its 24 hours dimmed looks broken, not shared.
   const [focusHour, setFocusHour] = useState<number | null>(null);
   const { aurora, cyclones, fires, floods, volcanoes, answered } = useHazardLayers();
   // Memos run during render; define their clock first. See ARCHITECTURE.md#srcapptsx.
   const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
-  /* Hidden while an archived day is up, or today's storms are drawn over July's earthquakes. See ARCHITECTURE.md#srcapptsx. */
   const archived = snapshot.archive !== null;
   const archiveState = useArchive(feed, snapshot.archive, shared.day, (returnedToLive) => {
     setSelected(null);
@@ -174,12 +165,19 @@ export function App(): JSX.Element {
     }
   });
   const { archiveHazards, backToLive, stepDay, archiveBusy, archiveDay, loadedDay } = archiveState;
+  const [mapOn, setFlat] = useStoredFlag("flat", false, shared.section !== undefined || undefined);
+  const flat = observatory.observing ? false : mapOn;
+  const chase = useEclipsePlayback(
+    loadedDay === APRIL_ECLIPSE_DAY && !archiveBusy && !flat && !observatory.observing,
+    setScrub,
+  );
   /* In archive mode this is the end of the archived day, not the wall clock. See ARCHITECTURE.md#srcapptsx. */
   const now = snapshot.archive ? snapshot.archive.to : Date.now();
   const minuteClock = Math.floor(now / 60_000) * 60_000;
   const span = { from: now - filters.windowMs, to: now };
   // Clamp on the way out, never write it back: a render must not correct its own state.
-  const view = clampScrub(scrub, span);
+  const view = chase.frame ? { at: chase.frame.at, playing: chase.playing } : clampScrub(scrub, span);
+  const viewClock = view.at === null ? null : chase.frame ? eclipseClock(view.at) : clock(view.at);
   /* The cursor reveals these layers too, quantised to the strip's bucket: playing steps it twenty times
      a second, and these feeds are dated to the hour at best. */
   const revealStep = filters.windowMs / BUCKETS;
@@ -274,8 +272,6 @@ export function App(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [filters, snapshot.revision, clockAt],
   );
-  const [mapOn, setFlat] = useStoredFlag("flat", false, shared.section !== undefined || undefined);
-  const flat = observatory.observing ? false : mapOn;
   /* Clamp on the way in too. The `Resizer` bounds this while dragging and the restore path went around
      it, so a stored 1 came back as a rail one pixel wide with nothing to grab. */
   const [railWidth, setRailWidth] = useStoredNumber("rail", RAIL_DEFAULT, (n) =>
@@ -640,21 +636,7 @@ export function App(): JSX.Element {
     if (selected && !feed.store.get(selected)) setSelected(null);
   }, [selected, snapshot.revision]);
 
-  /* Twenty ticks a second, not one a frame: every tick re-renders the rail and re-syncs the event layer.
-     See ARCHITECTURE.md#srcapptsx. */
-  const playedAt = useRef(0);
-  useEffect(() => {
-    if (!scrub.playing) return undefined;
-    playedAt.current = performance.now();
-    const id = window.setInterval(() => {
-      const tick = performance.now();
-      const dt = (tick - playedAt.current) / 1000;
-      playedAt.current = tick;
-      const at = Date.now();
-      setScrub((s) => stepScrub(s, { from: at - filters.windowMs, to: at }, dt));
-    }, 50);
-    return () => window.clearInterval(id);
-  }, [scrub.playing, filters.windowMs]);
+  useTimelinePlayback(scrub.playing && !chase.frame, filters.windowMs, setScrub);
 
   /*
    * Space and the step keys only while nothing is focused, or space stops activating a focused button.
@@ -993,7 +975,7 @@ export function App(): JSX.Element {
         onStep={(buckets) => setScrub(nudge(view, span, buckets))}
         onPlayToggle={() => setScrub(togglePlay(view, span))}
         onLive={() => setScrub(LIVE)}
-        cursorLabel={view.at === null ? null : clock(view.at)}
+        cursorLabel={viewClock}
         reaches={reaches}
         notes={timelineNotes}
       >
@@ -1075,7 +1057,9 @@ export function App(): JSX.Element {
             onHistory={(day) => {
               stopTour();
               enterExplore();
-              historyIntent.current = day;
+              const eclipseDay = day === APRIL_ECLIPSE_DAY;
+              historyIntent.current = eclipseDay ? null : day;
+              if (eclipseDay) setFlat(false);
               setScrub(LIVE);
               setSectionLine(null);
               archiveState.setArchiveDay(day);
@@ -1165,12 +1149,8 @@ export function App(): JSX.Element {
                       <span className="text-faint">replaying the last day</span>
                     </div>
                   ) : view.at !== null ? (
-                    /*
-                    The cursor's own clock. "Last 24 hours" over a count of half of them would describe the
-                    window while the number describes the picture.
-                  */
                     <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
-                      <span className="font-mono text-ink">{clock(view.at)}</span>
+                      <span className="font-mono text-ink">{viewClock}</span>
                       <span className="text-faint">{view.playing ? "playing" : "held"}</span>
                     </div>
                   ) : (
@@ -1353,6 +1333,20 @@ export function App(): JSX.Element {
             archive={snapshot.archive}
             state={archiveState}
             onCursor={(at) => setScrub({ at, playing: false })}
+            watchEclipse={
+              flat
+                ? "Switch to Globe to watch."
+                : !observatory.ready
+                  ? "Waiting for the globe."
+                  : (event) => {
+                      if (chase.frame) return chase.close(true);
+                      onCutaway(false);
+                      setFilters((current) =>
+                        current.windowMs >= 86_400_000 ? current : { ...current, windowMs: 86_400_000 },
+                      );
+                      chase.start(camera.current, event.currentTarget);
+                    }
+            }
           />
           {timeline}
 
@@ -1628,7 +1622,7 @@ export function App(): JSX.Element {
               /* Which moment the light is of. `clockAt` is the app's answer to what time is on screen, and a
                held cursor overrides it with the same precedence `stillMoment` uses, so the terminator and
                the caption cannot disagree. See ARCHITECTURE.md#srcapptsx. */
-              moment={litAt}
+              moment={chase.frame ?? litAt}
               flat={flat}
               planetarium={observatory.night}
               depthSink={observatory.depth || sinkOn}
@@ -1661,7 +1655,8 @@ export function App(): JSX.Element {
             /* Fixed to the rail's edge, and never moved by a panel. See ARCHITECTURE.md#srcapptsx. */
             className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
           >
-            {section ? (
+            <EclipseReplayControls playback={chase} />
+            {section && !chase.frame ? (
               <CrossSection
                 data={section}
                 hinge={sectionLine?.hinge}
@@ -1673,12 +1668,14 @@ export function App(): JSX.Element {
                 onClose={() => setSectionLine(null)}
               />
             ) : null}
-            <CanvasFooter
-              flat={flat}
-              playing={view.playing}
-              archived={archived}
-              clearable={Boolean(query || sectionLine || view.at !== null || selected || markId)}
-            />
+            {chase.frame ? null : (
+              <CanvasFooter
+                flat={flat}
+                playing={view.playing}
+                archived={archived}
+                clearable={Boolean(query || sectionLine || view.at !== null || selected || markId)}
+              />
+            )}
           </div>
         </section>
 

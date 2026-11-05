@@ -39,6 +39,8 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `analytics/` | Closed event schema, privacy-aware browser transport and aggregate dataset writes |
 | `src/app/useArchive.ts` | Archive request ownership, stale-response protection, date navigation, source coverage |
 | `src/app/ArchiveControls.tsx` | Date entry, calendar, notable days, and eclipse controls |
+| `src/app/useEclipsePlayback.ts` | Eclipse replay clock, scrubbing and interruption |
+| `src/geo/aprilEclipse.ts` | Interpolation of NASA’s April 2024 path samples |
 | `src/app/useStill.ts` | Synchronous canvas capture, caption, native sharing, download fallback |
 | `src/app/stillDelivery.ts` | Attached download links and deferred object URL cleanup |
 | `src/app/Utilities.tsx` | Mobile disclosure focus, outside dismissal, Escape and resize lifetime |

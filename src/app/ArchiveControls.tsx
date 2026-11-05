@@ -1,3 +1,5 @@
+import type { MouseEventHandler } from "react";
+import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import { NOTABLE_DAYS, NOTABLE_NOTE } from "./notableDays";
 import { ECLIPSE_DAYS, eclipseMoment } from "./eclipseDays";
 import { isArchivableDay, typedDay } from "./day";
@@ -8,9 +10,10 @@ interface Props {
   archive: FeedSnapshot["archive"];
   state: ReturnType<typeof useArchive>;
   onCursor: (at: number) => void;
+  watchEclipse: MouseEventHandler<HTMLButtonElement> | string;
 }
 
-export function ArchiveControls({ archive, state, onCursor }: Props): JSX.Element {
+export function ArchiveControls({ archive, state, onCursor, watchEclipse }: Props): JSX.Element {
   const {
     archiveDay,
     setArchiveDay,
@@ -44,6 +47,22 @@ export function ArchiveControls({ archive, state, onCursor }: Props): JSX.Elemen
           <p className="mt-1.5 text-[11px] leading-relaxed text-ink">
             {new Date(archive.from).toISOString().slice(0, 10)}, all day UTC. Nothing here is arriving now.
           </p>
+          {loadedDay === APRIL_ECLIPSE_DAY && (
+            <div className="mt-2">
+              {typeof watchEclipse === "string" ? (
+                <p className="text-[11px] text-dim">{watchEclipse}</p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={watchEclipse}
+                  disabled={archiveBusy}
+                  className="min-h-10 w-full cursor-pointer border border-hairline bg-deck px-2 text-left text-xs font-semibold text-ink hover:bg-void disabled:opacity-60"
+                >
+                  Watch eclipse
+                </button>
+              )}
+            </div>
+          )}
           {/* Disabled while a day is in flight: two archive loads race, and the second answer is not
                 necessarily the second request. */}
           {neighbours ? (

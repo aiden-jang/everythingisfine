@@ -55,7 +55,9 @@ Observe or Explore remembers that presentation; opening the app alone saves no n
 - Change magnitude, feeds, or the time window. Search by region or place.
 - Choose **Map** to unfold the globe at its seam. Choose **Globe** to wrap it back up. On the flat map,
   draw a cross-section with Shift-drag. Release the line to fold it open into the depth chart.
-- Browse any completed UTC day, including notable earthquakes and eclipses.
+- Browse any completed UTC day, including notable earthquakes and eclipses. Find the total eclipse
+  of 8 April 2024 under **Revisit a day** in the Observatory or **Eclipses** in Explore. Choose
+  **Watch eclipse** in Globe view, then pause or scrub to follow the shadow at a specific UTC time.
 - On a phone, switch between globe space and recent events using the bottom navigation.
 - Use **Still** to share or download a captioned image. If native sharing fails, **Download image**
   keeps that captured frame available. Cancelling the share sheet leaves the page alone.
@@ -96,8 +98,11 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Stars | Yale Bright Star Catalogue, BSC5 |
 | Constellation figures | d3-celestial, copyright (c) 2015 Olaf Frohn, BSD 3-Clause |
 
-The sun, moon, planets, and eclipse geometry are calculated locally. Colour represents
-magnitude; other hazards use distinct shapes, with neutral interface controls.
+The sun, moon, planets, and eclipse geometry are calculated locally. The 8 April 2024 replay uses
+NASA’s two-minute path predictions from 16:40 to 19:54 UTC, with approximate shading.
+[Bundled path samples and NASA source](src/geo/aprilEclipseData.ts).
+
+Colour represents magnitude. Other hazards use distinct shapes, with neutral interface controls.
 
 Under **Feeds and layers**, **Regional cutaway** opens the pinned earthquake's region, or the
 centre of the view. Orbit to inspect events at their reported depths. The neutral well has 300 km

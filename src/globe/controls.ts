@@ -71,6 +71,7 @@ export interface Controls {
   state: () => CameraState;
   /** Springs the camera to a place. Instant under reduced motion, per DESIGN.md section 8. */
   flyTo: (lon: number, lat: number, zoom?: number) => void;
+  setView: (pose: CameraState) => void;
   /** Starts a finite horizon pullback. Skipped completely under reduced motion. */
   enter: () => void;
   /** 0 globe, 1 map. Drag becomes a pan and the facing tests fade out as this reaches 1. */
@@ -550,11 +551,7 @@ export function createControls(
     const clamped = { lon: toLon, lat: clampLat(toLat), zoom: clampZoom(toZoom) };
     if (reduced.matches) {
       // Not eased, not shortened: arrived. A half-disabled motion setting is worse than none.
-      ({ lon, lat, zoom } = clamped);
-      target = null;
-      vLon = vLat = vZoom = 0;
-      rig.snap();
-      apply();
+      aim(clamped, true);
       return;
     }
     vLon = 0;
@@ -572,6 +569,7 @@ export function createControls(
     apply,
     pick,
     flyTo,
+    setView: (pose) => aim(pose, true),
     enter: () => {
       if (sky.wanted() || dive.wanted()) return;
       sky.clear();

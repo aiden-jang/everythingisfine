@@ -1,3 +1,4 @@
+import { aprilEclipseAt } from "./aprilEclipse";
 import { EARTH_RADIUS_KM, toVec3 } from "./sphere";
 import { moonPosition, moonRadii, MOON_RADIUS_KM } from "./moon";
 import { subsolarPoint } from "./sun";
@@ -78,6 +79,17 @@ export function solarEclipse(at: number): Eclipse {
   const umbra = moonR - reach * spread;
   const penumbra = moonR + reach * spread;
 
+  const known = aprilEclipseAt(at);
+  if (known) {
+    // The table gives a surface width, so the shaded core is an approximate circular footprint.
+    return {
+      centre: toVec3(known.lon, known.lat, 1),
+      umbra: known.widthKm / (2 * EARTH_RADIUS_KM),
+      penumbra,
+      gap,
+      touching: true,
+    };
+  }
   return { centre, umbra, penumbra, gap, touching: gap < 1 + penumbra };
 }
 

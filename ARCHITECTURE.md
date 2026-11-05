@@ -3636,6 +3636,13 @@ ramp, and at true scale the biggest fire on Earth is a fifth of a degree across.
 Archive entry, calendar, notable days, and eclipse controls share one component. The archive
 hook owns loading and date navigation; this component does not fetch independently.
 
+For 8 April 2024, the replay session supplies one timestamp to the archive cursor, camera and
+lighting. Its camera approaches the first NASA sample, tracks the interpolated centreline,
+then pulls back to show the route. Playback holds the first and last UTC times during the camera
+moves and stops updating after the pullback. Reduced motion starts paused with the same time controls
+and a fixed overview. Closing holds the displayed time in the archive. The globe and feed stay
+mounted throughout. Other dates use the geometric eclipse model.
+
 ## src/app/useStill.ts
 
 Capture, caption, encoding, and sharing happen in one hook. Copy the WebGL drawing buffer

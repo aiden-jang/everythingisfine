@@ -1,6 +1,8 @@
 import { NIGHT_SURFACE } from "./nightSurface";
 import { lightSurface } from "./surfaceMaterial";
 import { createCutaway, type CutawayFocus } from "./cutaway";
+import { createEclipseTrack } from "./eclipseTrack";
+import type { EclipseFrame } from "../app/eclipseReplay";
 import { createRegroup } from "./regroup";
 import { createSurfaceLayers } from "./surfaceLayers";
 import {
@@ -51,6 +53,8 @@ import type { SlabPoint } from "../geo/slab";
 import { auroraTexture, writeAurora } from "./auroraTexture";
 import { createMarkLayer, pickMark, type Mark } from "./marks";
 import type { Aurora } from "../sources/aurora";
+
+export type GlobeMoment = number | EclipseFrame | null;
 
 export interface HitStore {
   forEach: (fn: (quake: HitQuake) => void) => void;
@@ -125,7 +129,7 @@ export interface Globe {
   slab: ReturnType<typeof createSlabLayer>;
   setSlab: (points: readonly SlabPoint[] | null) => void;
   setAurora: (grid: Aurora | null) => void;
-  setMoment: (at: number | null) => void;
+  setMoment: (value: GlobeMoment) => void;
   setStars: (table: StarTable) => void;
   setFigures: (table: FigureTable) => void;
   setFiguresOn: (on: boolean) => void;
@@ -201,12 +205,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
   const land = buildLand();
 
-  /*
-   * Land has its depth test off and is drawn in order instead. Triangles are cut in flat degrees, so one
-   * spanning a continent cuts a chord through the sphere and the ocean pokes up through Asia.
-   *
-   * Only the fill can do this. A line has no facing to cull by, so the graticule and coast keep their test.
-   */
+  // Land fill has depth testing off so the ocean cannot poke through flat-degree triangles.
   const fillGeom = new BufferGeometry();
   fillGeom.setAttribute("position", new BufferAttribute(land.position, 3));
   fillGeom.setIndex(new BufferAttribute(land.index, 1));
@@ -317,6 +316,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   );
   night.renderOrder = 4.5;
   spin.add(night);
+  const eclipseTrack = createEclipseTrack();
+  spin.add(eclipseTrack.path);
 
   // On `spin` rather than `world`, so the glyphs travel with the flat map's copies.
   const marks = createMarkLayer(morph);
@@ -363,13 +364,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       nightUniforms["uUmbraAng"]!.value = 0;
     }
 
-    /*
-     * The sky turns from the same timestamp, because the sun and the stars are one fact. Aim them apart and
-     * you get Orion overhead at noon.
-     */
-    starfield.setTime(at, gmstDeg(at));
-    // The same turn, so a line cannot separate from the star it reaches.
-    figures.setSpin(gmstDeg(at));
+    // Reuse the turn so a constellation line cannot separate from its stars.
+    const sidereal = gmstDeg(at);
+    starfield.setTime(at, sidereal);
+    figures.setSpin(sidereal);
     // The same direction that lights the Earth lights the moon, which is where its phase comes from.
     moon.setTime(at, sunDir);
     // And the Earth's own shadow, which is the same two cones as above with the bodies swapped.
@@ -593,11 +591,11 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       slabOn = true;
       slab.setOpacity(1 - morph.value);
     },
-    /*
-     * Loaded from `Globe.tsx` rather than here, because the caller is the only one holding `wake`. A layer
-     * that filled itself while the loop was asleep would stay invisible until something else moved.
-     */
-    setMoment: (at: number | null) => {
+    setMoment: (value) => {
+      const frame = typeof value === "object" ? value : null;
+      const at = typeof value === "number" ? value : (frame?.at ?? null);
+      eclipseTrack.setTime(frame?.at ?? null);
+      if (frame) controls.setView(frame.camera);
       moment = at;
       // Immediately, not on the next minute boundary, or a scrub drags the marks and leaves the light.
       if (at !== null) aimSun(at);
@@ -673,6 +671,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       world.position.x = 0;
     },
     dispose: () => {
+      eclipseTrack.dispose();
       regroup.dispose();
       events.dispose();
       slab.dispose();

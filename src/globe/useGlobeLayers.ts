@@ -44,7 +44,7 @@ export function useGlobeLayers(
     figuresRef.current(figures ?? null);
     wake.current();
   }, [figures, figuresRef, wake]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     momentRef.current(moment ?? null);
     wake.current();
   }, [moment, momentRef, wake]);

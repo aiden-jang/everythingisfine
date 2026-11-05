@@ -9,7 +9,7 @@ import { attachSectionDrawing, type SectionCommit } from "./sectionDrawing";
 import { useEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
 import { loadStars, type FigureTable } from "../geo/stars";
-import { createGlobe } from "./scene";
+import { createGlobe, type GlobeMoment } from "./scene";
 import { sinkFraction, type FocusSpan } from "./events";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 import { createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
@@ -46,7 +46,7 @@ export interface GlobeProps {
   cutaway?: CutawayFocus | null;
   figures?: FigureTable | null;
   /** Null rather than `Date.now()` on the live view, so the scene keeps its once-a-minute throttle. */
-  moment?: number | null;
+  moment?: GlobeMoment;
   /** Handed in already loaded: whoever pressed the toggle pulls the chunk, and this stays a renderer. */
   slab?: readonly SlabPoint[] | null;
   /** A span, not a bucket index: the strip knows how wide its buckets are and this does not. */
@@ -109,7 +109,7 @@ export function Globe({
   const sinkRef = useRef<(on: boolean) => void>(() => {});
   const figuresRef = useRef<(table: FigureTable | null) => void>(() => {});
   const planetariumRef = useRef<(on: boolean) => void>(() => {});
-  const momentRef = useRef<(at: number | null) => void>(() => {});
+  const momentRef = useRef<(at: GlobeMoment) => void>(() => {});
   const slabRef = useRef<(points: readonly SlabPoint[] | null) => void>(() => {});
   const auroraRef = useRef<(next: Aurora | null) => void>(() => {});
   const markRef = useRef<(next: readonly Mark[]) => void>(() => {});
