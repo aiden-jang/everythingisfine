@@ -211,6 +211,11 @@ settles to an overview at the Buras landfall. Track dots mark published fixes. W
 the published quadrant radii, and the readings change at the fixes. Scrubbing and reduced motion
 use the fixed overview.
 
+Tonga opens on the eruption’s infrared scans, widens through the water-vapor difference scans, then
+pulls back into an orbit view. The ring is an estimate of the atmospheric wave. The station chart
+stays tied to measured pressure on the same UTC clock. Chapter jumps and reduced motion use static
+framing.
+
 The globe opens into a curved sheet from its map seam. The camera pulls back to show the curl, then
 settles at the selected map location. The same path wraps the sheet back into the globe, and changing
 direction continues from the displayed frame. Reduced motion switches directly between the projections.

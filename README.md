@@ -48,6 +48,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Follow Hurricane Katrina** banks over the Gulf and follows NOAA’s 2005 best track to landfall
   near Buras, Louisiana. Pause, scrub, or jump to the offshore peak and landfall. Reduced motion
   opens a fixed overview with the same readings.
+- **Watch Tonga’s shockwave** opens on infrared and water-vapor scans of the 2022 eruption,
+  then pulls back to follow the estimated atmospheric wave. Pick a ground station to jump to
+  its pressure pulse. Reduced motion opens the eruption scan with the same timeline and stations.
 - **Save view** uses the existing captioned image export, including the reference-cutaway label.
 
 The opening pulls back from the horizon into orbit. Long camera flights bank gently, bright stars
@@ -113,6 +116,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Plate boundaries | PB2002, Bird (2003), simplified for display |
 | Tōhoku rupture and shaking | USGS finite-fault model and preferred ShakeMap Atlas MMI contours |
 | Katrina replay | NOAA National Hurricane Center Atlantic HURDAT2 best track |
+| Tonga replay | NOAA GOES-17 ABI bands 13 and 8, one-minute ASOS via Iowa Environmental Mesonet, Wright et al. (2022) |
 | Stars | Yale Bright Star Catalogue, BSC5 |
 | Constellation figures | d3-celestial, copyright (c) 2015 Olaf Frohn, BSD 3-Clause |
 
@@ -127,6 +131,14 @@ Katrina’s replay interpolates the storm center and available 34- and 64-knot q
 published fixes. The readout keeps each fix’s estimated maximum sustained winds and central
 pressure. The radii are missing at the Buras fix, so that view omits the overlays.
 [NHC Katrina report](https://www.nhc.noaa.gov/data/tcr/AL122005_Katrina.pdf).
+
+Tonga’s satellite views use colorized crops of the original infrared scans and differences
+between consecutive water-vapor scans. The scan labels use UTC start times. The globe’s ring
+estimates the first atmospheric Lamb wave using the published origin time and travel time to the
+antipode. The station charts retain the measured minute-by-minute pressure, converted to hPa.
+[NOAA GOES archive](https://registry.opendata.aws/noaa-goes/) ·
+[ASOS archive](https://mesonet.agron.iastate.edu/request/asos/1min.phtml) ·
+[Wright et al.](https://doi.org/10.1038/s41586-022-05012-5).
 
 Colour represents magnitude. Other hazards use distinct shapes, with neutral interface controls.
 

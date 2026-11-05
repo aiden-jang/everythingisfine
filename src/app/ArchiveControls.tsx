@@ -2,6 +2,7 @@ import type { MouseEventHandler } from "react";
 import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import { RuptureReveal, TOHOKU_DAY } from "./rupture/RuptureReveal";
 import { KATRINA_DAY, StormReplay } from "./storm/StormReplay";
+import { TONGA_DAY, TongaReplay } from "./tonga/TongaReplay";
 import { NOTABLE_DAYS, NOTABLE_NOTE } from "./notableDays";
 import { ECLIPSE_DAYS, eclipseMoment } from "./eclipseDays";
 import { isArchivableDay, typedDay } from "./day";
@@ -55,6 +56,7 @@ export function ArchiveControls({ archive, state, onCursor, watchEclipse }: Prop
           {loadedDay === KATRINA_DAY && (
             <StormReplay className="archive-scene-button mt-2 w-full text-left" />
           )}
+          {loadedDay === TONGA_DAY && <TongaReplay className="archive-scene-button mt-2 w-full text-left" />}
           {loadedDay === APRIL_ECLIPSE_DAY && (
             <div className="mt-2">
               {typeof watchEclipse === "string" ? (
