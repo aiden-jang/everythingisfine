@@ -2517,7 +2517,8 @@ when graphics startup is retried.
 Layer effects write through stable scene bindings and wake or redraw the existing renderer when
 necessary. Their dependencies are individual values and refs, so a camera preset or a lazy table
 does not recreate WebGL resources or feed subscriptions. Scene construction restores current values
-before these effects run, including on graphics retry.
+before these effects run, including on graphics retry. Planetarium framing commits before paint so
+reduced motion does not wait for a deferred layer update.
 
 ### src/globe/controls.ts
 

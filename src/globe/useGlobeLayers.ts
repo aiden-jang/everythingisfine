@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import type { GlobeProps } from "./Globe";
 
 type Values = Pick<
@@ -59,7 +59,7 @@ export function useGlobeLayers(
     marksRef.current(marks ?? []);
     redraw.current();
   }, [marks, marksRef, redraw]);
-  useEffect(() => {
+  useLayoutEffect(() => {
     skyRef.current(planetarium ?? false);
     wake.current();
   }, [planetarium, skyRef, wake]);
