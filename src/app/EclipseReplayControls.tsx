@@ -66,7 +66,7 @@ export function EclipseReplayControls({
           value={minute}
           onChange={(event) => seek(Number(event.currentTarget.value) / MINUTES)}
           onKeyDown={(event) => {
-            let next = minute;
+            let next: number;
             switch (event.key) {
               case "Home":
                 next = 0;
