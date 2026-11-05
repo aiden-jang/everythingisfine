@@ -206,6 +206,11 @@ overhead map. The fault view uses USGS model timing and metres of slip, with fou
 The surface view uses the preferred USGS ShakeMap contours and a separate intensity legend.
 The motion pauses in hidden tabs, and either finished view can be opened directly.
 
+Katrina opens on a banked view of the Gulf horizon, follows the eye along NOAA’s best track and
+settles to an overview at the Buras landfall. Track dots mark published fixes. Wind outlines use
+the published quadrant radii, and the readings change at the fixes. Scrubbing and reduced motion
+use the fixed overview.
+
 The globe opens into a curved sheet from its map seam. The camera pulls back to show the curl, then
 settles at the selected map location. The same path wraps the sheet back into the globe, and changing
 direction continues from the displayed frame. Reduced motion switches directly between the projections.

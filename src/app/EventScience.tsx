@@ -18,7 +18,7 @@ export function EventScience({
   const tohoku = quake.readings.some(({ source, id }) => source === "usgs" && TOHOKU_IDS.has(id));
   return (
     <>
-      {tohoku && <RuptureReveal className="rupture-button mt-4 w-full text-left" />}
+      {tohoku && <RuptureReveal className="archive-scene-button mt-4 w-full text-left" />}
       {arrival ? (
         <div className="mt-4">
           <p className="text-[11px] leading-relaxed text-dim">

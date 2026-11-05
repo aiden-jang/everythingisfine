@@ -42,6 +42,8 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/useEclipsePlayback.ts` | Eclipse replay clock, scrubbing and interruption |
 | `src/geo/aprilEclipse.ts` | Interpolation of NASA’s April 2024 path samples |
 | `src/app/rupture/` | On-demand Tōhoku archive scene, regional projection and finite reveal clock |
+| `src/app/ArchiveScene.tsx` | Shared archive dialog, on-demand scene loading and focus |
+| `src/app/storm/` | Katrina best track, spherical regional projection and playback |
 | `src/app/useStill.ts` | Synchronous canvas capture, caption, native sharing, download fallback |
 | `src/app/stillDelivery.ts` | Attached download links and deferred object URL cleanup |
 | `src/app/Utilities.tsx` | Mobile disclosure focus, outside dismissal, Escape and resize lifetime |
@@ -106,6 +108,11 @@ Replay retains wall-clock time. Reduced motion remains a separate user preferenc
 Tōhoku loads a separate regional canvas and pinned USGS data on request. The model clock orders
 fault patches using their rupture start and rise times. ShakeMap contours appear in a separate
 surface view. Regenerate the packed asset with [make-tohoku.mjs](tools/make-tohoku.mjs).
+
+Katrina shares the archive dialog and loads its own regional canvas on demand. The frame loop
+interpolates the center on the replay clock, while the measurement readout retains the latest
+NOAA fix at or before the cursor. Regenerate the packed HURDAT2 track with
+[make-katrina.mjs](tools/make-katrina.mjs).
 
 After Dark reuses the polled NOAA grid for aurora overflight. A flight holds one forecast while
 the camera and readout follow it. The frame loop drives the veil sweep and stops when it settles.

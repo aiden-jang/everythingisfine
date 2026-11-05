@@ -1,7 +1,7 @@
 // Pack the two versioned USGS products and Natural Earth coastlines for the on-demand archive scene.
 import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
-import { feature } from "topojson-client";
+import { regionalCoast } from "./regional-coast.mjs";
 import atlas from "world-atlas/land-50m.json" with { type: "json" };
 
 const USGS = "https://earthquake.usgs.gov/product/";
@@ -39,37 +39,7 @@ const contours = shaking.features.map(({ properties: { value, color }, geometry 
   lines: geometry.coordinates.map((line) => line.map((point) => point.map(round))),
 }));
 
-// Crop rings at the viewing bounds to avoid shipping the full regional basemap.
-function crop(ring, axis, boundary, inside) {
-  const result = [];
-  let prev = ring.at(-1);
-  for (const point of ring) {
-    if (inside(prev[axis]) !== inside(point[axis])) {
-      const t = (boundary - prev[axis]) / (point[axis] - prev[axis]);
-      result.push(prev.map((value, i) => (i === axis ? boundary : value + (point[i] - value) * t)));
-    }
-    if (inside(point[axis])) result.push(point);
-    prev = point;
-  }
-  return result;
-}
-
-const coast = feature(atlas, atlas.objects.land)
-  .features.flatMap(({ geometry }) =>
-    geometry.type === "MultiPolygon" ? geometry.coordinates : [geometry.coordinates],
-  )
-  .map((rings) =>
-    rings
-      .map((ring) => {
-        const west = crop(ring, 0, 128, (lon) => lon >= 128);
-        const east = crop(west, 0, 154, (lon) => lon <= 154);
-        const south = crop(east, 1, 28, (lat) => lat >= 28);
-        const north = crop(south, 1, 48, (lat) => lat <= 48);
-        return north.map((point) => point.map(round));
-      })
-      .filter((ring) => ring.length >= 3),
-  )
-  .filter((polygon) => polygon.length);
+const coast = regionalCoast(atlas, { west: 128, east: 154, south: 28, north: 48 });
 
 const packed = {
   coast,

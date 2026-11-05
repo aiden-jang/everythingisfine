@@ -45,6 +45,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Watch Tōhoku rupture** follows the 2011 earthquake from its epicenter to the modeled fault
   beneath the ocean and then to estimated shaking across Japan. Choose **Fault slip** or
   **Shaking** to inspect either view. Reduced motion opens the finished fault view.
+- **Follow Hurricane Katrina** banks over the Gulf and follows NOAA’s 2005 best track to landfall
+  near Buras, Louisiana. Pause, scrub, or jump to the offshore peak and landfall. Reduced motion
+  opens a fixed overview with the same readings.
 - **Save view** uses the existing captioned image export, including the reference-cutaway label.
 
 The opening pulls back from the horizon into orbit. Long camera flights bank gently, bright stars
@@ -109,6 +112,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Coastlines and replay cities | Natural Earth, public domain |
 | Plate boundaries | PB2002, Bird (2003), simplified for display |
 | Tōhoku rupture and shaking | USGS finite-fault model and preferred ShakeMap Atlas MMI contours |
+| Katrina replay | NOAA National Hurricane Center Atlantic HURDAT2 best track |
 | Stars | Yale Bright Star Catalogue, BSC5 |
 | Constellation figures | d3-celestial, copyright (c) 2015 Olaf Frohn, BSD 3-Clause |
 
@@ -118,6 +122,11 @@ NASA’s two-minute path predictions from 16:40 to 19:54 UTC, with approximate s
 
 The Tōhoku view compresses the modeled rupture times and exaggerates depth by four to make the
 fault visible. The shaking contours show estimated intensity for the event. [USGS Tōhoku record](https://earthquake.usgs.gov/earthquakes/eventpage/usc0001xgp).
+
+Katrina’s replay interpolates the storm center and available 34- and 64-knot quadrant radii between
+published fixes. The readout keeps each fix’s estimated maximum sustained winds and central
+pressure. The radii are missing at the Buras fix, so that view omits the overlays.
+[NHC Katrina report](https://www.nhc.noaa.gov/data/tcr/AL122005_Katrina.pdf).
 
 Colour represents magnitude. Other hazards use distinct shapes, with neutral interface controls.
 

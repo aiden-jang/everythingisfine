@@ -1,6 +1,7 @@
 import type { MouseEventHandler } from "react";
 import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import { RuptureReveal, TOHOKU_DAY } from "./rupture/RuptureReveal";
+import { KATRINA_DAY, StormReplay } from "./storm/StormReplay";
 import { NOTABLE_DAYS, NOTABLE_NOTE } from "./notableDays";
 import { ECLIPSE_DAYS, eclipseMoment } from "./eclipseDays";
 import { isArchivableDay, typedDay } from "./day";
@@ -48,7 +49,12 @@ export function ArchiveControls({ archive, state, onCursor, watchEclipse }: Prop
           <p className="mt-1.5 text-[11px] leading-relaxed text-ink">
             {new Date(archive.from).toISOString().slice(0, 10)}, all day UTC. Nothing here is arriving now.
           </p>
-          {loadedDay === TOHOKU_DAY && <RuptureReveal className="rupture-button mt-2 w-full text-left" />}
+          {loadedDay === TOHOKU_DAY && (
+            <RuptureReveal className="archive-scene-button mt-2 w-full text-left" />
+          )}
+          {loadedDay === KATRINA_DAY && (
+            <StormReplay className="archive-scene-button mt-2 w-full text-left" />
+          )}
           {loadedDay === APRIL_ECLIPSE_DAY && (
             <div className="mt-2">
               {typeof watchEclipse === "string" ? (

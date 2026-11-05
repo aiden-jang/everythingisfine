@@ -2,6 +2,7 @@ import { useLayoutEffect, type RefObject } from "react";
 import { ObservatoryStage, OBSERVATORY_SCENES, SceneDiagram } from "./ObservatoryStage";
 import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import { RuptureReveal, TOHOKU_DAY } from "./rupture/RuptureReveal";
+import { StormReplay } from "./storm/StormReplay";
 import { AuroraOverflightControls } from "./AuroraOverflightControls";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene } from "./useObservatory";
@@ -202,6 +203,7 @@ export function Observatory({
                 Japan, 2011 ↗
               </button>
               <RuptureReveal />
+              <StormReplay />
               <button type="button" onClick={() => onHistory("2013-05-24")}>
                 Deep beneath Okhotsk ↗
               </button>

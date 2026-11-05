@@ -132,23 +132,23 @@ export function RuptureStage(): JSX.Element {
 
   return (
     <>
-      <figure className="rupture-map">
+      <figure className="archive-scene-map">
         <canvas ref={canvas} role="img" aria-label={caption.title + ". " + caption.detail} />
         <figcaption>
           <span>38.297° N / 142.373° E</span>
           <span>{displayed === "fault" ? "Depth ×4" : "Offshore Japan"}</span>
         </figcaption>
       </figure>
-      <div className="rupture-console">
-        <div className="rupture-caption" role="status">
+      <div className="archive-scene-console">
+        <div className="archive-scene-caption" role="status">
           <h3>{caption.title}</h3>
           <p>{caption.detail}</p>
         </div>
-        <div className="rupture-actions">
-          <div className="rupture-controls" role="group" aria-label="Rupture views">
+        <div className="archive-scene-actions">
+          <div className="archive-scene-controls" role="group" aria-label="Rupture views">
             <button
               type="button"
-              className="rupture-button"
+              className="archive-scene-button"
               aria-pressed={mode === "fault"}
               onClick={() => setMode("fault")}
             >
@@ -156,23 +156,23 @@ export function RuptureStage(): JSX.Element {
             </button>
             <button
               type="button"
-              className="rupture-button"
+              className="archive-scene-button"
               aria-pressed={mode === "shaking"}
               onClick={() => setMode("shaking")}
             >
               Shaking
             </button>
             {!reduced && (
-              <button type="button" className="rupture-button" onClick={playback}>
+              <button type="button" className="archive-scene-button" onClick={playback}>
                 {mode === "playing" ? "Pause reveal" : mode === "paused" ? "Resume reveal" : "Replay reveal"}
               </button>
             )}
           </div>
           {displayed === "approach" ? (
-            <div className="rupture-legend" aria-hidden="true" />
+            <div className="archive-scene-legend" aria-hidden="true" />
           ) : (
             <div
-              className="rupture-legend"
+              className="archive-scene-legend"
               role="group"
               aria-label={displayed === "fault" ? "Modeled slip in metres" : "Modified Mercalli intensity"}
             >
