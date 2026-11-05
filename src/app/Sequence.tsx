@@ -1,4 +1,8 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
+import type { Quake } from "../data/types";
+import type { Store } from "../data/store";
+import { createSequenceRun } from "./sequenceReplay";
+import type { StartInspection } from "./useEventInspection";
 import type { Nearby } from "./nearby";
 import { MIN_AFTER, observed, reference, staircase } from "./omori";
 
@@ -6,7 +10,9 @@ import { MIN_AFTER, observed, reference, staircase } from "./omori";
 
 export interface SequenceProps {
   nearby: Nearby;
-  magnitude: number;
+  quake: Quake;
+  store: Store;
+  onReplay: StartInspection | null;
   ramp: RampName;
 }
 
@@ -26,9 +32,10 @@ function span(ms: number): string {
   return `${hours < 10 ? hours.toFixed(1) : Math.round(hours)}h`;
 }
 
-export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Element | null {
+export function Sequence({ nearby, quake, store, ramp, onReplay }: SequenceProps): JSX.Element | null {
   if (nearby.sequence.length === 0) return null;
 
+  const { magnitude } = quake.primary;
   const first = Math.min(0, nearby.sequence[0]!.at);
   const last = Math.max(0, nearby.sequence[nearby.sequence.length - 1]!.at);
   const width = last - first || 1;
@@ -74,6 +81,18 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
         </span>
       </div>
 
+      {onReplay && (
+        <button
+          type="button"
+          onClick={(event) => {
+            const run = createSequenceRun(quake, nearby, store, ramp);
+            if (run) onReplay(run, event.currentTarget);
+          }}
+          className="mt-2 min-h-11 w-full cursor-pointer border border-hairline bg-raised px-3 text-left text-xs font-semibold text-ink hover:bg-void"
+        >
+          Replay sequence
+        </button>
+      )}
       <div className="relative mt-2" style={{ height: `${HEIGHT}px` }}>
         {nearby.sequence.map((e, i) => (
           <span
@@ -137,8 +156,8 @@ export function Sequence({ nearby, magnitude, ramp }: SequenceProps): JSX.Elemen
           is carried by the dash, and a swatch legend for two strokes would be larger than the plot. */}
       {decay ? (
         <p className="mt-1 text-[11px] leading-relaxed text-faint">
-          The solid line is how the aftershocks actually arrived. The dashed one is Omori's law, which says
-          the rate falls as one over the time since, drawn to the same total.
+          The solid line counts the nearby events recorded after this quake. The dashed one is Omori's law,
+          which says the rate falls as one over the time since, drawn to the same total.
         </p>
       ) : null}
 

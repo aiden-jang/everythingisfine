@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import catalogue from "../geo/waveCities.json?url";
 import type { Quake } from "../data/types";
 import { MAX_KM } from "./arrival";
-import { nearbyWaveRoutes, type WaveCity, type WaveRoute } from "./waveReplay";
+import { createWaveRun, nearbyWaveRoutes, type WaveCity } from "./waveReplay";
 
-export type FollowWave = (key: string, route: WaveRoute, trigger: HTMLButtonElement) => void;
+import type { StartInspection } from "./useEventInspection";
 
-export function WaveChooser({ quake, onFollow }: { quake: Quake; onFollow: FollowWave }): JSX.Element {
+export function WaveChooser({ quake, onFollow }: { quake: Quake; onFollow: StartInspection }): JSX.Element {
   const [requested, setRequested] = useState(false);
   const [cities, setCities] = useState<readonly WaveCity[] | "error" | null>(null);
   const [choice, setChoice] = useState(0);
@@ -67,7 +67,7 @@ export function WaveChooser({ quake, onFollow }: { quake: Quake; onFollow: Follo
             </label>
             <button
               type="button"
-              onClick={(event) => onFollow(quake.key, route, event.currentTarget)}
+              onClick={(event) => onFollow(createWaveRun(quake.key, route), event.currentTarget)}
               className="min-h-11 cursor-pointer border border-hairline px-3 text-xs font-semibold text-ink hover:bg-raised"
             >
               Play wave

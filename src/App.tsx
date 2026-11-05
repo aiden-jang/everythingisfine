@@ -1,6 +1,7 @@
 import type { FlyTo } from "./globe/cameraTarget";
 import { WaveReplayControls } from "./app/WaveReplayControls";
-import { useWaveInspection } from "./app/useWaveInspection";
+import { useEventInspection } from "./app/useEventInspection";
+import { SequenceReplayControls } from "./app/SequenceReplayControls";
 import { CanvasFooter } from "./app/CanvasFooter";
 import { Observatory } from "./app/Observatory";
 import { journeyFor, observatorySummary, observatoryFeedNote } from "./app/journeys";
@@ -147,7 +148,6 @@ export function App(): JSX.Element {
   const [missingShared, setMissingShared] = useState<string | null>(shared.event ?? null);
   const [focusHour, setFocusHour] = useState<number | null>(null);
   const { aurora, cyclones, fires, floods, volcanoes, answered } = useHazardLayers();
-  // Memos run during render; define their clock first. See ARCHITECTURE.md#srcapptsx.
   const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
   const archived = snapshot.archive !== null;
   const archiveState = useArchive(feed, snapshot.archive, shared.day, (returnedToLive) => {
@@ -173,7 +173,10 @@ export function App(): JSX.Element {
     loadedDay === APRIL_ECLIPSE_DAY && !archiveBusy && !flat && !observatory.observing,
     setScrub,
   );
-  const wave = useWaveInspection(selected, !observatory.observing && !flat && !archiveBusy && !chase.frame);
+  const inspection = useEventInspection(
+    selected,
+    !observatory.observing && !flat && !archiveBusy && !chase.frame,
+  );
   const now = snapshot.archive ? snapshot.archive.to : Date.now();
   const minuteClock = Math.floor(now / 60_000) * 60_000;
   const span = { from: now - filters.windowMs, to: now };
@@ -1617,7 +1620,7 @@ export function App(): JSX.Element {
                held cursor overrides it with the same precedence `stillMoment` uses, so the terminator and
                the caption cannot disagree. See ARCHITECTURE.md#srcapptsx. */
               moment={chase.frame ?? litAt}
-              wave={wave.run}
+              inspection={inspection.run}
               flat={flat}
               planetarium={observatory.night}
               depthSink={observatory.depth || sinkOn}
@@ -1651,8 +1654,9 @@ export function App(): JSX.Element {
             className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
           >
             <EclipseReplayControls playback={chase} />
-            <WaveReplayControls replay={wave} />
-            {section && !chase.frame && !wave.run ? (
+            <WaveReplayControls replay={inspection} />
+            <SequenceReplayControls replay={inspection} />
+            {section && !chase.frame && !inspection.run ? (
               <CrossSection
                 data={section}
                 hinge={sectionLine?.hinge}
@@ -1664,7 +1668,7 @@ export function App(): JSX.Element {
                 onClose={() => setSectionLine(null)}
               />
             ) : null}
-            {chase.frame || wave.run ? null : (
+            {chase.frame || inspection.run ? null : (
               <CanvasFooter
                 flat={flat}
                 playing={view.playing}
@@ -1675,11 +1679,6 @@ export function App(): JSX.Element {
           </div>
         </section>
 
-        {/*
-        Folding the bar must not hide which day this is. It carried all four statements of the date, and
-        a fullscreen window has no tab title either, so a viewer saw 2011 with nothing saying it was not
-        this morning. Take the day from the snapshot, not the field, which is text somebody is typing.
-        */}
         {!headShown && (snapshot.archive !== null || view.at !== null) ? (
           <div className="stamp pointer-events-none absolute bottom-4 left-4 z-[2] bg-deck/40 px-3 py-2 font-mono text-[11px] text-faint backdrop-blur-xl backdrop-saturate-50">
             {stillMoment(
@@ -1694,7 +1693,7 @@ export function App(): JSX.Element {
           <MarkCard found={markSubject} now={now} archived={archived} onClose={() => setMarkId(null)} />
         ) : shownQuake ? (
           <DetailPanel
-            open={pinned !== undefined && !wave.run}
+            open={pinned !== undefined && !inspection.run}
             quake={shownQuake}
             store={feed.store}
             filters={filters}
@@ -1704,13 +1703,14 @@ export function App(): JSX.Element {
             now={now}
             archived={archived}
             onClose={() => setSelected(null)}
-            onFollowWave={
+            onInspect={
               observatory.ready
-                ? (key, route, opener) => {
+                ? (run, opener) => {
                     setFlat(false);
                     onCutaway(false);
                     setFarSideOf(null);
-                    wave.start(key, route, opener);
+                    setScrub((current) => (current.playing ? { ...current, playing: false } : current));
+                    inspection.start(run, opener);
                   }
                 : null
             }

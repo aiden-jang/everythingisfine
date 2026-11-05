@@ -61,6 +61,8 @@ Observe or Explore remembers that presentation; opening the app alone saves no n
 - Pin an earthquake and open **Follow the wave**. Pick a nearby city to see the estimated P and
   S arrivals, with a fixed overview under reduced motion. The city picker lists up to six places
   within 700 km.
+- Choose **Replay sequence** in a pinned earthquake’s nearby activity to see the recorded events
+  appear in order. The UTC timeline can be scrubbed, including in the fixed reduced-motion view.
 - On a phone, switch between globe space and recent events using the bottom navigation.
 - Use **Still** to share or download a captioned image. If native sharing fails, **Download image**
   keeps that captured frame available. Cancelling the share sheet leaves the page alone.

@@ -1,8 +1,8 @@
 import { NIGHT_SURFACE } from "./nightSurface";
 import { lightSurface } from "./surfaceMaterial";
 import { createCutaway, type CutawayFocus } from "./cutaway";
-import { createWavePresentation } from "./wavePresentation";
-import type { WaveRun } from "../app/waveReplay";
+import { createEventPresentation } from "./eventPresentation";
+import type { InspectionRun } from "../app/useEventInspection";
 import { createEclipseTrack } from "./eclipseTrack";
 import type { EclipseFrame } from "../app/eclipseReplay";
 import { createRegroup } from "./regroup";
@@ -132,7 +132,7 @@ export interface Globe {
   setSlab: (points: readonly SlabPoint[] | null) => void;
   setAurora: (grid: Aurora | null) => void;
   setMoment: (value: GlobeMoment) => void;
-  setWave: (run: WaveRun | null) => void;
+  setInspection: (run: InspectionRun | null) => void;
   setStars: (table: StarTable) => void;
   setFigures: (table: FigureTable) => void;
   setFiguresOn: (on: boolean) => void;
@@ -181,11 +181,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const world = new Group();
   scene.add(world);
   const spin = new Group();
-  world.add(spin);
+  const catalogue = new Group();
+  world.add(spin, catalogue);
 
-  /*
-   * A rectangle behind the flat map, hiding the sawtooth the sphere's pole leaves when it unwraps.
-   */
   /* It has to be opaque. Three.js draws every opaque object before any transparent one and `renderOrder`
      only sorts within each group, so a transparent backdrop paints over the geography whatever you ask. */
   const mapBase = new Mesh(
@@ -324,8 +322,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
   // On `spin` rather than `world`, so the glyphs travel with the flat map's copies.
   const marks = createMarkLayer(morph);
-  spin.add(marks.object);
-  spin.add(marks.highlight);
+  catalogue.add(marks.object, marks.highlight);
   let heldMarks: readonly Mark[] = [];
 
   const sunDir = new Vector3();
@@ -396,14 +393,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const planets = createPlanets();
   scene.add(planets.object);
 
-  // Added to the scene root, not to `spin`: the globe group carries no transform, and hanging the events
-  // off it would invite somebody to rotate one and not the other.
   const events = createEventLayer(capacity, "thermal", morph);
-  world.add(events.object);
+  catalogue.add(events.object);
   const rings = createRingLayer("thermal", morph);
-  world.add(rings.object);
+  catalogue.add(rings.object);
   const slab = createSlabLayer(morph);
-  world.add(slab.object);
+  catalogue.add(slab.object);
 
   /* Nothing under `world` is culled against its own bounds, because those bounds are the wrong shape. See ARCHITECTURE.md#srcglobescenets. */
   world.traverse((o) => {
@@ -411,8 +406,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   });
 
   const controls = createControls(camera, canvas, FRAMING, FOV);
-  const wave = createWavePresentation(camera, controls);
-  spin.add(wave.object);
+  const inspection = createEventPresentation(camera, controls, catalogue);
+  spin.add(inspection.object);
   let markerScale = (): number => 1;
 
   const resize = (): void => {
@@ -450,12 +445,16 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     cutaway.patch(layer.material);
   }
   const regroup = createRegroup(events.object);
-  world.add(regroup.object);
+  catalogue.add(regroup.object);
 
   return {
     resize,
     controls,
-    setWave: wave.set,
+    setInspection: (run) => {
+      inspection.set(run);
+      sunMinute = -1;
+      if (moment !== null && run?.kind !== "sequence") aimSun(moment);
+    },
     beginArrival: lights.begin,
     setCutaway: (focus) => {
       controls.setDive(focus?.dive === true);
@@ -472,7 +471,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       const tracing = figures.step(dt, reduced, !controls.skyReady());
       const grouping = regroup.step(dt, reduced);
       const settling = morph.value === 0 && !controls.framingReady();
-      const following = wave.step(dt, reduced, morph.value === 0);
+      const following = inspection.step(dt, reduced, morph.value === 0);
       return cutting || tracing || grouping || illuminating || settling || following;
     },
     markerRadius: (magnitude: number): number => markerRadiusPx(magnitude, markerScale()),
@@ -603,7 +602,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       if (frame) controls.setView(frame.camera);
       moment = at;
       // Immediately, not on the next minute boundary, or a scrub drags the marks and leaves the light.
-      if (at !== null) aimSun(at);
+      if (at !== null && inspection.recordedAt() === null) aimSun(at);
       else sunMinute = -1;
     },
     setStars: (t: StarTable) => starfield.setStars(t),
@@ -622,11 +621,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       material.uniforms["uAuroraOn"]!.value = 1;
     },
     render: () => {
-      if (moment === null) {
-        const minute = Math.floor(Date.now() / 60_000);
+      const at = inspection.recordedAt() ?? (moment === null ? Date.now() : null);
+      if (at !== null) {
+        const minute = Math.floor(at / 60_000);
         if (minute !== sunMinute) {
           sunMinute = minute;
-          aimSun(Date.now());
+          aimSun(at);
         }
       }
 
@@ -670,7 +670,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       world.position.x = 0;
     },
     dispose: () => {
-      wave.dispose();
+      inspection.dispose();
       eclipseTrack.dispose();
       regroup.dispose();
       events.dispose();

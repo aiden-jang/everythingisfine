@@ -56,6 +56,7 @@ export function createWaveRun(key: string, route: WaveRoute) {
     for (const subscriber of subscribers) subscriber();
   };
   return {
+    kind: "wave" as const,
     key,
     route,
     read: () => snapshot,

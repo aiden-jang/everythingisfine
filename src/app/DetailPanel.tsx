@@ -1,4 +1,5 @@
-import { WaveChooser, type FollowWave } from "./WaveChooser";
+import { WaveChooser } from "./WaveChooser";
+import type { StartInspection } from "./useEventInspection";
 import { CopyLink } from "./CopyLink";
 import { EventTime } from "./EventTime";
 import { useMemo } from "react";
@@ -37,7 +38,7 @@ export interface DetailPanelProps {
   store: Store;
   filters: Filters;
   onClose: () => void;
-  onFollowWave?: FollowWave | null;
+  onInspect?: StartInspection | null;
   /**
    * Opens a cross-section through this event, across the local trend. Shift-dragging the map was the only
    * way in: undiscoverable on a mouse and impossible on a touch screen, where there is no shift to hold.
@@ -101,7 +102,7 @@ export function DetailPanel({
   now,
   archived = false,
   onClose,
-  onFollowWave,
+  onInspect,
   onSection,
   farSide,
   onFarSide,
@@ -281,7 +282,7 @@ export function DetailPanel({
         </div>
       ) : null}
 
-      {onFollowWave && <WaveChooser key={quake.key} quake={quake} onFollow={onFollowWave} />}
+      {onInspect && <WaveChooser key={quake.key} quake={quake} onFollow={onInspect} />}
 
       {spread ? (
         <div className="mt-4">
@@ -332,9 +333,6 @@ export function DetailPanel({
                 : ""}
               .
             </p>
-            {/* The largest neighbours, and a way to get to them. They were listed and unreachable: the
-                panel named the four events most worth looking at and left you to find them in a rail
-                of sixty. */}
             {near.notable.map(({ quake: other, km }) => (
               <button
                 key={other.key}
@@ -351,7 +349,7 @@ export function DetailPanel({
                 <span className="shrink-0 font-mono text-[10.5px] text-faint">{Math.round(km)} km</span>
               </button>
             ))}
-            <Sequence nearby={near} magnitude={r.magnitude} ramp={ramp} />
+            <Sequence nearby={near} quake={quake} store={store} ramp={ramp} onReplay={onInspect ?? null} />
             {/* Walking the sequence, which was the missing half of the strip: you could read the shape of a
                 swarm and not visit it. See ARCHITECTURE.md#srcappdetailpaneltsx. */}
             {(() => {

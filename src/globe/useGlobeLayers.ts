@@ -12,7 +12,7 @@ type Values = Pick<
   | "aurora"
   | "marks"
   | "planetarium"
-  | "wave"
+  | "inspection"
 >;
 type Slot<T> = { readonly current: T };
 type Bindings = {
@@ -26,14 +26,14 @@ export function useGlobeLayers(
   bindings: Bindings,
   draw: { wake: Slot<() => void>; redraw: Slot<() => void> },
 ): void {
-  const { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, planetarium, wave } = values;
+  const { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, planetarium, inspection } = values;
   const {
     ramp: rampRef,
     depthSink: sinkRef,
     cutaway: cutawayRef,
     figures: figuresRef,
     moment: momentRef,
-    wave: waveRef,
+    inspection: inspectionRef,
     slab: slabRef,
     aurora: auroraRef,
     marks: marksRef,
@@ -59,18 +59,18 @@ export function useGlobeLayers(
     wake.current();
   }, [moment, momentRef, wake]);
   useLayoutEffect(() => {
-    waveRef.current(wave ?? null);
+    inspectionRef.current(inspection ?? null);
     wake.current();
-    if (!wave) return;
+    if (!inspection) return;
     const motion = matchMedia("(prefers-reduced-motion: reduce)");
     const onChange = () => wake.current();
-    const unsubscribe = wave.subscribe(onChange);
+    const unsubscribe = inspection.subscribe(onChange);
     motion.addEventListener("change", onChange);
     return () => {
       unsubscribe();
       motion.removeEventListener("change", onChange);
     };
-  }, [wave, waveRef, wake]);
+  }, [inspection, inspectionRef, wake]);
   useEffect(() => {
     slabRef.current(slab ?? null);
   }, [slab, slabRef]);

@@ -3658,6 +3658,19 @@ The bundled catalogue in `src/geo/waveCities.json` is derived from
 [Natural Earth 1:10m populated places, simple](https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/),
 version 5.1.2. Keep the name and the Point’s longitude and latitude, rounded to four decimals.
 
+## Sequence replay
+
+The pinned panel supplies the same filtered neighbourhood used in its sequence plot. The replay
+holds those readings for the session, including concurrent events, and does not change the archive
+cursor or feed. It gives earlier and later events separate time spans with a brief hold at the
+pinned instant. The transport shows recorded UTC time, while a single scene clock controls both
+visibility, emphasis and the scene’s time of day. Magnitude colors use the selected ramp. Reduced motion shows the complete
+cluster immediately and preserves the time controls.
+
+Both pinned-event replays use the same camera framing, focus restoration and renderer binding.
+The sequence briefly hides the ordinary catalogue layers so clusters and live arrivals cannot be
+mistaken for events in the replay. Closing restores the live layers.
+
 ## src/app/useStill.ts
 
 Capture, caption, encoding, and sharing happen in one hook. Copy the WebGL drawing buffer

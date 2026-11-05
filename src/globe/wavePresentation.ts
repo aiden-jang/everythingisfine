@@ -11,11 +11,10 @@ import {
   RingGeometry,
   ShaderMaterial,
   Vector3,
-  type PerspectiveCamera,
 } from "three";
 import type { WaveRun } from "../app/waveReplay";
 import { DEG, EARTH_RADIUS_KM, toVec3 } from "../geo/sphere";
-import type { CameraState, Controls } from "./controls";
+import type { createRegionalFraming } from "./regionalFraming";
 
 const P_COLOR = 0xffd18a;
 const S_COLOR = 0x83daff;
@@ -56,7 +55,7 @@ function siteMark(sides: number) {
   );
 }
 
-export function createWavePresentation(camera: PerspectiveCamera, controls: Controls) {
+export function createWavePresentation(framing: ReturnType<typeof createRegionalFraming>) {
   const object = new Group();
   const pRing = waveRing(P_COLOR);
   const sRing = waveRing(S_COLOR);
@@ -71,24 +70,12 @@ export function createWavePresentation(camera: PerspectiveCamera, controls: Cont
   const to = new Vector3();
   const midpoint = new Vector3();
   let run: WaveRun | null = null;
-  let initial: CameraState;
-  let lens = 1;
-  let fromLens = 1;
-  let release = 0;
   let markerSize = 0;
-  let framed = false;
   object.visible = false;
   object.add(route, pRing, sRing, origin, city);
   route.renderOrder = 7;
   pRing.renderOrder = sRing.renderOrder = 8;
   origin.renderOrder = city.renderOrder = 9;
-
-  function setLens(zoom: number) {
-    if (zoom !== camera.zoom) {
-      camera.zoom = zoom;
-      camera.updateProjectionMatrix();
-    }
-  }
 
   function drawRing(ring: typeof pRing, angle: number) {
     ring.visible = angle > 0;
@@ -101,12 +88,8 @@ export function createWavePresentation(camera: PerspectiveCamera, controls: Cont
     object,
     set(next: WaveRun | null) {
       run = next;
-      framed = false;
       object.visible = false;
-      fromLens = camera.zoom;
-      release = 0;
       if (!next) return;
-      initial = controls.state();
       const path = next.route;
       from.set(...toVec3(path.origin.lon, path.origin.lat, 1));
       to.set(...toVec3(path.city.lon, path.city.lat, 1));
@@ -126,29 +109,19 @@ export function createWavePresentation(camera: PerspectiveCamera, controls: Cont
       city.quaternion.setFromUnitVectors(up, to);
       markerSize = Math.max(0.00035, (path.km / EARTH_RADIUS_KM) * 0.019);
       origin.scale.setScalar(markerSize);
-      lens = Math.max(1, Math.min(8, 440 / path.km));
+      framing.aim(
+        {
+          lon: Math.atan2(midpoint.x, midpoint.z) / DEG,
+          lat: Math.asin(midpoint.y) / DEG,
+          zoom: 2.65,
+        },
+        Math.max(1, Math.min(8, 440 / path.km)),
+      );
     },
-    step(dt: number, reduced: boolean, spherical: boolean) {
-      if (!run) {
-        if (camera.zoom === 1) return false;
-        release = reduced || !spherical ? 1 : Math.min(1, release + dt / 0.35);
-        setLens(1 + (fromLens - 1) * (1 - release) ** 3);
-        return release < 1;
-      }
-      if (!spherical) return false;
+    step(dt: number, reduced: boolean) {
+      if (!run) return false;
       const shot = run.step(dt, reduced);
-      if (!framed) {
-        const t = shot.approach ** 2 * (3 - 2 * shot.approach);
-        const lon = Math.atan2(midpoint.x, midpoint.z) / DEG;
-        const turn = ((((lon - initial.lon + 180) % 360) + 360) % 360) - 180;
-        controls.setView({
-          lon: initial.lon + turn * t,
-          lat: initial.lat + (Math.asin(midpoint.y) / DEG - initial.lat) * t,
-          zoom: initial.zoom + (2.65 - initial.zoom) * t,
-        });
-        setLens(fromLens + (lens - fromLens) * t);
-        framed = shot.approach === 1;
-      }
+      framing.step(shot.approach);
       object.visible = shot.approach > 0.4;
       drawRing(pRing, shot.pAngle);
       drawRing(sRing, shot.sAngle);

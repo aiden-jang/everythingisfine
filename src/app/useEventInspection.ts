@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePlaybackBoundary } from "./usePlaybackBoundary";
-import { createWaveRun, type WaveRoute, type WaveRun } from "./waveReplay";
+import type { WaveRun } from "./waveReplay";
+import type { SequenceRun } from "./sequenceReplay";
 
-export function useWaveInspection(selected: string | null, enabled: boolean) {
-  const [session, setSession] = useState<WaveRun | null>(null);
+export type InspectionRun = WaveRun | SequenceRun;
+export type StartInspection = (run: InspectionRun, opener: HTMLButtonElement) => void;
+
+export function useEventInspection(selected: string | null, enabled: boolean) {
+  const [session, setSession] = useState<InspectionRun | null>(null);
   const panel = useRef<HTMLElement>(null);
   const trigger = useRef<HTMLButtonElement | null>(null);
   const run = enabled && session?.key === selected ? session : null;
@@ -20,9 +24,9 @@ export function useWaveInspection(selected: string | null, enabled: boolean) {
     run,
     panel,
     close,
-    start: (key: string, route: WaveRoute, opener: HTMLButtonElement) => {
+    start: (next: InspectionRun, opener: HTMLButtonElement) => {
       trigger.current = opener;
-      setSession(createWaveRun(key, route));
+      setSession(next);
     },
   };
 }

@@ -1,4 +1,4 @@
-import type { WaveRun } from "../app/waveReplay";
+import type { InspectionRun } from "../app/useEventInspection";
 import { useGlobeLayers } from "./useGlobeLayers";
 import { createFlightTarget, type FlyTo } from "./cameraTarget";
 import { createOrbitReadout } from "./orbitReadout";
@@ -48,7 +48,7 @@ export interface GlobeProps {
   figures?: FigureTable | null;
   /** Null rather than `Date.now()` on the live view, so the scene keeps its once-a-minute throttle. */
   moment?: GlobeMoment;
-  wave?: WaveRun | null;
+  inspection?: InspectionRun | null;
   /** Handed in already loaded: whoever pressed the toggle pulls the chunk, and this stays a renderer. */
   slab?: readonly SlabPoint[] | null;
   /** A span, not a bucket index: the strip knows how wide its buckets are and this does not. */
@@ -92,7 +92,7 @@ export function Globe({
   slab = null,
   figures = null,
   moment = null,
-  wave = null,
+  inspection = null,
   section = null,
   onSection,
 }: GlobeProps): JSX.Element {
@@ -112,7 +112,7 @@ export function Globe({
   const sinkRef = useRef<(on: boolean) => void>(() => {});
   const figuresRef = useRef<(table: FigureTable | null) => void>(() => {});
   const planetariumRef = useRef<(on: boolean) => void>(() => {});
-  const waveRef = useRef<(run: WaveRun | null) => void>(() => {});
+  const inspectionRef = useRef<(run: InspectionRun | null) => void>(() => {});
   const momentRef = useRef<(at: GlobeMoment) => void>(() => {});
   const slabRef = useRef<(points: readonly SlabPoint[] | null) => void>(() => {});
   const auroraRef = useRef<(next: Aurora | null) => void>(() => {});
@@ -133,7 +133,7 @@ export function Globe({
     slab,
     figures,
     moment,
-    wave,
+    inspection,
     section,
     aurora,
     marks,
@@ -150,7 +150,7 @@ export function Globe({
     slab,
     figures,
     moment,
-    wave,
+    inspection,
     section,
     aurora,
     marks,
@@ -226,8 +226,6 @@ export function Globe({
     /** Puts the pinned outline and the hover tooltip over whatever they are attached to. */
     const placeOverlays = (): void => {
       const box = el.getBoundingClientRect();
-      // One resolver for both namespaces, so the overlays do not care which layer they point at. A mark's
-      // label rides on the mark: this file knows about polylines and has no business knowing about cyclones.
       const locate = (t: {
         kind: "quake" | "mark";
         id: string;
@@ -252,7 +250,7 @@ export function Globe({
         offsetY: number,
       ): void => {
         if (!node) return;
-        const found = target ? locate(target) : null;
+        const found = target && live.current.inspection?.kind !== "sequence" ? locate(target) : null;
         const radius =
           found?.quake && live.current.depthSink
             ? 1 - sinkFraction(found.quake.primary.depthKm) * (1 - globe.controls.morph())
@@ -569,8 +567,8 @@ export function Globe({
       redraw();
     };
     globe.setMoment(live.current.moment ?? null);
-    waveRef.current = globe.setWave;
-    globe.setWave(live.current.wave);
+    inspectionRef.current = globe.setInspection;
+    globe.setInspection(live.current.inspection);
     figuresRef.current = (table) => {
       if (table !== null) globe.setFigures(table);
       globe.setFiguresOn(table !== null);
@@ -648,6 +646,7 @@ export function Globe({
     };
 
     const onMove = (e: PointerEvent): void => {
+      if (live.current.inspection?.kind === "sequence") return;
       // Earthquakes first, then the other four, the same order the click uses: the ramp belongs to
       // earthquakes and so does the pointer when both are under it.
       const quake = globe.hitTest(e.clientX, e.clientY, feed.store, live.current.filters, Date.now());
@@ -773,14 +772,14 @@ export function Globe({
   }, [filters, selected, focus, scrubAt, flat]);
 
   useGlobeLayers(
-    { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, planetarium, wave },
+    { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, planetarium, inspection },
     {
       ramp: rampRef,
       depthSink: sinkRef,
       cutaway: cutawayRef,
       figures: figuresRef,
       moment: momentRef,
-      wave: waveRef,
+      inspection: inspectionRef,
       slab: slabRef,
       aurora: auroraRef,
       marks: markRef,

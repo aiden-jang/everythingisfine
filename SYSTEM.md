@@ -53,6 +53,8 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/useGlobeTour.ts` | Captured route, arrival-aware reading time, pause/step controls and interaction cancellation |
 | `src/globe/surfaceMaterial.ts` | Displayed-sun surface shading, fading to the unchanged flat-map palette |
 | `src/app/waveReplay.ts` | City selection, regional travel times and replay clock |
+| `src/app/sequenceReplay.ts` | Recorded event order, pinned moment and replay clock |
+| `src/globe/sequencePresentation.ts` | Unclustered regional replay with magnitude-colored arrivals |
 | `src/globe/wavePresentation.ts` | On-demand replay framing, P and S fronts and destination marker |
 | `src/globe/nightSurface.ts` | Night, eclipse and aurora surface shader |
 | `src/globe/cameraFlight.ts` | Finite arrival path, spring integration and flight-bank targets |

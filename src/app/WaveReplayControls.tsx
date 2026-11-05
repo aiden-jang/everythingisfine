@@ -1,14 +1,14 @@
 import { useSyncExternalStore, type RefObject } from "react";
 import { seconds } from "./arrival";
 import type { WaveRun } from "./waveReplay";
-import type { useWaveInspection } from "./useWaveInspection";
+import type { useEventInspection } from "./useEventInspection";
 
 export function WaveReplayControls({
   replay: { run, panel, close },
 }: {
-  replay: ReturnType<typeof useWaveInspection>;
+  replay: ReturnType<typeof useEventInspection>;
 }): JSX.Element | null {
-  return run ? <WaveTransport run={run} panel={panel} close={close} /> : null;
+  return run?.kind === "wave" ? <WaveTransport run={run} panel={panel} close={close} /> : null;
 }
 
 function WaveTransport({

@@ -15,11 +15,7 @@ export interface Nearby {
   notable: { quake: Quake; km: number }[];
   /** Largest magnitude among them, or null when this event stands alone. */
   largest: number | null;
-  /** Every neighbour as an offset in ms from the pinned event, negative for earlier. This is what decides
-   * what a pinned event is: an M5 with thirty larger events in the preceding hour is an aftershock, and the
-   * same M5 with thirty smaller ones after it is a mainshock. */
-  // `key` so the swarm can be walked, not only read. The offsets say when each neighbour happened and
-  // nothing said which event it was.
+  /** Neighbours ordered by recorded time, with offsets in ms from the pinned event and keys for navigation. */
   sequence: { key: string; at: number; magnitude: number }[];
   before: number;
   after: number;
