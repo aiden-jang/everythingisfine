@@ -53,7 +53,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm exec playwright install --with-deps chromium
+      # Ubuntu 24.04 already has the runtime libraries. The suite uses headless Chromium.
+      - run: pnpm exec playwright install --only-shell chromium
       # One software-rendered globe per machine; shards use separate runners.
       - run: pnpm run test:e2e
         env:
