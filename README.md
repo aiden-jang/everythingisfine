@@ -29,7 +29,8 @@ A fresh visit opens the observatory: a full globe, a short introduction, and thr
 **Explore** opens the scientific controls. The wordmark returns to the observatory, resets the view, and replays its horizon-to-orbit arrival.
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
 
-- **Live Earth** frames the current activity; selecting it from an archive returns to live.
+- **Live Earth** frames current activity and traces the day–night boundary. Choosing it from an
+  archive returns to live.
 - **Below the Surface** flies to the deepest visible earthquake, settles at an angle, and opens
   a cutaway with true-scale reference guides and historical seismicity. It is available when the
   view contains a reported depth of at least 70 km.

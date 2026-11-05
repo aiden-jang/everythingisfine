@@ -22,6 +22,9 @@ for (const [width, height] of [
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
     await expect(page.locator("#chrome-rail")).toBeHidden();
+    const stage = page.getByRole("group", { name: "Globe readout" });
+    await expect(stage).toContainText("Day–night boundary");
+    await expect(stage).toContainText(/\d{2}:\d{2} UTC/);
     const explore = page.getByRole("button", { name: "Explore the globe" });
     await expect(explore).toBeVisible();
     const depth = page.getByRole("button", { name: "Below the Surface", exact: true });
@@ -41,6 +44,7 @@ for (const [width, height] of [
     await page.screenshot({ path: test.info().outputPath(`observe-live-${width}.png`) });
     await page.getByRole("button", { name: "After Dark", exact: true }).click();
     await expect(page.getByRole("heading", { name: "The other side of day." })).toBeVisible();
+    await expect(stage).toContainText("Catalogue sky");
     await expect(page.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -48,9 +52,11 @@ for (const [width, height] of [
     await depth.click();
     await expect(page.getByRole("heading", { name: "Beneath the surface." })).toBeVisible();
     await expect(depth).toHaveAttribute("aria-pressed", "true");
+    await expect(stage).toContainText("300 / 600 / 900 km");
     await page.screenshot({ path: test.info().outputPath(`observe-depth-${width}.png`) });
     await explore.click();
     await expect(page.locator("#chrome-rail")).toBeVisible();
+    await expect(stage).toBeHidden();
     await expect(page.getByRole("region", { name: "Recent earthquakes" })).toBeVisible();
     expect(errors).toEqual([]);
   });

@@ -389,7 +389,6 @@ export function App(): JSX.Element {
   const sharedCursor = useRef(view.at);
   sharedCursor.current = view.at;
 
-  // Publish changed controls before paint so an immediate copy carries the visible settings.
   useLayoutEffect(() => {
     /* Never overwrite a hash this app did not write. See ARCHITECTURE.md#srcapptsx. */
     const write = (): void => {
@@ -1045,6 +1044,7 @@ export function App(): JSX.Element {
         {observatory.observing ? (
           <Observatory
             scene={observatory.scene}
+            at={litAt ?? minuteClock}
             ready={observatory.ready}
             waiting={snapshot.coveredSince === null}
             summary={observatorySummary({
@@ -1094,7 +1094,6 @@ export function App(): JSX.Element {
             }}
           />
         ) : null}
-        {/* Keep enough space for both the globe and the sheet heading. */}
         {observatory.observing || markSubject || (shownQuake && pinned) ? null : (
           <Resizer
             axis="y"
@@ -1589,8 +1588,6 @@ export function App(): JSX.Element {
           max={RAIL_MAX}
           measure={(e) => e.clientX}
           onChange={setRailWidth}
-          /* Hide it with the rail. The handle is a sibling and not a child, so left behind it is a one-pixel
-          bright line down a frame containing nothing but planet. */
           className={railShown ? "absolute inset-y-0 hidden xl:block" : "hidden"}
           style={{ left: railWidth - 6 }}
         />
@@ -1622,7 +1619,13 @@ export function App(): JSX.Element {
               moment={chase.frame ?? litAt}
               inspection={inspection.run}
               flat={flat}
-              planetarium={observatory.night}
+              skyPresentation={
+                observatory.night
+                  ? "planetarium"
+                  : observatory.observing && observatory.scene === "live" && tourAt === null
+                    ? "dayline"
+                    : null
+              }
               depthSink={observatory.depth || sinkOn}
               cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}
               slab={
@@ -1649,10 +1652,7 @@ export function App(): JSX.Element {
             />
           </Suspense>
 
-          <div
-            /* Fixed to the rail's edge, and never moved by a panel. See ARCHITECTURE.md#srcapptsx. */
-            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
-          >
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]">
             <EclipseReplayControls playback={chase} />
             <WaveReplayControls replay={inspection} />
             <SequenceReplayControls replay={inspection} />

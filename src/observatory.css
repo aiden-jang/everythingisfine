@@ -15,25 +15,17 @@
     padding: 32px clamp(24px, 4vw, 72px);
     color: var(--color-ink);
   }
-  .observatory-eyebrow {
-    margin-bottom: 16px;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--color-faint);
-  }
   .observatory-story h2 {
-    max-width: 8.5ch;
-    font-size: clamp(48px, 4.6vw, 68px);
-    line-height: 0.98;
+    max-width: 9.5ch;
+    font-size: clamp(48px, 5.5vw, 84px);
+    line-height: 1;
     font-weight: 580;
-    letter-spacing: -0.065em;
+    letter-spacing: -0.04em;
     text-wrap: balance;
   }
   .observatory-description {
     max-width: 36ch;
-    margin-top: 24px;
+    margin-top: 20px;
     font-size: 14px;
     line-height: 1.65;
     color: var(--color-dim);
@@ -105,57 +97,151 @@
   .observatory-scenes {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
     margin-top: 24px;
-    padding-top: 12px;
-    border-top: 1px solid var(--color-hairline);
+    border-block: 1px solid var(--color-hairline);
   }
   .observatory-scenes button {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    min-height: 64px;
-    padding: 10px 6px;
-    border: 1px solid transparent;
-    border-radius: 7px;
+    --scene-ink: #9dcfdc;
+    position: relative;
+    display: grid;
+    align-content: start;
+    justify-items: start;
+    gap: 4px;
+    min-height: 94px;
+    padding: 10px;
+    border-right: 1px solid var(--color-hairline);
     text-align: left;
-    font-size: 11px;
-    line-height: 1.4;
-    color: var(--color-faint);
+    color: var(--color-dim);
     cursor: pointer;
     transition:
-      color 150ms,
-      background-color 150ms,
-      border-color 150ms;
+      color 160ms,
+      background-color 160ms;
   }
-  .observatory-scenes button[aria-pressed="true"] {
-    color: var(--color-ink);
-    background: var(--color-raised);
-    border-color: var(--color-hairline);
+  .observatory-scenes button:last-child {
+    border-right: 0;
   }
+  .observatory-scenes button:nth-child(2) {
+    --scene-ink: #e2b892;
+  }
+  .observatory-scenes button:nth-child(3) {
+    --scene-ink: #b9bbeb;
+  }
+  .observatory-scenes button[aria-pressed="true"],
   .observatory-scenes button:hover:not(:disabled) {
     color: var(--color-ink);
-    border-color: var(--color-faint);
+    background: var(--color-raised);
+  }
+  .observatory-scenes button[aria-pressed="true"]::after {
+    position: absolute;
+    inset: auto 0 -1px;
+    height: 2px;
+    background: var(--scene-ink);
+    content: "";
+    transform-origin: left;
+    animation: stage-rule-arrive 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   .scene-symbol {
     display: block;
-    width: 18px;
-    height: 18px;
-    border: 1px solid currentColor;
-    border-radius: 50%;
+    width: 32px;
+    height: 24px;
+    color: var(--scene-ink);
   }
-  .scene-symbol[data-scene="live"] {
-    background: linear-gradient(90deg, transparent 45%, currentColor 47%, currentColor 51%, transparent 53%);
+  .scene-label {
+    font-size: 12px;
+    line-height: 1.3;
   }
-  .scene-symbol[data-scene="depth"] {
-    border-style: dashed;
-    box-shadow: inset 0 0 0 4px var(--color-deck);
+  .scene-note {
+    font-size: 10px;
+    line-height: 1.4;
+    color: var(--color-dim);
+  }
+  .scene-diagram-trace {
+    opacity: 0;
+    stroke: var(--color-ink);
+    stroke-dasharray: 1;
+  }
+  .observatory-scenes button[aria-pressed="true"] .scene-diagram-trace {
+    opacity: 1;
+    animation: scene-diagram-trace 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .observatory-stage {
+    --stage-ink: #9dcfdc;
+    --stage-inset: clamp(16px, 2.3vw, 34px);
+    grid-area: canvas;
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    pointer-events: none;
+    color: var(--color-dim);
+    font: 11px / 1.45 var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+  .observatory-stage[data-stage="depth"] {
+    --stage-ink: #e2b892;
+  }
+  .observatory-stage[data-stage="night"] {
+    --stage-ink: #b9bbeb;
+  }
+  .stage-corners {
+    position: absolute;
+    inset: var(--stage-inset);
+  }
+  .stage-corners span {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    border: 0 solid color-mix(in srgb, var(--stage-ink) 60%, var(--color-deck));
+  }
+  .stage-corners span:nth-child(1) {
+    inset: 0 auto auto 0;
+    border-width: 1px 0 0 1px;
+  }
+  .stage-corners span:nth-child(2) {
+    inset: 0 0 auto auto;
+    border-width: 1px 1px 0 0;
+  }
+  .stage-corners span:nth-child(3) {
+    inset: auto auto 0 0;
+    border-width: 0 0 1px 1px;
+  }
+  .stage-corners span:nth-child(4) {
+    inset: auto 0 0 auto;
+    border-width: 0 1px 1px 0;
+  }
+  .stage-ident,
+  .stage-readout {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    inset-inline: calc(var(--stage-inset) + 12px);
+    animation: stage-readout-arrive 440ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .stage-ident {
+    top: calc(var(--stage-inset) + 8px);
+    justify-content: flex-end;
+    color: var(--stage-ink);
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+  }
+  .stage-rule {
+    width: 28px;
+    height: 1px;
     background: currentColor;
+    transform-origin: right;
+    animation: stage-rule-arrive 500ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
-  .scene-symbol[data-scene="night"] {
-    border-color: transparent;
-    box-shadow: inset 6px -2px 0 currentColor;
+  .stage-readout {
+    bottom: calc(var(--stage-inset) + 7px);
+    justify-content: space-between;
+  }
+  .stage-readout strong {
+    color: var(--color-ink);
+    font-weight: 500;
+  }
+  .stage-readout time {
+    flex: none;
+    color: var(--stage-ink);
   }
   .observatory-history {
     margin-top: 16px;
@@ -163,7 +249,7 @@
     color: var(--color-dim);
   }
   .observatory-history summary {
-    min-height: 32px;
+    min-height: 44px;
     display: flex;
     align-items: center;
     cursor: pointer;
@@ -182,7 +268,7 @@
     gap: 0 16px;
   }
   .observatory-history button {
-    min-height: 36px;
+    min-height: 44px;
     text-align: left;
     cursor: pointer;
   }
@@ -243,9 +329,6 @@
       align-self: stretch;
       padding: 10px 24px 16px;
     }
-    .observatory-intro[data-scene="live"] .observatory-description {
-      display: none;
-    }
     .observatory-intro[data-scene="tour"] {
       display: flex;
       flex-direction: column;
@@ -267,10 +350,6 @@
     .observatory-credit {
       display: none;
     }
-    .observatory-eyebrow {
-      margin-bottom: 12px;
-      font-size: 9px;
-    }
     .observatory-story h2 {
       max-width: 17ch;
       font-size: clamp(34px, 5vw, 44px);
@@ -287,19 +366,30 @@
     }
     .observatory-scenes {
       margin-top: 14px;
-      padding-top: 10px;
     }
     .observatory-scenes button {
-      flex-direction: row;
-      align-items: center;
-      min-height: 52px;
-      gap: 8px;
+      min-height: 68px;
       padding: 8px;
     }
     .scene-symbol {
-      flex-shrink: 0;
-      width: 15px;
-      height: 15px;
+      width: 26px;
+      height: 20px;
+    }
+    .scene-label {
+      font-size: 11px;
+    }
+    .scene-note {
+      display: none;
+    }
+    .observatory-stage {
+      --stage-inset: 9px;
+      font-size: 9px;
+    }
+    .stage-ident {
+      top: calc(var(--stage-inset) + 2px);
+    }
+    .stage-readout {
+      bottom: calc(var(--stage-inset) + 2px);
     }
     .observatory-history {
       margin-top: 10px;
@@ -325,12 +415,6 @@
     }
     .observatory-history {
       column-gap: 14px;
-    }
-    .observatory-scenes button {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 6px;
-      min-height: 62px;
     }
   }
   @media (max-height: 620px) and (min-width: 600px) {
@@ -442,61 +526,61 @@
 
 @layer components {
   .observatory-story h2 {
-    overflow: hidden;
-    padding-bottom: 0.09em;
-    margin-bottom: -0.09em;
-  }
-  .observatory-word {
-    display: inline-block;
-    animation: observatory-word-arrive 950ms cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-delay: calc(var(--word-index) * 75ms);
-  }
-  .observatory-description {
-    animation: observatory-prose-arrive 750ms 120ms ease-out both;
-  }
-  .observatory-actions {
-    animation: observatory-prose-arrive 650ms 200ms ease-out both;
-  }
-  .observatory-scenes {
-    animation: observatory-prose-arrive 750ms 300ms ease-out both;
+    animation: observatory-title-arrive 540ms cubic-bezier(0.16, 1, 0.3, 1);
   }
   .observatory-primary span {
     display: inline-block;
-    transition: transform 250ms ease-out;
+    transition: transform 220ms ease-out;
   }
   .observatory-primary:hover span {
     transform: translate(3px, -3px);
   }
 }
-@keyframes observatory-word-arrive {
+@keyframes observatory-title-arrive {
   from {
-    opacity: 0;
-    transform: translateY(105%) rotate(4deg);
-    filter: blur(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) rotate(0);
-    filter: blur(0);
-  }
-}
-@keyframes observatory-prose-arrive {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-    filter: blur(3px);
+    opacity: 0.64;
+    transform: translateY(8px);
+    clip-path: inset(-0.1em -0.25em 0.25em);
   }
   to {
     opacity: 1;
     transform: translateY(0);
-    filter: blur(0);
+    clip-path: inset(-0.1em -0.25em);
+  }
+}
+@keyframes stage-rule-arrive {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes stage-readout-arrive {
+  from {
+    opacity: 0.55;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes scene-diagram-trace {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .observatory-word,
-  .observatory-description,
-  .observatory-actions,
-  .observatory-scenes {
+  .observatory-story h2,
+  .observatory-scenes button[aria-pressed="true"]::after,
+  .observatory-scenes button[aria-pressed="true"] .scene-diagram-trace,
+  .stage-ident,
+  .stage-readout,
+  .stage-rule {
     animation: none;
   }
   .observatory-primary span {

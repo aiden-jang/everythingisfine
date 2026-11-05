@@ -144,6 +144,7 @@ export interface Globe {
   setMarkHover: (id: string | null) => void;
   setMorph: (t: number) => void;
   beginArrival: () => void;
+  setDayline: (on: boolean) => void;
   setCutaway: (focus: CutawayFocus | null) => void;
   cutawayOpen: () => boolean;
   beginRegroup: (reduced: boolean) => void;
@@ -277,11 +278,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   coast.renderOrder = 4;
   spin.add(coast);
 
-  /*
-   * Night, as one shell over all the geography rather than a light in each of its four shaders.
-   *
-   * Under the markers: an earthquake at 3am is not dimmer than one at noon.
-   */
+  // Night is a shell below the data so light cannot change how event markers read.
+  const dayline = { value: 0 };
+  let showDayline = false;
   const aurora = auroraTexture();
   const nightGeom = new SphereGeometry(RADIUS_NIGHT, 96, 64, SPHERE_PHI_START);
   attachLonLat(nightGeom);
@@ -292,21 +291,17 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       uniforms: {
         uMorph: morph,
         uSun: { value: new Vector3(0, 0, 1) },
+        uDayline: dayline,
         /* Zero radii means no eclipse, which is every day but a handful a year. */
         uEclipse: { value: new Vector3(0, 0, 1) },
         uPenumbraAng: { value: 0 },
         uUmbraAng: { value: 0 },
         // Achromatic. A warm daylight would put hue on the one surface the data is drawn against.
         uDayColor: { value: new Color(0x9fb0cc) },
-        /* Deep enough to read as night, shallow enough that the geography survives it. At 0.38 land in
-           shadow against ocean in daylight measured 1.084:1, so the lighting out-contrasted what it was
-           lighting. See ARCHITECTURE.md#srcglobescenets. */
         uDepth: { value: 0.44 },
         uLift: { value: 0.11 },
         uAurora: { value: aurora },
         uAuroraOn: { value: 0 },
-        /* Green, and one of only three hues here that are not a magnitude: this, the rim and the day wash, all
-           of them light rather than marks. Everything drawn after this is a mark and stays achromatic. */
         uAuroraColor: { value: new Color(0x7fc9a6) },
       },
       transparent: true,
@@ -320,7 +315,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const eclipseTrack = createEclipseTrack();
   spin.add(eclipseTrack.path);
 
-  // On `spin` rather than `world`, so the glyphs travel with the flat map's copies.
   const marks = createMarkLayer(morph);
   catalogue.add(marks.object, marks.highlight);
   let heldMarks: readonly Mark[] = [];
@@ -456,6 +450,11 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       if (moment !== null && run?.kind !== "sequence") aimSun(moment);
     },
     beginArrival: lights.begin,
+    setDayline: (on) => {
+      if (on && !showDayline) lights.begin();
+      showDayline = on;
+      dayline.value = on ? lights.reveal.value : 0;
+    },
     setCutaway: (focus) => {
       controls.setDive(focus?.dive === true);
       cutaway.set(focus);
@@ -467,6 +466,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     stepPresentation: (dt, reduced) => {
       quietMotion = reduced;
       const illuminating = lights.step(dt, reduced);
+      if (showDayline) dayline.value = lights.reveal.value;
       const cutting = cutaway.step(dt, reduced, morph.value, !controls.diveReady());
       const tracing = figures.step(dt, reduced, !controls.skyReady());
       const grouping = regroup.step(dt, reduced);

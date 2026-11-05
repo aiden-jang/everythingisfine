@@ -11,7 +11,7 @@ type Values = Pick<
   | "slab"
   | "aurora"
   | "marks"
-  | "planetarium"
+  | "skyPresentation"
   | "inspection"
 >;
 type Slot<T> = { readonly current: T };
@@ -26,7 +26,8 @@ export function useGlobeLayers(
   bindings: Bindings,
   draw: { wake: Slot<() => void>; redraw: Slot<() => void> },
 ): void {
-  const { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, planetarium, inspection } = values;
+  const { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, skyPresentation, inspection } =
+    values;
   const {
     ramp: rampRef,
     depthSink: sinkRef,
@@ -37,7 +38,7 @@ export function useGlobeLayers(
     slab: slabRef,
     aurora: auroraRef,
     marks: marksRef,
-    planetarium: skyRef,
+    skyPresentation: skyRef,
   } = bindings;
   const { wake, redraw } = draw;
   useEffect(() => {
@@ -83,7 +84,7 @@ export function useGlobeLayers(
     redraw.current();
   }, [marks, marksRef, redraw]);
   useLayoutEffect(() => {
-    skyRef.current(planetarium ?? false);
+    skyRef.current(skyPresentation ?? null);
     wake.current();
-  }, [planetarium, skyRef, wake]);
+  }, [skyPresentation, skyRef, wake]);
 }

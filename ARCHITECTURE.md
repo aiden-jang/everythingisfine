@@ -3658,6 +3658,14 @@ The bundled catalogue in `src/geo/waveCities.json` is derived from
 [Natural Earth 1:10m populated places, simple](https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/),
 version 5.1.2. Keep the name and the Point’s longitude and latitude, rounded to four decimals.
 
+## Observatory stage
+
+The scene strip and viewport readout share the Observatory’s existing scene state. The depth readout
+uses the same guide distances as the cutaway. The sky and subsolar readouts use the displayed UTC
+clock. Live Earth traces the zero-elevation solar contour in the night shader with the renderer’s
+finite lighting reveal. Reduced motion draws the complete contour in one step. The contour is
+scoped to Live Earth, and Explore retains its normal geography.
+
 ## Sequence replay
 
 The pinned panel supplies the same filtered neighbourhood used in its sequence plot. The replay

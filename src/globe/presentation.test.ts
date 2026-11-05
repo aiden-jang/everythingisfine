@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { BufferAttribute, BufferGeometry, MeshBasicMaterial, Points, ShaderMaterial, Vector3 } from "three";
 import { createFigures } from "./figures";
-import { createCutaway, CUTAWAY_DEPTH_KM } from "./cutaway";
+import { createCutaway } from "./cutaway";
+import { CUTAWAY_DEPTH_KM } from "./cutawayScale";
 import { createRegroup } from "./regroup";
 import { EARTH_RADIUS_KM } from "../geo/sphere";
 import { orbitCoordinates } from "./orbitReadout";

@@ -137,7 +137,9 @@ with larger, tighter type than the scientific controls. It remains neutral and r
 saved layouts stay in Explore; direct content links expose their content without an intro in front.
 
 On wide screens, the introduction and globe occupy separate columns. On phones, the planet sits
-above a bounded introduction with owned scrolling. Controls stay reachable in short landscape views.
+above a bounded introduction with owned scrolling. The globe stage carries a UTC readout and one
+scene-specific reference. The three scene controls share a ruled strip, with a distinct diagram and
+accent for each mode. Controls stay reachable in short landscape views.
 Live Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
 Their temporary overrides do not overwrite saved scientific settings. The observatory retains source
 status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
@@ -147,7 +149,9 @@ reported depth, historical reference points and the time scope; never manufactur
 unrelated earthquakes. Reading time begins at camera arrival and pauses in hidden tabs. Viewer
 interaction ends the tour except within its narration and controls. Escape always stops it.
 
-Surface lighting may use the displayed sun and the sphere's actual normals to improve form. It must
+Live Earth traces the day–night boundary from the displayed Sun direction. The sweep settles into
+a thin reference line. Reduced motion shows the full boundary immediately. Surface lighting may
+use the displayed sun and the sphere's actual normals to improve form. It must
 not fabricate topography, add photographic textures, dim earthquake measurements, or alter the
 flat-map palette. Presentation crossfades are finite and skipped under reduced motion.
 

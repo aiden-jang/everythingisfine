@@ -40,7 +40,7 @@ export interface GlobeProps {
   /** Replay counts events, rather than the smaller number of clustered markers. */
   onReplay?: (state: { at: number; revealed: number } | null) => void;
   flat?: boolean;
-  planetarium?: boolean;
+  skyPresentation?: "planetarium" | "dayline" | null;
   /** Draw earthquakes at their own depth. Only means anything on the globe, and the shader fades it with
    * the morph, so unwrapping the map lifts every event back to the surface as one motion. */
   depthSink?: boolean;
@@ -86,7 +86,7 @@ export function Globe({
   marks = [],
   scrubAt = null,
   flat = false,
-  planetarium = false,
+  skyPresentation = null,
   depthSink = false,
   cutaway = null,
   slab = null,
@@ -111,7 +111,7 @@ export function Globe({
   const cutawayRef = useRef<(focus: CutawayFocus | null) => void>(() => {});
   const sinkRef = useRef<(on: boolean) => void>(() => {});
   const figuresRef = useRef<(table: FigureTable | null) => void>(() => {});
-  const planetariumRef = useRef<(on: boolean) => void>(() => {});
+  const skyRef = useRef<(mode: NonNullable<GlobeProps["skyPresentation"]> | null) => void>(() => {});
   const inspectionRef = useRef<(run: InspectionRun | null) => void>(() => {});
   const momentRef = useRef<(at: GlobeMoment) => void>(() => {});
   const slabRef = useRef<(points: readonly SlabPoint[] | null) => void>(() => {});
@@ -127,7 +127,7 @@ export function Globe({
     focus,
     scrubAt,
     flat,
-    planetarium,
+    skyPresentation,
     depthSink,
     cutaway,
     slab,
@@ -144,7 +144,7 @@ export function Globe({
     focus,
     scrubAt,
     flat,
-    planetarium,
+    skyPresentation,
     depthSink,
     cutaway,
     slab,
@@ -521,8 +521,6 @@ export function Globe({
     /** Events the replay has passed. Accumulated as it crosses them, never recounted. */
     let revealed = 0;
 
-    // The entrance wins while it is running and the cursor takes over after. Both drive `revealUntil`, so
-    // one has to be chosen rather than combined.
     const revealUntil = (): number | undefined => replay?.at() ?? live.current.scrubAt ?? undefined;
 
     const redraw = (): void => {
@@ -545,7 +543,6 @@ export function Globe({
     markRef.current = (next) => {
       globe.setMarks(next);
     };
-    // The glyph scale is a function of zoom, so it has to be right before the first frame.
     globe.setMarkZoom(globe.controls.state().zoom);
     /*
      * Pushed once at setup, not only when the data next changes. The effects below fire on their own
@@ -575,8 +572,11 @@ export function Globe({
       globe.stepPresentation(0, reducedMotion.matches);
       redraw();
     };
-    planetariumRef.current = (on) => globe.controls.setPlanetarium(on);
-    globe.controls.setPlanetarium(live.current.planetarium);
+    skyRef.current = (mode) => {
+      globe.controls.setPlanetarium(mode === "planetarium");
+      globe.setDayline(mode === "dayline");
+    };
+    skyRef.current(live.current.skyPresentation);
     cutawayRef.current = (next) => {
       globe.setCutaway(next);
       wake();
@@ -772,7 +772,7 @@ export function Globe({
   }, [filters, selected, focus, scrubAt, flat]);
 
   useGlobeLayers(
-    { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, planetarium, inspection },
+    { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, skyPresentation, inspection },
     {
       ramp: rampRef,
       depthSink: sinkRef,
@@ -783,7 +783,7 @@ export function Globe({
       slab: slabRef,
       aurora: auroraRef,
       marks: markRef,
-      planetarium: planetariumRef,
+      skyPresentation: skyRef,
     },
     { wake: wakeRef, redraw: redrawRef },
   );

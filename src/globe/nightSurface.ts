@@ -18,6 +18,7 @@ export const NIGHT_SURFACE = {
         uniform float uPenumbraAng;
         uniform float uUmbraAng;
         uniform vec3 uSun;
+        uniform float uDayline;
         uniform vec3 uDayColor;
         uniform float uDepth;
         uniform float uLift;
@@ -74,9 +75,19 @@ export const NIGHT_SURFACE = {
              tens of pixels and an 8-bit framebuffer turns that into flat bands across Russia. See ARCHITECTURE.md#srcglobenightsurfacets. */
           float grain = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453);
           float dither = (grain - 0.5) / 255.0;
-          gl_FragColor = vec4(
-            uDayColor * day + uAuroraColor * glow,
-            night * uDepth + day * uLift + glow * 0.30 + dither
-          );
+          vec3 color = uDayColor * day + uAuroraColor * glow;
+          float alpha = night * uDepth + day * uLift + glow * 0.30 + dither;
+          if (uDayline > 0.0) {
+            // Trace the contour of zero solar elevation from north to south.
+            float width = clamp(fwidth(sun) * 1.65, 0.0015, 0.018);
+            float contour = 1.0 - smoothstep(width * 0.28, width, abs(sun));
+            float halo = 1.0 - smoothstep(width, width * 6.0, abs(sun));
+            float latitude = 0.5 - normalize(vNormal).y * 0.5;
+            float traced = smoothstep(0.0, 0.12, uDayline * 1.13 - latitude);
+            float accent = (contour * 0.72 + halo * 0.16) * traced * (1.0 - uMorph);
+            color = mix(color, vec3(0.64, 0.86, 0.93), clamp(accent * 1.45, 0.0, 1.0));
+            alpha = max(alpha, accent);
+          }
+          gl_FragColor = vec4(color, alpha);
         }`,
 };

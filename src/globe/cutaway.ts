@@ -1,3 +1,4 @@
+import { CUTAWAY_DEPTH_KM, CUTAWAY_GUIDES_KM } from "./cutawayScale";
 import {
   BufferAttribute,
   BufferGeometry,
@@ -18,7 +19,6 @@ export interface CutawayFocus {
   lat: number;
   dive?: true;
 }
-export const CUTAWAY_DEPTH_KM = 900;
 const ANGLE = 20 * DEG;
 const INNER_RADIUS = 1 - CUTAWAY_DEPTH_KM / EARTH_RADIUS_KM;
 
@@ -77,7 +77,7 @@ export function createCutaway() {
   object.add(floor);
   const positions: number[] = [];
   const traces: number[] = [];
-  for (const [ring, km] of [0, 300, 600, CUTAWAY_DEPTH_KM].entries()) {
+  for (const [ring, km] of CUTAWAY_GUIDES_KM.entries()) {
     const r = 1 - km / EARTH_RADIUS_KM;
     for (let i = 0; i < 96; i++) {
       for (const at of [i, i + 1]) {

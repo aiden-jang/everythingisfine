@@ -1,5 +1,6 @@
 import { geographicCoordinates } from "./orbitReadout";
-import { CUTAWAY_DEPTH_KM, type CutawayFocus } from "./cutaway";
+import type { CutawayFocus } from "./cutaway";
+import { CUTAWAY_DEPTH_KM, CUTAWAY_GUIDES_KM } from "./cutawayScale";
 import type { RefObject } from "react";
 
 interface OverlayRefs {
@@ -44,7 +45,8 @@ export function GlobeOverlays({
           <span className="label block">Regional cutaway · true scale</span>
           <span className="mt-1 block font-mono tabular-nums">{geographicCoordinates(cutaway)}</span>
           <span className="mt-1 block">
-            Guide rings every 300 km, to {CUTAWAY_DEPTH_KM} km. Orbit to inspect below the surface.
+            Guide rings every {CUTAWAY_GUIDES_KM[1]} km, to {CUTAWAY_DEPTH_KM} km. Orbit to inspect below the
+            surface.
           </span>
         </div>
       ) : null}
