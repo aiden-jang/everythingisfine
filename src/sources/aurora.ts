@@ -13,6 +13,8 @@ export interface Aurora {
   grid: Uint8Array;
   /** What moment the model is forecasting, which is not when it was fetched. */
   forecastAt: number;
+  /** A usable grid arrived without a published forecast time. */
+  estimatedTime?: true;
   /** The highest probability anywhere, so a quiet night can be drawn as a quiet night. */
   peak: number;
 }
@@ -29,14 +31,18 @@ export function parseOvation(payload: unknown): Aurora | null {
   if (!Array.isArray(rows) || rows.length !== AURORA_LON * AURORA_LAT) return null;
 
   const grid = new Uint8Array(AURORA_LON * AURORA_LAT);
+  grid.fill(255);
   let peak = 0;
   for (const row of rows) {
     if (!Array.isArray(row) || row.length < 3) return null;
     const [lon, lat, value] = row as [unknown, unknown, unknown];
     if (typeof lon !== "number" || typeof lat !== "number" || typeof value !== "number") return null;
+    if (!Number.isInteger(lon) || !Number.isInteger(lat) || !Number.isFinite(value)) return null;
     if (lon < 0 || lon >= AURORA_LON || lat < -90 || lat > 90) return null;
+    const cell = (lat + 90) * AURORA_LON + lon;
+    if (grid[cell] !== 255) return null;
     const probability = Math.max(0, Math.min(100, Math.round(value)));
-    grid[(lat + 90) * AURORA_LON + lon] = probability;
+    grid[cell] = probability;
     if (probability > peak) peak = probability;
   }
 
@@ -46,7 +52,7 @@ export function parseOvation(payload: unknown): Aurora | null {
     grid,
     // The fetch time is a poor stand-in and is better than nothing: it is within minutes of the
     // forecast, and the alternative is refusing a usable grid over a malformed timestamp.
-    forecastAt: Number.isFinite(stamp) ? stamp : Date.now(),
+    ...(Number.isFinite(stamp) ? { forecastAt: stamp } : { forecastAt: Date.now(), estimatedTime: true }),
     peak,
   };
 }

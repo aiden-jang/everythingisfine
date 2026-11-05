@@ -2,6 +2,8 @@ import { useLayoutEffect, type RefObject } from "react";
 import { ObservatoryStage, OBSERVATORY_SCENES, SceneDiagram } from "./ObservatoryStage";
 import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import { RuptureReveal, TOHOKU_DAY } from "./rupture/RuptureReveal";
+import { AuroraOverflightControls } from "./AuroraOverflightControls";
+import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene } from "./useObservatory";
 import type { Stop } from "./tour";
 import { geographicCoordinates } from "../globe/orbitReadout";
@@ -14,6 +16,7 @@ interface Props {
   summary: string;
   feedNote: string | null;
   deepAvailable: boolean;
+  aurora: ReturnType<typeof useAuroraOverflight>;
   onScene: (scene: EarthScene) => void;
   onExplore: () => void;
   tour: {
@@ -41,6 +44,7 @@ export function Observatory({
   waiting,
   summary,
   deepAvailable,
+  aurora,
   feedNote,
   onScene,
   onExplore,
@@ -57,18 +61,22 @@ export function Observatory({
     : scene === "depth"
       ? "Beneath the surface."
       : scene === "night"
-        ? "The other side of day."
+        ? aurora.run
+          ? "Into the auroral oval."
+          : "The other side of day."
         : "Meanwhile, on Earth.";
   const description = active
     ? (tour.stop?.description ?? "Travelling to the next view. The story begins when the camera arrives.")
     : scene === "depth"
       ? "Look through a regional cutaway at reported earthquake depths. The faint points show historical seismicity."
       : scene === "night"
-        ? "Earth settles into the horizon as constellations trace overhead. The sky follows the UTC readout."
+        ? aurora.run
+          ? "Follow NOAA’s forecast over Earth’s dark side. The raised glow illustrates the modeled oval."
+          : "Earth settles into the horizon as constellations trace overhead. The sky follows the UTC readout."
         : "A live view of earthquakes, changing skies, and a restless planet.";
   return (
     <>
-      <ObservatoryStage scene={scene} at={at} tour={active ? tour.stop : undefined} />
+      <ObservatoryStage scene={scene} at={at} tour={active ? tour.stop : undefined} aurora={aurora.run} />
       <section
         className="observatory-intro"
         ref={tour.controls}
@@ -90,6 +98,9 @@ export function Observatory({
             </p>
           ) : null}
         </div>
+        {!active && scene === "night" ? (
+          <AuroraOverflightControls aurora={aurora} ready={ready} onReturn={() => onScene("night")} />
+        ) : null}
         {active ? (
           <div className="observatory-tour-controls">
             <div className="observatory-tour-step">
@@ -130,7 +141,11 @@ export function Observatory({
         ) : (
           <>
             <div className="observatory-actions">
-              <button type="button" onClick={onExplore} className="observatory-primary">
+              <button
+                type="button"
+                onClick={onExplore}
+                className={aurora.run ? undefined : "observatory-primary"}
+              >
                 Explore the globe <span aria-hidden="true">↗</span>
               </button>
               <button
@@ -142,13 +157,15 @@ export function Observatory({
                 Take a tour <span aria-hidden="true">→</span>
               </button>
             </div>
-            <p className="observatory-summary">
-              {waiting
-                ? feedNote
-                  ? "Earthquake readings aren’t available yet. Explore for feed status."
-                  : "Listening for the public feeds…"
-                : summary}
-            </p>
+            {scene !== "night" ? (
+              <p className="observatory-summary">
+                {waiting
+                  ? feedNote
+                    ? "Earthquake readings aren’t available yet. Explore for feed status."
+                    : "Listening for the public feeds…"
+                  : summary}
+              </p>
+            ) : null}
           </>
         )}
         {!active ? (

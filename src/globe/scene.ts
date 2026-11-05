@@ -1,4 +1,6 @@
-import { NIGHT_SURFACE } from "./nightSurface";
+import { createNightSurface } from "./nightSurface";
+import { createAuroraVeil } from "./auroraVeil";
+import type { AuroraRun } from "../sources/auroraRoute";
 import { lightSurface } from "./surfaceMaterial";
 import { createCutaway, type CutawayFocus } from "./cutaway";
 import { createEventPresentation } from "./eventPresentation";
@@ -26,7 +28,7 @@ import {
   Vector3,
   WebGLRenderer,
 } from "three";
-import { buildLand, RADIUS_GRATICULE, RADIUS_NIGHT, RADIUS_SPHERE, type LandGeometry } from "../geo/land";
+import { buildLand, RADIUS_GRATICULE, RADIUS_SPHERE, type LandGeometry } from "../geo/land";
 import type { RampName } from "./ramp";
 import { DEG, distanceKm, graticule } from "../geo/sphere";
 import { buildPlates, orderByProximity } from "../geo/plates";
@@ -52,11 +54,12 @@ import { createEventLayer, type EventLayer, markerRadiusPx, sinkFraction } from 
 import { createRingLayer, type RingLayer } from "./rings";
 import { createSlabLayer } from "./slab";
 import type { SlabPoint } from "../geo/slab";
-import { auroraTexture, writeAurora } from "./auroraTexture";
+import { writeAurora } from "./auroraTexture";
 import { createMarkLayer, pickMark, type Mark } from "./marks";
 import type { Aurora } from "../sources/aurora";
 
 export type GlobeMoment = number | EclipseFrame | null;
+export type SkyPresentation = "planetarium" | "dayline" | AuroraRun | null;
 
 export interface HitStore {
   forEach: (fn: (quake: HitQuake) => void) => void;
@@ -144,7 +147,7 @@ export interface Globe {
   setMarkHover: (id: string | null) => void;
   setMorph: (t: number) => void;
   beginArrival: () => void;
-  setDayline: (on: boolean) => void;
+  setSkyPresentation: (mode: SkyPresentation) => void;
   setCutaway: (focus: CutawayFocus | null) => void;
   cutawayOpen: () => boolean;
   beginRegroup: (reduced: boolean) => void;
@@ -278,39 +281,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   coast.renderOrder = 4;
   spin.add(coast);
 
-  // Night is a shell below the data so light cannot change how event markers read.
-  const dayline = { value: 0 };
+  const { night, aurora, dayline } = createNightSurface(morph);
   let showDayline = false;
-  const aurora = auroraTexture();
-  const nightGeom = new SphereGeometry(RADIUS_NIGHT, 96, 64, SPHERE_PHI_START);
-  attachLonLat(nightGeom);
-  const night = new Mesh(
-    nightGeom,
-    new ShaderMaterial({
-      ...NIGHT_SURFACE,
-      uniforms: {
-        uMorph: morph,
-        uSun: { value: new Vector3(0, 0, 1) },
-        uDayline: dayline,
-        /* Zero radii means no eclipse, which is every day but a handful a year. */
-        uEclipse: { value: new Vector3(0, 0, 1) },
-        uPenumbraAng: { value: 0 },
-        uUmbraAng: { value: 0 },
-        // Achromatic. A warm daylight would put hue on the one surface the data is drawn against.
-        uDayColor: { value: new Color(0x9fb0cc) },
-        uDepth: { value: 0.44 },
-        uLift: { value: 0.11 },
-        uAurora: { value: aurora },
-        uAuroraOn: { value: 0 },
-        uAuroraColor: { value: new Color(0x7fc9a6) },
-      },
-      transparent: true,
-      depthWrite: false,
-      depthTest: false,
-      side: FrontSide,
-    }),
-  );
-  night.renderOrder = 4.5;
+  let veil: ReturnType<typeof createAuroraVeil> | null = null;
+  let oval: AuroraRun["route"] | null = null;
   spin.add(night);
   const eclipseTrack = createEclipseTrack();
   spin.add(eclipseTrack.path);
@@ -450,10 +424,21 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       if (moment !== null && run?.kind !== "sequence") aimSun(moment);
     },
     beginArrival: lights.begin,
-    setDayline: (on) => {
+    setSkyPresentation: (mode) => {
+      const route = typeof mode === "object" ? (mode?.route ?? null) : null;
+      controls.setPlanetarium(mode === "planetarium");
+      controls.setOverflight(route?.focus ?? null);
+      const on = mode === "dayline";
       if (on && !showDayline) lights.begin();
       showDayline = on;
       dayline.value = on ? lights.reveal.value : 0;
+      if (route && !veil) {
+        veil = createAuroraVeil(sunDir);
+        spin.add(veil.object);
+      }
+      if (oval !== route) veil?.set(route);
+      oval = route;
+      veil?.trace(controls.auroraSweep());
     },
     setCutaway: (focus) => {
       controls.setDive(focus?.dive === true);
@@ -467,6 +452,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       quietMotion = reduced;
       const illuminating = lights.step(dt, reduced);
       if (showDayline) dayline.value = lights.reveal.value;
+      veil?.trace(controls.auroraSweep());
       const cutting = cutaway.step(dt, reduced, morph.value, !controls.diveReady());
       const tracing = figures.step(dt, reduced, !controls.skyReady());
       const grouping = regroup.step(dt, reduced);
@@ -689,6 +675,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           (Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => m.dispose());
         }
       });
+      aurora.dispose();
       renderer.dispose();
     },
     stats: land.stats,

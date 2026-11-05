@@ -86,6 +86,17 @@
   .observatory-actions span {
     margin-left: 12px;
   }
+  .aurora-overflight .observatory-actions + p {
+    margin-top: 8px;
+  }
+  .aurora-overflight .observatory-summary a {
+    color: var(--color-dim);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  .aurora-overflight + .observatory-actions {
+    margin-top: 10px;
+  }
   .observatory-summary {
     max-width: 38ch;
     margin-top: 14px;
@@ -179,7 +190,7 @@
   .observatory-stage[data-stage="depth"] {
     --stage-ink: #e2b892;
   }
-  .observatory-stage[data-stage="night"] {
+  .observatory-stage:is([data-stage="night"], [data-stage="aurora"]) {
     --stage-ink: #b9bbeb;
   }
   .stage-corners {
@@ -407,6 +418,12 @@
     }
   }
   @media (max-width: 380px) {
+    .aurora-overflight .observatory-actions {
+      gap: 6px;
+    }
+    .aurora-overflight .observatory-actions button {
+      padding-inline: 8px;
+    }
     .observatory-intro {
       padding-inline: 16px;
     }

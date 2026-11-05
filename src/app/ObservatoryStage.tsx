@@ -3,11 +3,12 @@ import { CUTAWAY_GUIDES_KM } from "../globe/cutawayScale";
 import { subsolarPoint } from "../geo/sun";
 import type { EarthScene } from "./useObservatory";
 import type { Stop } from "./tour";
+import type { AuroraRun } from "../sources/auroraRoute";
 
 export const OBSERVATORY_SCENES = [
   { id: "live", name: "Live Earth", note: "Seismicity and daylight" },
   { id: "depth", name: "Below the Surface", note: "Recorded depths" },
-  { id: "night", name: "After Dark", note: "The catalogue sky" },
+  { id: "night", name: "After Dark", note: "Stars and aurora" },
 ] as const;
 
 export function SceneDiagram({ scene }: { scene: EarthScene }): JSX.Element {
@@ -51,25 +52,34 @@ export function ObservatoryStage({
   scene,
   at,
   tour,
+  aurora,
 }: {
   scene: EarthScene;
   at: number;
   tour: Stop | null | undefined;
+  aurora: AuroraRun | null;
 }): JSX.Element {
   const time = new Date(at).toISOString();
-  const mode = tour === undefined ? scene : "tour";
+  const mode = tour !== undefined ? "tour" : aurora ? "aurora" : scene;
   const sceneName =
-    mode === "tour" ? "Guided view" : OBSERVATORY_SCENES.find((item) => item.id === mode)!.name;
+    mode === "tour"
+      ? "Guided view"
+      : mode === "aurora"
+        ? "Aurora overflight"
+        : OBSERVATORY_SCENES.find((item) => item.id === mode)!.name;
   const label =
-    mode === "depth"
-      ? "Depth guides"
-      : mode === "night"
-        ? "Catalogue sky"
-        : mode === "tour"
-          ? "Viewpoint"
-          : "Sun overhead";
-  const value =
-    mode === "depth"
+    mode === "aurora"
+      ? "NOAA forecast"
+      : mode === "depth"
+        ? "Depth guides"
+        : mode === "night"
+          ? "Catalogue sky"
+          : mode === "tour"
+            ? "Viewpoint"
+            : "Sun overhead";
+  const value = aurora
+    ? `${aurora.route.focus.probability}% model chance`
+    : mode === "depth"
       ? `${CUTAWAY_GUIDES_KM.slice(1).join(" / ")} km`
       : mode === "night"
         ? time.slice(0, 10)
@@ -94,7 +104,10 @@ export function ObservatoryStage({
         <div>
           <span>{label}</span> <strong>{value}</strong>
         </div>
-        <time dateTime={time}>{time.slice(11, 16)} UTC</time>
+        <time dateTime={time}>
+          {mode === "aurora" ? "For " : ""}
+          {time.slice(11, 16)} UTC
+        </time>
       </div>
     </div>
   );

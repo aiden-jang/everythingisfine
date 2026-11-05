@@ -62,6 +62,8 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/globe/cameraRig.ts` | Interruptible lens bank and horizon offset, cleared on the map and under reduced motion |
 | `src/globe/cameraTarget.ts` | Shared camera callback, perspective panel lift and explicit arrival replay |
 | `src/globe/planetarium.ts` | Finite After Dark pitch, input interruption and reduced-motion sky framing |
+| `src/sources/auroraRoute.ts` | Current NOAA forecast checks and dark-side oval selection |
+| `src/globe/auroraFlight.ts` and `src/globe/auroraVeil.ts` | Finite polar framing and forecast-derived ribbon |
 | `src/globe/depthDive.ts` | Oblique cutaway framing after geographic arrival, including interruption and exit |
 | `src/globe/cameraProjection.ts` | Geographic projection for overlays and limb-safe perspective angles for input |
 | `src/globe/morph.ts` | Reversible sheet geometry, shared geographic projection, and map repeat spacing |
@@ -104,6 +106,9 @@ Replay retains wall-clock time. Reduced motion remains a separate user preferenc
 Tōhoku loads a separate regional canvas and pinned USGS data on request. The model clock orders
 fault patches using their rupture start and rise times. ShakeMap contours appear in a separate
 surface view. Regenerate the packed asset with [make-tohoku.mjs](tools/make-tohoku.mjs).
+
+After Dark reuses the polled NOAA grid for aurora overflight. A flight holds one forecast while
+the camera and readout follow it. The frame loop drives the veil sweep and stops when it settles.
 
 WebGL startup failures have a retry surface; they do not remove the event list and filters.
 Scene callbacks use current refs so changing a selection does not recreate WebGL resources.

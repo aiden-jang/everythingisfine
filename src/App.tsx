@@ -5,9 +5,9 @@ import { SequenceReplayControls } from "./app/SequenceReplayControls";
 import { CanvasFooter } from "./app/CanvasFooter";
 import { Observatory } from "./app/Observatory";
 import { journeyFor, observatorySummary, observatoryFeedNote } from "./app/journeys";
-import { subsolarPoint } from "./geo/sun";
 import { GlobeHeader } from "./app/GlobeHeader";
-import { useObservatory } from "./app/useObservatory";
+import { earthSceneTarget, useObservatory, type EarthScene } from "./app/useObservatory";
+import { useAuroraOverflight } from "./app/useAuroraOverflight";
 import { useCutaway } from "./app/useCutaway";
 import { liftForPanel } from "./app/panelLift";
 import { useReplayAnalytics } from "./app/useReplayAnalytics";
@@ -179,6 +179,13 @@ export function App(): JSX.Element {
   );
   const now = snapshot.archive ? snapshot.archive.to : Date.now();
   const minuteClock = Math.floor(now / 60_000) * 60_000;
+  const overflight = useAuroraOverflight(
+    aurora,
+    answered.aurora,
+    observatory.aurora,
+    observatory.night && !archived,
+    minuteClock,
+  );
   const span = { from: now - filters.windowMs, to: now };
   const view = chase.frame ? { at: chase.frame.at, playing: chase.playing } : clampScrub(scrub, span);
   const viewClock = view.at === null ? null : chase.frame ? eclipseClock(view.at) : clock(view.at);
@@ -444,8 +451,12 @@ export function App(): JSX.Element {
     feed,
     filters,
     ramp,
-    view.at,
-    (cutaway || observatory.depthFocus) && !flat ? "reference cutaway · true scale" : null,
+    overflight.run?.forecast.forecastAt ?? view.at,
+    overflight.run
+      ? "NOAA OVATION · illustrative veil"
+      : (cutaway || observatory.depthFocus) && !flat
+        ? "reference cutaway · true scale"
+        : null,
   );
   // Count the displayed subset, not whole timeline bins.
   const revealedNow = ((): number | null => {
@@ -500,20 +511,12 @@ export function App(): JSX.Element {
     stopTour();
     observatory.exploreScene();
   };
-  const chooseEarthScene = (scene: "live" | "depth" | "night"): void => {
+  const chooseEarthScene = (scene: EarthScene): void => {
     stopTour();
-    if (scene === "depth" && journey.deepest) {
-      chooseScene(scene, { ...journey.deepest, dive: true });
-      flyTo.current(journey.deepest.lon, journey.deepest.lat, 1.9);
-    } else if (scene === "night") {
-      const sun = subsolarPoint(view.at ?? clockAt());
-      chooseScene(scene);
-      flyTo.current(sun.lon + 180, -sun.lat, 0.92);
-    } else {
-      chooseScene("live");
-      if (snapshot.archive !== null) backToLive();
-      flyTo.current(145, 12, 1);
-    }
+    const next = earthSceneTarget(scene, journey.deepest, view.at ?? clockAt());
+    chooseScene(next.scene, next.focus);
+    if (next.scene === "live" && archived) backToLive();
+    flyTo.current(...next.camera);
   };
   useLayoutEffect(() => {
     if (observatory.observing && (selected || markId || sectionLine)) enterExplore();
@@ -1044,7 +1047,7 @@ export function App(): JSX.Element {
         {observatory.observing ? (
           <Observatory
             scene={observatory.scene}
-            at={litAt ?? minuteClock}
+            at={overflight.run?.forecast.forecastAt ?? litAt ?? minuteClock}
             ready={observatory.ready}
             waiting={snapshot.coveredSince === null}
             summary={observatorySummary({
@@ -1058,6 +1061,7 @@ export function App(): JSX.Element {
             deepAvailable={journey.deepest !== null}
             onScene={chooseEarthScene}
             onExplore={openExplorer}
+            aurora={overflight}
             onHistory={(day) => {
               stopTour();
               enterExplore();
@@ -1610,22 +1614,16 @@ export function App(): JSX.Element {
               selected={selected}
               ramp={ramp}
               focus={focusSpan}
-              aurora={onGlobe.aurora}
+              aurora={overflight.run?.forecast ?? onGlobe.aurora}
               marks={marks}
               scrubAt={view.at}
               /* Which moment the light is of. `clockAt` is the app's answer to what time is on screen, and a
                held cursor overrides it with the same precedence `stillMoment` uses, so the terminator and
                the caption cannot disagree. See ARCHITECTURE.md#srcapptsx. */
-              moment={chase.frame ?? litAt}
+              moment={overflight.run?.forecast.forecastAt ?? chase.frame ?? litAt}
               inspection={inspection.run}
               flat={flat}
-              skyPresentation={
-                observatory.night
-                  ? "planetarium"
-                  : observatory.observing && observatory.scene === "live" && tourAt === null
-                    ? "dayline"
-                    : null
-              }
+              skyPresentation={observatory.sky(tourAt !== null)}
               depthSink={observatory.depth || sinkOn}
               cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}
               slab={

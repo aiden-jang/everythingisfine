@@ -10,7 +10,7 @@ import { attachSectionDrawing, type SectionCommit } from "./sectionDrawing";
 import { useEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
 import { loadStars, type FigureTable } from "../geo/stars";
-import { createGlobe, type GlobeMoment } from "./scene";
+import { createGlobe, type GlobeMoment, type SkyPresentation } from "./scene";
 import { sinkFraction, type FocusSpan } from "./events";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 import { createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
@@ -40,7 +40,7 @@ export interface GlobeProps {
   /** Replay counts events, rather than the smaller number of clustered markers. */
   onReplay?: (state: { at: number; revealed: number } | null) => void;
   flat?: boolean;
-  skyPresentation?: "planetarium" | "dayline" | null;
+  skyPresentation?: SkyPresentation;
   /** Draw earthquakes at their own depth. Only means anything on the globe, and the shader fades it with
    * the morph, so unwrapping the map lifts every event back to the surface as one motion. */
   depthSink?: boolean;
@@ -572,10 +572,7 @@ export function Globe({
       globe.stepPresentation(0, reducedMotion.matches);
       redraw();
     };
-    skyRef.current = (mode) => {
-      globe.controls.setPlanetarium(mode === "planetarium");
-      globe.setDayline(mode === "dayline");
-    };
+    skyRef.current = globe.setSkyPresentation;
     skyRef.current(live.current.skyPresentation);
     cutawayRef.current = (next) => {
       globe.setCutaway(next);

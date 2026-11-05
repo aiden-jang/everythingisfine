@@ -56,6 +56,10 @@ export function useGlobeLayers(
     wake.current();
   }, [figures, figuresRef, wake]);
   useLayoutEffect(() => {
+    auroraRef.current(aurora ?? null);
+    wake.current();
+  }, [aurora, auroraRef, wake]);
+  useLayoutEffect(() => {
     momentRef.current(moment ?? null);
     wake.current();
   }, [moment, momentRef, wake]);
@@ -75,10 +79,6 @@ export function useGlobeLayers(
   useEffect(() => {
     slabRef.current(slab ?? null);
   }, [slab, slabRef]);
-  useEffect(() => {
-    auroraRef.current(aurora ?? null);
-    redraw.current();
-  }, [aurora, auroraRef, redraw]);
   useEffect(() => {
     marksRef.current(marks ?? []);
     redraw.current();

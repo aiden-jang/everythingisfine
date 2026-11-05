@@ -1,4 +1,4 @@
-import { DataTexture, LinearFilter, RGBAFormat, UnsignedByteType } from "three";
+import { DataTexture, LinearFilter, RepeatWrapping, RGBAFormat, UnsignedByteType } from "three";
 import { AURORA_LAT, AURORA_LON, type Aurora } from "../sources/aurora";
 
 /* The aurora grid as something a shader can sample. See ARCHITECTURE.md#srcglobeauroratexturets. */
@@ -11,6 +11,7 @@ export function auroraTexture(): DataTexture {
     RGBAFormat,
     UnsignedByteType,
   );
+  texture.wrapS = RepeatWrapping;
   texture.magFilter = LinearFilter;
   texture.minFilter = LinearFilter;
   texture.needsUpdate = true;

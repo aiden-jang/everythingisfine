@@ -36,6 +36,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
   view contains a reported depth of at least 70 km.
 - **After Dark** opens the displayed moment's night sky above Earth's curved horizon, then traces
   constellation guides. Reduced motion keeps the same view without the flight.
+- **Follow the aurora** in After Dark banks over a dark-side NOAA OVATION forecast oval and settles
+  into a polar view. The readout shows the forecast time and modeled chance at the focus. The
+  raised glow illustrates the footprint. Reduced motion opens the polar view directly.
 - **Take a tour** visits a captured selection of readings and regions. Narration waits for arrival;
   Pause, Previous, Next, Stop, and Read this event remain available. Hidden tabs pause its reading time.
 - **Revisit a day** loads an archived day and frames its largest available event.

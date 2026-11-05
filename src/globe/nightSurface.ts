@@ -1,7 +1,10 @@
-import { MORPH_GLSL } from "./morph";
+import { Color, FrontSide, Mesh, ShaderMaterial, SphereGeometry, Vector3 } from "three";
+import { attachLonLat, MORPH_GLSL, SPHERE_PHI_START } from "./morph";
+import { AURORA_LAT, AURORA_LON } from "../sources/aurora";
+import { auroraTexture } from "./auroraTexture";
 import { RADIUS_NIGHT } from "../geo/land";
 
-export const NIGHT_SURFACE = {
+const NIGHT_SURFACE = {
   vertexShader: /* glsl */ `
         ${MORPH_GLSL}
         varying vec3 vNormal;
@@ -68,7 +71,7 @@ export const NIGHT_SURFACE = {
           day *= mix(1.0, 0.32, smoothstep(0.30, 0.94, edge));
 
           /* Aurora intensity shares the geographic night mask. See ARCHITECTURE.md#srcglobenightsurfacets. */
-          vec2 auv = vec2(fract(vLonLat.x / 360.0), (vLonLat.y + 90.0) / 180.0);
+          vec2 auv = vec2((vLonLat.x + 0.5) / ${AURORA_LON}.0, (vLonLat.y + 90.5) / ${AURORA_LAT}.0);
           float glow = clamp(texture2D(uAurora, auv).r * 3.0, 0.0, 1.0) * night * uAuroraOn;
 
           /* A quarter of a level of noise, because this overlay's alpha changes by less than 1/255 over
@@ -91,3 +94,39 @@ export const NIGHT_SURFACE = {
           gl_FragColor = vec4(color, alpha);
         }`,
 };
+
+export function createNightSurface(morph: { value: number }) {
+  // Night is a shell below the data so light cannot change how event markers read.
+  const dayline = { value: 0 };
+  const aurora = auroraTexture();
+  const nightGeom = new SphereGeometry(RADIUS_NIGHT, 96, 64, SPHERE_PHI_START);
+  attachLonLat(nightGeom);
+  const night = new Mesh(
+    nightGeom,
+    new ShaderMaterial({
+      ...NIGHT_SURFACE,
+      uniforms: {
+        uMorph: morph,
+        uSun: { value: new Vector3(0, 0, 1) },
+        uDayline: dayline,
+        /* Zero radii means no eclipse, which is every day but a handful a year. */
+        uEclipse: { value: new Vector3(0, 0, 1) },
+        uPenumbraAng: { value: 0 },
+        uUmbraAng: { value: 0 },
+        // Achromatic. A warm daylight would put hue on the one surface the data is drawn against.
+        uDayColor: { value: new Color(0x9fb0cc) },
+        uDepth: { value: 0.44 },
+        uLift: { value: 0.11 },
+        uAurora: { value: aurora },
+        uAuroraOn: { value: 0 },
+        uAuroraColor: { value: new Color(0x7fc9a6) },
+      },
+      transparent: true,
+      depthWrite: false,
+      depthTest: false,
+      side: FrontSide,
+    }),
+  );
+  night.renderOrder = 4.5;
+  return { night, aurora, dayline };
+}

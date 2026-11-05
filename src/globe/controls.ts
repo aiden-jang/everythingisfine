@@ -1,3 +1,5 @@
+import { createAuroraFlight } from "./auroraFlight";
+import type { OvalPoint } from "../sources/auroraRoute";
 import { createPlanetarium } from "./planetarium";
 import { createGeographicProjection, createUnfoldCamera, perspectiveAngle } from "./cameraProjection";
 import { createDepthDive } from "./depthDive";
@@ -10,10 +12,10 @@ import {
   entranceDone,
   type CameraTarget,
 } from "./cameraFlight";
-import { LAT_LIMIT, ZOOM_MIN, ZOOM_MAX } from "./framing";
+import { LAT_LIMIT } from "./framing";
+import { createOrbitDistance } from "./orbitDistance";
 import { Raycaster, Vector2, Vector3, type PerspectiveCamera } from "three";
-import { RADIUS_ATMOSPHERE } from "../geo/land";
-import { DEG, spanDeg } from "../geo/sphere";
+import { DEG, spanDeg, toVec3 } from "../geo/sphere";
 import { MAP_HALF_WIDTH, projectionMoving } from "./morph";
 
 /* Orbiting the globe, hand-written. OrbitControls slides a pan target, and on a sphere there is no target
@@ -27,11 +29,6 @@ const ARC_MIN_DEG = 25;
 const ARC_FULL_DEG = 110;
 /** Extra distance at the top of the arc, as a fraction of the flight's own magnification. */
 const ARC_PULLBACK = 0.45;
-
-/* The map is the ball unrolled to 4 by 2, so it needs its own fraction. Measure against the
-   height-only fit: fitting by the tighter dimension is right for a ball and, on a phone, framed the
-   map's width and left a strip across the middle. */
-const MAP_FIT = 0.72;
 
 /** Flick decay. A third of a second of coasting reads as weight; longer reads as ice. */
 const MOMENTUM_TAU = 0.32;
@@ -79,6 +76,8 @@ export interface Controls {
   morph: () => number;
   setPlanetarium: (on: boolean) => void;
   skyReady: () => boolean;
+  setOverflight: (focus: OvalPoint | null) => void;
+  auroraSweep: () => number;
   setDive: (on: boolean) => void;
   diveReady: () => boolean;
   framingReady: () => boolean;
@@ -106,8 +105,7 @@ export function createControls(
   let zoom = 1;
   /** 0 globe, 1 map. Held here as well as in the scene, because the camera has to agree with it. */
   let morph = 0;
-  let fit = 4;
-  let heightFit = 4;
+  const distance = createOrbitDistance(camera, fovDeg);
 
   let vLon = 0;
   let vLat = 0;
@@ -116,6 +114,7 @@ export function createControls(
   let target: CameraTarget | null = null;
   const rig = createCameraRig(camera, canvas);
   const sky = createPlanetarium(camera);
+  const aurora = createAuroraFlight(camera);
   const dive = createDepthDive(camera);
   const flightPose = { lon, lat, zoom },
     flightVelocity = { lon: 0, lat: 0, zoom: 0 };
@@ -134,33 +133,20 @@ export function createControls(
   const unfold = createUnfoldCamera(camera);
   const interruptFraming = (): void => {
     sky.interrupt();
+    aurora.interrupt();
     dive.interrupt();
   };
   const stepFraming = (dt: number): boolean => {
     if (morph !== 0) return false;
     const revealing = sky.step(dt, reduced.matches);
     const diving = dive.step(dt, reduced.matches, target === null);
-    return revealing || diving;
+    const flying = aurora.step(dt, reduced.matches);
+    return revealing || diving || flying;
   };
 
-  /**
-   * A hard floor that does not rely on the zoom clamp being right. At ZOOM_MAX the camera stops 0.19
-   * radii outside the atmosphere shell by luck - move the framing, the field of view or the ceiling and
-   * it ends up inside the shell with the screen washed out.
-   */
-  const DIST_FLOOR = RADIUS_ATMOSPHERE + 0.12;
-  const mapFit = (): number => heightFit * MAP_FIT;
-  const distAt = (z: number): number => Math.max(DIST_FLOOR, (fit + (mapFit() - fit) * morph) / z);
+  const distAt = (zoom: number): number => distance.at(zoom, morph);
   const dist = (): number => distAt(zoom);
-
-  /* How far out you may go, which is a different question on each view: a globe can be lost, a plane
-     cannot, because it tiles. See ARCHITECTURE.md#srcglobecontrolsts. */
-  const zoomFloor = (): number => {
-    const wholeWorld = (mapFit() * Math.tan((fovDeg / 2) * DEG) * camera.aspect) / MAP_HALF_WIDTH;
-    return ZOOM_MIN + (Math.min(ZOOM_MIN, wholeWorld) - ZOOM_MIN) * morph;
-  };
-
-  const clampZoom = (v: number): number => Math.max(zoomFloor(), Math.min(ZOOM_MAX, v));
+  const clampZoom = (zoom: number): number => distance.clamp(zoom, morph);
 
   /**
    * Pixels per unit of projected height at the origin plane. The one constant the projection needs.
@@ -221,18 +207,12 @@ export function createControls(
       return;
     }
     unfold.reset();
-    const phi = lat * DEG;
-    const lam = lon * DEG;
-    const c = Math.cos(phi) * dist();
-    const orbitX = c * Math.sin(lam);
-    const orbitY = Math.sin(phi) * dist();
-    const orbitZ = c * Math.cos(lam);
-
-    camera.position.set(orbitX, orbitY, orbitZ);
+    camera.position.set(...toVec3(lon, lat, dist()));
     camera.lookAt(0, 0, 0);
     dive.apply();
     rig.apply(false);
     sky.apply();
+    aurora.apply();
     // Required. `lookAt` writes the quaternion but leaves matrixWorld stale until something renders,
     // and `pick` raycasts through matrixWorld. Skip it and the anchoring below measures from where the
     // camera used to be, off by tens of degrees.
@@ -607,21 +587,28 @@ export function createControls(
       apply();
     },
     skyReady: sky.ready,
+    setOverflight: (focus) => {
+      const side = focus && (focus.lat > 0 ? 1 : -1);
+      aurora.set(side);
+      if (focus && side) flyTo(focus.lon, side * Math.min(82, Math.max(72, Math.abs(focus.lat) + 10)), 1.18);
+      stepFraming(0);
+      apply();
+    },
+    auroraSweep: aurora.sweep,
     setDive: (on) => {
       dive.set(on);
       stepFraming(0);
       apply();
     },
     diveReady: dive.ready,
-    framingReady: () => sky.ready() && dive.ready(),
+    framingReady: () => sky.ready() && dive.ready() && aurora.ready(),
     state: () => ({ lon, lat, zoom }),
     // Visible height at distance d is 2 d tan(fov/2), and `focalPx` is the reciprocal half of that, so
     // a pixel is d/focalPx world units and a world unit is 90 degrees.
     degPerPx: (atZoom) => (90 * (atZoom === undefined ? dist() : distAt(atZoom))) / focalPx(),
     degForPx: (px, atZoom) => angleAt(px, atZoom === undefined ? undefined : distAt(atZoom)) / DEG,
     setFit: (d, byHeight) => {
-      fit = d;
-      heightFit = byHeight;
+      distance.fit(d, byHeight);
       apply();
     },
   };

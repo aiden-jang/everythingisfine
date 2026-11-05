@@ -87,6 +87,7 @@ describe("reading the published grid", () => {
   it("falls back to now when the timestamp is unusable, rather than refusing the grid", () => {
     const a = parseOvation({ ...payload(() => 1), "Forecast Time": "soon" })!;
     expect(Number.isFinite(a.forecastAt)).toBe(true);
+    expect(a.estimatedTime).toBe(true);
   });
 });
 
@@ -133,7 +134,8 @@ describe("a row that is not a row", () => {
     expect(parseOvation(rowsWith(null))).toBeNull();
   });
 
-  it("still reads a forecast where every row is a row", () => {
-    expect(parseOvation(rowsWith([1, 2, 3]))).not.toBeNull();
+  it("preserves a full grid and rejects duplicate coordinates", () => {
+    expect(parseOvation(rowsWith([500 % AURORA_LON, Math.floor(500 / AURORA_LON) - 90, 3]))?.peak).toBe(3);
+    expect(parseOvation(rowsWith([1, 2, 3]))).toBeNull();
   });
 });
