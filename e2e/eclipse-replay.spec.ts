@@ -18,9 +18,8 @@ test("the archived eclipse can be paused, scrubbed, and replayed", async ({ page
   const replay = await watchEclipse(page);
   const slider = replay.getByRole("slider", { name: "Eclipse time" });
   await expect(slider).not.toHaveValue("0");
-  await replay.getByRole("button", { name: "Pause", exact: true }).click();
-  await slider.focus();
   await slider.press("Home");
+  await expect(replay.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   await expect(slider).toHaveAttribute("aria-valuetext", "16:40 UTC");
   await slider.press("ArrowRight");
   await expect(slider).toHaveAttribute("aria-valuetext", "16:41 UTC");

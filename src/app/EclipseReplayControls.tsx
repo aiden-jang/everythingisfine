@@ -10,7 +10,7 @@ export function EclipseReplayControls({
   playback: ReturnType<typeof useEclipsePlayback>;
 }): JSX.Element | null {
   if (!frame) return null;
-  const fraction = pathFraction(progress);
+  const minute = Math.round(pathFraction(progress) * MINUTES);
   const instant = new Date(Math.round(frame.at)).toISOString();
   const clock = eclipseClock(frame.at);
   return (
@@ -63,8 +63,32 @@ export function EclipseReplayControls({
           aria-valuetext={clock}
           min={0}
           max={MINUTES}
-          value={Math.round(fraction * MINUTES)}
+          value={minute}
           onChange={(event) => seek(Number(event.currentTarget.value) / MINUTES)}
+          onKeyDown={(event) => {
+            let next = minute;
+            switch (event.key) {
+              case "Home":
+                next = 0;
+                break;
+              case "End":
+                next = MINUTES;
+                break;
+              case "ArrowRight":
+              case "ArrowUp":
+                next = Math.min(MINUTES, minute + 1);
+                break;
+              case "ArrowLeft":
+              case "ArrowDown":
+                next = Math.max(0, minute - 1);
+                break;
+              default:
+                return;
+            }
+            // A native range emits no change when the key hits the current value.
+            event.preventDefault();
+            seek(next / MINUTES);
+          }}
           className="scrub-slider min-h-11 min-w-0 flex-1"
         />
       </div>
