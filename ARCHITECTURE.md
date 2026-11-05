@@ -9,6 +9,7 @@ index to the matching implementation note.
 - [e2e/design.spec.ts](#e2edesignspects)
 - [e2e/feeds.ts](#e2efeedsts)
 - [e2e/interaction.spec.ts](#e2einteractionspects)
+- [e2e/unfold.spec.ts](#e2eunfoldspects)
 - [src/app/panelLift.ts](#srcapppanelliftts)
 - [src/app/ArchiveControls.tsx](#srcapparchivecontrolstsx)
 - [src/app/useStill.ts](#srcappusestillts)
@@ -266,14 +267,6 @@ Two bugs in one state. DESIGN.md 6 specifies a hairline notice naming the source
 Worse, coverage was inferred from the first delivery carrying events: with the seed requests dead and two
 stray socket pushes arriving, the rail read "0 events, last 24 hours".
 
-**Double the budget, because this test costs about a full one**
-
-Double the budget, because this test costs about a full one.
-
-A passing run measures 45.5s against the default 45s, so it sat exactly on its own ceiling and flipped
-with the weather: the projection toggle read `""` because the test was killed mid-assertion, not because
-anything errored. An entrance to wait out, two 2.5s morphs, and two WebGL canvas screenshots.
-
 **Arrow keys, not just a pointer. Shift is the coarse step**
 
 Arrow keys, not just a pointer. Shift is the coarse step.
@@ -321,6 +314,12 @@ other. Two separate errors used to put it 6px under the top bar on a short phone
 each other into something that looked deliberate: the lift was converted with `degPerPx`, which is the
 flat map's straight line rather than the sphere's curve, and it was converted at the zoom the flight
 started from rather than the one it ends on.
+
+### e2e/unfold.spec.ts
+
+The desktop and phone journeys measure the settled projection and unchanged geographic pose in both
+directions. A frame callback reverses the switch while the sheet is still curved. The phone case
+also checks the map ruler clears the footer.
 
 ### src/App.tsx
 
@@ -2499,6 +2498,8 @@ The sphere's perspective inverse uses the camera distance and focal length, with
 at the limb. Both drag anchoring and panel lift use it. The derivation remains under
 [controls](#srcglobecontrolsts), where those geographic interactions are coordinated.
 Overlays project through the same camera as the canvas, including the dive's displaced eye.
+During the map switch, the camera follows the opening sheet with a temporary pullback and bank.
+Its longitude stays continuous across the seam and its settled view follows the saved camera.
 
 ### src/globe/planetarium.ts
 
@@ -2834,10 +2835,14 @@ No falloff across the face. The real umbra edge crosses a disc eleven pixels wid
 
 Globe to map, as one geometry.
 
-Two scenes cross-faded doubles every buffer and every place a layer can be forgotten, and the switch is a
-dissolve, which says nothing. A planet unwrapping says what a projection is.
+The same geographic buffers draw the globe, the curved sheet, and the equirectangular atlas. At each
+latitude, the sheet reduces the angular sweep of its longitude arc while moving toward the atlas
+width. The half-angle form keeps the arc's depth continuous as curvature reaches zero. Surface
+normals carry the layers and their depth offsets around the fold.
 
-So there is one set of positions, on the sphere, and the plane is derived from them in the vertex shader.
+Both directions use the same eased travel value, so reversing continues from the displayed shape.
+The CPU projection matches the shader for geographic overlays. Surface picking and map section
+drawing use the settled projections. Reduced motion applies the destination directly.
 
 **How much of a layer's radial lift survives on the flat map**
 
@@ -3107,7 +3112,8 @@ across Asia, leaving a hairline of ocean from the Caspian to Sakhalin.
 
 Deciding the winding in lon/lat instead measured worse: 301 gaps against 126.
 
-Switched late, at 0.9, so it cannot flash: by then there is no far side left to see through.
+The fill becomes double sided at the flat endpoint. During the curl, the ocean sheet exposes the
+reverse face and the geography on the front remains culled.
 
 **The map repeats by drawing the world again beside itself. Only the copies that intersect t**
 
@@ -3115,7 +3121,8 @@ The map repeats by drawing the world again beside itself. Wrapping each vertex t
 in the shader is cheaper and tears, because the three corners of one triangle can land on different
 copies. A whole extra pass cannot tear.
 
-Only the copies that intersect the view are drawn: two most of the time, one zoomed in.
+Only the copies that intersect the view are drawn. During the last part of the curl the adjacent
+sheets slide toward their ordinary spacing. The pole backdrop appears at the flat endpoint.
 
 ### src/globe/shapes.ts
 

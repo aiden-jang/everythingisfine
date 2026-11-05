@@ -773,44 +773,6 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
     .toBeLessThan(1);
 });
 
-test("the globe unwraps into a map and back", { tag: "@dev" }, async ({ page }) => {
-  /* Double the budget, because this test costs about a full one. See ARCHITECTURE.md#e2einteractionspects. */
-  test.setTimeout(90_000);
-  // One geometry, projected in the vertex shader. Two scenes cross-faded would double every buffer and make
-  // the switch a dissolve, which says nothing.
-  await installFeeds(page);
-  await page.goto("/");
-  await expect(
-    page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first(),
-  ).toBeVisible({ timeout: 25_000 });
-  await cameraStill(page);
-
-  const toggle = page.getByRole("button", { name: /^(Map|Globe)$/ });
-  await expect(toggle).toHaveText("Map");
-  await expect(toggle).toHaveAttribute("aria-pressed", "false");
-
-  const globe = await page.locator("canvas").screenshot();
-  await toggle.click();
-  await expect(toggle).toHaveText("Globe");
-  /*
-   * A flat wait here, deliberately, where the camera assertions use `cameraStill`. The morph is an exponential
-   * ease, so a stillness threshold tight enough to mean "finished" is reached many time constants after the
-   * projection has visibly changed. This test only needs "changed enough to screenshot".
-   */
-  await page.waitForTimeout(2_500);
-
-  const flat = await page.locator("canvas").screenshot();
-  expect(flat.equals(globe)).toBe(false);
-
-  // Remembered, because which projection somebody reads in is a preference, not a view.
-  expect(await page.evaluate(() => localStorage.getItem("eif.flat"))).toBe("1");
-
-  await toggle.click();
-  await page.waitForTimeout(2_500);
-  await expect(toggle).toHaveText("Map");
-  expect(await page.evaluate(() => localStorage.getItem("eif.flat"))).toBe("0");
-});
-
 test("a shared camera survives the entrance", async ({ page }) => {
   // Regression. The entrance named the default framing as its destination and runs after the permalink has
   // aimed the camera, so every shared link arrived at the default view. Nothing threw.
@@ -914,7 +876,7 @@ test("a line dragged across the map opens a section through it", async ({ page }
   await page.goto("/#at=140,36,2.6&m=2&w=24");
   await waitForData(page);
   await page.getByRole("button", { name: "Map" }).click();
-  await page.waitForTimeout(1400);
+  await expect(page.locator("[data-scale]")).toHaveCSS("opacity", "1");
 
   const section = page.getByText("Cross-section", { exact: true });
   await expect(section).toHaveCount(0);

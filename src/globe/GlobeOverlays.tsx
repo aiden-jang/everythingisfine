@@ -67,10 +67,9 @@ export function GlobeOverlays({
         ref={scaleBar}
         data-scale
         aria-hidden="true"
-        style={{ bottom: "76px" }}
         /* Offset past the rail, like the bottom band. The canvas is full-bleed and the rail floats over
            it, so a bar at the container's own left edge is drawn underneath the rail. */
-        className="pointer-events-none absolute left-4 opacity-0 transition-opacity duration-200
+        className="pointer-events-none absolute bottom-32 left-4 opacity-0 transition-opacity duration-200 md:bottom-[76px]
           xl:ml-[var(--rail-w)]"
       >
         <span ref={scaleText} className="block font-mono text-[10.5px] text-faint tabular-nums" />

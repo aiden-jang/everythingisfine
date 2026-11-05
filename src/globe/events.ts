@@ -75,12 +75,10 @@ const SHADER = {
         0.0, 1.0
       );
       vFocus = aFocus;
-      vec4 world = modelMatrix * vec4(position, 1.0);
-      // The globe is a unit sphere at the origin, so a point's position is also its surface normal.
-      vec3 normal = normalize(world.xyz);
-      // A map has no far side, so the facing test fades out with the morph. Left on, it would delete
-      // half the earthquakes on the plane.
-      vFacing = mix(dot(normal, normalize(cameraPosition - world.xyz)), 1.0, uMorph);
+      vec3 point = fmProject(position);
+      vec3 normal = fmNormal(position);
+      vec3 world = (modelMatrix * vec4(point, 1.0)).xyz;
+      vFacing = uMorph >= 1.0 ? 1.0 : dot(normal, normalize(cameraPosition - world));
 
       vRamp = clamp((aMag - uMagMin) / 6.5, 0.0, 1.0);
       // A cluster is drawn a little wider to leave room for its ring. The fill still means magnitude.
@@ -88,9 +86,8 @@ const SHADER = {
 
       /* Sunk to the hypocentre, so the scatter resolves into the slab: orbit Chile and the events form a
          plane dipping under the arc. See ARCHITECTURE.md#srcglobeeventsts. */
-      // position, not world: the model matrix draws the flat map more than once.
-      vec3 sunk = normalize(position) * (-aSink * uSink * (1.0 - uMorph));
-      gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position) + sunk, 1.0);
+      vec3 sunk = normal * (-aSink * uSink * (1.0 - uMorph));
+      gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(point + sunk, 1.0);
       gl_PointSize = 2.0 * radius * uPixelRatio;
     }`,
   fragmentShader: /* glsl */ `

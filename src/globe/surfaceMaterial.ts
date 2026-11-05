@@ -20,9 +20,11 @@ export function lightSurface(
       `
       varying vec3 vSurfaceDirection;
       varying vec3 vSurfaceWorld;
+      ${ocean ? "varying float vSheetLongitude;" : ""}
       void main() {
         vSurfaceDirection = normalize(position);
         vSurfaceWorld = (modelMatrix * vec4(position, 1.0)).xyz;
+        ${ocean ? "vSheetLongitude = aLonLat.x;" : ""}
     `,
     );
     shader.fragmentShader = shader.fragmentShader.replace(
@@ -33,6 +35,7 @@ export function lightSurface(
       uniform float uSurfaceReveal;
       varying vec3 vSurfaceDirection;
       varying vec3 vSurfaceWorld;
+      ${ocean ? "varying float vSheetLongitude;" : ""}
       void main() {
     `,
     );
@@ -49,6 +52,15 @@ export function lightSurface(
       float catchlight = 1.0 - smoothstep(0.015, 0.15, abs(n.y - mix(-1.2, 1.2, uSurfaceReveal)));
       body += catchlight * 0.35 * sin(3.14159265 * uSurfaceReveal);
       diffuseColor.rgb *= mix(body, 1.0, uSurfaceMorph);
+      ${
+        ocean
+          ? `
+        float opening = smoothstep(0.04, 0.3, uSurfaceMorph) * (1.0 - smoothstep(0.77, 0.99, uSurfaceMorph));
+        float edge = smoothstep(178.4, 179.9, abs(vSheetLongitude));
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.11, 0.17, 0.24), edge * opening * 0.65);
+      `
+          : ""
+      }
     `,
     );
   };

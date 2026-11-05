@@ -1,5 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { MAP_HALF_WIDTH, visibleCopies } from "./morph";
+import { Vector3 } from "three";
+import { MAP_HALF_WIDTH, unfoldPoint, visibleCopies } from "./morph";
+
+it("opens the seam on a curved sheet and reaches the same map coordinates continuously", () => {
+  const west = new Vector3();
+  const east = new Vector3();
+  const middle = new Vector3();
+  expect(unfoldPoint(east, 180, 0, 0).distanceTo(unfoldPoint(west, -180, 0, 0))).toBeLessThan(1e-10);
+  unfoldPoint(west, -180, 0, 0.5);
+  unfoldPoint(east, 180, 0, 0.5);
+  unfoldPoint(middle, 0, 0, 0.5);
+  expect(east.x).toBeGreaterThan(1);
+  expect(west.x).toBeCloseTo(-east.x);
+  expect(middle.z - east.z).toBeGreaterThan(1);
+  for (const [lon, lat] of [
+    [180, 88],
+    [-179.5, -89],
+    [145, 12],
+    [0, 0],
+  ] as const) {
+    expect(unfoldPoint(east, lon, lat, 1 - 1e-7).distanceTo(unfoldPoint(west, lon, lat, 1))).toBeLessThan(
+      1e-6,
+    );
+  }
+  expect(unfoldPoint(east, 180, 0, 1).x).toBe(MAP_HALF_WIDTH);
+});
 
 /*
  * The flat map repeats by being drawn again, so this decides how many passes a frame costs and, more

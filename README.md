@@ -53,7 +53,8 @@ Observe or Explore remembers that presentation; opening the app alone saves no n
 - Drag to orbit, scroll to zoom, or use the arrow keys and `+` / `-`. Press `0` to reset the camera.
 - Select an earthquake to pin its details and see each agency's original magnitude and scale.
 - Change magnitude, feeds, or the time window. Search by region or place.
-- Switch to the flat map to draw a cross-section with Shift-drag.
+- Choose **Map** to unfold the globe at its seam. Choose **Globe** to wrap it back up. On the flat map,
+  draw a cross-section with Shift-drag.
 - Browse any completed UTC day, including notable earthquakes and eclipses.
 - On a phone, switch between globe space and recent events using the bottom navigation.
 - Use **Still** to share or download a captioned image. If native sharing fails, **Download image**

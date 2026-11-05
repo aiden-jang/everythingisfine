@@ -43,13 +43,14 @@ const SHADER = {
     varying float vFacing;
 
     void main() {
-      vec4 world = modelMatrix * vec4(position, 1.0);
+      vec3 point = fmProject(position);
+      vec3 world = (modelMatrix * vec4(point, 1.0)).xyz;
       vRamp = aRamp;
       vFade = aFade;
       // Interpolated across the segment, so a ring straddling the horizon is clipped exactly at the limb
       // rather than vanishing or showing through the planet all at once. A map has no limb to clip at.
-      vFacing = mix(dot(normalize(world.xyz), normalize(cameraPosition - world.xyz)), 1.0, uMorph);
-      gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position), 1.0);
+      vFacing = uMorph >= 1.0 ? 1.0 : dot(fmNormal(position), normalize(cameraPosition - world));
+      gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(point, 1.0);
     }`,
   fragmentShader: /* glsl */ `
     uniform sampler2D uRamp;

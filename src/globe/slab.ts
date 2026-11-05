@@ -31,12 +31,13 @@ const SHADER = {
     varying float vFacing;
 
     void main() {
-      vec3 surface = normalize(position);
-      // Same test the markers use, fading out with the morph because a plane has no far side.
-      vFacing = mix(dot(surface, normalize(cameraPosition - surface)), 1.0, uMorph);
+      vec3 point = fmProject(position);
+      vec3 surface = fmNormal(position);
+      vec3 world = (modelMatrix * vec4(point, 1.0)).xyz;
+      vFacing = uMorph >= 1.0 ? 1.0 : dot(surface, normalize(cameraPosition - world));
       /* Lifted back to the surface as the map unwraps, exactly as the markers are. See ARCHITECTURE.md#srcglobeslabts. */
       vec3 sunk = surface * (-aSink * (1.0 - uMorph));
-      gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(fmProject(position) + sunk, 1.0);
+      gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(point + sunk, 1.0);
       gl_PointSize = uSize * uPixelRatio;
     }`,
   fragmentShader: /* glsl */ `

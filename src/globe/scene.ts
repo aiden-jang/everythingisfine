@@ -33,7 +33,14 @@ import { createStarfield } from "./starfield";
 import { createMoon } from "./moon";
 import { createFigures } from "./figures";
 import { createPlanets } from "./planets";
-import { attachLonLat, MAP_HALF_WIDTH, morphable, SPHERE_PHI_START, visibleCopies } from "./morph";
+import {
+  attachLonLat,
+  MAP_HALF_WIDTH,
+  mapRepeatSpacing,
+  morphable,
+  SPHERE_PHI_START,
+  visibleCopies,
+} from "./morph";
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
@@ -66,8 +73,6 @@ const SHORTLIST = 8;
 /* The globe's palette, brightest last: sea, land, graticule, coast, plates. See ARCHITECTURE.md#srcglobescenets. */
 const COLOR_SPHERE = 0x031120;
 /* Must equal `--color-void` in `index.css`. Nothing checks it, and the canvas fades to this. */
-const COLOR_VOID_C = new Color(0x050b16);
-const COLOR_SPHERE_C = new Color(COLOR_SPHERE);
 const COLOR_LAND = 0x1c3d52;
 const COLOR_COAST = 0x245b83;
 const COLOR_GRATICULE = 0x13334e;
@@ -178,7 +183,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
      only sorts within each group, so a transparent backdrop paints over the geography whatever you ask. */
   const mapBase = new Mesh(
     new PlaneGeometry(2 * MAP_HALF_WIDTH, 2),
-    new MeshBasicMaterial({ color: COLOR_VOID_C }),
+    new MeshBasicMaterial({ color: COLOR_SPHERE }),
   );
   mapBase.position.z = -0.02;
   mapBase.renderOrder = -1;
@@ -189,7 +194,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
   const oceanGeom = new SphereGeometry(RADIUS_SPHERE, 96, 64, SPHERE_PHI_START);
   attachLonLat(oceanGeom);
-  const ocean = new Mesh(oceanGeom, new MeshBasicMaterial({ color: COLOR_SPHERE }));
+  const ocean = new Mesh(oceanGeom, new MeshBasicMaterial({ color: COLOR_SPHERE, side: DoubleSide }));
   morphable(ocean.material, morph);
   ocean.renderOrder = 0;
   spin.add(ocean);
@@ -476,8 +481,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       (grat.material as LineBasicMaterial).color.setHex(GRATICULE_ON(palette));
       (plateLines.material as LineBasicMaterial).color.setHex(palette.plates);
       (coast.material as LineBasicMaterial).color.setHex(palette.coast);
-      // The map's backdrop fades to the sphere colour, so it has to move with it.
-      COLOR_SPHERE_C.setHex(palette.sphere);
+      mapBase.material.color.setHex(palette.sphere);
     },
     setDepthSink: (on: boolean): void => {
       sink = on ? 1 : 0;
@@ -625,10 +629,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
       lights.apply();
       starfield.prepare(camera, canvas.width, canvas.height, quietMotion || morph.value > 0);
-      /*
-       * Gone by the time the map is flat. A star field around a rectangle is a view from space of a thing
-       * that cannot be seen from space.
-       */
+      // The sky fades as the curved sheet becomes an atlas.
       starfield.setOpacity(1 - morph.value);
       moon.setOpacity(1 - morph.value);
       figures.setOpacity(1 - morph.value);
@@ -640,7 +641,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       if (slabOn) slab.setOpacity(1 - morph.value);
 
       /* The fill is culled on the globe and not on the map. See ARCHITECTURE.md#srcglobescenets. */
-      const wantSide = morph.value > 0.9 ? DoubleSide : FrontSide;
+      const wantSide = morph.value === 1 ? DoubleSide : FrontSide;
       const fillMaterial = fill.material as MeshBasicMaterial;
       if (fillMaterial.side !== wantSide) {
         fillMaterial.side = wantSide;
@@ -648,21 +649,18 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         fillMaterial.needsUpdate = true;
       }
 
-      if (morph.value < 0.01) {
+      const period = mapRepeatSpacing(morph.value);
+      mapBase.visible = morph.value === 1;
+      if (!period) {
         world.position.x = 0;
-        mapBase.visible = false;
         renderer.render(scene, camera);
         return;
       }
 
-      mapBase.visible = true;
-      (mapBase.material as MeshBasicMaterial).color.copy(COLOR_VOID_C).lerp(COLOR_SPHERE_C, morph.value);
-
       /* The map repeats by drawing the world again beside itself. Only the copies that intersect the view
          are drawn: two most of the time, one zoomed in. See ARCHITECTURE.md#srcglobescenets. */
-      const period = 2 * MAP_HALF_WIDTH;
       const halfHeight = camera.position.z * Math.tan((FOV / 2) * (Math.PI / 180));
-      const { first, last } = visibleCopies(camera.position.x, halfHeight * camera.aspect);
+      const { first, last } = visibleCopies(camera.position.x, halfHeight * camera.aspect, period);
 
       renderer.autoClear = true;
       for (let k = first; k <= last; k += 1) {

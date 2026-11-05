@@ -1,5 +1,5 @@
 import { createPlanetarium } from "./planetarium";
-import { createGeographicProjection, perspectiveAngle } from "./cameraProjection";
+import { createGeographicProjection, createUnfoldCamera, perspectiveAngle } from "./cameraProjection";
 import { createDepthDive } from "./depthDive";
 import { createCameraRig } from "./cameraRig";
 import {
@@ -14,7 +14,7 @@ import { LAT_LIMIT, ZOOM_MIN, ZOOM_MAX } from "./framing";
 import { Raycaster, Vector2, Vector3, type PerspectiveCamera } from "three";
 import { RADIUS_ATMOSPHERE } from "../geo/land";
 import { DEG, spanDeg } from "../geo/sphere";
-import { MAP_HALF_WIDTH } from "./morph";
+import { MAP_HALF_WIDTH, projectionMoving } from "./morph";
 
 /* Orbiting the globe, hand-written. OrbitControls slides a pan target, and on a sphere there is no target
    to slide - only a rotation that puts the same coastline back under the pointer. See ARCHITECTURE.md#srcglobecontrolsts. */
@@ -130,6 +130,7 @@ export function createControls(
   const ndc = new Vector2();
   const hit = new Vector3();
   const project = createGeographicProjection(camera, canvas);
+  const unfold = createUnfoldCamera(camera);
   const interruptFraming = (): void => {
     sky.interrupt();
     dive.interrupt();
@@ -169,6 +170,7 @@ export function createControls(
 
   /** Geographic point under a client-space pixel, or null if the ray misses the globe. */
   const pick = (clientX: number, clientY: number): { lon: number; lat: number } | null => {
+    if (projectionMoving(morph)) return null;
     const r = canvas.getBoundingClientRect();
     ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
@@ -180,7 +182,7 @@ export function createControls(
      * On the map the ray meets a plane, not a ball. Raycasting the sphere still returns an answer,
      * which is worse than none: hover looked like it worked and named the wrong earthquake.
      */
-    if (morph > 0.5) {
+    if (morph === 1) {
       if (Math.abs(d.z) < 1e-6) return null;
       const t = -o.z / d.z;
       if (t < 0) return null;
@@ -210,34 +212,20 @@ export function createControls(
     };
   };
 
-  /* Orbit and plane swap on the same number as the geometry. Sequence it after the morph, or switch at
-     the halfway point, and one frame shows a flat map seen from an angle. */
   const apply = (): void => {
+    if (morph > 0) {
+      unfold.place(lon, lat, dist(), morph);
+      rig.apply(true);
+      camera.updateMatrixWorld();
+      return;
+    }
+    unfold.reset();
     const phi = lat * DEG;
     const lam = lon * DEG;
     const c = Math.cos(phi) * dist();
     const orbitX = c * Math.sin(lam);
     const orbitY = Math.sin(phi) * dist();
     const orbitZ = c * Math.cos(lam);
-
-    if (morph > 0) {
-      /*
-       * The map has no pan of its own: longitude and latitude *are* the camera here. A separate pan split
-       * the camera in two, and shared map links came back to the middle of the Atlantic.
-       */
-      const flatX = (lon / 180) * MAP_HALF_WIDTH;
-      const flatY = lat / 90;
-      const flatZ = dist();
-      camera.position.set(
-        orbitX + (flatX - orbitX) * morph,
-        orbitY + (flatY - orbitY) * morph,
-        orbitZ + (flatZ - orbitZ) * morph,
-      );
-      camera.lookAt(flatX * morph, flatY * morph, 0);
-      rig.apply(true);
-      camera.updateMatrixWorld();
-      return;
-    }
 
     camera.position.set(orbitX, orbitY, orbitZ);
     camera.lookAt(0, 0, 0);

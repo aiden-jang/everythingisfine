@@ -302,7 +302,7 @@ export function Globe({
         const draft = drag.current;
         // Map only. A great circle projects to a curve on a globe, so a straight screen line between two
         // projected points would be a wrong picture rather than a simplified one.
-        const line = globe.controls.morph() > 0.5 ? (draft ?? live.current.section) : null;
+        const line = globe.controls.morph() === 1 ? (draft ?? live.current.section) : null;
         const a = line ? globe.controls.project(line.fromLon, line.fromLat) : null;
         const b = line ? globe.controls.project(line.toLon, line.toLat) : null;
         svg.style.opacity = a && b ? "1" : "0";
@@ -348,7 +348,7 @@ export function Globe({
        */
       const bar = scaleBar.current;
       if (bar) {
-        const flat = globe.controls.morph() > 0.99;
+        const flat = globe.controls.morph() === 1;
         const { lat } = globe.controls.state();
         const drawn = flat ? niceScale(kmPerPixel(globe.controls.degPerPx(), lat), SCALE_TARGET_PX) : null;
         // Hidden on the globe, which carries its own scale by being a ball, and mid-morph, where a number
@@ -371,6 +371,7 @@ export function Globe({
     let focusFade = 0;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let morph = live.current.flat ? 1 : 0;
+    let projectionTravel = morph;
     globe.setMorph(morph);
     globe.controls.setMorph(morph);
 
@@ -439,15 +440,14 @@ export function Globe({
       const morphTarget = live.current.flat ? 1 : 0;
       let unwrapping = false;
       if (morph !== morphTarget) {
-        // 1.1 seconds, which is slow. Greenland swelling as it leaves the sphere is the whole argument for
-        // the globe being the default view, and at 300ms nobody sees it happen.
         const step = reducedMotion.matches
           ? 1
           : morphTarget === 1 && (globe.cutawayOpen() || !globe.controls.framingReady())
             ? 0
-            : dt / 1.1;
-        morph =
-          morphTarget > morph ? Math.min(morphTarget, morph + step) : Math.max(morphTarget, morph - step);
+            : dt / 1.45;
+        const travel = projectionTravel + (morphTarget ? step : -step);
+        projectionTravel = Math.max(0, Math.min(1, travel));
+        morph = projectionTravel * projectionTravel * (3 - 2 * projectionTravel);
         globe.setMorph(morph);
         globe.controls.setMorph(morph);
         unwrapping = morph !== morphTarget;
@@ -500,7 +500,7 @@ export function Globe({
      * added in. Stopping propagation here is the whole of "this drag is not a pan".
      */
     const onSectionDown = (e: PointerEvent): void => {
-      if (!e.shiftKey || globe.controls.morph() < 0.5 || !onSectionRef.current) return;
+      if (!e.shiftKey || globe.controls.morph() !== 1 || !onSectionRef.current) return;
       const start = globe.controls.pick(e.clientX, e.clientY);
       if (!start) return;
       e.preventDefault();
@@ -728,7 +728,7 @@ export function Globe({
       if (!downAt) return;
       const travelled = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
       downAt = null;
-      if (travelled > 5) return;
+      if (travelled > 5 || (morph > 0 && morph < 1)) return;
       /*
        * A finger gets a bigger target than a mouse. A magnitude 2 marker is about 3px across against 4px
        * of slop, so on a phone the target was a 7px circle - and a miss does not merely do nothing, it

@@ -192,6 +192,10 @@ Below the Surface approaches the selected region and lowers the camera toward th
 after the camera settles, then the reference guides trace downward. Steering can interrupt the shot,
 and reduced motion starts at the finished composition. The depth scale and geographic anchor stay fixed.
 
+The globe opens into a curved sheet from its map seam. The camera pulls back to show the curl, then
+settles at the selected map location. The same path wraps the sheet back into the globe, and changing
+direction continues from the displayed frame. Reduced motion switches directly between the projections.
+
 Selection brackets may settle once, panels may catch a brief neutral edge light, and zoom regrouping
 may crossfade recorded marker positions. These effects must not invent intermediate epicentres or
 change magnitude encoding. Optional constellation lines trace their catalogue connections with a brief leading glint on
