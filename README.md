@@ -58,6 +58,9 @@ Observe or Explore remembers that presentation; opening the app alone saves no n
 - Browse any completed UTC day, including notable earthquakes and eclipses. Find the total eclipse
   of 8 April 2024 under **Revisit a day** in the Observatory or **Eclipses** in Explore. Choose
   **Watch eclipse** in Globe view, then pause or scrub to follow the shadow at a specific UTC time.
+- Pin an earthquake and open **Follow the wave**. Pick a nearby city to see the estimated P and
+  S arrivals, with a fixed overview under reduced motion. The city picker lists up to six places
+  within 700 km.
 - On a phone, switch between globe space and recent events using the bottom navigation.
 - Use **Still** to share or download a captioned image. If native sharing fails, **Download image**
   keeps that captured frame available. Cancelling the share sheet leaves the page alone.
@@ -93,7 +96,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Live storms, volcanoes, wildfires, floods | GDACS, retaining the credited reporting agency |
 | Archived hazards | NASA EONET |
 | Aurora forecast | NOAA SWPC OVATION |
-| Coastlines | Natural Earth, public domain |
+| Coastlines and replay cities | Natural Earth, public domain |
 | Plate boundaries | PB2002, Bird (2003), simplified for display |
 | Stars | Yale Bright Star Catalogue, BSC5 |
 | Constellation figures | d3-celestial, copyright (c) 2015 Olaf Frohn, BSD 3-Clause |

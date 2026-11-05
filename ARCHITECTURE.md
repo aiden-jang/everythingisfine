@@ -3643,6 +3643,21 @@ moves and stops updating after the pullback. Reduced motion starts paused with t
 and a fixed overview. Closing holds the displayed time in the archive. The globe and feed stay
 mounted throughout. Other dates use the geometric eclipse model.
 
+## Follow the wave
+
+The replay is a regional illustration. A pinned reading supplies the epicentre and depth. The
+city picker loads the local catalogue on expansion, then offers the six closest entries within
+the same distance limit as the panel’s arrival estimates. The P and S rings invert the same
+depth-corrected distance formula, so each ring intersects the city at its own estimate.
+
+The scene advances one clock in its existing frame loop. Only the replay transport subscribes
+to displayed times. The shot ends at the S arrival and then releases the loop. Reduced motion
+opens that final frame directly. Both replays share the same focus and dismissal behavior.
+
+The bundled catalogue in `src/geo/waveCities.json` is derived from
+[Natural Earth 1:10m populated places, simple](https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/),
+version 5.1.2. Keep the name and the Point’s longitude and latitude, rounded to four decimals.
+
 ## src/app/useStill.ts
 
 Capture, caption, encoding, and sharing happen in one hook. Copy the WebGL drawing buffer

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CameraState } from "../globe/controls";
 import { eclipseFrame, progressAt } from "./eclipseReplay";
+import { usePlaybackBoundary } from "./usePlaybackBoundary";
 import type { Scrub } from "./scrub";
 
 const RUN_MS = 8_000;
@@ -73,45 +74,14 @@ export function useEclipsePlayback(enabled: boolean, setScrub: (scrub: Scrub) =>
 
   useEffect(() => {
     if (!active) return;
-    panel.current?.focus();
     const motion = matchMedia(MOTION);
     const changeMotion = () => {
       setSession((current) => current && { ...current, reduced: motion.matches, playing: false });
     };
-    const outside = (event: PointerEvent | WheelEvent) => {
-      const target = event.target;
-      if (
-        !(target instanceof Element) ||
-        panel.current?.contains(target) ||
-        trigger.current?.contains(target)
-      ) {
-        return;
-      }
-      if (target.closest("button, a, input, select, summary, canvas")) close();
-    };
-    const key = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        close(true);
-      } else if (
-        !(event.target instanceof Node && panel.current?.contains(event.target)) &&
-        /^(Arrow.*|Home|End|Enter| |\+|-|,|\.|\[|\])$/.test(event.key)
-      ) {
-        close();
-      }
-    };
     motion.addEventListener("change", changeMotion);
-    window.addEventListener("pointerdown", outside, true);
-    window.addEventListener("wheel", outside, { capture: true, passive: true });
-    window.addEventListener("keydown", key, true);
-    return () => {
-      motion.removeEventListener("change", changeMotion);
-      window.removeEventListener("pointerdown", outside, true);
-      window.removeEventListener("wheel", outside, true);
-      window.removeEventListener("keydown", key, true);
-    };
-  }, [active, close]);
+    return () => motion.removeEventListener("change", changeMotion);
+  }, [active]);
+  usePlaybackBoundary(active, panel, trigger, close);
 
   return {
     frame,

@@ -1,3 +1,4 @@
+import { WaveChooser, type FollowWave } from "./WaveChooser";
 import { CopyLink } from "./CopyLink";
 import { EventTime } from "./EventTime";
 import { useMemo } from "react";
@@ -36,6 +37,7 @@ export interface DetailPanelProps {
   store: Store;
   filters: Filters;
   onClose: () => void;
+  onFollowWave?: FollowWave | null;
   /**
    * Opens a cross-section through this event, across the local trend. Shift-dragging the map was the only
    * way in: undiscoverable on a mouse and impossible on a touch screen, where there is no shift to hold.
@@ -99,6 +101,7 @@ export function DetailPanel({
   now,
   archived = false,
   onClose,
+  onFollowWave,
   onSection,
   farSide,
   onFarSide,
@@ -119,10 +122,6 @@ export function DetailPanel({
   );
   const klass = depthClass(r.depthKm);
 
-  // The disagreement, as a sentence, in the units a person thinks in. Only when there is genuinely a
-  // second reading to disagree with.
-  // Recomputed with the event rather than memoised: a regex and two divisions, where everything else this
-  // panel derives walks the buffer.
   const arrival = arrivalFor(quake);
 
   const [a, b] = quake.readings;
@@ -268,8 +267,6 @@ export function DetailPanel({
         />
       </div>
 
-      {/* When it reached the nearest place with a name on it. A marker says an earthquake happened at a
-          point; it does not say the point is 7km from a town that felt it two seconds later. See ARCHITECTURE.md#srcappdetailpaneltsx. */}
       {arrival ? (
         <div className="mt-4">
           <p className="text-[11px] leading-relaxed text-dim">
@@ -283,6 +280,8 @@ export function DetailPanel({
           </p>
         </div>
       ) : null}
+
+      {onFollowWave && <WaveChooser key={quake.key} quake={quake} onFollow={onFollowWave} />}
 
       {spread ? (
         <div className="mt-4">

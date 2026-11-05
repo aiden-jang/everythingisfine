@@ -1,6 +1,8 @@
 import { NIGHT_SURFACE } from "./nightSurface";
 import { lightSurface } from "./surfaceMaterial";
 import { createCutaway, type CutawayFocus } from "./cutaway";
+import { createWavePresentation } from "./wavePresentation";
+import type { WaveRun } from "../app/waveReplay";
 import { createEclipseTrack } from "./eclipseTrack";
 import type { EclipseFrame } from "../app/eclipseReplay";
 import { createRegroup } from "./regroup";
@@ -130,6 +132,7 @@ export interface Globe {
   setSlab: (points: readonly SlabPoint[] | null) => void;
   setAurora: (grid: Aurora | null) => void;
   setMoment: (value: GlobeMoment) => void;
+  setWave: (run: WaveRun | null) => void;
   setStars: (table: StarTable) => void;
   setFigures: (table: FigureTable) => void;
   setFiguresOn: (on: boolean) => void;
@@ -370,9 +373,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     figures.setSpin(sidereal);
     // The same direction that lights the Earth lights the moon, which is where its phase comes from.
     moon.setTime(at, sunDir);
-    // And the Earth's own shadow, which is the same two cones as above with the bodies swapped.
     moon.setUmbral(lunarEclipse(at).umbral);
-    // The planets move against the sky rather than with it, so their buffer is rewritten, not rotated.
     planets.setTime(at);
   };
 
@@ -410,6 +411,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   });
 
   const controls = createControls(camera, canvas, FRAMING, FOV);
+  const wave = createWavePresentation(camera, controls);
+  spin.add(wave.object);
   let markerScale = (): number => 1;
 
   const resize = (): void => {
@@ -452,6 +455,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   return {
     resize,
     controls,
+    setWave: wave.set,
     beginArrival: lights.begin,
     setCutaway: (focus) => {
       controls.setDive(focus?.dive === true);
@@ -468,7 +472,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       const tracing = figures.step(dt, reduced, !controls.skyReady());
       const grouping = regroup.step(dt, reduced);
       const settling = morph.value === 0 && !controls.framingReady();
-      return cutting || tracing || grouping || illuminating || settling;
+      const following = wave.step(dt, reduced, morph.value === 0);
+      return cutting || tracing || grouping || illuminating || settling || following;
     },
     markerRadius: (magnitude: number): number => markerRadiusPx(magnitude, markerScale()),
     setGeography: (ramp: RampName): void => {
@@ -627,15 +632,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
       lights.apply();
       starfield.prepare(camera, canvas.width, canvas.height, quietMotion || morph.value > 0);
-      // The sky fades as the curved sheet becomes an atlas.
       starfield.setOpacity(1 - morph.value);
       moon.setOpacity(1 - morph.value);
       figures.setOpacity(1 - morph.value);
       planets.setOpacity(1 - morph.value);
-      /*
-       * Gone by the time the map is flat, and not only for consistency: flattened, every point in the slab
-       * collapses onto the epicentre it sits under. Depth is the only reason the layer exists.
-       */
       if (slabOn) slab.setOpacity(1 - morph.value);
 
       /* The fill is culled on the globe and not on the map. See ARCHITECTURE.md#srcglobescenets. */
@@ -664,13 +664,13 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       for (let k = first; k <= last; k += 1) {
         world.position.x = k * period;
         renderer.render(scene, camera);
-        // Everything after the first pass paints on top of it rather than wiping it.
         renderer.autoClear = false;
       }
       renderer.autoClear = true;
       world.position.x = 0;
     },
     dispose: () => {
+      wave.dispose();
       eclipseTrack.dispose();
       regroup.dispose();
       events.dispose();

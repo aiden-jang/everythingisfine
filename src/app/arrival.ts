@@ -38,6 +38,11 @@ export function pathKm(epicentralKm: number, depthKm: number): number {
   return Math.sqrt(epicentralKm * epicentralKm + depth * depth);
 }
 
+export function travelTimes(epicentralKm: number, depthKm: number): { p: number; s: number } {
+  const path = pathKm(epicentralKm, depthKm);
+  return { p: path / P_WAVE_KM_PER_S, s: path / S_WAVE_KM_PER_S };
+}
+
 /** The arrival, from whichever reading described its own surroundings. The primary first, because a
  * distance quoted from one agency beside a position from another would be two accounts spliced into one
  * sentence. Depth comes from the same reading as the distance. */
@@ -49,9 +54,7 @@ export function arrivalFor(quake: Quake): Arrival | null {
   for (const reading of order) {
     const named = parsePlace(reading.place);
     if (!named || named.km > MAX_KM) continue;
-    const path = pathKm(named.km, reading.depthKm);
-    const p = path / P_WAVE_KM_PER_S;
-    const s = path / S_WAVE_KM_PER_S;
+    const { p, s } = travelTimes(named.km, reading.depthKm);
     return { place: named.name, km: named.km, p, gap: s - p };
   }
   return null;

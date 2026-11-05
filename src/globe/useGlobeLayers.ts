@@ -3,7 +3,16 @@ import type { GlobeProps } from "./Globe";
 
 type Values = Pick<
   GlobeProps,
-  "ramp" | "depthSink" | "cutaway" | "figures" | "moment" | "slab" | "aurora" | "marks" | "planetarium"
+  | "ramp"
+  | "depthSink"
+  | "cutaway"
+  | "figures"
+  | "moment"
+  | "slab"
+  | "aurora"
+  | "marks"
+  | "planetarium"
+  | "wave"
 >;
 type Slot<T> = { readonly current: T };
 type Bindings = {
@@ -17,13 +26,14 @@ export function useGlobeLayers(
   bindings: Bindings,
   draw: { wake: Slot<() => void>; redraw: Slot<() => void> },
 ): void {
-  const { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, planetarium } = values;
+  const { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, planetarium, wave } = values;
   const {
     ramp: rampRef,
     depthSink: sinkRef,
     cutaway: cutawayRef,
     figures: figuresRef,
     moment: momentRef,
+    wave: waveRef,
     slab: slabRef,
     aurora: auroraRef,
     marks: marksRef,
@@ -48,6 +58,19 @@ export function useGlobeLayers(
     momentRef.current(moment ?? null);
     wake.current();
   }, [moment, momentRef, wake]);
+  useLayoutEffect(() => {
+    waveRef.current(wave ?? null);
+    wake.current();
+    if (!wave) return;
+    const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    const onChange = () => wake.current();
+    const unsubscribe = wave.subscribe(onChange);
+    motion.addEventListener("change", onChange);
+    return () => {
+      unsubscribe();
+      motion.removeEventListener("change", onChange);
+    };
+  }, [wave, waveRef, wake]);
   useEffect(() => {
     slabRef.current(slab ?? null);
   }, [slab, slabRef]);

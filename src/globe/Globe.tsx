@@ -1,3 +1,4 @@
+import type { WaveRun } from "../app/waveReplay";
 import { useGlobeLayers } from "./useGlobeLayers";
 import { createFlightTarget, type FlyTo } from "./cameraTarget";
 import { createOrbitReadout } from "./orbitReadout";
@@ -47,6 +48,7 @@ export interface GlobeProps {
   figures?: FigureTable | null;
   /** Null rather than `Date.now()` on the live view, so the scene keeps its once-a-minute throttle. */
   moment?: GlobeMoment;
+  wave?: WaveRun | null;
   /** Handed in already loaded: whoever pressed the toggle pulls the chunk, and this stays a renderer. */
   slab?: readonly SlabPoint[] | null;
   /** A span, not a bucket index: the strip knows how wide its buckets are and this does not. */
@@ -90,6 +92,7 @@ export function Globe({
   slab = null,
   figures = null,
   moment = null,
+  wave = null,
   section = null,
   onSection,
 }: GlobeProps): JSX.Element {
@@ -109,6 +112,7 @@ export function Globe({
   const sinkRef = useRef<(on: boolean) => void>(() => {});
   const figuresRef = useRef<(table: FigureTable | null) => void>(() => {});
   const planetariumRef = useRef<(on: boolean) => void>(() => {});
+  const waveRef = useRef<(run: WaveRun | null) => void>(() => {});
   const momentRef = useRef<(at: GlobeMoment) => void>(() => {});
   const slabRef = useRef<(points: readonly SlabPoint[] | null) => void>(() => {});
   const auroraRef = useRef<(next: Aurora | null) => void>(() => {});
@@ -129,6 +133,7 @@ export function Globe({
     slab,
     figures,
     moment,
+    wave,
     section,
     aurora,
     marks,
@@ -145,6 +150,7 @@ export function Globe({
     slab,
     figures,
     moment,
+    wave,
     section,
     aurora,
     marks,
@@ -367,8 +373,6 @@ export function Globe({
     let frameId = 0;
     let last = 0;
     let lastZoom = globe.controls.state().zoom;
-    // Eased here rather than in CSS, because the value is a shader uniform. Set on redraw instead, the
-    // whole planet cut between two brightness levels in one frame.
     let focusFade = 0;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let morph = live.current.flat ? 1 : 0;
@@ -405,8 +409,6 @@ export function Globe({
       last = now;
       const moving = globe.controls.step(dt);
       globe.controls.apply();
-      // Only above `REPLAY_FRONT_MIN_MAG`. A day holds several hundred events and a front for each is
-      // noise; above 4.5 a day yields fifteen to twenty-five, which lands as a rhythm.
       let replaying = false;
       if (replay && !replay.done()) {
         const crossed = replay.step(rawDt);
@@ -562,12 +564,13 @@ export function Globe({
       globe.setSlab(points);
       redraw();
     };
-    // One call carries the table and the toggle, because asking for the layer is what fetches the chunk.
     momentRef.current = (at) => {
       globe.setMoment(at);
       redraw();
     };
     globe.setMoment(live.current.moment ?? null);
+    waveRef.current = globe.setWave;
+    globe.setWave(live.current.wave);
     figuresRef.current = (table) => {
       if (table !== null) globe.setFigures(table);
       globe.setFiguresOn(table !== null);
@@ -770,13 +773,14 @@ export function Globe({
   }, [filters, selected, focus, scrubAt, flat]);
 
   useGlobeLayers(
-    { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, planetarium },
+    { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, planetarium, wave },
     {
       ramp: rampRef,
       depthSink: sinkRef,
       cutaway: cutawayRef,
       figures: figuresRef,
       moment: momentRef,
+      wave: waveRef,
       slab: slabRef,
       aurora: auroraRef,
       marks: markRef,
@@ -788,10 +792,6 @@ export function Globe({
   return (
     <div className="relative h-full w-full [--scene-hud-top:76px]">
       {unavailable ? <GlobeUnavailable onRetry={() => setAttempt((n) => n + 1)} /> : null}
-      {/* `touch-action: none`, so every gesture on the globe belongs to the globe. On `auto` the browser
-          claims a pinch for page zoom before the pointer events reach the pinch handler. */}
-      {/* `aria-hidden` sits on the canvas, not the region around it: the region also holds the legend,
-          which is content and has to stay reachable. */}
       <canvas
         ref={canvas}
         aria-hidden="true"

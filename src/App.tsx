@@ -1,4 +1,6 @@
 import type { FlyTo } from "./globe/cameraTarget";
+import { WaveReplayControls } from "./app/WaveReplayControls";
+import { useWaveInspection } from "./app/useWaveInspection";
 import { CanvasFooter } from "./app/CanvasFooter";
 import { Observatory } from "./app/Observatory";
 import { journeyFor, observatorySummary, observatoryFeedNote } from "./app/journeys";
@@ -171,11 +173,10 @@ export function App(): JSX.Element {
     loadedDay === APRIL_ECLIPSE_DAY && !archiveBusy && !flat && !observatory.observing,
     setScrub,
   );
-  /* In archive mode this is the end of the archived day, not the wall clock. See ARCHITECTURE.md#srcapptsx. */
+  const wave = useWaveInspection(selected, !observatory.observing && !flat && !archiveBusy && !chase.frame);
   const now = snapshot.archive ? snapshot.archive.to : Date.now();
   const minuteClock = Math.floor(now / 60_000) * 60_000;
   const span = { from: now - filters.windowMs, to: now };
-  // Clamp on the way out, never write it back: a render must not correct its own state.
   const view = chase.frame ? { at: chase.frame.at, playing: chase.playing } : clampScrub(scrub, span);
   const viewClock = view.at === null ? null : chase.frame ? eclipseClock(view.at) : clock(view.at);
   /* The cursor reveals these layers too, quantised to the strip's bucket: playing steps it twenty times
@@ -1591,13 +1592,8 @@ export function App(): JSX.Element {
           style={{ left: railWidth - 6 }}
         />
 
-        {/* Stands down while a panel is up: same edge, and two things claiming it are two answers to one
-        question. */}
         {observatory.observing || !keyOnCanvas || section || markSubject || (shownQuake && pinned) ? null : (
           <div
-            /* Anchored at the bottom, so opening grows it upward out of the corner instead of off the screen.
-            The share-of-viewport cap is the phone's, where the canvas is a 60dvh row with the rail under
-            it. From `md` the rail floats and the canvas is the whole frame, so the key gets desktop room. */
             className="pointer-events-auto absolute right-4 bottom-4 z-[1] max-h-[46dvh] w-[300px]
               overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50
               md:max-h-[calc(100dvh_-_var(--head-h)_-_6rem)]"
@@ -1607,8 +1603,6 @@ export function App(): JSX.Element {
         )}
 
         <section aria-label="Globe" className="zone-canvas relative bg-void">
-          {/* Split out so the rail paints before three.js parses. The fallback is the void the globe
-              sits on, so nothing appears and is then replaced. */}
           <Suspense fallback={<GlobeLoading />}>
             <Globe
               feed={feed}
@@ -1623,6 +1617,7 @@ export function App(): JSX.Element {
                held cursor overrides it with the same precedence `stillMoment` uses, so the terminator and
                the caption cannot disagree. See ARCHITECTURE.md#srcapptsx. */
               moment={chase.frame ?? litAt}
+              wave={wave.run}
               flat={flat}
               planetarium={observatory.night}
               depthSink={observatory.depth || sinkOn}
@@ -1656,7 +1651,8 @@ export function App(): JSX.Element {
             className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]"
           >
             <EclipseReplayControls playback={chase} />
-            {section && !chase.frame ? (
+            <WaveReplayControls replay={wave} />
+            {section && !chase.frame && !wave.run ? (
               <CrossSection
                 data={section}
                 hinge={sectionLine?.hinge}
@@ -1668,7 +1664,7 @@ export function App(): JSX.Element {
                 onClose={() => setSectionLine(null)}
               />
             ) : null}
-            {chase.frame ? null : (
+            {chase.frame || wave.run ? null : (
               <CanvasFooter
                 flat={flat}
                 playing={view.playing}
@@ -1694,15 +1690,11 @@ export function App(): JSX.Element {
           </div>
         ) : null}
 
-        {/* Held past the unpin so the panel can leave: React removes a conditional mount on the same frame,
-            and a transition on a removed node never runs. */}
-        {/* Never folds with the chrome - this is content. Escape belongs to the browser in fullscreen, so the
-            panel's own `esc` control is how it closes there. */}
         {markSubject ? (
           <MarkCard found={markSubject} now={now} archived={archived} onClose={() => setMarkId(null)} />
         ) : shownQuake ? (
           <DetailPanel
-            open={pinned !== undefined}
+            open={pinned !== undefined && !wave.run}
             quake={shownQuake}
             store={feed.store}
             filters={filters}
@@ -1712,6 +1704,16 @@ export function App(): JSX.Element {
             now={now}
             archived={archived}
             onClose={() => setSelected(null)}
+            onFollowWave={
+              observatory.ready
+                ? (key, route, opener) => {
+                    setFlat(false);
+                    onCutaway(false);
+                    setFarSideOf(null);
+                    wave.start(key, route, opener);
+                  }
+                : null
+            }
             onSection={(line) => {
               setSectionLine(line);
               setFlat(true);
@@ -1720,8 +1722,6 @@ export function App(): JSX.Element {
             boundaryKm={boundaryKmOf(shownQuake)}
             onSelect={selectQuake}
             farSide={farSideOf === shownQuake.key}
-            /* Out to 0.9: the figure is 40,000km across, and zoomed in you see one arc with no sign it is a
-            circle. */
             onFarSide={(on) => {
               setFarSideOf(on ? shownQuake.key : null);
               if (on) flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 0.9);
