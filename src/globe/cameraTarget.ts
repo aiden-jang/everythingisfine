@@ -16,6 +16,7 @@ export function createFlightTarget(controls: Controls, wake: () => void, reveal:
       );
     controls.flyTo(lon, lat, zoom);
     if (entrance) {
+      controls.setPlanetarium(false);
       controls.enter();
       reveal();
     }

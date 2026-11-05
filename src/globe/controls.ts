@@ -1,3 +1,5 @@
+import { createPlanetarium } from "./planetarium";
+import { perspectiveAngle } from "./cameraProjection";
 import { createCameraRig } from "./cameraRig";
 import {
   advanceCameraSpring,
@@ -73,6 +75,8 @@ export interface Controls {
   /** 0 globe, 1 map. Drag becomes a pan and the facing tests fade out as this reaches 1. */
   setMorph: (t: number) => void;
   morph: () => number;
+  setPlanetarium: (on: boolean) => void;
+  skyReady: () => boolean;
   /** Screen position of a geographic point, or null when it is round the back. See ARCHITECTURE.md#srcglobecontrolsts. */
   project: (lon: number, lat: number, radius?: number) => { x: number; y: number } | null;
   /** Degrees of map covered by one screen pixel. Only meaningful once flat. See ARCHITECTURE.md#srcglobecontrolsts. */
@@ -106,6 +110,7 @@ export function createControls(
   // Reset, arc and arrival share one target so steering cancels the whole shot.
   let target: CameraTarget | null = null;
   const rig = createCameraRig(camera, canvas);
+  const sky = createPlanetarium(camera);
   const flightPose = { lon, lat, zoom },
     flightVelocity = { lon: 0, lat: 0, zoom: 0 };
 
@@ -145,29 +150,7 @@ export function createControls(
    */
   const focalPx = (): number => canvas.clientHeight / (2 * Math.tan((fovDeg / 2) * DEG));
 
-  /* How far around the globe a pixel offset from centre actually is. See ARCHITECTURE.md#srcglobecontrolsts. */
-  const exactAngle = (px: number, d: number, focal: number): number => {
-    const u = px / focal;
-    return Math.asin(Math.max(-1, Math.min(1, (u * d) / Math.sqrt(1 + u * u)))) - Math.atan(u);
-  };
-
-  /**
-   * Where the inverse above is straightened out. At the horizon the curve goes vertical, so the last
-   * pixel before the edge is worth unbounded degrees and a drag grazing the rim would fling the globe.
-   */
-  const SHOULDER = 0.985;
-
-  const angleAt = (px: number, atDist?: number): number => {
-    const d = atDist ?? dist();
-    const focal = focalPx();
-    // Pixel offset at which the exact form reaches SHOULDER of the way to the limb.
-    const limit = (focal * SHOULDER) / Math.sqrt(d * d - SHOULDER * SHOULDER);
-    const a = Math.abs(px);
-    if (a <= limit) return exactAngle(px, d, focal);
-    const at = exactAngle(limit, d, focal);
-    const slope = at - exactAngle(limit - 1, d, focal);
-    return Math.sign(px) * (at + (a - limit) * slope);
-  };
+  const angleAt = (px: number, atDist?: number): number => perspectiveAngle(px, atDist ?? dist(), focalPx());
 
   /** Geographic point under a client-space pixel, or null if the ray misses the globe. */
   const pick = (clientX: number, clientY: number): { lon: number; lat: number } | null => {
@@ -244,6 +227,7 @@ export function createControls(
     camera.position.set(orbitX, orbitY, orbitZ);
     camera.lookAt(0, 0, 0);
     rig.apply(false);
+    sky.apply();
     // Required. `lookAt` writes the quaternion but leaves matrixWorld stale until something renders,
     // and `pick` raycasts through matrixWorld. Skip it and the anchoring below measures from where the
     // camera used to be, off by tens of degrees.
@@ -277,6 +261,7 @@ export function createControls(
 
   /** One key press of camera movement, in degrees and in zoom factor. */
   const nudge = (dLon: number, dLat: number, factor = 1): void => {
+    sky.interrupt();
     const base = intended();
     aim({
       lon: base.lon + dLon,
@@ -291,6 +276,7 @@ export function createControls(
    * what lets ten fast notches travel ten notches instead of racing the animation.
    */
   const zoomAt = (factor: number, clientX: number, clientY: number): void => {
+    sky.interrupt();
     const before = pick(clientX, clientY);
     const base = intended();
     const nextZoom = clampZoom(base.zoom * factor);
@@ -345,6 +331,7 @@ export function createControls(
         /* drag still works, it just ends at the canvas edge */
       }
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      sky.interrupt();
       // Touching the globe stops it dead. Coasting through a grab feels broken.
       vLon = 0;
       vLat = 0;
@@ -516,6 +503,7 @@ export function createControls(
   };
 
   const step = (dt: number): boolean => {
+    const skyMoving = morph === 0 && sky.step(dt, reduced.matches);
     const rigMoving = rig.step(dt, cameraRigTarget(target, { lon, lat, zoom }), reduced.matches || morph > 0);
     if (target) {
       if (reduced.matches) {
@@ -537,7 +525,7 @@ export function createControls(
       }
       return true;
     }
-    let moving = rigMoving;
+    let moving = rigMoving || skyMoving;
 
     if (Math.abs(vLon) > MOMENTUM_FLOOR || Math.abs(vLat) > MOMENTUM_FLOOR) {
       lon += vLon * dt;
@@ -554,6 +542,7 @@ export function createControls(
   };
 
   function flyTo(toLon: number, toLat: number, toZoom = zoom): void {
+    sky.resume();
     const clamped = { lon: toLon, lat: clampLat(toLat), zoom: clampZoom(toZoom) };
     if (reduced.matches) {
       // Not eased, not shortened: arrived. A half-disabled motion setting is worse than none.
@@ -580,6 +569,8 @@ export function createControls(
     pick,
     flyTo,
     enter: () => {
+      if (sky.wanted()) return;
+      sky.clear();
       // Skipped under reduced motion, not shortened. A brief version of a motion somebody asked not to
       // see is still the motion.
       if (reduced.matches) return;
@@ -628,6 +619,7 @@ export function createControls(
     setMorph: (t) => {
       if (t > 0 && target?.intro) target = null;
       morph = Math.max(0, Math.min(1, t));
+      if (morph === 0) sky.step(0, reduced.matches);
       // The floor moves with the morph, so a camera parked beyond the globe's has to be brought back
       // as the map rolls up. The pending target too, or the spring drags it straight back out.
       zoom = clampZoom(zoom);
@@ -635,6 +627,12 @@ export function createControls(
       apply();
     },
     morph: () => morph,
+    setPlanetarium: (on) => {
+      sky.set(on);
+      if (morph === 0) sky.step(0, reduced.matches);
+      apply();
+    },
+    skyReady: sky.ready,
     state: () => ({ lon, lat, zoom }),
     // Visible height at distance d is 2 d tan(fov/2), and `focalPx` is the reciprocal half of that, so
     // a pixel is d/focalPx world units and a world unit is 90 degrees.

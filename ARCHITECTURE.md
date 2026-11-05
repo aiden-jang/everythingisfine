@@ -107,6 +107,9 @@ index to the matching implementation note.
 - [src/globe/cameraFlight.ts](#srcglobecameraflightts)
 - [src/globe/cameraRig.ts](#srcglobecamerarigts)
 - [src/globe/cameraTarget.ts](#srcglobecameratargetts)
+- [src/globe/cameraProjection.ts](#srcglobecameraprojectionts)
+- [src/globe/planetarium.ts](#srcglobeplanetariumts)
+- [src/globe/useGlobeLayers.ts](#srcglobeuseglobelayersts)
 - [src/globe/controls.ts](#srcglobecontrolsts)
 - [src/globe/events.perf.test.ts](#srcglobeeventsperftestts)
 - [src/globe/events.ts](#srcglobeeventsts)
@@ -2487,7 +2490,34 @@ reduced motion clear the lens; no separate animation loop is created.
 The callback resolves wake through its caller at invocation time: shared-link setup can call it before
 the frame loop exists. Pixel lift uses the sphere's perspective angle and the existing latitude/lift
 limits. Only an explicit arrival request replays the shot and reveal lighting; normal inspection
-and tour flights remain navigation.
+and tour flights remain navigation. That explicit replay also clears the planetarium pitch.
+
+### src/globe/cameraProjection.ts
+
+The sphere's perspective inverse uses the camera distance and focal length, with a linear continuation
+at the limb. Both drag anchoring and panel lift use it. The derivation remains under
+[controls](#srcglobecontrolsts), where those geographic interactions are coordinated.
+
+### src/globe/planetarium.ts
+
+After Dark holds a camera pitch independently from geographic longitude, latitude and zoom. It opens
+the sky with a finite ease-out and returns to centred framing on exit. Input freezes the displayed
+pitch; a new explicit flight can resume a wanted reveal. Reduced motion snaps to the same final sky
+composition. The catalogue never changes direction to accommodate the framing, and picking uses
+the pitched camera's actual matrix.
+
+Controls retain a pending sky request while a saved map rolls into the globe. Pitch advances only on
+the sphere; returning to a map settles it before flattening. Guide tracing waits for sky arrival,
+then completes through the existing frame loop. Hidden map guides do not hold that loop awake.
+Bootstrap arrival leaves an active sky request intact; the app restores its current geographic camera
+when graphics startup is retried.
+
+### src/globe/useGlobeLayers.ts
+
+Layer effects write through stable scene bindings and wake or redraw the existing renderer when
+necessary. Their dependencies are individual values and refs, so a camera preset or a lazy table
+does not recreate WebGL resources or feed subscriptions. Scene construction restores current values
+before these effects run, including on graphics retry.
 
 ### src/globe/controls.ts
 

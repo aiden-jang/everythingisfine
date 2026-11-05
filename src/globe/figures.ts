@@ -41,7 +41,7 @@ export interface Figures {
   setOpacity: (value: number) => void;
   /** The reader's own choice, since this layer is an interpretation and not a reading. */
   setOn: (on: boolean) => void;
-  step: (dt: number, reduced: boolean) => boolean;
+  step: (dt: number, reduced: boolean, waitingForSky?: boolean) => boolean;
   dispose: () => void;
 }
 
@@ -74,6 +74,7 @@ export function createFigures(): Figures {
   let loaded = false;
   let held: FigureTable | null = null;
   let trace = 1;
+  let skyWaiting = false;
   let on = false;
   let morph = 1;
   const show = (): void => {
@@ -129,7 +130,14 @@ export function createFigures(): Figures {
       material.uniforms["uTrace"]!.value = trace;
       show();
     },
-    step: (dt, reduced) => {
+    step: (dt, reduced, waitingForSky = false) => {
+      if (waitingForSky && !reduced && on && morph > 0.001) {
+        if (!skyWaiting) trace = 0;
+        skyWaiting = true;
+        material.uniforms["uTrace"]!.value = 0;
+        return loaded;
+      }
+      skyWaiting = false;
       trace = reduced || !on || morph <= 0.001 ? 1 : Math.min(1, trace + dt / 1.05);
       material.uniforms["uTrace"]!.value = trace;
       return loaded && on && trace < 1;

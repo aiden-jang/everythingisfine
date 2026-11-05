@@ -62,5 +62,5 @@ in the recorded-feed fixture. This keeps their original control assertions while
 first-visit presentation separately.
 
 For a local animation recording, set `EIF_CAPTURE_MOTION=1` when running
-`pnpm run test:e2e e2e/cinematic.spec.ts`. Only those journeys record video; normal verification
-keeps video capture off. Their output follows the temporary-artifact policy above.
+`pnpm run test:e2e e2e/cinematic.spec.ts e2e/planetarium.spec.ts`. Only those journeys record video;
+normal verification keeps video capture off. Their output follows the temporary-artifact policy above.

@@ -65,7 +65,7 @@ export function Observatory({
     : scene === "depth"
       ? "An opening into reported earthquake depths. Reference rings run every 300 km to 900 km; the faint points trace historical seismicity."
       : scene === "night"
-        ? "Sunlight gives way to the night side. The stars and their constellations follow the time shown in this view."
+        ? "Earth settles into the horizon as the constellations trace overhead. The sky follows the time shown in this view."
         : "A live view of earthquakes, changing skies, and a restless planet.";
   return (
     <section

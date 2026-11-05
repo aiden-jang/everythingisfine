@@ -1,3 +1,4 @@
+import { useGlobeLayers } from "./useGlobeLayers";
 import { createFlightTarget, type FlyTo } from "./cameraTarget";
 import { createOrbitReadout } from "./orbitReadout";
 import { type CutawayFocus } from "./cutaway";
@@ -37,6 +38,7 @@ export interface GlobeProps {
   /** Replay counts events, rather than the smaller number of clustered markers. */
   onReplay?: (state: { at: number; revealed: number } | null) => void;
   flat?: boolean;
+  planetarium?: boolean;
   /** Draw earthquakes at their own depth. Only means anything on the globe, and the shader fades it with
    * the morph, so unwrapping the map lifts every event back to the surface as one motion. */
   depthSink?: boolean;
@@ -81,6 +83,7 @@ export function Globe({
   marks = [],
   scrubAt = null,
   flat = false,
+  planetarium = false,
   depthSink = false,
   cutaway = null,
   slab = null,
@@ -104,6 +107,7 @@ export function Globe({
   const cutawayRef = useRef<(focus: CutawayFocus | null) => void>(() => {});
   const sinkRef = useRef<(on: boolean) => void>(() => {});
   const figuresRef = useRef<(table: FigureTable | null) => void>(() => {});
+  const planetariumRef = useRef<(on: boolean) => void>(() => {});
   const momentRef = useRef<(at: number | null) => void>(() => {});
   const slabRef = useRef<(points: readonly SlabPoint[] | null) => void>(() => {});
   const auroraRef = useRef<(next: Aurora | null) => void>(() => {});
@@ -118,6 +122,7 @@ export function Globe({
     focus,
     scrubAt,
     flat,
+    planetarium,
     depthSink,
     cutaway,
     slab,
@@ -133,6 +138,7 @@ export function Globe({
     focus,
     scrubAt,
     flat,
+    planetarium,
     depthSink,
     cutaway,
     slab,
@@ -435,7 +441,11 @@ export function Globe({
       if (morph !== morphTarget) {
         // 1.1 seconds, which is slow. Greenland swelling as it leaves the sphere is the whole argument for
         // the globe being the default view, and at 300ms nobody sees it happen.
-        const step = reducedMotion.matches ? 1 : morphTarget === 1 && globe.cutawayOpen() ? 0 : dt / 1.1;
+        const step = reducedMotion.matches
+          ? 1
+          : morphTarget === 1 && (globe.cutawayOpen() || !globe.controls.skyReady())
+            ? 0
+            : dt / 1.1;
         morph =
           morphTarget > morph ? Math.min(morphTarget, morph + step) : Math.max(morphTarget, morph - step);
         globe.setMorph(morph);
@@ -607,6 +617,8 @@ export function Globe({
       globe.stepPresentation(0, reducedMotion.matches);
       redraw();
     };
+    planetariumRef.current = (on) => globe.controls.setPlanetarium(on);
+    globe.controls.setPlanetarium(live.current.planetarium);
     cutawayRef.current = (next) => {
       globe.setCutaway(next);
       wake();
@@ -800,47 +812,21 @@ export function Globe({
     wakeRef.current();
   }, [filters, selected, focus, scrubAt, flat]);
 
-  useEffect(() => {
-    rampRef.current(ramp);
-  }, [ramp]);
-
-  useEffect(() => {
-    sinkRef.current(depthSink);
-  }, [depthSink]);
-
-  useEffect(() => {
-    cutawayRef.current(cutaway);
-  }, [cutaway]);
-
-  // Same route and the same reason as the slab: the loop is asleep when a lazy chunk lands.
-  useEffect(() => {
-    figuresRef.current(figures ?? null);
-    wakeRef.current();
-  }, [figures]);
-
-  // The loop sleeps when nothing moves, and a new moment moves the light rather than the camera.
-  useEffect(() => {
-    momentRef.current(moment ?? null);
-    wakeRef.current();
-  }, [moment]);
-
-  // Same route and the same reason as the marks: the loop is asleep when a lazy chunk lands.
-  useEffect(() => {
-    slabRef.current(slab ?? null);
-  }, [slab]);
-
-  // Handed to the scene rather than held in it, and redrawn once when it lands: the loop stops itself when
-  // nothing is moving, so a grid arriving in an idle minute has to ask for a frame.
-  useEffect(() => {
-    auroraRef.current(aurora);
-    redrawRef.current();
-  }, [aurora]);
-
-  // Same route and the same reason: the loop is asleep when a ten-minute fetch lands.
-  useEffect(() => {
-    markRef.current(marks);
-    redrawRef.current();
-  }, [marks]);
+  useGlobeLayers(
+    { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, planetarium },
+    {
+      ramp: rampRef,
+      depthSink: sinkRef,
+      cutaway: cutawayRef,
+      figures: figuresRef,
+      moment: momentRef,
+      slab: slabRef,
+      aurora: auroraRef,
+      marks: markRef,
+      planetarium: planetariumRef,
+    },
+    { wake: wakeRef, redraw: redrawRef },
+  );
 
   return (
     <div className="relative h-full w-full [--scene-hud-top:76px]">

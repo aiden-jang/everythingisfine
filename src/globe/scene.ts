@@ -461,9 +461,9 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       quietMotion = reduced;
       const illuminating = lights.step(dt, reduced);
       const cutting = cutaway.step(dt, reduced, morph.value);
-      const tracing = figures.step(dt, reduced);
+      const tracing = figures.step(dt, reduced, !controls.skyReady());
       const grouping = regroup.step(dt, reduced);
-      return cutting || tracing || grouping || illuminating;
+      return cutting || tracing || grouping || illuminating || (morph.value === 0 && !controls.skyReady());
     },
     // Geography follows the ramp's contrast requirements; see NEUTRAL for the measurement.
     markerRadius: (magnitude: number): number => markerRadiusPx(magnitude, markerScale()),

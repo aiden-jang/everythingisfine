@@ -32,7 +32,8 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Live Earth** frames the current activity; selecting it from an archive returns to live.
 - **Below the Surface** opens the deepest visible earthquake with true-scale reference guides and
   historical seismicity. It is available when the view contains a reported depth of at least 70 km.
-- **After Dark** starts on the displayed moment's night side and enables constellation guides.
+- **After Dark** opens the displayed moment's night sky above Earth's curved horizon, then traces
+  constellation guides. Reduced motion keeps the same view without the flight.
 - **Take a tour** visits a captured selection of readings and regions. Narration waits for arrival;
   Pause, Previous, Next, Stop, and Read this event remain available. Hidden tabs pause its reading time.
 - **Revisit a day** loads an archived day and frames its largest available event.

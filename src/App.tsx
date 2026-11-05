@@ -378,7 +378,7 @@ export function App(): JSX.Element {
     (fn: typeof flyTo.current) => {
       flyTo.current = fn;
       setGlobeReady(true);
-      if (shared.lon !== undefined) fn(shared.lon, shared.lat ?? 12, shared.zoom ?? 1);
+      fn(camera.current.lon, camera.current.lat, camera.current.zoom);
     },
     [setGlobeReady],
   );
@@ -495,6 +495,10 @@ export function App(): JSX.Element {
     enterObserve();
     beginTour();
   }, [beginTour, chooseScene, enterObserve]);
+  const openExplorer = (): void => {
+    stopTour();
+    observatory.exploreScene();
+  };
   const chooseEarthScene = (scene: "live" | "depth" | "night"): void => {
     stopTour();
     if (scene === "depth" && journey.deepest) {
@@ -1005,10 +1009,7 @@ export function App(): JSX.Element {
       <GlobeHeader
         ready={observatory.ready}
         observing={observatory.observing}
-        onExplore={() => {
-          stopTour();
-          observatory.exploreScene();
-        }}
+        onExplore={openExplorer}
         onHome={() => {
           stopTour();
           resetView();
@@ -1068,10 +1069,7 @@ export function App(): JSX.Element {
             feedNote={observatoryFeedNote(snapshot.statuses, feeds.silent)}
             deepAvailable={journey.deepest !== null}
             onScene={chooseEarthScene}
-            onExplore={() => {
-              stopTour();
-              observatory.exploreScene();
-            }}
+            onExplore={openExplorer}
             onHistory={(day) => {
               stopTour();
               enterExplore();
@@ -1630,6 +1628,7 @@ export function App(): JSX.Element {
                the caption cannot disagree. See ARCHITECTURE.md#srcapptsx. */
               moment={litAt}
               flat={flat}
+              planetarium={observatory.night}
               depthSink={observatory.depth || sinkOn}
               cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}
               slab={

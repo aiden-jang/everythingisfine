@@ -10,7 +10,7 @@ import { Color, Vector3 } from "three";
 
 describe("cinematic camera and light", () => {
   it("replays arrival only on request and retains perspective-correct panel lift", () => {
-    const controls = { flyTo: vi.fn(), enter: vi.fn(), degForPx: vi.fn(() => 30) };
+    const controls = { flyTo: vi.fn(), enter: vi.fn(), setPlanetarium: vi.fn(), degForPx: vi.fn(() => 30) };
     const wake = vi.fn(),
       reveal = vi.fn();
     const fly = createFlightTarget(controls as unknown as Controls, wake, reveal);
@@ -18,9 +18,11 @@ describe("cinematic camera and light", () => {
     expect(controls.flyTo).toHaveBeenLastCalledWith(10, 8, 1.5);
     expect(controls.degForPx).toHaveBeenCalledWith(100, 1.5);
     expect(controls.enter).not.toHaveBeenCalled();
+    expect(controls.setPlanetarium).not.toHaveBeenCalled();
     fly(145, 12, 1, 0, true);
     expect(controls.flyTo).toHaveBeenLastCalledWith(145, 12, 1);
     expect(controls.enter).toHaveBeenCalledTimes(1);
+    expect(controls.setPlanetarium).toHaveBeenLastCalledWith(false);
     expect(reveal).toHaveBeenCalledTimes(1);
     expect(wake).toHaveBeenCalledTimes(2);
   });

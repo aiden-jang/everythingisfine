@@ -182,6 +182,12 @@ the shot, and its lens offset settles independently. The flat map clears the cin
 Camera keys, pointer, touch and wheel preserve the same bounds and motion policy.
 Lost focus, backgrounding and dialog changes release held input.
 
+After Dark pitches the actual camera toward the sky, leaving Earth as a curved horizon.
+Constellation tracing waits for that finite reveal to settle. Returning to another scene restores
+Earth's framing; returning to a saved map settles the pitch before unwrapping. Steering interrupts
+the reveal at its displayed position. Reduced motion uses the final sky composition immediately.
+The sky catalogue keeps its displayed-time orientation throughout; no stars move to decorate the shot.
+
 Selection brackets may settle once, panels may catch a brief neutral edge light, and zoom regrouping
 may crossfade recorded marker positions. These effects must not invent intermediate epicentres or
 change magnitude encoding. Optional constellation lines trace their catalogue connections with a brief leading glint on
