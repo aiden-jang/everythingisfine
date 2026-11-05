@@ -51,6 +51,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Watch Tonga’s shockwave** opens on infrared and water-vapor scans of the 2022 eruption,
   then pulls back to follow the estimated atmospheric wave. Pick a ground station to jump to
   its pressure pulse. Reduced motion opens the eruption scan with the same timeline and stations.
+- **Follow Kīlauea’s lava** follows the 2018 flow from Fissure 8 to Kapoho Bay using dated USGS
+  maps and a brief HVO overflight. Compare the historic shore with the August 9 footprint at the
+  same scale. Reduced motion keeps the dated maps and the comparison in fixed views.
 - **Save view** uses the existing captioned image export, including the reference-cutaway label.
 
 The opening pulls back from the horizon into orbit. Long camera flights bank gently, bright stars
@@ -117,6 +120,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Tōhoku rupture and shaking | USGS finite-fault model and preferred ShakeMap Atlas MMI contours |
 | Katrina replay | NOAA National Hurricane Center Atlantic HURDAT2 best track |
 | Tonga replay | NOAA GOES-17 ABI bands 13 and 8, one-minute ASOS via Iowa Environmental Mesonet, Wright et al. (2022) |
+| Kīlauea replay | USGS lower East Rift Zone chronology, HVO helicopter footage, 3DEP reference relief, Hawaiʻi Statewide GIS historic coast |
 | Stars | Yale Bright Star Catalogue, BSC5 |
 | Constellation figures | d3-celestial, copyright (c) 2015 Olaf Frohn, BSD 3-Clause |
 
@@ -139,6 +143,14 @@ antipode. The station charts retain the measured minute-by-minute pressure, conv
 [NOAA GOES archive](https://registry.opendata.aws/noaa-goes/) ·
 [ASOS archive](https://mesonet.agron.iastate.edu/request/asos/1min.phtml) ·
 [Wright et al.](https://doi.org/10.1038/s41586-022-05012-5).
+
+Kīlauea’s map dates use Hawaiʻi Standard Time. Lava entered Kapoho Bay late on June 3. The
+June 4 evening snapshot is the first dated map in the replay with the new delta. The comparison
+uses the Hawaiʻi Statewide GIS coastline derived from 1983 USGS maps and the final mapped 2018
+Fissure 8 deposit. The shaded relief provides a fixed reference surface across the dates.
+[USGS lava maps](https://doi.org/10.5066/P9S7UQKQ) ·
+[Historic coastline metadata](https://files.hawaii.gov/dbedt/op/gis/data/coastline.pdf) ·
+[HVO June 4 overflight](https://www.usgs.gov/media/videos/kilauea-volcano-lava-entering-kapoho-bay).
 
 Colour represents magnitude. Other hazards use distinct shapes, with neutral interface controls.
 

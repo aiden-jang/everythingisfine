@@ -4,6 +4,7 @@ import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import { RuptureReveal, TOHOKU_DAY } from "./rupture/RuptureReveal";
 import { StormReplay } from "./storm/StormReplay";
 import { TongaReplay } from "./tonga/TongaReplay";
+import { KilaueaReplay } from "./kilauea/KilaueaReplay";
 import { AuroraOverflightControls } from "./AuroraOverflightControls";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene } from "./useObservatory";
@@ -206,6 +207,7 @@ export function Observatory({
               <RuptureReveal />
               <StormReplay />
               <TongaReplay />
+              <KilaueaReplay />
               <button type="button" onClick={() => onHistory("2013-05-24")}>
                 Deep beneath Okhotsk ↗
               </button>

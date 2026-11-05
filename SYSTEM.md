@@ -45,6 +45,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/ArchiveScene.tsx` | Shared archive dialog, on-demand scene loading and focus |
 | `src/app/storm/` | Katrina best track, spherical regional projection and playback |
 | `src/app/tonga/` | GOES-17 image crops, estimated Lamb wave and measured ASOS station traces |
+| `src/app/kilauea/` | USGS lava chronology, HVO overflight, and historic shoreline comparison |
 | `src/app/useStill.ts` | Synchronous canvas capture, caption, native sharing, download fallback |
 | `src/app/stillDelivery.ts` | Attached download links and deferred object URL cleanup |
 | `src/app/Utilities.tsx` | Mobile disclosure focus, outside dismissal, Escape and resize lifetime |
@@ -119,6 +120,11 @@ Tonga loads two compressed satellite atlases only when opened. Its replay clock 
 times, then drives the estimated wavefront and cursor in the observed pressure window. The atlas
 metadata records the source keys and the ASOS requests. Regenerate it with
 [make-tonga.py](tools/make-tonga.py) using Python with h5py, NumPy, Pillow, and fsspec with HTTP support.
+
+Kīlauea loads a regional map on demand. Dated lava increments accumulate into each snapshot.
+The coastline comparison combines the historic coastline with the mapped Fissure 8 delta.
+The data generator [make-kilauea.py](tools/make-kilauea.py) uses Python with NumPy, Pillow,
+PyProj, PyShp, and Shapely, plus FFmpeg for the HVO excerpt.
 
 After Dark reuses the polled NOAA grid for aurora overflight. A flight holds one forecast while
 the camera and readout follow it. The frame loop drives the veil sweep and stops when it settles.

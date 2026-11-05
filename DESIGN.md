@@ -216,6 +216,11 @@ pulls back into an orbit view. The ring is an estimate of the atmospheric wave. 
 stays tied to measured pressure on the same UTC clock. Chapter jumps and reduced motion use static
 framing.
 
+Kīlauea starts tilted over Fissure 8 and follows the mapped extent toward Kapoho Bay. The dated
+HVO overflight marks the ocean entry. The camera levels at the bay for the shoreline wipe, which
+holds scale and position so the former coast and the new land can be compared. Reduced motion
+uses fixed maps and the manual wipe.
+
 The globe opens into a curved sheet from its map seam. The camera pulls back to show the curl, then
 settles at the selected map location. The same path wraps the sheet back into the globe, and changing
 direction continues from the displayed frame. Reduced motion switches directly between the projections.
