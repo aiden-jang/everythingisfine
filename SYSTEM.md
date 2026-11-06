@@ -52,7 +52,8 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/stillDelivery.ts` | Attached download links and deferred object URL cleanup |
 | `src/app/Utilities.tsx` | Mobile disclosure focus, outside dismissal, Escape and resize lifetime |
 | `src/app/useGlobeResources.ts` | Deferred geometry and timezone data, retained while disabled, with completion cleanup |
-| `src/app/useObservatory.ts` | First-visit and saved presentation, temporary scene overrides, reduced-motion-aware view transitions |
+| `src/app/useObservatory.ts` | First-visit and saved presentation, temporary scene overrides, reduced-motion-aware globe handoff |
+| `src/app/radar/` and `src/sources/radar.ts` | Storm Radar flight, scrubber, and the NOAA scan catalogue |
 | `src/app/Observatory.tsx` | Intro, scene choices, captured-story narration and tour controls |
 | `src/app/GlobeHeader.tsx` | Shared masthead, capture, source status and explorer tools |
 | `src/app/CanvasFooter.tsx` | Explorer credit and input hints |
@@ -145,6 +146,11 @@ the camera and readout follow it. The frame loop drives the veil sweep and stops
 Sun Watch opens over that same globe and polls the two NOAA observation endpoints independently
 while visible. Each retains its latest reading through failures with a status label and timestamp.
 Closing Sun Watch cancels both requests and returns to the stars or starts the aurora flight.
+
+Storm Radar loads on demand and polls NOAA’s MRMS catalogue while its dialog is visible. The
+scrubber uses published timestamps and requests each raster by its NOAA record ID. Closing the
+dialog aborts requests and releases decoded images. [make-radar-map.mjs](tools/make-radar-map.mjs)
+regenerates the shared map outlines from pinned Census geometry and Natural Earth coastlines.
 
 WebGL startup failures have a retry surface; they do not remove the event list and filters.
 Scene callbacks use current refs so changing a selection does not recreate WebGL resources.

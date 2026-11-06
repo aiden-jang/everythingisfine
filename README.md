@@ -39,6 +39,8 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Follow the aurora** in After Dark banks over a dark-side NOAA OVATION forecast oval and settles
   into a polar view. The readout shows the forecast time and modeled chance at the focus. The
   raised glow illustrates the footprint. Reduced motion opens the polar view directly.
+- **Storm Radar** banks toward recent radar returns over the contiguous United States. Play or
+  scrub through up to an hour of live NOAA scans at their published UTC times.
 - **Take a tour** visits a captured selection of readings and regions. Narration waits for arrival;
   Pause, Previous, Next, Stop, and Read this event remain available. Hidden tabs pause its reading time.
 - **Revisit a day** loads an archived day and frames its largest available event.
@@ -123,6 +125,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Archived earthquakes | USGS and EMSC FDSN endpoints |
 | Live storms, volcanoes, wildfires, floods | GDACS, retaining the credited reporting agency |
 | Archived hazards | NASA EONET |
+| Storm Radar | [NOAA MRMS base reflectivity](https://mapservices.weather.noaa.gov/eventdriven/rest/services/radar/radar_base_reflectivity_time/ImageServer), U.S. Census boundaries |
 | Aurora forecast | NOAA SWPC OVATION |
 | Sun Watch | NOAA SWPC real-time solar wind, primary GOES X-ray flux, NASA/GSFC Solar Dynamics Observatory |
 | Coastlines and replay cities | Natural Earth, public domain |

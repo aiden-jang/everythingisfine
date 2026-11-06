@@ -60,7 +60,7 @@ export function ArchiveScene({ label, title, subtitle, credits, load, className 
             <p className="archive-scene-loading" role="status">
               {stage === "error"
                 ? "This scene couldn’t load. Reload the page to try again."
-                : "Loading the archive scene…"}
+                : "Loading the scene…"}
             </p>
           ))}
         <footer className="archive-scene-credits">{credits}</footer>

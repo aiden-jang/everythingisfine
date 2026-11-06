@@ -7,6 +7,7 @@ import { TongaReplay } from "./tonga/TongaReplay";
 import { KilaueaReplay } from "./kilauea/KilaueaReplay";
 import { IcebergReplay } from "./iceberg/IcebergReplay";
 import { MegaflashReplay } from "./megaflash/MegaflashReplay";
+import { StormRadar } from "./radar/StormRadar";
 import { AuroraOverflightControls } from "./AuroraOverflightControls";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene } from "./useObservatory";
@@ -197,6 +198,7 @@ export function Observatory({
               >
                 Take a tour <span aria-hidden="true">→</span>
               </button>
+              {scene === "live" && <StormRadar />}
             </div>
             {scene !== "night" ? (
               <p className="observatory-summary">
