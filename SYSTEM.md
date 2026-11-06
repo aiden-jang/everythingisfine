@@ -46,6 +46,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/storm/` | Katrina best track, spherical regional projection and playback |
 | `src/app/tonga/` | GOES-17 image crops, estimated Lamb wave and measured ASOS station traces |
 | `src/app/kilauea/` | USGS lava chronology, HVO overflight, and historic shoreline comparison |
+| `src/app/iceberg/` | On-demand A-68A tracks, dated satellite imagery, and fragment inspection |
 | `src/app/useStill.ts` | Synchronous canvas capture, caption, native sharing, download fallback |
 | `src/app/stillDelivery.ts` | Attached download links and deferred object URL cleanup |
 | `src/app/Utilities.tsx` | Mobile disclosure focus, outside dismissal, Escape and resize lifetime |
@@ -125,6 +126,11 @@ Kīlauea loads a regional map on demand. Dated lava increments accumulate into e
 The coastline comparison combines the historic coastline with the mapped Fissure 8 delta.
 The data generator [make-kilauea.py](tools/make-kilauea.py) uses Python with NumPy, Pillow,
 PyProj, PyShp, and Shapely, plus FFmpeg for the HVO excerpt.
+
+Iceberg Drift loads the regional coastline, daily iceberg fixes, and three satellite images
+only when opened. The photo cuts hold their source dates. The map joins consecutive fixes and
+marks the previous fix when the selected date has no position. Regenerate the bundled tracks
+and WebP images with [make-iceberg.mjs](tools/make-iceberg.mjs) using Node and `cwebp`.
 
 After Dark reuses the polled NOAA grid for aurora overflight. A flight holds one forecast while
 the camera and readout follow it. The frame loop drives the veil sweep and stops when it settles.

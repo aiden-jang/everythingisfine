@@ -54,6 +54,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Follow Kīlauea’s lava** follows the 2018 flow from Fissure 8 to Kapoho Bay using dated USGS
   maps and a brief HVO overflight. Compare the historic shore with the August 9 footprint at the
   same scale. Reduced motion keeps the dated maps and the comparison in fixed views.
+- **Follow iceberg A-68A** flies over the Scotia Sea, cuts to three dated satellite views,
+  and traces 13 tracked fragments after the breakup. Choose an iceberg to jump to its last
+  listed position. Reduced motion opens a still with the same date and track controls.
 - **Save view** uses the existing captioned image export, including the reference-cutaway label.
 
 The opening pulls back from the horizon into orbit. Long camera flights bank gently, bright stars
@@ -121,6 +124,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Katrina replay | NOAA National Hurricane Center Atlantic HURDAT2 best track |
 | Tonga replay | NOAA GOES-17 ABI bands 13 and 8, one-minute ASOS via Iowa Environmental Mesonet, Wright et al. (2022) |
 | Kīlauea replay | USGS lower East Rift Zone chronology, HVO helicopter footage, 3DEP reference relief, Hawaiʻi Statewide GIS historic coast |
+| Iceberg Drift | UK Polar Data Centre A-68A and descendant tracks, NASA Earth Observatory images from Terra MODIS, Landsat 8 and NOAA-20 VIIRS |
 | Stars | Yale Bright Star Catalogue, BSC5 |
 | Constellation figures | d3-celestial, copyright (c) 2015 Olaf Frohn, BSD 3-Clause |
 
@@ -151,6 +155,15 @@ Fissure 8 deposit. The shaded relief provides a fixed reference surface across t
 [USGS lava maps](https://doi.org/10.5066/P9S7UQKQ) ·
 [Historic coastline metadata](https://files.hawaii.gov/dbedt/op/gis/data/coastline.pdf) ·
 [HVO June 4 overflight](https://www.usgs.gov/media/videos/kilauea-volcano-lava-entering-kapoho-bay).
+
+Iceberg Drift covers November 5, 2020 through April 16, 2021. It smooths movement between
+consecutive positions in the source catalogue and leaves missing dates as gaps. The catalogue
+interpolated some isolated cloudy days. A hollow marker shows the last position available at the
+selected date. A-68A’s area appears only on dates with a Sentinel-1 radar measurement. [Smith and Bigg, UK Polar Data Centre](https://doi.org/10.5285/d56d9e3f-80d2-4076-9e70-24f662c0e362) ·
+[Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/) ·
+[NASA approach](https://science.nasa.gov/earth/earth-observatory/iceberg-a-68a-nears-south-georgia-147535/) ·
+[NASA breakup](https://science.nasa.gov/earth/earth-observatory/iceberg-goes-with-the-flow-147715/) ·
+[NASA fragments](https://science.nasa.gov/earth/earth-observatory/pieces-of-iceberg-a-68a-147785/).
 
 Colour represents magnitude. Other hazards use distinct shapes, with neutral interface controls.
 

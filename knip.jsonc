@@ -5,6 +5,8 @@
   "project": ["worker/**/*.ts", "analytics/**/*.ts", "src/**/*.{ts,tsx,css}", "tools/*.mjs", "e2e/**/*.ts"],
   // Vite aliases React imports to Preact; both dependency warnings describe that intentional alias.
   "ignoreDependencies": ["preact", "react", "react-dom"],
+  // The offline iceberg asset generator uses the system WebP encoder.
+  "ignoreBinaries": ["cwebp"],
   // Include exports used only by their own file or tests; report symbols with no consumers.
   "ignoreExportsUsedInFile": true,
 }

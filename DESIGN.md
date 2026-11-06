@@ -221,6 +221,11 @@ HVO overflight marks the ocean entry. The camera levels at the bay for the shore
 holds scale and position so the former coast and the new land can be compared. Reduced motion
 uses fixed maps and the manual wipe.
 
+Iceberg Drift opens on Terra MODIS, banks along A-68A’s track, and cuts to Landsat and VIIRS
+on their capture dates. The flight levels into a regional map as the tracks diverge. Selecting
+a fragment highlights its path and jumps to its last recorded fix. Reduced motion opens a
+still and keeps the date slider and track picker available.
+
 The globe opens into a curved sheet from its map seam. The camera pulls back to show the curl, then
 settles at the selected map location. The same path wraps the sheet back into the globe, and changing
 direction continues from the displayed frame. Reduced motion switches directly between the projections.
