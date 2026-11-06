@@ -17,13 +17,8 @@ export interface EventListProps {
    * being new, and a second implementation is a second chance to announce a cold-load backlog. */
   onNews?: (magnitudes: number[]) => void;
   onAnnounceAboveChange: (value: number) => void;
-  /** True before any feed has delivered, so an empty list is not blamed on the filters. */
-  waiting: boolean;
-  /**
-   * How many events the span holds before any filter is applied. Zero and "excluded by the filters" read
-   * identically without this: an archived 1960s day where both agencies answered nothing said "No events
-   * match the current filters", sending a viewer to widen a control that was never the problem.
-   */
+  coverage: "loading" | "unavailable" | "ready";
+  /** Unfiltered reports, used to tell an empty result apart from filters hiding the data. */
   reported: number;
   /** The clock every age in this list is measured against. Passed in, because on an archived day it is
    * the end of that day: `Date.now()` put "99d" on every row while the title block said "13h". */
@@ -56,7 +51,7 @@ export function EventList({
   announceAbove,
   onAnnounceAboveChange,
   onNews,
-  waiting,
+  coverage,
   reported,
   now,
   archived = false,
@@ -71,6 +66,7 @@ export function EventList({
   const items = useRef<(HTMLButtonElement | null)[]>([]);
   const announced = useRef(new Set<string>());
   const [announcement, setAnnouncement] = useState("");
+  const filtered = coverage !== "loading" && reported > 0;
 
   /* The live region, gated by magnitude and by the clock. See ARCHITECTURE.md#srcappeventlisttsx. */
   useEffect(() => {
@@ -153,15 +149,17 @@ export function EventList({
       </details>
 
       {quakes.length === 0 ? (
-        // Blaming the filters is only right when there is something for them to exclude. Three states,
-        // three sentences, and only the last is about the controls.
         <p className="mt-2 text-[12px] text-faint">
-          {waiting
-            ? "Waiting for the first events."
-            : reported === 0
-              ? `Nothing was reported ${archived ? "on this day" : "in this window"}.`
-              : "No events match the current filters."}
-          {!waiting && reported > 0 && (
+          <span role="status">
+            {filtered
+              ? "No earthquakes match the current filters."
+              : coverage === "loading"
+                ? "Loading earthquake reports…"
+                : coverage === "unavailable"
+                  ? "Earthquake feeds unavailable. Retrying automatically."
+                  : `No earthquakes reported ${archived ? "on this day" : "in this window"}.`}
+          </span>
+          {filtered && (
             <button
               type="button"
               className="ml-2 min-h-8 cursor-pointer text-ink underline underline-offset-4"

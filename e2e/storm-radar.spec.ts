@@ -25,8 +25,10 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   const times = [now - 35 * 60_000, now - 13 * 60_000, now - 4 * 60_000];
   const ids: number[] = [];
   let queries = 0;
+  let catalogueDown = false;
   await page.route("**/radar_base_reflectivity_time/ImageServer/query?**", (route) => {
     queries += 1;
+    if (catalogueDown) return route.fulfill({ status: 503 });
     return route.fulfill({
       json: {
         features: times.map((at, index) => ({ attributes: { objectid: index + 1, idp_validtime: at } })),
@@ -54,7 +56,7 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   await expect(page.getByRole("group", { name: "Radar on the globe" })).toBeInViewport();
   expect(await canvas.evaluate((element, original) => element === original, globe)).toBe(true);
   const slider = scene.getByRole("slider", { name: "Radar scan time" });
-  const time = scene.locator("time");
+  const time = scene.locator(".radar-clock time");
   const timestamp = (index: number) => new Date(times[index]!).toISOString();
 
   await expect(time).toHaveAttribute("datetime", timestamp(2));
@@ -80,6 +82,17 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   await scene.getByRole("button", { name: "Map", exact: true }).click();
   await expect(page.getByRole("group", { name: "Radar on the map" })).toBeVisible();
   await expect(time).toHaveAttribute("datetime", timestamp(2));
+  await slider.press("Home");
+  catalogueDown = true;
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  const status = scene.getByRole("status");
+  await expect(status).toContainText("Showing the last available radar scans.");
+  await expect(status.locator("time")).toHaveAttribute("datetime", timestamp(2));
+  await expect(time).toHaveAttribute("datetime", timestamp(0));
+  catalogueDown = false;
+  await scene.getByRole("button", { name: "Retry NOAA" }).click();
+  await expect(status).not.toContainText("Showing the last available radar scans.");
+  await expect(time).toHaveAttribute("datetime", timestamp(0));
   await page.keyboard.press("Escape");
   await expect(scene).toBeHidden();
   await expect(trigger).toBeFocused();
@@ -101,7 +114,7 @@ test("Storm Radar returns to Explore with the same globe", async ({ page }) => {
   const trigger = page.getByRole("button", { name: "Storm Radar", exact: true });
   await trigger.click();
   const scene = page.getByRole("region", { name: "Storm Radar" });
-  await expect(scene.getByRole("status")).toHaveText("NOAA’s catalogue has no scans.");
+  await expect(scene.getByRole("status")).toHaveText("No recent radar scans available.");
   await scene.getByRole("button", { name: "Back to Explore" }).click();
   await expect(scene).toBeHidden();
   await expect(trigger).toBeFocused();

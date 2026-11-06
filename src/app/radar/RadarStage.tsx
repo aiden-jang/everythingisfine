@@ -73,13 +73,15 @@ export function RadarStage({ onView }: { onView: (view: RadarView) => void }): J
 
   const place = region?.name ?? "National view";
   const delayed = latest !== undefined && checkedAt - latest.at > 20 * 60_000;
+  const lastAvailable =
+    status === "error" || status === "empty" ? scans.filter(({ id }) => images.get(id)).at(-1) : undefined;
   const statusText =
     status === "loading"
-      ? "Connecting to NOAA…"
+      ? "Loading NOAA radar scans…"
       : status === "empty"
-        ? "NOAA’s catalogue has no scans."
+        ? "No recent radar scans available."
         : status === "error"
-          ? "NOAA’s catalogue is unavailable."
+          ? "Couldn’t reach NOAA radar."
           : image === null
             ? "This scan’s image is unavailable."
             : image === undefined
@@ -116,7 +118,17 @@ export function RadarStage({ onView }: { onView: (view: RadarView) => void }): J
             </select>
           </label>
         </div>
-        <p role="status">{statusText}</p>
+        <p role="status">
+          {lastAvailable ? (
+            <>
+              Showing the last available radar scans. Latest available scan{" "}
+              <time dateTime={new Date(lastAvailable.at).toISOString()}>{label(lastAvailable.at)}</time>.
+              {image === null && " This scan’s image is unavailable."}
+            </>
+          ) : (
+            statusText
+          )}
+        </p>
         {canRetry && (
           <button type="button" className="radar-retry" onClick={retry}>
             Retry NOAA

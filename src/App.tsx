@@ -174,6 +174,11 @@ export function App(): JSX.Element {
     }
   });
   const { archiveHazards, backToLive, stepDay, archiveBusy, archiveDay, loadedDay } = archiveState;
+  const earthquakeFeedsDown =
+    !archived &&
+    !archiveBusy &&
+    snapshot.statuses.usgs.kind === "failing" &&
+    snapshot.statuses.emsc.kind === "failing";
   const [mapOn, setFlat] = useStoredFlag("flat", false, shared.section ? true : shared.flat);
   const flat = observatory.observing ? observatory.observations.map : mapOn;
   const chase = useEclipsePlayback(
@@ -1235,13 +1240,7 @@ export function App(): JSX.Element {
                 disclaimers under a number that meant nothing. */}
               {snapshot.coveredSince === null ? (
                 <div className="mt-2 max-w-[30ch] text-[14px] leading-snug text-dim">
-                  {/* Reads `archiveDay`, which is set before the fetch starts. `archive` and `coveredSince` are both
-                    set by the success handler, so a page opened straight at a past day said "the last day" about 2011
-                    until the answer landed. */}
-                  {/* "Asking" stops being true once both feeds have answered no: eighteen seconds into a total outage
-                    the rail read "Asking USGS and EMSC" above "USGS is not answering". Only when both fail - one feed
-                    down is a caveat the notice already carries. */}
-                  {snapshot.statuses.usgs.kind === "failing" && snapshot.statuses.emsc.kind === "failing"
+                  {earthquakeFeedsDown
                     ? "Neither feed is answering yet."
                     : archiveBusy && archiveDay
                       ? `Asking USGS and EMSC for ${archiveDay}.`
@@ -1354,8 +1353,8 @@ export function App(): JSX.Element {
             statuses={snapshot.statuses}
             archiveDay={archived ? loadedDay : null}
             cursor={view.at}
-            staleCursor={staleCursor}
-            missingEvent={Boolean(missingShared && !pinned && (archived || snapshot.stats.quakes > 0))}
+            staleCursor={!archiveBusy && staleCursor}
+            missingEvent={Boolean(missingShared && !pinned && snapshot.coveredSince !== null)}
           />
 
           <div data-rail="legend">{marksFilter}</div>
@@ -1405,8 +1404,9 @@ export function App(): JSX.Element {
             announceAbove={announceAbove}
             onAnnounceAboveChange={setAnnounceAbove}
             onNews={onNews}
-            waiting={snapshot.coveredSince === null}
-            /* Unfiltered on purpose: turning both sources off should be blamed, a quiet day should not. */
+            coverage={
+              earthquakeFeedsDown ? "unavailable" : snapshot.coveredSince === null ? "loading" : "ready"
+            }
             reported={snapshot.stats.quakes}
             now={now}
             archived={archived}

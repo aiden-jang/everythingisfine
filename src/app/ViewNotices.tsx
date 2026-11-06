@@ -35,16 +35,20 @@ export function ViewNotices({ statuses, archiveDay, cursor, staleCursor, missing
       )}
       {staleCursor && (
         <p data-rail="notice" className={notice} role="status">
-          {cursor === null
-            ? "The moment in this link is outside the window, so this is the present instead."
-            : "The moment in this link is older than the window, so this is the oldest moment the buffer still holds."}
+          {archiveDay
+            ? cursor === null
+              ? "This link’s time is outside the archived day. Showing the full day."
+              : "This link’s time is before the archived day. Showing the start of that day."
+            : cursor === null
+              ? "This link’s time is outside the live window. Showing the live view."
+              : "This link’s time is older than the live window. Showing the start of the window."}
         </p>
       )}
       {missingEvent && (
         <p data-rail="notice" className={notice} role="status">
           {archiveDay
-            ? `The available archive readings for ${archiveDay} don’t include this event.`
-            : "The event in this link is no longer in the window of available readings."}
+            ? `Couldn’t find this earthquake in the archive reports for ${archiveDay}.`
+            : "Couldn’t find this earthquake in the available live reports."}
         </p>
       )}
     </>

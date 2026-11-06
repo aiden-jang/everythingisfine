@@ -450,8 +450,9 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
   await expect(rail.locator("[data-event-count]")).toHaveCount(0);
   // Writing this test turned up two more of the same kind. The strip reported "nothing yet" beside
   // the sentence, and the list blamed the filters for a feed that had not answered yet.
-  await expect(rail).toContainText("Waiting for the first events.");
-  await expect(rail).not.toContainText("No events match");
+  const recent = page.getByRole("region", { name: "Recent earthquakes" });
+  await expect(recent.getByRole("status")).toHaveText("Loading earthquake reports…");
+  await expect(recent.getByRole("button", { name: "Clear filters" })).toHaveCount(0);
   await expect(rail).not.toContainText("not quiet hours");
 
   // Both tracks on screen from the first frame, empty, and saying which state they are in. The sentence above
@@ -609,6 +610,9 @@ test("a dead feed says so, and does not claim a covered day", async ({ page }) =
   await expect(rail).not.toContainText("last 24 hours");
   await expect(rail).not.toContainText("Asking USGS and EMSC");
   await expect(rail).toContainText(/Neither feed is answering/);
+  await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("status")).toHaveText(
+    "Earthquake feeds unavailable. Retrying automatically.",
+  );
 });
 
 test.describe("on a touch screen", () => {
@@ -791,8 +795,27 @@ test("a link naming an event that has aged out says so", async ({ page }) => {
 
   // Silently opening no panel would look like the link was broken. The app knows why, so it says
   // why, which is the same honesty the window's left edge gets.
-  await expect(page.locator(".zone-rail")).toContainText("no longer in the window");
+  await expect(page.locator(".zone-rail")).toContainText(
+    "Couldn’t find this earthquake in the available live reports.",
+  );
   await expect(page.locator(".zone-panel")).toHaveCount(0);
+});
+
+test("a shared time outside the live window explains the view it opens", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page);
+  const now = Math.floor(Date.now() / 1000);
+  const rail = page.locator(".zone-rail");
+
+  await page.goto(`/?share=older#w=24&c=${now - 2 * 86_400}`);
+  await expect(rail).toContainText(
+    "This link’s time is older than the live window. Showing the start of the window.",
+  );
+  await expect(rail.locator(".view-mode")).toHaveText("View time Held");
+
+  await page.goto(`/?share=future#w=24&c=${now + 3600}`);
+  await expect(rail).toContainText("This link’s time is outside the live window. Showing the live view.");
+  await expect(rail.locator(".view-mode")).toHaveText("View time Live");
 });
 
 /*

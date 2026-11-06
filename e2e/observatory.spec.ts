@@ -215,6 +215,9 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await expect(page.getByText("Below the Surface needs a quake at least 70 km deep.")).toBeVisible();
   await page.getByRole("button", { name: "Explore the globe" }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
+  await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("status")).toHaveText(
+    "No earthquakes reported in this window.",
+  );
 });
 
 test("unavailable earthquake feeds do not masquerade as an empty or loading view", async ({ page }) => {
