@@ -10,7 +10,8 @@ import { attachSectionDrawing, type SectionCommit } from "./sectionDrawing";
 import { useEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
 import { loadStars, type FigureTable } from "../geo/stars";
-import { createGlobe, type GlobeMoment, type SkyPresentation } from "./scene";
+import { createGlobe, type GlobeMoment } from "./scene";
+import { isRadar, type GlobePresentation } from "./scenePresentation";
 import { sinkFraction, type FocusSpan } from "./events";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 import { createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
@@ -40,7 +41,7 @@ export interface GlobeProps {
   /** Replay counts events, rather than the smaller number of clustered markers. */
   onReplay?: (state: { at: number; revealed: number } | null) => void;
   flat?: boolean;
-  skyPresentation?: SkyPresentation;
+  globePresentation?: GlobePresentation;
   /** Draw earthquakes at their own depth. Only means anything on the globe, and the shader fades it with
    * the morph, so unwrapping the map lifts every event back to the surface as one motion. */
   depthSink?: boolean;
@@ -86,7 +87,7 @@ export function Globe({
   marks = [],
   scrubAt = null,
   flat = false,
-  skyPresentation = null,
+  globePresentation = null,
   depthSink = false,
   cutaway = null,
   slab = null,
@@ -111,7 +112,7 @@ export function Globe({
   const cutawayRef = useRef<(focus: CutawayFocus | null) => void>(() => {});
   const sinkRef = useRef<(on: boolean) => void>(() => {});
   const figuresRef = useRef<(table: FigureTable | null) => void>(() => {});
-  const skyRef = useRef<(mode: NonNullable<GlobeProps["skyPresentation"]> | null) => void>(() => {});
+  const presentationRef = useRef<(mode: GlobePresentation) => void>(() => {});
   const inspectionRef = useRef<(run: InspectionRun | null) => void>(() => {});
   const momentRef = useRef<(at: GlobeMoment) => void>(() => {});
   const slabRef = useRef<(points: readonly SlabPoint[] | null) => void>(() => {});
@@ -127,7 +128,7 @@ export function Globe({
     focus,
     scrubAt,
     flat,
-    skyPresentation,
+    globePresentation,
     depthSink,
     cutaway,
     slab,
@@ -144,7 +145,7 @@ export function Globe({
     focus,
     scrubAt,
     flat,
-    skyPresentation,
+    globePresentation,
     depthSink,
     cutaway,
     slab,
@@ -537,9 +538,7 @@ export function Globe({
       placeOverlays();
     };
     redrawRef.current = redraw;
-    auroraRef.current = (grid) => {
-      globe.setAurora(grid);
-    };
+    auroraRef.current = globe.setAurora;
     markRef.current = (next) => {
       globe.setMarks(next);
     };
@@ -572,8 +571,8 @@ export function Globe({
       globe.stepPresentation(0, reducedMotion.matches);
       redraw();
     };
-    skyRef.current = globe.setSkyPresentation;
-    skyRef.current(live.current.skyPresentation);
+    presentationRef.current = globe.setPresentation;
+    presentationRef.current(live.current.globePresentation);
     cutawayRef.current = (next) => {
       globe.setCutaway(next);
       wake();
@@ -677,6 +676,7 @@ export function Globe({
 
     let downAt: { x: number; y: number } | null = null;
     const onDown = (e: PointerEvent): void => {
+      if (isRadar(live.current.globePresentation)) return;
       interrupt();
       downAt = { x: e.clientX, y: e.clientY };
     };
@@ -769,7 +769,7 @@ export function Globe({
   }, [filters, selected, focus, scrubAt, flat]);
 
   useGlobeLayers(
-    { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, skyPresentation, inspection },
+    { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, globePresentation, inspection },
     {
       ramp: rampRef,
       depthSink: sinkRef,
@@ -780,7 +780,7 @@ export function Globe({
       slab: slabRef,
       aurora: auroraRef,
       marks: markRef,
-      skyPresentation: skyRef,
+      globePresentation: presentationRef,
     },
     { wake: wakeRef, redraw: redrawRef },
   );

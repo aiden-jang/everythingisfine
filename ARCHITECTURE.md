@@ -3006,6 +3006,11 @@ intent and selects the largest available event, so a late answer cannot move a n
 
 ### src/globe/scene.ts
 
+Storm Radar uses the same scene and camera as the other Observatory views. The curved raster patch
+shares the extent of NOAA’s geographic image request. The radar panel owns the decoded scans, and
+the renderer owns only the selected texture. A missing image clears that texture while retaining
+the scan time. The event catalogue is hidden and picking is suspended until the radar view closes.
+
 **The globe's palette, brightest last: sea, land, graticule, coast, plates**
 
 The globe's palette, brightest last: sea, land, graticule, coast, plates.

@@ -218,9 +218,10 @@ settles to an overview at the Buras landfall. Track dots mark published fixes. W
 the published quadrant radii, and the readings change at the fixes. Scrubbing and reduced motion
 use the fixed overview.
 
-Storm Radar banks from the national map toward an area of visible radar returns. The map levels
-for comparing individual scans on their published UTC timestamps. Region changes reuse the
-flight. Reduced motion cuts directly to the chosen view.
+Storm Radar flies from the current globe view to the contiguous United States or an area with
+visible returns. NOAA reflectivity colors belong to the raster. The scan controls stay in the
+Observatory panel, and scrubbing changes only the scan at its published UTC time. Region changes
+reuse the camera flight. Reduced motion cuts directly to the chosen view.
 
 Tonga opens on the eruption’s infrared scans, widens through the water-vapor difference scans, then
 pulls back into an orbit view. The ring is an estimate of the atmospheric wave. The station chart

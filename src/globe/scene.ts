@@ -1,6 +1,5 @@
 import { createNightSurface } from "./nightSurface";
-import { createAuroraVeil } from "./auroraVeil";
-import type { AuroraRun } from "../sources/auroraRoute";
+import { createScenePresentation, type GlobePresentation } from "./scenePresentation";
 import { lightSurface } from "./surfaceMaterial";
 import { createCutaway, type CutawayFocus } from "./cutaway";
 import { createEventPresentation } from "./eventPresentation";
@@ -59,7 +58,6 @@ import { createMarkLayer, pickMark, type Mark } from "./marks";
 import type { Aurora } from "../sources/aurora";
 
 export type GlobeMoment = number | EclipseFrame | null;
-export type SkyPresentation = "planetarium" | "dayline" | AuroraRun | null;
 
 export interface HitStore {
   forEach: (fn: (quake: HitQuake) => void) => void;
@@ -147,7 +145,7 @@ export interface Globe {
   setMarkHover: (id: string | null) => void;
   setMorph: (t: number) => void;
   beginArrival: () => void;
-  setSkyPresentation: (mode: SkyPresentation) => void;
+  setPresentation: (mode: GlobePresentation) => void;
   setCutaway: (focus: CutawayFocus | null) => void;
   cutawayOpen: () => boolean;
   beginRegroup: (reduced: boolean) => void;
@@ -282,9 +280,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   spin.add(coast);
 
   const { night, aurora, dayline } = createNightSurface(morph);
-  let showDayline = false;
-  let veil: ReturnType<typeof createAuroraVeil> | null = null;
-  let oval: AuroraRun["route"] | null = null;
   spin.add(night);
   const eclipseTrack = createEclipseTrack();
   spin.add(eclipseTrack.path);
@@ -374,6 +369,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   });
 
   const controls = createControls(camera, canvas, FRAMING, FOV);
+  const presentation = createScenePresentation(spin, catalogue, controls, sunDir, lights, dayline);
   const inspection = createEventPresentation(camera, controls, catalogue);
   spin.add(inspection.object);
   let markerScale = (): number => 1;
@@ -424,22 +420,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       if (moment !== null && run?.kind !== "sequence") aimSun(moment);
     },
     beginArrival: lights.begin,
-    setSkyPresentation: (mode) => {
-      const route = typeof mode === "object" ? (mode?.route ?? null) : null;
-      controls.setPlanetarium(mode === "planetarium");
-      controls.setOverflight(route?.focus ?? null);
-      const on = mode === "dayline";
-      if (on && !showDayline) lights.begin();
-      showDayline = on;
-      dayline.value = on ? lights.reveal.value : 0;
-      if (route && !veil) {
-        veil = createAuroraVeil(sunDir);
-        spin.add(veil.object);
-      }
-      if (oval !== route) veil?.set(route);
-      oval = route;
-      veil?.trace(controls.auroraSweep());
-    },
+    setPresentation: presentation.set,
     setCutaway: (focus) => {
       controls.setDive(focus?.dive === true);
       cutaway.set(focus);
@@ -451,8 +432,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     stepPresentation: (dt, reduced) => {
       quietMotion = reduced;
       const illuminating = lights.step(dt, reduced);
-      if (showDayline) dayline.value = lights.reveal.value;
-      veil?.trace(controls.auroraSweep());
+      presentation.step();
       const cutting = cutaway.step(dt, reduced, morph.value, !controls.diveReady());
       const tracing = figures.step(dt, reduced, !controls.skyReady());
       const grouping = regroup.step(dt, reduced);
@@ -509,6 +489,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     /* What is under the pointer, answered geographically first and in pixels second. See ARCHITECTURE.md#srcglobescenets. */
     hitTest: (clientX, clientY, store, filters, now, slopPx = HIT_SLOP_PX) => {
+      if (!catalogue.visible) return null;
       const under = controls.pick(clientX, clientY);
       if (!under) return null;
 
@@ -557,7 +538,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     },
     /* Picked by their anchor, at a wider slop than the markers. See `MARK_SLOP_PX`. */
     hitMark: (clientX, clientY, slopPx = MARK_SLOP_PX) =>
-      pickMark(heldMarks, { x: clientX, y: clientY }, controls.project, slopPx),
+      catalogue.visible ? pickMark(heldMarks, { x: clientX, y: clientY }, controls.project, slopPx) : null,
     events,
     rings,
     slab,
@@ -656,6 +637,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       world.position.x = 0;
     },
     dispose: () => {
+      presentation.dispose();
       inspection.dispose();
       eclipseTrack.dispose();
       regroup.dispose();

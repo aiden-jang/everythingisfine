@@ -5,7 +5,6 @@ import { KATRINA_DAY, StormReplay } from "./storm/StormReplay";
 import { TONGA_DAY, TongaReplay } from "./tonga/TongaReplay";
 import { KAPOHO_DAY, KilaueaReplay } from "./kilauea/KilaueaReplay";
 import { ICEBERG_DAY, IcebergReplay } from "./iceberg/IcebergReplay";
-import { StormRadar } from "./radar/StormRadar";
 import { MEGAFLASH_DAY, MegaflashReplay } from "./megaflash/MegaflashReplay";
 import { NOTABLE_DAYS, NOTABLE_NOTE } from "./notableDays";
 import { ECLIPSE_DAYS, eclipseMoment } from "./eclipseDays";
@@ -18,9 +17,10 @@ interface Props {
   state: ReturnType<typeof useArchive>;
   onCursor: (at: number) => void;
   watchEclipse: MouseEventHandler<HTMLButtonElement> | string;
+  openRadar: () => void;
 }
 
-export function ArchiveControls({ archive, state, onCursor, watchEclipse }: Props): JSX.Element {
+export function ArchiveControls({ archive, state, onCursor, watchEclipse, openRadar }: Props): JSX.Element {
   const {
     archiveDay,
     setArchiveDay,
@@ -221,7 +221,17 @@ export function ArchiveControls({ archive, state, onCursor, watchEclipse }: Prop
           </p>
         )}
       </div>
-      {!archive && <StormRadar className="archive-scene-button w-full text-left" />}
+      {!archive && (
+        <button
+          type="button"
+          id="open-explorer-radar"
+          className="archive-scene-button w-full text-left"
+          onClick={openRadar}
+          disabled={archiveBusy}
+        >
+          Storm Radar
+        </button>
+      )}
       {archiveNote && !archive ? (
         <p role="status" className="mt-1 text-[11px] text-faint">
           {archiveNote}

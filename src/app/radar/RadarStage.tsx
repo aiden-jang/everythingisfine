@@ -1,7 +1,6 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RadarScan } from "../../sources/radar";
-import { RadarMap } from "./RadarMap";
-import { radarRegions, strongestRegion, type RadarRegion } from "./radarCamera";
+import { radarRegions, regionCamera, strongestRegion, type RadarRegion, type RadarView } from "./radarCamera";
 import { useRadarScans } from "./useRadarScans";
 
 const format = new Intl.DateTimeFormat("en-GB", {
@@ -16,7 +15,7 @@ const format = new Intl.DateTimeFormat("en-GB", {
 const label = (at: number) => format.format(at) + " UTC";
 const shortTime = (at: number) => new Date(at).toISOString().slice(11, 16);
 
-export function RadarStage(): JSX.Element {
+export function RadarStage({ onView }: { onView: (view: RadarView) => void }): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
   const { scans, images, status, checkedAt, retry } = useRadarScans(held);
@@ -31,6 +30,9 @@ export function RadarStage(): JSX.Element {
   const selected = scans[index];
   const image = selected && images.get(selected.id);
   const region = regionId === "auto" ? (focus ?? undefined) : radarRegions.find(({ id }) => id === regionId);
+  const target = useMemo(() => regionCamera(region), [region]);
+
+  useLayoutEffect(() => onView({ kind: "radar", target, image: image ?? null }), [image, onView, target]);
 
   function seek(scan: RadarScan | null) {
     held.current = scan;
@@ -63,7 +65,7 @@ export function RadarStage(): JSX.Element {
     return () => document.removeEventListener("visibilitychange", visibility);
   }, []);
 
-  const place = region?.name ?? "Contiguous United States";
+  const place = region?.name ?? "National view";
   const delayed = latest !== undefined && checkedAt - latest.at > 20 * 60_000;
   const statusText =
     status === "loading"
@@ -91,78 +93,71 @@ export function RadarStage(): JSX.Element {
   }
 
   return (
-    <>
-      <RadarMap region={region} image={image ?? null} />
-      <div className="archive-scene-console radar-console">
-        <div className="archive-scene-caption radar-reading">
-          <div className="radar-place">
-            <h3>{place}</h3>
-            <label>
-              <span className="sr-only">Radar region</span>
-              <select value={regionId} onChange={(event) => setRegionId(event.currentTarget.value)}>
-                <option value="auto">Auto focus</option>
-                <option value="national">United States</option>
-                {radarRegions.map(({ id, name }) => (
-                  <option key={id} value={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <p role="status">{statusText}</p>
-          {canRetry && (
-            <button type="button" className="radar-retry" onClick={retry}>
-              Retry NOAA
-            </button>
+    <div>
+      <div className="radar-reading">
+        <div className="radar-place">
+          <h3>{place}</h3>
+          <label>
+            <span className="sr-only">Radar region</span>
+            <select value={regionId} onChange={(event) => setRegionId(event.currentTarget.value)}>
+              <option value="auto">Auto focus</option>
+              <option value="national">United States</option>
+              {radarRegions.map(({ id, name }) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <p role="status">{statusText}</p>
+        {canRetry && (
+          <button type="button" className="radar-retry" onClick={retry}>
+            Retry NOAA
+          </button>
+        )}
+      </div>
+      <div className="radar-transport">
+        <div className="radar-clock">
+          <label htmlFor={id}>{atLatest ? "Latest scan" : "Scan time"}</label>
+          {selected && <time dateTime={new Date(selected.at).toISOString()}>{timeLabel}</time>}
+        </div>
+        <input
+          id={id}
+          className="scrub-slider radar-scrub"
+          type="range"
+          min={0}
+          max={Math.max(0, scans.length - 1)}
+          value={index}
+          disabled={scans.length < 2}
+          aria-label="Radar scan time"
+          aria-valuetext={timeLabel}
+          onChange={(event) => {
+            setPlaying(false);
+            seek(scans[event.currentTarget.valueAsNumber] ?? null);
+          }}
+        />
+        <div className="observatory-actions radar-actions">
+          <button type="button" disabled={scans.length < 2} onClick={togglePlay}>
+            {playing ? "Pause" : "Play scans"}
+          </button>
+          <button
+            type="button"
+            disabled={!selected}
+            onClick={() => {
+              setPlaying(false);
+              seek(null);
+            }}
+          >
+            Latest
+          </button>
+          {scans[0] && latest && (
+            <span className="radar-window">
+              {shortTime(scans[0].at)}–{shortTime(latest.at)} UTC
+            </span>
           )}
         </div>
-        <div className="radar-transport">
-          <div className="radar-clock">
-            <label htmlFor={id}>{atLatest ? "Latest scan" : "Scan time"}</label>
-            {selected && <time dateTime={new Date(selected.at).toISOString()}>{timeLabel}</time>}
-          </div>
-          <input
-            id={id}
-            className="scrub-slider radar-scrub"
-            type="range"
-            min={0}
-            max={Math.max(0, scans.length - 1)}
-            value={index}
-            disabled={scans.length < 2}
-            aria-label="Radar scan time"
-            aria-valuetext={timeLabel}
-            onChange={(event) => {
-              setPlaying(false);
-              seek(scans[event.currentTarget.valueAsNumber] ?? null);
-            }}
-          />
-          <div className="radar-actions">
-            <span>
-              {scans[0] && latest ? `${shortTime(scans[0].at)}–${shortTime(latest.at)} UTC` : "Recent scans"}
-            </span>
-            <button
-              type="button"
-              className="archive-scene-button"
-              disabled={scans.length < 2}
-              onClick={togglePlay}
-            >
-              {playing ? "Pause" : "Play scans"}
-            </button>
-            <button
-              type="button"
-              className="archive-scene-button"
-              disabled={!selected}
-              onClick={() => {
-                setPlaying(false);
-                seek(null);
-              }}
-            >
-              Latest
-            </button>
-          </div>
-        </div>
       </div>
-    </>
+    </div>
   );
 }

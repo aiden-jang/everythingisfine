@@ -1,14 +1,18 @@
 import { RADAR_BOUNDS } from "../../sources/radar";
 
-export interface RadarCamera {
+interface RadarCamera {
   lon: number;
   lat: number;
-  span: number;
-  roll: number;
-  pitch: number;
+  zoom: number;
 }
 
-export const national: RadarCamera = { lon: -95.5, lat: 37, span: 58, roll: 0, pitch: 1 };
+export interface RadarView {
+  kind: "radar";
+  target: RadarCamera;
+  image: ImageBitmap | null;
+}
+
+export const national: RadarCamera = { lon: -95.5, lat: 37, zoom: 1.45 };
 
 export const radarRegions = [
   { id: "pacific", name: "Pacific", lon: -120, lat: 41, span: 18 },
@@ -22,7 +26,7 @@ export const radarRegions = [
 export type RadarRegion = (typeof radarRegions)[number];
 
 export function regionCamera(region: RadarRegion | undefined): RadarCamera {
-  return region ? { lon: region.lon, lat: region.lat, span: region.span, roll: 0, pitch: 1 } : national;
+  return region ? { lon: region.lon, lat: region.lat, zoom: 2.55 } : national;
 }
 
 export function strongestRegion(image: ImageBitmap): RadarRegion | undefined {
@@ -56,16 +60,4 @@ export function strongestRegion(image: ImageBitmap): RadarRegion | undefined {
     }
   }
   return best;
-}
-
-export function radarFlight(from: RadarCamera, to: RadarCamera, progress: number): RadarCamera {
-  const t = progress * progress * (3 - 2 * progress);
-  const bank = Math.sin(Math.PI * t);
-  return {
-    lon: from.lon + (to.lon - from.lon) * t,
-    lat: from.lat + (to.lat - from.lat) * t,
-    span: from.span + (to.span - from.span) * t,
-    roll: from.roll * (1 - t) - bank * 0.22,
-    pitch: from.pitch + (to.pitch - from.pitch) * t - bank * 0.24,
-  };
 }

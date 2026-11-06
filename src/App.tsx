@@ -500,7 +500,6 @@ export function App(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [filters, snapshot.revision, regions, clockAt, view.at],
   );
-  const stops = journey.stops;
   const {
     tourAt,
     touring,
@@ -514,7 +513,7 @@ export function App(): JSX.Element {
     togglePause,
     tourLength,
     onCamera: observeTourCamera,
-  } = useGlobeTour(stops, flyTo, observatory.setTourStop);
+  } = useGlobeTour(journey.stops, flyTo, observatory.setTourStop);
   const startTour = useCallback(() => {
     chooseScene("live");
     setSelected(null);
@@ -914,7 +913,6 @@ export function App(): JSX.Element {
   const sourceNote = reachNote(snapshot.covered, now, filters.windowMs);
   const feeds = feedStatus(snapshot.statuses, answered);
 
-  // Keep each key in one place so its explanatory text cannot be duplicated.
   const keyOnCanvas = useNarrow() === false;
   // Compose shared legend props once so the rail and canvas cannot drift apart.
   const marksFilter = (
@@ -1037,6 +1035,7 @@ export function App(): JSX.Element {
     <ArchiveControls
       archive={snapshot.archive}
       state={archiveState}
+      openRadar={observatory.radar.open}
       onCursor={(at) => setScrub({ at, playing: false })}
       watchEclipse={
         flat
@@ -1116,7 +1115,7 @@ export function App(): JSX.Element {
           download,
           dismiss,
         }}
-        tourDisabled={stops.length === 0 || !observatory.ready}
+        tourDisabled={journey.stops.length === 0 || !observatory.ready}
       />
       <div
         className="zones"
@@ -1157,6 +1156,7 @@ export function App(): JSX.Element {
             }}
             aurora={overflight}
             sun={observatory.sun}
+            radar={observatory.radar}
             onHistory={(day) => {
               stopTour();
               enterExplore();
@@ -1180,7 +1180,7 @@ export function App(): JSX.Element {
               next: nextTour,
               previous: previousTour,
               pause: togglePause,
-              available: stops.length > 0,
+              available: journey.stops.length > 0,
               inspect:
                 touring?.key && feed.store.get(touring.key)
                   ? () => {
@@ -1560,7 +1560,7 @@ export function App(): JSX.Element {
             <Globe
               feed={feed}
               filters={filters}
-              selected={selected}
+              selected={observatory.radar.active ? null : selected}
               ramp={ramp}
               focus={focusSpan}
               aurora={overflight.run?.forecast ?? onGlobe.aurora}
@@ -1572,7 +1572,7 @@ export function App(): JSX.Element {
               moment={overflight.run?.forecast.forecastAt ?? chase.frame ?? litAt}
               inspection={inspection.run}
               flat={flat}
-              skyPresentation={observatory.sky(tourAt !== null)}
+              globePresentation={observatory.globe(tourAt !== null)}
               depthSink={observatory.depth || sinkOn}
               cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}
               slab={

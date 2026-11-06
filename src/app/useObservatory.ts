@@ -6,7 +6,8 @@ import type { Stop } from "./tour";
 import type { CutawayFocus } from "../globe/cutaway";
 import { subsolarPoint } from "../geo/sun";
 import type { AuroraRun } from "../sources/auroraRoute";
-import type { SkyPresentation } from "../globe/scene";
+import type { GlobePresentation } from "../globe/scenePresentation";
+import { national, type RadarView } from "./radar/radarCamera";
 import { revealReadings, shiftGlobe } from "./presentationMotion";
 
 export type EarthScene = "live" | "depth" | "night";
@@ -57,37 +58,46 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [ready, setReady] = useState(false);
   const [run, setRun] = useState<AuroraRun | null>(null);
   const [sunWatch, setSunWatch] = useState(false);
+  const [radarView, setRadarView] = useState<RadarView | null>(null);
+  const radarOrigin = useRef<Presentation>("observe");
   const transition = useRef<Animation[]>([]);
   const focusExplorer = useRef(false);
-  const changePresentation = useCallback((next: Presentation, animate: boolean, prepare?: () => void) => {
-    const globe = document.querySelector<HTMLElement>(".zone-canvas");
-    const from =
-      animate && globe?.animate && !document.hidden && !matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? globe.getBoundingClientRect()
-        : null;
-    for (const animation of transition.current) animation.cancel();
-    transition.current = [];
-    const update = () => {
-      prepare?.();
-      focusExplorer.current = animate && next === "explore";
-      setPresentation(next);
-      setTourStop(null);
-      setRun(null);
-      setSunWatch(false);
-      store("presentation", next);
-    };
-    if (!globe || !from) {
-      update();
-      return;
-    }
-    flushSync(update);
-    const flight = shiftGlobe(globe, from);
-    const readings = revealReadings(
-      document.querySelector<HTMLElement>(next === "explore" ? "#chrome-rail" : ".observatory-intro"),
-    );
-    if (flight) transition.current.push(flight);
-    if (readings) transition.current.push(readings);
-  }, []);
+  const changePresentation = useCallback(
+    (next: Presentation, animate: boolean, prepare?: () => void, remember = true) => {
+      const globe = document.querySelector<HTMLElement>(".zone-canvas");
+      const from =
+        animate &&
+        globe?.animate &&
+        !document.hidden &&
+        !matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? globe.getBoundingClientRect()
+          : null;
+      for (const animation of transition.current) animation.cancel();
+      transition.current = [];
+      const update = () => {
+        focusExplorer.current = remember && animate && next === "explore";
+        setPresentation(next);
+        setTourStop(null);
+        setRun(null);
+        setSunWatch(false);
+        setRadarView(null);
+        prepare?.();
+        if (remember) store("presentation", next);
+      };
+      if (!globe || !from) {
+        update();
+        return;
+      }
+      flushSync(update);
+      const flight = shiftGlobe(globe, from);
+      const readings = revealReadings(
+        document.querySelector<HTMLElement>(next === "explore" ? "#chrome-rail" : ".observatory-intro"),
+      );
+      if (flight) transition.current.push(flight);
+      if (readings) transition.current.push(readings);
+    },
+    [],
+  );
   useEffect(
     () => () => {
       for (const animation of transition.current) animation.cancel();
@@ -117,6 +127,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     setTourStop(null);
     setRun(null);
     setSunWatch(false);
+    setRadarView(null);
   }, []);
   const observing = presentation === "observe";
   const night = observing && scene === "night";
@@ -146,9 +157,33 @@ export function useObservatory(shared: Partial<Permalink>) {
         setSunWatch(!sunActive);
       },
     },
-    sky(guided: boolean): SkyPresentation {
+    radar: {
+      active: radarView !== null,
+      fromExplore: radarView !== null && radarOrigin.current === "explore",
+      open() {
+        radarOrigin.current = presentation;
+        const open = () => setRadarView({ kind: "radar", target: national, image: null });
+        if (observing) open();
+        else
+          changePresentation(
+            "observe",
+            true,
+            () => {
+              setScene("live");
+              open();
+            },
+            false,
+          );
+      },
+      close() {
+        if (radarOrigin.current === "explore") changePresentation("explore", true, undefined, false);
+        else setRadarView(null);
+      },
+      update: setRadarView,
+    },
+    globe(guided: boolean): GlobePresentation {
       if (night) return sunActive ? null : (auroraRun ?? "planetarium");
-      return observing && scene === "live" && !guided ? "dayline" : null;
+      return observing && scene === "live" && !guided ? (radarView ?? "dayline") : null;
     },
     setTourStop,
   };

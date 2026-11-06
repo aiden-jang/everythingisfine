@@ -7,10 +7,10 @@ import { TongaReplay } from "./tonga/TongaReplay";
 import { KilaueaReplay } from "./kilauea/KilaueaReplay";
 import { IcebergReplay } from "./iceberg/IcebergReplay";
 import { MegaflashReplay } from "./megaflash/MegaflashReplay";
-import { StormRadar } from "./radar/StormRadar";
+import { RadarReadout, StormRadar } from "./radar/StormRadar";
 import { AuroraOverflightControls } from "./AuroraOverflightControls";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
-import type { EarthScene } from "./useObservatory";
+import type { EarthScene, useObservatory } from "./useObservatory";
 import type { Stop } from "./tour";
 import { geographicCoordinates } from "../globe/orbitReadout";
 import "./sun/sun-watch.css";
@@ -27,6 +27,7 @@ interface Props {
   deepAvailable: boolean;
   aurora: ReturnType<typeof useAuroraOverflight>;
   sun: { active: boolean; toggle: () => void };
+  radar: ReturnType<typeof useObservatory>["radar"];
   onScene: (scene: EarthScene) => void;
   onExplore: () => void;
   onPickDate: () => void;
@@ -57,6 +58,7 @@ export function Observatory({
   deepAvailable,
   aurora,
   sun,
+  radar,
   feedNote,
   onScene,
   onExplore,
@@ -67,7 +69,7 @@ export function Observatory({
   useLayoutEffect(() => {
     tour.controls.current?.scrollTo(0, 0);
     tour.controls.current?.querySelector<HTMLElement>(".observatory-story")?.scrollTo(0, 0);
-  }, [scene, tour.at, tour.controls]);
+  }, [scene, tour.at, tour.controls, radar.active]);
   const active = tour.at !== null;
   const solar = sun.active && !active;
   const title = active
@@ -94,8 +96,12 @@ export function Observatory({
         : "A live view of earthquakes, changing skies, and a restless planet.";
   return (
     <>
-      {!solar && (
-        <ObservatoryStage scene={scene} at={at} tour={active ? tour.stop : undefined} aurora={aurora.run} />
+      {radar.active ? (
+        <RadarReadout />
+      ) : (
+        !solar && (
+          <ObservatoryStage scene={scene} at={at} tour={active ? tour.stop : undefined} aurora={aurora.run} />
+        )
       )}
       <div className="observatory-sidebar">
         <section
@@ -105,176 +111,202 @@ export function Observatory({
           ref={tour.controls}
           data-scene={active ? "tour" : scene}
           data-sun-watch={solar || undefined}
-          aria-label="Earth observatory"
+          data-storm-radar={radar.active || undefined}
+          aria-label={radar.active ? "Storm Radar" : "Earth observatory"}
         >
-          <div className="observatory-story" aria-live="polite" aria-atomic="true">
-            <h2 key={title}>{title}</h2>
-            <p key={description} className="observatory-description">
-              {description}
-            </p>
-            {active && tour.stop ? (
-              <p className="observatory-location" data-tour-location={`${tour.stop.lon},${tour.stop.lat}`}>
-                {tour.stop.name}{" "}
-                <span>
-                  {geographicCoordinates(tour.stop)} · Stop {Math.min((tour.at ?? 0) + 1, tour.length)} of{" "}
-                  {tour.length}
-                </span>
-              </p>
-            ) : null}
-          </div>
-          {!active && scene === "night" ? (
-            <AuroraOverflightControls
-              aurora={aurora}
-              ready={ready}
-              solar={solar}
-              onReturn={() => onScene("night")}
-              onSunWatch={sun.toggle}
+          {radar.active ? (
+            <StormRadar
+              fromExplore={radar.fromExplore}
+              onView={radar.update}
+              onClose={() => {
+                radar.close();
+                const trigger = radar.fromExplore ? "open-explorer-radar" : "open-storm-radar";
+                requestAnimationFrame(() => document.getElementById(trigger)?.focus());
+              }}
             />
-          ) : null}
-          {solar && (
-            <div className="sun-credits" aria-label="Sun Watch sources">
-              <a href="https://www.swpc.noaa.gov/products/solar-wind" target="_blank" rel="noreferrer">
-                NOAA solar wind
-              </a>
-              <a href="https://www.swpc.noaa.gov/products/goes-x-ray-flux" target="_blank" rel="noreferrer">
-                GOES X-rays
-              </a>
-              <a
-                href="https://www.jpl.nasa.gov/images/pia26681-image-of-sun-from-nasas-solar-dynamics-observatory/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                NASA/GSFC/SDO image
-              </a>
-            </div>
-          )}
-          {active ? (
-            <div className="observatory-tour-controls">
-              <div className="observatory-tour-step">
-                <button
-                  type="button"
-                  onClick={tour.previous}
-                  disabled={tour.at === 0}
-                  aria-label="Previous tour stop"
-                >
-                  ←
-                </button>
-                <button type="button" onClick={tour.pause}>
-                  {tour.paused ? "Resume tour" : "Pause tour"}
-                </button>
-                <button
-                  type="button"
-                  onClick={tour.next}
-                  aria-label={(tour.at ?? 0) + 1 >= tour.length ? "Finish tour" : "Next tour stop"}
-                >
-                  →
-                </button>
-              </div>
-              <div className="observatory-actions">
-                <button type="button" ref={tour.button} onClick={tour.stopTour}>
-                  Stop
-                </button>
-                {tour.inspect ? (
-                  <button type="button" onClick={tour.inspect}>
-                    Read this event ↗
-                  </button>
-                ) : (
-                  <button type="button" onClick={onExplore}>
-                    Explore this view ↗
-                  </button>
-                )}
-              </div>
-            </div>
           ) : (
             <>
-              <div className="observatory-actions">
-                <button
-                  type="button"
-                  onClick={onExplore}
-                  className={aurora.run || solar ? undefined : "observatory-primary"}
-                >
-                  Explore the globe <span aria-hidden="true">↗</span>
-                </button>
-                <button
-                  type="button"
-                  ref={tour.button}
-                  onClick={tour.start}
-                  disabled={!ready || !tour.available}
-                >
-                  Take a tour <span aria-hidden="true">→</span>
-                </button>
-                {scene === "live" && <StormRadar />}
+              <div className="observatory-story" aria-live="polite" aria-atomic="true">
+                <h2 key={title}>{title}</h2>
+                <p key={description} className="observatory-description">
+                  {description}
+                </p>
+                {active && tour.stop ? (
+                  <p
+                    className="observatory-location"
+                    data-tour-location={`${tour.stop.lon},${tour.stop.lat}`}
+                  >
+                    {tour.stop.name}{" "}
+                    <span>
+                      {geographicCoordinates(tour.stop)} · Stop {Math.min((tour.at ?? 0) + 1, tour.length)} of{" "}
+                      {tour.length}
+                    </span>
+                  </p>
+                ) : null}
               </div>
-              {scene !== "night" ? (
-                <p className="observatory-summary">
-                  {waiting
-                    ? feedNote
-                      ? "Earthquake readings aren’t available yet. Explore for feed status."
-                      : "Listening for the public feeds…"
-                    : summary}
+              {!active && scene === "night" ? (
+                <AuroraOverflightControls
+                  aurora={aurora}
+                  ready={ready}
+                  solar={solar}
+                  onReturn={() => onScene("night")}
+                  onSunWatch={sun.toggle}
+                />
+              ) : null}
+              {solar && (
+                <div className="sun-credits" aria-label="Sun Watch sources">
+                  <a href="https://www.swpc.noaa.gov/products/solar-wind" target="_blank" rel="noreferrer">
+                    NOAA solar wind
+                  </a>
+                  <a
+                    href="https://www.swpc.noaa.gov/products/goes-x-ray-flux"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    GOES X-rays
+                  </a>
+                  <a
+                    href="https://www.jpl.nasa.gov/images/pia26681-image-of-sun-from-nasas-solar-dynamics-observatory/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    NASA/GSFC/SDO image
+                  </a>
+                </div>
+              )}
+              {active ? (
+                <div className="observatory-tour-controls">
+                  <div className="observatory-tour-step">
+                    <button
+                      type="button"
+                      onClick={tour.previous}
+                      disabled={tour.at === 0}
+                      aria-label="Previous tour stop"
+                    >
+                      ←
+                    </button>
+                    <button type="button" onClick={tour.pause}>
+                      {tour.paused ? "Resume tour" : "Pause tour"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={tour.next}
+                      aria-label={(tour.at ?? 0) + 1 >= tour.length ? "Finish tour" : "Next tour stop"}
+                    >
+                      →
+                    </button>
+                  </div>
+                  <div className="observatory-actions">
+                    <button type="button" ref={tour.button} onClick={tour.stopTour}>
+                      Stop
+                    </button>
+                    {tour.inspect ? (
+                      <button type="button" onClick={tour.inspect}>
+                        Read this event ↗
+                      </button>
+                    ) : (
+                      <button type="button" onClick={onExplore}>
+                        Explore this view ↗
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="observatory-actions">
+                    <button
+                      type="button"
+                      onClick={onExplore}
+                      className={aurora.run || solar ? undefined : "observatory-primary"}
+                    >
+                      Explore the globe <span aria-hidden="true">↗</span>
+                    </button>
+                    <button
+                      type="button"
+                      ref={tour.button}
+                      onClick={tour.start}
+                      disabled={!ready || !tour.available}
+                    >
+                      Take a tour <span aria-hidden="true">→</span>
+                    </button>
+                    {scene === "live" && (
+                      <button type="button" id="open-storm-radar" onClick={radar.open} disabled={!ready}>
+                        Storm Radar
+                      </button>
+                    )}
+                  </div>
+                  {scene !== "night" ? (
+                    <p className="observatory-summary">
+                      {waiting
+                        ? feedNote
+                          ? "Earthquake readings aren’t available yet. Explore for feed status."
+                          : "Listening for the public feeds…"
+                        : summary}
+                    </p>
+                  ) : null}
+                </>
+              )}
+              {!active ? (
+                <div className="observatory-scenes" role="group" aria-label="Earth scenes">
+                  {OBSERVATORY_SCENES.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => onScene(option.id)}
+                      aria-pressed={scene === option.id}
+                      aria-label={option.name}
+                      disabled={!ready || (option.id === "depth" && !deepAvailable)}
+                      aria-describedby={
+                        option.id === "depth" && ready && !deepAvailable ? "depth-availability" : undefined
+                      }
+                    >
+                      <SceneDiagram scene={option.id} />
+                      <span className="scene-label">{option.name}</span>
+                      <span className="scene-note">{option.note}</span>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              {!active && ready && !deepAvailable && (
+                <p id="depth-availability" className="observatory-depth-note">
+                  Below the Surface needs a quake at least 70 km deep.
+                </p>
+              )}
+              {!active && scene === "live" ? (
+                <div className="observatory-history">
+                  <details>
+                    <summary>Historical replays</summary>
+                    <div className="observatory-history-links">
+                      <button type="button" onClick={() => onHistory(TOHOKU_DAY)}>
+                        Japan, 2011 ↗
+                      </button>
+                      <RuptureReveal />
+                      <StormReplay />
+                      <TongaReplay />
+                      <KilaueaReplay />
+                      <IcebergReplay />
+                      <MegaflashReplay />
+                      <button type="button" onClick={() => onHistory("2013-05-24")}>
+                        Deep beneath Okhotsk ↗
+                      </button>
+                      <button type="button" onClick={() => onHistory(APRIL_ECLIPSE_DAY)}>
+                        Total eclipse, 2024 ↗
+                      </button>
+                    </div>
+                  </details>
+                  <button type="button" onClick={onPickDate}>
+                    Pick a past date
+                  </button>
+                </div>
+              ) : null}
+              {feedNote ? (
+                <p className="observatory-source-note" role="status">
+                  {feedNote}
                 </p>
               ) : null}
             </>
           )}
-          {!active ? (
-            <div className="observatory-scenes" role="group" aria-label="Earth scenes">
-              {OBSERVATORY_SCENES.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => onScene(option.id)}
-                  aria-pressed={scene === option.id}
-                  aria-label={option.name}
-                  disabled={!ready || (option.id === "depth" && !deepAvailable)}
-                  aria-describedby={
-                    option.id === "depth" && ready && !deepAvailable ? "depth-availability" : undefined
-                  }
-                >
-                  <SceneDiagram scene={option.id} />
-                  <span className="scene-label">{option.name}</span>
-                  <span className="scene-note">{option.note}</span>
-                </button>
-              ))}
-            </div>
-          ) : null}
-
-          {!active && ready && !deepAvailable && (
-            <p id="depth-availability" className="observatory-depth-note">
-              Below the Surface needs a quake at least 70 km deep.
-            </p>
-          )}
-          {!active && scene === "live" ? (
-            <div className="observatory-history">
-              <details>
-                <summary>Historical replays</summary>
-                <div className="observatory-history-links">
-                  <button type="button" onClick={() => onHistory(TOHOKU_DAY)}>
-                    Japan, 2011 ↗
-                  </button>
-                  <RuptureReveal />
-                  <StormReplay />
-                  <TongaReplay />
-                  <KilaueaReplay />
-                  <IcebergReplay />
-                  <MegaflashReplay />
-                  <button type="button" onClick={() => onHistory("2013-05-24")}>
-                    Deep beneath Okhotsk ↗
-                  </button>
-                  <button type="button" onClick={() => onHistory(APRIL_ECLIPSE_DAY)}>
-                    Total eclipse, 2024 ↗
-                  </button>
-                </div>
-              </details>
-              <button type="button" onClick={onPickDate}>
-                Pick a past date
-              </button>
-            </div>
-          ) : null}
-          {feedNote ? (
-            <p className="observatory-source-note" role="status">
-              {feedNote}
-            </p>
-          ) : null}
         </section>
         <p className="observatory-credit">
           An observatory by{" "}
