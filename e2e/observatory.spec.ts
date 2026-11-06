@@ -195,6 +195,7 @@ test("a historical shortcut frames an actual archived event and keeps capture av
 });
 
 test("an empty view stays honest and keeps exploration available", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { empty: true, presentation: "fresh" });
   await page.goto("/");
@@ -202,6 +203,7 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
+  await expect(page.getByText("Below the Surface needs a quake at least 70 km deep.")).toBeVisible();
   await page.getByRole("button", { name: "Explore the globe" }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
 });

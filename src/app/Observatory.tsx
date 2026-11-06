@@ -225,18 +225,23 @@ export function Observatory({
                 aria-pressed={scene === option.id}
                 aria-label={option.name}
                 disabled={!ready || (option.id === "depth" && !deepAvailable)}
-                aria-describedby={option.id === "depth" && !deepAvailable ? "depth-availability" : undefined}
+                aria-describedby={
+                  option.id === "depth" && ready && !deepAvailable ? "depth-availability" : undefined
+                }
               >
                 <SceneDiagram scene={option.id} />
                 <span className="scene-label">{option.name}</span>
-                <span className="scene-note" id={option.id === "depth" ? "depth-availability" : undefined}>
-                  {option.id === "depth" && !deepAvailable ? "Needs a quake 70 km deep" : option.note}
-                </span>
+                <span className="scene-note">{option.note}</span>
               </button>
             ))}
           </div>
         ) : null}
 
+        {!active && ready && !deepAvailable && (
+          <p id="depth-availability" className="observatory-depth-note">
+            Below the Surface needs a quake at least 70 km deep.
+          </p>
+        )}
         {!active && scene === "live" ? (
           <div className="observatory-history">
             <details>

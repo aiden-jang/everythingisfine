@@ -1089,3 +1089,8 @@ textarea::selection {
     min-height: 44px;
   }
 }
+
+[data-section-panel][data-folding],
+[data-section-panel][data-folding] * {
+  pointer-events: none;
+}

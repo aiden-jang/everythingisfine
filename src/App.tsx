@@ -712,7 +712,8 @@ export function App(): JSX.Element {
         }
         return;
       }
-      if (document.activeElement && document.activeElement !== document.body) return;
+      const active = document.activeElement;
+      if (active && active !== document.body && active.id !== "globe-view") return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.key === " ") {
         const live = spanNow();
@@ -1252,7 +1253,10 @@ export function App(): JSX.Element {
                   {/* The one piece of display type here, so it is set like display type: heavier than the
                     prose under it and closed up slightly, which large figures need and small ones do not.
                     `tabular-nums` still decides the widths, so the tracking cannot make it twitch. */}
-                  <div className="mt-1.5 text-[38px] leading-none font-[650] tracking-[-0.015em] tabular-nums">
+                  <div
+                    data-event-count
+                    className="mt-1.5 text-[38px] leading-none font-[650] tracking-[-0.015em] tabular-nums"
+                  >
                     {headline.toLocaleString("en-GB")}
                   </div>
                   {replay ? (

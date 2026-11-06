@@ -101,7 +101,8 @@ export function observatorySummary({
   if (sources.size === 0) return "No earthquake feeds selected. Explore to choose a source.";
   const period = day ? `${day} archive` : `last ${compactSpan(windowMs)}`;
   const source = sources.size === 1 ? ` · ${sources.has("usgs") ? "USGS" : "EMSC"} only` : "";
-  return `${count.toLocaleString("en-GB")} earthquakes · M${minMagnitude.toFixed(1)}+ · ${period}${source}`;
+  const event = count === 1 ? "earthquake" : "earthquakes";
+  return `${count.toLocaleString("en-GB")} ${event} · M${minMagnitude.toFixed(1)}+ · ${period}${source}`;
 }
 
 export function observatoryFeedNote(

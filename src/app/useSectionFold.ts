@@ -25,6 +25,7 @@ export function useSectionFold(hinge?: SectionHinge) {
     const rotate = `rotate(${Math.atan2(to.y - from.y, to.x - from.x)}rad)`;
     const width = span / box.width;
     const atHinge = `${translate} ${rotate} scale(${width}, 0.62) perspective(900px)`;
+    panel.setAttribute("data-folding", "");
     const fold = panel.animate(
       [
         { transform: `${atHinge} rotateX(89.7deg)`, transformOrigin: origin, easing: SETTLE },
@@ -53,6 +54,7 @@ export function useSectionFold(hinge?: SectionHinge) {
       );
     }
     const detach = (): void => {
+      panel.removeAttribute("data-folding");
       window.removeEventListener("resize", cancel);
       motion.removeEventListener("change", cancel);
     };

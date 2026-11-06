@@ -33,6 +33,6 @@ describe("naming the feeds that did not answer", () => {
         floods: false,
         aurora: false,
       }),
-    ).toBe("No feed answered for any layer, so none are drawn.");
+    ).toBe("The optional layer feeds haven’t answered yet.");
   });
 });

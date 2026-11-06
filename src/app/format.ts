@@ -429,7 +429,7 @@ export function silentFeeds(answered: Record<HazardLayer, boolean>): string | nu
   const missing = names.filter(([key]) => !answered[key]).map(([, label]) => label);
   if (missing.length === 0) return null;
   // All five is one fact about the network, not five facts about layers.
-  if (missing.length === names.length) return "No feed answered for any layer, so none are drawn.";
+  if (missing.length === names.length) return "The optional layer feeds haven’t answered yet.";
   const listed =
     missing.length === 1
       ? missing[0]!

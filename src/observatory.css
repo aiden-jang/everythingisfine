@@ -252,6 +252,12 @@
     flex: none;
     color: var(--stage-ink);
   }
+  .observatory-depth-note {
+    margin-top: 8px;
+    color: var(--color-dim);
+    font-size: 11px;
+    line-height: 1.45;
+  }
   .observatory-history {
     display: flex;
     flex-wrap: wrap;

@@ -430,10 +430,10 @@ export function createControls(
      * Camera keys live on the window: the canvas is `aria-hidden` and unfocusable on purpose, because the
      * feed is the screen-reader interface, but a sighted person with no mouse still has to move the globe.
      *
-     * Only while nothing is focused, so the event list keeps its arrows and a slider keeps its own.
-     */
+     * Allow the surrounding globe region too. Lists and sliders keep their own arrow keys. */
     const onKeyDown = (e: KeyboardEvent): void => {
-      if (document.activeElement && document.activeElement !== document.body) return;
+      const active = document.activeElement;
+      if (active && active !== document.body && active.id !== "globe-view") return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
 
       const step = e.shiftKey ? 24 : 8;

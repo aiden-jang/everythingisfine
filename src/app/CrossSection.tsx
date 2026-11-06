@@ -85,7 +85,7 @@ export function CrossSection({
     <div
       ref={panelRef}
       data-section-panel
-      className={`order-9 -mx-4 -mb-4 w-[calc(100%+2rem)] bg-deck/70 px-4 pt-3 pb-4 backdrop-blur-2xl backdrop-saturate-0 ${
+      className={`pointer-events-auto order-9 -mx-4 -mb-4 max-h-[40dvh] w-[calc(100%+2rem)] overflow-y-auto overscroll-contain bg-deck/70 px-4 pt-3 pb-4 backdrop-blur-2xl backdrop-saturate-0 ${
         inset ? "xl:pr-[calc(var(--panel-w)+1rem)]" : ""
       }`}
     >

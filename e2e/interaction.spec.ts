@@ -334,7 +334,7 @@ test("the window buttons move the data and the headline follows", async ({ page 
   await page.goto("/");
   await waitForData(page);
 
-  const headline = page.locator(".zone-rail .text-\\[48px\\]");
+  const headline = page.locator(".zone-rail [data-event-count]");
   const count = async (): Promise<number> => Number((await headline.innerText()).replace(/[^0-9]/g, ""));
 
   // Settle before measuring. The two feeds seed independently, and a baseline taken from a moving total
@@ -447,7 +447,7 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
   await expect(rail).not.toContainText("nothing yet");
   await expect(rail).not.toContainText("still filling");
   // No headline either: an empty count is not a count.
-  await expect(rail.locator(".text-\\[48px\\]")).toHaveCount(0);
+  await expect(rail.locator("[data-event-count]")).toHaveCount(0);
   // Writing this test turned up two more of the same kind. The strip reported "nothing yet" beside
   // the sentence, and the list blamed the filters for a feed that had not answered yet.
   await expect(rail).toContainText("Waiting for the first events.");
@@ -722,7 +722,7 @@ test("a pinned event the filters exclude says so", async ({ page }) => {
   // panel beside an empty globe is the app describing something it is not showing.
   await expect(panel).toContainText("Outside the current filters");
   await expect(panel).toContainText("M 2.7");
-  await expect(page.locator(".zone-rail .text-\\[48px\\]")).toHaveText("0");
+  await expect(page.locator(".zone-rail [data-event-count]")).toHaveText("0");
 
   await page.locator("#mag").fill("2");
   await expect(panel).not.toContainText("Outside the current filters");
