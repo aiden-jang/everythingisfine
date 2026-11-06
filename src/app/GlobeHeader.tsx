@@ -219,6 +219,7 @@ export function GlobeHeader({
       {headShown ? null : (
         <button
           type="button"
+          id="show-top-bar"
           onClick={() => setHeadOpen(true)}
           aria-label="Show the top bar"
           aria-expanded={false}

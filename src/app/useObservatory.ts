@@ -54,9 +54,14 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [run, setRun] = useState<AuroraRun | null>(null);
   const transition = useRef<ViewTransition | null>(null);
   const focusExplorer = useRef(false);
-  const changePresentation = useCallback((next: Presentation, animate: boolean) => {
-    focusExplorer.current = animate && next === "explore";
+  const changeId = useRef(0);
+  const changePresentation = useCallback((next: Presentation, animate: boolean, prepare?: () => void) => {
+    const id = ++changeId.current;
+    transition.current?.skipTransition();
     const update = (): void => {
+      if (id !== changeId.current) return;
+      prepare?.();
+      focusExplorer.current = animate && next === "explore";
       setPresentation(next);
       setTourStop(null);
       setRun(null);
@@ -71,27 +76,46 @@ export function useObservatory(shared: Partial<Permalink>) {
       update();
       return;
     }
-    transition.current?.skipTransition();
-    transition.current = document.startViewTransition(async () => {
+    const active = document.startViewTransition(async () => {
+      if (id !== changeId.current) return;
       flushSync(update);
       // Let the existing resize observer render the new canvas dimensions before its snapshot.
       await new Promise<void>((resolve) =>
         requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
       );
     });
-    void transition.current.ready.catch(() => {});
-    void transition.current.finished.catch(() => {});
+    transition.current = active;
+    void active.ready.catch(() => {});
+    void active.finished
+      .catch(() => {})
+      .then(() => {
+        if (transition.current === active) transition.current = null;
+      });
   }, []);
-  useEffect(() => () => transition.current?.skipTransition(), []);
+  useEffect(
+    () => () => {
+      changeId.current++;
+      transition.current?.skipTransition();
+    },
+    [],
+  );
   useEffect(() => {
     if (presentation !== "explore" || !focusExplorer.current) return;
     focusExplorer.current = false;
-    document.getElementById("view-projection")?.focus({ preventScroll: true });
+    const projection = document.getElementById("view-projection");
+    const target = projection?.getClientRects().length ? projection : document.getElementById("show-top-bar");
+    target?.focus({ preventScroll: true });
   }, [presentation]);
   const enterExplore = useCallback(() => changePresentation("explore", false), [changePresentation]);
   const enterObserve = useCallback(() => changePresentation("observe", false), [changePresentation]);
-  const exploreScene = useCallback(() => changePresentation("explore", true), [changePresentation]);
-  const observeScene = useCallback(() => changePresentation("observe", true), [changePresentation]);
+  const exploreScene = useCallback(
+    (prepare: () => void) => changePresentation("explore", true, prepare),
+    [changePresentation],
+  );
+  const observeScene = useCallback(
+    (prepare: () => void) => changePresentation("observe", true, prepare),
+    [changePresentation],
+  );
   const chooseScene = useCallback((next: EarthScene, at: CutawayFocus | null = null) => {
     setScene(next);
     setFocus(at);

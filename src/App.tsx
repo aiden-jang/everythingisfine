@@ -507,10 +507,7 @@ export function App(): JSX.Element {
     enterObserve();
     beginTour();
   }, [beginTour, chooseScene, enterObserve]);
-  const openExplorer = (): void => {
-    stopTour();
-    observatory.exploreScene();
-  };
+  const openExplorer = (): void => observatory.exploreScene(stopTour);
   const chooseEarthScene = (scene: EarthScene): void => {
     stopTour();
     const next = earthSceneTarget(scene, journey.deepest, view.at ?? clockAt());
@@ -1000,12 +997,13 @@ export function App(): JSX.Element {
         ready={observatory.ready}
         observing={observatory.observing}
         onExplore={openExplorer}
-        onHome={() => {
-          stopTour();
-          resetView();
-          chooseScene("live");
-          observatory.observeScene();
-        }}
+        onHome={() =>
+          observatory.observeScene(() => {
+            stopTour();
+            resetView();
+            chooseScene("live");
+          })
+        }
         {...{
           headShown,
           chromeFloats,

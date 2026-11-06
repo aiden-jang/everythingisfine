@@ -139,6 +139,14 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
   await page.getByRole("button", { name: "Explore the globe" }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
   await expect(page.locator("#view-projection")).toBeFocused();
+  const canvas = page.getByRole("region", { name: "Globe", exact: true });
+  const rail = page.locator("#chrome-rail");
+  await expect
+    .poll(async () => {
+      const [map, panel] = await Promise.all([canvas.boundingBox(), rail.boundingBox()]);
+      return Boolean(map && panel && map.x >= panel.x + panel.width - 1);
+    })
+    .toBe(true);
   await page.getByRole("button", { name: "Everything Is Fine, back to the default view" }).click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
   expect(await contexts()).toBe(original);

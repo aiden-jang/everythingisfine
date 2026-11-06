@@ -2993,7 +2993,9 @@ same sun vector, and fades to a factor of one on the flat map.
 Direct content links open Explore, and initialization never stores a new default. Presets override
 rendered layers and framing temporarily. Explore restores saved choices. Mode changes use a finite
 view transition when supported, with a synchronous state commit and a resize-render opportunity
-before the new snapshot; reduced motion and unsupported browsers update directly.
+before the new snapshot. The globe, header and readings use separate snapshots so the globe
+can keep its visual position while the controls change. On wide screens the readings rail
+reserves its own width in Explore. Reduced motion and unsupported browsers update directly.
 
 The globe instance survives presentation and grid changes. Header and footer composition live in
 `GlobeHeader.tsx` and `CanvasFooter.tsx`; no camera or source subscription depends on those elements.
