@@ -313,7 +313,7 @@ test("an archived time returns to day end and partial coverage stays explicit", 
   await expect(back).toBeVisible();
   await expect(page.getByText(/EMSC did not answer/)).toBeVisible();
   await expect(
-    page.getByText("The available archive readings for 2011-03-11 don’t include this event."),
+    page.getByText("Couldn’t find this earthquake in the archive reports for 2011-03-11."),
   ).toBeVisible();
   const transport = page.getByRole("slider", { name: "Time in the window" });
   await transport.press("Home");
