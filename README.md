@@ -57,6 +57,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Follow iceberg A-68A** flies over the Scotia Sea, cuts to three dated satellite views,
   and traces 13 tracked fragments after the breakup. Choose an iceberg to jump to its last
   listed position. Reduced motion opens a still with the same date and track controls.
+- **Watch Megaflash** slows down a 2017 lightning flash from the southern Plains. Follow the
+  GOES-16 optical trace, then pull back to see the span across five states. Reduced motion
+  opens the full trace with the same scrubber.
 - **Save view** uses the existing captioned image export, including the reference-cutaway label.
 
 The opening pulls back from the horizon into orbit. Long camera flights bank gently, bright stars
@@ -125,6 +128,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Tonga replay | NOAA GOES-17 ABI bands 13 and 8, one-minute ASOS via Iowa Environmental Mesonet, Wright et al. (2022) |
 | Kīlauea replay | USGS lower East Rift Zone chronology, HVO helicopter footage, 3DEP reference relief, Hawaiʻi Statewide GIS historic coast |
 | Iceberg Drift | UK Polar Data Centre A-68A and descendant tracks, NASA Earth Observatory images from Terra MODIS, Landsat 8 and NOAA-20 VIIRS |
+| Megaflash | GOES-16 ABI infrared, Peterson et al. GOES-16 GLM reanalysis, and U.S. Census state boundaries |
 | Stars | Yale Bright Star Catalogue, BSC5 |
 | Constellation figures | d3-celestial, copyright (c) 2015 Olaf Frohn, BSD 3-Clause |
 
@@ -164,6 +168,14 @@ selected date. A-68A’s area appears only on dates with a Sentinel-1 radar meas
 [NASA approach](https://science.nasa.gov/earth/earth-observatory/iceberg-a-68a-nears-south-georgia-147535/) ·
 [NASA breakup](https://science.nasa.gov/earth/earth-observatory/iceberg-goes-with-the-flow-147715/) ·
 [NASA fragments](https://science.nasa.gov/earth/earth-observatory/pieces-of-iceberg-a-68a-147785/).
+
+Megaflash’s infrared backdrop is a false-color GOES-16 scan from 08:52 UTC. The animation
+samples the time-coded optical trace in the published GOES-16 reanalysis in approximate
+250 ms bins. Occluded or ambiguous colors can leave gaps. The 829 ± 8 km extent and
+7.39-second duration come from the study.
+[Peterson et al.](https://doi.org/10.1175/BAMS-D-25-0037.1) ·
+[NOAA GOES-16](https://www.nesdis.noaa.gov/news/noaa-satellites-help-certify-worlds-longest-lightning-flash) ·
+[WMO certification](https://wmo.int/news/media-centre/wmo-certifies-megaflash-lightning-record-usa).
 
 Colour represents magnitude. Other hazards use distinct shapes, with neutral interface controls.
 

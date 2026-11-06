@@ -5,6 +5,7 @@ import { KATRINA_DAY, StormReplay } from "./storm/StormReplay";
 import { TONGA_DAY, TongaReplay } from "./tonga/TongaReplay";
 import { KAPOHO_DAY, KilaueaReplay } from "./kilauea/KilaueaReplay";
 import { ICEBERG_DAY, IcebergReplay } from "./iceberg/IcebergReplay";
+import { MEGAFLASH_DAY, MegaflashReplay } from "./megaflash/MegaflashReplay";
 import { NOTABLE_DAYS, NOTABLE_NOTE } from "./notableDays";
 import { ECLIPSE_DAYS, eclipseMoment } from "./eclipseDays";
 import { isArchivableDay, typedDay } from "./day";
@@ -64,6 +65,9 @@ export function ArchiveControls({ archive, state, onCursor, watchEclipse }: Prop
           )}
           {loadedDay === ICEBERG_DAY && (
             <IcebergReplay className="archive-scene-button mt-2 w-full text-left" />
+          )}
+          {loadedDay === MEGAFLASH_DAY && (
+            <MegaflashReplay className="archive-scene-button mt-2 w-full text-left" />
           )}
           {loadedDay === APRIL_ECLIPSE_DAY && (
             <div className="mt-2">

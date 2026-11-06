@@ -1,0 +1,186 @@
+.flash-map figcaption {
+  inset-block: 12px;
+  align-items: flex-start;
+}
+
+.flash-map figcaption span,
+.flash-map figcaption strong {
+  padding: 3px 6px;
+  border-radius: 2px;
+  background: var(--color-void);
+  color: var(--color-ink);
+}
+
+.flash-map figcaption strong {
+  flex-shrink: 0;
+  color: #ace6ff;
+  font-size: clamp(0.85rem, 2.2vw, 1.25rem);
+}
+
+.flash-console {
+  gap: 12px 32px;
+}
+
+.flash-reading {
+  min-width: 0;
+  min-height: 5.5rem;
+}
+
+.flash-legend {
+  margin-top: 7px;
+}
+
+.flash-legend i {
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #9fe8ff;
+}
+
+.flash-transport {
+  display: grid;
+  width: min(100%, 28rem);
+  min-width: 0;
+  gap: 6px;
+}
+
+.flash-time {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 2px 12px;
+  color: var(--color-dim);
+  font-size: 0.75rem;
+}
+
+.flash-time span {
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.flash-scrub {
+  width: 100%;
+  min-height: 35px;
+  cursor: pointer;
+}
+
+.flash-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 700px), (max-height: 520px) {
+  .flash-map figcaption {
+    inset: 8px 12px;
+    align-items: flex-end;
+  }
+
+  .flash-map figcaption span {
+    max-width: calc(100% - 66px);
+  }
+
+  .flash-map figcaption strong {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-end: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .flash-console {
+    gap: 10px;
+  }
+
+  .flash-reading {
+    min-height: 0;
+  }
+
+  .flash-transport {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) and (max-height: 760px) {
+  .archive-scene-dialog[open]:has(.flash-map) {
+    grid-template-rows: auto minmax(165px, 1fr) auto auto;
+  }
+
+  .archive-scene-dialog:has(.flash-map) .archive-scene-header {
+    padding-block: 13px;
+  }
+
+  .archive-scene-dialog:has(.flash-map) .archive-scene-header h2 {
+    font-size: clamp(1.4rem, 5.8vw, 1.75rem);
+  }
+
+  .archive-scene-dialog:has(.flash-map) .archive-scene-header p {
+    column-gap: 8px;
+    margin-top: 5px;
+    font-size: 0.66rem;
+  }
+
+  .flash-reading p {
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+
+  .archive-scene-dialog:has(.flash-map) .archive-scene-credits {
+    gap: 4px 12px;
+    padding-block: 7px;
+  }
+}
+
+@media (max-height: 520px) and (min-width: 620px) {
+  .archive-scene-dialog[open]:has(.flash-map) {
+    grid-template-rows: auto minmax(132px, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 37%);
+  }
+
+  .flash-console {
+    display: contents;
+  }
+
+  .flash-reading {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+    overflow: auto;
+    padding: 12px;
+    background: var(--color-deck);
+  }
+
+  .flash-transport {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    grid-template-areas:
+      "time controls"
+      "scrub controls";
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 1px 18px;
+    width: 100%;
+    padding: 7px 12px;
+    background: var(--color-deck);
+  }
+
+  .flash-time {
+    grid-area: time;
+  }
+
+  .flash-scrub {
+    grid-area: scrub;
+    min-height: 30px;
+  }
+
+  .flash-controls {
+    grid-area: controls;
+    gap: 4px;
+  }
+
+  .flash-controls button {
+    padding-inline: 8px;
+    font-size: 0.72rem;
+  }
+}

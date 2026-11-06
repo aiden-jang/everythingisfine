@@ -6,6 +6,7 @@ import { StormReplay } from "./storm/StormReplay";
 import { TongaReplay } from "./tonga/TongaReplay";
 import { KilaueaReplay } from "./kilauea/KilaueaReplay";
 import { IcebergReplay } from "./iceberg/IcebergReplay";
+import { MegaflashReplay } from "./megaflash/MegaflashReplay";
 import { AuroraOverflightControls } from "./AuroraOverflightControls";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene } from "./useObservatory";
@@ -210,6 +211,7 @@ export function Observatory({
               <TongaReplay />
               <KilaueaReplay />
               <IcebergReplay />
+              <MegaflashReplay />
               <button type="button" onClick={() => onHistory("2013-05-24")}>
                 Deep beneath Okhotsk ↗
               </button>

@@ -226,6 +226,10 @@ on their capture dates. The flight levels into a regional map as the tracks dive
 a fragment highlights its path and jumps to its last recorded fix. Reduced motion opens a
 still and keeps the date slider and track picker available.
 
+Megaflash banks over a false-color infrared scan and slows the observed optical spread
+so the newest pulses stand out against the accumulated trace. It levels into a five-state
+map. Scrubbing and reduced motion use the same level framing.
+
 The globe opens into a curved sheet from its map seam. The camera pulls back to show the curl, then
 settles at the selected map location. The same path wraps the sheet back into the globe, and changing
 direction continues from the displayed frame. Reduced motion switches directly between the projections.

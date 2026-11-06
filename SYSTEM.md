@@ -47,6 +47,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/tonga/` | GOES-17 image crops, estimated Lamb wave and measured ASOS station traces |
 | `src/app/kilauea/` | USGS lava chronology, HVO overflight, and historic shoreline comparison |
 | `src/app/iceberg/` | On-demand A-68A tracks, dated satellite imagery, and fragment inspection |
+| `src/app/megaflash/` | On-demand GOES-16 infrared and time-coded optical flash replay |
 | `src/app/useStill.ts` | Synchronous canvas capture, caption, native sharing, download fallback |
 | `src/app/stillDelivery.ts` | Attached download links and deferred object URL cleanup |
 | `src/app/Utilities.tsx` | Mobile disclosure focus, outside dismissal, Escape and resize lifetime |
@@ -131,6 +132,11 @@ Iceberg Drift loads the regional coastline, daily iceberg fixes, and three satel
 only when opened. The photo cuts hold their source dates. The map joins consecutive fixes and
 marks the previous fix when the selected date has no position. Regenerate the bundled tracks
 and WebP images with [make-iceberg.mjs](tools/make-iceberg.mjs) using Node and `cwebp`.
+
+Megaflash samples the GLM trace from figure 1 of the published reanalysis, keeping only
+colors that match its time scale. A separate ABI scan is reprojected into the same geographic
+frame. [make-megaflash.py](tools/make-megaflash.py) regenerates both assets with Python,
+PyMuPDF, h5py, NumPy, Pillow, and PyProj.
 
 After Dark reuses the polled NOAA grid for aurora overflight. A flight holds one forecast while
 the camera and readout follow it. The frame loop drives the veil sweep and stops when it settles.
