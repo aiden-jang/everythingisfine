@@ -75,7 +75,7 @@ test("the first live seed includes a useful backlog", async ({ page }) => {
     .first();
   await expect(reported).toBeVisible();
   expect(Number((await reported.textContent())?.replace(/,/g, ""))).toBeGreaterThan(50);
-  await expect(page.getByRole("button", { name: /Feed status, .*feeds available/i })).toBeVisible();
+  await expect(page.getByText("All feeds available", { exact: true })).toBeVisible();
   // The window states its own left edge rather than claiming a full 24 hours it does not have.
   // Any live span, not one particular window: this is about the first frame being live.
   await expect(page.locator(".zone-rail")).toContainText(/since \d\d:\d\d|last 24 hours|last 7 days/);
@@ -1881,6 +1881,7 @@ test("the bar's own fold does not make the bar taller", async ({ page }) => {
   // One line of controls. 68px is `py-3` either side of a 44px touch target, and is the height at every
   // width below 1280 whether the fold is drawn in the row or tucked in the menu.
   expect(rows.height, "the bar is one row tall").toBeLessThanOrEqual(68);
+  await expect(page.getByText("7/7", { exact: true })).toBeVisible();
 
   // Reachable all the same, behind `more`, alongside the other three that fold away on a phone.
   await expect(page.getByRole("button", { name: "Hide bar" })).toBeHidden();

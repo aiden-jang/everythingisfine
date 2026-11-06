@@ -53,7 +53,12 @@ export function feedStatus(
     total,
     settling,
     rows,
-    phrase: arrived === 0 && settling ? "connecting" : `${arrived}/${total} feeds available`,
+    phrase:
+      arrived === 0 && settling
+        ? "connecting"
+        : arrived === total
+          ? "All feeds available"
+          : `${arrived} of ${total} feeds available`,
     silent: silentFeeds(
       Object.fromEntries(Object.entries(answered).map(([key, state]) => [key, state !== "failed"])) as Record<
         HazardLayer,
