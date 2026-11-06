@@ -73,7 +73,8 @@ export default defineConfig({
             id.includes("plateMotion.json") ||
             id.includes("slab.json") ||
             id.includes("stars.json") ||
-            id.includes("figures.json")
+            id.includes("figures.json") ||
+            id.endsWith("/src/geo/tonight.ts")
           )
             return undefined;
           /*

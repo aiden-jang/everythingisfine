@@ -194,6 +194,11 @@ Earth's framing; returning to a saved map settles the pitch before unwrapping. S
 the reveal at its displayed position. Reduced motion uses the final sky composition immediately.
 The sky catalogue keeps its displayed-time orientation throughout; no stars move to decorate the shot.
 
+Tonight’s Sky approaches the selected city in the shared globe, then lowers and widens the lens
+as the Earth limb gives way to a level horizon. The local compass holds its direction while time
+changes. Twilight follows the Sun’s elevation and direction, and the Moon and planets follow the
+displayed instant. Reduced motion uses the local view immediately.
+
 Aurora overflight leaves the planetarium for a dark forecast oval. The camera lowers toward the
 curved horizon, banks as the veil traces outward from the forecast focus, then settles over the pole.
 The globe lighting, oval and readout use the same NOAA forecast instant. The elevated veil illustrates

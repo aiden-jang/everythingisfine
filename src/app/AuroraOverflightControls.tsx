@@ -7,11 +7,13 @@ export function AuroraOverflightControls({
   solar,
   onReturn,
   onSunWatch,
+  onTonight,
 }: {
   aurora: ReturnType<typeof useAuroraOverflight>;
   ready: boolean;
   solar: boolean;
   onSunWatch: () => void;
+  onTonight: () => void;
   onReturn: () => void;
 }): JSX.Element {
   const primary = useRef<HTMLButtonElement>(null);
@@ -34,6 +36,9 @@ export function AuroraOverflightControls({
         </button>
         <button type="button" onClick={onSunWatch} aria-expanded={solar} data-sun-toggle="">
           {solar ? "Back to stars" : "Sun Watch"}
+        </button>
+        <button type="button" id="open-tonight-sky" onClick={onTonight} disabled={!ready}>
+          Tonight’s Sky
         </button>
         {aurora.run && (
           <>

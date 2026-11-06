@@ -1,0 +1,27 @@
+import type { SkyCity } from "../../geo/tonight";
+
+export const skyCities: readonly SkyCity[] = [
+  { name: "New York", lat: 40.7128, lon: -74.006, zone: "America/New_York" },
+  { name: "Amsterdam", lat: 52.3676, lon: 4.9041, zone: "Europe/Amsterdam" },
+  { name: "Anchorage", lat: 61.2181, lon: -149.9003, zone: "America/Anchorage" },
+  { name: "Auckland", lat: -36.8509, lon: 174.7645, zone: "Pacific/Auckland" },
+  { name: "Buenos Aires", lat: -34.6037, lon: -58.3816, zone: "America/Argentina/Buenos_Aires" },
+  { name: "Cape Town", lat: -33.9249, lon: 18.4241, zone: "Africa/Johannesburg" },
+  { name: "Chicago", lat: 41.8781, lon: -87.6298, zone: "America/Chicago" },
+  { name: "Delhi", lat: 28.6139, lon: 77.209, zone: "Asia/Kolkata" },
+  { name: "Honolulu", lat: 21.3099, lon: -157.8581, zone: "Pacific/Honolulu" },
+  { name: "London", lat: 51.5072, lon: -0.1276, zone: "Europe/London" },
+  { name: "Los Angeles", lat: 34.0522, lon: -118.2437, zone: "America/Los_Angeles" },
+  { name: "Mexico City", lat: 19.4326, lon: -99.1332, zone: "America/Mexico_City" },
+  { name: "Nairobi", lat: -1.2921, lon: 36.8219, zone: "Africa/Nairobi" },
+  { name: "Paris", lat: 48.8566, lon: 2.3522, zone: "Europe/Paris" },
+  { name: "Reykjavík", lat: 64.1466, lon: -21.9426, zone: "Atlantic/Reykjavik" },
+  { name: "San Francisco", lat: 37.7749, lon: -122.4194, zone: "America/Los_Angeles" },
+  { name: "São Paulo", lat: -23.5505, lon: -46.6333, zone: "America/Sao_Paulo" },
+  { name: "Seoul", lat: 37.5665, lon: 126.978, zone: "Asia/Seoul" },
+  { name: "Singapore", lat: 1.3521, lon: 103.8198, zone: "Asia/Singapore" },
+  { name: "Sydney", lat: -33.8688, lon: 151.2093, zone: "Australia/Sydney" },
+  { name: "Tokyo", lat: 35.6762, lon: 139.6503, zone: "Asia/Tokyo" },
+  { name: "Toronto", lat: 43.6532, lon: -79.3832, zone: "America/Toronto" },
+  { name: "Tromsø", lat: 69.6492, lon: 18.9553, zone: "Europe/Oslo" },
+];

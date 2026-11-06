@@ -114,6 +114,7 @@ index to the matching implementation note.
 - [src/globe/depthDive.ts](#srcglobedepthdivets)
 - [src/globe/useGlobeLayers.ts](#srcglobeuseglobelayersts)
 - [src/globe/controls.ts](#srcglobecontrolsts)
+- [src/globe/controlsTypes.ts](#srcglobecontrolstypests)
 - [src/globe/events.perf.test.ts](#srcglobeeventsperftestts)
 - [src/globe/events.ts](#srcglobeeventsts)
 - [src/globe/figures.ts](#srcglobefigurests)
@@ -2560,21 +2561,6 @@ target to slide - only a rotation that puts the same coastline back under the po
 
 The camera is kept in longitude, latitude and zoom, so cursor anchoring is a subtraction.
 
-**Screen position of a geographic point, or null when it is round the back**
-
-Screen position of a geographic point, or null when it is round the back.
-
-`radius` is in globe radii, because markers are drawn at their depth: the hit test, hover ring and
-tooltip all have to ask about a point *inside* the planet. A surface-only projection puts the pointer
-a long way from a 600km event near the limb.
-
-**Degrees of map covered by one screen pixel. Only meaningful once flat**
-
-Degrees of map covered by one screen pixel. Only meaningful once flat.
-
-`atZoom` asks at a zoom the camera has not reached. Distance is inversely proportional to zoom, so
-converting pixels for the end of a 1 to 1.9 flight while still at 1 gives nearly twice too much.
-
 **How far out you may go, which is a different question on each view: a globe can be lost, a**
 
 How far out you may go, which is a different question on each view: a globe can be lost, a plane
@@ -2602,6 +2588,23 @@ Longitude is squeezed by latitude and the drag has to undo it: a horizontal drag
 point along its parallel, which at latitude L is only cos(L) as long as the equator. Without this a
 140px drag at 70 degrees left the coastline 69 pixels behind. Floored, or a small drag near the axis
 becomes a spin.
+
+### src/globe/controlsTypes.ts
+
+**Screen position of a geographic point, or null when it is round the back**
+
+Screen position of a geographic point, or null when it is round the back.
+
+`radius` is in globe radii, because markers are drawn at their depth: the hit test, hover ring and
+tooltip all have to ask about a point *inside* the planet. A surface-only projection puts the pointer
+a long way from a 600km event near the limb.
+
+**Degrees of map covered by one screen pixel. Only meaningful once flat**
+
+Degrees of map covered by one screen pixel. Only meaningful once flat.
+
+`atZoom` asks at a zoom the camera has not reached. Distance is inversely proportional to zoom, so
+converting pixels for the end of a 1 to 1.9 flight while still at 1 gives nearly twice too much.
 
 ### src/globe/events.perf.test.ts
 

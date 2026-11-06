@@ -1,5 +1,7 @@
 import { createAuroraFlight } from "./auroraFlight";
-import type { OvalPoint } from "../sources/auroraRoute";
+import { createLocalSkyCamera } from "./localSkyCamera";
+import type { CameraState, Controls, Framing } from "./controlsTypes";
+export type { CameraState, Controls } from "./controlsTypes";
 import { createPlanetarium } from "./planetarium";
 import { createGeographicProjection, createUnfoldCamera, perspectiveAngle } from "./cameraProjection";
 import { createDepthDive } from "./depthDive";
@@ -39,61 +41,6 @@ const MOMENTUM_FLOOR = 0.6; // deg/sec, below which it has stopped
  */
 const MOMENTUM_MAX = 200;
 
-export interface Framing {
-  lon: number;
-  lat: number;
-}
-
-export interface CameraState {
-  lon: number;
-  lat: number;
-  zoom: number;
-}
-
-export interface Controls {
-  /** Wires up pointer, wheel and keyboard listeners. Returns the detach function. */
-  attach: (onChange: () => void) => () => void;
-  /** Advances momentum and any reset spring. Returns true while something is still moving. */
-  step: (dt: number) => boolean;
-  /** Writes the current orientation onto the camera. */
-  apply: () => void;
-  /**
-   * The framing distances, recomputed on resize. Two of them: `distance` fits the ball by whichever of
-   * width and height is tighter, and `byHeight` ignores the width, which is what the map wants.
-   */
-  setFit: (distance: number, byHeight: number) => void;
-  /** Geographic point under a client pixel, or null off the globe. Hover in step 9 needs this. */
-  pick: (clientX: number, clientY: number) => { lon: number; lat: number } | null;
-  /** The whole camera in three numbers. This is exactly what a permalink has to carry. */
-  state: () => CameraState;
-  /** Springs the camera to a place. Instant under reduced motion, per DESIGN.md section 8. */
-  flyTo: (lon: number, lat: number, zoom?: number) => void;
-  setView: (pose: CameraState) => void;
-  /** Starts a finite horizon pullback. Skipped completely under reduced motion. */
-  enter: () => void;
-  /** 0 globe, 1 map. Drag becomes a pan and the facing tests fade out as this reaches 1. */
-  setMorph: (t: number) => void;
-  morph: () => number;
-  setPlanetarium: (on: boolean) => void;
-  skyReady: () => boolean;
-  setOverflight: (focus: OvalPoint | null) => void;
-  auroraSweep: () => number;
-  setDive: (on: boolean) => void;
-  diveReady: () => boolean;
-  framingReady: () => boolean;
-  /** Screen position of a geographic point, or null when it is round the back. See ARCHITECTURE.md#srcglobecontrolsts. */
-  project: (lon: number, lat: number, radius?: number) => { x: number; y: number } | null;
-  /** Degrees of map covered by one screen pixel. Only meaningful once flat. See ARCHITECTURE.md#srcglobecontrolsts. */
-  degPerPx: (atZoom?: number) => number;
-  /**
-   * How far around the globe a pixel offset from the centre actually is.
-   *
-   * Not `degPerPx * px`. That is the flat map's straight line; this camera sits about two radii out, so
-   * the sphere's curve decides, and the two disagree threefold at the distances a panel lift asks about.
-   */
-  degForPx: (px: number, atZoom?: number) => number;
-}
-
 export function createControls(
   camera: PerspectiveCamera,
   canvas: HTMLCanvasElement,
@@ -114,6 +61,8 @@ export function createControls(
   let target: CameraTarget | null = null;
   const rig = createCameraRig(camera, canvas);
   const sky = createPlanetarium(camera);
+  const state = (): CameraState => ({ lon, lat, zoom });
+  const horizon = createLocalSkyCamera(camera, state, flyTo);
   const aurora = createAuroraFlight(camera);
   const dive = createDepthDive(camera);
   const flightPose = { lon, lat, zoom },
@@ -141,7 +90,8 @@ export function createControls(
     const revealing = sky.step(dt, reduced.matches);
     const diving = dive.step(dt, reduced.matches, target === null);
     const flying = aurora.step(dt, reduced.matches);
-    return revealing || diving || flying;
+    const landing = horizon.step(dt, reduced.matches, target === null);
+    return revealing || diving || flying || landing;
   };
 
   const distAt = (zoom: number): number => distance.at(zoom, morph);
@@ -213,6 +163,7 @@ export function createControls(
     rig.apply(false);
     sky.apply();
     aurora.apply();
+    horizon.apply();
     // Required. `lookAt` writes the quaternion but leaves matrixWorld stale until something renders,
     // and `pick` raycasts through matrixWorld. Skip it and the anchoring below measures from where the
     // camera used to be, off by tens of degrees.
@@ -308,6 +259,7 @@ export function createControls(
     };
 
     const onPointerDown = (e: PointerEvent): void => {
+      if (horizon.active()) return;
       // Capture keeps a drag alive when the pointer leaves the canvas, and the globe sits against the
       // panel edge. It throws when the pointer is already gone, which a fast tap can arrange.
       try {
@@ -415,6 +367,7 @@ export function createControls(
     };
 
     const onWheel = (e: WheelEvent): void => {
+      if (horizon.active()) return;
       e.preventDefault();
       // Exponential, so a notch is the same proportion of the way in wherever you start: about 14%.
       zoomAt(Math.exp(-e.deltaY * 0.0011), e.clientX, e.clientY);
@@ -422,6 +375,7 @@ export function createControls(
     };
 
     const onDoubleClick = (): void => {
+      if (horizon.active()) return;
       flyTo(framing.lon, framing.lat, 1);
       onChange();
     };
@@ -432,6 +386,7 @@ export function createControls(
      *
      * Allow the surrounding globe region too. Lists and sliders keep their own arrow keys. */
     const onKeyDown = (e: KeyboardEvent): void => {
+      if (horizon.active()) return;
       const active = document.activeElement;
       if (active && active !== document.body && active.id !== "globe-view") return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -586,6 +541,12 @@ export function createControls(
       if (morph === 0) sky.step(0, reduced.matches);
       apply();
     },
+    setLocalSky: (view, restore) => {
+      horizon.set(view, restore);
+      stepFraming(0);
+      apply();
+    },
+    localSky: horizon,
     skyReady: sky.ready,
     setOverflight: (focus) => {
       const side = focus && (focus.lat > 0 ? 1 : -1);
@@ -601,8 +562,8 @@ export function createControls(
       apply();
     },
     diveReady: dive.ready,
-    framingReady: () => sky.ready() && dive.ready() && aurora.ready(),
-    state: () => ({ lon, lat, zoom }),
+    framingReady: () => sky.ready() && dive.ready() && aurora.ready() && horizon.ready(),
+    state,
     // Visible height at distance d is 2 d tan(fov/2), and `focalPx` is the reciprocal half of that, so
     // a pixel is d/focalPx world units and a world unit is 90 degrees.
     degPerPx: (atZoom) => (90 * (atZoom === undefined ? dist() : distAt(atZoom))) / focalPx(),

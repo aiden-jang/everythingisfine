@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
 import { loadStars, type FigureTable } from "../geo/stars";
 import { createGlobe, type GlobeMoment } from "./scene";
-import { isRadar, type GlobePresentation } from "./scenePresentation";
+import { isLocalView, type GlobePresentation } from "./scenePresentation";
 import { sinkFraction, type FocusSpan } from "./events";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 import { createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
@@ -676,7 +676,7 @@ export function Globe({
 
     let downAt: { x: number; y: number } | null = null;
     const onDown = (e: PointerEvent): void => {
-      if (isRadar(live.current.globePresentation)) return;
+      if (isLocalView(live.current.globePresentation)) return;
       interrupt();
       downAt = { x: e.clientX, y: e.clientY };
     };

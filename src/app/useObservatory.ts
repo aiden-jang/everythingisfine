@@ -6,6 +6,7 @@ import type { Stop } from "./tour";
 import type { CutawayFocus } from "../globe/cutaway";
 import { subsolarPoint } from "../geo/sun";
 import type { AuroraRun } from "../sources/auroraRoute";
+import type { TonightView } from "../geo/tonight";
 import type { GlobePresentation } from "../globe/scenePresentation";
 import { national, type RadarView } from "./radar/radarCamera";
 import { revealReadings, shiftGlobe } from "./presentationMotion";
@@ -58,6 +59,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [ready, setReady] = useState(false);
   const [run, setRun] = useState<AuroraRun | null>(null);
   const [sunWatch, setSunWatch] = useState(false);
+  const [tonightView, setTonightView] = useState<TonightView | "opening" | null>(null);
   const [radarView, setRadarView] = useState<RadarView | null>(null);
   const radarOrigin = useRef<Presentation>("observe");
   const transition = useRef<Animation[]>([]);
@@ -81,6 +83,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         setRun(null);
         setSunWatch(false);
         setRadarView(null);
+        setTonightView(null);
         prepare?.();
         if (remember) store("presentation", next);
       };
@@ -128,11 +131,14 @@ export function useObservatory(shared: Partial<Permalink>) {
     setRun(null);
     setSunWatch(false);
     setRadarView(null);
+    setTonightView(null);
   }, []);
   const observing = presentation === "observe";
   const night = observing && scene === "night";
   const sunActive = night && sunWatch;
-  const auroraRun = night && !sunActive ? run : null;
+  const tonight = night && tonightView !== null;
+  const localSky = tonight && tonightView !== "opening" ? tonightView : null;
+  const auroraRun = night && !sunActive && !tonight ? run : null;
   const depth = observing && (tourStop?.purpose === "depth" || scene === "depth");
   const depthFocus = depth ? (tourStop?.purpose === "depth" ? tourStop : focus) : null;
   return {
@@ -156,6 +162,17 @@ export function useObservatory(shared: Partial<Permalink>) {
         if (!sunActive) setRun(null);
         setSunWatch(!sunActive);
       },
+    },
+    tonight: {
+      active: tonight,
+      view: localSky,
+      open() {
+        setRun(null);
+        setSunWatch(false);
+        setTonightView("opening");
+      },
+      update: setTonightView,
+      close: () => setTonightView(null),
     },
     radar: {
       active: radarView !== null,
@@ -182,7 +199,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       update: setRadarView,
     },
     globe(guided: boolean): GlobePresentation {
-      if (night) return sunActive ? null : (auroraRun ?? "planetarium");
+      if (night) return sunActive ? null : (localSky ?? auroraRun ?? "planetarium");
       return observing && scene === "live" && !guided ? (radarView ?? "dayline") : null;
     },
     setTourStop,

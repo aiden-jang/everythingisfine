@@ -68,10 +68,10 @@ export function createSurfaceLayers(
       reveal.value = elapsed / 2.2;
       return elapsed < 2.2;
     },
-    apply(): void {
+    apply(local = 0): void {
       const flare = Math.sin(Math.PI * reveal.value);
-      rim.material.uniforms["uIntensity"]!.value = (0.3 + 0.42 * flare) * (1 - morph.value);
-      glint.material.uniforms["uIntensity"]!.value = (0.3 + 0.18 * flare) * (1 - morph.value);
+      rim.material.uniforms["uIntensity"]!.value = (0.3 + 0.42 * flare) * (1 - morph.value) * (1 - local);
+      glint.material.uniforms["uIntensity"]!.value = (0.3 + 0.18 * flare) * (1 - morph.value) * (1 - local);
       rim.visible = glint.visible = morph.value < 0.999;
     },
   };

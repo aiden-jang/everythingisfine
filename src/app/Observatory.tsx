@@ -14,8 +14,16 @@ import type { EarthScene, useObservatory } from "./useObservatory";
 import type { Stop } from "./tour";
 import { geographicCoordinates } from "../globe/orbitReadout";
 import "./sun/sun-watch.css";
+import "./tonight/tonight.css";
 
 const SunWatch = lazy(() => import("./sun/SunWatch").then(({ SunWatch }) => ({ default: SunWatch })));
+
+const TonightSky = lazy(() =>
+  import("./tonight/TonightSky").then(({ TonightSky }) => ({ default: TonightSky })),
+);
+const TonightCompass = lazy(() =>
+  import("./tonight/TonightCompass").then(({ TonightCompass }) => ({ default: TonightCompass })),
+);
 
 interface Props {
   scene: EarthScene;
@@ -26,7 +34,7 @@ interface Props {
   feedNote: string | null;
   deepAvailable: boolean;
   aurora: ReturnType<typeof useAuroraOverflight>;
-  sun: { active: boolean; toggle: () => void };
+  nightViews: Pick<ReturnType<typeof useObservatory>, "sun" | "tonight">;
   radar: ReturnType<typeof useObservatory>["radar"];
   onScene: (scene: EarthScene) => void;
   onExplore: () => void;
@@ -57,7 +65,7 @@ export function Observatory({
   summary,
   deepAvailable,
   aurora,
-  sun,
+  nightViews: { sun, tonight },
   radar,
   feedNote,
   onScene,
@@ -69,7 +77,7 @@ export function Observatory({
   useLayoutEffect(() => {
     tour.controls.current?.scrollTo(0, 0);
     tour.controls.current?.querySelector<HTMLElement>(".observatory-story")?.scrollTo(0, 0);
-  }, [scene, tour.at, tour.controls, radar.active]);
+  }, [scene, tour.at, tour.controls, radar.active, tonight.active]);
   const active = tour.at !== null;
   const solar = sun.active && !active;
   const title = active
@@ -98,6 +106,10 @@ export function Observatory({
     <>
       {radar.active ? (
         <RadarReadout />
+      ) : tonight.active ? (
+        <Suspense fallback={null}>
+          <TonightCompass view={tonight.view} onView={tonight.update} />
+        </Suspense>
       ) : (
         !solar && (
           <ObservatoryStage scene={scene} at={at} tour={active ? tour.stop : undefined} aurora={aurora.run} />
@@ -112,7 +124,8 @@ export function Observatory({
           data-scene={active ? "tour" : scene}
           data-sun-watch={solar || undefined}
           data-storm-radar={radar.active || undefined}
-          aria-label={radar.active ? "Storm Radar" : "Earth observatory"}
+          data-tonight={tonight.active || undefined}
+          aria-label={radar.active ? "Storm Radar" : tonight.active ? "Tonight’s Sky" : "Earth observatory"}
         >
           {radar.active ? (
             <StormRadar
@@ -124,6 +137,17 @@ export function Observatory({
                 requestAnimationFrame(() => document.getElementById(trigger)?.focus());
               }}
             />
+          ) : tonight.active ? (
+            <Suspense fallback={<p role="status">Opening Tonight’s Sky…</p>}>
+              <TonightSky
+                view={tonight.view}
+                onView={tonight.update}
+                onClose={() => {
+                  tonight.close();
+                  requestAnimationFrame(() => document.getElementById("open-tonight-sky")?.focus());
+                }}
+              />
+            </Suspense>
           ) : (
             <>
               <div className="observatory-story" aria-live="polite" aria-atomic="true">
@@ -151,6 +175,7 @@ export function Observatory({
                   solar={solar}
                   onReturn={() => onScene("night")}
                   onSunWatch={sun.toggle}
+                  onTonight={tonight.open}
                 />
               ) : null}
               {solar && (

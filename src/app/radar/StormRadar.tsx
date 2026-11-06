@@ -1,6 +1,7 @@
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef } from "react";
+import { lazy, Suspense, useLayoutEffect, useRef } from "react";
 import { RADAR_SERVICE } from "../../sources/radar";
 import type { RadarView } from "./radarCamera";
+import { useObservatoryEscape } from "../useObservatoryEscape";
 import "./radar.css";
 
 const RadarStage = lazy(() => import("./RadarStage").then(({ RadarStage }) => ({ default: RadarStage })));
@@ -34,16 +35,7 @@ export function StormRadar({
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
-  useEffect(() => {
-    function escape(event: KeyboardEvent) {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      onClose();
-    }
-    window.addEventListener("keydown", escape, true);
-    return () => window.removeEventListener("keydown", escape, true);
-  }, [onClose]);
+  useObservatoryEscape(onClose);
 
   return (
     <>

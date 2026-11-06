@@ -458,7 +458,7 @@ export function App(): JSX.Element {
   const fetching = pendingRev !== null && snapshot.revision === pendingRev;
   /* Null on the live view, not a timestamp: the scene keeps its minute throttle instead of re-aiming
   the sun every render for a change no eye could see. */
-  const litAt = view.at ?? (snapshot.archive === null ? null : clockAt());
+  const litAt = observatory.tonight.view?.at ?? view.at ?? (archived ? clockAt() : null);
   const eclipseKey = litAt ?? Math.floor(Date.now() / 60_000) * 60_000;
   const eclipse = useMemo(() => {
     const solar = solarEclipse(eclipseKey);
@@ -1084,7 +1084,7 @@ export function App(): JSX.Element {
       </a>
       <h1 className="sr-only">Everything Is Fine</h1>
       <GlobeHeader
-        ready={observatory.ready && !observatory.sun.active}
+        ready={observatory.ready && !observatory.sun.active && !observatory.tonight.active}
         observing={observatory.observing}
         onHome={() =>
           observatory.observeScene(() => {
@@ -1155,7 +1155,7 @@ export function App(): JSX.Element {
               );
             }}
             aurora={overflight}
-            sun={observatory.sun}
+            nightViews={observatory}
             radar={observatory.radar}
             onHistory={(day) => {
               stopTour();
@@ -1560,7 +1560,7 @@ export function App(): JSX.Element {
             <Globe
               feed={feed}
               filters={filters}
-              selected={observatory.radar.active ? null : selected}
+              selected={observatory.radar.active || observatory.tonight.active ? null : selected}
               ramp={ramp}
               focus={focusSpan}
               aurora={overflight.run?.forecast ?? onGlobe.aurora}

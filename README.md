@@ -36,6 +36,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
   view contains a reported depth of at least 70 km.
 - **After Dark** opens the displayed moment's night sky above Earth's curved horizon, then traces
   constellation guides. Reduced motion keeps the same view without the flight.
+- **Tonight’s Sky** descends to a selected city from After Dark. Scrub from local sunset to sunrise,
+  use the compass to turn, or point at the Moon and five bright planets. Angles are calculated for a
+  level horizon. Where a crossing is absent, the timeline uses a local evening or morning endpoint.
 - **Follow the aurora** in After Dark banks over a dark-side NOAA OVATION forecast oval and settles
   into a polar view. The readout shows the forecast time and modeled chance at the focus. The
   raised glow illustrates the footprint. Reduced motion opens the polar view directly.
@@ -128,6 +131,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Storm Radar | [NOAA MRMS base reflectivity](https://mapservices.weather.noaa.gov/eventdriven/rest/services/radar/radar_base_reflectivity_time/ImageServer) |
 | Aurora forecast | NOAA SWPC OVATION |
 | Sun Watch | NOAA SWPC real-time solar wind, primary GOES X-ray flux, NASA/GSFC Solar Dynamics Observatory |
+| Tonight’s Sky | Local solar and lunar calculations, [JPL planetary elements](https://ssd.jpl.nasa.gov/planets/orbits/), [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) reference checks |
 | Coastlines and replay cities | Natural Earth, public domain |
 | Plate boundaries | PB2002, Bird (2003), simplified for display |
 | Tōhoku rupture and shaking | USGS finite-fault model and preferred ShakeMap Atlas MMI contours |

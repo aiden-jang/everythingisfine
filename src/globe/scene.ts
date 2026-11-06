@@ -369,7 +369,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   });
 
   const controls = createControls(camera, canvas, FRAMING, FOV);
-  const presentation = createScenePresentation(spin, catalogue, controls, sunDir, lights, dayline);
+  const presentation = createScenePresentation(spin, catalogue, controls, sunDir, lights, dayline, canvas);
   const inspection = createEventPresentation(camera, controls, catalogue);
   spin.add(inspection.object);
   let markerScale = (): number => 1;
@@ -597,12 +597,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         }
       }
 
-      lights.apply();
+      const skyOpacity = (1 - morph.value) * presentation.skyOpacity(camera);
       starfield.prepare(camera, canvas.width, canvas.height, quietMotion || morph.value > 0);
-      starfield.setOpacity(1 - morph.value);
+      starfield.setOpacity(skyOpacity);
       moon.setOpacity(1 - morph.value);
-      figures.setOpacity(1 - morph.value);
-      planets.setOpacity(1 - morph.value);
+      figures.setOpacity(skyOpacity);
+      planets.setOpacity(skyOpacity);
       if (slabOn) slab.setOpacity(1 - morph.value);
 
       /* The fill is culled on the globe and not on the map. See ARCHITECTURE.md#srcglobescenets. */
