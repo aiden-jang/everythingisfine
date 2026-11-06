@@ -77,11 +77,11 @@ test("mobile utilities dismiss with Escape and return keyboard focus", async ({ 
   const toggle = page.getByRole("button", { name: "More view controls", exact: true });
   await toggle.focus();
   await page.keyboard.press("Enter");
-  const sound = page.getByRole("button", { name: "Sound off", exact: true });
-  await expect(sound).toBeFocused();
+  const colors = page.getByRole("button", { name: "Magnitude colors · Thermal", exact: true });
+  await expect(colors).toBeFocused();
   await page.keyboard.press("Escape");
-  await expect(sound).toBeHidden();
-  await expect(page.getByRole("button", { name: "More view controls", exact: true })).toBeFocused();
+  await expect(colors).toBeHidden();
+  await expect(toggle).toBeFocused();
 });
 
 test("mobile utilities dismiss outside and when focus leaves", async ({ page }) => {
