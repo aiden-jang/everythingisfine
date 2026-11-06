@@ -6,7 +6,7 @@ test("feed status names unavailable sources without increasing the background co
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.route(/gdacs.*eventlist=WF/i, (route) => route.abort());
   await page.goto("/");
-  const toggle = page.getByRole("button", { name: "Feed status, 6 of 7 feeds available" });
+  const toggle = page.getByRole("button", { name: "Feed status, 6/7 available" });
   await expect(toggle.getByText("6/7", { exact: true })).toBeVisible();
   await toggle.press("Enter");
   const panel = page.getByRole("region", { name: "Feed status", exact: true });

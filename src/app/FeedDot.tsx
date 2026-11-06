@@ -39,7 +39,6 @@ export function FeedDot({
         data-feed-compact={compact || undefined}
         ref={trigger}
         {...{ popovertarget: id }}
-        aria-label={`Feed status, ${feeds.phrase}`}
         aria-controls={id}
         onClick={() => {
           const rect = trigger.current?.getBoundingClientRect();
@@ -49,9 +48,15 @@ export function FeedDot({
         }}
       >
         <span className={`inline-block size-[6px] rounded-full ${dot}`} aria-hidden="true" />
+        <span className="sr-only">Feed status,</span>
         <span className="feed-wide hidden sm:inline">{feeds.phrase}</span>
-        <span className="feed-count sm:hidden" aria-hidden="true">
-          {feeds.arrived}/{feeds.total}
+        <span className="feed-count sm:hidden">
+          <span>
+            {feeds.arrived}/{feeds.total}
+          </span>
+          <span className="sr-only">
+            {feeds.arrived === 0 && feeds.settling ? "connecting" : "available"}
+          </span>
         </span>
         <svg width="9" height="6" viewBox="0 0 9 6" fill="none" aria-hidden="true">
           <path d="m1 1 3.5 3.5L8 1" stroke="currentColor" />
