@@ -1,4 +1,4 @@
-import { useLayoutEffect, type RefObject } from "react";
+import { lazy, Suspense, useLayoutEffect, type RefObject } from "react";
 import { ObservatoryStage, OBSERVATORY_SCENES, SceneDiagram } from "./ObservatoryStage";
 import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import { RuptureReveal, TOHOKU_DAY } from "./rupture/RuptureReveal";
@@ -12,6 +12,9 @@ import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene } from "./useObservatory";
 import type { Stop } from "./tour";
 import { geographicCoordinates } from "../globe/orbitReadout";
+import "./sun/sun-watch.css";
+
+const SunWatch = lazy(() => import("./sun/SunWatch").then(({ SunWatch }) => ({ default: SunWatch })));
 
 interface Props {
   scene: EarthScene;
@@ -22,6 +25,7 @@ interface Props {
   feedNote: string | null;
   deepAvailable: boolean;
   aurora: ReturnType<typeof useAuroraOverflight>;
+  sun: { active: boolean; toggle: () => void };
   onScene: (scene: EarthScene) => void;
   onExplore: () => void;
   tour: {
@@ -50,6 +54,7 @@ export function Observatory({
   summary,
   deepAvailable,
   aurora,
+  sun,
   feedNote,
   onScene,
   onExplore,
@@ -61,31 +66,39 @@ export function Observatory({
     tour.controls.current?.querySelector<HTMLElement>(".observatory-story")?.scrollTo(0, 0);
   }, [scene, tour.at, tour.controls]);
   const active = tour.at !== null;
+  const solar = sun.active && !active;
   const title = active
     ? (tour.stop?.heading ?? "Taking the long way around.")
     : scene === "depth"
       ? "Beneath the surface."
       : scene === "night"
-        ? aurora.run
-          ? "Into the auroral oval."
-          : "The other side of day."
+        ? solar
+          ? "Sun Watch"
+          : aurora.run
+            ? "Into the auroral oval."
+            : "The other side of day."
         : "Meanwhile, on Earth.";
   const description = active
     ? (tour.stop?.description ?? "Travelling to the next view. The story begins when the camera arrives.")
     : scene === "depth"
       ? "Look through a regional cutaway at reported earthquake depths. The faint points show historical seismicity."
       : scene === "night"
-        ? aurora.run
-          ? "Follow NOAA’s forecast over Earth’s dark side. The raised glow illustrates the modeled oval."
-          : "Earth settles into the horizon as constellations trace overhead. The sky follows the UTC readout."
+        ? solar
+          ? "See what GOES measures in X-rays and what spacecraft sample in the solar wind upstream of Earth. Aurora has its own forecast."
+          : aurora.run
+            ? "Follow NOAA’s forecast over Earth’s dark side. The raised glow illustrates the modeled oval."
+            : "Earth settles into the horizon as constellations trace overhead. The sky follows the UTC readout."
         : "A live view of earthquakes, changing skies, and a restless planet.";
   return (
     <>
-      <ObservatoryStage scene={scene} at={at} tour={active ? tour.stop : undefined} aurora={aurora.run} />
+      {!solar && (
+        <ObservatoryStage scene={scene} at={at} tour={active ? tour.stop : undefined} aurora={aurora.run} />
+      )}
       <section
         className="observatory-intro"
         ref={tour.controls}
         data-scene={active ? "tour" : scene}
+        data-sun-watch={solar || undefined}
         aria-label="Earth observatory"
       >
         <div className="observatory-story" aria-live="polite" aria-atomic="true">
@@ -104,8 +117,31 @@ export function Observatory({
           ) : null}
         </div>
         {!active && scene === "night" ? (
-          <AuroraOverflightControls aurora={aurora} ready={ready} onReturn={() => onScene("night")} />
+          <AuroraOverflightControls
+            aurora={aurora}
+            ready={ready}
+            solar={solar}
+            onReturn={() => onScene("night")}
+            onSunWatch={sun.toggle}
+          />
         ) : null}
+        {solar && (
+          <div className="sun-credits" aria-label="Sun Watch sources">
+            <a href="https://www.swpc.noaa.gov/products/solar-wind" target="_blank" rel="noreferrer">
+              NOAA solar wind
+            </a>
+            <a href="https://www.swpc.noaa.gov/products/goes-x-ray-flux" target="_blank" rel="noreferrer">
+              GOES X-rays
+            </a>
+            <a
+              href="https://www.jpl.nasa.gov/images/pia26681-image-of-sun-from-nasas-solar-dynamics-observatory/"
+              target="_blank"
+              rel="noreferrer"
+            >
+              NASA/GSFC/SDO image
+            </a>
+          </div>
+        )}
         {active ? (
           <div className="observatory-tour-controls">
             <div className="observatory-tour-step">
@@ -149,7 +185,7 @@ export function Observatory({
               <button
                 type="button"
                 onClick={onExplore}
-                className={aurora.run ? undefined : "observatory-primary"}
+                className={aurora.run || solar ? undefined : "observatory-primary"}
               >
                 Explore the globe <span aria-hidden="true">↗</span>
               </button>
@@ -238,6 +274,22 @@ export function Observatory({
           </a>
         </p>
       </section>
+      {solar && (
+        <Suspense
+          fallback={
+            <div className="observatory-stage sun-watch-loading" role="status">
+              Opening Sun Watch…
+            </div>
+          }
+        >
+          <SunWatch
+            onClose={() => {
+              sun.toggle();
+              tour.controls.current?.querySelector<HTMLButtonElement>("[data-sun-toggle]")?.focus();
+            }}
+          />
+        </Suspense>
+      )}
     </>
   );
 }

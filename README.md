@@ -42,6 +42,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Take a tour** visits a captured selection of readings and regions. Narration waits for arrival;
   Pause, Previous, Next, Stop, and Read this event remain available. Hidden tabs pause its reading time.
 - **Revisit a day** loads an archived day and frames its largest available event.
+- **Sun Watch** in After Dark moves from a NASA solar image through a schematic solar-wind
+  stream and back to Earth. Its two live plots show the last hour of upstream wind speed and
+  six hours of GOES X-ray flux. Choose any of the three still views with reduced motion.
 - **Watch Tōhoku rupture** follows the 2011 earthquake from its epicenter to the modeled fault
   beneath the ocean and then to estimated shaking across Japan. Choose **Fault slip** or
   **Shaking** to inspect either view. Reduced motion opens the finished fault view.
@@ -121,6 +124,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Live storms, volcanoes, wildfires, floods | GDACS, retaining the credited reporting agency |
 | Archived hazards | NASA EONET |
 | Aurora forecast | NOAA SWPC OVATION |
+| Sun Watch | NOAA SWPC real-time solar wind, primary GOES X-ray flux, NASA/GSFC Solar Dynamics Observatory |
 | Coastlines and replay cities | Natural Earth, public domain |
 | Plate boundaries | PB2002, Bird (2003), simplified for display |
 | Tōhoku rupture and shaking | USGS finite-fault model and preferred ShakeMap Atlas MMI contours |
@@ -176,6 +180,14 @@ samples the time-coded optical trace in the published GOES-16 reanalysis in appr
 [Peterson et al.](https://doi.org/10.1175/BAMS-D-25-0037.1) ·
 [NOAA GOES-16](https://www.nesdis.noaa.gov/news/noaa-satellites-help-certify-worlds-longest-lightning-flash) ·
 [WMO certification](https://wmo.int/news/media-centre/wmo-certifies-megaflash-lightning-record-usa).
+
+Sun Watch follows SWPC’s active upstream spacecraft and the primary GOES 0.1–0.8 nm band.
+Each plot shows its own observation time. The solar disk is an archived image from September
+10, 2025, and the motion of the schematic stream reflects the latest wind sample. The separate
+OVATION view shows the aurora forecast.
+[NOAA solar wind](https://www.swpc.noaa.gov/products/solar-wind) ·
+[GOES X-rays](https://www.swpc.noaa.gov/products/goes-x-ray-flux) ·
+[NASA/GSFC/SDO image](https://www.jpl.nasa.gov/images/pia26681-image-of-sun-from-nasas-solar-dynamics-observatory/).
 
 Colour represents magnitude. Other hazards use distinct shapes, with neutral interface controls.
 

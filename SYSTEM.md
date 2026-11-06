@@ -67,6 +67,8 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/globe/cameraFlight.ts` | Finite arrival path, spring integration and flight-bank targets |
 | `src/globe/cameraRig.ts` | Interruptible lens bank and horizon offset, cleared on the map and under reduced motion |
 | `src/globe/cameraTarget.ts` | Shared camera callback, perspective panel lift and explicit arrival replay |
+| `src/app/sun/` | On-demand solar flight, separate live observation windows and feed state |
+| `src/sources/spaceWeather.ts` | NOAA primary wind and GOES X-ray decoders |
 | `src/globe/planetarium.ts` | Finite After Dark pitch, input interruption and reduced-motion sky framing |
 | `src/sources/auroraRoute.ts` | Current NOAA forecast checks and dark-side oval selection |
 | `src/globe/auroraFlight.ts` and `src/globe/auroraVeil.ts` | Finite polar framing and forecast-derived ribbon |
@@ -140,6 +142,9 @@ PyMuPDF, h5py, NumPy, Pillow, and PyProj.
 
 After Dark reuses the polled NOAA grid for aurora overflight. A flight holds one forecast while
 the camera and readout follow it. The frame loop drives the veil sweep and stops when it settles.
+Sun Watch opens over that same globe and polls the two NOAA observation endpoints independently
+while visible. Each retains its latest reading through failures with a status label and timestamp.
+Closing Sun Watch cancels both requests and returns to the stars or starts the aurora flight.
 
 WebGL startup failures have a retry surface; they do not remove the event list and filters.
 Scene callbacks use current refs so changing a selection does not recreate WebGL resources.

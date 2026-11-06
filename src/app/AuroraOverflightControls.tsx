@@ -4,25 +4,36 @@ import type { useAuroraOverflight } from "./useAuroraOverflight";
 export function AuroraOverflightControls({
   aurora,
   ready,
+  solar,
   onReturn,
+  onSunWatch,
 }: {
   aurora: ReturnType<typeof useAuroraOverflight>;
   ready: boolean;
+  solar: boolean;
+  onSunWatch: () => void;
   onReturn: () => void;
 }): JSX.Element {
   const primary = useRef<HTMLButtonElement>(null);
   const other = aurora.routes.find((route) => route.hemisphere !== aurora.run?.route.hemisphere);
   return (
     <div className="aurora-overflight">
-      <div className="observatory-actions" role="group" aria-label="Aurora overflight">
+      <div className="observatory-actions" role="group" aria-label="After Dark views">
         <button
           ref={primary}
           type="button"
           className="observatory-primary"
           disabled={!ready || (!aurora.run && aurora.unavailable !== null)}
-          onClick={() => (aurora.run ? aurora.replay() : aurora.start())}
+          onClick={() => {
+            if (solar) onSunWatch();
+            if (aurora.run) aurora.replay();
+            else aurora.start();
+          }}
         >
           {aurora.run ? "Replay flight" : "Follow the aurora"}
+        </button>
+        <button type="button" onClick={onSunWatch} aria-expanded={solar} data-sun-toggle="">
+          {solar ? "Back to stars" : "Sun Watch"}
         </button>
         {aurora.run && (
           <>
@@ -61,7 +72,7 @@ export function AuroraOverflightControls({
           {" · "}
           {aurora.run.route.hemisphere === 1 ? "Northern oval" : "Southern oval"}
         </p>
-      ) : aurora.unavailable ? (
+      ) : aurora.unavailable && !solar ? (
         <p className="observatory-summary" role="status">
           {aurora.unavailable}
         </p>

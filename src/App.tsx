@@ -507,7 +507,7 @@ export function App(): JSX.Element {
     enterObserve();
     beginTour();
   }, [beginTour, chooseScene, enterObserve]);
-  const openExplorer = (): void => observatory.exploreScene(stopTour);
+  const openExplorer = () => observatory.exploreScene(stopTour);
   const chooseEarthScene = (scene: EarthScene): void => {
     stopTour();
     const next = earthSceneTarget(scene, journey.deepest, view.at ?? clockAt());
@@ -994,7 +994,7 @@ export function App(): JSX.Element {
     <main className="frame" data-presentation={observatory.presentation}>
       <h1 className="sr-only">Everything Is Fine</h1>
       <GlobeHeader
-        ready={observatory.ready}
+        ready={observatory.ready && !observatory.sun.active}
         observing={observatory.observing}
         onExplore={openExplorer}
         onHome={() =>
@@ -1028,7 +1028,6 @@ export function App(): JSX.Element {
         }}
         tourDisabled={stops.length === 0 || !observatory.ready}
       />
-
       <div
         className="zones"
         style={
@@ -1060,6 +1059,7 @@ export function App(): JSX.Element {
             onScene={chooseEarthScene}
             onExplore={openExplorer}
             aurora={overflight}
+            sun={observatory.sun}
             onHistory={(day) => {
               stopTour();
               enterExplore();

@@ -206,6 +206,11 @@ overhead map. The fault view uses USGS model timing and metres of slip, with fou
 The surface view uses the preferred USGS ShakeMap contours and a separate intensity legend.
 The motion pauses in hidden tabs, and either finished view can be opened directly.
 
+Sun Watch stays inside After Dark. An archived solar close-up gives way to a schematic
+flow informed by current wind speed and density, then clears to the same night-side globe.
+The wind and X-ray plots have separate axes and observation times. Reduced motion opens on
+Earth with the same three chapter controls.
+
 Katrina opens on a banked view of the Gulf horizon, follows the eye along NOAA’s best track and
 settles to an overview at the Buras landfall. Track dots mark published fixes. Wind outlines use
 the published quadrant radii, and the readings change at the fixes. Scrubbing and reduced motion

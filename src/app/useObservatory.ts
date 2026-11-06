@@ -52,6 +52,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [tourStop, setTourStop] = useState<Stop | null>(null);
   const [ready, setReady] = useState(false);
   const [run, setRun] = useState<AuroraRun | null>(null);
+  const [sunWatch, setSunWatch] = useState(false);
   const transition = useRef<ViewTransition | null>(null);
   const focusExplorer = useRef(false);
   const changeId = useRef(0);
@@ -65,6 +66,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       setPresentation(next);
       setTourStop(null);
       setRun(null);
+      setSunWatch(false);
       store("presentation", next);
     };
     if (
@@ -121,10 +123,12 @@ export function useObservatory(shared: Partial<Permalink>) {
     setFocus(at);
     setTourStop(null);
     setRun(null);
+    setSunWatch(false);
   }, []);
   const observing = presentation === "observe";
   const night = observing && scene === "night";
-  const auroraRun = night ? run : null;
+  const sunActive = night && sunWatch;
+  const auroraRun = night && !sunActive ? run : null;
   const depth = observing && (tourStop?.purpose === "depth" || scene === "depth");
   const depthFocus = depth ? (tourStop?.purpose === "depth" ? tourStop : focus) : null;
   return {
@@ -142,8 +146,15 @@ export function useObservatory(shared: Partial<Permalink>) {
     depthFocus,
     night,
     aurora: { run: auroraRun, setRun },
+    sun: {
+      active: sunActive,
+      toggle() {
+        if (!sunActive) setRun(null);
+        setSunWatch(!sunActive);
+      },
+    },
     sky(guided: boolean): SkyPresentation {
-      if (night) return auroraRun ?? "planetarium";
+      if (night) return sunActive ? null : (auroraRun ?? "planetarium");
       return observing && scene === "live" && !guided ? "dayline" : null;
     },
     setTourStop,

@@ -1,0 +1,261 @@
+.observatory-intro[data-sun-watch] .observatory-description {
+  max-width: 39ch;
+}
+
+.observatory-intro[data-sun-watch] .observatory-actions {
+  margin-top: 14px;
+}
+
+.sun-credits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 13px;
+  margin-top: 12px;
+  color: var(--color-dim);
+  font-size: 0.69rem;
+}
+
+.sun-credits a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sun-watch-stage {
+  --sun-veil: 1;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  overflow: hidden;
+  padding: 8px var(--stage-inset) var(--stage-inset);
+  background: rgb(7 13 24 / var(--sun-veil));
+  pointer-events: auto;
+}
+
+.sun-watch-stage[data-leg="earth"]:not([style]) {
+  --sun-veil: 0;
+}
+
+.sun-watch-loading {
+  display: grid;
+  place-items: center;
+  color: var(--color-dim);
+}
+
+.sun-flight {
+  position: relative;
+  min-height: 0;
+}
+
+.sun-flight canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.sun-flight-caption {
+  position: absolute;
+  inset: 8px 0 auto auto;
+  max-width: 100%;
+  padding: 5px 7px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 4px;
+  background: var(--color-void);
+  color: var(--color-ink);
+}
+
+.sun-console {
+  z-index: 1;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-hairline);
+  border-radius: 8px;
+  background: var(--color-deck);
+}
+
+.sun-transport {
+  display: flex;
+  min-width: 0;
+  justify-content: space-between;
+  gap: 4px;
+  padding-inline: 5px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.sun-chapters {
+  display: flex;
+  min-width: 0;
+}
+
+.sun-transport button {
+  min-height: 44px;
+  padding: 0 11px;
+  border-bottom: 1px solid transparent;
+  color: var(--color-dim);
+  font-family: var(--font-sans);
+  font-weight: 560;
+  cursor: pointer;
+}
+
+.sun-transport button:is(:hover, [aria-pressed="true"]) {
+  border-color: #a8d3ec;
+  color: var(--color-ink);
+  background: var(--color-raised);
+}
+
+.sun-play {
+  min-width: 60px;
+}
+
+.sun-readings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sun-readings section {
+  min-width: 0;
+  padding: 10px 14px;
+}
+
+.sun-readings section + section {
+  border-inline-start: 1px solid var(--color-hairline);
+}
+
+.sun-reading-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 7px;
+  color: var(--color-dim);
+}
+
+.sun-reading-heading h3 {
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.sun-value {
+  margin-top: 3px;
+  color: var(--color-ink);
+  font-size: 0.8rem;
+}
+
+.sun-value strong {
+  font-size: clamp(0.98rem, 1.7vw, 1.4rem);
+  font-weight: 600;
+}
+
+.sun-instrument {
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.sun-chart {
+  --sun-trace: #9fd1ee;
+  margin-top: 6px;
+}
+
+.sun-chart[data-series="xray"] {
+  --sun-trace: #f2bd86;
+}
+
+.sun-chart svg,
+.sun-chart-empty {
+  display: block;
+  width: 100%;
+  height: 36px;
+}
+
+.sun-chart-empty {
+  display: flex;
+  align-items: center;
+  color: var(--color-dim);
+}
+
+.sun-chart svg circle {
+  fill: var(--sun-trace);
+}
+
+.sun-chart-grid,
+.sun-chart-line {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.sun-chart-grid {
+  stroke: var(--color-hairline);
+}
+
+.sun-chart-line {
+  stroke: var(--sun-trace);
+  stroke-width: 1.3px;
+}
+
+.sun-chart-times {
+  display: flex;
+  justify-content: space-between;
+  gap: 3px;
+  color: var(--color-dim);
+}
+
+.sun-stamp {
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 899px) {
+  .sun-watch-stage {
+    padding-top: 4px;
+  }
+
+  .sun-readings section {
+    padding: 6px 9px;
+  }
+
+  .sun-transport button {
+    padding-inline: 8px;
+  }
+
+  .sun-chart svg,
+  .sun-chart-empty {
+    height: 26px;
+  }
+
+  .sun-chart {
+    margin-top: 3px;
+  }
+
+  .sun-credits {
+    margin-top: 4px;
+  }
+}
+
+@media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
+  .frame[data-presentation="observe"] .zones:has(.observatory-intro[data-sun-watch]) {
+    grid-template-rows: minmax(330px, 1fr) auto;
+  }
+
+  .observatory-intro[data-sun-watch] {
+    max-height: none;
+    overflow: visible;
+  }
+}
+
+@media (forced-colors: active) {
+  .sun-chart-line {
+    stroke: CanvasText;
+  }
+
+  .sun-chart svg circle {
+    fill: CanvasText;
+  }
+
+  .sun-transport button[aria-pressed="true"] {
+    border-color: Highlight;
+  }
+}
