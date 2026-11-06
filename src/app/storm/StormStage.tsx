@@ -155,7 +155,7 @@ export function StormStage(): JSX.Element {
             <span>{fix.pressure} mb</span>
           </p>
           <p>
-            {atFix ? "Recorded storm position" : "Most recent recorded position"}{" "}
+            {atFix ? "Recorded position" : "Last recorded position"}{" "}
             <time dateTime={fix.at}>{stormClock(fix.time)}</time>
           </p>
         </div>

@@ -137,7 +137,7 @@ export function GlobeHeader({
           <>
             {/* Never `whitespace-nowrap` here. It does not shrink, it overflows, and one extra button pushed
         the header 120px past a phone viewport. */}
-            <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 max-md:gap-x-1">
+            <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-2 max-lg:gap-x-1.5 max-md:gap-x-1">
               <button
                 type="button"
                 id="view-projection"
@@ -197,10 +197,14 @@ export function GlobeHeader({
                 <button
                   type="button"
                   onClick={onReset}
+                  aria-label={snapshot.archive ? "Reset to live" : "Reset view & filters"}
                   aria-description="Reset the camera and earthquake filters, and return to live"
                   className="cursor-pointer border border-hairline px-2.5 py-1 text-[11px] text-faint transition-colors hover:bg-raised hover:text-ink"
                 >
-                  {snapshot.archive ? "Reset to live" : "Reset view & filters"}
+                  <span className="hidden md:inline lg:hidden">Reset</span>
+                  <span className="md:hidden lg:inline">
+                    {snapshot.archive ? "Reset to live" : "Reset view & filters"}
+                  </span>
                 </button>
                 {/* Keep the fold inside the overflow. As a button of its own at 390 it wrapped onto a line by
           itself and took the header from 46px to 80px, which is the opposite of folding the bar. */}

@@ -45,7 +45,7 @@ export function useStill(
         file
           ? "Sharing is unavailable. You can download the image."
           : loading
-            ? "The globe is still loading. Try again after it appears."
+            ? "The globe is not ready. Try again after it appears."
             : "Couldn’t create the image. Try again.",
       );
     };

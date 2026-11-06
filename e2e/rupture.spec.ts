@@ -11,10 +11,10 @@ test("Tōhoku reveals the modeled fault before the estimated shaking", async ({ 
   await trigger.click();
   const reveal = page.getByRole("dialog", { name: "The Tōhoku rupture" });
   await expect(reveal.getByRole("heading", { name: "Off the coast of Honshu" })).toBeVisible();
-  await expect(reveal.getByRole("heading", { name: "Slip on the fault" })).toBeVisible();
+  await expect(reveal.getByRole("heading", { name: "Modeled fault movement" })).toBeVisible();
   await reveal.getByRole("button", { name: "Pause reveal" }).click();
   await expect(reveal.getByRole("button", { name: "Resume reveal" })).toBeVisible();
-  await expect(reveal.getByRole("heading", { name: "Slip on the fault" })).toBeVisible();
+  await expect(reveal.getByRole("heading", { name: "Modeled fault movement" })).toBeVisible();
   await reveal.getByRole("button", { name: "Resume reveal" }).click();
   await expect(reveal.getByRole("button", { name: "Replay reveal" })).toBeVisible();
   await expect(reveal.getByRole("heading", { name: "Estimated surface shaking" })).toBeVisible();

@@ -78,13 +78,15 @@ export function ObservationDeck({ deck, onClose }: { deck: Deck; onClose: () => 
           <div className="observation-heading">
             <h2>{title}</h2>
             <div className="observatory-actions">
-              <button
-                type="button"
-                ref={back}
-                onClick={id ? () => deck.open("catalogue") : onClose}
-                aria-label={id ? "Back to observatory views" : "Back to Observatory"}
-              >
-                {id ? "Back to observatory views" : "Back to Observatory"}
+              <button type="button" ref={back} onClick={id ? () => deck.open("catalogue") : onClose}>
+                {id ? (
+                  <>
+                    <span className="observation-back-full">Back to observatory views</span>
+                    <span className="observation-back-compact">Back to views</span>
+                  </>
+                ) : (
+                  "Back to Observatory"
+                )}
               </button>
             </div>
           </div>

@@ -65,6 +65,27 @@
   padding-block: 8px;
 }
 
+.observation-transport > span {
+  min-width: 0;
+  color: var(--color-dim);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.observation-back-compact {
+  display: none;
+}
+
+@media (max-width: 480px), (max-height: 620px) {
+  .observation-back-full {
+    display: none;
+  }
+
+  .observation-back-compact {
+    display: inline;
+  }
+}
+
 .observation-transport time,
 .observation-values dd {
   font-family: var(--font-mono);

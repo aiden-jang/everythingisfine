@@ -37,13 +37,14 @@ for (const [width, height] of [
     ).toBeVisible({ timeout: 25_000 });
     const toggle = page.locator("#view-projection");
     await expect(toggle).toHaveText("Map");
-    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await expect(toggle).toHaveAttribute("aria-description", "Switch to map");
     await page.emulateMedia({ reducedMotion: "no-preference" });
     const before = (await pose(page))!;
     const globe = await page.locator("canvas").screenshot();
 
     await toggle.click();
     await expect(toggle).toHaveText("Globe");
+    await expect(toggle).toHaveAttribute("aria-description", "Switch to globe");
     await expect.poll(() => pose(page)).toEqual({ ...before, morph: 1 });
     const flat = await page.locator("canvas").screenshot();
     expect(flat.equals(globe)).toBe(false);

@@ -31,7 +31,7 @@ const captions = {
   },
   shaking: {
     title: "Estimated surface shaking",
-    detail: "USGS ShakeMap estimates shaking intensity at each location. The contours summarize the event.",
+    detail: "USGS ShakeMap estimates Modified Mercalli intensity (MMI) at each location.",
   },
 };
 
@@ -149,18 +149,20 @@ export function RuptureStage(): JSX.Element {
             <button
               type="button"
               className="archive-scene-button"
+              aria-label="Modeled fault movement"
               aria-pressed={mode === "fault"}
               onClick={() => setMode("fault")}
             >
-              Modeled fault movement
+              Fault movement
             </button>
             <button
               type="button"
               className="archive-scene-button"
+              aria-label="Estimated surface shaking"
               aria-pressed={mode === "shaking"}
               onClick={() => setMode("shaking")}
             >
-              Estimated surface shaking
+              Surface shaking
             </button>
             {!reduced && (
               <button type="button" className="archive-scene-button" onClick={playback}>
@@ -176,7 +178,7 @@ export function RuptureStage(): JSX.Element {
               role="group"
               aria-label={displayed === "fault" ? "Modeled slip in metres" : "Modified Mercalli intensity"}
             >
-              <span>{displayed === "fault" ? "Slip · m" : "Modified Mercalli intensity"}</span>
+              <span>{displayed === "fault" ? "Slip · m" : "Intensity · MMI"}</span>
               {(displayed === "fault" ? slipKey : shakingLegend).map(({ label, color }) => (
                 <span key={label}>
                   <i data-ramp="" style={{ backgroundColor: color }} />

@@ -20,7 +20,7 @@ test("After Dark follows the NOAA forecast and returns to the stars", { tag: "@d
   await follow(page).click();
   const readout = page.getByRole("group", { name: "Globe readout" });
   await expect(readout).toContainText("30% model chance");
-  await expect(readout).toContainText(/For \d\d:\d\d UTC/);
+  await expect(readout).toContainText(/Valid for \d\d:\d\d UTC/);
   const flight = () =>
     page.evaluate(() => {
       const globe = (

@@ -443,7 +443,7 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
 
   await page.goto("/");
   const rail = page.locator(".zone-rail");
-  await expect(rail).toContainText("Loading earthquake reports for the last 24h…");
+  await expect(rail).toContainText("Loading earthquake reports for the last 7d…");
   await expect(rail).not.toContainText("nothing yet");
   await expect(rail).not.toContainText("still filling");
   // No headline either: an empty count is not a count.
