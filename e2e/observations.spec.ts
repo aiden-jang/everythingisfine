@@ -56,7 +56,14 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   const more = page.getByRole("button", { name: "More views", exact: true });
   await more.click();
   expect(attempts).toBe(0);
-  await page.getByRole("button", { name: /^Tide Watch/ }).click();
+  const catalogue = page.getByRole("region", { name: "Observatory views" });
+  const tideRow = catalogue.getByRole("button", { name: "Tide Watch", exact: true });
+  await expect(tideRow).toHaveAccessibleDescription("Compare measured and predicted tides.");
+  await expect(tideRow.getByText("Compare measured and predicted tides.")).toBeVisible();
+  await catalogue.evaluate((panel) => (panel.scrollTop = 90));
+  const scroll = await catalogue.evaluate((panel) => panel.scrollTop);
+  expect(scroll).toBeGreaterThan(0);
+  await tideRow.click();
   const tide = page.getByRole("region", { name: "Tide Watch", exact: true });
   await expect(tide.getByText(/Couldn’t load Tide Watch data from NOAA/)).toBeVisible();
   await tide.getByRole("button", { name: "Retry source" }).click();
@@ -76,6 +83,10 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(slider).toBeInViewport({ ratio: 1 });
   expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await tide.getByRole("button", { name: "Back to views", exact: true }).click();
+  await expect(tideRow).toBeFocused();
+  expect(await catalogue.evaluate((panel) => panel.scrollTop)).toBe(scroll);
   await page.keyboard.press("Escape");
   await expect(more).toBeFocused();
   expect(errors).toEqual([]);
@@ -110,6 +121,6 @@ test("Orbital Pass shares the city and time between the horizon, globe and map",
   await expect(page.getByRole("group", { name: "Orbital Pass on the map" })).toBeVisible();
   await expect(slider).toHaveAttribute("aria-valuetext", time!);
   await expect(city).toHaveValue("Tokyo");
-  await page.keyboard.press("Escape");
+  await pass.getByRole("button", { name: "Back to After Dark", exact: true }).click();
   await expect(open).toBeFocused();
 });

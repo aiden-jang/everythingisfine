@@ -15,15 +15,36 @@ type Deck = Omit<ReturnType<typeof useObservationDeck>, "entry"> & {
   entry: ObservationId | "catalogue";
 };
 
-export function ObservationDeck({ deck, onClose }: { deck: Deck; onClose: () => void }): JSX.Element {
+export function ObservationDeck({
+  deck,
+  onClose,
+  closeLabel,
+}: {
+  deck: Deck;
+  onClose: () => void;
+  closeLabel: string;
+}): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLElement>(null);
+  const catalogueScroll = useRef(0);
+  const [catalogueRow, setCatalogueRow] = useState<ObservationId | null>(null);
   const [loaded, setLoaded] = useState<{ id: ObservationId; source: ObservationSource | null } | null>(null);
   const [revision, retry] = useState(0);
   const id = deck.entry === "catalogue" ? null : deck.entry;
   const meta = id ? observations[id] : null;
   const title = meta?.title ?? "Observatory views";
 
-  useLayoutEffect(() => back.current?.focus({ preventScroll: true }), [id]);
+  useLayoutEffect(() => {
+    const intro = panel.current;
+    if (!intro) return;
+    if (!id && catalogueRow) {
+      intro.scrollTop = catalogueScroll.current;
+      intro.querySelector<HTMLButtonElement>(`[data-view="${catalogueRow}"]`)?.focus({ preventScroll: true });
+    } else {
+      intro.scrollTop = 0;
+      back.current?.focus({ preventScroll: true });
+    }
+  }, [id, catalogueRow]);
   useObservatoryEscape(onClose);
 
   useEffect(() => {
@@ -70,6 +91,7 @@ export function ObservationDeck({ deck, onClose }: { deck: Deck; onClose: () => 
       <div className="observatory-sidebar">
         <section
           id="observatory-intro"
+          ref={panel}
           className="observatory-intro observation-panel"
           tabIndex={-1}
           aria-label={title}
@@ -78,14 +100,18 @@ export function ObservationDeck({ deck, onClose }: { deck: Deck; onClose: () => 
           <div className="observation-heading">
             <h2>{title}</h2>
             <div className="observatory-actions">
-              <button type="button" ref={back} onClick={id ? () => deck.open("catalogue") : onClose}>
-                {id ? (
+              <button
+                type="button"
+                ref={back}
+                onClick={id && catalogueRow ? () => deck.open("catalogue") : onClose}
+              >
+                {id && catalogueRow ? (
                   <>
                     <span className="observation-back-full">Back to observatory views</span>
                     <span className="observation-back-compact">Back to views</span>
                   </>
                 ) : (
-                  "Back to Observatory"
+                  closeLabel
                 )}
               </button>
             </div>
@@ -166,9 +192,22 @@ export function ObservationDeck({ deck, onClose }: { deck: Deck; onClose: () => 
                     .filter(([, item]) => item.group === group)
                     .map(([key, item]) => (
                       <li key={key}>
-                        <button type="button" onClick={() => deck.open(key)}>
-                          {item.title}
+                        <button
+                          type="button"
+                          data-view={key}
+                          aria-labelledby={`view-${key}`}
+                          aria-describedby={`view-summary-${key}`}
+                          onClick={() => {
+                            catalogueScroll.current = panel.current?.scrollTop ?? 0;
+                            setCatalogueRow(key);
+                            deck.open(key);
+                          }}
+                        >
+                          <span id={`view-${key}`}>{item.title}</span>
                           <small>{item.source}</small>
+                          <span id={`view-summary-${key}`} className="observation-index-summary">
+                            {item.summary}
+                          </span>
                         </button>
                       </li>
                     ))}

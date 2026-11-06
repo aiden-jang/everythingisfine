@@ -102,32 +102,25 @@ export function reach(from: number | null, now: number, windowMs: number): strin
   return agoShort(from, now);
 }
 
-/**
- * Stops `USGS 30d · EMSC 18h` reading as a bug. Null when every agency covers the whole window.
- *
- * Truncated and missing are different facts and get different words.
- */
+/** Explains uneven coverage once at least one source has loaded earlier reports. */
 export function reachNote(
-  covered: Record<SourceId, number | null>,
+  reports: readonly { id: SourceId; from: number | null; unavailable: boolean }[],
   now: number,
   windowMs: number,
 ): string | null {
-  const ids = Object.keys(covered) as SourceId[];
   const edge = now - windowMs;
-  // Before the first seed lands nothing has reached anywhere, and the rail is already saying that it
-  // is asking. A note about short backlogs on top of that describes a state nobody is in yet.
-  if (ids.every((id) => covered[id] === null)) return null;
+  if (reports.every(({ from }) => from === null)) return null;
 
-  const truncated = ids.filter((id) => covered[id] !== null && covered[id]! > edge);
-  const missing = ids.filter((id) => covered[id] === null);
+  const truncated = reports.filter(({ from }) => from !== null && from > edge);
+  const missing = reports.filter(({ from }) => from === null);
   if (truncated.length === 0 && missing.length === 0) return null;
 
-  const named = (list: SourceId[]): string => list.map((id) => SOURCE_NAMES[id]).join(" and ");
+  const named = (list: typeof reports): string => list.map(({ id }) => SOURCE_NAMES[id]).join(" and ");
   const parts: string[] = [];
 
   if (truncated.length > 0) {
     // The furthest back any truncated source got. Naming the shallowest would understate what is held.
-    const deepest = Math.min(...truncated.map((id) => covered[id]!));
+    const deepest = Math.min(...truncated.map(({ from }) => from!));
     parts.push(
       truncated.length === 1
         ? `${named(truncated)} returns its most recent page whatever the window, so it reaches only as ` +
@@ -136,12 +129,16 @@ export function reachNote(
             `as far back as ${agoShort(deepest, now)}.`,
     );
   }
-  if (missing.length > 0) {
-    parts.push(`Earlier reports unavailable from ${named(missing)}.`);
+  const unavailable = missing.filter((report) => report.unavailable);
+  const waiting = missing.filter((report) => !report.unavailable);
+  if (waiting.length > 0) {
+    parts.push(`Waiting for earlier reports from ${named(waiting)}.`);
   }
-
-  const full = ids.filter((id) => !truncated.includes(id) && !missing.includes(id));
-  if (full.length > 0) parts.push(`Older events are ${named(full)} alone.`);
+  if (unavailable.length > 0) {
+    parts.push(`Earlier reports unavailable from ${named(unavailable)}.`);
+  }
+  const full = reports.filter(({ from }) => from !== null && from <= edge);
+  if (full.length > 0 && waiting.length === 0) parts.push(`Older events are ${named(full)} alone.`);
   return parts.join(" ");
 }
 

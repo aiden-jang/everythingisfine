@@ -58,16 +58,26 @@ describe("how far back one agency reaches", () => {
 });
 
 describe("the note under the pair", () => {
+  const noteFor = (usgs: number | null, emsc: number | null, windowMs: number) =>
+    reachNote(
+      [
+        { id: "usgs", from: usgs, unavailable: usgs === null },
+        { id: "emsc", from: emsc, unavailable: emsc === null },
+      ],
+      now,
+      windowMs,
+    );
+
   it("says nothing while both cover the window, so the caveat is never stale", () => {
-    expect(reachNote({ usgs: now - DAY, emsc: now - DAY }, now, DAY)).toBeNull();
+    expect(noteFor(now - DAY, now - DAY, DAY)).toBeNull();
   });
 
   it("says nothing before the first seed, which the rail is already reporting", () => {
-    expect(reachNote({ usgs: null, emsc: null }, now, DAY)).toBeNull();
+    expect(noteFor(null, null, DAY)).toBeNull();
   });
 
   it("names the truncated agency, its reach, and who covers the rest", () => {
-    const note = reachNote({ usgs: now - MONTH, emsc: now - 18 * HOUR }, now, MONTH);
+    const note = noteFor(now - MONTH, now - 18 * HOUR, MONTH);
     expect(note).toBe(
       "EMSC returns its most recent page whatever the window, so it reaches only as far back as 18h." +
         " Older events are USGS alone.",
@@ -77,14 +87,14 @@ describe("the note under the pair", () => {
   it("does not blame the cap for a feed that returned nothing at all", () => {
     // Two different failures. A short page was capped by the endpoint; an absent one failed and has its own
     // notice elsewhere. One sentence covering both would explain the wrong thing about the wrong feed.
-    const note = reachNote({ usgs: null, emsc: now - 18 * HOUR }, now, MONTH);
+    const note = noteFor(null, now - 18 * HOUR, MONTH);
     expect(note).toContain("EMSC returns its most recent page");
     expect(note).toContain("Earlier reports unavailable from USGS.");
     expect(note).not.toContain("alone");
   });
 
   it("drops the who-covers-the-rest clause when nobody does", () => {
-    const note = reachNote({ usgs: now - 2 * HOUR, emsc: now - 18 * HOUR }, now, MONTH);
+    const note = noteFor(now - 2 * HOUR, now - 18 * HOUR, MONTH);
     expect(note).toBe(
       "USGS and EMSC return their most recent page whatever the window, so they reach only as far" +
         " back as 18h.",
@@ -93,7 +103,7 @@ describe("the note under the pair", () => {
 
   it("names the deepest reach of the short ones, not the shallowest", () => {
     // Understating what is held would be the same kind of error in the other direction.
-    const note = reachNote({ usgs: now - 2 * HOUR, emsc: now - 18 * HOUR }, now, MONTH);
+    const note = noteFor(now - 2 * HOUR, now - 18 * HOUR, MONTH);
     expect(note).toContain("18h");
     expect(note).not.toContain("2h");
   });

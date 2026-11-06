@@ -30,6 +30,7 @@ export function ObservationDeckShell({
     >
       <ObservationDeck
         deck={{ ...deck, entry }}
+        closeLabel={night ? "Back to After Dark" : "Back to Observatory"}
         onClose={() => {
           deck.close();
           requestAnimationFrame(() =>

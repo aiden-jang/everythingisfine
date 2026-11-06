@@ -1,6 +1,7 @@
 import type { History } from "../sources/history";
 import type { FeedSnapshot } from "./feed";
 import type { LayerAnswer } from "./feedStatus";
+import { earlierReportsUnavailable } from "./earthquakeStatus";
 import { SOURCE_NAMES, type HazardLayer } from "./format";
 
 export function sharedEarthquakeNotice(
@@ -19,7 +20,7 @@ export function sharedEarthquakeNotice(
   }
   if (snapshot.covered[source] !== null)
     return "Couldn’t find this earthquake in the available live reports.";
-  if (snapshot.seedFailed[source] || snapshot.statuses[source].kind === "failing")
+  if (earlierReportsUnavailable(snapshot, source))
     return `Earlier earthquake reports from ${agency} are unavailable.`;
   return null;
 }

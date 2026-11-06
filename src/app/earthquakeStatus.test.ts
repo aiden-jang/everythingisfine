@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import type { FeedSnapshot } from "./feed";
-import { earthquakeCoverage, earthquakeEmpty } from "./earthquakeStatus";
+import { earthquakeCoverage, earthquakeEmpty, earthquakeReach } from "./earthquakeStatus";
 import { sharedEarthquakeNotice, sharedHazardNotice } from "./linkNotices";
 
 const day = 86_400_000;
@@ -18,6 +18,25 @@ it("reports the coverage of the selected source and dates earlier days", () => {
   expect(coverage).toMatchObject({ from: now - 2 * day, partial: true, waiting: false });
   expect(coverage.label).toMatch(/Partial source coverage · since 4 Nov 2026 at /);
   expect(earthquakeCoverage(snapshot, { ...filters, sources: new Set(["usgs"]) }, now).partial).toBe(false);
+});
+
+it("keeps the source row and coverage note in agreement while a second backfill is pending", () => {
+  const pending = { ...snapshot, covered: { ...snapshot.covered, emsc: null } };
+  const waiting = earthquakeReach(pending, now, day);
+  expect(waiting.rows[1]?.words).toBe("Waiting");
+  expect(waiting.note).toBe("Waiting for earlier reports from EMSC.");
+
+  const disconnected = {
+    ...pending,
+    statuses: { ...pending.statuses, emsc: { kind: "failing", reason: "connection lost", retryAt: now } },
+  } satisfies typeof pending;
+  expect(earthquakeReach(disconnected, now, day)).toEqual(waiting);
+  expect(sharedEarthquakeNotice("emsc:missing", disconnected, null, false)).toBeNull();
+
+  const failed = earthquakeReach({ ...pending, seedFailed: { emsc: true } }, now, day);
+  expect(failed.rows[1]?.words).toBe("Unavailable");
+  expect(failed.note).toBe("Earlier reports unavailable from EMSC. Older events are USGS alone.");
+  expect(earthquakeReach(snapshot, now, day).note).toBeNull();
 });
 
 it("distinguishes an incomplete empty window, loading, an outage, and filtered reports", () => {

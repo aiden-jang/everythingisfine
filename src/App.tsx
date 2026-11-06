@@ -105,7 +105,6 @@ import {
   quietNote,
   quietParts,
   compactSpan,
-  reachNote,
   SOURCE_NAMES,
 } from "./app/format";
 
@@ -916,9 +915,6 @@ export function App(): JSX.Element {
     shown,
     revealedNow,
   ]);
-  // Not memoised: the reach it names is a distance from now, and keyed on the revision it would freeze
-  // at whatever it was when the last event landed.
-  const sourceNote = reachNote(snapshot.covered, now, filters.windowMs);
   const feeds = feedStatus(snapshot.statuses, answered, { ...snapshot.checked, ...checked });
 
   const keyOnCanvas = useNarrow() === false;
@@ -987,7 +983,7 @@ export function App(): JSX.Element {
 
   const marksKey = cloneElement(marksFilter, { part: "key" });
 
-  const reaches = earthquakeReach(snapshot, now, filters.windowMs);
+  const { rows: reaches, note: sourceNote } = earthquakeReach(snapshot, now, filters.windowMs);
   const timelineNotes = [sourceNote, corroborationNote(overlap, overlapFrom, now, filters.windowMs)].filter(
     (n): n is string => n !== null,
   );

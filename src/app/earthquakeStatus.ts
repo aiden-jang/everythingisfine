@@ -1,6 +1,14 @@
-import type { Filters } from "../data/types";
+import type { Filters, SourceId } from "../data/types";
 import type { FeedSnapshot } from "./feed";
-import { reachFraction, reachWords, SOURCE_NAMES, windowLabel } from "./format";
+import { reachFraction, reachNote, reachWords, SOURCE_NAMES, windowLabel } from "./format";
+
+export function earlierReportsUnavailable(
+  snapshot: Pick<FeedSnapshot, "statuses" | "seedFailed">,
+  id: SourceId,
+) {
+  // EMSC's live socket can disconnect while its separate catalogue request is still pending.
+  return snapshot.seedFailed[id] === true || (id === "usgs" && snapshot.statuses[id].kind === "failing");
+}
 
 export function earthquakeCoverage(
   snapshot: Pick<FeedSnapshot, "archive" | "covered" | "statuses" | "seedFailed">,
@@ -22,9 +30,7 @@ export function earthquakeCoverage(
     return start === null || start > now - filters.windowMs || snapshot.statuses[id].kind === "failing";
   });
   const waiting =
-    !snapshot.archive &&
-    from === null &&
-    sources.some((id) => !snapshot.seedFailed[id] && snapshot.statuses[id].kind !== "failing");
+    !snapshot.archive && from === null && sources.some((id) => !earlierReportsUnavailable(snapshot, id));
   const label =
     sources.length === 0
       ? "No earthquake sources selected"
@@ -40,21 +46,29 @@ export function earthquakeCoverage(
   return { from, partial, waiting, label };
 }
 
-export function earthquakeReach(snapshot: FeedSnapshot, now: number, windowMs: number) {
-  return (["usgs", "emsc"] as const).map((id) => {
+export function earthquakeReach(
+  snapshot: Pick<FeedSnapshot, "archive" | "covered" | "statuses" | "seedFailed">,
+  now: number,
+  windowMs: number,
+) {
+  const reports = (["usgs", "emsc"] as const).map((id) => {
     const from = snapshot.covered[id];
     const unavailable = snapshot.archive
       ? snapshot.archive.answered?.[id] === null
-      : snapshot.seedFailed[id] === true || snapshot.statuses[id].kind === "failing";
-    return {
+      : earlierReportsUnavailable(snapshot, id);
+    return { id, from, unavailable };
+  });
+  return {
+    rows: reports.map(({ id, from, unavailable }) => ({
       id,
       label: SOURCE_NAMES[id],
       fraction: reachFraction(from, now, windowMs),
       words: snapshot.archive?.answered?.[id]?.truncated
         ? "Incomplete"
         : reachWords(from, unavailable, now, windowMs),
-    };
-  });
+    })),
+    note: snapshot.archive ? null : reachNote(reports, now, windowMs),
+  };
 }
 
 export function earthquakeEmpty({

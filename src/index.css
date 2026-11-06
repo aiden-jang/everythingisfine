@@ -824,6 +824,12 @@
   }
 }
 
+@media (max-width: 350px) {
+  .zone-head:not(.observatory-header) {
+    padding-inline: 8px;
+  }
+}
+
 /* Live activity comes before archive browsing; an active archive keeps its date upfront. */
 .rail > [data-rail="activity"]:not(:has(.stamp)) {
   padding-top: 18px;

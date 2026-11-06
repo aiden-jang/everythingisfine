@@ -8,7 +8,9 @@ export function Utilities({ children }: { children: ReactNode }): JSX.Element {
   useEffect(() => {
     if (!open) return;
     const media = window.matchMedia("(max-width: 767px)");
-    panel.current?.querySelector("button")?.focus();
+    Array.from(panel.current?.querySelectorAll("button") ?? [])
+      .find((button) => button.offsetWidth > 0 && !button.disabled)
+      ?.focus();
     const outside = (event: Event): void => {
       if (!root.current?.contains(event.target as Node)) setOpen(false);
     };
@@ -55,7 +57,7 @@ export function Utilities({ children }: { children: ReactNode }): JSX.Element {
         aria-controls="utility-controls"
         aria-label={open ? "Close view controls" : "More view controls"}
         onClick={() => setOpen((value) => !value)}
-        className="w-[3.25rem] shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-center text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink md:hidden"
+        className="w-[3.25rem] shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-center text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink max-[400px]:w-11 md:hidden"
       >
         {open ? "close" : "more"}
       </button>

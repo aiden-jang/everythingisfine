@@ -61,6 +61,27 @@ export function GlobeHeader({
   saveStill,
   feeds,
 }: Props): JSX.Element {
+  const colorLabel = `Magnitude colors · ${ramp === "cividis" ? "Cividis" : "Thermal"}`;
+  const colors = (inMenu: boolean) => (
+    <button
+      type="button"
+      onClick={() => setRamp((r) => (r === "thermal" ? "cividis" : "thermal"))}
+      aria-label={colorLabel}
+      aria-pressed={ramp === "cividis"}
+      className={`${inMenu ? "min-[400px]:hidden" : "max-[400px]:hidden"} shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised ${
+        ramp === "cividis" ? "bg-raised text-ink" : "text-faint"
+      }`}
+    >
+      {inMenu ? (
+        colorLabel
+      ) : (
+        <>
+          <span className="lg:hidden">Colors</span>
+          <span className="hidden lg:inline">{colorLabel}</span>
+        </>
+      )}
+    </button>
+  );
   return (
     <>
       <header
@@ -143,25 +164,13 @@ export function GlobeHeader({
                 id="view-projection"
                 onClick={() => setFlat((f) => !f)}
                 aria-description={flat ? "Switch to globe" : "Switch to map"}
-                className="min-w-[60px] shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink max-md:min-w-[52px]"
+                className="min-w-[60px] shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink max-md:min-w-[52px] max-[400px]:min-w-11"
               >
                 {flat ? "Globe" : "Map"}
               </button>
-              <button
-                type="button"
-                onClick={() => setRamp((r) => (r === "thermal" ? "cividis" : "thermal"))}
-                aria-label={`Magnitude colors · ${ramp === "cividis" ? "Cividis" : "Thermal"}`}
-                aria-pressed={ramp === "cividis"}
-                className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised ${
-                  ramp === "cividis" ? "bg-raised text-ink" : "text-faint"
-                }`}
-              >
-                <span className="lg:hidden">Colors</span>
-                <span className="hidden lg:inline">
-                  Magnitude colors · {ramp === "cividis" ? "Cividis" : "Thermal"}
-                </span>
-              </button>
+              {colors(false)}
               <Utilities>
+                {colors(true)}
                 <button
                   type="button"
                   onClick={() => setSound((on) => !on)}

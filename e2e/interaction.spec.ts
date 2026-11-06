@@ -1886,29 +1886,32 @@ test("the bar folds where it is a row of its own, and stays folded", async ({ pa
  * the opposite of what folding the bar is for. It lives in the overflow menu now.
  */
 test("the bar's own fold does not make the bar taller", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 414, height: 844 });
   await installFeeds(page, { count: 200 });
   await page.goto("/");
   await waitForData(page);
   await page.waitForTimeout(600);
 
-  const rows = await page.evaluate(() => {
-    const head = document.querySelector("#chrome-head") as HTMLElement;
-    const tops = new Set<number>();
-    for (const child of Array.from(head.querySelectorAll("button, span"))) {
-      const box = child.getBoundingClientRect();
-      if (box.height > 0) tops.add(Math.round(box.top));
-    }
-    return { lines: tops.size, height: Math.round(head.getBoundingClientRect().height) };
-  });
-  // One line of controls. 68px is `py-3` either side of a 44px touch target, and is the height at every
-  // width below 1280 whether the fold is drawn in the row or tucked in the menu.
-  expect(rows.height, "the bar is one row tall").toBeLessThanOrEqual(68);
-  await expect(page.getByText("7/7", { exact: true })).toBeVisible();
+  const bar = page.locator("#chrome-head");
+  const height = () => bar.evaluate((element) => element.getBoundingClientRect().height);
+  const more = page.getByRole("button", { name: "More view controls" });
+  const colors = page.getByRole("button", { name: /Magnitude colors/ });
+  expect(await height(), "the bar is one row tall at 414px").toBeLessThanOrEqual(68);
+  await expect(colors).toBeVisible();
 
-  // Reachable all the same, behind `more`, alongside the other three that fold away on a phone.
-  await expect(page.getByRole("button", { name: "Hide bar" })).toBeHidden();
-  await page.getByRole("button", { name: "More view controls" }).click();
+  for (const width of [390, 375, 320]) {
+    await page.setViewportSize({ width, height: 740 });
+    expect(await height(), `the bar is one row tall at ${width}px`).toBeLessThanOrEqual(68);
+  }
+  await expect(page.getByText("7/7", { exact: true })).toBeVisible();
+  await expect(colors).toBeHidden();
+  await more.press("Enter");
+  await expect(colors).toBeFocused();
+  await colors.press("Enter");
+  await expect(more).toBeFocused();
+  await more.click();
+  await expect(colors).toHaveAttribute("aria-pressed", "true");
+
   await expect(page.getByRole("button", { name: "Hide bar" })).toBeVisible();
   await page.getByRole("button", { name: "Hide bar" }).click();
   await page.waitForTimeout(400);
