@@ -541,45 +541,6 @@
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .zone-canvas {
-    view-transition-name: earth-view;
-  }
-
-  #chrome-head {
-    view-transition-name: earth-header;
-  }
-
-  #chrome-rail {
-    view-transition-name: earth-readings;
-  }
-
-  ::view-transition-group(*) {
-    animation-duration: 420ms;
-    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  ::view-transition-group(earth-header) {
-    z-index: 3;
-  }
-
-  ::view-transition-group(earth-readings) {
-    z-index: 2;
-    animation-duration: 320ms;
-  }
-
-  ::view-transition-image-pair(earth-view) {
-    overflow: clip;
-    background: var(--color-void);
-  }
-
-  ::view-transition-old(earth-view),
-  ::view-transition-new(earth-view) {
-    height: 100%;
-    object-fit: contain;
-  }
-}
-
 @layer components {
   .observatory-story h2 {
     animation: observatory-title-arrive 540ms cubic-bezier(0.16, 1, 0.3, 1);

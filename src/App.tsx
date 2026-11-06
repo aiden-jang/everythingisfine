@@ -1116,7 +1116,7 @@ export function App(): JSX.Element {
         <aside
           aria-label="Event filters and recent activity"
           id="chrome-rail"
-          className="zone-rail rail border-hairline bg-deck p-5 max-md:border-b md:border-r"
+          className="zone-rail rail border-hairline p-5 max-md:border-b md:border-r"
           hidden={!railShown}
         >
           <div className="titleblock">

@@ -198,9 +198,6 @@
       /* Its own scroll container, since it no longer has a grid row to be bounded by. */
       overflow-y: auto;
       contain: paint;
-      /* Blur preserves legibility through the translucent rail; desaturation keeps data hues out of chrome. */
-      background: color-mix(in srgb, var(--color-deck) 44%, transparent);
-      backdrop-filter: blur(28px) saturate(0.45);
     }
 
     /* Opaque sticky title cells keep counts readable without translucent dividers flickering over scrolling content. */
@@ -209,7 +206,6 @@
       top: 0;
       /* Above later siblings, which paint over a same-index sticky element by document order. */
       z-index: 2;
-      background: linear-gradient(var(--color-hairline), var(--color-hairline)), var(--color-deck);
     }
   }
 
@@ -231,6 +227,7 @@
 
   .zone-rail {
     grid-area: rail;
+    background: var(--color-void);
   }
 
   /* Phone only: the rail is a sheet, so it scrolls inside its own row. `min-height: 0` is the part
@@ -850,12 +847,6 @@
   border-top: 1px solid var(--color-hairline);
 }
 
-@media (min-width: 768px) {
-  .zone-rail > .titleblock {
-    background: var(--color-deck);
-  }
-}
-
 @media (pointer: coarse) {
   .zone-head button:not(.wordmark),
   .zone-rail .disclose,
@@ -947,6 +938,7 @@
     top: -20px;
     margin-top: -20px;
     padding-top: 20px;
+    background: var(--color-void);
   }
 }
 
@@ -963,7 +955,7 @@
     z-index: 3;
     display: flex;
     justify-content: space-between;
-    background: var(--color-deck);
+    background: var(--color-void);
     pointer-events: none;
   }
   .mobile-navigation button {

@@ -7,6 +7,7 @@ import type { CutawayFocus } from "../globe/cutaway";
 import { subsolarPoint } from "../geo/sun";
 import type { AuroraRun } from "../sources/auroraRoute";
 import type { SkyPresentation } from "../globe/scene";
+import { revealReadings, shiftGlobe } from "./presentationMotion";
 
 export type EarthScene = "live" | "depth" | "night";
 export type Presentation = "observe" | "explore";
@@ -53,14 +54,17 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [ready, setReady] = useState(false);
   const [run, setRun] = useState<AuroraRun | null>(null);
   const [sunWatch, setSunWatch] = useState(false);
-  const transition = useRef<ViewTransition | null>(null);
+  const transition = useRef<Animation[]>([]);
   const focusExplorer = useRef(false);
-  const changeId = useRef(0);
   const changePresentation = useCallback((next: Presentation, animate: boolean, prepare?: () => void) => {
-    const id = ++changeId.current;
-    transition.current?.skipTransition();
-    const update = (): void => {
-      if (id !== changeId.current) return;
+    const globe = document.querySelector<HTMLElement>(".zone-canvas");
+    const from =
+      animate && globe?.animate && !document.hidden && !matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? globe.getBoundingClientRect()
+        : null;
+    for (const animation of transition.current) animation.cancel();
+    transition.current = [];
+    const update = () => {
       prepare?.();
       focusExplorer.current = animate && next === "explore";
       setPresentation(next);
@@ -69,35 +73,21 @@ export function useObservatory(shared: Partial<Permalink>) {
       setSunWatch(false);
       store("presentation", next);
     };
-    if (
-      !animate ||
-      !document.startViewTransition ||
-      document.hidden ||
-      matchMedia("(prefers-reduced-motion: reduce)").matches
-    ) {
+    if (!globe || !from) {
       update();
       return;
     }
-    const active = document.startViewTransition(async () => {
-      if (id !== changeId.current) return;
-      flushSync(update);
-      // Let the existing resize observer render the new canvas dimensions before its snapshot.
-      await new Promise<void>((resolve) =>
-        requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
-      );
-    });
-    transition.current = active;
-    void active.ready.catch(() => {});
-    void active.finished
-      .catch(() => {})
-      .then(() => {
-        if (transition.current === active) transition.current = null;
-      });
+    flushSync(update);
+    const flight = shiftGlobe(globe, from);
+    const readings = revealReadings(
+      document.querySelector<HTMLElement>(next === "explore" ? "#chrome-rail" : ".observatory-intro"),
+    );
+    if (flight) transition.current.push(flight);
+    if (readings) transition.current.push(readings);
   }, []);
   useEffect(
     () => () => {
-      changeId.current++;
-      transition.current?.skipTransition();
+      for (const animation of transition.current) animation.cancel();
     },
     [],
   );

@@ -377,11 +377,11 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const inspection = createEventPresentation(camera, controls, catalogue);
   spin.add(inspection.object);
   let markerScale = (): number => 1;
-
   const resize = (): void => {
     const parent = canvas.parentElement;
     if (!parent) return;
-    const { width, height } = parent.getBoundingClientRect();
+    // Presentation motion can transform the visible canvas while the renderer uses its final layout.
+    const { clientWidth: width, clientHeight: height } = parent;
     if (width < 1 || height < 1) return;
 
     const dpr = Math.min(window.devicePixelRatio, 2);

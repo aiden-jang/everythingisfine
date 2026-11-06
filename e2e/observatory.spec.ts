@@ -119,7 +119,20 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
   await installFeeds(page, { presentation: "fresh" });
   await page.addInitScript(() => {
     const get = HTMLCanvasElement.prototype.getContext;
-    const scene = { contexts: 0 };
+    const scene = { contexts: 0, flights: 0, canvas: null as HTMLCanvasElement | null };
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (frames, options) {
+      const motion = animate.call(this, frames, options);
+      if (
+        this.matches(".zone-canvas") &&
+        Array.isArray(frames) &&
+        frames[0]?.transform !== frames[1]?.transform
+      ) {
+        scene.flights += 1;
+        scene.canvas ??= this.querySelector("canvas");
+      }
+      return motion;
+    };
     Object.assign(window, { observatoryScene: scene });
     HTMLCanvasElement.prototype.getContext = function (kind: string, ...args: unknown[]) {
       if (/webgl/.test(kind)) scene.contexts += 1;
@@ -141,6 +154,8 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
   await expect(page.locator("#view-projection")).toBeFocused();
   const canvas = page.getByRole("region", { name: "Globe", exact: true });
   const rail = page.locator("#chrome-rail");
+  const landingColor = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  await expect(rail).toHaveCSS("background-color", landingColor);
   await expect
     .poll(async () => {
       const [map, panel] = await Promise.all([canvas.boundingBox(), rail.boundingBox()]);
@@ -150,6 +165,14 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
   await page.getByRole("button", { name: "Everything Is Fine, back to the default view" }).click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
   expect(await contexts()).toBe(original);
+  expect(
+    await page.evaluate(() => {
+      const { flights, canvas } = (
+        window as unknown as { observatoryScene: { flights: number; canvas: HTMLCanvasElement | null } }
+      ).observatoryScene;
+      return { flights, sameCanvas: canvas === document.querySelector(".zone-canvas canvas") };
+    }),
+  ).toEqual({ flights: 2, sameCanvas: true });
   expect(errors).toEqual([]);
 });
 
