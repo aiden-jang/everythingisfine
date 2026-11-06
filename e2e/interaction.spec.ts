@@ -433,7 +433,7 @@ test("a revised magnitude says what the agency first said", async ({ page }) => 
   await expect(panel).toContainText("USGS first said M 6.1 → M 6.4, 25 km → 41 km deep");
   // The current value is what the headline and the marker use, not the first one.
   await expect(panel.locator(".text-\\[40px\\]")).toContainText("6.4");
-  await expect(page.locator("header")).toContainText("revised");
+  await expect(page.locator("#chrome-head")).toContainText("revised");
 });
 
 test("before any data lands, the rail says what it is waiting for", async ({ page }) => {
