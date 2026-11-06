@@ -17,7 +17,7 @@ test("Tōhoku reveals the modeled fault before the estimated shaking", async ({ 
   await expect(reveal.getByRole("heading", { name: "Slip on the fault" })).toBeVisible();
   await reveal.getByRole("button", { name: "Resume reveal" }).click();
   await expect(reveal.getByRole("button", { name: "Replay reveal" })).toBeVisible();
-  await expect(reveal.getByRole("heading", { name: "Shaking at the surface" })).toBeVisible();
+  await expect(reveal.getByRole("heading", { name: "Estimated surface shaking" })).toBeVisible();
   await expect(reveal.getByText("Intensity · MMI")).toBeVisible();
   await expect(reveal.getByRole("img")).toBeVisible();
   await page.keyboard.press("Escape");
@@ -63,11 +63,14 @@ test("Tōhoku archive exposes both maps on a small phone with reduced motion", a
   const trigger = pinned.getByRole("button", { name: "Watch Tōhoku rupture" });
   await trigger.click();
   const reveal = page.getByRole("dialog", { name: "The Tōhoku rupture" });
-  await expect(reveal.getByRole("button", { name: "Fault slip" })).toHaveAttribute("aria-pressed", "true");
+  await expect(reveal.getByRole("button", { name: "Modeled fault movement" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await expect(reveal.getByRole("button", { name: /reveal/ })).toHaveCount(0);
-  await expect(reveal.getByText("Depth ×4")).toBeVisible();
-  await reveal.getByRole("button", { name: "Shaking", exact: true }).click();
-  await expect(reveal.getByRole("heading", { name: "Shaking at the surface" })).toBeVisible();
+  await expect(reveal.getByText("Depth exaggerated 4×")).toBeVisible();
+  await reveal.getByRole("button", { name: "Estimated surface shaking", exact: true }).click();
+  await expect(reveal.getByRole("heading", { name: "Estimated surface shaking" })).toBeVisible();
   await expect(reveal.getByRole("link", { name: "USGS ShakeMap" })).toBeVisible();
   const overflow = () =>
     reveal.evaluate((dialog) => [

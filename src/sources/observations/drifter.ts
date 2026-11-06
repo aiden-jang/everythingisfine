@@ -49,7 +49,7 @@ export const drifter: ObservationSource = {
       measurements: [
         { label: "Drifter ID", value: temperatureTrack ? RECENT : selected.id },
         {
-          label: temperatureTrack ? "Speed between fixes" : "Estimated surface speed",
+          label: temperatureTrack ? "Speed between recorded positions" : "Estimated surface speed",
           value: point.speed === undefined ? "First fix" : `${point.speed.toFixed(2)} m/s`,
         },
         ...(point.temperature === undefined

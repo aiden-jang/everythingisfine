@@ -12,6 +12,8 @@ test("feed status names unavailable sources without increasing the background co
   const panel = page.getByRole("region", { name: "Feed status", exact: true });
   await expect(panel).toBeInViewport({ ratio: 1 });
   await expect(panel.getByRole("listitem")).toHaveCount(7);
+  await expect(panel).toContainText("7 background feeds checked. 1 unavailable.");
+  await expect(panel.getByText("Last successful check", { exact: false }).first()).toBeVisible();
   await expect(panel.getByRole("listitem").filter({ hasText: "USGS earthquakes" })).toContainText(
     "Available",
   );
@@ -56,7 +58,7 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   expect(attempts).toBe(0);
   await page.getByRole("button", { name: /^Tide Watch/ }).click();
   const tide = page.getByRole("region", { name: "Tide Watch", exact: true });
-  await expect(tide.getByText(/Couldn’t reach NOAA/)).toBeVisible();
+  await expect(tide.getByText(/Couldn’t load Tide Watch data from NOAA/)).toBeVisible();
   await tide.getByRole("button", { name: "Retry source" }).click();
   const slider = tide.getByRole("slider", { name: "Observation time" });
   await slider.press("Home");
@@ -99,7 +101,7 @@ test("Orbital Pass shares the city and time between the horizon, globe and map",
   const pass = page.getByRole("region", { name: "Orbital Pass", exact: true });
   const city = pass.getByRole("combobox", { name: "City" });
   await city.selectOption("Tokyo");
-  const slider = pass.getByRole("slider", { name: "Observation time" });
+  const slider = pass.getByRole("slider", { name: "Predicted pass time" });
   await slider.press("End");
   const time = await slider.getAttribute("aria-valuetext");
   await pass.getByRole("button", { name: "Local sky" }).click();

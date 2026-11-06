@@ -35,7 +35,7 @@ test("a selected city receives both modeled waves and Escape returns to the even
   await expect(replay).toContainText("Los Angeles");
   await expect(replay.getByText("P wave", { exact: true })).toBeVisible();
   await expect(replay.getByText("S wave", { exact: true })).toBeVisible();
-  await expect(replay).toContainText("Both arrived");
+  await expect(replay).toContainText("Estimated arrival of both waves");
   if (process.env["EIF_CAPTURE_MOTION"] === "1") {
     await page.screenshot({ path: info.outputPath("wave-desktop.png") });
   }
@@ -49,7 +49,7 @@ test("reduced motion shows a fixed route and both arrival times on a phone", asy
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   const { replay, details } = await startWave(page);
-  await expect(replay).toContainText("Both arrived");
+  await expect(replay).toContainText("Estimated arrival of both waves");
   await expect(replay.getByRole("button", { name: "Pause" })).toHaveCount(0);
   if (process.env["EIF_CAPTURE_MOTION"] === "1") {
     await page.screenshot({ path: info.outputPath("wave-phone.png") });

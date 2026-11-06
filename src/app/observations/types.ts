@@ -1,6 +1,8 @@
 import type { SkyCity, SkyLook, TonightView } from "../../geo/tonight";
 import type { CameraState } from "../../globe/controls";
 
+export class ObservationDataError extends Error {}
+
 export interface GeoPoint {
   lon: number;
   lat: number;

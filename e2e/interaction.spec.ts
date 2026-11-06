@@ -69,7 +69,7 @@ test("the first live seed includes a useful backlog", async ({ page }) => {
   // The seed count is independent of the entrance replay's gradually revealed events.
   const reported = page
     .locator("#chrome-head")
-    .getByText("reported", { exact: true })
+    .getByText("Earthquakes before filters", { exact: true })
     .locator("..")
     .locator("span")
     .first();
@@ -242,7 +242,7 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   await expect(page.locator(".zone-panel")).toBeVisible();
   const pinnedText = await page.locator(".zone-panel").innerText();
 
-  await page.getByRole("button", { name: /colourblind ramp/i }).click();
+  await page.getByRole("button", { name: /magnitude colors/i }).click();
   await expect
     .poll(async () => page.evaluate(() => window.location.hash), { timeout: 5_000 })
     .toMatch(/e=(usgs|emsc):/);
@@ -260,7 +260,7 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   await waitForData(fresh);
 
   await expect(fresh.locator(".zone-panel")).toBeVisible();
-  await expect(fresh.getByRole("button", { name: /colourblind ramp/i })).toHaveAttribute(
+  await expect(fresh.getByRole("button", { name: /magnitude colors/i })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
@@ -443,7 +443,7 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
 
   await page.goto("/");
   const rail = page.locator(".zone-rail");
-  await expect(rail).toContainText("Asking USGS and EMSC for the last day.");
+  await expect(rail).toContainText("Loading earthquake reports for the last 24h…");
   await expect(rail).not.toContainText("nothing yet");
   await expect(rail).not.toContainText("still filling");
   // No headline either: an empty count is not a count.
@@ -462,7 +462,7 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
   await expect(activity).toContainText("EMSC");
   // "waiting", not "no backlog": a feed still being waited for resolves itself and a refused one does
   // not, and this fixture never answers rather than refusing.
-  expect(await activity.locator("text=waiting").count()).toBe(2);
+  expect(await activity.getByText("Waiting", { exact: true }).count()).toBe(2);
   await expect(activity).not.toContainText("no answer");
   // Nothing drawn on either track until a feed vouches for something.
   const filled = await page.evaluate(
@@ -600,7 +600,7 @@ test("a dead feed says so, and does not claim a covered day", async ({ page }) =
   const rail = page.locator(".zone-rail");
   await expect(rail).toContainText("USGS is not answering", { timeout: 25_000 });
   await expect(rail).toContainText("Retrying at");
-  await expect(rail).toContainText("The globe keeps what it has.");
+  await expect(rail).toContainText("Previously loaded reports remain visible.");
 
   /*
    * Nothing was fetched, so nothing is covered, and the headline says which of those it is. "Asking" stops
@@ -608,7 +608,7 @@ test("a dead feed says so, and does not claim a covered day", async ({ page }) =
    * defends is that a dead feed says so.
    */
   await expect(rail).not.toContainText("last 24 hours");
-  await expect(rail).not.toContainText("Asking USGS and EMSC");
+  await expect(rail).not.toContainText("Loading earthquake reports for the last");
   await expect(rail).toContainText(/Neither feed is answering/);
   await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("status")).toHaveText(
     "Earthquake feeds unavailable. Retrying automatically.",
@@ -811,7 +811,7 @@ test("a shared time outside the live window explains the view it opens", async (
   await expect(rail).toContainText(
     "This link’s time is older than the live window. Showing the start of the window.",
   );
-  await expect(rail.locator(".view-mode")).toHaveText("View time Held");
+  await expect(rail.locator(".view-mode")).toHaveText(/^View time Paused at /);
 
   await page.goto(`/?share=future#w=24&c=${now + 3600}`);
   await expect(rail).toContainText("This link’s time is outside the live window. Showing the live view.");
@@ -1068,12 +1068,12 @@ test("holding the cursor part way through draws part of the window", async ({ pa
   expect(held).toBeLessThan(live);
   expect(held).toBeGreaterThan(0);
   // The headline says which state it is in rather than going on claiming the window's total.
-  await expect(page.getByText("held", { exact: true })).toBeVisible();
+  await expect(page.getByText("Paused", { exact: true })).toBeVisible();
 
   // Escape gives it back, and the count returns to what it was.
   await page.keyboard.press("Escape");
   await page.waitForTimeout(600);
-  await expect(page.getByText("held", { exact: true })).toBeHidden();
+  await expect(page.getByText("Paused", { exact: true })).toBeHidden();
 });
 
 test("playing advances the cursor against the wall clock", async ({ page }) => {
@@ -1134,7 +1134,7 @@ test("the transport has a keyboard path, and the keys are written down", async (
   await page.keyboard.press(",");
   const three = Number(await cursor.inputValue());
   expect(Math.abs(three - (1000 - 3 * (1000 / 24)))).toBeLessThan(3);
-  await expect(page.getByText("held", { exact: true })).toBeVisible();
+  await expect(page.getByText("Paused", { exact: true })).toBeVisible();
 
   // Forward the same number of times comes back to live, rather than parking a second behind the
   // present with every event drawn and the headline still saying held.
@@ -1143,7 +1143,7 @@ test("the transport has a keyboard path, and the keys are written down", async (
   await page.keyboard.press(".");
   await page.keyboard.press(".");
   await expect(cursor).toHaveValue("1000");
-  await expect(page.getByText("held", { exact: true })).toBeHidden();
+  await expect(page.getByText("Paused", { exact: true })).toBeHidden();
 
   // Freeze only the transport phase; startup keeps its real timers.
   await page.clock.install();
@@ -1250,13 +1250,13 @@ test("the rail can be searched, and says what it cannot search", async ({ page }
   await expect(rail).toContainText("Regions");
 
   // A region, which is authored navigation and is offered whether or not anything is happening in it.
-  await page.getByLabel("Find").fill("japan");
+  await page.getByLabel("Find earthquake reports").fill("japan");
   await expect(rail.getByRole("button", { name: /Japan & Kurils/ })).toBeVisible();
   // The results stand in the region rows rather than beside them, so the rail keeps its height.
   await expect(rail).not.toContainText("Regions");
 
   // A place, from what an agency wrote on the events currently held, grouped rather than listed.
-  await page.getByLabel("Find").fill("flores");
+  await page.getByLabel("Find earthquake reports").fill("flores");
   const flores = rail.getByRole("button", { name: /Flores Sea/ });
   await expect(flores).toBeVisible();
   await expect(flores).toContainText(/\d+ · M\d\.\d/);
@@ -1268,12 +1268,12 @@ test("the rail can be searched, and says what it cannot search", async ({ page }
   await expect(panel).toContainText(/Flores Sea/i);
 
   // Which of the two nothings this is.
-  await page.getByLabel("Find").fill("paris");
-  await expect(rail).toContainText("not a map of the world");
+  await page.getByLabel("Find earthquake reports").fill("paris");
+  await expect(rail).toContainText("No matching earthquake reports in this view.");
 
   // Escape is the innermost rung while there is a query, so it clears the box and not the pin.
-  await page.getByLabel("Find").press("Escape");
-  await expect(page.getByLabel("Find")).toHaveValue("");
+  await page.getByLabel("Find earthquake reports").press("Escape");
+  await expect(page.getByLabel("Find earthquake reports")).toHaveValue("");
   await expect(rail).toContainText("Regions");
   await expect(panel).toBeVisible();
 });
@@ -1284,8 +1284,8 @@ test("enter takes the first result, so the box does not swallow the query", asyn
   await waitForData(page);
   await page.waitForTimeout(4000);
 
-  await page.getByLabel("Find").fill("flores");
-  await page.getByLabel("Find").press("Enter");
+  await page.getByLabel("Find earthquake reports").fill("flores");
+  await page.getByLabel("Find earthquake reports").press("Enter");
   // The first hit for a place-only query is the place, which pins as well as flies.
   await expect(page.locator(".zone-panel")).toContainText(/Flores Sea/i);
 });
@@ -1416,8 +1416,8 @@ test("the largest event is a way in, in time as well as in space", async ({ page
   await expect(panel).toContainText("Sequence");
 
   // Time: the window is held at that moment rather than at the present.
-  await expect(page.getByText("held", { exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "go live" })).toBeVisible();
+  await expect(page.getByText("Paused", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Return to live" })).toBeVisible();
   // And the globe is drawing that moment, not the end state. Twenty hours back of this fixture is the big one
   // and nothing else, against forty-one events live.
   let held = live;
@@ -1432,7 +1432,7 @@ test("the largest event is a way in, in time as well as in space", async ({ page
 
   // Escape gives the present back and keeps the pin: one rung at a time, innermost first.
   await page.keyboard.press("Escape");
-  await expect(page.getByText("held", { exact: true })).toBeHidden();
+  await expect(page.getByText("Paused", { exact: true })).toBeHidden();
   await expect(panel).toContainText("M 6.4");
 });
 
@@ -1449,7 +1449,7 @@ test("a section can be opened from the panel, not only by a gesture", async ({ p
   const panel = page.locator(".zone-panel");
   await expect(panel).toBeVisible();
 
-  await panel.getByRole("button", { name: "Slice here" }).click();
+  await panel.getByRole("button", { name: "Show depth cross-section" }).click();
 
   // A section only exists on the map, so taking it goes there rather than opening over a globe with
   // no line on it. Same reasoning a shared link carrying a section already follows.
@@ -1473,7 +1473,7 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
    * phone - and only one is ever shown, so `.first()` picks by DOM order and lands on the hidden one.
    */
   const only = (text: string) => page.getByText(text).filter({ visible: true });
-  const key = only("What the marks mean");
+  const key = only("Map legend");
   const explanation = only("Larger marks = higher magnitude");
   const slider = page.locator("#mag");
 
@@ -1503,7 +1503,7 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   await expect(only("Larger marks = higher magnitude")).toHaveCount(0);
   await expect(page.locator("#mag")).toBeVisible();
 
-  await only("What the marks mean").click();
+  await only("Map legend").click();
   await expect(only("Larger marks = higher magnitude")).toBeVisible();
 });
 
@@ -1602,7 +1602,7 @@ test("the tour names where the camera is, not where it is going", { tag: "@dev" 
 });
 
 /* The two ways the panel moves the camera, and the fact that they pull opposite ways. Opening it flies to
-   the epicentre; "Far side" draws five circles spanning the planet, so it has to pull back. See ARCHITECTURE.md#e2einteractionspects. */
+   the epicentre; "Show opposite side" draws five circles spanning the planet, so it has to pull back. See ARCHITECTURE.md#e2einteractionspects. */
 test("pinning flies in, and the far side pulls back to the same place", { tag: "@dev" }, async ({ page }) => {
   // Three eased flights in one test, each of which has to settle before the next is measured.
   test.setTimeout(120_000);
@@ -1621,7 +1621,7 @@ test("pinning flies in, and the far side pulls back to the same place", { tag: "
   // a default camera, which is why this is not a strict `>`.
   expect(near.zoom).toBeGreaterThanOrEqual(1.9);
 
-  const farSide = panel.getByRole("button", { name: "Far side" });
+  const farSide = panel.getByRole("button", { name: "Show opposite side" });
   await expect(farSide).toHaveAttribute("aria-pressed", "false");
   await farSide.click();
   await expect(farSide).toHaveAttribute("aria-pressed", "true");
@@ -1735,7 +1735,7 @@ test("fullscreen makes the window bigger and takes nothing away", async ({ page 
         head: shown("#chrome-head"),
         rail: shown("#chrome-rail"),
         hints: shown(".key-hints"),
-        key: document.body.innerText.includes("What the marks mean"),
+        key: document.body.innerText.includes("Map legend"),
         panels: document.querySelectorAll(".zone-panel").length,
         full: document.fullscreenElement ? document.fullscreenElement.className : "",
       };
@@ -1866,7 +1866,7 @@ test("the bar folds where it is a row of its own, and stays folded", async ({ pa
   await expect(page.getByLabel("Hide the panel")).toHaveCount(0);
 
   // The fold lives in the overflow menu at this width: as a button of its own it wrapped the header.
-  await page.getByRole("button", { name: "more" }).click();
+  await page.getByRole("button", { name: "More view controls" }).click();
   await page.getByRole("button", { name: "Hide bar" }).click();
   await page.waitForTimeout(400);
   expect(await bar(), "the bar folds").toBe(false);
@@ -1908,7 +1908,7 @@ test("the bar's own fold does not make the bar taller", async ({ page }) => {
 
   // Reachable all the same, behind `more`, alongside the other three that fold away on a phone.
   await expect(page.getByRole("button", { name: "Hide bar" })).toBeHidden();
-  await page.getByRole("button", { name: "more" }).click();
+  await page.getByRole("button", { name: "More view controls" }).click();
   await expect(page.getByRole("button", { name: "Hide bar" })).toBeVisible();
   await page.getByRole("button", { name: "Hide bar" }).click();
   await page.waitForTimeout(400);
@@ -2023,7 +2023,7 @@ test("the marks key is reachable at every width", async ({ page }) => {
     const shown = await page.evaluate(
       () =>
         Array.from(document.querySelectorAll("summary"))
-          .filter((s) => /What the marks mean/.test(s.textContent || ""))
+          .filter((s) => /Map legend/.test(s.textContent || ""))
           .filter((s) => (s as HTMLElement).checkVisibility()).length,
     );
     expect(shown, `visible copies of the key at ${w}x${h}`).toBe(1);
@@ -2106,7 +2106,7 @@ test("Still hands the picture to the share sheet when there is one", async ({ pa
   await waitForData(page);
   await page.waitForTimeout(1_200);
 
-  await page.getByRole("button", { name: "Save view" }).click();
+  await page.getByRole("button", { name: "Save image" }).click();
   const shared = await page.evaluate(
     () =>
       (window as unknown as { __shared?: { name: string; type: string; size: number; transient?: boolean } })
@@ -2133,11 +2133,11 @@ test("the archive field says what it takes, and warns about the thin years", asy
   await page.goto("/");
   await waitForData(page);
 
-  const field = page.getByLabel("Go to a day");
+  const field = page.getByLabel("Open archive date");
   /* The outermost of the wrappers holding the field, or `.last()` lands on the row holding the input and
      the go button, which is inside the block carrying the caption. */
   const block = page.locator("div", { has: field }).first();
-  await expect(block).toContainText("including the one you were born on");
+  await expect(block).toContainText("Choose a completed UTC day.");
 
   await field.fill("");
   await field.type("1962");
@@ -2146,7 +2146,7 @@ test("the archive field says what it takes, and warns about the thin years", asy
   // And back, because the warning is about the year in the box rather than a state it latches.
   await field.fill("");
   await field.type("2020");
-  await expect(block).toContainText("including the one you were born on");
+  await expect(block).toContainText("Choose a completed UTC day.");
 });
 
 test("a first visit saves no preference the visitor never chose", async ({ page }) => {
@@ -2171,7 +2171,7 @@ test("mobile exploration switches between globe space and recent events", async 
   await page.goto("/");
   await waitForData(page);
   const navigation = page.getByRole("navigation", { name: "Explore" });
-  await navigation.getByRole("button", { name: "View globe", exact: true }).click();
+  await navigation.getByRole("button", { name: "Expand globe", exact: true }).click();
   const globeHeight = await page
     .getByRole("separator", { name: "Sheet height" })
     .getAttribute("aria-valuenow");

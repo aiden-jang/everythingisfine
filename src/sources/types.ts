@@ -55,6 +55,7 @@ export interface SourceHandlers {
    * pushes arriving, the rail read "0 events, last 24 hours": a complete day it never asked for.
    */
   onSeeded: (from: number) => void;
+  onSeedFailed?: () => void;
 }
 
 export interface GeoEventSource {

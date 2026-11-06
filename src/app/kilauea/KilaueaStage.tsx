@@ -70,7 +70,7 @@ async function loadImage(url: string) {
 export function KilaueaStage(): JSX.Element {
   const id = useId();
   const [imageState, setImageState] = useState<"loading" | "ready" | "error">("loading");
-  const [hasFootage, setHasFootage] = useState(false);
+  const [footageState, setFootageState] = useState<"pending" | "ready" | "error" | "skipped">("pending");
   const [view, setView] = useState<Playback>(() => (matchMedia(MOTION).matches ? inspect(0) : flight()));
   const clock = useRef(view);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -104,12 +104,13 @@ export function KilaueaStage(): JSX.Element {
       repaint.current();
     });
     resize.observe(element);
-    const footage = matchMedia(MOTION).matches ? Promise.resolve(null) : loadImage(footageUrl);
+    const skipFootage = matchMedia(MOTION).matches;
+    const footage = skipFootage ? Promise.resolve(null) : loadImage(footageUrl);
     void Promise.all([loadImage(reliefUrl), footage]).then(([relief, flightImage]) => {
       if (closed) return;
       images = { relief, flight: flightImage };
       repaint.current();
-      setHasFootage(flightImage !== null);
+      setFootageState(skipFootage ? "skipped" : flightImage ? "ready" : "error");
       setImageState(relief ? "ready" : "error");
     });
     return () => {
@@ -169,13 +170,17 @@ export function KilaueaStage(): JSX.Element {
   const frame = lavaFrame(view.elapsed, view.camera);
   const split = view.comparison ?? frame.wipe;
   const comparing = view.comparison !== undefined;
-  const showingFootage = hasFootage && (frame.footage?.opacity ?? 0) > 0.5;
+  const showingFootage = footageState === "ready" && (frame.footage?.opacity ?? 0) > 0.5;
   const readyToReplay = comparing || (view.camera !== undefined && frame.index === LAST);
   const [title, note] = story(frame.index);
   const at = snapshots[frame.index]!.at;
   const value = view.comparison ?? frame.index;
   const amount =
-    value === 0 ? "Before the eruption" : value === 100 ? "August 9 map" : `${value}% August 9 map`;
+    value === 0
+      ? "Before the eruption"
+      : value === 100
+        ? "August 9 coastline"
+        : `Comparison divider at ${value}%`;
 
   function togglePlay() {
     const current = clock.current;
@@ -221,6 +226,9 @@ export function KilaueaStage(): JSX.Element {
           {imageState === "error" && (
             <p role="status">Shaded relief is unavailable. The mapped outlines are visible.</p>
           )}
+          {footageState === "error" && frame.footage && (
+            <p role="status">Overflight image unavailable. Showing the USGS flow map.</p>
+          )}
           <div className="archive-scene-legend lava-legend">
             {split !== null || frame.index === LAST ? (
               <>
@@ -246,7 +254,7 @@ export function KilaueaStage(): JSX.Element {
         </div>
         <div className="lava-transport">
           <div className="lava-time">
-            <label htmlFor={id}>{comparing ? "Coastline comparison" : "Mapped extent"}</label>
+            <label htmlFor={id}>{comparing ? "Compare before and after" : "Mapped extent date"}</label>
             {comparing ? <span>{amount}</span> : <time dateTime={at}>{mapDate(at)}</time>}
           </div>
           <input

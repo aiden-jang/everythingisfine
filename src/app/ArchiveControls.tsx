@@ -53,7 +53,10 @@ export function ArchiveControls({ archive, state, onCursor, watchEclipse, openRa
             </button>
           </div>
           <p className="mt-1.5 text-[11px] leading-relaxed text-ink">
-            {new Date(archive.from).toISOString().slice(0, 10)}, all day UTC. Nothing here is arriving now.
+            {new Date(archive.from).toISOString().slice(0, 10)} UTC
+            {archive.answered && Object.values(archive.answered).some((answer) => !answer || answer.truncated)
+              ? " · Partial source coverage"
+              : " · Full day"}
           </p>
           {loadedDay === TOHOKU_DAY && (
             <RuptureReveal className="archive-scene-button mt-2 w-full text-left" />
@@ -134,7 +137,7 @@ export function ArchiveControls({ archive, state, onCursor, watchEclipse, openRa
       ) : null}
       <div className="mb-3">
         <label className="label" htmlFor="archive-day">
-          Go to a day
+          Open archive date
         </label>
         <div className="mt-1 flex items-center gap-1.5">
           {/* ISO text, not `type="date"`: the native widget wants `mm/dd/yyyy`, which this app never prints,
@@ -200,7 +203,7 @@ export function ArchiveControls({ archive, state, onCursor, watchEclipse, openRa
             onClick={() => void loadArchive(archiveDay)}
             className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:cursor-default disabled:text-faint"
           >
-            {archiveBusy ? "loading…" : "go"}
+            {archiveBusy ? "Loading…" : "Open date"}
           </button>
         </div>
         {/* Said here, not through `archiveNote`: that renders in the other branch of this ternary, so a
@@ -217,7 +220,7 @@ export function ArchiveControls({ archive, state, onCursor, watchEclipse, openRa
             {earlyDay
               ? "Before about 1970 only the large ones were recorded anywhere. A quiet day back" +
                 " there may mean nobody was listening, not that the Earth was still."
-              : "Any day that has ended, including the one you were born on."}
+              : "Choose a completed UTC day."}
           </p>
         )}
       </div>

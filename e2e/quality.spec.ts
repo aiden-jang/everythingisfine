@@ -36,7 +36,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
       }
     };
     await capture("live");
-    const marks = page.getByText("What the marks mean", { exact: true }).filter({ visible: true });
+    const marks = page.getByText("Map legend", { exact: true }).filter({ visible: true });
     await marks.click();
     await page.getByText("Depth, in section", { exact: true }).filter({ visible: true }).click();
     const diagram = page
@@ -49,10 +49,10 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await capture("depth-key");
     await marks.click();
     if (width < 768) {
-      await page.getByRole("button", { name: "more", exact: true }).click();
+      await page.getByRole("button", { name: "More view controls", exact: true }).click();
       await capture("utilities");
     }
-    await page.getByRole("button", { name: "Save view", exact: true }).click();
+    await page.getByRole("button", { name: "Save image", exact: true }).click();
     await expect(page.getByRole("button", { name: "Download image", exact: true })).toBeVisible();
     const notice = await page.locator(".still-notice").boundingBox();
     expect(notice!.x).toBeGreaterThanOrEqual(0);
@@ -60,7 +60,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await capture("share-recovery");
     await page.getByRole("button", { name: "Dismiss", exact: true }).click();
     await expect(
-      page.getByRole("button", { name: width < 768 ? "more" : "Save view", exact: true }),
+      page.getByRole("button", { name: width < 768 ? "More view controls" : "Save image", exact: true }),
     ).toBeFocused();
     if (width < 768) await page.getByRole("button", { name: "Recent earthquakes", exact: true }).click();
     await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
@@ -74,14 +74,14 @@ test("mobile utilities dismiss with Escape and return keyboard focus", async ({ 
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
-  const toggle = page.getByRole("button", { name: "more", exact: true });
+  const toggle = page.getByRole("button", { name: "More view controls", exact: true });
   await toggle.focus();
   await page.keyboard.press("Enter");
   const sound = page.getByRole("button", { name: "Sound off", exact: true });
   await expect(sound).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(sound).toBeHidden();
-  await expect(page.getByRole("button", { name: "more", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "More view controls", exact: true })).toBeFocused();
 });
 
 test("mobile utilities dismiss outside and when focus leaves", async ({ page }) => {
@@ -89,11 +89,11 @@ test("mobile utilities dismiss outside and when focus leaves", async ({ page }) 
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
-  await page.getByRole("button", { name: "more", exact: true }).click();
+  await page.getByRole("button", { name: "More view controls", exact: true }).click();
   const sound = page.getByRole("button", { name: "Sound off", exact: true });
-  await page.getByRole("button", { name: "View globe", exact: true }).click();
+  await page.getByRole("button", { name: "Expand globe", exact: true }).click();
   await expect(sound).toBeHidden();
-  await page.getByRole("button", { name: "more", exact: true }).click();
+  await page.getByRole("button", { name: "More view controls", exact: true }).click();
   await page.getByRole("button", { name: "Map", exact: true }).focus();
   await expect(sound).toBeHidden();
 });
@@ -112,7 +112,7 @@ test("invalid saved preferences cannot break the globe or layout", async ({ page
   await expect(page.locator("canvas")).toBeVisible();
   expect(errors).toEqual([]);
   expect(await page.locator(".rail").evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(200);
-  await expect(page.getByRole("button", { name: "Colourblind ramp off", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Magnitude colors · Thermal", exact: true })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem("eif.ramp"))).toBe("unknown-palette");
 });
 
@@ -152,7 +152,7 @@ test("failed native sharing keeps a downloadable still", async ({ page }) => {
   await page.goto("/");
   await waitForData(page);
   await expect(page.locator("canvas")).toBeVisible();
-  await page.getByRole("button", { name: "Save view", exact: true }).click();
+  await page.getByRole("button", { name: "Save image", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Sharing is unavailable" })).toBeVisible();
   const downloaded = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download image", exact: true }).click();
@@ -174,8 +174,8 @@ test("cancelling native sharing does not download or show an error", async ({ pa
   await page.goto("/");
   await waitForData(page);
   await expect(page.locator("canvas")).toBeVisible();
-  await page.getByRole("button", { name: "Save view", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Save view", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Save image", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Save image", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Download image", exact: true })).toHaveCount(0);
   expect(downloads).toEqual([]);
 });
@@ -191,7 +191,7 @@ test("a missing globe explains why a still cannot be captured", async ({ page })
   await installFeeds(page);
   await page.goto("/");
   await expect(page.getByText("The globe could not start.", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Save view", exact: true }).click();
+  await page.getByRole("button", { name: "Save image", exact: true }).click();
   await expect(
     page.getByText("The globe is not ready. Try again after it appears.", { exact: true }),
   ).toBeVisible();

@@ -8,7 +8,7 @@ import { ObservationPlayer } from "./ObservationPlayer";
 import type { ObservationSource } from "./types";
 import type { useObservationDeck } from "./useObservationDeck";
 
-const groups = ["Recent observations", "After Dark", "Recorded journeys"] as const;
+const groups = ["Recent observations", "Forecasts", "After Dark", "Recorded journeys"] as const;
 const entries = Object.entries(observations) as [ObservationId, (typeof observations)[ObservationId]][];
 
 type Deck = Omit<ReturnType<typeof useObservationDeck>, "entry"> & {
@@ -84,7 +84,7 @@ export function ObservationDeck({ deck, onClose }: { deck: Deck; onClose: () => 
                 onClick={id ? () => deck.open("catalogue") : onClose}
                 aria-label={id ? "Back to observatory views" : "Back to Observatory"}
               >
-                Back
+                {id ? "Back to observatory views" : "Back to Observatory"}
               </button>
             </div>
           </div>

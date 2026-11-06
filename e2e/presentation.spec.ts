@@ -29,7 +29,7 @@ for (const width of [1440, 390, 320]) {
     expect(caption!.y).toBeGreaterThanOrEqual(header!.y + header!.height);
     expect(caption!.x + caption!.width).toBeLessThanOrEqual(width);
     await feeds.click();
-    if (width < 768) await page.getByRole("button", { name: "View globe", exact: true }).click();
+    if (width < 768) await page.getByRole("button", { name: "Expand globe", exact: true }).click();
     await page.screenshot({ path: test.info().outputPath(`cutaway-${width}.png`) });
     await page.locator("body").click({ position: { x: width - 20, y: 140 } });
     await page.keyboard.press("ArrowRight");
@@ -43,7 +43,10 @@ for (const width of [1440, 390, 320]) {
     await page.getByRole("button", { name: "Globe", exact: true }).click();
     await expect(note).toHaveText(anchored!);
     await feeds.click();
-    await page.getByRole("button", { name: "depth", exact: true }).filter({ visible: true }).click();
+    await page
+      .getByRole("button", { name: "Place markers at depth", exact: true })
+      .filter({ visible: true })
+      .click();
     await expect(note).toHaveCount(0);
     await expect(cutaway).toHaveAttribute("aria-pressed", "false");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -109,7 +112,7 @@ test("scene effects settle and skip decorative motion when requested", async ({ 
   await expect(page.locator("[data-orbit-readout]")).toHaveCSS("transition-duration", "0s");
   await page.getByRole("button", { name: "Close", exact: true }).filter({ visible: true }).click();
   const image = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Save view", exact: true }).click();
+  await page.getByRole("button", { name: "Save image", exact: true }).click();
   const capture = await image;
   expect(capture.suggestedFilename()).toMatch(/^everything-is-fine-.*\.png$/);
   expect(await capture.failure()).toBeNull();
@@ -135,7 +138,7 @@ test("switching the historical depth layer off removes its markers @dev", async 
       return { visible: slab.visible, points: slab.geometry.attributes.position?.count ?? 0 };
     });
   const toggle = page
-    .getByRole("button", { name: "Deep earthquakes", exact: true })
+    .getByRole("button", { name: "Historical deep earthquakes", exact: true })
     .filter({ visible: true });
   await toggle.click();
   await expect.poll(layer).toMatchObject({ visible: true });

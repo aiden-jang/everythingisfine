@@ -55,8 +55,8 @@ export function TonightSky({
       <div className="tonight-heading">
         <h2>Tonight’s Sky</h2>
         <div className="observatory-actions tonight-back">
-          <button type="button" ref={back} onClick={onClose} aria-label="Back to stars">
-            Back
+          <button type="button" ref={back} onClick={onClose} aria-label="Back to After Dark">
+            Back to After Dark
           </button>
         </div>
       </div>
@@ -78,7 +78,7 @@ export function TonightSky({
       </label>
       <div className="tonight-time">
         <div className="tonight-clock">
-          <label htmlFor={rangeId}>Local sky time</label>
+          <label htmlFor={rangeId}>City local time</label>
           <time dateTime={new Date(at).toISOString()}>{format.local.format(at)}</time>
         </div>
         <input
@@ -107,7 +107,7 @@ export function TonightSky({
         <summary>
           <span>Moon &amp; planets</span>
           <span>
-            {sky} · {above} above horizon
+            {sky} · {above} {above === 1 ? "object" : "objects"} above the horizon
           </span>
         </summary>
         <ul>

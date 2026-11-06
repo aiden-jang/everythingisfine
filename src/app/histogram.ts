@@ -23,6 +23,7 @@ export interface Bar {
 
 export interface Activity {
   bars: Bar[];
+  reported: number;
   /** The strongest event in the window, or null. Returned from here because this already walks every
    * event in the buffer, and the alternative is a second full pass for a one-line question. */
   strongest: Quake | null;
@@ -78,14 +79,17 @@ export function histogram(
   // Counted in the walk that is already happening, like the energy share beside it.
   let inOverlap = 0;
   let bothInOverlap = 0;
+  let reported = 0;
+  const maxAge = BUCKETS * bucketMs;
 
   forEach((quake) => {
-    if (!passesMagnitude(quake, filters.minMagnitude)) return;
-    if (!passesSource(quake, filters.sources)) return;
     // Origin time, not arrival: an event that reached us thirty seconds ago but happened twenty minutes
     // ago belongs twenty minutes back on this strip.
-    const bucketsAgo = Math.floor((now - quake.primary.time) / bucketMs);
-    if (bucketsAgo >= BUCKETS) return;
+    const age = now - quake.primary.time;
+    if (age >= maxAge) return;
+    reported += 1;
+    if (!passesMagnitude(quake, filters.minMagnitude) || !passesSource(quake, filters.sources)) return;
+    const bucketsAgo = Math.floor(age / bucketMs);
     /*
      * A future origin time lands in the current bucket rather than being dropped. Agencies and browsers
      * disagree about the clock by a second or two, and the window filter accepts such an event, so
@@ -143,6 +147,7 @@ export function histogram(
 
   return {
     bars,
+    reported,
     strongest,
     bucketMs,
     energyShare,

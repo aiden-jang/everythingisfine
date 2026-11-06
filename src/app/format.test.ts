@@ -53,7 +53,7 @@ describe("how far back one agency reaches", () => {
   });
 
   it("says no backlog rather than showing a zero, which is a different fact", () => {
-    expect(reach(null, now, DAY)).toBe("no backlog");
+    expect(reach(null, now, DAY)).toBe("earlier reports unavailable");
   });
 });
 
@@ -79,7 +79,7 @@ describe("the note under the pair", () => {
     // notice elsewhere. One sentence covering both would explain the wrong thing about the wrong feed.
     const note = reachNote({ usgs: null, emsc: now - 18 * HOUR }, now, MONTH);
     expect(note).toContain("EMSC returns its most recent page");
-    expect(note).toContain("USGS has returned no backlog.");
+    expect(note).toContain("Earlier reports unavailable from USGS.");
     expect(note).not.toContain("alone");
   });
 
@@ -134,9 +134,9 @@ describe("what a feed's bar says while it is still arriving", () => {
   it("distinguishes not yet from refused, which resolve differently", () => {
     // `reach` alone answers "no backlog" for both, which describes a feed that failed as one that happened
     // to have nothing. The first fixes itself and the second does not.
-    expect(reachWords(null, false, now, DAY)).toBe("waiting");
+    expect(reachWords(null, false, now, DAY)).toBe("Waiting");
     // One word: the 38px column it renders into wrapped "no answer" onto two lines.
-    expect(reachWords(null, true, now, DAY)).toBe("silent");
+    expect(reachWords(null, true, now, DAY)).toBe("Unavailable");
   });
 
   it("prefers a reach it has over a failure it also has", () => {
@@ -379,22 +379,22 @@ describe("the negative-space sentence", () => {
 describe("the depth sentence, which counts instead of promising", () => {
   it("says how many are in each band", () => {
     const note = depthNote({ shallow: 70, intermediate: 8, deep: 1, unknown: 0, total: 79 })!;
-    expect(note).toContain("70 above 70 km");
-    expect(note).toContain("8 between 70 and 300");
-    expect(note).toContain("1 below 300");
+    expect(note).toContain("70 at 0–70 km deep");
+    expect(note).toContain("8 at 70–300 km");
+    expect(note).toContain("1 over 300 km deep");
   });
 
   it("always states the deep count, even when it is zero", () => {
     // The whole point of the row. On a typical day one event of seventy-nine is deep enough to be a ring,
-    // so "0 below 300" is the useful reading rather than an omission.
+    // so "0 over 300 km deep" is the useful reading rather than an omission.
     expect(depthNote({ shallow: 40, intermediate: 0, deep: 0, unknown: 0, total: 40 })!).toContain(
-      "0 below 300",
+      "0 over 300 km deep",
     );
   });
 
   it("drops the intermediate clause when there are none, rather than printing a zero for it", () => {
     const note = depthNote({ shallow: 40, intermediate: 0, deep: 2, unknown: 0, total: 42 })!;
-    expect(note).not.toContain("between 70 and 300");
+    expect(note).not.toContain("at 70–300 km");
   });
 
   it("reports a missing depth rather than folding it into shallow", () => {

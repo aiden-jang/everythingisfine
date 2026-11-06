@@ -16,12 +16,18 @@ export function useAuroraOverflight(
   const unavailable = !enabled
     ? "Return to live Earth for the current forecast."
     : answer === "pending"
-      ? "Waiting for NOAA’s forecast…"
-      : !current
-        ? "A current NOAA forecast is unavailable."
-        : routes.length === 0
-          ? "This forecast has no aurora on the dark side."
-          : null;
+      ? "Loading NOAA’s aurora forecast…"
+      : !forecast
+        ? "NOAA’s aurora forecast is unavailable."
+        : forecast.estimatedTime
+          ? "Forecast time unavailable."
+          : !current
+            ? forecast.forecastAt < now
+              ? "The latest aurora forecast has expired."
+              : "The forecast is too far ahead for this view."
+            : routes.length === 0
+              ? "No forecast aurora on Earth’s night side."
+              : null;
 
   return {
     run,

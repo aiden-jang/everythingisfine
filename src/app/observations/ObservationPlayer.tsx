@@ -24,7 +24,7 @@ export function ObservationPlayer({
   const [option, setOption] = useState(source.options?.[0]?.id ?? "");
   const [selectedAt, setSelectedAt] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
-  const { data, state, retry } = useObservationData(source, option);
+  const { data, state, reason, retry } = useObservationData(source, option);
   const frames = data?.frames ?? EMPTY;
   const frame =
     selectedAt === null ? frames[data?.initial ?? 0] : nearest(frames, selectedAt, ({ at }) => at);
@@ -32,6 +32,8 @@ export function ObservationPlayer({
   const { element, status } = useObservationImage(frame?.raster?.url);
   const time = frame ? `${clock.format(frame.at)} UTC` : "";
   const metadata = observations[id];
+  const latest = frames.at(-1);
+  const holding = state !== "ready" && latest !== undefined;
 
   useLayoutEffect(() => {
     const sky =
@@ -84,7 +86,7 @@ export function ObservationPlayer({
     <>
       {source.options && (
         <label className="observation-picker">
-          <span>{id === "orbit" || id === "air" ? "City" : id === "wind" ? "Wind level" : "Location"}</span>
+          <span>{metadata.picker}</span>
           <select
             value={option}
             onChange={(event) => {
@@ -105,7 +107,12 @@ export function ObservationPlayer({
       {frame && data && (
         <>
           <div className="observation-transport">
-            <time dateTime={new Date(frame.at).toISOString()}>{time}</time>
+            <span>
+              {id === "lightning" && frame === latest ? "Latest available scan" : metadata.time}
+              {" · "}
+              <time dateTime={new Date(frame.at).toISOString()}>{time}</time>
+              {id === "rain" && " · Data arrives several hours after observation"}
+            </span>
             {frames.length > 1 && (
               <div className="observatory-actions">
                 <button
@@ -122,7 +129,7 @@ export function ObservationPlayer({
             {frames.length > 1 && (
               <input
                 className="scrub-slider observation-scrub"
-                aria-label="Observation time"
+                aria-label={metadata.time}
                 aria-valuetext={time}
                 type="range"
                 min={0}
@@ -184,9 +191,7 @@ export function ObservationPlayer({
       )}
       {state === "failed" && (
         <div className="observation-note" role="status">
-          <p>
-            Couldn’t reach {metadata.source}.{data ? " The last successful readings are still shown." : ""}
-          </p>
+          <p>{reason ?? `Couldn’t load ${metadata.title} data from ${metadata.source}.`}</p>
           <div className="observatory-actions observation-chapters">
             <button type="button" onClick={retry}>
               Retry source
@@ -196,8 +201,13 @@ export function ObservationPlayer({
       )}
       {state === "empty" && (
         <p className="observation-note" role="status">
-          The provider returned no readings for this selection.
-          {data ? " The previous readings are still shown." : ""}
+          {metadata.empty}
+        </p>
+      )}
+      {holding && (
+        <p className="observation-note" role="status">
+          Showing the last available readings ·{" "}
+          <time dateTime={new Date(latest.at).toISOString()}>{clock.format(latest.at)} UTC</time>
         </p>
       )}
       {status === "failed" && (

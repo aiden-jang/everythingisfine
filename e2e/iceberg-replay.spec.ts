@@ -43,11 +43,11 @@ test("Iceberg Drift keeps the fragment picker and dated map available with reduc
   await dialog.getByRole("combobox", { name: "Iceberg", exact: true }).selectOption({ label: "A-68J" });
   const slider = dialog.getByRole("slider", { name: "Track date" });
   await expect(slider).toHaveAttribute("aria-valuetext", "Mar 17, 2021");
-  await expect(dialog.getByText(/Last listed · Mar 17, 2021/)).toBeVisible();
+  await expect(dialog.getByText(/Last recorded position · Mar 17, 2021/)).toBeVisible();
   await slider.press("Home");
   await expect(dialog.getByText("This track starts Jan 30, 2021.")).toBeVisible();
   await slider.press("End");
-  await expect(dialog.getByText(/Last listed · Mar 17, 2021/)).toBeVisible();
+  await expect(dialog.getByText(/Last recorded position · Mar 17, 2021/)).toBeVisible();
   await expect.poll(() => dialog.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(dialog.getByRole("button", { name: "Fragments", exact: true })).toBeInViewport();

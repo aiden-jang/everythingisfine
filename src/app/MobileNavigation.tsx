@@ -2,10 +2,11 @@ import { useState } from "react";
 
 interface MobileNavigationProps {
   canvasHeight: number;
+  flat: boolean;
   onResize: (height: number) => void;
 }
 
-export function MobileNavigation({ canvasHeight, onResize }: MobileNavigationProps): JSX.Element {
+export function MobileNavigation({ canvasHeight, flat, onResize }: MobileNavigationProps): JSX.Element {
   const [preset, setPreset] = useState<{ recent: boolean; height: number }>();
   const show = (recent: boolean): void => {
     const height = Math.round(window.innerHeight * (recent ? 0.46 : 0.82));
@@ -30,7 +31,7 @@ export function MobileNavigation({ canvasHeight, onResize }: MobileNavigationPro
         aria-pressed={preset?.height === canvasHeight && !preset.recent}
         onClick={() => show(false)}
       >
-        View globe
+        {flat ? "Expand map" : "Expand globe"}
       </button>
       <button
         type="button"

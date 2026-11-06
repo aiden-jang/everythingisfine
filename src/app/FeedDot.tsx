@@ -31,6 +31,7 @@ export function FeedDot({
     );
   const dot = feeds.arrived === feeds.total ? "bg-ink" : "bg-dim";
   const unavailable = feeds.rows.filter(({ state }) => state === "failed").length;
+  const pending = feeds.total - feeds.arrived - unavailable;
   return (
     <>
       <button
@@ -73,9 +74,10 @@ export function FeedDot({
       >
         <h2 id={`${id}-title`}>Feed status</h2>
         <p>
-          {unavailable
-            ? `${unavailable} of ${feeds.total} background feeds couldn’t be reached.`
-            : "Background feeds checked by this browser."}
+          {pending > 0
+            ? `Checking ${pending} of ${feeds.total} background feeds…`
+            : `${feeds.total} background feeds checked.`}
+          {unavailable > 0 && ` ${unavailable} unavailable.`}
         </p>
         <ul>
           {feeds.rows.map(({ id: key, label, state, lastCheck }) => (
@@ -84,7 +86,7 @@ export function FeedDot({
               <span>{LABEL[state]}</span>
               {lastCheck !== undefined && (
                 <small>
-                  Last heard{" "}
+                  Last successful check{" "}
                   <time
                     dateTime={new Date(lastCheck).toISOString()}
                     title={new Date(lastCheck).toISOString()}

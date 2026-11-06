@@ -55,7 +55,7 @@ export function StormRadar({
             onClick={onClose}
             aria-label={fromExplore ? "Back to Explore" : "Back to Live Earth"}
           >
-            Back
+            {fromExplore ? "Back to Explore" : "Back to Live Earth"}
           </button>
         </div>
       </div>

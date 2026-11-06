@@ -42,7 +42,7 @@ test("Tonga’s reduced-motion archive can jump to measured station pulses on a 
   await expect(replay.getByText("1022.76 hPa", { exact: true })).toBeVisible();
   await slider.press("Home");
   await expect(slider).toHaveAttribute("aria-valuetext", "04:00 UTC");
-  await expect(replay.getByText("Outside station window")).toBeVisible();
+  await expect(replay.getByText("This station’s readings cover")).toBeVisible();
   await expect.poll(() => replay.evaluate((dialog) => dialog.scrollWidth - dialog.clientWidth)).toBe(0);
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(replay.getByRole("combobox", { name: "Ground station" })).toBeInViewport();

@@ -70,7 +70,9 @@ import {
 import { boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE } from "./geo/boundaryDistance";
 import { MobileNavigation } from "./app/MobileNavigation";
 import { ViewNotices } from "./app/ViewNotices";
+import { sharedEarthquakeNotice, sharedHazardNotice } from "./app/linkNotices";
 import { EventList } from "./app/EventList";
+import { earthquakeCoverage, earthquakeEmpty, earthquakeReach } from "./app/earthquakeStatus";
 import { feedStatus } from "./app/feedStatus";
 import { useHazardLayers } from "./app/useHazardLayers";
 import { DetailPanel } from "./app/DetailPanel";
@@ -102,11 +104,9 @@ import {
   place,
   quietNote,
   quietParts,
-  reachFraction,
+  compactSpan,
   reachNote,
-  reachWords,
   SOURCE_NAMES,
-  windowLabel,
 } from "./app/format";
 
 /* Built here and not in an effect. In an effect, StrictMode mounts twice and you get two WebSockets. */
@@ -157,13 +157,17 @@ export function App(): JSX.Element {
   const { aurora, cyclones, fires, floods, volcanoes, answered, checked } = useHazardLayers();
   const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
   const archived = snapshot.archive !== null;
+  const initialArchiveMark = useRef(shared.day ? (shared.mark ?? null) : null);
   const archiveState = useArchive(feed, snapshot.archive, shared.day, (returnedToLive) => {
+    const archive = feed.snapshot().archive;
     setSelected(null);
-    setMarkId(null);
+    setMarkId(
+      !returnedToLive && archive?.from === Date.parse(shared.day ?? "") ? initialArchiveMark.current : null,
+    );
+    initialArchiveMark.current = null;
     if (returnedToLive) setScrub(LIVE);
     const day = historyIntent.current;
     historyIntent.current = null;
-    const archive = feed.snapshot().archive;
     if (day && !returnedToLive && archive && new Date(archive.from).toISOString().slice(0, 10) === day) {
       let largest: Quake | null = null;
       feed.store.forEach((q) => {
@@ -309,8 +313,6 @@ export function App(): JSX.Element {
   // Read lazily, so the first paint has the right ramp instead of flashing the default one.
   const [ramp, setRamp] = useStoredName<RampName>("ramp", "thermal", ["thermal", "cividis"], shared.ramp);
   const [announceAbove, setAnnounceAbove] = useStoredNumber("announceAbove", 4.5);
-  // Dropped when the link also names a day: an archived day withholds the five layers, so the id would
-  // resolve to nothing and the card would never open.
   const [markId, setMarkId] = useState<string | null>(shared.day ? null : (shared.mark ?? null));
   /* Never reload here. There is no backend, so the buffer is every event on screen. */
   const resetView = useCallback(() => {
@@ -570,9 +572,6 @@ export function App(): JSX.Element {
     [feed.store, sectionLine, filters, snapshot.revision, slabOn, slabData],
   );
 
-  /* Look the pin up by key every render. The store revises events in place, so an object would pin a
-  stale copy and an index would pin whatever later took the slot. */
-  // Cannot be done at mount: on a cold load the store is empty for a second or two while both seeds land.
   useEffect(() => {
     if (!missingShared) return;
     const [source, id] = missingShared.split(":") as [SourceId, string];
@@ -580,10 +579,8 @@ export function App(): JSX.Element {
     if (found) {
       setSelected(found.key);
       setMissingShared(null);
-    } else if (snapshot.stats.quakes > 0 && snapshot.statuses.usgs.kind === "live") {
-      setMissingShared((current) => current);
     }
-  }, [missingShared, snapshot.revision, snapshot.statuses.usgs.kind, snapshot.stats.quakes]);
+  }, [missingShared, snapshot.revision]);
 
   const pinned = selected ? feed.store.get(selected) : undefined;
   // The panel outlives the pin by one exit transition; see where it is rendered.
@@ -769,18 +766,12 @@ export function App(): JSX.Element {
       ? Math.max(snapshot.covered.usgs, snapshot.covered.emsc)
       : null;
 
-  const { bars, strongest, bucketMs, energyShare, energyTotal, overlap } = useMemo(
-    () => histogram(feed.store.forEach, filters, now, snapshot.coveredSince, overlapFrom),
+  const coverage = earthquakeCoverage(snapshot, filters, now);
+  const { bars, strongest, bucketMs, energyShare, energyTotal, overlap, reported } = useMemo(
+    () => histogram(feed.store.forEach, filters, now, coverage.from, overlapFrom),
     // `now` is absent on purpose: it ticks every second and the bars only move on a bucket boundary.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [
-      filters.minMagnitude,
-      filters.sources,
-      filters.windowMs,
-      snapshot.revision,
-      snapshot.coveredSince,
-      overlapFrom,
-    ],
+    [filters.minMagnitude, filters.sources, filters.windowMs, snapshot.revision, coverage.from, overlapFrom],
   );
 
   // `now` is absent on purpose: a second passing does not change what matches a query, and depending on
@@ -826,6 +817,18 @@ export function App(): JSX.Element {
   // and `stats.quakes` beside it stayed put. The strip spans exactly the window, so its total is the
   // window's total - one walk, one number, and the strip and the headline cannot disagree.
   const shown = totalIn(bars);
+  const emptyEarthquakes = earthquakeEmpty({
+    waiting: coverage.waiting || (archiveBusy && !archived),
+    unavailable:
+      !archived &&
+      !archiveBusy &&
+      [...filters.sources].every((id) => snapshot.statuses[id].kind === "failing"),
+    reported,
+    earlierUnavailable: !archived && !archiveBusy && coverage.from === null && !coverage.waiting,
+    archived,
+    partial: coverage.partial,
+    hasSources: filters.sources.size > 0,
+  });
 
   // `useRolling` is handed the animate-or-jump distinction rather than inferring it, because the two
   // cases look identical from the value alone.
@@ -957,12 +960,9 @@ export function App(): JSX.Element {
       onSlab={setSlabOn}
       slabCount={slabData.length}
     >
-      {/* Passed in as a child so the sources land above the folding key: at the bottom of a scrolling
-      column they were off the fold at 1280x720, a control reached by scrolling prose. */}
-      {/* The group needs a name, or two toggles are two unexplained pressed-states. */}
       <div className="mt-3">
-        <span className="label block">Feeds</span>
-        <div role="group" aria-label="Feeds" className="mt-1 flex gap-1.5">
+        <span className="label block">Earthquake sources</span>
+        <div role="group" aria-label="Earthquake sources" className="mt-1 flex gap-1.5">
           {(["usgs", "emsc"] as const).map((id) => (
             <button
               key={id}
@@ -987,12 +987,7 @@ export function App(): JSX.Element {
 
   const marksKey = cloneElement(marksFilter, { part: "key" });
 
-  const reaches = (["usgs", "emsc"] as const).map((id) => ({
-    id,
-    label: SOURCE_NAMES[id],
-    fraction: reachFraction(snapshot.covered[id], now, filters.windowMs),
-    words: reachWords(snapshot.covered[id], snapshot.statuses[id].kind === "failing", now, filters.windowMs),
-  }));
+  const reaches = earthquakeReach(snapshot, now, filters.windowMs);
   const timelineNotes = [sourceNote, corroborationNote(overlap, overlapFrom, now, filters.windowMs)].filter(
     (n): n is string => n !== null,
   );
@@ -1016,7 +1011,7 @@ export function App(): JSX.Element {
         }}
         bucketMs={bucketMs}
         fetching={fetching}
-        waiting={snapshot.coveredSince === null}
+        empty={emptyEarthquakes.short}
         cursor={fractionOf(view, span)}
         parked={view.at !== null}
         playing={view.playing}
@@ -1029,7 +1024,9 @@ export function App(): JSX.Element {
         notes={timelineNotes}
       >
         <details className="mt-3">
-          <summary className="disclose text-[11px] text-faint hover:text-dim">How the sizes stack up</summary>
+          <summary className="disclose text-[11px] text-faint hover:text-dim">
+            Earthquakes by magnitude
+          </summary>
           <SizeChart sizes={sizes} />
         </details>
       </Timeline>
@@ -1060,7 +1057,12 @@ export function App(): JSX.Element {
   );
   const regionalResults = (
     <RegionalResults
-      {...{ flat, hours, query, results, regions, hazards, markId, regionsHeight, pick }}
+      {...{ flat, query, results, regions, hazards, markId, regionsHeight, pick }}
+      empty={
+        emptyEarthquakes.kind === "loading" || emptyEarthquakes.kind === "unavailable"
+          ? emptyEarthquakes.text
+          : null
+      }
       onRegion={(region) => flyTo.current(region.lon, region.lat, region.zoom)}
       onHazard={selectMark}
       onResize={setRegionsHeight}
@@ -1140,14 +1142,12 @@ export function App(): JSX.Element {
             scene={observatory.scene}
             at={overflight.run?.forecast.forecastAt ?? litAt ?? minuteClock}
             ready={observatory.ready}
-            waiting={snapshot.coveredSince === null}
-            summary={observatorySummary({
-              count: shown,
-              minMagnitude: filters.minMagnitude,
-              windowMs: filters.windowMs,
-              sources: filters.sources,
-              day: archived ? loadedDay : null,
-            })}
+            empty={emptyEarthquakes}
+            summary={
+              shown === 0 && emptyEarthquakes.kind !== "empty"
+                ? emptyEarthquakes.text
+                : observatorySummary(shown, filters, coverage, loadedDay)
+            }
             feedNote={observatoryFeedNote(snapshot.statuses, feeds.silent)}
             deepAvailable={journey.deepest !== null}
             onScene={chooseEarthScene}
@@ -1213,7 +1213,7 @@ export function App(): JSX.Element {
           />
         )}
         {!markSubject && !(shownQuake && pinned) && railShown ? (
-          <MobileNavigation canvasHeight={sheetCanvas} onResize={setSheetCanvas} />
+          <MobileNavigation canvasHeight={sheetCanvas} flat={flat} onResize={setSheetCanvas} />
         ) : null}
         <aside
           aria-label="Event filters and recent activity"
@@ -1230,28 +1230,20 @@ export function App(): JSX.Element {
                 : view.at === null
                   ? "Live"
                   : view.playing
-                    ? "Playing"
-                    : "Held"}
+                    ? "Replaying"
+                    : `Paused at ${viewClock}`}
             </p>
-            {/* `data-rail="headline"` has no stylesheet rule: it is a browser test's handle for somewhere in
-              the rail that is not the strip. Deleting it as dead looked right and broke two tests. */}
             <div className="tb-cell tb-wide" data-rail="headline">
-              {/* Before any coverage exists there is no count, and a big 0 over "nothing yet" was two
-                disclaimers under a number that meant nothing. */}
               {snapshot.coveredSince === null ? (
                 <div className="mt-2 max-w-[30ch] text-[14px] leading-snug text-dim">
                   {earthquakeFeedsDown
                     ? "Neither feed is answering yet."
                     : archiveBusy && archiveDay
                       ? `Asking USGS and EMSC for ${archiveDay}.`
-                      : "Asking USGS and EMSC for the last day."}
+                      : `Loading earthquake reports for the last ${compactSpan(filters.windowMs)}…`}
                 </div>
               ) : (
                 <>
-                  {/* Counts what is on the globe, so during the replay it climbs as the day plays in. See ARCHITECTURE.md#srcapptsx. */}
-                  {/* The one piece of display type here, so it is set like display type: heavier than the
-                    prose under it and closed up slightly, which large figures need and small ones do not.
-                    `tabular-nums` still decides the widths, so the tracking cannot make it twitch. */}
                   <div
                     data-event-count
                     className="mt-1.5 text-[38px] leading-none font-[650] tracking-[-0.015em] tabular-nums"
@@ -1266,28 +1258,19 @@ export function App(): JSX.Element {
                   ) : view.at !== null ? (
                     <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
                       <span className="font-mono text-ink">{viewClock}</span>
-                      <span className="text-faint">{view.playing ? "playing" : "held"}</span>
+                      <span className="text-faint">{view.playing ? "Replaying" : "Paused"}</span>
                     </div>
                   ) : (
-                    <div className="mt-1.5 text-[11px] text-dim">
-                      {partialArchive
-                        ? "Available readings"
-                        : windowLabel(now, filters.windowMs, snapshot.coveredSince, archived)}
-                      {archived || edge.complete ? "" : " · still filling"}
-                    </div>
+                    <div className="mt-1.5 text-[11px] text-dim">{coverage.label}</div>
                   )}
                 </>
               )}
             </div>
 
             {!strongest && !replay && !flat ? (
-              /* Hold the place and say what happened. Letting these vanish collapsed the titleblock from 190px
-            to 86px under the cursor that caused it, which reads as a bug. */
               <div className="tb-cell tb-wide" data-rail="largest">
                 <span className="label block">Largest</span>
-                <span className="text-[11px] text-faint">
-                  nothing at or above M{filters.minMagnitude.toFixed(1)}
-                </span>
+                <span className="text-[11px] text-faint">{emptyEarthquakes.short}</span>
               </div>
             ) : null}
             {strongest && !replay && !flat ? (
@@ -1329,7 +1312,9 @@ export function App(): JSX.Element {
             {!replay && !flat && quiet.parts === null ? (
               <div className="tb-cell tb-wide">
                 <span className="label block">Near plate boundaries</span>
-                <span className="text-[11px] text-faint">nothing in range to measure</span>
+                <span className="text-[11px] text-faint">
+                  {shown ? "No events in range" : emptyEarthquakes.short}
+                </span>
               </div>
             ) : null}
             {!replay && !flat && quiet.parts !== null ? (
@@ -1354,7 +1339,18 @@ export function App(): JSX.Element {
             archiveDay={archived ? loadedDay : null}
             cursor={view.at}
             staleCursor={!archiveBusy && staleCursor}
-            missingEvent={Boolean(missingShared && !pinned && snapshot.coveredSince !== null)}
+            earthquakeNotice={sharedEarthquakeNotice(
+              pinned ? null : missingShared,
+              snapshot,
+              loadedDay,
+              archiveBusy,
+            )}
+            hazardNotice={sharedHazardNotice(
+              markId === shared.mark && !markSubject ? markId : null,
+              archived,
+              archiveHazards,
+              answered,
+            )}
           />
 
           <div data-rail="legend">{marksFilter}</div>
@@ -1369,7 +1365,7 @@ export function App(): JSX.Element {
           <div data-rail="when">
             <div role="search" className="mb-1.5 flex flex-col gap-1 xl:flex-row xl:items-baseline xl:gap-2">
               <label htmlFor="find" className="label shrink-0">
-                Find
+                Find earthquake reports
               </label>
               <input
                 id="find"
@@ -1404,10 +1400,7 @@ export function App(): JSX.Element {
             announceAbove={announceAbove}
             onAnnounceAboveChange={setAnnounceAbove}
             onNews={onNews}
-            coverage={
-              earthquakeFeedsDown ? "unavailable" : snapshot.coveredSince === null ? "loading" : "ready"
-            }
-            reported={snapshot.stats.quakes}
+            empty={emptyEarthquakes}
             now={now}
             archived={archived}
             onClearFilters={() => {

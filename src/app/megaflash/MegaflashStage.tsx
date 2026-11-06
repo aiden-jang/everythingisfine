@@ -144,7 +144,9 @@ export function MegaflashStage(): JSX.Element {
     ? "Preparing the infrared scan…"
     : image
       ? `GOES-16 infrared · ${scan.slice(11, 16)} UTC · False color`
-      : "Infrared scan unavailable · Trace visible";
+      : before
+        ? "Infrared image unavailable · showing the storm map"
+        : "Infrared image unavailable · lightning detections shown on the map";
 
   function togglePlay() {
     const current = clock.current;
@@ -177,7 +179,9 @@ export function MegaflashStage(): JSX.Element {
           <h3>{before ? "Above the storm" : complete ? "Across five states" : "The flash spreads"}</h3>
           <p>
             {before
-              ? "An infrared scan shows the storm minutes before the first light."
+              ? image
+                ? "An infrared scan shows the storm minutes before the first light."
+                : "The lightning timeline starts with the first detected pulse."
               : complete
                 ? "From eastern Texas to near Kansas City in 7.39 seconds."
                 : "GOES-16 recorded pulses of light as the discharge spread through the storm."}

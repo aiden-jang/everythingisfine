@@ -70,7 +70,7 @@ test("reduced motion keeps the measurements and aurora available during a solar-
   const stage = page.getByRole("region", { name: "Sun Watch readings" });
   await expect(stage.getByText("Earth · After Dark")).toBeVisible();
   await expect(stage.getByText("NOAA feed unavailable")).toBeVisible();
-  await expect(stage.getByText("Older reading")).toBeVisible();
+  await expect(stage.getByText(/Latest reading is .* old/)).toBeVisible();
   await expect(stage.getByText("1.23e-6", { exact: true })).toBeVisible();
   expect(await credit.boundingBox()).toEqual(creditPosition);
   await expect(stage.getByRole("button", { name: "Pause", exact: true })).toHaveCount(0);

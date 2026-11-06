@@ -7,7 +7,7 @@ import { PLACE_LIMIT, type Hit, type Results } from "./search";
 
 interface Props {
   flat: boolean;
-  hours: number;
+  empty: string | null;
   query: string;
   results: Results;
   regions: RegionCount[];
@@ -22,7 +22,7 @@ interface Props {
 
 export function RegionalResults({
   flat,
-  hours,
+  empty,
   query,
   results,
   regions,
@@ -69,12 +69,9 @@ export function RegionalResults({
                   ) : null}
                 </>
               ) : (
-                /* Say which nothing this is. There is no gazetteer and cannot be one keylessly, so a real place
-                    with no seismicity looks exactly like a typo. */
-                <p className="px-1.5 py-1 text-[11px] leading-relaxed text-faint">
-                  Nothing in the {hours >= 48 ? `${Math.round(hours / 24)} days` : `${hours} hours`} on
-                  screen. This searches the named regions and the places these two agencies put on the events
-                  it holds, not a map of the world.
+                <p className="px-1.5 py-1 text-[11px] leading-relaxed text-faint" role="status">
+                  {empty ??
+                    "No matching earthquake reports in this view. Search by a region or a place named in a report."}
                 </p>
               )
             ) : (

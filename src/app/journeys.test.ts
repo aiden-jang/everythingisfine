@@ -118,27 +118,18 @@ describe("the observatory entry", () => {
 
 describe("honest observatory summaries", () => {
   it("labels the magnitude, selected time window and single source", () => {
+    const filters = { minMagnitude: 4.5, windowMs: 86_400_000, sources: new Set(["usgs"] as const) };
+    expect(observatorySummary(1234, filters, { label: "last 24 hours", partial: false }, null)).toBe(
+      "1,234 earthquakes · M4.5+ · last 24 hours · USGS only",
+    );
     expect(
-      observatorySummary({
-        count: 1234,
-        minMagnitude: 4.5,
-        windowMs: 86400000,
-        sources: new Set(["usgs"]),
-        day: null,
-      }),
-    ).toBe("1,234 earthquakes · M4.5+ · last 24h · USGS only");
+      observatorySummary(0, filters, { label: "Partial source coverage", partial: true }, "2011-03-11"),
+    ).toBe(
+      "0 earthquakes in available reports · M4.5+ · 2011-03-11 archive · Partial source coverage · USGS only",
+    );
     expect(
-      observatorySummary({
-        count: 0,
-        minMagnitude: 2,
-        windowMs: 86400000,
-        sources: new Set(["usgs", "emsc"]),
-        day: "2011-03-11",
-      }),
-    ).toContain("2011-03-11 archive");
-    expect(
-      observatorySummary({ count: 0, minMagnitude: 2, windowMs: 86400000, sources: new Set(), day: null }),
-    ).toContain("No earthquake feeds selected");
+      observatorySummary(0, { ...filters, sources: new Set() }, { label: "", partial: false }, null),
+    ).toContain("No earthquake sources selected");
   });
   it("distinguishes unavailable earthquake feeds from other feed failures", () => {
     const live = { kind: "live", since: NOW } as const;

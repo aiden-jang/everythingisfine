@@ -24,8 +24,13 @@ export function readingStatus(data: Readings<SpaceSample>): string {
     if (data.status === "waiting") return "Waiting for NOAA";
     return data.status === "empty" ? "No recent readings" : "NOAA feed unavailable";
   }
-  if (data.status !== "ok") return "Last available";
-  return data.now - sample.at > SPACE_WEATHER_FRESHNESS ? "Older reading" : "Current reading";
+  if (data.status === "error") return "Update failed · last reading";
+  if (data.status !== "ok") return "No new readings · last reading";
+  const age = Math.round((data.now - sample.at) / 60_000);
+  if (data.now - sample.at <= SPACE_WEATHER_FRESHNESS) return "Current reading";
+  return age >= 120
+    ? `Latest reading is ${Math.round(age / 60)} hours old`
+    : `Latest reading is ${age} minutes old`;
 }
 
 function Chart({ data, wind }: { data: Readings<SpaceSample>; wind: boolean }): JSX.Element {

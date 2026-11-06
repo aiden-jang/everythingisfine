@@ -21,11 +21,7 @@ export interface TimelineProps {
   bucketMs: number;
   /** True while a wider backlog is still arriving, so the strip can say so rather than look empty. */
   fetching: boolean;
-  /**
-   * True before any feed has vouched for the window, so an empty strip is not blamed on the filters. See
-   * ARCHITECTURE.md.
-   */
-  waiting: boolean;
+  empty: string;
   /** Where the cursor sits across the strip, 0 at the old edge and 1 at now. Live reads as 1. */
   cursor: number;
   /** True when the cursor is standing somewhere rather than following the present. */
@@ -106,7 +102,7 @@ export function Timeline({
   onFocusHourChange,
   bucketMs,
   fetching,
-  waiting,
+  empty,
   cursor,
   parked,
   playing,
@@ -185,20 +181,14 @@ export function Timeline({
             asked for, so showing them together left two numbers with nothing saying which was which. */}
         <span className="font-mono text-[10.5px] text-faint">
           {fetching
-            ? "fetching the backlog"
+            ? "Loading earlier reports…"
             : held
-              ? `${held.count} ${held.count === 1 ? "event" : "events"} · ` +
-                `${bucketAgo(held.bucketsAgo, bucketMs)}`
+              ? !held.observed && held.count === 0
+                ? `Coverage unavailable · ${bucketAgo(held.bucketsAgo, bucketMs)}`
+                : `${held.count} ${held.count === 1 ? "event" : "events"} · ${bucketAgo(held.bucketsAgo, bucketMs)}`
               : peak > 0 && tallest
                 ? `peak ${peak} · ${bucketAgo(tallest.bucketsAgo, bucketMs)}`
-                : /*
-                  An empty window says so, in the slot the peak was using. With nothing passing the filter
-                  every bucket draws its 1px floor, so the strip becomes a row of twenty-four slivers under
-                  an axis: a frame around nothing, which reads as a rendering fault rather than as zero.
-                */
-                  waiting
-                  ? ""
-                  : "nothing in this window"}
+                : empty}
         </span>
       </div>
 
@@ -335,9 +325,7 @@ export function Timeline({
       {/* Folded: provenance, not a control. Opened, still tight to the axis it measures. */}
       {reaches.length > 0 ? (
         <details className="mt-1">
-          <summary className="disclose text-[11px] text-faint hover:text-dim">
-            How far the feeds reach
-          </summary>
+          <summary className="disclose text-[11px] text-faint hover:text-dim">Coverage by source</summary>
           {/* Tight to the axis, because these measure it. At 8 to 10px apart the axis, the two coverage
               rules and the transport read as four peers, when they are one scale, two annotations and a
               control. */}
@@ -356,8 +344,7 @@ export function Timeline({
                     style={{ width: `${Math.max(r.fraction > 0 ? 1 : 0, r.fraction * 100)}%` }}
                   />
                 </span>
-                {/* `nowrap` so a longer word overflows rather than stacking and moving the rule. */}
-                <span className="w-[38px] shrink-0 text-right font-mono text-[10.5px] whitespace-nowrap text-faint tabular-nums">
+                <span className="w-[72px] shrink-0 text-right font-mono text-[10.5px] text-faint tabular-nums">
                   {r.words}
                 </span>
               </div>
@@ -426,7 +413,7 @@ export function Timeline({
             // number with nothing to say which was which.
             className="shrink-0 font-mono text-[10.5px] text-dim hover:text-ink"
           >
-            {archived ? "End of day" : "go live"}
+            {archived ? "Jump to end of day" : "Return to live"}
           </button>
         ) : (
           <span className="shrink-0 font-mono text-[10.5px] text-faint">{archived ? "day end" : "live"}</span>
@@ -448,7 +435,7 @@ export function Timeline({
           blocks, explains a state the sentence above the rail has already named. */}
       {unobserved ? (
         <p className="mt-2 text-[11px] leading-relaxed text-faint">
-          Blocks are {unit.many} the buffer was not open for, not quiet ones.
+          Shaded {unit.many} have incomplete source coverage.
         </p>
       ) : null}
     </div>

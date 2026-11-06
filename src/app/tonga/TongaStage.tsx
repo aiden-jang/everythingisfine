@@ -166,6 +166,7 @@ export function TongaStage(): JSX.Element {
   const isVapor = !isOrbit && vaporMix >= 0.5;
   const scans = isVapor ? vapor : infrared;
   const scan = scans[latestScan(scans, minute)]!;
+  const hasImage = Boolean(isVapor ? images.current.vapor : images.current.infrared);
   const caption = isOrbit
     ? "Estimated atmospheric wave"
     : isVapor
@@ -204,10 +205,14 @@ export function TongaStage(): JSX.Element {
           aria-label="Satellite observations of the Tonga eruption and a globe showing the estimated atmospheric wave"
         />
         <figcaption>
-          <span>{assets === "loading" ? "Preparing satellite scans…" : caption}</span>
-          {assets !== "loading" && !isOrbit && (
-            <time dateTime={scan.at}>Scan {timeLabel(scan.minute)} UTC</time>
-          )}
+          <span>
+            {assets === "loading"
+              ? "Preparing satellite scans…"
+              : !isOrbit && !hasImage
+                ? "Satellite imagery unavailable for this chapter"
+                : caption}
+          </span>
+          {hasImage && !isOrbit && <time dateTime={scan.at}>Scan {timeLabel(scan.minute)} UTC</time>}
         </figcaption>
       </figure>
       <div className="archive-scene-console tonga-console">
@@ -218,8 +223,10 @@ export function TongaStage(): JSX.Element {
             {(assets === "partial" || assets === "error") && (
               <p role="status">
                 {assets === "partial"
-                  ? "One satellite band is unavailable."
-                  : "Satellite scans are unavailable."}
+                  ? images.current.infrared
+                    ? "Water-vapor imagery unavailable. Infrared and pressure readings remain available."
+                    : "Infrared imagery unavailable. Water-vapor and pressure readings remain available."
+                  : "Satellite scans unavailable. The estimated wave and pressure readings remain available."}
               </p>
             )}
           </div>

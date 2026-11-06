@@ -77,7 +77,7 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Watch Megaflash** slows down a 2017 lightning flash from the southern Plains. Follow the
   GOES-16 optical trace, then pull back to see the span across five states. Reduced motion
   opens the full trace with the same scrubber.
-- **Save view** uses the existing captioned image export, including the reference-cutaway label.
+- **Save image** uses the existing captioned image export, including the reference-cutaway label.
 
 The opening pulls back from the horizon into orbit. Long camera flights bank gently, bright stars
 leave short photographic trails during travel, and scene reveals briefly lift the atmosphere's light.
@@ -104,7 +104,7 @@ Observe or Explore remembers that presentation; opening the app alone saves no n
   appear in order. The UTC timeline can be scrubbed, including in the fixed reduced-motion view.
 - Open **Watch Tōhoku rupture** from the 11 March 2011 archive or the pinned mainshock.
 - On a phone, switch between globe space and recent events using the bottom navigation.
-- Use **Save view** to share or download a captioned image. If native sharing fails, **Download image**
+- Use **Save image** to share or download a captioned image. If native sharing fails, **Download image**
   keeps that captured frame available. Cancelling the share sheet leaves the page alone.
   The URL retains the projection, presentation, and selection.
 - Press `f` for fullscreen, Space to play the window, and `,` / `.` to step through it.

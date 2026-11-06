@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { downloadStill } from "./stillDelivery";
 import { drawStill, stillMoment, verdictLine, STILL_HEIGHT, STILL_WIDTH } from "./still";
-import { compactSpan } from "./format";
+import { earthquakeCoverage } from "./earthquakeStatus";
 import type { Feed } from "./feed";
 import type { Filters } from "../data/types";
 import type { RampName } from "../globe/ramp";
@@ -38,13 +38,15 @@ export function useStill(
     setNotice(null);
     setFallback(null);
     let file: File | null = null;
-    const failed = (): void => {
+    const failed = (loading = false): void => {
       if (!alive.current) return;
       setFallback(file);
       setNotice(
         file
           ? "Sharing is unavailable. You can download the image."
-          : "The globe is not ready. Try again after it appears.",
+          : loading
+            ? "The globe is still loading. Try again after it appears."
+            : "Couldn’t create the image. Try again.",
       );
     };
     const finished = (): void => {
@@ -53,15 +55,19 @@ export function useStill(
     };
     try {
       const source = capture.current();
-      if (!source) throw new Error("Globe unavailable");
-      const archive = feed.snapshot().archive;
-      const partial =
-        archive?.answered && Object.values(archive.answered).some((answer) => !answer || answer.truncated);
-      const scope = archive
-        ? partial
-          ? "Partial UTC day"
-          : "UTC day"
-        : `last ${compactSpan(filters.windowMs)}`;
+      if (!source) {
+        failed(true);
+        finished();
+        return;
+      }
+      const snapshot = feed.snapshot();
+      const archive = snapshot.archive;
+      const now = archive?.to ?? Date.now();
+      const coverage = earthquakeCoverage(snapshot, filters, now);
+      const scope =
+        !archive && coverage.from !== null && coverage.from > now - filters.windowMs
+          ? `Available reports since ${new Date(coverage.from).toISOString().slice(0, 16).replace("T", " ")} UTC`
+          : coverage.label;
       const frame = document.createElement("canvas");
       frame.width = STILL_WIDTH;
       frame.height = STILL_HEIGHT;
@@ -79,7 +85,6 @@ export function useStill(
           moment: stillMoment(cursor, archive?.from ?? Date.now(), archive !== null),
           // From `onGlobe`, not the raw feeds, or a still of an archived day counts layers it does not show.
           verdict: verdictLine(stillCounts.current),
-          // Caption the requested span even while its feeds are still filling.
           filter: [`M${filters.minMagnitude.toFixed(1)}+ · ${scope}`, inspection].filter(Boolean).join(" · "),
           host: window.location.host,
         },
@@ -125,7 +130,7 @@ export function useStill(
       failed();
       finished();
     }
-  }, [feed, filters.minMagnitude, filters.windowMs, cursor, ramp, inspection]);
+  }, [feed, filters, cursor, ramp, inspection]);
   const dismiss = (): void => {
     setNotice(null);
     setFallback(null);

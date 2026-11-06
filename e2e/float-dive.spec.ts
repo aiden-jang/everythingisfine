@@ -47,7 +47,7 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   await expect(dive.getByText("33.000", { exact: true })).toBeVisible();
   await expect(dive.getByRole("button", { name: "Replay ascent" })).toBeVisible();
   await picker.selectOption({ label: "1 Nov 2026 · WMO 6901937" });
-  await expect(dive.getByText(/previous profile is still shown/)).toBeVisible();
+  await expect(dive.getByText(/Still showing .* cycle/)).toBeVisible();
   await expect(depth).toHaveAttribute("aria-valuetext", "0 m");
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);
   await page.setViewportSize({ width: 320, height: 640 });

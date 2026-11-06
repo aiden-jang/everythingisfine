@@ -56,7 +56,7 @@ export interface MagnitudeFilterProps {
   value: number;
   onChange: (value: number) => void;
   /** Tonight's aurora, for the one line that explains it. Null when there is none to explain. */
-  aurora: { peak: number; forecastAt: number } | null;
+  aurora: { peak: number; forecastAt: number; estimatedTime?: true } | null;
   /** The storms running now, for the same reason: no layer without the thing that explains it. */
   cyclones: readonly { name: string; peakKmh: number | null }[];
   /** How many volcanoes are drawn. */
@@ -182,7 +182,7 @@ export function MagnitudeFilter({
               onKeyOpen(!keyOpen);
             }}
           >
-            What the marks mean
+            Map legend
           </summary>
 
           {/* Size carries the same value, so a colourblind viewer and a small screen both still read it. */}
@@ -376,7 +376,7 @@ export function MagnitudeFilter({
           wash instead of a glyph for the same reason. */}
           {aurora ? (
             <KeyRow
-              note={auroraNote(aurora.peak, aurora.forecastAt, Date.now())}
+              note={auroraNote(aurora.peak, aurora.forecastAt, aurora.estimatedTime)}
               glyph={
                 <span
                   className="mt-[3px] inline-block h-[9px] w-[13px] shrink-0 rounded-[2px]"

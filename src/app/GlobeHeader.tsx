@@ -83,8 +83,8 @@ export function GlobeHeader({
         >
           {(
             [
-              ["reported", snapshot.stats.quakes.toLocaleString("en-GB")],
-              ["seen by both", snapshot.stats.corroborated.toLocaleString("en-GB")],
+              ["Earthquakes before filters", snapshot.stats.quakes.toLocaleString("en-GB")],
+              ["Reported by both agencies", snapshot.stats.corroborated.toLocaleString("en-GB")],
               ...(snapshot.stats.revised > 0
                 ? [["revised", snapshot.stats.revised.toLocaleString("en-GB")] as const]
                 : []),
@@ -115,7 +115,7 @@ export function GlobeHeader({
               id="capture-still"
               onClick={saveStill}
               disabled={saving || !ready}
-              aria-label={saving ? "Saving view" : "Save view"}
+              aria-label={saving ? "Saving image" : "Save image"}
               className="observatory-save"
             >
               <svg
@@ -142,7 +142,7 @@ export function GlobeHeader({
                 type="button"
                 id="view-projection"
                 onClick={() => setFlat((f) => !f)}
-                aria-pressed={flat}
+                aria-description={flat ? "Switch to globe" : "Switch to map"}
                 className="min-w-[60px] shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink max-md:min-w-[52px]"
               >
                 {flat ? "Globe" : "Map"}
@@ -150,13 +150,16 @@ export function GlobeHeader({
               <button
                 type="button"
                 onClick={() => setRamp((r) => (r === "thermal" ? "cividis" : "thermal"))}
+                aria-label={`Magnitude colors · ${ramp === "cividis" ? "Cividis" : "Thermal"}`}
                 aria-pressed={ramp === "cividis"}
                 className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised ${
                   ramp === "cividis" ? "bg-raised text-ink" : "text-faint"
                 }`}
               >
-                <span className="lg:hidden">Palette</span>
-                <span className="hidden lg:inline">Colourblind ramp {ramp === "cividis" ? "on" : "off"}</span>
+                <span className="lg:hidden">Colors</span>
+                <span className="hidden lg:inline">
+                  Magnitude colors · {ramp === "cividis" ? "Cividis" : "Thermal"}
+                </span>
               </button>
               <Utilities>
                 <button
@@ -189,14 +192,15 @@ export function GlobeHeader({
                   disabled={saving}
                   className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink disabled:cursor-default"
                 >
-                  {saving ? "Saving…" : "Save view"}
+                  {saving ? "Saving…" : "Save image"}
                 </button>
                 <button
                   type="button"
                   onClick={onReset}
+                  aria-description="Reset the camera and earthquake filters, and return to live"
                   className="cursor-pointer border border-hairline px-2.5 py-1 text-[11px] text-faint transition-colors hover:bg-raised hover:text-ink"
                 >
-                  Reset view
+                  {snapshot.archive ? "Reset to live" : "Reset view & filters"}
                 </button>
                 {/* Keep the fold inside the overflow. As a button of its own at 390 it wrapped onto a line by
           itself and took the header from 46px to 80px, which is the opposite of folding the bar. */}

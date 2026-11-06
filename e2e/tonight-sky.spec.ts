@@ -25,7 +25,7 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await expect(horizon).toContainText("Tokyo · Local horizon");
   await horizon.getByRole("button", { name: "Look east" }).click();
   await expect(horizon).toContainText("Facing E · 90°");
-  const slider = sky.getByRole("slider", { name: "Local sky time" });
+  const slider = sky.getByRole("slider", { name: "City local time" });
   const time = sky.locator("time");
   await slider.press("Home");
   const sunset = await time.getAttribute("datetime");

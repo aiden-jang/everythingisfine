@@ -22,7 +22,11 @@ function WaveTransport({
 }): JSX.Element {
   const state = useSyncExternalStore(run.subscribe, run.read);
   const { city, km, p, s } = run.route;
-  const phase = state.done ? "Both arrived" : state.at >= p ? "P wave arrived" : "Estimated travel";
+  const phase = state.done
+    ? "Estimated arrival of both waves"
+    : state.at >= p
+      ? "Estimated P-wave arrival"
+      : "Estimated travel";
   return (
     <section
       ref={panel}

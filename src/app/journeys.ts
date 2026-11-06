@@ -4,7 +4,7 @@ import type { Store } from "../data/store";
 import type { Filters, Quake, Reading } from "../data/types";
 import { matches } from "../data/filter";
 import type { RegionCount } from "./regions";
-import { compactSpan, depth, place, SOURCE_NAMES } from "./format";
+import { depth, place, SOURCE_NAMES } from "./format";
 import type { Stop } from "./tour";
 
 function readingStop(quake: Quake, purpose: "largest" | "depth"): Stop {
@@ -85,24 +85,18 @@ export function journeyFor(
   return { stops, deepest: deep?.primary ?? null };
 }
 
-export function observatorySummary({
-  count,
-  minMagnitude,
-  windowMs,
-  sources,
-  day,
-}: {
-  count: number;
-  minMagnitude: number;
-  windowMs: number;
-  sources: ReadonlySet<string>;
-  day: string | null;
-}): string {
-  if (sources.size === 0) return "No earthquake feeds selected. Explore to choose a source.";
-  const period = day ? `${day} archive` : `last ${compactSpan(windowMs)}`;
-  const source = sources.size === 1 ? ` · ${sources.has("usgs") ? "USGS" : "EMSC"} only` : "";
+export function observatorySummary(
+  count: number,
+  filters: Filters,
+  coverage: { label: string; partial: boolean },
+  day: string | null,
+): string {
+  if (filters.sources.size === 0) return "No earthquake sources selected. Explore to choose a source.";
+  const period = day ? `${day} archive · ${coverage.label}` : coverage.label;
+  const source = filters.sources.size === 1 ? ` · ${filters.sources.has("usgs") ? "USGS" : "EMSC"} only` : "";
   const event = count === 1 ? "earthquake" : "earthquakes";
-  return `${count.toLocaleString("en-GB")} ${event} · M${minMagnitude.toFixed(1)}+ · ${period}${source}`;
+  const available = coverage.partial ? " in available reports" : "";
+  return `${count.toLocaleString("en-GB")} ${event}${available} · M${filters.minMagnitude.toFixed(1)}+ · ${period}${source}`;
 }
 
 export function observatoryFeedNote(
@@ -113,7 +107,7 @@ export function observatoryFeedNote(
     .filter((id) => statuses[id].kind === "failing")
     .map((id) => SOURCE_NAMES[id]);
   const earthquakeNote = failed.length
-    ? `${failed.join(" and ")} ${failed.length === 1 ? "is" : "are"} not answering. Retrying automatically; Explore for source status.`
+    ? `${failed.join(" and ")} ${failed.length === 1 ? "is" : "are"} not answering. Retrying automatically. Open Feed status for details.`
     : null;
   return [earthquakeNote, otherFeeds].filter(Boolean).join(" ") || null;
 }

@@ -192,9 +192,9 @@ test("a historical shortcut frames an actual archived event and keeps capture av
   await page.setViewportSize({ width: 1440, height: 900 });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Save view", exact: true })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Save image", exact: true })).toBeEnabled();
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Save view", exact: true }).click();
+  await page.getByRole("button", { name: "Save image", exact: true }).click();
   expect((await download).suggestedFilename()).toMatch(/\.png$/);
   await page.getByText("Historical replays", { exact: true }).click();
   await page.getByRole("button", { name: "Japan, 2011 ↗", exact: true }).click();
@@ -212,7 +212,9 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
-  await expect(page.getByText("Below the Surface needs a quake at least 70 km deep.")).toBeVisible();
+  await expect(
+    page.getByText("Below the Surface needs an earthquake at least 70 km deep in the current view."),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Explore the globe" }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
   await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("status")).toHaveText(
@@ -225,7 +227,7 @@ test("unavailable earthquake feeds do not masquerade as an empty or loading view
   await installFeeds(page, { dead: true, presentation: "fresh" });
   await page.goto("/");
   await expect(page.locator(".observatory-source-note")).toContainText("USGS and EMSC are not answering");
-  await expect(page.locator(".observatory-summary")).toContainText("aren’t available yet");
+  await expect(page.locator(".observatory-summary")).toContainText("Earthquake feeds unavailable.");
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
   await page.getByRole("button", { name: "Explore the globe" }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
@@ -243,13 +245,13 @@ test("the observatory keeps capture recovery and home navigation available", asy
   });
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
-  await page.getByRole("button", { name: "Save view", exact: true }).click();
+  await page.getByRole("button", { name: "Save image", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Sharing is unavailable" })).toBeVisible();
   const downloaded = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download image", exact: true }).click();
   expect((await downloaded).suggestedFilename()).toMatch(/\.png$/);
   await page.getByRole("button", { name: "Dismiss", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Save view", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "Save image", exact: true })).toBeFocused();
   await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
 });
@@ -295,7 +297,7 @@ test("a shared map restores Explore and the Observatory preserves the held view"
     await installFeeds(recipient, { presentation: "fresh" });
     await recipient.goto(link);
     await expect(recipient.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
-    await expect(recipient.getByRole("button", { name: "go live", exact: true })).toBeVisible();
+    await expect(recipient.getByRole("button", { name: "Return to live", exact: true })).toBeVisible();
   } finally {
     await recipient.close();
   }
@@ -311,13 +313,11 @@ test("an archived time returns to day end and partial coverage stays explicit", 
   await page.goto("/#d=2011-03-11&e=emsc:missing-fixture");
   const back = page.getByRole("button", { name: "back to live", exact: true });
   await expect(back).toBeVisible();
-  await expect(page.getByText(/EMSC did not answer/)).toBeVisible();
-  await expect(
-    page.getByText("Couldn’t find this earthquake in the archive reports for 2011-03-11."),
-  ).toBeVisible();
+  await expect(page.getByText(/EMSC · Couldn’t be reached/)).toBeVisible();
+  await expect(page.getByText("EMSC archive reports couldn’t be reached for 2011-03-11.")).toBeVisible();
   const transport = page.getByRole("slider", { name: "Time in the window" });
   await transport.press("Home");
-  await page.getByRole("button", { name: "End of day", exact: true }).click();
+  await page.getByRole("button", { name: "Jump to end of day", exact: true }).click();
   await expect(transport).toHaveAttribute("aria-valuetext", "End of day");
   await expect(back).toBeVisible();
   await back.click();

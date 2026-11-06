@@ -15,6 +15,7 @@ export interface FeedSnapshot {
   stats: StoreStats;
   statuses: Record<SourceId, SourceStatus>;
   checked: Partial<Record<SourceId, number>>;
+  seedFailed: Partial<Record<SourceId, boolean>>;
   /** Bumped on every ingest, so a subscriber can tell "nothing changed" from "same total". */
   revision: number;
   /** Quakes newly created since the previous announcement, oldest first. A wavefront belongs to an
@@ -86,6 +87,7 @@ export function createFeed(capacity = 50_000): Feed {
     emsc: { kind: "idle" },
   };
   const checked: Partial<Record<SourceId, number>> = {};
+  const seedFailed: Partial<Record<SourceId, boolean>> = {};
   let revision = 0;
   let running = false;
   let announced = false;
@@ -111,6 +113,7 @@ export function createFeed(capacity = 50_000): Feed {
     stats: store.stats(),
     statuses: { ...statuses },
     checked: { ...checked },
+    seedFailed: { ...seedFailed },
     revision,
     arrived,
     seeding: !announced,
@@ -150,6 +153,7 @@ export function createFeed(capacity = 50_000): Feed {
   // thing that must be identical across that swap. Inline, the re-seed path would be a second copy.
   const wire = (): void => {
     for (const source of sources) {
+      delete seedFailed[source.id];
       source.start({
         onReadings: (batch) => {
           // Stopping a source cannot recall a request already in flight. Its answer landed in the
@@ -166,6 +170,11 @@ export function createFeed(capacity = 50_000): Feed {
         onStatus: (status) => {
           if (status.kind === "live") checked[source.id] = Date.now();
           statuses[source.id] = status;
+          announce();
+        },
+        onSeedFailed: () => {
+          if (archive !== null) return;
+          seedFailed[source.id] = true;
           announce();
         },
         // Only ever wider. A second seed reaching further back widens it; one reaching less far does not

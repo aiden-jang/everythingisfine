@@ -33,9 +33,9 @@ export function PressureChart({ station, minute }: { station: Station; minute: n
         <span>Station pressure</span>
         <span>
           {minute < station.start || minute >= end + 1
-            ? "Outside station window"
+            ? `This station’s readings cover ${timeLabel(station.start)}–${timeLabel(end)} UTC`
             : reading === null
-              ? "No reading"
+              ? "No reading at this minute"
               : `${reading.toFixed(2)} hPa`}
         </span>
       </div>

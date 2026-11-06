@@ -67,9 +67,9 @@ export const tsunami: ObservationSource = {
             })),
           ],
           measurements: [
-            { label: "Since the earthquake", value: `${hour} h` },
+            { label: "Modeled arrival · time since the earthquake", value: `${hour} h` },
             {
-              label: "Recorded at selected buoy",
+              label: "Measured water-level change at buoy",
               value:
                 actual && Math.abs(actual[0] - at) <= 900_000
                   ? `${actual[1].toFixed(3)} m`
@@ -79,7 +79,7 @@ export const tsunami: ObservationSource = {
         };
       }),
       units: "m",
-      series: [{ label: `DART ${chosen.id} · observed residual`, samples: series }],
+      series: [{ label: `DART ${chosen.id} · measured water-level change`, samples: series }],
       note: "Illustrative first-arrival model calculated from NOAA ETOPO bathymetry. The glowing front shows estimated travel time. The gauge plot uses separate NOAA DART observations after tide removal.",
     };
   },

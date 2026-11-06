@@ -35,7 +35,7 @@ test("Katrina’s reduced-motion map supports the NOAA fixes and keyboard scrubb
   const { dialog } = await openStorm(page);
   const slider = dialog.getByRole("slider", { name: "Track time" });
   await expect(dialog.getByText("Track overview")).toBeVisible();
-  await expect(dialog.getByText("Wind radii are unavailable at the landfall fix.")).toBeVisible();
+  await expect(dialog.getByText("Wind extent unavailable for this position.")).toBeVisible();
   await dialog.getByRole("button", { name: "Offshore peak" }).click();
   await expect(dialog.getByText("150 kt max wind")).toBeVisible();
   await expect(dialog.getByText("64 kt radius")).toBeVisible();

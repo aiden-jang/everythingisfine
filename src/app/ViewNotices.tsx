@@ -7,10 +7,18 @@ interface Props {
   archiveDay: string | null;
   cursor: number | null;
   staleCursor: boolean;
-  missingEvent: boolean;
+  earthquakeNotice: string | null;
+  hazardNotice: string | null;
 }
 
-export function ViewNotices({ statuses, archiveDay, cursor, staleCursor, missingEvent }: Props): JSX.Element {
+export function ViewNotices({
+  statuses,
+  archiveDay,
+  cursor,
+  staleCursor,
+  earthquakeNotice,
+  hazardNotice,
+}: Props): JSX.Element {
   const sources = ["usgs", "emsc"] as const;
   const failing = archiveDay
     ? []
@@ -26,11 +34,11 @@ export function ViewNotices({ statuses, archiveDay, cursor, staleCursor, missing
         <div data-rail="notice" className={notice} role="status">
           {failing.map(({ id, status }) => (
             <div key={id}>
-              <span className="text-ink">{SOURCE_NAMES[id]}</span> is not answering: {status.reason}. Retrying
-              at {clock(status.retryAt)}.
+              <span className="text-ink">{SOURCE_NAMES[id]}</span> is not answering. Retrying at{" "}
+              {clock(status.retryAt)}.
             </div>
           ))}
-          <div className="mt-1 text-faint">The globe keeps what it has.</div>
+          <div className="mt-1 text-faint">Previously loaded reports remain visible.</div>
         </div>
       )}
       {staleCursor && (
@@ -44,13 +52,11 @@ export function ViewNotices({ statuses, archiveDay, cursor, staleCursor, missing
               : "This link’s time is older than the live window. Showing the start of the window."}
         </p>
       )}
-      {missingEvent && (
-        <p data-rail="notice" className={notice} role="status">
-          {archiveDay
-            ? `Couldn’t find this earthquake in the archive reports for ${archiveDay}.`
-            : "Couldn’t find this earthquake in the available live reports."}
+      {[earthquakeNotice, hazardNotice].filter(Boolean).map((message) => (
+        <p key={message} data-rail="notice" className={notice} role="status">
+          {message}
         </p>
-      )}
+      ))}
     </>
   );
 }

@@ -37,7 +37,7 @@ interface Props {
   scene: EarthScene;
   at: number;
   ready: boolean;
-  waiting: boolean;
+  empty: ReturnType<typeof import("./earthquakeStatus").earthquakeEmpty>;
   summary: string;
   feedNote: string | null;
   deepAvailable: boolean;
@@ -69,7 +69,7 @@ export function Observatory({
   scene,
   at,
   ready,
-  waiting,
+  empty,
   summary,
   deepAvailable,
   aurora,
@@ -284,9 +284,15 @@ export function Observatory({
                       ref={tour.button}
                       onClick={tour.start}
                       disabled={!ready || !tour.available}
+                      aria-describedby={ready && !tour.available ? "tour-availability" : undefined}
                     >
                       Take a tour <span aria-hidden="true">→</span>
                     </button>
+                    {ready && !tour.available && scene === "night" && (
+                      <p id="tour-availability" className="observatory-summary">
+                        {empty.text}
+                      </p>
+                    )}
                     {scene === "live" && (
                       <LiveExperiences
                         ready={ready}
@@ -297,12 +303,11 @@ export function Observatory({
                     )}
                   </div>
                   {scene !== "night" ? (
-                    <p className="observatory-summary">
-                      {waiting
-                        ? feedNote
-                          ? "Earthquake readings aren’t available yet. Explore for feed status."
-                          : "Listening for the public feeds…"
-                        : summary}
+                    <p
+                      id={ready && !tour.available ? "tour-availability" : undefined}
+                      className="observatory-summary"
+                    >
+                      {summary}
                     </p>
                   ) : null}
                 </>
@@ -331,7 +336,7 @@ export function Observatory({
 
               {!active && ready && !deepAvailable && (
                 <p id="depth-availability" className="observatory-depth-note">
-                  Below the Surface needs a quake at least 70 km deep.
+                  Below the Surface needs an earthquake at least 70 km deep in the current view.
                 </p>
               )}
               {!active && scene === "live" ? (

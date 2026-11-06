@@ -155,7 +155,7 @@ export function StormStage(): JSX.Element {
             <span>{fix.pressure} mb</span>
           </p>
           <p>
-            {atFix ? "NOAA fix" : "Latest fix in replay"}{" "}
+            {atFix ? "Recorded storm position" : "Most recent recorded position"}{" "}
             <time dateTime={fix.at}>{stormClock(fix.time)}</time>
           </p>
         </div>
@@ -196,7 +196,7 @@ export function StormStage(): JSX.Element {
           </div>
           <p className="storm-legend">
             {fix.landfall ? (
-              "Wind radii are unavailable at the landfall fix."
+              "Wind extent unavailable for this position."
             ) : (
               <>
                 <span>

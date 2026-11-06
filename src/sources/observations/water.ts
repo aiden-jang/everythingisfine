@@ -45,6 +45,7 @@ export const tide: ObservationSource = {
         .catch(() => null),
     ]);
     const measured = tides(actual, "data");
+    const predictionsAvailable = Array.isArray((forecast as Record<string, unknown> | null)?.["predictions"]);
     const prediction = tides(forecast, "predictions");
     const levels = [...measured, ...prediction].map(([, level]) => level);
     const min = Math.floor(Math.min(0, ...levels));
@@ -65,7 +66,15 @@ export const tide: ObservationSource = {
         ],
         measurements: [
           { label: "Observed level", value: `${level.toFixed(2)} m` },
-          { label: "Predicted tide", value: valid === undefined ? "Unavailable" : `${valid.toFixed(2)} m` },
+          {
+            label: "Predicted tide",
+            value:
+              valid !== undefined
+                ? `${valid.toFixed(2)} m`
+                : predictionsAvailable
+                  ? "No prediction for this time"
+                  : "Prediction source unavailable",
+          },
         ],
       };
     });
@@ -181,7 +190,12 @@ export const river: ObservationSource = {
             const value = values.find(({ station }) => station.label === label)?.value;
             return {
               label,
-              value: value === undefined ? "Unavailable" : `${Math.round(value).toLocaleString()} ft³/s`,
+              value:
+                value !== undefined
+                  ? `${Math.round(value).toLocaleString()} ft³/s`
+                  : stations.some((station) => station.label === label)
+                    ? "No reading at this time"
+                    : "Gauge unavailable",
             };
           }),
         };

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Quake } from "../data/types";
 import { ago, agoShort, coordinates, depth, place, reportedBy, SOURCE_NAMES } from "./format";
 import { newsIn } from "./announce";
+import type { earthquakeEmpty } from "./earthquakeStatus";
 
 /* The list of recent events. One list, for everybody. See ARCHITECTURE.md#srcappeventlisttsx. */
 
@@ -17,9 +18,7 @@ export interface EventListProps {
    * being new, and a second implementation is a second chance to announce a cold-load backlog. */
   onNews?: (magnitudes: number[]) => void;
   onAnnounceAboveChange: (value: number) => void;
-  coverage: "loading" | "unavailable" | "ready";
-  /** Unfiltered reports, used to tell an empty result apart from filters hiding the data. */
-  reported: number;
+  empty: ReturnType<typeof earthquakeEmpty>;
   /** The clock every age in this list is measured against. Passed in, because on an archived day it is
    * the end of that day: `Date.now()` put "99d" on every row while the title block said "13h". */
   now: number;
@@ -51,8 +50,7 @@ export function EventList({
   announceAbove,
   onAnnounceAboveChange,
   onNews,
-  coverage,
-  reported,
+  empty,
   now,
   archived = false,
 }: EventListProps): JSX.Element {
@@ -66,7 +64,6 @@ export function EventList({
   const items = useRef<(HTMLButtonElement | null)[]>([]);
   const announced = useRef(new Set<string>());
   const [announcement, setAnnouncement] = useState("");
-  const filtered = coverage !== "loading" && reported > 0;
 
   /* The live region, gated by magnitude and by the clock. See ARCHITECTURE.md#srcappeventlisttsx. */
   useEffect(() => {
@@ -150,16 +147,8 @@ export function EventList({
 
       {quakes.length === 0 ? (
         <p className="mt-2 text-[12px] text-faint">
-          <span role="status">
-            {filtered
-              ? "No earthquakes match the current filters."
-              : coverage === "loading"
-                ? "Loading earthquake reports…"
-                : coverage === "unavailable"
-                  ? "Earthquake feeds unavailable. Retrying automatically."
-                  : `No earthquakes reported ${archived ? "on this day" : "in this window"}.`}
-          </span>
-          {filtered && (
+          <span role="status">{empty.text}</span>
+          {empty.kind === "filtered" && (
             <button
               type="button"
               className="ml-2 min-h-8 cursor-pointer text-ink underline underline-offset-4"

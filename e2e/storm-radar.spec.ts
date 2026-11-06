@@ -26,6 +26,12 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   const ids: number[] = [];
   let queries = 0;
   let catalogueDown = false;
+  let lightningDown = true;
+  await page.route("https://noaa-goes19.s3.amazonaws.com/**", (route) =>
+    lightningDown
+      ? route.fulfill({ status: 503 })
+      : route.fulfill({ contentType: "application/xml", body: "<ListBucketResult/>" }),
+  );
   await page.route("**/radar_base_reflectivity_time/ImageServer/query?**", (route) => {
     queries += 1;
     if (catalogueDown) return route.fulfill({ status: 503 });
@@ -60,6 +66,14 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   const timestamp = (index: number) => new Date(times[index]!).toISOString();
 
   await expect(time).toHaveAttribute("datetime", timestamp(2));
+  const lightning = scene.getByRole("button", { name: "Lightning", exact: true });
+  await lightning.click();
+  await expect(scene.getByText("Couldn’t load lightning data.")).toBeVisible();
+  await lightning.click();
+  lightningDown = false;
+  await lightning.click();
+  await expect(scene.getByText("No lightning scan matches this radar time.")).toBeVisible();
+  await lightning.click();
   await expect(canvas).toHaveAttribute("data-radar-uploads", "1");
   await expect.poll(() => [...ids].sort()).toEqual([1, 2, 3]);
   await slider.press("ArrowLeft");

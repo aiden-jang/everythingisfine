@@ -171,7 +171,7 @@ folded and the magnitude scale remains visible. New viewers start with plate
 movement arrows, deep seismicity and constellation figures off; saved choices win.
 
 Phone layouts keep the subject visible above a draggable, keyboard-operable sheet.
-View globe expands the canvas; Recent earthquakes opens more list space and
+Expand globe or Expand map enlarges the canvas; Recent earthquakes opens more list space and
 reveals recent events. The handle has a 44px target. Intermediate heights,
 selection closing and preserved list position remain supported. Short landscape
 and tablet views need their own reflow checks, not only portrait-phone coverage.

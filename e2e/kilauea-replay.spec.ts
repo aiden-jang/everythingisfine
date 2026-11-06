@@ -22,7 +22,7 @@ test("Kīlauea’s flight reaches the HVO ocean-entry shot and opens the shoreli
   await dialog.getByRole("button", { name: "Play", exact: true }).click();
   await expect(dialog.getByRole("heading", { name: "Lava reaches Kapoho Bay" })).toBeVisible();
   await expect(dialog.getByText("USGS overflight · June 4, 2018")).toBeVisible();
-  await expect(dialog.getByRole("slider", { name: "Coastline comparison" })).toBeVisible();
+  await expect(dialog.getByRole("slider", { name: "Compare before and after" })).toBeVisible();
   await expect(dialog.getByText("USGS estimate · ~3.5 km² added")).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
@@ -35,17 +35,17 @@ test("Kīlauea’s reduced-motion map compares the two shorelines from a phone k
   const { dialog } = await openKilauea(page);
   await expect(dialog.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: "Ocean entry" }).click();
-  await expect(dialog.getByRole("slider", { name: "Mapped extent" })).toHaveAttribute(
+  await expect(dialog.getByRole("slider", { name: "Mapped extent date" })).toHaveAttribute(
     "aria-valuetext",
     "Jun 4 · 22:00 HST",
   );
   await dialog.getByRole("button", { name: "Compare coast" }).click();
-  const compare = dialog.getByRole("slider", { name: "Coastline comparison" });
+  const compare = dialog.getByRole("slider", { name: "Compare before and after" });
   await compare.press("Home");
   await expect(compare).toHaveAttribute("aria-valuetext", "Before the eruption");
   await expect(dialog.getByText("Before eruption", { exact: true })).toBeVisible();
   await compare.press("End");
-  await expect(compare).toHaveAttribute("aria-valuetext", "August 9 map");
+  await expect(compare).toHaveAttribute("aria-valuetext", "August 9 coastline");
   await expect(dialog.getByText("August 9, 2018", { exact: true })).toBeVisible();
   await expect.poll(() => dialog.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
   await page.setViewportSize({ width: 812, height: 375 });

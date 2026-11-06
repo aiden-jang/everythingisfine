@@ -25,12 +25,12 @@ const captions = {
     detail: "The crosshair marks the epicenter. The camera tilts to reveal the fault beneath it.",
   },
   fault: {
-    title: "Slip on the fault",
+    title: "Modeled fault movement",
     detail:
       "Colors show modeled slip in metres. About three minutes of modeled rupture play in five seconds.",
   },
   shaking: {
-    title: "Shaking at the surface",
+    title: "Estimated surface shaking",
     detail: "USGS ShakeMap estimates shaking intensity at each location. The contours summarize the event.",
   },
 };
@@ -136,7 +136,7 @@ export function RuptureStage(): JSX.Element {
         <canvas ref={canvas} role="img" aria-label={caption.title + ". " + caption.detail} />
         <figcaption>
           <span>38.297° N / 142.373° E</span>
-          <span>{displayed === "fault" ? "Depth ×4" : "Offshore Japan"}</span>
+          <span>{displayed === "fault" ? "Depth exaggerated 4×" : "Offshore Japan"}</span>
         </figcaption>
       </figure>
       <div className="archive-scene-console">
@@ -152,7 +152,7 @@ export function RuptureStage(): JSX.Element {
               aria-pressed={mode === "fault"}
               onClick={() => setMode("fault")}
             >
-              Fault slip
+              Modeled fault movement
             </button>
             <button
               type="button"
@@ -160,7 +160,7 @@ export function RuptureStage(): JSX.Element {
               aria-pressed={mode === "shaking"}
               onClick={() => setMode("shaking")}
             >
-              Shaking
+              Estimated surface shaking
             </button>
             {!reduced && (
               <button type="button" className="archive-scene-button" onClick={playback}>
@@ -176,7 +176,7 @@ export function RuptureStage(): JSX.Element {
               role="group"
               aria-label={displayed === "fault" ? "Modeled slip in metres" : "Modified Mercalli intensity"}
             >
-              <span>{displayed === "fault" ? "Slip · m" : "Intensity · MMI"}</span>
+              <span>{displayed === "fault" ? "Slip · m" : "Modified Mercalli intensity"}</span>
               {(displayed === "fault" ? slipKey : shakingLegend).map(({ label, color }) => (
                 <span key={label}>
                   <i data-ramp="" style={{ backgroundColor: color }} />

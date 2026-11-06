@@ -151,9 +151,11 @@ export function SunWatch({ onClose }: { onClose: () => void }): JSX.Element {
   const { leg } = solarFrame(view.at);
   const caption =
     leg === "sun"
-      ? image === null
-        ? "Solar image unavailable"
-        : "NASA SDO archive · 10 Sep 2025"
+      ? image === undefined
+        ? "Loading archive image…"
+        : image === null
+          ? "Solar image unavailable"
+          : "NASA SDO archive · 10 Sep 2025"
       : leg === "wind"
         ? "Solar wind · schematic view"
         : "Earth · After Dark";

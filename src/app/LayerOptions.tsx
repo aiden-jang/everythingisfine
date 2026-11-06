@@ -22,13 +22,15 @@ export function LayerOptions(p: Props): JSX.Element {
     <div className="mt-3">
       <span className="label block">Layers</span>
       <div role="group" aria-label="Layers" className="layer-options mt-1">
-        {p.sinkOn === null ? null : <LayerToggle label="depth" on={p.sinkOn} onChange={p.onSink} />}
+        {p.sinkOn === null ? null : (
+          <LayerToggle label="Place markers at depth" on={p.sinkOn} onChange={p.onSink} />
+        )}
         {p.cutawayOn === null ? null : (
           <LayerToggle label="Regional cutaway" on={p.cutawayOn} onChange={p.onCutaway} />
         )}
         <LayerToggle label="Plate movement" on={p.motionOn} onChange={p.onMotion} />
         {p.slabOn === null ? null : (
-          <LayerToggle label="Deep earthquakes" on={p.slabOn} onChange={p.onSlab} />
+          <LayerToggle label="Historical deep earthquakes" on={p.slabOn} onChange={p.onSlab} />
         )}
         {p.figuresOn == null || !p.onFigures ? null : (
           <LayerToggle label="Constellations" on={p.figuresOn} onChange={p.onFigures} />

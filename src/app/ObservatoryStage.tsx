@@ -105,7 +105,7 @@ export function ObservatoryStage({
           <span>{label}</span> <strong>{value}</strong>
         </div>
         <time dateTime={time}>
-          {mode === "aurora" ? "For " : ""}
+          {mode === "aurora" ? "Valid for " : ""}
           {time.slice(11, 16)} UTC
         </time>
       </div>

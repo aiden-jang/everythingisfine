@@ -721,7 +721,7 @@ Feeds and layers fold, because they are set once and then never touched, and the
 about 400px with the timeline back in it. The ramp above stays open - that one gets dragged.
 
 Layers live here rather than in the key, where they used to be: turning the slab on meant opening
-a fold titled "What the marks mean", which is not where anybody looks for a control.
+a fold titled "Map legend", which is not where anybody looks for a control.
 
 ### src/app/MarkCard.tsx
 

@@ -214,9 +214,7 @@ export function createEmscSource(
   };
 
   /*
-   * One catalogue fetch, fired alongside the connection rather than before it. Not awaited: a slow catalogue
-   * must never delay the socket, and if it fails nothing is reported as broken, because the feed is
-   * genuinely live either way.
+   * The catalogue and socket can fail independently. A missing backlog does not make the socket offline.
    */
   const seed = async (): Promise<void> => {
     if (!catalogue) return;
@@ -225,9 +223,17 @@ export function createEmscSource(
     const query = `${catalogue}?limit=${SEED_LIMIT}&format=json&start=${since}`;
     try {
       const res = await runtime.fetch(query);
-      if (!res.ok || !handlers || lifetime !== generation) return;
+      if (!handlers || lifetime !== generation) return;
+      if (!res.ok) {
+        handlers.onSeedFailed?.();
+        return;
+      }
       const payload = (await res.json()) as { features?: unknown };
-      if (!handlers || lifetime !== generation || !Array.isArray(payload?.features)) return;
+      if (!handlers || lifetime !== generation) return;
+      if (!Array.isArray(payload?.features)) {
+        handlers.onSeedFailed?.();
+        return;
+      }
 
       const readings: Reading[] = [];
       // Tracked over the page, not over what was delivered from it. The delivered list is the page minus
@@ -253,10 +259,13 @@ export function createEmscSource(
        * is exactly wrong here: the page was cut short and the app has no idea where, so claiming the whole
        * window claims a month on the strength of zero events.
        */
-      if (full && !Number.isFinite(oldestOnPage)) return;
+      if (full && !Number.isFinite(oldestOnPage)) {
+        handlers.onSeedFailed?.();
+        return;
+      }
       handlers.onSeeded(full ? oldestOnPage : runtime.now() - seedHours * 3_600_000);
     } catch {
-      // Optional by design. The socket is the source; this was a head start.
+      if (lifetime === generation) handlers?.onSeedFailed?.();
     }
   };
 

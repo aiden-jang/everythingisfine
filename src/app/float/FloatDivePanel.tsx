@@ -126,7 +126,7 @@ export function FloatDivePanel({
         <h2>Float Dive</h2>
         <div className="observatory-actions float-actions">
           <button type="button" ref={back} onClick={onClose} aria-label="Back to Live Earth">
-            Back
+            Back to Live Earth
           </button>
         </div>
       </div>
@@ -169,16 +169,22 @@ export function FloatDivePanel({
         {pending ? (
           <p role="status">Checking this profile’s readings…</p>
         ) : problem ? (
-          <p role="status">Couldn’t load usable readings. The previous profile is still shown.</p>
+          <p role="status">
+            Couldn’t load usable readings for the selected profile.
+            {view && ` Still showing ${name(view.profile)}, cycle ${view.profile.cycle}.`}
+          </p>
         ) : catalogue.state === "loading" ? (
           <p role="status">Checking for recent North Atlantic profiles…</p>
         ) : null}
         {catalogue.state === "error" && (
-          <div className="observatory-actions float-actions">
-            <button type="button" onClick={retry}>
-              Retry recent feed
-            </button>
-          </div>
+          <>
+            <p role="status">Couldn’t load recent Argo profiles. Recorded profiles are available.</p>
+            <div className="observatory-actions float-actions">
+              <button type="button" onClick={retry}>
+                Retry recent profiles
+              </button>
+            </div>
+          </>
         )}
         {catalogue.state === "ready" && catalogue.stations.length === 0 && <p>No recent profiles found.</p>}
       </div>

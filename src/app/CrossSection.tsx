@@ -132,14 +132,13 @@ export function CrossSection({
            * and a slab running its length draws a dense arc, and every other drawing here is about the window.
            */
           <p className="mb-1.5 max-w-[52ch] text-[11px] leading-relaxed text-dim">
-            Nothing from this window is inside the corridor. Everything drawn is the deep record for{" "}
-            {SLAB_FROM} to {SLAB_TO}.
+            No matching earthquakes along this line. Showing historical deep earthquakes from {SLAB_FROM} to{" "}
+            {SLAB_TO}.
           </p>
         ) : null}
         {drawn === 0 ? (
           <p className="max-w-[52ch] text-[11px] leading-relaxed text-dim">
-            Nothing inside this corridor in the current window. Margins are where the depth is: try a line
-            across a plate boundary, at right angles to it.
+            No matching earthquakes along this line. Try drawing across a plate boundary.
           </p>
         ) : (
           <div ref={plotRef} className="relative w-full">

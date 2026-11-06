@@ -249,7 +249,7 @@ export function DetailPanel({
         {/* What the sky was doing there when it happened. An M6 at three in the morning is a different
             event from the same rupture at three in the afternoon. See ARCHITECTURE.md#srcappdetailpaneltsx. */}
         <Field
-          label="Solar time"
+          label="Local solar time at the epicenter"
           value={`${solarClock(solarHour(r.lon, r.time))} · ${daylight(sunElevation(r.lon, r.lat, r.time))}`}
         />
         <Field
@@ -305,7 +305,7 @@ export function DetailPanel({
       <div className="mt-4">
         <span className="text-[11px] text-faint">Within {NEARBY_KM} km</span>
         {near.count === 0 ? (
-          <p className="mt-2 text-[11px] text-faint">Nothing else in this window. On its own, so far.</p>
+          <p className="mt-2 text-[11px] text-faint">No other matching reports within {NEARBY_KM} km.</p>
         ) : (
           <>
             <p className="mt-2 text-[11px] leading-relaxed text-dim">
@@ -389,7 +389,7 @@ export function DetailPanel({
           onClick={() => onSection(sectionThrough(r.lon, r.lat, near.trendDeg))}
           className="cursor-pointer border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink"
         >
-          Slice here
+          Show depth cross-section
         </button>
         {/* Far-side rings show geometry, without claiming a modeled arrival time. */}
         <button
@@ -402,7 +402,7 @@ export function DetailPanel({
               : "border-hairline text-dim hover:bg-raised hover:text-ink"
           }`}
         >
-          Far side
+          Show opposite side
         </button>
         <CopyLink key={quake.key} />
       </div>

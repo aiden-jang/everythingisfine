@@ -74,7 +74,8 @@ function trackReadout(selected: string, day: number) {
   const fix = track.fixes[index];
   if (!fix) return "This track starts " + dateLabel(track.fixes[0]![0]) + ".";
   const [stamp, lon, lat] = fix;
-  const label = index === track.fixes.length - 1 || stamp !== day ? "Last listed" : "Daily fix";
+  const label =
+    index === track.fixes.length - 1 || stamp !== day ? "Last recorded position" : "Recorded position";
   return `${label} · ${dateLabel(stamp)} · ${coordinate(lat, "N", "S")} ${coordinate(lon, "E", "W")}`;
 }
 
@@ -223,7 +224,12 @@ export function IcebergStage(): JSX.Element {
         />
         <figcaption>
           <span>
-            {loading ? "Preparing satellite images…" : (image?.caption ?? "Scotia Sea · Satellite tracks")}
+            {loading
+              ? "Preparing satellite images…"
+              : (image?.caption ??
+                (frame.photo && available && !available.includes(frame.photo.id)
+                  ? "Satellite image unavailable for this chapter · showing recorded tracks"
+                  : "Scotia Sea · Satellite tracks"))}
           </span>
         </figcaption>
       </figure>

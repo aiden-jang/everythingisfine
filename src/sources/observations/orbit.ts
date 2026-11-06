@@ -1,5 +1,6 @@
 import { eciToGeodetic, gstime, propagate, twoline2satrec, type SatRec } from "satellite.js";
 import { skyCities } from "../../app/tonight/cities";
+import { ObservationDataError } from "../../app/observations/types";
 import type { ObservationSource } from "../../app/observations/types";
 import { horizontal } from "../../geo/tonight";
 import { DEG, toVec3 } from "../../geo/sphere";
@@ -31,12 +32,12 @@ export const orbit: ObservationSource = {
     const tle = (await (await request(ORBIT, signal)).text()).split(/\r?\n/);
     const first = tle.find((line) => line.startsWith("1 25544"));
     const second = tle.find((line) => line.startsWith("2 25544"));
-    if (!first || !second) throw new Error("No ISS orbital elements");
+    if (!first || !second) throw new ObservationDataError("CelesTrak returned no usable ISS orbital data.");
     const epoch =
       Date.UTC(2000 + Number(first.slice(18, 20)), 0, 1) + (Number(first.slice(20, 32)) - 1) * 24 * HOUR;
     const now = Math.floor(Date.now() / MINUTE) * MINUTE;
     if (!Number.isFinite(epoch) || Math.abs(now - epoch) > 7 * 24 * HOUR)
-      throw new Error("Orbital elements are too old");
+      throw new ObservationDataError("The ISS orbital data is too old to predict a pass.");
     const sat = twoline2satrec(first, second);
     let pass: number | undefined;
     let overhead: number | undefined;
@@ -97,7 +98,12 @@ export const orbit: ObservationSource = {
       frames,
       chapters:
         pass !== undefined || overhead !== undefined
-          ? [{ index: 96, label: pass !== undefined ? "Jump to visible pass" : "Jump to overhead pass" }]
+          ? [
+              {
+                index: 96,
+                label: pass !== undefined ? "Jump to visible pass" : "Jump to next pass above 10°",
+              },
+            ]
           : [],
       note: `Calculated from ISS elements dated ${new Date(epoch).toISOString().slice(0, 10)}. ${pass === undefined ? "No sunlit pass above 10° found in the next 48 hours." : "Predicted visibility assumes clear skies and a level horizon."}`,
     };

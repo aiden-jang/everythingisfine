@@ -30,8 +30,8 @@ test("an archive response cannot undo returning to live", async ({ page }) => {
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
-  await page.getByLabel("Go to a day", { exact: true }).fill("2011-03-11");
-  await page.getByRole("button", { name: "go", exact: true }).click();
+  await page.getByLabel("Open archive date", { exact: true }).fill("2011-03-11");
+  await page.getByRole("button", { name: "Open date", exact: true }).click();
   await expect(page.getByText("2011-03-11, all day UTC.", { exact: false })).toBeVisible();
   await page.getByRole("slider", { name: "Time in the window", exact: true }).press("Home");
   let release!: () => void;
@@ -64,7 +64,7 @@ test("an archive response cannot undo returning to live", async ({ page }) => {
   await expect.poll(() => released).toBe(2);
   await waitForData(page);
   await expect(page.getByRole("button", { name: "back to live", exact: true })).toBeHidden();
-  await expect(page.getByLabel("Go to a day", { exact: true })).toHaveValue("");
+  await expect(page.getByLabel("Open archive date", { exact: true })).toHaveValue("");
   await expect(page.getByRole("slider", { name: "Time in the window", exact: true })).toHaveValue("1000");
   await expect(page.getByText("Nothing here is arriving now.", { exact: false })).toBeHidden();
 });

@@ -36,7 +36,7 @@ export function RadarStage({ onView }: { onView: (view: RadarView) => void }): J
 
   const lightning = useRadarLightning(showLightning ? selected?.at : undefined);
   useLayoutEffect(
-    () => onView({ kind: "radar", target, image: image ?? null, lightning: lightning ?? undefined }),
+    () => onView({ kind: "radar", target, image: image ?? null, lightning: lightning?.frame ?? undefined }),
     [image, lightning, onView, target],
   );
 
@@ -188,9 +188,11 @@ export function RadarStage({ onView }: { onView: (view: RadarView) => void }): J
             <p role="status">
               {lightning === undefined
                 ? "Checking GOES-East…"
-                : lightning === null
-                  ? "No matching lightning scan."
-                  : `GOES-East · ${lightning.measurements?.[0]?.value} detections · ${shortTime(lightning.at)} UTC`}
+                : lightning.failed
+                  ? "Couldn’t load lightning data."
+                  : !lightning.frame
+                    ? "No lightning scan matches this radar time."
+                    : `GOES-East · ${lightning.frame.measurements?.[0]?.value ?? "Unknown"} detections · ${shortTime(lightning.frame.at)} UTC`}
             </p>
           )}
         </div>

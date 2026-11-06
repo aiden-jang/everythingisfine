@@ -59,10 +59,10 @@ export function useArchive(
         const said = (["usgs", "emsc"] as const).map((id) => {
           const answer = got.answered[id];
           return answer
-            ? `${SOURCE_NAMES[id]} ${answer.count}${answer.truncated ? " (truncated)" : ""}`
-            : `${SOURCE_NAMES[id]} did not answer`;
+            ? `${SOURCE_NAMES[id]} · ${answer.count} reports${answer.truncated ? " · Incomplete set" : ""}`
+            : `${SOURCE_NAMES[id]} · Couldn’t be reached`;
         });
-        setArchiveNote(said.join(" · "));
+        setArchiveNote(said.join(" / "));
         loaded.current();
         setArchiveBusy(false);
         const hazards = await history;
@@ -70,7 +70,11 @@ export function useArchive(
         setArchiveHazards(hazards);
         const count =
           hazards.cyclones.length + hazards.fires.length + hazards.floods.length + hazards.volcanoes.length;
-        setArchiveNote([...said, hazards.answered ? `EONET ${count}` : "EONET did not answer"].join(" · "));
+        setArchiveNote(
+          [...said, hazards.answered ? `NASA · ${count} hazard reports` : "NASA · Couldn’t be reached"].join(
+            " / ",
+          ),
+        );
       } catch {
         if (current === request.current) setArchiveNote("That day could not be loaded. Try again.");
       } finally {

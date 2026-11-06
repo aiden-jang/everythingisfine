@@ -63,14 +63,16 @@ export function windowLabel(
   if (archived) return "the whole day";
   if (coveredSince <= now - windowMs) {
     const hours = Math.round(windowMs / 3_600_000);
-    // "Last 720 hours" is arithmetically fine and nobody reads a month that way.
-    if (hours >= 48) {
-      const days = Math.round(hours / 24);
-      return `last ${days} day${days === 1 ? "" : "s"}`;
-    }
-    return `last ${hours} hour${hours === 1 ? "" : "s"}`;
+    return hours >= 48
+      ? `last ${Math.round(hours / 24)} days`
+      : `last ${hours} hour${hours === 1 ? "" : "s"}`;
   }
-  return `since ${clock(coveredSince)}`;
+  const date = new Date(coveredSince);
+  const day =
+    date.toDateString() === new Date(now).toDateString()
+      ? ""
+      : `${date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })} at `;
+  return `since ${day}${clock(coveredSince)}`;
 }
 
 export function agoShort(then: number, now: number, archived = false): string {
@@ -95,7 +97,7 @@ export function compactSpan(ms: number): string {
 
 /** Three states. A feed with no backlog at all is not a feed with a backlog of nothing: say so. */
 export function reach(from: number | null, now: number, windowMs: number): string {
-  if (from === null) return "no backlog";
+  if (from === null) return "earlier reports unavailable";
   if (from <= now - windowMs) return compactSpan(windowMs);
   return agoShort(from, now);
 }
@@ -135,7 +137,7 @@ export function reachNote(
     );
   }
   if (missing.length > 0) {
-    parts.push(`${named(missing)} ${missing.length === 1 ? "has" : "have"} returned no backlog.`);
+    parts.push(`Earlier reports unavailable from ${named(missing)}.`);
   }
 
   const full = ids.filter((id) => !truncated.includes(id) && !missing.includes(id));
@@ -169,8 +171,7 @@ export function reachFraction(from: number | null, now: number, windowMs: number
 /** A feed still being waited for and one that refused are different facts. `reach` alone says neither. */
 export function reachWords(from: number | null, failing: boolean, now: number, windowMs: number): string {
   if (from !== null) return reach(from, now, windowMs);
-  // One word: the column is 38px and "no answer" wraps, which pushes both coverage rows taller.
-  return failing ? "silent" : "waiting";
+  return failing ? "Unavailable" : "Waiting";
 }
 
 /**
@@ -195,14 +196,11 @@ export function corroborationNote(
   );
 }
 
-export function auroraNote(peak: number, forecastAt: number, now: number): string {
-  const strength = peak >= 40 ? "strong" : peak >= 15 ? "active" : "quiet";
-  const age = Math.max(0, Math.round((now - forecastAt) / 60_000));
-  const when = age < 1 ? "for this minute" : `forecast ${age} minute${age === 1 ? "" : "s"} ago`;
+export function auroraNote(peak: number, forecastAt: number, estimatedTime = false): string {
+  const time = new Date(forecastAt).toISOString().slice(0, 16).replace("T", " ");
   return (
-    `the green is the aurora. ` +
-    `Only where it is dark enough to see it, ${strength} tonight, peaking at ` +
-    `${Math.round(peak)}% chance, ${when}.`
+    `Green shows forecast aurora. Peak anywhere on the forecast map is ${Math.round(peak)}%. ` +
+    (estimatedTime ? "Forecast time unavailable." : `Valid for ${time} UTC.`)
   );
 }
 
@@ -385,9 +383,9 @@ export function depthNote(bands: {
   if (bands.total === 0) return null;
   // Group these: a 30-day window puts "1188 above 70 km" beside a headline reading "1,188".
   const n = (v: number): string => v.toLocaleString("en-GB");
-  const parts = [`${n(bands.shallow)} above 70 km`];
-  if (bands.intermediate > 0) parts.push(`${n(bands.intermediate)} between 70 and 300`);
-  parts.push(`${n(bands.deep)} below 300`);
+  const parts = [`${n(bands.shallow)} at 0–70 km deep`];
+  if (bands.intermediate > 0) parts.push(`${n(bands.intermediate)} at 70–300 km`);
+  parts.push(`${n(bands.deep)} over 300 km deep`);
   if (bands.unknown > 0) parts.push(`${n(bands.unknown)} with no depth given`);
   return (
     `${parts.join(", ")}. Deep events sit inside a descending slab, so a margin only resolves ` +

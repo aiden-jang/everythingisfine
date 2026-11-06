@@ -66,6 +66,6 @@ test("After Dark still opens when NOAA’s forecast is unavailable", async ({ pa
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect(page.getByRole("heading", { name: "The other side of day." })).toBeVisible();
-  await expect(page.getByText("A current NOAA forecast is unavailable.")).toBeVisible();
+  await expect(page.getByText("NOAA’s aurora forecast is unavailable.")).toBeVisible();
   await expect(follow(page)).toBeDisabled();
 });

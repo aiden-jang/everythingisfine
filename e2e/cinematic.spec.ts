@@ -87,8 +87,8 @@ for (const [width, height] of [
       await page.screenshot({ path: test.info().outputPath(`depth-reveal-${width}.png`) });
       await page.getByRole("button", { name: "Explore the globe" }).click();
       await expect(page.locator("#chrome-rail")).toBeVisible();
-      if (width < 768) await page.getByRole("button", { name: "more", exact: true }).click();
-      await page.getByRole("button", { name: "Reset view", exact: true }).click();
+      if (width < 768) await page.getByRole("button", { name: "More view controls", exact: true }).click();
+      await page.getByRole("button", { name: "Reset view & filters", exact: true }).click();
       await expect.poll(async () => (await pose()).zoom).toBeGreaterThan(1.2);
       await expect.poll(async () => (await pose()).lon).toBe(145);
       await expect.poll(async () => (await pose()).zoom).toBe(1);

@@ -1,6 +1,9 @@
 export const observations = {
   orbit: {
     title: "Orbital Pass",
+    picker: "City",
+    time: "Predicted pass time",
+    empty: "No predicted positions for this city.",
     group: "After Dark",
     description: "Trace the International Space Station and find a predicted pass over your city.",
     source: "CelesTrak",
@@ -8,6 +11,9 @@ export const observations = {
   },
   drifter: {
     title: "Current Rider",
+    picker: "Drifter track",
+    time: "Replay time",
+    empty: "No recorded positions for this track.",
     group: "Recorded journeys",
     description: "Ride a drifting buoy’s recorded path as an ocean eddy draws it into a loop.",
     source: "NOAA Global Drifter Program",
@@ -15,6 +21,9 @@ export const observations = {
   },
   smoke: {
     title: "Smoke Crossing",
+    picker: "Map focus",
+    time: "Replay time",
+    empty: "No smoke images available for this view.",
     group: "Recorded journeys",
     description:
       "Follow the June 2023 Canadian wildfire plume as it moves across the northeastern United States.",
@@ -23,6 +32,9 @@ export const observations = {
   },
   tsunami: {
     title: "Tsunami Arrival",
+    picker: "Measurement buoy",
+    time: "Replay time",
+    empty: "No readings for this buoy.",
     group: "Recorded journeys",
     description:
       "Follow the 2010 Chile tsunami across the Pacific and check the readings from open-ocean buoys.",
@@ -31,6 +43,9 @@ export const observations = {
   },
   rain: {
     title: "Rainbelt",
+    picker: "Location",
+    time: "Satellite estimate time",
+    empty: "No satellite rain estimates for this view.",
     group: "Recent observations",
     description: "Watch rain move across land and ocean in NASA’s half-hourly satellite estimates.",
     source: "NASA GPM IMERG",
@@ -38,6 +53,9 @@ export const observations = {
   },
   tide: {
     title: "Tide Watch",
+    picker: "Harbor",
+    time: "Observation time",
+    empty: "No recent water-level measurements at this harbor.",
     group: "Recent observations",
     description: "Fly into a harbor and compare the observed water level with the predicted tide.",
     source: "NOAA Tides & Currents",
@@ -45,6 +63,9 @@ export const observations = {
   },
   lightning: {
     title: "Lightning Live",
+    picker: "Location",
+    time: "Scan time",
+    empty: "No recent lightning scans available.",
     group: "Recent observations",
     description: "Watch the latest satellite-detected flashes over storms.",
     source: "NOAA GOES-East GLM",
@@ -52,13 +73,19 @@ export const observations = {
   },
   wind: {
     title: "Wind Atlas",
-    group: "Recent observations",
+    picker: "Wind level",
+    time: "Forecast time",
+    empty: "No forecast steps for this wind level.",
+    group: "Forecasts",
     description: "See the winds bend around weather systems from the surface to the jet stream.",
     source: "NOAA Global Forecast System",
     url: "https://www.nco.ncep.noaa.gov/pmb/products/gfs/",
   },
   river: {
     title: "River Pulse",
+    picker: "River",
+    time: "Observation time",
+    empty: "No recent measurements at these gauges.",
     group: "Recent observations",
     description: "Compare the latest flow at two gauges along the same river.",
     source: "USGS Water Data",
@@ -66,6 +93,9 @@ export const observations = {
   },
   air: {
     title: "Air Watch",
+    picker: "City",
+    time: "Observation time",
+    empty: "No monitor readings for this city and time.",
     group: "Recent observations",
     description: "Inspect measured fine-particle concentrations at monitors near a city.",
     source: "EPA AirNow",

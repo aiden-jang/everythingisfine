@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import type { ObservationData, ObservationSource } from "./types";
+import { ObservationDataError, type ObservationData, type ObservationSource } from "./types";
 
-type Result = { data: ObservationData | null; state: "loading" | "ready" | "empty" | "failed" };
+type Result = {
+  data: ObservationData | null;
+  state: "loading" | "ready" | "empty" | "failed";
+  reason?: string;
+};
 
 export function useObservationData(source: ObservationSource, option: string) {
   const cache = useRef(new Map<string, ObservationData>());
@@ -24,9 +28,13 @@ export function useObservationData(source: ObservationSource, option: string) {
             },
           });
         })
-        .catch(() => {
-          if (!abort.signal.aborted)
-            setResult({ option, result: { data: cache.current.get(option) ?? null, state: "failed" } });
+        .catch((error: unknown) => {
+          if (abort.signal.aborted) return;
+          const detail = error instanceof ObservationDataError ? { reason: error.message } : {};
+          setResult({
+            option,
+            result: { data: cache.current.get(option) ?? null, state: "failed", ...detail },
+          });
         })
         .finally(() => {
           if (!abort.signal.aborted && source.refreshMs) timer = window.setTimeout(tick, source.refreshMs);
@@ -51,7 +59,7 @@ export function useObservationData(source: ObservationSource, option: string) {
   const state =
     result?.option === option
       ? result.result
-      : { data: cache.current.get(option) ?? null, state: "loading" as const };
+      : { data: cache.current.get(option) ?? null, state: "loading" as const, reason: undefined };
   return {
     ...state,
     retry() {

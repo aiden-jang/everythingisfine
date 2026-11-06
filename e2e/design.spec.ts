@@ -345,7 +345,7 @@ test("the colourblind ramp survives a reload", async ({ page }) => {
   await page.goto("/");
   await waitForData(page);
 
-  const toggle = page.getByRole("button", { name: /colourblind ramp/i });
+  const toggle = page.getByRole("button", { name: /magnitude colors/i });
   await expect(toggle).toHaveAttribute("aria-pressed", "false");
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-pressed", "true");
@@ -353,7 +353,7 @@ test("the colourblind ramp survives a reload", async ({ page }) => {
   await page.reload();
   await waitForData(page);
   // Persisted, because re-choosing an accessibility setting every visit is its own barrier.
-  await expect(page.getByRole("button", { name: /colourblind ramp/i })).toHaveAttribute(
+  await expect(page.getByRole("button", { name: /magnitude colors/i })).toHaveAttribute(
     "aria-pressed",
     "true",
   );

@@ -53,10 +53,11 @@ export function Utilities({ children }: { children: ReactNode }): JSX.Element {
         type="button"
         aria-expanded={open}
         aria-controls="utility-controls"
+        aria-label={open ? "Close view controls" : "More view controls"}
         onClick={() => setOpen((value) => !value)}
         className="w-[3.25rem] shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-center text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink md:hidden"
       >
-        {open ? "less" : "more"}
+        {open ? "close" : "more"}
       </button>
     </div>
   );
