@@ -1,4 +1,38 @@
 export const observations = {
+  epic: {
+    title: "Million-Mile View",
+    picker: "Image sequence",
+    time: "Photograph time",
+    empty: "NASA has no photographs available for this sequence.",
+    group: "Recent observations",
+    summary: "See the real Earth from DSCOVR and replay the Moon crossing.",
+    description: "Pull back from the globe to NASA’s camera and scrub through its photographs of Earth.",
+    source: "NASA EPIC / NOAA DSCOVR",
+    url: "https://epic.gsfc.nasa.gov/",
+  },
+  deep: {
+    title: "Deep Time",
+    picker: "Follow a place",
+    time: "Reconstruction age",
+    empty: "No plate reconstructions are available.",
+    group: "Below the Surface",
+    summary: "Rewind 230 million years of moving continents.",
+    description: "Rewind the Atlantic to Pangaea, and follow a point on a moving plate.",
+    source: "EarthByte / GPlates",
+    url: "https://zenodo.org/records/11601026",
+  },
+  swell: {
+    title: "Swell Lines",
+    picker: "Reference buoy",
+    time: "Forecast valid time",
+    empty: "No recent wave forecasts are available for this area.",
+    group: "Forecasts",
+    summary: "Follow Pacific swell and compare it with buoy readings.",
+    description:
+      "Fly over Pacific swell, scrub the forecast, and compare the wave height and period near a buoy.",
+    source: "NOAA GFS-Wave / CDIP",
+    url: "https://open-meteo.com/en/docs/marine-weather-api",
+  },
   orbit: {
     title: "Orbital Pass",
     picker: "City",

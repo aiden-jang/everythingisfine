@@ -124,3 +124,68 @@ test("Orbital Pass shares the city and time between the horizon, globe and map",
   await pass.getByRole("button", { name: "Back to After Dark", exact: true }).click();
   await expect(open).toBeFocused();
 });
+
+test("the Moon crossing, reconstructed plates, and wave forecasts reuse the Observatory globe", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const now = Date.parse("2026-11-06T18:00:00Z");
+  await page.clock.setFixedTime(new Date(now));
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.route("https://marine-api.open-meteo.com/v1/marine?**", (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    const lats = params.get("latitude")!.split(",").map(Number);
+    const lons = params.get("longitude")!.split(",").map(Number);
+    return route.fulfill({
+      json: lats.map((latitude, i) => ({
+        latitude,
+        longitude: lons[i],
+        hourly: {
+          time: [now / 1000, now / 1000 + 10_800],
+          swell_wave_height: [2.1, 3.3],
+          swell_wave_direction: [306, 307],
+          wave_height: [2.7, 3.9],
+          wave_period: [14.8, 16.6],
+        },
+      })),
+    });
+  });
+  await page.route("https://erddap.cdip.ucsd.edu/erddap/tabledap/wave_agg.json?**", (route) =>
+    route.fulfill({ json: { table: { rows: [["2026-11-06T18:00:00Z", 37.9415, -123.4645, 4.28, 16.7]] } } }),
+  );
+  await page.goto("/");
+  const canvas = page.locator("#globe-view canvas");
+  const original = await canvas.elementHandle();
+  const epic = page.getByRole("button", { name: "Million-Mile View", exact: true });
+  await epic.click();
+  const shot = page.getByRole("img", { name: /NASA EPIC photograph/ });
+  await expect(shot).toBeVisible();
+  const first = await shot.getAttribute("src");
+  await page.getByRole("slider", { name: "Photograph time" }).press("End");
+  await expect(shot).not.toHaveAttribute("src", first!);
+  await page.getByRole("button", { name: "Back to Observatory", exact: true }).click();
+  await expect(epic).toBeFocused();
+
+  await page.getByRole("button", { name: "More views", exact: true }).click();
+  await page.getByRole("button", { name: "Deep Time", exact: true }).click();
+  await page.getByRole("button", { name: /Pangaea/ }).click();
+  const age = page.getByRole("slider", { name: "Reconstruction age" });
+  await expect(age).toHaveAttribute("aria-valuetext", "230 million years ago");
+  await page.getByRole("combobox", { name: "Follow a place" }).selectOption("Rio de Janeiro");
+  await expect(page.getByText("Rio de Janeiro’s plate position")).toBeVisible();
+  await expect(age).toHaveAttribute("aria-valuetext", "230 million years ago");
+  await page.getByRole("button", { name: "Back to views", exact: true }).click();
+
+  await page.getByRole("button", { name: "Swell Lines", exact: true }).click();
+  const swell = page.getByRole("region", { name: "Swell Lines", exact: true });
+  await expect(swell.getByText("4.3 m", { exact: true })).toBeVisible();
+  await swell.getByRole("button", { name: "Map", exact: true }).click();
+  await expect(page.getByRole("group", { name: "Swell Lines on the map" })).toBeVisible();
+  await page.getByRole("button", { name: /Show Mokapu Point/ }).click();
+  await expect(swell.getByRole("combobox", { name: "Reference buoy" })).toHaveValue("098");
+  const forecast = swell.getByRole("slider", { name: "Forecast valid time" });
+  await forecast.press("End");
+  await expect(swell.getByText("3.9 m", { exact: true })).toBeVisible();
+  expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
+});

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { drawRupture } from "./drawRupture";
 import {
   ARRIVAL_MS,
@@ -14,6 +14,9 @@ type Mode = "fault" | "shaking" | "playing" | "paused";
 type Beat = "approach" | "fault" | "shaking";
 
 const MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+const RecordedWaves = lazy(() =>
+  import("./RecordedWaves").then(({ RecordedWaves }) => ({ default: RecordedWaves })),
+);
 const shakingLegend = [2, 4, 6, 8].map((level, index) => ({
   label: ["II", "IV", "VI", "VIII"][index]!,
   color: contours.find(({ mmi }) => mmi === level)!.color,
@@ -40,14 +43,38 @@ function beatAt(ms: number): Beat {
 }
 
 export function RuptureStage(): JSX.Element {
+  const [chapter, setChapter] = useState<"opening" | "waves" | "shaking">("opening");
+  if (chapter === "waves") {
+    return (
+      <Suspense
+        fallback={
+          <p className="archive-scene-console" role="status">
+            Opening recorded waves…
+          </p>
+        }
+      >
+        <RecordedWaves back={() => setChapter("shaking")} />
+      </Suspense>
+    );
+  }
+  return <RupturePlayback returned={chapter === "shaking"} recorded={() => setChapter("waves")} />;
+}
+
+function RupturePlayback({ returned, recorded }: { returned: boolean; recorded: () => void }): JSX.Element {
   const [reduced, setReduced] = useState(() => matchMedia(MOTION_QUERY).matches);
-  const [mode, setMode] = useState<Mode>(() => (matchMedia(MOTION_QUERY).matches ? "fault" : "playing"));
+  const [mode, setMode] = useState<Mode>(() =>
+    returned ? "shaking" : matchMedia(MOTION_QUERY).matches ? "fault" : "playing",
+  );
   const [beat, setBeat] = useState<Beat>("approach");
   const canvas = useRef<HTMLCanvasElement>(null);
+  const recordedButton = useRef<HTMLButtonElement>(null);
   const elapsed = useRef(0);
   const running = mode === "playing" || mode === "paused";
   const displayed = running ? beat : mode;
   const caption = captions[displayed];
+  useEffect(() => {
+    if (returned) recordedButton.current?.focus({ preventScroll: true });
+  }, [returned]);
 
   useEffect(() => {
     const media = matchMedia(MOTION_QUERY);
@@ -144,8 +171,8 @@ export function RuptureStage(): JSX.Element {
           <h3>{caption.title}</h3>
           <p>{caption.detail}</p>
         </div>
-        <div className="archive-scene-actions">
-          <div className="archive-scene-controls" role="group" aria-label="Rupture views">
+        <div className="archive-scene-actions rupture-actions">
+          <div className="archive-scene-controls rupture-views" role="group" aria-label="Rupture views">
             <button
               type="button"
               className="archive-scene-button"
@@ -163,6 +190,9 @@ export function RuptureStage(): JSX.Element {
               onClick={() => setMode("shaking")}
             >
               Surface shaking
+            </button>
+            <button ref={recordedButton} type="button" className="archive-scene-button" onClick={recorded}>
+              Recorded waves
             </button>
             {!reduced && (
               <button type="button" className="archive-scene-button" onClick={playback}>

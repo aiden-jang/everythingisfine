@@ -2,6 +2,9 @@ import type { ObservationId } from "./catalogue";
 import type { ObservationSource } from "./types";
 
 export const loadSource: Record<ObservationId, () => Promise<ObservationSource>> = {
+  epic: () => import("../../sources/observations/epic").then(({ epic }) => epic),
+  deep: () => import("../../sources/observations/deepTime").then(({ deepTime }) => deepTime),
+  swell: () => import("../../sources/observations/swell").then(({ swell }) => swell),
   tide: () => import("../../sources/observations/water").then(({ tide }) => tide),
   river: () => import("../../sources/observations/water").then(({ river }) => river),
   rain: () => import("../../sources/observations/rain").then(({ rain }) => rain),

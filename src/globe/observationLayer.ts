@@ -192,9 +192,11 @@ export function createObservationLayer(morph: { value: number }) {
       dot.geometry.dispose();
       dot.geometry = marks.geometry();
     }
-    if (view?.image !== prior?.image) {
+    const image = view?.frame.raster ? view.image : null;
+    const priorImage = prior?.frame.raster ? prior.image : null;
+    if (image !== priorImage) {
       raster.material.map?.dispose();
-      raster.material.map = view?.image ? new Texture(view.image) : null;
+      raster.material.map = image ? new Texture(image) : null;
       if (raster.material.map) {
         raster.material.map.colorSpace = SRGBColorSpace;
         raster.material.map.needsUpdate = true;
@@ -202,11 +204,11 @@ export function createObservationLayer(morph: { value: number }) {
       raster.material.needsUpdate = true;
     }
     const bounds = view?.frame.raster?.bounds ?? FULL;
-    if (view?.image && (!prior?.image || bounds !== (prior.frame.raster?.bounds ?? FULL))) {
+    if (image && (!priorImage || bounds !== (prior?.frame.raster?.bounds ?? FULL))) {
       raster.geometry.dispose();
       raster.geometry = rasterGeometry(bounds);
     }
-    raster.visible = !!view?.image;
+    raster.visible = !!image;
     prior = view;
   }
 

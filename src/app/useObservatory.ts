@@ -8,7 +8,8 @@ import { subsolarPoint } from "../geo/sun";
 import type { AuroraRun } from "../sources/auroraRoute";
 import { useObservationDeck } from "./observations/useObservationDeck";
 import type { FloatDiveView } from "./float/floatPlayback";
-import type { TonightView } from "../geo/tonight";
+import type { SkyLook, TonightView } from "../geo/tonight";
+import { useSkyCity } from "./tonight/SkyCityPicker";
 import type { GlobePresentation } from "../globe/scenePresentation";
 import { national, type RadarView } from "./radar/radarCamera";
 import { revealReadings, shiftGlobe } from "./presentationMotion";
@@ -62,6 +63,13 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [run, setRun] = useState<AuroraRun | null>(null);
   const [sunWatch, setSunWatch] = useState(false);
   const [tonightView, setTonightView] = useState<TonightView | "opening" | null>(null);
+  const [skyEntry, setSkyEntry] = useState<{ mode: "sky" | "meteors"; look?: SkyLook }>({ mode: "sky" });
+  const skyMemory = useRef<TonightView | null>(null);
+  const skyCity = useSkyCity();
+  const updateSky = useCallback((view: TonightView) => {
+    skyMemory.current = view;
+    setTonightView(view);
+  }, []);
   const [floatView, setFloatView] = useState<FloatDiveView | "opening" | null>(null);
   const [radarView, setRadarView] = useState<RadarView | null>(null);
   const observations = useObservationDeck();
@@ -151,7 +159,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const tonight = night && tonightView !== null;
   const localSky = tonight && tonightView !== "opening" ? tonightView : null;
   const auroraRun = night && !sunActive && !tonight ? run : null;
-  const depth = observing && (tourStop?.purpose === "depth" || scene === "depth");
+  const depth = observing && !observations.entry && (tourStop?.purpose === "depth" || scene === "depth");
   const depthFocus = depth ? (tourStop?.purpose === "depth" ? tourStop : focus) : null;
   return {
     observing,
@@ -161,7 +169,8 @@ export function useObservatory(shared: Partial<Permalink>) {
     canCapture: ready && !sunActive && !tonight && floatView === null && !observations.entry,
     localReadings: radarView !== null || tonight || floatView !== null || !!observations.entry,
     observations,
-    viewAt: observations.view?.frame.at ?? localSky?.at,
+    skyCity,
+    viewAt: (observations.view?.frame.timeLabel ? undefined : observations.view?.frame.at) ?? localSky?.at,
     setReady,
     chooseScene,
     enterExplore,
@@ -182,12 +191,15 @@ export function useObservatory(shared: Partial<Permalink>) {
     tonight: {
       active: tonight,
       view: localSky,
-      open() {
+      entry: skyEntry,
+      open(mode: "sky" | "meteors" = "sky") {
+        const previous = skyMemory.current;
+        setSkyEntry({ mode, ...(previous?.city.name === skyCity.name ? { look: previous.look } : {}) });
         setRun(null);
         setSunWatch(false);
         setTonightView("opening");
       },
-      update: setTonightView,
+      update: updateSky,
       close: () => setTonightView(null),
     },
     floatDive: {

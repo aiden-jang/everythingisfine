@@ -1,12 +1,6 @@
 import { lazy, Suspense, useLayoutEffect, type RefObject } from "react";
 import { ObservatoryStage, OBSERVATORY_SCENES, SceneDiagram } from "./ObservatoryStage";
-import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
-import { RuptureReveal, TOHOKU_DAY } from "./rupture/RuptureReveal";
-import { StormReplay } from "./storm/StormReplay";
-import { TongaReplay } from "./tonga/TongaReplay";
-import { KilaueaReplay } from "./kilauea/KilaueaReplay";
-import { IcebergReplay } from "./iceberg/IcebergReplay";
-import { MegaflashReplay } from "./megaflash/MegaflashReplay";
+import { ObservatoryHistory } from "./ObservatoryHistory";
 import { FloatReadout } from "./float/FloatReadout";
 import { RadarReadout, StormRadar } from "./radar/StormRadar";
 import { AuroraOverflightControls } from "./AuroraOverflightControls";
@@ -42,7 +36,10 @@ interface Props {
   feedNote: string | null;
   deepAvailable: boolean;
   aurora: ReturnType<typeof useAuroraOverflight>;
-  views: Pick<ReturnType<typeof useObservatory>, "sun" | "tonight" | "floatDive" | "observations">;
+  views: Pick<
+    ReturnType<typeof useObservatory>,
+    "sun" | "tonight" | "floatDive" | "observations" | "skyCity"
+  >;
   radar: ReturnType<typeof useObservatory>["radar"];
   onScene: (scene: EarthScene) => void;
   onExplore: () => void;
@@ -73,7 +70,7 @@ export function Observatory({
   summary,
   deepAvailable,
   aurora,
-  views: { sun, tonight, floatDive, observations },
+  views: { sun, tonight, floatDive, observations, skyCity },
   radar,
   feedNote,
   onScene,
@@ -91,7 +88,9 @@ export function Observatory({
     : radar.active
       ? "Storm Radar"
       : tonight.active
-        ? "Tonight’s Sky"
+        ? tonight.entry.mode === "meteors"
+          ? "Meteor Nights"
+          : "Tonight’s Sky"
         : "Earth observatory";
   const active = tour.at !== null;
   const solar = sun.active && !active;
@@ -118,7 +117,9 @@ export function Observatory({
             : "Earth settles into the horizon as constellations trace overhead. The sky follows the UTC readout."
         : "A live view of earthquakes, changing skies, and a restless planet.";
   if (observations.entry)
-    return <ObservationDeckShell deck={observations} entry={observations.entry} night={scene === "night"} />;
+    return (
+      <ObservationDeckShell deck={observations} entry={observations.entry} scene={scene} city={skyCity} />
+    );
   return (
     <>
       {floatDive.active ? (
@@ -146,6 +147,7 @@ export function Observatory({
           data-tonight={tonight.active || undefined}
           data-float-dive={floatDive.active || undefined}
           aria-label={localTitle}
+          aria-labelledby={tonight.active ? "local-sky-title" : undefined}
         >
           {floatDive.active ? (
             <Suspense fallback={<p role="status">Opening Float Dive…</p>}>
@@ -174,9 +176,13 @@ export function Observatory({
               <TonightSky
                 view={tonight.view}
                 onView={tonight.update}
+                preference={skyCity}
+                initialMode={tonight.entry.mode}
+                initialLook={tonight.entry.look}
                 onClose={() => {
                   tonight.close();
-                  requestAnimationFrame(() => document.getElementById("open-tonight-sky")?.focus());
+                  const id = tonight.entry.mode === "meteors" ? "open-meteor-nights" : "open-tonight-sky";
+                  requestAnimationFrame(() => document.getElementById(id)?.focus());
                 }}
               />
             </Suspense>
@@ -207,8 +213,10 @@ export function Observatory({
                   solar={solar}
                   onReturn={() => onScene("night")}
                   onSunWatch={sun.toggle}
-                  onTonight={tonight.open}
-                  onOrbit={() => observations.open("orbit")}
+                  onTonight={() => tonight.open()}
+                  onOrbit={() => observations.open("orbit", "open-orbital-pass")}
+                  onMeteors={() => tonight.open("meteors")}
+                  city={skyCity}
                 />
               ) : null}
               {solar && (
@@ -299,7 +307,18 @@ export function Observatory({
                         radar={radar.open}
                         dive={floatDive.open}
                         more={observations.open}
+                        epic={() => observations.open("epic", "open-epic")}
                       />
+                    )}
+                    {scene === "depth" && (
+                      <button
+                        type="button"
+                        id="open-deep-time"
+                        disabled={!ready}
+                        onClick={() => observations.open("deep", "open-deep-time")}
+                      >
+                        Deep Time
+                      </button>
                     )}
                   </div>
                   {scene !== "night" ? (
@@ -340,31 +359,7 @@ export function Observatory({
                 </p>
               )}
               {!active && scene === "live" ? (
-                <div className="observatory-history">
-                  <details>
-                    <summary>Historical replays</summary>
-                    <div className="observatory-history-links">
-                      <button type="button" onClick={() => onHistory(TOHOKU_DAY)}>
-                        Japan, 2011 ↗
-                      </button>
-                      <RuptureReveal />
-                      <StormReplay />
-                      <TongaReplay />
-                      <KilaueaReplay />
-                      <IcebergReplay />
-                      <MegaflashReplay />
-                      <button type="button" onClick={() => onHistory("2013-05-24")}>
-                        Deep beneath Okhotsk ↗
-                      </button>
-                      <button type="button" onClick={() => onHistory(APRIL_ECLIPSE_DAY)}>
-                        Total eclipse, 2024 ↗
-                      </button>
-                    </div>
-                  </details>
-                  <button type="button" onClick={onPickDate}>
-                    Pick a past date
-                  </button>
-                </div>
+                <ObservatoryHistory onHistory={onHistory} onPickDate={onPickDate} />
               ) : null}
               {feedNote ? (
                 <p className="observatory-source-note" role="status">

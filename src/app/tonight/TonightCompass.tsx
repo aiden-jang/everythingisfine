@@ -15,7 +15,13 @@ export function TonightCompass({
   onView: (view: TonightView) => void;
 }): JSX.Element {
   return (
-    <div className="observatory-stage" data-stage="tonight" role="group" aria-label="Local horizon">
+    <div
+      className="observatory-stage"
+      data-stage="tonight"
+      data-meteor-view={view?.radiantTrail ? true : undefined}
+      role="group"
+      aria-label="Local horizon"
+    >
       <div className="stage-corners" aria-hidden="true">
         <span />
         <span />
@@ -26,6 +32,11 @@ export function TonightCompass({
         <span className="stage-rule" aria-hidden="true" />
         <span>{view?.city.name ?? "After Dark"} · Local horizon</span>
       </div>
+      {view?.radiantTrail && (
+        <svg className="meteor-arc" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <path data-radiant-arc="" pathLength="1" />
+        </svg>
+      )}
       <div className="tonight-labels" data-sky-labels="" aria-hidden="true">
         {view?.bodies.map(({ name }) => (
           <span key={name} data-body={name}>

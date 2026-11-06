@@ -4,6 +4,7 @@ import type { ObservationView } from "./types";
 
 export function useObservationDeck() {
   const [entry, setEntry] = useState<ObservationId | "catalogue" | null>(null);
+  const [trigger, setTrigger] = useState<string | null>(null);
   const [view, update] = useState<ObservationView | null>(null);
   const [map, setMap] = useState(false);
   const [horizon, setHorizon] = useState(false);
@@ -11,18 +12,21 @@ export function useObservationDeck() {
   const close = useCallback(() => {
     update(null);
     setEntry(null);
+    setTrigger(null);
     setMap(false);
     setHorizon(false);
   }, []);
   return {
     entry,
+    trigger,
     view,
     map,
     update,
     setMap,
     horizon,
     setHorizon,
-    open(next: NonNullable<typeof entry> = "catalogue") {
+    open(next: NonNullable<typeof entry> = "catalogue", from?: string) {
+      if (from) setTrigger(from);
       update(null);
       setMap(false);
       setHorizon(false);

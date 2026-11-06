@@ -335,7 +335,7 @@ or a separate landing page. Preserve keyless feeds, sharing, timeline/archive,
 optional layers and accessible controls. A paid provider or private-data backend
 changes the product boundary and requires an explicit decision.
 
-Sound is opt-in, silent in hidden tabs and tied to genuinely new events using the
+Live earthquake alerts are opt-in, silent in hidden tabs and tied to genuinely new events using the
 same threshold as announcements. Seeds and UI actions do not make sound. Pitch
 and duration describe a transposed interpretation, not a recording of an
 individual earthquake; disclose compressed loudness. No ambient bed or drone.

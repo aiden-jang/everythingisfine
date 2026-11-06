@@ -1,4 +1,5 @@
 import { ArchiveScene } from "../ArchiveScene";
+import "./recorded-waves.css";
 
 const EVENT = "https://earthquake.usgs.gov/earthquakes/eventpage/usc0001xgp";
 export const TOHOKU_DAY = "2011-03-11";

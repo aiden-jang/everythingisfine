@@ -6,6 +6,7 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.clock.setFixedTime(new Date("2026-11-06T18:00:00Z"));
   await installFeeds(page, { presentation: "fresh" });
+  await page.route("https://celestrak.org/NORAD/elements/gp.php?**", (route) => route.abort());
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => {
@@ -42,6 +43,26 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await page.keyboard.press("Escape");
   await expect(open).toBeFocused();
   await expect(page.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
+  await expect(page.getByRole("combobox", { name: "City" })).toHaveValue("Tokyo");
+  const meteorButton = page.getByRole("button", { name: "Meteor Nights", exact: true });
+  await meteorButton.click();
+  const meteor = page.getByRole("region", { name: "Meteor Nights" });
+  await expect(meteor.getByRole("combobox", { name: "City" })).toHaveValue("Tokyo");
+  await expect(horizon).toContainText("Facing E · 90°");
+  await meteor.getByRole("combobox", { name: "Shower" }).selectOption("2026-12-13");
+  await meteor.getByRole("button", { name: "Jump to a dark window" }).click();
+  await expect(meteor.getByText(/Dark sky and Moon below the horizon/)).toBeVisible();
+  await expect(horizon.locator("[data-radiant-arc]")).toHaveAttribute("d", /^M/);
+  await meteor.getByRole("button", { name: "Sky view", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Tonight’s Sky", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Sky view", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page.keyboard.press("Escape");
+  await expect(meteorButton).toBeFocused();
+  await page.getByRole("button", { name: "Orbital Pass", exact: true }).click();
+  await expect(page.getByRole("combobox", { name: "City" })).toHaveValue("Tokyo");
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);
   expect(errors).toEqual([]);
 });

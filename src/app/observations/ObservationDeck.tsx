@@ -7,8 +7,15 @@ import { TideGauge } from "./TideGauge";
 import { ObservationPlayer } from "./ObservationPlayer";
 import type { ObservationSource } from "./types";
 import type { useObservationDeck } from "./useObservationDeck";
+import { swellBuoys } from "./swellBuoys";
 
-const groups = ["Recent observations", "Forecasts", "After Dark", "Recorded journeys"] as const;
+const groups = [
+  "Recent observations",
+  "Forecasts",
+  "After Dark",
+  "Below the Surface",
+  "Recorded journeys",
+] as const;
 const entries = Object.entries(observations) as [ObservationId, (typeof observations)[ObservationId]][];
 
 type Deck = Omit<ReturnType<typeof useObservationDeck>, "entry"> & {
@@ -19,10 +26,12 @@ export function ObservationDeck({
   deck,
   onClose,
   closeLabel,
+  city,
 }: {
   deck: Deck;
   onClose: () => void;
   closeLabel: string;
+  city: { name: string; select: (name: string) => void };
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLElement>(null);
@@ -30,9 +39,17 @@ export function ObservationDeck({
   const [catalogueRow, setCatalogueRow] = useState<ObservationId | null>(null);
   const [loaded, setLoaded] = useState<{ id: ObservationId; source: ObservationSource | null } | null>(null);
   const [revision, retry] = useState(0);
+  const [buoy, setBuoy] = useState<string>(swellBuoys[0].id);
   const id = deck.entry === "catalogue" ? null : deck.entry;
   const meta = id ? observations[id] : null;
   const title = meta?.title ?? "Observatory views";
+  const photograph = deck.view?.frame.photograph;
+  const picker =
+    id === "orbit"
+      ? { value: city.name, select: city.select }
+      : id === "swell"
+        ? { value: buoy, select: setBuoy }
+        : undefined;
 
   useLayoutEffect(() => {
     const intro = panel.current;
@@ -70,8 +87,17 @@ export function ObservationDeck({
           className="observatory-stage"
           data-stage="observation"
           role="group"
-          aria-label={`${title} on the ${deck.map ? "map" : deck.horizon ? "horizon" : "globe"}`}
+          aria-label={
+            id === "epic"
+              ? "DSCOVR camera view"
+              : `${title} on the ${deck.map ? "map" : deck.horizon ? "horizon" : "globe"}`
+          }
         >
+          {photograph && (
+            <div className="observation-photograph" data-loaded={deck.view?.image ? "true" : "false"}>
+              {deck.view?.image && <img src={deck.view.image.src} alt={photograph.alt} />}
+            </div>
+          )}
           <div className="stage-corners" aria-hidden="true">
             <span />
             <span />
@@ -83,8 +109,24 @@ export function ObservationDeck({
             <span>{meta.source}</span>
           </div>
           {!deck.map && deck.view?.frame.tide && <TideGauge tide={deck.view.frame.tide} />}
+          {id === "swell" && (
+            <div className="swell-buoys" role="group" aria-label="Pacific buoys">
+              {swellBuoys.map(({ id, short, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={buoy === id}
+                  aria-label={`Show ${label} buoy`}
+                  onClick={() => setBuoy(id)}
+                >
+                  {short}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="stage-readout">
-            {deck.map ? "Map" : deck.horizon ? "Local horizon" : "Globe"} · {meta.group}
+            {id === "epic" ? "DSCOVR camera" : deck.map ? "Map" : deck.horizon ? "Local horizon" : "Globe"} ·{" "}
+            {meta.group}
           </div>
         </div>
       )}
@@ -119,44 +161,46 @@ export function ObservationDeck({
           {id && meta ? (
             <>
               <p className="observation-note observation-introduction">{meta.description}</p>
-              <div
-                className="observatory-actions observation-projection"
-                role="group"
-                aria-label="Observation projection"
-              >
-                <button
-                  type="button"
-                  aria-pressed={!deck.map && !deck.horizon}
-                  onClick={() => {
-                    deck.setMap(false);
-                    deck.setHorizon(false);
-                  }}
+              {id !== "epic" && (
+                <div
+                  className="observatory-actions observation-projection"
+                  role="group"
+                  aria-label="Observation projection"
                 >
-                  Globe
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={deck.map}
-                  onClick={() => {
-                    deck.setHorizon(false);
-                    deck.setMap(true);
-                  }}
-                >
-                  Map
-                </button>
-                {id === "orbit" && (
                   <button
                     type="button"
-                    aria-pressed={deck.horizon}
+                    aria-pressed={!deck.map && !deck.horizon}
                     onClick={() => {
                       deck.setMap(false);
-                      deck.setHorizon(true);
+                      deck.setHorizon(false);
                     }}
                   >
-                    Local sky
+                    Globe
                   </button>
-                )}
-              </div>
+                  <button
+                    type="button"
+                    aria-pressed={deck.map}
+                    onClick={() => {
+                      deck.setHorizon(false);
+                      deck.setMap(true);
+                    }}
+                  >
+                    Map
+                  </button>
+                  {id === "orbit" && (
+                    <button
+                      type="button"
+                      aria-pressed={deck.horizon}
+                      onClick={() => {
+                        deck.setMap(false);
+                        deck.setHorizon(true);
+                      }}
+                    >
+                      Local sky
+                    </button>
+                  )}
+                </div>
+              )}
               {loaded?.id === id ? (
                 loaded.source ? (
                   <ObservationPlayer
@@ -166,6 +210,7 @@ export function ObservationDeck({
                     horizon={deck.horizon}
                     map={deck.map}
                     update={deck.update}
+                    {...(picker ? { picker } : {})}
                   />
                 ) : (
                   <div className="observation-note" role="status">

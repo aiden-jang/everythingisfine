@@ -162,6 +162,10 @@
   .frame[data-presentation="observe"] .zones:has([data-tonight]) {
     grid-template-rows: minmax(175px, 1fr) clamp(340px, 43dvh, 420px);
   }
+
+  .frame[data-presentation="observe"] .zones:has([data-meteor-view]) {
+    grid-template-rows: minmax(175px, 1fr) clamp(390px, 51dvh, 460px);
+  }
 }
 
 @media (max-height: 620px) and (min-width: 600px) {
@@ -196,4 +200,68 @@
   border: 1px solid var(--color-faint);
   border-radius: 50%;
   transform: translate(-50%, -50%);
+}
+
+.tonight-mode {
+  margin-block: 0;
+}
+
+.tonight-mode button[aria-pressed="true"] {
+  border-color: var(--color-faint);
+  color: var(--color-ink);
+  background: var(--color-raised);
+}
+
+.meteor-window-track {
+  position: relative;
+  height: 3px;
+  background: var(--color-hairline);
+}
+
+.meteor-window-track span {
+  position: absolute;
+  inset-block: 0;
+  background: var(--color-dim);
+}
+
+.meteor-actions {
+  margin-block: 0;
+}
+
+.after-dark-city {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.meteor-arc {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.meteor-arc path {
+  fill: none;
+  stroke: #b8b7e8;
+  stroke-width: 1.25px;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.75;
+  stroke-dasharray: 1;
+  animation: radiant-trace 900ms 380ms ease-out both;
+}
+
+@keyframes radiant-trace {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meteor-arc path {
+    animation: none;
+  }
 }

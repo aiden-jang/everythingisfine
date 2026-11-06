@@ -367,8 +367,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   world.traverse((o) => {
     o.frustumCulled = false;
   });
-
   const controls = createControls(camera, canvas, FRAMING, FOV);
+  const modern = [fill, coast, plateLines, plateEdge];
   const presentation = createScenePresentation(spin, catalogue, controls, sunDir, lights, dayline, canvas);
   const inspection = createEventPresentation(camera, controls, catalogue);
   spin.add(inspection.object);
@@ -420,7 +420,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       if (moment !== null && run?.kind !== "sequence") aimSun(moment);
     },
     beginArrival: lights.begin,
-    setPresentation: presentation.set,
+    setPresentation: (mode) => presentation.set(mode, modern),
     setCutaway: (focus) => {
       controls.setDive(focus?.dive === true);
       cutaway.set(focus);

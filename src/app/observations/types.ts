@@ -32,6 +32,9 @@ export interface Measurement {
 
 export interface ObservationFrame {
   at: number;
+  timeLabel?: string;
+  reconstruction?: boolean;
+  photograph?: { url: string; alt: string };
   marks?: readonly ObservationMark[];
   paths?: readonly ObservationPath[];
   raster?: ObservationRaster;

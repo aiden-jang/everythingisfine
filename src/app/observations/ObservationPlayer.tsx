@@ -3,6 +3,7 @@ import { nearest } from "../../sources/observations/common";
 import { observations, type ObservationId } from "./catalogue";
 import type { ObservationFrame, ObservationSource, ObservationView } from "./types";
 import { ObservationChart } from "./ObservationChart";
+import { DeepTimePin } from "./DeepTimePin";
 import { useObservationData, useObservationImage } from "./useObservationData";
 
 const EMPTY: readonly ObservationFrame[] = [];
@@ -14,14 +15,17 @@ export function ObservationPlayer({
   horizon,
   map,
   update,
+  picker,
 }: {
   id: ObservationId;
   source: ObservationSource;
   horizon: boolean;
   map: boolean;
   update: (view: ObservationView | null) => void;
+  picker?: { value: string; select: (value: string) => void };
 }): JSX.Element {
-  const [option, setOption] = useState(source.options?.[0]?.id ?? "");
+  const [localOption, setOption] = useState(source.options?.[0]?.id ?? "");
+  const option = picker?.value ?? localOption;
   const [selectedAt, setSelectedAt] = useState<number | null>(null);
   const [playing, setPlaying] = useState(false);
   const { data, state, reason, retry } = useObservationData(source, option);
@@ -29,13 +33,18 @@ export function ObservationPlayer({
   const frame =
     selectedAt === null ? frames[data?.initial ?? 0] : nearest(frames, selectedAt, ({ at }) => at);
   const index = frame ? frames.indexOf(frame) : 0;
-  const { element, status } = useObservationImage(frame?.raster?.url);
-  const time = frame ? `${clock.format(frame.at)} UTC` : "";
+  const { element, status } = useObservationImage(
+    frame?.photograph?.url ?? frame?.raster?.url,
+    frame?.photograph ? option : undefined,
+  );
+  const time = frame ? (frame.timeLabel ?? `${clock.format(frame.at)} UTC`) : "";
   const metadata = observations[id];
   const latest = frames.at(-1);
   const holding = state !== "ready" && latest !== undefined;
+  const canHold = id === "deep" || id === "swell";
 
   useLayoutEffect(() => {
+    if (canHold && (!data || !frame) && state === "loading") return;
     const sky =
       horizon && frame?.localSky
         ? {
@@ -57,7 +66,7 @@ export function ObservationPlayer({
           }
         : null,
     );
-  }, [data, frame, element, horizon, map, update]);
+  }, [data, frame, element, horizon, map, update, canHold, state]);
 
   useEffect(() => {
     if (!playing || status === "loading") return;
@@ -90,12 +99,15 @@ export function ObservationPlayer({
           <select
             value={option}
             onChange={(event) => {
-              update(null);
-              setSelectedAt(null);
+              if (!canHold) {
+                update(null);
+                setSelectedAt(null);
+              }
               setPlaying(false);
-              setOption(event.currentTarget.value);
+              (picker?.select ?? setOption)(event.currentTarget.value);
             }}
           >
+            {option.startsWith("pin:") && <option value={option}>Custom coordinates</option>}
             {source.options.map(({ id: key, label }) => (
               <option key={key} value={key}>
                 {label}
@@ -104,13 +116,21 @@ export function ObservationPlayer({
           </select>
         </label>
       )}
+      {id === "deep" && (
+        <DeepTimePin
+          select={(value) => {
+            setPlaying(false);
+            setOption(value);
+          }}
+        />
+      )}
       {frame && data && (
         <>
           <div className="observation-transport">
             <span>
               {id === "lightning" && frame === latest ? "Latest available scan" : metadata.time}
               {" · "}
-              <time dateTime={new Date(frame.at).toISOString()}>{time}</time>
+              {frame.timeLabel ? time : <time dateTime={new Date(frame.at).toISOString()}>{time}</time>}
               {id === "rain" && " · Data arrives several hours after observation"}
             </span>
             {frames.length > 1 && (
@@ -207,17 +227,22 @@ export function ObservationPlayer({
       {holding && (
         <p className="observation-note" role="status">
           Showing the last available readings ·{" "}
-          <time dateTime={new Date(latest.at).toISOString()}>{clock.format(latest.at)} UTC</time>
+          {latest.timeLabel ?? (
+            <time dateTime={new Date(latest.at).toISOString()}>{clock.format(latest.at)} UTC</time>
+          )}
         </p>
       )}
       {status === "failed" && (
         <p className="observation-note" role="status">
           No image could be loaded for this timestamp.
+          {frame?.photograph && element ? " Showing the last loaded photograph." : ""}
         </p>
       )}
       {status === "loading" && (
         <p className="observation-note" role="status">
-          Loading this image…
+          {frame?.photograph && element
+            ? "Loading this image… Showing the last loaded photograph."
+            : "Loading this image…"}
         </p>
       )}
       {data && <p className="observation-note">{data.note}</p>}

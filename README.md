@@ -39,6 +39,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Tonight’s Sky** descends to a selected city from After Dark. Scrub from local sunset to sunrise,
   use the compass to turn, or point at the Moon and five bright planets. Angles are calculated for a
   level horizon. Where a crossing is absent, the timeline uses a local evening or morning endpoint.
+- **Meteor Nights** traces a shower’s apparent origin across the same local sky. Play or scrub a
+  listed peak night and find the dark, moon-free windows. The city selected in After Dark is shared
+  by Tonight’s Sky, Meteor Nights and Orbital Pass.
 - **Follow the aurora** in After Dark banks over a dark-side NOAA OVATION forecast oval and settles
   into a polar view. The readout shows the forecast time and modeled chance at the focus. The
   raised glow illustrates the footprint. Reduced motion opens the polar view directly.
@@ -47,9 +50,15 @@ Existing saved layouts and links to an event, archive, section, or held moment o
   Pick a recent Marine Institute profile or a bundled recording.
 - **Storm Radar** flies to recent radar returns on the globe over the contiguous United States.
   Play or scrub through up to an hour of NOAA scans at their published UTC times.
-- **More views** opens Globe and Map playback for Tide Watch, Wind Atlas, Rainbelt, River Pulse,
-  Air Watch, Lightning Live, Current Rider, Smoke Crossing, and Tsunami Arrival. **Orbital Pass**
-  also opens directly from After Dark, with a city picker and local horizon.
+- **Million-Mile View** pulls the globe back into NASA’s DSCOVR camera view. Scrub the recorded
+  2015 Moon crossing or switch to the latest published full-Earth photographs.
+- **Deep Time** replaces modern coastlines with reconstructed continents. Rewind to Pangaea on
+  the globe or map and pin a present-day place to follow its plate.
+- **Swell Lines** follows forecast swell direction and height across the Pacific. Scrub two days
+  of forecasts and select a buoy to compare recent measurements with the nearby model.
+- **More views** opens Swell Lines, Deep Time, Million-Mile View, Tide Watch, Wind Atlas, Rainbelt,
+  River Pulse, Air Watch, Lightning Live, Current Rider, Smoke Crossing, and Tsunami Arrival.
+  **Orbital Pass** also opens directly from After Dark, with a city picker and local horizon.
 - **Feed status** lists the seven background feeds and their last successful check or received message.
   Observatory views fetch their own sources when opened. In Storm Radar, switch projections or turn
   on matched GOES-East lightning scans.
@@ -60,8 +69,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
   stream and back to Earth. Its two live plots show the last hour of upstream wind speed and
   six hours of GOES X-ray flux. Choose any of the three still views with reduced motion.
 - **Watch Tōhoku rupture** follows the 2011 earthquake from its epicenter to the modeled fault
-  beneath the ocean and then to estimated shaking across Japan. Choose **Fault slip** or
-  **Shaking** to inspect either view. Reduced motion opens the finished fault view.
+  beneath the ocean and then to estimated shaking across Japan. Choose **Fault movement** or
+  **Surface shaking** to inspect either view. **Recorded waves** compares actual seismometer traces on a
+  shared timeline and offers optional sonification. Reduced motion opens the finished fault view.
 - **Follow Hurricane Katrina** banks over the Gulf and follows NOAA’s 2005 best track to landfall
   near Buras, Louisiana. Pause, scrub, or jump to the offshore peak and landfall. Reduced motion
   opens a fixed overview with the same readings.
@@ -149,6 +159,11 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Aurora forecast | NOAA SWPC OVATION |
 | Sun Watch | NOAA SWPC real-time solar wind, primary GOES X-ray flux, NASA/GSFC Solar Dynamics Observatory |
 | Tonight’s Sky | Local solar and lunar calculations, [JPL planetary elements](https://ssd.jpl.nasa.gov/planets/orbits/), [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) reference checks |
+| Meteor Nights | [International Meteor Organization 2026 and 2027 calendars](https://www.imo.net/calendar/), with calculated local radiant and moonlight geometry |
+| Million-Mile View | NASA EPIC / NOAA DSCOVR [Moon transit archive](https://epic.gsfc.nasa.gov/galleries/2015/lunar_transit) and [natural-color imagery API](https://epic.gsfc.nasa.gov/about/api) |
+| Deep Time | [Müller et al. (2019) EarthByte plate model](https://zenodo.org/records/11601026) (CC BY 4.0), continental reconstructions sampled through the GPlates Web Service |
+| Swell Lines | NOAA NCEP GFS-Wave through [Open-Meteo](https://open-meteo.com/en/docs/marine-weather-api) (CC BY 4.0, sampled display) and measured [Scripps CDIP wave data](https://cdip.ucsd.edu/) |
+| Tōhoku recorded waves | [EarthScope waveform archive](https://service.earthscope.org/fdsnws/dataselect/docs/1/help/), Global Seismographic Network [IU](https://www.fdsn.org/networks/detail/IU/) and [II](https://www.fdsn.org/networks/detail/II/) channels |
 | Coastlines and replay cities | Natural Earth, public domain |
 | Plate boundaries | PB2002, Bird (2003), simplified for display |
 | Tōhoku rupture and shaking | USGS finite-fault model and preferred ShakeMap Atlas MMI contours |

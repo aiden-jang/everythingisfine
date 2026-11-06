@@ -1,5 +1,7 @@
 import { useRef } from "react";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
+import { SkyCityPicker, type SkyCityPreference } from "./tonight/SkyCityPicker";
+import { meteorDate, nextMeteor } from "./tonight/meteorCalendar";
 
 export function AuroraOverflightControls({
   aurora,
@@ -9,6 +11,8 @@ export function AuroraOverflightControls({
   onSunWatch,
   onTonight,
   onOrbit,
+  onMeteors,
+  city,
 }: {
   aurora: ReturnType<typeof useAuroraOverflight>;
   ready: boolean;
@@ -16,10 +20,13 @@ export function AuroraOverflightControls({
   onSunWatch: () => void;
   onTonight: () => void;
   onOrbit: () => void;
+  onMeteors: () => void;
+  city: SkyCityPreference;
   onReturn: () => void;
 }): JSX.Element {
   const primary = useRef<HTMLButtonElement>(null);
   const other = aurora.routes.find((route) => route.hemisphere !== aurora.run?.route.hemisphere);
+  const next = nextMeteor(Date.now());
   return (
     <div className="aurora-overflight">
       <div className="observatory-actions" role="group" aria-label="After Dark views">
@@ -44,6 +51,9 @@ export function AuroraOverflightControls({
         </button>
         <button type="button" id="open-orbital-pass" onClick={onOrbit} disabled={!ready}>
           Orbital Pass
+        </button>
+        <button type="button" id="open-meteor-nights" onClick={onMeteors} disabled={!ready}>
+          Meteor Nights
         </button>
         {aurora.run && (
           <>
@@ -70,6 +80,16 @@ export function AuroraOverflightControls({
           </>
         )}
       </div>
+      {!solar && !aurora.run && (
+        <div className="after-dark-city">
+          <SkyCityPicker city={city.name} select={city.select} />
+          {next && (
+            <p className="observation-note">
+              Next meteor viewing night · {next.name} · {meteorDate.format(Date.parse(next.day))}
+            </p>
+          )}
+        </div>
+      )}
       {aurora.run ? (
         <p className="observatory-summary">
           <a

@@ -1,4 +1,4 @@
-import type { Group, PerspectiveCamera, Vector3 } from "three";
+import type { Group, Object3D, PerspectiveCamera, Vector3 } from "three";
 import type { AuroraRun } from "../sources/auroraRoute";
 import type { RadarView } from "../app/radar/radarCamera";
 import type { Controls } from "./controls";
@@ -51,7 +51,7 @@ export function createScenePresentation(
     return (observations?.step(dt, reduced) ?? false) || !!diving;
   }
 
-  function set(mode: GlobePresentation) {
+  function set(mode: GlobePresentation, geography: readonly Object3D[]) {
     const local = isLocalView(mode) ? mode : null;
     const observation = local?.kind === "observation" ? local : null;
     const weather = local?.kind === "radar" ? local : null;
@@ -90,6 +90,7 @@ export function createScenePresentation(
       spin.add(observations.object);
     }
     observations?.set(overlay);
+    for (const layer of geography) layer.visible = !observation?.frame.reconstruction;
     catalogue.visible = local === null;
     if (weather) {
       returnCamera ??= controls.state();

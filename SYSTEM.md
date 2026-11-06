@@ -156,6 +156,27 @@ Moon’s altitude includes parallax at the city. The horizon is level and the tw
 illustrative. The compass holds its direction during scrubbing, and choosing a body points the
 camera at its calculated position at that instant.
 
+After Dark, Tonight’s Sky, Meteor Nights and Orbital Pass share a saved city. Meteor Nights uses dated peak
+nights and radiants from the 2026 and 2027 IMO calendars. Local sidereal time places the radiant,
+and five-minute samples find windows with astronomical darkness, the Moon below the horizon and
+the radiant at least ten degrees above it. The sky renderer projects the calculated path above the horizon.
+
+Million-Mile View opens on 20 source photographs from the July 2015 DSCOVR lunar transit,
+resized to WebP. The latest option reads NASA EPIC metadata and loads only the selected photograph.
+The photo overlay leaves the shared canvas mounted. Deep Time loads simplified EarthByte Müller
+2019 coastlines and three reference tracks at ten-million-year steps from the present to 230 Ma.
+Custom coordinates use GPlates plate assignment and motion paths at the same step while the assigned
+plate has model coverage.
+
+Swell Lines requests a bounded North Pacific sample of NOAA GFS-Wave through Open-Meteo when
+opened. The selected Scripps CDIP buoy supplies a separate measured wave height and peak period.
+The view compares observations only with a nearby model hour and labels unavailable readings.
+
+The Tōhoku recorded-waves chapter uses seven EarthScope vertical broadband traces at 1 Hz for
+the first 90 minutes after the event. The plots preserve five-second minimum and maximum envelopes
+and normalize each instrument independently. The onset markers use sustained motion above the
+preceding baseline. Optional audio resamples each recording at 900 times its original rate.
+
 Float Dive loads on demand from Live Earth. The browser requests ascending North Atlantic
 profiles from the Marine Institute ERDDAP and validates each level’s pressure, temperature and
 salinity quality flags. Two bundled recordings from the same source stay available offline.

@@ -69,23 +69,27 @@ export function useObservationData(source: ObservationSource, option: string) {
   };
 }
 
-export function useObservationImage(url: string | undefined) {
-  const [image, setImage] = useState<{ url: string; element: HTMLImageElement | null } | null>(null);
+export function useObservationImage(url: string | undefined, sequence?: string) {
+  const [image, setImage] = useState<{
+    url: string;
+    failed: boolean;
+    last?: { sequence: string; element: HTMLImageElement };
+  } | null>(null);
   const cache = useRef(new Map<string, HTMLImageElement>());
   useEffect(() => {
     if (!url || cache.current.has(url)) return;
     const element = new Image();
-    element.crossOrigin = "anonymous";
+    if (sequence === undefined) element.crossOrigin = "anonymous";
     const failed = () => {
       window.clearTimeout(timeout);
-      setImage({ url, element: null });
+      setImage((previous) => ({ ...previous, url, failed: true }));
     };
     const timeout = window.setTimeout(failed, 10_000);
     element.onload = () => {
       window.clearTimeout(timeout);
       if (cache.current.size >= 8) cache.current.delete(cache.current.keys().next().value!);
       cache.current.set(url, element);
-      setImage({ url, element });
+      setImage({ url, failed: false, ...(sequence !== undefined ? { last: { sequence, element } } : {}) });
     };
     element.onerror = failed;
     element.src = url;
@@ -94,9 +98,12 @@ export function useObservationImage(url: string | undefined) {
       element.onload = element.onerror = null;
       if (!element.complete) element.removeAttribute("src");
     };
-  }, [url]);
+  }, [url, sequence]);
+  const loaded = url ? cache.current.get(url) : undefined;
+  const hold =
+    url && sequence !== undefined && image?.last?.sequence === sequence ? image.last.element : null;
   return {
-    element: url ? (cache.current.get(url) ?? null) : null,
-    status: !url || cache.current.has(url) ? "ready" : image?.url === url ? "failed" : "loading",
+    element: loaded ?? hold,
+    status: !url || loaded ? "ready" : image?.url === url && image.failed ? "failed" : "loading",
   } as const;
 }

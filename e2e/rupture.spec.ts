@@ -20,6 +20,16 @@ test("Tōhoku reveals the modeled fault before the estimated shaking", async ({ 
   await expect(reveal.getByRole("heading", { name: "Estimated surface shaking" })).toBeVisible();
   await expect(reveal.getByText("Intensity · MMI")).toBeVisible();
   await expect(reveal.getByRole("img")).toBeVisible();
+  const recorded = reveal.getByRole("button", { name: "Recorded waves", exact: true });
+  await recorded.click();
+  await expect(reveal.getByRole("heading", { name: "When Earth Rings" })).toBeVisible();
+  await expect(reveal.getByRole("combobox", { name: "Second station" })).toHaveValue("5");
+  await reveal.getByRole("button", { name: "Jump to ANMO onset" }).click();
+  await expect(reveal.getByRole("slider")).toHaveAttribute("aria-valuetext", "05:58:56 UTC");
+  await reveal.getByRole("combobox", { name: "Second station" }).selectOption({ label: "Oʻahu" });
+  await expect(reveal.getByRole("img", { name: /Oʻahu, Hawaiʻi, normalized vertical motion/ })).toBeVisible();
+  await reveal.getByRole("button", { name: "Back to surface shaking" }).click();
+  await expect(recorded).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(reveal).toBeHidden();
   await expect(trigger).toBeFocused();
@@ -78,6 +88,17 @@ test("Tōhoku archive exposes both maps on a small phone with reduced motion", a
       dialog.scrollHeight - dialog.clientHeight,
     ]);
   await expect.poll(overflow).toEqual([0, 0]);
+  await reveal.getByRole("button", { name: "Recorded waves", exact: true }).click();
+  const comparison = reveal.locator(".recorded-waves");
+  await expect(comparison.getByRole("img", { name: /Albuquerque, New Mexico, normalized/ })).toBeVisible();
+  expect(
+    await comparison.evaluate((figure) =>
+      Array.from(figure.querySelectorAll(".recorded-trace svg")).every(
+        (trace) => trace.getBoundingClientRect().bottom <= figure.getBoundingClientRect().bottom,
+      ),
+    ),
+  ).toBe(true);
+  await reveal.getByRole("button", { name: "Back to surface shaking" }).click();
   await page.setViewportSize({ width: 812, height: 375 });
   await expect.poll(overflow).toEqual([0, 0]);
   await reveal.getByRole("button", { name: "Close" }).click();

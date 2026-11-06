@@ -22,6 +22,7 @@ export interface TonightView {
   look: SkyLook;
   bodies: ReturnType<typeof skyBodies>;
   targetName?: string | undefined;
+  radiantTrail?: readonly SkyLook[];
 }
 
 const HOUR = 3_600_000;
@@ -127,6 +128,10 @@ export function localNight(city: SkyCity, now: number) {
     sunset: sunset !== null,
     sunrise: sunrise !== null,
   };
+}
+
+export function localNightOn(city: SkyCity, day: string) {
+  return localNight(city, wallTime(civilClock(city.zone), Date.parse(`${day}T12:00:00Z`)));
 }
 
 const DIRECTIONS = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
