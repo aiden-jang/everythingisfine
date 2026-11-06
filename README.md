@@ -42,6 +42,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Follow the aurora** in After Dark banks over a dark-side NOAA OVATION forecast oval and settles
   into a polar view. The readout shows the forecast time and modeled chance at the focus. The
   raised glow illustrates the footprint. Reduced motion opens the polar view directly.
+- **Float Dive** follows an Argo float from its North Atlantic position into a schematic ascent on the globe.
+  Play or scrub measured temperature and practical salinity from depth toward the surface.
+  Pick a recent Marine Institute profile or a bundled recording.
 - **Storm Radar** flies to recent radar returns on the globe over the contiguous United States.
   Play or scrub through up to an hour of NOAA scans at their published UTC times.
 - **Take a tour** visits a captured selection of readings and regions. Narration waits for arrival;
@@ -128,6 +131,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Archived earthquakes | USGS and EMSC FDSN endpoints |
 | Live storms, volcanoes, wildfires, floods | GDACS, retaining the credited reporting agency |
 | Archived hazards | NASA EONET |
+| Float Dive | [Argo profile data](https://doi.org/10.17882/42182) via the [Marine Institute’s North Atlantic subset](https://erddap.marine.ie/erddap/info/argoFloats/) |
 | Storm Radar | [NOAA MRMS base reflectivity](https://mapservices.weather.noaa.gov/eventdriven/rest/services/radar/radar_base_reflectivity_time/ImageServer) |
 | Aurora forecast | NOAA SWPC OVATION |
 | Sun Watch | NOAA SWPC real-time solar wind, primary GOES X-ray flux, NASA/GSFC Solar Dynamics Observatory |

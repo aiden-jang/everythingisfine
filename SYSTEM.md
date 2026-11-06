@@ -53,6 +53,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/Utilities.tsx` | Mobile disclosure focus, outside dismissal, Escape and resize lifetime |
 | `src/app/useGlobeResources.ts` | Deferred geometry and timezone data, retained while disabled, with completion cleanup |
 | `src/app/useObservatory.ts` | First-visit and saved presentation, temporary scene overrides, reduced-motion-aware globe handoff |
+| `src/app/float/`, `src/sources/argo.ts`, and `src/globe/floatPresentation.ts` | Argo catalogue and profile validation, sample playback, and the shared globe’s float sequence |
 | `src/app/radar/`, `src/sources/radar.ts`, and `src/globe/radarSurface.ts` | Storm Radar controls, NOAA scan catalogue, and globe overlay |
 | `src/app/Observatory.tsx` | Intro, scene choices, captured-story narration and tour controls |
 | `src/app/GlobeHeader.tsx` | Shared masthead, capture, source status and explorer tools |
@@ -153,6 +154,13 @@ star catalogue. The city’s time zone defines the evening and morning across cl
 Moon’s altitude includes parallax at the city. The horizon is level and the twilight glow is
 illustrative. The compass holds its direction during scrubbing, and choosing a body points the
 camera at its calculated position at that instant.
+
+Float Dive loads on demand from Live Earth. The browser requests ascending North Atlantic
+profiles from the Marine Institute ERDDAP and validates each level’s pressure, temperature and
+salinity quality flags. Two bundled recordings from the same source stay available offline.
+The instrument is schematic and the ascent is compressed. The readout uses the original
+samples, with depth estimated from pressure using the
+[Fofonoff and Millard equation](https://doi.org/10.25607/OBP-1450).
 
 Storm Radar loads on demand from Live Earth or Explore and shows NOAA MRMS scans on the shared
 globe. The scrubber uses published timestamps and requests each raster by its NOAA record ID. The

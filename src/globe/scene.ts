@@ -432,13 +432,13 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     stepPresentation: (dt, reduced) => {
       quietMotion = reduced;
       const illuminating = lights.step(dt, reduced);
-      presentation.step();
+      const presenting = presentation.step(dt, reduced);
       const cutting = cutaway.step(dt, reduced, morph.value, !controls.diveReady());
       const tracing = figures.step(dt, reduced, !controls.skyReady());
       const grouping = regroup.step(dt, reduced);
       const settling = morph.value === 0 && !controls.framingReady();
       const following = inspection.step(dt, reduced, morph.value === 0);
-      return cutting || tracing || grouping || illuminating || settling || following;
+      return cutting || tracing || grouping || illuminating || settling || following || presenting;
     },
     markerRadius: (magnitude: number): number => markerRadiusPx(magnitude, markerScale()),
     setGeography: (ramp: RampName): void => {

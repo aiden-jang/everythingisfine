@@ -86,5 +86,20 @@ export function useGlobeLayers(
   useLayoutEffect(() => {
     presentationRef.current(globePresentation ?? null);
     wake.current();
+    if (
+      globePresentation &&
+      typeof globePresentation === "object" &&
+      "kind" in globePresentation &&
+      globePresentation.kind === "float-dive"
+    ) {
+      const motion = matchMedia("(prefers-reduced-motion: reduce)");
+      const onChange = () => wake.current();
+      const unsubscribe = globePresentation.subscribe(onChange);
+      motion.addEventListener("change", onChange);
+      return () => {
+        unsubscribe();
+        motion.removeEventListener("change", onChange);
+      };
+    }
   }, [globePresentation, presentationRef, wake]);
 }

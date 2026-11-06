@@ -223,6 +223,11 @@ settles to an overview at the Buras landfall. Track dots mark published fixes. W
 the published quadrant radii, and the readings change at the fixes. Scrubbing and reduced motion
 use the fixed overview.
 
+Float Dive travels to the float’s recorded surfacing coordinates, holds the locator ring, then
+reveals a schematic water column in the same canvas. The instrument rises into surface light
+while the plots follow the measured levels. Scrubbing stops playback at the selected sample.
+Reduced motion opens directly with a fixed instrument and manual playback.
+
 Storm Radar flies from the current globe view to the contiguous United States or an area with
 visible returns. NOAA reflectivity colors belong to the raster. The scan controls stay in the
 Observatory panel, and scrubbing changes only the scan at its published UTC time. Region changes

@@ -1,0 +1,195 @@
+.observatory-intro[data-float-dive] {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.float-heading,
+.float-picker,
+.float-edges,
+.float-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+
+.float-heading h2 {
+  font-size: clamp(32px, 4vw, 60px);
+  line-height: 1;
+  font-weight: 580;
+  letter-spacing: -0.04em;
+}
+
+.float-actions {
+  margin: 0;
+}
+
+.float-summary,
+.float-picker,
+.float-meta,
+.float-source,
+.float-depth,
+.float-value,
+.float-edges {
+  font-size: 0.75rem;
+  line-height: 1.45;
+}
+
+.float-summary,
+.float-meta,
+.float-source,
+.float-depth span,
+.float-depth small,
+.float-edges {
+  color: var(--color-dim);
+}
+
+.float-picker span {
+  white-space: nowrap;
+}
+
+.float-picker select {
+  min-height: 44px;
+  min-width: 0;
+  max-width: 74%;
+  padding-inline: 8px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  color: var(--color-ink);
+  background-color: var(--color-deck);
+}
+
+.float-transport {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding-block: 10px 8px;
+  border-block: 1px solid var(--color-hairline);
+}
+
+.float-depth {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 6px;
+}
+
+.float-depth strong {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.float-transport button {
+  min-width: 108px;
+}
+
+.float-depth strong,
+.float-value strong {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.float-scrub,
+.float-edges {
+  grid-column: 1 / -1;
+}
+
+.float-scrub {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 4px;
+}
+
+.float-scrub::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 2px;
+}
+
+.float-scrub::-moz-range-track {
+  height: 3px;
+  border-radius: 2px;
+}
+
+.float-scrub::-webkit-slider-thumb {
+  width: 12px;
+  height: 17px;
+  margin-top: -7px;
+  border-radius: 3px;
+}
+
+.float-scrub::-moz-range-thumb {
+  width: 12px;
+  height: 17px;
+  border-radius: 3px;
+}
+
+.float-measurements {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.float-trace {
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  color: #e8bc8e;
+}
+
+.float-trace[data-reading="salinity"] {
+  color: #8bd7cf;
+}
+
+.float-value {
+  flex-wrap: wrap;
+  justify-content: start;
+}
+
+.float-value span {
+  color: var(--color-dim);
+}
+
+.float-trace svg {
+  display: block;
+  width: 100%;
+  height: clamp(25px, 6vh, 45px);
+  stroke: currentColor;
+  stroke-width: 1.25;
+  fill: none;
+}
+
+.float-trace circle {
+  fill: currentColor;
+}
+
+.float-axis {
+  stroke: var(--color-hairline);
+}
+
+.float-source a {
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.frame[data-presentation="observe"] .zones:has([data-float-dive]) .zone-canvas canvas {
+  cursor: default;
+}
+
+@media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
+  .frame[data-presentation="observe"] .zones:has([data-float-dive]) {
+    grid-template-rows: minmax(150px, 1fr) clamp(350px, 56dvh, 465px);
+  }
+}
+
+@media (max-height: 720px) {
+  .observatory-intro[data-float-dive] {
+    gap: 8px;
+  }
+
+  .float-summary {
+    display: none;
+  }
+}

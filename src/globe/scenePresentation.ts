@@ -6,11 +6,14 @@ import type { createSurfaceLayers } from "./surfaceLayers";
 import { createAuroraVeil } from "./auroraVeil";
 import { createRadarSurface } from "./radarSurface";
 import { createLocalSkyLight } from "./localSkyLight";
+import type { FloatDiveView } from "../app/float/floatPlayback";
+import { createFloatPresentation } from "./floatPresentation";
 import type { TonightView } from "../geo/tonight";
 
-export type GlobePresentation = "planetarium" | "dayline" | AuroraRun | RadarView | TonightView | null;
+export type GlobePresentation = "planetarium" | "dayline" | AuroraRun | LocalView | null;
+type LocalView = RadarView | TonightView | FloatDiveView;
 
-export function isLocalView(mode: GlobePresentation): mode is RadarView | TonightView {
+export function isLocalView(mode: GlobePresentation): mode is LocalView {
   return mode !== null && typeof mode === "object" && "kind" in mode;
 }
 
@@ -33,9 +36,12 @@ export function createScenePresentation(
   let radarTarget: RadarView["target"] | undefined;
   let returnCamera: ReturnType<Controls["state"]> | undefined;
 
-  function step() {
+  let dive: ReturnType<typeof createFloatPresentation> | undefined;
+
+  function step(dt: number, reduced: boolean) {
     dayline.value = showDayline ? lights.reveal.value : 0;
     veil?.trace(controls.auroraSweep());
+    return dive?.step(dt, reduced) ?? false;
   }
 
   function set(mode: GlobePresentation) {
@@ -60,6 +66,12 @@ export function createScenePresentation(
     if (oval !== route) veil?.set(route);
     oval = route;
 
+    const float = local?.kind === "float-dive" ? local : null;
+    if (float && !dive) {
+      dive = createFloatPresentation(controls);
+      spin.add(dive.object);
+    }
+    dive?.set(float, mode === "dayline");
     catalogue.visible = local === null;
     if (weather) {
       returnCamera ??= controls.state();
@@ -76,13 +88,14 @@ export function createScenePresentation(
     }
     radarTarget = weather?.target;
     radar?.setImage(weather?.image ?? null);
-    step();
+    dayline.value = showDayline ? lights.reveal.value : 0;
   }
 
   return {
     set,
     step,
     skyOpacity(camera: PerspectiveCamera) {
+      dive?.size(camera.aspect);
       const amount = controls.localSky.amount();
       lights.apply(amount);
       return localLight?.draw(camera, amount, controls.localSky.ready() ? skyView : null) ?? 1;

@@ -7,6 +7,7 @@ import { TongaReplay } from "./tonga/TongaReplay";
 import { KilaueaReplay } from "./kilauea/KilaueaReplay";
 import { IcebergReplay } from "./iceberg/IcebergReplay";
 import { MegaflashReplay } from "./megaflash/MegaflashReplay";
+import { FloatReadout } from "./float/FloatReadout";
 import { RadarReadout, StormRadar } from "./radar/StormRadar";
 import { AuroraOverflightControls } from "./AuroraOverflightControls";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
@@ -15,6 +16,7 @@ import type { Stop } from "./tour";
 import { geographicCoordinates } from "../globe/orbitReadout";
 import "./sun/sun-watch.css";
 import "./tonight/tonight.css";
+import "./float/float-dive.css";
 
 const SunWatch = lazy(() => import("./sun/SunWatch").then(({ SunWatch }) => ({ default: SunWatch })));
 
@@ -23,6 +25,10 @@ const TonightSky = lazy(() =>
 );
 const TonightCompass = lazy(() =>
   import("./tonight/TonightCompass").then(({ TonightCompass }) => ({ default: TonightCompass })),
+);
+
+const FloatDive = lazy(() =>
+  import("./float/FloatDivePanel").then(({ FloatDivePanel }) => ({ default: FloatDivePanel })),
 );
 
 interface Props {
@@ -34,7 +40,7 @@ interface Props {
   feedNote: string | null;
   deepAvailable: boolean;
   aurora: ReturnType<typeof useAuroraOverflight>;
-  nightViews: Pick<ReturnType<typeof useObservatory>, "sun" | "tonight">;
+  views: Pick<ReturnType<typeof useObservatory>, "sun" | "tonight" | "floatDive">;
   radar: ReturnType<typeof useObservatory>["radar"];
   onScene: (scene: EarthScene) => void;
   onExplore: () => void;
@@ -65,7 +71,7 @@ export function Observatory({
   summary,
   deepAvailable,
   aurora,
-  nightViews: { sun, tonight },
+  views: { sun, tonight, floatDive },
   radar,
   feedNote,
   onScene,
@@ -77,7 +83,14 @@ export function Observatory({
   useLayoutEffect(() => {
     tour.controls.current?.scrollTo(0, 0);
     tour.controls.current?.querySelector<HTMLElement>(".observatory-story")?.scrollTo(0, 0);
-  }, [scene, tour.at, tour.controls, radar.active, tonight.active]);
+  }, [scene, tour.at, tour.controls, radar.active, tonight.active, floatDive.active]);
+  const localTitle = floatDive.active
+    ? "Float Dive"
+    : radar.active
+      ? "Storm Radar"
+      : tonight.active
+        ? "Tonight’s Sky"
+        : "Earth observatory";
   const active = tour.at !== null;
   const solar = sun.active && !active;
   const title = active
@@ -104,7 +117,9 @@ export function Observatory({
         : "A live view of earthquakes, changing skies, and a restless planet.";
   return (
     <>
-      {radar.active ? (
+      {floatDive.active ? (
+        <FloatReadout view={floatDive.view} />
+      ) : radar.active ? (
         <RadarReadout />
       ) : tonight.active ? (
         <Suspense fallback={null}>
@@ -125,9 +140,21 @@ export function Observatory({
           data-sun-watch={solar || undefined}
           data-storm-radar={radar.active || undefined}
           data-tonight={tonight.active || undefined}
-          aria-label={radar.active ? "Storm Radar" : tonight.active ? "Tonight’s Sky" : "Earth observatory"}
+          data-float-dive={floatDive.active || undefined}
+          aria-label={localTitle}
         >
-          {radar.active ? (
+          {floatDive.active ? (
+            <Suspense fallback={<p role="status">Opening Float Dive…</p>}>
+              <FloatDive
+                view={floatDive.view}
+                onView={floatDive.update}
+                onClose={() => {
+                  floatDive.close();
+                  requestAnimationFrame(() => document.getElementById("open-float-dive")?.focus());
+                }}
+              />
+            </Suspense>
+          ) : radar.active ? (
             <StormRadar
               fromExplore={radar.fromExplore}
               onView={radar.update}
@@ -255,9 +282,14 @@ export function Observatory({
                       Take a tour <span aria-hidden="true">→</span>
                     </button>
                     {scene === "live" && (
-                      <button type="button" id="open-storm-radar" onClick={radar.open} disabled={!ready}>
-                        Storm Radar
-                      </button>
+                      <>
+                        <button type="button" id="open-storm-radar" onClick={radar.open} disabled={!ready}>
+                          Storm Radar
+                        </button>
+                        <button type="button" id="open-float-dive" onClick={floatDive.open} disabled={!ready}>
+                          Float Dive
+                        </button>
+                      </>
                     )}
                   </div>
                   {scene !== "night" ? (

@@ -1084,7 +1084,7 @@ export function App(): JSX.Element {
       </a>
       <h1 className="sr-only">Everything Is Fine</h1>
       <GlobeHeader
-        ready={observatory.ready && !observatory.sun.active && !observatory.tonight.active}
+        ready={observatory.canCapture}
         observing={observatory.observing}
         onHome={() =>
           observatory.observeScene(() => {
@@ -1155,7 +1155,7 @@ export function App(): JSX.Element {
               );
             }}
             aurora={overflight}
-            nightViews={observatory}
+            views={observatory}
             radar={observatory.radar}
             onHistory={(day) => {
               stopTour();
@@ -1560,7 +1560,7 @@ export function App(): JSX.Element {
             <Globe
               feed={feed}
               filters={filters}
-              selected={observatory.radar.active || observatory.tonight.active ? null : selected}
+              selected={observatory.localReadings ? null : selected}
               ramp={ramp}
               focus={focusSpan}
               aurora={overflight.run?.forecast ?? onGlobe.aurora}

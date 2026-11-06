@@ -71,6 +71,7 @@ export function createControls(
   const intended = (): CameraState => (target && !target.intro ? target : { lon, lat, zoom });
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let orbitLocked = false;
   const pointers = new Map<number, { x: number; y: number }>();
   let lastMove = { x: 0, y: 0, t: 0 };
   let pinchDist = 0;
@@ -259,7 +260,7 @@ export function createControls(
     };
 
     const onPointerDown = (e: PointerEvent): void => {
-      if (horizon.active()) return;
+      if (orbitLocked || horizon.active()) return;
       // Capture keeps a drag alive when the pointer leaves the canvas, and the globe sits against the
       // panel edge. It throws when the pointer is already gone, which a fast tap can arrange.
       try {
@@ -367,7 +368,7 @@ export function createControls(
     };
 
     const onWheel = (e: WheelEvent): void => {
-      if (horizon.active()) return;
+      if (orbitLocked || horizon.active()) return;
       e.preventDefault();
       // Exponential, so a notch is the same proportion of the way in wherever you start: about 14%.
       zoomAt(Math.exp(-e.deltaY * 0.0011), e.clientX, e.clientY);
@@ -375,22 +376,17 @@ export function createControls(
     };
 
     const onDoubleClick = (): void => {
-      if (horizon.active()) return;
+      if (orbitLocked || horizon.active()) return;
       flyTo(framing.lon, framing.lat, 1);
       onChange();
     };
 
-    /*
-     * Camera keys live on the window: the canvas is `aria-hidden` and unfocusable on purpose, because the
-     * feed is the screen-reader interface, but a sighted person with no mouse still has to move the globe.
-     *
-     * Allow the surrounding globe region too. Lists and sliders keep their own arrow keys. */
+    // The canvas is unfocusable. Window keys move the globe while lists and sliders keep their own keys.
     const onKeyDown = (e: KeyboardEvent): void => {
-      if (horizon.active()) return;
+      if (orbitLocked || horizon.active()) return;
       const active = document.activeElement;
       if (active && active !== document.body && active.id !== "globe-view") return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-
       const step = e.shiftKey ? 24 : 8;
       switch (e.key) {
         case "ArrowLeft":
@@ -504,13 +500,15 @@ export function createControls(
     apply,
     pick,
     flyTo,
+    lockOrbit: (locked) => {
+      orbitLocked = locked;
+      if (locked) pointers.clear();
+    },
     setView: (pose) => aim(pose, true),
     enter: () => {
       if (sky.wanted() || dive.wanted()) return;
       sky.clear();
       dive.clear();
-      // Skipped under reduced motion, not shortened. A brief version of a motion somebody asked not to
-      // see is still the motion.
       if (reduced.matches) return;
       /* Wherever the camera is already aimed, not the default framing. A permalink calls `flyTo` during
          setup and `enter` runs after the first draw, so naming the framing here threw away every shared
