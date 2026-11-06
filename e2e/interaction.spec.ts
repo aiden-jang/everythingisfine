@@ -75,7 +75,7 @@ test("the first live seed includes a useful backlog", async ({ page }) => {
     .first();
   await expect(reported).toBeVisible();
   expect(Number((await reported.textContent())?.replace(/,/g, ""))).toBeGreaterThan(50);
-  await expect(page.getByText(/feeds live/i)).toBeVisible();
+  await expect(page.getByRole("button", { name: /Feed status, .*feeds available/i })).toBeVisible();
   // The window states its own left edge rather than claiming a full 24 hours it does not have.
   // Any live span, not one particular window: this is about the first frame being live.
   await expect(page.locator(".zone-rail")).toContainText(/since \d\d:\d\d|last 24 hours|last 7 days/);

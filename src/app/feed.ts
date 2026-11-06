@@ -14,6 +14,7 @@ export interface FeedSnapshot {
   archive: ArchiveSpan | null;
   stats: StoreStats;
   statuses: Record<SourceId, SourceStatus>;
+  checked: Partial<Record<SourceId, number>>;
   /** Bumped on every ingest, so a subscriber can tell "nothing changed" from "same total". */
   revision: number;
   /** Quakes newly created since the previous announcement, oldest first. A wavefront belongs to an
@@ -84,6 +85,7 @@ export function createFeed(capacity = 50_000): Feed {
     usgs: { kind: "idle" },
     emsc: { kind: "idle" },
   };
+  const checked: Partial<Record<SourceId, number>> = {};
   let revision = 0;
   let running = false;
   let announced = false;
@@ -108,6 +110,7 @@ export function createFeed(capacity = 50_000): Feed {
     archive,
     stats: store.stats(),
     statuses: { ...statuses },
+    checked: { ...checked },
     revision,
     arrived,
     seeding: !announced,
@@ -152,6 +155,7 @@ export function createFeed(capacity = 50_000): Feed {
           // Stopping a source cannot recall a request already in flight. Its answer landed in the
           // archived day, dated later than the day's end, and every event clamped into the newest bucket.
           if (archive !== null) return;
+          checked[source.id] = Date.now();
           for (const reading of batch) {
             const result = store.ingest(reading);
             if (result.isNew && arrived.length < ARRIVAL_LIMIT) arrived.push(result.quake);
@@ -160,6 +164,7 @@ export function createFeed(capacity = 50_000): Feed {
           announce();
         },
         onStatus: (status) => {
+          if (status.kind === "live") checked[source.id] = Date.now();
           statuses[source.id] = status;
           announce();
         },

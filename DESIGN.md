@@ -233,6 +233,12 @@ visible returns. NOAA reflectivity colors belong to the raster. The scan control
 Observatory panel, and scrubbing changes only the scan at its published UTC time. Region changes
 reuse the camera flight. Reduced motion cuts directly to the chosen view.
 
+The optional observation views keep one timeline through the existing globe and map morph.
+Orbital Pass adds a city horizon, Tide Watch adds a measured gauge, and Wind Atlas traces
+its vectors downwind as each forecast step arrives. Satellite imagery and tsunami travel
+times stay pinned to geography. Recorded data and model output carry separate labels.
+Playback runs only when requested and stops advancing while the page is hidden.
+
 Tonga opens on the eruption’s infrared scans, widens through the water-vapor difference scans, then
 pulls back into an orbit view. The ring is an estimate of the atmospheric wave. The station chart
 stays tied to measured pressure on the same UTC clock. Chapter jumps and reduced motion use static

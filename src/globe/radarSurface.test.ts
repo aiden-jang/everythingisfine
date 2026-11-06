@@ -5,7 +5,7 @@ import { RADAR_BOUNDS } from "../sources/radar";
 import { createRadarSurface } from "./radarSurface";
 
 test("the radar raster faces north and covers the bounds requested from NOAA", () => {
-  const { object, setImage } = createRadarSurface();
+  const { object, setImage } = createRadarSurface({ value: 0 });
   const image = { width: 2, height: 2 } as ImageBitmap;
   setImage(image);
   const texture = object.material.map!;

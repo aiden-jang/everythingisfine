@@ -1,14 +1,15 @@
-import type { JSX } from "react";
-import type { FeedStatus } from "./feedStatus";
+import { useId, useRef, type JSX } from "react";
+import type { FeedStatus, LayerAnswer } from "./feedStatus";
+import { observations } from "./observations/catalogue";
+import "./feed-status.css";
 
-/* Achromatic, because DESIGN.md 3.1 keeps hue for the data: a green dot here is the chrome borrowing
-   the alphabet the ramp uses. Brightness says how much is in, the blink says more is coming. */
-const DOT = {
-  archived: "bg-faint",
-  settling: "bg-dim motion-safe:animate-pulse",
-  complete: "bg-ink",
-  partial: "bg-dim",
-} as const;
+const LABEL: Record<LayerAnswer, string> = {
+  ok: "Available",
+  pending: "Loading",
+  failed: "Couldn’t reach feed",
+};
+
+const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
 
 export function FeedDot({
   feeds,
@@ -17,29 +18,87 @@ export function FeedDot({
   feeds: FeedStatus;
   archiveFrom: number | null;
 }): JSX.Element {
-  const state =
-    archiveFrom !== null
-      ? "archived"
-      : feeds.settling
-        ? "settling"
-        : feeds.arrived === feeds.total
-          ? "complete"
-          : "partial";
+  const id = useId();
+  const trigger = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  if (archiveFrom !== null)
+    return (
+      <span className="font-mono text-[11px] text-dim">
+        {new Date(archiveFrom).toISOString().slice(0, 10)}
+      </span>
+    );
+  const dot = feeds.arrived === feeds.total ? "bg-ink" : "bg-dim";
+  const unavailable = feeds.rows.filter(({ state }) => state === "failed").length;
   return (
-    <span title={feeds.phrase} className="flex items-center gap-2 text-[11px] whitespace-nowrap text-dim">
-      <span className={`inline-block size-[6px] rounded-full ${DOT[state]}`} />
-      {/* The date always shows and only the live phrase folds. "Everything is normal" is reassurance and
-        the dot carries it; "this is not what you think" is a correction, and absence is its failure. */}
-      {archiveFrom !== null ? (
-        <span className="font-mono">{new Date(archiveFrom).toISOString().slice(0, 10)}</span>
-      ) : (
-        <>
-          <span className="hidden sm:inline">{feeds.phrase}</span>
-          <span className="sm:hidden" aria-label={feeds.phrase}>
-            {feeds.arrived}/{feeds.total}
-          </span>
-        </>
-      )}
-    </span>
+    <>
+      <button
+        type="button"
+        className="feed-toggle"
+        ref={trigger}
+        {...{ popovertarget: id }}
+        aria-label={`Feed status, ${feeds.phrase}`}
+        aria-controls={id}
+        onClick={() => {
+          const rect = trigger.current?.getBoundingClientRect();
+          if (!rect || !panel.current) return;
+          panel.current.style.insetBlockStart = `${Math.ceil(rect.bottom + 6)}px`;
+          panel.current.style.setProperty("--feed-offset", `${window.innerWidth - rect.right}px`);
+        }}
+      >
+        <span className={`inline-block size-[6px] rounded-full ${dot}`} aria-hidden="true" />
+        <span className="hidden sm:inline">{feeds.phrase}</span>
+        <span className="sm:hidden" aria-hidden="true">
+          {feeds.arrived}/{feeds.total}
+        </span>
+        <svg width="9" height="6" viewBox="0 0 9 6" fill="none" aria-hidden="true">
+          <path d="m1 1 3.5 3.5L8 1" stroke="currentColor" />
+        </svg>
+      </button>
+      <div
+        ref={panel}
+        id={id}
+        {...{ popover: "auto" }}
+        data-feed-popover=""
+        className="feed-popover"
+        role="region"
+        aria-labelledby={`${id}-title`}
+      >
+        <h2 id={`${id}-title`}>Feed status</h2>
+        <p>
+          {unavailable
+            ? `${unavailable} of ${feeds.total} background feeds couldn’t be reached.`
+            : "Background feeds checked by this browser."}
+        </p>
+        <ul>
+          {feeds.rows.map(({ id: key, label, state, lastCheck }) => (
+            <li key={key}>
+              <strong>{label}</strong>
+              <span>{LABEL[state]}</span>
+              {lastCheck !== undefined && (
+                <small>
+                  Last heard{" "}
+                  <time
+                    dateTime={new Date(lastCheck).toISOString()}
+                    title={new Date(lastCheck).toISOString()}
+                  >
+                    {clock.format(lastCheck)} UTC
+                  </time>
+                </small>
+              )}
+            </li>
+          ))}
+        </ul>
+        <h3>Loads when opened</h3>
+        <p>Storm Radar, Float Dive and Sun Watch</p>
+        <details>
+          <summary>Other observatory views</summary>
+          <p>
+            {Object.values(observations)
+              .map(({ title }) => title)
+              .join(" · ")}
+          </p>
+        </details>
+      </div>
+    </>
   );
 }

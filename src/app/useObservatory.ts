@@ -6,6 +6,7 @@ import type { Stop } from "./tour";
 import type { CutawayFocus } from "../globe/cutaway";
 import { subsolarPoint } from "../geo/sun";
 import type { AuroraRun } from "../sources/auroraRoute";
+import { useObservationDeck } from "./observations/useObservationDeck";
 import type { FloatDiveView } from "./float/floatPlayback";
 import type { TonightView } from "../geo/tonight";
 import type { GlobePresentation } from "../globe/scenePresentation";
@@ -63,6 +64,8 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [tonightView, setTonightView] = useState<TonightView | "opening" | null>(null);
   const [floatView, setFloatView] = useState<FloatDiveView | "opening" | null>(null);
   const [radarView, setRadarView] = useState<RadarView | null>(null);
+  const observations = useObservationDeck();
+  const closeObservations = observations.close;
   const radarOrigin = useRef<Presentation>("observe");
   const transition = useRef<Animation[]>([]);
   const focusExplorer = useRef(false);
@@ -87,6 +90,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         setRadarView(null);
         setTonightView(null);
         setFloatView(null);
+        closeObservations();
         prepare?.();
         if (remember) store("presentation", next);
       };
@@ -102,7 +106,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       if (flight) transition.current.push(flight);
       if (readings) transition.current.push(readings);
     },
-    [],
+    [closeObservations],
   );
   useEffect(
     () => () => {
@@ -127,16 +131,20 @@ export function useObservatory(shared: Partial<Permalink>) {
     (prepare: () => void) => changePresentation("observe", true, prepare),
     [changePresentation],
   );
-  const chooseScene = useCallback((next: EarthScene, at: CutawayFocus | null = null) => {
-    setScene(next);
-    setFocus(at);
-    setTourStop(null);
-    setRun(null);
-    setSunWatch(false);
-    setRadarView(null);
-    setTonightView(null);
-    setFloatView(null);
-  }, []);
+  const chooseScene = useCallback(
+    (next: EarthScene, at: CutawayFocus | null = null) => {
+      setScene(next);
+      setFocus(at);
+      setTourStop(null);
+      setRun(null);
+      setSunWatch(false);
+      setRadarView(null);
+      setTonightView(null);
+      setFloatView(null);
+      closeObservations();
+    },
+    [closeObservations],
+  );
   const observing = presentation === "observe";
   const night = observing && scene === "night";
   const sunActive = night && sunWatch;
@@ -150,8 +158,10 @@ export function useObservatory(shared: Partial<Permalink>) {
     presentation,
     scene,
     ready,
-    canCapture: ready && !sunActive && !tonight && floatView === null,
-    localReadings: radarView !== null || tonight || floatView !== null,
+    canCapture: ready && !sunActive && !tonight && floatView === null && !observations.entry,
+    localReadings: radarView !== null || tonight || floatView !== null || !!observations.entry,
+    observations,
+    viewAt: observations.view?.frame.at ?? localSky?.at,
     setReady,
     chooseScene,
     enterExplore,
@@ -206,12 +216,14 @@ export function useObservatory(shared: Partial<Permalink>) {
           );
       },
       close() {
+        observations.setMap(false);
         if (radarOrigin.current === "explore") changePresentation("explore", true, undefined, false);
         else setRadarView(null);
       },
       update: setRadarView,
     },
     globe(guided: boolean): GlobePresentation {
+      if (observations.entry) return observations.view ?? "dayline";
       if (night) return sunActive ? null : (localSky ?? auroraRun ?? "planetarium");
       return observing && scene === "live" && !guided
         ? ((floatView === "opening" ? null : floatView) ?? radarView ?? "dayline")

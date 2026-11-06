@@ -1,0 +1,72 @@
+.feed-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-dim);
+  cursor: pointer;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.feed-toggle:hover {
+  color: var(--color-ink);
+  background: var(--color-raised);
+}
+
+.feed-popover {
+  position: fixed;
+  --feed-offset: 12px;
+  inset: 58px auto auto;
+  inset-inline-end: clamp(12px, var(--feed-offset), max(12px, 100vw - 367px));
+  width: min(355px, calc(100vw - 24px));
+  max-height: calc(100dvh - 76px);
+  margin: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 16px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  color: var(--color-ink);
+  background: var(--color-deck);
+  font-size: 12px;
+}
+
+.feed-popover h2 {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.feed-popover h3 {
+  margin-top: 14px;
+  font-weight: 600;
+}
+
+.feed-popover p,
+.feed-popover small,
+.feed-popover li span {
+  color: var(--color-dim);
+}
+
+.feed-popover ul {
+  margin-top: 10px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.feed-popover li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  padding-block: 7px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.feed-popover time {
+  font-family: var(--font-mono);
+}
+
+.feed-popover summary {
+  min-height: 32px;
+  align-content: center;
+  cursor: pointer;
+}

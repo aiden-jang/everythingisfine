@@ -47,6 +47,12 @@ Existing saved layouts and links to an event, archive, section, or held moment o
   Pick a recent Marine Institute profile or a bundled recording.
 - **Storm Radar** flies to recent radar returns on the globe over the contiguous United States.
   Play or scrub through up to an hour of NOAA scans at their published UTC times.
+- **More views** opens Globe and Map playback for Tide Watch, Wind Atlas, Rainbelt, River Pulse,
+  Air Watch, Lightning Live, Current Rider, Smoke Crossing, and Tsunami Arrival. **Orbital Pass**
+  also opens directly from After Dark, with a city picker and local horizon.
+- **Feed status** lists the seven background feeds and their last successful check or received message.
+  Observatory views fetch their own sources when opened. In Storm Radar, switch projections or turn
+  on matched GOES-East lightning scans.
 - **Take a tour** visits a captured selection of readings and regions. Narration waits for arrival;
   Pause, Previous, Next, Stop, and Read this event remain available. Hidden tabs pause its reading time.
 - **Historical replays** opens recorded stories and notable events. **Pick a past date** opens the UTC date picker in Explore.
@@ -133,6 +139,13 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Archived hazards | NASA EONET |
 | Float Dive | [Argo profile data](https://doi.org/10.17882/42182) via the [Marine Institute’s North Atlantic subset](https://erddap.marine.ie/erddap/info/argoFloats/) |
 | Storm Radar | [NOAA MRMS base reflectivity](https://mapservices.weather.noaa.gov/eventdriven/rest/services/radar/radar_base_reflectivity_time/ImageServer) |
+| Orbital Pass | [CelesTrak ISS orbital elements](https://celestrak.org/NORAD/elements/) and SGP4 predictions |
+| Tide Watch and River Pulse | [NOAA water levels and tide predictions](https://api.tidesandcurrents.noaa.gov/api/dev) and [USGS continuous streamflow](https://api.waterdata.usgs.gov/) |
+| Wind Atlas | [NOAA GFS](https://www.nco.ncep.noaa.gov/pmb/products/gfs/) via [PacIOOS](https://www.pacioos.hawaii.edu/) for the current surface forecast and [NSF Unidata](https://www.unidata.ucar.edu/data/nsf-unidatas-thredds-data-server) for a dated 250 hPa forecast |
+| Rainbelt and Lightning Live | [NASA IMERG precipitation imagery](https://gpm.nasa.gov/data/visualization/worldview) and [NOAA GOES-East GLM](https://www.star.nesdis.noaa.gov/goes/) |
+| Air Watch | [EPA AirNow hourly PM₂.₅ observations](https://www.airnow.gov/about-the-data/) |
+| Current Rider | [NOAA Global Drifter Program](https://www.aoml.noaa.gov/global-drifter-program/) recorded trajectories |
+| Smoke Crossing and Tsunami Arrival | [NOAA GOES-East wildfire observations](https://www.weather.gov/bgm/pastNonPrecipJune05072023), NOAA ETOPO bathymetry, and [NOAA DART buoy readings](https://www.ncei.noaa.gov/products/natural-hazards/tsunamis-earthquakes-volcanoes/tsunamis/recent-significant-events/chile-feb-2010-dart-summary) |
 | Aurora forecast | NOAA SWPC OVATION |
 | Sun Watch | NOAA SWPC real-time solar wind, primary GOES X-ray flux, NASA/GSFC Solar Dynamics Observatory |
 | Tonight’s Sky | Local solar and lunar calculations, [JPL planetary elements](https://ssd.jpl.nasa.gov/planets/orbits/), [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) reference checks |

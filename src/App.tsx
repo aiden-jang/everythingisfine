@@ -154,7 +154,7 @@ export function App(): JSX.Element {
   const [pendingRev, setPendingRev] = useState<number | null>(null);
   const [missingShared, setMissingShared] = useState<string | null>(shared.event ?? null);
   const [focusHour, setFocusHour] = useState<number | null>(null);
-  const { aurora, cyclones, fires, floods, volcanoes, answered } = useHazardLayers();
+  const { aurora, cyclones, fires, floods, volcanoes, answered, checked } = useHazardLayers();
   const clockAt = useCallback(() => feed.snapshot().archive?.to ?? Date.now(), []);
   const archived = snapshot.archive !== null;
   const archiveState = useArchive(feed, snapshot.archive, shared.day, (returnedToLive) => {
@@ -175,7 +175,7 @@ export function App(): JSX.Element {
   });
   const { archiveHazards, backToLive, stepDay, archiveBusy, archiveDay, loadedDay } = archiveState;
   const [mapOn, setFlat] = useStoredFlag("flat", false, shared.section ? true : shared.flat);
-  const flat = observatory.observing ? false : mapOn;
+  const flat = observatory.observing ? observatory.observations.map : mapOn;
   const chase = useEclipsePlayback(
     loadedDay === APRIL_ECLIPSE_DAY && !archiveBusy && !flat && !observatory.observing,
     setScrub,
@@ -458,7 +458,7 @@ export function App(): JSX.Element {
   const fetching = pendingRev !== null && snapshot.revision === pendingRev;
   /* Null on the live view, not a timestamp: the scene keeps its minute throttle instead of re-aiming
   the sun every render for a change no eye could see. */
-  const litAt = observatory.tonight.view?.at ?? view.at ?? (archived ? clockAt() : null);
+  const litAt = observatory.viewAt ?? view.at ?? (archived ? clockAt() : null);
   const eclipseKey = litAt ?? Math.floor(Date.now() / 60_000) * 60_000;
   const eclipse = useMemo(() => {
     const solar = solarEclipse(eclipseKey);
@@ -698,7 +698,7 @@ export function App(): JSX.Element {
       return feed.snapshot().archive ?? { from: at - filters.windowMs, to: at };
     };
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && !document.querySelector("[data-feed-popover]:popover-open")) {
         // One rung at a time, innermost first: closing the pin and the section together undoes two decisions
         // with one press.
         if (query) setQuery("");
@@ -911,7 +911,7 @@ export function App(): JSX.Element {
   // Not memoised: the reach it names is a distance from now, and keyed on the revision it would freeze
   // at whatever it was when the last event landed.
   const sourceNote = reachNote(snapshot.covered, now, filters.windowMs);
-  const feeds = feedStatus(snapshot.statuses, answered);
+  const feeds = feedStatus(snapshot.statuses, answered, { ...snapshot.checked, ...checked });
 
   const keyOnCanvas = useNarrow() === false;
   // Compose shared legend props once so the rail and canvas cannot drift apart.

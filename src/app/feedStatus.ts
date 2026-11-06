@@ -1,47 +1,61 @@
 import type { SourceId, SourceStatus } from "../sources/types";
 import { silentFeeds, type HazardLayer } from "./format";
 
-/** A hazard layer that has not been heard from is not a layer that failed. */
 export type LayerAnswer = "pending" | "ok" | "failed";
+type FeedKey = SourceId | HazardLayer;
+export type FeedChecks = Partial<Record<FeedKey, number>>;
+
+const labels: Record<FeedKey, string> = {
+  usgs: "USGS earthquakes",
+  emsc: "EMSC earthquakes",
+  aurora: "NOAA aurora forecast",
+  cyclones: "GDACS cyclones",
+  volcanoes: "GDACS volcanoes",
+  fires: "GDACS wildfires",
+  floods: "GDACS floods",
+};
 
 export interface FeedStatus {
   arrived: number;
   total: number;
-  /** Something is still in flight, so a count of what is in is a count of what is early. */
   settling: boolean;
-  /** What went quiet, or null. Pending layers are not named: they have not gone quiet yet. */
   silent: string | null;
   phrase: string;
+  rows: readonly {
+    id: FeedKey;
+    label: string;
+    state: LayerAnswer;
+    lastCheck: number | undefined;
+  }[];
 }
 
-/** `statuses` holds the two streaming quake feeds only; the other five layers are in `answered`. */
 export function feedStatus(
   statuses: Record<SourceId, SourceStatus>,
   answered: Record<HazardLayer, LayerAnswer>,
+  checks: FeedChecks = {},
 ): FeedStatus {
-  const streams = Object.values(statuses);
-  const layers = Object.values(answered);
-  const arrived = streams.filter((s) => s.kind === "live").length + layers.filter((a) => a === "ok").length;
-  // Counted, not written down, so adding a source cannot leave the phrase claiming the old total.
-  const total = streams.length + layers.length;
-  const settling = streams.some((s) => s.kind === "idle") || layers.some((a) => a === "pending");
+  const states: Record<FeedKey, LayerAnswer> = {
+    ...answered,
+    usgs: statuses.usgs.kind === "live" ? "ok" : statuses.usgs.kind === "idle" ? "pending" : "failed",
+    emsc: statuses.emsc.kind === "live" ? "ok" : statuses.emsc.kind === "idle" ? "pending" : "failed",
+  };
+  const rows = (Object.keys(labels) as FeedKey[]).map((id) => ({
+    id,
+    label: labels[id],
+    state: states[id],
+    lastCheck: checks[id],
+  }));
+  const arrived = rows.filter(({ state }) => state === "ok").length;
+  const total = rows.length;
+  const settling = rows.some(({ state }) => state === "pending");
   return {
     arrived,
     total,
     settling,
-    /* "connecting" only while nothing at all has arrived. The hazard layers come from GDACS, which
-       routinely takes ten to eighteen seconds, and letting the slowest source own the words meant the
-       header disowned a planet already covered in earthquakes. The dot still blinks until all are in. */
-    phrase:
-      arrived === 0
-        ? settling
-          ? "connecting"
-          : "feeds unavailable"
-        : arrived === total
-          ? "all feeds live"
-          : `${arrived} of ${total} feeds live · ${settling ? "loading" : "unavailable"}`,
+    rows,
+    phrase: arrived === 0 && settling ? "connecting" : `${arrived}/${total} feeds available`,
     silent: silentFeeds(
-      Object.fromEntries(Object.entries(answered).map(([k, v]) => [k, v !== "failed"])) as Record<
+      Object.fromEntries(Object.entries(answered).map(([key, state]) => [key, state !== "failed"])) as Record<
         HazardLayer,
         boolean
       >,

@@ -1,3 +1,4 @@
+import type { ObservationFrame } from "../observations/types";
 import { RADAR_BOUNDS } from "../../sources/radar";
 
 interface RadarCamera {
@@ -10,6 +11,7 @@ export interface RadarView {
   kind: "radar";
   target: RadarCamera;
   image: ImageBitmap | null;
+  lightning?: ObservationFrame | undefined;
 }
 
 export const national: RadarCamera = { lon: -95.5, lat: 37, zoom: 1.45 };

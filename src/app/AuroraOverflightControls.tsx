@@ -8,12 +8,14 @@ export function AuroraOverflightControls({
   onReturn,
   onSunWatch,
   onTonight,
+  onOrbit,
 }: {
   aurora: ReturnType<typeof useAuroraOverflight>;
   ready: boolean;
   solar: boolean;
   onSunWatch: () => void;
   onTonight: () => void;
+  onOrbit: () => void;
   onReturn: () => void;
 }): JSX.Element {
   const primary = useRef<HTMLButtonElement>(null);
@@ -39,6 +41,9 @@ export function AuroraOverflightControls({
         </button>
         <button type="button" id="open-tonight-sky" onClick={onTonight} disabled={!ready}>
           Tonight’s Sky
+        </button>
+        <button type="button" id="open-orbital-pass" onClick={onOrbit} disabled={!ready}>
+          Orbital Pass
         </button>
         {aurora.run && (
           <>

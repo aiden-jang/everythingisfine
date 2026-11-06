@@ -1,6 +1,7 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RadarScan } from "../../sources/radar";
 import { radarRegions, regionCamera, strongestRegion, type RadarRegion, type RadarView } from "./radarCamera";
+import { useRadarLightning } from "./useRadarLightning";
 import { useRadarScans } from "./useRadarScans";
 
 const format = new Intl.DateTimeFormat("en-GB", {
@@ -20,6 +21,7 @@ export function RadarStage({ onView }: { onView: (view: RadarView) => void }): J
   const held = useRef<RadarScan | null>(null);
   const { scans, images, status, checkedAt, retry } = useRadarScans(held);
   const [chosen, setChosen] = useState<RadarScan | null>(null);
+  const [showLightning, setShowLightning] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [regionId, setRegionId] = useState("auto");
   const [focus, setFocus] = useState<RadarRegion | null | undefined>();
@@ -32,7 +34,11 @@ export function RadarStage({ onView }: { onView: (view: RadarView) => void }): J
   const region = regionId === "auto" ? (focus ?? undefined) : radarRegions.find(({ id }) => id === regionId);
   const target = useMemo(() => regionCamera(region), [region]);
 
-  useLayoutEffect(() => onView({ kind: "radar", target, image: image ?? null }), [image, onView, target]);
+  const lightning = useRadarLightning(showLightning ? selected?.at : undefined);
+  useLayoutEffect(
+    () => onView({ kind: "radar", target, image: image ?? null, lightning: lightning ?? undefined }),
+    [image, lightning, onView, target],
+  );
 
   function seek(scan: RadarScan | null) {
     held.current = scan;
@@ -155,6 +161,25 @@ export function RadarStage({ onView }: { onView: (view: RadarView) => void }): J
             <span className="radar-window">
               {shortTime(scans[0].at)}–{shortTime(latest.at)} UTC
             </span>
+          )}
+        </div>
+        <div className="observatory-actions radar-actions">
+          <button
+            type="button"
+            aria-pressed={showLightning}
+            disabled={!selected}
+            onClick={() => setShowLightning((on) => !on)}
+          >
+            Lightning
+          </button>
+          {showLightning && selected && (
+            <p role="status">
+              {lightning === undefined
+                ? "Checking GOES-East…"
+                : lightning === null
+                  ? "No matching lightning scan."
+                  : `GOES-East · ${lightning.measurements?.[0]?.value} detections · ${shortTime(lightning.at)} UTC`}
+            </p>
           )}
         </div>
       </div>

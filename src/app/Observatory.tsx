@@ -17,6 +17,8 @@ import { geographicCoordinates } from "../globe/orbitReadout";
 import "./sun/sun-watch.css";
 import "./tonight/tonight.css";
 import "./float/float-dive.css";
+import { ObservationCredit } from "./observations/ObservationCredit";
+import { LiveExperiences, ObservationDeckShell } from "./observations/ObservationEntry";
 
 const SunWatch = lazy(() => import("./sun/SunWatch").then(({ SunWatch }) => ({ default: SunWatch })));
 
@@ -40,7 +42,7 @@ interface Props {
   feedNote: string | null;
   deepAvailable: boolean;
   aurora: ReturnType<typeof useAuroraOverflight>;
-  views: Pick<ReturnType<typeof useObservatory>, "sun" | "tonight" | "floatDive">;
+  views: Pick<ReturnType<typeof useObservatory>, "sun" | "tonight" | "floatDive" | "observations">;
   radar: ReturnType<typeof useObservatory>["radar"];
   onScene: (scene: EarthScene) => void;
   onExplore: () => void;
@@ -71,7 +73,7 @@ export function Observatory({
   summary,
   deepAvailable,
   aurora,
-  views: { sun, tonight, floatDive },
+  views: { sun, tonight, floatDive, observations },
   radar,
   feedNote,
   onScene,
@@ -115,12 +117,14 @@ export function Observatory({
             ? "Follow NOAA’s forecast over Earth’s dark side. The raised glow illustrates the modeled oval."
             : "Earth settles into the horizon as constellations trace overhead. The sky follows the UTC readout."
         : "A live view of earthquakes, changing skies, and a restless planet.";
+  if (observations.entry)
+    return <ObservationDeckShell deck={observations} entry={observations.entry} night={scene === "night"} />;
   return (
     <>
       {floatDive.active ? (
         <FloatReadout view={floatDive.view} />
       ) : radar.active ? (
-        <RadarReadout />
+        <RadarReadout map={observations.map} />
       ) : tonight.active ? (
         <Suspense fallback={null}>
           <TonightCompass view={tonight.view} onView={tonight.update} />
@@ -156,6 +160,7 @@ export function Observatory({
             </Suspense>
           ) : radar.active ? (
             <StormRadar
+              projection={observations}
               fromExplore={radar.fromExplore}
               onView={radar.update}
               onClose={() => {
@@ -203,6 +208,7 @@ export function Observatory({
                   onReturn={() => onScene("night")}
                   onSunWatch={sun.toggle}
                   onTonight={tonight.open}
+                  onOrbit={() => observations.open("orbit")}
                 />
               ) : null}
               {solar && (
@@ -282,14 +288,12 @@ export function Observatory({
                       Take a tour <span aria-hidden="true">→</span>
                     </button>
                     {scene === "live" && (
-                      <>
-                        <button type="button" id="open-storm-radar" onClick={radar.open} disabled={!ready}>
-                          Storm Radar
-                        </button>
-                        <button type="button" id="open-float-dive" onClick={floatDive.open} disabled={!ready}>
-                          Float Dive
-                        </button>
-                      </>
+                      <LiveExperiences
+                        ready={ready}
+                        radar={radar.open}
+                        dive={floatDive.open}
+                        more={observations.open}
+                      />
                     )}
                   </div>
                   {scene !== "night" ? (
@@ -365,17 +369,7 @@ export function Observatory({
             </>
           )}
         </section>
-        <p className="observatory-credit">
-          An observatory by{" "}
-          <a
-            href="https://www.aidenjang.com"
-            target="_blank"
-            rel="noreferrer"
-            aria-describedby="external-link-hint"
-          >
-            aiden jang
-          </a>
-        </p>
+        <ObservationCredit />
       </div>
       {solar && (
         <Suspense

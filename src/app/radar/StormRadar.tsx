@@ -6,9 +6,14 @@ import "./radar.css";
 
 const RadarStage = lazy(() => import("./RadarStage").then(({ RadarStage }) => ({ default: RadarStage })));
 
-export function RadarReadout(): JSX.Element {
+export function RadarReadout({ map }: { map: boolean }): JSX.Element {
   return (
-    <div className="observatory-stage" data-stage="radar" role="group" aria-label="Radar on the globe">
+    <div
+      className="observatory-stage"
+      data-stage="radar"
+      role="group"
+      aria-label={map ? "Radar on the map" : "Radar on the globe"}
+    >
       <div className="stage-corners" aria-hidden="true">
         <span />
         <span />
@@ -28,10 +33,12 @@ export function StormRadar({
   fromExplore,
   onClose,
   onView,
+  projection,
 }: {
   fromExplore: boolean;
   onClose: () => void;
   onView: (view: RadarView) => void;
+  projection: { map: boolean; setMap: (map: boolean) => void };
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
@@ -55,6 +62,14 @@ export function StormRadar({
       <Suspense fallback={<p role="status">Opening Storm Radar…</p>}>
         <RadarStage onView={onView} />
       </Suspense>
+      <div className="observatory-actions radar-actions" role="group" aria-label="Radar projection">
+        <button type="button" aria-pressed={!projection.map} onClick={() => projection.setMap(false)}>
+          Globe
+        </button>
+        <button type="button" aria-pressed={projection.map} onClick={() => projection.setMap(true)}>
+          Map
+        </button>
+      </div>
       <div className="radar-sources" aria-label="Storm Radar sources">
         <a href={RADAR_SERVICE} target="_blank" rel="noreferrer" aria-describedby="external-link-hint">
           NOAA MRMS

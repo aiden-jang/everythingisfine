@@ -1,20 +1,19 @@
-import { Mesh, MeshBasicMaterial, SphereGeometry, SRGBColorSpace, Texture } from "three";
-import { DEG } from "../geo/sphere";
+import { DoubleSide, Mesh, MeshBasicMaterial, SRGBColorSpace, Texture } from "three";
 import { RADAR_BOUNDS } from "../sources/radar";
+import { morphable } from "./morph";
+import { rasterGeometry } from "./observationLayer";
 
-export function createRadarSurface() {
-  const [west, south, east, north] = RADAR_BOUNDS;
-  const geometry = new SphereGeometry(
-    1.008,
-    32,
-    16,
-    (west + 90) * DEG,
-    (east - west) * DEG,
-    (90 - north) * DEG,
-    (north - south) * DEG,
-  );
-  const material = new MeshBasicMaterial({ transparent: true, depthWrite: false, toneMapped: false });
+export function createRadarSurface(morph: { value: number }) {
+  const geometry = rasterGeometry(RADAR_BOUNDS);
+  const material = new MeshBasicMaterial({
+    side: DoubleSide,
+    transparent: true,
+    depthWrite: false,
+    toneMapped: false,
+  });
+  morphable(material, morph);
   const object = new Mesh(geometry, material);
+  object.frustumCulled = false;
   object.renderOrder = 4.5;
   object.visible = false;
 

@@ -54,6 +54,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/useGlobeResources.ts` | Deferred geometry and timezone data, retained while disabled, with completion cleanup |
 | `src/app/useObservatory.ts` | First-visit and saved presentation, temporary scene overrides, reduced-motion-aware globe handoff |
 | `src/app/float/`, `src/sources/argo.ts`, and `src/globe/floatPresentation.ts` | Argo catalogue and profile validation, sample playback, and the shared globe’s float sequence |
+| `src/app/observations/`, `src/sources/observations/`, and `src/globe/observationLayer.ts` | Optional observations and replays, provider readers, shared playback, and projected data layers |
 | `src/app/radar/`, `src/sources/radar.ts`, and `src/globe/radarSurface.ts` | Storm Radar controls, NOAA scan catalogue, and globe overlay |
 | `src/app/Observatory.tsx` | Intro, scene choices, captured-story narration and tour controls |
 | `src/app/GlobeHeader.tsx` | Shared masthead, capture, source status and explorer tools |
@@ -167,6 +168,12 @@ globe. The scrubber uses published timestamps and requests each raster by its NO
 globe places the raster on a curved patch that uses the same geographic bounds as the image request.
 Closing the view aborts requests, releases decoded images and the active texture, and returns to the
 originating view.
+
+Optional Observatory views load provider code and data on demand. Timeline samples stay attached
+to the same WebGL scene through both projections. Real measurements, forecasts, and archived
+imagery retain their timestamps and source labels. Live requests can keep their previous result
+on a failed refresh. The header shows the background sources separately and tracks when this
+browser last heard from each one.
 
 WebGL startup failures have a retry surface; they do not remove the event list and filters.
 Scene callbacks use current refs so changing a selection does not recreate WebGL resources.

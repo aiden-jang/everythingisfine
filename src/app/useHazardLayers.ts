@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { fetchAurora, type Aurora } from "../sources/aurora";
 import { fetchCyclones, type Cyclone } from "../sources/cyclones";
 import { fetchFloods, type Flood } from "../sources/floods";
@@ -6,7 +6,7 @@ import { fetchVolcanoes, type Volcano } from "../sources/volcanoes";
 import { fetchWildfires, type Wildfire } from "../sources/wildfires";
 import { timedFetch } from "../sources/types";
 import type { HazardLayer } from "./format";
-import type { LayerAnswer } from "./feedStatus";
+import type { FeedChecks, LayerAnswer } from "./feedStatus";
 
 const POLL_MS = 10 * 60_000;
 
@@ -17,6 +17,7 @@ export interface HazardLayers {
   floods: readonly Flood[];
   volcanoes: readonly Volcano[];
   answered: Record<HazardLayer, LayerAnswer>;
+  checked: FeedChecks;
 }
 
 /** The five layers that are polled rather than streamed, and whether each has been heard from. */
@@ -28,26 +29,27 @@ export function useHazardLayers(): HazardLayers {
   const [fires, setFires] = useState<readonly Wildfire[]>([]);
   const [floods, setFloods] = useState<readonly Flood[]>([]);
   const [volcanoes, setVolcanoes] = useState<readonly Volcano[]>([]);
-  /* Three states, not two. A boolean starting at `true` means "has not failed", which cannot say
-     whether a layer has arrived. */
-  const [answered, setAnswered] = useState<Record<HazardLayer, LayerAnswer>>({
-    cyclones: "pending",
-    volcanoes: "pending",
-    fires: "pending",
-    floods: "pending",
-    aurora: "pending",
+  const [health, setHealth] = useState<{ answered: Record<HazardLayer, LayerAnswer>; checked: FeedChecks }>({
+    answered: {
+      cyclones: "pending",
+      volcanoes: "pending",
+      fires: "pending",
+      floods: "pending",
+      aurora: "pending",
+    },
+    checked: {},
   });
-  const answerFor = useCallback(
-    (layer: HazardLayer) =>
-      (ok: boolean): void => {
-        const next = ok ? "ok" : "failed";
-        setAnswered((was) => (was[layer] === next ? was : { ...was, [layer]: next }));
-      },
-    [],
-  );
 
   useEffect(() => {
     let alive = true;
+    const answerFor = (layer: HazardLayer) => (ok: boolean) => {
+      if (!alive) return;
+      const at = Date.now();
+      setHealth(({ answered, checked }) => ({
+        answered: { ...answered, [layer]: ok ? "ok" : "failed" },
+        checked: ok ? { ...checked, [layer]: at } : checked,
+      }));
+    };
     const load = (): void => {
       void fetchAurora(timedFetch, answerFor("aurora")).then((next) => {
         if (alive && next) setAurora(next);
@@ -72,7 +74,7 @@ export function useHazardLayers(): HazardLayers {
       alive = false;
       window.clearInterval(id);
     };
-  }, [answerFor]);
+  }, []);
 
-  return { aurora, cyclones, fires, floods, volcanoes, answered };
+  return { aurora, cyclones, fires, floods, volcanoes, ...health };
 }

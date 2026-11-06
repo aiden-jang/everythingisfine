@@ -77,6 +77,9 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   await scene.getByLabel("Radar region").selectOption("national");
   await expect(slider).toBeInViewport({ ratio: 1 });
   await expect(scene.getByRole("button", { name: "Play scans" })).toBeInViewport({ ratio: 1 });
+  await scene.getByRole("button", { name: "Map", exact: true }).click();
+  await expect(page.getByRole("group", { name: "Radar on the map" })).toBeVisible();
+  await expect(time).toHaveAttribute("datetime", timestamp(2));
   await page.keyboard.press("Escape");
   await expect(scene).toBeHidden();
   await expect(trigger).toBeFocused();
