@@ -274,22 +274,6 @@
     gap: 1.125rem;
   }
 
-  /* Notes last: stacked second they pushed the transport under the fold. */
-  .rail > .tb-stack {
-    order: 2;
-  }
-
-  /*
-   * The events outrank the summary of them: the list was 0% visible while `regions` sat fully above it.
-   * Its height is in `EventList` - a utility beats this file.
-   *
-   * `when` rides along, because it is the search box and `regions` is where its results are drawn.
-   */
-  .rail > [data-rail="when"],
-  .rail > [data-rail="regions"] {
-    order: 1;
-  }
-
   /* Bound region scrolling without truncating quieter regions; paint containment prevents document overflow. */
   .rail-regions {
     height: var(--regions-h, 132px);
@@ -842,7 +826,6 @@
 
 /* Live activity comes before archive browsing; an active archive keeps its date upfront. */
 .rail > [data-rail="activity"]:not(:has(.stamp)) {
-  order: 2;
   padding-top: 18px;
   border-top: 1px solid var(--color-hairline);
 }
@@ -1063,5 +1046,46 @@ textarea::selection {
   input::selection,
   textarea::selection {
     -webkit-text-fill-color: HighlightText;
+  }
+}
+
+.skip-controls {
+  position: fixed;
+  inset: max(8px, env(safe-area-inset-top)) auto auto max(8px, env(safe-area-inset-left));
+  z-index: 15;
+  padding: 10px 14px;
+  border-radius: 7px;
+  background: var(--color-raised);
+  color: var(--color-ink);
+}
+
+.skip-controls:not(:focus) {
+  clip-path: inset(50%);
+}
+
+.view-mode {
+  font-size: 0.75rem;
+  color: var(--color-dim);
+}
+
+.mobile-navigation button[aria-pressed="true"] {
+  border-color: var(--color-dim);
+  background: var(--color-raised);
+}
+
+@media (max-width: 767px) {
+  .zone-rail,
+  .zone-panel {
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+
+  .zone-head {
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+}
+
+@media (pointer: coarse) {
+  .zone-rail .scrub-slider {
+    min-height: 44px;
   }
 }

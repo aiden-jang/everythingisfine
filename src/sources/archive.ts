@@ -39,50 +39,47 @@ export async function fetchArchive(
   get: (url: string) => Promise<Response> = fetch,
 ): Promise<Archive> {
   const at = Date.now();
-  const readings: Reading[] = [];
-  const answered: Record<SourceId, ArchiveAnswer | null> = { usgs: null, emsc: null };
-
   const usgsUrl =
     `${USGS_QUERY}?format=geojson&limit=${ARCHIVE_LIMIT}` +
     `&starttime=${stamp(from)}&endtime=${stamp(to)}&minmagnitude=${minMagnitude}`;
-  try {
-    const res = await get(usgsUrl);
-    if (res.ok) {
-      const parsed = parseUsgs(await res.json(), at);
-      readings.push(...parsed.readings);
-      answered.usgs = { count: parsed.readings.length, truncated: parsed.readings.length >= ARCHIVE_LIMIT };
-    }
-  } catch {
-    /* reported as null, not as zero */
-  }
-
   const emscUrl =
     `${EMSC_QUERY}?format=json&limit=${ARCHIVE_LIMIT}` +
     `&starttime=${stamp(from)}&endtime=${stamp(to)}&minmag=${minMagnitude}`;
-  try {
-    const res = await get(emscUrl);
-    if (res.ok) {
-      const payload = (await res.json()) as { features?: unknown };
-      let count = 0;
-      if (Array.isArray(payload?.features)) {
-        for (const feature of payload.features) {
-          // The socket's envelope, so both transports share one parser.
-          const parsed = parseEmscFrame({ action: "create", data: feature }, at);
-          if (!parsed) continue;
-          count += 1;
-          readings.push(parsed.reading);
-        }
-        answered.emsc = {
-          count,
-          truncated: (payload.features as unknown[]).length >= ARCHIVE_LIMIT,
-        };
-      }
-    }
-  } catch {
-    /* as above */
-  }
+  const [usgs, emsc] = await Promise.all([
+    readArchive(usgsUrl, get, (payload) => parseUsgs(payload, at).readings),
+    readArchive(emscUrl, get, (payload) =>
+      payload.features.flatMap((feature) => {
+        const parsed = parseEmscFrame({ action: "create", data: feature }, at);
+        return parsed ? [parsed.reading] : [];
+      }),
+    ),
+  ]);
+  return {
+    from,
+    to,
+    readings: [...(usgs?.readings ?? []), ...(emsc?.readings ?? [])],
+    answered: { usgs: usgs?.answer ?? null, emsc: emsc?.answer ?? null },
+  };
+}
 
-  return { from, to, readings, answered };
+async function readArchive(
+  url: string,
+  get: (url: string) => Promise<Response>,
+  parse: (payload: { features: unknown[] }) => Reading[],
+) {
+  try {
+    const response = await get(url);
+    if (!response.ok) return null;
+    const payload = (await response.json()) as { features?: unknown } | null;
+    if (!Array.isArray(payload?.features)) return null;
+    const readings = parse({ features: payload.features });
+    return {
+      readings,
+      answer: { count: readings.length, truncated: payload.features.length >= ARCHIVE_LIMIT },
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**

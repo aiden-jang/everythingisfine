@@ -4,7 +4,7 @@ import { installFeeds } from "./feeds";
 async function openKilauea(page: Page) {
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
-  await page.getByText("Revisit a day", { exact: true }).click();
+  await page.getByText("Historical replays", { exact: true }).click();
   const trigger = page.getByRole("button", { name: "Follow Kīlauea’s lava" });
   await trigger.click();
   return { trigger, dialog: page.getByRole("dialog", { name: "A new coastline" }) };

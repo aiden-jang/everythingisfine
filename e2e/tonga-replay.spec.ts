@@ -6,7 +6,7 @@ test("Tonga transitions from satellite imagery to the atmospheric wave and can p
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
-  await page.getByText("Revisit a day", { exact: true }).click();
+  await page.getByText("Historical replays", { exact: true }).click();
   const trigger = page.getByRole("button", { name: "Watch Tonga’s shockwave" });
   await trigger.click();
   const replay = page.getByRole("dialog", { name: "Tonga’s shockwave" });
@@ -31,7 +31,7 @@ test("Tonga’s reduced-motion archive can jump to measured station pulses on a 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
-  await page.getByText("Revisit a day", { exact: true }).click();
+  await page.getByText("Historical replays", { exact: true }).click();
   await page.getByRole("button", { name: "Watch Tonga’s shockwave" }).click();
   const replay = page.getByRole("dialog", { name: "Tonga’s shockwave" });
   const slider = replay.getByRole("slider", { name: "Replay time" });

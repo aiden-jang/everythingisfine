@@ -12,8 +12,8 @@ interface Props {
   dismiss: () => void;
   ready: boolean;
   observing: boolean;
-  onExplore: () => void;
   onHome: () => void;
+  onReset: () => void;
   headShown: boolean;
   chromeFloats: boolean;
   setHeadOpen: Dispatch<SetStateAction<boolean>>;
@@ -40,8 +40,8 @@ export function GlobeHeader({
   dismiss,
   observing,
   ready,
-  onExplore,
   onHome,
+  onReset,
   headShown,
   chromeFloats,
   setHeadOpen,
@@ -71,7 +71,7 @@ export function GlobeHeader({
         <button
           type="button"
           onClick={onHome}
-          aria-label="Everything Is Fine, back to the default view"
+          aria-label="Everything Is Fine, back to the Observatory"
           className="wordmark flex min-h-11 cursor-pointer items-center whitespace-nowrap max-md:self-start"
         >
           Everything is fine<span aria-hidden="true">.</span>
@@ -132,9 +132,6 @@ export function GlobeHeader({
                 <path d="m3 17 5-5 4 4 4-6 5 7" />
               </svg>
             </button>
-            <button type="button" onClick={onExplore} className="observatory-enter">
-              Explore
-            </button>
           </div>
         ) : (
           <>
@@ -158,10 +155,17 @@ export function GlobeHeader({
                   ramp === "cividis" ? "bg-raised text-ink" : "text-faint"
                 }`}
               >
-                <span className="lg:hidden">Ramp {ramp === "cividis" ? "CB" : "std"}</span>
+                <span className="lg:hidden">Palette</span>
                 <span className="hidden lg:inline">Colourblind ramp {ramp === "cividis" ? "on" : "off"}</span>
               </button>
               <Utilities>
+                <button
+                  type="button"
+                  onClick={onReset}
+                  className="cursor-pointer border border-hairline px-2.5 py-1 text-[11px] text-faint transition-colors hover:bg-raised hover:text-ink"
+                >
+                  Reset view
+                </button>
                 <button
                   type="button"
                   onClick={() => setSound((on) => !on)}
@@ -192,7 +196,7 @@ export function GlobeHeader({
                   disabled={saving}
                   className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink disabled:cursor-default"
                 >
-                  {saving ? "Saving…" : "Still"}
+                  {saving ? "Saving…" : "Save view"}
                 </button>
                 {/* Keep the fold inside the overflow. As a button of its own at 390 it wrapped onto a line by
           itself and took the header from 46px to 80px, which is the opposite of folding the bar. */}

@@ -48,8 +48,7 @@
     gap: 10px;
     margin-top: 28px;
   }
-  .observatory-actions button,
-  .observatory-enter {
+  .observatory-actions button {
     min-height: 44px;
     padding: 10px 14px;
     border: 1px solid var(--color-hairline);
@@ -62,8 +61,7 @@
       color 150ms,
       border-color 150ms;
   }
-  .observatory-actions button:hover,
-  .observatory-enter:hover {
+  .observatory-actions button:hover {
     background: var(--color-raised);
     color: var(--color-ink);
     border-color: var(--color-faint);
@@ -255,6 +253,10 @@
     color: var(--stage-ink);
   }
   .observatory-history {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: start;
+    column-gap: 20px;
     margin-top: 16px;
     font-size: 11px;
     color: var(--color-dim);
@@ -266,11 +268,14 @@
     cursor: pointer;
     color: var(--color-faint);
   }
+  .observatory-history details[open] {
+    width: 100%;
+  }
   .observatory-history summary::after {
     content: "+";
     margin-left: 8px;
   }
-  .observatory-history[open] summary::after {
+  .observatory-history details[open] summary::after {
     content: "−";
   }
   .observatory-history-links {
@@ -469,7 +474,6 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .observatory-actions button,
-  .observatory-enter,
   .observatory-scenes button {
     transition: none;
   }

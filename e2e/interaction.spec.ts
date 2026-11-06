@@ -2082,7 +2082,7 @@ test("Still hands the picture to the share sheet when there is one", async ({ pa
   await waitForData(page);
   await page.waitForTimeout(1_200);
 
-  await page.getByRole("button", { name: "Still" }).click();
+  await page.getByRole("button", { name: "Save view" }).click();
   const shared = await page.evaluate(
     () =>
       (window as unknown as { __shared?: { name: string; type: string; size: number; transient?: boolean } })

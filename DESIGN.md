@@ -106,7 +106,7 @@ No serif or decorative display face. Keep labels readable instead of using
 weight or very faint gray as a substitute for hierarchy.
 
 The sentence-case masthead is 18px desktop / 16px phone, weight 600 with tight
-tracking. The headline is 48px; selected magnitude 40px; detail/place headings
+tracking. The Explore count is 38px, the selected magnitude is 40px, and detail and place headings
 20px. Small metadata has deliberate spacing, and long agency/place names wrap.
 
 ## 6. Components
@@ -143,6 +143,8 @@ accent for each mode. Controls stay reachable in short landscape views.
 Live Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
 Their temporary overrides do not overwrite saved scientific settings. The observatory retains source
 status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
+Live experiences belong beside their scene. Historical replays and choosing a UTC date have
+separate entry points.
 
 Guided narration uses captured primary readings and regional counts. Explain magnitude scales,
 reported depth, historical reference points and the time scope; never manufacture a journey between
@@ -180,7 +182,7 @@ No ambient globe spin or perpetual chrome loops. The entrance is finite and data
 appears promptly; do not delay initial fetching until an interval or animation ends.
 
 The opening is a finite horizon-to-orbit shot with a close lens, a vertical framing offset and a
-settling bank. The wordmark can replay it. Navigation retains critically damped springs: long
+settling bank. **Reset view** can replay it. Navigation retains critically damped springs: long
 flights pull back and bank proportionally; short hops remain direct. Grabbing or steering interrupts
 the shot, and its lens offset settles independently. The flat map clears the cinematic lens.
 Camera keys, pointer, touch and wheel preserve the same bounds and motion policy.

@@ -29,6 +29,7 @@ interface Props {
   sun: { active: boolean; toggle: () => void };
   onScene: (scene: EarthScene) => void;
   onExplore: () => void;
+  onPickDate: () => void;
   tour: {
     at: number | null;
     stop: Stop | null;
@@ -59,6 +60,7 @@ export function Observatory({
   feedNote,
   onScene,
   onExplore,
+  onPickDate,
   tour,
   onHistory,
 }: Props): JSX.Element {
@@ -96,6 +98,8 @@ export function Observatory({
         <ObservatoryStage scene={scene} at={at} tour={active ? tour.stop : undefined} aurora={aurora.run} />
       )}
       <section
+        id="observatory-intro"
+        tabIndex={-1}
         className="observatory-intro"
         ref={tour.controls}
         data-scene={active ? "tour" : scene}
@@ -221,16 +225,12 @@ export function Observatory({
                 aria-pressed={scene === option.id}
                 aria-label={option.name}
                 disabled={!ready || (option.id === "depth" && !deepAvailable)}
-                title={
-                  option.id === "depth" && !deepAvailable
-                    ? "No earthquake at least 70 km deep is present in this view."
-                    : option.note
-                }
+                aria-describedby={option.id === "depth" && !deepAvailable ? "depth-availability" : undefined}
               >
                 <SceneDiagram scene={option.id} />
                 <span className="scene-label">{option.name}</span>
-                <span className="scene-note" aria-hidden="true">
-                  {option.note}
+                <span className="scene-note" id={option.id === "depth" ? "depth-availability" : undefined}>
+                  {option.id === "depth" && !deepAvailable ? "Needs a quake 70 km deep" : option.note}
                 </span>
               </button>
             ))}
@@ -238,26 +238,31 @@ export function Observatory({
         ) : null}
 
         {!active && scene === "live" ? (
-          <details className="observatory-history">
-            <summary>Revisit a day</summary>
-            <div className="observatory-history-links">
-              <button type="button" onClick={() => onHistory(TOHOKU_DAY)}>
-                Japan, 2011 ↗
-              </button>
-              <RuptureReveal />
-              <StormReplay />
-              <TongaReplay />
-              <KilaueaReplay />
-              <IcebergReplay />
-              <MegaflashReplay />
-              <button type="button" onClick={() => onHistory("2013-05-24")}>
-                Deep beneath Okhotsk ↗
-              </button>
-              <button type="button" onClick={() => onHistory(APRIL_ECLIPSE_DAY)}>
-                Total eclipse, 2024 ↗
-              </button>
-            </div>
-          </details>
+          <div className="observatory-history">
+            <details>
+              <summary>Historical replays</summary>
+              <div className="observatory-history-links">
+                <button type="button" onClick={() => onHistory(TOHOKU_DAY)}>
+                  Japan, 2011 ↗
+                </button>
+                <RuptureReveal />
+                <StormReplay />
+                <TongaReplay />
+                <KilaueaReplay />
+                <IcebergReplay />
+                <MegaflashReplay />
+                <button type="button" onClick={() => onHistory("2013-05-24")}>
+                  Deep beneath Okhotsk ↗
+                </button>
+                <button type="button" onClick={() => onHistory(APRIL_ECLIPSE_DAY)}>
+                  Total eclipse, 2024 ↗
+                </button>
+              </div>
+            </details>
+            <button type="button" onClick={onPickDate}>
+              Pick a past date
+            </button>
+          </div>
         ) : null}
         {feedNote ? (
           <p className="observatory-source-note" role="status">

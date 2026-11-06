@@ -45,6 +45,15 @@ describe("longitude on the way out", () => {
 });
 
 describe("permalinks", () => {
+  it("restores the shared projection and presentation ahead of local preferences", () => {
+    expect(decode(encode({ ...state, flat: true, presentation: "explore" }))).toMatchObject({
+      flat: true,
+      presentation: "explore",
+    });
+    expect(decode("p=globe&v=observe")).toEqual({ flat: false, presentation: "observe" });
+    expect(decode("p=unknown&v=unknown")).toEqual({});
+  });
+
   it("survives a round trip", () => {
     const full: Permalink = {
       ...state,

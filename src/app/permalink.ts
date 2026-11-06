@@ -17,6 +17,8 @@ export interface Permalink {
   windowHours: number;
   sources: SourceId[];
   ramp: RampName;
+  flat?: boolean;
+  presentation?: "observe" | "explore";
   /** `source:id`, or null. Not our internal key. */
   event: string | null;
   /** The two ends of the cross-section, or null. A link with one always lands on the map, because that is the only place a section exists. */
@@ -48,6 +50,8 @@ export function encode(state: Permalink): string {
     `s=${[...state.sources].sort().join(",")}`,
     `r=${state.ramp}`,
   ];
+  if (state.flat !== undefined) parts.push(`p=${state.flat ? "map" : "globe"}`);
+  if (state.presentation) parts.push(`v=${state.presentation}`);
   if (state.event) parts.push(`e=${state.event}`);
   // Seconds, not milliseconds. The strip is 24 buckets wide, so a shared moment is good to about a minute.
   if (state.cursor !== null) parts.push(`c=${Math.round(state.cursor / 1000)}`);
@@ -72,6 +76,11 @@ const clamp = (value: number, lo: number, hi: number): number => Math.max(lo, Ma
 export function decode(fragment: string): Partial<Permalink> {
   const out: Partial<Permalink> = {};
   const params = new URLSearchParams(fragment.replace(/^#/, ""));
+
+  const projection = params.get("p");
+  if (projection === "map" || projection === "globe") out.flat = projection === "map";
+  const presentation = params.get("v");
+  if (presentation === "observe" || presentation === "explore") out.presentation = presentation;
 
   const at = params.get("at")?.split(",").map(Number);
   if (at && at.length === 3 && at.every((n) => Number.isFinite(n))) {

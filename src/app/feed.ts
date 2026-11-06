@@ -2,13 +2,16 @@ import { createStore, type Store, type StoreStats } from "../data/store";
 import type { Filters, Quake, Reading, SourceId } from "../data/types";
 import { createEmscSource } from "../sources/emsc";
 import { createUsgsSource, usgsSeedFor } from "../sources/usgs";
+import type { Archive } from "../sources/archive";
 import { browserRuntime, type GeoEventSource, type SourceStatus } from "../sources/types";
 
 /* The two feeds, the store, and whoever needs to know something changed. See ARCHITECTURE.md#srcappfeedts. */
 
+type ArchiveSpan = { from: number; to: number; answered?: Archive["answered"] };
+
 export interface FeedSnapshot {
   /** The archived span being shown, or null when live. See ARCHITECTURE.md#srcappfeedts. */
-  archive: { from: number; to: number } | null;
+  archive: ArchiveSpan | null;
   stats: StoreStats;
   statuses: Record<SourceId, SourceStatus>;
   /** Bumped on every ingest, so a subscriber can tell "nothing changed" from "same total". */
@@ -59,7 +62,7 @@ export interface Feed {
    */
   setWindow: (windowMs: number) => boolean;
   /** Replaces everything with an archived span, and stops listening to the present. See ARCHITECTURE.md#srcappfeedts. */
-  showArchive: (span: { from: number; to: number }, readings: readonly Reading[]) => void;
+  showArchive: (span: ArchiveSpan, readings: readonly Reading[]) => void;
   /** Back to now: empties the archive and restarts the sources from scratch. */
   resumeLive: () => void;
 }
@@ -99,7 +102,7 @@ export function createFeed(capacity = 50_000): Feed {
     createEmscSource(browserRuntime, {}, windowMs / 3_600_000),
   ];
   let sources: GeoEventSource[] = build(seededMs);
-  let archive: { from: number; to: number } | null = null;
+  let archive: ArchiveSpan | null = null;
 
   const snapshot = (): FeedSnapshot => ({
     archive,
@@ -216,14 +219,11 @@ export function createFeed(capacity = 50_000): Feed {
       announced = false;
       archive = span;
       for (const reading of readings) store.ingest(reading);
-      /*
-       * Coverage is the span requested, not the earliest row returned. The live path has to infer it,
-       * because a truncated page must not claim a whole day; here the request names both ends, and whether
-       * the answer was truncated is reported separately beside the counts.
-       */
+      for (const id of ["usgs", "emsc"] as const) {
+        const answer = span.answered?.[id];
+        covered[id] = span.answered && (!answer || answer.truncated) ? null : span.from;
+      }
       coveredSince = span.from;
-      covered.usgs = span.from;
-      covered.emsc = span.from;
       revision += 1;
       announceNow();
     },

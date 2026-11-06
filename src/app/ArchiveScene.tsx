@@ -12,6 +12,7 @@ interface Props {
 
 export function ArchiveScene({ label, title, subtitle, credits, load, className }: Props): JSX.Element {
   const id = useId();
+  const trigger = useRef<HTMLButtonElement>(null);
   const dialog = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
   const [stage, setStage] = useState<{ component: ComponentType } | "error" | null>(null);
@@ -32,22 +33,25 @@ export function ArchiveScene({ label, title, subtitle, credits, load, className 
 
   return (
     <>
-      <button className={className} type="button" aria-haspopup="dialog" onClick={show}>
+      <button ref={trigger} className={className} type="button" aria-haspopup="dialog" onClick={show}>
         {label}
       </button>
       <dialog
         ref={dialog}
         className="archive-scene-dialog"
         aria-labelledby={id}
+        aria-describedby={`${id}-summary`}
         onClose={() => {
-          if (!dialog.current?.open) setOpen(false);
+          if (dialog.current?.open) return;
+          setOpen(false);
+          trigger.current?.focus({ preventScroll: true });
         }}
         onKeyDown={(event) => event.stopPropagation()}
       >
         <header className="archive-scene-header">
           <div>
             <h2 id={id}>{title}</h2>
-            <p>{subtitle}</p>
+            <p id={`${id}-summary`}>{subtitle}</p>
           </div>
           <button type="button" className="archive-scene-button" onClick={() => dialog.current?.close()}>
             Close
@@ -57,11 +61,18 @@ export function ArchiveScene({ label, title, subtitle, credits, load, className 
           (Stage ? (
             <Stage />
           ) : (
-            <p className="archive-scene-loading" role="status">
-              {stage === "error"
-                ? "This scene couldn’t load. Reload the page to try again."
-                : "Loading the scene…"}
-            </p>
+            <div className="archive-scene-loading">
+              <p role="status">{stage === "error" ? "This scene couldn’t load." : "Loading the scene…"}</p>
+              {stage === "error" && (
+                <button
+                  type="button"
+                  className="archive-scene-button"
+                  onClick={() => window.location.reload()}
+                >
+                  Reload the app
+                </button>
+              )}
+            </div>
           ))}
         <footer className="archive-scene-credits">{credits}</footer>
       </dialog>

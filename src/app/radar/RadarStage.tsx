@@ -110,7 +110,7 @@ export function RadarStage(): JSX.Element {
               </select>
             </label>
           </div>
-          <p>{statusText}</p>
+          <p role="status">{statusText}</p>
           {canRetry && (
             <button type="button" className="radar-retry" onClick={retry}>
               Retry NOAA

@@ -54,6 +54,14 @@ export function useStill(
     try {
       const source = capture.current();
       if (!source) throw new Error("Globe unavailable");
+      const archive = feed.snapshot().archive;
+      const partial =
+        archive?.answered && Object.values(archive.answered).some((answer) => !answer || answer.truncated);
+      const scope = archive
+        ? partial
+          ? "Partial UTC day"
+          : "UTC day"
+        : `last ${compactSpan(filters.windowMs)}`;
       const frame = document.createElement("canvas");
       frame.width = STILL_WIDTH;
       frame.height = STILL_HEIGHT;
@@ -68,17 +76,11 @@ export function useStill(
         source.height,
         {
           // An archive ends at the next midnight; its caption belongs to the day's start.
-          moment: stillMoment(
-            cursor,
-            feed.snapshot().archive?.from ?? Date.now(),
-            feed.snapshot().archive !== null,
-          ),
+          moment: stillMoment(cursor, archive?.from ?? Date.now(), archive !== null),
           // From `onGlobe`, not the raw feeds, or a still of an archived day counts layers it does not show.
           verdict: verdictLine(stillCounts.current),
           // Caption the requested span even while its feeds are still filling.
-          filter: [`M${filters.minMagnitude.toFixed(1)}+ · last ${compactSpan(filters.windowMs)}`, inspection]
-            .filter(Boolean)
-            .join(" · "),
+          filter: [`M${filters.minMagnitude.toFixed(1)}+ · ${scope}`, inspection].filter(Boolean).join(" · "),
           host: window.location.host,
         },
         { background: token("void"), ink: token("ink"), faint: token("faint"), ramp },

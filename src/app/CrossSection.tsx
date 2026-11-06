@@ -48,6 +48,7 @@ export function CrossSection({
   onClose,
 }: CrossSectionProps): JSX.Element {
   const { panelRef, plotRef } = useSectionFold(hinge);
+  const [listOpen, setListOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const hoveredReading = hovered ? store.get(hovered)?.primary : undefined;
   const { lengthKm, points, deepestKm, withoutDepth, crossings, slab } = data;
@@ -114,15 +115,13 @@ export function CrossSection({
               // are the one omission a reader has to be told about.
               <span className="text-[11px] text-faint">{withoutDepth} without a published depth</span>
             ) : null}
-            {/* Keys are written the way they are printed on a keyboard, lowercase and mono, not wearing
-              `.label`. The touch target is top-aligned for the same reason as the others: a button centres
-              its content, and on a coarse pointer that content sits in a 44px box. */}
+
             <button
               type="button"
               onClick={onClose}
-              className="flex cursor-pointer items-start font-mono text-[10.5px] text-faint transition-colors hover:text-ink"
+              className="min-h-8 cursor-pointer rounded-md border border-hairline px-2 text-xs text-dim hover:text-ink"
             >
-              esc
+              Close section
             </button>
           </span>
         </div>
@@ -304,6 +303,34 @@ export function CrossSection({
             </span>
           </div>
         ) : null}
+        {points.length > 0 && (
+          <details className="mt-2" onToggle={(event) => setListOpen(event.currentTarget.open)}>
+            <summary className="disclose text-xs text-dim">
+              Earthquakes in this section ({points.length})
+            </summary>
+            {listOpen && (
+              <ol className="mt-1 max-h-[min(9rem,28dvh)] overflow-y-auto overscroll-contain">
+                {points.map((point) => {
+                  const reading = store.get(point.key)?.primary;
+                  return (
+                    reading && (
+                      <li key={point.key} className="[content-visibility:auto]">
+                        <button
+                          type="button"
+                          className="min-h-8 w-full cursor-pointer rounded px-2 text-left text-xs text-dim hover:bg-raised hover:text-ink"
+                          aria-current={point.key === selected || undefined}
+                          onClick={() => onSelect(point.key === selected ? null : point.key)}
+                        >
+                          {place(reading.place)} · {magnitude(reading)} · {depth(reading)}
+                        </button>
+                      </li>
+                    )
+                  );
+                })}
+              </ol>
+            )}
+          </details>
+        )}
       </div>
     </div>
   );

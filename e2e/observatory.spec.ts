@@ -74,7 +74,7 @@ test("scenes preserve existing preferences and shared event links open the explo
   });
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Everything Is Fine, back to the default view" }).click();
+  await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await page.getByRole("button", { name: "Explore the globe" }).click();
@@ -162,7 +162,7 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
       return Boolean(map && panel && map.x >= panel.x + panel.width - 1);
     })
     .toBe(true);
-  await page.getByRole("button", { name: "Everything Is Fine, back to the default view" }).click();
+  await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
   expect(await contexts()).toBe(original);
   expect(
@@ -187,7 +187,7 @@ test("a historical shortcut frames an actual archived event and keeps capture av
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Save view", exact: true }).click();
   expect((await download).suggestedFilename()).toMatch(/\.png$/);
-  await page.getByText("Revisit a day", { exact: true }).click();
+  await page.getByText("Historical replays", { exact: true }).click();
   await page.getByRole("button", { name: "Japan, 2011 ↗", exact: true }).click();
   await expect(page).toHaveURL(/d=2011-03-11/);
   await expect(page.getByRole("complementary", { name: "Pinned earthquake" })).toBeVisible();
@@ -236,7 +236,7 @@ test("the observatory keeps capture recovery and home navigation available", asy
   expect((await downloaded).suggestedFilename()).toMatch(/\.png$/);
   await page.getByRole("button", { name: "Dismiss", exact: true }).click();
   await expect(page.getByRole("button", { name: "Save view", exact: true })).toBeFocused();
-  await page.getByRole("button", { name: "Everything Is Fine, back to the default view" }).click();
+  await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
 });
 
@@ -255,4 +255,57 @@ test("a missing WebGL context still offers the source readings", async ({ page }
   await expect(page.getByRole("button", { name: "Explore the globe" })).toBeVisible();
   await page.getByRole("button", { name: "Explore the globe" }).click();
   await waitForData(page);
+});
+
+test("a shared map restores Explore and the Observatory preserves the held view", async ({
+  page,
+  browser,
+}) => {
+  await installFeeds(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  const transport = page.getByRole("slider", { name: "Time in the window" });
+  await transport.press("ArrowLeft");
+  await expect(page).toHaveURL(/p=map&v=explore.*&c=/);
+  const link = page.url();
+  await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
+  await expect(page.locator("main")).toHaveAttribute("data-presentation", "observe");
+  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await expect(page).toHaveURL(/p=map&v=explore.*&c=/);
+  expect(new URLSearchParams(new URL(page.url()).hash.slice(1)).get("c")).toBe(
+    new URLSearchParams(new URL(link).hash.slice(1)).get("c"),
+  );
+  const recipient = await browser.newPage({ reducedMotion: "reduce" });
+  try {
+    await installFeeds(recipient, { presentation: "fresh" });
+    await recipient.goto(link);
+    await expect(recipient.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
+    await expect(recipient.getByRole("button", { name: "go live", exact: true })).toBeVisible();
+  } finally {
+    await recipient.close();
+  }
+});
+
+test("an archived time returns to day end and partial coverage stays explicit", async ({ page }) => {
+  await installFeeds(page);
+  await page.route(/seismicportal\.eu.*fdsnws\/event\/1\/query/, async (route) => {
+    if (new URL(route.request().url()).searchParams.has("starttime")) await route.abort();
+    else await route.fallback();
+  });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#d=2011-03-11&e=emsc:missing-fixture");
+  const back = page.getByRole("button", { name: "back to live", exact: true });
+  await expect(back).toBeVisible();
+  await expect(page.getByText(/EMSC did not answer/)).toBeVisible();
+  await expect(
+    page.getByText("The available archive readings for 2011-03-11 don’t include this event."),
+  ).toBeVisible();
+  const transport = page.getByRole("slider", { name: "Time in the window" });
+  await transport.press("Home");
+  await page.getByRole("button", { name: "End of day", exact: true }).click();
+  await expect(transport).toHaveAttribute("aria-valuetext", "End of day");
+  await expect(back).toBeVisible();
+  await back.click();
+  await expect(back).toBeHidden();
 });

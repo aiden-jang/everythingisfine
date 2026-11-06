@@ -2990,7 +2990,8 @@ same sun vector, and fades to a factor of one on the flat map.
 ### Observatory lifetime
 
 `useObservatory.ts` reads existing saved layout preferences before deciding the initial presentation.
-Direct content links open Explore, and initialization never stores a new default. Presets override
+Legacy links to an event, held time, archive, or section open Explore. New links include projection
+and presentation. Initialization leaves saved preferences alone. Presets override
 rendered layers and framing temporarily. Explore restores saved choices. A synchronous commit
 moves the live globe into the Explore grid. The canvas container animates from its previous center
 and apparent scale while the readings enter separately. The renderer sizes its drawing buffer
@@ -2999,6 +3000,7 @@ and shares the Observatory background. Reduced motion and unsupported browsers u
 
 The globe instance survives presentation and grid changes. Header and footer composition live in
 `GlobeHeader.tsx` and `CanvasFooter.tsx`; no camera or source subscription depends on those elements.
+Returning to the Observatory keeps the selected event, filters, and held moment available in Explore.
 Historical shortcuts reuse the archive request owner. Only a successful matching day consumes the
 intent and selects the largest available event, so a late answer cannot move a newer view.
 

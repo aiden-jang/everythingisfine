@@ -87,10 +87,12 @@ for (const [width, height] of [
       await page.screenshot({ path: test.info().outputPath(`depth-reveal-${width}.png`) });
       await page.getByRole("button", { name: "Explore the globe" }).click();
       await expect(page.locator("#chrome-rail")).toBeVisible();
-      await page.getByRole("button", { name: "Everything Is Fine, back to the default view" }).click();
+      if (width < 768) await page.getByRole("button", { name: "more", exact: true }).click();
+      await page.getByRole("button", { name: "Reset view", exact: true }).click();
       await expect.poll(async () => (await pose()).zoom).toBeGreaterThan(1.2);
       await expect.poll(async () => (await pose()).lon).toBe(145);
       await expect.poll(async () => (await pose()).zoom).toBe(1);
+      await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
       await page.emulateMedia({ reducedMotion: "reduce" });
       const dive = page.getByRole("button", { name: "Below the Surface", exact: true });
       await dive.click();

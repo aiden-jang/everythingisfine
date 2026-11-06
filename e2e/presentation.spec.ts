@@ -109,7 +109,7 @@ test("scene effects settle and skip decorative motion when requested", async ({ 
   await expect(page.locator("[data-orbit-readout]")).toHaveCSS("transition-duration", "0s");
   await page.getByRole("button", { name: "Close", exact: true }).filter({ visible: true }).click();
   const image = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Still", exact: true }).click();
+  await page.getByRole("button", { name: "Save view", exact: true }).click();
   const capture = await image;
   expect(capture.suggestedFilename()).toMatch(/^everything-is-fine-.*\.png$/);
   expect(await capture.failure()).toBeNull();

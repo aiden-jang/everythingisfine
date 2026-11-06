@@ -9,6 +9,7 @@ export interface EventListProps {
   quakes: readonly Quake[];
   selected: string | null;
   onSelect: (key: string | null) => void;
+  onClearFilters: () => void;
   /** Events at or above this magnitude are announced. Below it, they arrive silently. */
   announceAbove: number;
   /** The events that genuinely just arrived. Handed out from here rather than recomputed elsewhere,
@@ -51,6 +52,7 @@ export function EventList({
   quakes,
   selected,
   onSelect,
+  onClearFilters,
   announceAbove,
   onAnnounceAboveChange,
   onNews,
@@ -117,6 +119,7 @@ export function EventList({
   return (
     /* A floor under the list, because `flex-1` gives zero when there is nothing left to give. See ARCHITECTURE.md#srcappeventlisttsx. */
     <section
+      id="recent-earthquakes"
       aria-label="Recent earthquakes"
       data-empty={quakes.length === 0 || undefined}
       /* A share of the viewport in the two single-column layouts, not just a floor. See ARCHITECTURE.md#srcappeventlisttsx. */
@@ -158,6 +161,15 @@ export function EventList({
             : reported === 0
               ? `Nothing was reported ${archived ? "on this day" : "in this window"}.`
               : "No events match the current filters."}
+          {!waiting && reported > 0 && (
+            <button
+              type="button"
+              className="ml-2 min-h-8 cursor-pointer text-ink underline underline-offset-4"
+              onClick={onClearFilters}
+            >
+              Clear filters
+            </button>
+          )}
         </p>
       ) : null}
 

@@ -13,7 +13,10 @@ export type EarthScene = "live" | "depth" | "night";
 export type Presentation = "observe" | "explore";
 
 export function initialPresentation(shared: Partial<Permalink>, read = stored): Presentation {
-  if (shared.event || shared.mark || shared.day || shared.section || shared.cursor != null) return "explore";
+  if (shared.section && !shared.presentation) return "explore";
+  if (shared.presentation) return shared.presentation;
+  if (shared.event || shared.mark || shared.day || shared.cursor != null || shared.flat !== undefined)
+    return "explore";
   const saved = read("presentation");
   if (saved === "observe" || saved === "explore") return saved;
   const preferences = [

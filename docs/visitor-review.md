@@ -8,8 +8,12 @@ coaching; record where they hesitate and what they think the app is showing.
 3. Change the window or magnitude, then return to the default view.
 4. On a phone, move between globe space and recent earthquakes. Open and dismiss the extra controls.
 5. Copy a pinned-event link and reopen it in a different browser. Confirm the same view and event.
+   Repeat for a flat map and held moment.
 6. Make a still. Try successful sharing, cancellation, clipboard refusal and image download where supported.
-7. Browse a completed UTC day, then return to live. Explain the coverage caveat for an early historical day.
+7. Browse a completed UTC day. Move to its end, then return to live. Explain the coverage caveat
+   for an early historical day.
+8. Open a historical replay, pause and scrub it, and return to the globe. Repeat with Storm Radar
+   and jump back to the latest scan. In After Dark, open and close Sun Watch.
 
 Repeat the main path with keyboard navigation, reduced motion, larger text and a screen reader.
 Check that Escape dismisses the innermost mobile controls before changing the selected view.

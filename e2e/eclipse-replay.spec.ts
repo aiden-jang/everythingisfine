@@ -39,7 +39,7 @@ test("reduced motion opens a held eclipse on a phone", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
-  await page.getByText("Revisit a day", { exact: true }).click();
+  await page.getByText("Historical replays", { exact: true }).click();
   await page.getByRole("button", { name: /Total eclipse, 2024/ }).click();
   const replay = await watchEclipse(page);
   const slider = replay.getByRole("slider", { name: "Eclipse time" });

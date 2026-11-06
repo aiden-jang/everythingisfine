@@ -21,7 +21,7 @@ export function useArchive(
   const [dayCounts, setDayCounts] = useState<Record<string, number | null>>({});
   const countsAsked = useRef(false);
   const arrivedOnADay = useRef(false);
-  const request = useRef(0);
+  const request = useRef<AbortController | null>(null);
   const mounted = useRef(true);
   const loaded = useRef(onLoaded);
   loaded.current = onLoaded;
@@ -41,35 +41,43 @@ export function useArchive(
     async (iso: string) => {
       const span = dayRange(iso);
       if (!span || !isArchivableDay(iso, Date.now())) return;
-      const current = ++request.current;
+      request.current?.abort();
+      const current = new AbortController();
+      request.current = current;
       setArchiveBusy(true);
       setArchiveNote(null);
       setArchiveHazards(null);
       try {
-        const [got, hazards] = await Promise.all([
-          fetchArchive(span.from, span.to, MAG_MIN),
-          fetchHistory(span.from, span.to),
-        ]);
+        const get = (url: RequestInfo | URL) =>
+          fetch(url, { signal: AbortSignal.any([current.signal, AbortSignal.timeout(12_000)]) });
+        const history = fetchHistory(span.from, span.to, get);
+        const got = await fetchArchive(span.from, span.to, MAG_MIN, get);
         // A newer request, return to live, or unmount supersedes this answer.
-        if (current !== request.current) return;
-        feed.showArchive(span, got.readings);
+        if (current.signal.aborted) return;
+        feed.showArchive({ ...span, answered: got.answered }, got.readings);
         reportAnalytics({ name: "archive_opened" });
-        setArchiveHazards(hazards);
         const said = (["usgs", "emsc"] as const).map((id) => {
           const answer = got.answered[id];
           return answer
             ? `${SOURCE_NAMES[id]} ${answer.count}${answer.truncated ? " (truncated)" : ""}`
             : `${SOURCE_NAMES[id]} did not answer`;
         });
-        const count =
-          hazards.cyclones.length + hazards.fires.length + hazards.floods.length + hazards.volcanoes.length;
-        said.push(hazards.answered ? `EONET ${count}` : "EONET did not answer");
         setArchiveNote(said.join(" · "));
         loaded.current();
+        setArchiveBusy(false);
+        const hazards = await history;
+        if (current.signal.aborted) return;
+        setArchiveHazards(hazards);
+        const count =
+          hazards.cyclones.length + hazards.fires.length + hazards.floods.length + hazards.volcanoes.length;
+        setArchiveNote([...said, hazards.answered ? `EONET ${count}` : "EONET did not answer"].join(" · "));
       } catch {
         if (current === request.current) setArchiveNote("That day could not be loaded. Try again.");
       } finally {
-        if (current === request.current) setArchiveBusy(false);
+        if (current === request.current) {
+          request.current = null;
+          setArchiveBusy(false);
+        }
       }
     },
     [feed],
@@ -80,7 +88,8 @@ export function useArchive(
     mounted.current = true;
     feed.start();
     return () => {
-      request.current += 1;
+      request.current?.abort();
+      request.current = null;
       mounted.current = false;
       feed.stop();
     };
@@ -103,7 +112,8 @@ export function useArchive(
     [feed, loadArchive],
   );
   const backToLive = useCallback(() => {
-    request.current += 1;
+    request.current?.abort();
+    request.current = null;
     setArchiveBusy(false);
     setArchiveDay("");
     setArchiveNote(null);

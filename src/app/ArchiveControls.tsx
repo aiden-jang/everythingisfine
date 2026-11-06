@@ -45,6 +45,7 @@ export function ArchiveControls({ archive, state, onCursor, watchEclipse }: Prop
             <span className="label">Archive</span>
             <button
               type="button"
+              id="archive-return"
               onClick={backToLive}
               className="cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-deck hover:text-ink"
             >
@@ -112,102 +113,114 @@ export function ArchiveControls({ archive, state, onCursor, watchEclipse }: Prop
             Storms, fires, floods and volcanoes come from NASA rather than the live feeds. No aurora: it is a
             forecast, so there is no past to ask for.
           </p>
-          {archiveNote ? (
-            <p className="mt-1 font-mono text-[10.5px] leading-relaxed text-faint">{archiveNote}</p>
-          ) : null}
-        </div>
-      ) : (
-        /* Label above, not beside: side by side left the date field 60px in the 768px strip. */
-        <div className="mb-3">
-          <label className="label" htmlFor="archive-day">
-            Go to a day
-          </label>
-          <div className="mt-1 flex items-center gap-1.5">
-            {/* ISO text, not `type="date"`: the native widget wants `mm/dd/yyyy`, which this app never prints,
-                so a day could not be copied out of the list below and pasted in. */}
-            <input
-              id="archive-day"
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="YYYY-MM-DD"
-              aria-invalid={dayFault ? true : undefined}
-              aria-describedby={dayFault ? "archive-day-fault" : undefined}
-              value={archiveDay}
-              onChange={(e) => setArchiveDay(typedDay(e.target.value))}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !archiveBusy && isArchivableDay(archiveDay, Date.now())) {
-                  e.preventDefault();
-                  void loadArchive(archiveDay);
-                }
-              }}
-              className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[10.5px] text-dim placeholder:text-faint"
-            />
-            <span className="relative inline-flex size-[26px] shrink-0 items-center justify-center border border-hairline text-faint hover:text-ink">
-              <svg viewBox="0 0 14 14" aria-hidden="true" className="size-[11px]">
-                <rect
-                  x="1"
-                  y="2.5"
-                  width="12"
-                  height="10.5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                />
-                <path d="M1 6 H13 M4.5 1 V4 M9.5 1 V4" fill="none" stroke="currentColor" strokeWidth="1.2" />
-              </svg>
-              <input
-                type="date"
-                aria-label="Pick a day from a calendar"
-                max={newestDay}
-                value={isArchivableDay(archiveDay, Date.now()) ? archiveDay : ""}
-                onChange={(e) => {
-                  const picked = e.target.value;
-                  if (!picked) return;
-                  setArchiveDay(picked);
-                  if (isArchivableDay(picked, Date.now())) void loadArchive(picked);
-                }}
-                /* `showPicker` throws where it is unsupported, and the browser's own icon is invisible here. */
-                onClick={(e) => {
-                  const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
-                  try {
-                    el.showPicker?.();
-                  } catch {
-                    /* the field still takes a typed date */
-                  }
-                }}
-                className="absolute inset-0 cursor-pointer opacity-0"
-              />
-            </span>
-            <button
-              type="button"
-              disabled={archiveBusy || !isArchivableDay(archiveDay, Date.now())}
-              onClick={() => void loadArchive(archiveDay)}
-              className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:cursor-default disabled:text-faint"
-            >
-              {archiveBusy ? "loading…" : "go"}
-            </button>
-          </div>
-          {/* Said here, not through `archiveNote`: that renders in the other branch of this ternary, so a
-                day refused while live set a message nobody ever saw. */}
-          {dayFault ? (
-            <p id="archive-day-fault" className="mt-1 text-[11px] leading-relaxed text-faint">
-              {dayFault}
-            </p>
-          ) : (
-            /* The field takes any day that has ended, which includes the one anybody actually wants
-                     and would never think to try. One sentence, because the control for it already
-                     exists: a second field beside this one was the same field twice. */
-            <p className="mt-1 text-[11px] leading-relaxed text-faint">
-              {earlyDay
-                ? "Before about 1970 only the large ones were recorded anywhere. A quiet day back" +
-                  " there may mean nobody was listening, not that the Earth was still."
-                : "Any day that has ended, including the one you were born on."}
+          {archiveNote && (
+            <p role="status" className="mt-1 font-mono text-[10.5px] leading-relaxed text-faint">
+              {archiveNote}
             </p>
           )}
+          {archive.answered &&
+            Object.values(archive.answered).some((answer) => answer === null) &&
+            loadedDay && (
+              <button
+                type="button"
+                className="mt-1 min-h-8 cursor-pointer text-xs text-dim underline underline-offset-4 hover:text-ink"
+                disabled={archiveBusy}
+                onClick={() => void loadArchive(loadedDay)}
+              >
+                Retry archive sources
+              </button>
+            )}
         </div>
-      )}
+      ) : null}
+      <div className="mb-3">
+        <label className="label" htmlFor="archive-day">
+          Go to a day
+        </label>
+        <div className="mt-1 flex items-center gap-1.5">
+          {/* ISO text, not `type="date"`: the native widget wants `mm/dd/yyyy`, which this app never prints,
+                so a day could not be copied out of the list below and pasted in. */}
+          <input
+            id="archive-day"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="YYYY-MM-DD"
+            aria-invalid={dayFault ? true : undefined}
+            aria-describedby={dayFault ? "archive-day-fault" : undefined}
+            value={archiveDay}
+            onChange={(e) => setArchiveDay(typedDay(e.target.value))}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !archiveBusy && isArchivableDay(archiveDay, Date.now())) {
+                e.preventDefault();
+                void loadArchive(archiveDay);
+              }
+            }}
+            className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1 font-mono text-[10.5px] text-dim placeholder:text-faint"
+          />
+          <span className="relative inline-flex size-[26px] shrink-0 items-center justify-center border border-hairline text-faint hover:text-ink">
+            <svg viewBox="0 0 14 14" aria-hidden="true" className="size-[11px]">
+              <rect
+                x="1"
+                y="2.5"
+                width="12"
+                height="10.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.2"
+              />
+              <path d="M1 6 H13 M4.5 1 V4 M9.5 1 V4" fill="none" stroke="currentColor" strokeWidth="1.2" />
+            </svg>
+            <input
+              type="date"
+              aria-label="Pick a day from a calendar"
+              max={newestDay}
+              value={isArchivableDay(archiveDay, Date.now()) ? archiveDay : ""}
+              onChange={(e) => {
+                const picked = e.target.value;
+                if (!picked) return;
+                setArchiveDay(picked);
+                if (isArchivableDay(picked, Date.now())) void loadArchive(picked);
+              }}
+              /* `showPicker` throws where it is unsupported, and the browser's own icon is invisible here. */
+              onClick={(e) => {
+                const el = e.currentTarget as HTMLInputElement & { showPicker?: () => void };
+                try {
+                  el.showPicker?.();
+                } catch {
+                  /* the field still takes a typed date */
+                }
+              }}
+              className="absolute inset-0 cursor-pointer opacity-0"
+            />
+          </span>
+          <button
+            type="button"
+            disabled={archiveBusy || !isArchivableDay(archiveDay, Date.now())}
+            onClick={() => void loadArchive(archiveDay)}
+            className="shrink-0 cursor-pointer border border-hairline px-2 py-1 font-mono text-[10.5px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:cursor-default disabled:text-faint"
+          >
+            {archiveBusy ? "loading…" : "go"}
+          </button>
+        </div>
+        {/* Said here, not through `archiveNote`: that renders in the other branch of this ternary, so a
+                day refused while live set a message nobody ever saw. */}
+        {dayFault ? (
+          <p id="archive-day-fault" className="mt-1 text-[11px] leading-relaxed text-faint">
+            {dayFault}
+          </p>
+        ) : (
+          /* The field takes any day that has ended, which includes the one anybody actually wants
+                     and would never think to try. One sentence, because the control for it already
+                     exists: a second field beside this one was the same field twice. */
+          <p className="mt-1 text-[11px] leading-relaxed text-faint">
+            {earlyDay
+              ? "Before about 1970 only the large ones were recorded anywhere. A quiet day back" +
+                " there may mean nobody was listening, not that the Earth was still."
+              : "Any day that has ended, including the one you were born on."}
+          </p>
+        )}
+      </div>
       {!archive && <StormRadar className="archive-scene-button w-full text-left" />}
       {archiveNote && !archive ? (
         <p role="status" className="mt-1 text-[11px] text-faint">

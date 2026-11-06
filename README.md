@@ -26,7 +26,7 @@ requested directly from the browser.
 ## Observe and explore
 
 A fresh visit opens the observatory: a full globe, a short introduction, and three scenes.
-**Explore** opens the scientific controls. The wordmark returns to the observatory, resets the view, and replays its horizon-to-orbit arrival.
+**Explore** opens the scientific controls. The wordmark returns to the Observatory and preserves the current view. Choose **Reset view** in Explore to clear the selection, filters, and held time and replay the globe’s arrival.
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
 
 - **Live Earth** frames current activity and traces the day–night boundary. Choosing it from an
@@ -43,7 +43,7 @@ Existing saved layouts and links to an event, archive, section, or held moment o
   scrub through up to an hour of live NOAA scans at their published UTC times.
 - **Take a tour** visits a captured selection of readings and regions. Narration waits for arrival;
   Pause, Previous, Next, Stop, and Read this event remain available. Hidden tabs pause its reading time.
-- **Revisit a day** loads an archived day and frames its largest available event.
+- **Historical replays** opens recorded stories and notable events. **Pick a past date** opens the UTC date picker in Explore.
 - **Sun Watch** in After Dark moves from a NASA solar image through a schematic solar-wind
   stream and back to Earth. Its two live plots show the last hour of upstream wind speed and
   six hours of GOES X-ray flux. Choose any of the three still views with reduced motion.
@@ -83,7 +83,7 @@ Observe or Explore remembers that presentation; opening the app alone saves no n
 - Choose **Map** to unfold the globe at its seam. Choose **Globe** to wrap it back up. On the flat map,
   draw a cross-section with Shift-drag. Release the line to fold it open into the depth chart.
 - Browse any completed UTC day, including notable earthquakes and eclipses. Find the total eclipse
-  of 8 April 2024 under **Revisit a day** in the Observatory or **Eclipses** in Explore. Choose
+  of 8 April 2024 under **Historical replays** in the Observatory or **Eclipses** in Explore. Choose
   **Watch eclipse** in Globe view, then pause or scrub to follow the shadow at a specific UTC time.
 - Pin an earthquake and open **Follow the wave**. Pick a nearby city to see the estimated P and
   S arrivals, with a fixed overview under reduced motion. The city picker lists up to six places
@@ -92,9 +92,9 @@ Observe or Explore remembers that presentation; opening the app alone saves no n
   appear in order. The UTC timeline can be scrubbed, including in the fixed reduced-motion view.
 - Open **Watch Tōhoku rupture** from the 11 March 2011 archive or the pinned mainshock.
 - On a phone, switch between globe space and recent events using the bottom navigation.
-- Use **Still** to share or download a captioned image. If native sharing fails, **Download image**
+- Use **Save view** to share or download a captioned image. If native sharing fails, **Download image**
   keeps that captured frame available. Cancelling the share sheet leaves the page alone.
-  The URL retains the view and selection.
+  The URL retains the projection, presentation, and selection.
 - Press `f` for fullscreen, Space to play the window, and `,` / `.` to step through it.
   On the time slider, Home selects the start and End returns to live (or the archived day end).
 

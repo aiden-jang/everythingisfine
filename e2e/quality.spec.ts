@@ -52,7 +52,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
       await page.getByRole("button", { name: "more", exact: true }).click();
       await capture("utilities");
     }
-    await page.getByRole("button", { name: "Still", exact: true }).click();
+    await page.getByRole("button", { name: "Save view", exact: true }).click();
     await expect(page.getByRole("button", { name: "Download image", exact: true })).toBeVisible();
     const notice = await page.locator(".still-notice").boundingBox();
     expect(notice!.x).toBeGreaterThanOrEqual(0);
@@ -60,7 +60,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await capture("share-recovery");
     await page.getByRole("button", { name: "Dismiss", exact: true }).click();
     await expect(
-      page.getByRole("button", { name: width < 768 ? "more" : "Still", exact: true }),
+      page.getByRole("button", { name: width < 768 ? "more" : "Save view", exact: true }),
     ).toBeFocused();
     if (width < 768) await page.getByRole("button", { name: "Recent earthquakes", exact: true }).click();
     await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
@@ -152,7 +152,7 @@ test("failed native sharing keeps a downloadable still", async ({ page }) => {
   await page.goto("/");
   await waitForData(page);
   await expect(page.locator("canvas")).toBeVisible();
-  await page.getByRole("button", { name: "Still", exact: true }).click();
+  await page.getByRole("button", { name: "Save view", exact: true }).click();
   await expect(page.getByRole("status").filter({ hasText: "Sharing is unavailable" })).toBeVisible();
   const downloaded = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download image", exact: true }).click();
@@ -174,8 +174,8 @@ test("cancelling native sharing does not download or show an error", async ({ pa
   await page.goto("/");
   await waitForData(page);
   await expect(page.locator("canvas")).toBeVisible();
-  await page.getByRole("button", { name: "Still", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Still", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Save view", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Save view", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "Download image", exact: true })).toHaveCount(0);
   expect(downloads).toEqual([]);
 });
@@ -191,7 +191,7 @@ test("a missing globe explains why a still cannot be captured", async ({ page })
   await installFeeds(page);
   await page.goto("/");
   await expect(page.getByText("The globe could not start.", { exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Still", exact: true }).click();
+  await page.getByRole("button", { name: "Save view", exact: true }).click();
   await expect(
     page.getByText("The globe is not ready. Try again after it appears.", { exact: true }),
   ).toBeVisible();

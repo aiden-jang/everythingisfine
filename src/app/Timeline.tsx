@@ -414,7 +414,7 @@ export function Timeline({
             onStep(by);
           }}
           aria-label="Time in the window"
-          aria-valuetext={cursorLabel ?? "Live"}
+          aria-valuetext={cursorLabel ?? (archived ? "End of day" : "Live")}
           aria-keyshortcuts="ArrowLeft ArrowRight Home End Comma Period"
           className="scrub-slider flex-1"
         />
@@ -426,7 +426,7 @@ export function Timeline({
             // number with nothing to say which was which.
             className="shrink-0 font-mono text-[10.5px] text-dim hover:text-ink"
           >
-            go live
+            {archived ? "End of day" : "go live"}
           </button>
         ) : (
           <span className="shrink-0 font-mono text-[10.5px] text-faint">{archived ? "day end" : "live"}</span>
