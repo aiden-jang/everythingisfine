@@ -161,13 +161,6 @@ export function GlobeHeader({
               <Utilities>
                 <button
                   type="button"
-                  onClick={onReset}
-                  className="cursor-pointer border border-hairline px-2.5 py-1 text-[11px] text-faint transition-colors hover:bg-raised hover:text-ink"
-                >
-                  Reset view
-                </button>
-                <button
-                  type="button"
                   onClick={() => setSound((on) => !on)}
                   aria-pressed={sound}
                   className={`shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap transition-colors hover:bg-raised hover:text-ink ${
@@ -197,6 +190,13 @@ export function GlobeHeader({
                   className="shrink-0 cursor-pointer border border-hairline px-2.5 py-1 text-[11px] whitespace-nowrap text-faint transition-colors hover:bg-raised hover:text-ink disabled:cursor-default"
                 >
                   {saving ? "Saving…" : "Save view"}
+                </button>
+                <button
+                  type="button"
+                  onClick={onReset}
+                  className="cursor-pointer border border-hairline px-2.5 py-1 text-[11px] text-faint transition-colors hover:bg-raised hover:text-ink"
+                >
+                  Reset view
                 </button>
                 {/* Keep the fold inside the overflow. As a button of its own at 390 it wrapped onto a line by
           itself and took the header from 46px to 80px, which is the opposite of folding the bar. */}

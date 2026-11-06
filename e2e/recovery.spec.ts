@@ -39,20 +39,29 @@ test("an archive response cannot undo returning to live", async ({ page }) => {
     release = resolve;
   });
   let arrived = 0;
-  let finished = 0;
+  let released = 0;
+  let aborted = 0;
+  const nextDay = (url: string) => new URL(url).searchParams.get("starttime")?.startsWith("2011-03-10");
+  page.on("requestfailed", (request) => {
+    if (nextDay(request.url())) aborted += 1;
+  });
   await page.route(/fdsnws\/event\/1\/query/, async (route) => {
-    if (!route.request().url().includes("starttime=")) return route.fallback();
+    if (!nextDay(route.request().url())) return route.fallback();
     arrived += 1;
     await barrier;
+    released += 1;
     await route.fallback();
-    finished += 1;
   });
   await page.getByRole("button", { name: "‹ 2011-03-10", exact: true }).click();
-  // The archive adapter queries the two agencies in sequence. Hold its first request.
-  await expect.poll(() => arrived).toBe(1);
-  await page.getByRole("button", { name: "back to live", exact: true }).click();
-  release();
-  await expect.poll(() => finished).toBe(2);
+  // Hold both agency requests until returning to live cancels the whole archive load.
+  try {
+    await expect.poll(() => arrived).toBe(2);
+    await page.getByRole("button", { name: "back to live", exact: true }).click();
+    await expect.poll(() => aborted).toBe(2);
+  } finally {
+    release();
+  }
+  await expect.poll(() => released).toBe(2);
   await waitForData(page);
   await expect(page.getByRole("button", { name: "back to live", exact: true })).toBeHidden();
   await expect(page.getByLabel("Go to a day", { exact: true })).toHaveValue("");
