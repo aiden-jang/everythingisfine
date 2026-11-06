@@ -70,3 +70,21 @@
   align-content: center;
   cursor: pointer;
 }
+
+@media (max-width: 1279px) {
+  .zone-head button.feed-toggle[data-feed-compact] {
+    justify-content: center;
+    flex: 0 0 44px;
+    min-height: 44px;
+    padding-inline: 0;
+  }
+
+  .feed-toggle[data-feed-compact] .feed-wide,
+  .feed-toggle[data-feed-compact] svg {
+    display: none;
+  }
+
+  .feed-toggle[data-feed-compact] .feed-count {
+    display: inline;
+  }
+}

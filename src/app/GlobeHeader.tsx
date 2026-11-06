@@ -212,7 +212,7 @@ export function GlobeHeader({
                   </button>
                 )}
               </Utilities>
-              <FeedDot feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
+              <FeedDot compact feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
             </div>
           </>
         )}

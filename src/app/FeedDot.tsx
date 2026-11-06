@@ -14,9 +14,11 @@ const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", hour: "2-digit
 export function FeedDot({
   feeds,
   archiveFrom,
+  compact = false,
 }: {
   feeds: FeedStatus;
   archiveFrom: number | null;
+  compact?: boolean;
 }): JSX.Element {
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
@@ -34,6 +36,7 @@ export function FeedDot({
       <button
         type="button"
         className="feed-toggle"
+        data-feed-compact={compact || undefined}
         ref={trigger}
         {...{ popovertarget: id }}
         aria-label={`Feed status, ${feeds.phrase}`}
@@ -46,8 +49,8 @@ export function FeedDot({
         }}
       >
         <span className={`inline-block size-[6px] rounded-full ${dot}`} aria-hidden="true" />
-        <span className="hidden sm:inline">{feeds.phrase}</span>
-        <span className="sm:hidden" aria-hidden="true">
+        <span className="feed-wide hidden sm:inline">{feeds.phrase}</span>
+        <span className="feed-count sm:hidden" aria-hidden="true">
           {feeds.arrived}/{feeds.total}
         </span>
         <svg width="9" height="6" viewBox="0 0 9 6" fill="none" aria-hidden="true">
