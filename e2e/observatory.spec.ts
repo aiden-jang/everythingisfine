@@ -41,10 +41,15 @@ for (const [width, height] of [
     expect(bounds.height).toBeLessThanOrEqual(height!);
     expect(bounds.canvas.width).toBeGreaterThan(150);
     expect(bounds.canvas.height).toBeGreaterThan(150);
+    const credit = page.getByRole("link", { name: "aiden jang", exact: true });
+    await expect(credit).toBeInViewport({ ratio: 1 });
+    const creditPosition = await credit.boundingBox();
+    expect(height! - (creditPosition!.y + creditPosition!.height)).toBeLessThanOrEqual(24);
     await page.screenshot({ path: test.info().outputPath(`observe-live-${width}.png`) });
     await page.getByRole("button", { name: "After Dark", exact: true }).click();
     await expect(page.getByRole("heading", { name: "The other side of day." })).toBeVisible();
     await expect(stage).toContainText("Catalogue sky");
+    expect(await credit.boundingBox()).toEqual(creditPosition);
     await expect(page.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -53,10 +58,12 @@ for (const [width, height] of [
     await expect(page.getByRole("heading", { name: "Beneath the surface." })).toBeVisible();
     await expect(depth).toHaveAttribute("aria-pressed", "true");
     await expect(stage).toContainText("300 / 600 / 900 km");
+    expect(await credit.boundingBox()).toEqual(creditPosition);
     await page.screenshot({ path: test.info().outputPath(`observe-depth-${width}.png`) });
     await explore.click();
     await expect(page.locator("#chrome-rail")).toBeVisible();
     await expect(stage).toBeHidden();
+    await expect(page.getByText("An observatory by")).toBeHidden();
     await expect(page.getByRole("region", { name: "Recent earthquakes" })).toBeVisible();
     expect(errors).toEqual([]);
   });
@@ -152,15 +159,17 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
   await page.getByRole("button", { name: "Explore the globe" }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
   await expect(page.locator("#view-projection")).toBeFocused();
-  const canvas = page.getByRole("region", { name: "Globe", exact: true });
   const rail = page.locator("#chrome-rail");
   const landingColor = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   await expect(rail).toHaveCSS("background-color", landingColor);
   await expect
-    .poll(async () => {
-      const [map, panel] = await Promise.all([canvas.boundingBox(), rail.boundingBox()]);
-      return Boolean(map && panel && map.x >= panel.x + panel.width - 1);
-    })
+    .poll(() =>
+      page.evaluate(() => {
+        const globe = document.getElementById("globe-view")?.getBoundingClientRect();
+        const panel = document.getElementById("chrome-rail")?.getBoundingClientRect();
+        return Boolean(globe && panel && globe.left >= panel.right - 1);
+      }),
+    )
     .toBe(true);
   await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();

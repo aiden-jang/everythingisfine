@@ -5,14 +5,20 @@
     grid-template-areas: "welcome canvas";
     padding-top: 60px;
   }
-  .observatory-intro {
+  .observatory-sidebar {
+    --observatory-inline: clamp(24px, 4vw, 72px);
     grid-area: welcome;
     z-index: 1;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    min-height: 0;
+  }
+  .observatory-intro {
     align-self: center;
     max-height: 100%;
     min-height: 0;
     overflow-y: auto;
-    padding: 32px clamp(24px, 4vw, 72px);
+    padding: 32px var(--observatory-inline);
     color: var(--color-ink);
   }
   .observatory-story h2 {
@@ -300,7 +306,7 @@
     text-underline-offset: 4px;
   }
   .observatory-credit {
-    margin-top: 12px;
+    padding: 0 var(--observatory-inline) max(8px, env(safe-area-inset-bottom));
     font-size: 10px;
     color: var(--color-faint);
   }
@@ -347,9 +353,12 @@
       grid-template-areas: "canvas" "welcome";
       overflow-y: auto;
     }
+    .observatory-sidebar {
+      --observatory-inline: 24px;
+    }
     .observatory-intro {
       align-self: stretch;
-      padding: 10px 24px 16px;
+      padding: 10px var(--observatory-inline) 12px;
     }
     .observatory-intro[data-scene="tour"] {
       display: flex;
@@ -368,9 +377,6 @@
     }
     .observatory-tour-controls .observatory-actions {
       margin-top: 8px;
-    }
-    .observatory-credit {
-      display: none;
     }
     .observatory-story h2 {
       max-width: 17ch;
@@ -417,9 +423,6 @@
       margin-top: 10px;
       column-gap: 18px;
     }
-    .observatory-credit {
-      margin-top: 10px;
-    }
     .observatory-location {
       margin-top: 10px;
     }
@@ -435,8 +438,8 @@
     .aurora-overflight .observatory-actions button {
       padding-inline: 8px;
     }
-    .observatory-intro {
-      padding-inline: 16px;
+    .observatory-sidebar {
+      --observatory-inline: 16px;
     }
     .observatory-story h2 {
       font-size: 34px;
@@ -452,9 +455,12 @@
       grid-template-areas: "welcome canvas";
       overflow-y: auto;
     }
+    .observatory-sidebar {
+      --observatory-inline: 24px;
+    }
     .observatory-intro {
       align-self: center;
-      padding: 18px 24px;
+      padding: 18px var(--observatory-inline);
     }
     .observatory-story h2 {
       font-size: 40px;
@@ -463,8 +469,7 @@
       font-size: 12px;
     }
     .observatory-scenes,
-    .observatory-history,
-    .observatory-credit {
+    .observatory-history {
       margin-top: 12px;
     }
   }

@@ -237,12 +237,7 @@
 
 @media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
   .frame[data-presentation="observe"] .zones:has(.observatory-intro[data-sun-watch]) {
-    grid-template-rows: minmax(330px, 1fr) auto;
-  }
-
-  .observatory-intro[data-sun-watch] {
-    max-height: none;
-    overflow: visible;
+    grid-template-rows: minmax(0, 1fr) clamp(230px, 40dvh, 330px);
   }
 }
 

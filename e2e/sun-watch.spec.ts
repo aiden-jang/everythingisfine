@@ -63,12 +63,16 @@ test("reduced motion keeps the measurements and aurora available during a solar-
   await installSun(page, false, 20);
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  const credit = page.getByRole("link", { name: "aiden jang", exact: true });
+  await expect(credit).toBeInViewport({ ratio: 1 });
+  const creditPosition = await credit.boundingBox();
   await page.getByRole("button", { name: "Sun Watch", exact: true }).click();
   const stage = page.getByRole("region", { name: "Sun Watch readings" });
   await expect(stage.getByText("Earth · After Dark")).toBeVisible();
   await expect(stage.getByText("NOAA feed unavailable")).toBeVisible();
   await expect(stage.getByText("Older reading")).toBeVisible();
   await expect(stage.getByText("1.23e-6", { exact: true })).toBeVisible();
+  expect(await credit.boundingBox()).toEqual(creditPosition);
   await expect(stage.getByRole("button", { name: "Pause", exact: true })).toHaveCount(0);
   await stage.getByRole("button", { name: "Sun", exact: true }).click();
   await expect(stage.getByText("NASA SDO archive · 10 Sep 2025")).toBeVisible();
