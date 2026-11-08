@@ -39,6 +39,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Tonight’s Sky** descends to a selected city from After Dark. Scrub from local sunset to sunrise,
   use the compass to turn, or point at the Moon and five bright planets. Angles are calculated for a
   level horizon. Where a crossing is absent, the timeline uses a local evening or morning endpoint.
+- **Moonfall** opens from Tonight’s Sky. Fly from lunar orbit into Taurus–Littrow and play or
+  scrub all three Apollo 17 rover traverses, with jumps to nine geology stops. Back restores
+  the same city, local time, and bearing. Reduced motion opens directly on the surveyed valley.
 - **Meteor Nights** traces a shower’s apparent origin across the same local sky. Play or scrub a
   listed peak night and find the dark, moon-free windows. The city selected in After Dark is shared
   by Tonight’s Sky, Meteor Nights and Orbital Pass.
@@ -159,6 +162,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Aurora forecast | NOAA SWPC OVATION |
 | Sun Watch | NOAA SWPC real-time solar wind, primary GOES X-ray flux, NASA/GSFC Solar Dynamics Observatory |
 | Tonight’s Sky | Local solar and lunar calculations, [JPL planetary elements](https://ssd.jpl.nasa.gov/planets/orbits/), [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) reference checks |
+| Moonfall | [NASA LRO global mosaic](https://svs.gsfc.nasa.gov/4720/), [LRO stereo elevations and imagery via USGS](https://astrogeology.usgs.gov/search/map/moon_apollo_17_lroc_nac_landing_site_orthomosaic_50cm), and the [Apollo 17 rover routes reconstructed by Haase et al.](https://doi.org/10.1029/2018EA000408) |
 | Meteor Nights | [International Meteor Organization 2026 and 2027 calendars](https://www.imo.net/calendar/), with calculated local radiant and moonlight geometry |
 | Million-Mile View | NASA EPIC / NOAA DSCOVR [Moon transit archive](https://epic.gsfc.nasa.gov/galleries/2015/lunar_transit) and [natural-color imagery API](https://epic.gsfc.nasa.gov/about/api) |
 | Deep Time | [Müller et al. (2019) EarthByte plate model](https://zenodo.org/records/11601026) (CC BY 4.0), continental reconstructions sampled through the GPlates Web Service |

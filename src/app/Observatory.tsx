@@ -1,6 +1,7 @@
 import { lazy, Suspense, useLayoutEffect, type RefObject } from "react";
 import { ObservatoryStage, OBSERVATORY_SCENES, SceneDiagram } from "./ObservatoryStage";
 import { ObservatoryHistory } from "./ObservatoryHistory";
+import { MoonfallReadout } from "./moonfall/MoonfallReadout";
 import { FloatReadout } from "./float/FloatReadout";
 import { RadarReadout, StormRadar } from "./radar/StormRadar";
 import { AuroraOverflightControls } from "./AuroraOverflightControls";
@@ -11,6 +12,7 @@ import { geographicCoordinates } from "../globe/orbitReadout";
 import "./sun/sun-watch.css";
 import "./tonight/tonight.css";
 import "./float/float-dive.css";
+import "./moonfall/moonfall.css";
 import { ObservationCredit } from "./observations/ObservationCredit";
 import { LiveExperiences, ObservationDeckShell } from "./observations/ObservationEntry";
 
@@ -126,6 +128,8 @@ export function Observatory({
         <FloatReadout view={floatDive.view} />
       ) : radar.active ? (
         <RadarReadout map={observations.map} />
+      ) : tonight.view?.moonfall ? (
+        <MoonfallReadout view={tonight.view.moonfall} />
       ) : tonight.active ? (
         <Suspense fallback={null}>
           <TonightCompass view={tonight.view} onView={tonight.update} />

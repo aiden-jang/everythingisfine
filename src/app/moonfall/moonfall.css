@@ -1,0 +1,51 @@
+.observatory-stage[data-stage="moonfall"] {
+  --stage-ink: #ded0bd;
+}
+
+.observatory-stage[data-stage="moonfall"] :is(.stage-ident, .stage-readout) span:not(.stage-rule) {
+  background: var(--color-void);
+  padding: 3px 5px;
+}
+
+.moonfall-stage-readout {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.moonfall-description {
+  max-width: 42ch;
+  color: var(--color-dim);
+  font-size: 0.8125rem;
+  line-height: 1.55;
+}
+
+.moonfall-actions {
+  margin-block: 0;
+}
+
+.moonfall-links {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 14px;
+}
+
+.moonfall-links a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-moonfall-replay] {
+    display: none;
+  }
+}
+
+@media (max-height: 460px) and (min-width: 600px) {
+  .observatory-intro:has([data-moonfall-panel]) .tonight-time {
+    padding-block: 6px;
+  }
+}

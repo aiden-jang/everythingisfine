@@ -156,6 +156,14 @@ Moon’s altitude includes parallax at the city. The horizon is level and the tw
 illustrative. The compass holds its direction during scrubbing, and choosing a body points the
 camera at its calculated position at that instant.
 
+Moonfall lazily loads the lunar mosaic, a local elevation grid and orthomosaic, and the three Apollo 17
+traverses. The Moon and valley use a dedicated camera in the existing WebGL renderer. Its finite
+approach and descent are illustrative. The terrain uses the LRO survey at about 64 m per sample and
+keeps the traverse segments and geology stops in the survey’s transverse Mercator grid. The rover
+cursor follows cumulative mapped distance and leaves gaps in the source geometry open. Closing
+Moonfall disposes its GPU resources and restores the original local sky view. The source URLs and
+conversion parameters are in [make-moonfall.py](tools/make-moonfall.py).
+
 After Dark, Tonight’s Sky, Meteor Nights and Orbital Pass share a saved city. Meteor Nights uses dated peak
 nights and radiants from the 2026 and 2027 IMO calendars. Local sidereal time places the radiant,
 and five-minute samples find windows with astronomical darkness, the Moon below the horizon and

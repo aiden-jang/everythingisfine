@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   aimAt,
   bearingLabel,
@@ -8,12 +8,14 @@ import {
   type SkyLook,
   type TonightView,
 } from "../../geo/tonight";
+import type { TonightPresentation } from "../../globe/scenePresentation";
 import { sunElevation } from "../../geo/sun";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { SkyCityPicker, type SkyCityPreference } from "./SkyCityPicker";
 import { MeteorNights } from "./MeteorNights";
 
 const MINUTE = 60_000;
+const Moonfall = lazy(() => import("../moonfall/Moonfall").then(({ Moonfall }) => ({ default: Moonfall })));
 
 export function TonightSky({
   view,
@@ -24,7 +26,7 @@ export function TonightSky({
   initialLook,
 }: {
   view: TonightView | null;
-  onView: (next: TonightView) => void;
+  onView: (next: TonightPresentation) => void;
   onClose: () => void;
   preference: SkyCityPreference;
   initialMode: "sky" | "meteors";
@@ -35,6 +37,7 @@ export function TonightSky({
   const [openedAt] = useState(() => Date.now());
   const [mode, setMode] = useState(initialMode);
   const [modeLook, setModeLook] = useState(initialLook);
+  const [departure, setDeparture] = useState<{ previous: TonightView; aim: TonightView } | null>(null);
   const { city } = preference;
   const night = useMemo(() => localNight(city, openedAt), [city, openedAt]);
   const format = useMemo(
@@ -65,7 +68,34 @@ export function TonightSky({
       onView({ ...opening, look: initialLook ?? opening.look });
     }
   }, [view?.city.name, city.name, mode, opening, initialLook, onView]);
-  useObservatoryEscape(onClose);
+  const returnToSky = () => {
+    if (!departure) return;
+    onView(departure.previous);
+    setDeparture(null);
+    requestAnimationFrame(() => document.getElementById("open-moonfall")?.focus());
+  };
+  useLayoutEffect(() => {
+    if (departure) document.getElementById("moonfall-back")?.focus({ preventScroll: true });
+  }, [departure]);
+  useObservatoryEscape(departure ? returnToSky : onClose);
+
+  if (departure) {
+    return (
+      <>
+        <div className="tonight-heading" data-moonfall-panel="">
+          <h2 id="local-sky-title">Moonfall</h2>
+          <div className="observatory-actions tonight-back">
+            <button type="button" id="moonfall-back" onClick={returnToSky}>
+              Back to Tonight’s Sky
+            </button>
+          </div>
+        </div>
+        <Suspense fallback={<p role="status">Loading the lunar survey…</p>}>
+          <Moonfall sky={departure.aim} onView={onView} />
+        </Suspense>
+      </>
+    );
+  }
 
   return (
     <>
@@ -101,6 +131,21 @@ export function TonightSky({
         >
           Meteor Nights
         </button>
+        {mode === "sky" && (
+          <button
+            type="button"
+            id="open-moonfall"
+            onClick={() => {
+              const moon = readings[0]!;
+              const aim =
+                moon.altitude > 0 ? { ...current, look: aimAt(moon), targetName: moon.name } : current;
+              setDeparture({ previous: current, aim });
+              onView(aim);
+            }}
+          >
+            Moonfall
+          </button>
+        )}
       </div>
       {mode === "meteors" ? (
         <MeteorNights city={city} view={view} initialLook={modeLook} onView={onView} />

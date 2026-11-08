@@ -1,4 +1,4 @@
-import type { Group, Object3D, PerspectiveCamera, Vector3 } from "three";
+import type { Group, Object3D, PerspectiveCamera, Vector3, WebGLRenderer } from "three";
 import type { AuroraRun } from "../sources/auroraRoute";
 import type { RadarView } from "../app/radar/radarCamera";
 import type { Controls } from "./controls";
@@ -9,12 +9,14 @@ import { createLocalSkyLight } from "./localSkyLight";
 import type { FloatDiveView } from "../app/float/floatPlayback";
 import { createFloatPresentation } from "./floatPresentation";
 import type { TonightView } from "../geo/tonight";
+import type { MoonfallView } from "./moonfall/scene";
 
 import { createObservationLayer } from "./observationLayer";
 import type { ObservationView } from "../app/observations/types";
 
 export type GlobePresentation = "planetarium" | "dayline" | AuroraRun | LocalView | null;
-type LocalView = RadarView | TonightView | FloatDiveView | ObservationView;
+export type TonightPresentation = TonightView & { moonfall?: MoonfallView };
+type LocalView = RadarView | TonightPresentation | FloatDiveView | ObservationView;
 
 export function isLocalView(mode: GlobePresentation): mode is LocalView {
   return mode !== null && typeof mode === "object" && "kind" in mode;
@@ -31,7 +33,7 @@ export function createScenePresentation(
 ) {
   let showDayline = false;
   let planetarium = false;
-  let skyView: TonightView | null = null;
+  let skyView: TonightPresentation | null = null;
   let localLight: ReturnType<typeof createLocalSkyLight> | undefined;
   let veil: ReturnType<typeof createAuroraVeil> | undefined;
   let oval: AuroraRun["route"] | null = null;
@@ -48,7 +50,8 @@ export function createScenePresentation(
     dayline.value = showDayline ? lights.reveal.value : 0;
     veil?.trace(controls.auroraSweep());
     const diving = dive?.step(dt, reduced);
-    return (observations?.step(dt, reduced) ?? false) || !!diving;
+    const lunar = skyView?.moonfall?.step(dt, reduced);
+    return (observations?.step(dt, reduced) ?? false) || !!diving || !!lunar;
   }
 
   function set(mode: GlobePresentation, geography: readonly Object3D[]) {
@@ -118,6 +121,9 @@ export function createScenePresentation(
   return {
     set,
     step,
+    renderMoon(renderer: WebGLRenderer, aspect: number) {
+      return skyView?.moonfall?.render(renderer, aspect) ?? false;
+    },
     skyOpacity(camera: PerspectiveCamera) {
       projection.value = controls.morph();
       dive?.size(camera.aspect);

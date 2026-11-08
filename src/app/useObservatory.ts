@@ -10,7 +10,7 @@ import { useObservationDeck } from "./observations/useObservationDeck";
 import type { FloatDiveView } from "./float/floatPlayback";
 import type { SkyLook, TonightView } from "../geo/tonight";
 import { useSkyCity } from "./tonight/SkyCityPicker";
-import type { GlobePresentation } from "../globe/scenePresentation";
+import type { GlobePresentation, TonightPresentation } from "../globe/scenePresentation";
 import { national, type RadarView } from "./radar/radarCamera";
 import { revealReadings, shiftGlobe } from "./presentationMotion";
 
@@ -62,12 +62,12 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [ready, setReady] = useState(false);
   const [run, setRun] = useState<AuroraRun | null>(null);
   const [sunWatch, setSunWatch] = useState(false);
-  const [tonightView, setTonightView] = useState<TonightView | "opening" | null>(null);
+  const [tonightView, setTonightView] = useState<TonightPresentation | "opening" | null>(null);
   const [skyEntry, setSkyEntry] = useState<{ mode: "sky" | "meteors"; look?: SkyLook }>({ mode: "sky" });
   const skyMemory = useRef<TonightView | null>(null);
   const skyCity = useSkyCity();
-  const updateSky = useCallback((view: TonightView) => {
-    skyMemory.current = view;
+  const updateSky = useCallback((view: TonightPresentation) => {
+    if (!view.moonfall) skyMemory.current = view;
     setTonightView(view);
   }, []);
   const [floatView, setFloatView] = useState<FloatDiveView | "opening" | null>(null);

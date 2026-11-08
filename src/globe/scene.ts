@@ -588,6 +588,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       material.uniforms["uAuroraOn"]!.value = 1;
     },
     render: () => {
+      if (presentation.renderMoon(renderer, camera.aspect)) return;
       const at = inspection.recordedAt() ?? (moment === null ? Date.now() : null);
       if (at !== null) {
         const minute = Math.floor(at / 60_000);
@@ -596,7 +597,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
           aimSun(at);
         }
       }
-
       const skyOpacity = (1 - morph.value) * presentation.skyOpacity(camera);
       starfield.prepare(camera, canvas.width, canvas.height, quietMotion || morph.value > 0);
       starfield.setOpacity(skyOpacity);
