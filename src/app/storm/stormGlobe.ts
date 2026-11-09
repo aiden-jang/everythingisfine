@@ -9,7 +9,7 @@ export const stormTarget = { lon: -88.2, lat: 27.25, zoom: 2.25 };
 export const stormLens = { globe: 2.85, map: 9 };
 export const gulf = coastRaster(
   coast.map((polygon) => polygon.map((ring) => ring.map(([lon, lat]) => ({ lon: lon!, lat: lat! })))),
-  [-112, 10, -65, 45],
+  [-104, 14, -73, 39],
 );
 
 function windPath(storm: Frame["storm"], radii: number[], color: number): ObservationPath {

@@ -52,11 +52,12 @@ function visibleShaking(progress: number): ObservationPath[] {
     for (let i = 0; i < points.length; i++) {
       const b = points[i]!;
       const a = points[i - 1];
-      if (a && a.lon <= edge !== b.lon <= edge) {
+      const inside = b.lon <= edge;
+      if (a && a.lon <= edge !== inside) {
         run.push({ lon: edge, lat: a.lat + ((b.lat - a.lat) * (edge - a.lon)) / (b.lon - a.lon) });
-        if (b.lon > edge) flush();
+        if (!inside) flush();
       }
-      if (b.lon <= edge) run.push(b);
+      if (inside) run.push(b);
     }
     flush();
   }
@@ -73,7 +74,12 @@ export function ruptureGeography(frame: RuptureFrame): Pick<ObservationView, "fr
       : [];
   if (frame.reveal > 0) paths.push(...visibleShaking(frame.reveal));
   return {
-    frame: { at: at + frame.modelTime * 1000, paths, marks: [{ ...origin, size: 19, color: 0xeaf3fb }] },
+    frame: {
+      at: at + frame.modelTime * 1000,
+      raster: japan,
+      paths,
+      marks: [{ ...origin, size: 19, color: 0xeaf3fb }],
+    },
     follow: {
       ...ruptureTarget,
       zoom: 1.95 + frame.camera.zoom * 0.25,

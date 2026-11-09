@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ruptureGeography } from "./ruptureGlobe";
 import {
   ARRIVAL_MS,
   MODEL_SECONDS,
@@ -32,5 +33,14 @@ describe("Tōhoku rupture scene", () => {
     expect(patchProgress(4, 5, 0)).toBe(0);
     expect(patchProgress(5, 5, 0)).toBe(1);
     expect(patchProgress(6, 5, 2)).toBe(0.5);
+  });
+
+  it("uses the same geographic coastline for the fault and shaking views", () => {
+    const fault = ruptureGeography(stillFrame("fault")).frame;
+    const shaking = ruptureGeography(stillFrame("shaking")).frame;
+    expect(fault.raster?.bounds).toEqual([126, 26, 156, 50]);
+    expect(shaking.raster).toBe(fault.raster);
+    expect(shaking.marks?.[0]?.lon).toBeCloseTo(142.373, 6);
+    expect(shaking.marks?.[0]?.lat).toBeCloseTo(38.297, 6);
   });
 });

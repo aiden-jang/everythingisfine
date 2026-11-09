@@ -35,7 +35,7 @@ export function coastRaster(
       ),
     )
     .join("");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768" preserveAspectRatio="none" viewBox="${west} ${-north} ${width} ${height}">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="1536" preserveAspectRatio="none" viewBox="${west} ${-north} ${width} ${height}">
     <defs><radialGradient id="edge" r="69%"><stop offset="63%" stop-color="white"/><stop offset="100%" stop-color="black"/></radialGradient>
     <mask id="blend"><rect x="${west}" y="${-north}" width="${width}" height="${height}" fill="url(#edge)"/></mask></defs>
     <g mask="url(#blend)"><rect x="${west}" y="${-north}" width="${width}" height="${height}" fill="#0d1d2e"/>
