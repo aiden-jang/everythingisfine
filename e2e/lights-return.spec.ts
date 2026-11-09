@@ -52,6 +52,16 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   await page.keyboard.press("Escape");
   await expect(open).toBeFocused();
   await expect(page.getByRole("button", { name: "Tonight’s Sky", exact: true })).toBeVisible();
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await open.click();
+  await expect(stage.getByText("Approaching the island", { exact: true })).toBeVisible();
+  await expect(active).toHaveAttribute("src", /maria-before-/);
+  await period.press("End");
+  await compare.click();
+  await divider.press("End");
+  await expect(stage.locator(".lights-archive")).toHaveCSS("opacity", "1");
+  await panel.getByRole("button", { name: "Back to After Dark" }).click();
+  await expect(open).toBeFocused();
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);
   expect(errors).toEqual([]);
 });

@@ -12,6 +12,7 @@ import { useObservatoryEscape } from "../useObservatoryEscape";
 
 const MOTION = "(prefers-reduced-motion: reduce)";
 const LAST = lightsPeriods.length - 1;
+const EXIT_MS = 240;
 const locator = { at: Date.UTC(2017, 8, 20, 4), marks: [{ ...puertoRico, size: 19, color: 0xe6caa6 }] };
 
 interface Landing {
@@ -30,12 +31,13 @@ export function LightsReturn({
   const archive = useRef<HTMLDivElement>(null);
   const skip = useRef<HTMLButtonElement>(null);
   const play = useRef<HTMLButtonElement>(null);
-  const exit = useRef<Animation>();
+  const exit = useRef<number>();
   const [attempt, retry] = useState(0);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [landing, setLanding] = useState<Landing | null>(null);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(() => !matchMedia(MOTION).matches);
+  const [leaving, setLeaving] = useState(false);
   const [compare, setCompare] = useState(false);
   const [split, setSplit] = useState(50);
   const timeline = useId();
@@ -44,7 +46,7 @@ export function LightsReturn({
   const displayed = compare && split === 100 ? lightsPeriods[0] : frame;
 
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
-  useEffect(() => () => exit.current?.cancel(), []);
+  useEffect(() => () => window.clearTimeout(exit.current), []);
   useEffect(() => {
     let open = true;
     void loadBlackMarble().then(
@@ -97,17 +99,15 @@ export function LightsReturn({
   }, []);
 
   function close() {
-    if (exit.current) return;
+    if (exit.current !== undefined) return;
     if (!archive.current || matchMedia(MOTION).matches || document.hidden) {
       onClose();
       return;
     }
     setPlaying(false);
-    exit.current = archive.current.animate([{ opacity: 1 }, { opacity: 0 }], {
-      duration: 240,
-      fill: "forwards",
-    });
-    void exit.current.finished.then(onClose, () => {});
+    setLeaving(true);
+    // A throttled compositor can leave an exit animation's completion promise pending.
+    exit.current = window.setTimeout(onClose, EXIT_MS);
   }
   useObservatoryEscape(close);
 
@@ -126,6 +126,7 @@ export function LightsReturn({
             data-arrived=""
             data-animate={landing.animate || undefined}
             data-playing={playing || undefined}
+            data-leaving={leaving || undefined}
           >
             <div
               className="lights-map"

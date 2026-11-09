@@ -29,6 +29,19 @@
   animation: lights-approach 850ms cubic-bezier(0.22, 0.75, 0.2, 1) both;
 }
 
+.lights-archive[data-leaving] {
+  animation: lights-leave 240ms ease-in both;
+}
+
+@keyframes lights-leave {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes lights-aperture {
   from {
     opacity: 0;
@@ -203,7 +216,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .lights-archive[data-animate],
-  .lights-archive[data-animate] .lights-map {
+  .lights-archive[data-animate] .lights-map,
+  .lights-archive[data-leaving] {
     animation: none;
   }
 
