@@ -188,6 +188,7 @@ export async function eclipseStory(city: SkyCity): Promise<EarthStoryData> {
   return {
     frames,
     lunarImage: moonTexture,
+    timelineLabel: "Eclipse time",
     mapTarget: { lon: ephemerisPoint(data.moon[210]!).lon, lat: 15, zoom: 1 },
     legend: [
       { color: "#8ba4ba", label: "Moon on the horizon · visible on the blue dot’s side" },

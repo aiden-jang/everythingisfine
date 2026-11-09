@@ -124,6 +124,7 @@ export function parseRiver(buffer: ArrayBuffer, archive: boolean): EarthStoryDat
   if (!frames.some((f) => f.paths.length)) throw new Error("No valid transport columns");
   return {
     frames,
+    timelineLabel: "Forecast valid time",
     target: { lon: -143, lat: 38, zoom: 1.3 },
     chapters: [
       { at: frames[0]!.at, label: "Pacific" },

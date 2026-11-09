@@ -35,7 +35,7 @@ test("Atmospheric River and River Pulse open distinct views from the catalogue a
   await atmospheric.click();
   const forecast = page.getByRole("region", { name: "Atmospheric River", exact: true });
   await expect(forecast.getByRole("combobox", { name: "Forecast", exact: true })).toBeVisible();
-  await expect(forecast.getByRole("slider")).toBeVisible();
+  await expect(forecast.getByRole("slider", { name: "Forecast valid time", exact: true })).toBeVisible();
   await forecast.getByRole("button", { name: "Back to Observatory", exact: true }).click();
   await expect(atmospheric).toBeFocused();
   await pulse.click();
@@ -168,6 +168,7 @@ for (const [id, title] of [
     await page.setViewportSize({ width: 1440, height: 950 });
     await page.goto(`/#v=observe&story=${id}`);
     const panel = page.getByRole("region", { name: title, exact: true });
+    await expect(panel.getByRole("slider", { name: /Predicted flyby|Eclipse time/ })).toBeVisible();
     const time = panel.locator(".story-time time");
     await panel
       .getByRole("button", { name: id === "eclipse" ? "Greatest eclipse" : "Closest approach" })
