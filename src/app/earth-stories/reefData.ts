@@ -36,6 +36,7 @@ async function recentTemperatures(): Promise<Map<number, number>> {
   try {
     const response = await fetch("/api/observations/reef-temperature", {
       signal: AbortSignal.timeout(25000),
+      cache: "no-store",
     });
     return response.ok ? parseReefTemperatures(await response.text()) : new Map();
   } catch {
@@ -86,7 +87,7 @@ export function parseReef(buffer: ArrayBuffer) {
 export async function reefStory(choice: string): Promise<EarthStoryData> {
   if (choice === "2023 archive") return reefArchive();
   const [response, temperatures] = await Promise.all([
-    fetch("/api/observations/reef", { signal: AbortSignal.timeout(25000) }),
+    fetch("/api/observations/reef", { signal: AbortSignal.timeout(25000), cache: "no-store" }),
     recentTemperatures(),
   ]);
   if (!response.ok) throw new Error("Recent reef observations unavailable");

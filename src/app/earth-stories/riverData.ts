@@ -1,9 +1,9 @@
-import { NetCDFReader, type Attribute } from "netcdfjs";
+import { NetCDFReader } from "netcdfjs";
 import type { ObservationPath } from "../observations/types";
 import type { EarthStoryData } from "./types";
 import recorded from "../../sources/earth-atlas/river.nc?url";
+import { forecastTime } from "./forecastTime";
 
-const HOUR = 3600000;
 const variables = [
   "Specific_humidity_isobaric",
   "u-component_of_wind_isobaric",
@@ -53,25 +53,16 @@ export function columnTransport(
 export function parseRiver(buffer: ArrayBuffer, archive: boolean): EarthStoryData {
   const grid = new NetCDFReader(buffer);
   const read = (name: string) => grid.getDataVariable(name).map(Number);
-  const attributes: readonly Attribute[] = grid.variables.find((v) => v.name === "time")?.attributes ?? [];
-  const units = attributes.find((a) => a.name === "units")?.value;
-  const origin = typeof units === "string" ? Date.parse(/^hours? since (.+)$/i.exec(units)?.[1] ?? "") : NaN;
+  const dimension = grid.variables.find((v) => v.name === variables[0])?.dimensions[0];
+  const { times, runs } = forecastTime(grid, dimension);
   const [q, u, v, surface, rain] = variables.map(read);
   const pressure = read("isobaric"),
     lons = read("longitude"),
-    lats = read("latitude"),
-    times = read("time"),
-    runs = read("reftime");
-  if (
-    !Number.isFinite(origin) ||
-    times.length < 2 ||
-    lons.length < 10 ||
-    lats.length < 10 ||
-    pressure.length < 10
-  )
+    lats = read("latitude");
+  if (lons.length < 10 || lats.length < 10 || pressure.length < 10)
     throw new Error("Incomplete water-vapor forecast");
   const area = lons.length * lats.length;
-  const frames = times.map((hour, index) => {
+  const frames = times.map((at, index) => {
     const paths: ObservationPath[] = [];
     let maximum = 0,
       coastalRain: number | null = null;
@@ -113,7 +104,7 @@ export function parseRiver(buffer: ArrayBuffer, archive: boolean): EarthStoryDat
         });
       }
     return {
-      at: origin + hour * HOUR,
+      at,
       caption: `${archive ? "Recorded" : "Current"} GFS forecast · water-vapor transport`,
       paths,
       flow: true,
@@ -125,7 +116,7 @@ export function parseRiver(buffer: ArrayBuffer, archive: boolean): EarthStoryDat
         },
         {
           label: "Model run",
-          value: new Date(origin + runs[index]! * HOUR).toISOString().slice(0, 16).replace("T", " ") + " UTC",
+          value: new Date(runs[index]!).toISOString().slice(0, 16).replace("T", " ") + " UTC",
         },
       ],
     };
@@ -136,7 +127,7 @@ export function parseRiver(buffer: ArrayBuffer, archive: boolean): EarthStoryDat
     target: { lon: -143, lat: 38, zoom: 1.3 },
     chapters: [
       { at: frames[0]!.at, label: "Pacific" },
-      { at: frames[2]!.at, label: "Approaching the coast" },
+      { at: frames[Math.floor(frames.length / 2)]!.at, label: "Approaching the coast" },
       { at: frames.at(-1)!.at, label: "Forecast end" },
     ],
     legend: [
@@ -151,6 +142,7 @@ export async function riverStory(choice: string): Promise<EarthStoryData> {
   const archive = choice !== "Latest forecast";
   const response = await fetch(archive ? recorded : "/api/observations/river", {
     signal: AbortSignal.timeout(25000),
+    cache: archive ? "default" : "no-store",
   });
   if (!response.ok) throw new Error("Forecast unavailable");
   return parseRiver(await response.arrayBuffer(), archive);
