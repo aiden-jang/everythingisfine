@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
 
 test("Megaflash starts on the storm and keeps the full trace and keyboard scrub available", async ({
   page,
@@ -8,7 +8,7 @@ test("Megaflash starts on the storm and keeps the full trace and keyboard scrub 
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
-  await page.getByText("Historical replays", { exact: true }).click();
+  await openStories(page);
   const trigger = page.getByRole("button", { name: "Watch Megaflash" });
   await trigger.click();
   const dialog = page.getByRole("dialog", { name: "Megaflash" });

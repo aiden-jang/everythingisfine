@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
 
 test("Shadow Chase follows the globe and uses the saved city for local circumstances", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
@@ -10,6 +10,7 @@ test("Shadow Chase follows the globe and uses the saved city for local circumsta
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await openStories(page);
   const trigger = page.getByRole("button", { name: "Shadow Chase", exact: true });
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
@@ -26,6 +27,9 @@ test("Shadow Chase follows the globe and uses the saved city for local circumsta
   await panel.getByRole("button", { name: "Greatest eclipse", exact: true }).click();
   await expect(stage.getByText("Greatest eclipse", { exact: true })).toBeVisible();
   await expect(panel.getByText("258 km")).toBeVisible();
+  await panel.getByRole("button", { name: "Map", exact: true }).click();
+  await expect(stage.getByText("Path of totality · Map", { exact: true })).toBeVisible();
+  await expect(shadow).toHaveAttribute("aria-valuetext", "10:06 UTC");
 
   await panel.getByRole("button", { name: "From New York" }).click();
   await expect(panel.getByRole("heading", { name: "No visible eclipse in New York" })).toBeVisible();
@@ -46,6 +50,10 @@ test("Shadow Chase follows the globe and uses the saved city for local circumsta
 
   await panel.getByRole("button", { name: "Follow the shadow", exact: true }).click();
   await expect(shadow).toHaveAttribute("aria-valuetext", "10:06 UTC");
+  await expect(panel.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);
@@ -68,6 +76,7 @@ test("normal motion starts the flight and reaches the saved city when animation 
   });
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await openStories(page);
   const trigger = page.getByRole("button", { name: "Shadow Chase", exact: true });
   await expect(trigger).toBeEnabled();
   await trigger.evaluate((button) => {

@@ -58,7 +58,7 @@ export function Moonfall({
 }
 
 function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void }): JSX.Element {
-  const { eva, flying, meters, playing, station } = useSyncExternalStore(view.subscribe, view.read);
+  const { eva, flying, meters, playing, station, mapped } = useSyncExternalStore(view.subscribe, view.read);
   const id = useId();
   const route = traverses[eva]!;
   const length = Math.round(route.km * 1000);
@@ -69,6 +69,14 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
   };
   return (
     <>
+      <div className="observatory-actions moonfall-actions" role="group" aria-label="Lunar projection">
+        <button type="button" aria-pressed={!mapped} onClick={() => act(() => view.project(false))}>
+          Terrain
+        </button>
+        <button type="button" aria-pressed={mapped} onClick={() => act(() => view.project(true))}>
+          Landing map
+        </button>
+      </div>
       <div className="observatory-actions moonfall-actions">
         {flying ? (
           <button type="button" onClick={() => act(view.skip)}>

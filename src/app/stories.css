@@ -1,0 +1,59 @@
+.stories-drawer {
+  display: grid;
+  gap: 14px;
+  margin-block: 14px;
+  padding-block: 12px 4px;
+  border-block: 1px solid var(--color-hairline);
+}
+
+.stories-group h3 {
+  color: var(--color-dim);
+  font-size: 11px;
+  font-weight: 550;
+  margin-bottom: 2px;
+}
+
+.stories-group button {
+  display: grid;
+  gap: 2px;
+  align-content: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 7px 6px;
+  border-bottom: 1px solid var(--color-hairline);
+  color: var(--color-ink);
+  font-size: 13px;
+  text-align: left;
+}
+
+.stories-group button:hover:not(:disabled) {
+  background: var(--color-deck);
+}
+
+.stories-group button:disabled {
+  opacity: 0.55;
+}
+
+.stories-group small {
+  color: var(--color-dim);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.kilauea-footage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--color-void);
+}
+
+.kilauea-footage canvas {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.kilauea-footage p {
+  position: absolute;
+}

@@ -13,6 +13,7 @@ export const loadSource: Record<ObservationId, () => Promise<ObservationSource>>
   wind: () => import("../../sources/observations/wind").then(({ wind }) => wind),
   air: () => import("../../sources/observations/air").then(({ air }) => air),
   lightning: () => import("../../sources/observations/lightning").then(({ lightning }) => lightning),
+  iceberg: () => import("../../sources/observations/iceberg").then(({ iceberg }) => iceberg),
   smoke: () => import("../../sources/observations/archive").then(({ smoke }) => smoke),
   tsunami: () => import("../../sources/observations/archive").then(({ tsunami }) => tsunami),
 };

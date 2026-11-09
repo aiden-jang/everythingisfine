@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
 
 test("Tōhoku reveals the modeled fault before the estimated shaking", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
-  await page.getByText("Historical replays", { exact: true }).click();
+  await openStories(page);
   const trigger = page.getByRole("button", { name: "Watch Tōhoku rupture" });
   await trigger.click();
   const reveal = page.getByRole("dialog", { name: "The Tōhoku rupture" });
@@ -66,7 +66,7 @@ test("Tōhoku archive exposes both maps on a small phone with reduced motion", a
       }),
   );
   await page.goto("/");
-  await page.getByText("Historical replays", { exact: true }).click();
+  await openStories(page);
   await page.getByRole("button", { name: /Japan, 2011/ }).click();
   await expect(page).toHaveURL(/d=2011-03-11/);
   const pinned = page.getByRole("complementary", { name: "Pinned earthquake" });

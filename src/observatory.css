@@ -264,47 +264,6 @@
     font-size: 11px;
     line-height: 1.45;
   }
-  .observatory-history {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: start;
-    column-gap: 20px;
-    margin-top: 16px;
-    font-size: 11px;
-    color: var(--color-dim);
-  }
-  .observatory-history summary {
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    color: var(--color-faint);
-  }
-  .observatory-history details[open] {
-    width: 100%;
-  }
-  .observatory-history summary::after {
-    content: "+";
-    margin-left: 8px;
-  }
-  .observatory-history details[open] summary::after {
-    content: "−";
-  }
-  .observatory-history-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0 16px;
-  }
-  .observatory-history button {
-    min-height: 44px;
-    text-align: left;
-    cursor: pointer;
-  }
-  .observatory-history button:hover {
-    color: var(--color-ink);
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
   .observatory-credit {
     padding: 0 var(--observatory-inline) max(8px, env(safe-area-inset-bottom));
     font-size: 10px;
@@ -419,10 +378,6 @@
     .stage-readout {
       bottom: calc(var(--stage-inset) + 2px);
     }
-    .observatory-history {
-      margin-top: 10px;
-      column-gap: 18px;
-    }
     .observatory-location {
       margin-top: 10px;
     }
@@ -444,9 +399,6 @@
     .observatory-story h2 {
       font-size: 34px;
     }
-    .observatory-history {
-      column-gap: 14px;
-    }
   }
   @media (max-height: 620px) and (min-width: 600px) {
     .frame[data-presentation="observe"] .zones {
@@ -467,10 +419,6 @@
     }
     .observatory-description {
       font-size: 12px;
-    }
-    .observatory-scenes,
-    .observatory-history {
-      margin-top: 12px;
     }
   }
 }

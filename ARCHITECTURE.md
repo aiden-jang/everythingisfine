@@ -3007,6 +3007,11 @@ Returning to the Observatory keeps the selected event, filters, and held moment 
 Historical shortcuts reuse the archive request owner. Only a successful matching day consumes the
 intent and selects the largest available event, so a late answer cannot move a newer view.
 
+The story panels own selection and playback time. Earth projections share the observation layer,
+including Kīlauea’s georeferenced raster and Iceberg Drift’s track gaps. The regional lens changes
+camera magnification after arrival. Moonfall switches between terrain and an orthographic landing
+map in the lunar scene, preserving the traverse and distance across both views.
+
 ### src/globe/scene.ts
 
 Storm Radar uses the same scene and camera as the other Observatory views. The curved raster patch

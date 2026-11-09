@@ -1,6 +1,7 @@
 import {
   BufferAttribute,
   BufferGeometry,
+  CanvasTexture,
   Color,
   DoubleSide,
   Group,
@@ -62,7 +63,9 @@ function wrapSegment(a: GeoPoint, b: GeoPoint, draw: (p: GeoPoint, q: GeoPoint) 
   draw({ ...at, lon: -edge }, b);
 }
 
-export function rasterGeometry(bounds: NonNullable<NonNullable<ObservationFrame["raster"]>["bounds"]>) {
+type Raster = NonNullable<ObservationFrame["raster"]>;
+
+export function rasterGeometry(bounds: NonNullable<Raster["bounds"]>, corners?: Raster["corners"]) {
   const [west, south, east, north] = bounds;
   const geometry = new SphereGeometry(
     1.009,
@@ -74,10 +77,23 @@ export function rasterGeometry(bounds: NonNullable<NonNullable<ObservationFrame[
     (north - south) * DEG,
   );
   const uv = geometry.attributes.uv!;
+  const vertices = geometry.attributes.position!;
   const coordinates = new Float32Array(uv.count * 2);
   for (let i = 0; i < uv.count; i++) {
-    coordinates[i * 2] = west + (east - west) * Math.min(1, Math.max(0, uv.getX(i)));
-    coordinates[i * 2 + 1] = south + (north - south) * uv.getY(i);
+    const u = Math.min(1, Math.max(0, uv.getX(i)));
+    const v = uv.getY(i);
+    let lon = west + (east - west) * u;
+    let lat = south + (north - south) * v;
+    if (corners) {
+      const [sw, se, nw, ne] = corners;
+      const mix = (a: number, b: number, c: number, d: number) =>
+        (a + (b - a) * u) * (1 - v) + (c + (d - c) * u) * v;
+      lon = mix(sw.lon, se.lon, nw.lon, ne.lon);
+      lat = mix(sw.lat, se.lat, nw.lat, ne.lat);
+      vertices.setXYZ(i, ...toVec3(lon, lat, 1.009));
+    }
+    coordinates[i * 2] = lon;
+    coordinates[i * 2 + 1] = lat;
   }
   geometry.setAttribute("aLonLat", new BufferAttribute(coordinates, 2));
   return geometry;
@@ -194,21 +210,31 @@ export function createObservationLayer(morph: { value: number }) {
       dot.geometry.dispose();
       dot.geometry = marks.geometry();
     }
-    const image = view?.frame.raster ? view.image : null;
-    const priorImage = prior?.frame.raster ? prior.image : null;
+    const image = view?.frame.raster ? (view.surface ?? view.image) : null;
+    const priorImage = prior?.frame.raster ? (prior.surface ?? prior.image) : null;
     if (image !== priorImage) {
       raster.material.map?.dispose();
-      raster.material.map = image ? new Texture(image) : null;
+      raster.material.map = view?.surface
+        ? new CanvasTexture(view.surface)
+        : image
+          ? new Texture(image)
+          : null;
       if (raster.material.map) {
         raster.material.map.colorSpace = SRGBColorSpace;
         raster.material.map.needsUpdate = true;
       }
       raster.material.needsUpdate = true;
-    }
+    } else if (view?.surface && raster.material.map) raster.material.map.needsUpdate = true;
     const bounds = view?.frame.raster?.bounds ?? FULL;
-    if (image && (!priorImage || bounds !== (prior?.frame.raster?.bounds ?? FULL))) {
+    const corners = view?.frame.raster?.corners;
+    if (
+      image &&
+      (!priorImage ||
+        bounds !== (prior?.frame.raster?.bounds ?? FULL) ||
+        corners !== prior?.frame.raster?.corners)
+    ) {
       raster.geometry.dispose();
-      raster.geometry = rasterGeometry(bounds);
+      raster.geometry = rasterGeometry(bounds, corners);
     }
     raster.visible = !!image;
     prior = view;

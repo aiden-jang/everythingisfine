@@ -102,7 +102,7 @@ export function createControls(
   /**
    * Pixels per unit of projected height at the origin plane. The one constant the projection needs.
    */
-  const focalPx = (): number => canvas.clientHeight / (2 * Math.tan((fovDeg / 2) * DEG));
+  const focalPx = (): number => (camera.zoom * canvas.clientHeight) / (2 * Math.tan((fovDeg / 2) * DEG));
 
   const angleAt = (px: number, atDist?: number): number => perspectiveAngle(px, atDist ?? dist(), focalPx());
 

@@ -8,12 +8,11 @@ import {
   snapshots,
   overflight,
   vent,
-  type Camera,
 } from "./lavaTimeline";
 
 type Context = CanvasRenderingContext2D;
 type Polyline = number[][];
-type Scene = ReturnType<typeof import("./lavaTimeline").lavaFrame>;
+type Survey = { index: number; accent: number };
 
 function pathOf(lines: Polyline[], closed = false) {
   const path = new Path2D();
@@ -42,7 +41,6 @@ const mapped = snapshots.map((snapshot) => {
 
 const [west, south, east, north] = bounds as [number, number, number, number];
 const bay = [9630, 2049];
-const pahoa = [20, 900];
 const grid = new Path2D();
 for (let x = west; x <= east; x += 2000) {
   grid.moveTo(x, south);
@@ -53,26 +51,10 @@ for (let y = south; y <= north; y += 2000) {
   grid.lineTo(east, y);
 }
 
-function mapProjection(camera: Camera, width: number, height: number) {
-  const scale = Math.min(width / (camera.span * 1.1), (height * 1.65) / camera.span);
-  const cx = width / 2;
-  const cy = height * 0.48;
-  const cos = Math.cos(camera.roll);
-  const sin = Math.sin(camera.roll);
-  return {
-    scale,
-    install(ctx: Context) {
-      ctx.translate(cx, cy);
-      ctx.rotate(camera.roll);
-      ctx.scale(scale, -scale * camera.pitch);
-      ctx.translate(-camera.x, -camera.y);
-    },
-    point([x, y]: number[]): [number, number] {
-      const u = (x! - camera.x) * scale;
-      const v = (camera.y - y!) * scale * camera.pitch;
-      return [cx + u * cos - v * sin, cy + u * sin + v * cos];
-    },
-  };
+interface SurfaceProjection {
+  scale: number;
+  install: (ctx: Context) => void;
+  point: (coordinates: number[]) => [number, number];
 }
 
 function paintReference(ctx: Context, relief: HTMLImageElement | null) {
@@ -89,9 +71,9 @@ function paintReference(ctx: Context, relief: HTMLImageElement | null) {
 
 function paintSurvey(
   ctx: Context,
-  frame: Scene,
+  frame: Survey,
   relief: HTMLImageElement | null,
-  projection: ReturnType<typeof mapProjection>,
+  projection: SurfaceProjection,
   mode: "dated" | "before" | "after",
 ) {
   ctx.save();
@@ -145,7 +127,7 @@ function paintSurvey(
 function paintOverflight(
   ctx: Context,
   image: HTMLImageElement,
-  footage: NonNullable<Scene["footage"]>,
+  footage: { index: number; opacity: number },
   width: number,
   height: number,
 ) {
@@ -165,11 +147,6 @@ function paintOverflight(
     h * scale,
   );
   ctx.restore();
-}
-
-export interface LavaImages {
-  relief: HTMLImageElement | null;
-  flight: HTMLImageElement | null;
 }
 
 function place(
@@ -198,72 +175,67 @@ function place(
   ctx.restore();
 }
 
-function scaleBar(ctx: Context, scale: number, width: number, height: number) {
-  const km = scale * 1000;
-  const end = width - 19;
-  const start = end - km;
-  const y = height - 15;
-  ctx.fillStyle = "#07121fdb";
-  ctx.fillRect(Math.min(start, end - 44) - 8, y - 22, Math.max(44, km) + 16, 30);
-  ctx.strokeStyle = "#d9e6eb";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(start, y - 4);
-  ctx.lineTo(start, y);
-  ctx.lineTo(end, y);
-  ctx.lineTo(end, y - 4);
-  ctx.stroke();
-  ctx.fillStyle = "#e8edf5";
-  ctx.font = '500 10px "Geist Mono Variable", monospace';
-  ctx.textAlign = "right";
-  ctx.fillText("1 km", end, y - 8);
-  ctx.textAlign = "left";
-}
-
-export function drawLava(
-  ctx: Context,
-  width: number,
-  height: number,
-  frame: Scene,
-  images: LavaImages,
+export function drawLavaSurface(
+  canvas: HTMLCanvasElement,
+  index: number,
+  relief: HTMLImageElement | null,
   comparison: number | null,
 ) {
-  const wipe = comparison ?? frame.wipe;
-  const projection = mapProjection(frame.camera, width, height);
-  const sea = ctx.createLinearGradient(width * 0.13, 0, width, height);
-  sea.addColorStop(0, "#0c1728");
-  sea.addColorStop(0.58, "#112a3b");
-  sea.addColorStop(1, "#142e40");
-  ctx.fillStyle = sea;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  const { width, height } = canvas;
+  const scale = width / (east - west);
+  const projection: SurfaceProjection = {
+    scale,
+    install(context) {
+      context.scale(scale, -height / (north - south));
+      context.translate(-west, -north);
+    },
+    point: ([x, y]) => [(x! - west) * scale, ((north - y!) * height) / (north - south)],
+  };
+  ctx.fillStyle = "#112638";
   ctx.fillRect(0, 0, width, height);
-  if (wipe === null) {
-    paintSurvey(ctx, frame, images.relief, projection, "dated");
-    place(ctx, projection.point(vent), "Fissure 8", width, height, true);
-    if (width >= 480 && frame.index < 7) place(ctx, projection.point(pahoa), "Pāhoa", width, height);
+  const frame = { index, accent: 0.9 };
+  if (comparison === null) {
+    paintSurvey(ctx, frame, relief, projection, "dated");
   } else {
-    const split = width * (1 - wipe / 100);
+    const center =
+      comparison === 0
+        ? width
+        : comparison === 100
+          ? 0
+          : projection.point([bay[0]! - 650 + (0.5 - comparison / 100) * 13_000, 0])[0];
     for (const [start, extent, mode] of [
-      [0, split, "before"],
-      [split, width - split, "after"],
+      [0, center, "before"],
+      [center, width - center, "after"],
     ] as const) {
       if (extent <= 0) continue;
       ctx.save();
       ctx.beginPath();
       ctx.rect(start, 0, extent, height);
       ctx.clip();
-      paintSurvey(ctx, frame, images.relief, projection, mode);
+      paintSurvey(ctx, frame, relief, projection, mode);
       ctx.restore();
     }
-    if (wipe > 0 && wipe < 100) {
-      ctx.beginPath();
-      ctx.moveTo(split, 0);
-      ctx.lineTo(split, height);
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = "#e2edf6";
-      ctx.stroke();
+    if (comparison > 0 && comparison < 100) {
+      ctx.fillStyle = "#e2edf6";
+      ctx.fillRect(center, 0, 2, height);
     }
   }
+  place(ctx, projection.point(vent), "Fissure 8", width, height, true);
   place(ctx, projection.point(bay), "Kapoho Bay", width, height, true);
-  if (frame.camera.pitch === 1) scaleBar(ctx, projection.scale, width, height);
-  if (images.flight && frame.footage) paintOverflight(ctx, images.flight, frame.footage, width, height);
+}
+
+export function drawLavaFootage(canvas: HTMLCanvasElement, image: HTMLImageElement, elapsed: number) {
+  const frame = Math.floor((elapsed * overflight.fps) / 1000);
+  const ctx = canvas.getContext("2d");
+  if (ctx)
+    paintOverflight(
+      ctx,
+      image,
+      { index: Math.min(overflight.count - 1, frame), opacity: 1 },
+      canvas.width,
+      canvas.height,
+    );
+  return frame >= overflight.count - 1;
 }

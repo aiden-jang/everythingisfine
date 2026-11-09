@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
 
 test("Tonight’s Sky follows the selected city and time on the same globe", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -42,6 +42,7 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await expect(page.getByRole("link", { name: "aiden jang", exact: true })).toBeInViewport();
   await page.keyboard.press("Escape");
   await expect(open).toBeFocused();
+  await openStories(page);
   await expect(page.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
   await expect(page.getByRole("combobox", { name: "City" })).toHaveValue("Tokyo");
   const meteorButton = page.getByRole("button", { name: "Meteor Nights", exact: true });
@@ -61,6 +62,7 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   );
   await page.keyboard.press("Escape");
   await expect(meteorButton).toBeFocused();
+  await openStories(page);
   await page.getByRole("button", { name: "Orbital Pass", exact: true }).click();
   await expect(page.getByRole("combobox", { name: "City" })).toHaveValue("Tokyo");
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);
@@ -101,8 +103,15 @@ test("Moonfall reuses the sky canvas and restores the city, time, and bearing", 
   await route.selectOption("1");
   await stops.selectOption({ label: "Shorty Crater" });
   const shorty = Number(await distance.inputValue());
+  const stop = await stops.inputValue();
   expect(shorty).toBeGreaterThan(0);
   expect(shorty).toBeLessThan(250);
+  await moonfall.getByRole("button", { name: "Landing map" }).click();
+  await expect(valley).toContainText("Taurus–Littrow landing map");
+  await expect(distance).toHaveValue(String(shorty));
+  await expect(stops).toHaveValue(stop);
+  await moonfall.getByRole("button", { name: "Terrain" }).click();
+  await expect(valley).toContainText("Taurus–Littrow Valley");
   await distance.press("End");
   await expect(distance).toHaveValue("250");
   await moonfall.getByRole("button", { name: "Play traverse" }).click();

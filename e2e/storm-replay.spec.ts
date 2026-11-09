@@ -1,10 +1,10 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
 
 async function openStorm(page: Page) {
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
-  await page.getByText("Historical replays", { exact: true }).click();
+  await openStories(page);
   const trigger = page.getByRole("button", { name: "Follow Hurricane Katrina" });
   await trigger.click();
   return { trigger, dialog: page.getByRole("dialog", { name: "Eye of the Storm" }) };

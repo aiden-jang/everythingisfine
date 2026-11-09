@@ -3,9 +3,10 @@ import type { ObservationId } from "./catalogue";
 import type { ObservationView } from "./types";
 
 export type AfterDarkArchive = "lights" | "shadow";
+export type StoryId = ObservationId | AfterDarkArchive | "kilauea";
 
 export function useObservationDeck() {
-  const [entry, setEntry] = useState<ObservationId | "catalogue" | AfterDarkArchive | null>(null);
+  const [entry, setEntry] = useState<StoryId | null>(null);
   const [trigger, setTrigger] = useState<string | null>(null);
   const [view, update] = useState<ObservationView | null>(null);
   const [map, setMap] = useState(false);
@@ -27,8 +28,8 @@ export function useObservationDeck() {
     setMap,
     horizon,
     setHorizon,
-    open(next: NonNullable<typeof entry> = "catalogue", from?: string) {
-      if (from) setTrigger(from);
+    open(next: StoryId, from: string) {
+      setTrigger(from);
       update(null);
       setMap(false);
       setHorizon(false);

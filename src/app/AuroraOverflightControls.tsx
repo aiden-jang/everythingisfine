@@ -1,5 +1,4 @@
 import { useRef } from "react";
-import type { AfterDarkArchive } from "./observations/useObservationDeck";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import { SkyCityPicker, type SkyCityPreference } from "./tonight/SkyCityPicker";
 import { meteorDate, nextMeteor } from "./tonight/meteorCalendar";
@@ -11,9 +10,6 @@ export function AuroraOverflightControls({
   onReturn,
   onSunWatch,
   onTonight,
-  onOrbit,
-  onMeteors,
-  onArchive,
   city,
 }: {
   aurora: ReturnType<typeof useAuroraOverflight>;
@@ -21,9 +17,6 @@ export function AuroraOverflightControls({
   solar: boolean;
   onSunWatch: () => void;
   onTonight: () => void;
-  onOrbit: () => void;
-  onMeteors: () => void;
-  onArchive: (archive: AfterDarkArchive) => void;
   city: SkyCityPreference;
   onReturn: () => void;
 }): JSX.Element {
@@ -46,23 +39,8 @@ export function AuroraOverflightControls({
         >
           {aurora.run ? "Replay flight" : "Follow the aurora"}
         </button>
-        <button type="button" onClick={onSunWatch} aria-expanded={solar} data-sun-toggle="">
-          {solar ? "Back to stars" : "Sun Watch"}
-        </button>
         <button type="button" id="open-tonight-sky" onClick={onTonight} disabled={!ready}>
           Tonight’s Sky
-        </button>
-        <button type="button" id="open-orbital-pass" onClick={onOrbit} disabled={!ready}>
-          Orbital Pass
-        </button>
-        <button type="button" id="open-meteor-nights" onClick={onMeteors} disabled={!ready}>
-          Meteor Nights
-        </button>
-        <button type="button" id="open-lights-return" onClick={() => onArchive("lights")} disabled={!ready}>
-          Lights Return
-        </button>
-        <button type="button" id="open-shadow-chase" onClick={() => onArchive("shadow")} disabled={!ready}>
-          Shadow Chase
         </button>
         {aurora.run && (
           <>

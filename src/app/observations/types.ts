@@ -23,6 +23,7 @@ export interface ObservationRaster {
   url: string;
   bounds?: readonly [west: number, south: number, east: number, north: number];
   opacity?: number;
+  corners?: readonly [GeoPoint, GeoPoint, GeoPoint, GeoPoint];
 }
 
 export interface Measurement {
@@ -55,6 +56,7 @@ export interface ObservationData {
   frames: readonly ObservationFrame[];
   target: CameraState;
   mapTarget?: CameraState;
+  lens?: ObservationView["lens"];
   note: string;
   series?: readonly ObservationSeries[];
   units?: string;
@@ -67,6 +69,8 @@ export interface ObservationView {
   frame: ObservationFrame;
   target: CameraState;
   image: HTMLImageElement | null;
+  surface?: HTMLCanvasElement;
+  lens?: { globe: number; map: number };
   sky?: TonightView | undefined;
   shadow?: { point: GeoPoint; pose: CameraState } | undefined;
   arrive?: (scale: number, reduced: boolean) => void;

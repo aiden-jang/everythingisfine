@@ -129,14 +129,15 @@ times, then drives the estimated wavefront and cursor in the observed pressure w
 metadata records the source keys and the ASOS requests. Regenerate it with
 [make-tonga.py](tools/make-tonga.py) using Python with h5py, NumPy, Pillow, and fsspec with HTTP support.
 
-Kīlauea loads a regional map on demand. Dated lava increments accumulate into each snapshot.
-The coastline comparison combines the historic coastline with the mapped Fissure 8 delta.
+Kīlauea draws the survey and coastline comparison onto one geographically anchored texture in the
+shared globe and map. The regional camera magnifies that surface after arrival. Dated lava increments
+accumulate into each snapshot. The HVO footage is a separate layer in the same story.
 The data generator [make-kilauea.py](tools/make-kilauea.py) uses Python with NumPy, Pillow,
 PyProj, PyShp, and Shapely, plus FFmpeg for the HVO excerpt.
 
-Iceberg Drift loads the regional coastline, daily iceberg fixes, and three satellite images
-only when opened. The photo cuts hold their source dates. The map joins consecutive fixes and
-marks the previous fix when the selected date has no position. Regenerate the bundled tracks
+Iceberg Drift loads daily iceberg fixes and three dated satellite images on demand. The shared
+globe and map join consecutive fixes and report the last recorded date when the selected date has no
+position. The photo layer can be opened on its source date. Regenerate the bundled tracks
 and WebP images with [make-iceberg.mjs](tools/make-iceberg.mjs) using Node and `cwebp`.
 
 Megaflash samples the GLM trace from figure 1 of the published reanalysis, keeping only
@@ -156,7 +157,7 @@ Marble HD stills are loaded only on entry. The four source images use the same c
 color ramp. The three recovery frames average their labeled date ranges. A clipping divider keeps
 both views registered to the original framing. Playback advances only among those four frames.
 
-Shadow Chase reuses the globe and local horizon. The globe follows NASA’s WGS84 centerline samples
+Shadow Chase reuses the globe, map and local horizon. The globe follows NASA’s WGS84 centerline samples
 and draws the northern and southern limits. The moving shadow and local Sun–Moon geometry use the
 Besselian elements from the same NASA map. The city view estimates visibility and contacts at sea
 level against a geometric horizon. The Luxor preview leaves the saved After Dark city intact.
@@ -168,7 +169,7 @@ illustrative. The compass holds its direction during scrubbing, and choosing a b
 camera at its calculated position at that instant.
 
 Moonfall lazily loads the lunar mosaic, a local elevation grid and orthomosaic, and the three Apollo 17
-traverses. The Moon and valley use a dedicated camera in the existing WebGL renderer. Its finite
+traverses. The Moon and valley use dedicated perspective and landing-map cameras in the existing renderer. Its finite
 approach and descent are illustrative. The terrain uses the LRO survey at about 64 m per sample and
 keeps the traverse segments and geology stops in the survey’s transverse Mercator grid. The rover
 cursor follows cumulative mapped distance and leaves gaps in the source geometry open. Closing

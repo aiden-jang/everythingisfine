@@ -3,8 +3,6 @@ import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import { RuptureReveal, TOHOKU_DAY } from "./rupture/RuptureReveal";
 import { KATRINA_DAY, StormReplay } from "./storm/StormReplay";
 import { TONGA_DAY, TongaReplay } from "./tonga/TongaReplay";
-import { KAPOHO_DAY, KilaueaReplay } from "./kilauea/KilaueaReplay";
-import { ICEBERG_DAY, IcebergReplay } from "./iceberg/IcebergReplay";
 import { MEGAFLASH_DAY, MegaflashReplay } from "./megaflash/MegaflashReplay";
 import { NOTABLE_DAYS, NOTABLE_NOTE } from "./notableDays";
 import { ECLIPSE_DAYS, eclipseMoment } from "./eclipseDays";
@@ -18,9 +16,17 @@ interface Props {
   onCursor: (at: number) => void;
   watchEclipse: MouseEventHandler<HTMLButtonElement> | string;
   openRadar: () => void;
+  openStory: (id: "kilauea" | "iceberg", trigger: string) => void;
 }
 
-export function ArchiveControls({ archive, state, onCursor, watchEclipse, openRadar }: Props): JSX.Element {
+export function ArchiveControls({
+  archive,
+  state,
+  onCursor,
+  watchEclipse,
+  openRadar,
+  openStory,
+}: Props): JSX.Element {
   const {
     archiveDay,
     setArchiveDay,
@@ -65,11 +71,25 @@ export function ArchiveControls({ archive, state, onCursor, watchEclipse, openRa
             <StormReplay className="archive-scene-button mt-2 w-full text-left" />
           )}
           {loadedDay === TONGA_DAY && <TongaReplay className="archive-scene-button mt-2 w-full text-left" />}
-          {loadedDay === KAPOHO_DAY && (
-            <KilaueaReplay className="archive-scene-button mt-2 w-full text-left" />
+          {loadedDay === "2018-06-04" && (
+            <button
+              type="button"
+              className="archive-scene-button mt-2 w-full text-left"
+              id="archive-story-kilauea"
+              onClick={() => openStory("kilauea", "archive-story-kilauea")}
+            >
+              Follow Kīlauea’s lava
+            </button>
           )}
-          {loadedDay === ICEBERG_DAY && (
-            <IcebergReplay className="archive-scene-button mt-2 w-full text-left" />
+          {loadedDay === "2020-12-23" && (
+            <button
+              type="button"
+              className="archive-scene-button mt-2 w-full text-left"
+              id="archive-story-iceberg"
+              onClick={() => openStory("iceberg", "archive-story-iceberg")}
+            >
+              Follow iceberg A-68A
+            </button>
           )}
           {loadedDay === MEGAFLASH_DAY && (
             <MegaflashReplay className="archive-scene-button mt-2 w-full text-left" />

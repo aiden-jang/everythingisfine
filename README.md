@@ -28,6 +28,8 @@ requested directly from the browser.
 A fresh visit opens the observatory: a full globe, a short introduction, and three scenes.
 **Explore** opens the scientific controls. The wordmark returns to the Observatory and preserves the current view. Choose **Reset view** in Explore to clear the selection, filters, and held time and replay the globe’s arrival.
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
+Open **Stories & layers** in any scene to find its live observations, forecasts, predictions, and replays.
+Closing a story returns to the entry that opened it.
 
 - **Live Earth** frames current activity and traces the day–night boundary. Choosing it from an
   archive returns to live.
@@ -40,14 +42,14 @@ Existing saved layouts and links to an event, archive, section, or held moment o
   lights after Hurricane Maria. Play or scrub four NASA Black Marble HD views from the pre-storm
   baseline through March 2018. Compare a recovery period with the baseline using a fixed divider.
 - **Shadow Chase** follows NASA’s predicted path for the 2 August 2027 total solar eclipse. Scrub
-  the shadow on the globe, then see the predicted eclipse from your saved After Dark city or preview
+  the same shadow on the globe or map, then see the predicted eclipse from your saved After Dark city or preview
   totality in Luxor.
 - **Tonight’s Sky** descends to a selected city from After Dark. Scrub from local sunset to sunrise,
   use the compass to turn, or point at the Moon and five bright planets. Angles are calculated for a
   level horizon. Where a crossing is absent, the timeline uses a local evening or morning endpoint.
-- **Moonfall** opens from Tonight’s Sky. Fly from lunar orbit into Taurus–Littrow and play or
-  scrub all three Apollo 17 rover traverses, with jumps to nine geology stops. Back restores
-  the same city, local time, and bearing. Reduced motion opens directly on the surveyed valley.
+- **Moonfall** opens from Tonight’s Sky or the After Dark drawer. Fly from lunar orbit into
+  Taurus–Littrow and switch between Terrain and Landing map without resetting the rover traverse
+  or geology stop. Back returns to the sky view or drawer that opened it.
 - **Meteor Nights** traces a shower’s apparent origin across the same local sky. Play or scrub a
   listed peak night and find the dark, moon-free windows. The city selected in After Dark is shared
   by Tonight’s Sky, Meteor Nights, Orbital Pass and Shadow Chase.
@@ -65,15 +67,14 @@ Existing saved layouts and links to an event, archive, section, or held moment o
   the globe or map and pin a present-day place to follow its plate.
 - **Swell Lines** follows forecast swell direction and height across the Pacific. Scrub two days
   of forecasts and select a buoy to compare recent measurements with the nearby model.
-- **More views** opens Swell Lines, Deep Time, Million-Mile View, Tide Watch, Wind Atlas, Rainbelt,
-  River Pulse, Air Watch, Lightning Live, Current Rider, Smoke Crossing, and Tsunami Arrival.
-  **Orbital Pass** also opens directly from After Dark, with a city picker and local horizon.
+- **Orbital Pass** opens from After Dark’s drawer with a city picker, a local horizon, and
+  Globe and Map views of the predicted ground track.
 - **Feed status** lists the seven background feeds and their last successful check or received message.
   Observatory views fetch their own sources when opened. In Storm Radar, switch projections or turn
   on matched GOES-East lightning scans.
 - **Take a tour** visits a captured selection of readings and regions. Narration waits for arrival;
   Pause, Previous, Next, Stop, and Read this event remain available. Hidden tabs pause its reading time.
-- **Historical replays** opens recorded stories and notable events. **Pick a past date** opens the UTC date picker in Explore.
+- **Pick a past date** in the drawer opens the UTC date picker in Explore.
 - **Sun Watch** in After Dark moves from a NASA solar image through a schematic solar-wind
   stream and back to Earth. Its two live plots show the last hour of upstream wind speed and
   six hours of GOES X-ray flux. Choose any of the three still views with reduced motion.
@@ -87,12 +88,11 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Watch Tonga’s shockwave** opens on infrared and water-vapor scans of the 2022 eruption,
   then pulls back to follow the estimated atmospheric wave. Pick a ground station to jump to
   its pressure pulse. Reduced motion opens the eruption scan with the same timeline and stations.
-- **Follow Kīlauea’s lava** follows the 2018 flow from Fissure 8 to Kapoho Bay using dated USGS
-  maps and a brief HVO overflight. Compare the historic shore with the August 9 footprint at the
-  same scale. Reduced motion keeps the dated maps and the comparison in fixed views.
-- **Follow iceberg A-68A** flies over the Scotia Sea, cuts to three dated satellite views,
-  and traces 13 tracked fragments after the breakup. Choose an iceberg to jump to its last
-  listed position. Reduced motion opens a still with the same date and track controls.
+- **Follow Kīlauea’s lava** flies to Hawaiʻi and follows the 2018 flow from Fissure 8 to Kapoho Bay.
+  Scrub dated USGS maps, compare the former shore with the August 9 footprint on either projection,
+  or open the HVO footage at the ocean-entry chapter.
+- **Iceberg Drift** follows A-68A and its 13 recorded fragments on the globe and map. Choose an
+  iceberg to jump to its last listed position, or open a satellite image at one of three chapters.
 - **Watch Megaflash** slows down a 2017 lightning flash from the southern Plains. Follow the
   GOES-16 optical trace, then pull back to see the span across five states. Reduced motion
   opens the full trace with the same scrubber.
@@ -114,7 +114,7 @@ Observe or Explore remembers that presentation; opening the app alone saves no n
 - Choose **Map** to unfold the globe at its seam. Choose **Globe** to wrap it back up. On the flat map,
   draw a cross-section with Shift-drag. Release the line to fold it open into the depth chart.
 - Browse any completed UTC day, including notable earthquakes and eclipses. Find the total eclipse
-  of 8 April 2024 under **Historical replays** in the Observatory or **Eclipses** in Explore. Choose
+  of 8 April 2024 under **Stories & layers → Replays** in the Observatory or **Eclipses** in Explore. Choose
   **Watch eclipse** in Globe view, then pause or scrub to follow the shadow at a specific UTC time.
 - Pin an earthquake and open **Follow the wave**. Pick a nearby city to see the estimated P and
   S arrivals, with a fixed overview under reduced motion. The city picker lists up to six places

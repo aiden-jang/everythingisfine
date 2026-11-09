@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
 
 test("Tonga transitions from satellite imagery to the atmospheric wave and can pause", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
-  await page.getByText("Historical replays", { exact: true }).click();
+  await openStories(page);
   const trigger = page.getByRole("button", { name: "Watch Tonga’s shockwave" });
   await trigger.click();
   const replay = page.getByRole("dialog", { name: "Tonga’s shockwave" });
@@ -31,7 +31,7 @@ test("Tonga’s reduced-motion archive can jump to measured station pulses on a 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
-  await page.getByText("Historical replays", { exact: true }).click();
+  await openStories(page);
   await page.getByRole("button", { name: "Watch Tonga’s shockwave" }).click();
   const replay = page.getByRole("dialog", { name: "Tonga’s shockwave" });
   const slider = replay.getByRole("slider", { name: "Replay time" });

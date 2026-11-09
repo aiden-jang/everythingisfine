@@ -1,10 +1,12 @@
 import { Mesh, ShaderMaterial, SphereGeometry, Vector2, Vector3 } from "three";
 import { eclipseElements, eclipseSlopes } from "../geo/eclipse2027";
 import { toVec3 } from "../geo/sphere";
+import { attachLonLat, MORPH_GLSL, SPHERE_PHI_START } from "./morph";
 import type { GeoPoint } from "../app/observations/types";
 
-export function createShadowChase() {
+export function createShadowChase(morph: { value: number }) {
   const uniforms = {
+    uMorph: morph,
     axis: { value: new Vector3() },
     east: { value: new Vector3() },
     north: { value: new Vector3() },
@@ -17,18 +19,29 @@ export function createShadowChase() {
     transparent: true,
     depthWrite: false,
     vertexShader: /* glsl */ `
+      ${MORPH_GLSL}
       varying vec3 surface;
+      varying vec2 geo;
       void main() {
         surface = position;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        geo = aLonLat;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(fmProject(position), 1.0);
       }
     `,
     fragmentShader: /* glsl */ `
       varying vec3 surface;
+      varying vec2 geo;
+      uniform float uMorph;
       uniform vec3 axis, east, north, centre;
       uniform vec2 intercept, radii;
       void main() {
         vec3 p = normalize(surface);
+        if (uMorph > 0.0) {
+          vec2 at = radians(geo);
+          float latitude = cos(at.y);
+          vec3 fromMap = vec3(latitude * sin(at.x), sin(at.y), latitude * cos(at.x));
+          p = normalize(mix(p, fromMap, uMorph));
+        }
         float sunlight = dot(p, axis);
         if (sunlight < 0.0) discard;
 
@@ -53,8 +66,11 @@ export function createShadowChase() {
       }
     `,
   });
-  const object = new Mesh(new SphereGeometry(1.0065, 96, 64), material);
+  const geometry = new SphereGeometry(1.0065, 96, 64, SPHERE_PHI_START);
+  attachLonLat(geometry);
+  const object = new Mesh(geometry, material);
   object.renderOrder = 4.75;
+  object.frustumCulled = false;
   return {
     object,
     set(at: number, point: GeoPoint) {

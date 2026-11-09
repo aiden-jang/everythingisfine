@@ -63,7 +63,9 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [run, setRun] = useState<AuroraRun | null>(null);
   const [sunWatch, setSunWatch] = useState(false);
   const [tonightView, setTonightView] = useState<TonightPresentation | "opening" | null>(null);
-  const [skyEntry, setSkyEntry] = useState<{ mode: "sky" | "meteors"; look?: SkyLook }>({ mode: "sky" });
+  const [skyEntry, setSkyEntry] = useState<{ mode: "sky" | "meteors" | "moonfall"; look?: SkyLook }>({
+    mode: "sky",
+  });
   const skyMemory = useRef<TonightView | null>(null);
   const skyCity = useSkyCity();
   const updateSky = useCallback((view: TonightPresentation) => {
@@ -75,6 +77,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const observations = useObservationDeck();
   const closeObservations = observations.close;
   const radarOrigin = useRef<Presentation>("observe");
+  const storyFromArchive = useRef(false);
   const transition = useRef<Animation[]>([]);
   const focusExplorer = useRef(false);
   const changePresentation = useCallback(
@@ -99,6 +102,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         setTonightView(null);
         setFloatView(null);
         closeObservations();
+        storyFromArchive.current = false;
         prepare?.();
         if (remember) store("presentation", next);
       };
@@ -169,6 +173,24 @@ export function useObservatory(shared: Partial<Permalink>) {
     canCapture: ready && !sunActive && !tonight && floatView === null && !observations.entry,
     localReadings: radarView !== null || tonight || floatView !== null || !!observations.entry,
     observations,
+    openRecordedStory(id: "kilauea" | "iceberg", from: string) {
+      if (observing) observations.open(id, from);
+      else
+        changePresentation(
+          "observe",
+          true,
+          () => {
+            storyFromArchive.current = true;
+            setScene("live");
+            observations.open(id, from);
+          },
+          false,
+        );
+    },
+    closeStory() {
+      if (storyFromArchive.current) changePresentation("explore", true, undefined, false);
+      else observations.close();
+    },
     openAfterDarkArchive(archive: AfterDarkArchive) {
       setRun(null);
       setSunWatch(false);
@@ -197,7 +219,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       active: tonight,
       view: localSky,
       entry: skyEntry,
-      open(mode: "sky" | "meteors" = "sky") {
+      open(mode: "sky" | "meteors" | "moonfall" = "sky") {
         const previous = skyMemory.current;
         setSkyEntry({ mode, ...(previous?.city.name === skyCity.name ? { look: previous.look } : {}) });
         setRun(null);

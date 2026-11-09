@@ -6,6 +6,7 @@ import { ObservationChart } from "./ObservationChart";
 import { DeepTimePin } from "./DeepTimePin";
 import { useObservationData, useObservationImage } from "./useObservationData";
 
+const lockRegionalCamera = () => {};
 const EMPTY: readonly ObservationFrame[] = [];
 const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" });
 
@@ -63,6 +64,7 @@ export function ObservationPlayer({
             frame,
             image: element,
             sky,
+            ...(data.lens ? { lens: data.lens, arrive: lockRegionalCamera } : {}),
           }
         : null,
     );

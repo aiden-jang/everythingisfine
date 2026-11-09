@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
 
 async function installSun(page: Page, windAvailable = true, xrayAge = 1) {
   await installFeeds(page, { presentation: "fresh", empty: true });
@@ -37,6 +37,7 @@ test("Sun Watch loads on demand and flies back to Earth inside After Dark", asyn
   const requests = await installSun(page);
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await openStories(page);
   await expect(page.getByRole("button", { name: "Follow the aurora" })).toBeEnabled();
   expect(requests).toEqual({ wind: 0, xray: 0 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -63,6 +64,7 @@ test("reduced motion keeps the measurements and aurora available during a solar-
   await installSun(page, false, 20);
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await openStories(page);
   const credit = page.getByRole("link", { name: "aiden jang", exact: true });
   await expect(credit).toBeInViewport({ ratio: 1 });
   const creditPosition = await credit.boundingBox();

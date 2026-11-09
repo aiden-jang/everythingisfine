@@ -466,3 +466,9 @@ export async function waitForData(page: Page): Promise<number> {
   }).toPass({ timeout: 30_000 });
   return held;
 }
+
+export async function openStories(page: Page) {
+  const toggle = page.getByRole("button", { name: "Stories & layers", exact: true });
+  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+  return toggle;
+}

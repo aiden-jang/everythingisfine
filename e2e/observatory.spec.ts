@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, waitForData } from "./feeds";
+import { installFeeds, waitForData, openStories } from "./feeds";
 
 for (const [width, height] of [
   [320, 640],
@@ -196,7 +196,7 @@ test("a historical shortcut frames an actual archived event and keeps capture av
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Save image", exact: true }).click();
   expect((await download).suggestedFilename()).toMatch(/\.png$/);
-  await page.getByText("Historical replays", { exact: true }).click();
+  await openStories(page);
   await page.getByRole("button", { name: "Japan, 2011 ↗", exact: true }).click();
   await expect(page).toHaveURL(/d=2011-03-11/);
   await expect(page.getByRole("complementary", { name: "Pinned earthquake" })).toBeVisible();

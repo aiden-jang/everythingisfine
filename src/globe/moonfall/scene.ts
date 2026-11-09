@@ -8,6 +8,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
+  OrthographicCamera,
   PerspectiveCamera,
   RingGeometry,
   Scene,
@@ -17,7 +18,7 @@ import {
   type WebGLRenderer,
 } from "three";
 import { DEG } from "../../geo/sphere";
-import { traverses, type loadLunarSurvey } from "../../sources/moonfall/apollo17";
+import { traverses, valley, type loadLunarSurvey } from "../../sources/moonfall/apollo17";
 import { roverRoutes } from "./routes";
 import { lunarTerrain, lunarTexture } from "./terrain";
 
@@ -50,6 +51,12 @@ export type MoonfallView = ReturnType<typeof createMoonfall>;
 export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>, reduced: boolean) {
   const scene = new Scene();
   const camera = new PerspectiveCamera(38, 1, 0.025, 460_000);
+  const map = new OrthographicCamera(-10, 10, 10, -10, 0.025, 120);
+  const centerX = (valley.left + valley.right) / 2;
+  const centerZ = (valley.near + valley.far) / 2;
+  map.position.set(centerX, 48, centerZ);
+  map.up.set(0, 0, -1);
+  map.lookAt(centerX, 0, centerZ);
   const space = new Group();
   const surface = new Group();
   const ambient = new HemisphereLight(0xd9dbed, 0x777785, 1.14);
@@ -68,17 +75,19 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
 
   let flight = reduced ? FLIGHT_SECONDS : 0;
   let flying = !reduced;
+  let mapped = false;
   let eva = 0;
   let distance = 0;
   let station: number | null = null;
   let playing = false;
   let disposed = false;
-  let current = { phase: "", flying, eva, meters: -1, station: null as number | null, playing };
+  let current = { phase: "", flying, eva, meters: -1, station: null as number | null, playing, mapped };
   const listeners = new Set<() => void>();
 
   function update() {
-    const phase =
-      flight >= FLIGHT_SECONDS
+    const phase = mapped
+      ? "Taurus–Littrow landing map"
+      : flight >= FLIGHT_SECONDS
         ? "Taurus–Littrow Valley"
         : flight >= ORBIT_END
           ? "Valley descent"
@@ -90,10 +99,11 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
       current.eva === eva &&
       current.meters === meters &&
       current.station === station &&
-      current.playing === playing
+      current.playing === playing &&
+      current.mapped === mapped
     )
       return;
-    current = { phase, flying, eva, meters, station, playing };
+    current = { phase, flying, eva, meters, station, playing, mapped };
     for (const listener of listeners) listener();
   }
   update();
@@ -177,8 +187,24 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
     render(renderer: WebGLRenderer, aspect: number) {
       if (disposed) return false;
       frame(aspect);
-      renderer.render(scene, camera);
+      if (mapped) {
+        const halfHeight = Math.max(
+          (valley.near - valley.far) / 2,
+          (valley.right - valley.left) / (2 * aspect),
+        );
+        map.top = halfHeight;
+        map.bottom = -halfHeight;
+        map.right = halfHeight * aspect;
+        map.left = -map.right;
+        map.updateProjectionMatrix();
+      }
+      renderer.render(scene, mapped ? map : camera);
       return true;
+    },
+    project(next: boolean) {
+      if (next) finishFlight();
+      mapped = next;
+      update();
     },
     select(index: number) {
       finishFlight();
@@ -215,6 +241,7 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
       update();
     },
     replay() {
+      mapped = false;
       flight = 0;
       flying = true;
       playing = false;

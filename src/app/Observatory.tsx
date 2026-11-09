@@ -1,6 +1,12 @@
-import { lazy, Suspense, useLayoutEffect, type RefObject } from "react";
-import { ObservatoryStage, OBSERVATORY_SCENES, SceneDiagram } from "./ObservatoryStage";
-import { ObservatoryHistory } from "./ObservatoryHistory";
+import { lazy, Suspense, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import {
+  ObservatoryStage,
+  ObservatoryScenePicker,
+  ObservatoryFeatured,
+  SunCredits,
+  TourUnavailable,
+} from "./ObservatoryStage";
+import { StoriesDrawer } from "./StoriesDrawer";
 import { MoonfallReadout } from "./moonfall/MoonfallReadout";
 import { FloatReadout } from "./float/FloatReadout";
 import { RadarReadout, StormRadar } from "./radar/StormRadar";
@@ -14,7 +20,7 @@ import "./tonight/tonight.css";
 import "./float/float-dive.css";
 import "./moonfall/moonfall.css";
 import { ObservationCredit } from "./observations/ObservationCredit";
-import { LiveExperiences, ObservationDeckShell } from "./observations/ObservationEntry";
+import { ObservationDeckShell } from "./observations/ObservationEntry";
 
 const SunWatch = lazy(() => import("./sun/SunWatch").then(({ SunWatch }) => ({ default: SunWatch })));
 
@@ -28,7 +34,6 @@ const TonightCompass = lazy(() =>
 const FloatDive = lazy(() =>
   import("./float/FloatDivePanel").then(({ FloatDivePanel }) => ({ default: FloatDivePanel })),
 );
-
 interface Props {
   scene: EarthScene;
   at: number;
@@ -40,7 +45,7 @@ interface Props {
   aurora: ReturnType<typeof useAuroraOverflight>;
   views: Pick<
     ReturnType<typeof useObservatory>,
-    "sun" | "tonight" | "floatDive" | "observations" | "skyCity" | "openAfterDarkArchive"
+    "sun" | "tonight" | "floatDive" | "observations" | "skyCity" | "openAfterDarkArchive" | "closeStory"
   >;
   radar: ReturnType<typeof useObservatory>["radar"];
   onScene: (scene: EarthScene) => void;
@@ -72,7 +77,7 @@ export function Observatory({
   summary,
   deepAvailable,
   aurora,
-  views: { sun, tonight, floatDive, observations, skyCity, openAfterDarkArchive },
+  views: { sun, tonight, floatDive, observations, skyCity, openAfterDarkArchive, closeStory },
   radar,
   feedNote,
   onScene,
@@ -81,19 +86,26 @@ export function Observatory({
   tour,
   onHistory,
 }: Props): JSX.Element {
+  const [stories, setStories] = useState(false);
+  const storyScroll = useRef(0);
   useLayoutEffect(() => {
-    tour.controls.current?.scrollTo(0, 0);
+    tour.controls.current?.scrollTo(0, stories && !tonight.active && !sun.active ? storyScroll.current : 0);
     tour.controls.current?.querySelector<HTMLElement>(".observatory-story")?.scrollTo(0, 0);
-  }, [scene, tour.at, tour.controls, radar.active, tonight.active, floatDive.active]);
-  const localTitle = floatDive.active
-    ? "Float Dive"
-    : radar.active
-      ? "Storm Radar"
-      : tonight.active
-        ? tonight.entry.mode === "meteors"
-          ? "Meteor Nights"
-          : "Tonight’s Sky"
-        : "Earth observatory";
+  }, [
+    scene,
+    tour.at,
+    tour.controls,
+    radar.active,
+    tonight.active,
+    floatDive.active,
+    observations.entry,
+    stories,
+    sun.active,
+  ]);
+  const closeSun = () => {
+    sun.toggle();
+    requestAnimationFrame(() => document.getElementById("open-sun-watch")?.focus({ preventScroll: true }));
+  };
   const active = tour.at !== null;
   const solar = sun.active && !active;
   const title = active
@@ -120,7 +132,13 @@ export function Observatory({
         : "A live view of earthquakes, changing skies, and a restless planet.";
   if (observations.entry)
     return (
-      <ObservationDeckShell deck={observations} entry={observations.entry} scene={scene} city={skyCity} />
+      <ObservationDeckShell
+        deck={observations}
+        entry={observations.entry}
+        scene={scene}
+        city={skyCity}
+        onClose={closeStory}
+      />
     );
   return (
     <>
@@ -150,7 +168,7 @@ export function Observatory({
           data-storm-radar={radar.active || undefined}
           data-tonight={tonight.active || undefined}
           data-float-dive={floatDive.active || undefined}
-          aria-label={localTitle}
+          aria-label={floatDive.active ? "Float Dive" : radar.active ? "Storm Radar" : "Earth observatory"}
           aria-labelledby={tonight.active ? "local-sky-title" : undefined}
         >
           {floatDive.active ? (
@@ -185,7 +203,12 @@ export function Observatory({
                 initialLook={tonight.entry.look}
                 onClose={() => {
                   tonight.close();
-                  const id = tonight.entry.mode === "meteors" ? "open-meteor-nights" : "open-tonight-sky";
+                  const id =
+                    tonight.entry.mode === "meteors"
+                      ? "open-meteor-nights"
+                      : tonight.entry.mode === "moonfall"
+                        ? "open-moonfall-story"
+                        : "open-tonight-sky";
                   requestAnimationFrame(() => document.getElementById(id)?.focus());
                 }}
               />
@@ -210,41 +233,7 @@ export function Observatory({
                   </p>
                 ) : null}
               </div>
-              {!active && scene === "night" ? (
-                <AuroraOverflightControls
-                  aurora={aurora}
-                  ready={ready}
-                  solar={solar}
-                  onReturn={() => onScene("night")}
-                  onSunWatch={sun.toggle}
-                  onTonight={() => tonight.open()}
-                  onOrbit={() => observations.open("orbit", "open-orbital-pass")}
-                  onMeteors={() => tonight.open("meteors")}
-                  onArchive={openAfterDarkArchive}
-                  city={skyCity}
-                />
-              ) : null}
-              {solar && (
-                <div className="sun-credits" aria-label="Sun Watch sources">
-                  <a href="https://www.swpc.noaa.gov/products/solar-wind" target="_blank" rel="noreferrer">
-                    NOAA solar wind
-                  </a>
-                  <a
-                    href="https://www.swpc.noaa.gov/products/goes-x-ray-flux"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    GOES X-rays
-                  </a>
-                  <a
-                    href="https://www.jpl.nasa.gov/images/pia26681-image-of-sun-from-nasas-solar-dynamics-observatory/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    NASA/GSFC/SDO image
-                  </a>
-                </div>
-              )}
+              {solar && <SunCredits />}
               {active ? (
                 <div className="observatory-tour-controls">
                   <div className="observatory-tour-step">
@@ -285,12 +274,24 @@ export function Observatory({
               ) : (
                 <>
                   <div className="observatory-actions">
+                    <button type="button" onClick={onExplore} className="observatory-primary">
+                      Explore the globe <span aria-hidden="true">↗</span>
+                    </button>
                     <button
                       type="button"
-                      onClick={onExplore}
-                      className={aurora.run || solar ? undefined : "observatory-primary"}
+                      id="open-observations"
+                      aria-controls={stories && !solar ? "stories-panel" : undefined}
+                      aria-expanded={solar ? undefined : stories}
+                      onClick={
+                        solar
+                          ? closeSun
+                          : () => {
+                              if (!stories) storyScroll.current = 0;
+                              setStories(!stories);
+                            }
+                      }
                     >
-                      Explore the globe <span aria-hidden="true">↗</span>
+                      {solar ? "Back to stars" : "Stories & layers"}
                     </button>
                     <button
                       type="button"
@@ -301,30 +302,7 @@ export function Observatory({
                     >
                       Take a tour <span aria-hidden="true">→</span>
                     </button>
-                    {ready && !tour.available && scene === "night" && (
-                      <p id="tour-availability" className="observatory-summary">
-                        {empty.text}
-                      </p>
-                    )}
-                    {scene === "live" && (
-                      <LiveExperiences
-                        ready={ready}
-                        radar={radar.open}
-                        dive={floatDive.open}
-                        more={observations.open}
-                        epic={() => observations.open("epic", "open-epic")}
-                      />
-                    )}
-                    {scene === "depth" && (
-                      <button
-                        type="button"
-                        id="open-deep-time"
-                        disabled={!ready}
-                        onClick={() => observations.open("deep", "open-deep-time")}
-                      >
-                        Deep Time
-                      </button>
-                    )}
+                    {ready && !tour.available && scene === "night" && <TourUnavailable note={empty.text} />}
                   </div>
                   {scene !== "night" ? (
                     <p
@@ -336,36 +314,61 @@ export function Observatory({
                   ) : null}
                 </>
               )}
-              {!active ? (
-                <div className="observatory-scenes" role="group" aria-label="Earth scenes">
-                  {OBSERVATORY_SCENES.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => onScene(option.id)}
-                      aria-pressed={scene === option.id}
-                      aria-label={option.name}
-                      disabled={!ready || (option.id === "depth" && !deepAvailable)}
-                      aria-describedby={
-                        option.id === "depth" && ready && !deepAvailable ? "depth-availability" : undefined
-                      }
-                    >
-                      <SceneDiagram scene={option.id} />
-                      <span className="scene-label">{option.name}</span>
-                      <span className="scene-note">{option.note}</span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-
+              {!active && !solar && stories && (
+                <StoriesDrawer
+                  scene={scene}
+                  ready={ready}
+                  sun={sun}
+                  tonight={tonight}
+                  observations={observations}
+                  openArchive={openAfterDarkArchive}
+                  onHistory={onHistory}
+                  onPickDate={onPickDate}
+                  onSelect={() => {
+                    storyScroll.current = tour.controls.current?.scrollTop ?? 0;
+                  }}
+                  onDismiss={() => {
+                    setStories(false);
+                    document.getElementById("open-observations")?.focus();
+                  }}
+                />
+              )}
+              {!active && (
+                <ObservatoryScenePicker
+                  scene={scene}
+                  ready={ready}
+                  deepAvailable={deepAvailable}
+                  onScene={(next) => {
+                    if (scene !== next) setStories(false);
+                    onScene(next);
+                  }}
+                />
+              )}
               {!active && ready && !deepAvailable && (
                 <p id="depth-availability" className="observatory-depth-note">
                   Below the Surface needs an earthquake at least 70 km deep in the current view.
                 </p>
               )}
-              {!active && scene === "live" ? (
-                <ObservatoryHistory onHistory={onHistory} onPickDate={onPickDate} />
+              {!active && scene === "night" ? (
+                <AuroraOverflightControls
+                  aurora={aurora}
+                  ready={ready}
+                  solar={solar}
+                  onReturn={() => onScene("night")}
+                  onSunWatch={sun.toggle}
+                  onTonight={() => tonight.open()}
+                  city={skyCity}
+                />
               ) : null}
+              {!active && scene !== "night" && (
+                <ObservatoryFeatured
+                  scene={scene}
+                  ready={ready}
+                  radar={radar.open}
+                  dive={floatDive.open}
+                  deep={() => observations.open("deep", "open-deep-time")}
+                />
+              )}
               {feedNote ? (
                 <p className="observatory-source-note" role="status">
                   {feedNote}
@@ -384,12 +387,7 @@ export function Observatory({
             </div>
           }
         >
-          <SunWatch
-            onClose={() => {
-              sun.toggle();
-              tour.controls.current?.querySelector<HTMLButtonElement>("[data-sun-toggle]")?.focus();
-            }}
-          />
+          <SunWatch onClose={closeSun} />
         </Suspense>
       )}
     </>

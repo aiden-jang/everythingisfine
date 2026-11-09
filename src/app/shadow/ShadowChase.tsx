@@ -32,14 +32,17 @@ const percentage = (cover: number) =>
 export function ShadowChase({
   city,
   onView,
+  onMap,
   onClose,
 }: {
   city: SkyCity;
   onView: (view: ObservationView) => void;
+  onMap: (map: boolean) => void;
   onClose: () => void;
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
   const [mode, setMode] = useState<"globe" | "saved" | "luxor">("globe");
+  const [earthMap, setEarthMap] = useState(false);
   const [landed, setLanded] = useState(false);
   const [entry, setEntry] = useState(() => (shadowMotion() ? chaseOverview : chasePose(chaseStart)));
   const observer = mode === "luxor" ? luxor : city;
@@ -76,6 +79,7 @@ export function ShadowChase({
 
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
   useObservatoryEscape(onClose);
+  useLayoutEffect(() => onMap(!local && earthMap), [onMap, local, earthMap]);
   useLayoutEffect(() => {
     const sky: TonightView | undefined = local
       ? {
@@ -148,7 +152,7 @@ export function ShadowChase({
         </div>
         <div className="stage-ident">
           <span className="stage-rule" aria-hidden="true" />
-          <span>{local ? observer.name : "Path of totality"}</span>
+          <span>{local ? observer.name : earthMap ? "Path of totality · Map" : "Path of totality"}</span>
         </div>
         <div className="stage-readout shadow-readout">
           <span>
@@ -193,6 +197,16 @@ export function ShadowChase({
               From {observer.name}
             </button>
           </div>
+          {!local && (
+            <div className="observatory-actions shadow-actions" role="group" aria-label="Eclipse projection">
+              <button type="button" aria-pressed={!earthMap} onClick={() => setEarthMap(false)}>
+                Globe
+              </button>
+              <button type="button" aria-pressed={earthMap} onClick={() => setEarthMap(true)}>
+                Map
+              </button>
+            </div>
+          )}
           {canScrub && (
             <div className="shadow-timeline">
               <div className="shadow-timeline-row">

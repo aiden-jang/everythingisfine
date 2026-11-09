@@ -56,6 +56,8 @@ export function createScenePresentation(
   let dive: ReturnType<typeof createFloatPresentation> | undefined;
   let shadow: ReturnType<typeof createShadowChase> | undefined;
   let chase: ObservationView["shadow"];
+  let lens: ObservationView["lens"];
+  let lensReveal = 0;
 
   function step(dt: number, reduced: boolean) {
     dayline.value = showDayline ? lights.reveal.value : 0;
@@ -64,6 +66,7 @@ export function createScenePresentation(
     const lunar = skyView?.moonfall?.step(dt, reduced);
     const approaching = arrival.step(dt, reduced);
     const tracing = observations?.step(dt, reduced) ?? false;
+    if (lens && arrival.ready()) lensReveal = reduced ? 1 : Math.min(1, lensReveal + dt / 0.65);
     let following = false;
     if (chase && !reduced && arrival.ready()) {
       const current = controls.state();
@@ -78,7 +81,7 @@ export function createScenePresentation(
         following = true;
       }
     }
-    return following || tracing || !!diving || !!lunar || approaching;
+    return following || tracing || !!diving || !!lunar || approaching || (!!lens && lensReveal < 1);
   }
 
   function set(mode: GlobePresentation, geography: readonly Object3D[]) {
@@ -86,6 +89,8 @@ export function createScenePresentation(
     const observation = local?.kind === "observation" ? local : null;
     const weather = local?.kind === "radar" ? local : null;
     const returningFromArchive = arrival.set(observation);
+    if (lens !== observation?.lens) lensReveal = 0;
+    lens = observation?.lens;
     skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);
     const route = mode && typeof mode === "object" && "route" in mode ? mode.route : null;
     if (planetarium !== (mode === "planetarium")) controls.setPlanetarium(mode === "planetarium");
@@ -123,7 +128,7 @@ export function createScenePresentation(
     observations?.set(overlay);
     chase = observation?.shadow;
     if (chase && observation && !shadow) {
-      shadow = createShadowChase();
+      shadow = createShadowChase(projection);
       spin.add(shadow.object);
     }
     if (shadow) {
@@ -146,7 +151,11 @@ export function createScenePresentation(
       if (target !== observationTarget && observation.sky?.sunCover === undefined)
         controls.flyTo(target.lon, target.lat, target.zoom);
     } else if (returnCamera) {
-      if (mode === "dayline" || mode === null || (returningFromArchive && mode === "planetarium"))
+      if (
+        mode === "dayline" ||
+        mode === null ||
+        ((returningFromArchive || observationTarget) && mode === "planetarium")
+      )
         controls.flyTo(returnCamera.lon, returnCamera.lat, returnCamera.zoom);
       returnCamera = undefined;
     }
@@ -165,6 +174,14 @@ export function createScenePresentation(
     },
     skyOpacity(camera: PerspectiveCamera) {
       projection.value = controls.morph();
+      const target = lens
+        ? (lens.globe + (lens.map - lens.globe) * projection.value) * Math.min(1, camera.aspect)
+        : 1;
+      const zoom = target ** (lensReveal * lensReveal * (3 - 2 * lensReveal));
+      if (camera.zoom !== zoom) {
+        camera.zoom = zoom;
+        camera.updateProjectionMatrix();
+      }
       dive?.size(camera.aspect);
       const amount = controls.localSky.amount();
       lights.apply(amount);

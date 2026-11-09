@@ -17,6 +17,14 @@ import { MeteorNights } from "./MeteorNights";
 const MINUTE = 60_000;
 const Moonfall = lazy(() => import("../moonfall/Moonfall").then(({ Moonfall }) => ({ default: Moonfall })));
 
+function depart(view: TonightView) {
+  const moon = view.bodies[0]!;
+  return {
+    previous: view,
+    aim: moon.altitude > 0 ? { ...view, look: aimAt(moon), targetName: moon.name } : view,
+  };
+}
+
 export function TonightSky({
   view,
   onView,
@@ -29,15 +37,14 @@ export function TonightSky({
   onView: (next: TonightPresentation) => void;
   onClose: () => void;
   preference: SkyCityPreference;
-  initialMode: "sky" | "meteors";
+  initialMode: "sky" | "meteors" | "moonfall";
   initialLook: SkyLook | undefined;
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
   const rangeId = useId();
   const [openedAt] = useState(() => Date.now());
-  const [mode, setMode] = useState(initialMode);
+  const [mode, setMode] = useState(initialMode === "moonfall" ? "sky" : initialMode);
   const [modeLook, setModeLook] = useState(initialLook);
-  const [departure, setDeparture] = useState<{ previous: TonightView; aim: TonightView } | null>(null);
   const { city } = preference;
   const night = useMemo(() => localNight(city, openedAt), [city, openedAt]);
   const format = useMemo(
@@ -56,6 +63,7 @@ export function TonightSky({
   );
   const opening = useMemo(() => openingSky(city, night.start, night.end), [city, night.start, night.end]);
   const current = view?.city.name === city.name ? view : { ...opening, look: initialLook ?? opening.look };
+  const [departure, setDeparture] = useState(() => (initialMode === "moonfall" ? depart(current) : null));
   const at = current.at;
   const readings = current.bodies;
   const above = readings.filter((body) => body.altitude > 0).length;
@@ -64,12 +72,16 @@ export function TonightSky({
 
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
   useLayoutEffect(() => {
-    if (mode === "sky" && view?.city.name !== city.name) {
+    if (!departure && mode === "sky" && view?.city.name !== city.name) {
       onView({ ...opening, look: initialLook ?? opening.look });
     }
-  }, [view?.city.name, city.name, mode, opening, initialLook, onView]);
+  }, [view?.city.name, city.name, mode, opening, initialLook, onView, departure]);
   const returnToSky = () => {
     if (!departure) return;
+    if (initialMode === "moonfall") {
+      onClose();
+      return;
+    }
     onView(departure.previous);
     setDeparture(null);
     requestAnimationFrame(() => document.getElementById("open-moonfall")?.focus());
@@ -86,7 +98,7 @@ export function TonightSky({
           <h2 id="local-sky-title">Moonfall</h2>
           <div className="observatory-actions tonight-back">
             <button type="button" id="moonfall-back" onClick={returnToSky}>
-              Back to Tonight’s Sky
+              {initialMode === "moonfall" ? "Back to After Dark" : "Back to Tonight’s Sky"}
             </button>
           </div>
         </div>
@@ -136,11 +148,9 @@ export function TonightSky({
             type="button"
             id="open-moonfall"
             onClick={() => {
-              const moon = readings[0]!;
-              const aim =
-                moon.altitude > 0 ? { ...current, look: aimAt(moon), targetName: moon.name } : current;
-              setDeparture({ previous: current, aim });
-              onView(aim);
+              const flight = depart(current);
+              setDeparture(flight);
+              onView(flight.aim);
             }}
           >
             Moonfall

@@ -143,8 +143,9 @@ accent for each mode. Controls stay reachable in short landscape views.
 Live Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
 Their temporary overrides do not overwrite saved scientific settings. The observatory retains source
 status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
-Live experiences belong beside their scene. Historical replays and choosing a UTC date have
-separate entry points.
+Each scene features a few experiences and keeps the full selection in **Stories & layers**. Group
+the drawer by data type. Keep **Explore the globe** visible above the scene strip. Closing an
+experience returns focus to its entry point and restores the drawer’s scroll position.
 
 Guided narration uses captured primary readings and regional counts. Explain magnitude scales,
 reported depth, historical reference points and the time scope; never manufacture a journey between

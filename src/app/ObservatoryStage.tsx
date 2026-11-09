@@ -5,13 +5,13 @@ import type { EarthScene } from "./useObservatory";
 import type { Stop } from "./tour";
 import type { AuroraRun } from "../sources/auroraRoute";
 
-export const OBSERVATORY_SCENES = [
+const OBSERVATORY_SCENES = [
   { id: "live", name: "Live Earth", note: "Seismicity and daylight" },
   { id: "depth", name: "Below the Surface", note: "Recorded depths" },
   { id: "night", name: "After Dark", note: "Stars and aurora" },
 ] as const;
 
-export function SceneDiagram({ scene }: { scene: EarthScene }): JSX.Element {
+function SceneDiagram({ scene }: { scene: EarthScene }): JSX.Element {
   return (
     <svg
       viewBox="0 0 32 24"
@@ -110,5 +110,100 @@ export function ObservatoryStage({
         </time>
       </div>
     </div>
+  );
+}
+
+export function ObservatoryScenePicker({
+  scene,
+  ready,
+  deepAvailable,
+  onScene,
+}: {
+  scene: EarthScene;
+  ready: boolean;
+  deepAvailable: boolean;
+  onScene: (scene: EarthScene) => void;
+}): JSX.Element {
+  return (
+    <div className="observatory-scenes" role="group" aria-label="Earth scenes">
+      {OBSERVATORY_SCENES.map((option) => (
+        <button
+          key={option.id}
+          type="button"
+          onClick={() => onScene(option.id)}
+          aria-pressed={scene === option.id}
+          aria-label={option.name}
+          disabled={!ready || (option.id === "depth" && !deepAvailable)}
+          aria-describedby={
+            option.id === "depth" && ready && !deepAvailable ? "depth-availability" : undefined
+          }
+        >
+          <SceneDiagram scene={option.id} />
+          <span className="scene-label">{option.name}</span>
+          <span className="scene-note">{option.note}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function ObservatoryFeatured({
+  scene,
+  ready,
+  radar,
+  dive,
+  deep,
+}: {
+  scene: Exclude<EarthScene, "night">;
+  ready: boolean;
+  radar: () => void;
+  dive: () => void;
+  deep: () => void;
+}): JSX.Element {
+  return (
+    <div className="observatory-actions" aria-label="Featured views" role="group">
+      {scene === "live" ? (
+        <>
+          <button type="button" id="open-storm-radar" onClick={radar} disabled={!ready}>
+            Storm Radar
+          </button>
+          <button type="button" id="open-float-dive" onClick={dive} disabled={!ready}>
+            Float Dive
+          </button>
+        </>
+      ) : (
+        <button type="button" id="open-deep-time" onClick={deep} disabled={!ready}>
+          Deep Time
+        </button>
+      )}
+    </div>
+  );
+}
+
+export function SunCredits(): JSX.Element {
+  return (
+    <div className="sun-credits" aria-label="Sun Watch sources">
+      <a href="https://www.swpc.noaa.gov/products/solar-wind" target="_blank" rel="noreferrer">
+        NOAA solar wind
+      </a>
+      <a href="https://www.swpc.noaa.gov/products/goes-x-ray-flux" target="_blank" rel="noreferrer">
+        GOES X-rays
+      </a>
+      <a
+        href="https://www.jpl.nasa.gov/images/pia26681-image-of-sun-from-nasas-solar-dynamics-observatory/"
+        target="_blank"
+        rel="noreferrer"
+      >
+        NASA/GSFC/SDO image
+      </a>
+    </div>
+  );
+}
+
+export function TourUnavailable({ note }: { note: string }): JSX.Element {
+  return (
+    <p id="tour-availability" className="observatory-summary">
+      {note}
+    </p>
   );
 }

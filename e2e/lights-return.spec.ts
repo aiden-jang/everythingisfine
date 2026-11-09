@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
 
 test("Lights Return compares NASA recovery periods and returns to the same After Dark globe", async ({
   page,
@@ -14,6 +14,7 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await openStories(page);
   const open = page.getByRole("button", { name: "Lights Return", exact: true });
   await open.click();
   const panel = page.getByRole("region", { name: "Lights Return" });

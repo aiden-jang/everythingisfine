@@ -55,6 +55,17 @@ export const observations = {
     source: "NOAA Global Drifter Program",
     url: "https://www.aoml.noaa.gov/global-drifter-program/",
   },
+  iceberg: {
+    title: "Iceberg Drift",
+    picker: "Iceberg",
+    time: "Track date",
+    empty: "No satellite tracks are available.",
+    group: "Recorded journeys",
+    summary: "Follow A-68A toward South Georgia and trace its fragments.",
+    description: "Scrub the recorded iceberg positions and compare three satellite photographs.",
+    source: "UK Polar Data Centre",
+    url: "https://doi.org/10.5285/d56d9e3f-80d2-4076-9e70-24f662c0e362",
+  },
   smoke: {
     title: "Smoke Crossing",
     picker: "Map focus",

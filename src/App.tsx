@@ -1028,12 +1028,12 @@ export function App(): JSX.Element {
       </Timeline>
     </div>
   );
-
   const archiveControls = (
     <ArchiveControls
       archive={snapshot.archive}
       state={archiveState}
       openRadar={observatory.radar.open}
+      openStory={observatory.openRecordedStory}
       onCursor={(at) => setScrub({ at, playing: false })}
       watchEclipse={
         flat
