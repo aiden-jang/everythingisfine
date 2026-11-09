@@ -40,7 +40,7 @@ interface Props {
   aurora: ReturnType<typeof useAuroraOverflight>;
   views: Pick<
     ReturnType<typeof useObservatory>,
-    "sun" | "tonight" | "floatDive" | "observations" | "skyCity" | "openLights"
+    "sun" | "tonight" | "floatDive" | "observations" | "skyCity" | "openAfterDarkArchive"
   >;
   radar: ReturnType<typeof useObservatory>["radar"];
   onScene: (scene: EarthScene) => void;
@@ -72,7 +72,7 @@ export function Observatory({
   summary,
   deepAvailable,
   aurora,
-  views: { sun, tonight, floatDive, observations, skyCity, openLights },
+  views: { sun, tonight, floatDive, observations, skyCity, openAfterDarkArchive },
   radar,
   feedNote,
   onScene,
@@ -220,7 +220,7 @@ export function Observatory({
                   onTonight={() => tonight.open()}
                   onOrbit={() => observations.open("orbit", "open-orbital-pass")}
                   onMeteors={() => tonight.open("meteors")}
-                  onLights={openLights}
+                  onArchive={openAfterDarkArchive}
                   city={skyCity}
                 />
               ) : null}

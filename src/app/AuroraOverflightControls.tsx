@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import type { AfterDarkArchive } from "./observations/useObservationDeck";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import { SkyCityPicker, type SkyCityPreference } from "./tonight/SkyCityPicker";
 import { meteorDate, nextMeteor } from "./tonight/meteorCalendar";
@@ -12,7 +13,7 @@ export function AuroraOverflightControls({
   onTonight,
   onOrbit,
   onMeteors,
-  onLights,
+  onArchive,
   city,
 }: {
   aurora: ReturnType<typeof useAuroraOverflight>;
@@ -22,7 +23,7 @@ export function AuroraOverflightControls({
   onTonight: () => void;
   onOrbit: () => void;
   onMeteors: () => void;
-  onLights: () => void;
+  onArchive: (archive: AfterDarkArchive) => void;
   city: SkyCityPreference;
   onReturn: () => void;
 }): JSX.Element {
@@ -57,8 +58,11 @@ export function AuroraOverflightControls({
         <button type="button" id="open-meteor-nights" onClick={onMeteors} disabled={!ready}>
           Meteor Nights
         </button>
-        <button type="button" id="open-lights-return" onClick={onLights} disabled={!ready}>
+        <button type="button" id="open-lights-return" onClick={() => onArchive("lights")} disabled={!ready}>
           Lights Return
+        </button>
+        <button type="button" id="open-shadow-chase" onClick={() => onArchive("shadow")} disabled={!ready}>
+          Shadow Chase
         </button>
         {aurora.run && (
           <>

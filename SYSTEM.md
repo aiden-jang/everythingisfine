@@ -156,6 +156,11 @@ Marble HD stills are loaded only on entry. The four source images use the same c
 color ramp. The three recovery frames average their labeled date ranges. A clipping divider keeps
 both views registered to the original framing. Playback advances only among those four frames.
 
+Shadow Chase reuses the globe and local horizon. The globe follows NASA’s WGS84 centerline samples
+and draws the northern and southern limits. The moving shadow and local Sun–Moon geometry use the
+Besselian elements from the same NASA map. The city view estimates visibility and contacts at sea
+level against a geometric horizon. The Luxor preview leaves the saved After Dark city intact.
+
 Tonight’s Sky shares the globe renderer and its displayed moment with the Sun, Moon, planets and
 star catalogue. The city’s time zone defines the evening and morning across clock changes. The
 Moon’s altitude includes parallax at the city. The horizon is level and the twilight glow is

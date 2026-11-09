@@ -39,6 +39,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 - **Lights Return** leaves the After Dark sky for Puerto Rico and follows the return of nighttime
   lights after Hurricane Maria. Play or scrub four NASA Black Marble HD views from the pre-storm
   baseline through March 2018. Compare a recovery period with the baseline using a fixed divider.
+- **Shadow Chase** follows NASA’s predicted path for the 2 August 2027 total solar eclipse. Scrub
+  the shadow on the globe, then see the predicted eclipse from your saved After Dark city or preview
+  totality in Luxor.
 - **Tonight’s Sky** descends to a selected city from After Dark. Scrub from local sunset to sunrise,
   use the compass to turn, or point at the Moon and five bright planets. Angles are calculated for a
   level horizon. Where a crossing is absent, the timeline uses a local evening or morning endpoint.
@@ -47,7 +50,7 @@ Existing saved layouts and links to an event, archive, section, or held moment o
   the same city, local time, and bearing. Reduced motion opens directly on the surveyed valley.
 - **Meteor Nights** traces a shower’s apparent origin across the same local sky. Play or scrub a
   listed peak night and find the dark, moon-free windows. The city selected in After Dark is shared
-  by Tonight’s Sky, Meteor Nights and Orbital Pass.
+  by Tonight’s Sky, Meteor Nights, Orbital Pass and Shadow Chase.
 - **Follow the aurora** in After Dark banks over a dark-side NOAA OVATION forecast oval and settles
   into a polar view. The readout shows the forecast time and modeled chance at the focus. The
   raised glow illustrates the footprint. Reduced motion opens the polar view directly.
@@ -165,6 +168,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Aurora forecast | NOAA SWPC OVATION |
 | Sun Watch | NOAA SWPC real-time solar wind, primary GOES X-ray flux, NASA/GSFC Solar Dynamics Observatory |
 | Tonight’s Sky | Local solar and lunar calculations, [JPL planetary elements](https://ssd.jpl.nasa.gov/planets/orbits/), [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) reference checks |
+| Shadow Chase | NASA GSFC 2027 eclipse path table and interactive-map Besselian elements, predictions by Fred Espenak. Both sources are linked in the view. |
 | Lights Return | [NASA Scientific Visualization Studio Black Marble HD](https://svs.gsfc.nasa.gov/4658/), using Suomi NPP VIIRS observations, and the [Román et al. recovery study](https://doi.org/10.1371/journal.pone.0218883) |
 | Moonfall | [NASA LRO global mosaic](https://svs.gsfc.nasa.gov/4720/), [LRO stereo elevations and imagery via USGS](https://astrogeology.usgs.gov/search/map/moon_apollo_17_lroc_nac_landing_site_orthomosaic_50cm), and the [Apollo 17 rover routes reconstructed by Haase et al.](https://doi.org/10.1029/2018EA000408) |
 | Meteor Nights | [International Meteor Organization 2026 and 2027 calendars](https://www.imo.net/calendar/), with calculated local radiant and moonlight geometry |

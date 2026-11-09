@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import type { ObservationId } from "./catalogue";
-import type { useObservationDeck } from "./useObservationDeck";
+import type { AfterDarkArchive, useObservationDeck } from "./useObservationDeck";
+import type { SkyCityPreference } from "../tonight/SkyCityPicker";
 import type { EarthScene } from "../useObservatory";
 import { ObservationCredit } from "./ObservationCredit";
 import "./observations.css";
@@ -14,6 +15,10 @@ const LightsReturn = lazy(() =>
   import("../lights/LightsReturn").then(({ LightsReturn }) => ({ default: LightsReturn })),
 );
 
+const ShadowChase = lazy(() =>
+  import("../shadow/ShadowChase").then(({ ShadowChase }) => ({ default: ShadowChase })),
+);
+
 export function ObservationDeckShell({
   deck,
   entry,
@@ -21,9 +26,9 @@ export function ObservationDeckShell({
   city,
 }: {
   deck: ReturnType<typeof useObservationDeck>;
-  entry: ObservationId | "catalogue" | "lights";
+  entry: ObservationId | "catalogue" | AfterDarkArchive;
   scene: EarthScene;
-  city: { name: string; select: (name: string) => void };
+  city: SkyCityPreference;
 }): JSX.Element {
   const close = () => {
     deck.close();
@@ -42,6 +47,8 @@ export function ObservationDeckShell({
     >
       {entry === "lights" ? (
         <LightsReturn onView={deck.update} onClose={close} />
+      ) : entry === "shadow" ? (
+        <ShadowChase city={city.city} onView={deck.update} onClose={close} />
       ) : (
         <ObservationDeck
           deck={{ ...deck, entry }}

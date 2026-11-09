@@ -68,6 +68,7 @@ export interface ObservationView {
   target: CameraState;
   image: HTMLImageElement | null;
   sky?: TonightView | undefined;
+  shadow?: { point: GeoPoint; pose: CameraState } | undefined;
   arrive?: (scale: number, reduced: boolean) => void;
 }
 

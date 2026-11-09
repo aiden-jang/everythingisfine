@@ -2,8 +2,10 @@ import { useCallback, useState } from "react";
 import type { ObservationId } from "./catalogue";
 import type { ObservationView } from "./types";
 
+export type AfterDarkArchive = "lights" | "shadow";
+
 export function useObservationDeck() {
-  const [entry, setEntry] = useState<ObservationId | "catalogue" | "lights" | null>(null);
+  const [entry, setEntry] = useState<ObservationId | "catalogue" | AfterDarkArchive | null>(null);
   const [trigger, setTrigger] = useState<string | null>(null);
   const [view, update] = useState<ObservationView | null>(null);
   const [map, setMap] = useState(false);

@@ -11,6 +11,7 @@ import { createFloatPresentation } from "./floatPresentation";
 import type { TonightView } from "../geo/tonight";
 import type { MoonfallView } from "./moonfall/scene";
 
+import { createShadowChase } from "./shadowChase";
 import { createObservationArrival } from "./observationArrival";
 import { createObservationLayer } from "./observationLayer";
 import type { ObservationView } from "../app/observations/types";
@@ -47,6 +48,8 @@ export function createScenePresentation(
   const arrival = createObservationArrival(controls, canvas);
   let observations: ReturnType<typeof createObservationLayer> | undefined;
   let dive: ReturnType<typeof createFloatPresentation> | undefined;
+  let shadow: ReturnType<typeof createShadowChase> | undefined;
+  let chase: ObservationView["shadow"];
 
   function step(dt: number, reduced: boolean) {
     dayline.value = showDayline ? lights.reveal.value : 0;
@@ -54,7 +57,22 @@ export function createScenePresentation(
     const diving = dive?.step(dt, reduced);
     const lunar = skyView?.moonfall?.step(dt, reduced);
     const approaching = arrival.step(dt, reduced);
-    return (observations?.step(dt, reduced) ?? false) || !!diving || !!lunar || approaching;
+    const tracing = observations?.step(dt, reduced) ?? false;
+    let following = false;
+    if (chase && !reduced && arrival.ready()) {
+      const current = controls.state();
+      const { lon, lat, zoom } = chase.pose;
+      if (Math.abs(lon - current.lon) + Math.abs(lat - current.lat) + Math.abs(zoom - current.zoom) > 0.003) {
+        const gain = -Math.expm1(-7 * dt);
+        controls.setView({
+          lon: current.lon + (lon - current.lon) * gain,
+          lat: current.lat + (lat - current.lat) * gain,
+          zoom: current.zoom + (zoom - current.zoom) * gain,
+        });
+        following = true;
+      }
+    }
+    return following || tracing || !!diving || !!lunar || approaching;
   }
 
   function set(mode: GlobePresentation, geography: readonly Object3D[]) {
@@ -71,7 +89,7 @@ export function createScenePresentation(
       localLight = createLocalSkyLight(sun, controls.localSky.up, canvas);
       spin.add(localLight.object);
     }
-    if (localLight) controls.setLocalSky(skyView, planetarium);
+    if (localLight) controls.setLocalSky(skyView, planetarium && !returningFromArchive);
     if (mode === "dayline" && !showDayline) lights.begin();
     showDayline = mode === "dayline";
     if (route && !veil) {
@@ -97,6 +115,15 @@ export function createScenePresentation(
       spin.add(observations.object);
     }
     observations?.set(overlay);
+    chase = observation?.shadow;
+    if (chase && observation && !shadow) {
+      shadow = createShadowChase();
+      spin.add(shadow.object);
+    }
+    if (shadow) {
+      shadow.object.visible = !!chase;
+      if (chase && observation) shadow.set(observation.frame.at, chase.point);
+    }
     for (const layer of geography) layer.visible = !observation?.frame.reconstruction;
     catalogue.visible = local === null;
     if (weather) {
@@ -125,6 +152,7 @@ export function createScenePresentation(
   return {
     set,
     step,
+    shadows: () => !!chase,
     renderMoon(renderer: WebGLRenderer, aspect: number) {
       return skyView?.moonfall?.render(renderer, aspect) ?? false;
     },
@@ -138,6 +166,7 @@ export function createScenePresentation(
     dispose() {
       radar?.setImage(null);
       observations?.set(null);
+      shadow?.dispose();
     },
   };
 }

@@ -6,7 +6,7 @@ import type { Stop } from "./tour";
 import type { CutawayFocus } from "../globe/cutaway";
 import { subsolarPoint } from "../geo/sun";
 import type { AuroraRun } from "../sources/auroraRoute";
-import { useObservationDeck } from "./observations/useObservationDeck";
+import { useObservationDeck, type AfterDarkArchive } from "./observations/useObservationDeck";
 import type { FloatDiveView } from "./float/floatPlayback";
 import type { SkyLook, TonightView } from "../geo/tonight";
 import { useSkyCity } from "./tonight/SkyCityPicker";
@@ -169,10 +169,10 @@ export function useObservatory(shared: Partial<Permalink>) {
     canCapture: ready && !sunActive && !tonight && floatView === null && !observations.entry,
     localReadings: radarView !== null || tonight || floatView !== null || !!observations.entry,
     observations,
-    openLights() {
+    openAfterDarkArchive(archive: AfterDarkArchive) {
       setRun(null);
       setSunWatch(false);
-      observations.open("lights", "open-lights-return");
+      observations.open(archive, archive === "lights" ? "open-lights-return" : "open-shadow-chase");
     },
     skyCity,
     viewAt: (observations.view?.frame.timeLabel ? undefined : observations.view?.frame.at) ?? localSky?.at,
@@ -241,7 +241,10 @@ export function useObservatory(shared: Partial<Permalink>) {
     },
     globe(guided: boolean): GlobePresentation {
       if (observations.entry)
-        return observations.view ?? (observations.entry === "lights" ? "planetarium" : "dayline");
+        return (
+          observations.view ??
+          (observations.entry === "lights" || observations.entry === "shadow" ? "planetarium" : "dayline")
+        );
       if (night) return sunActive ? null : (localSky ?? auroraRun ?? "planetarium");
       return observing && scene === "live" && !guided
         ? ((floatView === "opening" ? null : floatView) ?? radarView ?? "dayline")

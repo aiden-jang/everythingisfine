@@ -10,14 +10,15 @@ export function createObservationArrival(controls: Controls, canvas: HTMLCanvasE
     set(view: ObservationView | null) {
       const next = view?.arrive ? view : null;
       const returning = active !== null && next === null;
-      if (next !== active) {
+      if (next?.arrive !== active?.arrive || next?.target !== active?.target) {
         if (!!next !== !!active) controls.lockOrbit(!!next);
-        active = next;
         elapsed = 0;
         arrived = false;
       }
+      active = next;
       return returning;
     },
+    ready: () => arrived,
     step(dt: number, reduced: boolean) {
       if (!active?.arrive || arrived) return false;
       elapsed += dt;

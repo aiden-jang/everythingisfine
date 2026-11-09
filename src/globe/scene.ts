@@ -301,7 +301,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   let sink = 0;
 
   let slabOn = false;
-
   let sunMinute = -1;
   /* The instant the sun, sky and moon are aimed at, or null to follow the wall clock. See ARCHITECTURE.md#srcglobescenets. */
   let moment: number | null = null;
@@ -312,11 +311,10 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     const c = Math.cos(phi);
     sunDir.set(c * Math.sin(lam), Math.sin(phi), c * Math.cos(lam));
     (night.material as ShaderMaterial).uniforms["uSun"]!.value = sunDir;
-
     /* Aimed from the same instant as everything else: tonight's shadow over an archived April is nonsense. */
     const shadow = solarEclipse(at);
     const nightUniforms = (night.material as ShaderMaterial).uniforms;
-    if (shadow.touching) {
+    if (shadow.touching && !presentation.shadows()) {
       eclipseDir.set(shadow.centre[0], shadow.centre[1], shadow.centre[2]);
       nightUniforms["uEclipse"]!.value = eclipseDir;
       nightUniforms["uPenumbraAng"]!.value = Math.asin(Math.min(1, shadow.penumbra));
@@ -326,7 +324,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       nightUniforms["uPenumbraAng"]!.value = 0;
       nightUniforms["uUmbraAng"]!.value = 0;
     }
-
     // Reuse the turn so a constellation line cannot separate from its stars.
     const sidereal = gmstDeg(at);
     starfield.setTime(at, sidereal);
@@ -336,7 +333,6 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     moon.setUmbral(lunarEclipse(at).umbral);
     planets.setTime(at);
   };
-
   // Catalogue directions stay fixed; photographic exposure follows the rendered camera.
   const starfield = createStarfield();
   scene.add(starfield.object);
@@ -420,7 +416,11 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       if (moment !== null && run?.kind !== "sequence") aimSun(moment);
     },
     beginArrival: lights.begin,
-    setPresentation: (mode) => presentation.set(mode, modern),
+    setPresentation: (mode) => {
+      const previous = presentation.shadows();
+      presentation.set(mode, modern);
+      if (previous !== presentation.shadows() && moment !== null) aimSun(moment);
+    },
     setCutaway: (focus) => {
       controls.setDive(focus?.dive === true);
       cutaway.set(focus);

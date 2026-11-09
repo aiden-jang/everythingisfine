@@ -175,8 +175,8 @@ export function createObservationLayer(morph: { value: number }) {
     if (view === prior) return;
     if (view?.target !== prior?.target) reveal = 0;
     object.visible = !!view;
-    if (view?.frame !== prior?.frame) {
-      travel = 0;
+    if (view?.frame !== prior?.frame) travel = 0;
+    if (view?.frame.paths !== prior?.frame.paths) {
       const paths = rows();
       for (const { points, color = INK } of view?.frame.paths ?? []) {
         for (let i = 1; i < points.length; i++)
@@ -187,6 +187,8 @@ export function createObservationLayer(morph: { value: number }) {
       }
       line.geometry.dispose();
       line.geometry = paths.geometry();
+    }
+    if (view?.frame.marks !== prior?.frame.marks) {
       const marks = rows();
       for (const mark of view?.frame.marks ?? []) marks.push(mark, mark.color ?? PALE, mark.size ?? 13);
       dot.geometry.dispose();
