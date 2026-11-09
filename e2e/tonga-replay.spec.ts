@@ -9,10 +9,22 @@ test("Tonga transitions from satellite imagery to the atmospheric wave and can p
   await openStories(page);
   const trigger = page.getByRole("button", { name: "Watch Tonga’s shockwave" });
   await trigger.click();
-  const replay = page.getByRole("dialog", { name: "Tonga’s shockwave" });
-  await expect(replay.getByText("GOES-17 · Infrared", { exact: true })).toBeVisible();
-  await expect(replay.getByText("GOES-17 · Water-vapor change", { exact: true })).toBeVisible();
-  await expect(replay.getByText("Estimated atmospheric wave", { exact: true })).toBeVisible();
+  const replay = page.getByRole("region", { name: "Tonga’s shockwave" });
+  await expect(
+    page
+      .getByRole("group", { name: "Tonga’s shockwave on the globe" })
+      .getByText("GOES-17 · Infrared", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("group", { name: "Tonga’s shockwave on the globe" })
+      .getByText("GOES-17 · Water-vapor change", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("group", { name: "Tonga’s shockwave on the globe" })
+      .getByText("Estimated atmospheric wave", { exact: true }),
+  ).toBeVisible();
   await replay.getByRole("button", { name: "Pause", exact: true }).click();
   await expect(replay.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   await replay.getByRole("button", { name: "Antipode", exact: true }).click();
@@ -32,19 +44,37 @@ test("Tonga’s reduced-motion archive can jump to measured station pulses on a 
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
   await openStories(page);
+  const canvas = page.locator("#globe-view canvas");
+  const original = await canvas.elementHandle();
   await page.getByRole("button", { name: "Watch Tonga’s shockwave" }).click();
-  const replay = page.getByRole("dialog", { name: "Tonga’s shockwave" });
+  const replay = page.getByRole("region", { name: "Tonga’s shockwave" });
   const slider = replay.getByRole("slider", { name: "Replay time" });
-  await expect(replay.getByText("Scan 04:20 UTC", { exact: true })).toBeVisible();
+  await expect(
+    page
+      .getByRole("group", { name: "Tonga’s shockwave on the globe" })
+      .getByText("Scan 04:20 UTC", { exact: true }),
+  ).toBeVisible();
   await expect(replay.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   await replay.getByRole("combobox", { name: "Ground station" }).selectOption("SFO");
   await expect(slider).toHaveAttribute("aria-valuetext", "12:03 UTC");
   await expect(replay.getByText("1022.76 hPa", { exact: true })).toBeVisible();
+  await replay.getByRole("button", { name: "Map", exact: true }).click();
+  await expect(page.getByRole("group", { name: "Tonga’s shockwave on the map" })).toContainText(
+    "Estimated atmospheric wave",
+  );
+  await expect(slider).toHaveAttribute("aria-valuetext", "12:03 UTC");
+  await expect(replay.getByRole("combobox", { name: "Ground station" })).toHaveValue("SFO");
+  expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
   await slider.press("Home");
   await expect(slider).toHaveAttribute("aria-valuetext", "04:00 UTC");
   await expect(replay.getByText("This station’s readings cover")).toBeVisible();
   await expect.poll(() => replay.evaluate((dialog) => dialog.scrollWidth - dialog.clientWidth)).toBe(0);
   await page.setViewportSize({ width: 812, height: 375 });
-  await expect(replay.getByRole("combobox", { name: "Ground station" })).toBeInViewport();
-  await expect(replay.getByRole("button", { name: "Antipode" })).toBeInViewport();
+  const station = replay.getByRole("combobox", { name: "Ground station" });
+  const antipode = replay.getByRole("button", { name: "Antipode" });
+  await antipode.focus();
+  await expect(antipode).toBeInViewport();
+  await page.keyboard.press("Tab");
+  await expect(station).toBeFocused();
+  await expect(station).toBeInViewport();
 });

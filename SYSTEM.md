@@ -42,8 +42,8 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/useEclipsePlayback.ts` | Eclipse replay clock, scrubbing and interruption |
 | `src/geo/aprilEclipse.ts` | Interpolation of NASA’s April 2024 path samples |
 | `src/app/rupture/` | On-demand Tōhoku archive scene, regional projection and finite reveal clock |
-| `src/app/ArchiveScene.tsx` | Shared archive dialog, on-demand scene loading and focus |
-| `src/app/storm/` | Katrina best track, spherical regional projection and playback |
+| `src/app/observations/RecordedReplay.tsx` | Shared replay controls, projection, source credits, and on-demand loading |
+| `src/app/storm/` | Katrina best track, projected quadrant radii and camera playback |
 | `src/app/tonga/` | GOES-17 image crops, estimated Lamb wave and measured ASOS station traces |
 | `src/app/kilauea/` | USGS lava chronology, HVO overflight, and historic shoreline comparison |
 | `src/app/iceberg/` | On-demand A-68A tracks, dated satellite imagery, and fragment inspection |
@@ -115,18 +115,22 @@ Camera springs integrate fixed slices for stability. The frame loop accepts slow
 time up to a bounded pause, keeping movement from stretching with software-rendered frames.
 Replay retains wall-clock time. Reduced motion remains a separate user preference.
 
-Tōhoku loads a separate regional canvas and pinned USGS data on request. The model clock orders
-fault patches using their rupture start and rise times. ShakeMap contours appear in a separate
-surface view. Regenerate the packed asset with [make-tohoku.mjs](tools/make-tohoku.mjs).
+Tōhoku, Katrina, Tonga, and Megaflash load on demand and publish geographic layers to the
+shared observation renderer. Globe and Map use one playback clock and the same geographic data.
+The replay shell owns projection controls and restores focus to the drawer, archive, or pinned event.
 
-Katrina shares the archive dialog and loads its own regional canvas on demand. The frame loop
-interpolates the center on the replay clock, while the measurement readout retains the latest
-NOAA fix at or before the cursor. Regenerate the packed HURDAT2 track with
-[make-katrina.mjs](tools/make-katrina.mjs).
+Tōhoku orders fault patches by their USGS rupture start and rise times. A depth cutaway accompanies
+the modeled slip, then ShakeMap contours appear on the shared surface. Recorded waves animate the
+station marks while the traces and optional audio stay in the readings panel. Regenerate the packed
+asset with [make-tohoku.mjs](tools/make-tohoku.mjs).
 
-Tonga loads two compressed satellite atlases only when opened. Its replay clock follows scan-start
-times, then drives the estimated wavefront and cursor in the observed pressure window. The atlas
-metadata records the source keys and the ASOS requests. Regenerate it with
+Katrina’s camera follows the interpolated center. The track and wind radii stay registered to Earth,
+while the readout retains the latest NOAA fix at or before the cursor. Regenerate the packed
+HURDAT2 track with [make-katrina.mjs](tools/make-katrina.mjs).
+
+Tonga crossfades two compressed satellite atlases into the shared globe and map. Its replay clock
+follows scan-start times, then drives the estimated wavefront and cursor in the observed pressure
+window. The atlas metadata records the source keys and ASOS requests. Regenerate it with
 [make-tonga.py](tools/make-tonga.py) using Python with h5py, NumPy, Pillow, and fsspec with HTTP support.
 
 Kīlauea draws the survey and coastline comparison onto one geographically anchored texture in the
@@ -142,7 +146,7 @@ and WebP images with [make-iceberg.mjs](tools/make-iceberg.mjs) using Node and `
 
 Megaflash samples the GLM trace from figure 1 of the published reanalysis, keeping only
 colors that match its time scale. A separate ABI scan is reprojected into the same geographic
-frame. [make-megaflash.py](tools/make-megaflash.py) regenerates both assets with Python,
+frame as the shared surface. [make-megaflash.py](tools/make-megaflash.py) regenerates both assets with Python,
 PyMuPDF, h5py, NumPy, Pillow, and PyProj.
 
 After Dark reuses the polled NOAA grid for aurora overflight. A flight holds one forecast while

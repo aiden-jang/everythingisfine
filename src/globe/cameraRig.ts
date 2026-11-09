@@ -4,12 +4,18 @@ import type { PerspectiveCamera } from "three";
 export function createCameraRig(camera: PerspectiveCamera, canvas: HTMLCanvasElement) {
   let bank = 0,
     lift = 0;
+  let replayBank = 0;
+  let replayPitch = 0;
   const snap = (nextBank = 0, nextLift = 0): void => {
     bank = nextBank;
     lift = nextLift;
   };
   return {
     snap,
+    setReplayAngle(nextBank: number, nextPitch: number) {
+      replayBank = nextBank;
+      replayPitch = nextPitch;
+    },
     step(dt: number, next: { bank: number; lift: number }, reduced: boolean): boolean {
       if (reduced) {
         snap();
@@ -29,7 +35,10 @@ export function createCameraRig(camera: PerspectiveCamera, canvas: HTMLCanvasEle
           height = canvas.clientHeight || 1;
         camera.setViewOffset(width, height, 0, -offset * height, width, height);
       } else if (camera.view?.enabled) camera.clearViewOffset();
-      if (!flat && bank !== 0) camera.rotateZ(bank);
+      if (!flat) {
+        if (bank || replayBank) camera.rotateZ(bank + replayBank);
+        if (replayPitch) camera.rotateX(replayPitch);
+      }
     },
   };
 }

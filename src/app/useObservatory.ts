@@ -7,6 +7,7 @@ import type { CutawayFocus } from "../globe/cutaway";
 import { subsolarPoint } from "../geo/sun";
 import type { AuroraRun } from "../sources/auroraRoute";
 import { useObservationDeck, type AfterDarkArchive } from "./observations/useObservationDeck";
+import type { ReplayId } from "./observations/replays";
 import type { FloatDiveView } from "./float/floatPlayback";
 import type { SkyLook, TonightView } from "../geo/tonight";
 import { useSkyCity } from "./tonight/SkyCityPicker";
@@ -77,7 +78,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const observations = useObservationDeck();
   const closeObservations = observations.close;
   const radarOrigin = useRef<Presentation>("observe");
-  const storyFromArchive = useRef(false);
+  const storyFromExplore = useRef(false);
   const transition = useRef<Animation[]>([]);
   const focusExplorer = useRef(false);
   const changePresentation = useCallback(
@@ -102,7 +103,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         setTonightView(null);
         setFloatView(null);
         closeObservations();
-        storyFromArchive.current = false;
+        storyFromExplore.current = false;
         prepare?.();
         if (remember) store("presentation", next);
       };
@@ -173,14 +174,14 @@ export function useObservatory(shared: Partial<Permalink>) {
     canCapture: ready && !sunActive && !tonight && floatView === null && !observations.entry,
     localReadings: radarView !== null || tonight || floatView !== null || !!observations.entry,
     observations,
-    openRecordedStory(id: "kilauea" | "iceberg", from: string) {
+    openRecordedStory(id: ReplayId | "kilauea" | "iceberg", from: string) {
       if (observing) observations.open(id, from);
       else
         changePresentation(
           "observe",
           true,
           () => {
-            storyFromArchive.current = true;
+            storyFromExplore.current = true;
             setScene("live");
             observations.open(id, from);
           },
@@ -188,7 +189,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         );
     },
     closeStory() {
-      if (storyFromArchive.current) changePresentation("explore", true, undefined, false);
+      if (storyFromExplore.current) changePresentation("explore", true, undefined, false);
       else observations.close();
     },
     openAfterDarkArchive(archive: AfterDarkArchive) {

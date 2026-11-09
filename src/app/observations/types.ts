@@ -64,6 +64,11 @@ export interface ObservationData {
   chapters?: readonly { index: number; label: string }[];
 }
 
+export interface ReplayCamera extends CameraState {
+  bank?: number;
+  pitch?: number;
+}
+
 export interface ObservationView {
   kind: "observation";
   frame: ObservationFrame;
@@ -72,6 +77,7 @@ export interface ObservationView {
   surface?: HTMLCanvasElement;
   lens?: { globe: number; map: number };
   sky?: TonightView | undefined;
+  follow?: ReplayCamera | undefined;
   shadow?: { point: GeoPoint; pose: CameraState } | undefined;
   arrive?: (scale: number, reduced: boolean) => void;
 }

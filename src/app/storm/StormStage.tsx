@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { animationDelta } from "../../globe/animation";
-import { drawStorm } from "./drawStorm";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
+import { gulf, stormGeography, stormLens, stormTarget } from "./stormGlobe";
+import { useObservationImage } from "../observations/useObservationData";
 import {
   FIXES,
   FLIGHT_MS,
@@ -27,62 +28,33 @@ function seekTo(minute: number): Playback {
 
 const duration = (playback: Playback) => (playback.survey ? SURVEY_MS : FLIGHT_MS);
 
-export function StormStage(): JSX.Element {
+export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const [view, setView] = useState<Playback>(() =>
     matchMedia(MOTION).matches ? seekTo(TRACK_MINUTES) : { elapsed: 0, survey: false, playing: true },
   );
   const clock = useRef(view);
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const paint = useRef(() => {});
+  const { element: coast } = useObservationImage(gulf.url);
+  const [ready, setReady] = useState(false);
+  const arrive = useCallback(() => setReady(true), []);
 
   function update(next: Playback) {
     clock.current = next;
-    paint.current();
     setView(next);
   }
 
   useEffect(() => {
-    const element = canvas.current!;
-    const context = element.getContext("2d");
-    if (!context) return;
-    let width = 0;
-    let height = 0;
-    paint.current = () => {
-      if (width > 0 && height > 0) {
-        const { elapsed, survey } = clock.current;
-        drawStorm(context, width, height, stormFrame(elapsed, survey));
-      }
-    };
-    const resize = new ResizeObserver(([entry]) => {
-      if (!entry) return;
-      ({ width, height } = entry.contentRect);
-      const dpr = Math.min(devicePixelRatio, 2);
-      element.width = Math.round(width * dpr);
-      element.height = Math.round(height * dpr);
-      context.setTransform(dpr, 0, 0, dpr, 0, 0);
-      paint.current();
-    });
-    resize.observe(element);
-    return () => {
-      resize.disconnect();
-      paint.current = () => {};
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!view.playing) return;
+    if (!view.playing || !ready) return;
     let previous: number | undefined;
     let lastReadout = 0;
     let request = 0;
     function tick(now: number) {
       const current = clock.current;
       if (!current.playing) return;
-      const dt = previous === undefined ? 0 : animationDelta((now - previous) / 1000) * 1000;
+      const dt = previous === undefined ? 0 : now - previous;
       previous = now;
       const elapsed = Math.min(duration(current), current.elapsed + dt);
       const next = { ...current, elapsed, playing: elapsed < duration(current) };
       clock.current = next;
-      paint.current();
       if (!next.playing || now - lastReadout >= 75) {
         setView(next);
         lastReadout = now;
@@ -100,7 +72,7 @@ export function StormStage(): JSX.Element {
       cancelAnimationFrame(request);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [view.playing]);
+  }, [view.playing, ready]);
 
   useEffect(() => {
     const motion = matchMedia(MOTION);
@@ -113,6 +85,17 @@ export function StormStage(): JSX.Element {
     return () => motion.removeEventListener("change", change);
   }, []);
 
+  useLayoutEffect(() => {
+    const frame = stormFrame(view.elapsed, view.survey);
+    onView({
+      kind: "observation",
+      ...stormGeography(frame, !view.survey),
+      image: coast,
+      target: stormTarget,
+      lens: stormLens,
+      arrive,
+    });
+  }, [view, onView, arrive, coast]);
   const storm = stormFrame(view.elapsed, view.survey).storm;
   const { fix } = storm;
   const minute = Math.floor((storm.at - START) / 60_000);
@@ -134,19 +117,26 @@ export function StormStage(): JSX.Element {
   }
 
   return (
-    <>
-      <figure className="archive-scene-map storm-map">
-        <canvas
-          ref={canvas}
-          role="img"
-          aria-label="Map of Hurricane Katrina’s NOAA best track across the Gulf to Louisiana"
-        />
-        <figcaption>
-          <span>Gulf of Mexico</span>
-          <span>{view.survey || ended ? "Track overview" : "Camera follows storm center"}</span>
-        </figcaption>
-      </figure>
-      <div className="archive-scene-console storm-console">
+    <ReplayPanel
+      {...panel}
+      title="Eye of the Storm"
+      location="Gulf of Mexico"
+      subtitle="Hurricane Katrina · NOAA best track · 28–29 Aug 2005"
+      status={view.survey || ended ? "Track overview" : "Camera follows storm center"}
+      at={<time dateTime={new Date(storm.at).toISOString()}>{progress}</time>}
+      sources={
+        <>
+          <a href="https://www.nhc.noaa.gov/data/" target="_blank" rel="noreferrer">
+            NOAA HURDAT2
+          </a>
+          <a href="https://www.nhc.noaa.gov/data/tcr/AL122005_Katrina.pdf" target="_blank" rel="noreferrer">
+            NHC Katrina report
+          </a>
+          <span>Coastlines by Natural Earth</span>
+        </>
+      }
+    >
+      <div className="archive-scene-console">
         <div className="archive-scene-caption storm-reading">
           <h3>{title}</h3>
           <p className="storm-measurements">
@@ -213,6 +203,6 @@ export function StormStage(): JSX.Element {
           </p>
         </div>
       </div>
-    </>
+    </ReplayPanel>
   );
 }

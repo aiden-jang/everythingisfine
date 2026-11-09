@@ -1,4 +1,9 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
+import { useObservationImage } from "../observations/useObservationData";
+import { ReplayInset } from "../observations/ReplayInset";
+import { japan, ruptureGeography, ruptureLens, ruptureTarget } from "./ruptureGlobe";
+import { animationDelta } from "../../globe/animation";
 import { drawRupture } from "./drawRupture";
 import {
   ARRIVAL_MS,
@@ -42,39 +47,33 @@ function beatAt(ms: number): Beat {
   return ms < ARRIVAL_MS ? "approach" : ms < SHAKING_MS ? "fault" : "shaking";
 }
 
-export function RuptureStage(): JSX.Element {
-  const [chapter, setChapter] = useState<"opening" | "waves" | "shaking">("opening");
-  if (chapter === "waves") {
-    return (
-      <Suspense
-        fallback={
-          <p className="archive-scene-console" role="status">
-            Opening recorded waves…
-          </p>
-        }
-      >
-        <RecordedWaves back={() => setChapter("shaking")} />
-      </Suspense>
-    );
-  }
-  return <RupturePlayback returned={chapter === "shaking"} recorded={() => setChapter("waves")} />;
-}
-
-function RupturePlayback({ returned, recorded }: { returned: boolean; recorded: () => void }): JSX.Element {
+export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
+  const [waves, setWaves] = useState(false);
   const [reduced, setReduced] = useState(() => matchMedia(MOTION_QUERY).matches);
-  const [mode, setMode] = useState<Mode>(() =>
-    returned ? "shaking" : matchMedia(MOTION_QUERY).matches ? "fault" : "playing",
-  );
-  const [beat, setBeat] = useState<Beat>("approach");
-  const canvas = useRef<HTMLCanvasElement>(null);
+  const [mode, setMode] = useState<Mode>(() => (matchMedia(MOTION_QUERY).matches ? "fault" : "playing"));
+  const [clock, setClock] = useState(0);
+  const [ready, setReady] = useState(false);
+  const arrive = useCallback(() => setReady(true), []);
   const recordedButton = useRef<HTMLButtonElement>(null);
   const elapsed = useRef(0);
+  const { element: coast } = useObservationImage(japan.url);
   const running = mode === "playing" || mode === "paused";
-  const displayed = running ? beat : mode;
+  const displayed = running ? beatAt(clock) : mode;
   const caption = captions[displayed];
-  useEffect(() => {
-    if (returned) recordedButton.current?.focus({ preventScroll: true });
-  }, [returned]);
+  const frame = running ? revealFrame(clock) : stillFrame(mode);
+
+  useLayoutEffect(() => {
+    if (waves) return;
+    const current = mode === "playing" || mode === "paused" ? revealFrame(clock) : stillFrame(mode);
+    onView({
+      kind: "observation",
+      ...ruptureGeography(current),
+      image: coast,
+      target: ruptureTarget,
+      lens: ruptureLens,
+      arrive,
+    });
+  }, [mode, clock, waves, onView, arrive, coast]);
 
   useEffect(() => {
     const media = matchMedia(MOTION_QUERY);
@@ -95,130 +94,169 @@ function RupturePlayback({ returned, recorded }: { returned: boolean; recorded: 
   }, []);
 
   useEffect(() => {
-    const element = canvas.current!;
-    const ctx = element.getContext("2d");
-    if (!ctx) return;
+    if (mode !== "playing" || !ready) return;
     let previous: number | undefined;
     let request = 0;
-    let width = 0;
-    let height = 0;
-    let lastBeat = beatAt(elapsed.current);
-    const animated = mode === "playing" || mode === "paused";
-
-    function paint() {
-      if (width > 0 && height > 0) {
-        drawRupture(ctx!, width, height, animated ? revealFrame(elapsed.current) : stillFrame(mode));
-      }
-    }
-
+    let lastReadout = 0;
     function step(now: number) {
-      if (previous !== undefined) elapsed.current = Math.min(REVEAL_MS, elapsed.current + now - previous);
+      if (previous !== undefined)
+        elapsed.current = Math.min(
+          REVEAL_MS,
+          elapsed.current + animationDelta((now - previous) / 1000) * 1000,
+        );
       previous = now;
-      const next = beatAt(elapsed.current);
-      if (next !== lastBeat) {
-        lastBeat = next;
-        setBeat(next);
-      }
-      paint();
       if (elapsed.current >= REVEAL_MS) setMode("shaking");
-      else request = requestAnimationFrame(step);
+      else {
+        if (now - lastReadout >= 80) {
+          lastReadout = now;
+          setClock(elapsed.current);
+        }
+        request = requestAnimationFrame(step);
+      }
     }
-
-    const resize = new ResizeObserver(([entry]) => {
-      if (!entry) return;
-      ({ width, height } = entry.contentRect);
-      const dpr = Math.min(devicePixelRatio, 2);
-      element.width = Math.round(width * dpr);
-      element.height = Math.round(height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      paint();
-    });
     function visibility() {
       cancelAnimationFrame(request);
       previous = undefined;
-      if (!document.hidden && mode === "playing") request = requestAnimationFrame(step);
+      if (!document.hidden) request = requestAnimationFrame(step);
     }
-    resize.observe(element);
     document.addEventListener("visibilitychange", visibility);
     visibility();
     return () => {
       cancelAnimationFrame(request);
-      resize.disconnect();
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [mode]);
+  }, [mode, ready]);
 
   function playback() {
-    if (mode === "playing") return setMode("paused");
+    if (mode === "playing") {
+      setClock(elapsed.current);
+      return setMode("paused");
+    }
     if (mode !== "paused") {
       elapsed.current = 0;
-      setBeat("approach");
+      setClock(0);
     }
     setMode("playing");
   }
 
   return (
-    <>
-      <figure className="archive-scene-map">
-        <canvas ref={canvas} role="img" aria-label={caption.title + ". " + caption.detail} />
-        <figcaption>
-          <span>38.297° N / 142.373° E</span>
-          <span>{displayed === "fault" ? "Depth exaggerated 4×" : "Offshore Japan"}</span>
-        </figcaption>
-      </figure>
-      <div className="archive-scene-console">
-        <div className="archive-scene-caption" role="status">
-          <h3>{caption.title}</h3>
-          <p>{caption.detail}</p>
-        </div>
-        <div className="archive-scene-actions rupture-actions">
-          <div className="archive-scene-controls rupture-views" role="group" aria-label="Rupture views">
-            <button
-              type="button"
-              className="archive-scene-button"
-              aria-label="Modeled fault movement"
-              aria-pressed={mode === "fault"}
-              onClick={() => setMode("fault")}
-            >
-              Fault movement
-            </button>
-            <button
-              type="button"
-              className="archive-scene-button"
-              aria-label="Estimated surface shaking"
-              aria-pressed={mode === "shaking"}
-              onClick={() => setMode("shaking")}
-            >
-              Surface shaking
-            </button>
-            <button ref={recordedButton} type="button" className="archive-scene-button" onClick={recorded}>
-              Recorded waves
-            </button>
-            {!reduced && (
-              <button type="button" className="archive-scene-button" onClick={playback}>
-                {mode === "playing" ? "Pause reveal" : mode === "paused" ? "Resume reveal" : "Replay reveal"}
+    <ReplayPanel
+      {...panel}
+      title="The Tōhoku rupture"
+      location="Offshore Honshu · Japan"
+      subtitle="11 Mar 2011 · 05:46:24 UTC · M9.1 · 29 km deep"
+      status={waves ? "Global Seismographic Network · Recorded motion" : caption.title}
+      at={<span>{!waves && displayed === "fault" ? "Depth exaggerated 4×" : "38.297° N / 142.373° E"}</span>}
+      inset={
+        !waves &&
+        frame.depth > 0 && (
+          <ReplayInset
+            label="USGS fault cutaway, depth exaggerated four times"
+            width={720}
+            height={510}
+            opacity={frame.depth}
+            detail
+            paint={(context) => drawRupture(context, 720, 510, frame)}
+          />
+        )
+      }
+      sources={
+        <>
+          <a
+            href="https://earthquake.usgs.gov/earthquakes/eventpage/usc0001xgp/finite-fault"
+            target="_blank"
+            rel="noreferrer"
+          >
+            USGS finite fault
+          </a>
+          <a
+            href="https://earthquake.usgs.gov/earthquakes/eventpage/usc0001xgp/shakemap"
+            target="_blank"
+            rel="noreferrer"
+          >
+            USGS ShakeMap
+          </a>
+          <span>Coastlines by Natural Earth</span>
+        </>
+      }
+    >
+      {waves ? (
+        <Suspense fallback={<p role="status">Opening recorded waves…</p>}>
+          <RecordedWaves
+            onView={onView}
+            back={() => {
+              setWaves(false);
+              requestAnimationFrame(() => recordedButton.current?.focus({ preventScroll: true }));
+            }}
+          />
+        </Suspense>
+      ) : (
+        <div className="archive-scene-console">
+          <div className="archive-scene-caption" role="status">
+            <h3>{caption.title}</h3>
+            <p>{caption.detail}</p>
+          </div>
+          <div className="archive-scene-actions">
+            <div className="archive-scene-controls" role="group" aria-label="Rupture views">
+              <button
+                type="button"
+                className="archive-scene-button"
+                aria-label="Modeled fault movement"
+                aria-pressed={mode === "fault"}
+                onClick={() => setMode("fault")}
+              >
+                Fault movement
               </button>
+              <button
+                type="button"
+                className="archive-scene-button"
+                aria-label="Estimated surface shaking"
+                aria-pressed={mode === "shaking"}
+                onClick={() => setMode("shaking")}
+              >
+                Surface shaking
+              </button>
+              <button
+                ref={recordedButton}
+                type="button"
+                className="archive-scene-button"
+                onClick={() => {
+                  setMode("shaking");
+                  setWaves(true);
+                }}
+              >
+                Recorded waves
+              </button>
+              {!reduced && (
+                <button type="button" className="archive-scene-button" onClick={playback}>
+                  {mode === "playing"
+                    ? "Pause reveal"
+                    : mode === "paused"
+                      ? "Resume reveal"
+                      : "Replay reveal"}
+                </button>
+              )}
+            </div>
+            {displayed === "approach" ? (
+              <div className="archive-scene-legend" aria-hidden="true" />
+            ) : (
+              <div
+                className="archive-scene-legend"
+                role="group"
+                aria-label={displayed === "fault" ? "Modeled slip in metres" : "Modified Mercalli intensity"}
+              >
+                <span>{displayed === "fault" ? "Slip · m" : "Intensity · MMI"}</span>
+                {(displayed === "fault" ? slipKey : shakingLegend).map(({ label, color }) => (
+                  <span key={label}>
+                    <i data-ramp="" style={{ backgroundColor: color }} />
+                    {label}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
-          {displayed === "approach" ? (
-            <div className="archive-scene-legend" aria-hidden="true" />
-          ) : (
-            <div
-              className="archive-scene-legend"
-              role="group"
-              aria-label={displayed === "fault" ? "Modeled slip in metres" : "Modified Mercalli intensity"}
-            >
-              <span>{displayed === "fault" ? "Slip · m" : "Intensity · MMI"}</span>
-              {(displayed === "fault" ? slipKey : shakingLegend).map(({ label, color }) => (
-                <span key={label}>
-                  <i data-ramp="" style={{ backgroundColor: color }} />
-                  {label}
-                </span>
-              ))}
-            </div>
-          )}
         </div>
-      </div>
-    </>
+      )}
+    </ReplayPanel>
   );
 }

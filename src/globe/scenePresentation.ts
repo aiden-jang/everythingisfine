@@ -30,6 +30,10 @@ export function isShadowChase(mode: GlobePresentation): boolean {
   );
 }
 
+export function isRecordedFlight(mode: GlobePresentation): boolean {
+  return isLocalView(mode) && mode.kind === "observation" && !!mode.follow;
+}
+
 export function createScenePresentation(
   spin: Group,
   catalogue: Group,
@@ -58,6 +62,9 @@ export function createScenePresentation(
   let chase: ObservationView["shadow"];
   let lens: ObservationView["lens"];
   let lensReveal = 0;
+  let replay: ObservationView["follow"];
+  let replayBank = 0;
+  let replayPitch = 0;
 
   function step(dt: number, reduced: boolean) {
     dayline.value = showDayline ? lights.reveal.value : 0;
@@ -67,21 +74,34 @@ export function createScenePresentation(
     const approaching = arrival.step(dt, reduced);
     const tracing = observations?.step(dt, reduced) ?? false;
     if (lens && arrival.ready()) lensReveal = reduced ? 1 : Math.min(1, lensReveal + dt / 0.65);
+    const bank = replay && !reduced && controls.morph() === 0 ? (replay.bank ?? 0) : 0;
+    const pitch = replay && !reduced && controls.morph() === 0 ? (replay.pitch ?? 0) : 0;
+    const easing = Math.abs(bank - replayBank) + Math.abs(pitch - replayPitch) > 0.0005;
+    const rotate = replayBank !== bank || replayPitch !== pitch;
+    if (rotate) {
+      const gain = easing && !reduced ? -Math.expm1(-8 * dt) : 1;
+      replayBank += (bank - replayBank) * gain;
+      replayPitch += (pitch - replayPitch) * gain;
+      controls.setReplayAngle(replayBank, replayPitch);
+    }
     let following = false;
-    if (chase && !reduced && arrival.ready()) {
+    const destination = replay ?? chase?.pose;
+    if (destination && !reduced && arrival.ready()) {
       const current = controls.state();
-      const { lon, lat, zoom } = chase.pose;
-      if (Math.abs(lon - current.lon) + Math.abs(lat - current.lat) + Math.abs(zoom - current.zoom) > 0.003) {
+      const { lon, lat, zoom } = destination;
+      const turn = ((((lon - current.lon) % 360) + 540) % 360) - 180;
+      if (Math.abs(turn) + Math.abs(lat - current.lat) + Math.abs(zoom - current.zoom) > 0.003) {
         const gain = -Math.expm1(-7 * dt);
         controls.setView({
-          lon: current.lon + (lon - current.lon) * gain,
+          lon: current.lon + turn * gain,
           lat: current.lat + (lat - current.lat) * gain,
           zoom: current.zoom + (zoom - current.zoom) * gain,
         });
         following = true;
       }
     }
-    return following || tracing || !!diving || !!lunar || approaching || (!!lens && lensReveal < 1);
+    if (rotate && !following) controls.apply();
+    return easing || following || tracing || !!diving || !!lunar || approaching || (!!lens && lensReveal < 1);
   }
 
   function set(mode: GlobePresentation, geography: readonly Object3D[]) {
@@ -91,6 +111,7 @@ export function createScenePresentation(
     const returningFromArchive = arrival.set(observation);
     if (lens !== observation?.lens) lensReveal = 0;
     lens = observation?.lens;
+    replay = observation?.follow;
     skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);
     const route = mode && typeof mode === "object" && "route" in mode ? mode.route : null;
     if (planetarium !== (mode === "planetarium")) controls.setPlanetarium(mode === "planetarium");

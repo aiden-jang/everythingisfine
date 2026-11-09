@@ -32,6 +32,7 @@ export interface Controls {
   /** Springs the camera to a place. Instant under reduced motion, per DESIGN.md section 8. */
   flyTo: (lon: number, lat: number, zoom?: number) => void;
   lockOrbit: (locked: boolean) => void;
+  setReplayAngle: (bank: number, pitch: number) => void;
   setView: (pose: CameraState) => void;
   /** Starts a finite horizon pullback. Skipped completely under reduced motion. */
   enter: () => void;

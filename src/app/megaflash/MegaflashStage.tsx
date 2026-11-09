@@ -1,6 +1,6 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { animationDelta } from "../../globe/animation";
-import { drawFlash } from "./drawFlash";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
+import { flashGeography, flashLens, flashTarget } from "./flashGlobe";
 import {
   DURATION,
   elapsedFor,
@@ -25,19 +25,18 @@ interface Playback {
 const inspect = (at: number): Playback => ({ elapsed: elapsedFor(at), playing: false, fixed: true });
 const flight = (): Playback => ({ elapsed: 0, playing: true, fixed: false });
 
-export function MegaflashStage(): JSX.Element {
+export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const id = useId();
   const [view, setView] = useState<Playback>(() =>
     matchMedia(MOTION).matches ? inspect(DURATION) : flight(),
   );
   const [image, setImage] = useState<HTMLImageElement | null | undefined>(undefined);
-  const canvas = useRef<HTMLCanvasElement>(null);
+  const [ready, setReady] = useState(false);
+  const arrive = useCallback(() => setReady(true), []);
   const clock = useRef(view);
-  const repaint = useRef(() => {});
 
   function update(next: Playback) {
     clock.current = next;
-    repaint.current();
     setView(next);
   }
 
@@ -58,44 +57,16 @@ export function MegaflashStage(): JSX.Element {
     };
   }, []);
 
-  useEffect(() => {
-    const element = canvas.current!;
-    const ctx = element.getContext("2d");
-    if (!ctx) return;
-    let width = 0;
-    let height = 0;
-    repaint.current = () => {
-      if (width <= 0 || height <= 0) return;
-      const { elapsed, fixed } = clock.current;
-      drawFlash(ctx, width, height, flashFrame(elapsed, fixed), image ?? null);
-    };
-    const resize = new ResizeObserver(([entry]) => {
-      if (!entry) return;
-      ({ width, height } = entry.contentRect);
-      const dpr = Math.min(2, devicePixelRatio);
-      element.width = Math.round(width * dpr);
-      element.height = Math.round(height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      repaint.current();
-    });
-    resize.observe(element);
-    return () => {
-      resize.disconnect();
-      repaint.current = () => {};
-    };
-  }, [image]);
-
   const waiting = image === undefined;
   useEffect(() => {
-    if (!view.playing || waiting) return;
+    if (!view.playing || waiting || !ready) return;
     let previous: number | undefined;
     let lastReadout = 0;
     let frame = 0;
     function tick(now: number) {
       const current = clock.current;
       if (!current.playing) return;
-      const elapsed =
-        current.elapsed + (previous === undefined ? 0 : animationDelta((now - previous) / 1000) * 1000);
+      const elapsed = current.elapsed + (previous === undefined ? 0 : now - previous);
       previous = now;
       if (elapsed >= (current.fixed ? elapsedFor(DURATION) : FLIGHT_END)) {
         update(inspect(DURATION));
@@ -103,7 +74,6 @@ export function MegaflashStage(): JSX.Element {
       }
       const next = { ...current, elapsed };
       clock.current = next;
-      repaint.current();
       if (now - lastReadout >= 100) {
         lastReadout = now;
         setView(next);
@@ -121,7 +91,7 @@ export function MegaflashStage(): JSX.Element {
       cancelAnimationFrame(frame);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [waiting, view.playing]);
+  }, [waiting, view.playing, ready]);
 
   useEffect(() => {
     const motion = matchMedia(MOTION);
@@ -135,6 +105,16 @@ export function MegaflashStage(): JSX.Element {
     return () => motion.removeEventListener("change", change);
   }, []);
 
+  useLayoutEffect(() => {
+    onView({
+      kind: "observation",
+      ...flashGeography(flashFrame(view.elapsed, view.fixed), !view.fixed || view.playing),
+      image: image ?? null,
+      target: flashTarget,
+      lens: flashLens,
+      arrive,
+    });
+  }, [view, image, arrive, onView]);
   const { at } = flashFrame(view.elapsed, view.fixed);
   const before = at < 0;
   const complete = at >= DURATION;
@@ -162,20 +142,37 @@ export function MegaflashStage(): JSX.Element {
   }
 
   return (
-    <>
-      <figure className="archive-scene-map flash-map">
-        <canvas
-          ref={canvas}
-          role="img"
-          aria-label="Map of the GOES-16 lightning trace across Texas, Oklahoma, Arkansas, Kansas and Missouri"
-        />
-        <figcaption>
-          <span>{scanCaption}</span>
-          {complete && <strong>829 ± 8 km</strong>}
-        </figcaption>
-      </figure>
-      <div className="archive-scene-console flash-console">
-        <div className="archive-scene-caption flash-reading">
+    <ReplayPanel
+      {...panel}
+      title="Megaflash"
+      location="Southern Plains · United States"
+      subtitle="GOES-16 lightning detections · 22 Oct 2017 · 08:56 UTC"
+      status={scanCaption}
+      at={complete ? <strong>829 ± 8 km</strong> : <span>{label}</span>}
+      sources={
+        <>
+          <a href="https://doi.org/10.1175/BAMS-D-25-0037.1" target="_blank" rel="noreferrer">
+            GLM trace · Peterson et al.
+          </a>
+          <a
+            href="https://www.nesdis.noaa.gov/news/noaa-satellites-help-certify-worlds-longest-lightning-flash"
+            target="_blank"
+            rel="noreferrer"
+          >
+            NOAA GOES-16
+          </a>
+          <a
+            href="https://wmo.int/news/media-centre/wmo-certifies-megaflash-lightning-record-usa"
+            target="_blank"
+            rel="noreferrer"
+          >
+            WMO certification
+          </a>
+        </>
+      }
+    >
+      <div className="archive-scene-console">
+        <div className="archive-scene-caption">
           <h3>{before ? "Above the storm" : complete ? "Across five states" : "The flash spreads"}</h3>
           <p>
             {before
@@ -207,7 +204,7 @@ export function MegaflashStage(): JSX.Element {
             aria-valuetext={label}
             onChange={(event) => update(inspect(timeAtStep(event.currentTarget.valueAsNumber)))}
           />
-          <div className="archive-scene-controls flash-controls">
+          <div className="archive-scene-controls">
             <button type="button" className="archive-scene-button" onClick={togglePlay}>
               {view.playing ? "Pause" : complete ? "Replay" : "Play"}
             </button>
@@ -224,6 +221,6 @@ export function MegaflashStage(): JSX.Element {
           </div>
         </div>
       </div>
-    </>
+    </ReplayPanel>
   );
 }

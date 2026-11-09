@@ -1,5 +1,5 @@
-import { useEffect, useId, useRef, useState } from "react";
-import { rings, unwrap } from "../../geo/land";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import type { ObservationView } from "../observations/types";
 import stations from "../../sources/observations/recordings/tohoku-waves.json";
 
 const origin = Date.parse("2011-03-11T05:46:24Z");
@@ -11,25 +11,7 @@ const audioFiles = import.meta.glob<string>("../../sources/observations/recordin
   query: "?url",
 });
 const width = 720;
-const globeY = (lat: number) => (90 - lat) * (300 / 180);
-const mapX = (lon: number) => ((lon + 360) % 360) * 2;
-const coast = rings()
-  .flatMap((polygon) =>
-    polygon.flatMap((path) => {
-      const unwrapped = unwrap(path);
-      const offset = 360 * Math.round((180 - unwrapped.mean) / 360);
-      return [-360, 0, 360].map(
-        (repeat) =>
-          unwrapped.ring
-            .map(
-              ([lon, lat], i) =>
-                `${i ? "L" : "M"}${((lon! + offset + repeat) * 2).toFixed(1)} ${globeY(lat!).toFixed(1)}`,
-            )
-            .join(" ") + " Z",
-      );
-    }),
-  )
-  .join(" ");
+const target = { lon: 170, lat: 35, zoom: 0.9 };
 
 const waves = stations.map((station) => ({
   ...station,
@@ -107,16 +89,44 @@ function StationPicker({
   );
 }
 
-export function RecordedWaves({ back }: { back: () => void }): JSX.Element {
+export function RecordedWaves({
+  back,
+  onView,
+}: {
+  back: () => void;
+  onView: (view: ObservationView) => void;
+}): JSX.Element {
   const [first, setFirst] = useState(0);
   const [second, setSecond] = useState(5);
   const [seconds, setSeconds] = useState(0);
   const [playing, play] = useState(false);
-  const clip = useId();
   const cursor = useRef<HTMLInputElement>(null);
   const sound = useRef<HTMLAudioElement>(null);
   const a = waves[first]!;
   const b = waves[second]!;
+  useLayoutEffect(() => {
+    onView({
+      kind: "observation",
+      image: null,
+      target,
+      frame: {
+        at: origin + seconds * 1000,
+        marks: [
+          { lon: 142.373, lat: 38.297, size: 19, color: 0xe8edf5 },
+          ...waves.map((station) => {
+            const sample = station.envelope[Math.min(station.envelope.length - 1, Math.floor(seconds / 5))];
+            const amplitude = sample ? Math.max(Math.abs(sample[0]!), Math.abs(sample[1]!)) : 0;
+            return {
+              lon: station.lon,
+              lat: station.lat,
+              size: 8 + Math.sqrt(amplitude / 1000) * 20,
+              color: station === a ? 0x8fe7e8 : station === b ? 0xf0bd8e : 0x8fa7ba,
+            };
+          }),
+        ],
+      },
+    });
+  }, [seconds, a, b, onView]);
   const running = playing && seconds < duration;
   useEffect(() => cursor.current?.focus({ preventScroll: true }), []);
   useEffect(() => {
@@ -139,48 +149,11 @@ export function RecordedWaves({ back }: { back: () => void }): JSX.Element {
   };
   return (
     <>
-      <figure className="archive-scene-map recorded-waves">
-        <svg
-          className="recorded-world"
-          viewBox="0 0 720 300"
-          role="img"
-          aria-label="Pacific-centered map of seven recording stations and the Tōhoku epicenter"
-        >
-          <defs>
-            <clipPath id={clip}>
-              <rect width="720" height="300" />
-            </clipPath>
-          </defs>
-          <g clipPath={`url(#${clip})`}>
-            <g className="recorded-world-geometry">
-              <path d={coast} className="recorded-coast" />
-              <circle cx={mapX(142.373)} cy={globeY(38.297)} r="7" className="recorded-epicenter" />
-              {waves.map((station) => {
-                const sample =
-                  station.envelope[Math.min(station.envelope.length - 1, Math.floor(seconds / 5))];
-                const amplitude = sample ? Math.max(Math.abs(sample[0]!), Math.abs(sample[1]!)) : 0;
-                return (
-                  <circle
-                    key={station.id}
-                    cx={mapX(station.lon)}
-                    cy={globeY(station.lat)}
-                    r={3.5 + Math.sqrt(amplitude / 1000) * 10}
-                    className="recorded-station"
-                    data-selected={station === a ? "first" : station === b ? "second" : undefined}
-                  >
-                    <title>{station.name}</title>
-                  </circle>
-                );
-              })}
-            </g>
-          </g>
-        </svg>
-        <div className="recorded-traces">
-          <Trace station={a} seconds={seconds} />
-          <Trace station={b} seconds={seconds} second />
-        </div>
-      </figure>
-      <div className="archive-scene-console recorded-console">
+      <div className="recorded-traces">
+        <Trace station={a} seconds={seconds} />
+        <Trace station={b} seconds={seconds} second />
+      </div>
+      <div className="archive-scene-console">
         <div className="archive-scene-caption">
           <h3>When Earth Rings</h3>
           <p>

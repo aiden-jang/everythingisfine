@@ -209,8 +209,8 @@ Below the Surface approaches the selected region and lowers the camera toward th
 after the camera settles, then the reference guides trace downward. Steering can interrupt the shot,
 and reduced motion starts at the finished composition. The depth scale and geographic anchor stay fixed.
 
-The Tōhoku archive reveal holds the epicenter across a regional camera dive and the return to an
-overhead map. The fault view uses USGS model timing and metres of slip, with fourfold depth exaggeration.
+The Tōhoku archive reveal holds the epicenter while the camera dives into the regional view.
+A depth cutaway shows the modeled fault and the geographic layer reveals surface contours. The fault view uses USGS model timing and metres of slip, with fourfold depth exaggeration.
 The surface view uses the preferred USGS ShakeMap contours and a separate intensity legend.
 The motion pauses in hidden tabs, and either finished view can be opened directly.
 
@@ -243,10 +243,11 @@ The optional observation views keep one timeline through the existing globe and 
 Orbital Pass adds a city horizon, Tide Watch adds a measured gauge, and Wind Atlas traces
 its vectors downwind as each forecast step arrives. Satellite imagery and tsunami travel
 times stay pinned to geography. Recorded data and model output carry separate labels.
-Playback runs only when requested and stops advancing while the page is hidden.
+Live observation playback runs when requested. Recorded journeys may open with an authored flight.
+Playback stops advancing while the page is hidden.
 
 Tonga opens on the eruption’s infrared scans, widens through the water-vapor difference scans, then
-pulls back into an orbit view. The ring is an estimate of the atmospheric wave. The station chart
+pulls back into an orbit view on the shared globe. The ring is an estimate of the atmospheric wave. The station chart
 stays tied to measured pressure on the same UTC clock. Chapter jumps and reduced motion use static
 framing.
 

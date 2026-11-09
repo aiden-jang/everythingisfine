@@ -116,7 +116,6 @@ through and the rail came back one pixel wide. */
 const RAIL_MIN = 264;
 const RAIL_MAX = 620;
 const RAIL_DEFAULT = 356;
-
 function useFeed(): FeedSnapshot {
   const [snapshot, setSnapshot] = useState(() => feed.snapshot());
   useEffect(() => feed.subscribe(setSnapshot), []);
@@ -1644,6 +1643,7 @@ export function App(): JSX.Element {
             now={now}
             archived={archived}
             onClose={() => closeReading("quake")}
+            onRupture={() => observatory.openRecordedStory("rupture", "event-story-rupture")}
             onInspect={
               observatory.ready
                 ? (run, opener) => {

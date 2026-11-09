@@ -12,7 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
 import { loadStars, type FigureTable } from "../geo/stars";
 import { createGlobe, type GlobeMoment } from "./scene";
-import { isLocalView, isShadowChase, type GlobePresentation } from "./scenePresentation";
+import { isLocalView, isRecordedFlight, isShadowChase, type GlobePresentation } from "./scenePresentation";
 import { sinkFraction, type FocusSpan } from "./events";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 import { createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
@@ -523,7 +523,6 @@ export function Globe({
     let revealed = 0;
 
     const revealUntil = (): number | undefined => replay?.at() ?? live.current.scrubAt ?? undefined;
-
     const redraw = (): void => {
       globe.cancelRegroup();
       globe.events.sync(
@@ -560,7 +559,8 @@ export function Globe({
     };
     momentRef.current = (at) => {
       globe.setMoment(at);
-      if (!isShadowChase(live.current.globePresentation)) redraw();
+      if (!isShadowChase(live.current.globePresentation) && !isRecordedFlight(live.current.globePresentation))
+        redraw();
     };
     globe.setMoment(live.current.moment ?? null);
     inspectionRef.current = globe.setInspection;

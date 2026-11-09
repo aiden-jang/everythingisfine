@@ -78,9 +78,11 @@ Closing a story returns to the entry that opened it.
 - **Sun Watch** in After Dark moves from a NASA solar image through a schematic solar-wind
   stream and back to Earth. Its two live plots show the last hour of upstream wind speed and
   six hours of GOES X-ray flux. Choose any of the three still views with reduced motion.
+- **Globe** and **Map** switch projections during Tōhoku, Katrina, Tonga, and Megaflash.
+  The story keeps its playback time and selected chapter.
 - **Watch Tōhoku rupture** follows the 2011 earthquake from its epicenter to the modeled fault
   beneath the ocean and then to estimated shaking across Japan. Choose **Fault movement** or
-  **Surface shaking** to inspect either view. **Recorded waves** compares actual seismometer traces on a
+  **Surface shaking** to inspect either view. **Recorded waves** shows the stations on Earth and compares their traces on a
   shared timeline and offers optional sonification. Reduced motion opens the finished fault view.
 - **Follow Hurricane Katrina** banks over the Gulf and follows NOAA’s 2005 best track to landfall
   near Buras, Louisiana. Pause, scrub, or jump to the offshore peak and landfall. Reduced motion

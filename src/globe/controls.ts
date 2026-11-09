@@ -172,7 +172,6 @@ export function createControls(
   };
 
   const clampLat = (v: number): number => Math.max(-LAT_LIMIT, Math.min(LAT_LIMIT, v));
-
   /**
    * Zoom about a pixel rather than the middle of the screen: read what is under the pointer, change the
    * magnification, read it again, move by the difference. Twice, because one pass is visibly short near
@@ -504,6 +503,7 @@ export function createControls(
       orbitLocked = locked;
       if (locked) pointers.clear();
     },
+    setReplayAngle: rig.setReplayAngle,
     setView: (pose) => aim(pose, true),
     enter: () => {
       if (sky.wanted() || dive.wanted()) return;

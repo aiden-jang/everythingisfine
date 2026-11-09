@@ -1,9 +1,10 @@
 import { useCallback, useState } from "react";
 import type { ObservationId } from "./catalogue";
+import type { ReplayId } from "./replays";
 import type { ObservationView } from "./types";
 
 export type AfterDarkArchive = "lights" | "shadow";
-export type StoryId = ObservationId | AfterDarkArchive | "kilauea";
+export type StoryId = ObservationId | AfterDarkArchive | ReplayId | "kilauea";
 
 export function useObservationDeck() {
   const [entry, setEntry] = useState<StoryId | null>(null);

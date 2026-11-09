@@ -1,59 +1,3 @@
-.recorded-waves {
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-}
-
-.recorded-world {
-  align-self: stretch;
-  justify-self: stretch;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-}
-
-.recorded-world-geometry {
-  transform-box: view-box;
-  transform-origin: 39.5% 29%;
-  animation: recorded-pullback 1.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-@keyframes recorded-pullback {
-  from {
-    transform: scale(2.65);
-  }
-  to {
-    transform: scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .recorded-world-geometry {
-    animation: none;
-  }
-}
-
-.recorded-coast {
-  fill: #23374a;
-  stroke: #476275;
-  stroke-width: 0.65;
-}
-.recorded-epicenter {
-  fill: none;
-  stroke: #e5bd91;
-  stroke-width: 1.75;
-}
-.recorded-station {
-  fill: #68889a;
-  stroke: var(--color-deck);
-  stroke-width: 1.4;
-}
-.recorded-station[data-selected="first"] {
-  fill: #8adbd8;
-}
-.recorded-station[data-selected="second"] {
-  fill: #e5bd91;
-}
-
 .recorded-traces {
   display: grid;
   gap: 8px;
@@ -131,7 +75,7 @@
   color: var(--color-ink);
 }
 .recorded-time input {
-  min-height: 32px;
+  min-height: 44px;
 }
 .recorded-audio {
   color: var(--color-dim);
@@ -144,35 +88,4 @@
 }
 .recorded-audio audio {
   width: min(100%, 330px);
-}
-
-@media (max-width: 720px) {
-  .recorded-console {
-    flex-direction: column;
-  }
-  .recorded-controls {
-    width: 100%;
-  }
-}
-
-@media (max-width: 700px) {
-  .archive-scene-dialog[open]:has(.recorded-waves) {
-    grid-template-rows: auto minmax(265px, 1fr) auto auto;
-  }
-
-  .rupture-actions,
-  .rupture-views {
-    width: 100%;
-  }
-
-  .rupture-views {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  }
-
-  .rupture-views .archive-scene-button {
-    padding-inline: 6px;
-    white-space: normal;
-    line-height: 1.25;
-  }
 }

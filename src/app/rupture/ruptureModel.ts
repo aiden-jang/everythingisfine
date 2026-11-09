@@ -18,6 +18,10 @@ export function localPoint(lon: number, lat: number, depth = 0): Point {
   return { east: (lon - CENTRE_LON) * LON_SCALE, north: (lat - CENTRE_LAT) * KM_PER_DEGREE, depth };
 }
 
+export function geographicPoint(point: Point) {
+  return { lon: CENTRE_LON + point.east / LON_SCALE, lat: CENTRE_LAT + point.north / KM_PER_DEGREE };
+}
+
 function fromPosition(position: Position): Point {
   return localPoint(position[0]!, position[1]!, position[2]);
 }

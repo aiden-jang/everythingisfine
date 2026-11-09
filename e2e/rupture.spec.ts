@@ -8,24 +8,30 @@ test("Tōhoku reveals the modeled fault before the estimated shaking", async ({ 
   await page.goto("/");
   await openStories(page);
   const trigger = page.getByRole("button", { name: "Watch Tōhoku rupture" });
+  const canvas = page.locator("#globe-view canvas");
+  const original = await canvas.elementHandle();
   await trigger.click();
-  const reveal = page.getByRole("dialog", { name: "The Tōhoku rupture" });
+  const reveal = page.getByRole("region", { name: "The Tōhoku rupture" });
   await expect(reveal.getByRole("heading", { name: "Off the coast of Honshu" })).toBeVisible();
   await expect(reveal.getByRole("heading", { name: "Modeled fault movement" })).toBeVisible();
-  await reveal.getByRole("button", { name: "Pause reveal" }).click();
+  await reveal.getByRole("button", { name: "Pause reveal" }).press("Enter");
   await expect(reveal.getByRole("button", { name: "Resume reveal" })).toBeVisible();
   await expect(reveal.getByRole("heading", { name: "Modeled fault movement" })).toBeVisible();
   await reveal.getByRole("button", { name: "Resume reveal" }).click();
   await expect(reveal.getByRole("button", { name: "Replay reveal" })).toBeVisible();
   await expect(reveal.getByRole("heading", { name: "Estimated surface shaking" })).toBeVisible();
   await expect(reveal.getByText("Intensity · MMI")).toBeVisible();
-  await expect(reveal.getByRole("img")).toBeVisible();
+  await expect(page.getByRole("group", { name: "The Tōhoku rupture on the globe" })).toContainText(
+    "Estimated surface shaking",
+  );
   const recorded = reveal.getByRole("button", { name: "Recorded waves", exact: true });
   await recorded.click();
   await expect(reveal.getByRole("heading", { name: "When Earth Rings" })).toBeVisible();
   await expect(reveal.getByRole("combobox", { name: "Second station" })).toHaveValue("5");
   await reveal.getByRole("button", { name: "Jump to ANMO onset" }).click();
+  await reveal.getByRole("button", { name: "Map", exact: true }).click();
   await expect(reveal.getByRole("slider")).toHaveAttribute("aria-valuetext", "05:58:56 UTC");
+  expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
   await reveal.getByRole("combobox", { name: "Second station" }).selectOption({ label: "Oʻahu" });
   await expect(reveal.getByRole("img", { name: /Oʻahu, Hawaiʻi, normalized vertical motion/ })).toBeVisible();
   await reveal.getByRole("button", { name: "Back to surface shaking" }).click();
@@ -71,25 +77,30 @@ test("Tōhoku archive exposes both maps on a small phone with reduced motion", a
   await expect(page).toHaveURL(/d=2011-03-11/);
   const pinned = page.getByRole("complementary", { name: "Pinned earthquake" });
   const trigger = pinned.getByRole("button", { name: "Watch Tōhoku rupture" });
+  const canvas = page.locator("#globe-view canvas");
+  const original = await canvas.elementHandle();
   await trigger.click();
-  const reveal = page.getByRole("dialog", { name: "The Tōhoku rupture" });
+  const reveal = page.getByRole("region", { name: "The Tōhoku rupture" });
   await expect(reveal.getByRole("button", { name: "Modeled fault movement" })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
   await expect(reveal.getByRole("button", { name: /reveal/ })).toHaveCount(0);
-  await expect(reveal.getByText("Depth exaggerated 4×")).toBeVisible();
+  await expect(page.getByRole("group", { name: "The Tōhoku rupture on the globe" })).toContainText(
+    "Depth exaggerated 4×",
+  );
+  await reveal.getByRole("button", { name: "Map", exact: true }).click();
+  await expect(page.getByRole("group", { name: "The Tōhoku rupture on the map" })).toContainText(
+    "Depth exaggerated 4×",
+  );
   await reveal.getByRole("button", { name: "Estimated surface shaking", exact: true }).click();
   await expect(reveal.getByRole("heading", { name: "Estimated surface shaking" })).toBeVisible();
+  await reveal.getByText("Replay sources", { exact: true }).click();
   await expect(reveal.getByRole("link", { name: "USGS ShakeMap" })).toBeVisible();
-  const overflow = () =>
-    reveal.evaluate((dialog) => [
-      dialog.scrollWidth - dialog.clientWidth,
-      dialog.scrollHeight - dialog.clientHeight,
-    ]);
-  await expect.poll(overflow).toEqual([0, 0]);
+  const overflow = () => reveal.evaluate((panel) => panel.scrollWidth - panel.clientWidth);
+  await expect.poll(overflow).toBe(0);
   await reveal.getByRole("button", { name: "Recorded waves", exact: true }).click();
-  const comparison = reveal.locator(".recorded-waves");
+  const comparison = reveal.locator(".recorded-traces");
   await expect(comparison.getByRole("img", { name: /Albuquerque, New Mexico, normalized/ })).toBeVisible();
   expect(
     await comparison.evaluate((figure) =>
@@ -100,8 +111,10 @@ test("Tōhoku archive exposes both maps on a small phone with reduced motion", a
   ).toBe(true);
   await reveal.getByRole("button", { name: "Back to surface shaking" }).click();
   await page.setViewportSize({ width: 812, height: 375 });
-  await expect.poll(overflow).toEqual([0, 0]);
-  await reveal.getByRole("button", { name: "Close" }).click();
+  await expect.poll(overflow).toBe(0);
+  await reveal.getByRole("button", { name: "Back to earthquake" }).click();
+  await expect(page).toHaveURL(/d=2011-03-11/);
+  expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
   await expect(reveal).toBeHidden();
   await expect(trigger).toBeFocused();
 });

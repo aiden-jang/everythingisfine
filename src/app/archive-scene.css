@@ -1,99 +1,12 @@
-.archive-scene-dialog {
-  inset: 0;
-  box-sizing: border-box;
-  width: min(100% - 48px, 1400px);
-  height: min(100% - 48px, 920px);
-  max-width: none;
-  max-height: none;
-  margin: auto;
-  padding: 0;
-  overflow: auto;
-  overscroll-behavior: contain;
-  border: 1px solid var(--color-hairline);
-  border-radius: 12px;
-  background: var(--color-void);
-  color: var(--color-ink);
-}
-
-.archive-scene-dialog[open] {
-  display: grid;
-  grid-template-rows: auto minmax(260px, 1fr) auto auto;
-}
-
-.archive-scene-dialog::backdrop {
-  background: rgb(5 11 22 / 0.85);
-}
-
-.archive-scene-header,
 .archive-scene-console,
-.archive-scene-credits {
-  padding-inline: clamp(16px, 3vw, 42px);
-}
-
-.archive-scene-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-  padding-block: clamp(16px, 3vh, 30px);
-}
-
-.archive-scene-header h2 {
-  margin: 0;
-  font-size: clamp(1.7rem, 3.6vw, 3.2rem);
-  font-weight: 600;
-  letter-spacing: -0.038em;
-  line-height: 1.04;
-  text-wrap: balance;
-}
-
-.archive-scene-header p {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 16px;
-  margin-top: 10px;
-  color: var(--color-dim);
-  font: 0.72rem/1.5 var(--font-mono);
-}
-
-.archive-scene-map {
-  position: relative;
-  min-height: 0;
-  margin: 0;
-  overflow: hidden;
-  border-block: 1px solid var(--color-hairline);
-  background: radial-gradient(ellipse at 50% 43%, #172941, var(--color-void) 73%);
-}
-
-.archive-scene-map canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.archive-scene-map figcaption {
-  position: absolute;
-  inset: auto clamp(16px, 3vw, 42px) 12px;
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  color: var(--color-dim);
-  font: 0.68rem/1.5 var(--font-mono);
-  text-shadow: 0 1px 4px var(--color-void);
-  pointer-events: none;
-}
-
-.archive-scene-console {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 12px 28px;
-  padding-block: 16px 18px;
-  background: var(--color-deck);
+.archive-scene-actions {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
 }
 
 .archive-scene-caption h3 {
-  font-size: 1.04rem;
+  font-size: 1rem;
   font-weight: 600;
 }
 
@@ -101,14 +14,8 @@
   max-width: 55ch;
   margin-top: 4px;
   color: var(--color-dim);
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   line-height: 1.5;
-}
-
-.archive-scene-actions {
-  display: grid;
-  justify-items: end;
-  gap: 10px;
 }
 
 .archive-scene-controls {
@@ -119,14 +26,12 @@
 
 .archive-scene-button {
   min-height: 44px;
-  padding-inline: 12px;
+  padding-inline: 10px;
   border: 1px solid var(--color-hairline);
   border-radius: 7px;
   background: var(--color-deck);
   color: var(--color-ink);
-  font-size: 0.78rem;
-  font-weight: 600;
-  white-space: nowrap;
+  font-size: 0.75rem;
   cursor: pointer;
 }
 
@@ -140,7 +45,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 6px 10px;
-  min-height: 18px;
   color: var(--color-dim);
   font: 0.68rem/1.4 var(--font-mono);
 }
@@ -158,142 +62,52 @@
   border-radius: 2px;
 }
 
-.archive-scene-credits {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  padding-block: 9px;
+.replay-sources {
   border-top: 1px solid var(--color-hairline);
   color: var(--color-dim);
-  font-size: 0.7rem;
-  line-height: 1.5;
+  font-size: 12px;
 }
 
-.archive-scene-credits a {
+.replay-sources summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+}
+
+.replay-sources div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.replay-sources a {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
-.archive-scene-loading {
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  color: var(--color-dim);
-  text-align: center;
+.replay-inset {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: auto;
+  height: auto;
+  max-width: 74%;
+  max-height: 72%;
+  transform: translate(-50%, -50%);
+  border-radius: 4px;
+  border: 1px solid var(--color-hairline);
+  pointer-events: none;
 }
 
-@media (max-width: 700px) {
-  .archive-scene-dialog {
-    width: calc(100% - 20px);
-    height: calc(100% - 20px);
-  }
-
-  .archive-scene-dialog[open] {
-    grid-template-rows: auto minmax(195px, 1fr) auto auto;
-  }
-
-  .archive-scene-console {
-    flex-direction: column;
-    padding-block: 12px;
-  }
-
-  .archive-scene-actions {
-    justify-items: start;
-    gap: 8px;
-  }
-
-  .archive-scene-button {
-    padding-inline: 10px;
-  }
+.replay-inset-detail {
+  inset: auto max(var(--stage-inset), 12px) calc(var(--stage-inset) + 24px) auto;
+  max-width: 53%;
+  max-height: 61%;
+  transform: none;
 }
 
-@media (forced-colors: active) {
-  .archive-scene-map canvas {
-    forced-color-adjust: none;
+@media (max-width: 899px) {
+  .replay-inset-detail {
+    max-width: 49%;
+    max-height: 65%;
   }
-
-  .archive-scene-button[aria-pressed="true"] {
-    border-color: Highlight;
-  }
-}
-
-.archive-scene-caption {
-  min-height: 4rem;
-}
-
-@media (max-width: 700px) {
-  .archive-scene-caption {
-    min-height: 5rem;
-  }
-}
-
-@media (max-height: 520px) and (min-width: 620px) {
-  .archive-scene-dialog {
-    width: calc(100% - 20px);
-    height: calc(100% - 20px);
-  }
-
-  .archive-scene-dialog[open] {
-    grid-template: auto minmax(0, 1fr) auto / minmax(0, 1fr) minmax(210px, 30%);
-  }
-
-  .archive-scene-header,
-  .archive-scene-credits {
-    grid-column: 1 / -1;
-  }
-
-  .archive-scene-header {
-    padding-block: 12px;
-  }
-
-  .archive-scene-header h2 {
-    font-size: clamp(1.5rem, 3.3vw, 2.3rem);
-  }
-
-  .archive-scene-header p {
-    margin-top: 4px;
-  }
-
-  .archive-scene-console {
-    flex-direction: column;
-    justify-content: flex-start;
-    overflow: auto;
-    padding: 12px 16px;
-  }
-
-  .archive-scene-actions {
-    justify-items: start;
-  }
-
-  .archive-scene-legend > span:first-child {
-    flex-basis: 100%;
-  }
-
-  .archive-scene-map {
-    border-inline-end: 1px solid var(--color-hairline);
-  }
-}
-
-@media (max-width: 700px), (max-height: 520px) {
-  .archive-scene-dialog {
-    inset: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
-      env(safe-area-inset-left);
-    width: min(100% - 20px - env(safe-area-inset-left) - env(safe-area-inset-right), 1400px);
-    height: min(100% - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom), 920px);
-  }
-}
-
-.archive-scene-dialog :is(button, input, select, a) {
-  scroll-margin-block: 12px;
-}
-
-.archive-scene-loading .archive-scene-button {
-  margin-top: 12px;
-}
-
-.archive-scene-dialog:focus-within .archive-scene-header {
-  position: sticky;
-  z-index: 1;
-  top: 0;
-  background: var(--color-void);
 }

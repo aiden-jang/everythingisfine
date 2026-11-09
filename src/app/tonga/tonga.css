@@ -1,25 +1,8 @@
-.tonga-map figcaption :is(span, time) {
-  padding: 3px 6px;
-  border-radius: 2px;
-  background: var(--color-void);
-  color: var(--color-ink);
-}
-
-.tonga-console {
-  display: grid;
-  grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr);
-  gap: 18px clamp(22px, 5vw, 72px);
-}
-
 .tonga-transport,
 .tonga-station {
   display: grid;
   min-width: 0;
   gap: 6px;
-}
-
-.tonga-caption {
-  min-height: 3.9rem;
 }
 
 .tonga-time,
@@ -42,7 +25,7 @@
 
 .tonga-scrub {
   width: 100%;
-  min-height: 32px;
+  min-height: 44px;
   cursor: pointer;
 }
 
@@ -95,139 +78,4 @@
 
 .tonga-chart-dot {
   fill: #d3edf5;
-}
-
-@media (max-width: 700px) {
-  .tonga-console {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 10px;
-  }
-
-  .tonga-caption {
-    min-height: 0;
-  }
-}
-
-@media (max-width: 480px) {
-  .archive-scene-dialog[open]:has(.tonga-map) {
-    grid-template-rows: auto minmax(132px, 1fr) auto auto;
-  }
-
-  .archive-scene-dialog:has(.tonga-map) .archive-scene-header {
-    padding-block: 13px;
-  }
-
-  .archive-scene-dialog:has(.tonga-map) .archive-scene-header h2 {
-    font-size: clamp(1.25rem, 5.85vw, 1.7rem);
-  }
-
-  .archive-scene-dialog:has(.tonga-map) .archive-scene-header p {
-    column-gap: 8px;
-    margin-top: 5px;
-    font-size: 0.65rem;
-  }
-
-  .tonga-console {
-    gap: 8px;
-    padding-block: 9px;
-  }
-
-  .tonga-caption p {
-    font-size: 0.75rem;
-    line-height: 1.4;
-  }
-
-  .tonga-scrub {
-    min-height: 28px;
-  }
-
-  .tonga-chart {
-    gap: 3px;
-  }
-
-  .tonga-chart svg {
-    height: 41px;
-  }
-
-  .tonga-controls {
-    gap: 4px;
-  }
-
-  .tonga-controls button {
-    padding-inline: 7px;
-    font-size: 0.72rem;
-  }
-}
-
-@media (max-height: 520px) and (min-width: 620px) {
-  .archive-scene-dialog[open]:has(.tonga-map) {
-    grid-template: auto minmax(132px, 1fr) auto auto / minmax(0, 1fr) minmax(220px, 35%);
-  }
-
-  .tonga-console {
-    display: contents;
-  }
-
-  .tonga-transport {
-    grid-column: 1 / -1;
-    grid-row: 3;
-    grid-template-areas:
-      "chapter time controls"
-      "chapter scrub controls";
-    grid-template-columns: minmax(0, 1fr) minmax(120px, 1fr) auto;
-    align-items: center;
-    gap: 0 12px;
-    padding: 7px 12px;
-    background: var(--color-deck);
-  }
-
-  .tonga-caption {
-    grid-area: chapter;
-    min-height: 0;
-  }
-
-  .tonga-caption h3 {
-    font-size: 0.9rem;
-  }
-
-  .tonga-caption p:not([role]) {
-    display: none;
-  }
-
-  .tonga-time {
-    grid-area: time;
-  }
-
-  .tonga-scrub {
-    grid-area: scrub;
-    min-height: 25px;
-  }
-
-  .tonga-controls {
-    grid-area: controls;
-    gap: 4px;
-  }
-
-  .tonga-controls button {
-    padding-inline: 7px;
-    font-size: 0.72rem;
-  }
-
-  .tonga-station {
-    grid-column: 2;
-    grid-row: 2;
-    align-content: center;
-    padding: 6px 10px;
-    background: var(--color-deck);
-  }
-
-  .tonga-chart svg {
-    height: 44px;
-  }
-}
-
-@media (forced-colors: active) {
-  .tonga-chart :is(path, circle) {
-    stroke: CanvasText;
-  }
 }

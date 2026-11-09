@@ -1,7 +1,7 @@
 import type { Quake } from "../data/types";
 import { P_WAVE_KM_PER_S, S_WAVE_KM_PER_S } from "../geo/waves";
 import { arrivalFor, seconds } from "./arrival";
-import { RuptureReveal } from "./rupture/RuptureReveal";
+import { replays } from "./observations/replays";
 import type { StartInspection } from "./useEventInspection";
 import { WaveChooser } from "./WaveChooser";
 
@@ -10,15 +10,26 @@ const TOHOKU_IDS = new Set(["official20110311054624120_30", "usc0001xgp", "usp00
 export function EventScience({
   quake,
   onInspect,
+  onRupture,
 }: {
   quake: Quake;
   onInspect: StartInspection | null;
+  onRupture: () => void;
 }): JSX.Element {
   const arrival = arrivalFor(quake);
   const tohoku = quake.readings.some(({ source, id }) => source === "usgs" && TOHOKU_IDS.has(id));
   return (
     <>
-      {tohoku && <RuptureReveal className="archive-scene-button mt-4 w-full text-left" />}
+      {tohoku && (
+        <button
+          type="button"
+          id="event-story-rupture"
+          className="archive-scene-button mt-4 w-full text-left"
+          onClick={onRupture}
+        >
+          {replays.rupture.label}
+        </button>
+      )}
       {arrival ? (
         <div className="mt-4">
           <p className="text-[11px] leading-relaxed text-dim">

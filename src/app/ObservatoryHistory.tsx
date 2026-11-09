@@ -1,30 +1,31 @@
 import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
-import { RuptureReveal, TOHOKU_DAY } from "./rupture/RuptureReveal";
-import { StormReplay } from "./storm/StormReplay";
-import { TongaReplay } from "./tonga/TongaReplay";
-import { MegaflashReplay } from "./megaflash/MegaflashReplay";
+import { replayIds, replays, type ReplayId } from "./observations/replays";
 
 export function ObservatoryHistory({
   onHistory,
   onPickDate,
-  onKilauea,
+  onStory,
 }: {
   onHistory: (day: string) => void;
   onPickDate: () => void;
-  onKilauea: () => void;
+  onStory: (entry: ReplayId | "kilauea", from: string) => void;
 }): JSX.Element {
   return (
     <>
-      <button type="button" onClick={() => onHistory(TOHOKU_DAY)}>
+      <button type="button" onClick={() => onHistory(replays.rupture.day)}>
         Japan, 2011 ↗
       </button>
-      <RuptureReveal />
-      <StormReplay />
-      <TongaReplay />
-      <button type="button" id="open-kilauea" onClick={onKilauea}>
+      {replayIds.map((entry) => {
+        const id = `open-story-${entry}`;
+        return (
+          <button key={entry} type="button" id={id} onClick={() => onStory(entry, id)}>
+            {replays[entry].label}
+          </button>
+        );
+      })}
+      <button type="button" id="open-kilauea" onClick={() => onStory("kilauea", "open-kilauea")}>
         Follow Kīlauea’s lava
       </button>
-      <MegaflashReplay />
       <button type="button" onClick={() => onHistory("2013-05-24")}>
         Deep beneath Okhotsk ↗
       </button>

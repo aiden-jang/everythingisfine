@@ -3008,9 +3008,13 @@ Historical shortcuts reuse the archive request owner. Only a successful matching
 intent and selects the largest available event, so a late answer cannot move a newer view.
 
 The story panels own selection and playback time. Earth projections share the observation layer,
-including Kīlauea’s georeferenced raster and Iceberg Drift’s track gaps. The regional lens changes
+including Kīlauea’s georeferenced raster, Iceberg Drift’s track gaps, and the archived storm, seismic,
+and atmospheric layers. The regional lens changes
 camera magnification after arrival. Moonfall switches between terrain and an orthographic landing
-map in the lunar scene, preserving the traverse and distance across both views.
+map in the lunar scene, preserving the traverse and distance across both views. Recorded Earth
+replays own their time and chapter across projection changes. The renderer follows their camera
+waypoints and applies authored bank and pitch to the spherical view. Tonga’s source scans and the
+Tōhoku depth cutaway are insets over the same canvas.
 
 ### src/globe/scene.ts
 

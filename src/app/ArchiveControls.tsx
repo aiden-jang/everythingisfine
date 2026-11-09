@@ -1,9 +1,6 @@
 import type { MouseEventHandler } from "react";
 import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
-import { RuptureReveal, TOHOKU_DAY } from "./rupture/RuptureReveal";
-import { KATRINA_DAY, StormReplay } from "./storm/StormReplay";
-import { TONGA_DAY, TongaReplay } from "./tonga/TongaReplay";
-import { MEGAFLASH_DAY, MegaflashReplay } from "./megaflash/MegaflashReplay";
+import { replayIds, replays, type ReplayId } from "./observations/replays";
 import { NOTABLE_DAYS, NOTABLE_NOTE } from "./notableDays";
 import { ECLIPSE_DAYS, eclipseMoment } from "./eclipseDays";
 import { isArchivableDay, typedDay } from "./day";
@@ -16,7 +13,7 @@ interface Props {
   onCursor: (at: number) => void;
   watchEclipse: MouseEventHandler<HTMLButtonElement> | string;
   openRadar: () => void;
-  openStory: (id: "kilauea" | "iceberg", trigger: string) => void;
+  openStory: (id: ReplayId | "kilauea" | "iceberg", trigger: string) => void;
 }
 
 export function ArchiveControls({
@@ -43,6 +40,7 @@ export function ArchiveControls({
     stepDay,
     backToLive,
   } = state;
+  const replay = replayIds.find((id) => replays[id].day === loadedDay);
   return (
     <div data-rail="activity" aria-busy={archiveBusy}>
       {archive ? (
@@ -64,13 +62,16 @@ export function ArchiveControls({
               ? " · Partial source coverage"
               : " · Full day"}
           </p>
-          {loadedDay === TOHOKU_DAY && (
-            <RuptureReveal className="archive-scene-button mt-2 w-full text-left" />
+          {replay && (
+            <button
+              type="button"
+              className="archive-scene-button mt-2 w-full text-left"
+              id={`archive-story-${replay}`}
+              onClick={() => openStory(replay, `archive-story-${replay}`)}
+            >
+              {replays[replay].label}
+            </button>
           )}
-          {loadedDay === KATRINA_DAY && (
-            <StormReplay className="archive-scene-button mt-2 w-full text-left" />
-          )}
-          {loadedDay === TONGA_DAY && <TongaReplay className="archive-scene-button mt-2 w-full text-left" />}
           {loadedDay === "2018-06-04" && (
             <button
               type="button"
@@ -90,9 +91,6 @@ export function ArchiveControls({
             >
               Follow iceberg A-68A
             </button>
-          )}
-          {loadedDay === MEGAFLASH_DAY && (
-            <MegaflashReplay className="archive-scene-button mt-2 w-full text-left" />
           )}
           {loadedDay === APRIL_ECLIPSE_DAY && (
             <div className="mt-2">

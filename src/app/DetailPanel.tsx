@@ -36,6 +36,7 @@ export interface DetailPanelProps {
   store: Store;
   filters: Filters;
   onClose: () => void;
+  onRupture: () => void;
   onInspect?: StartInspection | null;
   /**
    * Opens a cross-section through this event, across the local trend. Shift-dragging the map was the only
@@ -101,6 +102,7 @@ export function DetailPanel({
   archived = false,
   onClose,
   onInspect,
+  onRupture,
   onSection,
   farSide,
   onFarSide,
@@ -120,7 +122,6 @@ export function DetailPanel({
     reading.revision ? [{ reading, revision: reading.revision }] : [],
   );
   const klass = depthClass(r.depthKm);
-
   const [a, b] = quake.readings;
   const spread =
     a && b
@@ -130,7 +131,6 @@ export function DetailPanel({
           mag: Math.abs(a.magnitude - b.magnitude),
         }
       : null;
-
   return (
     <aside
       aria-label="Pinned earthquake"
@@ -264,7 +264,7 @@ export function DetailPanel({
         />
       </div>
 
-      <EventScience quake={quake} onInspect={onInspect ?? null} />
+      <EventScience quake={quake} onInspect={onInspect ?? null} onRupture={onRupture} />
 
       {spread ? (
         <div className="mt-4">

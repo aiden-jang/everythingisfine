@@ -159,11 +159,7 @@ export function StoriesDrawer({
                 {layers.filter(([, view]) => view.group === "Recorded journeys").map(([id]) => add(id))}
               </>
             )}
-            <ObservatoryHistory
-              onHistory={onHistory}
-              onPickDate={onPickDate}
-              onKilauea={() => deck.open("kilauea", "open-kilauea")}
-            />
+            <ObservatoryHistory onHistory={onHistory} onPickDate={onPickDate} onStory={deck.open} />
           </Group>
         </>
       )}
