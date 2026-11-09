@@ -19,6 +19,8 @@ import { DEG, toVec3 } from "../geo/sphere";
 import { MORPH_GLSL, morphable } from "./morph";
 
 import { createObservationCurtain } from "./observationCurtain";
+import { createObservationTerrain } from "./observationTerrain";
+import { createObservationMoon } from "./observationMoon";
 
 const INK = 0x8adbd8;
 const PALE = 0xe6f1fa;
@@ -105,18 +107,25 @@ export function createObservationLayer(morph: { value: number }) {
   const object = new Group();
   const curtain = createObservationCurtain(morph);
   object.add(curtain.object);
+  const terrain = createObservationTerrain(morph);
+  object.add(terrain.object);
+  const moon = createObservationMoon(morph);
+  object.add(moon.object);
+  const orbital = { value: 0 };
   const lineMaterial = new ShaderMaterial({
-    uniforms: { uMorph: morph, opacity: { value: 0.88 }, phase: { value: -1 } },
+    uniforms: { uMorph: morph, opacity: { value: 0.88 }, phase: { value: -1 }, orbital },
     vertexShader: /* glsl */ `
       ${MORPH_GLSL}
       attribute vec3 color;
       attribute float aSize;
       varying vec3 tint;
       varying float trail;
+      uniform float orbital;
       void main() {
         tint = color;
         trail = aSize;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(fmProject(position), 1.0);
+        vec3 point=mix(position,normalize(position)*1.012,uMorph*orbital);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(fmProject(point), 1.0);
       }
     `,
     fragmentShader: /* glsl */ `
@@ -140,6 +149,7 @@ export function createObservationLayer(morph: { value: number }) {
     new BufferGeometry(),
     new ShaderMaterial({
       uniforms: {
+        orbital,
         uMorph: morph,
         pixelRatio: { value: Math.min(devicePixelRatio || 1, 2) },
         reveal: { value: 1 },
@@ -148,11 +158,13 @@ export function createObservationLayer(morph: { value: number }) {
       ${MORPH_GLSL}
       attribute vec3 color;
       attribute float aSize;
+      uniform float orbital;
       uniform float pixelRatio;
       varying vec3 tint;
       void main() {
         tint = color;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(fmProject(position), 1.0);
+        vec3 point=mix(position,normalize(position)*1.012,uMorph*orbital);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(fmProject(point), 1.0);
         gl_PointSize = aSize * pixelRatio;
       }
     `,
@@ -208,6 +220,9 @@ export function createObservationLayer(morph: { value: number }) {
   function set(view: ObservationView | null) {
     if (view === prior) return;
     curtain.set(view?.curtain);
+    terrain.set(view?.terrain);
+    moon.set(view);
+    orbital.value = view?.frame.orbit ? 1 : 0;
     if (view?.target !== prior?.target) reveal = 0;
     object.visible = !!view;
     if (view?.frame !== prior?.frame) travel = 0;
@@ -265,9 +280,12 @@ export function createObservationLayer(morph: { value: number }) {
     dispose() {
       set(null);
       curtain.dispose();
+      terrain.dispose();
+      moon.dispose();
     },
     step(dt: number, reduced: boolean) {
       const unfolding = curtain.step(dt, reduced);
+      const lifting = terrain.step(dt, reduced);
       if (!prior) return false;
       reveal = reduced ? 1 : Math.min(1, reveal + dt / 1.15);
       const strength = reveal * reveal * (3 - 2 * reveal);
@@ -279,7 +297,7 @@ export function createObservationLayer(morph: { value: number }) {
       const flowing = prior.frame.flow && !reduced && travel < 1;
       lineMaterial.uniforms.opacity!.value = strength * 0.88;
       lineMaterial.uniforms.phase!.value = flowing ? travel : -1;
-      return reveal < 1 || !!flowing || !!sweeping || unfolding;
+      return reveal < 1 || !!flowing || !!sweeping || unfolding || lifting;
     },
   };
 }

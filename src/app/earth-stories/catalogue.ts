@@ -1,4 +1,7 @@
+import { atlasStories } from "./atlasCatalogue";
+
 export const earthStories = {
+  ...atlasStories,
   fault: {
     title: "Fault Offset",
     summary: "Trace Ridgecrest’s 2019 ruptures and inspect measured offsets.",

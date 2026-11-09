@@ -26,8 +26,12 @@ concurrency group so two successful merges do not publish out of order.
 
 ## Hosting and credentials
 
-`wrangler.toml` configures static assets and the small anonymous analytics Worker. It has no
-database or migration step. Feed requests go directly from the browser to public providers.
+`wrangler.toml` configures static assets, anonymous analytics and three fixed observation routes.
+It has no database or migration step. Most feeds load directly in the browser. GFS transport and
+Coral Reef Watch use the same-origin Worker relay because their providers do not allow browser CORS.
+The relay caches successful responses for an hour and provider failures for 30 seconds, limits
+responses to 4 MB, and accepts only the fixed regional subsets. No provider key or secret is required.
+Vite development and preview use the same route logic with a bounded in-memory cache.
 
 The repository secret `CLOUDFLARE_API_TOKEN` needs Workers Scripts:Edit for this deployment.
 Wrangler infers the account from the token. Keep the token in GitHub secrets; never put it in

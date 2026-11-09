@@ -6,6 +6,32 @@ export function storyCamera(id: EarthStoryId, target: CameraState, progress: num
   const p = Math.min(1, Math.max(0, progress));
   const settle = 1 - (1 - p) ** 3;
   const bank = Math.sin(p * Math.PI);
+  if (id === "seafloor")
+    return {
+      lon: 148 - 5.8 * settle,
+      lat: 17 - 5.65 * settle,
+      zoom: 1.7 + 0.15 * bank,
+      bank: -0.045 * bank,
+      pitch: 0.1 * bank,
+    };
+  if (id === "glacier")
+    return {
+      ...target,
+      lon: target.lon + 0.35 * (1 - settle),
+      lat: target.lat + 0.06 * bank,
+      bank: -0.025 * bank,
+      pitch: 0.035 * bank,
+    };
+  if (id === "aral") return { ...target, lon: target.lon + 0.35 * (1 - settle), bank: 0.025 * bank };
+  if (id === "river")
+    return { ...target, lon: -165 + 40 * settle, lat: 36 + 4 * bank, bank: -0.06 * bank, pitch: 0.08 * bank };
+  if (id === "spring")
+    return {
+      ...target,
+      lon: target.lon + 25 * bank,
+      lat: -24 * Math.cos(p * Math.PI * 2),
+      bank: 0.05 * bank,
+    };
   if (id === "dust")
     return {
       lon: -20 - 65 * settle,

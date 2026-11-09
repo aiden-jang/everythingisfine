@@ -16,6 +16,8 @@ import { positionObservationAnchors } from "./observationAnchors";
 import { createObservationArrival } from "./observationArrival";
 import { createObservationLayer } from "./observationLayer";
 import type { ObservationView } from "../app/observations/types";
+import { createOrbitalFraming } from "./orbitalFraming";
+import { createObservationPicking } from "./observationPicking";
 
 export type GlobePresentation = "planetarium" | "dayline" | AuroraRun | LocalView | null;
 export type TonightPresentation = TonightView & { moonfall?: MoonfallView };
@@ -66,6 +68,9 @@ export function createScenePresentation(
   let replay: ObservationView["follow"];
   let replayBank = 0;
   let replayPitch = 0;
+  const orbital = createOrbitalFraming();
+  const picking = createObservationPicking(canvas, controls);
+  let orbitalMoon = false;
 
   function step(dt: number, reduced: boolean) {
     dayline.value = showDayline ? lights.reveal.value : 0;
@@ -74,6 +79,7 @@ export function createScenePresentation(
     const lunar = skyView?.moonfall?.step(dt, reduced);
     const approaching = arrival.step(dt, reduced);
     const tracing = observations?.step(dt, reduced) ?? false;
+    const orbiting = orbital.step(dt, reduced);
     if (lens && arrival.ready()) lensReveal = reduced ? 1 : Math.min(1, lensReveal + dt / 0.65);
     const bank = replay && !reduced && controls.morph() === 0 ? (replay.bank ?? 0) : 0;
     const pitch = replay && !reduced && controls.morph() === 0 ? (replay.pitch ?? 0) : 0;
@@ -102,18 +108,30 @@ export function createScenePresentation(
       }
     }
     if (rotate && !following) controls.apply();
-    return easing || following || tracing || !!diving || !!lunar || approaching || (!!lens && lensReveal < 1);
+    return (
+      easing ||
+      following ||
+      tracing ||
+      orbiting ||
+      !!diving ||
+      !!lunar ||
+      approaching ||
+      (!!lens && lensReveal < 1)
+    );
   }
 
   function set(mode: GlobePresentation, geography: readonly Object3D[]) {
     const local = isLocalView(mode) ? mode : null;
     const observation = local?.kind === "observation" ? local : null;
+    picking.set(observation);
     const weather = local?.kind === "radar" ? local : null;
     const returningFromArchive = arrival.set(observation);
     if (lens !== observation?.lens) lensReveal = 0;
     lens = observation?.lens;
     replay = observation?.follow;
     skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);
+    orbital.set(skyView ? undefined : observation?.frame.orbit);
+    orbitalMoon = !!observation?.frame.orbit?.eclipse;
     const route = mode && typeof mode === "object" && "route" in mode ? mode.route : null;
     if (planetarium !== (mode === "planetarium")) controls.setPlanetarium(mode === "planetarium");
     planetarium = mode === "planetarium";
@@ -191,6 +209,7 @@ export function createScenePresentation(
     set,
     step,
     shadows: () => !!chase,
+    orbitalMoon: () => orbitalMoon,
     renderMoon(renderer: WebGLRenderer, aspect: number) {
       return skyView?.moonfall?.render(renderer, aspect) ?? false;
     },
@@ -204,6 +223,7 @@ export function createScenePresentation(
         camera.zoom = zoom;
         camera.updateProjectionMatrix();
       }
+      orbital.apply(camera, projection.value, controls.apply);
       if (observationTarget) positionObservationAnchors(canvas, controls);
       dive?.size(camera.aspect);
       const amount = controls.localSky.amount();
@@ -214,6 +234,7 @@ export function createScenePresentation(
       radar?.setImage(null);
       observations?.dispose();
       shadow?.dispose();
+      picking.dispose();
     },
   };
 }

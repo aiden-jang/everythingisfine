@@ -18,13 +18,25 @@ export function curtainGeometry(points: Curtain["points"], heightKm: number, exa
     coordinates: number[] = [],
     uv: number[] = [],
     index: number[] = [];
+  const strip: { lon: number; lat: number; u: number; break?: boolean }[] = [];
   points.forEach((p, i) => {
+    const previous = points[i - 1];
+    if (previous && Math.abs(p.lon - previous.lon) > 180) {
+      const edge = previous.lon > 0 ? 180 : -180;
+      const t = (edge - previous.lon) / (p.lon - previous.lon + edge * 2);
+      const lat = previous.lat + (p.lat - previous.lat) * t;
+      const u = (i - 1 + t) / (points.length - 1);
+      strip.push({ lon: edge, lat, u }, { lon: -edge, lat, u, break: true });
+    }
+    strip.push({ ...p, u: i / (points.length - 1) });
+  });
+  strip.forEach((p, i) => {
     for (const top of [0, 1]) {
       position.push(...toVec3(p.lon, p.lat, 1.013 + (top * heightKm * exaggeration) / 6371));
       coordinates.push(p.lon, p.lat);
-      uv.push(i / (points.length - 1), top);
+      uv.push(p.u, top);
     }
-    if (i) index.push(2 * i - 2, 2 * i, 2 * i - 1, 2 * i - 1, 2 * i, 2 * i + 1);
+    if (i && !p.break) index.push(2 * i - 2, 2 * i, 2 * i - 1, 2 * i - 1, 2 * i, 2 * i + 1);
   });
   return new BufferGeometry()
     .setAttribute("position", new BufferAttribute(new Float32Array(position), 3))
@@ -35,16 +47,25 @@ export function curtainGeometry(points: Curtain["points"], heightKm: number, exa
 
 export function createObservationCurtain(morph: { value: number }) {
   const material = new ShaderMaterial({
-    uniforms: { uMorph: morph, opened: { value: 0 }, map: { value: null as Texture | null } },
+    uniforms: {
+      uMorph: morph,
+      opened: { value: 0 },
+      down: { value: false },
+      map: { value: null as Texture | null },
+    },
     vertexShader: `${MORPH_GLSL}
       uniform float opened;
+      uniform bool down;
       varying vec2 sampleAt;
       void main() {
-        sampleAt=uv;
+        sampleAt=vec2(uv.x,down ? 1.0-uv.y : uv.y);
         float rise=(length(position)-1.013)*opened;
         vec3 foot=normalize(position)*1.013;
-        vec3 vertex=fmProject(foot) + fmNormal(foot)*rise*(1.0-uMorph);
-        vertex.x += uMorph*rise;
+        vec3 direction=fmNormal(foot);
+        if(down) direction=normalize(vec3(0.0,-1.0,0.0)+normalize(foot)*0.45);
+        vec3 vertex=fmProject(foot) + direction*rise*(1.0-uMorph);
+        if(down) vertex.y -= uMorph*rise;
+        else vertex.x += uMorph*rise;
         vertex.z += uMorph*rise*0.2;
         gl_Position=projectionMatrix*modelViewMatrix*vec4(vertex,1.0);
       }`,
@@ -77,12 +98,13 @@ export function createObservationCurtain(morph: { value: number }) {
       material.uniforms.map!.value = null;
       object.geometry.dispose();
       object.visible = true;
-      amount = 0;
+      if (!prior) amount = 0;
       if (next) {
         const texture = new Texture(next.image);
         texture.colorSpace = SRGBColorSpace;
         texture.needsUpdate = true;
         material.uniforms.map!.value = texture;
+        material.uniforms.down!.value = !!next.down;
         object.geometry = curtainGeometry(next.points, next.heightKm, next.exaggeration);
       }
       prior = next;

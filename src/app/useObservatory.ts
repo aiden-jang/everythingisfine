@@ -12,7 +12,7 @@ import type { FloatDiveView } from "./float/floatPlayback";
 import type { SkyLook, TonightView } from "../geo/tonight";
 import { useSkyCity } from "./tonight/SkyCityPicker";
 import type { GlobePresentation, TonightPresentation } from "../globe/scenePresentation";
-import { national, type RadarView } from "./radar/radarCamera";
+import { national, regionCamera, radarRegions, type RadarView } from "./radar/radarCamera";
 import { revealReadings, shiftGlobe } from "./presentationMotion";
 import { earthStories, isEarthStory } from "./earth-stories/catalogue";
 
@@ -87,6 +87,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [radarView, setRadarView] = useState<RadarView | null>(null);
   const observations = useObservationDeck(shared.story);
   const closeObservations = observations.close;
+  const radarEntry = useRef<{ region?: string; story?: boolean }>({});
   const radarOrigin = useRef<Presentation>("observe");
   const storyFromExplore = useRef(false);
   const transition = useRef<Animation[]>([]);
@@ -250,9 +251,18 @@ export function useObservatory(shared: Partial<Permalink>) {
     radar: {
       active: radarView !== null,
       fromExplore: radarView !== null && radarOrigin.current === "explore",
-      open() {
+      entry: radarEntry.current,
+      open(region?: string, story = false) {
         radarOrigin.current = presentation;
-        const open = () => setRadarView({ kind: "radar", target: national, image: null });
+        radarEntry.current = { ...(region ? { region } : {}), story };
+        const open = () => {
+          if (story) observations.close();
+          setRadarView({
+            kind: "radar",
+            target: region ? regionCamera(radarRegions.find((r) => r.id === region)) : national,
+            image: null,
+          });
+        };
         if (observing) open();
         else
           changePresentation(
@@ -268,7 +278,10 @@ export function useObservatory(shared: Partial<Permalink>) {
       close() {
         observations.setMap(false);
         if (radarOrigin.current === "explore") changePresentation("explore", true, undefined, false);
-        else setRadarView(null);
+        else {
+          setRadarView(null);
+          if (radarEntry.current.story) observations.open("river", "open-observations");
+        }
       },
       update: setRadarView,
     },

@@ -34,8 +34,10 @@ export function StormRadar({
   onClose,
   onView,
   projection,
+  entry,
 }: {
   fromExplore: boolean;
+  entry: { region?: string; story?: boolean };
   onClose: () => void;
   onView: (view: RadarView) => void;
   projection: { map: boolean; setMap: (map: boolean) => void };
@@ -44,23 +46,23 @@ export function StormRadar({
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
   useObservatoryEscape(onClose);
 
+  const backLabel = entry.story
+    ? "Back to Atmospheric River"
+    : fromExplore
+      ? "Back to Explore"
+      : "Back to Live Earth";
   return (
     <>
       <div className="radar-heading">
         <h2>Storm Radar</h2>
         <div className="observatory-actions radar-actions">
-          <button
-            type="button"
-            ref={back}
-            onClick={onClose}
-            aria-label={fromExplore ? "Back to Explore" : "Back to Live Earth"}
-          >
-            {fromExplore ? "Back to Explore" : "Back to Live Earth"}
+          <button type="button" ref={back} onClick={onClose} aria-label={backLabel}>
+            {backLabel}
           </button>
         </div>
       </div>
       <Suspense fallback={<p role="status">Opening Storm Radar…</p>}>
-        <RadarStage onView={onView} />
+        <RadarStage onView={onView} initialRegion={entry.region} />
       </Suspense>
       <div className="observatory-actions radar-actions" role="group" aria-label="Radar projection">
         <button type="button" aria-pressed={!projection.map} onClick={() => projection.setMap(false)}>

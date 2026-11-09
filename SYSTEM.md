@@ -1,9 +1,12 @@
 # Current architecture
 
 Everything Is Fine is a static TypeScript app built with Vite, Preact through React-compatible
-imports, Tailwind, and three.js. Public providers are reached directly from the browser.
-The globe needs no API key, account, database or server-side feed cache. A small Worker
-serves the anonymous aggregate-events endpoint alongside static assets; it does not proxy feeds.
+imports, Tailwind, and three.js. Most public providers are reached directly from the browser.
+The globe needs no API key, account or database. A small Worker
+serves static assets, anonymous aggregate events and three fixed regional observation routes.
+The observation relay supplies only GFS transport, Coral Reef Watch heat stress and the Florida Keys
+temperature pixel. It accepts no parameters, caps responses at 4 MB, coalesces concurrent requests
+and caches successes for an hour or provider failures for 30 seconds.
 
 ## Data flow
 
@@ -35,7 +38,8 @@ accounts and the rail distinguishes raw readings from distinct events.
 
 | Module | Responsibility |
 | --- | --- |
-| `worker/index.ts` | Static-asset fallback and bounded anonymous analytics ingestion |
+| `worker/index.ts` | Static-asset fallback, bounded anonymous analytics ingestion, and fixed observation-route dispatch |
+| `worker/observations.ts` and `worker/development.ts` | Three cached read-only NOAA / NSF Unidata subsets, shared by the Worker and local Vite servers |
 | `analytics/` | Closed event schema, privacy-aware browser transport and aggregate dataset writes |
 | `src/app/useArchive.ts` | Archive request ownership, stale-response protection, date navigation, source coverage |
 | `src/app/ArchiveControls.tsx` | Date entry, calendar, notable days, and eclipse controls |
@@ -125,6 +129,19 @@ radar wipe is a finite texture reveal; the CALIPSO curtain uses measured browse 
 labelled vertical exaggeration. Reduced motion settles both immediately. Interaction interrupts
 camera following, hidden tabs pause playback, and pending images hold the prior matching timestamp.
 
+The atlas stories extend that shared surface with a GEBCO terrain mesh, a hinged TAO temperature
+section, physical Earth-relative orbital distances, and a Moon shaded by the computed terrestrial
+shadow. `observationTerrain.ts`, `observationMoon.ts`, and `orbitalFraming.ts` own those bounded layers;
+`observationPicking.ts` intercepts map taps only while the depth-section tool is armed. Pointer and
+coordinate entry use the same terrain sampling rules. Map projection keeps orbital footprints on
+Earth; city mode retains the selected instant and uses topocentric Moon/asteroid positions.
+
+`atlasArchive.ts` resolves local assets as URLs, loads only the selected JSON, and releases failed
+requests for retry. Current reef observations and GFS forecasts use fixed cached Worker routes to public NOAA /
+NSF Unidata services. A failed current request never silently becomes historical data: the visitor
+chooses the dated archive. GFS-to-radar navigation preserves the Pacific region and the forecast
+moment for Back, while explicitly switching to recent radar observation time.
+
 `StorySession` retains each story's moment in memory. `storyMoment.ts` validates the URL's story ID,
 finite timestamp and bounded choices; individual players clamp times to their data range. Shared
 links open paused and never write initial city choices into storage. `StorySearch` searches a small
@@ -136,6 +153,28 @@ fetches. Pass one or more of `fault dust comet fire ice north ozone water`, or n
 `EIF_ARCHIVE_CACHE` can select a reusable temporary download cache. Inputs and SHA-256 hashes are
 recorded in each `*-provenance.json`; raster origins and transformations are reproducible from the
 script. The larger fault, fire and ice JSON files load only when their story opens.
+
+`tools/make-atlas-imagery.py`, `make-atlas-orbits.py`, `make-atlas-terrain.py`,
+`make-atlas-ocean.py`, and `make-atlas-river.py` regenerate the additional atlas. They share
+`atlas_archive.py` and `EIF_ATLAS_CACHE`; use a temporary Python environment with the libraries above
+plus rasterio, netcdf4 and h5py. Pass `bloom spring`, `apophis eclipse`, `seafloor glacier`, or
+`nino reef aral` to the corresponding generator. The river generator records its dated GFS subset.
+`*-sources.json` records input SHA-256 hashes; raster sidecars retain origins and transformations.
+No download cache or Python environment belongs in the repository. These are bounded display
+subsets: originals remain the authority for scientific analysis.
+
+| Atlas view | Data and interpretation |
+| --- | --- |
+| Seafloor Flight | GEBCO 2026 regional elevation and source-type grid; measured and inferred bathymetry, 30× lifted relief with unexaggerated depth labels, authored flight rather than an observation timeline |
+| Close Encounter | JPL Horizons apparent equator-of-date Apophis ephemeris for 13–14 April 2029; physical distances, enlarged marker, geostationary altitude reference |
+| Glacier Flow | NASA ITS_LIVE annual 2013/2024 Greenland velocity mosaics; traces integrate the annual mean field, not observed individual ice parcels |
+| Atmospheric River | NOAA GFS humidity/wind integrated from 300 hPa to the surface (at most 1000 hPa), distributed by NSF Unidata; forecast transport and precipitation, not observations |
+| Earth’s Shadow | NASA March 2025 eclipse contact catalogue and JPL Sun/Moon ephemerides; computed shadow with illustrative red tint, topocentric horizon boundary |
+| El Niño Pulse | NOAA PMEL TAO/TRITON 1997–1998 monthly buoy temperatures; quality-filtered observations with bounded interpolation and visible gaps |
+| Ocean Bloom | NASA GIBS Aqua MODIS chlorophyll and matching-date natural color; cloud and swath gaps remain missing |
+| Reef Heat | NOAA Coral Reef Watch Degree Heating Weeks plus an offshore SST sample; heat stress risk is not confirmed bleaching |
+| Vanishing Sea | JRC Landsat annual surface-water classifications, 1984–2021; reference is observed 1984–1986 water, not the original pre-diversion shoreline |
+| Spring Wave | NASA Terra MODIS 16-day NDVI composites, 2023/2024; greenness, not flowers or biomass, and not instantaneous observations |
 
 | Archive | Source and interpretation |
 | --- | --- |

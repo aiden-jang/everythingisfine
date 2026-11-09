@@ -16,14 +16,20 @@ const format = new Intl.DateTimeFormat("en-GB", {
 const label = (at: number) => format.format(at) + " UTC";
 const shortTime = (at: number) => new Date(at).toISOString().slice(11, 16);
 
-export function RadarStage({ onView }: { onView: (view: RadarView) => void }): JSX.Element {
+export function RadarStage({
+  onView,
+  initialRegion,
+}: {
+  onView: (view: RadarView) => void;
+  initialRegion?: string | undefined;
+}): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
   const { scans, images, status, checkedAt, retry } = useRadarScans(held);
   const [chosen, setChosen] = useState<RadarScan | null>(null);
   const [showLightning, setShowLightning] = useState(false);
   const [playing, setPlaying] = useState(false);
-  const [regionId, setRegionId] = useState("auto");
+  const [regionId, setRegionId] = useState(initialRegion ?? "auto");
   const [focus, setFocus] = useState<RadarRegion | null | undefined>();
   const latest = scans.at(-1);
   const latestImage = latest && images.get(latest.id);

@@ -1,5 +1,10 @@
 import type { CameraState } from "../../globe/controls";
-import type { ObservationFrame, ObservationSeries, ObservationView } from "../observations/types";
+import type {
+  ObservationFrame,
+  ObservationSeries,
+  ObservationTerrain,
+  ObservationView,
+} from "../observations/types";
 
 export interface StoryFrame extends ObservationFrame {
   caption: string;
@@ -17,12 +22,16 @@ export interface EarthStoryData {
   sky?: (at: number) => NonNullable<ObservationView["sky"]>;
   geometry?: (frame: StoryFrame) => ObservationFrame;
   target: CameraState;
+  mapTarget?: CameraState;
   lens?: { globe: number; map: number };
   chapters: readonly { at: number; label: string }[];
   series?: readonly ObservationSeries[];
   units?: string;
   sites?: readonly StorySite[];
   legend?: readonly { color: string; label: string }[];
+  terrain?: ObservationTerrain;
+  timelineLabel?: string;
+  lunarImage?: string;
 }
 const files = import.meta.glob<string>("../../sources/earth-stories/assets/*.webp", {
   eager: true,

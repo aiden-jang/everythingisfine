@@ -137,6 +137,7 @@ export function Observatory({
         scene={scene}
         city={skyCity}
         onClose={closeStory}
+        onRadar={() => radar.open("pacific", true)}
       />
     );
   return (
@@ -182,6 +183,7 @@ export function Observatory({
             <StormRadar
               projection={observations}
               fromExplore={radar.fromExplore}
+              entry={radar.entry}
               onView={radar.update}
               onClose={() => {
                 const trigger = radar.fromExplore ? "open-explorer-radar" : "open-storm-radar";

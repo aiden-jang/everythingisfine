@@ -37,12 +37,14 @@ export function ObservationDeckShell({
   scene,
   city,
   onClose,
+  onRadar,
 }: {
   deck: ReturnType<typeof useObservationDeck>;
   entry: StoryId;
   scene: EarthScene;
   city: SkyCityPreference;
   onClose: () => void;
+  onRadar: () => void;
 }): JSX.Element {
   const fromExplore = deck.trigger?.startsWith("archive-story-") || deck.trigger?.startsWith("event-story-");
   const close = () => {
@@ -81,6 +83,7 @@ export function ObservationDeckShell({
             onClose={close}
             closeLabel={closeLabel}
             city={city}
+            onRadar={onRadar}
           />
         ) : entry === "lights" ? (
           <LightsReturn onView={deck.update} onClose={close} />

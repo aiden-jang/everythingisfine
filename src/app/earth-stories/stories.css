@@ -54,7 +54,8 @@
   padding: 8px;
   background: var(--color-deck);
 }
-.dust-caption {
+.story-section-caption,
+.terrain-section {
   position: absolute;
   inset: auto var(--stage-inset) calc(var(--stage-inset) + 40px);
   display: grid;
@@ -66,9 +67,20 @@
   color: var(--color-dim);
   font-size: 11px;
 }
-.dust-caption strong {
+.story-section-caption strong {
   color: var(--color-ink);
   font-weight: 500;
+}
+.terrain-section svg {
+  display: block;
+  width: 100%;
+}
+.terrain-section text {
+  fill: currentColor;
+  font: 10px var(--font-mono);
+}
+.terrain-section figcaption {
+  color: var(--color-ink);
 }
 .story-compass {
   display: flex;
@@ -125,4 +137,32 @@
   .story-compass g {
     transition: none;
   }
+}
+
+.terrain-coordinates {
+  margin-block: 12px;
+  font-size: 12px;
+  color: var(--color-dim);
+}
+.terrain-coordinates summary {
+  cursor: pointer;
+  padding-block: 10px;
+}
+.terrain-coordinates form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding-block: 10px;
+}
+.terrain-coordinates label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.terrain-coordinates input {
+  min-width: 0;
+  width: 100%;
+}
+.terrain-coordinates button {
+  grid-column: 1 / -1;
 }

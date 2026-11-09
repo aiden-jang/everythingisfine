@@ -1,0 +1,1 @@
+{"retrieved":"2026-11-09T20:22:43.178277+00:00","sha256":{"https://data.pmel.noaa.gov/pmel/erddap/tabledap/pmelTaoDyT.csv?time,longitude,depth,T_20,QT_5020&latitude=0&longitude>=130&longitude<=270&depth<=500&time>=1997-01-01T00:00:00Z&time<1999-01-01T00:00:00Z&QT_5020>=1&QT_5020<=2":"8dd74106d78467a2ad1fee54e727ea82103150599ca59c0d5634844f8947c7fc"}}

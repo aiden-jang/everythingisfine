@@ -376,6 +376,11 @@
       top: calc(var(--stage-inset) + 2px);
     }
     .stage-readout {
+      display: grid;
+      gap: 4px;
+      padding: 5px 7px;
+      background: var(--color-deck);
+      justify-content: start;
       bottom: calc(var(--stage-inset) + 2px);
     }
     .observatory-location {

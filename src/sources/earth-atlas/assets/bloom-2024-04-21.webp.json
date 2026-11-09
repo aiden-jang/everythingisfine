@@ -1,0 +1,1 @@
+{"prompt": "Sourced scientific raster: https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=MODIS_Aqua_L2_Chlorophyll_A&STYLES=&SRS=EPSG%3A4326&BBOX=-50%2C38%2C5%2C68&WIDTH=768&HEIGHT=512&FORMAT=image%2Fpng&TRANSPARENT=TRUE&TIME=2024-04-21"}

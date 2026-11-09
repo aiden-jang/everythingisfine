@@ -20,8 +20,9 @@ pnpm install --frozen-lockfile
 pnpm run dev
 ```
 
-Open <http://localhost:31600>. Fonts and map geometry are bundled; public data feeds are
-requested directly from the browser.
+Open <http://localhost:31600>. Fonts and map geometry are bundled. Most feeds load directly in
+the browser; GFS and Coral Reef Watch use fixed cached same-origin routes because their providers
+do not support browser CORS. The local server supplies the same routes without a key or account.
 
 ## Observe and explore
 
@@ -173,6 +174,14 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Storm Radar | [NOAA MRMS base reflectivity](https://mapservices.weather.noaa.gov/eventdriven/rest/services/radar/radar_base_reflectivity_time/ImageServer) |
 | Orbital Pass | [CelesTrak ISS orbital elements](https://celestrak.org/NORAD/elements/) and SGP4 predictions |
 | Tide Watch and River Pulse | [NOAA water levels and tide predictions](https://api.tidesandcurrents.noaa.gov/api/dev) and [USGS continuous streamflow](https://api.waterdata.usgs.gov/) |
+| Seafloor Flight | [GEBCO 2026 elevation and source-type grid](https://www.gebco.net/data-products-gridded-bathymetry-data/gebco2026-grid), resampled regional cutaway with labelled exaggeration; not for navigation |
+| Close Encounter / Earth’s Shadow | [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) apparent positions and [NASA’s March 2025 lunar eclipse](https://eclipse.gsfc.nasa.gov/LEplot/LEplot2001/LE2025Mar14T.pdf); eclipse red tint is illustrative |
+| Glacier Flow | [NASA ITS_LIVE](https://its-live.jpl.nasa.gov/) annual Greenland velocity mosaics v2.1 |
+| Atmospheric River | [NOAA GFS](https://www.nco.ncep.noaa.gov/pmb/products/gfs/) through [NSF Unidata](https://thredds.ucar.edu/); bounded current and dated forecasts |
+| El Niño Pulse | [NOAA PMEL TAO/TRITON](https://www.pmel.noaa.gov/gtmba/) daily buoy temperatures, aggregated by month |
+| Ocean Bloom / Spring Wave | [NASA GIBS](https://nasa-gibs.github.io/gibs-api-docs/) Aqua MODIS chlorophyll/natural color and Terra MODIS 16-day NDVI |
+| Reef Heat | [NOAA Coral Reef Watch](https://coralreefwatch.noaa.gov/product/5km/index.php) daily heat stress and sea-surface temperature through [PolarWatch](https://polarwatch.noaa.gov/erddap/) |
+| Vanishing Sea | [European Commission JRC Global Surface Water](https://global-surface-water.appspot.com/download), Landsat-derived annual classification; original data credits JRC / Google |
 | Wind Atlas | [NOAA GFS](https://www.nco.ncep.noaa.gov/pmb/products/gfs/) via [PacIOOS](https://www.pacioos.hawaii.edu/) for the current surface forecast and [NSF Unidata](https://www.unidata.ucar.edu/data/nsf-unidatas-thredds-data-server) for a dated 250 hPa forecast |
 | Rainbelt and Lightning Live | [NASA IMERG precipitation imagery](https://gpm.nasa.gov/data/visualization/worldview) and [NOAA GOES-East GLM](https://www.star.nesdis.noaa.gov/goes/) |
 | Air Watch | [EPA AirNow hourly PM₂.₅ observations](https://www.airnow.gov/about-the-data/) |
@@ -283,7 +292,7 @@ if it cannot start, the event list and filters remain available.
 [DESIGN.md](DESIGN.md) defines the visual system.
 
 Pushing to `main` triggers the existing Cloudflare deployment after verification succeeds.
-The app serves static assets with a small anonymous aggregate-analytics Worker and no database. Public feed requests stay in the browser. See [DEPLOY.md](DEPLOY.md).
+The app serves static assets with a small anonymous aggregate-analytics Worker and no database. Most feeds load directly in the browser; GFS and Coral Reef Watch use three fixed, hourly cached same-origin routes. See [DEPLOY.md](DEPLOY.md).
 
 Code is [MIT licensed](LICENSE). Report vulnerabilities through
 [private reporting](https://github.com/aiden-jang/everythingisfine/security/advisories/new).

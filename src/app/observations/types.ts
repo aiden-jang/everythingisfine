@@ -46,6 +46,26 @@ export interface ObservationFrame {
   camera?: CameraState;
   details?: { title: string; rows: readonly Measurement[] };
   localSky?: { city: SkyCity; look: SkyLook };
+  section?: {
+    image: string;
+    points: readonly GeoPoint[];
+    heightKm: number;
+    exaggeration: number;
+    label: string;
+  };
+  orbit?: {
+    focus: readonly [number, number, number];
+    distance: number;
+    eclipse?: { moon: GeoPoint; radius: number; sun: GeoPoint; sunDistance: number };
+  };
+}
+
+export interface ObservationTerrain {
+  bounds: readonly [number, number, number, number];
+  columns: number;
+  rows: number;
+  elevation: readonly number[];
+  tid: readonly number[];
 }
 
 export interface ObservationSeries {
@@ -76,7 +96,16 @@ export interface ObservationView {
   target: CameraState;
   image: HTMLImageElement | null;
   surface?: HTMLCanvasElement;
-  curtain?: { points: readonly GeoPoint[]; heightKm: number; exaggeration: number; image: HTMLImageElement };
+  curtain?: {
+    points: readonly GeoPoint[];
+    heightKm: number;
+    exaggeration: number;
+    image: HTMLImageElement;
+    down?: boolean;
+  };
+  terrain?: { grid: ObservationTerrain; progress: number };
+  moonImage?: HTMLImageElement | null;
+  onPick?: ((point: GeoPoint) => void) | undefined;
   lens?: { globe: number; map: number };
   sky?: TonightView | undefined;
   follow?: ReplayCamera | undefined;

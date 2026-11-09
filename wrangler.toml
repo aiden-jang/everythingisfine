@@ -2,7 +2,7 @@ name = "everythingisfine"
 main = "worker/index.ts"
 compatibility_date = "2026-08-01"
 
-# Static assets and a small anonymous aggregate-events endpoint. Feed requests still go directly to their supported transports.
+# Static assets, anonymous aggregate events and three bounded cached observation routes.
 
 # Serve only on the custom domain.
 workers_dev = false

@@ -13,13 +13,14 @@ interface composition should remain still once an interaction settles.
 
 ## 2. Zero-cost and data boundaries
 
-The visualization must render without an account, paid service or API key. Public
+The visualization must render without an account, paid service or API key. Most public
 providers are reached directly from the browser. USGS polling and EMSC push/catalogue
 readings share a reconciliation policy, while GDACS, EONET and NOAA supply their
 respective layers. See [provider coverage](README.md#data-and-attribution).
 
 A small Worker serves static assets and bounded anonymous aggregate analytics;
-it does not proxy feeds or store an account/database. Fonts are self-hosted.
+its only feed relay is three fixed GFS and Coral Reef Watch routes cached for an hour.
+The relay accepts no parameters and stores no account data or database. Fonts are self-hosted.
 Preferences stay on the device and view state stays in the URL. Privacy-aware
 analytics must retain its documented allowlist and opt-out boundaries.
 

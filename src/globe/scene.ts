@@ -600,7 +600,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       const skyOpacity = (1 - morph.value) * presentation.skyOpacity(camera);
       starfield.prepare(camera, canvas.width, canvas.height, quietMotion || morph.value > 0);
       starfield.setOpacity(skyOpacity);
-      moon.setOpacity(1 - morph.value);
+      moon.setOpacity(presentation.orbitalMoon() ? 0 : 1 - morph.value);
       figures.setOpacity(skyOpacity);
       planets.setOpacity(skyOpacity);
       if (slabOn) slab.setOpacity(1 - morph.value);
