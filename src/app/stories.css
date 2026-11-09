@@ -6,14 +6,14 @@
   border-block: 1px solid var(--color-hairline);
 }
 
-.stories-group h3 {
+.stories-group > h3 {
   color: var(--color-dim);
   font-size: 11px;
   font-weight: 550;
   margin-bottom: 2px;
 }
 
-.stories-group button {
+.stories-group > div > button {
   display: grid;
   gap: 2px;
   align-content: center;
@@ -26,15 +26,15 @@
   text-align: left;
 }
 
-.stories-group button:hover:not(:disabled) {
+.stories-group > div > button:hover:not(:disabled) {
   background: var(--color-deck);
 }
 
-.stories-group button:disabled {
+.stories-group > div > button:disabled {
   opacity: 0.55;
 }
 
-.stories-group small {
+.stories-group > div > button > small {
   color: var(--color-dim);
   font-size: 11px;
   line-height: 1.4;
