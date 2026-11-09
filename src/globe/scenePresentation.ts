@@ -24,6 +24,12 @@ export function isLocalView(mode: GlobePresentation): mode is LocalView {
   return mode !== null && typeof mode === "object" && "kind" in mode;
 }
 
+export function isShadowChase(mode: GlobePresentation): boolean {
+  return (
+    isLocalView(mode) && mode.kind === "observation" && !!(mode.shadow || mode.sky?.sunCover !== undefined)
+  );
+}
+
 export function createScenePresentation(
   spin: Group,
   catalogue: Group,

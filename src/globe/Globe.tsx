@@ -6,12 +6,13 @@ import { type CutawayFocus } from "./cutaway";
 import { GlobeOverlays } from "./GlobeOverlays";
 import { GlobeUnavailable } from "./GlobeUnavailable";
 import { animationDelta } from "./animation";
+import { createAnimationFrame } from "./animationFrame";
 import { attachSectionDrawing, type SectionCommit } from "./sectionDrawing";
 import { useEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
 import { loadStars, type FigureTable } from "../geo/stars";
 import { createGlobe, type GlobeMoment } from "./scene";
-import { isLocalView, type GlobePresentation } from "./scenePresentation";
+import { isLocalView, isShadowChase, type GlobePresentation } from "./scenePresentation";
 import { sinkFraction, type FocusSpan } from "./events";
 import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
 import { createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
@@ -369,7 +370,7 @@ export function Globe({
 
     // Sleep when nothing moves; redraw only when motion or changed data needs a frame.
     let running = false;
-    let frameId = 0;
+    const animation = createAnimationFrame(() => isShadowChase(live.current.globePresentation));
     let last = 0;
     let lastZoom = globe.controls.state().zoom;
     let focusFade = 0;
@@ -378,11 +379,9 @@ export function Globe({
     let projectionTravel = morph;
     globe.setMorph(morph);
     globe.controls.setMorph(morph);
-
     let plateReveal = reducedMotion.matches ? 1 : 0;
     let revealStarted = reducedMotion.matches;
     globe.plates.reveal(plateReveal);
-
     const startReveal = (): void => {
       if (revealStarted) return;
       revealStarted = true;
@@ -492,7 +491,7 @@ export function Globe({
       onCameraRef.current?.(globe.controls.state());
       const revealing = revealStarted && plateReveal < 1;
       if (moving || expanding || replaying || fading || revealing || unwrapping || presenting) {
-        frameId = requestAnimationFrame(frame);
+        animation.request(frame);
       } else running = false;
     };
 
@@ -509,10 +508,11 @@ export function Globe({
     });
 
     const wake = (): void => {
-      if (running || document.hidden) return;
+      if (document.hidden) return;
+      if (running) return animation.watch();
       running = true;
       last = performance.now();
-      frameId = requestAnimationFrame(frame);
+      animation.request(frame);
     };
     wakeRef.current = wake;
 
@@ -560,7 +560,7 @@ export function Globe({
     };
     momentRef.current = (at) => {
       globe.setMoment(at);
-      redraw();
+      if (!isShadowChase(live.current.globePresentation)) redraw();
     };
     globe.setMoment(live.current.moment ?? null);
     inspectionRef.current = globe.setInspection;
@@ -729,7 +729,7 @@ export function Globe({
 
     const onVisibility = (): void => {
       if (document.hidden) {
-        cancelAnimationFrame(frameId);
+        animation.cancel();
         running = false;
       } else wake();
     };
@@ -742,7 +742,7 @@ export function Globe({
     if (parent) ro.observe(parent);
 
     return () => {
-      cancelAnimationFrame(frameId);
+      animation.cancel();
       wakeRef.current = () => {};
       window.clearTimeout(revealFallback);
       ro.disconnect();
