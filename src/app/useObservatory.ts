@@ -169,6 +169,11 @@ export function useObservatory(shared: Partial<Permalink>) {
     canCapture: ready && !sunActive && !tonight && floatView === null && !observations.entry,
     localReadings: radarView !== null || tonight || floatView !== null || !!observations.entry,
     observations,
+    openLights() {
+      setRun(null);
+      setSunWatch(false);
+      observations.open("lights", "open-lights-return");
+    },
     skyCity,
     viewAt: (observations.view?.frame.timeLabel ? undefined : observations.view?.frame.at) ?? localSky?.at,
     setReady,
@@ -235,7 +240,8 @@ export function useObservatory(shared: Partial<Permalink>) {
       update: setRadarView,
     },
     globe(guided: boolean): GlobePresentation {
-      if (observations.entry) return observations.view ?? "dayline";
+      if (observations.entry)
+        return observations.view ?? (observations.entry === "lights" ? "planetarium" : "dayline");
       if (night) return sunActive ? null : (localSky ?? auroraRun ?? "planetarium");
       return observing && scene === "live" && !guided
         ? ((floatView === "opening" ? null : floatView) ?? radarView ?? "dayline")

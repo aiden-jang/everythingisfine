@@ -3,7 +3,7 @@ import type { ObservationId } from "./catalogue";
 import type { ObservationView } from "./types";
 
 export function useObservationDeck() {
-  const [entry, setEntry] = useState<ObservationId | "catalogue" | null>(null);
+  const [entry, setEntry] = useState<ObservationId | "catalogue" | "lights" | null>(null);
   const [trigger, setTrigger] = useState<string | null>(null);
   const [view, update] = useState<ObservationView | null>(null);
   const [map, setMap] = useState(false);

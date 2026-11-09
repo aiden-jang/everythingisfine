@@ -1,0 +1,57 @@
+import { expect, test } from "@playwright/test";
+import { installFeeds } from "./feeds";
+
+test("Lights Return compares NASA recovery periods and returns to the same After Dark globe", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 740 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh" });
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.route(/\/a\/maria-before-[^/]+\.webp$/, (route) => route.abort(), { times: 1 });
+  await page.goto("/");
+  const canvas = page.locator("#globe-view canvas");
+  const original = await canvas.elementHandle();
+  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  const open = page.getByRole("button", { name: "Lights Return", exact: true });
+  await open.click();
+  const panel = page.getByRole("region", { name: "Lights Return" });
+  await expect(panel.getByRole("button", { name: "Back to After Dark" })).toBeFocused();
+  await expect(panel.getByRole("status")).toHaveText("NASA’s archived images couldn’t load.");
+  await panel.getByRole("button", { name: "Retry images" }).click();
+  const stage = page.getByRole("group", { name: "Puerto Rico night lights" });
+  const active = stage.locator("img[data-current]");
+  await expect(active).toHaveAttribute("src", /maria-before-/);
+  const period = panel.getByRole("slider", { name: "Night-light period" });
+  const compare = panel.getByRole("button", { name: "Compare with before" });
+  await expect(compare).toBeDisabled();
+  await period.press("ArrowRight");
+  await expect(active).toHaveAttribute("src", /maria-early-/);
+  await expect(period).toHaveAttribute("aria-valuetext", /20 Sep – 20 Nov 2017/);
+  await compare.click();
+  const divider = panel.getByRole("slider", { name: "Before and after divider" });
+  await expect(divider).toBeInViewport();
+  await divider.press("End");
+  await expect(stage.locator(".stage-readout")).toContainText("Before Maria");
+  await divider.press("Home");
+  await expect(stage.locator(".stage-readout")).toContainText("Early aftermath");
+  await divider.press("ArrowRight");
+  await expect(stage.locator(".lights-map")).toHaveCSS("--lights-split", "1%");
+  await period.press("End");
+  await expect(active).toHaveAttribute("src", /maria-late-/);
+  await expect(period).toHaveAttribute("aria-valuetext", /21 Jan – 20 Mar 2018/);
+  await expect(active).toHaveJSProperty("naturalWidth", 1840);
+  await page.setViewportSize({ width: 812, height: 375 });
+  await expect(period).toBeInViewport();
+  await panel.getByRole("button", { name: "Replay recovery" }).click();
+  await expect(active).toHaveAttribute("src", /maria-before-/);
+  await expect(active).toHaveAttribute("src", /maria-early-/);
+  await panel.getByRole("button", { name: "Pause replay" }).click();
+  await expect(period).toHaveValue("1");
+  await page.keyboard.press("Escape");
+  await expect(open).toBeFocused();
+  await expect(page.getByRole("button", { name: "Tonight’s Sky", exact: true })).toBeVisible();
+  expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);
+  expect(errors).toEqual([]);
+});

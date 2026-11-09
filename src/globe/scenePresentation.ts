@@ -11,6 +11,7 @@ import { createFloatPresentation } from "./floatPresentation";
 import type { TonightView } from "../geo/tonight";
 import type { MoonfallView } from "./moonfall/scene";
 
+import { createObservationArrival } from "./observationArrival";
 import { createObservationLayer } from "./observationLayer";
 import type { ObservationView } from "../app/observations/types";
 
@@ -43,6 +44,7 @@ export function createScenePresentation(
   let returnCamera: ReturnType<Controls["state"]> | undefined;
 
   const projection = { value: 0 };
+  const arrival = createObservationArrival(controls, canvas);
   let observations: ReturnType<typeof createObservationLayer> | undefined;
   let dive: ReturnType<typeof createFloatPresentation> | undefined;
 
@@ -51,13 +53,15 @@ export function createScenePresentation(
     veil?.trace(controls.auroraSweep());
     const diving = dive?.step(dt, reduced);
     const lunar = skyView?.moonfall?.step(dt, reduced);
-    return (observations?.step(dt, reduced) ?? false) || !!diving || !!lunar;
+    const approaching = arrival.step(dt, reduced);
+    return (observations?.step(dt, reduced) ?? false) || !!diving || !!lunar || approaching;
   }
 
   function set(mode: GlobePresentation, geography: readonly Object3D[]) {
     const local = isLocalView(mode) ? mode : null;
     const observation = local?.kind === "observation" ? local : null;
     const weather = local?.kind === "radar" ? local : null;
+    const returningFromArchive = arrival.set(observation);
     skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);
     const route = mode && typeof mode === "object" && "route" in mode ? mode.route : null;
     if (planetarium !== (mode === "planetarium")) controls.setPlanetarium(mode === "planetarium");
@@ -108,7 +112,7 @@ export function createScenePresentation(
       const { target } = observation;
       if (target !== observationTarget) controls.flyTo(target.lon, target.lat, target.zoom);
     } else if (returnCamera) {
-      if (mode === "dayline" || mode === null)
+      if (mode === "dayline" || mode === null || (returningFromArchive && mode === "planetarium"))
         controls.flyTo(returnCamera.lon, returnCamera.lat, returnCamera.zoom);
       returnCamera = undefined;
     }

@@ -12,6 +12,7 @@ export function AuroraOverflightControls({
   onTonight,
   onOrbit,
   onMeteors,
+  onLights,
   city,
 }: {
   aurora: ReturnType<typeof useAuroraOverflight>;
@@ -21,6 +22,7 @@ export function AuroraOverflightControls({
   onTonight: () => void;
   onOrbit: () => void;
   onMeteors: () => void;
+  onLights: () => void;
   city: SkyCityPreference;
   onReturn: () => void;
 }): JSX.Element {
@@ -54,6 +56,9 @@ export function AuroraOverflightControls({
         </button>
         <button type="button" id="open-meteor-nights" onClick={onMeteors} disabled={!ready}>
           Meteor Nights
+        </button>
+        <button type="button" id="open-lights-return" onClick={onLights} disabled={!ready}>
+          Lights Return
         </button>
         {aurora.run && (
           <>

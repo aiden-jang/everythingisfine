@@ -218,6 +218,11 @@ flow informed by current wind speed and density, then clears to the same night-s
 The wind and X-ray plots have separate axes and observation times. Reduced motion opens on
 Earth with the same three chapter controls.
 
+Lights Return approaches Puerto Rico from After Dark, then opens the satellite archive at the
+island’s projected size. Black Marble’s colors represent observed nighttime lighting in this bounded
+archive view. The before-and-after divider holds the same position and scale in both images.
+Reduced motion opens the baseline directly, with the same manual playback and comparison controls.
+
 Katrina opens on a banked view of the Gulf horizon, follows the eye along NOAA’s best track and
 settles to an overview at the Buras landfall. Track dots mark published fixes. Wind outlines use
 the published quadrant radii, and the readings change at the fixes. Scrubbing and reduced motion

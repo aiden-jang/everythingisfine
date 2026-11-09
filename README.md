@@ -36,6 +36,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
   view contains a reported depth of at least 70 km.
 - **After Dark** opens the displayed moment's night sky above Earth's curved horizon, then traces
   constellation guides. Reduced motion keeps the same view without the flight.
+- **Lights Return** leaves the After Dark sky for Puerto Rico and follows the return of nighttime
+  lights after Hurricane Maria. Play or scrub four NASA Black Marble HD views from the pre-storm
+  baseline through March 2018. Compare a recovery period with the baseline using a fixed divider.
 - **Tonight’s Sky** descends to a selected city from After Dark. Scrub from local sunset to sunrise,
   use the compass to turn, or point at the Moon and five bright planets. Angles are calculated for a
   level horizon. Where a crossing is absent, the timeline uses a local evening or morning endpoint.
@@ -162,6 +165,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Aurora forecast | NOAA SWPC OVATION |
 | Sun Watch | NOAA SWPC real-time solar wind, primary GOES X-ray flux, NASA/GSFC Solar Dynamics Observatory |
 | Tonight’s Sky | Local solar and lunar calculations, [JPL planetary elements](https://ssd.jpl.nasa.gov/planets/orbits/), [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/) reference checks |
+| Lights Return | [NASA Scientific Visualization Studio Black Marble HD](https://svs.gsfc.nasa.gov/4658/), using Suomi NPP VIIRS observations, and the [Román et al. recovery study](https://doi.org/10.1371/journal.pone.0218883) |
 | Moonfall | [NASA LRO global mosaic](https://svs.gsfc.nasa.gov/4720/), [LRO stereo elevations and imagery via USGS](https://astrogeology.usgs.gov/search/map/moon_apollo_17_lroc_nac_landing_site_orthomosaic_50cm), and the [Apollo 17 rover routes reconstructed by Haase et al.](https://doi.org/10.1029/2018EA000408) |
 | Meteor Nights | [International Meteor Organization 2026 and 2027 calendars](https://www.imo.net/calendar/), with calculated local radiant and moonlight geometry |
 | Million-Mile View | NASA EPIC / NOAA DSCOVR [Moon transit archive](https://epic.gsfc.nasa.gov/galleries/2015/lunar_transit) and [natural-color imagery API](https://epic.gsfc.nasa.gov/about/api) |

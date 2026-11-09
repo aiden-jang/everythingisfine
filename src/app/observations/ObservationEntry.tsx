@@ -4,9 +4,14 @@ import type { useObservationDeck } from "./useObservationDeck";
 import type { EarthScene } from "../useObservatory";
 import { ObservationCredit } from "./ObservationCredit";
 import "./observations.css";
+import "../lights/lights.css";
 
 const ObservationDeck = lazy(() =>
   import("./ObservationDeck").then(({ ObservationDeck }) => ({ default: ObservationDeck })),
+);
+
+const LightsReturn = lazy(() =>
+  import("../lights/LightsReturn").then(({ LightsReturn }) => ({ default: LightsReturn })),
 );
 
 export function ObservationDeckShell({
@@ -16,10 +21,14 @@ export function ObservationDeckShell({
   city,
 }: {
   deck: ReturnType<typeof useObservationDeck>;
-  entry: ObservationId | "catalogue";
+  entry: ObservationId | "catalogue" | "lights";
   scene: EarthScene;
   city: { name: string; select: (name: string) => void };
 }): JSX.Element {
+  const close = () => {
+    deck.close();
+    requestAnimationFrame(() => document.getElementById(deck.trigger ?? "open-observations")?.focus());
+  };
   return (
     <Suspense
       fallback={
@@ -31,21 +40,22 @@ export function ObservationDeckShell({
         </div>
       }
     >
-      <ObservationDeck
-        deck={{ ...deck, entry }}
-        closeLabel={
-          scene === "night"
-            ? "Back to After Dark"
-            : scene === "depth"
-              ? "Back to Below the Surface"
-              : "Back to Observatory"
-        }
-        city={city}
-        onClose={() => {
-          deck.close();
-          requestAnimationFrame(() => document.getElementById(deck.trigger ?? "open-observations")?.focus());
-        }}
-      />
+      {entry === "lights" ? (
+        <LightsReturn onView={deck.update} onClose={close} />
+      ) : (
+        <ObservationDeck
+          deck={{ ...deck, entry }}
+          closeLabel={
+            scene === "night"
+              ? "Back to After Dark"
+              : scene === "depth"
+                ? "Back to Below the Surface"
+                : "Back to Observatory"
+          }
+          city={city}
+          onClose={close}
+        />
+      )}
     </Suspense>
   );
 }
