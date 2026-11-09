@@ -81,6 +81,7 @@ test("normal motion starts the flight and reaches the saved city when animation 
   await panel.getByRole("button", { name: "From London" }).evaluate((button) => button.click());
   const stage = page.getByRole("group", { name: "Eclipse visualization" });
   await expect(stage.locator(".shadow-disc")).toBeVisible();
+  await expect(stage.locator(".shadow-sight")).toHaveCSS("opacity", "1");
   await expect(stage.getByText("Partial phase · 41.9% covered")).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem("eif.sky-city"))).toBe("London");
 

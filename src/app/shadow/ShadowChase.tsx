@@ -134,8 +134,8 @@ export function ShadowChase({
   return (
     <>
       <div className="observatory-stage" data-stage="shadow" role="group" aria-label="Eclipse visualization">
-        {local && landed && frame.altitude >= 0 && (
-          <div className="shadow-sight">
+        {local && frame.altitude >= 0 && (
+          <div key={observer.name} className="shadow-sight">
             <EclipseDisc frame={frame} />
             <span>Sun close-up · celestial north up</span>
           </div>
@@ -153,9 +153,7 @@ export function ShadowChase({
         <div className="stage-readout shadow-readout">
           <span>
             {local
-              ? landed
-                ? phase
-                : "Approaching the city"
+              ? phase
               : landed
                 ? at === greatestEclipse
                   ? "Greatest eclipse"

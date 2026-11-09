@@ -143,7 +143,8 @@ export function createScenePresentation(
     } else if (observation) {
       returnCamera ??= controls.state();
       const { target } = observation;
-      if (target !== observationTarget) controls.flyTo(target.lon, target.lat, target.zoom);
+      if (target !== observationTarget && observation.sky?.sunCover === undefined)
+        controls.flyTo(target.lon, target.lat, target.zoom);
     } else if (returnCamera) {
       if (mode === "dayline" || mode === null || (returningFromArchive && mode === "planetarium"))
         controls.flyTo(returnCamera.lon, returnCamera.lat, returnCamera.zoom);

@@ -26,7 +26,13 @@ export function createObservationArrival(controls: Controls, canvas: HTMLCanvasE
       const { lon, lat, zoom } = active.target;
       const camera = controls.state();
       const close = spanDeg(camera.lon, camera.lat, lon, lat) < 0.2 && Math.abs(camera.zoom - zoom) < 0.018;
-      if (!reduced && elapsed < 5 && (!close || !controls.framingReady())) return true;
+      if (
+        active.sky?.sunCover === undefined &&
+        !reduced &&
+        elapsed < 5 &&
+        (!close || !controls.framingReady())
+      )
+        return true;
       if (reduced) controls.setView(active.target);
       const west = controls.project(lon - 0.9, lat);
       const east = controls.project(lon + 0.9, lat);

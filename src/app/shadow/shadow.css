@@ -135,7 +135,7 @@
 
 @media (prefers-reduced-motion: no-preference) {
   .shadow-sight {
-    animation: shadow-sight-arrival 550ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation: shadow-sight-arrival 450ms cubic-bezier(0.16, 1, 0.3, 1) 650ms both;
   }
 
   .shadow-moon {

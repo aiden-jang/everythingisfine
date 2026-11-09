@@ -5,6 +5,8 @@ import type { CameraState } from "./controlsTypes";
 
 const SURFACE_EYE = 1.012;
 const LOCAL_FOV = 64;
+const ECLIPSE_ARRIVAL_MS = 1100;
+const smooth = (t: number) => t * t * (3 - 2 * t);
 
 export function createLocalSkyCamera(
   camera: PerspectiveCamera,
@@ -20,6 +22,14 @@ export function createLocalSkyCamera(
   const aim = new Vector3();
   const orientation = new Quaternion();
   const matrix = new Matrix4();
+  const entryDirection = new Vector3();
+  const entryDestination = new Vector3();
+  const entryOrientation = new Quaternion();
+  const entryTurn = new Quaternion();
+  const turn = new Quaternion();
+  let entryDistance = 0;
+  let entryFov = 0;
+  let eclipseStarted = 0;
   let view: TonightView | null = null;
   let city: SkyCity | null = null;
   let saved: CameraState | null = null;
@@ -30,8 +40,9 @@ export function createLocalSkyCamera(
 
   function step(dt: number, reduced: boolean, arrived: boolean): boolean {
     const next = view?.city ?? null;
+    const eclipse = view?.sunCover !== undefined;
     if (city !== next) {
-      blend = reduced ? 0 : Math.max(0, blend - dt / 0.7);
+      blend = reduced || eclipse ? 0 : Math.max(0, blend - dt / 0.7);
       if (blend > 0) return true;
       city = next;
       if (city && view) {
@@ -41,14 +52,16 @@ export function createLocalSkyCamera(
         eye.copy(localUp).multiplyScalar(SURFACE_EYE);
         ({ azimuth, altitude } = view.look);
         fly(city.lon, city.lat, 1.35);
-        if (!reduced) return true;
+        if (!reduced && !eclipse) return true;
       } else {
         if (saved && restoreOrbit) fly(saved.lon, saved.lat, saved.zoom);
         saved = null;
       }
     }
     if (!view) return false;
-    if (arrived || reduced) blend = reduced ? 1 : Math.min(1, blend + dt / 1.5);
+    if (reduced) blend = 1;
+    else if (eclipse) blend = Math.min(1, (performance.now() - eclipseStarted) / ECLIPSE_ARRIVAL_MS);
+    else if (arrived) blend = Math.min(1, blend + dt / 1.5);
     const azimuthDelta = ((view.look.azimuth - azimuth + 540) % 360) - 180;
     const altitudeDelta = view.look.altitude - altitude;
     const gain = reduced ? 1 : -Math.expm1(-9 * dt);
@@ -60,6 +73,18 @@ export function createLocalSkyCamera(
   return {
     set(next: TonightView | null, restore: boolean) {
       if (next) saved ??= state();
+      if (next?.sunCover !== undefined && (next.city !== view?.city || view.sunCover === undefined)) {
+        eclipseStarted = performance.now();
+        entryDistance = camera.position.length();
+        entryDirection.copy(camera.position).normalize();
+        entryTurn.setFromUnitVectors(
+          entryDirection,
+          entryDestination.set(...toVec3(next.city.lon, next.city.lat, 1)),
+        );
+        entryOrientation.copy(camera.quaternion);
+        entryFov = camera.fov;
+        blend = 0;
+      }
       view = next;
       restoreOrbit = restore;
     },
@@ -69,8 +94,10 @@ export function createLocalSkyCamera(
     ready: () => (view ? blend === 1 && city === view.city : city === null),
     step,
     apply() {
-      const t = blend * blend * (3 - 2 * blend);
-      const fov = orbitalFov + (LOCAL_FOV - orbitalFov) * t;
+      const eclipse = view?.sunCover !== undefined;
+      const t = eclipse ? smooth(Math.max(0, (blend - 0.18) / 0.82)) : smooth(blend);
+      const fromFov = eclipse ? entryFov : orbitalFov;
+      const fov = fromFov + (LOCAL_FOV - fromFov) * t;
       if (camera.fov !== fov) {
         camera.fov = fov;
         camera.updateProjectionMatrix();
@@ -81,8 +108,18 @@ export function createLocalSkyCamera(
       heading.copy(north).multiplyScalar(Math.cos(bearing)).addScaledVector(east, Math.sin(bearing));
       aim.copy(eye).addScaledVector(heading, Math.cos(pitch)).addScaledVector(localUp, Math.sin(pitch));
       orientation.setFromRotationMatrix(matrix.lookAt(eye, aim, localUp));
-      camera.position.lerp(eye, t);
-      camera.quaternion.slerp(orientation, t);
+      if (eclipse && blend < 1) {
+        const travel = smooth(Math.min(1, blend / 0.8));
+        turn.identity().slerp(entryTurn, travel);
+        // Keep the approach above the globe even when the starting point and city are far apart.
+        const lift = Math.max(0, 1.7 - entryDistance) * Math.sin(Math.PI * travel);
+        const distance = entryDistance + (SURFACE_EYE - entryDistance) * t + lift;
+        camera.position.copy(entryDirection).applyQuaternion(turn).multiplyScalar(distance);
+        camera.quaternion.copy(entryOrientation).premultiply(turn).slerp(orientation, t);
+      } else {
+        camera.position.lerp(eye, t);
+        camera.quaternion.slerp(orientation, t);
+      }
     },
   };
 }
