@@ -125,6 +125,8 @@ test("story search starts an available aurora flight from the live scene", async
   await page.locator("#search-story-aurora").click();
   await expect(page.getByRole("heading", { name: "Into the auroral oval." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Replay flight" })).toBeVisible();
+  await page.getByRole("button", { name: "Back to stars", exact: true }).click();
+  await expect(page.locator("#search-story-aurora")).toBeFocused();
 });
 
 test("normal-motion entry can be interrupted and never replaces the shared canvas", async ({ page }) => {

@@ -19,7 +19,9 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   await open.click();
   const panel = page.getByRole("region", { name: "Lights Return" });
   await expect(panel.getByRole("button", { name: "Back to After Dark" })).toBeFocused();
-  await expect(panel.getByRole("status")).toHaveText("NASA’s archived images couldn’t load.");
+  await expect(panel.getByRole("status", { name: "Image loading status" })).toHaveText(
+    "NASA’s archived images couldn’t load.",
+  );
   await panel.getByRole("button", { name: "Retry images" }).click();
   const stage = page.getByRole("group", { name: "Puerto Rico night lights" });
   const active = stage.locator("img[data-current]");
@@ -56,7 +58,9 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await open.click();
   await expect(stage.getByText("Approaching the island", { exact: true })).toBeVisible();
-  await expect(active).toHaveAttribute("src", /maria-before-/);
+  await expect(active).toHaveAttribute("src", /maria-early-/);
+  await expect(period).toHaveValue("1");
+  await expect(panel.getByRole("button", { name: "Play recovery", exact: true })).toBeVisible();
   await period.press("End");
   await compare.click();
   await divider.press("End");

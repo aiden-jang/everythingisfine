@@ -28,6 +28,7 @@ export function AuroraOverflightControls({
       <div className="observatory-actions" role="group" aria-label="After Dark views">
         <button
           ref={primary}
+          id="open-aurora-overflight"
           type="button"
           className="observatory-primary"
           disabled={!ready || (!aurora.run && aurora.unavailable !== null)}
@@ -55,13 +56,7 @@ export function AuroraOverflightControls({
                 {other.hemisphere === 1 ? "Northern oval" : "Southern oval"}
               </button>
             )}
-            <button
-              type="button"
-              onClick={() => {
-                onReturn();
-                primary.current?.focus({ preventScroll: true });
-              }}
-            >
+            <button type="button" onClick={onReturn}>
               Back to stars
             </button>
           </>

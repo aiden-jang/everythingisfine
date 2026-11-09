@@ -352,7 +352,7 @@ export function Observatory({
                   aurora={aurora}
                   ready={ready}
                   solar={solar}
-                  onReturn={() => observations.returnTo("open-observations", () => onScene("night"))}
+                  onReturn={() => observations.returnTo("open-aurora-overflight", () => onScene("night"))}
                   onSunWatch={sun.toggle}
                   onTonight={() => tonight.open()}
                   city={skyCity}

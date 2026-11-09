@@ -43,7 +43,9 @@ export function ShareMoment(): JSX.Element | null {
       >
         Share this moment
       </button>
-      <span role="status">{status}</span>
+      <span role="status" aria-label="Sharing status">
+        {status}
+      </span>
       {fallback && (
         <input
           aria-label="Story link"

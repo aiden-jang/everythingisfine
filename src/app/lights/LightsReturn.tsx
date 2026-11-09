@@ -231,7 +231,7 @@ export function LightsReturn({
           )}
           {status === "error" && (
             <>
-              <p className="observation-note" role="status">
+              <p className="observation-note" role="status" aria-label="Image loading status">
                 NASA’s archived images couldn’t load.
               </p>
               <div className="observatory-actions">
