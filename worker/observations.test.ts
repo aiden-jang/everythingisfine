@@ -47,13 +47,14 @@ test("concurrent readers share one fetch, bodies remain readable and the next ho
   expect(fetcher).toHaveBeenCalledTimes(1);
   await relayObservation(request("river"), cache, fetcher, now + 3600000);
   expect(fetcher).toHaveBeenCalledTimes(2);
-  expect(fetcher.mock.calls[0]?.[1]).toMatchObject({ redirect: "error", signal: expect.any(AbortSignal) });
+  expect(fetcher.mock.calls[0]?.[1]).toMatchObject({ redirect: "manual", signal: expect.any(AbortSignal) });
 });
 
 test("provider errors, HTML and oversized streams become short-lived explicit failures", async () => {
   for (const upstream of [
     new Response("offline", { status: 503 }),
     new Response("<html>error</html>"),
+    new Response(null, { status: 302, headers: { Location: "https://example.invalid" } }),
     new Response(new Uint8Array(4_000_001)),
   ]) {
     const cache = store(),

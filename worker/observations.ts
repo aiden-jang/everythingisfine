@@ -2,7 +2,8 @@ const HOUR = 3_600_000;
 type Source = "river" | "reef" | "reef-temperature";
 type Store = Pick<Cache, "match" | "put">;
 type Fetcher = (url: string, init: RequestInit) => Promise<Response>;
-const pending = new Map<string, Promise<Response>>();
+type Packet = { body: ArrayBuffer; init: { status: number; headers: Record<string, string> } };
+const pending = new Map<string, Promise<Packet>>();
 
 export function observationUrl(source: Source, now: number): string {
   if (source === "river") {
@@ -39,7 +40,8 @@ async function provider(source: Source, fetcher: Fetcher, now: number): Promise<
   try {
     const response = await fetcher(observationUrl(source, now), {
       signal: AbortSignal.timeout(20000),
-      redirect: "error",
+      // Workers supports manual redirects; reject non-success responses below.
+      redirect: "manual",
     });
     if (!response.ok || !response.body) throw new Error("Provider unavailable");
     const reader = response.body.getReader(),
@@ -104,15 +106,18 @@ export async function relayObservation(
   if (!work) {
     work = (async () => {
       const hit = await cache.match(key);
-      if (hit) return hit;
-      const result = await provider(source as Source, fetcher, now);
-      await cache.put(key, result.clone());
-      return result;
+      const result = hit ?? (await provider(source as Source, fetcher, now));
+      // Worker streams belong to their request; coalesced readers share only buffered data.
+      const body = await result.arrayBuffer();
+      const init = { status: result.status, headers: Object.fromEntries(result.headers) };
+      if (!hit) await cache.put(key, new Response(body, init));
+      return { body, init };
     })();
     pending.set(key, work);
   }
   try {
-    return (await work).clone();
+    const { body, init } = await work;
+    return new Response(body, init);
   } finally {
     if (pending.get(key) === work) pending.delete(key);
   }
