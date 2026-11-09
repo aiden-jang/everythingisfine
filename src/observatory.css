@@ -429,6 +429,7 @@
   height: 60px;
   padding: 8px 20px;
   background: transparent;
+  backdrop-filter: none;
   border-color: transparent;
 }
 @media (prefers-reduced-motion: reduce) {

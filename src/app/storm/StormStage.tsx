@@ -13,6 +13,8 @@ import {
   stormFrame,
 } from "./stormTrack";
 
+import { useStorySession } from "../observations/StorySession";
+
 const MOTION = "(prefers-reduced-motion: reduce)";
 const PEAK_MINUTE = (FIXES.reduce((peak, fix) => (fix.wind > peak.wind ? fix : peak)).time - START) / 60_000;
 
@@ -29,8 +31,13 @@ function seekTo(minute: number): Playback {
 const duration = (playback: Playback) => (playback.survey ? SURVEY_MS : FLIGHT_MS);
 
 export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
+  const { initial } = useStorySession();
   const [view, setView] = useState<Playback>(() =>
-    matchMedia(MOTION).matches ? seekTo(TRACK_MINUTES) : { elapsed: 0, survey: false, playing: true },
+    initial
+      ? seekTo(Math.max(0, Math.min(TRACK_MINUTES, ((initial.at ?? START) - START) / 60000)))
+      : matchMedia(MOTION).matches
+        ? seekTo(TRACK_MINUTES)
+        : { elapsed: 0, survey: false, playing: true },
   );
   const clock = useRef(view);
   const { element: coast } = useObservationImage(gulf.url);

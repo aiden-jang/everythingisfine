@@ -9,6 +9,8 @@ import type { ObservationSource } from "./types";
 import type { useObservationDeck } from "./useObservationDeck";
 import { swellBuoys } from "./swellBuoys";
 
+import { ShareMoment, useStorySession } from "./StorySession";
+
 type Deck = Omit<ReturnType<typeof useObservationDeck>, "entry"> & { entry: ObservationId };
 
 export function ObservationDeck({
@@ -22,11 +24,14 @@ export function ObservationDeck({
   closeLabel: string;
   city: { name: string; select: (name: string) => void };
 }): JSX.Element {
-  const [photo, setPhoto] = useState(false);
+  const { initial } = useStorySession();
+  const [photo, setPhoto] = useState(initial?.chapter === "photo");
   const back = useRef<HTMLButtonElement>(null);
   const [loaded, setLoaded] = useState<{ id: ObservationId; source: ObservationSource | null } | null>(null);
   const [revision, retry] = useState(0);
-  const [buoy, setBuoy] = useState<string>(swellBuoys[0].id);
+  const [buoy, setBuoy] = useState<string>(
+    swellBuoys.find((b) => b.id === initial?.choice)?.id ?? swellBuoys[0].id,
+  );
   const id = deck.entry;
   const meta = observations[id];
   const title = meta.title;
@@ -177,6 +182,7 @@ export function ObservationDeck({
                 id={id}
                 source={loaded.source}
                 horizon={deck.horizon}
+                photo={photo}
                 map={deck.map}
                 update={deck.update}
                 {...(picker ? { picker } : {})}
@@ -231,6 +237,7 @@ export function ObservationDeck({
               </div>
             </details>
           )}
+          <ShareMoment />
         </section>
         <ObservationCredit />
       </div>

@@ -103,8 +103,7 @@ export function Observatory({
     sun.active,
   ]);
   const closeSun = () => {
-    sun.toggle();
-    requestAnimationFrame(() => document.getElementById("open-sun-watch")?.focus({ preventScroll: true }));
+    observations.returnTo("open-sun-watch", sun.toggle);
   };
   const active = tour.at !== null;
   const solar = sun.active && !active;
@@ -176,10 +175,7 @@ export function Observatory({
               <FloatDive
                 view={floatDive.view}
                 onView={floatDive.update}
-                onClose={() => {
-                  floatDive.close();
-                  requestAnimationFrame(() => document.getElementById("open-float-dive")?.focus());
-                }}
+                onClose={() => observations.returnTo("open-float-dive", floatDive.close)}
               />
             </Suspense>
           ) : radar.active ? (
@@ -188,9 +184,8 @@ export function Observatory({
               fromExplore={radar.fromExplore}
               onView={radar.update}
               onClose={() => {
-                radar.close();
                 const trigger = radar.fromExplore ? "open-explorer-radar" : "open-storm-radar";
-                requestAnimationFrame(() => document.getElementById(trigger)?.focus());
+                observations.returnTo(trigger, radar.close);
               }}
             />
           ) : tonight.active ? (
@@ -202,14 +197,13 @@ export function Observatory({
                 initialMode={tonight.entry.mode}
                 initialLook={tonight.entry.look}
                 onClose={() => {
-                  tonight.close();
                   const id =
                     tonight.entry.mode === "meteors"
                       ? "open-meteor-nights"
                       : tonight.entry.mode === "moonfall"
                         ? "open-moonfall-story"
                         : "open-tonight-sky";
-                  requestAnimationFrame(() => document.getElementById(id)?.focus());
+                  observations.returnTo(id, tonight.close);
                 }}
               />
             </Suspense>
@@ -322,6 +316,10 @@ export function Observatory({
                   tonight={tonight}
                   observations={observations}
                   openArchive={openAfterDarkArchive}
+                  onScene={onScene}
+                  onRadar={radar.open}
+                  onFloat={floatDive.open}
+                  aurora={aurora}
                   onHistory={onHistory}
                   onPickDate={onPickDate}
                   onSelect={() => {
@@ -354,7 +352,7 @@ export function Observatory({
                   aurora={aurora}
                   ready={ready}
                   solar={solar}
-                  onReturn={() => onScene("night")}
+                  onReturn={() => observations.returnTo("open-observations", () => onScene("night"))}
                   onSunWatch={sun.toggle}
                   onTonight={() => tonight.open()}
                   city={skyCity}

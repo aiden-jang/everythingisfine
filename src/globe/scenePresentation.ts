@@ -12,6 +12,7 @@ import type { TonightView } from "../geo/tonight";
 import type { MoonfallView } from "./moonfall/scene";
 
 import { createShadowChase } from "./shadowChase";
+import { positionObservationAnchors } from "./observationAnchors";
 import { createObservationArrival } from "./observationArrival";
 import { createObservationLayer } from "./observationLayer";
 import type { ObservationView } from "../app/observations/types";
@@ -203,6 +204,7 @@ export function createScenePresentation(
         camera.zoom = zoom;
         camera.updateProjectionMatrix();
       }
+      if (observationTarget) positionObservationAnchors(canvas, controls);
       dive?.size(camera.aspect);
       const amount = controls.localSky.amount();
       lights.apply(amount);
@@ -210,7 +212,7 @@ export function createScenePresentation(
     },
     dispose() {
       radar?.setImage(null);
-      observations?.set(null);
+      observations?.dispose();
       shadow?.dispose();
     },
   };

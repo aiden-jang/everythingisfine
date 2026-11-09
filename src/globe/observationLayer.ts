@@ -18,6 +18,8 @@ import type { GeoPoint, ObservationFrame, ObservationView } from "../app/observa
 import { DEG, toVec3 } from "../geo/sphere";
 import { MORPH_GLSL, morphable } from "./morph";
 
+import { createObservationCurtain } from "./observationCurtain";
+
 const INK = 0x8adbd8;
 const PALE = 0xe6f1fa;
 const FULL = [-180, -90, 180, 90] as const;
@@ -101,6 +103,8 @@ export function rasterGeometry(bounds: NonNullable<Raster["bounds"]>, corners?: 
 
 export function createObservationLayer(morph: { value: number }) {
   const object = new Group();
+  const curtain = createObservationCurtain(morph);
+  object.add(curtain.object);
   const lineMaterial = new ShaderMaterial({
     uniforms: { uMorph: morph, opacity: { value: 0.88 }, phase: { value: -1 } },
     vertexShader: /* glsl */ `
@@ -177,6 +181,20 @@ export function createObservationLayer(morph: { value: number }) {
     }),
   );
   morphable(raster.material, morph);
+  const sweep = { value: 1 };
+  const compileRaster = raster.material.onBeforeCompile;
+  raster.material.onBeforeCompile = (shader, renderer) => {
+    compileRaster(shader, renderer);
+    shader.uniforms.sweep = sweep;
+    shader.fragmentShader = `uniform float sweep;\n${shader.fragmentShader}`.replace(
+      "#include <map_fragment>",
+      `#include <map_fragment>
+       #ifdef USE_MAP
+       diffuseColor.a *= smoothstep(vMapUv.x - 0.025, vMapUv.x + 0.025, sweep);
+       #endif`,
+    );
+  };
+  raster.material.customProgramCacheKey = () => "fm-morph-radar-sweep";
   raster.renderOrder = 4;
   line.renderOrder = 5;
   dot.renderOrder = 6;
@@ -189,6 +207,7 @@ export function createObservationLayer(morph: { value: number }) {
 
   function set(view: ObservationView | null) {
     if (view === prior) return;
+    curtain.set(view?.curtain);
     if (view?.target !== prior?.target) reveal = 0;
     object.visible = !!view;
     if (view?.frame !== prior?.frame) travel = 0;
@@ -243,17 +262,24 @@ export function createObservationLayer(morph: { value: number }) {
   return {
     object,
     set,
+    dispose() {
+      set(null);
+      curtain.dispose();
+    },
     step(dt: number, reduced: boolean) {
+      const unfolding = curtain.step(dt, reduced);
       if (!prior) return false;
       reveal = reduced ? 1 : Math.min(1, reveal + dt / 1.15);
       const strength = reveal * reveal * (3 - 2 * reveal);
       dot.material.uniforms.reveal!.value = strength;
       raster.material.opacity = strength * (prior.frame.raster?.opacity ?? 0.88);
       travel = Math.min(1, travel + dt / 1.05);
+      sweep.value = prior.frame.raster?.sweep && !reduced ? travel * 1.1 - 0.05 : 1.05;
+      const sweeping = prior.frame.raster?.sweep && !reduced && travel < 1;
       const flowing = prior.frame.flow && !reduced && travel < 1;
       lineMaterial.uniforms.opacity!.value = strength * 0.88;
       lineMaterial.uniforms.phase!.value = flowing ? travel : -1;
-      return reveal < 1 || !!flowing;
+      return reveal < 1 || !!flowing || !!sweeping || unfolding;
     },
   };
 }

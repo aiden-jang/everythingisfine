@@ -5,12 +5,18 @@ import type { EarthScene } from "../useObservatory";
 import { RecordedReplay } from "./RecordedReplay";
 import { isReplay } from "./replays";
 import { ObservationCredit } from "./ObservationCredit";
+import { StorySession } from "./StorySession";
+import { isEarthStory } from "../earth-stories/catalogue";
+import "../earth-stories/stories.css";
 import "./observations.css";
 import "../lights/lights.css";
 import "../shadow/shadow.css";
 
 const ObservationDeck = lazy(() =>
   import("./ObservationDeck").then(({ ObservationDeck }) => ({ default: ObservationDeck })),
+);
+const EarthStory = lazy(() =>
+  import("../earth-stories/EarthStory").then(({ EarthStory }) => ({ default: EarthStory })),
 );
 
 const LightsReturn = lazy(() =>
@@ -55,34 +61,46 @@ export function ObservationDeckShell({
           ? "Back to Below the Surface"
           : "Back to Observatory";
   return (
-    <Suspense
-      fallback={
-        <div className="observatory-sidebar">
-          <p className="observatory-intro" role="status">
-            Opening observatory views…
-          </p>
-          <ObservationCredit />
-        </div>
-      }
-    >
-      {entry === "lights" ? (
-        <LightsReturn onView={deck.update} onClose={close} />
-      ) : entry === "shadow" ? (
-        <ShadowChase city={city.city} onView={deck.update} onMap={deck.setMap} onClose={close} />
-      ) : entry === "kilauea" ? (
-        <KilaueaJourney onView={deck.update} onMap={deck.setMap} onClose={close} closeLabel={closeLabel} />
-      ) : isReplay(entry) ? (
-        <RecordedReplay
-          entry={entry}
-          map={deck.map}
-          onMap={deck.setMap}
-          onView={deck.update}
-          onClose={close}
-          closeLabel={closeLabel}
-        />
-      ) : (
-        <ObservationDeck deck={{ ...deck, entry }} closeLabel={closeLabel} city={city} onClose={close} />
-      )}
-    </Suspense>
+    <StorySession.Provider key={entry} value={deck.session}>
+      <Suspense
+        fallback={
+          <div className="observatory-sidebar">
+            <p className="observatory-intro" role="status">
+              Opening observatory views…
+            </p>
+            <ObservationCredit />
+          </div>
+        }
+      >
+        {isEarthStory(entry) ? (
+          <EarthStory
+            id={entry}
+            map={deck.map}
+            onMap={deck.setMap}
+            onView={deck.update}
+            onClose={close}
+            closeLabel={closeLabel}
+            city={city}
+          />
+        ) : entry === "lights" ? (
+          <LightsReturn onView={deck.update} onClose={close} />
+        ) : entry === "shadow" ? (
+          <ShadowChase city={city.city} onView={deck.update} onMap={deck.setMap} onClose={close} />
+        ) : entry === "kilauea" ? (
+          <KilaueaJourney onView={deck.update} onMap={deck.setMap} onClose={close} closeLabel={closeLabel} />
+        ) : isReplay(entry) ? (
+          <RecordedReplay
+            entry={entry}
+            map={deck.map}
+            onMap={deck.setMap}
+            onView={deck.update}
+            onClose={close}
+            closeLabel={closeLabel}
+          />
+        ) : (
+          <ObservationDeck deck={{ ...deck, entry }} closeLabel={closeLabel} city={city} onClose={close} />
+        )}
+      </Suspense>
+    </StorySession.Provider>
   );
 }

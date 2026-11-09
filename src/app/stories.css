@@ -57,3 +57,28 @@
 .kilauea-footage p {
   position: absolute;
 }
+
+.story-search {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--color-dim);
+}
+.story-search input {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  color: var(--color-ink);
+  background: var(--color-deck);
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+}
+.story-search input::placeholder {
+  color: var(--color-dim);
+}
+.story-search-clear {
+  min-height: 44px;
+  padding: 8px;
+  font-size: 12px;
+}

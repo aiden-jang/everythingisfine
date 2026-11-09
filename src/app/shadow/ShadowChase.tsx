@@ -18,6 +18,8 @@ import {
 import { elementsSource, pathSource } from "./pathData";
 import { shadowMotion, useShadowClock } from "./useShadowClock";
 
+import { ShareMoment, useStorySession } from "../observations/StorySession";
+
 const routes = [
   { name: "Atlantic", at: chaseStart },
   { name: "Gibraltar", at: Date.UTC(2027, 7, 2, 8, 48) },
@@ -40,11 +42,18 @@ export function ShadowChase({
   onMap: (map: boolean) => void;
   onClose: () => void;
 }): JSX.Element {
+  const { initial, remember } = useStorySession();
   const back = useRef<HTMLButtonElement>(null);
-  const [mode, setMode] = useState<"globe" | "saved" | "luxor">("globe");
-  const [earthMap, setEarthMap] = useState(false);
+  const [mode, setMode] = useState<"globe" | "saved" | "luxor">(
+    initial?.chapter === "saved" || initial?.chapter === "luxor" ? initial.chapter : "globe",
+  );
+  const [earthMap, setEarthMap] = useState(initial?.map ?? false);
   const [landed, setLanded] = useState(false);
-  const [entry, setEntry] = useState(() => (shadowMotion() ? chaseOverview : chasePose(chaseStart)));
+  const [entry, setEntry] = useState(() =>
+    shadowMotion()
+      ? chaseOverview
+      : chasePose(Math.max(chaseStart, Math.min(chaseEnd, initial?.at ?? chaseStart))),
+  );
   const observer = mode === "luxor" ? luxor : city;
   const local = mode !== "globe";
   const { reference, visible: circumstances } = useMemo(() => localEclipse(observer), [observer]);
@@ -60,12 +69,21 @@ export function ShadowChase({
       }),
     [observer.zone],
   );
-  const pathClock = useShadowClock(chaseStart, chaseEnd, landed && !local, greatestEclipse);
+  const pathClock = useShadowClock(
+    chaseStart,
+    chaseEnd,
+    landed && !local,
+    greatestEclipse,
+    initial?.at,
+    !!initial,
+  );
   const skyClock = useShadowClock(
     circumstances?.start ?? reference,
     circumstances?.end ?? reference,
     landed && local,
     circumstances?.totality ? circumstances.peak : undefined,
+    initial?.at,
+    !!initial,
   );
   const at = local ? skyClock.at : pathClock.at;
   const clock = local ? skyClock : pathClock;
@@ -100,7 +118,22 @@ export function ShadowChase({
       arrive,
       shadow: local ? undefined : { point: shadowAt(at), pose: chasePose(at) },
     });
-  }, [arrive, at, entry, frame.altitude, frame.azimuth, frame.cover, local, observer, onView, site]);
+    remember?.({ chapter: mode, city: city.name });
+  }, [
+    arrive,
+    at,
+    entry,
+    frame.altitude,
+    frame.azimuth,
+    frame.cover,
+    local,
+    observer,
+    onView,
+    site,
+    remember,
+    mode,
+    city.name,
+  ]);
 
   function show(next: typeof mode) {
     if (next === mode) return;
@@ -340,6 +373,7 @@ export function ShadowChase({
               </a>
             </div>
           </details>
+          <ShareMoment />
         </section>
         <ObservationCredit />
       </div>

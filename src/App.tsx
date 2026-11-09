@@ -1,3 +1,4 @@
+import { useSharedLocation } from "./app/useSharedLocation";
 import type { FlyTo } from "./globe/cameraTarget";
 import { WaveReplayControls } from "./app/WaveReplayControls";
 import { useEventInspection } from "./app/useEventInspection";
@@ -25,17 +26,7 @@ import { useEclipsePlayback } from "./app/useEclipsePlayback";
 import { useTimelinePlayback } from "./app/useTimelinePlayback";
 import { ArchiveControls } from "./app/ArchiveControls";
 import { useArchive } from "./app/useArchive";
-import {
-  cloneElement,
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { cloneElement, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 const Globe = lazy(() => import("./globe/Globe").then((m) => ({ default: m.Globe })));
 import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
 import { countByRegion } from "./app/regions";
@@ -85,7 +76,7 @@ import { buildSection, type SectionHinge, type SectionLine } from "./app/section
 import { BUCKETS, histogram, totalIn } from "./app/histogram";
 import { diurnal } from "./app/diurnal";
 import { Dial } from "./app/Dial";
-import { decode, encode } from "./app/permalink";
+import { decode } from "./app/permalink";
 import { replaceViewLocation } from "./app/viewLocation";
 import { seconds } from "./app/arrival";
 import { timesLabel, versusReference } from "./app/versus";
@@ -193,13 +184,7 @@ export function App(): JSX.Element {
   );
   const now = snapshot.archive ? snapshot.archive.to : Date.now();
   const minuteClock = Math.floor(now / 60_000) * 60_000;
-  const overflight = useAuroraOverflight(
-    aurora,
-    answered.aurora,
-    observatory.aurora,
-    observatory.night && !archived,
-    minuteClock,
-  );
+  const overflight = useAuroraOverflight(aurora, answered.aurora, observatory.aurora, !archived, minuteClock);
   const span = snapshot.archive ?? { from: now - filters.windowMs, to: now };
   const view = chase.frame ? { at: chase.frame.at, playing: chase.playing } : clampScrub(scrub, span);
   const viewClock = view.at === null ? null : chase.frame ? eclipseClock(view.at) : clock(view.at);
@@ -403,62 +388,22 @@ export function App(): JSX.Element {
     [setGlobeReady],
   );
 
-  const heldCursor = view.playing ? null : view.at;
-  const sharedCursor = useRef(view.at);
-  sharedCursor.current = view.at;
-
-  useLayoutEffect(() => {
-    /* Never overwrite a hash this app did not write. See ARCHITECTURE.md#srcapptsx. */
-    const write = (): void => {
-      if (window.location.hash !== lastWritten.current) return;
-      const pinnedNow = selected ? feed.store.get(selected) : undefined;
-      const reading = pinnedNow?.primary;
-      const fragment = encode({
-        ...camera.current,
-        minMagnitude: filters.minMagnitude,
-        windowHours: filters.windowMs / 3_600_000,
-        sources: [...filters.sources],
-        ramp,
-        flat: mapOn,
-        presentation: observatory.presentation,
-        event: reading ? `${reading.source}:${reading.id}` : null,
-        day: snapshot.archive ? new Date(snapshot.archive.from).toISOString().slice(0, 10) : null,
-        mark: markId,
-        section: sectionLine,
-        // The moment being drawn, not the one the link asked for. `scrub` keeps the asked-for value so the
-        // notice can say it was refused; writing that value back out spread it on every re-share.
-        cursor: sharedCursor.current,
-      });
-      if (`#${fragment}` !== window.location.hash) replaceViewLocation(`#${fragment}`);
-      // Skip no-op writes: the SPA beacon counts each replacement as a page view.
-      lastWritten.current = window.location.hash;
-    };
-    write();
-    const timer = window.setInterval(write, 1000);
-    return () => window.clearInterval(timer);
-    // `snapshot.archive` is a dependency: the interval keeps calling the closure it was made with, and
-    // without it entering an archive leaves the link saying live.
-  }, [
+  useSharedLocation({
+    feed,
     filters,
     selected,
     ramp,
     sectionLine,
-    snapshot.archive,
+    archive: snapshot.archive,
     markId,
-    heldCursor,
+    at: view.at,
+    playing: view.playing,
     mapOn,
-    observatory.presentation,
-  ]);
-
-  /* Somebody pasting a link into an open tab. A fragment change does not reload, and the permalink is
-  read once at module load, so the address bar and the globe would disagree. */
-  useEffect(() => {
-    const onHashChange = (): void => {
-      if (window.location.hash !== lastWritten.current) window.location.reload();
-    };
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
-  }, []);
+    presentation: observatory.presentation,
+    getMoment: observatory.observations.getMoment,
+    camera,
+    lastWritten,
+  });
 
   const fetching = pendingRev !== null && snapshot.revision === pendingRev;
   /* Null on the live view, not a timestamp: the scene keeps its minute throttle instead of re-aiming
@@ -1551,7 +1496,7 @@ export function App(): JSX.Element {
               selected={observatory.localReadings ? null : selected}
               ramp={ramp}
               focus={focusSpan}
-              aurora={overflight.run?.forecast ?? onGlobe.aurora}
+              aurora={observatory.observations.entry ? null : (overflight.run?.forecast ?? onGlobe.aurora)}
               marks={marks}
               scrubAt={view.at}
               /* Which moment the light is of. `clockAt` is the app's answer to what time is on screen, and a

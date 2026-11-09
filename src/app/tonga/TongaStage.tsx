@@ -26,6 +26,8 @@ import {
   vapor,
 } from "./tongaTimeline";
 
+import { useStorySession } from "../observations/StorySession";
+
 const MOTION = "(prefers-reduced-motion: reduce)";
 type Station = (typeof stations)[number];
 type Assets = "loading" | "ready" | "partial" | "error";
@@ -62,10 +64,24 @@ async function loadImage(url: string): Promise<HTMLImageElement | null> {
 }
 
 export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
+  const { initial, remember } = useStorySession();
   const id = useId();
   const [assets, setAssets] = useState<Assets>("loading");
   const [view, setView] = useState<Playback>(() =>
-    matchMedia(MOTION).matches ? survey(ERUPTION) : initialFlight(),
+    initial
+      ? survey(
+          Math.max(
+            START,
+            Math.min(
+              END,
+              ((initial.at ?? Date.parse(timeIso(ERUPTION))) - Date.parse("2022-01-15T00:00:00Z")) / 60000,
+            ),
+          ),
+          stations.find((s) => s.id === initial.choice),
+        )
+      : matchMedia(MOTION).matches
+        ? survey(ERUPTION)
+        : initialFlight(),
   );
   const clock = useRef(view);
   const images = useRef<Satellite>({ infrared: null, vapor: null });
@@ -143,7 +159,8 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   }, [anchor]);
   useLayoutEffect(() => {
     onView({ kind: "observation", ...tongaGeography(minute, station, anchor), image: null, target, arrive });
-  }, [minute, station, anchor, target, onView, arrive]);
+    remember?.({ choice: station.id });
+  }, [minute, station, anchor, target, onView, arrive, remember]);
   const ended = view.elapsed >= duration(view);
   const hasInfrared = images.current.infrared !== null;
   const hasVapor = images.current.vapor !== null;

@@ -3,9 +3,16 @@ import { useEffect, useState } from "react";
 const MOTION = "(prefers-reduced-motion: reduce)";
 export const shadowMotion = () => matchMedia(MOTION).matches;
 
-export function useShadowClock(start: number, end: number, ready: boolean, hold?: number) {
-  const [playing, setPlaying] = useState(() => !shadowMotion());
-  const [at, setAt] = useState(start);
+export function useShadowClock(
+  start: number,
+  end: number,
+  ready: boolean,
+  hold?: number,
+  restored?: number,
+  paused = false,
+) {
+  const [playing, setPlaying] = useState(() => !paused && !shadowMotion());
+  const [at, setAt] = useState(Math.max(start, Math.min(end, restored ?? start)));
 
   useEffect(() => {
     const media = matchMedia(MOTION);

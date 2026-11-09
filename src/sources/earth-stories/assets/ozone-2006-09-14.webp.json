@@ -1,0 +1,4 @@
+{
+  "prompt": "Sourced scientific raster: https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=OMI_Ozone_TOMS_Total_Column&STYLES=&SRS=EPSG%3A4326&BBOX=-180%2C-90%2C180%2C-40&WIDTH=768&HEIGHT=192&FORMAT=image%2Fpng&TRANSPARENT=TRUE&TIME=2006-09-14. Source SHA256: 71d925d42556b6e21440b771ef6b3068158a56421a2251df9aefef21e48a7299. Transform reproduced by tools/make-earth-stories.py (ozone); see ozone-provenance.json. No generated imagery.",
+  "createdAt": "2026-11-09T19:09:13.852Z"
+}

@@ -355,7 +355,7 @@ export function Globe({
        */
       const bar = scaleBar.current;
       if (bar) {
-        const flat = globe.controls.morph() === 1;
+        const flat = globe.controls.morph() === 1 && globe.controls.localSky.amount() === 0;
         const { lat } = globe.controls.state();
         const drawn = flat ? niceScale(kmPerPixel(globe.controls.degPerPx(), lat), SCALE_TARGET_PX) : null;
         // Hidden on the globe, which carries its own scale by being a ball, and mid-morph, where a number

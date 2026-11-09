@@ -1,0 +1,4 @@
+{
+  "prompt": "Sourced scientific raster: https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=AIRS_L2_Dust_Score_Day&STYLES=&SRS=EPSG%3A4326&BBOX=-100%2C0%2C0%2C42&WIDTH=768&HEIGHT=384&FORMAT=image%2Fpng&TRANSPARENT=TRUE&TIME=2020-06-18. Source SHA256: 937a0449169a604f6aa34d3180108e59db428980f4042291b507b0e537f0108d. Transform reproduced by tools/make-earth-stories.py (dust); see dust-provenance.json. No generated imagery.",
+  "createdAt": "2026-11-09T19:09:03.717Z"
+}

@@ -5,8 +5,8 @@ const names = skyCities.map(({ name }) => name);
 const defaultCity = () =>
   skyCities.find(({ zone }) => zone === Intl.DateTimeFormat().resolvedOptions().timeZone) ?? skyCities[0]!;
 
-export function useSkyCity() {
-  const [name, select] = useStoredName("sky-city", defaultCity().name, names);
+export function useSkyCity(initial?: string) {
+  const [name, select] = useStoredName("sky-city", defaultCity().name, names, initial);
   const city = skyCities.find((city) => city.name === name) ?? skyCities[0]!;
   return { name, city, select };
 }

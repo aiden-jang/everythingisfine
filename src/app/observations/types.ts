@@ -23,6 +23,7 @@ export interface ObservationRaster {
   url: string;
   bounds?: readonly [west: number, south: number, east: number, north: number];
   opacity?: number;
+  sweep?: boolean;
   corners?: readonly [GeoPoint, GeoPoint, GeoPoint, GeoPoint];
 }
 
@@ -75,6 +76,7 @@ export interface ObservationView {
   target: CameraState;
   image: HTMLImageElement | null;
   surface?: HTMLCanvasElement;
+  curtain?: { points: readonly GeoPoint[]; heightKm: number; exaggeration: number; image: HTMLImageElement };
   lens?: { globe: number; map: number };
   sky?: TonightView | undefined;
   follow?: ReplayCamera | undefined;

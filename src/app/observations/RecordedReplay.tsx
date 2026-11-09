@@ -3,6 +3,7 @@ import { useObservatoryEscape } from "../useObservatoryEscape";
 import { ObservationCredit } from "./ObservationCredit";
 import type { ObservationView } from "./types";
 import type { ReplayId } from "./replays";
+import { ShareMoment } from "./StorySession";
 import "../archive-scene.css";
 import "../storm/storm.css";
 import "../megaflash/megaflash.css";
@@ -104,6 +105,7 @@ export function ReplayPanel({
             </button>
           </div>
           {children}
+          <ShareMoment />
           <details className="replay-sources">
             <summary>Replay sources</summary>
             <div>{sources}</div>

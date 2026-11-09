@@ -1,0 +1,4 @@
+{
+  "prompt": "Sourced scientific raster: https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1&LAYERS=GRACE_Tellus_Liquid_Water_Equivalent_Thickness_Mascon_CRI&STYLES=&SRS=EPSG%3A4326&BBOX=-126%2C30%2C-110%2C44&WIDTH=640&HEIGHT=560&FORMAT=image%2Fpng&TRANSPARENT=TRUE&TIME=2013-10-01. Source SHA256: d8857d015c3e31827b7d726f2c891d1f79444237963ab25049b072df24921cce. Transform reproduced by tools/make-earth-stories.py (water); see water-provenance.json. No generated imagery.",
+  "createdAt": "2026-11-09T19:09:19.329Z"
+}

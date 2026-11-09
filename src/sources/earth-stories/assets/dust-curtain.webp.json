@@ -1,0 +1,4 @@
+{
+  "prompt": "Sourced scientific raster: https://asdc.larc.nasa.gov/calipso-imagery/data/BROWSE/production/V5-00/2020-06-23/2020-06-23_06-39-03_V5.00_1_1.png. Source SHA256: 0fcb5555c261a9ead961cd1b294ab66da4f618bafdc4c24fb869f194d6a33d71. Transform reproduced by tools/make-earth-stories.py (dust); see dust-provenance.json. No generated imagery.",
+  "createdAt": "2026-11-09T19:09:04.153Z"
+}

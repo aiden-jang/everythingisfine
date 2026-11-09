@@ -119,6 +119,35 @@ Tōhoku, Katrina, Tonga, and Megaflash load on demand and publish geographic lay
 shared observation renderer. Globe and Map use one playback clock and the same geographic data.
 The replay shell owns projection controls and restores focus to the drawer, archive, or pinned event.
 
+The Earth stories in `src/app/earth-stories/` use the same observation layer, camera controls,
+projection transition, and requestAnimationFrame loop. No story creates another renderer. The
+radar wipe is a finite texture reveal; the CALIPSO curtain uses measured browse coordinates and
+labelled vertical exaggeration. Reduced motion settles both immediately. Interaction interrupts
+camera following, hidden tabs pause playback, and pending images hold the prior matching timestamp.
+
+`StorySession` retains each story's moment in memory. `storyMoment.ts` validates the URL's story ID,
+finite timestamp and bounded choices; individual players clamp times to their data range. Shared
+links open paused and never write initial city choices into storage. `StorySearch` searches a small
+metadata index across scenes without loading the archives. Returning preserves the query and focus.
+
+`tools/make-earth-stories.py` regenerates the bounded historical archives. Run it in a temporary
+Python environment with NumPy, SciPy, Pillow, pyproj, pyshp and ppigrf; Node 22 performs the HTTPS
+fetches. Pass one or more of `fault dust comet fire ice north ozone water`, or no arguments for all.
+`EIF_ARCHIVE_CACHE` can select a reusable temporary download cache. Inputs and SHA-256 hashes are
+recorded in each `*-provenance.json`; raster origins and transformations are reproducible from the
+script. The larger fault, fire and ice JSON files load only when their story opens.
+
+| Archive | Source and interpretation |
+| --- | --- |
+| Ridgecrest | USGS field surveys, NASA ARIA/JAXA ALOS-2 wrapped phase; local offsets and combined line-of-sight motion are separate quantities |
+| Dust | NASA GIBS AIRS daily dust score, CALIPSO V5.00 532 nm browse backscatter; no inferred dust concentration |
+| NEOWISE | NASA/JPL Horizons hourly geocentric directions and distance, transformed into the saved city's sky |
+| Dixie region | NASA FIRMS 2021 Suomi-NPP VIIRS nominal/high-confidence vegetation detections, grouped by pass; not a reconstructed fire perimeter |
+| Sea ice | NOAA/NSIDC Sea Ice Index v4 daily extent and same-date 1981–2010 median outlines |
+| Magnetic north | NOAA annual dip-pole positions and IGRF-14 sea-level city declination; model, not local compass survey |
+| Ozone | NASA GIBS Aura OMI total-column ozone and Ozone Watch area estimates for 2006/2019 |
+| Water | NASA GIBS/JPL GRACE RL06 V2 mascons and land-cell means in labelled regional boxes, relative to 2004–2009 |
+
 Tōhoku orders fault patches by their USGS rupture start and rise times. A depth cutaway accompanies
 the modeled slip, then ShakeMap contours appear on the shared surface. Recorded waves animate the
 station marks while the traces and optional audio stay in the readings panel. Regenerate the packed

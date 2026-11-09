@@ -1,0 +1,128 @@
+.story-time {
+  display: grid;
+  gap: 8px;
+  padding-block: 12px;
+  border-block: 1px solid var(--color-hairline);
+  font-size: 12px;
+  color: var(--color-dim);
+}
+.story-time time {
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.story-time input {
+  min-height: 44px;
+  width: 100%;
+}
+.story-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 11px;
+  color: var(--color-dim);
+}
+.story-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.story-legend i {
+  display: block;
+  width: 15px;
+  height: 3px;
+}
+.story-share {
+  display: grid;
+  gap: 8px;
+  padding-top: 8px;
+}
+.story-share button {
+  justify-self: start;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+}
+.story-share span {
+  font-size: 11px;
+  color: var(--color-dim);
+}
+.story-share input {
+  width: 100%;
+  min-width: 0;
+  padding: 8px;
+  background: var(--color-deck);
+}
+.dust-caption {
+  position: absolute;
+  inset: auto var(--stage-inset) calc(var(--stage-inset) + 40px);
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  max-width: 340px;
+  background: var(--color-deck);
+  border-left: 1px solid var(--color-hairline);
+  color: var(--color-dim);
+  font-size: 11px;
+}
+.dust-caption strong {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+.story-compass {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.story-compass svg {
+  width: 120px;
+  flex-shrink: 0;
+  color: var(--color-dim);
+  fill: none;
+  stroke: currentColor;
+}
+.story-compass text {
+  stroke: none;
+  fill: currentColor;
+  font-size: 10px;
+}
+.story-compass g {
+  color: var(--color-ink);
+  stroke-width: 2;
+  transition: transform 220ms ease-out;
+}
+.story-compass figcaption {
+  font-size: 11px;
+  color: var(--color-dim);
+}
+.story-sites {
+  position: absolute;
+  inset: 0;
+}
+.story-sites button {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  visibility: hidden;
+  pointer-events: auto;
+  color: var(--color-ink);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-deck);
+  border-radius: 50%;
+  font-size: 12px;
+}
+.comet-labels i {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--color-ink);
+  border-radius: 50%;
+  margin-right: 7px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .story-compass g {
+    transition: none;
+  }
+}

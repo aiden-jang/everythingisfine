@@ -6,6 +6,8 @@ import { ObservationChart } from "./ObservationChart";
 import { DeepTimePin } from "./DeepTimePin";
 import { useObservationData, useObservationImage } from "./useObservationData";
 
+import { useStorySession } from "./StorySession";
+
 const lockRegionalCamera = () => {};
 const EMPTY: readonly ObservationFrame[] = [];
 const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" });
@@ -14,6 +16,7 @@ export function ObservationPlayer({
   id,
   source,
   horizon,
+  photo,
   map,
   update,
   picker,
@@ -21,13 +24,21 @@ export function ObservationPlayer({
   id: ObservationId;
   source: ObservationSource;
   horizon: boolean;
+  photo: boolean;
   map: boolean;
   update: (view: ObservationView | null) => void;
   picker?: { value: string; select: (value: string) => void };
 }): JSX.Element {
-  const [localOption, setOption] = useState(source.options?.[0]?.id ?? "");
+  const { initial, remember } = useStorySession();
+  const [localOption, setOption] = useState(
+    initial?.choice &&
+      (source.options?.some((p) => p.id === initial.choice) ||
+        /^pin:-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?$/.test(initial.choice))
+      ? initial.choice
+      : (source.options?.[0]?.id ?? ""),
+  );
   const option = picker?.value ?? localOption;
-  const [selectedAt, setSelectedAt] = useState<number | null>(null);
+  const [selectedAt, setSelectedAt] = useState<number | null>(initial?.at ?? null);
   const [playing, setPlaying] = useState(false);
   const { data, state, reason, retry } = useObservationData(source, option);
   const frames = data?.frames ?? EMPTY;
@@ -68,7 +79,13 @@ export function ObservationPlayer({
           }
         : null,
     );
-  }, [data, frame, element, horizon, map, update, canHold, state]);
+    if (frame)
+      remember?.({
+        choice: option,
+        chapter: horizon ? "horizon" : photo ? "photo" : "",
+        ...(id === "orbit" ? { city: option } : {}),
+      });
+  }, [data, frame, element, horizon, map, update, canHold, state, remember, option, id, photo]);
 
   useEffect(() => {
     if (!playing || status === "loading") return;
@@ -95,6 +112,11 @@ export function ObservationPlayer({
 
   return (
     <>
+      {initial?.at !== undefined && frame && frame.at !== initial.at && selectedAt === initial.at && (
+        <p className="observation-note" role="status">
+          The linked time is outside the available observations. Showing the nearest available moment.
+        </p>
+      )}
       {source.options && (
         <label className="observation-picker">
           <span>{metadata.picker}</span>

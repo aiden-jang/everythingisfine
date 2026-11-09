@@ -14,11 +14,13 @@ import { useSkyCity } from "./tonight/SkyCityPicker";
 import type { GlobePresentation, TonightPresentation } from "../globe/scenePresentation";
 import { national, type RadarView } from "./radar/radarCamera";
 import { revealReadings, shiftGlobe } from "./presentationMotion";
+import { earthStories, isEarthStory } from "./earth-stories/catalogue";
 
 export type EarthScene = "live" | "depth" | "night";
 export type Presentation = "observe" | "explore";
 
 export function initialPresentation(shared: Partial<Permalink>, read = stored): Presentation {
+  if (shared.story) return "observe";
   if (shared.section && !shared.presentation) return "explore";
   if (shared.presentation) return shared.presentation;
   if (shared.event || shared.mark || shared.day || shared.cursor != null || shared.flat !== undefined)
@@ -57,7 +59,15 @@ export function earthSceneTarget(
 
 export function useObservatory(shared: Partial<Permalink>) {
   const [presentation, setPresentation] = useState(() => initialPresentation(shared));
-  const [scene, setScene] = useState<EarthScene>("live");
+  const [scene, setScene] = useState<EarthScene>(() =>
+    shared.story && isEarthStory(shared.story.id)
+      ? earthStories[shared.story.id].scene
+      : shared.story?.id === "rupture"
+        ? "depth"
+        : ["lights", "shadow", "orbit"].includes(shared.story?.id ?? "")
+          ? "night"
+          : "live",
+  );
   const [focus, setFocus] = useState<CutawayFocus | null>(null);
   const [tourStop, setTourStop] = useState<Stop | null>(null);
   const [ready, setReady] = useState(false);
@@ -68,14 +78,14 @@ export function useObservatory(shared: Partial<Permalink>) {
     mode: "sky",
   });
   const skyMemory = useRef<TonightView | null>(null);
-  const skyCity = useSkyCity();
+  const skyCity = useSkyCity(shared.story?.city);
   const updateSky = useCallback((view: TonightPresentation) => {
     if (!view.moonfall) skyMemory.current = view;
     setTonightView(view);
   }, []);
   const [floatView, setFloatView] = useState<FloatDiveView | "opening" | null>(null);
   const [radarView, setRadarView] = useState<RadarView | null>(null);
-  const observations = useObservationDeck();
+  const observations = useObservationDeck(shared.story);
   const closeObservations = observations.close;
   const radarOrigin = useRef<Presentation>("observe");
   const storyFromExplore = useRef(false);

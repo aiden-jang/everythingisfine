@@ -7,6 +7,7 @@ import { animationDelta } from "../../globe/animation";
 import { drawRupture } from "./drawRupture";
 import {
   ARRIVAL_MS,
+  MODEL_SECONDS,
   REVEAL_MS,
   SHAKING_MS,
   contours,
@@ -14,6 +15,8 @@ import {
   slipKey,
   stillFrame,
 } from "./ruptureModel";
+
+import { useStorySession } from "../observations/StorySession";
 
 type Mode = "fault" | "shaking" | "playing" | "paused";
 type Beat = "approach" | "fault" | "shaking";
@@ -48,14 +51,34 @@ function beatAt(ms: number): Beat {
 }
 
 export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
-  const [waves, setWaves] = useState(false);
+  const { initial, remember } = useStorySession();
+  const restoredClock = Math.max(
+    0,
+    Math.min(
+      REVEAL_MS,
+      initial?.chapter?.startsWith("reveal:") && Number.isFinite(Number(initial.chapter.slice(7)))
+        ? Number(initial.chapter.slice(7))
+        : ARRIVAL_MS +
+            (Math.max(0, ((initial?.at ?? 0) - Date.parse("2011-03-11T05:46:24Z")) / 1000) / MODEL_SECONDS) *
+              5000,
+    ),
+  );
+  const [waves, setWaves] = useState(initial?.chapter === "waves");
   const [reduced, setReduced] = useState(() => matchMedia(MOTION_QUERY).matches);
-  const [mode, setMode] = useState<Mode>(() => (matchMedia(MOTION_QUERY).matches ? "fault" : "playing"));
-  const [clock, setClock] = useState(0);
+  const [mode, setMode] = useState<Mode>(() =>
+    initial
+      ? initial.chapter === "fault" || initial.chapter === "shaking"
+        ? initial.chapter
+        : "paused"
+      : matchMedia(MOTION_QUERY).matches
+        ? "fault"
+        : "playing",
+  );
+  const [clock, setClock] = useState(initial ? restoredClock : 0);
   const [ready, setReady] = useState(false);
   const arrive = useCallback(() => setReady(true), []);
   const recordedButton = useRef<HTMLButtonElement>(null);
-  const elapsed = useRef(0);
+  const elapsed = useRef(clock);
   const { element: coast } = useObservationImage(japan.url);
   const running = mode === "playing" || mode === "paused";
   const displayed = running ? beatAt(clock) : mode;
@@ -73,7 +96,8 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
       lens: ruptureLens,
       arrive,
     });
-  }, [mode, clock, waves, onView, arrive, coast]);
+    remember?.({ chapter: mode === "playing" || mode === "paused" ? `reveal:${clock}` : mode });
+  }, [mode, clock, waves, onView, arrive, coast, remember]);
 
   useEffect(() => {
     const media = matchMedia(MOTION_QUERY);

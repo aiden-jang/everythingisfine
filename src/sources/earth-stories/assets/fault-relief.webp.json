@@ -1,0 +1,4 @@
+{
+  "prompt": "Sourced scientific raster: https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage?bbox=-118.12%2C35.2%2C-117.0%2C36.2&bboxSR=4326&imageSR=4326&f=image&size=1100%2C1000&format=png32&adjustAspectRatio=false&renderingRule=%7B%22rasterFunction%22%3A+%22Hillshade+Gray%22%7D. Source SHA256: b517a97f3f72fee9a84d10b5892c6dc791ab0c5c07ec385c5e2cc4e44966a920. Transform reproduced by tools/make-earth-stories.py (fault); see fault-provenance.json. No generated imagery.",
+  "createdAt": "2026-11-09T19:09:04.247Z"
+}

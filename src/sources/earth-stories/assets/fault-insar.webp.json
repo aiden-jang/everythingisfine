@@ -1,0 +1,4 @@
+{
+  "prompt": "Sourced scientific raster: https://d1z62tir4fw0q0.cloudfront.net/20190704-California_EQ/ARIA_coseismic_InSAR_ALOS-2.kmz. Source SHA256: 3f885623986661ae78d6f0254dda74f98c8cf5169f6e7d6ff99e2f9ab8294260. Transform reproduced by tools/make-earth-stories.py (fault); see fault-provenance.json. No generated imagery.",
+  "createdAt": "2026-11-09T19:09:04.201Z"
+}

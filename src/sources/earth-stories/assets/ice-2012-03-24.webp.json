@@ -1,0 +1,4 @@
+{
+  "prompt": "Sourced scientific raster: https://noaadata.apps.nsidc.org/NOAA/G02135/north/daily/geotiff/2012/03_Mar/N_20120324_extent_v4.0.tif. Source SHA256: 60bddadc0f86db404b6816a451e1adbb407c935db8126026fde5afc3016564d2. Transform reproduced by tools/make-earth-stories.py (ice); see ice-provenance.json. No generated imagery.",
+  "createdAt": "2026-11-09T19:09:04.496Z"
+}

@@ -14,6 +14,8 @@ import {
 } from "./flashTimeline";
 import infrared from "./infrared.webp?url";
 
+import { useStorySession } from "../observations/StorySession";
+
 const MOTION = "(prefers-reduced-motion: reduce)";
 
 interface Playback {
@@ -26,9 +28,22 @@ const inspect = (at: number): Playback => ({ elapsed: elapsedFor(at), playing: f
 const flight = (): Playback => ({ elapsed: 0, playing: true, fixed: false });
 
 export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
+  const { initial } = useStorySession();
   const id = useId();
   const [view, setView] = useState<Playback>(() =>
-    matchMedia(MOTION).matches ? inspect(DURATION) : flight(),
+    initial
+      ? inspect(
+          Math.max(
+            0,
+            Math.min(
+              DURATION,
+              (initial.at ?? Date.parse("2017-10-22T08:56:45.834Z")) - Date.parse("2017-10-22T08:56:45.834Z"),
+            ),
+          ),
+        )
+      : matchMedia(MOTION).matches
+        ? inspect(DURATION)
+        : flight(),
   );
   const [image, setImage] = useState<HTMLImageElement | null | undefined>(undefined);
   const [ready, setReady] = useState(false);

@@ -29,7 +29,9 @@ A fresh visit opens the observatory: a full globe, a short introduction, and thr
 **Explore** opens the scientific controls. The wordmark returns to the Observatory and preserves the current view. Choose **Reset view** in Explore to clear the selection, filters, and held time and replay the globe’s arrival.
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
 Open **Stories & layers** in any scene to find its live observations, forecasts, predictions, and replays.
-Closing a story returns to the entry that opened it.
+Search by subject, place, or year across all three scenes. Closing a story returns to its search
+result or drawer entry. **Share this moment** copies the story, timestamp, projection, and selected
+city or chapter. Links open paused; recent feeds explain when the linked observation has expired.
 
 - **Live Earth** frames current activity and traces the day–night boundary. Choosing it from an
   archive returns to live.
@@ -72,6 +74,15 @@ Closing a story returns to the entry that opened it.
 - **Feed status** lists the seven background feeds and their last successful check or received message.
   Observatory views fetch their own sources when opened. In Storm Radar, switch projections or turn
   on matched GOES-East lightning scans.
+- **Fault Offset** traces Ridgecrest’s two 2019 surface ruptures, opens surveyed offsets, and wipes
+  NASA’s combined radar observation across the same terrain.
+- **Dust Curtain** follows June 2020 AIRS observations across the Atlantic. Open the measured
+  CALIPSO lidar slice above its ground track; the exaggerated height is labelled.
+- **Comet Return** follows NASA/JPL NEOWISE positions in July 2020 and opens a visible hour above
+  the selected After Dark city. The marker represents direction, not a near-Earth orbit.
+- **Fire Front**, **Ice Line**, **Wandering North**, **Ozone Season**, and **Water Weight** replay
+  satellite fire detections, Arctic sea ice, magnetic-pole motion, Antarctic ozone, and California
+  water storage. Each keeps its dated measurements when switching between globe and map.
 - **Take a tour** visits a captured selection of readings and regions. Narration waits for arrival;
   Pause, Previous, Next, Stop, and Read this event remain available. Hidden tabs pause its reading time.
 - **Pick a past date** in the drawer opens the UTC date picker in Explore.

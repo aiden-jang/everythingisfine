@@ -2,6 +2,8 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ObservationView } from "../observations/types";
 import stations from "../../sources/observations/recordings/tohoku-waves.json";
 
+import { useStorySession } from "../observations/StorySession";
+
 const origin = Date.parse("2011-03-11T05:46:24Z");
 const duration = 90 * 60;
 const scale = 900;
@@ -96,9 +98,20 @@ export function RecordedWaves({
   back: () => void;
   onView: (view: ObservationView) => void;
 }): JSX.Element {
-  const [first, setFirst] = useState(0);
-  const [second, setSecond] = useState(5);
-  const [seconds, setSeconds] = useState(0);
+  const { initial, remember } = useStorySession();
+  const selection = initial?.choice?.split(",").map(Number);
+  const valid = (n: number | undefined, fallback: number) =>
+    n !== undefined && Number.isInteger(n) && n >= 0 && n < waves.length ? n : fallback;
+  const [first, setFirst] = useState(valid(selection?.[0], 0));
+  const [second, setSecond] = useState(() => {
+    const picked = valid(selection?.[1], 5);
+    return picked === first ? (first + 1) % waves.length : picked;
+  });
+  const [seconds, setSeconds] = useState(
+    initial?.chapter === "waves"
+      ? Math.max(0, Math.min(duration, ((initial.at ?? origin) - origin) / 1000))
+      : 0,
+  );
   const [playing, play] = useState(false);
   const cursor = useRef<HTMLInputElement>(null);
   const sound = useRef<HTMLAudioElement>(null);
@@ -126,7 +139,8 @@ export function RecordedWaves({
         ],
       },
     });
-  }, [seconds, a, b, onView]);
+    remember?.({ chapter: "waves", choice: `${first},${second}` });
+  }, [seconds, a, b, first, second, onView, remember]);
   const running = playing && seconds < duration;
   useEffect(() => cursor.current?.focus({ preventScroll: true }), []);
   useEffect(() => {

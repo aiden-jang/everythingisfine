@@ -47,6 +47,7 @@ index to the matching implementation note.
 - [src/app/omori.ts](#srcappomorits)
 - [src/app/permalink.test.ts](#srcapppermalinktestts)
 - [src/app/permalink.ts](#srcapppermalinkts)
+- [src/app/useSharedLocation.ts](#srcappusesharedlocationts)
 - [src/app/viewLocation.ts](#srcappviewlocationts)
 - [src/app/useGlobeResources.ts](#srcappusegloberesourcests)
 - [src/app/useGlobeTour.ts](#srcappuseglobetourts)
@@ -348,17 +349,6 @@ In archive mode this is the end of the archived day, not the wall clock.
 Everything here filters on "the last N hours before now", so against the wall clock an archived day
 filtered to nothing: 702 events in the store and a headline of 0. The cost is that "3h ago" means
 that day, which is why the banner naming the date matters.
-
-**Never overwrite a hash this app did not write**
-
-Never overwrite a hash this app did not write.
-
-Pasting a link queues a `hashchange` the handler below reloads on. Land a write in between and the
-app's own state goes back over the pasted link, the handler sees no change, and the link is
-swallowed. Caught as a 1-in-6 flake in the shared cross-section test.
-
-The guard is here and not at the three call sites because the rule is about the writer, not about
-who asked.
 
 **How far above the middle a pinned event should sit, so the sheet describing it does not co**
 
@@ -3714,3 +3704,12 @@ The phone focus offset uses the canvas and available zone bounds so a selected e
 stays above the detail sheet. The geometry moved unchanged from App into this pure
 DOM helper while adding analytics, keeping the orchestration budget from growing.
 Desktop and missing-layout cases still return zero.
+
+### src/app/useSharedLocation.ts
+
+Only replace the hash while it is still the last hash this view wrote. A pasted fragment belongs
+to the visitor and reloads the shared state; it must not be overwritten by an old timer closure.
+Camera, moving cursors and story moments are read from refs on the one-second interval. Held
+cursors and semantic changes publish immediately. No-op replacements are skipped because the
+SPA beacon counts replacements as navigation. Story links retain their own recorded timestamp
+independently of the live earthquake window.

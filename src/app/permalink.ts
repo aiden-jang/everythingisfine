@@ -4,12 +4,14 @@ import type { RampName } from "../globe/ramp";
 import type { SectionLine } from "./section";
 import { isArchivableDay } from "./day";
 import { nearestWindow } from "./windows";
+import { readStoryMoment, writeStoryMoment, type StoryMoment } from "./observations/storyMoment";
 // Import the bounds, don't retype them. A retyped bound is what caused the clamp bug in `decode`.
 import { MAG_MAX, MAG_MIN } from "../globe/ramp";
 
 /* "Look at this" as a link. See ARCHITECTURE.md#srcapppermalinkts. */
 
 export interface Permalink {
+  story?: StoryMoment | undefined;
   lon: number;
   lat: number;
   zoom: number;
@@ -64,7 +66,10 @@ export function encode(state: Permalink): string {
         `,${round(wrapLon(toLon), 2)},${round(toLat, 2)}`,
     );
   }
-  return parts.join("&");
+  if (!state.story) return parts.join("&");
+  const params = new URLSearchParams(parts.join("&"));
+  writeStoryMoment(params, state.story);
+  return params.toString();
 }
 
 const SOURCES: readonly string[] = ["usgs", "emsc"];
@@ -76,6 +81,8 @@ const clamp = (value: number, lo: number, hi: number): number => Math.max(lo, Ma
 export function decode(fragment: string): Partial<Permalink> {
   const out: Partial<Permalink> = {};
   const params = new URLSearchParams(fragment.replace(/^#/, ""));
+  const story = readStoryMoment(params);
+  if (story) out.story = story;
 
   const projection = params.get("p");
   if (projection === "map" || projection === "globe") out.flat = projection === "map";

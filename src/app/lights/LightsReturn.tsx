@@ -10,6 +10,8 @@ import { ObservationCredit } from "../observations/ObservationCredit";
 import type { ObservationView } from "../observations/types";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 
+import { ShareMoment, useStorySession } from "../observations/StorySession";
+
 const MOTION = "(prefers-reduced-motion: reduce)";
 const LAST = lightsPeriods.length - 1;
 const EXIT_MS = 240;
@@ -27,6 +29,7 @@ export function LightsReturn({
   onView: (view: ObservationView) => void;
   onClose: () => void;
 }): JSX.Element {
+  const { initial, remember } = useStorySession();
   const back = useRef<HTMLButtonElement>(null);
   const archive = useRef<HTMLDivElement>(null);
   const skip = useRef<HTMLButtonElement>(null);
@@ -35,11 +38,13 @@ export function LightsReturn({
   const [attempt, retry] = useState(0);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [landing, setLanding] = useState<Landing | null>(null);
-  const [index, setIndex] = useState(0);
-  const [playing, setPlaying] = useState(() => !matchMedia(MOTION).matches);
+  const [index, setIndex] = useState(Math.max(0, Math.min(LAST, Math.round(Number(initial?.choice) || 0))));
+  const [playing, setPlaying] = useState(() => !initial && !matchMedia(MOTION).matches);
   const [leaving, setLeaving] = useState(false);
-  const [compare, setCompare] = useState(false);
-  const [split, setSplit] = useState(50);
+  const [compare, setCompare] = useState(initial?.chapter?.startsWith("compare:") ?? false);
+  const [split, setSplit] = useState(
+    Math.max(0, Math.min(100, Number(initial?.chapter?.split(":")[1] ?? 50) || 0)),
+  );
   const timeline = useId();
   const compareId = useId();
   const frame = lightsPeriods[index]!;
@@ -66,7 +71,8 @@ export function LightsReturn({
   useLayoutEffect(() => {
     if (status === "ready")
       onView({ kind: "observation", target: puertoRico, frame: locator, image: null, arrive });
-  }, [status, onView, arrive]);
+    remember?.({ choice: String(index), chapter: compare ? `compare:${split}` : "" });
+  }, [status, onView, arrive, remember, index, compare, split]);
 
   useEffect(() => {
     if (!landing || !playing || index === LAST) return;
@@ -353,6 +359,7 @@ export function LightsReturn({
               </a>
             </div>
           </details>
+          <ShareMoment />
         </section>
         <ObservationCredit />
       </div>

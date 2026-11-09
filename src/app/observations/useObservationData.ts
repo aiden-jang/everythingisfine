@@ -70,6 +70,7 @@ export function useObservationData(source: ObservationSource, option: string) {
 }
 
 export function useObservationImage(url: string | undefined, sequence?: string) {
+  const [revision, setRevision] = useState(0);
   const [image, setImage] = useState<{
     url: string;
     failed: boolean;
@@ -98,12 +99,16 @@ export function useObservationImage(url: string | undefined, sequence?: string) 
       element.onload = element.onerror = null;
       if (!element.complete) element.removeAttribute("src");
     };
-  }, [url, sequence]);
+  }, [url, sequence, revision]);
   const loaded = url ? cache.current.get(url) : undefined;
   const hold =
     url && sequence !== undefined && image?.last?.sequence === sequence ? image.last.element : null;
   return {
     element: loaded ?? hold,
+    retry() {
+      setImage(null);
+      setRevision((n) => n + 1);
+    },
     status: !url || loaded ? "ready" : image?.url === url && image.failed ? "failed" : "loading",
   } as const;
 }

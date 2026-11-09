@@ -8,6 +8,9 @@ import { KilaueaFootage } from "./KilaueaFootage";
 import { COAST_COMPARISON, LAST, OCEAN_ENTRY, mapDate, snapshots } from "./lavaTimeline";
 import relief from "./relief.webp?url";
 
+import { ShareMoment, useStorySession } from "../observations/StorySession";
+import { nearest } from "../../sources/observations/common";
+
 const target = { lon: -154.86504, lat: 19.48196, zoom: 2.4 };
 const lens = { globe: 82, map: 235 };
 // NAD83 / UTM 5N corners of the 3DEP tile, converted to geographic coordinates.
@@ -35,11 +38,20 @@ export function KilaueaJourney({
   onClose: () => void;
   closeLabel: string;
 }): JSX.Element {
-  const [index, setIndex] = useState(0);
-  const [split, setSplit] = useState<number | null>(null);
-  const [playing, setPlaying] = useState(() => !prefersStill());
+  const { initial, remember } = useStorySession();
+  const [index, setIndex] = useState(
+    initial?.at === undefined
+      ? 0
+      : snapshots.indexOf(nearest(snapshots, initial.at, (s) => Date.parse(s.at))!),
+  );
+  const [split, setSplit] = useState<number | null>(
+    initial?.chapter === "compare"
+      ? Math.max(0, Math.min(100, Number.isFinite(Number(initial.choice)) ? Number(initial.choice) : 50))
+      : null,
+  );
+  const [playing, setPlaying] = useState(() => !initial && !prefersStill());
   const [arrived, setArrived] = useState(false);
-  const [map, setMap] = useState(false);
+  const [map, setMap] = useState(initial?.map ?? false);
   const [footage, setFootage] = useState(false);
   const back = useRef<HTMLButtonElement>(null);
   const id = useId();
@@ -85,7 +97,8 @@ export function KilaueaJourney({
       lens,
       arrive,
     });
-  }, [index, element, split, at, onView, surface, arrive]);
+    remember?.({ chapter: split === null ? "" : "compare", choice: String(split ?? "") });
+  }, [index, element, split, at, onView, surface, arrive, remember]);
   useEffect(() => {
     if (!playing || !arrived) return;
     let timer = 0;
@@ -278,6 +291,7 @@ export function KilaueaJourney({
           >
             Watch the USGS ocean-entry footage
           </a>
+          <ShareMoment />
         </section>
         <ObservationCredit />
       </div>
