@@ -14,7 +14,7 @@ export function atlasStory(id: AtlasStoryId, choice: string, city: SkyCity) {
       return apophisStory(city);
     case "glacier":
       return glacierStory(choice);
-    case "river":
+    case "atmospheric-river":
       return riverStory(choice);
     case "eclipse":
       return eclipseStory(city);

@@ -1,5 +1,54 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
+
+test("Atmospheric River and River Pulse open distinct views from the catalogue and shared links", async ({
+  page,
+}) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.route("**/api/observations/river", (route) =>
+    route.fulfill({ path: "src/sources/earth-atlas/river.nc", contentType: "application/x-netcdf" }),
+  );
+  await page.route("https://api.waterdata.usgs.gov/**", (route) => {
+    const location = route.request().url().includes("monitoring-locations");
+    return route.fulfill({
+      json: location
+        ? { geometry: { coordinates: [-73.58, 42.95] } }
+        : {
+            features: [0, 1].map((step) => ({
+              properties: {
+                time: `2026-11-09T12:${step ? "15" : "00"}:00Z`,
+                value: "2340",
+                unit_of_measure: "ft^3/s",
+              },
+            })),
+          },
+    });
+  });
+  await page.goto("/");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await openStories(page);
+  const atmospheric = page.getByRole("button", { name: "Atmospheric River", exact: true });
+  const pulse = page.getByRole("button", { name: "River Pulse", exact: true });
+  await expect(atmospheric).toHaveCount(1);
+  await expect(pulse).toHaveCount(1);
+  await atmospheric.click();
+  const forecast = page.getByRole("region", { name: "Atmospheric River", exact: true });
+  await expect(forecast.getByRole("combobox", { name: "Forecast", exact: true })).toBeVisible();
+  await expect(forecast.getByRole("slider")).toBeVisible();
+  await forecast.getByRole("button", { name: "Back to Observatory", exact: true }).click();
+  await expect(atmospheric).toBeFocused();
+  await pulse.click();
+  const gauges = page.getByRole("region", { name: "River Pulse", exact: true });
+  await expect(gauges.getByRole("combobox", { name: "River", exact: true })).toBeVisible();
+  await expect(gauges.getByRole("slider")).toBeVisible();
+  await expect(gauges.getByText("2,340 ft³/s", { exact: true })).toHaveCount(2);
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+  await page.goto("/#v=observe&story=river");
+  await expect(gauges.getByRole("slider")).toBeVisible();
+  await page.goto("/#v=observe&story=atmospheric-river");
+  await expect(forecast.getByRole("slider")).toBeVisible();
+});
 
 async function painted(page: Page) {
   await page.evaluate(async () => {
@@ -12,7 +61,7 @@ const stories = [
   ["seafloor", "Seafloor Flight", "Challenger Deep", ""],
   ["apophis", "Close Encounter", "Closest approach", ""],
   ["glacier", "Glacier Flow", "Full trace", "2024"],
-  ["river", "Atmospheric River", "Forecast end", "9 November 2026 archive"],
+  ["atmospheric-river", "Atmospheric River", "Forecast end", "9 November 2026 archive"],
   ["eclipse", "Earth’s Shadow", "Greatest eclipse", ""],
   ["nino", "El Niño Pulse", "Warm layer shifts", ""],
   ["bloom", "Ocean Bloom", "May", "Chlorophyll"],
@@ -178,7 +227,7 @@ test("Pacific radar opens from the forecast and returns to the retained forecast
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.route("https://nowcoast.noaa.gov/**", (route) => route.abort());
-  await page.goto("/#v=observe&story=river&choice=9+November+2026+archive");
+  await page.goto("/#v=observe&story=atmospheric-river&choice=9+November+2026+archive");
   const panel = page.getByRole("region", { name: "Atmospheric River", exact: true });
   await panel.getByRole("button", { name: "Forecast end" }).click();
   const at = await panel.locator(".story-time time").getAttribute("datetime");

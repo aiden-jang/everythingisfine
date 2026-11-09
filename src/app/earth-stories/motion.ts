@@ -23,7 +23,7 @@ export function storyCamera(id: EarthStoryId, target: CameraState, progress: num
       pitch: 0.035 * bank,
     };
   if (id === "aral") return { ...target, lon: target.lon + 0.35 * (1 - settle), bank: 0.025 * bank };
-  if (id === "river")
+  if (id === "atmospheric-river")
     return { ...target, lon: -165 + 40 * settle, lat: 36 + 4 * bank, bank: -0.06 * bank, pitch: 0.08 * bank };
   if (id === "spring")
     return {

@@ -280,7 +280,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         if (radarOrigin.current === "explore") changePresentation("explore", true, undefined, false);
         else {
           setRadarView(null);
-          if (radarEntry.current.story) observations.open("river", "open-observations");
+          if (radarEntry.current.story) observations.open("atmospheric-river", "open-observations");
         }
       },
       update: setRadarView,

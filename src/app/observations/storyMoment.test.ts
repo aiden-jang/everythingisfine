@@ -1,6 +1,15 @@
 import { expect, test } from "vitest";
 import { readStoryMoment, writeStoryMoment } from "./storyMoment";
-import { findStories } from "../storyIndex";
+import { findStories, searchStories } from "../storyIndex";
+
+test("every story has a unique address across catalogues", () => {
+  const ids = searchStories.map(({ id }) => id);
+  expect(ids.filter((id, index) => ids.indexOf(id) !== index)).toEqual([]);
+  expect(findStories("River Pulse").map(({ id }) => id)).toEqual(["river"]);
+  expect(findStories("Atmospheric River").map(({ id }) => id)).toEqual(["atmospheric-river"]);
+  for (const id of ["river", "atmospheric-river"])
+    expect(readStoryMoment(new URLSearchParams({ story: id }))?.id).toBe(id);
+});
 
 test("story links preserve a subsecond sample, city, projection, selection and chapter", () => {
   const moment = {

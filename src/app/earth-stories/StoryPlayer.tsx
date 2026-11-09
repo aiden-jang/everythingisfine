@@ -241,7 +241,7 @@ export function StoryPlayer({
         }}
       />
       {section.controls}
-      {id === "river" && (
+      {id === "atmospheric-river" && (
         <div className="observatory-actions">
           <button type="button" onClick={onRadar}>
             View current Pacific radar

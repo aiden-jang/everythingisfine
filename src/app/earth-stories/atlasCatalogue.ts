@@ -26,7 +26,7 @@ export const atlasStories = {
     url: "https://its-live.jpl.nasa.gov/",
     note: "Satellite-derived annual mean velocity, in metres per year. Traces integrate the measured velocity field for one illustrative year; they are not tracked pieces of ice or a forecast. Cells need at least five contributing image pairs. Missing observations remain blank. The regional display samples the original 120 m mosaic.",
   },
-  river: {
+  "atmospheric-river": {
     title: "Atmospheric River",
     summary: "Follow forecast water-vapor transport across the Pacific toward North America.",
     location: "North Pacific · NOAA GFS",
