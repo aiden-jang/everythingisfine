@@ -17,7 +17,6 @@ import {
 } from "./path";
 import { elementsSource, pathSource } from "./pathData";
 import { shadowMotion, useShadowClock } from "./useShadowClock";
-import "./shadow.css";
 
 const routes = [
   { name: "Atlantic", at: chaseStart },
@@ -134,12 +133,7 @@ export function ShadowChase({
 
   return (
     <>
-      <div
-        className="observatory-stage shadow-stage"
-        data-stage="shadow"
-        role="group"
-        aria-label="Eclipse visualization"
-      >
+      <div className="observatory-stage" data-stage="shadow" role="group" aria-label="Eclipse visualization">
         {local && landed && frame.altitude >= 0 && (
           <div className="shadow-sight">
             <EclipseDisc frame={frame} />

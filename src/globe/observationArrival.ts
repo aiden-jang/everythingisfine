@@ -22,6 +22,7 @@ export function createObservationArrival(controls: Controls, canvas: HTMLCanvasE
     step(dt: number, reduced: boolean) {
       if (!active?.arrive || arrived) return false;
       elapsed += dt;
+      if (active.sky && !controls.localSky.ready()) return true;
       const { lon, lat, zoom } = active.target;
       const camera = controls.state();
       const close = spanDeg(camera.lon, camera.lat, lon, lat) < 0.2 && Math.abs(camera.zoom - zoom) < 0.018;

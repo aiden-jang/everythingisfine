@@ -62,7 +62,8 @@ export function createLocalSkyLight(sun: Vector3, up: Vector3, canvas: HTMLCanva
       const solarLight = 1 - (view?.sunCover ?? 0) ** 6;
       material.uniforms["uSolarLight"]!.value = solarLight;
       const daylight = Math.min(1, Math.max(0, (sun.dot(up) + 0.26) / 0.24)) * solarLight;
-      return 1 - reveal * daylight * 0.9;
+      const exposure = 0.34 + 0.66 * solarLight;
+      return (1 - reveal * daylight * 0.9) * exposure;
     },
   };
 }

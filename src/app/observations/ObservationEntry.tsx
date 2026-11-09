@@ -6,6 +6,7 @@ import type { EarthScene } from "../useObservatory";
 import { ObservationCredit } from "./ObservationCredit";
 import "./observations.css";
 import "../lights/lights.css";
+import "../shadow/shadow.css";
 
 const ObservationDeck = lazy(() =>
   import("./ObservationDeck").then(({ ObservationDeck }) => ({ default: ObservationDeck })),
