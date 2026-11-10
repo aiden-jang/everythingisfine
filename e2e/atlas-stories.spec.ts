@@ -212,14 +212,15 @@ test("the current-feed error gives an explicit archive recovery without silently
   await panel.getByRole("combobox", { name: "Heat stress" }).selectOption("2023 archive");
   await expect(panel.getByRole("slider")).toBeVisible();
   await panel.getByRole("button", { name: "August", exact: true }).click();
-  const at = await panel.locator(".story-time time").getAttribute("datetime");
+  const at = "2023-08-10T12:00:00.000Z";
+  await expect(panel.locator(".story-time time")).toHaveAttribute("datetime", at);
   await panel.getByRole("combobox", { name: "Heat stress" }).selectOption("Recent observations");
   await expect(
     panel.getByText("The selected data could not load. Previous observations stay visible.", {
       exact: false,
     }),
   ).toBeVisible();
-  await expect(panel.locator(".story-time time")).toHaveAttribute("datetime", at!);
+  await expect(panel.locator(".story-time time")).toHaveAttribute("datetime", at);
 });
 
 test("Pacific radar opens from the forecast and returns to the retained forecast moment", async ({
