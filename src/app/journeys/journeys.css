@@ -1,0 +1,31 @@
+.guided-journey {
+  display: grid;
+  gap: 10px;
+  padding-block: 16px 8px;
+  border-top: 1px solid var(--color-hairline);
+}
+.guided-journey h3 {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 12px;
+  font-size: 14px;
+  font-weight: 550;
+}
+.guided-journey h3 span {
+  font-variant-numeric: tabular-nums;
+}
+.guided-journey p {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.guided-journey .journey-context,
+.guided-journey small {
+  color: var(--color-dim);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.related-stories button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}

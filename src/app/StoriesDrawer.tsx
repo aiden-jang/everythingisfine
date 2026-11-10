@@ -1,3 +1,4 @@
+import { JourneyPicker } from "./journeys/JourneyPicker";
 import { StoryThumbnail } from "./StoryThumbnail";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { ReactNode } from "react";
@@ -61,9 +62,6 @@ export function StoriesDrawer({
   onPickDate,
   onSelect,
   onDismiss,
-  onScene,
-  onRadar,
-  onFloat,
   aurora,
 }: {
   scene: EarthScene;
@@ -76,9 +74,6 @@ export function StoriesDrawer({
   onPickDate: () => void;
   onSelect: () => void;
   onDismiss: () => void;
-  onScene: (scene: EarthScene) => void;
-  onRadar: () => void;
-  onFloat: () => void;
   aurora: ReturnType<typeof useAuroraOverflight>;
 }): JSX.Element {
   const add = (id: ObservationId, trigger = `open-story-${id}`) => (
@@ -105,19 +100,10 @@ export function StoriesDrawer({
         }
       }}
     >
-      <StorySearch
-        deck={deck}
-        ready={ready}
-        scene={scene}
-        onScene={onScene}
-        tonight={tonight}
-        sun={sun}
-        onRadar={onRadar}
-        onFloat={onFloat}
-        aurora={aurora}
-      />
+      <StorySearch deck={deck} ready={ready} aurora={aurora} />
       {!deck.query.trim() && (
         <>
+          <JourneyPicker />
           <Group title="Earth stories">
             {earthStoryIds
               .filter((id) => earthStories[id].scene === scene || (scene === "live" && id === "fault"))

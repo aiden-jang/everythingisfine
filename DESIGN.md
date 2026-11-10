@@ -148,6 +148,10 @@ status, scoped counts, capture and a direct Explore action, including empty or u
 Each scene features a few experiences and keeps the full selection in **Stories & layers**. Group
 the drawer by data type. Keep **Explore the globe** visible above the scene strip. Closing an
 experience returns focus to its entry point and restores the drawer’s scroll position.
+Story thumbnails show recorded captures of their actual views. Guided journeys use the drawer’s
+existing quiet rows and each story’s reading panel, with manual steps, visible source context and
+a return to free exploration. Onward links explain the relationship without implying shared dates
+or causation between independent records. Keep the scientific scene large and the controls neutral.
 
 Story headings keep the return action above the title and the projection choice nearby; short
 landscape observation panels put Back beside the title to keep playback visible. Moonfall’s
@@ -354,6 +358,11 @@ Live earthquake alerts are opt-in, silent in hidden tabs and tied to genuinely n
 same threshold as announcements. Seeds and UI actions do not make sound. Pitch
 and duration describe a transposed interpretation, not a recording of an
 individual earthquake; disclose compressed loudness. No ambient bed or drone.
+
+Float Dive and Tide Watch also offer opt-in measurement tones. A short, quiet synthesized tone maps
+the selected temperature or measured water level to pitch, with the mapping stated beside the
+neutral Listen/Mute control. Sound starts only after a gesture and stops on hiding the tab, leaving
+the view, or changing the profile or harbor. It is not a field recording, and never an ambient loop.
 
 ## 13. Banned
 

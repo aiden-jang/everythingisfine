@@ -1,4 +1,4 @@
-import { RelatedStories } from "./RelatedStories";
+import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { lazy, useLayoutEffect, useRef, type ReactNode } from "react";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { ObservationCredit } from "./ObservationCredit";
@@ -107,7 +107,7 @@ export function ReplayPanel({
           </div>
           {children}
           <ShareMoment />
-          <RelatedStories />
+          <ExperienceEnding />
           <details className="replay-sources">
             <summary>Replay sources</summary>
             <div>{sources}</div>

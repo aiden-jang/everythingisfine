@@ -33,10 +33,23 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 Photograph overlays and Sun Watch do not offer an incomplete canvas-only export.
 Use **Fullscreen** on desktop for a larger viewing area.
 Open **Stories & layers** in any scene to find its live observations, forecasts, predictions, and replays.
-Search by subject, place, or year across all three scenes. Closing a story returns to its search
-result or drawer entry. **Keep exploring** offers a small set of related views, each with its own
+Search by subject, place, or year across all three scenes. The thumbnails are recorded views;
+open a story for its source, date, and current availability. Closing a story returns to its search
+result or drawer entry. **Keep exploring** offers a related view with context for its separate
 observations and time period. **Share this moment** copies the story, timestamp, projection, and selected
 city or chapter. Links open paused; recent feeds explain when the linked observation has expired.
+
+The drawer also offers **One night above Earth**, **Water in motion**, and **Reading the coast**.
+These guided journeys provide a reading prompt and source context in each view. Advance with **Next**,
+revisit a **Previous view**, or leave the journey to explore freely. Progress is temporary;
+each view keeps its own controls and time. The sequence does not imply synchronized readings
+or a causal connection between separate events.
+
+In **Float Dive** and **Tide Watch**, choose **Listen to temperature** or **Listen to water level**
+to hear short synthesized tones as the measured reading changes. Higher pitch means warmer water
+or a higher measured level within the displayed range. Sound starts off and returns to off when
+the tab is hidden, the view closes, or the selected profile or harbor changes. These are sonified
+measurements, not field recordings.
 
 - **Live Earth** frames current activity and traces the day–night boundary. Choosing it from an
   archive returns to live.
@@ -59,7 +72,8 @@ city or chapter. Links open paused; recent feeds explain when the linked observa
   or geology stop. Back returns to the opening screen, sky view, or drawer that opened it.
 - **Meteor Nights** traces a shower’s apparent origin across the same local sky. Play or scrub a
   listed peak night and find the dark, moon-free windows. The city selected in After Dark is shared
-  by Tonight’s Sky, Meteor Nights, Orbital Pass and Shadow Chase.
+  by Tonight’s Sky, Meteor Nights, Orbital Pass and Shadow Chase. Returning to Tonight’s Sky through
+  **Keep exploring** restores its held night and city; a shower’s peak date does not replace that night.
 - **Follow the aurora** in After Dark banks over a dark-side NOAA OVATION forecast oval and settles
   into a polar view. The readout shows the forecast time and modeled chance at the focus. The
   raised glow illustrates the footprint. Reduced motion opens the polar view directly.

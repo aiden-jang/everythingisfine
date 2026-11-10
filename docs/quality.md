@@ -27,6 +27,18 @@ They check landmark structure, visible-label matching and the applicable automat
 These cases share the existing browser runners; they do not add a separate workflow or check.
 CodeQL runs separately on GitHub.
 
+Observatory journeys test fresh storage, scene changes, source scope, narrow phones, guided-tour
+controls and returning to saved settings. Existing instrument journeys explicitly select Explore
+in the recorded-feed fixture. This keeps their original control assertions while testing the
+first-visit presentation separately.
+
+Guided-path checks cover manual stepping, shared-canvas identity, return focus, finishing into free
+exploration and keeping the general-sky time through Moonfall and Meteor Nights. Narrow-phone
+coverage checks playback labels and reachable onward links. Audio checks establish that a gesture
+is required, pitch follows the measured value and leaving the view closes the voice; unit checks
+cover finite inputs, throttling, hidden-tab silence and voice cleanup. Catalogue and preview checks keep story
+destinations and recorded thumbnail coverage aligned with the available views.
+
 ## Responsive evidence
 
 The quality browser journeys cover live controls, the phone disclosure, sharing recovery and a
@@ -55,11 +67,9 @@ Commit authored design references and a small curated set of README images only;
 keep runtime and installation assets separate. Earlier audit records remain in Git
 history. Use synthetic data and remove private information from shared evidence.
 
-
-Observatory journeys test fresh storage, scene changes, source scope, narrow phones, guided-tour
-controls and returning to saved settings. Existing instrument journeys explicitly select Explore
-in the recorded-feed fixture. This keeps their original control assertions while testing the new
-first-visit presentation separately.
+Story thumbnails in `src/assets/story-previews/` are curated runtime assets with origin sidecars.
+Keep the full captures used to produce them in temporary review output. A recorded thumbnail is
+neither evidence of current feed availability nor a live observation.
 
 For a local animation recording, set `EIF_CAPTURE_MOTION=1` when running
 `pnpm run test:e2e e2e/cinematic.spec.ts e2e/planetarium.spec.ts e2e/unfold.spec.ts e2e/section-fold.spec.ts`.

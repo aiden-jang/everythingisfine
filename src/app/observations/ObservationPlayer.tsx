@@ -1,3 +1,4 @@
+import { MeasurementSound } from "../MeasurementSound";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { nearest } from "../../sources/observations/common";
 import { observations, type ObservationId } from "./catalogue";
@@ -210,6 +211,16 @@ export function ObservationPlayer({
             </details>
           )}
           {data.series && <ObservationChart series={data.series} at={frame.at} units={data.units} />}
+          {id === "tide" && state === "ready" && frame.tide && (
+            <MeasurementSound
+              key={option}
+              value={frame.tide.observed}
+              min={frame.tide.min}
+              max={frame.tide.max}
+              label="water level"
+              explanation="Higher pitch means higher measured water within this harbor’s displayed range."
+            />
+          )}
           {data.chapters?.length ? (
             <div className="observatory-actions observation-chapters">
               {data.chapters.map(({ index: jump, label }) => (

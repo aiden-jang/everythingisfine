@@ -1,3 +1,4 @@
+import { MeasurementSound } from "../MeasurementSound";
 import { useLayoutEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { ARGO_DOI, ARGO_PROVIDER, type ArgoSample, type ArgoStation } from "../../sources/argo";
 import { useObservatoryEscape } from "../useObservatoryEscape";
@@ -29,7 +30,7 @@ function trace(samples: readonly ArgoSample[], field: "temperature" | "salinity"
   return { points, line: points.map(({ x, y }) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") };
 }
 
-function Measurements({ view }: { view: FloatDiveView }): JSX.Element {
+function Measurements({ view, sound }: { view: FloatDiveView; sound: boolean }): JSX.Element {
   const { index, playing } = useSyncExternalStore(view.subscribe, view.read);
   const { samples } = view.profile;
   const sample = samples[index]!;
@@ -101,6 +102,16 @@ function Measurements({ view }: { view: FloatDiveView }): JSX.Element {
           </div>
         ))}
       </div>
+      {sound && (
+        <MeasurementSound
+          key={view.profile.id}
+          value={sample.temperature}
+          min={-2}
+          max={35}
+          label="temperature"
+          explanation="Higher pitch means warmer measured water (−2 to 35 °C)."
+        />
+      )}
     </>
   );
 }
@@ -157,7 +168,7 @@ export function FloatDivePanel({
           )}
         </select>
       </label>
-      {view && <Measurements view={view} />}
+      {view && <Measurements view={view} sound={!pending && !problem} />}
       <div className="float-meta">
         {view && (
           <p>

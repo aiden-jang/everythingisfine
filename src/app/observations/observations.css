@@ -63,7 +63,8 @@
 
 .observation-transport {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
   align-items: center;
   border-block: 1px solid var(--color-hairline);
   padding-block: 8px;
@@ -71,6 +72,7 @@
 
 .observation-transport > span {
   min-width: 0;
+  overflow-wrap: anywhere;
   color: var(--color-dim);
   font-size: 12px;
   line-height: 1.4;

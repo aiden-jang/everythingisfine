@@ -1,3 +1,4 @@
+import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { eclipseFrom, greatestEclipse, localEclipse } from "../../geo/eclipse2027";
 import { bearingLabel, type SkyCity, type TonightView } from "../../geo/tonight";
@@ -374,6 +375,7 @@ export function ShadowChase({
             </div>
           </details>
           <ShareMoment />
+          <ExperienceEnding />
         </section>
         <ObservationCredit />
       </div>

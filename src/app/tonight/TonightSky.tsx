@@ -1,3 +1,4 @@
+import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { lazy, Suspense, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   aimAt,
@@ -32,6 +33,7 @@ export function TonightSky({
   preference,
   initialMode,
   initialLook,
+  initialMoment,
   returnLabel,
 }: {
   view: TonightView | null;
@@ -40,6 +42,7 @@ export function TonightSky({
   preference: SkyCityPreference;
   initialMode: "sky" | "meteors" | "moonfall";
   initialLook: SkyLook | undefined;
+  initialMoment: { city: string; at: number } | undefined;
   returnLabel: string;
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
@@ -63,7 +66,13 @@ export function TonightSky({
     }),
     [city],
   );
-  const opening = useMemo(() => openingSky(city, night.start, night.end), [city, night.start, night.end]);
+  const opening = useMemo(() => {
+    const base = openingSky(city, night.start, night.end);
+    const saved = initialMoment?.city === city.name ? initialMoment.at : undefined;
+    return saved !== undefined && saved >= night.start && saved <= night.end
+      ? { ...base, at: saved, bodies: skyBodies(city, saved) }
+      : base;
+  }, [city, night.start, night.end, initialMoment]);
   const current = view?.city.name === city.name ? view : { ...opening, look: initialLook ?? opening.look };
   const [departure, setDeparture] = useState(() => (initialMode === "moonfall" ? depart(current) : null));
   const at = current.at;
@@ -107,6 +116,7 @@ export function TonightSky({
         <Suspense fallback={<p role="status">Loading the lunar survey…</p>}>
           <Moonfall sky={departure.aim} onView={onView} />
         </Suspense>
+        <ExperienceEnding id="moonfall" />
       </>
     );
   }
@@ -223,6 +233,7 @@ export function TonightSky({
           </details>
         </>
       )}
+      <ExperienceEnding id={mode} />
     </>
   );
 }

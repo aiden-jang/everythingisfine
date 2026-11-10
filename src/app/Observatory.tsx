@@ -1,3 +1,5 @@
+import { StoryNavigation } from "./journeys/StoryNavigation";
+import { ExperienceEnding } from "./journeys/ExperienceEnding";
 import { lazy, Suspense, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import {
   ObservatoryStage,
@@ -21,6 +23,7 @@ import "./experience.css";
 import "./sun/sun-watch.css";
 import "./tonight/tonight.css";
 import "./float/float-dive.css";
+import "./measurement-sound.css";
 import "./moonfall/moonfall.css";
 import { ObservationCredit } from "./observations/ObservationCredit";
 import { ObservationDeckShell } from "./observations/ObservationEntry";
@@ -72,7 +75,15 @@ export interface ObservatoryProps {
   onHistory: (day: string) => void;
 }
 
-export function Observatory({
+export function Observatory(props: ObservatoryProps): JSX.Element {
+  return (
+    <StoryNavigation {...props}>
+      <ObservatoryContent {...props} />
+    </StoryNavigation>
+  );
+}
+
+function ObservatoryContent({
   scene,
   at,
   ready,
@@ -200,11 +211,13 @@ export function Observatory({
           ) : tonight.active ? (
             <Suspense fallback={<p role="status">Opening Tonight’s Sky…</p>}>
               <TonightSky
+                key={tonight.entry.revision}
                 view={tonight.view}
                 onView={tonight.update}
                 preference={skyCity}
                 initialMode={tonight.entry.mode}
                 initialLook={tonight.entry.look}
+                initialMoment={tonight.entry.moment}
                 returnLabel={
                   observations.trigger === "open-featured-moonfall"
                     ? "Back to Live Earth"
@@ -301,9 +314,6 @@ export function Observatory({
                   tonight={tonight}
                   observations={observations}
                   openArchive={openAfterDarkArchive}
-                  onScene={onScene}
-                  onRadar={radar.open}
-                  onFloat={floatDive.open}
                   aurora={aurora}
                   onHistory={onHistory}
                   onPickDate={onPickDate}
@@ -359,6 +369,7 @@ export function Observatory({
               ) : null}
             </>
           )}
+          {(floatDive.active || radar.active || solar || aurora.run) && <ExperienceEnding />}
         </section>
         <ObservationCredit />
       </div>

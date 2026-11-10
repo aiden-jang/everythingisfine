@@ -106,6 +106,26 @@ describe("cinematic camera and light", () => {
     expect(camera.view?.enabled).toBe(false);
     expect(camera.quaternion.z).toBe(0);
   });
+  it("keeps the surveyed region in frame while banking through a magnified replay", () => {
+    for (const lens of [1, 13, 17, 36]) {
+      const camera = new PerspectiveCamera(32, 1);
+      camera.zoom = lens;
+      camera.updateProjectionMatrix();
+      camera.position.set(0, 0, 4);
+      camera.lookAt(0, 0, 0);
+      const rig = createCameraRig(camera, { clientWidth: 390, clientHeight: 390 } as HTMLCanvasElement);
+      rig.setReplayAngle(0.025, 0.04);
+      rig.apply(false);
+      camera.updateMatrixWorld();
+      const center = new Vector3(0, 0, 1).project(camera);
+      expect(Math.abs(center.y)).toBeGreaterThan(0.1);
+      expect(Math.abs(center.y)).toBeLessThan(0.15);
+      camera.lookAt(0, 0, 0);
+      rig.apply(true);
+      camera.updateMatrixWorld();
+      expect(new Vector3(0, 0, 1).project(camera).y).toBeCloseTo(0);
+    }
+  });
   it("does not draw trails from an old tab, a resized frame or reduced motion", () => {
     const camera = new PerspectiveCamera();
     camera.position.set(0, 0, 4);

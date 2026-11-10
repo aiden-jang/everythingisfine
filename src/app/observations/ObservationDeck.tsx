@@ -1,4 +1,4 @@
-import { RelatedStories } from "./RelatedStories";
+import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { observations, type ObservationId } from "./catalogue";
@@ -239,7 +239,7 @@ export function ObservationDeck({
             </details>
           )}
           <ShareMoment />
-          <RelatedStories />
+          <ExperienceEnding />
         </section>
         <ObservationCredit />
       </div>

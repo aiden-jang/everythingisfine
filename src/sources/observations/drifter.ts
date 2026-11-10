@@ -41,6 +41,7 @@ export const drifter: ObservationSource = {
     if (!first) throw new Error("Recorded track is empty");
     const frames = track.map((point, index) => ({
       at: point.at,
+      camera: { lon: point.lon, lat: point.lat, zoom: 2.2 },
       paths: [
         { points: track, color: 0x42657c },
         { points: track.slice(0, index + 1), color: 0x89dfdf },

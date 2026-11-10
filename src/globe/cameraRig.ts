@@ -37,7 +37,8 @@ export function createCameraRig(camera: PerspectiveCamera, canvas: HTMLCanvasEle
       } else if (camera.view?.enabled) camera.clearViewOffset();
       if (!flat) {
         if (bank || replayBank) camera.rotateZ(bank + replayBank);
-        if (replayPitch) camera.rotateX(replayPitch);
+        // A regional lens must not magnify the authored tilt until its survey leaves the viewport.
+        if (replayPitch) camera.rotateX(replayPitch / camera.zoom);
       }
     },
   };

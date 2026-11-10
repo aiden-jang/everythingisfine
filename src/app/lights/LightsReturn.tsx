@@ -1,3 +1,4 @@
+import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import {
   blackMarbleSource,
@@ -367,6 +368,7 @@ export function LightsReturn({
             </div>
           </details>
           <ShareMoment />
+          <ExperienceEnding />
         </section>
         <ObservationCredit />
       </div>

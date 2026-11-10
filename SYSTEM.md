@@ -64,6 +64,9 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/GlobeHeader.tsx` | Shared masthead, capture, source status and explorer tools |
 | `src/app/CanvasFooter.tsx` | Explorer credit and input hints |
 | `src/app/journeys.ts` | Filtered reading selection, factual captions and scoped summary |
+| `src/app/journeys/` | Manual guided paths, contextual onward links, and navigation through existing story and scene controls |
+| `src/app/StoryThumbnail.tsx` and `src/assets/story-previews/` | Lazy recorded-view thumbnails and their origin sidecars |
+| `src/app/MeasurementSound.tsx` and `src/app/measurementVoice.ts` | Gesture-enabled measurement tones, bounded playback, and audio cleanup |
 | `src/app/useGlobeTour.ts` | Captured route, arrival-aware reading time, pause/step controls and interaction cancellation |
 | `src/globe/surfaceMaterial.ts` | Displayed-sun surface shading, fading to the unchanged flat-map palette |
 | `src/app/waveReplay.ts` | City selection, regional travel times and replay clock |
@@ -146,6 +149,18 @@ moment for Back, while explicitly switching to recent radar observation time.
 finite timestamp and bounded choices; individual players clamp times to their data range. Shared
 links open paused and never write initial city choices into storage. `StorySearch` searches a small
 metadata index across scenes without loading the archives. Returning preserves the query and focus.
+
+The `src/app/journeys/` catalogue provides guided paths and a contextual onward link for each story.
+It is separate from `src/app/journeys.ts`, which selects scientific readings for the narrated globe
+tour. `StoryNavigation` keeps guided progress in memory and delegates to the existing scene and
+story entry points. Steps advance only on request; finishing leaves the current view open for free
+exploration. Each view retains its own data, time and controls. Prompts distinguish independent
+records, forecasts and predictions rather than implying synchronized time or causation.
+
+Story thumbnails are cropped captures of the actual rendered views, loaded as small WebP assets.
+Their origin sidecars describe the recorded UI capture; they do not establish current provider
+availability or make the preview a live reading. The catalogue adds no backend or persisted route
+state; story entry continues to use the existing renderer and on-demand provider lifecycle.
 
 `tools/make-earth-stories.py` regenerates the bounded historical archives. Run it in a temporary
 Python environment with NumPy, SciPy, Pillow, pyproj, pyshp and ppigrf; Node 22 performs the HTTPS
@@ -252,6 +267,8 @@ After Dark, Tonight’s Sky, Meteor Nights and Orbital Pass share a saved city. 
 nights and radiants from the 2026 and 2027 IMO calendars. Local sidereal time places the radiant,
 and five-minute samples find windows with astronomical darkness, the Moon below the horizon and
 the radiant at least ten degrees above it. The sky renderer projects the calculated path above the horizon.
+Explicit entry into Tonight’s Sky resets its internal Meteor Nights or Moonfall mode while restoring
+the held general-sky city and moment. A shower’s calendar night does not overwrite that saved moment.
 
 Million-Mile View opens on 20 source photographs from the July 2015 DSCOVR lunar transit,
 resized to WebP. The latest option reads NASA EPIC metadata and loads only the selected photograph.
@@ -275,6 +292,12 @@ salinity quality flags. Two bundled recordings from the same source stay availab
 The instrument is schematic and the ascent is compressed. The readout uses the original
 samples, with depth estimated from pressure using the
 [Fofonoff and Millard equation](https://doi.org/10.25607/OBP-1450).
+
+Float Dive temperature and Tide Watch measured water level offer optional synthesized tones.
+`MeasurementSound` creates Web Audio only after a listener’s gesture. `measurementVoice.ts` maps
+finite readings into pitch, throttles updates and permits one short, quiet tone at a time. Hidden
+tabs, unmounting, and profile or harbor changes close the voice and clear the opt-in. The mapping is
+disclosed beside the control; the sound is not a field recording or an ambient loop.
 
 Storm Radar loads on demand from Live Earth or Explore and shows NOAA MRMS scans on the shared
 globe. The scrubber uses published timestamps and requests each raster by its NOAA record ID. The

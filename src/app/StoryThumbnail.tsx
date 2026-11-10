@@ -1,22 +1,36 @@
-import moon from "../sources/moonfall/recordings/moon.webp";
-import lights from "../sources/observations/black-marble/maria-before.webp";
-import smoke from "../sources/observations/archive-assets/smoke-0.webp";
-
-const previews: Record<string, string> = { moonfall: moon, lights, smoke };
+const previews = Object.fromEntries(
+  Object.entries(
+    import.meta.glob<string>("../assets/story-previews/*.webp", {
+      eager: true,
+      query: "?url&no-inline",
+      import: "default",
+    }),
+  ).map(([path, url]) => [path.split("/").at(-1)!.replace(".webp", ""), url]),
+);
+const aliases: Record<string, string> = {
+  "sun-watch": "sun",
+  "meteor-nights": "meteors",
+  "shadow-chase": "shadow",
+  "lights-return": "lights",
+  "tonight-sky": "sky",
+  "orbital-pass": "orbit",
+  "aurora-overflight": "aurora",
+  "storm-radar": "radar",
+  "float-dive": "float",
+  "deep-time": "deep",
+  "moonfall-story": "moonfall",
+  "featured-moonfall": "moonfall",
+};
 
 export function StoryThumbnail({ id }: { id: string }): JSX.Element | null {
-  const src =
-    previews[
-      id
-        .replace(/^open-(story-)?/, "")
-        .replace(/-story$/, "")
-        .replace("lights-return", "lights")
-    ];
+  const key = id.replace(/^open-(story-)?/, "");
+  const src = previews[aliases[key] ?? key];
   return src ? (
     <img
       className="story-thumbnail"
       src={src}
       alt=""
+      title="Recorded view preview; open for the source and current availability."
       width="64"
       height="56"
       loading="lazy"

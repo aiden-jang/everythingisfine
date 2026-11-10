@@ -38,12 +38,6 @@ export function useObservationDeck(shared?: StoryMoment) {
     initial: entry ? memory.current.get(entry) : undefined,
     remember,
     current,
-    openRelated(next: StoryId) {
-      setView(null);
-      setMap(memory.current.get(next)?.map ?? false);
-      setHorizon(memory.current.get(next)?.chapter === "horizon");
-      setEntry(next);
-    },
   };
 
   const close = useCallback(() => {

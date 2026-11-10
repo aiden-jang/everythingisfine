@@ -74,13 +74,20 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [run, setRun] = useState<AuroraRun | null>(null);
   const [sunWatch, setSunWatch] = useState(false);
   const [tonightView, setTonightView] = useState<TonightPresentation | "opening" | null>(null);
-  const [skyEntry, setSkyEntry] = useState<{ mode: "sky" | "meteors" | "moonfall"; look?: SkyLook }>({
+  const [skyEntry, setSkyEntry] = useState<{
+    mode: "sky" | "meteors" | "moonfall";
+    revision: number;
+    look?: SkyLook;
+    moment?: { city: string; at: number };
+  }>({
     mode: "sky",
+    revision: 0,
   });
   const skyMemory = useRef<TonightView | null>(null);
   const skyCity = useSkyCity(shared.story?.city);
   const updateSky = useCallback((view: TonightPresentation) => {
-    if (!view.moonfall) skyMemory.current = view;
+    // A shower's selected night must not replace the saved general-sky moment.
+    if (!view.moonfall && !view.radiantTrail) skyMemory.current = view;
     setTonightView(view);
   }, []);
   const [floatView, setFloatView] = useState<FloatDiveView | "opening" | null>(null);
@@ -240,7 +247,13 @@ export function useObservatory(shared: Partial<Permalink>) {
       entry: skyEntry,
       open(mode: "sky" | "meteors" | "moonfall" = "sky") {
         const previous = skyMemory.current;
-        setSkyEntry({ mode, ...(previous?.city.name === skyCity.name ? { look: previous.look } : {}) });
+        setSkyEntry((entry) => ({
+          mode,
+          revision: entry.revision + 1,
+          ...(previous?.city.name === skyCity.name
+            ? { look: previous.look, moment: { city: previous.city.name, at: previous.at } }
+            : {}),
+        }));
         setRun(null);
         setSunWatch(false);
         setTonightView("opening");

@@ -1,3 +1,4 @@
+import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ObservationCredit } from "../observations/ObservationCredit";
 import type { ObservationRaster, ObservationView } from "../observations/types";
@@ -293,6 +294,7 @@ export function KilaueaJourney({
             Watch the USGS ocean-entry footage
           </a>
           <ShareMoment />
+          <ExperienceEnding />
         </section>
         <ObservationCredit />
       </div>
