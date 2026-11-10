@@ -27,6 +27,7 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   const stage = page.getByRole("group", { name: "Puerto Rico night lights" });
   const active = stage.locator("img[data-current]");
   await expect(active).toHaveAttribute("src", /maria-before-/);
+  await expect(page.getByRole("button", { name: "Save image", exact: true })).toBeDisabled();
   const period = panel.getByRole("slider", { name: "Night-light period" });
   const compare = panel.getByRole("button", { name: "Compare with before" });
   await expect(compare).toBeDisabled();

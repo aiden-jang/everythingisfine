@@ -70,7 +70,14 @@ export function LightsReturn({
   }, []);
   useLayoutEffect(() => {
     if (status === "ready")
-      onView({ kind: "observation", target: puertoRico, frame: locator, image: null, arrive });
+      onView({
+        kind: "observation",
+        target: puertoRico,
+        frame: locator,
+        image: null,
+        capture: false,
+        arrive,
+      });
     remember?.({ choice: String(index), chapter: compare ? `compare:${split}` : "" });
   }, [status, onView, arrive, remember, index, compare, split]);
 
