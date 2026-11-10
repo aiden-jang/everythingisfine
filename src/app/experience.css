@@ -100,6 +100,16 @@
   color: var(--color-ink);
   font-size: 12px;
 }
+@media (max-height: 620px) and (min-width: 600px) {
+  .observatory-intro .observation-heading {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px 12px;
+  }
+  .observatory-intro .observation-heading h2 {
+    font-size: 30px;
+  }
+}
 @media (max-width: 899px) {
   .observatory-save span,
   .observatory-fullscreen {

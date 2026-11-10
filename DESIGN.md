@@ -149,7 +149,8 @@ Each scene features a few experiences and keeps the full selection in **Stories 
 the drawer by data type. Keep **Explore the globe** visible above the scene strip. Closing an
 experience returns focus to its entry point and restores the drawer’s scroll position.
 
-Story headings keep the return action above the title and the projection choice nearby. Moonfall’s
+Story headings keep the return action above the title and the projection choice nearby; short
+landscape observation panels put Back beside the title to keep playback visible. Moonfall’s
 playback dock sits over the terrain on roomy desktops and returns to the scrolling control panel
 on smaller screens. Radar prioritizes the selected scan time and playback before optional coverage
 information. Source disclosures, unavailable states, and scientific distinctions remain readable.

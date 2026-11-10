@@ -9,7 +9,8 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   await installFeeds(page, { presentation: "fresh" });
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.route(/\/a\/maria-before-[^/]+\.webp$/, (route) => route.abort(), { times: 1 });
+  // The baseline also appears in discovery; fail an image loaded only by the replay.
+  await page.route(/\/a\/maria-early-[^/]+\.webp$/, (route) => route.abort(), { times: 1 });
   await page.goto("/");
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
