@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, waitForData } from "./feeds";
 
 for (const width of [1440, 390, 320]) {
@@ -58,55 +58,83 @@ for (const width of [1440, 390, 320]) {
   });
 }
 
-test("scene effects settle and skip decorative motion when requested", async ({ page }) => {
+async function openSceneEffects(page: Page, reduced = false): Promise<void> {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page);
   await page.addInitScript(() => {
-    const original = window.requestAnimationFrame.bind(window);
-    const counter = { frames: 0 };
+    const request = window.requestAnimationFrame.bind(window);
+    const cancel = window.cancelAnimationFrame.bind(window);
+    const counter = { frames: 0, pending: new Set<number>() };
     Object.assign(window, { presentationFrames: counter });
-    window.requestAnimationFrame = (callback) =>
-      original((at) => {
+    window.requestAnimationFrame = (callback) => {
+      const id = request((at) => {
+        counter.pending.delete(id);
         counter.frames += 1;
         callback(at);
       });
+      counter.pending.add(id);
+      return id;
+    };
+    window.cancelAnimationFrame = (id) => {
+      counter.pending.delete(id);
+      cancel(id);
+    };
   });
   await page.goto("/");
   await waitForData(page);
-  await page.emulateMedia({ reducedMotion: "no-preference" });
+  if (!reduced) await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.getByText("Feeds and layers", { exact: true }).filter({ visible: true }).click();
   await page.getByRole("button", { name: "Constellations", exact: true }).filter({ visible: true }).click();
   await page.getByRole("button", { name: "Regional cutaway", exact: true }).filter({ visible: true }).click();
   await page.getByText("Feeds and layers", { exact: true }).filter({ visible: true }).click();
   await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
+}
+
+async function waitForRest(page: Page): Promise<void> {
+  await expect(async () => {
+    const sample = await page.evaluate(() => {
+      const counter = (window as unknown as { presentationFrames: { frames: number; pending: Set<number> } })
+        .presentationFrames;
+      const before = counter.frames;
+      // Driver round trips must not stretch the interval being measured.
+      return new Promise<{ frames: number; pending: number }>((resolve) => {
+        window.setTimeout(() => {
+          resolve({ frames: counter.frames - before, pending: counter.pending.size });
+        }, 500);
+      });
+    });
+    expect(sample.frames, "the scene keeps drawing after settling").toBeLessThanOrEqual(2);
+    // A stalled compositor can draw few frames while more work is still scheduled.
+    expect(sample.pending, "the scene still has a frame scheduled").toBe(0);
+  }).toPass({ timeout: 20_000 });
+}
+
+test("scene effects settle after pinning and zooming", async ({ page }) => {
+  await openSceneEffects(page);
   await expect(page.locator(".pick-corners")).toHaveCSS("animation-name", "pin-settle");
   await page.mouse.move(950, 360);
   await page.mouse.wheel(0, -200);
-  await page.screenshot({ path: test.info().outputPath("presentation-motion.png") });
-  const frames = () =>
-    page.evaluate(
-      () => (window as unknown as { presentationFrames: { frames: number } }).presentationFrames.frames,
-    );
-  const waitForRest = async (): Promise<void> => {
-    await expect
-      .poll(
-        async () => {
-          const before = await frames();
-          await page.waitForTimeout(500);
-          return (await frames()) - before;
-        },
-        { timeout: 20_000 },
-      )
-      .toBeLessThanOrEqual(2);
-  };
-  await waitForRest();
+  await waitForRest(page);
+});
+
+test("projection motion settles with an open cutaway", async ({ page }) => {
+  await openSceneEffects(page, true);
+  await page.mouse.move(950, 360);
+  await page.mouse.wheel(0, -200);
+  await waitForRest(page);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.getByRole("button", { name: "Map", exact: true }).click();
-  await waitForRest();
+  await waitForRest(page);
   await expect(page.locator(".cutaway-note")).toHaveCount(0);
   await page.getByRole("button", { name: "Globe", exact: true }).click();
-  await waitForRest();
+  await waitForRest(page);
   await expect(page.locator(".cutaway-note")).toBeVisible();
+});
+
+test("reduced motion skips decorative effects and preserves cutaway capture", async ({ page }) => {
+  await openSceneEffects(page);
+  await expect(page.locator(".pick-corners")).toHaveCSS("animation-name", "pin-settle");
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator(".pick-corners")).toHaveCSS("animation-name", "none");
   await expect(page.locator("[data-orbit-readout]")).toHaveCSS("transition-duration", "0s");
