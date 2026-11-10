@@ -1954,10 +1954,12 @@ test("a finger-width miss still opens the earthquake it was aimed at", { tag: "@
   await installFeeds(page, { count: 200 });
   await page.goto("/");
   await waitForData(page);
-  await page.waitForTimeout(1_200);
+  // A tap cancels the entrance at its current pose. Wait for arrival, not a machine-dependent delay
+  // that can leave all the fixture's earthquakes outside the viewport.
+  await expect.poll(async () => (await cameraNow(page))?.zoom, { timeout: CAMERA_SETTLE_MS }).toBe(1);
 
   /*
-   * The first tap skips the intro, which otherwise clears the selection the second tap makes.
+   * The first tap skips the data replay, which otherwise clears the selection the second tap makes.
    * Empty sky, so it selects nothing of its own.
    */
   const tap = (x: number, y: number) =>
@@ -1980,29 +1982,36 @@ test("a finger-width miss still opens the earthquake it was aimed at", { tag: "@
       [x, y],
     );
   await tap(30, 90);
-  await page.waitForTimeout(600);
 
   /*
    * A marker with nothing else within a finger of it, found by asking the pointer's own question.
    * Projecting a coordinate does not work here: markers are drawn at their depth, inside the planet, so
    * the surface point is tens of pixels from the thing you can see.
    */
-  const aim = await page.evaluate(() => {
-    const hit = (
-      window as unknown as {
-        __hitTest: (x: number, y: number, slopPx?: number) => string | null;
-      }
-    ).__hitTest;
-    for (let y = 100; y < 540; y += 3) {
-      for (let x = 24; x < 360; x += 3) {
-        const key = hit(x, y);
-        // 4 was the slop before this test existed, 18 is a finger's half-width.
-        if (key && hit(x + 12, y, 4) === null && hit(x + 12, y, 18) === key) return { x, y, key };
-      }
-    }
-    return null;
-  });
-  expect(aim, "an earthquake with clear space beside it").not.toBeNull();
+  let aim: { x: number; y: number; key: string } | null = null;
+  await expect
+    .poll(
+      async () => {
+        aim = await page.evaluate(() => {
+          const hit = (
+            window as unknown as {
+              __hitTest: (x: number, y: number, slopPx?: number) => string | null;
+            }
+          ).__hitTest;
+          for (let y = 100; y < 540; y += 3) {
+            for (let x = 24; x < 360; x += 3) {
+              const key = hit(x, y);
+              // 4 was the slop before this test existed, 18 is a finger's half-width.
+              if (key && hit(x + 12, y, 4) === null && hit(x + 12, y, 18) === key) return { x, y, key };
+            }
+          }
+          return null;
+        });
+        return aim;
+      },
+      { message: "an earthquake with clear space beside it", timeout: CAMERA_SETTLE_MS },
+    )
+    .not.toBeNull();
 
   await tap(aim!.x + 12, aim!.y);
   await expect(page.locator(".zone-panel", { hasText: "Pinned event" })).toBeVisible();
