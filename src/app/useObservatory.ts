@@ -314,7 +314,11 @@ export function useObservatory(shared: Partial<Permalink>) {
         );
       if (night) return sunActive ? null : (localSky ?? auroraRun ?? "planetarium");
       return observing && scene === "live" && !guided
-        ? ((floatView === "opening" ? null : floatView) ?? radarView ?? "dayline")
+        ? ((floatView === "opening" ? null : floatView) ??
+            radarView ??
+            (floatView === "opening" || shared.lon !== undefined || shared.day || shared.cursor != null
+              ? "dayline"
+              : "landing"))
         : null;
     },
     setTourStop,

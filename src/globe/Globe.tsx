@@ -7,6 +7,8 @@ import { GlobeOverlays } from "./GlobeOverlays";
 import { GlobeUnavailable } from "./GlobeUnavailable";
 import { animationDelta } from "./animation";
 import { createAnimationFrame } from "./animationFrame";
+import { observeViewport } from "./observeViewport";
+import { useLandingRotation } from "./useLandingRotation";
 import { attachSectionDrawing, type SectionCommit } from "./sectionDrawing";
 import { useEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
@@ -98,6 +100,7 @@ export function Globe({
   section = null,
   onSection,
 }: GlobeProps): JSX.Element {
+  const { rotation, control: rotationControl } = useLandingRotation(globePresentation === "landing");
   const canvas = useRef<HTMLCanvasElement>(null);
   const orbit = useRef<HTMLDivElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
@@ -180,6 +183,7 @@ export function Globe({
       return undefined;
     }
     setUnavailable(false);
+    const detachRotation = rotation.attach(el, globe.controls, () => wakeRef.current());
     const readout = createOrbitReadout(orbit.current);
     globe.resize();
     globe.render();
@@ -406,6 +410,7 @@ export function Globe({
       const dt = animationDelta(rawDt);
       last = now;
       const moving = globe.controls.step(dt);
+      const rotating = rotation.step(dt, moving);
       globe.controls.apply();
       let replaying = false;
       if (replay && !replay.done()) {
@@ -488,9 +493,9 @@ export function Globe({
       globe.render();
       placeOverlays();
       readout.update(globe.controls.state());
-      onCameraRef.current?.(globe.controls.state());
+      if (!rotating) onCameraRef.current?.(globe.controls.state());
       const revealing = revealStarted && plateReveal < 1;
-      if (moving || expanding || replaying || fading || revealing || unwrapping || presenting) {
+      if (moving || rotating || expanding || replaying || fading || revealing || unwrapping || presenting) {
         animation.request(frame);
       } else running = false;
     };
@@ -727,26 +732,17 @@ export function Globe({
     globe.controls.enter();
     wake();
 
-    const onVisibility = (): void => {
-      if (document.hidden) {
-        animation.cancel();
-        running = false;
-      } else wake();
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    const ro = new ResizeObserver(() => {
-      globe.resize();
-      redraw();
+    const detachViewport = observeViewport(el, globe, redraw, wake, () => {
+      animation.cancel();
+      running = false;
     });
-    const parent = el.parentElement;
-    if (parent) ro.observe(parent);
 
     return () => {
       animation.cancel();
       wakeRef.current = () => {};
       window.clearTimeout(revealFallback);
-      ro.disconnect();
-      document.removeEventListener("visibilitychange", onVisibility);
+      detachViewport();
+      detachRotation();
       unsubscribe();
       detach();
       el.removeEventListener("pointermove", onMove);
@@ -759,7 +755,7 @@ export function Globe({
       readout.dispose();
       globe.dispose();
     };
-  }, [feed, onReady, onSelect, onCapture, onSelectMark, attempt]);
+  }, [feed, onReady, onSelect, onCapture, onSelectMark, attempt, rotation]);
 
   // A filter move, a new selection or a held hour redraws rather than rebuilds. Hover only changes whole
   // hours, so this fires once per bar crossed, not per mouse move.
@@ -793,6 +789,7 @@ export function Globe({
         aria-hidden="true"
         className="block h-full w-full touch-none cursor-grab active:cursor-grabbing"
       />
+      {!unavailable && rotationControl}
       <GlobeOverlays
         selected={selected}
         orbit={orbit}

@@ -19,7 +19,7 @@ import type { ObservationView } from "../app/observations/types";
 import { createOrbitalFraming } from "./orbitalFraming";
 import { createObservationPicking } from "./observationPicking";
 
-export type GlobePresentation = "planetarium" | "dayline" | AuroraRun | LocalView | null;
+export type GlobePresentation = "planetarium" | "dayline" | "landing" | AuroraRun | LocalView | null;
 export type TonightPresentation = TonightView & { moonfall?: MoonfallView };
 type LocalView = RadarView | TonightPresentation | FloatDiveView | ObservationView;
 
@@ -121,6 +121,7 @@ export function createScenePresentation(
   }
 
   function set(mode: GlobePresentation, geography: readonly Object3D[]) {
+    if (mode === "landing") mode = "dayline";
     const local = isLocalView(mode) ? mode : null;
     const observation = local?.kind === "observation" ? local : null;
     picking.set(observation);

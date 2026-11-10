@@ -36,7 +36,8 @@ for (const [width, height] of [
         if (message.type() === "error" && /shader|WebGLProgram/i.test(message.text()))
           errors.push(message.text());
       });
-      await page.goto("/");
+      // A shared viewpoint stays fixed after arrival; landing rotation has separate coverage.
+      await page.goto("/#at=145,12,1&v=observe");
       await expect
         .poll(() => page.evaluate(() => (window as unknown as { cinemaStart: unknown }).cinemaStart))
         .not.toBeNull();

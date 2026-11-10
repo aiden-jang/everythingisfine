@@ -191,8 +191,11 @@ and tablet views need their own reflow checks, not only portrait-phone coverage.
 
 ## 8. Motion
 
-No ambient globe spin or perpetual chrome loops. The entrance is finite and data
-appears promptly; do not delay initial fetching until an interval or animation ends.
+Only the Live Earth landing view has ambient rotation: a slow camera orbit after the entrance
+settles, with a visible Pause/Resume rotation control. Steering pauses it immediately. Explore,
+shared camera views, guided tours and stories keep their own framing. Rotation stops in hidden
+tabs and under reduced motion; it does not advance the data clock or continually rewrite the URL.
+No perpetual chrome loops. Data appears promptly; fetching never waits for animation.
 
 The opening is a finite horizon-to-orbit shot with a close lens, a vertical framing offset and a
 settling bank. **Reset view** can replay it. Navigation retains critically damped springs: long
@@ -293,7 +296,7 @@ directions and resting brightness remain unchanged. Reset the exposure after idl
 viewport changes. Scene lighting may briefly catch the surface and atmosphere during a reveal;
 this is a display treatment, not another measurement layer. A regional cutaway uses actual earthquake depths and clearly labelled reference guides;
 it is not a model of the crust. Its depth guides draw in sequence at their true radii. Camera coordinates appear briefly during user input. Every effect
-finishes and releases the frame loop, with no permanent background animation.
+finishes and releases the frame loop, except the explicitly controlled Live Earth landing rotation.
 
 Respect reduced motion completely: skip entrance rotation, camera easing and
 secondary travel rather than merely shortening them. Keep events and every action
@@ -367,7 +370,7 @@ the view, or changing the profile or harbor. It is not a field recording, and ne
 ## 13. Banned
 
 - Saturated interface accents, accent glows, pure black, serif typography or emoji.
-- Ambient globe rotation, perpetual interface loops or bouncing exploration cues.
+- Globe rotation outside the controlled Live Earth landing view, perpetual interface loops or bouncing exploration cues.
 - Photographic Earth textures, decorative cloud layers or night-light overlays.
 - Proportional figures in updating numbers, clipped names or horizontal page overflow.
 - Spinners hiding the product, or blanking good data because another source failed.

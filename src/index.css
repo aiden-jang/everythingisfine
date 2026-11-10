@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./motion.css";
 @import "./observatory.css";
+@import "./globe/landing-rotation.css";
 
 /* Self-hosted rather than linked from a font CDN. Geist over Inter: Inter is the default-looking
    choice and reads as unconsidered. Geist Mono carries every coordinate, timestamp and magnitude. */
