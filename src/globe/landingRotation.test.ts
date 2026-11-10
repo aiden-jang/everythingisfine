@@ -20,7 +20,7 @@ describe("landing rotation", () => {
     expect(first).toBeGreaterThan(0);
     expect(first).toBeLessThan(0.03);
     for (let i = 0; i < 99; i++) step(view, 0.1, true, false);
-    expect(view.state()).toEqual({ lon: expect.closeTo(160.2, 4), lat: 12, zoom: 1 });
+    expect(view.state()).toEqual({ lon: expect.closeTo(167.8, 4), lat: 12, zoom: 1 });
   });
 
   it("integrates the same travel at different frame rates", () => {

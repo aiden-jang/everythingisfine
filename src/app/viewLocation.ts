@@ -3,7 +3,7 @@ import { useSyncExternalStore } from "react";
 const VIEW_LOCATION_CHANGE = "eif:view-location-change";
 
 export function replaceViewLocation(url: string): void {
-  history.replaceState(null, "", url);
+  history.replaceState(history.state, "", url);
   window.dispatchEvent(new Event(VIEW_LOCATION_CHANGE));
 }
 

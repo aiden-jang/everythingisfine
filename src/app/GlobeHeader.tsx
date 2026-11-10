@@ -1,4 +1,4 @@
-import { FullscreenButton } from "./FullscreenButton";
+import { ObservatoryOptions } from "./ObservatoryOptions";
 import { StillNotice } from "./StillNotice";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { FeedSnapshot } from "./feed";
@@ -33,6 +33,7 @@ interface Props {
   saving: boolean;
   saveStill: () => void;
   feeds: FeedStatus;
+  rotation: { enabled: boolean; set: (enabled: boolean) => void };
 }
 
 export function GlobeHeader({
@@ -61,6 +62,7 @@ export function GlobeHeader({
   saving,
   saveStill,
   feeds,
+  rotation,
 }: Props): JSX.Element {
   const colorLabel = `Magnitude colors · ${ramp === "cividis" ? "Cividis" : "Thermal"}`;
   const colors = (inMenu: boolean) => (
@@ -132,30 +134,7 @@ export function GlobeHeader({
         {observing ? (
           <div className="observatory-header-actions">
             <FeedDot feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
-            <button
-              type="button"
-              id="capture-still"
-              onClick={saveStill}
-              disabled={saving || !ready}
-              aria-label={saving ? "Saving image" : "Save image"}
-              className="observatory-save"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="17"
-                height="17"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden="true"
-              >
-                <rect x="3" y="3" width="18" height="18" rx="3" />
-                <circle cx="8" cy="8" r="1.5" />
-                <path d="m3 17 5-5 4 4 4-6 5 7" />
-              </svg>
-              <span>{saving ? "Saving image" : "Save image"}</span>
-            </button>
-            <FullscreenButton />
+            <ObservatoryOptions ready={ready} saving={saving} saveStill={saveStill} rotation={rotation} />
           </div>
         ) : (
           <>

@@ -10,6 +10,7 @@ for (const [id, query, back] of [
   ["float", "Float Dive", "Back to Live Earth"],
 ] as const) {
   test(`${query} returns keyboard focus to its search result`, async ({ page }) => {
+    if (id === "sky") await page.setViewportSize({ width: 320, height: 640 });
     await installFeeds(page, { presentation: "fresh", empty: true });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.route("https://erddap.marine.ie/**", (route) => route.abort());
@@ -19,6 +20,7 @@ for (const [id, query, back] of [
     await page.goto("/");
     await openStories(page);
     const search = page.getByRole("searchbox", { name: "Find a story or layer" });
+    await expect(search).toBeInViewport({ ratio: 1 });
     await search.fill(query);
     await page.locator(`#search-story-${id}`).click();
     await page.getByRole("button", { name: back, exact: true }).click();

@@ -22,7 +22,10 @@ export function StillNotice({
           onClick={() => {
             dismiss();
             const capture = document.getElementById("capture-still");
-            (capture?.checkVisibility() ? capture : document.getElementById("utility-toggle"))?.focus();
+            (capture?.checkVisibility()
+              ? capture
+              : (document.getElementById("observatory-options") ?? document.getElementById("utility-toggle"))
+            )?.focus();
           }}
         >
           Dismiss

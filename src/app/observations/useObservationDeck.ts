@@ -8,7 +8,9 @@ import type { ObservationView } from "./types";
 export type AfterDarkArchive = "lights" | "shadow";
 export type StoryId = ObservationId | AfterDarkArchive | ReplayId | EarthStoryId | "kilauea";
 
-export function useObservationDeck(shared?: StoryMoment) {
+export function useObservationDeck(shared?: StoryMoment, before = () => {}) {
+  const checkpoint = useRef(before);
+  checkpoint.current = before;
   const memory = useRef(new Map<string, StoryMoment>(shared ? [[shared.id, shared]] : []));
   const [entry, setEntry] = useState<StoryId | null>((shared?.id as StoryId) ?? null);
   const [trigger, setTrigger] = useState<string | null>(null);
@@ -20,16 +22,24 @@ export function useObservationDeck(shared?: StoryMoment) {
   active.current = entry;
   const projection = useRef(map);
   projection.current = map;
-  const update = useCallback((next: ObservationView | null) => {
-    setView(next);
-    const id = active.current;
-    if (id && next)
-      memory.current.set(id, { ...memory.current.get(id), id, map: projection.current, at: next.frame.at });
-  }, []);
-  const remember = useCallback((part: Partial<StoryMoment>) => {
-    const id = active.current;
-    if (id) memory.current.set(id, { id, map: projection.current, ...memory.current.get(id), ...part });
-  }, []);
+  const update = useCallback(
+    (next: ObservationView | null) => {
+      if (active.current !== entry) return;
+      setView(next);
+      const id = active.current;
+      if (id && next)
+        memory.current.set(id, { ...memory.current.get(id), id, map: projection.current, at: next.frame.at });
+    },
+    [entry],
+  );
+  const remember = useCallback(
+    (part: Partial<StoryMoment>) => {
+      if (active.current !== entry) return;
+      const id = active.current;
+      if (id) memory.current.set(id, { id, map: projection.current, ...memory.current.get(id), ...part });
+    },
+    [entry],
+  );
   const current = useCallback(() => {
     const id = active.current;
     return id ? { ...memory.current.get(id), id, map: projection.current } : undefined;
@@ -41,16 +51,29 @@ export function useObservationDeck(shared?: StoryMoment) {
   };
 
   const close = useCallback(() => {
+    checkpoint.current();
     const id = active.current;
     if (id) memory.current.set(id, { ...memory.current.get(id), id, map: projection.current });
+    active.current = null;
     setView(null);
     setEntry(null);
     setTrigger(null);
     setMap(false);
     setHorizon(false);
   }, []);
+  const snapshot = { entry, trigger, map, horizon, query };
   return {
     entry,
+    capture: () => snapshot,
+    restore(saved: typeof snapshot) {
+      active.current = saved.entry;
+      setEntry(saved.entry);
+      setTrigger(saved.trigger);
+      setMap(saved.map);
+      setHorizon(saved.horizon);
+      setQuery(saved.query);
+      setView(null);
+    },
     trigger,
     setTrigger,
     returnTo(fallback: string, closeView: () => void) {
@@ -75,6 +98,8 @@ export function useObservationDeck(shared?: StoryMoment) {
     setQuery,
     setHorizon,
     open(next: StoryId, from: string) {
+      before();
+      active.current = next;
       setTrigger(from);
       setView(null);
       setMap(memory.current.get(next)?.map ?? false);

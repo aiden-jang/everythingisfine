@@ -1,6 +1,7 @@
 import { observatoryCaption } from "./app/observatoryCaption";
+import { useSceneHistory } from "./app/useSceneHistory";
 import { useSharedLocation } from "./app/useSharedLocation";
-import type { FlyTo } from "./globe/cameraTarget";
+import { useGlobeCamera } from "./app/useGlobeCamera";
 import { WaveReplayControls } from "./app/WaveReplayControls";
 import { useEventInspection } from "./app/useEventInspection";
 import { SequenceReplayControls } from "./app/SequenceReplayControls";
@@ -122,6 +123,7 @@ export function App(): JSX.Element {
   const historyIntent = useRef<string | null>(null);
   const observatory = useObservatory(shared);
   const { enterExplore, enterObserve, chooseScene, setReady: setGlobeReady } = observatory;
+  const { flyTo, camera, read: readCamera, onReady } = useGlobeCamera(shared, setGlobeReady);
   const [liveFilters, setFilters] = useState<Filters>(() => ({
     minMagnitude: shared.minMagnitude ?? DEFAULT_FILTERS.minMagnitude,
     windowMs: shared.windowHours === undefined ? DEFAULT_FILTERS.windowMs : shared.windowHours * 3_600_000,
@@ -315,7 +317,7 @@ export function App(): JSX.Element {
     // The writer only writes while the hash is the one it last wrote, which is what protects a pasted
     // link. Emptying it without saying so leaves the writer refusing to write again.
     lastWritten.current = window.location.hash;
-  }, [backToLive]);
+  }, [backToLive, flyTo]);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
   const [keyOpen, setKeyOpen] = useStoredFlag("legendKey", false);
   const [motionOn, setMotionOn] = useStoredFlag("motion", false);
@@ -368,27 +370,24 @@ export function App(): JSX.Element {
   const onNews = useCallback((magnitudes: number[]) => {
     siren.current?.play(magnitudes);
   }, []);
-  const flyTo = useRef<FlyTo>(() => {});
   const lastWritten = useRef<string>(window.location.hash);
-  const camera = useRef<{ lon: number; lat: number; zoom: number }>({
-    lon: shared.lon ?? 145,
-    lat: shared.lat ?? 12,
-    zoom: shared.zoom ?? 1,
-  });
   const { cutaway, onCutaway, onSink } = useCutaway(
     () => (selected ? feed.store.get(selected)?.primary : null) ?? camera.current,
     setSinkOn,
   );
-  // Call and read this in the same tick. See `Globe.onCapture`.
-  const onReady = useCallback(
-    (fn: typeof flyTo.current) => {
-      flyTo.current = fn;
-      setGlobeReady(true);
-      fn(camera.current.lon, camera.current.lat, camera.current.zoom);
+  useSceneHistory({
+    route: {
+      ...observatory.navigation,
+      restore: (saved) => {
+        stopTour();
+        observatory.navigation.restore(saved);
+      },
     },
-    [setGlobeReady],
-  );
-
+    checkpoint: observatory.checkpoint,
+    readCamera,
+    flyTo,
+    lastWritten,
+  });
   useSharedLocation({
     feed,
     filters,
@@ -592,7 +591,7 @@ export function App(): JSX.Element {
         flyTo.current(where.lon, where.lat, Math.max(camera.current.zoom, 2.2), liftForPanel());
       }
     },
-    [enterExplore],
+    [enterExplore, camera, flyTo],
   );
   const selectQuake = useCallback(
     (key: string | null) => {
@@ -607,7 +606,7 @@ export function App(): JSX.Element {
       reportAnalytics({ name: "event_opened" });
       flyTo.current(quake.primary.lon, quake.primary.lat, Math.max(camera.current.zoom, 1.9), liftForPanel());
     },
-    [enterExplore],
+    [enterExplore, camera, flyTo],
   );
   const marks = useMemo(
     () =>
@@ -1031,14 +1030,13 @@ export function App(): JSX.Element {
       </a>
       <h1 className="sr-only">Everything Is Fine</h1>
       <GlobeHeader
+        rotation={observatory.rotation}
         ready={observatory.canCapture}
         observing={observatory.observing}
-        onHome={() =>
-          observatory.observeScene(() => {
-            stopTour();
-            chooseScene("live");
-          })
-        }
+        onHome={() => {
+          observatory.home(stopTour);
+          flyTo.current(145, 12, 1);
+        }}
         onReset={resetView}
         {...{
           headShown,
@@ -1506,6 +1504,7 @@ export function App(): JSX.Element {
               inspection={inspection.run}
               flat={flat}
               globePresentation={observatory.globe(tourAt !== null)}
+              rotateLanding={observatory.rotation.enabled}
               depthSink={observatory.depth || sinkOn}
               cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}
               slab={

@@ -127,7 +127,7 @@
     align-content: start;
     justify-items: start;
     gap: 4px;
-    min-height: 58px;
+    min-height: 94px;
     padding: 10px;
     border-right: 0;
     text-align: left;
@@ -153,6 +153,28 @@
     content: "";
     transform-origin: left;
     animation: stage-rule-arrive 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  .scene-symbol {
+    width: 42px;
+    height: 32px;
+    margin-bottom: 4px;
+  }
+  .observatory-scenes button[aria-pressed="true"] .scene-diagram-trace {
+    stroke-dasharray: 1;
+    animation: scene-trace 650ms ease-out both;
+  }
+  @keyframes scene-trace {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .observatory-scenes button[aria-pressed="true"] .scene-diagram-trace {
+      animation: none;
+    }
   }
   .scene-label {
     font-size: 12px;
@@ -336,8 +358,13 @@
       margin-top: 14px;
     }
     .observatory-scenes button {
-      min-height: 52px;
+      min-height: 78px;
       padding: 8px;
+    }
+    .scene-symbol {
+      width: 36px;
+      height: 27px;
+      margin: 0;
     }
     .scene-label {
       font-size: 11px;
@@ -394,7 +421,12 @@
       padding: 18px var(--observatory-inline);
     }
     .observatory-story h2 {
-      font-size: 40px;
+      font-size: 28px;
+    }
+    .observatory-scenes,
+    .observatory-entry-actions,
+    .observatory-description {
+      margin-top: 8px;
     }
     .observatory-description {
       font-size: 12px;

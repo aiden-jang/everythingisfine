@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, revealStoryTools } from "./feeds";
 
 test("Tonight’s Sky follows the selected city and time on the same globe", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -17,6 +17,7 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await revealStoryTools(page);
   const open = page.getByRole("button", { name: "Tonight’s Sky", exact: true });
   await open.click();
   const sky = page.getByRole("region", { name: "Tonight’s Sky" });
@@ -80,6 +81,7 @@ test("Moonfall reuses the sky canvas and restores the city, time, and bearing", 
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await revealStoryTools(page);
   await page.getByRole("button", { name: "Tonight’s Sky", exact: true }).click();
   const sky = page.getByRole("region", { name: "Tonight’s Sky" });
   await sky.getByRole("combobox", { name: "City" }).selectOption("Tokyo");

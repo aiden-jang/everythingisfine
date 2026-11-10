@@ -1,3 +1,4 @@
+import { SceneDiagram } from "./SceneDiagram";
 import { geographicCoordinates } from "../globe/orbitReadout";
 import { CUTAWAY_GUIDES_KM } from "../globe/cutawayScale";
 import { subsolarPoint } from "../geo/sun";
@@ -101,6 +102,7 @@ export function ObservatoryScenePicker({
             option.id === "depth" && ready && !deepAvailable ? "depth-availability" : undefined
           }
         >
+          <SceneDiagram scene={option.id} />
           <span className="scene-label">{option.name}</span>
         </button>
       ))}

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, revealStoryTools } from "./feeds";
 
 const follow = (page: Page) => page.getByRole("button", { name: "Follow the aurora" });
 
@@ -15,8 +15,10 @@ test("After Dark follows the NOAA forecast and returns to the stars", { tag: "@d
   });
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await revealStoryTools(page);
   await expect(follow(page)).toBeEnabled();
   await page.emulateMedia({ reducedMotion: "no-preference" });
+  await revealStoryTools(page);
   await follow(page).click();
   const readout = page.getByRole("group", { name: "Globe readout" });
   await expect(readout).toContainText("30% model chance");
@@ -50,6 +52,7 @@ test("the reduced-motion phone can read the current forecast and exit to Explore
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await revealStoryTools(page);
   await follow(page).click();
   await expect(page.getByRole("heading", { name: "Into the auroral oval." })).toBeVisible();
   await expect(page.getByRole("link", { name: "NOAA OVATION forecast" })).toBeVisible();
@@ -66,6 +69,7 @@ test("After Dark still opens when NOAA’s forecast is unavailable", async ({ pa
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect(page.getByRole("heading", { name: "The other side of day." })).toBeVisible();
+  await revealStoryTools(page);
   await expect(page.getByText("NOAA’s aurora forecast is unavailable.")).toBeVisible();
   await expect(follow(page)).toBeDisabled();
 });

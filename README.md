@@ -32,7 +32,9 @@ Existing saved layouts and links to an event, archive, section, or held moment o
 **Save image** adds the displayed story’s title, time and source to supported canvas views.
 Photograph overlays and Sun Watch do not offer an incomplete canvas-only export.
 Use **Fullscreen** on desktop for a larger viewing area.
-Open **Stories & layers** in any scene to find its live observations, forecasts, predictions, and replays.
+Open **Stories & layers** in any scene to find tours, featured experiences, live observations, forecasts,
+predictions, and replays. **View options** holds image capture, fullscreen and the landing globe’s
+auto-rotation setting. Dragging pauses rotation; it resumes after five idle seconds.
 Search by subject, place, or year across all three scenes. The thumbnails are recorded views;
 open a story for its source, date, and current availability. Closing a story returns to its search
 result or drawer entry. **Keep exploring** offers a related view with context for its separate

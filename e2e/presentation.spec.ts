@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, waitForData } from "./feeds";
+import { installFeeds, waitForData, saveImageButton } from "./feeds";
 
 for (const width of [1440, 390, 320]) {
   test(`regional inspection stays usable at ${width}px`, async ({ page }) => {
@@ -140,7 +140,7 @@ test("reduced motion skips decorative effects and preserves cutaway capture", as
   await expect(page.locator("[data-orbit-readout]")).toHaveCSS("transition-duration", "0s");
   await page.getByRole("button", { name: "Close", exact: true }).filter({ visible: true }).click();
   const image = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Save image", exact: true }).click();
+  await (await saveImageButton(page)).click();
   const capture = await image;
   expect(capture.suggestedFilename()).toMatch(/^everything-is-fine-.*\.png$/);
   expect(await capture.failure()).toBeNull();

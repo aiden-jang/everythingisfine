@@ -1,5 +1,5 @@
 import { useEffect, useId, useState, useSyncExternalStore } from "react";
-import { createMoonfall, type MoonfallView } from "../../globe/moonfall/scene";
+import { createMoonfall, type MoonfallProgress, type MoonfallView } from "../../globe/moonfall/scene";
 import { loadLunarSurvey, lunarSources, traverses } from "../../sources/moonfall/apollo17";
 import type { TonightPresentation } from "../../globe/scenePresentation";
 import type { TonightView } from "../../geo/tonight";
@@ -10,8 +10,10 @@ const km = new Intl.NumberFormat("en", { maximumFractionDigits: 2, minimumFracti
 export function Moonfall({
   sky,
   onView,
+  resume,
 }: {
   sky: TonightView;
+  resume?: MoonfallProgress | undefined;
   onView: (view: TonightPresentation) => void;
 }): JSX.Element {
   const [experience, setExperience] = useState<MoonfallView | "failed" | null>(null);
@@ -23,6 +25,12 @@ export function Moonfall({
       .then((survey) => {
         if (abort.signal.aborted) return;
         created = createMoonfall(survey, matchMedia(motion).matches);
+        if (resume) {
+          created.select(resume.eva);
+          created.project(resume.mapped);
+          if (resume.station !== null) created.stopAt(resume.station);
+          else created.seek(resume.meters);
+        }
         setExperience(created);
         onView({ ...sky, moonfall: created });
       })
@@ -33,7 +41,7 @@ export function Moonfall({
       abort.abort();
       created?.dispose();
     };
-  }, [sky, onView, attempt]);
+  }, [sky, onView, attempt, resume]);
 
   if (experience === null) return <p role="status">Loading the lunar survey…</p>;
   if (experience === "failed") {

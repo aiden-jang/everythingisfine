@@ -1,6 +1,7 @@
+import { SunWatch, TonightSky, TonightCompass, FloatDive } from "./ObservatoryViews";
 import { StoryNavigation } from "./journeys/StoryNavigation";
 import { ExperienceEnding } from "./journeys/ExperienceEnding";
-import { lazy, Suspense, useLayoutEffect, useRef, useState, type RefObject } from "react";
+import { Suspense, useLayoutEffect, type RefObject } from "react";
 import {
   ObservatoryStage,
   ObservatoryScenePicker,
@@ -28,18 +29,6 @@ import "./moonfall/moonfall.css";
 import { ObservationCredit } from "./observations/ObservationCredit";
 import { ObservationDeckShell } from "./observations/ObservationEntry";
 
-const SunWatch = lazy(() => import("./sun/SunWatch").then(({ SunWatch }) => ({ default: SunWatch })));
-
-const TonightSky = lazy(() =>
-  import("./tonight/TonightSky").then(({ TonightSky }) => ({ default: TonightSky })),
-);
-const TonightCompass = lazy(() =>
-  import("./tonight/TonightCompass").then(({ TonightCompass }) => ({ default: TonightCompass })),
-);
-
-const FloatDive = lazy(() =>
-  import("./float/FloatDivePanel").then(({ FloatDivePanel }) => ({ default: FloatDivePanel })),
-);
 export interface ObservatoryProps {
   scene: EarthScene;
   at: number;
@@ -51,7 +40,14 @@ export interface ObservatoryProps {
   aurora: ReturnType<typeof useAuroraOverflight>;
   views: Pick<
     ReturnType<typeof useObservatory>,
-    "sun" | "tonight" | "floatDive" | "observations" | "skyCity" | "openAfterDarkArchive" | "closeStory"
+    | "sun"
+    | "tonight"
+    | "floatDive"
+    | "observations"
+    | "skyCity"
+    | "openAfterDarkArchive"
+    | "closeStory"
+    | "browser"
   >;
   radar: ReturnType<typeof useObservatory>["radar"];
   onScene: (scene: EarthScene) => void;
@@ -91,7 +87,7 @@ function ObservatoryContent({
   summary,
   deepAvailable,
   aurora,
-  views: { sun, tonight, floatDive, observations, skyCity, openAfterDarkArchive, closeStory },
+  views: { sun, tonight, floatDive, observations, skyCity, openAfterDarkArchive, closeStory, browser },
   radar,
   feedNote,
   onScene,
@@ -100,11 +96,16 @@ function ObservatoryContent({
   tour,
   onHistory,
 }: ObservatoryProps): JSX.Element {
-  const [stories, setStories] = useState(false);
-  const storyScroll = useRef(0);
+  const { open: stories, setOpen: setStories, scroll: storyScroll } = browser;
+  const active = tour.at !== null;
+  const solar = sun.active && !active;
+  const browsing =
+    stories && !active && !solar && !aurora.run && !tonight.active && !floatDive.active && !radar.active;
   useLayoutEffect(() => {
-    tour.controls.current?.scrollTo(0, stories && !tonight.active && !sun.active ? storyScroll.current : 0);
+    tour.controls.current?.scrollTo(0, browsing ? storyScroll.current : 0);
     tour.controls.current?.querySelector<HTMLElement>(".observatory-story")?.scrollTo(0, 0);
+    if (browsing && storyScroll.current === 0)
+      tour.controls.current?.querySelector(".story-search")?.scrollIntoView({ block: "nearest" });
   }, [
     scene,
     tour.at,
@@ -113,8 +114,11 @@ function ObservatoryContent({
     tonight.active,
     floatDive.active,
     observations.entry,
-    stories,
+    browsing,
+    storyScroll,
+    browser.home,
     sun.active,
+    aurora.run,
   ]);
   const closeSun = () => observations.returnTo("open-sun-watch", sun.toggle);
   const openFeatured = () => {
@@ -122,8 +126,17 @@ function ObservatoryContent({
     observations.setTrigger("open-featured-moonfall");
     tonight.open("moonfall");
   };
-  const active = tour.at !== null;
-  const solar = sun.active && !active;
+  const auroraControls = (
+    <AuroraOverflightControls
+      aurora={aurora}
+      ready={ready}
+      solar={solar}
+      onReturn={() => observations.returnTo("open-aurora-overflight", () => onScene("night"))}
+      onSunWatch={sun.toggle}
+      onTonight={() => tonight.open()}
+      city={skyCity}
+    />
+  );
   const title = active
     ? (tour.stop?.heading ?? "Taking the long way around.")
     : scene === "depth"
@@ -180,8 +193,11 @@ function ObservatoryContent({
           tabIndex={-1}
           className="observatory-intro"
           ref={tour.controls}
+          onScroll={(event) => {
+            if (browsing) storyScroll.current = event.currentTarget.scrollTop;
+          }}
           data-scene={active ? "tour" : scene}
-          data-browsing={(stories && !active && !solar) || undefined}
+          data-browsing={browsing || undefined}
           data-sun-watch={solar || undefined}
           data-storm-radar={radar.active || undefined}
           data-tonight={tonight.active || undefined}
@@ -216,6 +232,7 @@ function ObservatoryContent({
                 onView={tonight.update}
                 preference={skyCity}
                 initialMode={tonight.entry.mode}
+                initialLunar={tonight.entry.lunar}
                 initialLook={tonight.entry.look}
                 initialMoment={tonight.entry.moment}
                 returnLabel={
@@ -258,6 +275,22 @@ function ObservatoryContent({
                 ) : null}
               </div>
               {solar && <SunCredits />}
+              {!active && !solar && !aurora.run && (
+                <ObservatoryScenePicker
+                  scene={scene}
+                  ready={ready}
+                  deepAvailable={deepAvailable}
+                  onScene={(next) => {
+                    if (scene !== next) setStories(false);
+                    onScene(next);
+                  }}
+                />
+              )}
+              {!active && !solar && !aurora.run && ready && !deepAvailable && (
+                <p id="depth-availability" className="observatory-depth-note">
+                  Below the Surface needs an earthquake at least 70 km deep in the current view.
+                </p>
+              )}
               {active ? (
                 <ObservatoryTourControls tour={tour} onExplore={onExplore} />
               ) : (
@@ -266,32 +299,24 @@ function ObservatoryContent({
                     <button type="button" onClick={onExplore} className="observatory-primary">
                       Explore the globe <span aria-hidden="true">↗</span>
                     </button>
-                    <button
-                      type="button"
-                      id="open-observations"
-                      aria-controls={stories && !solar ? "stories-panel" : undefined}
-                      aria-expanded={solar ? undefined : stories}
-                      onClick={
-                        solar
-                          ? closeSun
-                          : () => {
-                              if (!stories) storyScroll.current = 0;
-                              setStories(!stories);
-                            }
-                      }
-                    >
-                      {solar ? "Back to stars" : "Stories & layers"}
-                    </button>
-                    <button
-                      type="button"
-                      ref={tour.button}
-                      onClick={tour.start}
-                      disabled={!ready || !tour.available}
-                      aria-describedby={ready && !tour.available ? "tour-availability" : undefined}
-                    >
-                      Take a tour <span aria-hidden="true">→</span>
-                    </button>
-                    {ready && !tour.available && scene === "night" && <TourUnavailable note={empty.text} />}
+                    {!aurora.run && (
+                      <button
+                        type="button"
+                        id="open-observations"
+                        aria-controls={stories && !solar ? "stories-panel" : undefined}
+                        aria-expanded={solar ? undefined : stories}
+                        onClick={
+                          solar
+                            ? closeSun
+                            : () => {
+                                if (!stories) storyScroll.current = 0;
+                                setStories(!stories);
+                              }
+                        }
+                      >
+                        {solar ? "Back to stars" : "Stories & layers"}
+                      </button>
+                    )}
                   </div>
                   {scene !== "night" ? (
                     <p
@@ -303,10 +328,7 @@ function ObservatoryContent({
                   ) : null}
                 </>
               )}
-              {!active && !solar && !stories && scene === "live" && (
-                <FeaturedStory ready={ready} open={openFeatured} />
-              )}
-              {!active && !solar && stories && (
+              {browsing && (
                 <StoriesDrawer
                   scene={scene}
                   ready={ready}
@@ -324,44 +346,33 @@ function ObservatoryContent({
                     setStories(false);
                     document.getElementById("open-observations")?.focus();
                   }}
-                />
+                >
+                  <div className="observatory-actions">
+                    <button
+                      type="button"
+                      ref={tour.button}
+                      onClick={tour.start}
+                      disabled={!ready || !tour.available}
+                      aria-describedby={ready && !tour.available ? "tour-availability" : undefined}
+                    >
+                      Take a tour <span aria-hidden="true">→</span>
+                    </button>
+                    {ready && !tour.available && scene === "night" && <TourUnavailable note={empty.text} />}
+                  </div>
+                  {scene === "live" && <FeaturedStory ready={ready} open={openFeatured} />}
+                  {!aurora.run && scene === "night" ? auroraControls : null}
+                  {!active && scene !== "night" && (
+                    <ObservatoryFeatured
+                      scene={scene}
+                      ready={ready}
+                      radar={radar.open}
+                      dive={floatDive.open}
+                      deep={() => observations.open("deep", "open-deep-time")}
+                    />
+                  )}
+                </StoriesDrawer>
               )}
-              {!active && (
-                <ObservatoryScenePicker
-                  scene={scene}
-                  ready={ready}
-                  deepAvailable={deepAvailable}
-                  onScene={(next) => {
-                    if (scene !== next) setStories(false);
-                    onScene(next);
-                  }}
-                />
-              )}
-              {!active && ready && !deepAvailable && (
-                <p id="depth-availability" className="observatory-depth-note">
-                  Below the Surface needs an earthquake at least 70 km deep in the current view.
-                </p>
-              )}
-              {!active && scene === "night" ? (
-                <AuroraOverflightControls
-                  aurora={aurora}
-                  ready={ready}
-                  solar={solar}
-                  onReturn={() => observations.returnTo("open-aurora-overflight", () => onScene("night"))}
-                  onSunWatch={sun.toggle}
-                  onTonight={() => tonight.open()}
-                  city={skyCity}
-                />
-              ) : null}
-              {!active && scene !== "night" && (
-                <ObservatoryFeatured
-                  scene={scene}
-                  ready={ready}
-                  radar={radar.open}
-                  dive={floatDive.open}
-                  deep={() => observations.open("deep", "open-deep-time")}
-                />
-              )}
+              {(solar || aurora.run) && auroraControls}
               {feedNote ? (
                 <p className="observatory-source-note" role="status">
                   {feedNote}

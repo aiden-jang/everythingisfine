@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import { SkyCityPicker, type SkyCityPreference } from "./tonight/SkyCityPicker";
 import { meteorDate, nextMeteor } from "./tonight/meteorCalendar";
@@ -21,6 +21,11 @@ export function AuroraOverflightControls({
   onReturn: () => void;
 }): JSX.Element {
   const primary = useRef<HTMLButtonElement>(null);
+  useLayoutEffect(() => {
+    if (!aurora.run) return;
+    const frame = requestAnimationFrame(() => primary.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [aurora.run]);
   const other = aurora.routes.find((route) => route.hemisphere !== aurora.run?.route.hemisphere);
   const next = nextMeteor(Date.now());
   return (

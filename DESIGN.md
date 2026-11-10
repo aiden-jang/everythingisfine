@@ -140,13 +140,15 @@ saved layouts stay in Explore; direct content links expose their content without
 On wide screens, the introduction and globe occupy separate columns. On phones, the planet sits
 above a bounded introduction with owned scrolling. The globe stage carries a UTC readout and one
 scene-specific reference. The three scene controls share a quiet ruled strip with a clear active
-underline. The live opening features one recorded journey, illustrated with its real source image.
+underline and a small globe, depth or constellation diagram. A finite trace marks a selection;
+reduced motion keeps the diagram still. Featured journeys live inside Stories & layers.
 Controls stay reachable in short landscape views.
 Live Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
 Their temporary overrides do not overwrite saved scientific settings. The observatory retains source
 status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
-Each scene features a few experiences and keeps the full selection in **Stories & layers**. Group
-the drawer by data type. Keep **Explore the globe** visible above the scene strip. Closing an
+Keep tours, featured experiences and the full selection in **Stories & layers**, grouped by data type.
+The three illustrated scenes precede **Explore the globe** and **Stories & layers**; all three are visible
+on a narrow phone without scrolling. Closing an
 experience returns focus to its entry point and restores the drawer’s scroll position.
 Story thumbnails show recorded captures of their actual views. Guided journeys use the drawer’s
 existing quiet rows and each story’s reading panel, with manual steps, visible source context and
@@ -192,7 +194,9 @@ and tablet views need their own reflow checks, not only portrait-phone coverage.
 ## 8. Motion
 
 Only the Live Earth landing view has ambient rotation: a slow camera orbit after the entrance
-settles, with a visible Pause/Resume rotation control. Steering pauses it immediately. Explore,
+settles, at 2.4 degrees per second with an eased start. Steering pauses it immediately; it resumes
+five seconds after the last gesture and its momentum settle. **View options** provides a persistent
+auto-rotation setting alongside image capture and fullscreen. Explore,
 shared camera views, guided tours and stories keep their own framing. Rotation stops in hidden
 tabs and under reduced motion; it does not advance the data clock or continually rewrite the URL.
 No perpetual chrome loops. Data appears promptly; fetching never waits for animation.

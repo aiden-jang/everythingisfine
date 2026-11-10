@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, waitForData } from "./feeds";
+import { installFeeds, waitForData, saveImageButton } from "./feeds";
 
 /*
  * The claims that only a browser can settle. Each is here because the alternative would be to assert it in
@@ -2118,7 +2118,7 @@ test("Still hands the picture to the share sheet when there is one", async ({ pa
   await waitForData(page);
   await page.waitForTimeout(1_200);
 
-  await page.getByRole("button", { name: "Save image" }).click();
+  await (await saveImageButton(page)).click();
   const shared = await page.evaluate(
     () =>
       (window as unknown as { __shared?: { name: string; type: string; size: number; transient?: boolean } })

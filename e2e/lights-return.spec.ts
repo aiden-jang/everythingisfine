@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, saveImageButton, revealStoryTools } from "./feeds";
 
 test("Lights Return compares NASA recovery periods and returns to the same After Dark globe", async ({
   page,
@@ -27,7 +27,7 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   const stage = page.getByRole("group", { name: "Puerto Rico night lights" });
   const active = stage.locator("img[data-current]");
   await expect(active).toHaveAttribute("src", /maria-before-/);
-  await expect(page.getByRole("button", { name: "Save image", exact: true })).toBeDisabled();
+  await expect(await saveImageButton(page)).toBeDisabled();
   const period = panel.getByRole("slider", { name: "Night-light period" });
   const compare = panel.getByRole("button", { name: "Compare with before" });
   await expect(compare).toBeDisabled();
@@ -56,6 +56,7 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   await expect(period).toHaveValue("1");
   await page.keyboard.press("Escape");
   await expect(open).toBeFocused();
+  await revealStoryTools(page);
   await expect(page.getByRole("button", { name: "Tonight’s Sky", exact: true })).toBeVisible();
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await open.click();

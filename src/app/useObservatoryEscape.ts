@@ -4,7 +4,8 @@ export function useObservatoryEscape(onClose: () => void) {
   useEffect(() => {
     function escape(event: KeyboardEvent) {
       if (event.key !== "Escape" || event.defaultPrevented) return;
-      if (document.querySelector("[data-feed-popover]:popover-open")) return;
+      if (document.querySelector("[data-feed-popover]:popover-open, [data-view-popover]:popover-open"))
+        return;
       event.preventDefault();
       event.stopImmediatePropagation();
       onClose();

@@ -1,33 +1,63 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Controls } from "./controls";
 import { createLandingRotation } from "./landingRotation";
+import { createRotationIdle } from "./rotationIdle";
 
 const MOTION = "(prefers-reduced-motion: reduce)";
 
 export function useLandingRotation(enabled: boolean) {
-  const [paused, setPaused] = useState(false);
-  const [reduced, setReduced] = useState(() => matchMedia(MOTION).matches);
-  const settings = useRef({ enabled, paused, reduced });
-  settings.current = { enabled, paused, reduced };
+  const settings = useRef(enabled);
+  settings.current = enabled;
   const [rotation] = useState(() => {
     const advance = createLandingRotation();
+    const idle = createRotationIdle();
+    const media = matchMedia(MOTION);
     let camera: Controls | undefined;
     let wake = () => {};
-    const pause = () => {
-      if (!settings.current.enabled) return;
-      settings.current.paused = true;
-      setPaused(true);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const schedule = () => {
+      if (timer !== undefined || !camera) return;
+      const remaining = idle.remaining(performance.now());
+      if (!Number.isFinite(remaining)) return;
+      timer = setTimeout(() => {
+        timer = undefined;
+        if (idle.remaining(performance.now()) > 0) schedule();
+        else wake();
+      }, remaining);
+    };
+    const defer = () => {
+      idle.defer(performance.now());
+      schedule();
       wake();
     };
     return {
       wake: () => wake(),
       step(dt: number, busy: boolean) {
-        const { enabled, paused, reduced } = settings.current;
-        return camera ? advance(camera, dt, enabled && !paused && !reduced && !document.hidden, busy) : false;
+        if (settings.current && busy && idle.interacted) {
+          idle.defer(performance.now());
+          schedule();
+        }
+        const active =
+          settings.current && !media.matches && !document.hidden && idle.remaining(performance.now()) === 0;
+        return camera ? advance(camera, dt, active, busy) : false;
       },
       attach(canvas: HTMLCanvasElement, controls: Controls, redraw: () => void) {
         camera = controls;
         wake = redraw;
+        const down = (event: PointerEvent) => {
+          idle.hold(event.pointerId);
+          defer();
+        };
+        const up = (event: PointerEvent) => {
+          if (idle.release(event.pointerId, performance.now())) {
+            schedule();
+            wake();
+          }
+        };
+        const blur = () => {
+          idle.clear(performance.now());
+          schedule();
+        };
         const key = (event: KeyboardEvent) => {
           const active = document.activeElement;
           if (active && active !== document.body && active.id !== "globe-view") return;
@@ -37,16 +67,24 @@ export function useLandingRotation(enabled: boolean) {
             !event.altKey &&
             /^(Arrow(Left|Right|Up|Down)|[+=_\-0])$/.test(event.key)
           )
-            pause();
+            defer();
         };
-        canvas.addEventListener("pointerdown", pause, { capture: true, passive: true });
-        canvas.addEventListener("wheel", pause, { capture: true, passive: true });
+        canvas.addEventListener("pointerdown", down, { capture: true, passive: true });
+        canvas.addEventListener("wheel", defer, { capture: true, passive: true });
+        window.addEventListener("pointerup", up, true);
+        window.addEventListener("pointercancel", up, true);
+        window.addEventListener("blur", blur);
         window.addEventListener("keydown", key, true);
         return () => {
           camera = undefined;
           wake = () => {};
-          canvas.removeEventListener("pointerdown", pause, true);
-          canvas.removeEventListener("wheel", pause, true);
+          clearTimeout(timer);
+          timer = undefined;
+          canvas.removeEventListener("pointerdown", down, true);
+          canvas.removeEventListener("wheel", defer, true);
+          window.removeEventListener("pointerup", up, true);
+          window.removeEventListener("pointercancel", up, true);
+          window.removeEventListener("blur", blur);
           window.removeEventListener("keydown", key, true);
         };
       },
@@ -54,25 +92,9 @@ export function useLandingRotation(enabled: boolean) {
   });
   useEffect(() => {
     const media = matchMedia(MOTION);
-    const change = () => {
-      settings.current.reduced = media.matches;
-      setReduced(media.matches);
-      rotation.wake();
-    };
-    media.addEventListener("change", change);
-    return () => media.removeEventListener("change", change);
+    media.addEventListener("change", rotation.wake);
+    return () => media.removeEventListener("change", rotation.wake);
   }, [rotation]);
-  useLayoutEffect(() => rotation.wake(), [enabled, paused, reduced, rotation]);
-  const control =
-    enabled && !reduced ? (
-      <button
-        type="button"
-        className="landing-rotation"
-        aria-label={paused ? "Resume globe rotation" : "Pause globe rotation"}
-        onClick={() => setPaused((value) => !value)}
-      >
-        {paused ? "Resume rotation" : "Pause rotation"}
-      </button>
-    ) : null;
-  return { rotation, control };
+  useLayoutEffect(() => rotation.wake(), [enabled, rotation]);
+  return rotation;
 }

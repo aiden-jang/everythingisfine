@@ -7,6 +7,8 @@ import { GlobeOverlays } from "./GlobeOverlays";
 import { GlobeUnavailable } from "./GlobeUnavailable";
 import { animationDelta } from "./animation";
 import { createAnimationFrame } from "./animationFrame";
+import { createTapGesture } from "./tapGesture";
+import type { CameraState } from "./controls";
 import { observeViewport } from "./observeViewport";
 import { useLandingRotation } from "./useLandingRotation";
 import { attachSectionDrawing, type SectionCommit } from "./sectionDrawing";
@@ -36,7 +38,7 @@ export interface GlobeProps {
   selected: string | null;
   ramp: RampName;
   onSelect: (key: string | null) => void;
-  onReady: (flyTo: FlyTo) => void;
+  onReady: (flyTo: FlyTo, read: () => CameraState) => void;
   /** Hands out a function that renders and returns the canvas, for the still. See ARCHITECTURE.md#srcglobeglobetsx. */
   onCapture?: (capture: () => HTMLCanvasElement | null) => void;
   onSelectMark?: (id: string | null) => void;
@@ -45,6 +47,7 @@ export interface GlobeProps {
   onReplay?: (state: { at: number; revealed: number } | null) => void;
   flat?: boolean;
   globePresentation?: GlobePresentation;
+  rotateLanding?: boolean;
   /** Draw earthquakes at their own depth. Only means anything on the globe, and the shader fades it with
    * the morph, so unwrapping the map lifts every event back to the surface as one motion. */
   depthSink?: boolean;
@@ -91,6 +94,7 @@ export function Globe({
   scrubAt = null,
   flat = false,
   globePresentation = null,
+  rotateLanding = true,
   depthSink = false,
   cutaway = null,
   slab = null,
@@ -100,7 +104,7 @@ export function Globe({
   section = null,
   onSection,
 }: GlobeProps): JSX.Element {
-  const { rotation, control: rotationControl } = useLandingRotation(globePresentation === "landing");
+  const rotation = useLandingRotation(globePresentation === "landing" && rotateLanding);
   const canvas = useRef<HTMLCanvasElement>(null);
   const orbit = useRef<HTMLDivElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
@@ -187,7 +191,10 @@ export function Globe({
     const readout = createOrbitReadout(orbit.current);
     globe.resize();
     globe.render();
-    onReady(createFlightTarget(globe.controls, () => wakeRef.current(), globe.beginArrival));
+    onReady(
+      createFlightTarget(globe.controls, () => wakeRef.current(), globe.beginArrival),
+      globe.controls.state,
+    );
 
     onCapture?.(() => {
       const el2 = canvas.current;
@@ -410,7 +417,7 @@ export function Globe({
       const dt = animationDelta(rawDt);
       last = now;
       const moving = globe.controls.step(dt);
-      const rotating = rotation.step(dt, moving);
+      const rotating = rotation.step(dt, moving || globe.controls.morph() > 0);
       globe.controls.apply();
       let replaying = false;
       if (replay && !replay.done()) {
@@ -646,7 +653,9 @@ export function Globe({
       else redraw();
     };
 
+    const tap = createTapGesture();
     const onMove = (e: PointerEvent): void => {
+      tap.move(e);
       if (live.current.inspection?.kind === "sequence") return;
       // Earthquakes first, then the other four, the same order the click uses: the ramp belongs to
       // earthquakes and so does the pointer when both are under it.
@@ -669,8 +678,6 @@ export function Globe({
       placeOverlays();
     };
 
-    // A click that was really a drag does not select. Without the distance check, spinning the globe and
-    // releasing over an earthquake opens the panel on an event nobody was looking at.
     /** Any deliberate interaction ends the replay: nobody should have to wait out a title card. */
     const interrupt = (): void => {
       if (!replay || replay.done()) return;
@@ -679,22 +686,14 @@ export function Globe({
       redraw();
     };
 
-    let downAt: { x: number; y: number } | null = null;
     const onDown = (e: PointerEvent): void => {
       if (isLocalView(live.current.globePresentation)) return;
       interrupt();
-      downAt = { x: e.clientX, y: e.clientY };
+      tap.down(e);
     };
     const onUp = (e: PointerEvent): void => {
-      if (!downAt) return;
-      const travelled = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
-      downAt = null;
-      if (travelled > 5 || (morph > 0 && morph < 1)) return;
-      /*
-       * A finger gets a bigger target than a mouse. A magnitude 2 marker is about 3px across against 4px
-       * of slop, so on a phone the target was a 7px circle - and a miss does not merely do nothing, it
-       * falls through to `hitMark` and then clears whatever was open.
-       */
+      if (!tap.up(e) || (morph > 0 && morph < 1)) return;
+      // Fingers need a larger hit area than the few pixels occupied by a small quake.
       const slop = e.pointerType === "mouse" ? undefined : TOUCH_SLOP_PX;
       // Earthquakes first, then the other marks: the ramp belongs to earthquakes and so does the pointer.
       // A click that hits neither clears both selections.
@@ -718,6 +717,7 @@ export function Globe({
     el.addEventListener("pointermove", onMove);
     el.addEventListener("pointerdown", onDown);
     el.addEventListener("pointerup", onUp);
+    el.addEventListener("pointercancel", tap.cancel);
     el.addEventListener("pointerleave", onLeave);
 
     const detach = globe.controls.attach(() => {
@@ -748,6 +748,7 @@ export function Globe({
       el.removeEventListener("pointermove", onMove);
       el.removeEventListener("pointerdown", onDown);
       el.removeEventListener("pointerup", onUp);
+      el.removeEventListener("pointercancel", tap.cancel);
       el.removeEventListener("pointerleave", onLeave);
       detachSection();
       // Before dispose, so a table landing after unmount cannot write to a scene that is gone.
@@ -789,7 +790,6 @@ export function Globe({
         aria-hidden="true"
         className="block h-full w-full touch-none cursor-grab active:cursor-grabbing"
       />
-      {!unavailable && rotationControl}
       <GlobeOverlays
         selected={selected}
         orbit={orbit}

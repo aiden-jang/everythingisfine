@@ -63,7 +63,9 @@ export function StoriesDrawer({
   onSelect,
   onDismiss,
   aurora,
+  children,
 }: {
+  children: ReactNode;
   scene: EarthScene;
   ready: boolean;
   sun: Observatory["sun"];
@@ -103,6 +105,7 @@ export function StoriesDrawer({
       <StorySearch deck={deck} ready={ready} aurora={aurora} />
       {!deck.query.trim() && (
         <>
+          {children}
           <JourneyPicker />
           <Group title="Earth stories">
             {earthStoryIds

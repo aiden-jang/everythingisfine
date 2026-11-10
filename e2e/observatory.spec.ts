@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, waitForData, openStories } from "./feeds";
+import { installFeeds, waitForData, openStories, saveImageButton, revealStoryTools } from "./feeds";
 
 for (const [width, height] of [
   [320, 640],
@@ -29,6 +29,8 @@ for (const [width, height] of [
     await expect(explore).toBeVisible();
     const depth = page.getByRole("button", { name: "Below the Surface", exact: true });
     await expect(depth).toBeEnabled();
+    for (const scene of ["Live Earth", "Below the Surface", "After Dark"])
+      await expect(page.getByRole("button", { name: scene, exact: true })).toBeInViewport({ ratio: 1 });
     const bounds = await page.evaluate(() => {
       const canvas = document.querySelector("canvas")!.getBoundingClientRect();
       return {
@@ -103,6 +105,7 @@ test("tour controls pause, advance, stop and leave the readings accessible", asy
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
+  await revealStoryTools(page);
   const tour = page.getByRole("button", { name: "Take a tour" });
   await expect(tour).toBeEnabled();
   await tour.click();
@@ -149,6 +152,7 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
+  await revealStoryTools(page);
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeEnabled();
   const contexts = () =>
     page.evaluate(
@@ -192,9 +196,9 @@ test("a historical shortcut frames an actual archived event and keeps capture av
   await page.setViewportSize({ width: 1440, height: 900 });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Save image", exact: true })).toBeEnabled();
+  await expect(await saveImageButton(page)).toBeEnabled();
   const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Save image", exact: true }).click();
+  await (await saveImageButton(page)).click();
   expect((await download).suggestedFilename()).toMatch(/\.png$/);
   await openStories(page);
   await page.getByRole("button", { name: "Japan, 2011 ↗", exact: true }).click();
@@ -209,6 +213,7 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await installFeeds(page, { empty: true, presentation: "fresh" });
   await page.goto("/");
   await expect(page.locator(".observatory-summary")).toContainText("0 earthquakes");
+  await revealStoryTools(page);
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
@@ -228,6 +233,7 @@ test("unavailable earthquake feeds do not masquerade as an empty or loading view
   await page.goto("/");
   await expect(page.locator(".observatory-source-note")).toContainText("USGS and EMSC are not answering");
   await expect(page.locator(".observatory-summary")).toContainText("Earthquake feeds unavailable.");
+  await revealStoryTools(page);
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
   await page.getByRole("button", { name: "Explore the globe" }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
@@ -245,13 +251,14 @@ test("the observatory keeps capture recovery and home navigation available", asy
   });
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
-  await page.getByRole("button", { name: "Save image", exact: true }).click();
+  await (await saveImageButton(page)).click();
+  await expect(page.getByRole("region", { name: "View options", exact: true })).toBeHidden();
   await expect(page.getByRole("status").filter({ hasText: "Sharing is unavailable" })).toBeVisible();
   const downloaded = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download image", exact: true }).click();
   expect((await downloaded).suggestedFilename()).toMatch(/\.png$/);
   await page.getByRole("button", { name: "Dismiss", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Save image", exact: true })).toBeFocused();
+  await expect(page.getByRole("button", { name: "View options", exact: true })).toBeFocused();
   await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
 });
@@ -267,6 +274,7 @@ test("a missing WebGL context still offers the source readings", async ({ page }
     } as typeof get;
   });
   await page.goto("/");
+  await revealStoryTools(page);
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Explore the globe" })).toBeVisible();
   await page.getByRole("button", { name: "Explore the globe" }).click();

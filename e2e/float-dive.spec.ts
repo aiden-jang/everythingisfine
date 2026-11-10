@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, revealStoryTools } from "./feeds";
 
 test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -29,6 +29,7 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   await page.goto("/");
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
+  await revealStoryTools(page);
   const open = page.getByRole("button", { name: "Float Dive", exact: true });
   await expect(open).toBeEnabled();
   expect(requests).toBe(0);
@@ -55,6 +56,10 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(depth).toBeInViewport({ ratio: 1 });
   await expect(page.getByRole("link", { name: "aiden jang", exact: true })).toBeInViewport();
+  await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
+  await page.goBack();
+  await expect(depth).toHaveAttribute("aria-valuetext", "0 m");
+  await expect(dive.getByText(/Recent profile · Cycle 269/)).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(open).toBeFocused();
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);

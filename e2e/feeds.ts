@@ -469,3 +469,16 @@ export async function openStories(page: Page) {
   if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
   return toggle;
 }
+
+export async function revealStoryTools(page: Page) {
+  const toggle = page.getByRole("button", { name: "Stories & layers", exact: true });
+  if (await toggle.isVisible()) await openStories(page);
+}
+export async function saveImageButton(page: Page) {
+  const toggle = page.getByRole("button", { name: "View options", exact: true });
+  if (await toggle.isVisible()) {
+    if (!(await page.getByRole("region", { name: "View options", exact: true }).isVisible()))
+      await toggle.click();
+  }
+  return page.getByRole("button", { name: "Save image", exact: true });
+}

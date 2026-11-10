@@ -6,6 +6,8 @@ import { RecordedReplay } from "./RecordedReplay";
 import { isReplay } from "./replays";
 import { ObservationCredit } from "./ObservationCredit";
 import { StorySession } from "./StorySession";
+import { observations } from "./catalogue";
+import { earthStories } from "../earth-stories/catalogue";
 import { isEarthStory } from "../earth-stories/catalogue";
 import "../earth-stories/stories.css";
 import "./observations.css";
@@ -67,9 +69,22 @@ export function ObservationDeckShell({
       <Suspense
         fallback={
           <div className="observatory-sidebar">
-            <p className="observatory-intro" role="status">
-              Opening observatory views…
-            </p>
+            <section className="observatory-intro" aria-label="Opening story">
+              <p role="status">
+                Opening{" "}
+                {isEarthStory(entry)
+                  ? earthStories[entry].title
+                  : entry in observations
+                    ? observations[entry as keyof typeof observations].title
+                    : "story"}
+                …
+              </p>
+              <div className="observatory-actions">
+                <button type="button" onClick={close}>
+                  {closeLabel}
+                </button>
+              </div>
+            </section>
             <ObservationCredit />
           </div>
         }

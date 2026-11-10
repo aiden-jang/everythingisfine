@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, saveImageButton, revealStoryTools } from "./feeds";
 
 const pixel = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGOQW///PwAFhwLMAV5hdQAAAABJRU5ErkJggg==",
@@ -51,6 +51,7 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
       : route.fulfill({ contentType: "image/png", body: pixel });
   });
   await page.goto("/");
+  await revealStoryTools(page);
   const trigger = page.getByRole("button", { name: "Storm Radar", exact: true });
   const canvas = page.locator("#globe-view canvas");
   const globe = await canvas.elementHandle();
@@ -82,7 +83,7 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   if (process.env["EIF_CAPTURE_UI"])
     await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/radar-missing-phone.png` });
   await expect(canvas).toHaveAttribute("data-radar-uploads", "1");
-  await expect(page.getByRole("button", { name: "Save image" })).toBeDisabled();
+  await expect(await saveImageButton(page)).toBeDisabled();
   await scene.getByRole("button", { name: "Previous radar scan" }).click();
   await expect(time).toHaveAttribute("datetime", timestamp(0));
   await expect(scene.getByRole("button", { name: "Previous radar scan" })).toBeDisabled();
@@ -129,6 +130,7 @@ test("Storm Radar returns to Explore with the same globe", async ({ page }) => {
   await page.getByRole("button", { name: "Map", exact: true }).click();
   const canvas = page.locator("#globe-view canvas");
   const globe = await canvas.elementHandle();
+  await revealStoryTools(page);
   const trigger = page.getByRole("button", { name: "Storm Radar", exact: true });
   await trigger.click();
   const scene = page.getByRole("region", { name: "Storm Radar" });

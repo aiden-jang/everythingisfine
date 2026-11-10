@@ -1,0 +1,24 @@
+import { useCallback, useRef } from "react";
+import type { FlyTo } from "../globe/cameraTarget";
+import type { CameraState } from "../globe/controls";
+import type { Permalink } from "./permalink";
+
+export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boolean) => void) {
+  const flyTo = useRef<FlyTo>(() => {});
+  const camera = useRef<CameraState>({
+    lon: shared.lon ?? 145,
+    lat: shared.lat ?? 12,
+    zoom: shared.zoom ?? 1,
+  });
+  const read = useRef(() => camera.current);
+  const onReady = useCallback(
+    (fly: FlyTo, current: () => CameraState) => {
+      flyTo.current = fly;
+      read.current = current;
+      setReady(true);
+      fly(camera.current.lon, camera.current.lat, camera.current.zoom);
+    },
+    [setReady],
+  );
+  return { flyTo, camera, read, onReady };
+}

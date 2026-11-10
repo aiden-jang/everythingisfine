@@ -47,6 +47,10 @@ function moonGlobe(image: HTMLImageElement) {
 }
 
 export type MoonfallView = ReturnType<typeof createMoonfall>;
+export type MoonfallProgress = Pick<
+  ReturnType<MoonfallView["read"]>,
+  "eva" | "meters" | "station" | "mapped"
+>;
 
 export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>, reduced: boolean) {
   const scene = new Scene();

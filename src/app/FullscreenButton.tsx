@@ -14,7 +14,7 @@ export function FullscreenButton(): JSX.Element | null {
     <>
       <button
         type="button"
-        className="observatory-save observatory-fullscreen"
+        className="observatory-save"
         aria-label={active ? "Exit fullscreen" : "Fullscreen"}
         aria-pressed={active}
         onClick={() => {

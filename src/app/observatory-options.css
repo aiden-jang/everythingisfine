@@ -1,0 +1,45 @@
+.observatory-options {
+  position: fixed;
+  inset: auto 20px auto auto;
+  margin: 0;
+  padding: 12px;
+  width: min(290px, calc(100vw - 24px));
+  border: 1px solid var(--color-hairline);
+  background: var(--color-deck);
+  color: var(--color-ink);
+  box-shadow: 0 16px 48px #0005;
+}
+.observatory-options > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+.observatory-options > button:hover {
+  background: var(--color-raised);
+}
+.observatory-options > button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.observatory-options > button span {
+  display: inline;
+}
+.observatory-options > p {
+  padding: 0 8px 12px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--color-dim);
+}
+
+.observatory-options .fullscreen-error {
+  position: static;
+  display: block;
+  padding: 8px;
+}

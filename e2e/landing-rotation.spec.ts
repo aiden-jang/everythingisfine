@@ -35,11 +35,16 @@ test("the landing globe rotates, pauses, and hands the same camera to Explore @d
   const url = page.url();
   await moving(page);
   expect(page.url()).toBe(url);
-  await page.getByRole("button", { name: "Pause globe rotation", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Resume globe rotation", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "View options", exact: true }).click();
+  await page.getByRole("button", { name: "Auto-rotate globe" }).click();
+  await expect(page.getByRole("button", { name: "Auto-rotate globe" })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
   await still(page);
   await page.screenshot({ path: test.info().outputPath("landing-rotation-desktop.png") });
-  await page.getByRole("button", { name: "Resume globe rotation", exact: true }).click();
+  await page.getByRole("button", { name: "Auto-rotate globe" }).click();
+  await page.keyboard.press("Escape");
   await moving(page);
   const before = (await camera(page))!;
   await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
@@ -50,7 +55,7 @@ test("the landing globe rotates, pauses, and hands the same camera to Explore @d
   await still(page);
 });
 
-test("steering on a phone pauses rotation and its control fits the stage @dev", async ({ page }) => {
+test("steering on a phone pauses rotation then resumes after idle @dev", async ({ page }) => {
   await open(page, 390);
   await moving(page);
   const box = (await page.locator("canvas").boundingBox())!;
@@ -58,23 +63,17 @@ test("steering on a phone pauses rotation and its control fits the stage @dev", 
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2, { steps: 5 });
   await page.mouse.up();
-  const resume = page.getByRole("button", { name: "Resume globe rotation", exact: true });
-  await expect(resume).toBeVisible();
-  const button = (await resume.boundingBox())!;
-  expect(button.height).toBeGreaterThanOrEqual(44);
-  expect(button.x).toBeGreaterThanOrEqual(box.x);
-  expect(button.x + button.width).toBeLessThanOrEqual(box.x + box.width);
-  const readout = (await page.locator("[data-orbit-readout]").boundingBox())!;
-  expect(readout.y).toBeGreaterThanOrEqual(button.y + button.height + 8);
-  await page.screenshot({ path: test.info().outputPath("landing-rotation-phone.png") });
+  await expect(page.getByRole("button", { name: /globe rotation/ })).toHaveCount(0);
   await expect(async () => {
     await still(page);
   }).toPass({ timeout: 20_000 });
-  await resume.click();
   await moving(page);
   await page.locator("#globe-view").focus();
   await page.keyboard.press("ArrowLeft");
-  await expect(resume).toBeVisible();
+  await expect(async () => {
+    await still(page);
+  }).toPass({ timeout: 20_000 });
+  await moving(page);
 });
 
 test("landing rotation respects reduced motion and hidden tabs @dev", async ({ page }) => {

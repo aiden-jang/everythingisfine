@@ -56,7 +56,9 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/stillDelivery.ts` | Attached download links and deferred object URL cleanup |
 | `src/app/Utilities.tsx` | Mobile disclosure focus, outside dismissal, Escape and resize lifetime |
 | `src/app/useGlobeResources.ts` | Deferred geometry and timezone data, retained while disabled, with completion cleanup |
-| `src/app/useObservatory.ts` | First-visit and saved presentation, temporary scene overrides, reduced-motion-aware globe handoff |
+| `src/app/useObservatory.ts` | First-visit and saved presentation, temporary scene overrides and story browser state |
+| `src/app/usePresentation.ts` | Interruptible globe/panel handoff without rebuilding the renderer |
+| `src/app/useSceneHistory.ts` | In-memory scene, browser-scroll and camera restoration for browser Back/Forward |
 | `src/app/float/`, `src/sources/argo.ts`, and `src/globe/floatPresentation.ts` | Argo catalogue and profile validation, sample playback, and the shared globe’s float sequence |
 | `src/app/observations/`, `src/sources/observations/`, and `src/globe/observationLayer.ts` | Optional observations and replays, provider readers, shared playback, and projected data layers |
 | `src/app/radar/`, `src/sources/radar.ts`, and `src/globe/radarSurface.ts` | Storm Radar controls, NOAA scan catalogue, and globe overlay |
@@ -149,6 +151,11 @@ moment for Back, while explicitly switching to recent radar observation time.
 finite timestamp and bounded choices; individual players clamp times to their data range. Shared
 links open paused and never write initial city choices into storage. `StorySearch` searches a small
 metadata index across scenes without loading the archives. Returning preserves the query and focus.
+Scene navigation stores camera and logical view snapshots in memory; browser history receives only
+an opaque entry identifier. Snapshots omit bitmaps and lunar rendering resources. Moonfall restores
+its traverse, distance and projection on a fresh lunar scene, and Float Dive restores its paused sample.
+The shared-link writer preserves that history state. The title clears story browsing
+and returns to the Live Earth overview without replaying the entrance or replacing the canvas.
 
 The `src/app/journeys/` catalogue provides guided paths and a contextual onward link for each story.
 It is separate from `src/app/journeys.ts`, which selects scientific readings for the narrated globe

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, revealStoryTools } from "./feeds";
 
 async function installSun(page: Page, windAvailable = true, xrayAge = 1) {
   await installFeeds(page, { presentation: "fresh", empty: true });
@@ -38,6 +38,7 @@ test("Sun Watch loads on demand and flies back to Earth inside After Dark", asyn
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await openStories(page);
+  await revealStoryTools(page);
   await expect(page.getByRole("button", { name: "Follow the aurora" })).toBeEnabled();
   expect(requests).toEqual({ wind: 0, xray: 0 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -51,6 +52,7 @@ test("Sun Watch loads on demand and flies back to Earth inside After Dark", asyn
   await expect(stage.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
   await expect(stage.getByText("Earth · After Dark")).toBeVisible();
   expect(requests).toEqual({ wind: 1, xray: 1 });
+  await revealStoryTools(page);
   await page.getByRole("button", { name: "Follow the aurora" }).click();
   await expect(stage).toBeHidden();
   await expect(page.getByRole("group", { name: "Globe readout" })).toContainText("30% model chance");
@@ -81,5 +83,6 @@ test("reduced motion keeps the measurements and aurora available during a solar-
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
   await page.getByRole("button", { name: "Back to stars", exact: true }).click();
   await expect(page.getByRole("button", { name: "Sun Watch", exact: true })).toBeFocused();
+  await revealStoryTools(page);
   await expect(page.getByRole("button", { name: "Follow the aurora" })).toBeEnabled();
 });

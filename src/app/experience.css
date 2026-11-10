@@ -111,10 +111,6 @@
   }
 }
 @media (max-width: 899px) {
-  .observatory-save span,
-  .observatory-fullscreen {
-    display: none;
-  }
   .featured-story {
     grid-template-columns: 60px minmax(0, 1fr);
     margin-top: 14px;

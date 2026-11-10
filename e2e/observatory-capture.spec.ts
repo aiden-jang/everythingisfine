@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, saveImageButton, openStories } from "./feeds";
 
 type Captured = { lines: string[]; size: number; type: string };
 
@@ -28,6 +28,7 @@ test("the featured lunar journey keeps its canvas and saves its own scientific c
   await page.goto("/");
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
+  await openStories(page);
   await page.getByRole("button", { name: "Moonfall", exact: true }).click();
   const moon = page.locator("#observatory-intro");
   await expect(page.getByRole("group", { name: "Lunar view" })).toContainText("Taurus–Littrow Valley");
@@ -35,7 +36,8 @@ test("the featured lunar journey keeps its canvas and saves its own scientific c
   await expect(moon).toHaveAccessibleName("Moonfall");
   await moon.getByLabel("Rover traverse").selectOption("1");
   await moon.getByRole("slider", { name: "Mapped distance" }).press("End");
-  await page.getByRole("button", { name: "Save image", exact: true }).click();
+  const distance = await moon.getByRole("slider", { name: "Mapped distance" }).inputValue();
+  await (await saveImageButton(page)).click();
   const result = await page.evaluate(() => (window as unknown as { captured: Captured }).captured);
   expect(result.type).toBe("image/png");
   expect(result.size).toBeGreaterThan(20_000);
@@ -43,6 +45,10 @@ test("the featured lunar journey keeps its canvas and saves its own scientific c
   expect(result.lines).toContain("Apollo 17 · December 1972 · Traverse 2");
   expect(result.lines.join(" ")).toContain("LRO / USGS terrain");
   expect(result.lines.join(" ")).not.toMatch(/earthquakes|magnitude|Live ·/);
+  await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
+  await page.goBack();
+  await expect(moon.getByLabel("Rover traverse")).toHaveValue("1");
+  await expect(moon.getByRole("slider", { name: "Mapped distance" })).toHaveValue(distance);
   await moon.getByRole("button", { name: "Back to Live Earth", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Moonfall", exact: true })).toBeFocused();
