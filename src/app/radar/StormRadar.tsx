@@ -57,14 +57,16 @@ export function StormRadar({
         <h2>Storm Radar</h2>
         <div className="observatory-actions radar-actions">
           <button type="button" ref={back} onClick={onClose} aria-label={backLabel}>
-            {backLabel}
+            <span className="observation-back-full">{backLabel}</span>
+            <span className="observation-back-compact">Back</span>
           </button>
         </div>
       </div>
-      <Suspense fallback={<p role="status">Opening Storm Radar…</p>}>
-        <RadarStage onView={onView} initialRegion={entry.region} />
-      </Suspense>
-      <div className="observatory-actions radar-actions" role="group" aria-label="Radar projection">
+      <div
+        className="observatory-actions radar-actions radar-projection"
+        role="group"
+        aria-label="Radar projection"
+      >
         <button type="button" aria-pressed={!projection.map} onClick={() => projection.setMap(false)}>
           Globe
         </button>
@@ -72,19 +74,29 @@ export function StormRadar({
           Map
         </button>
       </div>
-      <div className="radar-sources" aria-label="Storm Radar sources">
-        <a href={RADAR_SERVICE} target="_blank" rel="noreferrer" aria-describedby="external-link-hint">
-          NOAA MRMS
-        </a>
-        <a
-          href="https://www.weather.gov/jetstream/reflectivity"
-          target="_blank"
-          rel="noreferrer"
-          aria-describedby="external-link-hint"
-        >
-          What reflectivity means
-        </a>
-      </div>
+      <Suspense fallback={<p role="status">Opening Storm Radar…</p>}>
+        <RadarStage onView={onView} initialRegion={entry.region} />
+      </Suspense>
+      <details className="radar-coverage">
+        <summary>Data &amp; coverage</summary>
+        <p>
+          Recent radar reflectivity across the contiguous United States. Returns show what the radar detected,
+          not a forecast of where rain will move.
+        </p>
+        <div className="radar-sources" aria-label="Storm Radar sources">
+          <a href={RADAR_SERVICE} target="_blank" rel="noreferrer" aria-describedby="external-link-hint">
+            NOAA MRMS
+          </a>
+          <a
+            href="https://www.weather.gov/jetstream/reflectivity"
+            target="_blank"
+            rel="noreferrer"
+            aria-describedby="external-link-hint"
+          >
+            What reflectivity means
+          </a>
+        </div>
+      </details>
     </>
   );
 }

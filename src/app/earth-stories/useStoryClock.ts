@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
 export function useStoryClock(
   count: number,
@@ -56,6 +56,10 @@ export function useStoryClock(
     media.addEventListener("change", stop);
     return () => media.removeEventListener("change", stop);
   }, []);
+  const pause = useCallback(() => {
+    setPlaying(false);
+    setCinematic(false);
+  }, []);
   return {
     position,
     playing,
@@ -65,10 +69,7 @@ export function useStoryClock(
       setCinematic(false);
       setPosition(Math.max(0, Math.min(count - 1, index)));
     },
-    pause() {
-      setPlaying(false);
-      setCinematic(false);
-    },
+    pause,
     toggle() {
       if (!playing && position >= count - 1) {
         setPosition(0);

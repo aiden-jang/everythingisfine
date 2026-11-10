@@ -11,6 +11,7 @@ export interface RadarView {
   kind: "radar";
   target: RadarCamera;
   image: ImageBitmap | null;
+  at?: number | undefined;
   lightning?: ObservationFrame | undefined;
 }
 

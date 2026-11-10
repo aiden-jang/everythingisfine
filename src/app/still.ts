@@ -5,6 +5,8 @@
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
 
 export interface StillCaption {
+  subject?: string;
+  magnitudeScale?: boolean;
   /** What the image is of, from the cursor rather than the clock. */
   moment: string;
   /** The evidence for the title, from `verdictLine`. Null when the planet really has nothing on it. */
@@ -41,7 +43,12 @@ const CAPTION_H = 118;
  * asserted without a canvas: what a still claims is the part worth testing, and `fillText` is not.
  */
 export function captionLines(caption: StillCaption): [string, string | null, string, string] {
-  return ["EVERYTHING IS FINE", caption.verdict, caption.moment, `${caption.filter} · ${caption.host}`];
+  return [
+    caption.subject ?? "EVERYTHING IS FINE",
+    caption.verdict,
+    caption.moment,
+    `${caption.filter} · ${caption.host}`,
+  ];
 }
 
 /** The evidence line under the title. Every number is already in the snapshot. See ARCHITECTURE.md#srcappstillts. */
@@ -104,7 +111,7 @@ export function drawStill(
   if (globeWidth / globeHeight > frameAspect) sw = globeHeight * frameAspect;
   else sh = globeWidth / frameAspect;
 
-  if (sw >= shortest && sh >= shortest) {
+  if (caption.magnitudeScale !== false && sw >= shortest && sh >= shortest) {
     ctx.drawImage(globe, (globeWidth - sw) / 2, (globeHeight - sh) / 2, sw, sh, 0, 0, STILL_WIDTH, frameH);
   } else {
     const scale = Math.min(STILL_WIDTH / globeWidth, frameH / globeHeight);
@@ -117,19 +124,22 @@ export function drawStill(
   const baseline = frameH + 34;
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = theme.ink;
-  ctx.font = "600 21px Geist, Helvetica Neue, Arial, sans-serif";
-  ctx.letterSpacing = "0.16em";
-  ctx.fillText(mark, 56, baseline);
+  ctx.font = "600 24px Geist, Helvetica Neue, Arial, sans-serif";
   ctx.letterSpacing = "0px";
-  // The verdict in ink rather than faint, directly under the title: it is the half of the joke the image was
-  // missing. The stamp and the provenance stay faint - they are what the picture is of, not what it says.
-  ctx.font = "16px ui-monospace, SFMono-Regular, Menlo, monospace";
-  if (verdict !== null) ctx.fillText(verdict, 56, baseline + 27);
+  ctx.fillText(mark, 40, baseline, 780);
   ctx.font = "15px ui-monospace, SFMono-Regular, Menlo, monospace";
+  if (verdict !== null) ctx.fillText(verdict, 40, baseline + 28, 780);
   ctx.fillStyle = theme.faint;
-  ctx.fillText(moment, 56, baseline + 54);
-  const width = ctx.measureText(provenance).width;
-  ctx.fillText(provenance, STILL_WIDTH - 56 - width, baseline + 54);
+  ctx.fillText(moment, 40, baseline + (verdict ? 52 : 28), 780);
+  ctx.font = "12px Geist, Helvetica Neue, Arial, sans-serif";
+  ctx.fillText(provenance, 40, STILL_HEIGHT - 12, STILL_WIDTH - 80);
+  if (caption.magnitudeScale === false) {
+    ctx.textAlign = "right";
+    ctx.font = "500 16px Geist, Helvetica Neue, Arial, sans-serif";
+    ctx.fillText("Everything is fine.", STILL_WIDTH - 40, baseline);
+    ctx.textAlign = "left";
+    return;
+  }
 
   /* The scale travels with the picture, because the picture is the part that leaves. Shared, the image was
      a field of coloured dots with a caption that counted them and never explained them. See ARCHITECTURE.md#srcappstillts. */

@@ -38,6 +38,41 @@
   text-underline-offset: 3px;
 }
 
+.moonfall-route-note {
+  font-size: 12px;
+  color: var(--color-dim);
+}
+.moonfall-transport .observatory-actions {
+  align-items: center;
+  margin-block: 4px 12px;
+}
+.moonfall-transport output {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+@media (min-width: 1000px) and (min-height: 700px) {
+  .moonfall-transport {
+    position: fixed;
+    z-index: 2;
+    left: calc(clamp(320px, 34vw, 480px) + 32px);
+    right: 32px;
+    bottom: 64px;
+    padding: 12px 20px;
+    border: 1px solid var(--color-hairline);
+    border-radius: 7px;
+    background: var(--color-deck);
+  }
+  .moonfall-transport .tonight-scrub {
+    min-height: 36px;
+  }
+  .moonfall-transport .observatory-actions {
+    margin-bottom: 4px;
+  }
+  .observatory-intro:has([data-moonfall-panel]) {
+    align-self: start;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   [data-moonfall-replay] {
     display: none;

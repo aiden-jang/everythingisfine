@@ -78,10 +78,14 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   await expect.poll(() => [...ids].sort()).toEqual([1, 2, 3]);
   await slider.press("ArrowLeft");
   await expect(time).toHaveAttribute("datetime", timestamp(1));
-  await expect(scene.getByText("This scan’s image is unavailable.")).toBeVisible();
+  await expect(scene.getByText("This scan’s image is unavailable.")).toBeInViewport({ ratio: 1 });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/radar-missing-phone.png` });
   await expect(canvas).toHaveAttribute("data-radar-uploads", "1");
-  await slider.press("Home");
+  await expect(page.getByRole("button", { name: "Save image" })).toBeDisabled();
+  await scene.getByRole("button", { name: "Previous radar scan" }).click();
   await expect(time).toHaveAttribute("datetime", timestamp(0));
+  await expect(scene.getByRole("button", { name: "Previous radar scan" })).toBeDisabled();
   await expect(canvas).toHaveAttribute("data-radar-uploads", "2");
   await scene.getByLabel("Radar region").selectOption({ label: "Great Lakes" });
   await expect(scene.getByRole("heading", { name: "Great Lakes" })).toBeVisible();

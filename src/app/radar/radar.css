@@ -53,9 +53,35 @@
 }
 
 .radar-transport {
-  margin-top: 12px;
+  margin-top: 0;
   padding-top: 12px;
   border-top: 1px solid var(--color-hairline);
+}
+
+.radar-playback {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  margin-bottom: 8px;
+}
+.radar-playback button:nth-child(2) {
+  color: var(--color-ink);
+  background: var(--color-raised);
+}
+.radar-reading {
+  padding-top: 12px;
+  margin-top: 12px;
+  border-top: 1px solid var(--color-hairline);
+}
+.radar-coverage {
+  font-size: 12px;
+  color: var(--color-dim);
+  line-height: 1.5;
+}
+.radar-coverage summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+  color: var(--color-ink);
 }
 
 .radar-clock {
@@ -133,17 +159,54 @@
 
 @media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
   .frame[data-presentation="observe"] .zones:has([data-storm-radar]) {
-    grid-template-rows: minmax(175px, 1fr) clamp(350px, 44dvh, 408px);
+    grid-template-rows: minmax(175px, 1fr) clamp(390px, 50dvh, 460px);
   }
 }
 
 @media (max-height: 620px) and (min-width: 600px) {
   .observatory-intro[data-storm-radar] {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    gap: 8px;
+    padding-block: 8px;
+  }
+  .observatory-intro[data-storm-radar] .radar-heading {
+    flex-direction: row;
+    align-items: center;
     gap: 8px;
   }
-
+  .observatory-intro[data-storm-radar] .radar-heading h2 {
+    font-size: 30px;
+  }
+  .radar-stage-controls {
+    display: flex;
+    flex-direction: column;
+  }
+  .radar-reading {
+    order: -1;
+    margin-top: 0;
+    padding-top: 0;
+    border: 0;
+  }
+  .radar-reading p {
+    margin-top: 4px;
+  }
+  .radar-projection {
+    order: 1;
+  }
+  .radar-coverage {
+    order: 2;
+  }
   .radar-transport {
     margin-top: 8px;
     padding-top: 8px;
   }
+}
+
+.radar-warning {
+  margin-top: 6px;
+  color: var(--color-ink);
+  font-size: 12px;
+  line-height: 1.5;
 }

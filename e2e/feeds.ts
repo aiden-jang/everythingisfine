@@ -455,10 +455,7 @@ export async function waitForData(page: Page): Promise<number> {
   await expect(rail, "the rail never rendered: the page probably threw on load").toBeAttached({
     timeout: 10_000,
   });
-  const counter = rail
-    .locator("div")
-    .filter({ hasText: /^\d[\d,]*$/ })
-    .first();
+  const counter = rail.locator("[data-event-count]");
   let held = 0;
   await expect(async () => {
     held = Number((await counter.textContent({ timeout: 1000 }))?.replace(/,/g, "") ?? 0);

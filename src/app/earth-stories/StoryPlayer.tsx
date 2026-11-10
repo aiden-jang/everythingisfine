@@ -193,16 +193,17 @@ export function StoryPlayer({
     lunarImage.element,
     status,
   ]);
+  const pause = clock.pause;
   useEffect(() => {
     const canvas = document.querySelector(".zone-canvas canvas");
-    const stop = () => clock.pause();
+    const stop = () => pause();
     canvas?.addEventListener("pointerdown", stop);
     canvas?.addEventListener("wheel", stop, { passive: true });
     return () => {
       canvas?.removeEventListener("pointerdown", stop);
       canvas?.removeEventListener("wheel", stop);
     };
-  }, [clock]);
+  }, [pause]);
   const chooseSite = (value: string) => {
     setSite(value);
     const point = data.sites?.find((p) => p.id === value);

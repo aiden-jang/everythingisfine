@@ -32,6 +32,7 @@ export function TonightSky({
   preference,
   initialMode,
   initialLook,
+  returnLabel,
 }: {
   view: TonightView | null;
   onView: (next: TonightPresentation) => void;
@@ -39,6 +40,7 @@ export function TonightSky({
   preference: SkyCityPreference;
   initialMode: "sky" | "meteors" | "moonfall";
   initialLook: SkyLook | undefined;
+  returnLabel: string;
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
   const rangeId = useId();
@@ -98,7 +100,7 @@ export function TonightSky({
           <h2 id="local-sky-title">Moonfall</h2>
           <div className="observatory-actions tonight-back">
             <button type="button" id="moonfall-back" onClick={returnToSky}>
-              {initialMode === "moonfall" ? "Back to After Dark" : "Back to Tonight’s Sky"}
+              {initialMode === "moonfall" ? returnLabel : "Back to Tonight’s Sky"}
             </button>
           </div>
         </div>
@@ -114,8 +116,8 @@ export function TonightSky({
       <div className="tonight-heading">
         <h2 id="local-sky-title">{mode === "sky" ? "Tonight’s Sky" : "Meteor Nights"}</h2>
         <div className="observatory-actions tonight-back">
-          <button type="button" ref={back} onClick={onClose} aria-label="Back to After Dark">
-            Back to After Dark
+          <button type="button" ref={back} onClick={onClose}>
+            {returnLabel}
           </button>
         </div>
       </div>

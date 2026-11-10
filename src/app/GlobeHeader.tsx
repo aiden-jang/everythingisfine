@@ -1,3 +1,4 @@
+import { FullscreenButton } from "./FullscreenButton";
 import { StillNotice } from "./StillNotice";
 import type { Dispatch, RefObject, SetStateAction } from "react";
 import type { FeedSnapshot } from "./feed";
@@ -152,7 +153,9 @@ export function GlobeHeader({
                 <circle cx="8" cy="8" r="1.5" />
                 <path d="m3 17 5-5 4 4 4-6 5 7" />
               </svg>
+              <span>{saving ? "Saving image" : "Save image"}</span>
             </button>
+            <FullscreenButton />
           </div>
         ) : (
           <>

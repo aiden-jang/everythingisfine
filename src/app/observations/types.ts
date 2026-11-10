@@ -91,6 +91,8 @@ export interface ReplayCamera extends CameraState {
 }
 
 export interface ObservationView {
+  /** False while a DOM photo or video covers the shared canvas. */
+  capture?: boolean;
   kind: "observation";
   frame: ObservationFrame;
   target: CameraState;

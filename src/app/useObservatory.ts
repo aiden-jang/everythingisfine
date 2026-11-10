@@ -182,7 +182,14 @@ export function useObservatory(shared: Partial<Permalink>) {
     presentation,
     scene,
     ready,
-    canCapture: ready && !sunActive && !tonight && floatView === null && !observations.entry,
+    canCapture:
+      ready &&
+      !sunActive &&
+      tonightView !== "opening" &&
+      floatView !== "opening" &&
+      (!radarView || !!radarView.image) &&
+      (!observations.entry ||
+        (!!observations.view && observations.view.capture !== false && !observations.view.frame.photograph)),
     localReadings: radarView !== null || tonight || floatView !== null || !!observations.entry,
     observations,
     openRecordedStory(id: ReplayId | "kilauea" | "iceberg", from: string) {
@@ -250,6 +257,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     },
     radar: {
       active: radarView !== null,
+      view: radarView,
       fromExplore: radarView !== null && radarOrigin.current === "explore",
       entry: radarEntry.current,
       open(region?: string, story = false) {

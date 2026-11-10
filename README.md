@@ -29,9 +29,13 @@ do not support browser CORS. The local server supplies the same routes without a
 A fresh visit opens the observatory: a full globe, a short introduction, and three scenes.
 **Explore** opens the scientific controls. The wordmark returns to the Observatory and preserves the current view. Choose **Reset view** in Explore to clear the selection, filters, and held time and replay the globe’s arrival.
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
+**Save image** adds the displayed story’s title, time and source to supported canvas views.
+Photograph overlays and Sun Watch do not offer an incomplete canvas-only export.
+Use **Fullscreen** on desktop for a larger viewing area.
 Open **Stories & layers** in any scene to find its live observations, forecasts, predictions, and replays.
 Search by subject, place, or year across all three scenes. Closing a story returns to its search
-result or drawer entry. **Share this moment** copies the story, timestamp, projection, and selected
+result or drawer entry. **Keep exploring** offers a small set of related views, each with its own
+observations and time period. **Share this moment** copies the story, timestamp, projection, and selected
 city or chapter. Links open paused; recent feeds explain when the linked observation has expired.
 
 - **Live Earth** frames current activity and traces the day–night boundary. Choosing it from an
@@ -50,9 +54,9 @@ city or chapter. Links open paused; recent feeds explain when the linked observa
 - **Tonight’s Sky** descends to a selected city from After Dark. Scrub from local sunset to sunrise,
   use the compass to turn, or point at the Moon and five bright planets. Angles are calculated for a
   level horizon. Where a crossing is absent, the timeline uses a local evening or morning endpoint.
-- **Moonfall** opens from Tonight’s Sky or the After Dark drawer. Fly from lunar orbit into
+- **Moonfall** is featured on the opening screen and also opens from Tonight’s Sky or the After Dark drawer. Fly from lunar orbit into
   Taurus–Littrow and switch between Terrain and Landing map without resetting the rover traverse
-  or geology stop. Back returns to the sky view or drawer that opened it.
+  or geology stop. Back returns to the opening screen, sky view, or drawer that opened it.
 - **Meteor Nights** traces a shower’s apparent origin across the same local sky. Play or scrub a
   listed peak night and find the dark, moon-free windows. The city selected in After Dark is shared
   by Tonight’s Sky, Meteor Nights, Orbital Pass and Shadow Chase.
@@ -63,7 +67,8 @@ city or chapter. Links open paused; recent feeds explain when the linked observa
   Play or scrub measured temperature and practical salinity from depth toward the surface.
   Pick a recent Marine Institute profile or a bundled recording.
 - **Storm Radar** flies to recent radar returns on the globe over the contiguous United States.
-  Play or scrub through up to an hour of NOAA scans at their published UTC times.
+  Play, step, or scrub through up to an hour of NOAA scans at their published UTC times.
+  **Data & coverage** explains the source and the limits of reflectivity.
 - **Million-Mile View** pulls the globe back into NASA’s DSCOVR camera view. Scrub the recorded
   2015 Moon crossing or switch to the latest published full-Earth photographs.
 - **Deep Time** replaces modern coastlines with reconstructed continents. Rewind to Pangaea on

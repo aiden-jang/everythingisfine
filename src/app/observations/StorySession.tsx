@@ -1,8 +1,10 @@
+import type { StoryId } from "./useObservationDeck";
 import { createContext, useContext, useRef, useState } from "react";
 import { writeStoryMoment, type StoryMoment } from "./storyMoment";
 
 export interface StorySessionValue {
   initial: StoryMoment | undefined;
+  openRelated?: (id: StoryId) => void;
   remember: (part: Partial<StoryMoment>) => void;
   current: () => StoryMoment | undefined;
 }

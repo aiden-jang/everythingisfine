@@ -1507,6 +1507,11 @@ The view as a PNG, with the moment it is of written on it.
 Always stamp the moment, and take it from the cursor rather than the clock. An image of live data outlives
 the data, and a still is shared by hand with no cache to blame.
 
+`observatoryCaption` resolves the active presentation before capture: radar uses the selected scan,
+Moonfall names the Apollo traverse, and story views use their own frame time and source. These
+exports omit the earthquake legend and fit the complete canvas so routes and map edges survive.
+The live earthquake view retains its magnitude scale and globe-centered crop.
+
 Compose it; never grab the canvas raw. The globe's context has a zero clear alpha, so a bare capture is a
 globe on transparency, and the chrome that explains it is DOM sitting over the canvas.
 

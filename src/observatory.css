@@ -1,29 +1,34 @@
 @layer components {
   .frame[data-presentation="observe"] .zones {
-    grid-template-columns: minmax(320px, 35%) minmax(0, 1fr);
+    --observatory-width: clamp(320px, 34vw, 480px);
+    grid-template-columns: var(--observatory-width) minmax(0, 1fr);
     grid-template-rows: 1fr;
     grid-template-areas: "welcome canvas";
     padding-top: 60px;
   }
   .observatory-sidebar {
-    --observatory-inline: clamp(24px, 4vw, 72px);
+    --observatory-inline: clamp(24px, 3.2vw, 56px);
     grid-area: welcome;
     z-index: 1;
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
     min-height: 0;
+    min-width: 0;
   }
   .observatory-intro {
     align-self: center;
     max-height: 100%;
     min-height: 0;
     overflow-y: auto;
-    padding: 32px var(--observatory-inline);
+    padding: 24px var(--observatory-inline);
+    scrollbar-width: thin;
+    overscroll-behavior: contain;
+    scroll-padding-block: 20px;
     color: var(--color-ink);
   }
   .observatory-story h2 {
     max-width: 9.5ch;
-    font-size: clamp(48px, 5.5vw, 84px);
+    font-size: clamp(48px, 4.8vw, 72px);
     line-height: 1;
     font-weight: 580;
     letter-spacing: -0.04em;
@@ -31,7 +36,7 @@
   }
   .observatory-description {
     max-width: 36ch;
-    margin-top: 20px;
+    margin-top: 16px;
     font-size: 14px;
     line-height: 1.65;
     color: var(--color-dim);
@@ -52,7 +57,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    margin-top: 28px;
+    margin-top: 20px;
   }
   .observatory-actions button {
     min-height: 44px;
@@ -116,15 +121,15 @@
     border-block: 1px solid var(--color-hairline);
   }
   .observatory-scenes button {
-    --scene-ink: #9dcfdc;
+    --scene-ink: var(--color-ink);
     position: relative;
     display: grid;
     align-content: start;
     justify-items: start;
     gap: 4px;
-    min-height: 94px;
+    min-height: 58px;
     padding: 10px;
-    border-right: 1px solid var(--color-hairline);
+    border-right: 0;
     text-align: left;
     color: var(--color-dim);
     cursor: pointer;
@@ -135,16 +140,10 @@
   .observatory-scenes button:last-child {
     border-right: 0;
   }
-  .observatory-scenes button:nth-child(2) {
-    --scene-ink: #e2b892;
-  }
-  .observatory-scenes button:nth-child(3) {
-    --scene-ink: #b9bbeb;
-  }
   .observatory-scenes button[aria-pressed="true"],
   .observatory-scenes button:hover:not(:disabled) {
     color: var(--color-ink);
-    background: var(--color-raised);
+    background: transparent;
   }
   .observatory-scenes button[aria-pressed="true"]::after {
     position: absolute;
@@ -155,29 +154,9 @@
     transform-origin: left;
     animation: stage-rule-arrive 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
-  .scene-symbol {
-    display: block;
-    width: 32px;
-    height: 24px;
-    color: var(--scene-ink);
-  }
   .scene-label {
     font-size: 12px;
     line-height: 1.3;
-  }
-  .scene-note {
-    font-size: 10px;
-    line-height: 1.4;
-    color: var(--color-dim);
-  }
-  .scene-diagram-trace {
-    opacity: 0;
-    stroke: var(--color-ink);
-    stroke-dasharray: 1;
-  }
-  .observatory-scenes button[aria-pressed="true"] .scene-diagram-trace {
-    opacity: 1;
-    animation: scene-diagram-trace 680ms cubic-bezier(0.16, 1, 0.3, 1) both;
   }
   .observatory-stage {
     --stage-ink: #9dcfdc;
@@ -205,7 +184,7 @@
     position: absolute;
     width: 15px;
     height: 15px;
-    border: 0 solid color-mix(in srgb, var(--stage-ink) 60%, var(--color-deck));
+    border: 0 solid transparent;
   }
   .stage-corners span:nth-child(1) {
     inset: 0 auto auto 0;
@@ -236,8 +215,7 @@
     top: calc(var(--stage-inset) + 8px);
     justify-content: flex-end;
     color: var(--stage-ink);
-    text-transform: uppercase;
-    letter-spacing: 0.09em;
+    letter-spacing: 0.02em;
   }
   .stage-rule {
     width: 28px;
@@ -314,6 +292,9 @@
     }
     .observatory-sidebar {
       --observatory-inline: 24px;
+      border-top: 1px solid var(--color-hairline);
+      border-radius: 20px 20px 0 0;
+      background: var(--color-deck);
     }
     .observatory-intro {
       align-self: stretch;
@@ -355,18 +336,11 @@
       margin-top: 14px;
     }
     .observatory-scenes button {
-      min-height: 68px;
+      min-height: 52px;
       padding: 8px;
-    }
-    .scene-symbol {
-      width: 26px;
-      height: 20px;
     }
     .scene-label {
       font-size: 11px;
-    }
-    .scene-note {
-      display: none;
     }
     .observatory-stage {
       --stage-inset: 9px;
@@ -458,8 +432,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
+    gap: 8px;
+    min-width: 44px;
     height: 44px;
+    padding-inline: 10px;
+    font-size: 12px;
     border: 1px solid var(--color-hairline);
     border-radius: 7px;
     color: var(--color-dim);
@@ -552,18 +529,9 @@
     transform: translateY(0);
   }
 }
-@keyframes scene-diagram-trace {
-  from {
-    stroke-dashoffset: 1;
-  }
-  to {
-    stroke-dashoffset: 0;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .observatory-story h2,
   .observatory-scenes button[aria-pressed="true"]::after,
-  .observatory-scenes button[aria-pressed="true"] .scene-diagram-trace,
   .stage-ident,
   .stage-readout,
   .stage-rule {

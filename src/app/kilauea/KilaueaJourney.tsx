@@ -89,6 +89,7 @@ export function KilaueaJourney({
   useLayoutEffect(() => {
     drawLavaSurface(surface, index, element, split);
     onView({
+      capture: !footage || map,
       kind: "observation",
       frame: { at: Date.parse(at), raster },
       target,
@@ -98,7 +99,7 @@ export function KilaueaJourney({
       arrive,
     });
     remember?.({ chapter: split === null ? "" : "compare", choice: String(split ?? "") });
-  }, [index, element, split, at, onView, surface, arrive, remember]);
+  }, [index, element, split, at, onView, surface, arrive, remember, footage, map]);
   useEffect(() => {
     if (!playing || !arrived) return;
     let timer = 0;

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { captionLines, stillMoment, STILL_HEIGHT, STILL_WIDTH, verdictLine } from "./still";
+import { describe, expect, it, vi } from "vitest";
+import { captionLines, drawStill, stillMoment, STILL_HEIGHT, STILL_WIDTH, verdictLine } from "./still";
 
 const NOW = Date.parse("2026-08-21T04:12:30Z");
 
@@ -129,4 +129,29 @@ describe("a still taken while an archived day is on screen", () => {
     expect(stillMoment(held, NOW, true)).toBe("Held at 2026-07-04 09:30 UTC");
     expect(stillMoment(held, NOW, false)).toBe("Held at 2026-07-04 09:30 UTC");
   });
+});
+
+it("keeps the whole scientific canvas and omits an unrelated earthquake legend", () => {
+  const drawImage = vi.fn();
+  const fillText = vi.fn();
+  const ctx = { fillRect: vi.fn(), drawImage, fillText } as unknown as CanvasRenderingContext2D;
+  const image = {} as CanvasImageSource;
+  drawStill(
+    ctx,
+    image,
+    1600,
+    900,
+    {
+      subject: "Moonfall",
+      moment: "Apollo 17 · December 1972",
+      verdict: null,
+      filter: "LRO / USGS terrain",
+      host: "example.test",
+      magnitudeScale: false,
+    },
+    { background: "black", ink: "white", faint: "gray", ramp: "thermal" },
+  );
+  expect(drawImage).toHaveBeenCalledWith(image, 0, expect.any(Number), 1200, 675);
+  expect(fillText.mock.calls.map(([text]) => text)).toContain("Moonfall");
+  expect(fillText.mock.calls.map(([text]) => text)).not.toContain("magnitude");
 });

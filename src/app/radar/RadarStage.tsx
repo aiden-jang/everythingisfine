@@ -42,8 +42,15 @@ export function RadarStage({
 
   const lightning = useRadarLightning(showLightning ? selected?.at : undefined);
   useLayoutEffect(
-    () => onView({ kind: "radar", target, image: image ?? null, lightning: lightning?.frame ?? undefined }),
-    [image, lightning, onView, target],
+    () =>
+      onView({
+        kind: "radar",
+        target,
+        image: image ?? null,
+        at: image ? selected?.at : undefined,
+        lightning: lightning?.frame ?? undefined,
+      }),
+    [image, lightning, onView, target, selected?.at],
   );
 
   function seek(scan: RadarScan | null) {
@@ -101,51 +108,38 @@ export function RadarStage({
   const atLatest = index === scans.length - 1 && chosen === null;
   const timeLabel = selected ? label(selected.at) : "Waiting for scans";
 
+  const problem = !!lastAvailable || canRetry || image === undefined || delayed;
+  const statusMessage = (
+    <>
+      {lastAvailable ? (
+        <>
+          Showing the last available radar scans. Latest available scan{" "}
+          <time dateTime={new Date(lastAvailable.at).toISOString()}>{label(lastAvailable.at)}</time>.
+          {image === null && " This scan’s image is unavailable."}
+        </>
+      ) : (
+        statusText
+      )}
+    </>
+  );
+
   function togglePlay() {
     if (!playing && index === scans.length - 1) seek(scans[0] ?? null);
     setPlaying(!playing);
   }
 
   return (
-    <div>
-      <div className="radar-reading">
-        <div className="radar-place">
-          <h3>{place}</h3>
-          <label>
-            <span className="sr-only">Radar region</span>
-            <select value={regionId} onChange={(event) => setRegionId(event.currentTarget.value)}>
-              <option value="auto">Auto focus</option>
-              <option value="national">United States</option>
-              {radarRegions.map(({ id, name }) => (
-                <option key={id} value={id}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <p role="status">
-          {lastAvailable ? (
-            <>
-              Showing the last available radar scans. Latest available scan{" "}
-              <time dateTime={new Date(lastAvailable.at).toISOString()}>{label(lastAvailable.at)}</time>.
-              {image === null && " This scan’s image is unavailable."}
-            </>
-          ) : (
-            statusText
-          )}
-        </p>
-        {canRetry && (
-          <button type="button" className="radar-retry" onClick={retry}>
-            Retry NOAA
-          </button>
-        )}
-      </div>
+    <div className="radar-stage-controls">
       <div className="radar-transport">
         <div className="radar-clock">
           <label htmlFor={id}>{atLatest ? "Latest scan" : "Scan time"}</label>
           {selected && <time dateTime={new Date(selected.at).toISOString()}>{timeLabel}</time>}
         </div>
+        {problem && (
+          <p className="radar-warning" role="status">
+            {statusMessage}
+          </p>
+        )}
         <input
           id={id}
           className="scrub-slider radar-scrub"
@@ -161,10 +155,34 @@ export function RadarStage({
             seek(scans[event.currentTarget.valueAsNumber] ?? null);
           }}
         />
-        <div className="observatory-actions radar-actions">
+        <div className="observatory-actions radar-actions radar-playback">
+          <button
+            type="button"
+            aria-label="Previous radar scan"
+            disabled={index === 0 || scans.length < 2}
+            onClick={() => {
+              setPlaying(false);
+              seek(scans[index - 1] ?? null);
+            }}
+          >
+            Previous
+          </button>
           <button type="button" disabled={scans.length < 2} onClick={togglePlay}>
             {playing ? "Pause" : "Play scans"}
           </button>
+          <button
+            type="button"
+            aria-label="Next radar scan"
+            disabled={index >= scans.length - 1 || scans.length < 2}
+            onClick={() => {
+              setPlaying(false);
+              seek(scans[index + 1] ?? null);
+            }}
+          >
+            Next
+          </button>
+        </div>
+        <div className="observatory-actions radar-actions">
           <button
             type="button"
             disabled={!selected}
@@ -180,8 +198,6 @@ export function RadarStage({
               {shortTime(scans[0].at)}–{shortTime(latest.at)} UTC
             </span>
           )}
-        </div>
-        <div className="observatory-actions radar-actions">
           <button
             type="button"
             aria-pressed={showLightning}
@@ -202,6 +218,29 @@ export function RadarStage({
             </p>
           )}
         </div>
+      </div>
+      <div className="radar-reading">
+        <div className="radar-place">
+          <h3>{place}</h3>
+          <label>
+            <span className="sr-only">Radar region</span>
+            <select value={regionId} onChange={(event) => setRegionId(event.currentTarget.value)}>
+              <option value="auto">Auto focus</option>
+              <option value="national">United States</option>
+              {radarRegions.map(({ id, name }) => (
+                <option key={id} value={id}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {!problem && <p role="status">{statusMessage}</p>}
+        {canRetry && (
+          <button type="button" className="radar-retry" onClick={retry}>
+            Retry NOAA
+          </button>
+        )}
       </div>
     </div>
   );

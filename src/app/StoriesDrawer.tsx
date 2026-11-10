@@ -1,3 +1,4 @@
+import { StoryThumbnail } from "./StoryThumbnail";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { ReactNode } from "react";
 import { observations, type ObservationId } from "./observations/catalogue";
@@ -33,6 +34,7 @@ function Story({
       aria-labelledby={`${id}-title`}
       aria-describedby={`${id}-note`}
     >
+      <StoryThumbnail id={id} />
       <span id={`${id}-title`}>{name}</span>
       <small id={`${id}-note`}>{note}</small>
     </button>

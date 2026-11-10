@@ -139,14 +139,20 @@ saved layouts stay in Explore; direct content links expose their content without
 
 On wide screens, the introduction and globe occupy separate columns. On phones, the planet sits
 above a bounded introduction with owned scrolling. The globe stage carries a UTC readout and one
-scene-specific reference. The three scene controls share a ruled strip, with a distinct diagram and
-accent for each mode. Controls stay reachable in short landscape views.
+scene-specific reference. The three scene controls share a quiet ruled strip with a clear active
+underline. The live opening features one recorded journey, illustrated with its real source image.
+Controls stay reachable in short landscape views.
 Live Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
 Their temporary overrides do not overwrite saved scientific settings. The observatory retains source
 status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
 Each scene features a few experiences and keeps the full selection in **Stories & layers**. Group
 the drawer by data type. Keep **Explore the globe** visible above the scene strip. Closing an
 experience returns focus to its entry point and restores the drawer’s scroll position.
+
+Story headings keep the return action above the title and the projection choice nearby. Moonfall’s
+playback dock sits over the terrain on roomy desktops and returns to the scrolling control panel
+on smaller screens. Radar prioritizes the selected scan time and playback before optional coverage
+information. Source disclosures, unavailable states, and scientific distinctions remain readable.
 
 Guided narration uses captured primary readings and regional counts. Explain magnitude scales,
 reported depth, historical reference points and the time scope; never manufacture a journey between

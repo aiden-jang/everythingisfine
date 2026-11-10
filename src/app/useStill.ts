@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { downloadStill } from "./stillDelivery";
+import type { StillCaption } from "./still";
 import { drawStill, stillMoment, verdictLine, STILL_HEIGHT, STILL_WIDTH } from "./still";
 import { earthquakeCoverage } from "./earthquakeStatus";
 import type { Feed } from "./feed";
@@ -12,7 +13,10 @@ export function useStill(
   ramp: RampName,
   cursor: number | null,
   inspection: string | null = null,
+  getCaption?: () => Omit<StillCaption, "host"> | null,
 ) {
+  const captionReader = useRef(getCaption);
+  captionReader.current = getCaption;
   const capture = useRef<() => HTMLCanvasElement | null>(() => null);
   const onCapture = useCallback((fn: () => HTMLCanvasElement | null) => {
     capture.current = fn;
@@ -86,6 +90,7 @@ export function useStill(
           // From `onGlobe`, not the raw feeds, or a still of an archived day counts layers it does not show.
           verdict: verdictLine(stillCounts.current),
           filter: [`M${filters.minMagnitude.toFixed(1)}+ · ${scope}`, inspection].filter(Boolean).join(" · "),
+          ...captionReader.current?.(),
           host: window.location.host,
         },
         { background: token("void"), ink: token("ink"), faint: token("faint"), ramp },

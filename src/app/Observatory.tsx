@@ -6,6 +6,8 @@ import {
   SunCredits,
   TourUnavailable,
 } from "./ObservatoryStage";
+import { ObservatoryTourControls } from "./ObservatoryTourControls";
+import { FeaturedStory } from "./FeaturedStory";
 import { StoriesDrawer } from "./StoriesDrawer";
 import { MoonfallReadout } from "./moonfall/MoonfallReadout";
 import { FloatReadout } from "./float/FloatReadout";
@@ -15,6 +17,7 @@ import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene, useObservatory } from "./useObservatory";
 import type { Stop } from "./tour";
 import { geographicCoordinates } from "../globe/orbitReadout";
+import "./experience.css";
 import "./sun/sun-watch.css";
 import "./tonight/tonight.css";
 import "./float/float-dive.css";
@@ -34,7 +37,7 @@ const TonightCompass = lazy(() =>
 const FloatDive = lazy(() =>
   import("./float/FloatDivePanel").then(({ FloatDivePanel }) => ({ default: FloatDivePanel })),
 );
-interface Props {
+export interface ObservatoryProps {
   scene: EarthScene;
   at: number;
   ready: boolean;
@@ -85,7 +88,7 @@ export function Observatory({
   onPickDate,
   tour,
   onHistory,
-}: Props): JSX.Element {
+}: ObservatoryProps): JSX.Element {
   const [stories, setStories] = useState(false);
   const storyScroll = useRef(0);
   useLayoutEffect(() => {
@@ -102,8 +105,11 @@ export function Observatory({
     stories,
     sun.active,
   ]);
-  const closeSun = () => {
-    observations.returnTo("open-sun-watch", sun.toggle);
+  const closeSun = () => observations.returnTo("open-sun-watch", sun.toggle);
+  const openFeatured = () => {
+    onScene("night");
+    observations.setTrigger("open-featured-moonfall");
+    tonight.open("moonfall");
   };
   const active = tour.at !== null;
   const solar = sun.active && !active;
@@ -164,6 +170,7 @@ export function Observatory({
           className="observatory-intro"
           ref={tour.controls}
           data-scene={active ? "tour" : scene}
+          data-browsing={(stories && !active && !solar) || undefined}
           data-sun-watch={solar || undefined}
           data-storm-radar={radar.active || undefined}
           data-tonight={tonight.active || undefined}
@@ -198,6 +205,11 @@ export function Observatory({
                 preference={skyCity}
                 initialMode={tonight.entry.mode}
                 initialLook={tonight.entry.look}
+                returnLabel={
+                  observations.trigger === "open-featured-moonfall"
+                    ? "Back to Live Earth"
+                    : "Back to After Dark"
+                }
                 onClose={() => {
                   const id =
                     tonight.entry.mode === "meteors"
@@ -205,7 +217,10 @@ export function Observatory({
                       : tonight.entry.mode === "moonfall"
                         ? "open-moonfall-story"
                         : "open-tonight-sky";
-                  observations.returnTo(id, tonight.close);
+                  observations.returnTo(id, () => {
+                    tonight.close();
+                    if (observations.trigger === "open-featured-moonfall") onScene("live");
+                  });
                 }}
               />
             </Suspense>
@@ -231,45 +246,10 @@ export function Observatory({
               </div>
               {solar && <SunCredits />}
               {active ? (
-                <div className="observatory-tour-controls">
-                  <div className="observatory-tour-step">
-                    <button
-                      type="button"
-                      onClick={tour.previous}
-                      disabled={tour.at === 0}
-                      aria-label="Previous tour stop"
-                    >
-                      ←
-                    </button>
-                    <button type="button" onClick={tour.pause}>
-                      {tour.paused ? "Resume tour" : "Pause tour"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={tour.next}
-                      aria-label={(tour.at ?? 0) + 1 >= tour.length ? "Finish tour" : "Next tour stop"}
-                    >
-                      →
-                    </button>
-                  </div>
-                  <div className="observatory-actions">
-                    <button type="button" ref={tour.button} onClick={tour.stopTour}>
-                      Stop
-                    </button>
-                    {tour.inspect ? (
-                      <button type="button" onClick={tour.inspect}>
-                        Read this event ↗
-                      </button>
-                    ) : (
-                      <button type="button" onClick={onExplore}>
-                        Explore this view ↗
-                      </button>
-                    )}
-                  </div>
-                </div>
+                <ObservatoryTourControls tour={tour} onExplore={onExplore} />
               ) : (
                 <>
-                  <div className="observatory-actions">
+                  <div className="observatory-actions observatory-entry-actions">
                     <button type="button" onClick={onExplore} className="observatory-primary">
                       Explore the globe <span aria-hidden="true">↗</span>
                     </button>
@@ -309,6 +289,9 @@ export function Observatory({
                     </p>
                   ) : null}
                 </>
+              )}
+              {!active && !solar && !stories && scene === "live" && (
+                <FeaturedStory ready={ready} open={openFeatured} />
               )}
               {!active && !solar && stories && (
                 <StoriesDrawer

@@ -1,3 +1,4 @@
+import { observatoryCaption } from "./app/observatoryCaption";
 import { useSharedLocation } from "./app/useSharedLocation";
 import type { FlyTo } from "./globe/cameraTarget";
 import { WaveReplayControls } from "./app/WaveReplayControls";
@@ -404,7 +405,6 @@ export function App(): JSX.Element {
     camera,
     lastWritten,
   });
-
   const fetching = pendingRev !== null && snapshot.revision === pendingRev;
   /* Null on the live view, not a timestamp: the scene keeps its minute throttle instead of re-aiming
   the sun every render for a change no eye could see. */
@@ -425,8 +425,8 @@ export function App(): JSX.Element {
       : (cutaway || observatory.depthFocus) && !flat
         ? "reference cutaway · true scale"
         : null,
+    () => observatoryCaption(observatory, litAt ?? Date.now()),
   );
-  // Count the displayed subset, not whole timeline bins.
   const revealedNow = ((): number | null => {
     if (view.at === null) return null;
     const limit = view.at;

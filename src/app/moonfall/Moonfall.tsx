@@ -69,6 +69,7 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
   };
   return (
     <>
+      <p className="moonfall-description">Follow Apollo 17 through Taurus–Littrow, December 1972.</p>
       <div className="observatory-actions moonfall-actions" role="group" aria-label="Lunar projection">
         <button type="button" aria-pressed={!mapped} onClick={() => act(() => view.project(false))}>
           Terrain
@@ -87,9 +88,6 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
             Replay descent
           </button>
         )}
-        <button type="button" onClick={() => act(view.toggleRoute)}>
-          {playing ? "Pause traverse" : "Play traverse"}
-        </button>
       </div>
       <label className="tonight-city">
         Rover traverse
@@ -101,26 +99,6 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
           ))}
         </select>
       </label>
-      <div className="tonight-time">
-        <div className="tonight-clock">
-          <label htmlFor={id}>Mapped distance</label>
-          <output htmlFor={id}>{distance}</output>
-        </div>
-        <input
-          id={id}
-          type="range"
-          className="scrub-slider tonight-scrub"
-          min={0}
-          max={250}
-          value={Math.round((250 * meters) / length)}
-          aria-valuetext={distance}
-          onChange={(event) => act(() => view.seek((length * event.currentTarget.valueAsNumber) / 250))}
-        />
-        <div className="tonight-clock tonight-edges">
-          <span>{route.day} 1972 · UTC</span>
-          <span>Traverse {eva + 1} of 3</span>
-        </div>
-      </div>
       <label className="tonight-city">
         Geology stop
         <select
@@ -137,6 +115,34 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
           ))}
         </select>
       </label>
+      <div className="tonight-time moonfall-transport" role="group" aria-label="Rover playback">
+        <div className="tonight-clock">
+          <label htmlFor={id}>Mapped distance</label>
+          <output htmlFor={id}>{distance}</output>
+        </div>
+        <input
+          id={id}
+          type="range"
+          className="scrub-slider tonight-scrub"
+          min={0}
+          max={250}
+          value={Math.round((250 * meters) / length)}
+          aria-valuetext={distance}
+          onChange={(event) => act(() => view.seek((length * event.currentTarget.valueAsNumber) / 250))}
+        />
+        <div className="observatory-actions moonfall-actions">
+          <button type="button" onClick={() => act(view.toggleRoute)}>
+            {playing ? "Pause traverse" : meters >= length ? "Replay traverse" : "Play traverse"}
+          </button>
+          <span className="moonfall-route-note">
+            {station === null ? route.title : route.stations[station]?.name}
+          </span>
+        </div>
+        <div className="tonight-clock tonight-edges">
+          <span>{route.day} 1972 · UTC</span>
+          <span>Traverse {eva + 1} of 3</span>
+        </div>
+      </div>
       <p className="moonfall-description">
         Apollo 17 in Taurus–Littrow. Follow the rover’s mapped tracks across terrain measured from lunar
         orbit.

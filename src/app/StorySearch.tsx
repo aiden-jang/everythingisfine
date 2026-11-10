@@ -1,3 +1,4 @@
+import { StoryThumbnail } from "./StoryThumbnail";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { useObservatory, EarthScene } from "./useObservatory";
 import type { StoryId } from "./observations/useObservationDeck";
@@ -63,6 +64,7 @@ export function StorySearch({
                 id={`search-story-${story.id}`}
                 onClick={() => open(story)}
               >
+                <StoryThumbnail id={story.id} />
                 <span>{story.title}</span>
                 <small>{story.id === "aurora" ? (aurora.unavailable ?? story.summary) : story.summary}</small>
               </button>
