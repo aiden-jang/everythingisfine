@@ -184,6 +184,8 @@ test(
 
       await waitForData(page);
 
+      // Feed data can arrive before the lazy globe initializes; wait for the camera, not its motion.
+      await expect.poll(() => cameraNow(page)).not.toBeNull();
       const camera = (): Promise<{ lon: number; zoom: number }> =>
         page.evaluate(() =>
           (window as unknown as { __globe: { state: () => { lon: number; zoom: number } } }).__globe.state(),
