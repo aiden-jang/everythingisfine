@@ -54,11 +54,19 @@
 
 .feed-popover li {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   align-items: baseline;
   gap: 2px 12px;
   padding-block: 7px;
   border-top: 1px solid var(--color-hairline);
+}
+
+.feed-popover li span {
+  text-align: right;
+}
+
+.feed-popover li small {
+  grid-column: 1 / -1;
 }
 
 .feed-popover time {

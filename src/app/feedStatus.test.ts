@@ -39,6 +39,17 @@ describe("what the header dot may claim", () => {
   it("does not name a layer that is merely still in flight", () => {
     expect(feedStatus(streams(LIVE, LIVE), layers("pending")).silent).toBeNull();
   });
+
+  it("counts active radar and keeps an off layer visible without claiming a failure", () => {
+    const radar = { id: "radar", label: "RainViewer storm radar", lastCheck: 123 } as const;
+    const status = (state: "pending" | "ok" | "failed" | "off") =>
+      feedStatus(streams(LIVE, LIVE), layers("ok"), {}, { ...radar, state });
+    expect(status("pending")).toMatchObject({ arrived: 7, total: 8, settling: true });
+    expect(status("ok")).toMatchObject({ arrived: 8, total: 8, phrase: "All feeds available" });
+    expect(status("failed")).toMatchObject({ total: 8, phrase: "7 of 8 feeds available", settling: false });
+    expect(status("off")).toMatchObject({ arrived: 7, total: 7, phrase: "All feeds available" });
+    expect(status("off").rows.at(-1)).toEqual({ ...radar, state: "off" });
+  });
 });
 
 describe("the phrase under the dot", () => {

@@ -318,6 +318,10 @@ while enabled outside archive mode. It supplies a `radar-layer` presentation: no
 override. The catalogue retains the cinematic `radar` presentation and regional controls. The two
 entries never mount their scan loaders together; leaving either releases decoded images and requests.
 Both use the shared globe/map and preserve the selected provider timestamp during playback.
+The background feed panel includes RainViewer while Explore's layer is active, using the same loader's
+catalogue and latest-image health without another request. Off radar remains listed outside the count.
+Empty results, delayed scans and missing imagery have distinct messages; failed refreshes retain the
+last successful check time.
 RainViewer’s past-only catalogue supplies up to two hours of ten-minute composites. Each frame combines
 four zoom-one 512-pixel tiles into a bounded overview, using the supported Universal Blue palette.
 Mercator latitude is mapped onto the globe’s geographic mesh; NOAA retains its geographic raster bounds.

@@ -112,7 +112,7 @@ measurements, not field recordings.
   of forecasts and select a buoy to compare recent measurements with the nearby model.
 - **Orbital Pass** opens from After Dark’s drawer with a city picker, a local horizon, and
   Globe and Map views of the predicted ground track.
-- **Feed status** lists the seven background feeds and their last successful check or received message.
+- **Feed status** lists background sources and radar, with their last successful check or received message.
   Observatory views fetch their own sources when opened. In Storm Radar, switch projections or turn
   on matched GOES-East lightning scans.
 - **Fault Offset** traces Ridgecrest’s two 2019 surface ruptures, opens surveyed offsets, and wipes
@@ -173,8 +173,9 @@ while enabled there. Its playback appears below the switches, using a separate c
 playback and releases decoded images. Recent radar is unavailable in archive mode. **All stories & data** returns to the full
 catalogue. Layer visibility stays on this device; shared event targets override a hidden layer.
 Earthquake controls fold out of the way when that layer is off, while the report time window remains.
-The feed counter covers seven automatically checked background sources. Other views check their own
-sources when opened; a recorded journey is not a live feed. Tropical cyclones are global GDACS reports,
+The feed counter covers seven background sources plus radar while active in Explore. Radar stays listed
+when off but is excluded from the total. Other views check their own sources when opened; a recorded
+journey is not a live feed. Tropical cyclones are global GDACS reports,
 while Storm Radar uses RainViewer’s worldwide available radar coverage with an optional NOAA
 contiguous-US detail view. Uncovered areas are marked, rather than presented as clear weather.
 

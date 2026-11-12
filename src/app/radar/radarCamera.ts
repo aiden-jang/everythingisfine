@@ -1,5 +1,6 @@
 import type { ObservationFrame } from "../observations/types";
 import { RADAR_BOUNDS } from "../../sources/radar";
+import type { RadarFeedHealth } from "./radarFeedHealth";
 
 interface RadarCamera {
   lon: number;
@@ -14,6 +15,7 @@ export interface RadarView {
   image: ImageBitmap | null;
   at?: number | undefined;
   lightning?: ObservationFrame | undefined;
+  feed?: RadarFeedHealth | undefined;
 }
 
 export type RadarLayerView = Pick<RadarView, "image" | "at" | "region"> & { kind: "radar-layer" };

@@ -870,7 +870,7 @@ export function App(): JSX.Element {
     shown,
     revealedNow,
   ]);
-  const feeds = feedStatus(snapshot.statuses, answered, { ...snapshot.checked, ...checked });
+  const feeds = feedStatus(snapshot.statuses, answered, { ...snapshot.checked, ...checked }, mapLayers.feed);
 
   const keyOnCanvas = useNarrow() === false;
   // Compose shared legend props once so the rail and canvas cannot drift apart.

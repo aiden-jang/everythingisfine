@@ -3,6 +3,7 @@ import type { Filters } from "../data/types";
 import { stored, store } from "./stored";
 import { readMapLayers, type MapLayer } from "./layerVisibility";
 import type { RadarLayerView, RadarView } from "./radar/radarCamera";
+import type { FeedRow } from "./feedStatus";
 
 export function useMapLayers(filters: Filters, observing: boolean, target?: string, archived = false) {
   const [enabled, setEnabled] = useState(() => readMapLayers(stored("mapLayers"), target));
@@ -39,6 +40,13 @@ export function useMapLayers(filters: Filters, observing: boolean, target?: stri
     globeFilters,
     radar,
     updateRadar,
+    feed: {
+      id: "radar",
+      label: "RainViewer storm radar",
+      state: radarActive ? (radarView?.feed?.state ?? "pending") : "off",
+      lastCheck: radarActive ? radarView?.feed?.lastCheck : undefined,
+      message: radarActive ? radarView?.feed?.message : enabled.radar ? "Loads in Explore" : undefined,
+    } satisfies FeedRow,
     captureNote: (inspection: string | null) =>
       [radarCaption, inspection].filter(Boolean).join(" · ") || null,
     canCapture: !radar || !!radar.image,

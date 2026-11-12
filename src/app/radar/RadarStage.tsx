@@ -11,6 +11,7 @@ import {
 } from "./radarCamera";
 import { useRadarLightning } from "./useRadarLightning";
 import { useRadarScans } from "./useRadarScans";
+import { radarFeedHealth } from "./radarFeedHealth";
 
 const format = new Intl.DateTimeFormat("en-GB", {
   month: "short",
@@ -39,7 +40,7 @@ export function RadarStage({
 }): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
-  const { scans, images, status, checkedAt, retry } = useRadarScans(held, global);
+  const { scans, images, status, checkedAt, lastSuccess, retry } = useRadarScans(held, global);
   const [chosen, setChosen] = useState<RadarScan | null>(null);
   const [showLightning, setShowLightning] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -47,6 +48,17 @@ export function RadarStage({
   const [focus, setFocus] = useState<RadarRegion | null | undefined>();
   const latest = scans.at(-1);
   const latestImage = latest && images.get(latest.id);
+  const feed = useMemo(
+    () =>
+      radarFeedHealth({
+        status,
+        image: latestImage === undefined ? "pending" : latestImage === null ? "failed" : "ok",
+        checkedAt,
+        latestAt: latest?.at,
+        lastSuccess,
+      }),
+    [status, latestImage, checkedAt, latest?.at, lastSuccess],
+  );
   const [restored, setRestored] = useState(initialAt === undefined);
   const [expired, setExpired] = useState(false);
   useEffect(() => {
@@ -78,8 +90,9 @@ export function RadarStage({
         image: image ?? null,
         at: image ? selected?.at : undefined,
         lightning: lightning?.frame ?? undefined,
+        feed,
       }),
-    [image, lightning, onView, target, selected?.at, regionId],
+    [image, lightning, onView, target, selected?.at, regionId, feed],
   );
 
   function seek(scan: RadarScan | null) {

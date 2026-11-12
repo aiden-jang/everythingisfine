@@ -1,12 +1,13 @@
 import { useId, useRef, type JSX } from "react";
-import type { FeedStatus, LayerAnswer } from "./feedStatus";
+import type { FeedStatus, FeedRow } from "./feedStatus";
 import { observations } from "./observations/catalogue";
 import "./feed-status.css";
 
-const LABEL: Record<LayerAnswer, string> = {
+const LABEL: Record<FeedRow["state"], string> = {
   ok: "Available",
   pending: "Loading",
   failed: "Couldn’t reach feed",
+  off: "Off",
 };
 
 const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
@@ -80,10 +81,10 @@ export function FeedDot({
           {unavailable > 0 && ` ${unavailable} unavailable.`}
         </p>
         <ul>
-          {feeds.rows.map(({ id: key, label, state, lastCheck }) => (
+          {feeds.rows.map(({ id: key, label, state, lastCheck, message }) => (
             <li key={key}>
               <strong>{label}</strong>
-              <span>{LABEL[state]}</span>
+              <span>{message ?? LABEL[state]}</span>
               {lastCheck !== undefined && (
                 <small>
                   Last successful check{" "}
@@ -98,11 +99,11 @@ export function FeedDot({
             </li>
           ))}
         </ul>
-        <p>The counter covers these background sources, not every view in the observatory.</p>
+        <p>Radar joins the total while active in Explore. Off means it is not being checked.</p>
         <h3>Loads when opened</h3>
         <p>
-          Storm radar checks its source when its layer is on. Float Dive and Sun Watch load when opened. Find
-          the full catalogue in All stories &amp; data.
+          Float Dive, Sun Watch and other observatory views check their own sources when opened. Find the full
+          catalogue in All stories &amp; data.
         </p>
         <details>
           <summary>Other observatory views</summary>

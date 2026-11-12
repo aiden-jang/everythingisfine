@@ -11,7 +11,10 @@ test("feed status names unavailable sources without increasing the background co
   await toggle.press("Enter");
   const panel = page.getByRole("region", { name: "Background feed status", exact: true });
   await expect(panel).toBeInViewport({ ratio: 1 });
-  await expect(panel.getByRole("listitem")).toHaveCount(7);
+  await expect(panel.getByRole("listitem")).toHaveCount(8);
+  await expect(panel.getByRole("listitem").filter({ hasText: "RainViewer storm radar" })).toContainText(
+    "Off",
+  );
   await expect(panel).toContainText("7 background feeds checked. 1 unavailable.");
   await expect(panel.getByText("Last successful check", { exact: false }).first()).toBeVisible();
   await expect(panel.getByRole("listitem").filter({ hasText: "USGS earthquakes" })).toContainText(

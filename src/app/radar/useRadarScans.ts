@@ -12,6 +12,7 @@ interface RadarData {
   images: ReadonlyMap<number, ImageBitmap | null>;
   status: "loading" | "ready" | "empty" | "error";
   checkedAt: number;
+  lastSuccess?: number | undefined;
 }
 
 const fetchBounded = (url: string, signal: AbortSignal) =>
@@ -50,7 +51,7 @@ export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean
         }
         if (signal.aborted) return;
         if (!fresh.length) {
-          setData((old) => ({ ...old, status: "empty", checkedAt: Date.now() }));
+          setData((old) => ({ ...old, status: "empty", checkedAt: Date.now(), lastSuccess: Date.now() }));
           return;
         }
         const newest = fresh.at(-1)!;
@@ -75,7 +76,13 @@ export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean
           ({ id }) => !images.get(id),
         );
         for (const { id } of queue) images.delete(id);
-        setData({ scans, images: new Map(images), status: "ready", checkedAt: Date.now() });
+        setData((old) => ({
+          scans,
+          images: new Map(images),
+          status: "ready",
+          checkedAt: Date.now(),
+          lastSuccess: images.get(newest.id) ? Date.now() : old.lastSuccess,
+        }));
 
         async function next() {
           for (let scan = queue.shift(); scan && !signal.aborted; scan = queue.shift()) {
@@ -96,7 +103,11 @@ export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean
               break;
             }
             images.set(id, image);
-            setData((old) => ({ ...old, images: new Map(images) }));
+            setData((old) => ({
+              ...old,
+              images: new Map(images),
+              lastSuccess: id === newest.id && image ? Date.now() : old.lastSuccess,
+            }));
           }
         }
         await Promise.all(global ? [next()] : [next(), next(), next()]);

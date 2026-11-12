@@ -78,12 +78,25 @@ for (const width of [1440, 390]) {
     await expect(status).toHaveText("Couldn’t reach RainViewer radar.");
     expect(queries).toBe(1);
     expect(await page.evaluate(() => localStorage.getItem("eif.mapLayers"))).toBeNull();
+    const feedToggle = page.getByRole("button", { name: /^Feed status,/ });
+    const feedPanel = page.getByRole("region", { name: "Background feed status", exact: true });
+    const radarFeed = feedPanel.getByRole("listitem").filter({ hasText: "RainViewer storm radar" });
+    await expect(feedToggle).toHaveAccessibleName(/7(?: of |\/)8/);
+    await feedToggle.click();
+    await expect(radarFeed).toContainText("Couldn’t reach feed");
+    await expect(radarFeed.locator("time")).toHaveCount(0);
+    await page.keyboard.press("Escape");
     await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
     expect(await marksVisible(page)).toBe(true);
     expect(await camera(page)).toEqual(originalCamera);
     unavailable = false;
     await controls.getByRole("button", { name: "Retry RainViewer" }).click();
     await expect(status).toHaveCount(0);
+    await expect(feedToggle).toHaveAccessibleName(/All feeds available|8\/8 available/);
+    await feedToggle.click();
+    await expect(radarFeed).toContainText("Available");
+    await expect(radarFeed.locator("time")).toBeVisible();
+    await page.keyboard.press("Escape");
     const time = controls.locator(".radar-clock time");
     await expect(time).toHaveAttribute("datetime", new Date(now).toISOString());
     const slider = controls.getByRole("slider", { name: "Radar scan time" });
@@ -111,6 +124,10 @@ for (const width of [1440, 390]) {
     const closed = Number(await page.locator("html").getAttribute("data-closed-radar-frames"));
     await toggle.click();
     await expect(controls).toHaveCount(0);
+    await expect(feedToggle).toHaveAccessibleName(/All feeds available|7\/7 available/);
+    await feedToggle.click();
+    await expect(radarFeed).toContainText("Off");
+    await page.keyboard.press("Escape");
     await expect
       .poll(async () => Number(await page.locator("html").getAttribute("data-closed-radar-frames")))
       .toBeGreaterThanOrEqual(closed + 3);
