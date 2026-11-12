@@ -19,6 +19,9 @@ interface Camera {
 // Allow for software-rendered camera motion and the URL writer's sampling interval.
 const CAMERA_SETTLE_MS = 20_000;
 
+const linkField = (page: Page, name: string): string | null =>
+  new URLSearchParams(new URL(page.url()).hash.slice(1)).get(name);
+
 const cameraNow = (page: Page): Promise<Camera | null> =>
   page.evaluate(() => {
     const globe = (
@@ -245,14 +248,13 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   const pinnedText = await page.locator(".zone-panel").innerText();
 
   await page.getByRole("button", { name: /magnitude colors/i }).click();
-  await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 5_000 })
-    .toMatch(/e=(usgs|emsc):/);
+  await expect.poll(() => linkField(page, "e"), { timeout: 5_000 }).toMatch(/^(usgs|emsc):[\w.-]+$/);
 
   const link = await page.evaluate(() => window.location.href);
   expect(link).toMatch(/r=cividis/);
   // Never our own key, which means nothing on another machine.
-  expect(link).not.toMatch(/e=q[a-z0-9]+(&|$)/);
+  const event = linkField(page, "e");
+  expect(event).not.toMatch(/^q[a-z0-9]+$/);
 
   const fresh = await page.context().newPage();
   // The second page needs its own fixtures: routes are per-page, so without this the fresh tab went
@@ -269,6 +271,7 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   // The same earthquake, not merely some earthquake.
   expect(await fresh.locator(".zone-panel").innerText()).toContain(pinnedText.match(/M \d+\.\d/)![0]);
 
+  expect(linkField(fresh, "e")).toBe(event);
   await fresh.close();
 });
 
@@ -545,9 +548,7 @@ test("notches compound off where the camera is heading", { tag: "@dev" }, async 
 
   await cameraStill(page);
   // exp(0.264) twice is 1.696, and zoom is written to two places.
-  await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
-    .toMatch(/,1\.7&/);
+  await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).toMatch(/,1\.7$/);
 });
 
 test("the globe is operable from the keyboard, and the keys are written down", async ({ page }) => {
@@ -566,31 +567,23 @@ test("the globe is operable from the keyboard, and the keys are written down", a
   // After the entrance has landed. Pressing during the flight compounds off a moving target, which is
   // correct behaviour and makes the destination depend on when the key arrived.
   // CAMERA_SETTLE_MS, not a shorter one of its own: on CI the eased flight was still 0.07 short at 15s.
-  await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
-    .toMatch(/^#at=140,20,1&/);
+  await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).toMatch(/^140,20,1$/);
 
   await page.keyboard.press("ArrowRight");
-  await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
-    .toMatch(/^#at=148,20,1&/);
+  await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).toMatch(/^148,20,1$/);
 
   await page.keyboard.press("Equal");
-  await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
-    .toMatch(/,1\.25&/);
+  await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).toMatch(/,1\.25$/);
 
   await page.keyboard.press("Digit0");
-  await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
-    .toMatch(/^#at=145,12,1&/);
+  await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).toMatch(/^145,12,1$/);
 
   // A focused control keeps its own arrows. One global handler that fired regardless of focus would
   // break every slider it sits next to.
   await page.locator("#mag").focus();
   await page.keyboard.press("ArrowRight");
   await expect(page.locator(".zones")).toContainText("Magnitude 2.1 and above");
-  expect(await page.evaluate(() => window.location.hash)).toMatch(/^#at=145,12,1&/);
+  expect(linkField(page, "at")).toBe("145,12,1");
 });
 
 test("a dead feed says so, and does not claim a covered day", async ({ page }) => {
@@ -640,9 +633,7 @@ test.describe("on a touch screen", () => {
     await page.mouse.down();
     await page.mouse.move(cx + 90, cy, { steps: 8 });
     await page.mouse.up();
-    await expect
-      .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
-      .not.toMatch(/^#at=140,/);
+    await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).not.toMatch(/^140,/);
 
     await page.evaluate(
       ([x, y]) => {
@@ -679,9 +670,7 @@ test.describe("on a touch screen", () => {
     );
 
     // Spread fingers, so the globe comes closer rather than the page getting bigger.
-    await expect
-      .poll(async () => page.evaluate(() => window.location.hash), { timeout: CAMERA_SETTLE_MS })
-      .toMatch(/,2\.\d&/);
+    await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).toMatch(/,2\.\d$/);
   });
 
   test("the key hints are not offered to a device with no keys", async ({ page }) => {
@@ -786,9 +775,7 @@ test("a shared camera survives the entrance", async ({ page }) => {
   await installFeeds(page);
   await page.goto("/#at=-70.5,-33.5,2.4&m=2&w=24&s=emsc,usgs&r=thermal");
   await waitForData(page);
-  await expect
-    .poll(async () => page.evaluate(() => window.location.hash), { timeout: 15_000 })
-    .toMatch(/^#at=-70\.5,-33\.5,2\.4&/);
+  await expect.poll(() => linkField(page, "at"), { timeout: 15_000 }).toMatch(/^-70\.5,-33\.5,2\.4$/);
 });
 
 test("a link naming an event that has aged out says so", async ({ page }) => {
@@ -1549,9 +1536,7 @@ test("a copied link reopens the same event, not merely the same view", async ({ 
    * to it during setup, so the sender's framing is a starting point rather than a guarantee, and a test that
    * asserted otherwise would be asserting the bug.
    */
-  const hash = await opened.evaluate(() => window.location.hash);
-  expect(hash).toContain("e=");
-  expect(hash.split("e=")[1]).toBe(href.split("e=")[1]);
+  expect(linkField(opened, "e")).toBe(new URLSearchParams(new URL(href).hash.slice(1)).get("e"));
 });
 
 /*

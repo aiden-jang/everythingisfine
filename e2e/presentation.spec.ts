@@ -85,11 +85,11 @@ async function openSceneEffects(page: Page, reduced = false): Promise<void> {
   });
   await page.goto("/");
   await waitForData(page);
-  if (!reduced) await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.getByText("Earthquake display & sky guides", { exact: true }).filter({ visible: true }).click();
   await page.getByRole("button", { name: "Constellations", exact: true }).filter({ visible: true }).click();
   await page.getByRole("button", { name: "Regional cutaway", exact: true }).filter({ visible: true }).click();
   await page.getByText("Earthquake display & sky guides", { exact: true }).filter({ visible: true }).click();
+  if (!reduced) await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
 }
 

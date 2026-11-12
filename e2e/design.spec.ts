@@ -447,7 +447,7 @@ test("the desktop rail is the only thing in it that scrolls", async ({ page }) =
   await installFeeds(page, { count: 200 });
   await page.goto("/");
   await waitForData(page);
-  await page.waitForTimeout(800);
+  await page.getByText(/^Storms, fires, floods and volcanoes \(/).click();
 
   const seen = await page.evaluate(() => {
     const rail = document.querySelector(".rail") as HTMLElement;

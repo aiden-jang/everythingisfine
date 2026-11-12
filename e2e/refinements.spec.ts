@@ -22,7 +22,7 @@ test("event links remain copyable when clipboard access is refused", async ({ pa
   await page.goto("/");
   await waitForData(page);
   await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
-  await expect(page).toHaveURL(/[&#]e=usgs:/);
+  await expect(page).toHaveURL((url) => new URLSearchParams(url.hash.slice(1)).get("e") === "usgs:fx4h");
   await expect(page.getByRole("button", { name: "Copy citation", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Copy link", exact: true }).click();
   const link = page.getByRole("textbox", { name: "Link to copy" });

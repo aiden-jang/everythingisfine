@@ -15,7 +15,7 @@ export function HazardList({
           <summary className="disclose text-[11px] text-faint hover:text-dim">
             Storms, fires, floods and volcanoes ({hazardCount(hazards)})
           </summary>
-          <div className="mt-1.5 max-h-[240px] overflow-y-auto pr-1">
+          <div className="mt-1.5 max-h-[240px] overflow-y-auto pr-1 xl:max-h-none xl:overflow-visible xl:pr-0">
             {hazards.map((group) => (
               <div key={group.kind} className="mt-1.5 first:mt-0">
                 <div className="label">{group.label}</div>
