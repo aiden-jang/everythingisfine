@@ -4,6 +4,7 @@
   margin: 0;
   padding: 12px;
   width: min(290px, calc(100vw - 24px));
+  overflow: auto;
   border: 1px solid var(--color-hairline);
   background: var(--color-deck);
   color: var(--color-ink);
@@ -42,4 +43,25 @@
   position: static;
   display: block;
   padding: 8px;
+}
+
+.observatory-policy-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+  border-top: 1px solid var(--color-hairline);
+}
+.observatory-policy-links a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 8px;
+  color: var(--color-ink);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.observatory-policy-links a:hover {
+  background: var(--color-raised);
 }

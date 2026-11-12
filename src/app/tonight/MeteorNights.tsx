@@ -163,6 +163,7 @@ export function MeteorNights({
       </div>
       <div className="observatory-actions meteor-actions">
         <button
+          data-playback-start={!playing || undefined}
           type="button"
           onClick={() => {
             if (!playing && at >= night.end)

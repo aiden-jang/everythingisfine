@@ -1,3 +1,4 @@
+import { VisitShelf } from "./visitor/VisitShelf";
 import { JourneyPicker } from "./journeys/JourneyPicker";
 import { StoryThumbnail } from "./StoryThumbnail";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
@@ -105,6 +106,7 @@ export function StoriesDrawer({
       <StorySearch deck={deck} ready={ready} aurora={aurora} />
       {!deck.query.trim() && (
         <>
+          <VisitShelf />
           {children}
           <JourneyPicker />
           <Group title="Earth stories">
@@ -153,13 +155,6 @@ export function StoriesDrawer({
                 />
               </Group>
               <Group title="Replays">
-                <Story
-                  id="open-moonfall-story"
-                  name="Moonfall"
-                  note="Descend to the Apollo 17 landing site and follow the rover."
-                  ready={ready}
-                  open={() => tonight.open("moonfall")}
-                />
                 <Story
                   id="open-lights-return"
                   name="Lights Return"

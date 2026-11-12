@@ -19,10 +19,20 @@ do not break product operations. Browser counters are best effort, not unique-us
 account counts; do not present them as retention or exact billing data.
 
 - Page categories: globe, other.
-- Action names: event_opened, source_filter_changed, replay_started, share_created, archive_opened.
+- Bare actions: event_opened, source_filter_changed, replay_started, share_created, archive_opened,
+  explore_opened, clip_created.
+- scene_selected: the fixed live/depth/night category, from an explicit scene choice.
+- story_opened, playback_started, story_left_early: a public story catalogue id. Playback counts the
+  first explicit Play/Replay action per visit, not autoplay or pauses. Early leaving means under five
+  visible seconds before switching or closing the view; it does not establish why someone left.
+- journey_started, journey_completed: a fixed guided-path id. Completion requires Finish journey.
+
+No visitor identifier or individual event trail is stored. These totals support comparisons of
+entries and actions, not per-person funnels or a measured retention rate. Saved cities, searches,
+coordinates, timestamps, bookmarks and files are never event fields.
 
 Dataset columns: `index1/blob1` app, `blob2` event, `blob3` fixed page category for
-`page_view`, `blob4` empty, `double1` count. Existing app-specific product events keep
+`page_view` or the fixed scene/story/journey category, `blob4` empty, `double1` count. Existing app-specific product events keep
 their established columns. Use `SUM(_sample_interval * double1)` for sampled totals.
 
 ```sql

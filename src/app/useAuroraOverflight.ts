@@ -31,6 +31,7 @@ export function useAuroraOverflight(
 
   return {
     run,
+    forecastAt: current?.forecastAt,
     unavailable,
     routes,
     start(hemisphere?: Hemisphere) {

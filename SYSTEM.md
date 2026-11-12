@@ -52,11 +52,13 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/kilauea/` | USGS lava chronology, HVO overflight, and historic shoreline comparison |
 | `src/app/iceberg/` | On-demand A-68A tracks, dated satellite imagery, and fragment inspection |
 | `src/app/megaflash/` | On-demand GOES-16 infrared and time-coded optical flash replay |
-| `src/app/useStill.ts` | Synchronous canvas capture, caption, native sharing, download fallback |
+| `src/app/useStill.ts` | Shared caption reader, synchronous image capture and video-recording lifecycle |
+| `src/app/capture/` | Bounded local video encoding from the existing renderer, preview and delivery |
+| `src/app/visitor/` | Feed-derived discoveries, bounded local visit library and aggregate journey signals |
 | `src/app/stillDelivery.ts` | Attached download links and deferred object URL cleanup |
 | `src/app/Utilities.tsx` | Mobile disclosure focus, outside dismissal, Escape and resize lifetime |
 | `src/app/useGlobeResources.ts` | Deferred geometry and timezone data, retained while disabled, with completion cleanup |
-| `src/app/useObservatory.ts` | First-visit and saved presentation, temporary scene overrides and story browser state |
+| `src/app/useObservatory.ts`, `observatoryState.ts` | First-visit and saved presentation, temporary scene overrides and story browser state |
 | `src/app/usePresentation.ts` | Interruptible globe/panel handoff without rebuilding the renderer |
 | `src/app/useSceneHistory.ts` | In-memory scene, browser-scroll and camera restoration for browser Back/Forward |
 | `src/app/float/`, `src/sources/argo.ts`, and `src/globe/floatPresentation.ts` | Argo catalogue and profile validation, sample playback, and the shared globe’s float sequence |

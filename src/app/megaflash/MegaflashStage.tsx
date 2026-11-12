@@ -220,7 +220,12 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
             onChange={(event) => update(inspect(timeAtStep(event.currentTarget.valueAsNumber)))}
           />
           <div className="archive-scene-controls">
-            <button type="button" className="archive-scene-button" onClick={togglePlay}>
+            <button
+              data-playback-start={!view.playing || undefined}
+              type="button"
+              className="archive-scene-button"
+              onClick={togglePlay}
+            >
               {view.playing ? "Pause" : complete ? "Replay" : "Play"}
             </button>
             <button

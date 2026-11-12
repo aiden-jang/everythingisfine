@@ -19,9 +19,11 @@ const shortTime = (at: number) => new Date(at).toISOString().slice(11, 16);
 export function RadarStage({
   onView,
   initialRegion,
+  initialAt,
 }: {
   onView: (view: RadarView) => void;
   initialRegion?: string | undefined;
+  initialAt?: number | undefined;
 }): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
@@ -33,6 +35,17 @@ export function RadarStage({
   const [focus, setFocus] = useState<RadarRegion | null | undefined>();
   const latest = scans.at(-1);
   const latestImage = latest && images.get(latest.id);
+  const [restored, setRestored] = useState(initialAt === undefined);
+  const [expired, setExpired] = useState(false);
+  useEffect(() => {
+    if (restored || status !== "ready") return;
+    const saved = scans.find(({ at }) => at === initialAt);
+    if (saved) {
+      held.current = saved;
+      setChosen(saved);
+    } else setExpired(true);
+    setRestored(true);
+  }, [restored, status, scans, initialAt]);
   const candidate = chosen && scans.findIndex(({ at }) => at === chosen.at);
   const index = candidate !== null && candidate >= 0 ? candidate : Math.max(0, scans.length - 1);
   const selected = scans[index];
@@ -45,12 +58,13 @@ export function RadarStage({
     () =>
       onView({
         kind: "radar",
+        region: regionId,
         target,
         image: image ?? null,
         at: image ? selected?.at : undefined,
         lightning: lightning?.frame ?? undefined,
       }),
-    [image, lightning, onView, target, selected?.at],
+    [image, lightning, onView, target, selected?.at, regionId],
   );
 
   function seek(scan: RadarScan | null) {
@@ -130,6 +144,7 @@ export function RadarStage({
 
   return (
     <div className="radar-stage-controls">
+      {expired && <p role="status">The saved scan has expired. Showing the latest available scan.</p>}
       <div className="radar-transport">
         <div className="radar-clock">
           <label htmlFor={id}>{atLatest ? "Latest scan" : "Scan time"}</label>
@@ -167,7 +182,12 @@ export function RadarStage({
           >
             Previous
           </button>
-          <button type="button" disabled={scans.length < 2} onClick={togglePlay}>
+          <button
+            data-playback-start={!playing || undefined}
+            type="button"
+            disabled={scans.length < 2}
+            onClick={togglePlay}
+          >
             {playing ? "Pause" : "Play scans"}
           </button>
           <button

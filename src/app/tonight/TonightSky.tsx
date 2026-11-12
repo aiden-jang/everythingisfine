@@ -54,7 +54,13 @@ export function TonightSky({
   const [mode, setMode] = useState(initialMode === "moonfall" ? "sky" : initialMode);
   const [modeLook, setModeLook] = useState(initialLook);
   const { city } = preference;
-  const night = useMemo(() => localNight(city, openedAt), [city, openedAt]);
+  const night = useMemo(() => {
+    const at = initialMoment?.city === city.name ? initialMoment.at : openedAt;
+    const candidate = localNight(city, at);
+    return at < candidate.start && initialMoment?.city === city.name
+      ? localNight(city, at - 12 * 3_600_000)
+      : candidate;
+  }, [city, openedAt, initialMoment]);
   const format = useMemo(
     () => ({
       clock: new Intl.DateTimeFormat("en", { timeZone: city.zone, hour: "numeric", minute: "2-digit" }),

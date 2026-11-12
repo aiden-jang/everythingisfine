@@ -1,3 +1,4 @@
+import { nearestFrame } from "./nearestFrame";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { useObservationImage } from "../observations/useObservationData";
@@ -19,13 +20,6 @@ import { useTerrainSection } from "./useTerrainSection";
 const dustPoints = transect.points.map(point);
 const dustTarget = { lon: -84, lat: 22, zoom: 1.8 };
 const format = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" });
-const nearest = (data: EarthStoryData, at?: number) =>
-  at === undefined
-    ? 0
-    : data.frames.reduce(
-        (best, frame, i) => (Math.abs(frame.at - at) < Math.abs(data.frames[best]!.at - at) ? i : best),
-        0,
-      );
 
 type Props = ReplayProps & { id: EarthStoryId; city: SkyCityPreference; onRadar: () => void };
 
@@ -63,7 +57,7 @@ export function StoryPlayer({
     restoredAt = Date.parse(
       `${new Date(data.frames[0]!.at).getUTCFullYear()}${new Date(restoredAt).toISOString().slice(4)}`,
     );
-  const [start] = useState(() => nearest(data, restoredAt));
+  const [start] = useState(() => nearestFrame(data, restoredAt));
   const selected = data.sites?.find((p) => p.id === site);
   const waiting = useRef(true);
   const clock = useStoryClock(data.frames.length, start, waiting, !!initial);
@@ -207,7 +201,7 @@ export function StoryPlayer({
   const chooseSite = (value: string) => {
     setSite(value);
     const point = data.sites?.find((p) => p.id === value);
-    if (point) clock.seek(nearest(data, point.at));
+    if (point) clock.seek(nearestFrame(data, point.at));
   };
   return (
     <ReplayPanel
@@ -261,7 +255,7 @@ export function StoryPlayer({
               clock.pause();
               if (!skyMode && id === "comet") {
                 const visible = data.chapters.find((chapter) => chapter.label === "Above my horizon");
-                if (visible) clock.seek(nearest(data, visible.at));
+                if (visible) clock.seek(nearestFrame(data, visible.at));
               }
               panel.onMap(false);
               setSkyMode(!skyMode);
@@ -277,7 +271,7 @@ export function StoryPlayer({
             type="button"
             aria-pressed={slice}
             onClick={() => {
-              clock.seek(nearest(data, Date.parse("2020-06-23T12:00:00Z")));
+              clock.seek(nearestFrame(data, Date.parse("2020-06-23T12:00:00Z")));
               setSlice(!slice);
             }}
           >
@@ -304,7 +298,12 @@ export function StoryPlayer({
         />
       </div>
       <div className="observatory-actions">
-        <button type="button" onClick={clock.toggle} disabled={busy}>
+        <button
+          data-playback-start={!clock.playing || undefined}
+          type="button"
+          onClick={clock.toggle}
+          disabled={busy}
+        >
           {clock.playing ? "Pause" : index === data.frames.length - 1 ? "Replay" : "Play"}
         </button>
         {data.chapters.map((chapter) => (
@@ -312,7 +311,7 @@ export function StoryPlayer({
             type="button"
             key={chapter.label}
             disabled={busy}
-            onClick={() => clock.seek(nearest(data, chapter.at))}
+            onClick={() => clock.seek(nearestFrame(data, chapter.at))}
           >
             {chapter.label}
           </button>

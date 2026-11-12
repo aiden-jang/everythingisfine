@@ -1,6 +1,6 @@
 import type { InspectionRun } from "../app/useEventInspection";
 import { useGlobeLayers } from "./useGlobeLayers";
-import { createFlightTarget, type FlyTo } from "./cameraTarget";
+import { createFlightTarget } from "./cameraTarget";
 import { createOrbitReadout } from "./orbitReadout";
 import { type CutawayFocus } from "./cutaway";
 import { GlobeOverlays } from "./GlobeOverlays";
@@ -8,19 +8,18 @@ import { GlobeUnavailable } from "./GlobeUnavailable";
 import { animationDelta } from "./animation";
 import { createAnimationFrame } from "./animationFrame";
 import { createTapGesture } from "./tapGesture";
-import type { CameraState } from "./controls";
 import { observeViewport } from "./observeViewport";
 import { useLandingRotation } from "./useLandingRotation";
-import { attachSectionDrawing, type SectionCommit } from "./sectionDrawing";
+import { attachSectionDrawing } from "./sectionDrawing";
 import { useEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
 import { loadStars, type FigureTable } from "../geo/stars";
 import { createGlobe, type GlobeMoment } from "./scene";
 import { isLocalView, isRecordedFlight, isShadowChase, type GlobePresentation } from "./scenePresentation";
-import { sinkFraction, type FocusSpan } from "./events";
-import { frontsFor, type Feed, type FeedSnapshot } from "../app/feed";
+import { sinkFraction } from "./events";
+import { frontsFor, type FeedSnapshot } from "../app/feed";
 import { createReplay, replayFrom, REPLAY_FRONT_MIN_MAG, type Replay } from "../app/replay";
-import type { Filters, Quake } from "../data/types";
+import type { Quake } from "../data/types";
 import { distanceLabel, magnitude } from "../app/format";
 import { between, seconds } from "../app/arrival";
 import type { RampName } from "./ramp";
@@ -29,47 +28,9 @@ import type { Aurora } from "../sources/aurora";
 import type { SlabPoint } from "../geo/slab";
 import type { Mark } from "./marks";
 import { kmPerPixel, latitudeLabel, niceScale } from "./scale";
+import type { GlobeProps } from "./GlobeProps";
 
 /* The canvas, and the smallest possible amount of React around it. three.js owns everything inside it. See ARCHITECTURE.md#srcglobeglobetsx. */
-
-export interface GlobeProps {
-  feed: Feed;
-  filters: Filters;
-  selected: string | null;
-  ramp: RampName;
-  onSelect: (key: string | null) => void;
-  onReady: (flyTo: FlyTo, read: () => CameraState) => void;
-  /** Hands out a function that renders and returns the canvas, for the still. See ARCHITECTURE.md#srcglobeglobetsx. */
-  onCapture?: (capture: () => HTMLCanvasElement | null) => void;
-  onSelectMark?: (id: string | null) => void;
-  onCamera?: (state: { lon: number; lat: number; zoom: number }) => void;
-  /** Replay counts events, rather than the smaller number of clustered markers. */
-  onReplay?: (state: { at: number; revealed: number } | null) => void;
-  flat?: boolean;
-  globePresentation?: GlobePresentation;
-  rotateLanding?: boolean;
-  /** Draw earthquakes at their own depth. Only means anything on the globe, and the shader fades it with
-   * the morph, so unwrapping the map lifts every event back to the surface as one motion. */
-  depthSink?: boolean;
-  cutaway?: CutawayFocus | null;
-  figures?: FigureTable | null;
-  /** Null rather than `Date.now()` on the live view, so the scene keeps its once-a-minute throttle. */
-  moment?: GlobeMoment;
-  inspection?: InspectionRun | null;
-  /** Handed in already loaded: whoever pressed the toggle pulls the chunk, and this stays a renderer. */
-  slab?: readonly SlabPoint[] | null;
-  /** A span, not a bucket index: the strip knows how wide its buckets are and this does not. */
-  focus?: FocusSpan | null;
-  aurora?: Aurora | null;
-  marks?: readonly Mark[];
-  /** Origin time the cursor stands at, or null for live. Null means no limit rather than "the present",
-   * so a live arrival still appears. */
-  scrubAt?: number | null;
-  section?: SectionLine | null;
-  /** Map only: picking two points on a sphere somebody is rotating is a guess. Shift and drag, because a
-   * plain drag already pans and a "now draw a line" button would be a mode to get stuck in. */
-  onSection?: SectionCommit;
-}
 
 /* Half of the 44px a finger is reckoned to need, so a marker's own radius makes up the rest. */
 const TOUCH_SLOP_PX = 18;
@@ -85,6 +46,7 @@ export function Globe({
   onSelect,
   onReady,
   onCapture,
+  onFrame,
   onSelectMark,
   onCamera,
   onReplay,
@@ -132,6 +94,7 @@ export function Globe({
    */
   const live = useRef({
     filters,
+    onFrame,
     selected,
     focus,
     scrubAt,
@@ -149,6 +112,7 @@ export function Globe({
   });
   live.current = {
     filters,
+    onFrame,
     selected,
     focus,
     scrubAt,
@@ -191,6 +155,7 @@ export function Globe({
     const readout = createOrbitReadout(orbit.current);
     globe.resize();
     globe.render();
+    live.current.onFrame?.(el);
     onReady(
       createFlightTarget(globe.controls, () => wakeRef.current(), globe.beginArrival),
       globe.controls.state,
@@ -201,6 +166,7 @@ export function Globe({
       if (!el2) return null;
       // Drawn again right here, so the pixels exist when the caller reads them on the next line.
       globe.render();
+      live.current.onFrame?.(el);
       return el2;
     });
 
@@ -224,6 +190,7 @@ export function Globe({
          */
         __drawOnce: () => {
           globe.render();
+          live.current.onFrame?.(el);
         },
       });
     }
@@ -498,6 +465,7 @@ export function Globe({
       }
       const presenting = globe.stepPresentation(dt, reducedMotion.matches);
       globe.render();
+      live.current.onFrame?.(el);
       placeOverlays();
       readout.update(globe.controls.state());
       if (!rotating) onCameraRef.current?.(globe.controls.state());
@@ -546,6 +514,7 @@ export function Globe({
         live.current.focus,
       );
       globe.render();
+      live.current.onFrame?.(el);
       placeOverlays();
     };
     redrawRef.current = redraw;

@@ -98,3 +98,30 @@ describe("anonymous aggregate analytics", () => {
     ).toBe(204);
   });
 });
+
+it("accepts only catalogue categories for journeys, never the visitor's selected place or saved state", async () => {
+  const writeDataPoint = vi.fn();
+  for (const event of [
+    { name: "scene_selected", scene: "night" },
+    { name: "story_opened", story: "moonfall" },
+    { name: "playback_started", story: "float" },
+    { name: "story_left_early", story: "tonga" },
+    { name: "journey_completed", journey: "above-earth" },
+  ]) {
+    expect(isAnalyticsEvent(event)).toBe(true);
+    await handleAnalytics(request(JSON.stringify(event)), { EVENTS: { writeDataPoint } });
+  }
+  expect(writeDataPoint).toHaveBeenCalledWith({
+    indexes: [APP],
+    blobs: [APP, "story_opened", "moonfall", ""],
+    doubles: [1, 0],
+  });
+  for (const event of [
+    { name: "story_opened", story: "PRIVATE" },
+    { name: "scene_selected", scene: "Seoul" },
+    { name: "journey_completed", journey: "not-a-journey" },
+    { name: "playback_started", story: "float", at: 123 },
+    { name: "story_opened", story: "moonfall", city: "Seoul" },
+  ])
+    expect(isAnalyticsEvent(event)).toBe(false);
+});

@@ -1,9 +1,10 @@
 import { useCallback, useRef, useState } from "react";
+import type { VisitPosition } from "./visitor/library";
 import type { Permalink } from "./permalink";
-import { stored } from "./stored";
+import { initialPresentation } from "./observatoryState";
+export { initialPresentation, earthSceneTarget } from "./observatoryState";
 import type { Stop } from "./tour";
 import type { CutawayFocus } from "../globe/cutaway";
-import { subsolarPoint } from "../geo/sun";
 import type { AuroraRun } from "../sources/auroraRoute";
 import { useObservationDeck, type AfterDarkArchive } from "./observations/useObservationDeck";
 import type { ReplayId } from "./observations/replays";
@@ -20,47 +21,13 @@ import { earthStories, isEarthStory } from "./earth-stories/catalogue";
 export type EarthScene = "live" | "depth" | "night";
 export type Presentation = "observe" | "explore";
 
-export function initialPresentation(shared: Partial<Permalink>, read = stored): Presentation {
-  if (shared.story) return "observe";
-  if (shared.section && !shared.presentation) return "explore";
-  if (shared.presentation) return shared.presentation;
-  if (shared.event || shared.mark || shared.day || shared.cursor != null || shared.flat !== undefined)
-    return "explore";
-  const saved = read("presentation");
-  if (saved === "observe" || saved === "explore") return saved;
-  const preferences = [
-    "railOpen",
-    "head",
-    "rail",
-    "sheet",
-    "flat",
-    "ramp",
-    "motion",
-    "depthSink",
-    "slab",
-    "figures",
-  ];
-  return preferences.some((key) => read(key) !== null) ? "explore" : "observe";
-}
-
-export function earthSceneTarget(
-  scene: EarthScene,
-  deepest: CutawayFocus | null,
-  at: number,
-): { scene: EarthScene; focus: CutawayFocus | null; camera: [number, number, number] } {
-  if (scene === "depth" && deepest) {
-    return { scene, focus: { ...deepest, dive: true }, camera: [deepest.lon, deepest.lat, 1.9] };
-  }
-  if (scene === "night") {
-    const sun = subsolarPoint(at);
-    return { scene, focus: null, camera: [sun.lon + 180, -sun.lat, 0.92] };
-  }
-  return { scene: "live", focus: null, camera: [145, 12, 1] };
-}
-
 export function useObservatory(shared: Partial<Permalink>) {
   const checkpoint = useRef<() => void>(() => {});
-  const before = useCallback(() => checkpoint.current(), []);
+  const visitCheckpoint = useRef<() => void>(() => {});
+  const before = useCallback(() => {
+    visitCheckpoint.current();
+    checkpoint.current();
+  }, []);
   const [scene, setScene] = useState<EarthScene>(() =>
     shared.story && isEarthStory(shared.story.id)
       ? earthStories[shared.story.id].scene
@@ -78,6 +45,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const skyCity = useSkyCity(shared.story?.city);
   const sky = useSkyView(skyCity.name);
   const { view: tonightView, entry: skyEntry, setView: setTonightView, update: updateSky } = sky;
+  const floatEntry = useRef<VisitPosition["float"]>();
   const [floatView, setFloatView] = useState<FloatDiveView | "opening" | null>(null);
   const [radarView, setRadarView] = useState<RadarView | null>(null);
   const updateFloat = useCallback(
@@ -90,7 +58,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   );
   const observations = useObservationDeck(shared.story, before);
   const closeObservations = observations.close;
-  const radarEntry = useRef<{ region?: string; story?: boolean }>({});
+  const radarEntry = useRef<{ region?: string; story?: boolean; at?: number }>({});
   const radarOrigin = useRef<Presentation>("observe");
   const storyFromExplore = useRef(false);
   const clearViews = useCallback(() => {
@@ -174,6 +142,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       },
     },
     checkpoint,
+    visitCheckpoint,
     home(prepare: () => void) {
       before();
       sharedView.current = false;
@@ -222,6 +191,7 @@ export function useObservatory(shared: Partial<Permalink>) {
             float = createFloatPlayback(saved.float.profile, false, saved.float.source);
             float.seek(saved.float.index);
           }
+          floatEntry.current = undefined;
           setFloatView(float);
           setRadarView(saved.radar);
           setBrowser(saved.browser);
@@ -294,9 +264,9 @@ export function useObservatory(shared: Partial<Permalink>) {
       active: tonight,
       view: localSky,
       entry: skyEntry,
-      open(mode: "sky" | "meteors" | "moonfall" = "sky") {
+      open(mode: "sky" | "meteors" | "moonfall" = "sky", resume?: VisitPosition["sky"]) {
         before();
-        sky.open(mode);
+        sky.open(mode, resume);
         setRun(null);
         setSunWatch(false);
       },
@@ -309,8 +279,10 @@ export function useObservatory(shared: Partial<Permalink>) {
     floatDive: {
       active: floatView !== null,
       view: floatView === "opening" ? null : floatView,
-      open: () => {
+      entry: floatEntry.current,
+      open: (resume?: VisitPosition["float"]) => {
         before();
+        floatEntry.current = resume;
         setFloatView("opening");
       },
       update: updateFloat,
@@ -324,10 +296,10 @@ export function useObservatory(shared: Partial<Permalink>) {
       view: radarView,
       fromExplore: radarView !== null && radarOrigin.current === "explore",
       entry: radarEntry.current,
-      open(region?: string, story = false) {
+      open(region?: string, story = false, at?: number) {
         before();
         radarOrigin.current = presentation;
-        radarEntry.current = { ...(region ? { region } : {}), story };
+        radarEntry.current = { ...(region ? { region } : {}), ...(at !== undefined ? { at } : {}), story };
         const open = () => {
           if (story) observations.close();
           setRadarView({

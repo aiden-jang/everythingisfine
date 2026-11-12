@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import type { VisitPosition } from "./visitor/library";
 import type { SkyLook, TonightView } from "../geo/tonight";
 import type { TonightPresentation } from "../globe/scenePresentation";
 import type { MoonfallProgress } from "../globe/moonfall/scene";
@@ -43,12 +44,19 @@ export function useSkyView(city: string) {
       setView(saved.view);
       setEntry({ ...saved.entry, revision: entry.revision + 1 });
     },
-    open(mode: Entry["mode"] = "sky") {
+    open(mode: Entry["mode"] = "sky", resume?: VisitPosition["sky"]) {
       const previous = memory.current;
       setEntry((last) => ({
         mode,
         revision: last.revision + 1,
-        ...(previous?.city.name === city
+        ...(resume
+          ? {
+              look: resume.look,
+              moment: { city: resume.city, at: resume.at },
+              ...(resume.lunar ? { lunar: resume.lunar } : {}),
+            }
+          : {}),
+        ...(!resume && previous?.city.name === city
           ? { look: previous.look, moment: { city: previous.city.name, at: previous.at } }
           : {}),
       }));

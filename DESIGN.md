@@ -382,3 +382,14 @@ the view, or changing the profile or harbor. It is not a field recording, and ne
 - Unexplained bare magnitudes, hidden deduplication or inaccurate coverage/liveness.
 - Relationships fabricated between observations, or pins lost on a feed refresh.
 - Performance claims without the hardware and measurement conditions.
+
+## Discovery and return visits
+
+The landing stays quiet. Stories & layers gives each scene one featured entry, a compact current-data
+discovery list, and returning visitors their recent views. Sources and times explain why a suggestion
+is relevant; no new feed or fabricated highlight is required. Saved views are local and removable.
+A save confirms what was retained, while unavailable historical live scans explain the fallback.
+
+Video recording lives beside Save image in View options. Its short status sits over the canvas,
+leaving playback and navigation reachable. Recording does not introduce a second scene or change
+its geometry. The preview appears only after recording ends and can be dismissed immediately.

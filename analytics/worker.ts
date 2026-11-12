@@ -11,7 +11,20 @@ export function writeAnalytics(env: AnalyticsBindings, event: AnalyticsEvent): v
   try {
     env.EVENTS?.writeDataPoint({
       indexes: [APP],
-      blobs: [APP, event.name, event.name === "page_view" ? event.page : "", ""],
+      blobs: [
+        APP,
+        event.name,
+        "page" in event
+          ? event.page
+          : "story" in event
+            ? event.story
+            : "journey" in event
+              ? event.journey
+              : "scene" in event
+                ? event.scene
+                : "",
+        "",
+      ],
       doubles: [1, 0],
     });
   } catch {

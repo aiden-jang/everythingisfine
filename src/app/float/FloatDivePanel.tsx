@@ -1,3 +1,4 @@
+import type { VisitPosition } from "../visitor/library";
 import { MeasurementSound } from "../MeasurementSound";
 import { useLayoutEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { ARGO_DOI, ARGO_PROVIDER, type ArgoSample, type ArgoStation } from "../../sources/argo";
@@ -65,7 +66,7 @@ function Measurements({ view, sound }: { view: FloatDiveView; sound: boolean }):
           <small>{sample.pressure.toFixed(1)} dbar</small>
         </div>
         <div className="observatory-actions float-actions">
-          <button type="button" onClick={view.toggle}>
+          <button data-playback-start={!playing || undefined} type="button" onClick={view.toggle}>
             {playing ? "Pause" : index === samples.length - 1 ? "Replay ascent" : "Play ascent"}
           </button>
         </div>
@@ -120,15 +121,17 @@ export function FloatDivePanel({
   view,
   onView,
   onClose,
+  resume,
 }: {
   view: FloatDiveView | null;
   onView: (view: FloatDiveView) => void;
   onClose: () => void;
+  resume?: VisitPosition["float"];
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
   useObservatoryEscape(onClose);
-  const { saved, catalogue, pending, problem, select, retry } = useArgoProfiles(view, onView);
+  const { saved, catalogue, pending, problem, select, retry } = useArgoProfiles(view, onView, resume);
   const value = pending ?? (view ? `${view.source}/${view.profile.id}` : "");
 
   return (
@@ -181,7 +184,9 @@ export function FloatDivePanel({
           <p role="status">Checking this profile’s readings…</p>
         ) : problem ? (
           <p role="status">
-            Couldn’t load usable readings for the selected profile.
+            {problem === "resume"
+              ? "The saved profile could not be restored."
+              : "Couldn’t load usable readings for the selected profile."}
             {view && ` Still showing ${name(view.profile)}, cycle ${view.profile.cycle}.`}
           </p>
         ) : catalogue.state === "loading" ? (

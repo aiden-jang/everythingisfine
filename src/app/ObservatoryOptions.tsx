@@ -1,13 +1,17 @@
+import { RecordButton } from "./capture/ClipControls";
+import type { Clip } from "./capture/useClip";
 import { useId, useRef } from "react";
 import { FullscreenButton } from "./FullscreenButton";
 import "./observatory-options.css";
 
 export function ObservatoryOptions({
+  clip,
   ready,
   saving,
   saveStill,
   rotation,
 }: {
+  clip: Clip;
   ready: boolean;
   saving: boolean;
   saveStill: () => void;
@@ -27,7 +31,10 @@ export function ObservatoryOptions({
         aria-controls={id}
         onClick={() => {
           const rect = trigger.current?.getBoundingClientRect();
-          if (rect && panel.current) panel.current.style.insetBlockStart = `${rect.bottom + 8}px`;
+          if (rect && panel.current) {
+            panel.current.style.insetBlockStart = `${rect.bottom + 8}px`;
+            panel.current.style.maxBlockSize = `calc(100dvh - ${rect.bottom + 20}px)`;
+          }
         }}
       >
         View options
@@ -56,7 +63,12 @@ export function ObservatoryOptions({
         >
           {saving ? "Saving image" : "Save image"}
         </button>
+        <RecordButton clip={clip} ready={ready} close={() => panel.current?.hidePopover()} />
         <FullscreenButton />
+        <nav className="observatory-policy-links" aria-label="Legal">
+          <a href="https://accounts.aidenjang.com/privacy#legal-cookies-and-analytics">Privacy</a>
+          <a href="https://accounts.aidenjang.com/terms">Terms</a>
+        </nav>
       </div>
     </>
   );

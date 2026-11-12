@@ -1,3 +1,4 @@
+import { reportAnalytics } from "../../analytics/browser";
 import { SceneDiagram } from "./SceneDiagram";
 import { geographicCoordinates } from "../globe/orbitReadout";
 import { CUTAWAY_GUIDES_KM } from "../globe/cutawayScale";
@@ -94,7 +95,10 @@ export function ObservatoryScenePicker({
         <button
           key={option.id}
           type="button"
-          onClick={() => onScene(option.id)}
+          onClick={() => {
+            if (scene !== option.id) reportAnalytics({ name: "scene_selected", scene: option.id });
+            onScene(option.id);
+          }}
           aria-pressed={scene === option.id}
           aria-label={option.name}
           disabled={!ready || (option.id === "depth" && !deepAvailable)}
@@ -114,13 +118,11 @@ export function ObservatoryFeatured({
   scene,
   ready,
   radar,
-  dive,
   deep,
 }: {
   scene: Exclude<EarthScene, "night">;
   ready: boolean;
   radar: () => void;
-  dive: () => void;
   deep: () => void;
 }): JSX.Element {
   return (
@@ -129,9 +131,6 @@ export function ObservatoryFeatured({
         <>
           <button type="button" id="open-storm-radar" onClick={radar} disabled={!ready}>
             Storm Radar
-          </button>
-          <button type="button" id="open-float-dive" onClick={dive} disabled={!ready}>
-            Float Dive
           </button>
         </>
       ) : (

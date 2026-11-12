@@ -161,6 +161,7 @@ export function ObservationPlayer({
             {frames.length > 1 && (
               <div className="observatory-actions">
                 <button
+                  data-playback-start={!playing || undefined}
                   type="button"
                   onClick={() => {
                     if (!playing && index === frames.length - 1) setSelectedAt(frames[0]!.at);

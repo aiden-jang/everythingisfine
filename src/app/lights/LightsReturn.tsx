@@ -271,6 +271,7 @@ export function LightsReturn({
                   </button>
                 )}
                 <button
+                  data-playback-start={!playing || undefined}
                   type="button"
                   ref={play}
                   onClick={() => {

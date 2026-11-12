@@ -206,6 +206,7 @@ export function KilaueaJourney({
             </span>
             <div className="observatory-actions">
               <button
+                data-playback-start={!playing || undefined}
                 type="button"
                 onClick={() => {
                   if (!playing && (split !== null || index === LAST)) {

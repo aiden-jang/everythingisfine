@@ -1,17 +1,24 @@
+import { reportAnalytics } from "../../../analytics/browser";
+import { useJourneyAnalytics } from "../visitor/useJourneyAnalytics";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { ObservatoryProps } from "../Observatory";
 import { searchStories } from "../storyIndex";
 import type { StoryId } from "../observations/useObservationDeck";
 import { journeys } from "./catalogue";
+import { useVisitMemory } from "../visitor/useVisitMemory";
+import type { Visit } from "../visitor/library";
 
 const Navigation = createContext<{
   active: string | null;
+  library: ReturnType<typeof useVisitMemory>["library"];
+  current: () => Visit | null;
+  resume: (visit: Visit) => void;
   route: { id: string; step: number } | null;
   unavailable: (id: string) => string | null;
   open: (id: string, trigger?: string) => void;
   start: (id: string) => void;
   step: (index: number) => void;
-  finish: () => void;
+  finish: (complete: boolean) => void;
 } | null>(null);
 
 export const useStoryNavigation = () => useContext(Navigation);
@@ -28,33 +35,45 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         : tonight.active
           ? tonight.view?.moonfall
             ? "moonfall"
-            : tonight.entry.mode
+            : tonight.view?.radiantTrail
+              ? "meteors"
+              : tonight.entry.mode
           : sun.active
             ? "sun"
             : props.aurora.run
               ? "aurora"
               : null);
+  useJourneyAnalytics(active);
+  const memory = useVisitMemory(props, active);
   useEffect(() => {
     if (route && active === null) setRoute(null);
   }, [active, route]);
   const unavailable = (id: string) =>
     !props.ready ? "The globe is still opening." : id === "aurora" ? props.aurora.unavailable : null;
-  function navigate(id: string, trigger = "open-observations") {
+  function navigate(id: string, trigger = "open-observations", saved?: Visit) {
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
     props.onScene(story.scene);
     deck.setTrigger(trigger);
-    if (id === "sky" || id === "meteors" || id === "moonfall") tonight.open(id);
+    if (saved?.position.sky) props.views.skyCity.select(saved.position.sky.city);
+    if (id === "sky" || id === "meteors" || id === "moonfall") tonight.open(id, saved?.position.sky);
     else if (id === "aurora") props.aurora.start();
     else if (id === "sun") sun.toggle();
-    else if (id === "radar") props.radar.open();
-    else if (id === "float") floatDive.open();
-    else deck.open(id as StoryId, trigger);
+    else if (id === "radar") {
+      props.radar.open(saved?.position.radar?.region, false, saved?.position.radar?.at);
+      deck.setMap(saved?.position.radar?.map ?? false);
+    } else if (id === "float") floatDive.open(saved?.position.float);
+    else deck.open(id as StoryId, trigger, saved?.position.moment);
   }
   return (
     <Navigation.Provider
       value={{
         active,
+        ...memory,
+        resume(visit) {
+          setRoute(null);
+          navigate(visit.id, "open-observations", visit);
+        },
         route:
           route && journeys.find((journey) => journey.id === route.id)?.steps[route.step]?.id === active
             ? route
@@ -67,6 +86,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         start(id) {
           const first = journeys.find((journey) => journey.id === id)?.steps[0];
           if (!first || unavailable(first.id)) return;
+          reportAnalytics({ name: "journey_started", journey: id });
           setRoute({ id, step: 0 });
           navigate(first.id, `journey-${id}`);
         },
@@ -76,7 +96,8 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           setRoute({ ...route, step: index });
           navigate(next.id, `journey-${route.id}`);
         },
-        finish() {
+        finish(complete) {
+          if (complete && route) reportAnalytics({ name: "journey_completed", journey: route.id });
           setRoute(null);
         },
       }}

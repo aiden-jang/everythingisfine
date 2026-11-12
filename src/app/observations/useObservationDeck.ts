@@ -97,8 +97,9 @@ export function useObservationDeck(shared?: StoryMoment, before = () => {}) {
     query,
     setQuery,
     setHorizon,
-    open(next: StoryId, from: string) {
+    open(next: StoryId, from: string, resume?: StoryMoment) {
       before();
+      if (resume?.id === next) memory.current.set(next, resume);
       active.current = next;
       setTrigger(from);
       setView(null);

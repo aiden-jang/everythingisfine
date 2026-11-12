@@ -8,6 +8,7 @@ interface RadarCamera {
 }
 
 export interface RadarView {
+  region?: string;
   kind: "radar";
   target: RadarCamera;
   image: ImageBitmap | null;

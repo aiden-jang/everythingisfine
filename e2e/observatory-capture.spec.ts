@@ -28,6 +28,7 @@ test("the featured lunar journey keeps its canvas and saves its own scientific c
   await page.goto("/");
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
+  await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await openStories(page);
   await page.getByRole("button", { name: "Moonfall", exact: true }).click();
   const moon = page.locator("#observatory-intro");
@@ -49,8 +50,8 @@ test("the featured lunar journey keeps its canvas and saves its own scientific c
   await page.goBack();
   await expect(moon.getByLabel("Rover traverse")).toHaveValue("1");
   await expect(moon.getByRole("slider", { name: "Mapped distance" })).toHaveValue(distance);
-  await moon.getByRole("button", { name: "Back to Live Earth", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+  await moon.getByRole("button", { name: "Back to After Dark", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "The other side of day.", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Moonfall", exact: true })).toBeFocused();
   expect(await canvas.evaluate((element, previous) => element === previous, original)).toBe(true);
 });

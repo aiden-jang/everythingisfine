@@ -1,0 +1,97 @@
+.visit-shelf {
+  border-bottom: 1px solid var(--color-hairline);
+  padding-block: 4px 16px;
+}
+.visit-shelf h3 {
+  font-size: 14px;
+  font-weight: 550;
+  margin-bottom: 6px;
+}
+.visit-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+.visit-row button {
+  min-height: 44px;
+  padding-block: 10px;
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+.visit-row button:first-child {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+}
+.visit-row button:first-child > span,
+.discovery-list button > span {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.visit-row small,
+.visit-shelf p,
+.visit-shelf [role="status"],
+.visit-save span {
+  color: var(--color-dim);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.visit-row button:hover,
+.visit-shelf > details > button:hover,
+.visit-save button:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.visit-shelf summary,
+.visit-shelf > details > button,
+.visit-save button {
+  min-height: 44px;
+  align-content: center;
+  font-size: 12px;
+  cursor: pointer;
+}
+.visit-shelf > details {
+  margin-top: 10px;
+}
+.visit-save {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-top: 1px solid var(--color-hairline);
+  margin-top: 16px;
+}
+.discovery-list {
+  display: grid;
+  gap: 12px;
+  padding-block: 8px 20px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+.discovery-list h3 {
+  font-size: 16px;
+  font-weight: 550;
+}
+.discovery-list button {
+  display: grid;
+  gap: 5px;
+  text-align: left;
+  min-height: 44px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.discovery-list button span {
+  font-size: 13px;
+}
+.discovery-list small {
+  color: var(--color-dim);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.discovery-list button:hover > span {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

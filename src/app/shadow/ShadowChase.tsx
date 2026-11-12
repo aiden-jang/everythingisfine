@@ -247,6 +247,7 @@ export function ShadowChase({
                 <label htmlFor={timeline}>{local ? "Local eclipse time" : "Shadow time"}</label>
                 <time dateTime={new Date(at).toISOString()}>{time}</time>
                 <button
+                  data-playback-start={!clock.playing || undefined}
                   type="button"
                   onClick={() => {
                     if (local && !clock.playing && at === circumstances?.peak) clock.reset(start, true);

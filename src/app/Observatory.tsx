@@ -10,6 +10,7 @@ import {
   TourUnavailable,
 } from "./ObservatoryStage";
 import { ObservatoryTourControls } from "./ObservatoryTourControls";
+import { Discoveries, type DiscoveriesData } from "./visitor/Discoveries";
 import { FeaturedStory } from "./FeaturedStory";
 import { StoriesDrawer } from "./StoriesDrawer";
 import { MoonfallReadout } from "./moonfall/MoonfallReadout";
@@ -30,6 +31,7 @@ import { ObservationCredit } from "./observations/ObservationCredit";
 import { ObservationDeckShell } from "./observations/ObservationEntry";
 
 export interface ObservatoryProps {
+  discoveries: DiscoveriesData;
   scene: EarthScene;
   at: number;
   ready: boolean;
@@ -48,6 +50,7 @@ export interface ObservatoryProps {
     | "openAfterDarkArchive"
     | "closeStory"
     | "browser"
+    | "visitCheckpoint"
   >;
   radar: ReturnType<typeof useObservatory>["radar"];
   onScene: (scene: EarthScene) => void;
@@ -80,6 +83,7 @@ export function Observatory(props: ObservatoryProps): JSX.Element {
 }
 
 function ObservatoryContent({
+  discoveries,
   scene,
   at,
   ready,
@@ -121,11 +125,6 @@ function ObservatoryContent({
     aurora.run,
   ]);
   const closeSun = () => observations.returnTo("open-sun-watch", sun.toggle);
-  const openFeatured = () => {
-    onScene("night");
-    observations.setTrigger("open-featured-moonfall");
-    tonight.open("moonfall");
-  };
   const auroraControls = (
     <AuroraOverflightControls
       aurora={aurora}
@@ -209,8 +208,9 @@ function ObservatoryContent({
             <Suspense fallback={<p role="status">Opening Float Dive…</p>}>
               <FloatDive
                 view={floatDive.view}
+                resume={floatDive.entry}
                 onView={floatDive.update}
-                onClose={() => observations.returnTo("open-float-dive", floatDive.close)}
+                onClose={() => observations.returnTo("open-featured-float", floatDive.close)}
               />
             </Suspense>
           ) : radar.active ? (
@@ -235,22 +235,15 @@ function ObservatoryContent({
                 initialLunar={tonight.entry.lunar}
                 initialLook={tonight.entry.look}
                 initialMoment={tonight.entry.moment}
-                returnLabel={
-                  observations.trigger === "open-featured-moonfall"
-                    ? "Back to Live Earth"
-                    : "Back to After Dark"
-                }
+                returnLabel="Back to After Dark"
                 onClose={() => {
                   const id =
                     tonight.entry.mode === "meteors"
                       ? "open-meteor-nights"
                       : tonight.entry.mode === "moonfall"
-                        ? "open-moonfall-story"
+                        ? "open-featured-moonfall"
                         : "open-tonight-sky";
-                  observations.returnTo(id, () => {
-                    tonight.close();
-                    if (observations.trigger === "open-featured-moonfall") onScene("live");
-                  });
+                  observations.returnTo(id, tonight.close);
                 }}
               />
             </Suspense>
@@ -359,14 +352,14 @@ function ObservatoryContent({
                     </button>
                     {ready && !tour.available && scene === "night" && <TourUnavailable note={empty.text} />}
                   </div>
-                  {scene === "live" && <FeaturedStory ready={ready} open={openFeatured} />}
+                  <FeaturedStory scene={scene} />
+                  <Discoveries data={discoveries} aurora={aurora} city={skyCity.city} />
                   {!aurora.run && scene === "night" ? auroraControls : null}
                   {!active && scene !== "night" && (
                     <ObservatoryFeatured
                       scene={scene}
                       ready={ready}
                       radar={radar.open}
-                      dive={floatDive.open}
                       deep={() => observations.open("deep", "open-deep-time")}
                     />
                   )}

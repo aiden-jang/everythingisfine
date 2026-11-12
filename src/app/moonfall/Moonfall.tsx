@@ -139,7 +139,11 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
           onChange={(event) => act(() => view.seek((length * event.currentTarget.valueAsNumber) / 250))}
         />
         <div className="observatory-actions moonfall-actions">
-          <button type="button" onClick={() => act(view.toggleRoute)}>
+          <button
+            data-playback-start={!playing || undefined}
+            type="button"
+            onClick={() => act(view.toggleRoute)}
+          >
             {playing ? "Pause traverse" : meters >= length ? "Replay traverse" : "Play traverse"}
           </button>
           <span className="moonfall-route-note">

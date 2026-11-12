@@ -278,7 +278,12 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
             onInput={(event) => update(survey(Number(event.currentTarget.value)))}
           />
           <div className="archive-scene-controls">
-            <button type="button" className="archive-scene-button" onClick={toggle}>
+            <button
+              data-playback-start={!view.playing || undefined}
+              type="button"
+              className="archive-scene-button"
+              onClick={toggle}
+            >
               {view.playing ? "Pause" : ended ? "Replay" : "Play"}
             </button>
             <button type="button" className="archive-scene-button" onClick={() => update(survey(ERUPTION))}>

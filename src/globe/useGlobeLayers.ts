@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect } from "react";
-import type { GlobeProps } from "./Globe";
+import type { GlobeProps } from "./GlobeProps";
 
 type Values = Pick<
   GlobeProps,

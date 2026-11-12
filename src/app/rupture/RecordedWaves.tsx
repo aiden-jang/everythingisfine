@@ -205,6 +205,7 @@ export function RecordedWaves({
           </label>
           <div className="archive-scene-controls">
             <button
+              data-playback-start={!running || undefined}
               type="button"
               className="archive-scene-button"
               onClick={() => {

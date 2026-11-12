@@ -1,3 +1,4 @@
+import { SourceFilter } from "./app/SourceFilter";
 import { observatoryCaption } from "./app/observatoryCaption";
 import { useSceneHistory } from "./app/useSceneHistory";
 import { useSharedLocation } from "./app/useSharedLocation";
@@ -19,6 +20,7 @@ import { useGlobeResources } from "./app/useGlobeResources";
 import { useGlobeTour } from "./app/useGlobeTour";
 import { GlobeLoading } from "./globe/GlobeLoading";
 import { stillMoment } from "./app/still";
+import { useFeedSnapshot } from "./app/useFeedSnapshot";
 import { useStill } from "./app/useStill";
 import { RegionalResults } from "./app/RegionalResults";
 import { APRIL_ECLIPSE_DAY } from "./geo/aprilEclipse";
@@ -30,7 +32,7 @@ import { ArchiveControls } from "./app/ArchiveControls";
 import { useArchive } from "./app/useArchive";
 import { cloneElement, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 const Globe = lazy(() => import("./globe/Globe").then((m) => ({ default: m.Globe })));
-import { createFeed, DEFAULT_FILTERS, type FeedSnapshot } from "./app/feed";
+import { createFeed, DEFAULT_FILTERS } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { search, type Hit } from "./app/search";
 import { useRolling } from "./app/roll";
@@ -98,7 +100,6 @@ import {
   quietNote,
   quietParts,
   compactSpan,
-  SOURCE_NAMES,
 } from "./app/format";
 
 /* Built here and not in an effect. In an effect, StrictMode mounts twice and you get two WebSockets. */
@@ -109,17 +110,11 @@ through and the rail came back one pixel wide. */
 const RAIL_MIN = 264;
 const RAIL_MAX = 620;
 const RAIL_DEFAULT = 356;
-function useFeed(): FeedSnapshot {
-  const [snapshot, setSnapshot] = useState(() => feed.snapshot());
-  useEffect(() => feed.subscribe(setSnapshot), []);
-  return snapshot;
-}
-
 // Read before the first render. In an effect it shows the default globe first, then jumps.
 const shared = decode(window.location.hash);
 
 export function App(): JSX.Element {
-  const snapshot = useFeed();
+  const snapshot = useFeedSnapshot(feed);
   const historyIntent = useRef<string | null>(null);
   const observatory = useObservatory(shared);
   const { enterExplore, enterObserve, chooseScene, setReady: setGlobeReady } = observatory;
@@ -414,7 +409,7 @@ export function App(): JSX.Element {
     if (solar.touching) return { kind: solar.umbra > 0 ? "total" : "annular" } as const;
     return lunarEclipse(eclipseKey).umbral > 0 ? ({ kind: "lunar" } as const) : null;
   }, [eclipseKey]);
-  const { saving, stillCounts, saveStill, onCapture, notice, download, dismiss } = useStill(
+  const { saving, stillCounts, saveStill, onCapture, notice, download, dismiss, clip } = useStill(
     feed,
     filters,
     ramp,
@@ -425,6 +420,7 @@ export function App(): JSX.Element {
         ? "reference cutaway · true scale"
         : null,
     () => observatoryCaption(observatory, litAt ?? Date.now()),
+    { ready: observatory.canCapture, key: observatory.navigation.key },
   );
   const revealedNow = ((): number | null => {
     if (view.at === null) return null;
@@ -472,7 +468,10 @@ export function App(): JSX.Element {
     enterObserve();
     beginTour();
   }, [beginTour, chooseScene, enterObserve]);
-  const openExplorer = () => observatory.exploreScene(stopTour);
+  const openExplorer = () => {
+    reportAnalytics({ name: "explore_opened" });
+    observatory.exploreScene(stopTour);
+  };
   const closeReading = (kind: "quake" | "hazard" | "section") => {
     const selector =
       kind === "quake"
@@ -899,28 +898,7 @@ export function App(): JSX.Element {
       onSlab={setSlabOn}
       slabCount={slabData.length}
     >
-      <div className="mt-3">
-        <span className="label block">Earthquake sources</span>
-        <div role="group" aria-label="Earthquake sources" className="mt-1 flex gap-1.5">
-          {(["usgs", "emsc"] as const).map((id) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => toggleSource(id)}
-              aria-pressed={filters.sources.has(id)}
-              /* Sized to their labels, not to the panel. `flex-1` gave each half the key's width, making two
-           secondary filters the heaviest things in it. See ARCHITECTURE.md#srcapptsx. */
-              className={`cursor-pointer border px-2.5 py-1 text-[11px] transition-colors ${
-                filters.sources.has(id)
-                  ? "border-faint bg-raised text-ink"
-                  : "border-hairline text-faint hover:bg-raised hover:text-dim"
-              }`}
-            >
-              {SOURCE_NAMES[id]}
-            </button>
-          ))}
-        </div>
-      </div>
+      <SourceFilter sources={filters.sources} toggleSource={toggleSource} />
     </MagnitudeFilter>
   );
 
@@ -1030,6 +1008,7 @@ export function App(): JSX.Element {
       </a>
       <h1 className="sr-only">Everything Is Fine</h1>
       <GlobeHeader
+        clip={clip}
         rotation={observatory.rotation}
         ready={observatory.canCapture}
         observing={observatory.observing}
@@ -1077,6 +1056,17 @@ export function App(): JSX.Element {
       >
         {observatory.observing ? (
           <Observatory
+            discoveries={{
+              now: minuteClock,
+              quake:
+                !archived &&
+                view.at === null &&
+                journey.stops[0]?.reading &&
+                snapshot.statuses[journey.stops[0].reading.source].kind !== "failing"
+                  ? (journey.stops[0] ?? null)
+                  : null,
+              inspect: selectQuake,
+            }}
             scene={observatory.scene}
             at={overflight.run?.forecast.forecastAt ?? litAt ?? minuteClock}
             ready={observatory.ready}
@@ -1522,6 +1512,7 @@ export function App(): JSX.Element {
               onSelect={selectQuake}
               onReady={onReady}
               onCapture={onCapture}
+              onFrame={clip.onFrame}
               onSelectMark={selectMark}
               onCamera={(state) => {
                 camera.current = state;

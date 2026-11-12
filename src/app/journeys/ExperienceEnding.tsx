@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { SaveVisit } from "../visitor/VisitShelf";
 import { searchStories } from "../storyIndex";
 import { journeys, onward } from "./catalogue";
 import { useStoryNavigation } from "./StoryNavigation";
@@ -24,46 +25,49 @@ export function ExperienceEnding({ id }: { id?: string } = {}) {
     const next = journey.steps[route.step + 1];
     const nextTitle = searchStories.find((entry) => entry.id === next?.id)?.title;
     return (
-      <section className="guided-journey" aria-label="Current journey">
-        <h3>
-          {journey.title}{" "}
-          <span>
-            {route.step + 1} of {journey.steps.length}
-          </span>
-        </h3>
-        <p>{step.prompt}</p>
-        <p className="journey-context">{step.context}</p>
-        {last && <p>{journey.ending}</p>}
-        <div className="observatory-actions">
-          {route.step > 0 && (
-            <button type="button" onClick={() => navigation.step(route.step - 1)}>
-              Previous view
-            </button>
-          )}
-          {next && (
+      <>
+        <SaveVisit />
+        <section className="guided-journey" aria-label="Current journey">
+          <h3>
+            {journey.title}{" "}
+            <span>
+              {route.step + 1} of {journey.steps.length}
+            </span>
+          </h3>
+          <p>{step.prompt}</p>
+          <p className="journey-context">{step.context}</p>
+          {last && <p>{journey.ending}</p>}
+          <div className="observatory-actions">
+            {route.step > 0 && (
+              <button type="button" onClick={() => navigation.step(route.step - 1)}>
+                Previous view
+              </button>
+            )}
+            {next && (
+              <button
+                type="button"
+                disabled={!!navigation.unavailable(next.id)}
+                onClick={() => navigation.step(route.step + 1)}
+              >
+                Next: {nextTitle}
+              </button>
+            )}
             <button
               type="button"
-              disabled={!!navigation.unavailable(next.id)}
-              onClick={() => navigation.step(route.step + 1)}
+              onClick={() => {
+                navigation.finish(last);
+                requestAnimationFrame(() =>
+                  document.querySelector<HTMLElement>(".related-stories summary")?.focus(),
+                );
+              }}
             >
-              Next: {nextTitle}
+              {last ? "Finish journey" : "Leave journey"}
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              navigation.finish();
-              requestAnimationFrame(() =>
-                document.querySelector<HTMLElement>(".related-stories summary")?.focus(),
-              );
-            }}
-          >
-            {last ? "Finish journey" : "Leave journey"}
-          </button>
-        </div>
-        {next && navigation.unavailable(next.id) && <p role="status">{navigation.unavailable(next.id)}</p>}
-        <small>Continue when you’re ready. Each view keeps its own controls and time.</small>
-      </section>
+          </div>
+          {next && navigation.unavailable(next.id) && <p role="status">{navigation.unavailable(next.id)}</p>}
+          <small>Continue when you’re ready. Each view keeps its own controls and time.</small>
+        </section>
+      </>
     );
   }
   const next = onward[active];
@@ -71,23 +75,26 @@ export function ExperienceEnding({ id }: { id?: string } = {}) {
   if (!next || !story) return null;
   const reason = navigation.unavailable(story.id);
   return (
-    <details
-      ref={details}
-      className="related-stories"
-      onToggle={() => {
-        if (details.current?.open)
-          details.current.scrollIntoView({
-            block: "nearest",
-            behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-          });
-      }}
-    >
-      <summary>Keep exploring</summary>
-      <p>{next[1]}</p>
-      <button type="button" disabled={!!reason} onClick={() => navigation.open(story.id)}>
-        <strong>{story.title}</strong>
-        <span>{reason ?? story.summary}</span>
-      </button>
-    </details>
+    <>
+      <SaveVisit />
+      <details
+        ref={details}
+        className="related-stories"
+        onToggle={() => {
+          if (details.current?.open)
+            details.current.scrollIntoView({
+              block: "nearest",
+              behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+            });
+        }}
+      >
+        <summary>Keep exploring</summary>
+        <p>{next[1]}</p>
+        <button type="button" disabled={!!reason} onClick={() => navigation.open(story.id)}>
+          <strong>{story.title}</strong>
+          <span>{reason ?? story.summary}</span>
+        </button>
+      </details>
+    </>
   );
 }

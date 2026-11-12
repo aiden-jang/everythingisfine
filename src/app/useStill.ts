@@ -1,5 +1,7 @@
+import { SOURCE_NAMES } from "./format";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { downloadStill } from "./stillDelivery";
+import { useClip } from "./capture/useClip";
 import type { StillCaption } from "./still";
 import { drawStill, stillMoment, verdictLine, STILL_HEIGHT, STILL_WIDTH } from "./still";
 import { earthquakeCoverage } from "./earthquakeStatus";
@@ -14,6 +16,7 @@ export function useStill(
   cursor: number | null,
   inspection: string | null = null,
   getCaption?: () => Omit<StillCaption, "host"> | null,
+  view = { ready: true, key: "globe" },
 ) {
   const captionReader = useRef(getCaption);
   captionReader.current = getCaption;
@@ -36,6 +39,37 @@ export function useStill(
   }, []);
   // Read current displayed counts without recreating the capture callback on every tick.
   const stillCounts = useRef({ quakes: 0, cyclones: 0, fires: 0, firesCapped: false, floods: 0 });
+  const readCaption = useCallback(() => {
+    const snapshot = feed.snapshot();
+    const archive = snapshot.archive;
+    const now = archive?.to ?? Date.now();
+    const coverage = earthquakeCoverage(snapshot, filters, now);
+    const scope =
+      !archive && coverage.from !== null && coverage.from > now - filters.windowMs
+        ? `Available reports since ${new Date(coverage.from).toISOString().slice(0, 16).replace("T", " ")} UTC`
+        : coverage.label;
+    return {
+      // An archive ends at the next midnight; its caption belongs to the day's start.
+      moment: stillMoment(cursor, archive?.from ?? Date.now(), archive !== null),
+      // From `onGlobe`, not the raw feeds, or a still of an archived day counts layers it does not show.
+      verdict: verdictLine(stillCounts.current),
+      filter: [
+        [...filters.sources].map((source) => SOURCE_NAMES[source]).join(" / ") || "No earthquake sources",
+        `M${filters.minMagnitude.toFixed(1)}+ · ${scope}`,
+        inspection,
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      ...captionReader.current?.(),
+      host: window.location.host,
+    };
+  }, [feed, filters, cursor, inspection]);
+  const theme = () => {
+    const style = getComputedStyle(document.documentElement);
+    const token = (name: string) => style.getPropertyValue(`--color-${name}`).trim();
+    return { background: token("void"), ink: token("ink"), faint: token("faint"), ramp };
+  };
+  const clip = useClip(capture, readCaption, theme, view.ready, view.key);
   const saveStill = useCallback(() => {
     if (busy.current) return;
     busy.current = true;
@@ -64,14 +98,6 @@ export function useStill(
         finished();
         return;
       }
-      const snapshot = feed.snapshot();
-      const archive = snapshot.archive;
-      const now = archive?.to ?? Date.now();
-      const coverage = earthquakeCoverage(snapshot, filters, now);
-      const scope =
-        !archive && coverage.from !== null && coverage.from > now - filters.windowMs
-          ? `Available reports since ${new Date(coverage.from).toISOString().slice(0, 16).replace("T", " ")} UTC`
-          : coverage.label;
       const frame = document.createElement("canvas");
       frame.width = STILL_WIDTH;
       frame.height = STILL_HEIGHT;
@@ -79,22 +105,12 @@ export function useStill(
       if (!ctx) throw new Error("Canvas unavailable");
       const style = getComputedStyle(document.documentElement);
       const token = (name: string): string => style.getPropertyValue(`--color-${name}`).trim();
-      drawStill(
-        ctx,
-        source,
-        source.width,
-        source.height,
-        {
-          // An archive ends at the next midnight; its caption belongs to the day's start.
-          moment: stillMoment(cursor, archive?.from ?? Date.now(), archive !== null),
-          // From `onGlobe`, not the raw feeds, or a still of an archived day counts layers it does not show.
-          verdict: verdictLine(stillCounts.current),
-          filter: [`M${filters.minMagnitude.toFixed(1)}+ · ${scope}`, inspection].filter(Boolean).join(" · "),
-          ...captionReader.current?.(),
-          host: window.location.host,
-        },
-        { background: token("void"), ink: token("ink"), faint: token("faint"), ramp },
-      );
+      drawStill(ctx, source, source.width, source.height, readCaption(), {
+        background: token("void"),
+        ink: token("ink"),
+        faint: token("faint"),
+        ramp,
+      });
 
       /*
        * Encoded synchronously, through `toDataURL` rather than `toBlob`.
@@ -135,7 +151,7 @@ export function useStill(
       failed();
       finished();
     }
-  }, [feed, filters, cursor, ramp, inspection]);
+  }, [readCaption, cursor, ramp]);
   const dismiss = (): void => {
     setNotice(null);
     setFallback(null);
@@ -150,5 +166,5 @@ export function useStill(
         }
       }
     : null;
-  return { saving, stillCounts, saveStill, onCapture, notice, download, dismiss };
+  return { saving, stillCounts, saveStill, onCapture, notice, download, dismiss, clip };
 }

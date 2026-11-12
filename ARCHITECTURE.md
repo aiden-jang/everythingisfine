@@ -13,6 +13,8 @@ index to the matching implementation note.
 - [src/app/panelLift.ts](#srcapppanelliftts)
 - [src/app/ArchiveControls.tsx](#srcapparchivecontrolstsx)
 - [src/app/useStill.ts](#srcappusestillts)
+- [src/app/capture/clipRecorder.ts](#srcappcapturecliprecorderts)
+- [src/app/visitor/useVisitMemory.ts](#srcappvisitorusevisitmemoryts)
 - [src/App.tsx](#srcapptsx)
 - [src/app/CrossSection.tsx](#srcappcrosssectiontsx)
 - [src/app/useSectionFold.ts](#srcappusesectionfoldts)
@@ -103,6 +105,7 @@ index to the matching implementation note.
 - [src/geo/stars.ts](#srcgeostarsts)
 - [src/geo/sun.ts](#srcgeosunts)
 - [src/geo/waves.ts](#srcgeowavests)
+- [src/globe/GlobeProps.ts](#srcglobeglobepropsts)
 - [src/globe/Globe.tsx](#srcglobeglobetsx)
 - [src/globe/GlobeOverlays.tsx](#srcglobeglobeoverlaystsx)
 - [src/globe/auroraTexture.ts](#srcglobeauroratexturets)
@@ -3726,3 +3729,34 @@ Camera, moving cursors and story moments are read from refs on the one-second in
 cursors and semantic changes publish immediately. No-op replacements are skipped because the
 SPA beacon counts replacements as navigation. Story links retain their own recorded timestamp
 independently of the live earthquake window.
+
+## src/app/capture/clipRecorder.ts
+
+The globe’s post-render callback copies the live drawing buffer synchronously, before browser
+compositing clears it. It is read through a ref so recording does not rebuild the renderer or feed
+subscriptions. The local encoder receives a bounded 720px, 24fps canvas with the same current
+source/date caption as stills. A retained 2D frame supplies static intervals without waking WebGL.
+Encoding is capped at ten seconds and a byte limit. Cancellation also invalidates a pending stop
+result; all completion paths release tracks and timers. Object URLs are revoked on dismissal,
+replacement or unmount. The image path preserves its synchronous native-share gesture.
+
+## src/app/visitor/useVisitMemory.ts
+
+The navigation boundary checkpoints the displayed story before its player is disposed. Page hiding
+also checkpoints it; animation frames never write storage. A versioned allowlist retains bounded
+recent visits and explicit saved views separately, without images, raw provider responses or account
+identifiers. Readers validate ids, dates, city catalogue entries and numerical ranges before restoring.
+Saved recent scans/profiles must be fetched again and can expire. A refused storage write leaves
+this visit usable and explicit saves explain that the browser cannot retain them.
+
+Discovery reuses the existing earthquake and aurora subscriptions. The sky suggestion calculates
+positions for the selected city and opens the advertised instant, independently of an older saved
+night. Scene-specific featured entries and the visit shelf share normal story navigation, so they
+retain the same globe, map morph, history and reduced-motion path.
+
+## src/globe/GlobeProps.ts
+
+The renderer contract is separate from its frame loop. Data and visual settings remain props;
+post-render frame delivery reads the latest callback without re-creating the scene. The capture
+callback renders synchronously for explicit image/video starts. Camera changes and capture callbacks
+must not rebuild provider subscriptions or retain a prior view’s canvas.

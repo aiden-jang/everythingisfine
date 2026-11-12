@@ -27,19 +27,36 @@ do not support browser CORS. The local server supplies the same routes without a
 ## Observe and explore
 
 A fresh visit opens the observatory: a full globe, a short introduction, and three scenes.
-**Explore** opens the scientific controls. The wordmark returns to the Observatory and preserves the current view. Choose **Reset view** in Explore to clear the selection, filters, and held time and replay the globe’s arrival.
+**Explore** opens the scientific controls. The wordmark returns to the Live Earth landing view. Browser Back restores the previous view. Choose **Reset view** in Explore to clear the selection, filters, and held time and replay the globe’s arrival.
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
 **Save image** adds the displayed story’s title, time and source to supported canvas views.
 Photograph overlays and Sun Watch do not offer an incomplete canvas-only export.
 Use **Fullscreen** on desktop for a larger viewing area.
 Open **Stories & layers** in any scene to find tours, featured experiences, live observations, forecasts,
-predictions, and replays. **View options** holds image capture, fullscreen and the landing globe’s
+predictions, and replays. **View options** holds image and clip capture, fullscreen and the landing globe’s
 auto-rotation setting. Dragging pauses rotation; it resumes after five idle seconds.
 Search by subject, place, or year across all three scenes. The thumbnails are recorded views;
 open a story for its source, date, and current availability. Closing a story returns to its search
 result or drawer entry. **Keep exploring** offers a related view with context for its separate
 observations and time period. **Share this moment** copies the story, timestamp, projection, and selected
 city or chapter. Links open paused; recent feeds explain when the linked observation has expired.
+
+Each scene has a featured starting point: Float Dive, Rupture Reveal, or Moonfall.
+**Worth looking at today** uses the current earthquake reports, available NOAA aurora forecast,
+and calculated sky above the selected city. Dates and sources stay attached; unavailable or expired
+readings are not advertised as current.
+
+Recent visits appear under **Pick up where you left off**. **Save view** keeps one bookmark per story
+on this device; **Update saved view** replaces its saved point. Recorded stories retain their held time and projection; Moonfall retains its traverse,
+Tonight’s Sky its city and time, and Float Dive its measured depth. Live views reload their providers;
+a radar scan may expire and a recent float profile may become unavailable. **Saved views** lets you
+remove bookmarks or clear recent visits. No account or remote storage is involved.
+
+**Record 10-second clip** records the existing canvas as a silent video with its source and date.
+Start recording, then replay or scrub within the view. Stop early or cancel, preview the result, then
+download it or use native sharing where supported. The recorder uses a bounded 720px output without
+reducing the displayed globe’s detail. Leaving the tab or changing views cancels it. Video support
+varies by browser; Save image remains the fallback. Recordings stay in browser memory until dismissed.
 
 The drawer also offers **One night above Earth**, **Water in motion**, and **Reading the coast**.
 These guided journeys provide a reading prompt and source context in each view. Advance with **Next**,
@@ -69,7 +86,7 @@ measurements, not field recordings.
 - **Tonight’s Sky** descends to a selected city from After Dark. Scrub from local sunset to sunrise,
   use the compass to turn, or point at the Moon and five bright planets. Angles are calculated for a
   level horizon. Where a crossing is absent, the timeline uses a local evening or morning endpoint.
-- **Moonfall** is featured on the opening screen and also opens from Tonight’s Sky or the After Dark drawer. Fly from lunar orbit into
+- **Moonfall** is featured in the After Dark drawer and also opens from Tonight’s Sky. Fly from lunar orbit into
   Taurus–Littrow and switch between Terrain and Landing map without resetting the rover traverse
   or geology stop. Back returns to the opening screen, sky view, or drawer that opened it.
 - **Meteor Nights** traces a shower’s apparent origin across the same local sky. Play or scrub a

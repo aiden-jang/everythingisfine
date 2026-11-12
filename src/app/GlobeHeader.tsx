@@ -1,3 +1,5 @@
+import { ClipNotice } from "./capture/ClipControls";
+import type { Clip } from "./capture/useClip";
 import { ObservatoryOptions } from "./ObservatoryOptions";
 import { StillNotice } from "./StillNotice";
 import type { Dispatch, RefObject, SetStateAction } from "react";
@@ -8,6 +10,7 @@ import { Utilities } from "./Utilities";
 import { FeedDot } from "./FeedDot";
 
 interface Props {
+  clip: Clip;
   notice: string | null;
   download: (() => void) | null;
   dismiss: () => void;
@@ -37,6 +40,7 @@ interface Props {
 }
 
 export function GlobeHeader({
+  clip,
   notice,
   download,
   dismiss,
@@ -134,7 +138,13 @@ export function GlobeHeader({
         {observing ? (
           <div className="observatory-header-actions">
             <FeedDot feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
-            <ObservatoryOptions ready={ready} saving={saving} saveStill={saveStill} rotation={rotation} />
+            <ObservatoryOptions
+              clip={clip}
+              ready={ready}
+              saving={saving}
+              saveStill={saveStill}
+              rotation={rotation}
+            />
           </div>
         ) : (
           <>
@@ -217,6 +227,8 @@ export function GlobeHeader({
         )}
         <StillNotice message={notice} download={download} dismiss={dismiss} />
       </header>
+
+      <ClipNotice clip={clip} />
 
       {/* The way back. The fold control goes with the bar, so the unfold cannot live there. */}
       {headShown ? null : (

@@ -37,7 +37,7 @@ export function StormRadar({
   entry,
 }: {
   fromExplore: boolean;
-  entry: { region?: string; story?: boolean };
+  entry: { region?: string; story?: boolean; at?: number };
   onClose: () => void;
   onView: (view: RadarView) => void;
   projection: { map: boolean; setMap: (map: boolean) => void };
@@ -75,7 +75,7 @@ export function StormRadar({
         </button>
       </div>
       <Suspense fallback={<p role="status">Opening Storm Radar…</p>}>
-        <RadarStage onView={onView} initialRegion={entry.region} />
+        <RadarStage onView={onView} initialRegion={entry.region} initialAt={entry.at} />
       </Suspense>
       <details className="radar-coverage">
         <summary>Data &amp; coverage</summary>

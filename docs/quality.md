@@ -39,6 +39,11 @@ is required, pitch follows the measured value and leaving the view closes the vo
 cover finite inputs, throttling, hidden-tab silence and voice cleanup. Catalogue and preview checks keep story
 destinations and recorded thumbnail coverage aligned with the available views.
 
+Visit checks cover scene discovery, local bookmarks, resume after a new page visit, measured float
+depth and refused storage. Clip checks decode the actual browser-produced video, check rendered
+pixels and source/date captions, and verify download and object-URL disposal. Controller tests cover
+time limits and cancellation; privacy tests reject extra analytics fields and unknown categories.
+
 ## Responsive evidence
 
 The quality browser journeys cover live controls, the phone disclosure, sharing recovery and a

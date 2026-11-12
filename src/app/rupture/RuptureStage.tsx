@@ -252,7 +252,12 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
                 Recorded waves
               </button>
               {!reduced && (
-                <button type="button" className="archive-scene-button" onClick={playback}>
+                <button
+                  data-playback-start={mode !== "playing" || undefined}
+                  type="button"
+                  className="archive-scene-button"
+                  onClick={playback}
+                >
                   {mode === "playing"
                     ? "Pause reveal"
                     : mode === "paused"

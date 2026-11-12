@@ -19,10 +19,12 @@ export function stored(key: string): string | null {
   }
 }
 
-export function store(key: string, value: string): void {
+export function store(key: string, value: string): boolean {
   try {
     localStorage.setItem(PREFIX + key, value);
+    return true;
   } catch {
-    // Same: a preference that cannot be saved is not worth taking the page down for.
+    // A refused write stays usable in memory.
+    return false;
   }
 }
