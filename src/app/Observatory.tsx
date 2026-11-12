@@ -1,7 +1,8 @@
 import { SunWatch, TonightSky, TonightCompass, FloatDive } from "./ObservatoryViews";
 import { StoryNavigation } from "./journeys/StoryNavigation";
 import { ExperienceEnding } from "./journeys/ExperienceEnding";
-import { Suspense, useLayoutEffect, type RefObject } from "react";
+import { Suspense, type RefObject } from "react";
+import { useObservatoryScroll } from "./useObservatoryScroll";
 import {
   ObservatoryStage,
   ObservatoryScenePicker,
@@ -51,6 +52,7 @@ export interface ObservatoryProps {
     | "closeStory"
     | "browser"
     | "visitCheckpoint"
+    | "navigation"
   >;
   radar: ReturnType<typeof useObservatory>["radar"];
   onScene: (scene: EarthScene) => void;
@@ -91,7 +93,17 @@ function ObservatoryContent({
   summary,
   deepAvailable,
   aurora,
-  views: { sun, tonight, floatDive, observations, skyCity, openAfterDarkArchive, closeStory, browser },
+  views: {
+    sun,
+    tonight,
+    floatDive,
+    observations,
+    skyCity,
+    openAfterDarkArchive,
+    closeStory,
+    browser,
+    navigation,
+  },
   radar,
   feedNote,
   onScene,
@@ -105,23 +117,12 @@ function ObservatoryContent({
   const solar = sun.active && !active;
   const browsing =
     stories && !active && !solar && !aurora.run && !tonight.active && !floatDive.active && !radar.active;
-  useLayoutEffect(() => {
-    tour.controls.current?.scrollTo(0, browsing ? storyScroll.current : 0);
-    tour.controls.current?.querySelector<HTMLElement>(".observatory-story")?.scrollTo(0, 0);
-  }, [
-    scene,
-    tour.at,
+  const revealStories = useObservatoryScroll(
     tour.controls,
-    radar.active,
-    tonight.active,
-    floatDive.active,
-    observations.entry,
-    browsing,
     storyScroll,
-    browser.home,
-    sun.active,
-    aurora.run,
-  ]);
+    browsing,
+    [navigation.key, tour.at, browser.home].join(":"),
+  );
   const closeSun = () => observations.returnTo("open-sun-watch", sun.toggle);
   const auroraControls = (
     <AuroraOverflightControls
@@ -286,7 +287,7 @@ function ObservatoryContent({
                           solar
                             ? closeSun
                             : () => {
-                                if (!stories) storyScroll.current = 0;
+                                if (!stories) revealStories();
                                 setStories(!stories);
                               }
                         }
@@ -311,7 +312,7 @@ function ObservatoryContent({
                   ready={ready}
                   deepAvailable={deepAvailable}
                   onScene={(next) => {
-                    storyScroll.current = 0;
+                    revealStories();
                     observations.setQuery("");
                     browser.select(next);
                     onScene(next);

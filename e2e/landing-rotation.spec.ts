@@ -68,11 +68,42 @@ test("steering on a phone pauses rotation then resumes after idle @dev", async (
   }).toPass({ timeout: 20_000 });
   await page.mouse.up();
   await moving(page);
+});
+
+test("keyboard steering pauses landing rotation then resumes after idle @dev", async ({ page }) => {
+  await open(page, 390);
+  await moving(page);
   await page.locator("#globe-view").focus();
+  // Measure the short idle plateau in-page; driver round trips can outlast it on software WebGL.
+  await page.evaluate(() => {
+    const globe = (window as unknown as { __globe: { state: () => unknown } }).__globe;
+    Object.assign(window, {
+      rotationKeyRest: new Promise<boolean>((resolve) => {
+        const onKey = (event: KeyboardEvent) => {
+          if (event.key !== "ArrowLeft") return;
+          document.removeEventListener("keydown", onKey);
+          const started = performance.now();
+          let resting = started;
+          let previous = JSON.stringify(globe.state());
+          const sample = () => {
+            const now = performance.now();
+            const current = JSON.stringify(globe.state());
+            if (current !== previous) resting = now;
+            previous = current;
+            if (now - resting >= 1000) resolve(true);
+            else if (now - started >= 20_000) resolve(false);
+            else setTimeout(sample, 50);
+          };
+          setTimeout(sample, 50);
+        };
+        document.addEventListener("keydown", onKey);
+      }),
+    });
+  });
   await page.keyboard.press("ArrowLeft");
-  await expect(async () => {
-    await still(page);
-  }).toPass({ timeout: 20_000 });
+  expect(
+    await page.evaluate(() => (window as unknown as { rotationKeyRest: Promise<boolean> }).rotationKeyRest),
+  ).toBe(true);
   await moving(page);
 });
 

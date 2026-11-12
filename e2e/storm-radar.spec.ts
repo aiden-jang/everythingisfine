@@ -131,7 +131,10 @@ test("Storm Radar returns to Explore with the same globe", async ({ page }) => {
   const canvas = page.locator("#globe-view canvas");
   const globe = await canvas.elementHandle();
   await revealStoryTools(page);
-  const trigger = page.getByRole("button", { name: "Storm Radar", exact: true });
+  const trigger = page.getByRole("region", { name: "Map layers", exact: true }).getByRole("button", {
+    name: "Storm Radar Recent scans · contiguous US",
+    exact: true,
+  });
   await trigger.click();
   const scene = page.getByRole("region", { name: "Storm Radar" });
   await expect(scene.getByRole("status", { name: "Radar status" })).toHaveText(

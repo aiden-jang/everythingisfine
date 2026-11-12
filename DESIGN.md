@@ -148,7 +148,8 @@ Their temporary overrides do not overwrite saved scientific settings. The observ
 status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
 Keep tours, featured experiences and the full selection in **Stories & layers**, grouped by data type.
 **Explore the globe** comes before the three illustrated scene filters. The landing overview starts
-with none selected and Stories & layers open. Selecting a scene immediately exposes its entries. Closing an
+with none selected and Stories & layers open. Selecting a scene immediately exposes its entries and brings
+the search field into view on narrow screens. Initial load preserves the introduction. Closing an
 experience returns focus to its entry point and restores the drawer’s scroll position.
 Story thumbnails show recorded captures of their actual views. Guided journeys use the drawer’s
 existing quiet rows and each story’s reading panel, with manual steps, visible source context and
