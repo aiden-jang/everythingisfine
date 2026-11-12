@@ -18,8 +18,10 @@ stable across GitHub runner-image migrations.
 - Recorded feeds replace the external agency calls and EMSC socket. These tests do not establish
   current provider availability; `pnpm run test:live` is an explicit, separate check.
 
-One software-rendered globe runs per runner. CI distributes the complete inventory across isolated
-shards. It keeps core checks and browser runners parallel, then deploys the assets from the successful
+One software-rendered globe runs per runner. `tools/browser-shards.mjs` distributes adjacent tests
+round-robin across isolated shards, so the responsive and motion cases do not all land on one runner.
+Every test belongs to exactly one shard; an unsharded run keeps the complete inventory.
+CI keeps core checks and browser runners parallel, then deploys the assets from the successful
 core build only after every shard passes. Failure traces and screenshots remain available.
 
 Accessibility journeys scan live and pinned states at phone and desktop widths with axe.

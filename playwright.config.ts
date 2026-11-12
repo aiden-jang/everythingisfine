@@ -1,4 +1,5 @@
 import { defineConfig } from "@playwright/test";
+import { fileURLToPath } from "node:url";
 
 const ci = Boolean(process.env["CI"]);
 const rawShard = process.env["E2E_SHARD"];
@@ -15,7 +16,12 @@ export default defineConfig({
   workers: 1,
   timeout: ci ? 90_000 : 45_000,
   expect: { timeout: ci ? 30_000 : 15_000 },
-  reporter: ci ? [["github"], ["list"], ["json", { outputFile: "test-results/results.json" }]] : [["list"]],
+  reporter: [
+    [fileURLToPath(new URL("./tools/browser-shards.mjs", import.meta.url))],
+    ...(ci
+      ? ([["github"], ["list"], ["json", { outputFile: "test-results/results.json" }]] as const)
+      : ([["list"]] as const)),
+  ],
   shard: shard ? { current: Number(shard[1]), total: Number(shard[2]) } : null,
   use: {
     baseURL: "http://localhost:31600",
