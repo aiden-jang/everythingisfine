@@ -118,6 +118,11 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
   const source = await radarSource(page);
   await page.goto("/");
   await expect.poll(() => radarTexture(page)).not.toBeNull();
+  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await page.getByRole("region", { name: "Storm radar playback" }).getByRole("slider").press("Home");
+  await page
+    .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+    .click();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect.poll(() => radarTexture(page)).toBeNull();
   await expect(page.locator("#radar-layer-controls")).toHaveCount(0);
@@ -131,6 +136,10 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect.poll(() => radarTexture(page)).not.toBeNull();
+  await expect(page.locator(".radar-canvas-credit time")).toHaveAttribute(
+    "datetime",
+    new Date(source.at - 600_000).toISOString(),
+  );
   await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
   await page.getByRole("button", { name: "Storm radar", exact: true }).click();
   await expect.poll(() => radarTexture(page)).toBeNull();
@@ -143,4 +152,27 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
   await expect(page.getByRole("button", { name: "Explore the globe", exact: true })).toBeEnabled();
   expect(await radarTexture(page)).toBeNull();
   expect(source.calls()).toBe(before);
+});
+
+test("Home leaves archive mode and browser Back recovers the recorded day @dev", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { radar: "default" });
+  await radarSource(page);
+  await page.goto("/#d=2011-03-11");
+  const toggle = page
+    .getByRole("region", { name: "Map layers", exact: true })
+    .getByRole("button", { name: "Storm radar", exact: true });
+  await expect(toggle).toBeDisabled();
+  await expect(page.getByRole("button", { name: "back to live", exact: true })).toBeVisible();
+  await page
+    .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+    .click();
+  await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+  await expect.poll(() => radarTexture(page)).not.toBeNull();
+  await expect(page.locator(".observatory-summary").first()).not.toContainText("2011");
+  await page.goBack();
+  await expect(toggle).toBeDisabled();
+  await expect(page.getByRole("button", { name: "back to live", exact: true })).toBeVisible();
+  await expect(page.locator("#archive-day")).toHaveValue("2011-03-11");
+  await expect.poll(() => radarTexture(page)).toBeNull();
 });

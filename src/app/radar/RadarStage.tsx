@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RadarScan } from "../../sources/radar";
 import {
   radarRegions,
@@ -29,12 +29,14 @@ export function RadarStage({
   onView,
   initialRegion,
   initialAt,
+  onSelect,
   global,
   layer = false,
 }: {
   onView: (view: RadarView) => void;
   initialRegion?: string | undefined;
   initialAt?: number | undefined;
+  onSelect?: (at: number | null) => void;
   global: boolean;
   layer?: boolean;
 }): JSX.Element {
@@ -95,10 +97,15 @@ export function RadarStage({
     [image, lightning, onView, target, selected?.at, regionId, feed],
   );
 
-  function seek(scan: RadarScan | null) {
-    held.current = scan;
-    setChosen(scan);
-  }
+  const seek = useCallback(
+    (scan: RadarScan | null) => {
+      held.current = scan;
+      setChosen(scan);
+      setExpired(false);
+      onSelect?.(scan?.at ?? null);
+    },
+    [onSelect],
+  );
 
   useEffect(() => {
     if (layer || global || !latestImage || focus !== undefined) return;
@@ -116,7 +123,7 @@ export function RadarStage({
       index === scans.length - 1 ? 820 : 510,
     );
     return () => window.clearTimeout(timer);
-  }, [image, index, playing, scans, selected]);
+  }, [image, index, playing, scans, selected, seek]);
 
   useEffect(() => {
     function visibility() {

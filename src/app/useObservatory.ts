@@ -140,7 +140,8 @@ export function useObservatory(shared: Partial<Permalink>) {
   });
   return {
     observing,
-    backgroundLayers: !observing || (scene === "live" && !observations.entry && !floatView && !radarView),
+    backgroundLayers:
+      !observing || (scene === "live" && !depth && !observations.entry && !floatView && !radarView),
     presentation,
     rotation: { enabled: rotation, set: setRotation },
     browser: {

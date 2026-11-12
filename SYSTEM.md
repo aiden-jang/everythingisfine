@@ -64,7 +64,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/float/`, `src/sources/argo.ts`, and `src/globe/floatPresentation.ts` | Argo catalogue and profile validation, sample playback, and the shared globe’s float sequence |
 | `src/app/observations/`, `src/sources/observations/`, and `src/globe/observationLayer.ts` | Optional observations and replays, provider readers, shared playback, and projected data layers |
 | `src/app/radar/`, `src/sources/{radar,rainviewer}.ts`, and `src/globe/radarSurface.ts` | Storm Radar controls, international/US catalogues, and globe overlay |
-| `src/app/{MapLayers,LayerPlayback,WeatherLayer}.tsx`, `useMapLayers.ts`, and `weatherLayers.ts` | Optional Explore weather sources, independent clocks, feed health and shared-scene composition |
+| `src/app/{MapLayers,LayerPlayback,LayerReadout,WeatherLayer}.tsx`, `useMapLayers.ts`, and `weatherLayers.ts` | Shared layer controls, weather clocks, feed health and scene composition |
 | `src/app/Observatory.tsx` | Intro, scene choices, captured-story narration and tour controls |
 | `src/app/GlobeHeader.tsx` | Shared masthead, capture, source status and explorer tools |
 | `src/app/CanvasFooter.tsx` | Explorer credit and input hints |
@@ -160,6 +160,8 @@ an opaque entry identifier. Snapshots omit bitmaps and lunar rendering resources
 its traverse, distance and projection on a fresh lunar scene, and Float Dive restores its paused sample.
 The shared-link writer preserves that history state. The title clears story browsing
 and returns to the compact Live Earth overview without replaying the entrance or replacing the canvas.
+Home leaves the earthquake archive; browser Back can reload the captured archive day. A held moment
+within the current earthquake window remains selected across the landing/Explore handoff.
 Scene buttons toggle their catalogue; the initial overview has none selected. Explore’s catalogue
 entry explicitly opens the all-scenes browser.
 
@@ -327,11 +329,18 @@ last successful check time.
 Surface wind and lightning are optional additions through the same layer controls. They reuse the
 GFS surface forecast and GOES-East GLM readers, lazy-load when enabled on the landing globe or in Explore,
 and cancel requests when disabled or entering another scene. An accordion exposes one player while preserving the
-other layers' selections and independent timestamps. Their frames contribute paths and marks to
+other layers' selections and independent timestamps. Selected times live above the players so a scene
+detour, archive visit or disabled layer releases data resources without losing the chosen moment.
+Returning reopens paused; following latest remains distinct from holding a timestamp. An expired
+selection reports its fallback rather than silently presenting it as the same scan.
+The shared readout names wind forecasts and GOES-East lightning with their own timestamps on landing,
+globe and map. Their frames contribute paths and marks to
 the existing observation renderer, with stable geometry references and no additional canvas.
 The feed total includes each enabled source, reports failure independently, and retains its last
 successful check. Archived earthquakes and cinematic views do not mount current weather sources.
 Landing composition retains its day/night lighting and automatic rotation while sharing these overlays.
+Base-layer visibility choices also apply in the scene categories; explicit stories own their separate
+source data. Guided depth stops pause background weather until the surface view returns.
 RainViewer’s past-only catalogue supplies up to two hours of ten-minute composites. Each frame combines
 four zoom-one 512-pixel tiles into a bounded overview, using the supported Universal Blue palette.
 Mercator latitude is mapped onto the globe’s geographic mesh; NOAA retains its geographic raster bounds.

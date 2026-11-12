@@ -41,6 +41,7 @@ export function useArchive(
     async (iso: string) => {
       const span = dayRange(iso);
       if (!span || !isArchivableDay(iso, Date.now())) return;
+      setArchiveDay(iso);
       request.current?.abort();
       const current = new AbortController();
       request.current = current;
@@ -101,7 +102,6 @@ export function useArchive(
   useEffect(() => {
     if (!sharedDay || arrivedOnADay.current) return;
     arrivedOnADay.current = true;
-    setArchiveDay(sharedDay);
     void loadArchive(sharedDay);
   }, [loadArchive, sharedDay]);
 
@@ -110,7 +110,6 @@ export function useArchive(
       const current = feed.snapshot().archive;
       if (!current) return;
       const iso = new Date(current.from + days * 86_400_000).toISOString().slice(0, 10);
-      setArchiveDay(iso);
       void loadArchive(iso);
     },
     [feed, loadArchive],

@@ -13,7 +13,8 @@ import { useGlobeCamera } from "./app/useGlobeCamera";
 import { WaveReplayControls } from "./app/WaveReplayControls";
 import { useEventInspection } from "./app/useEventInspection";
 import { SequenceReplayControls } from "./app/SequenceReplayControls";
-import { CanvasFooter, RadarCanvasCredit } from "./app/CanvasFooter";
+import { CanvasFooter } from "./app/CanvasFooter";
+import { LayerReadout } from "./app/LayerReadout";
 import { Observatory } from "./app/Observatory";
 import { journeyFor, observatorySummary, observatoryFeedNote } from "./app/journeys";
 import { GlobeHeader } from "./app/GlobeHeader";
@@ -225,10 +226,7 @@ export function App(): JSX.Element {
     shared.event ? "quake:" : (shared.mark ?? undefined),
     archived || archiveBusy,
   );
-  const onGlobe = useMemo(
-    () => (observatory.backgroundLayers ? visibleHazards(inWindow, mapLayers.enabled) : inWindow),
-    [inWindow, mapLayers.enabled, observatory.backgroundLayers],
-  );
+  const onGlobe = useMemo(() => visibleHazards(inWindow, mapLayers.enabled), [inWindow, mapLayers.enabled]);
   const hazardTally = useMemo(() => {
     const held = archived
       ? {
@@ -384,9 +382,14 @@ export function App(): JSX.Element {
   useSceneHistory({
     route: {
       ...observatory.navigation,
+      capture: () => ({ view: observatory.navigation.capture(), day: loadedDay }),
       restore: (saved) => {
         stopTour();
-        observatory.navigation.restore(saved);
+        observatory.navigation.restore(saved.view);
+        if (saved.day !== loadedDay || archiveBusy) {
+          if (saved.day) void archiveState.loadArchive(saved.day);
+          else backToLive();
+        }
       },
     },
     checkpoint: observatory.checkpoint,
@@ -511,6 +514,7 @@ export function App(): JSX.Element {
   };
   function returnHome() {
     observatory.home(stopTour);
+    if (archived || archiveBusy) backToLive();
     flyTo.current(145, 12, 1);
   }
   const section = useMemo(
@@ -1098,7 +1102,7 @@ export function App(): JSX.Element {
             aurora={overflight}
             views={observatory}
             radar={observatory.radar}
-            radarLayer={mapLayers.radar}
+            layerReadout={<LayerReadout controls={mapLayers} />}
             onHistory={(day) => {
               stopTour();
               enterExplore();
@@ -1107,7 +1111,6 @@ export function App(): JSX.Element {
               if (eclipseDay) setFlat(false);
               setScrub(LIVE);
               setSectionLine(null);
-              archiveState.setArchiveDay(day);
               void archiveState.loadArchive(day);
             }}
             tour={{
@@ -1455,11 +1458,7 @@ export function App(): JSX.Element {
             <Globe
               feed={feed}
               filters={mapLayers.globeFilters}
-              selected={
-                observatory.localReadings || (!observatory.observing && !mapLayers.enabled.earthquakes)
-                  ? null
-                  : selected
-              }
+              selected={observatory.localReadings || !mapLayers.enabled.earthquakes ? null : selected}
               ramp={ramp}
               focus={focusSpan}
               aurora={observatory.observations.entry ? null : (overflight.run?.forecast ?? onGlobe.aurora)}
@@ -1500,7 +1499,7 @@ export function App(): JSX.Element {
             />
           </Suspense>
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]">
-            <RadarCanvasCredit radar={observatory.observing ? null : mapLayers.radar} />
+            {!observatory.observing && <LayerReadout controls={mapLayers} />}
             <EclipseReplayControls playback={chase} />
             <WaveReplayControls replay={inspection} />
             <SequenceReplayControls replay={inspection} />

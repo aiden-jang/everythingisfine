@@ -19,6 +19,14 @@ export function useMapLayers(filters: Filters, background: boolean, target?: str
   const [radarView, updateRadar] = useState<RadarView | null>(null);
   const [weather, setWeather] = useState<Partial<Record<WeatherLayerId, WeatherLayerView>>>({});
   const [expanded, expand] = useState<PlaybackLayer | null>("radar");
+  const [selectedTimes, setSelectedTimes] = useState<Record<PlaybackLayer, number | null>>({
+    radar: null,
+    wind: null,
+    lightning: null,
+  });
+  const selectTime = useCallback((id: PlaybackLayer, at: number | null) => {
+    setSelectedTimes((previous) => ({ ...previous, [id]: at }));
+  }, []);
   const active = background && !archived;
   const updateWeather = useCallback((id: WeatherLayerId, view: WeatherLayerView | null) => {
     setWeather((previous) => {
@@ -48,9 +56,8 @@ export function useMapLayers(filters: Filters, background: boolean, target?: str
     if (on && (layer === "radar" || layer in weatherLayers)) expand(layer as PlaybackLayer);
   }, []);
   const globeFilters = useMemo(
-    () =>
-      !background || enabled.earthquakes ? filters : { ...filters, sources: new Set<"usgs" | "emsc">() },
-    [filters, background, enabled.earthquakes],
+    () => (enabled.earthquakes ? filters : { ...filters, sources: new Set<"usgs" | "emsc">() }),
+    [filters, enabled.earthquakes],
   );
   const radarCaption =
     radar?.at === undefined
@@ -96,6 +103,8 @@ export function useMapLayers(filters: Filters, background: boolean, target?: str
     active,
     expanded,
     expand,
+    selectedTimes,
+    selectTime,
     updateWeather,
     weather,
     compose,

@@ -163,6 +163,11 @@ test("saved weather layers load on the landing globe and stay out of earthquake 
   await expect.poll(() => source.calls.wind).toBeGreaterThan(0);
   await expect.poll(() => source.calls.lightning).toBeGreaterThan(0);
   await expect(page.locator("#lightning-playback-content")).toContainText("Satellite detections: 3");
+  const readout = page.getByLabel("Weather layer times", { exact: true });
+  await expect(readout).toBeVisible();
+  await expect(readout).toContainText("GFS wind forecast");
+  await expect(readout).toContainText("GOES-East lightning");
+  await expect(readout.locator("time")).toHaveCount(2);
   const beforeArchive = { ...source.calls };
   await page.goto("/#d=2011-03-11");
   await expect(page.getByRole("button", { name: "Surface wind", exact: true })).toBeDisabled();
@@ -171,4 +176,38 @@ test("saved weather layers load on the landing globe and stay out of earthquake 
   await page.getByRole("button", { name: "back to live", exact: true }).click();
   await expect.poll(() => source.calls.wind).toBeGreaterThan(beforeArchive.wind);
   await expect.poll(() => source.calls.lightning).toBeGreaterThan(beforeArchive.lightning);
+});
+
+test("weather selections survive a cinematic detour without resuming playback @dev", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page);
+  const source = await sources(page);
+  source.recover();
+  await page.goto("/");
+  const layers = page.getByRole("region", { name: "Map layers", exact: true });
+  for (const name of ["surface wind", "lightning"]) {
+    await layers.getByText("Add layer", { exact: true }).click();
+    await layers.getByRole("button", { name: new RegExp(`^Add ${name} `) }).click();
+  }
+  const windPanel = page.getByRole("region", { name: "Surface wind playback" });
+  const lightningPanel = page.getByRole("region", { name: "Lightning playback" });
+  await lightningPanel.getByRole("slider").press("Home");
+  await layers.getByRole("button", { name: "Surface wind controls", exact: true }).click();
+  await windPanel.getByRole("slider").press("End");
+  await page
+    .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+    .click();
+  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await expect(windPanel).toHaveCount(0);
+  await expect(lightningPanel).toHaveCount(0);
+  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
+  await expect(windPanel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  await layers.getByRole("button", { name: "Lightning controls", exact: true }).click();
+  await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /15:50/);
+  await expect(lightningPanel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await expect.poll(async () => (await camera(page))?.morph).toBe(1);
+  await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /15:50/);
 });

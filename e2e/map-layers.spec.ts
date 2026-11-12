@@ -1,6 +1,58 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds } from "./feeds";
 
+test("hidden base layers stay hidden through landing, scene categories and both projections @dev", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page);
+  await page.goto("/");
+  const layers = page.getByRole("region", { name: "Map layers", exact: true });
+  const counts = () =>
+    page.evaluate(() => {
+      const world = window as unknown as {
+        __events?: { object: { geometry: { drawRange: { count: number } } } };
+        __marks?: () => { id: string }[];
+      };
+      if (!world.__events || !world.__marks) return null;
+      return {
+        quakes: world.__events.object.geometry.drawRange.count,
+        hazards: world.__marks().filter(({ id }) => /^(cyclone|fire|flood|volcano):/.test(id)).length,
+      };
+    });
+  await expect.poll(async () => (await counts())?.quakes ?? 0).toBeGreaterThan(0);
+  await expect.poll(async () => (await counts())?.hazards ?? 0).toBeGreaterThan(0);
+  for (const name of [
+    "Earthquakes",
+    "Tropical cyclones",
+    "Wildfires",
+    "Floods",
+    "Volcanoes",
+    "Aurora forecast",
+  ]) {
+    await layers.getByRole("button", { name, exact: true }).click();
+  }
+  await expect.poll(counts).toEqual({ quakes: 0, hazards: 0 });
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await expect.poll(counts).toEqual({ quakes: 0, hazards: 0 });
+  await page
+    .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+    .click();
+  for (const name of ["Live Earth", "Below the Surface", "After Dark"]) {
+    await page.getByRole("button", { name, exact: true }).click();
+    await expect.poll(counts).toEqual({ quakes: 0, hazards: 0 });
+    await page.getByRole("button", { name, exact: true }).click();
+    await expect.poll(counts).toEqual({ quakes: 0, hazards: 0 });
+  }
+  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as unknown as { __globe: { morph: () => number } }).__globe.morph()),
+    )
+    .toBe(1);
+  await expect(page.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
+});
+
 test("a fresh overview exposes every scene and selecting one opens its content @dev", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });

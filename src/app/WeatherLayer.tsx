@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { loadSource } from "./observations/load";
 import { observations } from "./observations/catalogue";
 import type { ObservationSource } from "./observations/types";
@@ -11,10 +11,15 @@ import {
   type WeatherLayerView,
 } from "./weatherLayers";
 
-type Props = { id: WeatherLayerId; onView: (id: WeatherLayerId, view: WeatherLayerView | null) => void };
+type Props = {
+  id: WeatherLayerId;
+  onView: (id: WeatherLayerId, view: WeatherLayerView | null) => void;
+  selectedAt: number | null;
+  onSelect: (id: WeatherLayerId, at: number | null) => void;
+};
 const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" });
 
-export function WeatherLayer({ id, onView }: Props): JSX.Element {
+export function WeatherLayer({ id, onView, selectedAt, onSelect }: Props): JSX.Element {
   const [source, setSource] = useState<ObservationSource | null>(null);
   const [failed, setFailed] = useState(false);
   const [revision, retry] = useState(0);
@@ -38,7 +43,7 @@ export function WeatherLayer({ id, onView }: Props): JSX.Element {
     };
   }, [id, onView, revision]);
   return source ? (
-    <WeatherPlayer id={id} onView={onView} source={source} />
+    <WeatherPlayer id={id} onView={onView} source={source} selectedAt={selectedAt} onSelect={onSelect} />
   ) : (
     <div role="status">
       <p>
@@ -61,9 +66,15 @@ export function WeatherLayer({ id, onView }: Props): JSX.Element {
   );
 }
 
-function WeatherPlayer({ id, onView, source }: Props & { source: ObservationSource }): JSX.Element {
+function WeatherPlayer({
+  id,
+  onView,
+  source,
+  selectedAt,
+  onSelect,
+}: Props & { source: ObservationSource }): JSX.Element {
   const { data, state, lastCheck, retry } = useObservationData(source, id === "wind" ? "surface" : "");
-  const [selectedAt, select] = useState<number | null>(null);
+  const select = useCallback((at: number | null) => onSelect(id, at), [id, onSelect]);
   const [playing, play] = useState(false);
   const frame = weatherFrame(data, id, selectedAt, Date.now());
   const frames = data?.frames;
@@ -89,7 +100,7 @@ function WeatherPlayer({ id, onView, source }: Props & { source: ObservationSour
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", step);
     };
-  }, [playing, frames, index]);
+  }, [playing, frames, index, select]);
   const meta = weatherLayers[id];
   const time = frame ? `${clock.format(frame.at)} UTC` : "";
   const status =

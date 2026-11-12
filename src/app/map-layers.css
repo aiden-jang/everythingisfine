@@ -218,3 +218,16 @@
   background: var(--color-deck);
   font-variant-numeric: tabular-nums;
 }
+.weather-canvas-readout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  order: -1;
+  width: 100%;
+  color: var(--color-dim);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.weather-canvas-readout span {
+  background: var(--color-deck);
+}

@@ -1,7 +1,7 @@
 import { SunWatch, TonightSky, TonightCompass, FloatDive } from "./ObservatoryViews";
 import { StoryNavigation } from "./journeys/StoryNavigation";
 import { ExperienceEnding } from "./journeys/ExperienceEnding";
-import { Suspense, type RefObject } from "react";
+import { Suspense, type RefObject, type ReactNode } from "react";
 import { useObservatoryScroll } from "./useObservatoryScroll";
 import {
   ObservatoryStage,
@@ -17,7 +17,6 @@ import { StoriesDrawer } from "./StoriesDrawer";
 import { MoonfallReadout } from "./moonfall/MoonfallReadout";
 import { FloatReadout } from "./float/FloatReadout";
 import { RadarReadout, StormRadar } from "./radar/StormRadar";
-import type { RadarLayerView } from "./radar/radarCamera";
 import { AuroraOverflightControls } from "./AuroraOverflightControls";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene, useObservatory } from "./useObservatory";
@@ -56,7 +55,7 @@ export interface ObservatoryProps {
     | "navigation"
   >;
   radar: ReturnType<typeof useObservatory>["radar"];
-  radarLayer: RadarLayerView | null;
+  layerReadout: ReactNode;
   onScene: (scene: EarthScene) => void;
   onHome: () => void;
   onExplore: () => void;
@@ -88,7 +87,7 @@ export function Observatory(props: ObservatoryProps): JSX.Element {
 }
 
 function ObservatoryContent({
-  radarLayer,
+  layerReadout,
   discoveries,
   scene,
   at,
@@ -194,7 +193,7 @@ function ObservatoryContent({
             at={at}
             tour={active ? tour.stop : undefined}
             aurora={aurora.run}
-            radar={radarLayer}
+            layers={layerReadout}
           />
         )
       )}

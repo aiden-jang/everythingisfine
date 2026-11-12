@@ -3074,6 +3074,11 @@ The landing and Live Earth overview use that same background layer state and mou
 `map-layers` presentation can retain a `landing` or `dayline` base, so receiving a radar image does not
 replace the landing lighting or stop automatic rotation. Cinematic views take precedence and pause
 background weather; entering Explore only reveals the existing controls, without refetching images.
+`useMapLayers` owns selected weather timestamps independently of mounted players. A null timestamp
+means follow the current forecast or latest scan. Scene detours release images and requests while
+retaining this intent; returning pauses playback and resolves the saved time against the new catalogue.
+The visibility switches filter base events in every scene category. Story-specific observations remain
+independent, so turning off a background layer does not erase the subject of an explicitly opened story.
 
 **The globe's palette, brightest last: sea, land, graticule, coast, plates**
 

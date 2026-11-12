@@ -45,7 +45,7 @@ export function MapLayers({
   const expand = (id: PlaybackLayer) => controls.expand(controls.expanded === id ? null : id);
   return (
     <section className="map-layers" aria-label="Map layers">
-      <h2>Layers on the globe</h2>
+      <h2>Layers</h2>
       <div className="map-layer-switches">
         {(Object.keys(mapLayerNames) as MapLayer[]).map((layer) => {
           if (layer in weatherLayers && !controls.enabled[layer]) return null;
@@ -125,7 +125,11 @@ export function MapLayers({
               </p>
             }
           >
-            <RadarLayer onView={controls.updateRadar} />
+            <RadarLayer
+              onView={controls.updateRadar}
+              initialAt={controls.selectedTimes.radar}
+              onSelect={controls.selectTime}
+            />
           </Suspense>
         </LayerPlayback>
       )}
@@ -144,7 +148,12 @@ export function MapLayers({
                 <Suspense
                   fallback={<p role="status">Loading {weatherLayers[id].label.toLowerCase()} controls…</p>}
                 >
-                  <WeatherLayer id={id} onView={controls.updateWeather} />
+                  <WeatherLayer
+                    id={id}
+                    onView={controls.updateWeather}
+                    selectedAt={controls.selectedTimes[id]}
+                    onSelect={controls.selectTime}
+                  />
                 </Suspense>
               </LayerPlayback>
             ),
