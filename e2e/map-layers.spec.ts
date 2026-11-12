@@ -42,36 +42,55 @@ test("hidden base layers stay hidden through landing, scene categories and both 
       const world = window as unknown as {
         __events?: { object: { geometry: { drawRange: { count: number } } } };
         __marks?: () => { id: string }[];
+        __rings?: { object: { geometry: { drawRange: { count: number } } } };
       };
-      if (!world.__events || !world.__marks) return null;
+      if (!world.__events || !world.__marks || !world.__rings) return null;
       return {
         quakes: world.__events.object.geometry.drawRange.count,
+        rings: world.__rings.object.geometry.drawRange.count,
         hazards: world.__marks().filter(({ id }) => /^(cyclone|fire|flood|volcano):/.test(id)).length,
       };
     });
   await expect.poll(async () => (await counts())?.quakes ?? 0).toBeGreaterThan(0);
   await expect.poll(async () => (await counts())?.hazards ?? 0).toBeGreaterThan(0);
-  for (const name of [
-    "Earthquakes",
-    "Tropical cyclones",
-    "Wildfires",
-    "Floods",
-    "Volcanoes",
-    "Aurora forecast",
-  ]) {
+  await page.evaluate(() => {
+    const world = window as unknown as {
+      __feed: {
+        store: {
+          forEach: (
+            fn: (q: { key: string; primary: { lon: number; lat: number; magnitude: number } }) => void,
+          ) => void;
+        };
+      };
+      __rings: {
+        spawn: (lon: number, lat: number, mag: number, key: string) => void;
+        step: (dt: number) => void;
+      };
+      __drawOnce: () => void;
+    };
+    world.__feed.store.forEach((q) =>
+      world.__rings.spawn(q.primary.lon, q.primary.lat, q.primary.magnitude, q.key),
+    );
+    world.__rings.step(0.1);
+    world.__drawOnce();
+  });
+  expect((await counts())?.rings).toBeGreaterThan(0);
+  await layers.getByRole("button", { name: "Earthquakes", exact: true }).click();
+  expect((await counts())?.rings, "turning earthquakes off removes their existing wavefronts").toBe(0);
+  for (const name of ["Tropical cyclones", "Wildfires", "Floods", "Volcanoes", "Aurora forecast"]) {
     await layers.getByRole("button", { name, exact: true }).click();
   }
-  await expect.poll(counts).toEqual({ quakes: 0, hazards: 0 });
+  await expect.poll(counts).toEqual({ quakes: 0, rings: 0, hazards: 0 });
   await page.getByRole("button", { name: "Map", exact: true }).click();
-  await expect.poll(counts).toEqual({ quakes: 0, hazards: 0 });
+  await expect.poll(counts).toEqual({ quakes: 0, rings: 0, hazards: 0 });
   await page
     .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
     .click();
   for (const name of ["Live Earth", "Below the Surface", "After Dark"]) {
     await page.getByRole("button", { name, exact: true }).click();
-    await expect.poll(counts).toEqual({ quakes: 0, hazards: 0 });
+    await expect.poll(counts).toEqual({ quakes: 0, rings: 0, hazards: 0 });
     await page.getByRole("button", { name, exact: true }).click();
-    await expect.poll(counts).toEqual({ quakes: 0, hazards: 0 });
+    await expect.poll(counts).toEqual({ quakes: 0, rings: 0, hazards: 0 });
   }
   await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
   await expect

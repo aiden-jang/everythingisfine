@@ -213,8 +213,8 @@ A ceiling above `REPLAY_FRONT_MIN_MAG` lets the entrance replay fire fronts, eac
 frame loop awake about sixteen seconds: three tests went from roughly 20 seconds to 40, 45 and 66,
 straight through the budget, with nothing wrong with the app or the tests.
 
-The cost is that no browser test ever sees a wavefront. That was already true and is now at least
-visible.
+General feed fixtures stay below that threshold. The layer-visibility browser check explicitly seeds
+fronts with fixture event keys, so it can verify that hiding earthquakes also removes their waves.
 
 **A day of seismicity, newest last, drawn from Gutenberg-Richter. A uniform draw would put a**
 
@@ -3016,6 +3016,10 @@ The signature: a wavefront leaving the epicentre.
 Two seismic feeds have no origin and destination, so a line drawn between two earthquakes asserts a
 relationship that does not exist. A ring asserts something true: this happened here, and the energy has
 reached this far.
+
+Each catalogue front retains its event key. Before drawing, the layer drops fronts whose event no longer
+matches the visible sources, magnitude, time window or held cursor. A filter change removes existing
+fronts immediately; matching fronts keep their age, and later arrivals obey the same rule.
 
 ### src/globe/scale.ts
 

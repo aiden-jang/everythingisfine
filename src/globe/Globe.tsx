@@ -165,7 +165,8 @@ export function Globe({
     onCapture?.(() => {
       const el2 = canvas.current;
       if (!el2 || contextLost) return null;
-      // Draw synchronously so the capture reads the current pixels.
+      // Apply wavefront visibility before the synchronous capture.
+      globe.rings.step(0, visibleRing);
       draw();
       return el2;
     });
@@ -247,7 +248,7 @@ export function Globe({
             if (t <= crossed.from || t > crossed.to) return;
             revealed += 1;
             if (quake.primary.magnitude < REPLAY_FRONT_MIN_MAG) return;
-            globe.rings.spawn(quake.primary.lon, quake.primary.lat, quake.primary.magnitude);
+            globe.rings.spawn(quake.primary.lon, quake.primary.lat, quake.primary.magnitude, quake.key);
           });
         }
         replaying = true;
@@ -298,7 +299,7 @@ export function Globe({
         fading = focusFade !== focusTarget;
       }
 
-      const expanding = globe.rings.step(dt) > 0;
+      const expanding = globe.rings.step(dt, visibleRing) > 0;
       // Clustering depends on zoom, so a zoom has to redraw the layer, not merely the camera.
       const zoomNow = globe.controls.state().zoom;
       if (Math.abs(zoomNow - lastZoom) > 0.001) {
@@ -354,8 +355,17 @@ export function Globe({
     let revealed = 0;
 
     const revealUntil = (): number | undefined => replay?.at() ?? live.current.scrubAt ?? undefined;
+    const visibleRing = (key: string | undefined): boolean => {
+      const quake = key ? feed.store.get(key) : undefined;
+      return (
+        !!quake &&
+        matches(quake, live.current.filters, clockAt()) &&
+        quake.primary.time <= (revealUntil() ?? Infinity)
+      );
+    };
     const redraw = (): void => {
       if (contextLost) return;
+      globe.rings.step(0, visibleRing);
       globe.cancelRegroup();
       globe.events.sync(
         feed.store,
@@ -374,11 +384,7 @@ export function Globe({
       globe.setMarks(next);
     };
     globe.setMarkZoom(globe.controls.state().zoom);
-    /*
-     * Pushed once at setup, not only when the data next changes. The effects below fire on their own
-     * dependencies, so a scene built after a fetch has landed never hears about it: the array has not
-     * changed, nothing re-runs, and the layer stays empty while the legend describes four storms.
-     */
+    // Seed layers that arrived before scene creation; unchanged props will not rerun their effects.
     auroraRef.current(live.current.aurora);
     markRef.current(live.current.marks);
     sinkRef.current = (on) => {
@@ -439,18 +445,12 @@ export function Globe({
           const startedAt = clockAt();
           const from = replayFrom(oldest, startedAt);
           replay = createReplay({ from, to: startedAt });
-          /*
-           * Primed with what is already on screen, not zero. The replay only plays the last day, so at a
-           * wider window everything older is drawn from the first frame, and starting at zero printed 285
-           * in the rail beside a globe holding eleven thousand.
-           */
+          // Wider windows already show events older than the replay; include them in its initial count.
           revealed = 0;
           feed.store.forEach((q) => {
             if (q.primary.time <= from) revealed += 1;
           });
-          // Announced before the first frame. React otherwise renders one pass with the replay still null,
-          // so the rail printed the full held total beside an empty globe for a quarter of a second. The
-          // clamped start and the primed count, for the same reason.
+          // Announce before the first frame so the rail and globe start at the same count.
           onReplayRef.current?.({ at: from, revealed });
           wake();
           return;
@@ -472,7 +472,7 @@ export function Globe({
       // A front per arrival, except on the seed. See `frontsFor`.
       const fronts = frontsFor(snapshot);
       for (const quake of fronts) {
-        globe.rings.spawn(quake.primary.lon, quake.primary.lat, quake.primary.magnitude);
+        globe.rings.spawn(quake.primary.lon, quake.primary.lat, quake.primary.magnitude, quake.key);
       }
       if (fronts.length > 0) wake();
       else redraw();

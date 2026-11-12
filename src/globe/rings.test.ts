@@ -13,12 +13,6 @@ import {
 import { S_WAVE_KM_PER_S } from "../geo/waves";
 import { EARTH_RADIUS_KM } from "../geo/sphere";
 
-/*
- * The rings are the one piece of motion in the product, and the claim attached to them is that their speed is
- * measured rather than invented. A claim like that survives a refactor as a comment long after the number
- * stopped agreeing with it.
- */
-
 describe("the rate is derived, not typed in", () => {
   it("advances at the P-wave velocity in real time", () => {
     // One second of real time covers 6km of ground, and 6km of a 6371km-radius sphere is this
@@ -52,6 +46,31 @@ describe("the rate is derived, not typed in", () => {
 });
 
 describe("the ring layer", () => {
+  it("removes filtered fronts immediately while preserving the age of visible fronts", () => {
+    const layer = createRingLayer();
+    layer.spawn(140, 35, 5, "visible");
+    layer.step(2);
+    const count = layer.object.geometry.drawRange.count;
+    const before = Array.from(layer.object.geometry.getAttribute("position").array).slice(0, count * 3);
+    layer.spawn(-70, -30, 6, "hidden");
+    layer.step(0);
+    expect(layer.object.geometry.drawRange.count).toBe(count * 2);
+    layer.step(0, (key) => key === "visible");
+    expect(layer.active()).toBe(1);
+    expect(layer.object.geometry.drawRange.count).toBe(count);
+    expect(Array.from(layer.object.geometry.getAttribute("position").array).slice(0, count * 3)).toEqual(
+      before,
+    );
+    layer.step(0, () => false);
+    expect(layer.active()).toBe(0);
+    expect(layer.object.geometry.drawRange.count).toBe(0);
+    layer.spawn(140, 35, 5, "late-arrival");
+    layer.step(0.1, () => false);
+    expect(layer.active()).toBe(0);
+    expect(layer.object.geometry.drawRange.count).toBe(0);
+    layer.dispose();
+  });
+
   it("expires a front after its lifetime and not before", () => {
     const layer = createRingLayer();
     layer.spawn(140, 35, 5);

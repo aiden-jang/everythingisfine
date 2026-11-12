@@ -66,6 +66,7 @@ const SHADER = {
 };
 
 interface Ring {
+  key: string | undefined;
   lon: number;
   lat: number;
   ramp: number;
@@ -76,9 +77,9 @@ interface Ring {
 export interface RingLayer {
   object: LineSegments;
   /** Starts a front at an epicentre. Ignored once MAX_RINGS are already running. */
-  spawn: (lon: number, lat: number, magnitude: number) => void;
+  spawn: (lon: number, lat: number, magnitude: number, key?: string) => void;
   /** Advances every front and rewrites the buffer. Returns how many are still alive. */
-  step: (dt: number) => number;
+  step: (dt: number, visible?: (key: string | undefined) => boolean) => number;
   active: () => number;
   setRamp: (name: RampName) => void;
   /**
@@ -208,9 +209,10 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
     object,
     active: () => rings.length,
 
-    spawn: (lon, lat, magnitude) => {
+    spawn: (lon, lat, magnitude, key) => {
       if (rings.length >= MAX_RINGS) return;
       rings.push({
+        key,
         lon,
         lat,
         ramp: Math.max(0, Math.min(1, (magnitude - MAG_MIN) / 6.5)),
@@ -218,13 +220,13 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
       });
     },
 
-    step: (dt) => {
+    step: (dt, visible) => {
       let written = 0;
       for (let i = rings.length - 1; i >= 0; i -= 1) {
         const ring = rings[i]!;
         ring.age += dt;
         const deg = ring.age * RATE_DEG_PER_S;
-        if (deg >= MAX_DEG) {
+        if (deg >= MAX_DEG || (visible && !visible(ring.key))) {
           // Swap-remove. Splicing shifts every later ring, which matters not at all at this size and is
           // exactly the habit that does matter in the event layer.
           rings[i] = rings[rings.length - 1]!;
