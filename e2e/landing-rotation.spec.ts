@@ -28,6 +28,44 @@ async function open(page: Page, width = 1440, reduced = false, fragment = "") {
   await expect.poll(async () => (await camera(page))?.zoom, { timeout: 20_000 }).toBe(1);
 }
 
+test("entering Explore during arrival preserves the camera destination @dev", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await installFeeds(page, { presentation: "fresh" });
+  await page.addInitScript(() => {
+    type Camera = { state: () => { zoom: number }; step: (dt: number) => boolean };
+    let camera: Camera | undefined;
+    let opened = false;
+    Object.defineProperty(window, "__globe", {
+      configurable: true,
+      get: () => camera,
+      set: (next: Camera) => {
+        camera = next;
+        const step = next.step;
+        next.step = (dt) => {
+          const moving = step(dt);
+          const zoom = next.state().zoom;
+          const button = document.querySelector<HTMLButtonElement>(".observatory-primary");
+          if (!opened && zoom > 1.1 && zoom < 2 && button && !button.disabled) {
+            opened = true;
+            // Click after this frame publishes its pose, before another frame can finish arrival.
+            queueMicrotask(() => {
+              document.documentElement.dataset["exploredDuringArrival"] = String(zoom);
+              button.click();
+            });
+          }
+          return moving;
+        };
+      },
+    });
+  });
+  await page.goto("/#at=145,12,1&v=observe");
+  await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
+  const interruptedAt = Number(await page.locator("html").getAttribute("data-explored-during-arrival"));
+  expect(interruptedAt).toBeGreaterThan(1.1);
+  expect(interruptedAt).toBeLessThan(2);
+  await expect.poll(() => camera(page)).toEqual({ lon: 145, lat: 12, zoom: 1 });
+});
+
 test("the landing globe rotates, pauses, and hands the same camera to Explore @dev", async ({ page }) => {
   await open(page);
   await moving(page);

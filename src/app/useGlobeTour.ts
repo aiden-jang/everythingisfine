@@ -20,8 +20,10 @@ export function useGlobeTour(
   const stopTour = useCallback(() => {
     setTourAt(null);
     target.current = null;
-    if (camera.current) flyTo.current(camera.current.lon, camera.current.lat, camera.current.zoom);
-  }, [flyTo]);
+    // Shared navigation also calls this while idle; only an active tour owns the camera flight.
+    if (tourAt !== null && camera.current)
+      flyTo.current(camera.current.lon, camera.current.lat, camera.current.zoom);
+  }, [flyTo, tourAt]);
   const startTour = useCallback(() => {
     if (stops.length === 0) return;
     route.current = stops;
