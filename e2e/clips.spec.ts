@@ -1,12 +1,19 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds } from "./feeds";
 
+const now = Date.parse("2026-11-12T04:00:00Z");
+
+test.beforeEach(async ({ page }) => {
+  // Keep the starting hemisphere sunlit: these checks measure clipping, not changing day/night shading.
+  await page.clock.setFixedTime(new Date(now));
+});
+
 test("records the existing globe with a source caption and releases the downloadable video", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 812, height: 375 });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await installFeeds(page, { presentation: "fresh" });
+  await installFeeds(page, { presentation: "fresh", now });
   await page.addInitScript(() => {
     const lines: string[] = [];
     Object.assign(window, { clipLines: lines });
@@ -71,7 +78,7 @@ test("records the existing globe with a source caption and releases the download
 test("unsupported browsers preserve the image fallback", async ({ page }) => {
   await page.setViewportSize({ width: 812, height: 375 });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await installFeeds(page, { presentation: "fresh" });
+  await installFeeds(page, { presentation: "fresh", now });
   await page.addInitScript(() => Object.defineProperty(window, "MediaRecorder", { value: undefined }));
   await page.goto("/");
   await page.getByRole("button", { name: "View options", exact: true }).click();
@@ -90,7 +97,7 @@ test("unsupported browsers preserve the image fallback", async ({ page }) => {
 test("the mobile recording notice leaves the visible globe intact", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await installFeeds(page, { presentation: "fresh" });
+  await installFeeds(page, { presentation: "fresh", now });
   await page.goto("/");
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
   const lowerGlobePixels = async () => {
