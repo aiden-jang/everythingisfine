@@ -100,8 +100,8 @@ export function FeedDot({
           ))}
         </ul>
         <p>
-          Radar, wind and lightning join the total while active in Explore. Off means they are not being
-          checked.
+          Enabled weather layers join the total on the landing globe and in Explore. They pause in other
+          views. Off means they are not being checked.
         </p>
         <h3>Loads when opened</h3>
         <p>

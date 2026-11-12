@@ -6,6 +6,8 @@ import { subsolarPoint } from "../geo/sun";
 import type { EarthScene } from "./useObservatory";
 import type { Stop } from "./tour";
 import type { AuroraRun } from "../sources/auroraRoute";
+import type { RadarLayerView } from "./radar/radarCamera";
+import { RadarCanvasCredit } from "./CanvasFooter";
 
 const OBSERVATORY_SCENES = [
   { id: "live", name: "Live Earth" },
@@ -18,11 +20,13 @@ export function ObservatoryStage({
   at,
   tour,
   aurora,
+  radar,
 }: {
   scene: EarthScene;
   at: number;
   tour: Stop | null | undefined;
   aurora: AuroraRun | null;
+  radar: RadarLayerView | null;
 }): JSX.Element {
   const time = new Date(at).toISOString();
   const mode = tour !== undefined ? "tour" : aurora ? "aurora" : scene;
@@ -66,6 +70,7 @@ export function ObservatoryStage({
         <span>{mode === "live" ? "Day–night boundary" : sceneName}</span>
       </div>
       <div key={`readout-${mode}`} className="stage-readout">
+        <RadarCanvasCredit radar={radar} />
         <div>
           <span>{label}</span> <strong>{value}</strong>
         </div>

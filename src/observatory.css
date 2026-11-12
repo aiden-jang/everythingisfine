@@ -249,6 +249,7 @@
   .stage-readout {
     bottom: calc(var(--stage-inset) + 7px);
     justify-content: space-between;
+    flex-wrap: wrap;
   }
   .stage-readout strong {
     color: var(--color-ink);

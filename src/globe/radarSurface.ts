@@ -15,6 +15,7 @@ export function createRadarSurface(morph: { value: number }) {
   });
   morphable(material, morph);
   const object = new Mesh(geometry, material);
+  object.name = "storm-radar";
   object.frustumCulled = false;
   object.renderOrder = 4.5;
   object.visible = false;

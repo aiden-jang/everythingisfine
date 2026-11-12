@@ -7,18 +7,19 @@ import type { FeedRow } from "./feedStatus";
 import {
   weatherLayers,
   weatherOverlay,
+  composeMapLayers,
   type WeatherLayerId,
   type WeatherLayerView,
   type PlaybackLayer,
   type MapLayerPresentation,
 } from "./weatherLayers";
 
-export function useMapLayers(filters: Filters, observing: boolean, target?: string, archived = false) {
+export function useMapLayers(filters: Filters, background: boolean, target?: string, archived = false) {
   const [enabled, setEnabled] = useState(() => readMapLayers(stored("mapLayers"), target));
   const [radarView, updateRadar] = useState<RadarView | null>(null);
   const [weather, setWeather] = useState<Partial<Record<WeatherLayerId, WeatherLayerView>>>({});
   const [expanded, expand] = useState<PlaybackLayer | null>("radar");
-  const active = !observing && !archived;
+  const active = background && !archived;
   const updateWeather = useCallback((id: WeatherLayerId, view: WeatherLayerView | null) => {
     setWeather((previous) => {
       const next = { ...previous };
@@ -27,7 +28,7 @@ export function useMapLayers(filters: Filters, observing: boolean, target?: stri
       return next;
     });
   }, []);
-  const radarActive = enabled.radar && !observing && !archived;
+  const radarActive = enabled.radar && active;
   useEffect(() => {
     if (!radarActive) updateRadar(null);
   }, [radarActive]);
@@ -47,8 +48,9 @@ export function useMapLayers(filters: Filters, observing: boolean, target?: stri
     if (on && (layer === "radar" || layer in weatherLayers)) expand(layer as PlaybackLayer);
   }, []);
   const globeFilters = useMemo(
-    () => (observing || enabled.earthquakes ? filters : { ...filters, sources: new Set<"usgs" | "emsc">() }),
-    [filters, observing, enabled.earthquakes],
+    () =>
+      !background || enabled.earthquakes ? filters : { ...filters, sources: new Set<"usgs" | "emsc">() },
+    [filters, background, enabled.earthquakes],
   );
   const radarCaption =
     radar?.at === undefined
@@ -64,13 +66,14 @@ export function useMapLayers(filters: Filters, observing: boolean, target?: stri
     () => (radar || observation ? { kind: "map-layers", radar, observation } : null),
     [radar, observation],
   );
+  const compose = useMemo(() => composeMapLayers(presentation), [presentation]);
   const feeds: FeedRow[] = [
     {
       id: "radar",
       label: "RainViewer storm radar",
       state: radarActive ? (radarView?.feed?.state ?? "pending") : "off",
       lastCheck: radarActive ? radarView?.feed?.lastCheck : undefined,
-      message: radarActive ? radarView?.feed?.message : enabled.radar ? "Loads in Explore" : undefined,
+      message: radarActive ? radarView?.feed?.message : enabled.radar ? "Paused in this view" : undefined,
     },
     ...Object.entries(weatherLayers).map(([key, meta]) => {
       const id = key as WeatherLayerId;
@@ -80,7 +83,7 @@ export function useMapLayers(filters: Filters, observing: boolean, target?: stri
         label: meta.source,
         state: running ? (weather[id]?.feed.state ?? "pending") : "off",
         lastCheck: running ? weather[id]?.feed.lastCheck : undefined,
-        message: running ? weather[id]?.feed.message : enabled[id] ? "Loads in Explore" : undefined,
+        message: running ? weather[id]?.feed.message : enabled[id] ? "Paused in this view" : undefined,
       } satisfies FeedRow;
     }),
   ];
@@ -95,7 +98,7 @@ export function useMapLayers(filters: Filters, observing: boolean, target?: stri
     expand,
     updateWeather,
     weather,
-    presentation,
+    compose,
     feeds,
     captureNote: (inspection: string | null) =>
       [

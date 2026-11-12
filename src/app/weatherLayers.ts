@@ -1,6 +1,7 @@
 import type { FeedRow } from "./feedStatus";
 import type { ObservationData, ObservationFrame, ObservationView } from "./observations/types";
 import type { RadarLayerView } from "./radar/radarCamera";
+import type { GlobePresentation } from "../globe/scenePresentation";
 import { nearest } from "../sources/observations/common";
 
 export const weatherLayers = {
@@ -23,8 +24,27 @@ export interface WeatherLayerView {
 }
 export interface MapLayerPresentation {
   kind: "map-layers";
+  base?: "landing" | "dayline";
   radar: RadarLayerView | null;
   observation: ObservationView | null;
+}
+
+export function composeMapLayers(layers: MapLayerPresentation | null) {
+  const landing: GlobePresentation = layers ? { ...layers, base: "landing" } : "landing";
+  const dayline: GlobePresentation = layers ? { ...layers, base: "dayline" } : "dayline";
+  return (mode: GlobePresentation): GlobePresentation =>
+    mode === "landing" ? landing : mode === "dayline" ? dayline : (mode ?? layers);
+}
+
+export function isLandingPresentation(mode: GlobePresentation): boolean {
+  return (
+    mode === "landing" ||
+    (mode !== null &&
+      typeof mode === "object" &&
+      "kind" in mode &&
+      mode.kind === "map-layers" &&
+      mode.base === "landing")
+  );
 }
 
 const target = { lon: 0, lat: 0, zoom: 1 };

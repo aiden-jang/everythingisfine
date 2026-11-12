@@ -3070,6 +3070,10 @@ camera target. Both presentations reuse one raster surface and the globe/map mor
 composes wind paths and lightning marks into the existing observation layer. Each retains its own
 source time; the composed frame does not set the globe clock or imply simultaneous observations.
 Unchanged geometry arrays retain their identity, so scrubbing lightning does not rebuild wind paths.
+The landing and Live Earth overview use that same background layer state and mounted players. A
+`map-layers` presentation can retain a `landing` or `dayline` base, so receiving a radar image does not
+replace the landing lighting or stop automatic rotation. Cinematic views take precedence and pause
+background weather; entering Explore only reveals the existing controls, without refetching images.
 
 **The globe's palette, brightest last: sea, land, graticule, coast, plates**
 

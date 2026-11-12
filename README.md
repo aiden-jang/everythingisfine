@@ -172,12 +172,14 @@ The rail starts with independent earthquake, tropical cyclone, wildfire, flood, 
 playback panel expands at a time. Wind is a global NOAA GFS surface forecast, while lightning uses
 selected GOES-East satellite scans. Each keeps its own timestamp without moving the camera or
 changing the earthquake timeline. Switching a layer off cancels its requests and removes its data.
-Storm radar starts on in Explore unless previously switched off, and loads recent worldwide scans only
-while enabled there. Its playback appears below the switches, using a separate clock from the earthquake timeline. Turning it off stops
+Enabled layers also appear on the landing globe and Live Earth overview. The landing layout stays
+clean, with playback controls in Explore; moving between them preserves the same images and selections.
+Storm radar starts on unless previously switched off, and loads recent worldwide scans while enabled
+on either surface. Its playback appears below the switches, using a separate clock from the earthquake timeline. Turning it off stops
 playback and releases decoded images. Recent radar is unavailable in archive mode. **All stories & data** returns to the full
 catalogue. Layer visibility stays on this device; shared event targets override a hidden layer.
 Earthquake controls fold out of the way when that layer is off, while the report time window remains.
-The feed counter covers seven background sources plus radar, wind and lightning while active in Explore.
+The feed counter covers seven background sources plus radar, wind and lightning while active on the landing globe or in Explore.
 Disabled weather layers stay listed as off but are excluded from the total. Other views check their own sources when opened; a recorded
 journey is not a live feed. Tropical cyclones are global GDACS reports,
 while Storm Radar uses RainViewer’s worldwide available radar coverage with an optional NOAA

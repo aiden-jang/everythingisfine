@@ -221,13 +221,13 @@ export function App(): JSX.Element {
   ]);
   const mapLayers = useMapLayers(
     filters,
-    observatory.observing,
+    observatory.backgroundLayers,
     shared.event ? "quake:" : (shared.mark ?? undefined),
     archived || archiveBusy,
   );
   const onGlobe = useMemo(
-    () => (observatory.observing ? inWindow : visibleHazards(inWindow, mapLayers.enabled)),
-    [inWindow, mapLayers.enabled, observatory.observing],
+    () => (observatory.backgroundLayers ? visibleHazards(inWindow, mapLayers.enabled) : inWindow),
+    [inWindow, mapLayers.enabled, observatory.backgroundLayers],
   );
   const hazardTally = useMemo(() => {
     const held = archived
@@ -1098,6 +1098,7 @@ export function App(): JSX.Element {
             aurora={overflight}
             views={observatory}
             radar={observatory.radar}
+            radarLayer={mapLayers.radar}
             onHistory={(day) => {
               stopTour();
               enterExplore();
@@ -1470,7 +1471,7 @@ export function App(): JSX.Element {
               moment={overflight.run?.forecast.forecastAt ?? chase.frame ?? litAt}
               inspection={inspection.run}
               flat={flat}
-              globePresentation={observatory.globe(tourAt !== null) ?? mapLayers.presentation}
+              globePresentation={mapLayers.compose(observatory.globe(tourAt !== null))}
               rotateLanding={observatory.rotation.enabled}
               depthSink={observatory.depth || sinkOn}
               cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}
@@ -1498,9 +1499,8 @@ export function App(): JSX.Element {
               onReplay={receiveReplay}
             />
           </Suspense>
-
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]">
-            <RadarCanvasCredit radar={mapLayers.radar} />
+            <RadarCanvasCredit radar={observatory.observing ? null : mapLayers.radar} />
             <EclipseReplayControls playback={chase} />
             <WaveReplayControls replay={inspection} />
             <SequenceReplayControls replay={inspection} />

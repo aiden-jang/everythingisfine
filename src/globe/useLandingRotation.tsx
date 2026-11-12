@@ -2,10 +2,13 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Controls } from "./controls";
 import { createLandingRotation } from "./landingRotation";
 import { createRotationIdle } from "./rotationIdle";
+import { isLandingPresentation } from "../app/weatherLayers";
+import type { GlobePresentation } from "./scenePresentation";
 
 const MOTION = "(prefers-reduced-motion: reduce)";
 
-export function useLandingRotation(enabled: boolean) {
+export function useLandingRotation(presentation: GlobePresentation, preference: boolean) {
+  const enabled = preference && isLandingPresentation(presentation);
   const settings = useRef(enabled);
   settings.current = enabled;
   const [rotation] = useState(() => {

@@ -17,6 +17,7 @@ import { StoriesDrawer } from "./StoriesDrawer";
 import { MoonfallReadout } from "./moonfall/MoonfallReadout";
 import { FloatReadout } from "./float/FloatReadout";
 import { RadarReadout, StormRadar } from "./radar/StormRadar";
+import type { RadarLayerView } from "./radar/radarCamera";
 import { AuroraOverflightControls } from "./AuroraOverflightControls";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { EarthScene, useObservatory } from "./useObservatory";
@@ -55,6 +56,7 @@ export interface ObservatoryProps {
     | "navigation"
   >;
   radar: ReturnType<typeof useObservatory>["radar"];
+  radarLayer: RadarLayerView | null;
   onScene: (scene: EarthScene) => void;
   onHome: () => void;
   onExplore: () => void;
@@ -86,6 +88,7 @@ export function Observatory(props: ObservatoryProps): JSX.Element {
 }
 
 function ObservatoryContent({
+  radarLayer,
   discoveries,
   scene,
   at,
@@ -186,7 +189,13 @@ function ObservatoryContent({
         </Suspense>
       ) : (
         !solar && (
-          <ObservatoryStage scene={scene} at={at} tour={active ? tour.stop : undefined} aurora={aurora.run} />
+          <ObservatoryStage
+            scene={scene}
+            at={at}
+            tour={active ? tour.stop : undefined}
+            aurora={aurora.run}
+            radar={radarLayer}
+          />
         )
       )}
       <div className="observatory-sidebar">

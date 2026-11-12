@@ -125,14 +125,15 @@ export function createScenePresentation(
   }
 
   function set(mode: GlobePresentation, geography: readonly Object3D[]) {
+    const mapLayers =
+      mode && typeof mode === "object" && "kind" in mode && mode.kind === "map-layers" ? mode : null;
+    if (mapLayers) mode = mapLayers.base ?? null;
     if (mode === "landing") mode = "dayline";
     if (mode === "planetarium" && !planetarium) skyCamera = returnCamera ?? controls.state();
     const local = isLocalView(mode) ? mode : null;
     const observation = local?.kind === "observation" ? local : null;
     picking.set(observation);
     const weather = local?.kind === "radar" ? local : null;
-    const mapLayers =
-      mode && typeof mode === "object" && "kind" in mode && mode.kind === "map-layers" ? mode : null;
     const float = local?.kind === "float-dive" ? local : null;
     const route = mode && typeof mode === "object" && "route" in mode ? mode.route : null;
     skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);

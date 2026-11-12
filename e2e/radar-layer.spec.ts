@@ -64,8 +64,8 @@ for (const width of [1440, 390]) {
     );
     await page.goto("/");
     await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
-    expect(queries).toBe(0);
-    await expect(page.getByRole("region", { name: "Storm radar playback" })).toHaveCount(0);
+    await expect.poll(() => queries).toBe(1);
+    await expect(page.locator("#radar-layer-controls")).toBeHidden();
     await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
     await expect.poll(async () => (await camera(page))?.zoom).toBe(1);
     const originalCamera = await camera(page);

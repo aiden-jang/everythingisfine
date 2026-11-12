@@ -149,7 +149,9 @@ for (const width of [1440, 390]) {
   });
 }
 
-test("saved weather layers wait for Explore and stay out of earthquake archives @dev", async ({ page }) => {
+test("saved weather layers load on the landing globe and stay out of earthquake archives @dev", async ({
+  page,
+}) => {
   await installFeeds(page, { presentation: "fresh" });
   await page.addInitScript(() =>
     localStorage.setItem("eif.mapLayers", JSON.stringify({ wind: true, lightning: true, radar: false })),
@@ -158,12 +160,15 @@ test("saved weather layers wait for Explore and stay out of earthquake archives 
   source.recover();
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Explore the globe", exact: true })).toBeVisible();
-  expect(source.calls).toEqual({ wind: 0, lightning: 0 });
+  await expect.poll(() => source.calls.wind).toBeGreaterThan(0);
+  await expect.poll(() => source.calls.lightning).toBeGreaterThan(0);
+  await expect(page.locator("#lightning-playback-content")).toContainText("Satellite detections: 3");
+  const beforeArchive = { ...source.calls };
   await page.goto("/#d=2011-03-11");
   await expect(page.getByRole("button", { name: "Surface wind", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Lightning", exact: true })).toBeDisabled();
-  expect(source.calls).toEqual({ wind: 0, lightning: 0 });
+  expect(source.calls).toEqual(beforeArchive);
   await page.getByRole("button", { name: "back to live", exact: true }).click();
-  await expect.poll(() => source.calls.wind).toBeGreaterThan(0);
-  await expect.poll(() => source.calls.lightning).toBeGreaterThan(0);
+  await expect.poll(() => source.calls.wind).toBeGreaterThan(beforeArchive.wind);
+  await expect.poll(() => source.calls.lightning).toBeGreaterThan(beforeArchive.lightning);
 });

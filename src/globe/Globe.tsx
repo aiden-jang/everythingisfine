@@ -67,7 +67,7 @@ export function Globe({
   section = null,
   onSection,
 }: GlobeProps): JSX.Element {
-  const rotation = useLandingRotation(globePresentation === "landing" && rotateLanding);
+  const rotation = useLandingRotation(globePresentation, rotateLanding);
   const canvas = useRef<HTMLCanvasElement>(null);
   const orbit = useRef<HTMLDivElement>(null);
   const tooltip = useRef<HTMLDivElement>(null);
