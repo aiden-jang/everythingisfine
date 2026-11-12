@@ -393,6 +393,9 @@
     }
   }
   @media (max-width: 380px) {
+    .frame[data-presentation="observe"] .zones {
+      grid-template-rows: minmax(180px, 1fr) clamp(380px, 48dvh, 430px);
+    }
     .aurora-overflight .observatory-actions {
       gap: 6px;
     }
