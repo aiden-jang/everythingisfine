@@ -153,6 +153,7 @@ for (const [id, title] of [
     await page.emulateMedia({ reducedMotion: "reduce" });
     await installFeeds(page, { presentation: "fresh", empty: true });
     await page.goto(`/#v=observe&story=${id}`);
+    await expect(page.locator("#globe-view canvas")).toBeVisible();
     const panel = page.getByRole("region", { name: title!, exact: true });
     await expect(panel.getByRole("slider").first()).toBeVisible();
     await panel.getByRole("button", { name: "Map", exact: true }).click();
@@ -189,6 +190,7 @@ test("globe and map use the wider zoom range and preserve it in shared links @de
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/#v=explore&at=0,0,3");
+  await expect(page.locator("#globe-view canvas")).toBeVisible();
   await expect.poll(async () => (await pose(page)).zoom).toBe(3);
   const apparentWidth = () =>
     page.evaluate(() => {
@@ -205,9 +207,11 @@ test("globe and map use the wider zoom range and preserve it in shared links @de
   for (let i = 0; i < 20; i++) await page.keyboard.press("-");
   await expect.poll(async () => (await pose(page)).zoom).toBe(0.4);
   await page.goto("/#v=explore&p=map&at=0,30,10");
+  await expect(page.locator("#globe-view canvas")).toBeVisible();
   await expect.poll(async () => (await pose(page)).zoom).toBe(10);
   await expect.poll(async () => (await pose(page)).map).toBe(1);
   await page.reload();
+  await expect(page.locator("#globe-view canvas")).toBeVisible();
   await expect.poll(async () => (await pose(page)).zoom).toBe(10);
   expect((await pose(page)).lat).toBeCloseTo(30, 1);
 });
