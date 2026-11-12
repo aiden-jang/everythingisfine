@@ -218,7 +218,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Live storms, volcanoes, wildfires, floods | GDACS, retaining the credited reporting agency |
 | Archived hazards | NASA EONET |
 | Float Dive | [Argo profile data](https://doi.org/10.17882/42182) via the [Marine Institute’s North Atlantic subset](https://erddap.marine.ie/erddap/info/argoFloats/) |
-| Storm Radar | [NOAA MRMS base reflectivity](https://mapservices.weather.noaa.gov/eventdriven/rest/services/radar/radar_base_reflectivity_time/ImageServer) |
+| Storm Radar | [RainViewer international radar network](https://www.rainviewer.com/) ([API terms](https://www.rainviewer.com/api.html), [limits](https://www.rainviewer.com/api/transition-faq.html)) · [NOAA MRMS US detail](https://mapservices.weather.noaa.gov/eventdriven/rest/services/radar/radar_base_reflectivity_time/ImageServer) |
 | Orbital Pass | [CelesTrak ISS orbital elements](https://celestrak.org/NORAD/elements/) and SGP4 predictions |
 | Tide Watch and River Pulse | [NOAA water levels and tide predictions](https://api.tidesandcurrents.noaa.gov/api/dev) and [USGS continuous streamflow](https://api.waterdata.usgs.gov/) |
 | Seafloor Flight | [GEBCO 2026 elevation and source-type grid](https://www.gebco.net/data-products-gridded-bathymetry-data/gebco2026-grid), resampled regional cutaway with labelled exaggeration; not for navigation |
@@ -255,6 +255,13 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Megaflash | GOES-16 ABI infrared, Peterson et al. GOES-16 GLM reanalysis, and U.S. Census state boundaries |
 | Stars | Yale Bright Star Catalogue, BSC5 |
 | Constellation figures | d3-celestial, copyright (c) 2015 Olaf Frohn, BSD 3-Clause |
+
+Storm Radar defaults to RainViewer’s international network, with two hours of observed composites at
+ten-minute intervals. Coverage varies by country and excludes much of the ocean; striped areas mark
+where the provider lists no radar coverage. The mask is approximate and does not report station outages.
+Frame times describe composite generation, so individual contributing radars can be older. NOAA MRMS
+remains available for detailed contiguous-US scans. Neither mode predicts future rain. RainViewer is
+used under its free personal/educational API terms, with visible attribution and bounded requests.
 
 The sun, moon, planets, and eclipse geometry are calculated locally. The 8 April 2024 replay uses
 NASA’s two-minute path predictions from 16:40 to 19:54 UTC, with approximate shading.

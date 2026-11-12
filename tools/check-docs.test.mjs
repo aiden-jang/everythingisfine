@@ -71,6 +71,14 @@ test("a missing local Markdown link fails verification", () => {
   assert.match(result.stderr, /no local link target `missing-guide.md`/);
 });
 
+test("external HTML pages are not local files while adjacent source paths still are checked", () => {
+  const link = "[Provider terms](https://www.rainviewer.com/api.html)";
+  assert.equal(check(`${link} and src/example.ts.\n`).status, 0);
+  const missing = check(`${link} and src/missing.ts.\n`);
+  assert.equal(missing.status, 1);
+  assert.match(missing.stderr, /no such file `src\/missing.ts`/);
+});
+
 test("current nested guides are checked relative to their own directory", () => {
   mkdirSync(join(root, "docs"), { recursive: true });
   writeFileSync(join(root, "docs/quality.md"), "Read [the guide](missing.md).\n");

@@ -187,6 +187,9 @@ export async function installFeeds(page: Page, options: FeedOptions = {}): Promi
     });
 
   await installHazards(page);
+  await page.route("https://api.rainviewer.com/public/weather-maps.json", (route) =>
+    route.fulfill({ json: { host: "https://tilecache.rainviewer.com", radar: { past: [] } } }),
+  );
 
   await page.addInitScript((isDead: boolean) => {
     class StubSocket {

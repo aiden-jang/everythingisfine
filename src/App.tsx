@@ -1172,7 +1172,7 @@ export function App(): JSX.Element {
             }}
             feeds={feeds}
             archived={archived}
-            onRadar={observatory.radar.open}
+            onRadar={() => observatory.radar.open()}
             onBrowse={() => observatory.home(stopTour)}
           />
           <HazardList hazards={hazards} markId={markId} onHazard={selectMark} />

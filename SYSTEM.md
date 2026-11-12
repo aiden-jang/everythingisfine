@@ -63,7 +63,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/useSceneHistory.ts` | In-memory scene, browser-scroll and camera restoration for browser Back/Forward |
 | `src/app/float/`, `src/sources/argo.ts`, and `src/globe/floatPresentation.ts` | Argo catalogue and profile validation, sample playback, and the shared globe’s float sequence |
 | `src/app/observations/`, `src/sources/observations/`, and `src/globe/observationLayer.ts` | Optional observations and replays, provider readers, shared playback, and projected data layers |
-| `src/app/radar/`, `src/sources/radar.ts`, and `src/globe/radarSurface.ts` | Storm Radar controls, NOAA scan catalogue, and globe overlay |
+| `src/app/radar/`, `src/sources/{radar,rainviewer}.ts`, and `src/globe/radarSurface.ts` | Storm Radar controls, international/US catalogues, and globe overlay |
 | `src/app/Observatory.tsx` | Intro, scene choices, captured-story narration and tour controls |
 | `src/app/GlobeHeader.tsx` | Shared masthead, capture, source status and explorer tools |
 | `src/app/CanvasFooter.tsx` | Explorer credit and input hints |
@@ -308,11 +308,22 @@ finite readings into pitch, throttles updates and permits one short, quiet tone 
 tabs, unmounting, and profile or harbor changes close the voice and clear the opt-in. The mapping is
 disclosed beside the control; the sound is not a field recording or an ambient loop.
 
-Storm Radar loads on demand from Live Earth or Explore and shows NOAA MRMS scans on the shared
-globe. The scrubber uses published timestamps and requests each raster by its NOAA record ID. The
-globe places the raster on a curved patch that uses the same geographic bounds as the image request.
-Closing the view aborts requests, releases decoded images and the active texture, and returns to the
-originating view.
+Storm Radar loads on demand from Live Earth or Explore. RainViewer is the default international
+network; NOAA MRMS remains the contiguous-US detail option, including existing US region visits.
+Both use the shared globe/map and preserve the selected provider timestamp during playback.
+RainViewer’s past-only catalogue supplies up to two hours of ten-minute composites. Each frame combines
+four zoom-one 512-pixel tiles into a bounded overview, using the supported Universal Blue palette.
+Mercator latitude is mapped onto the globe’s geographic mesh; NOAA retains its geographic raster bounds.
+A separately sourced coverage mask marks unobserved areas with subtle stripes. All four radar and
+coverage tiles must succeed before a frame is displayed; missing tiles never masquerade as dry weather.
+The UI identifies composite time, variable radar age, approximate coverage and polar limits, and links
+the required RainViewer attribution. GOES-East lightning remains in the US detail mode.
+
+A bounded in-memory blob cache reuses tiles across view changes. A sliding request budget stays below
+RainViewer’s per-IP ceiling, including retries; waits abort on exit and hidden-page requests stop.
+The catalogue refreshes every two minutes, decoded frames are limited to the active time window plus
+a held selection, and no forecast or discontinued satellite endpoint is requested. Closing the view
+aborts requests, releases decoded images and the active texture, and returns to the originating view.
 
 Optional Observatory views load provider code and data on demand. Timeline samples stay attached
 to the same WebGL scene through both projections. Real measurements, forecasts, and archived

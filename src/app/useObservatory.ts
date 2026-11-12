@@ -13,7 +13,7 @@ import { useSkyView } from "./useSkyView";
 import { createFloatPlayback } from "./float/floatPlayback";
 import { useSkyCity } from "./tonight/SkyCityPicker";
 import type { GlobePresentation } from "../globe/scenePresentation";
-import { national, regionCamera, radarRegions, type RadarView } from "./radar/radarCamera";
+import { radarCamera, type RadarView } from "./radar/radarCamera";
 import { usePresentation } from "./usePresentation";
 import { useStoredFlag } from "./useStored";
 import { earthStories, isEarthStory } from "./earth-stories/catalogue";
@@ -311,7 +311,8 @@ export function useObservatory(shared: Partial<Permalink>) {
           if (story) observations.close();
           setRadarView({
             kind: "radar",
-            target: region ? regionCamera(radarRegions.find((r) => r.id === region)) : national,
+            target: radarCamera(region),
+            region: region ?? "world",
             image: null,
           });
         };

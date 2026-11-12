@@ -109,7 +109,7 @@ export const searchStories: readonly SearchStory[] = [
   {
     id: "radar",
     title: "Storm Radar",
-    summary: "Scrub recent NOAA radar scans on the globe.",
+    summary: "Scrub recent radar from around the world on the globe.",
     scene: "live",
     keywords: "rain weather live",
   },

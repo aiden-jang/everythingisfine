@@ -85,7 +85,8 @@ for (const doc of LIVE) {
     const at = `${doc}:${i + 1}`;
     if (line.trimStart().startsWith("```")) fenced = !fenced;
 
-    for (const m of line.matchAll(/[\w./@-]*\w+\.(?:ts|tsx|css|mjs|toml|yml|html)\b/g)) {
+    const localPaths = line.replace(/https?:\/\/[^\s<>`)]+/g, "");
+    for (const m of localPaths.matchAll(/[\w./@-]*\w+\.(?:ts|tsx|css|mjs|toml|yml|html)\b/g)) {
       const bare = m[0].replace(/^`|`$/g, "");
       const tail = bare.split("/").pop();
       if (!onDisk.some((f) => f.endsWith(bare) || f.endsWith(`/${tail}`))) {

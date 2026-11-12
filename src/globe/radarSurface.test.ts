@@ -3,6 +3,7 @@ import { expect, test } from "vitest";
 import { toVec3 } from "../geo/sphere";
 import { RADAR_BOUNDS } from "../sources/radar";
 import { createRadarSurface } from "./radarSurface";
+import { radarMercatorY } from "../sources/rainviewer";
 
 test("the radar raster faces north and covers the bounds requested from NOAA", () => {
   const { object, setImage } = createRadarSurface({ value: 0 });
@@ -35,5 +36,26 @@ test("the radar raster faces north and covers the bounds requested from NOAA", (
   expect(releases).toHaveLength(1);
   expect(object.visible).toBe(false);
   geometry.dispose();
+  object.material.dispose();
+});
+
+test("world radar preserves Mercator latitude, both date-line edges, and replaces geometry on source changes", () => {
+  const { object, setImage } = createRadarSurface({ value: 1 });
+  const original = object.geometry;
+  let releases = 0;
+  original.addEventListener("dispose", () => releases++);
+  setImage({ width: 1024, height: 1024 } as ImageBitmap, true);
+  expect(releases).toBe(1);
+  const coordinates = object.geometry.getAttribute("aLonLat");
+  const uv = object.geometry.getAttribute("uv");
+  for (let i = 0; i < uv.count; i++) {
+    expect(1 - uv.getY(i)).toBeCloseTo(radarMercatorY(coordinates.getY(i)), 5);
+    expect(uv.getX(i)).toBeCloseTo((coordinates.getX(i) + 180) / 360, 5);
+  }
+  expect(coordinates.getX(0)).toBe(-180);
+  expect(coordinates.getX(64)).toBe(180);
+  setImage(null, false);
+  expect(object.geometry.getAttribute("aLonLat").getX(0)).toBe(RADAR_BOUNDS[0]);
+  object.geometry.dispose();
   object.material.dispose();
 });

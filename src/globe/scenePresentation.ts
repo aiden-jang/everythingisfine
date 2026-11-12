@@ -1,6 +1,6 @@
 import type { Group, Object3D, PerspectiveCamera, Vector3, WebGLRenderer } from "three";
 import type { AuroraRun } from "../sources/auroraRoute";
-import type { RadarView } from "../app/radar/radarCamera";
+import { isGlobalRadar, type RadarView } from "../app/radar/radarCamera";
 import type { Controls } from "./controls";
 import type { createSurfaceLayers } from "./surfaceLayers";
 import { createAuroraVeil } from "./auroraVeil";
@@ -202,7 +202,7 @@ export function createScenePresentation(
     }
     observationTarget = observation?.target;
     radarTarget = weather?.target;
-    radar?.setImage(weather?.image ?? null);
+    radar?.setImage(weather?.image ?? null, isGlobalRadar(weather?.region));
     dayline.value = showDayline ? lights.reveal.value : 0;
   }
 

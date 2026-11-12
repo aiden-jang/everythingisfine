@@ -62,6 +62,7 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   await expect(scene.getByRole("button", { name: "Back to Live Earth" })).toBeFocused();
   await expect(page.getByRole("group", { name: "Radar on the globe" })).toBeInViewport();
   expect(await canvas.evaluate((element, original) => element === original, globe)).toBe(true);
+  await scene.getByLabel("Coverage", { exact: true }).selectOption("us");
   const slider = scene.getByRole("slider", { name: "Radar scan time" });
   const time = scene.locator(".radar-clock time");
   const timestamp = (index: number) => new Date(times[index]!).toISOString();
@@ -132,7 +133,7 @@ test("Storm Radar returns to Explore with the same globe", async ({ page }) => {
   const globe = await canvas.elementHandle();
   await revealStoryTools(page);
   const trigger = page.getByRole("region", { name: "Map layers", exact: true }).getByRole("button", {
-    name: "Storm Radar Recent scans · contiguous US",
+    name: "Storm Radar Recent scans · worldwide network",
     exact: true,
   });
   await trigger.click();

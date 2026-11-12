@@ -1,3 +1,4 @@
+import { isGlobalRadar } from "./radar/radarCamera";
 import type { useObservatory } from "./useObservatory";
 import type { StillCaption } from "./still";
 import { searchStories } from "./storyIndex";
@@ -41,7 +42,9 @@ export function observatoryCaption(
     return caption(
       "Storm Radar",
       view.radar.view?.at === undefined ? "Scan unavailable" : stamp(view.radar.view.at),
-      "NOAA MRMS · radar reflectivity",
+      isGlobalRadar(view.radar.view?.region)
+        ? "Weather data by RainViewer · observed radar composite"
+        : "NOAA MRMS · radar reflectivity",
     );
   }
   const sky = view.tonight.view;

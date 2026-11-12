@@ -7,6 +7,7 @@ export const RADAR_BOUNDS = [-127, 23, -64, 51] as const;
 export interface RadarScan {
   id: number;
   at: number;
+  path?: string;
 }
 
 function record(raw: unknown): Record<string, unknown> | null {

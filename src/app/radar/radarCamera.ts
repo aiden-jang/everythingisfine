@@ -27,6 +27,25 @@ export const radarRegions = [
   { id: "northeast", name: "Northeast", lon: -75, lat: 42.5, span: 20 },
 ] as const;
 
+export const globalRadarRegions = [
+  { id: "world", name: "World", lon: 0, lat: 20, zoom: 1 },
+  { id: "europe", name: "Europe", lon: 15, lat: 50, zoom: 1.75 },
+  { id: "asia", name: "East Asia", lon: 127, lat: 34, zoom: 1.75 },
+  { id: "oceania", name: "Oceania", lon: 145, lat: -30, zoom: 1.5 },
+  { id: "americas", name: "Americas", lon: -85, lat: 15, zoom: 1.45 },
+  { id: "africa", name: "Africa", lon: 20, lat: 0, zoom: 1.5 },
+] as const;
+
+export const isGlobalRadar = (region?: string) =>
+  region === undefined || globalRadarRegions.some(({ id }) => id === region);
+
+export function radarCamera(region?: string): RadarCamera {
+  return (
+    globalRadarRegions.find(({ id }) => id === (region ?? "world")) ??
+    regionCamera(radarRegions.find(({ id }) => id === region))
+  );
+}
+
 export type RadarRegion = (typeof radarRegions)[number];
 
 export function regionCamera(region: RadarRegion | undefined): RadarCamera {

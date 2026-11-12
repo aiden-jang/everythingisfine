@@ -24,6 +24,7 @@ describe("captions describe the view that is actually saved", () => {
           active: true,
           view: {
             kind: "radar",
+            region: "national",
             image: null,
             at,
             target: { lon: -95, lat: 37, zoom: 1.4 },
@@ -44,6 +45,16 @@ describe("captions describe the view that is actually saved", () => {
     expect(observatoryCaption({ ...base, radar: { active: true, view: null } }, at)?.moment).toBe(
       "Scan unavailable",
     );
+  });
+  it("keeps international radar attribution on saved images", () => {
+    const result = observatoryCaption({
+      ...base,
+      radar: {
+        active: true,
+        view: { kind: "radar", region: "europe", image: null, at, target: { lon: 15, lat: 50, zoom: 2.55 } },
+      },
+    });
+    expect(result?.filter).toBe("Weather data by RainViewer · observed radar composite");
   });
   it("uses a reconstruction age instead of interpreting it as a date", () => {
     const result = observatoryCaption({

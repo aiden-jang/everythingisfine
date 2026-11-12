@@ -157,6 +157,19 @@
   cursor: pointer;
 }
 
+.radar-attribution {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 6px 10px;
+  background: var(--color-deck);
+  color: var(--color-ink);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  pointer-events: auto;
+}
+
 @media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
   .frame[data-presentation="observe"] .zones:has([data-storm-radar]) {
     grid-template-rows: minmax(175px, 1fr) clamp(390px, 50dvh, 460px);

@@ -175,7 +175,7 @@ function ObservatoryContent({
       {floatDive.active ? (
         <FloatReadout view={floatDive.view} />
       ) : radar.active ? (
-        <RadarReadout map={observations.map} />
+        <RadarReadout map={observations.map} region={radar.view?.region} />
       ) : tonight.view?.moonfall ? (
         <MoonfallReadout view={tonight.view.moonfall} />
       ) : tonight.active ? (
@@ -363,7 +363,7 @@ function ObservatoryContent({
                     <ObservatoryFeatured
                       scene={scene}
                       ready={ready}
-                      radar={radar.open}
+                      radar={() => radar.open()}
                       deep={() => observations.open("deep", "open-deep-time")}
                     />
                   )}

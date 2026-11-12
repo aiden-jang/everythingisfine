@@ -1,6 +1,14 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RadarScan } from "../../sources/radar";
-import { radarRegions, regionCamera, strongestRegion, type RadarRegion, type RadarView } from "./radarCamera";
+import {
+  radarRegions,
+  globalRadarRegions,
+  radarCamera,
+  regionCamera,
+  strongestRegion,
+  type RadarRegion,
+  type RadarView,
+} from "./radarCamera";
 import { useRadarLightning } from "./useRadarLightning";
 import { useRadarScans } from "./useRadarScans";
 
@@ -20,18 +28,20 @@ export function RadarStage({
   onView,
   initialRegion,
   initialAt,
+  global,
 }: {
   onView: (view: RadarView) => void;
   initialRegion?: string | undefined;
   initialAt?: number | undefined;
+  global: boolean;
 }): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
-  const { scans, images, status, checkedAt, retry } = useRadarScans(held);
+  const { scans, images, status, checkedAt, retry } = useRadarScans(held, global);
   const [chosen, setChosen] = useState<RadarScan | null>(null);
   const [showLightning, setShowLightning] = useState(false);
   const [playing, setPlaying] = useState(false);
-  const [regionId, setRegionId] = useState(initialRegion ?? "auto");
+  const [regionId, setRegionId] = useState(initialRegion ?? (global ? "world" : "auto"));
   const [focus, setFocus] = useState<RadarRegion | null | undefined>();
   const latest = scans.at(-1);
   const latestImage = latest && images.get(latest.id);
@@ -51,7 +61,10 @@ export function RadarStage({
   const selected = scans[index];
   const image = selected && images.get(selected.id);
   const region = regionId === "auto" ? (focus ?? undefined) : radarRegions.find(({ id }) => id === regionId);
-  const target = useMemo(() => regionCamera(region), [region]);
+  const target = useMemo(
+    () => (global ? radarCamera(regionId) : regionCamera(region)),
+    [region, regionId, global],
+  );
 
   const lightning = useRadarLightning(showLightning ? selected?.at : undefined);
   useLayoutEffect(
@@ -73,9 +86,9 @@ export function RadarStage({
   }
 
   useEffect(() => {
-    if (!latestImage || focus !== undefined) return;
+    if (global || !latestImage || focus !== undefined) return;
     setFocus(strongestRegion(latestImage) ?? null);
-  }, [focus, latestImage]);
+  }, [focus, latestImage, global]);
 
   useEffect(() => {
     if (!playing || !selected || image === undefined || document.hidden) return;
@@ -98,23 +111,26 @@ export function RadarStage({
     return () => document.removeEventListener("visibilitychange", visibility);
   }, []);
 
-  const place = region?.name ?? "National view";
+  const place = global
+    ? (globalRadarRegions.find(({ id }) => id === regionId)?.name ?? "World")
+    : (region?.name ?? "National view");
+  const provider = global ? "RainViewer" : "NOAA";
   const delayed = latest !== undefined && checkedAt - latest.at > 20 * 60_000;
   const lastAvailable =
     status === "error" || status === "empty" ? scans.filter(({ id }) => images.get(id)).at(-1) : undefined;
   const statusText =
     status === "loading"
-      ? "Loading NOAA radar scans…"
+      ? `Loading ${provider} radar scans…`
       : status === "empty"
         ? "No recent radar scans available."
         : status === "error"
-          ? "Couldn’t reach NOAA radar."
+          ? `Couldn’t reach ${provider} radar.`
           : image === null
             ? "This scan’s image is unavailable."
             : image === undefined
               ? "Loading the selected scan…"
               : delayed
-                ? "NOAA’s latest scan is delayed."
+                ? `${provider}’s latest scan is delayed.`
                 : regionId === "auto" && region
                   ? "Automatic focus · area with visible returns"
                   : "Select a time to compare the observed scans.";
@@ -151,7 +167,9 @@ export function RadarStage({
       )}
       <div className="radar-transport">
         <div className="radar-clock">
-          <label htmlFor={id}>{atLatest ? "Latest scan" : "Scan time"}</label>
+          <label htmlFor={id}>
+            {global ? (atLatest ? "Latest frame" : "Frame time") : atLatest ? "Latest scan" : "Scan time"}
+          </label>
           {selected && <time dateTime={new Date(selected.at).toISOString()}>{timeLabel}</time>}
         </div>
         {problem && (
@@ -222,14 +240,16 @@ export function RadarStage({
               {shortTime(scans[0].at)}–{shortTime(latest.at)} UTC
             </span>
           )}
-          <button
-            type="button"
-            aria-pressed={showLightning}
-            disabled={!selected}
-            onClick={() => setShowLightning((on) => !on)}
-          >
-            Lightning
-          </button>
+          {!global && (
+            <button
+              type="button"
+              aria-pressed={showLightning}
+              disabled={!selected}
+              onClick={() => setShowLightning((on) => !on)}
+            >
+              Lightning
+            </button>
+          )}
           {showLightning && selected && (
             <p role="status" aria-label="Lightning status">
               {lightning === undefined
@@ -249,9 +269,9 @@ export function RadarStage({
           <label>
             <span className="sr-only">Radar region</span>
             <select value={regionId} onChange={(event) => setRegionId(event.currentTarget.value)}>
-              <option value="auto">Auto focus</option>
-              <option value="national">United States</option>
-              {radarRegions.map(({ id, name }) => (
+              {!global && <option value="auto">Auto focus</option>}
+              {!global && <option value="national">United States</option>}
+              {(global ? globalRadarRegions : radarRegions).map(({ id, name }) => (
                 <option key={id} value={id}>
                   {name}
                 </option>
@@ -266,7 +286,7 @@ export function RadarStage({
         )}
         {canRetry && (
           <button type="button" className="radar-retry" onClick={retry}>
-            Retry NOAA
+            Retry {provider}
           </button>
         )}
       </div>

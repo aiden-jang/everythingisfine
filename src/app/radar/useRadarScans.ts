@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { radarCatalogUrl, radarImageUrl, radarScans, type RadarScan } from "../../sources/radar";
 
+import { RAINVIEWER_CATALOGUE, rainviewerScans } from "../../sources/rainviewer";
+import { forgetRainviewer, rainviewerFetch } from "./rainviewerFetch";
+import { globalRadarImage } from "./globalRadarImage";
+
 const POLL_MS = 120_000;
 
 interface RadarData {
@@ -13,7 +17,7 @@ interface RadarData {
 const fetchBounded = (url: string, signal: AbortSignal) =>
   fetch(url, { signal: AbortSignal.any([signal, AbortSignal.timeout(14_000)]) });
 
-export function useRadarScans(held: RefObject<RadarScan | null>) {
+export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean) {
   const [data, setData] = useState<RadarData>(() => ({
     scans: [],
     images: new Map(),
@@ -35,9 +39,15 @@ export function useRadarScans(held: RefObject<RadarScan | null>) {
       const { signal } = current;
       request = current;
       try {
-        const response = await fetchBounded(radarCatalogUrl(), signal);
-        if (!response.ok) throw new Error("NOAA radar catalogue unavailable");
-        const fresh = radarScans(await response.json(), Date.now());
+        let fresh: RadarScan[];
+        if (global) {
+          const catalogue = await rainviewerFetch(RAINVIEWER_CATALOGUE, signal, 60_000);
+          fresh = rainviewerScans(JSON.parse(await catalogue.text()), Date.now());
+        } else {
+          const response = await fetchBounded(radarCatalogUrl(), signal);
+          if (!response.ok) throw new Error("NOAA radar catalogue unavailable");
+          fresh = radarScans(await response.json(), Date.now());
+        }
         if (signal.aborted) return;
         if (!fresh.length) {
           setData((old) => ({ ...old, status: "empty", checkedAt: Date.now() }));
@@ -72,9 +82,12 @@ export function useRadarScans(held: RefObject<RadarScan | null>) {
             const { id } = scan;
             let image: ImageBitmap | null = null;
             try {
-              const png = await fetchBounded(radarImageUrl(id), signal);
-              if (png.ok && png.headers.get("Content-Type")?.startsWith("image/"))
-                image = await createImageBitmap(await png.blob());
+              if (global && scan.path) image = await globalRadarImage(scan.path, signal);
+              else {
+                const png = await fetchBounded(radarImageUrl(id), signal);
+                if (png.ok && png.headers.get("Content-Type")?.startsWith("image/"))
+                  image = await createImageBitmap(await png.blob());
+              }
             } catch {
               // The timestamp remains selectable when its image cannot be read.
             }
@@ -86,8 +99,9 @@ export function useRadarScans(held: RefObject<RadarScan | null>) {
             setData((old) => ({ ...old, images: new Map(images) }));
           }
         }
-        await Promise.all([next(), next(), next()]);
+        await Promise.all(global ? [next()] : [next(), next(), next()]);
       } catch {
+        if (global && !signal.aborted) forgetRainviewer(RAINVIEWER_CATALOGUE);
         if (!signal.aborted) setData((old) => ({ ...old, status: "error", checkedAt: Date.now() }));
       } finally {
         if (request === current) {
@@ -110,6 +124,7 @@ export function useRadarScans(held: RefObject<RadarScan | null>) {
     refresh.current = () => {
       request?.abort();
       request = null;
+      if (global) forgetRainviewer(RAINVIEWER_CATALOGUE);
       void load();
     };
     void load();
@@ -123,7 +138,7 @@ export function useRadarScans(held: RefObject<RadarScan | null>) {
       for (const image of images.values()) image?.close();
       refresh.current = () => {};
     };
-  }, [held]);
+  }, [held, global]);
 
   return { ...data, retry: () => refresh.current() };
 }
