@@ -118,6 +118,8 @@ index to the matching implementation note.
 - [src/globe/depthDive.ts](#srcglobedepthdivets)
 - [src/globe/useGlobeLayers.ts](#srcglobeuseglobelayersts)
 - [src/globe/controls.ts](#srcglobecontrolsts)
+- [src/globe/cameraInput.ts](#srcglobecamerainputts)
+- [src/globe/cameraGuidance.ts](#srcglobecameraguidancets)
 - [src/globe/controlsTypes.ts](#srcglobecontrolstypests)
 - [src/globe/events.perf.test.ts](#srcglobeeventsperftestts)
 - [src/globe/events.ts](#srcglobeeventsts)
@@ -2556,6 +2558,26 @@ necessary. Their dependencies are individual values and refs, so a camera preset
 does not recreate WebGL resources or feed subscriptions. Scene construction restores current values
 before these effects run, including on graphics retry. Planetarium framing commits before paint so
 reduced motion does not wait for a deferred layer update.
+
+### src/globe/cameraInput.ts
+
+DOM input owns pointer tracking, tap slop, pinch distance and keyboard focus rules. Camera math
+stays in `controls.ts`. A grab stops momentum; only a drag beyond tap slop, pinch, wheel or camera
+key interrupts guided framing. Repeated wheel inputs compound from their pending user target.
+Observation map picking waits for pointer release and rejects drags and multiple pointers.
+
+### src/globe/cameraGuidance.ts
+
+The camera owns a small external store for guided versus manual framing. The observation deck
+stamps a stable story key on each frame, so data updates and projection changes cannot resume a
+camera the visitor has moved. The presentation retains the latest restore callback. Recenter
+uses it without changing playback, selected readings or source subscriptions; changing stories
+clears manual ownership. Only ownership changes notify the React button, never animation frames.
+
+Arrival callbacks still release playback when interrupted. Replay positions and bank angles stop
+driving the camera during manual exploration. Orbital views retain their focus and honor zoom;
+Float Dive fades its screen-space water away to expose the geographic camera. Local sky and
+Moonfall keep their specialized direction and surface-route controls.
 
 ### src/globe/controls.ts
 

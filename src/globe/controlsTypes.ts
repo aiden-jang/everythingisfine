@@ -1,3 +1,4 @@
+import type { CameraGuidance } from "./cameraGuidance";
 import type { Vector3 } from "three";
 import type { TonightView } from "../geo/tonight";
 import type { OvalPoint } from "../sources/auroraRoute";
@@ -31,7 +32,7 @@ export interface Controls {
   state: () => CameraState;
   /** Springs the camera to a place. Instant under reduced motion, per DESIGN.md section 8. */
   flyTo: (lon: number, lat: number, zoom?: number) => void;
-  lockOrbit: (locked: boolean) => void;
+  guidance: CameraGuidance;
   setReplayAngle: (bank: number, pitch: number) => void;
   setView: (pose: CameraState) => void;
   /** Starts a finite horizon pullback. Skipped completely under reduced motion. */

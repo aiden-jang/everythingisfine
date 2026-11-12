@@ -158,6 +158,11 @@ words arrive with a staggered reveal. These are finite presentation effects; red
 
 Scenes are temporary: returning to Explore restores the saved layer and projection choices. Choosing
 Observe or Explore remembers that presentation; opening the app alone saves no new preference.
+On the shared globe and map, drag, pinch, scroll or use camera keys to take control of a story’s
+framing. Its timeline keeps running. **Recenter** (also double-click or `0`) restores the current shot
+without restarting the story. Float Dive fades back to the globe while you explore; Recenter returns
+to its underwater view at the selected measurement. Local sky and lunar surface views retain their
+own direction and route controls.
 
 ## Explore
 
@@ -167,7 +172,8 @@ catalogue. Layer visibility stays on this device; shared event targets override 
 Earthquake controls fold out of the way when that layer is off, while the report time window remains.
 The feed counter covers seven automatically checked background sources. Other views check their own
 sources when opened; a recorded journey is not a live feed. Tropical cyclones are global GDACS reports,
-while Storm Radar currently uses NOAA’s contiguous-US radar mosaic.
+while Storm Radar uses RainViewer’s worldwide available radar coverage with an optional NOAA
+contiguous-US detail view. Uncovered areas are marked, rather than presented as clear weather.
 
 - Drag to orbit, scroll to zoom, or use the arrow keys and `+` / `-`. Press `0` to reset the camera.
 - Select an earthquake to pin its details and see each agency's original magnitude and scale.

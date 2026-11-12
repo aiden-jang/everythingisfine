@@ -13,6 +13,7 @@ export function createFloatPresentation(controls: Controls) {
   let restore = false;
   let landed = 0;
   let arrived = false;
+  let readyToPlay = false;
   let reveal = 0;
 
   return {
@@ -27,7 +28,6 @@ export function createFloatPresentation(controls: Controls) {
       wanted = view;
       restore = returnToGlobe;
       if (view) returnCamera ??= controls.state();
-      controls.lockOrbit(!!view || reveal > 0);
     },
     step(dt: number, reduced: boolean) {
       let returning = false;
@@ -36,18 +36,17 @@ export function createFloatPresentation(controls: Controls) {
         if (reveal === 0) {
           showing = wanted;
           landed = 0;
-          arrived = false;
+          arrived = readyToPlay = false;
           if (showing) {
             const { lon, lat } = showing.profile;
             surface.locate(lon, lat);
-            controls.flyTo(lon, lat, ZOOM);
+            if (controls.guidance.following()) controls.flyTo(lon, lat, ZOOM);
           } else {
             if (restore && returnCamera) {
               controls.flyTo(returnCamera.lon, returnCamera.lat, returnCamera.zoom);
               returning = true;
             }
             returnCamera = null;
-            controls.lockOrbit(false);
           }
         }
       }
@@ -62,18 +61,21 @@ export function createFloatPresentation(controls: Controls) {
         const { lon, lat } = showing.profile;
         if (
           !arrived &&
-          spanDeg(camera.lon, camera.lat, lon, lat) < 0.55 &&
-          Math.abs(camera.zoom - ZOOM) < 0.025
+          (!controls.guidance.following() ||
+            (spanDeg(camera.lon, camera.lat, lon, lat) < 0.55 && Math.abs(camera.zoom - ZOOM) < 0.025))
         )
           arrived = true;
         if (arrived) landed += dt;
-        if (arrived && (reduced || landed >= 0.38)) reveal = reduced ? 1 : Math.min(1, reveal + dt / 1.35);
-        if (reveal === 1) rising = showing.step(dt);
+        if (!controls.guidance.following()) reveal = reduced ? 0 : Math.max(0, reveal - dt / 0.4);
+        else if (arrived && (reduced || landed >= 0.38))
+          reveal = reduced ? 1 : Math.min(1, reveal + dt / 1.35);
+        if (reveal === 1 || !controls.guidance.following()) readyToPlay = true;
+        if (readyToPlay) rising = showing.step(dt);
       }
       const first = showing.profile.samples[0]!.depth;
       const last = showing.profile.samples.at(-1)!.depth;
       surface.draw(reveal, (first - showing.depth()) / (first - last), showing === wanted, reduced);
-      return rising || showing !== wanted || reveal < 1;
+      return rising || showing !== wanted || reveal !== (controls.guidance.following() ? 1 : 0);
     },
   };
 }

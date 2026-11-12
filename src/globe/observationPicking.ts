@@ -1,22 +1,33 @@
 import type { ObservationView } from "../app/observations/types";
 import type { Controls } from "./controls";
+import { createTapGesture } from "./tapGesture";
 
 export function createObservationPicking(canvas: HTMLCanvasElement, controls: Controls) {
   let pick: ObservationView["onPick"];
+  const tap = createTapGesture();
   const down = (event: PointerEvent) => {
     if (!pick || event.button !== 0 || controls.morph() !== 1) return;
+    tap.down(event);
+  };
+  const up = (event: PointerEvent) => {
+    if (!tap.up(event) || !pick || controls.morph() !== 1) return;
     const point = controls.pick(event.clientX, event.clientY);
     event.preventDefault();
-    event.stopImmediatePropagation();
     if (point) pick(point);
   };
   canvas.addEventListener("pointerdown", down, true);
+  canvas.addEventListener("pointermove", tap.move);
+  canvas.addEventListener("pointerup", up);
+  canvas.addEventListener("pointercancel", tap.cancel);
   return {
     set(view: ObservationView | null) {
       pick = view?.onPick;
     },
     dispose() {
       canvas.removeEventListener("pointerdown", down, true);
+      canvas.removeEventListener("pointermove", tap.move);
+      canvas.removeEventListener("pointerup", up);
+      canvas.removeEventListener("pointercancel", tap.cancel);
     },
   };
 }

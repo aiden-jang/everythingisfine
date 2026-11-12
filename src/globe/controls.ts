@@ -1,3 +1,5 @@
+import { attachCameraInput } from "./cameraInput";
+import { createCameraGuidance } from "./cameraGuidance";
 import { createAuroraFlight } from "./auroraFlight";
 import { createLocalSkyCamera } from "./localSkyCamera";
 import type { CameraState, Controls, Framing } from "./controlsTypes";
@@ -71,10 +73,7 @@ export function createControls(
   const intended = (): CameraState => (target && !target.intro ? target : { lon, lat, zoom });
 
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-  let orbitLocked = false;
-  const pointers = new Map<number, { x: number; y: number }>();
-  let lastMove = { x: 0, y: 0, t: 0 };
-  let pinchDist = 0;
+  const guidance = createCameraGuidance();
 
   const raycaster = new Raycaster();
   const ndc = new Vector2();
@@ -82,6 +81,10 @@ export function createControls(
   const project = createGeographicProjection(camera, canvas);
   const unfold = createUnfoldCamera(camera);
   const interruptFraming = (): void => {
+    if (guidance.interrupt()) {
+      target = null;
+      vLon = vLat = vZoom = 0;
+    }
     sky.interrupt();
     aurora.interrupt();
     dive.interrupt();
@@ -252,190 +255,54 @@ export function createControls(
     aim(dest);
   };
 
-  const attach = (onChange: () => void): (() => void) => {
-    const changed = (): void => {
-      apply();
-      onChange();
-    };
-
-    const onPointerDown = (e: PointerEvent): void => {
-      if (orbitLocked || horizon.active()) return;
-      // Capture keeps a drag alive when the pointer leaves the canvas, and the globe sits against the
-      // panel edge. It throws when the pointer is already gone, which a fast tap can arrange.
-      try {
-        canvas.setPointerCapture(e.pointerId);
-      } catch {
-        /* drag still works, it just ends at the canvas edge */
-      }
-      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      interruptFraming();
-      // Touching the globe stops it dead. Coasting through a grab feels broken.
-      vLon = 0;
-      vLat = 0;
-      target = null;
-      lastMove = { x: e.clientX, y: e.clientY, t: performance.now() };
-      if (pointers.size === 2) pinchDist = spread();
-    };
-
-    const spread = (): number => {
-      const [a, b] = [...pointers.values()];
-      if (!a || !b) return 0;
-      return Math.hypot(a.x - b.x, a.y - b.y);
-    };
-
-    const centre = (): { x: number; y: number } => {
-      const all = [...pointers.values()];
-      const n = all.length || 1;
-      return {
-        x: all.reduce((s, p) => s + p.x, 0) / n,
-        y: all.reduce((s, p) => s + p.y, 0) / n,
-      };
-    };
-
-    /* On the map a drag moves the map, not the camera's longitude - reusing the orbit path would spin a
-       plane. Switched at the halfway point: half rotation and half pan tracks neither. */
-    const panBy = (dxPx: number, dyPx: number): void => {
-      const perPixel = (2 * dist() * Math.tan((fovDeg / 2) * DEG)) / canvas.clientHeight;
-      lon -= ((dxPx * perPixel) / MAP_HALF_WIDTH) * 180;
-      /* Vertically the map is a wall, horizontally a loop. The clamp accounts for how much is in frame, so
-         zoomed out far enough to see all of it, latitude locks to the equator. */
-      const halfView = dist() * Math.tan((fovDeg / 2) * DEG);
-      const room = Math.max(0, 1 - halfView) * 90;
-      lat = Math.max(-room, Math.min(room, lat + dyPx * perPixel * 90));
-      // Wrapped, not clamped. The map repeats, so a wall at the date line would be a strange place to stop.
-      lon = ((((lon + 180) % 360) + 360) % 360) - 180;
-    };
-
-    const onPointerMove = (e: PointerEvent): void => {
-      const prev = pointers.get(e.pointerId);
-      if (!prev) return;
-      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-      if (pointers.size === 2) {
-        const now = spread();
-        if (pinchDist > 0 && now > 0) {
-          const c = centre();
-          zoomAt(now / pinchDist, c.x, c.y);
-          pinchDist = now;
-          onChange();
+  const attach = (onChange: () => void): (() => void) =>
+    attachCameraInput(canvas, {
+      blocked: horizon.active,
+      grab: () => {
+        vLon = vLat = 0;
+      },
+      begin: () => {
+        interruptFraming();
+        target = null;
+        vLon = vLat = vZoom = 0;
+      },
+      drag: (prev, next, lastMove, elapsed) => {
+        if (morph > 0.5) {
+          const perPixel = (2 * dist() * Math.tan((fovDeg / 2) * DEG)) / canvas.clientHeight;
+          lon -= (((next.x - prev.x) * perPixel) / MAP_HALF_WIDTH) * 180;
+          const halfView = dist() * Math.tan((fovDeg / 2) * DEG);
+          const room = Math.max(0, 1 - halfView) * 90;
+          lat = Math.max(-room, Math.min(room, lat + (next.y - prev.y) * perPixel * 90));
+          lon = ((((lon + 180) % 360) + 360) % 360) - 180;
+          vLon = vLat = 0;
+        } else {
+          const r = canvas.getBoundingClientRect();
+          const cx = r.left + r.width / 2,
+            cy = r.top + r.height / 2;
+          const swept = (from: number, to: number, centre: number): number =>
+            (angleAt(to - centre) - angleAt(from - centre)) / DEG;
+          const lonScale = 1 / Math.max(0.25, Math.cos(lat * DEG));
+          lon -= swept(prev.x, next.x, cx) * lonScale;
+          lat = clampLat(lat + swept(prev.y, next.y, cy));
+          if (elapsed > 0.004) {
+            const cap = (v: number) => Math.max(-MOMENTUM_MAX, Math.min(MOMENTUM_MAX, v));
+            vLon = cap((-swept(lastMove.x, next.x, cx) * lonScale) / elapsed);
+            vLat = cap(swept(lastMove.y, next.y, cy) / elapsed);
+          }
         }
-        return;
-      }
-
-      if (morph > 0.5) {
-        panBy(e.clientX - prev.x, e.clientY - prev.y);
-        vLon = 0;
-        vLat = 0;
         apply();
-        onChange();
-        return;
-      }
-
-      const r = canvas.getBoundingClientRect();
-      const cx = r.left + r.width / 2;
-      const cy = r.top + r.height / 2;
-      const swept = (from: number, to: number, centre: number): number =>
-        (angleAt(to - centre) - angleAt(from - centre)) / DEG;
-
-      /* Longitude is squeezed by latitude and the drag has to undo it: a horizontal drag moves the grabbed
-         point along its parallel, which at latitude L is only cos(L) as long as the equator. See ARCHITECTURE.md#srcglobecontrolsts. */
-      const lonScale = 1 / Math.max(0.25, Math.cos(lat * DEG));
-      lon -= swept(prev.x, e.clientX, cx) * lonScale;
-      lat = clampLat(lat + swept(prev.y, e.clientY, cy));
-
-      const t = performance.now();
-      const elapsed = (t - lastMove.t) / 1000;
-      if (elapsed > 0.004) {
-        const cap = (v: number): number => Math.max(-MOMENTUM_MAX, Math.min(MOMENTUM_MAX, v));
-        vLon = cap((-swept(lastMove.x, e.clientX, cx) * lonScale) / elapsed);
-        vLat = cap(swept(lastMove.y, e.clientY, cy) / elapsed);
-        lastMove = { x: e.clientX, y: e.clientY, t };
-      }
-      changed();
-    };
-
-    const onPointerUp = (e: PointerEvent): void => {
-      pointers.delete(e.pointerId);
-      pinchDist = 0;
-      // A flick only coasts if it was still moving when it let go. Release after a pause and the globe stays put.
-      const stale = performance.now() - lastMove.t > 90;
-      if (stale || reduced.matches || pointers.size > 0) {
-        vLon = 0;
-        vLat = 0;
-      }
-      if (vLon || vLat) onChange();
-    };
-
-    const onWheel = (e: WheelEvent): void => {
-      if (orbitLocked || horizon.active()) return;
-      e.preventDefault();
-      // Exponential, so a notch is the same proportion of the way in wherever you start: about 14%.
-      zoomAt(Math.exp(-e.deltaY * 0.0011), e.clientX, e.clientY);
-      onChange();
-    };
-
-    const onDoubleClick = (): void => {
-      if (orbitLocked || horizon.active()) return;
-      flyTo(framing.lon, framing.lat, 1);
-      onChange();
-    };
-
-    // The canvas is unfocusable. Window keys move the globe while lists and sliders keep their own keys.
-    const onKeyDown = (e: KeyboardEvent): void => {
-      if (orbitLocked || horizon.active()) return;
-      const active = document.activeElement;
-      if (active && active !== document.body && active.id !== "globe-view") return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-      const step = e.shiftKey ? 24 : 8;
-      switch (e.key) {
-        case "ArrowLeft":
-          nudge(-step, 0);
-          break;
-        case "ArrowRight":
-          nudge(step, 0);
-          break;
-        case "ArrowUp":
-          nudge(0, step);
-          break;
-        case "ArrowDown":
-          nudge(0, -step);
-          break;
-        case "+":
-        case "=":
-          nudge(0, 0, 1.25);
-          break;
-        case "-":
-        case "_":
-          nudge(0, 0, 1 / 1.25);
-          break;
-        case "0":
-          flyTo(framing.lon, framing.lat, 1);
-          break;
-        default:
-          return;
-      }
-      e.preventDefault();
-      onChange();
-    };
-
-    canvas.addEventListener("pointerdown", onPointerDown);
-    canvas.addEventListener("pointermove", onPointerMove);
-    canvas.addEventListener("pointerup", onPointerUp);
-    canvas.addEventListener("pointercancel", onPointerUp);
-    canvas.addEventListener("wheel", onWheel, { passive: false });
-    canvas.addEventListener("dblclick", onDoubleClick);
-    window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      canvas.removeEventListener("pointerdown", onPointerDown);
-      canvas.removeEventListener("pointermove", onPointerMove);
-      canvas.removeEventListener("pointerup", onPointerUp);
-      canvas.removeEventListener("pointercancel", onPointerUp);
-      canvas.removeEventListener("wheel", onWheel);
-      canvas.removeEventListener("dblclick", onDoubleClick);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  };
+      },
+      release: (stale, remaining) => {
+        if (stale || reduced.matches || remaining > 0) vLon = vLat = 0;
+        if (vLon || vLat) onChange();
+      },
+      zoom: zoomAt,
+      nudge,
+      reset: () => {
+        if (!guidance.recenter()) flyTo(framing.lon, framing.lat, 1);
+      },
+      change: onChange,
+    });
 
   const step = (dt: number): boolean => {
     const framingMoving = stepFraming(dt);
@@ -499,10 +366,7 @@ export function createControls(
     apply,
     pick,
     flyTo,
-    lockOrbit: (locked) => {
-      orbitLocked = locked;
-      if (locked) pointers.clear();
-    },
+    guidance,
     setReplayAngle: rig.setReplayAngle,
     setView: (pose) => aim(pose, true),
     enter: () => {

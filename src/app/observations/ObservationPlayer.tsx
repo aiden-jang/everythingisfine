@@ -9,7 +9,7 @@ import { useObservationData, useObservationImage } from "./useObservationData";
 
 import { useStorySession } from "./StorySession";
 
-const lockRegionalCamera = () => {};
+const regionalArrival = () => {};
 const EMPTY: readonly ObservationFrame[] = [];
 const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" });
 
@@ -76,7 +76,7 @@ export function ObservationPlayer({
             frame,
             image: element,
             sky,
-            ...(data.lens ? { lens: data.lens, arrive: lockRegionalCamera } : {}),
+            ...(data.lens ? { lens: data.lens, arrive: regionalArrival } : {}),
           }
         : null,
     );

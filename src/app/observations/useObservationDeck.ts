@@ -25,7 +25,7 @@ export function useObservationDeck(shared?: StoryMoment, before = () => {}) {
   const update = useCallback(
     (next: ObservationView | null) => {
       if (active.current !== entry) return;
-      setView(next);
+      setView(next ? { ...next, cameraKey: entry ?? "observation" } : null);
       const id = active.current;
       if (id && next)
         memory.current.set(id, { ...memory.current.get(id), id, map: projection.current, at: next.frame.at });

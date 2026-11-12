@@ -94,6 +94,7 @@ export interface ObservationView {
   /** False while a DOM photo or video covers the shared canvas. */
   capture?: boolean;
   kind: "observation";
+  cameraKey?: string;
   frame: ObservationFrame;
   target: CameraState;
   image: HTMLImageElement | null;

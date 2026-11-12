@@ -11,7 +11,6 @@ export function createObservationArrival(controls: Controls, canvas: HTMLCanvasE
       const next = view?.arrive ? view : null;
       const returning = active !== null && next === null;
       if (next?.arrive !== active?.arrive || next?.target !== active?.target) {
-        if (!!next !== !!active) controls.lockOrbit(!!next);
         elapsed = 0;
         arrived = false;
       }
@@ -28,12 +27,13 @@ export function createObservationArrival(controls: Controls, canvas: HTMLCanvasE
       const close = spanDeg(camera.lon, camera.lat, lon, lat) < 0.2 && Math.abs(camera.zoom - zoom) < 0.018;
       if (
         active.sky?.sunCover === undefined &&
+        controls.guidance.following() &&
         !reduced &&
         elapsed < 5 &&
         (!close || !controls.framingReady())
       )
         return true;
-      if (reduced) controls.setView(active.target);
+      if (reduced && controls.guidance.following()) controls.setView(active.target);
       const west = controls.project(lon - 0.9, lat);
       const east = controls.project(lon + 0.9, lat);
       const scale = west && east ? Math.abs(east.x - west.x) / Math.max(1, 0.94 * canvas.clientWidth) : 0.08;

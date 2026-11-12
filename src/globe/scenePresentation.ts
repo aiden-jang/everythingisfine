@@ -48,6 +48,7 @@ export function createScenePresentation(
 ) {
   let showDayline = false;
   let planetarium = false;
+  let skyCamera: ReturnType<Controls["state"]> | undefined;
   let skyView: TonightPresentation | null = null;
   let localLight: ReturnType<typeof createLocalSkyLight> | undefined;
   let veil: ReturnType<typeof createAuroraVeil> | undefined;
@@ -81,8 +82,9 @@ export function createScenePresentation(
     const tracing = observations?.step(dt, reduced) ?? false;
     const orbiting = orbital.step(dt, reduced);
     if (lens && arrival.ready()) lensReveal = reduced ? 1 : Math.min(1, lensReveal + dt / 0.65);
-    const bank = replay && !reduced && controls.morph() === 0 ? (replay.bank ?? 0) : 0;
-    const pitch = replay && !reduced && controls.morph() === 0 ? (replay.pitch ?? 0) : 0;
+    const guided = controls.guidance.following();
+    const bank = guided && replay && !reduced && controls.morph() === 0 ? (replay.bank ?? 0) : 0;
+    const pitch = guided && replay && !reduced && controls.morph() === 0 ? (replay.pitch ?? 0) : 0;
     const easing = Math.abs(bank - replayBank) + Math.abs(pitch - replayPitch) > 0.0005;
     const rotate = replayBank !== bank || replayPitch !== pitch;
     if (rotate) {
@@ -93,7 +95,7 @@ export function createScenePresentation(
     }
     let following = false;
     const destination = replay ?? chase?.pose;
-    if (destination && !reduced && arrival.ready()) {
+    if (guided && destination && !reduced && arrival.ready()) {
       const current = controls.state();
       const { lon, lat, zoom } = destination;
       const turn = ((((lon - current.lon) % 360) + 540) % 360) - 180;
@@ -122,21 +124,48 @@ export function createScenePresentation(
 
   function set(mode: GlobePresentation, geography: readonly Object3D[]) {
     if (mode === "landing") mode = "dayline";
+    if (mode === "planetarium" && !planetarium) skyCamera = returnCamera ?? controls.state();
     const local = isLocalView(mode) ? mode : null;
     const observation = local?.kind === "observation" ? local : null;
     picking.set(observation);
     const weather = local?.kind === "radar" ? local : null;
+    const float = local?.kind === "float-dive" ? local : null;
+    const route = mode && typeof mode === "object" && "route" in mode ? mode.route : null;
+    skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);
+    controls.guidance.configure(
+      skyView
+        ? null
+        : observation
+          ? (observation.cameraKey ?? "observation")
+          : weather
+            ? `radar:${weather.region}`
+            : (float ?? (route ? "aurora" : mode === "planetarium" ? mode : null)),
+      () => {
+        if (observation) {
+          const pose = observation.follow ?? observation.shadow?.pose ?? observation.target;
+          orbital.set(observation.frame.orbit);
+          controls.flyTo(pose.lon, pose.lat, pose.zoom);
+        } else if (weather) {
+          controls.flyTo(weather.target.lon, weather.target.lat, weather.target.zoom);
+        } else if (float) {
+          controls.flyTo(float.profile.lon, float.profile.lat, 1.35);
+        } else if (route) controls.setOverflight(route.focus);
+        else if (mode === "planetarium") {
+          if (skyCamera) controls.flyTo(skyCamera.lon, skyCamera.lat, skyCamera.zoom);
+          controls.setPlanetarium(true);
+        }
+      },
+    );
+    const guided = controls.guidance.following();
     const returningFromArchive = arrival.set(observation);
     if (lens !== observation?.lens) lensReveal = 0;
     lens = observation?.lens;
     replay = observation?.follow;
-    skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);
-    orbital.set(skyView ? undefined : observation?.frame.orbit);
+    if (guided || !observation?.frame.orbit) orbital.set(skyView ? undefined : observation?.frame.orbit);
     orbitalMoon = !!observation?.frame.orbit?.eclipse;
-    const route = mode && typeof mode === "object" && "route" in mode ? mode.route : null;
     if (planetarium !== (mode === "planetarium")) controls.setPlanetarium(mode === "planetarium");
     planetarium = mode === "planetarium";
-    if (route || oval) controls.setOverflight(route?.focus ?? null);
+    if (route !== oval && (guided || !route)) controls.setOverflight(route?.focus ?? null);
     if (skyView && !localLight) {
       localLight = createLocalSkyLight(sun, controls.localSky.up, canvas);
       spin.add(localLight.object);
@@ -151,7 +180,6 @@ export function createScenePresentation(
     if (oval !== route) veil?.set(route);
     oval = route;
 
-    const float = local?.kind === "float-dive" ? local : null;
     if (float && !dive) {
       dive = createFloatPresentation(controls);
       spin.add(dive.object);
@@ -185,11 +213,11 @@ export function createScenePresentation(
         spin.add(radar.object);
       }
       const { target } = weather;
-      if (target !== radarTarget) controls.flyTo(target.lon, target.lat, target.zoom);
+      if (guided && target !== radarTarget) controls.flyTo(target.lon, target.lat, target.zoom);
     } else if (observation) {
       returnCamera ??= controls.state();
       const { target } = observation;
-      if (target !== observationTarget && observation.sky?.sunCover === undefined)
+      if (guided && target !== observationTarget && observation.sky?.sunCover === undefined)
         controls.flyTo(target.lon, target.lat, target.zoom);
     } else if (returnCamera) {
       if (
@@ -224,7 +252,12 @@ export function createScenePresentation(
         camera.zoom = zoom;
         camera.updateProjectionMatrix();
       }
-      orbital.apply(camera, projection.value, controls.apply);
+      orbital.apply(
+        camera,
+        projection.value,
+        controls.apply,
+        (observationTarget?.zoom ?? 1) / controls.state().zoom,
+      );
       if (observationTarget) positionObservationAnchors(canvas, controls);
       dive?.size(camera.aspect);
       const amount = controls.localSky.amount();

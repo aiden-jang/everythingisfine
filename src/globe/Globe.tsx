@@ -3,6 +3,7 @@ import { useGlobeLayers } from "./useGlobeLayers";
 import { createFlightTarget } from "./cameraTarget";
 import { createOrbitReadout } from "./orbitReadout";
 import { type CutawayFocus } from "./cutaway";
+import type { CameraGuidance } from "./cameraGuidance";
 import { GlobeOverlays } from "./GlobeOverlays";
 import { GlobeUnavailable } from "./GlobeUnavailable";
 import { animationDelta } from "./animation";
@@ -88,10 +89,7 @@ export function Globe({
   const slabRef = useRef<(points: readonly SlabPoint[] | null) => void>(() => {});
   const auroraRef = useRef<(next: Aurora | null) => void>(() => {});
   const markRef = useRef<(next: readonly Mark[]) => void>(() => {});
-  /*
-   * Read from inside the frame loop, which outlives any render. Listing filters and selection as effect
-   * dependencies would tear down the WebGL context and both feed subscriptions on every slider nudge.
-   */
+  // The frame loop reads current props without rebuilding the scene or its feed subscriptions.
   const live = useRef({
     filters,
     onFrame,
@@ -138,6 +136,7 @@ export function Globe({
 
   const [unavailable, setUnavailable] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [guide, setGuide] = useState<CameraGuidance | null>(null);
 
   useEffect(() => {
     const el = canvas.current;
@@ -151,6 +150,7 @@ export function Globe({
       return undefined;
     }
     setUnavailable(false);
+    setGuide(globe.controls.guidance);
     const detachRotation = rotation.attach(el, globe.controls, () => wakeRef.current());
     const readout = createOrbitReadout(orbit.current);
     globe.resize();
@@ -164,7 +164,7 @@ export function Globe({
     onCapture?.(() => {
       const el2 = canvas.current;
       if (!el2) return null;
-      // Drawn again right here, so the pixels exist when the caller reads them on the next line.
+      // Draw synchronously so the capture reads the current pixels.
       globe.render();
       live.current.onFrame?.(el);
       return el2;
@@ -697,8 +697,7 @@ export function Globe({
     const unsubscribe = feed.subscribe(redrawFromData);
     redraw();
 
-    // Start after the first draw, so the globe is painted before the horizon pullback moves it.
-    globe.controls.enter();
+    globe.controls.enter(); // The horizon pullback starts after the first paint.
     wake();
 
     const detachViewport = observeViewport(el, globe, redraw, wake, () => {
@@ -720,8 +719,7 @@ export function Globe({
       el.removeEventListener("pointercancel", tap.cancel);
       el.removeEventListener("pointerleave", onLeave);
       detachSection();
-      // Before dispose, so a table landing after unmount cannot write to a scene that is gone.
-      gone = true;
+      gone = true; // Reject late table writes before disposing the scene.
       readout.dispose();
       globe.dispose();
     };
@@ -760,6 +758,8 @@ export function Globe({
         className="block h-full w-full touch-none cursor-grab active:cursor-grabbing"
       />
       <GlobeOverlays
+        guide={unavailable ? null : guide}
+        wake={() => wakeRef.current()}
         selected={selected}
         orbit={orbit}
         cutaway={flat ? null : cutaway}

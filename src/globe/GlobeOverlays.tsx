@@ -1,9 +1,13 @@
+import { CameraRecenter } from "./CameraRecenter";
+import type { CameraGuidance } from "./cameraGuidance";
 import { geographicCoordinates } from "./orbitReadout";
 import type { CutawayFocus } from "./cutaway";
 import { CUTAWAY_DEPTH_KM, CUTAWAY_GUIDES_KM } from "./cutawayScale";
 import type { RefObject } from "react";
 
 interface OverlayRefs {
+  guide: CameraGuidance | null;
+  wake: () => void;
   selected: string | null;
   orbit: RefObject<HTMLDivElement>;
   cutaway: CutawayFocus | null;
@@ -17,6 +21,8 @@ interface OverlayRefs {
 }
 
 export function GlobeOverlays({
+  guide,
+  wake,
   selected,
   orbit,
   cutaway,
@@ -30,6 +36,7 @@ export function GlobeOverlays({
 }: OverlayRefs): JSX.Element {
   return (
     <>
+      {guide ? <CameraRecenter guide={guide} wake={wake} /> : null}
       <div
         ref={orbit}
         data-orbit-readout

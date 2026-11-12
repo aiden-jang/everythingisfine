@@ -31,7 +31,7 @@ export function createOrbitalFraming() {
       }
       return moving;
     },
-    apply(camera: PerspectiveCamera, morph: number, reset: () => void) {
+    apply(camera: PerspectiveCamera, morph: number, reset: () => void, zoom = 1) {
       if (!dirty && amount === 0) return;
       reset();
       if (amount === 0 || morph === 1) {
@@ -41,7 +41,11 @@ export function createOrbitalFraming() {
         return;
       }
       const blend = amount * (1 - morph);
-      const orbit = camera.position.clone().normalize().multiplyScalar(distance).add(focus);
+      const orbit = camera.position
+        .clone()
+        .normalize()
+        .multiplyScalar(distance * zoom)
+        .add(focus);
       camera.position.lerp(orbit, blend);
       target.copy(focus).multiplyScalar(blend);
       camera.lookAt(target);

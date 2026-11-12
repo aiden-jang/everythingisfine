@@ -80,6 +80,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/globe/nightSurface.ts` | Night, eclipse and aurora surface shader |
 | `src/globe/cameraFlight.ts` | Finite arrival path, spring integration and flight-bank targets |
 | `src/globe/cameraRig.ts` | Interruptible lens bank and horizon offset, cleared on the map and under reduced motion |
+| `src/globe/cameraInput.ts`, `src/globe/cameraGuidance.ts` | Gesture arbitration and manual story-camera ownership, with Recenter at the current timeline position |
 | `src/globe/cameraTarget.ts` | Shared camera callback, perspective panel lift and explicit arrival replay |
 | `src/app/sun/` | On-demand solar flight, separate live observation windows and feed state |
 | `src/sources/spaceWeather.ts` | NOAA primary wind and GOES X-ray decoders |

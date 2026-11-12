@@ -95,6 +95,11 @@ poles must remain coherent; the map wraps rather than splitting the Pacific with
 empty edges. A cross-section states distance, depth and vertical exaggeration,
 and exposes selected earthquakes through the same detail flow.
 
+Story framing is interruptible on the shared globe and map. A deliberate drag, pinch, wheel or
+camera key takes control without pausing the data timeline. Recenter restores the latest shot;
+projection changes and frame updates preserve manual control. A new story starts with its own
+framing. Map selection waits for a tap, so it does not consume pan or pinch gestures.
+
 Stars, moon, planets and eclipse geometry follow the displayed time. Constellation
 figures are optional interpretation and start off. Layer labels explain their
 meaning and limits. Saved preferences take precedence over new-visitor defaults.
