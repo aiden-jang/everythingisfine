@@ -62,12 +62,16 @@ export function MapLayers({
       <button
         type="button"
         id="open-explorer-radar"
+        aria-label="Storm Radar"
+        aria-describedby="explorer-radar-coverage"
         className="map-layer-open"
         onClick={onRadar}
         disabled={archived}
       >
         <span>Storm Radar</span>
-        <small>{archived ? "Return to live for recent scans" : "Recent scans · contiguous US"}</small>
+        <small id="explorer-radar-coverage">
+          {archived ? "Return to live for recent scans" : "Recent scans · contiguous US"}
+        </small>
         <span aria-hidden="true">→</span>
       </button>
       <button type="button" className="map-layer-open" onClick={onBrowse}>

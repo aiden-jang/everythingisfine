@@ -92,7 +92,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     (next: EarthScene, at: CutawayFocus | null = null) => {
       before();
       setScene(next);
-      setBrowser((value) => ({ ...value, open: true, category: next }));
+      setBrowser((value) => ({ ...value, open: true, category: value.category === null ? null : next }));
       setFocus(at);
       setTourStop(null);
       setRun(null);
@@ -141,6 +141,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     browser: {
       ...browser,
       scroll: browserScroll,
+      select: (category: EarthScene) => setBrowser((value) => ({ ...value, open: true, category })),
       setOpen: (open: boolean) => {
         before();
         setBrowser((value) => ({ ...value, open }));

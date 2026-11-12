@@ -708,13 +708,12 @@ a bug.
 The phase went out of that line rather than wrapping onto a second row: a crescent explains itself
 once it is a crescent, and the smallness is the part that needs defending.
 
-**Feeds and layers fold, because they are set once and then never touched, and the rail is s**
+**Keep display settings separate from layer visibility**
 
-Feeds and layers fold, because they are set once and then never touched, and the rail is short by
-about 400px with the timeline back in it. The ramp above stays open - that one gets dragged.
-
-Layers live here rather than in the key, where they used to be: turning the slab on meant opening
-a fold titled "Map legend", which is not where anybody looks for a control.
+Earthquake display and sky guides fold to leave room for the time window and playback controls.
+The magnitude ramp stays open. Independent hazard toggles sit above these settings, so choosing
+what appears on the globe does not require finding an earthquake-specific menu. The map legend
+explains symbols; it does not contain display controls.
 
 ### src/app/MarkCard.tsx
 

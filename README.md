@@ -311,7 +311,7 @@ OVATION view shows the aurora forecast.
 
 Colour represents magnitude. Other hazards use distinct shapes, with neutral interface controls.
 
-Under **Feeds and layers**, **Regional cutaway** opens the pinned earthquake's region, or the
+Under **Earthquake display & sky guides**, **Regional cutaway** opens the pinned earthquake's region, or the
 centre of the view. Orbit to inspect events at their reported depths. The neutral well has 300 km
 reference guides down to 900 km; it does not represent geological layers. Switch the cutaway off
 in the same menu, or turn depth off. The flat map temporarily hides the opening. Constellations

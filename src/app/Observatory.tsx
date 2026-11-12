@@ -313,6 +313,7 @@ function ObservatoryContent({
                   onScene={(next) => {
                     storyScroll.current = 0;
                     observations.setQuery("");
+                    browser.select(next);
                     onScene(next);
                   }}
                 />

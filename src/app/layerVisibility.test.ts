@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { allMapLayers, readMapLayers, visibleHazards } from "./layerVisibility";
+import { allMapLayers, markBelongsToLayer, readMapLayers, visibleHazards } from "./layerVisibility";
 
 describe("independent map layers", () => {
+  it("keeps selections in unrelated layers", () => {
+    expect(markBelongsToLayer("cyclone:123", "fires")).toBe(false);
+    expect(markBelongsToLayer("cyclone:123", "cyclones")).toBe(true);
+    expect(markBelongsToLayer(null, "earthquakes")).toBe(false);
+  });
   it("validates saved preferences and keeps explicitly shared targets visible", () => {
     expect(readMapLayers("broken")).toEqual(allMapLayers);
     expect(readMapLayers('{"fires":false,"floods":"false"}')).toEqual({ ...allMapLayers, fires: false });

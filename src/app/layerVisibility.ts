@@ -57,3 +57,15 @@ export function visibleHazards<T>(
     aurora: layers.aurora ? data.aurora : null,
   };
 }
+
+export function markBelongsToLayer(mark: string | null, layer: MapLayer): boolean {
+  const kind = {
+    cyclones: "cyclone",
+    fires: "fire",
+    floods: "flood",
+    volcanoes: "volcano",
+    earthquakes: "quake",
+    aurora: "aurora",
+  }[layer];
+  return mark?.startsWith(`${kind}:`) ?? false;
+}

@@ -17,6 +17,10 @@ test("a fresh overview exposes every scene and selecting one opens its content @
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
   await page.goBack();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
+  await page.getByRole("button", { name: "Storm Radar", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Live Earth", exact: true }).click();
+  await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
+  await expect(page.locator("#overview-story-radar")).toBeFocused();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
@@ -40,7 +44,17 @@ test("Explore switches independent layers without rebuilding the globe @dev", as
           .__events.object.geometry.drawRange.count,
     );
   await expect.poll(drawnEarthquakes).toBeGreaterThan(0);
+  await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
+  const selection = page.locator(".zone-panel");
+  await expect(selection).toBeVisible();
+  const selectedPlace = await selection.getByRole("heading").innerText();
+  const selectedTime = await selection.locator("time").first().getAttribute("datetime");
+  await layers.getByRole("button", { name: "Wildfires", exact: true }).click();
+  await expect(selection).toBeVisible();
+  await expect(selection.getByRole("heading")).toHaveText(selectedPlace);
+  await expect(selection.locator("time").first()).toHaveAttribute("datetime", selectedTime!);
   await earthquakes.click();
+  await expect(selection).toBeHidden();
   await expect.poll(drawnEarthquakes).toBe(0);
   await expect(page.locator("#mag")).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Layer time window", exact: true })).toBeVisible();

@@ -278,8 +278,8 @@ test("a missing WebGL context still offers the source readings", async ({ page }
     } as typeof get;
   });
   await page.goto("/");
-  await revealStoryTools(page);
-  await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Live Earth", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Explore the globe" })).toBeVisible();
   await page.getByRole("button", { name: "Explore the globe" }).click();
   await waitForData(page);

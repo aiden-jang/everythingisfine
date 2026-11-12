@@ -4,7 +4,7 @@ import { EarthquakeContext } from "./app/EarthquakeContext";
 import { EarthquakeHeadline } from "./app/EarthquakeHeadline";
 import { MapLayers } from "./app/MapLayers";
 import { useMapLayers } from "./app/useMapLayers";
-import { visibleHazards } from "./app/layerVisibility";
+import { markBelongsToLayer, visibleHazards } from "./app/layerVisibility";
 import { SourceFilter } from "./app/SourceFilter";
 import { observatoryCaption } from "./app/observatoryCaption";
 import { useSceneHistory } from "./app/useSceneHistory";
@@ -110,8 +110,7 @@ import {
 /* Built here and not in an effect. In an effect, StrictMode mounts twice and you get two WebSockets. */
 const feed = createFeed();
 
-/* Both the drag handle and the restore path have to use these. When they did not, a stored 1 got
-through and the rail came back one pixel wide. */
+// Share bounds between resizing and restoring saved rail widths.
 const RAIL_MIN = 264;
 const RAIL_MAX = 620;
 const RAIL_DEFAULT = 356;
@@ -1164,10 +1163,11 @@ export function App(): JSX.Element {
               ...mapLayers,
               change: (layer, on) => {
                 mapLayers.change(layer, on);
-                if (!on) {
+                if (!on && layer === "earthquakes") {
                   setSelected(null);
-                  setMarkId(null);
+                  setSectionLine(null);
                 }
+                if (!on && markBelongsToLayer(markId, layer)) setMarkId(null);
               },
             }}
             feeds={feeds}

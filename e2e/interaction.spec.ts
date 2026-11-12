@@ -812,11 +812,11 @@ test("a shared time outside the live window explains the view it opens", async (
   await expect(rail).toContainText(
     "This link’s time is older than the live window. Showing the start of the window.",
   );
-  await expect(rail.locator(".view-mode")).toHaveText(/^View time Paused at /);
+  await expect(rail.locator(".view-mode")).toHaveText(/^Earthquakes · View time Paused at /);
 
   await page.goto(`/?share=future#w=24&c=${now + 3600}`);
   await expect(rail).toContainText("This link’s time is outside the live window. Showing the live view.");
-  await expect(rail.locator(".view-mode")).toHaveText("View time Live");
+  await expect(rail.locator(".view-mode")).toHaveText("Earthquakes · View time Live");
 });
 
 /*
