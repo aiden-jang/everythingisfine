@@ -1,3 +1,10 @@
+import { HazardList } from "./app/HazardList";
+import { LayerWindow } from "./app/LayerWindow";
+import { EarthquakeContext } from "./app/EarthquakeContext";
+import { EarthquakeHeadline } from "./app/EarthquakeHeadline";
+import { MapLayers } from "./app/MapLayers";
+import { useMapLayers } from "./app/useMapLayers";
+import { visibleHazards } from "./app/layerVisibility";
 import { SourceFilter } from "./app/SourceFilter";
 import { observatoryCaption } from "./app/observatoryCaption";
 import { useSceneHistory } from "./app/useSceneHistory";
@@ -86,12 +93,10 @@ import { seconds } from "./app/arrival";
 import { timesLabel, versusReference } from "./app/versus";
 import { tick } from "./app/touch";
 import { recordWhen, SINCE, superlativeFor, UNTIL } from "./app/superlative";
-import { rampColorAt, type RampName } from "./globe/ramp";
+import { type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
 import {
-  ago,
-  agoShort,
   clock,
   corroborationNote,
   energyPercent,
@@ -190,7 +195,7 @@ export function App(): JSX.Element {
      a second, and these feeds are dated to the hour at best. */
   const revealStep = filters.windowMs / BUCKETS;
   const revealAt = view.at === null ? null : Math.floor(view.at / revealStep) * revealStep;
-  const onGlobe = useMemo(() => {
+  const inWindow = useMemo(() => {
     /* Window first, on each layer's own date, then the cursor. `age.ts` has the argument for the dates. */
     const shown = <T,>(list: readonly T[], dateOf: (h: T) => number | null): readonly T[] =>
       list.filter((h) => {
@@ -218,6 +223,15 @@ export function App(): JSX.Element {
     revealAt,
     minuteClock,
   ]);
+  const mapLayers = useMapLayers(
+    filters,
+    observatory.observing,
+    shared.event ? "quake:" : (shared.mark ?? undefined),
+  );
+  const onGlobe = useMemo(
+    () => (observatory.observing ? inWindow : visibleHazards(inWindow, mapLayers.enabled)),
+    [inWindow, mapLayers.enabled, observatory.observing],
+  );
   const hazardTally = useMemo(() => {
     const held = archived
       ? {
@@ -237,25 +251,25 @@ export function App(): JSX.Element {
       {
         kind: "cyclone" as const,
         held: held.cyclones.length,
-        shown: onGlobe.cyclones.length,
+        shown: inWindow.cyclones.length,
         newest: newestOf(held.cyclones, started),
       },
       {
         kind: "fire" as const,
         held: held.fires.length,
-        shown: onGlobe.fires.length,
+        shown: inWindow.fires.length,
         newest: newestOf(held.fires, started),
       },
       {
         kind: "flood" as const,
         held: held.floods.length,
-        shown: onGlobe.floods.length,
+        shown: inWindow.floods.length,
         newest: newestOf(held.floods, started),
       },
       {
         kind: "volcano" as const,
         held: held.volcanoes.length,
-        shown: onGlobe.volcanoes.length,
+        shown: inWindow.volcanoes.length,
         newest: newestOf(held.volcanoes, (v) => v.endedAt),
       },
     ];
@@ -266,10 +280,10 @@ export function App(): JSX.Element {
     volcanoes,
     fires,
     floods,
-    onGlobe.cyclones,
-    onGlobe.fires,
-    onGlobe.floods,
-    onGlobe.volcanoes,
+    inWindow.cyclones,
+    inWindow.fires,
+    inWindow.floods,
+    inWindow.volcanoes,
   ]);
   const fireSummary = useMemo(() => summarise(onGlobe.fires), [onGlobe.fires]);
   // Keyed on the revision, not the clock: the rail re-renders every second and these only move when an
@@ -411,7 +425,7 @@ export function App(): JSX.Element {
   }, [eclipseKey]);
   const { saving, stillCounts, saveStill, onCapture, notice, download, dismiss, clip } = useStill(
     feed,
-    filters,
+    mapLayers.globeFilters,
     ramp,
     overflight.run?.forecast.forecastAt ?? view.at,
     overflight.run
@@ -792,7 +806,7 @@ export function App(): JSX.Element {
   }, [headline, replay, snapshot.coveredSince, snapshot.archive]);
   // `headline`, not the raw total, so the number on the image is the number that was on screen.
   stillCounts.current = {
-    quakes: headline,
+    quakes: observatory.observing || mapLayers.enabled.earthquakes ? headline : 0,
     cyclones: onGlobe.cyclones.length,
     fires: fireSummary.count,
     firesCapped: fireSummary.count >= FEED_CAP,
@@ -815,8 +829,6 @@ export function App(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [here, filters, snapshot.revision, replay, view.at, clockAt]);
 
-  /* Do not let `f` fold these: a full screen with a planet and nothing else is a screensaver. Each fold
-  is offered only where it buys something - see `useFloatingChrome`. */
   const chromeFloats = useFloatingChrome();
   const [headOpen, setHeadOpen] = useStoredFlag("head", true);
   const [railOpen, setRailOpen] = useStoredFlag("railOpen", true);
@@ -908,6 +920,12 @@ export function App(): JSX.Element {
   const timelineNotes = [sourceNote, corroborationNote(overlap, overlapFrom, now, filters.windowMs)].filter(
     (n): n is string => n !== null,
   );
+  const changeWindow = (h: number) => {
+    const windowMs = h * 3_600_000;
+    setFilters((f) => ({ ...f, windowMs }));
+    setScrub(LIVE);
+    if (feed.setWindow(windowMs)) setPendingRev(snapshot.revision);
+  };
   const timeline = (
     <div data-activity>
       <Timeline
@@ -918,14 +936,7 @@ export function App(): JSX.Element {
         hours={hours}
         focusHour={focusHour}
         onFocusHourChange={setFocusHour}
-        onHoursChange={(h) => {
-          const windowMs = h * 3_600_000;
-          setFilters((f) => ({ ...f, windowMs }));
-          /* Release the cursor rather than clamping it: 40% through a day and 40% through a month are not the
-                same moment, so keeping the number moves the viewer in time without them touching anything. */
-          setScrub(LIVE);
-          if (feed.setWindow(windowMs)) setPendingRev(snapshot.revision);
-        }}
+        onHoursChange={changeWindow}
         bucketMs={bucketMs}
         fetching={fetching}
         empty={emptyEarthquakes.short}
@@ -953,7 +964,6 @@ export function App(): JSX.Element {
     <ArchiveControls
       archive={snapshot.archive}
       state={archiveState}
-      openRadar={observatory.radar.open}
       openStory={observatory.openRecordedStory}
       onCursor={(at) => setScrub({ at, playing: false })}
       watchEclipse={
@@ -974,14 +984,15 @@ export function App(): JSX.Element {
   );
   const regionalResults = (
     <RegionalResults
-      {...{ flat, query, results, regions, hazards, markId, regionsHeight, pick }}
+      {...{ flat, results, regionsHeight, pick }}
+      query={mapLayers.enabled.earthquakes ? query : ""}
+      regions={mapLayers.enabled.earthquakes ? regions : []}
       empty={
         emptyEarthquakes.kind === "loading" || emptyEarthquakes.kind === "unavailable"
           ? emptyEarthquakes.text
           : null
       }
       onRegion={(region) => flyTo.current(region.lon, region.lat, region.zoom)}
-      onHazard={selectMark}
       onResize={setRegionsHeight}
     />
   );
@@ -1045,8 +1056,6 @@ export function App(): JSX.Element {
         className="zones"
         style={
           {
-            /* Zero when folded. Everything else is placed from these, so leaving them holds a gap open where
-          the folded thing used to be. */
             ...(headShown ? {} : { "--head-h": "0px" }),
             "--rail-w": railShown ? `${railWidth}px` : "0px",
             "--regions-h": `${regionsHeight}px`,
@@ -1144,118 +1153,55 @@ export function App(): JSX.Element {
           <MobileNavigation canvasHeight={sheetCanvas} flat={flat} onResize={setSheetCanvas} />
         ) : null}
         <aside
-          aria-label="Event filters and recent activity"
+          aria-label="Map layers and recent activity"
           id="chrome-rail"
           tabIndex={-1}
           className="zone-rail rail border-hairline p-5 max-md:border-b md:border-r"
           hidden={!railShown}
         >
-          <div className="titleblock">
-            <p className="view-mode">
-              <span className="sr-only">View time </span>
-              {archived
-                ? `Archive · ${loadedDay ?? archiveDay} UTC`
-                : view.at === null
-                  ? "Live"
-                  : view.playing
-                    ? "Replaying"
-                    : `Paused at ${viewClock}`}
-            </p>
-            <div className="tb-cell tb-wide" data-rail="headline">
-              {snapshot.coveredSince === null ? (
-                <div className="mt-2 max-w-[30ch] text-[14px] leading-snug text-dim">
-                  {earthquakeFeedsDown
+          <MapLayers
+            controls={{
+              ...mapLayers,
+              change: (layer, on) => {
+                mapLayers.change(layer, on);
+                if (!on) {
+                  setSelected(null);
+                  setMarkId(null);
+                }
+              },
+            }}
+            feeds={feeds}
+            archived={archived}
+            onRadar={observatory.radar.open}
+            onBrowse={() => observatory.home(stopTour)}
+          />
+          <HazardList hazards={hazards} markId={markId} onHazard={selectMark} />
+          {mapLayers.enabled.earthquakes && (
+            <EarthquakeHeadline
+              time={
+                archived
+                  ? `Archive · ${loadedDay ?? archiveDay} UTC`
+                  : view.at === null
+                    ? "Live"
+                    : view.playing
+                      ? "Replaying"
+                      : `Paused at ${viewClock}`
+              }
+              loading={
+                snapshot.coveredSince !== null
+                  ? null
+                  : earthquakeFeedsDown
                     ? "Neither feed is answering yet."
                     : archiveBusy && archiveDay
                       ? `Asking USGS and EMSC for ${archiveDay}.`
-                      : `Loading earthquake reports for the last ${compactSpan(filters.windowMs)}…`}
-                </div>
-              ) : (
-                <>
-                  <div
-                    data-event-count
-                    className="mt-1.5 text-[38px] leading-none font-[650] tracking-[-0.015em] tabular-nums"
-                  >
-                    {headline.toLocaleString("en-GB")}
-                  </div>
-                  {replay ? (
-                    <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
-                      <span className="font-mono text-ink">{clock(replay.at)}</span>
-                      <span className="text-faint">replaying the last day</span>
-                    </div>
-                  ) : view.at !== null ? (
-                    <div className="mt-1.5 flex items-baseline gap-2 text-[11px]">
-                      <span className="font-mono text-ink">{viewClock}</span>
-                      <span className="text-faint">{view.playing ? "Replaying" : "Paused"}</span>
-                    </div>
-                  ) : (
-                    <div className="mt-1.5 text-[11px] text-dim">{coverage.label}</div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {!strongest && !replay && !flat ? (
-              <div className="tb-cell tb-wide" data-rail="largest">
-                <span className="label block">Largest</span>
-                <span className="text-[11px] text-faint">{emptyEarthquakes.short}</span>
-              </div>
-            ) : null}
-            {strongest && !replay && !flat ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelected(strongest.key);
-                  flyTo.current(strongest.primary.lon, strongest.primary.lat, 1.9);
-                  // Through `clamp`, or pinning the newest event parks the cursor a moment behind the present.
-                  setScrub(clampScrub({ at: strongest.primary.time, playing: false }, span));
-                }}
-                aria-description={
-                  `Magnitude ${strongest.primary.magnitude.toFixed(1)}, ${ago(strongest.primary.time, now, archived)}. ` +
-                  "Go there and hold the window at that moment."
-                }
-                data-rail="largest"
-                className="tb-cell tb-wide cursor-pointer text-left transition-colors hover:bg-raised"
-              >
-                <span className="flex items-baseline justify-between gap-2">
-                  <span className="label">Largest</span>
-                  <span className="shrink-0 font-mono text-[10.5px] text-faint">
-                    {agoShort(strongest.primary.time, now, archived)}
-                  </span>
-                </span>
-                <span className="flex items-baseline gap-2">
-                  <span
-                    data-ramp
-                    className="font-mono text-[14px] leading-none"
-                    style={{ color: rampColorAt(ramp, (strongest.primary.magnitude - 1) / 6.5) }}
-                  >
-                    {strongest.primary.magnitude.toFixed(1)}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-[11px] text-dim">
-                    {place(strongest.primary.place)}
-                  </span>
-                </span>
-              </button>
-            ) : null}
-            {!replay && !flat && quiet.parts === null ? (
-              <div className="tb-cell tb-wide">
-                <span className="label block">Near plate boundaries</span>
-                <span className="text-[11px] text-faint">
-                  {shown ? "No events in range" : emptyEarthquakes.short}
-                </span>
-              </div>
-            ) : null}
-            {!replay && !flat && quiet.parts !== null ? (
-              <div className="tb-cell tb-wide">
-                <span className="label">Near plate boundaries</span>
-                <span className="flex items-baseline gap-1.5">
-                  <span className="font-mono text-[13px] tabular-nums text-ink">{quiet.parts.percent}%</span>
-                  <span className="text-[11px] text-dim">within {QUIET_BAND_KM} km</span>
-                </span>
-              </div>
-            ) : null}
-          </div>
-
+                      : `Loading earthquake reports for the last ${compactSpan(filters.windowMs)}…`
+              }
+              count={headline}
+              coverage={coverage.label}
+              moment={replay ? clock(replay.at) : viewClock}
+              replaying={!!replay || view.playing}
+            />
+          )}
           {!archived && feeds.silent ? (
             <div className="tb-notes">
               <span className="label">Feeds</span>
@@ -1281,69 +1227,97 @@ export function App(): JSX.Element {
             )}
           />
 
-          <div data-rail="legend">{marksFilter}</div>
-          {/* A phone has no canvas corner to spare, so there the key goes back into the column. */}
-          {keyOnCanvas ? null : <div className="mt-4">{marksKey}</div>}
-
           {archived && archiveControls}
-          {timeline}
+          {!mapLayers.enabled.earthquakes && !archived && (
+            <LayerWindow
+              hours={hours}
+              onChange={changeWindow}
+              held={view.at !== null}
+              onLive={() => setScrub(LIVE)}
+            />
+          )}
+          {mapLayers.enabled.earthquakes && (
+            <>
+              <div data-rail="legend">{marksFilter}</div>
+              {/* A phone has no canvas corner to spare, so there the key goes back into the column. */}
+              {keyOnCanvas ? null : <div className="mt-4">{marksKey}</div>}
 
-          {/* Directly above the region list, because that is where its results are drawn. Under the headline
-          the answers landed 700px below the box, off the bottom of the screen. */}
-          <div data-rail="when">
-            <div role="search" className="mb-1.5 flex flex-col gap-1 xl:flex-row xl:items-baseline xl:gap-2">
-              <label htmlFor="find" className="label shrink-0">
-                Find earthquake reports
-              </label>
-              <input
-                id="find"
-                /* Text, not `type="search"`: that brings a user-agent cancel button into chrome whose whole rule
-                is that it carries none. */
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter") return;
-                  const first = results.hits[0];
-                  if (first) pick(first);
-                }}
-                placeholder="a region or a place"
-                autoComplete="off"
-                spellCheck={false}
-                className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1
+              {timeline}
+
+              <div data-rail="when">
+                <div
+                  role="search"
+                  className="mb-1.5 flex flex-col gap-1 xl:flex-row xl:items-baseline xl:gap-2"
+                >
+                  <label htmlFor="find" className="label shrink-0">
+                    Find earthquake reports
+                  </label>
+                  <input
+                    id="find"
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter") return;
+                      const first = results.hits[0];
+                      if (first) pick(first);
+                    }}
+                    placeholder="a region or a place"
+                    autoComplete="off"
+                    spellCheck={false}
+                    className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1
                   text-[12px] text-ink placeholder:text-faint"
-              />
-            </div>
-            <details>
-              <summary className="disclose text-[11px] text-faint hover:text-dim">Time of day</summary>
-              <Dial counts={clockBins} />
-            </details>
-          </div>
+                  />
+                </div>
+                <details>
+                  <summary className="disclose text-[11px] text-faint hover:text-dim">Time of day</summary>
+                  <Dial counts={clockBins} />
+                </details>
+              </div>
 
-          {query && regionalResults}
-          <EventList
-            quakes={recent}
-            selected={selected}
-            onSelect={selectQuake}
-            announceAbove={announceAbove}
-            onAnnounceAboveChange={setAnnounceAbove}
-            onNews={onNews}
-            empty={emptyEarthquakes}
-            now={now}
-            archived={archived}
-            onClearFilters={() => {
-              setFilters((current) => ({
-                ...current,
-                minMagnitude: DEFAULT_FILTERS.minMagnitude,
-                sources: new Set(DEFAULT_FILTERS.sources),
-              }));
-              document.getElementById("mag")?.focus();
-            }}
-          />
-          {!query && regionalResults}
+              {query && regionalResults}
+              <EventList
+                quakes={recent}
+                selected={selected}
+                onSelect={selectQuake}
+                announceAbove={announceAbove}
+                onAnnounceAboveChange={setAnnounceAbove}
+                onNews={onNews}
+                empty={emptyEarthquakes}
+                now={now}
+                archived={archived}
+                onClearFilters={() => {
+                  setFilters((current) => ({
+                    ...current,
+                    minMagnitude: DEFAULT_FILTERS.minMagnitude,
+                    sources: new Set(DEFAULT_FILTERS.sources),
+                  }));
+                  document.getElementById("mag")?.focus();
+                }}
+              />
+            </>
+          )}
+          {(!query || !mapLayers.enabled.earthquakes) && regionalResults}
           {!archived && archiveControls}
-          <details className="context-fold">
+          <details className="context-fold" hidden={!mapLayers.enabled.earthquakes}>
             <summary className="disclose text-dim">More context</summary>
+            {!replay && !flat && (
+              <EarthquakeContext
+                strongest={strongest}
+                percent={quiet.parts?.percent ?? null}
+                shown={shown}
+                empty={emptyEarthquakes.short}
+                now={now}
+                archived={archived}
+                ramp={ramp}
+                onLargest={() => {
+                  if (!strongest) return;
+                  setSelected(strongest.key);
+                  flyTo.current(strongest.primary.lon, strongest.primary.lat, 1.9);
+                  setScrub(clampScrub({ at: strongest.primary.time, playing: false }, span));
+                }}
+              />
+            )}
             {!replay && quiet.note ? (
               <div className="tb-notes">
                 <span className="label">Notes</span>
@@ -1480,8 +1454,12 @@ export function App(): JSX.Element {
           <Suspense fallback={<GlobeLoading />}>
             <Globe
               feed={feed}
-              filters={filters}
-              selected={observatory.localReadings ? null : selected}
+              filters={mapLayers.globeFilters}
+              selected={
+                observatory.localReadings || (!observatory.observing && !mapLayers.enabled.earthquakes)
+                  ? null
+                  : selected
+              }
               ramp={ramp}
               focus={focusSpan}
               aurora={observatory.observations.entry ? null : (overflight.run?.forecast ?? onGlobe.aurora)}

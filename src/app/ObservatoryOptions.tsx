@@ -51,7 +51,7 @@ export function ObservatoryOptions({
         <button type="button" aria-pressed={rotation.enabled} onClick={() => rotation.set(!rotation.enabled)}>
           Auto-rotate globe <span>{rotation.enabled ? "On" : "Off"}</span>
         </button>
-        <p>On the landing page only. Drag to pause; rotation resumes after five idle seconds.</p>
+        <p>On the landing page only. Drag to pause; rotation resumes after 1.5 idle seconds.</p>
         <button
           type="button"
           id="capture-still"

@@ -1,5 +1,4 @@
 import { useRef } from "react";
-import { hazardCount, type HazardGroup } from "./hazards";
 import type { Region, RegionCount } from "./regions";
 import { Resizer } from "./Resizer";
 import { Row } from "./Row";
@@ -11,12 +10,9 @@ interface Props {
   query: string;
   results: Results;
   regions: RegionCount[];
-  hazards: HazardGroup[];
-  markId: string | null;
   regionsHeight: number;
   pick: (hit: Hit) => void;
   onRegion: (region: Region) => void;
-  onHazard: (id: string) => void;
   onResize: (height: number) => void;
 }
 
@@ -26,17 +22,14 @@ export function RegionalResults({
   query,
   results,
   regions,
-  hazards,
-  markId,
   regionsHeight,
   pick,
   onRegion,
-  onHazard,
   onResize,
 }: Props): JSX.Element | null {
   const regionsRef = useRef<HTMLDivElement>(null);
   const busiest = regions[0]?.count ?? 0;
-  return query || (regions.length > 0 && !flat) || hazards.length > 0 ? (
+  return query || (regions.length > 0 && !flat) ? (
     <div data-rail="regions" className="relative">
       {query || (regions.length > 0 && !flat) ? (
         <>
@@ -100,45 +93,6 @@ export function RegionalResults({
             className="absolute inset-x-0 -bottom-2 hidden xl:block"
           />
         </>
-      ) : null}
-
-      {hazards.length > 0 ? (
-        <details className="mt-3">
-          <summary className="disclose text-[11px] text-faint hover:text-dim">
-            Storms, fires, floods and volcanoes ({hazardCount(hazards)})
-          </summary>
-          <div className="mt-1.5 max-h-[240px] overflow-y-auto pr-1">
-            {hazards.map((group) => (
-              <div key={group.kind} className="mt-1.5 first:mt-0">
-                <div className="label">{group.label}</div>
-                {group.rows.map((row) => (
-                  <button
-                    key={row.id}
-                    type="button"
-                    data-hazard-row={row.id}
-                    aria-current={markId === row.id || undefined}
-                    onClick={() => onHazard(row.id)}
-                    className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left transition-colors hover:bg-raised ${
-                      markId === row.id ? "bg-raised" : ""
-                    }`}
-                  >
-                    <span className="min-w-0 flex-1 truncate text-[11px] text-dim">{row.name}</span>
-                    {row.measure ? (
-                      <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
-                        {row.measure}
-                      </span>
-                    ) : null}
-                    {row.age ? (
-                      <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
-                        {row.age}
-                      </span>
-                    ) : null}
-                  </button>
-                ))}
-              </div>
-            ))}
-          </div>
-        </details>
       ) : null}
     </div>
   ) : null;

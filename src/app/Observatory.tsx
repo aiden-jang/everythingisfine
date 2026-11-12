@@ -108,8 +108,6 @@ function ObservatoryContent({
   useLayoutEffect(() => {
     tour.controls.current?.scrollTo(0, browsing ? storyScroll.current : 0);
     tour.controls.current?.querySelector<HTMLElement>(".observatory-story")?.scrollTo(0, 0);
-    if (browsing && storyScroll.current === 0)
-      tour.controls.current?.querySelector(".story-search")?.scrollIntoView({ block: "nearest" });
   }, [
     scene,
     tour.at,
@@ -150,7 +148,9 @@ function ObservatoryContent({
   const description = active
     ? (tour.stop?.description ?? "Travelling to the next view. The story begins when the camera arrives.")
     : scene === "depth"
-      ? "Look through a regional cutaway at reported earthquake depths. The faint points show historical seismicity."
+      ? deepAvailable
+        ? "Look through a regional cutaway at reported earthquake depths. The faint points show historical seismicity."
+        : "Explore recorded earthquakes, fault motion and the history of Earth’s plates."
       : scene === "night"
         ? solar
           ? "See what GOES measures in X-rays and what spacecraft sample in the solar wind upstream of Earth. Aurora has its own forecast."
@@ -268,22 +268,6 @@ function ObservatoryContent({
                 ) : null}
               </div>
               {solar && <SunCredits />}
-              {!active && !solar && !aurora.run && (
-                <ObservatoryScenePicker
-                  scene={scene}
-                  ready={ready}
-                  deepAvailable={deepAvailable}
-                  onScene={(next) => {
-                    if (scene !== next) setStories(false);
-                    onScene(next);
-                  }}
-                />
-              )}
-              {!active && !solar && !aurora.run && ready && !deepAvailable && (
-                <p id="depth-availability" className="observatory-depth-note">
-                  Below the Surface needs an earthquake at least 70 km deep in the current view.
-                </p>
-              )}
               {active ? (
                 <ObservatoryTourControls tour={tour} onExplore={onExplore} />
               ) : (
@@ -321,9 +305,27 @@ function ObservatoryContent({
                   ) : null}
                 </>
               )}
+              {!active && !solar && !aurora.run && (
+                <ObservatoryScenePicker
+                  scene={browser.category}
+                  ready={ready}
+                  deepAvailable={deepAvailable}
+                  onScene={(next) => {
+                    storyScroll.current = 0;
+                    observations.setQuery("");
+                    onScene(next);
+                  }}
+                />
+              )}
+              {!active && !solar && !aurora.run && ready && !deepAvailable && (
+                <p id="depth-availability" className="observatory-depth-note">
+                  No earthquake at least 70 km deep in this window. Recorded depth stories are still
+                  available.
+                </p>
+              )}
               {browsing && (
                 <StoriesDrawer
-                  scene={scene}
+                  scene={browser.category}
                   ready={ready}
                   sun={sun}
                   tonight={tonight}

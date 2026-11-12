@@ -39,5 +39,5 @@ export function earthSceneTarget(
     const sun = subsolarPoint(at);
     return { scene, focus: null, camera: [sun.lon + 180, -sun.lat, 0.92] };
   }
-  return { scene: "live", focus: null, camera: [145, 12, 1] };
+  return { scene, focus: null, camera: [145, 12, 1] };
 }

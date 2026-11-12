@@ -931,7 +931,7 @@
   }
 }
 
-.context-fold:not(:has(p)) {
+.context-fold:not(:has(p, [data-rail="largest"])) {
   display: none;
 }
 

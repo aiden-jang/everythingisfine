@@ -3,7 +3,7 @@ import { createRotationIdle } from "./rotationIdle";
 import { createTapGesture } from "./tapGesture";
 const pointer = (x = 0, id = 1) => ({ clientX: x, clientY: 0, pointerId: id });
 describe("deliberate globe interactions", () => {
-  it("waits for all fingers, momentum, and five idle seconds", () => {
+  it("waits for all fingers, momentum, and 1.5 idle seconds", () => {
     const idle = createRotationIdle();
     expect(idle.remaining(0)).toBe(0);
     idle.hold(1);
@@ -14,11 +14,11 @@ describe("deliberate globe interactions", () => {
     expect(idle.remaining(15000)).toBe(Infinity);
     idle.release(2, 15000);
     idle.defer(16000);
-    expect(idle.remaining(20999)).toBe(1);
-    expect(idle.remaining(21000)).toBe(0);
+    expect(idle.remaining(17499)).toBe(1);
+    expect(idle.remaining(17500)).toBe(0);
     idle.hold(3);
     idle.clear(22000);
-    expect(idle.remaining(27000)).toBe(0);
+    expect(idle.remaining(23500)).toBe(0);
   });
   it("does not turn a drag returning to its origin into a click", () => {
     const tap = createTapGesture();

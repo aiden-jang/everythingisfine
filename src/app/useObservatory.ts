@@ -80,7 +80,11 @@ export function useObservatory(shared: Partial<Permalink>) {
     observeScene,
     restore: restorePresentation,
   } = usePresentation(() => initialPresentation(shared), clearViews, before);
-  const [browser, setBrowser] = useState({ open: false, home: 0 });
+  const [browser, setBrowser] = useState({
+    open: true,
+    home: 0,
+    category: shared.story ? scene : (null as EarthScene | null),
+  });
   const browserScroll = useRef(0);
   const sharedView = useRef(shared.lon !== undefined || !!shared.day || shared.cursor != null);
   const [rotation, setRotation] = useStoredFlag("landingRotation", true);
@@ -88,6 +92,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     (next: EarthScene, at: CutawayFocus | null = null) => {
       before();
       setScene(next);
+      setBrowser((value) => ({ ...value, open: true, category: next }));
       setFocus(at);
       setTourStop(null);
       setRun(null);
@@ -147,10 +152,10 @@ export function useObservatory(shared: Partial<Permalink>) {
       before();
       sharedView.current = false;
       browserScroll.current = 0;
-      setBrowser((value) => ({ open: false, home: value.home + 1 }));
       observations.setQuery("");
       observeScene(() => {
         chooseScene("live");
+        setBrowser((value) => ({ open: true, home: value.home + 1, category: null }));
         prepare();
       });
     },
@@ -159,6 +164,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         presentation,
         scene,
         browser.open,
+        browser.category ?? "all",
         observations.entry ??
           (tonight
             ? skyEntry.mode

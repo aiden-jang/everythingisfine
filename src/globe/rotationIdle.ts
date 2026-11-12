@@ -1,4 +1,4 @@
-const RESUME_AFTER_MS = 5000;
+const RESUME_AFTER_MS = 1500;
 
 export function createRotationIdle() {
   const pointers = new Set<number>();

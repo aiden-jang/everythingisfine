@@ -62,11 +62,11 @@ test("steering on a phone pauses rotation then resumes after idle @dev", async (
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2 + 30, box.y + box.height / 2, { steps: 5 });
-  await page.mouse.up();
   await expect(page.getByRole("button", { name: /globe rotation/ })).toHaveCount(0);
   await expect(async () => {
     await still(page);
   }).toPass({ timeout: 20_000 });
+  await page.mouse.up();
   await moving(page);
   await page.locator("#globe-view").focus();
   await page.keyboard.press("ArrowLeft");

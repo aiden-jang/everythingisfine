@@ -72,7 +72,7 @@ export function FeedDot({
         role="region"
         aria-labelledby={`${id}-title`}
       >
-        <h2 id={`${id}-title`}>Feed status</h2>
+        <h2 id={`${id}-title`}>Background feed status</h2>
         <p>
           {pending > 0
             ? `Checking ${pending} of ${feeds.total} background feeds…`
@@ -98,8 +98,12 @@ export function FeedDot({
             </li>
           ))}
         </ul>
+        <p>The counter covers these background sources, not every view in the observatory.</p>
         <h3>Loads when opened</h3>
-        <p>Storm Radar, Float Dive and Sun Watch</p>
+        <p>
+          Storm Radar, Float Dive and Sun Watch check their sources when opened. Find these and the full
+          catalogue in Stories &amp; layers or Explore’s All stories &amp; data.
+        </p>
         <details>
           <summary>Other observatory views</summary>
           <p>

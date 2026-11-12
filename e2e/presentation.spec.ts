@@ -14,7 +14,9 @@ for (const width of [1440, 390, 320]) {
     });
     await page.goto("/");
     await waitForData(page);
-    const feeds = page.getByText("Feeds and layers", { exact: true }).filter({ visible: true });
+    const feeds = page
+      .getByText("Earthquake display & sky guides", { exact: true })
+      .filter({ visible: true });
     await feeds.click();
     const cutaway = page
       .getByRole("button", { name: "Regional cutaway", exact: true })
@@ -84,10 +86,10 @@ async function openSceneEffects(page: Page, reduced = false): Promise<void> {
   await page.goto("/");
   await waitForData(page);
   if (!reduced) await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.getByText("Feeds and layers", { exact: true }).filter({ visible: true }).click();
+  await page.getByText("Earthquake display & sky guides", { exact: true }).filter({ visible: true }).click();
   await page.getByRole("button", { name: "Constellations", exact: true }).filter({ visible: true }).click();
   await page.getByRole("button", { name: "Regional cutaway", exact: true }).filter({ visible: true }).click();
-  await page.getByText("Feeds and layers", { exact: true }).filter({ visible: true }).click();
+  await page.getByText("Earthquake display & sky guides", { exact: true }).filter({ visible: true }).click();
   await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
 }
 
@@ -153,7 +155,7 @@ test("switching the historical depth layer off removes its markers @dev", async 
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
-  await page.getByText("Feeds and layers", { exact: true }).filter({ visible: true }).click();
+  await page.getByText("Earthquake display & sky guides", { exact: true }).filter({ visible: true }).click();
   const layer = () =>
     page.evaluate(() => {
       const slab = (

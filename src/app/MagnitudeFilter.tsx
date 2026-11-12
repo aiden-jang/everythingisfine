@@ -519,10 +519,8 @@ export function MagnitudeFilter({
         ))}
       </div>
 
-      {/* Feeds and layers fold, because they are set once and then never touched, and the rail is short by
-          about 400px with the timeline back in it. The ramp above stays open - that one gets dragged. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
       <details className="mt-3">
-        <summary className="label cursor-pointer select-none">Feeds and layers</summary>
+        <summary className="label cursor-pointer select-none">Earthquake display & sky guides</summary>
         <div className="mt-2">
           {children}
           <LayerOptions

@@ -9,7 +9,7 @@ const labels: Record<FeedKey, string> = {
   usgs: "USGS earthquakes",
   emsc: "EMSC earthquakes",
   aurora: "NOAA aurora forecast",
-  cyclones: "GDACS cyclones",
+  cyclones: "GDACS global cyclones",
   volcanoes: "GDACS volcanoes",
   fires: "GDACS wildfires",
   floods: "GDACS floods",

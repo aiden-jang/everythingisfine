@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds, openStories } from "./feeds";
 
-test("Home clears story browsing and browser Back restores it on the same globe @dev", async ({ page }) => {
+test("Home restores all scenes and browser Back restores it on the same globe @dev", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
@@ -14,7 +14,7 @@ test("Home clears story browsing and browser Back restores it on the same globe 
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Stories & layers", exact: true })).toHaveAttribute(
     "aria-expanded",
-    "false",
+    "true",
   );
   await page.goBack();
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(

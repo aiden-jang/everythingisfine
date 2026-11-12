@@ -84,7 +84,7 @@ export function ObservatoryScenePicker({
   deepAvailable,
   onScene,
 }: {
-  scene: EarthScene;
+  scene: EarthScene | null;
   ready: boolean;
   deepAvailable: boolean;
   onScene: (scene: EarthScene) => void;
@@ -101,7 +101,7 @@ export function ObservatoryScenePicker({
           }}
           aria-pressed={scene === option.id}
           aria-label={option.name}
-          disabled={!ready || (option.id === "depth" && !deepAvailable)}
+          disabled={!ready}
           aria-describedby={
             option.id === "depth" && ready && !deepAvailable ? "depth-availability" : undefined
           }

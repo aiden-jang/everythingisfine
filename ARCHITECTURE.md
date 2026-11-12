@@ -2424,7 +2424,7 @@ The pinned ring and the hover tooltip are plain DOM written from the frame loop,
 every frame the camera does, and state would re-render the rail sixty times a second.
 
 The landing rotation shares this loop and the geographic camera. It starts only after camera motion
-settles, pauses on steering, and resumes five idle seconds after the gesture and momentum end.
+settles, pauses on steering, and resumes 1.5 idle seconds after the gesture and momentum end.
 It never moves the data clock. Its transient camera angles bypass the
 shared-location writer until it stops, avoiding URL and analytics churn. `useLandingRotation` owns
 the idle deadline and input listeners; `observeViewport` releases frames while the tab is hidden.

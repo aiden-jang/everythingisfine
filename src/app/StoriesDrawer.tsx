@@ -1,3 +1,4 @@
+import { OverviewStories } from "./OverviewStories";
 import { VisitShelf } from "./visitor/VisitShelf";
 import { JourneyPicker } from "./journeys/JourneyPicker";
 import { StoryThumbnail } from "./StoryThumbnail";
@@ -67,7 +68,7 @@ export function StoriesDrawer({
   children,
 }: {
   children: ReactNode;
-  scene: EarthScene;
+  scene: EarthScene | null;
   ready: boolean;
   sun: Observatory["sun"];
   tonight: Observatory["tonight"];
@@ -107,84 +108,94 @@ export function StoriesDrawer({
       {!deck.query.trim() && (
         <>
           <VisitShelf />
-          {children}
-          <JourneyPicker />
-          <Group title="Earth stories">
-            {earthStoryIds
-              .filter((id) => earthStories[id].scene === scene || (scene === "live" && id === "fault"))
-              .map((id) => (
-                <Story
-                  key={id}
-                  id={`open-story-${id}`}
-                  name={earthStories[id].title}
-                  note={earthStories[id].summary}
-                  ready={ready}
-                  open={() => deck.open(id, `open-story-${id}`)}
-                />
-              ))}
-          </Group>
-          {scene === "night" ? (
-            <>
-              <Group title="Live">
-                <Story
-                  id="open-sun-watch"
-                  name="Sun Watch"
-                  note="Follow solar wind and X-rays."
-                  ready={ready}
-                  open={() => {
-                    sun.toggle();
-                    requestAnimationFrame(() => document.getElementById("open-observations")?.focus());
-                  }}
-                />
-              </Group>
-              <Group title="Predictions">
-                {add("orbit", "open-orbital-pass")}
-                <Story
-                  id="open-meteor-nights"
-                  name="Meteor Nights"
-                  note="Find dark windows for meteor showers in your city."
-                  ready={ready}
-                  open={() => tonight.open("meteors")}
-                />
-                <Story
-                  id="open-shadow-chase"
-                  name="Shadow Chase"
-                  note="Follow the 2027 eclipse and see it from your city."
-                  ready={ready}
-                  open={() => openArchive("shadow")}
-                />
-              </Group>
-              <Group title="Replays">
-                <Story
-                  id="open-lights-return"
-                  name="Lights Return"
-                  note="See Puerto Rico’s lights return after Hurricane Maria."
-                  ready={ready}
-                  open={() => openArchive("lights")}
-                />
-              </Group>
-            </>
+          {scene === null ? (
+            <OverviewStories />
           ) : (
             <>
-              {scene === "live" && (
+              {children}
+              <JourneyPicker />
+              <Group title="Earth stories">
+                {earthStoryIds
+                  .filter((id) => earthStories[id].scene === scene || (scene === "live" && id === "fault"))
+                  .map((id) => (
+                    <Story
+                      key={id}
+                      id={`open-story-${id}`}
+                      name={earthStories[id].title}
+                      note={earthStories[id].summary}
+                      ready={ready}
+                      open={() => deck.open(id, `open-story-${id}`)}
+                    />
+                  ))}
+              </Group>
+              {scene === "night" ? (
                 <>
-                  <Group title="Recent observations">
-                    {layers.filter(([, view]) => view.group === "Recent observations").map(([id]) => add(id))}
+                  <Group title="Live">
+                    <Story
+                      id="open-sun-watch"
+                      name="Sun Watch"
+                      note="Follow solar wind and X-rays."
+                      ready={ready}
+                      open={() => {
+                        sun.toggle();
+                        requestAnimationFrame(() => document.getElementById("open-observations")?.focus());
+                      }}
+                    />
                   </Group>
-                  <Group title="Forecasts">
-                    {layers.filter(([, view]) => view.group === "Forecasts").map(([id]) => add(id))}
+                  <Group title="Predictions">
+                    {add("orbit", "open-orbital-pass")}
+                    <Story
+                      id="open-meteor-nights"
+                      name="Meteor Nights"
+                      note="Find dark windows for meteor showers in your city."
+                      ready={ready}
+                      open={() => tonight.open("meteors")}
+                    />
+                    <Story
+                      id="open-shadow-chase"
+                      name="Shadow Chase"
+                      note="Follow the 2027 eclipse and see it from your city."
+                      ready={ready}
+                      open={() => openArchive("shadow")}
+                    />
+                  </Group>
+                  <Group title="Replays">
+                    <Story
+                      id="open-lights-return"
+                      name="Lights Return"
+                      note="See Puerto Rico’s lights return after Hurricane Maria."
+                      ready={ready}
+                      open={() => openArchive("lights")}
+                    />
+                  </Group>
+                </>
+              ) : (
+                <>
+                  {scene === "live" && (
+                    <>
+                      <Group title="Recent observations">
+                        {layers
+                          .filter(([, view]) => view.group === "Recent observations")
+                          .map(([id]) => add(id))}
+                      </Group>
+                      <Group title="Forecasts">
+                        {layers.filter(([, view]) => view.group === "Forecasts").map(([id]) => add(id))}
+                      </Group>
+                    </>
+                  )}
+                  <Group title="Replays">
+                    {scene === "live" && (
+                      <>
+                        {add("deep")}
+                        {layers
+                          .filter(([, view]) => view.group === "Recorded journeys")
+                          .map(([id]) => add(id))}
+                      </>
+                    )}
+                    <ObservatoryHistory onHistory={onHistory} onPickDate={onPickDate} onStory={deck.open} />
                   </Group>
                 </>
               )}
-              <Group title="Replays">
-                {scene === "live" && (
-                  <>
-                    {add("deep")}
-                    {layers.filter(([, view]) => view.group === "Recorded journeys").map(([id]) => add(id))}
-                  </>
-                )}
-                <ObservatoryHistory onHistory={onHistory} onPickDate={onPickDate} onStory={deck.open} />
-              </Group>
             </>
           )}
         </>

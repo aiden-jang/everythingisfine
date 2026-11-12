@@ -465,6 +465,9 @@ export async function waitForData(page: Page): Promise<number> {
 }
 
 export async function openStories(page: Page) {
+  const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
+  if ((await scenes.isVisible()) && (await scenes.locator('[aria-pressed="true"]').count()) === 0)
+    await page.getByRole("button", { name: "Live Earth", exact: true }).click();
   const toggle = page.getByRole("button", { name: "Stories & layers", exact: true });
   if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
   return toggle;

@@ -12,18 +12,10 @@ interface Props {
   state: ReturnType<typeof useArchive>;
   onCursor: (at: number) => void;
   watchEclipse: MouseEventHandler<HTMLButtonElement> | string;
-  openRadar: () => void;
   openStory: (id: ReplayId | "kilauea" | "iceberg", trigger: string) => void;
 }
 
-export function ArchiveControls({
-  archive,
-  state,
-  onCursor,
-  watchEclipse,
-  openRadar,
-  openStory,
-}: Props): JSX.Element {
+export function ArchiveControls({ archive, state, onCursor, watchEclipse, openStory }: Props): JSX.Element {
   const {
     archiveDay,
     setArchiveDay,
@@ -242,17 +234,6 @@ export function ArchiveControls({
           </p>
         )}
       </div>
-      {!archive && (
-        <button
-          type="button"
-          id="open-explorer-radar"
-          className="archive-scene-button w-full text-left"
-          onClick={openRadar}
-          disabled={archiveBusy}
-        >
-          Storm Radar
-        </button>
-      )}
       {archiveNote && !archive ? (
         <p role="status" className="mt-1 text-[11px] text-faint">
           {archiveNote}

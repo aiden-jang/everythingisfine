@@ -215,11 +215,15 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await expect(page.locator(".observatory-summary")).toContainText("0 earthquakes");
   await revealStoryTools(page);
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
-  await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
   await expect(
-    page.getByText("Below the Surface needs an earthquake at least 70 km deep in the current view."),
+    page.getByText(
+      "No earthquake at least 70 km deep in this window. Recorded depth stories are still available.",
+    ),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Below the Surface", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Rupture Reveal", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Explore the globe" }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
   await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("status")).toHaveText(

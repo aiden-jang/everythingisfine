@@ -192,6 +192,66 @@ export function Timeline({
         </span>
       </div>
 
+      {/* The transport, on its own track rather than on the strip. Moving across the strip holds an hour,
+          and a drag that both held an hour and moved the cursor would be two meanings for one gesture. */}
+      <div className="mt-4 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onPlayToggle}
+          aria-label={playing ? "Pause" : "Play the window through"}
+          aria-keyshortcuts="Space"
+          // Same missing token and the same accident: a `dim` edge on a control whose neighbours are all
+          // hairline. The glyph is a symbol rather than a figure, so it sits on the sans step.
+          className="h-5 w-5 shrink-0 border border-hairline text-[11px] leading-none text-dim
+            hover:text-ink"
+        >
+          {playing ? "❚❚" : "▶"}
+        </button>
+        <input
+          type="range"
+          min={0}
+          max={1000}
+          step={1}
+          value={Math.round(cursor * 1000)}
+          onChange={(e) => onScrub(Number(e.target.value) / 1000)}
+          // Step by buckets so keyboard changes are visible even across a month.
+          onKeyDown={(e) => {
+            if (e.key === "Home" || e.key === "End") {
+              e.preventDefault();
+              if (e.key === "Home") onScrub(0);
+              else onLive();
+              return;
+            }
+            const by =
+              e.key === "ArrowRight" || e.key === "ArrowUp"
+                ? 1
+                : e.key === "ArrowLeft" || e.key === "ArrowDown"
+                  ? -1
+                  : 0;
+            if (by === 0) return;
+            e.preventDefault();
+            onStep(by);
+          }}
+          aria-label="Time in the window"
+          aria-valuetext={cursorLabel ?? (archived ? "End of day" : "Live")}
+          aria-keyshortcuts="ArrowLeft ArrowRight Home End Comma Period"
+          className="scrub-slider flex-1"
+        />
+        {parked ? (
+          <button
+            type="button"
+            onClick={onLive}
+            // The clock is already the headline's job, and printing it twice gave two readings of one
+            // number with nothing to say which was which.
+            className="shrink-0 font-mono text-[10.5px] text-dim hover:text-ink"
+          >
+            {archived ? "Jump to end of day" : "Return to live"}
+          </button>
+        ) : (
+          <span className="shrink-0 font-mono text-[10.5px] text-faint">{archived ? "day end" : "live"}</span>
+        )}
+      </div>
+
       <div
         className="relative mt-2.5"
         style={{ height: `${STRIP_PX}px` }}
@@ -360,68 +420,7 @@ export function Timeline({
 
       {children}
 
-      {/* The transport, on its own track rather than on the strip. Moving across the strip holds an hour,
-          and a drag that both held an hour and moved the cursor would be two meanings for one gesture. */}
-      <div className="mt-4 flex items-center gap-2">
-        <button
-          type="button"
-          onClick={onPlayToggle}
-          aria-label={playing ? "Pause" : "Play the window through"}
-          aria-keyshortcuts="Space"
-          // Same missing token and the same accident: a `dim` edge on a control whose neighbours are all
-          // hairline. The glyph is a symbol rather than a figure, so it sits on the sans step.
-          className="h-5 w-5 shrink-0 border border-hairline text-[11px] leading-none text-dim
-            hover:text-ink"
-        >
-          {playing ? "❚❚" : "▶"}
-        </button>
-        <input
-          type="range"
-          min={0}
-          max={1000}
-          step={1}
-          value={Math.round(cursor * 1000)}
-          onChange={(e) => onScrub(Number(e.target.value) / 1000)}
-          // Step by buckets so keyboard changes are visible even across a month.
-          onKeyDown={(e) => {
-            if (e.key === "Home" || e.key === "End") {
-              e.preventDefault();
-              if (e.key === "Home") onScrub(0);
-              else onLive();
-              return;
-            }
-            const by =
-              e.key === "ArrowRight" || e.key === "ArrowUp"
-                ? 1
-                : e.key === "ArrowLeft" || e.key === "ArrowDown"
-                  ? -1
-                  : 0;
-            if (by === 0) return;
-            e.preventDefault();
-            onStep(by);
-          }}
-          aria-label="Time in the window"
-          aria-valuetext={cursorLabel ?? (archived ? "End of day" : "Live")}
-          aria-keyshortcuts="ArrowLeft ArrowRight Home End Comma Period"
-          className="scrub-slider flex-1"
-        />
-        {parked ? (
-          <button
-            type="button"
-            onClick={onLive}
-            // The clock is already the headline's job, and printing it twice gave two readings of one
-            // number with nothing to say which was which.
-            className="shrink-0 font-mono text-[10.5px] text-dim hover:text-ink"
-          >
-            {archived ? "Jump to end of day" : "Return to live"}
-          </button>
-        ) : (
-          <span className="shrink-0 font-mono text-[10.5px] text-faint">{archived ? "day end" : "live"}</span>
-        )}
-      </div>
-
-      {/* Below the transport, not above: there it wrapped in the tablet column and pushed the transport
-          past the fold. Controls above, commentary below. */}
+      {/* Explanations follow the timeline; playback stays beside its window controls. */}
       {notable.length > 0 ? (
         <p className="mt-2 text-[11px] leading-relaxed text-faint">
           {notable.length === 1

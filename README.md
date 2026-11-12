@@ -26,15 +26,16 @@ do not support browser CORS. The local server supplies the same routes without a
 
 ## Observe and explore
 
-A fresh visit opens the observatory: a full globe, a short introduction, and three scenes.
+A fresh visit opens the observatory with the shared globe and the full story catalogue. No scene is
+preselected; choosing Live Earth, Below the Surface or After Dark opens that scene’s content immediately.
 **Explore** opens the scientific controls. The wordmark returns to the Live Earth landing view. Browser Back restores the previous view. Choose **Reset view** in Explore to clear the selection, filters, and held time and replay the globe’s arrival.
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
 **Save image** adds the displayed story’s title, time and source to supported canvas views.
 Photograph overlays and Sun Watch do not offer an incomplete canvas-only export.
 Use **Fullscreen** on desktop for a larger viewing area.
-Open **Stories & layers** in any scene to find tours, featured experiences, live observations, forecasts,
+**Stories & layers** starts open; it contains tours, featured experiences, live observations, forecasts,
 predictions, and replays. **View options** holds image and clip capture, fullscreen and the landing globe’s
-auto-rotation setting. Dragging pauses rotation; it resumes after five idle seconds.
+auto-rotation setting. Dragging pauses rotation; it resumes after 1.5 idle seconds.
 Search by subject, place, or year across all three scenes. The thumbnails are recorded views;
 open a story for its source, date, and current availability. Closing a story returns to its search
 result or drawer entry. **Keep exploring** offers a related view with context for its separate
@@ -159,6 +160,14 @@ Scenes are temporary: returning to Explore restores the saved layer and projecti
 Observe or Explore remembers that presentation; opening the app alone saves no new preference.
 
 ## Explore
+
+The rail starts with independent earthquake, tropical cyclone, wildfire, flood, volcano and aurora switches.
+Storm Radar opens its own scan timeline on the same globe. **All stories & data** returns to the full
+catalogue. Layer visibility stays on this device; shared event targets override a hidden layer.
+Earthquake controls fold out of the way when that layer is off, while the report time window remains.
+The feed counter covers seven automatically checked background sources. Other views check their own
+sources when opened; a recorded journey is not a live feed. Tropical cyclones are global GDACS reports,
+while Storm Radar currently uses NOAA’s contiguous-US radar mosaic.
 
 - Drag to orbit, scroll to zoom, or use the arrow keys and `+` / `-`. Press `0` to reset the camera.
 - Select an earthquake to pin its details and see each agency's original magnitude and scale.

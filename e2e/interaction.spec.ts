@@ -752,6 +752,7 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
   });
   await page.goto("/#at=0,0,1&m=2&w=24&s=usgs&r=thermal");
 
+  await page.getByText("More context", { exact: true }).click();
   const largest = page.getByRole("button", { name: /Largest/ });
   await expect(largest).toBeVisible({ timeout: 25_000 });
   await expect(largest).toContainText("6.3");
@@ -1405,6 +1406,7 @@ test("the largest event is a way in, in time as well as in space", async ({ page
   await page.goto("/");
   const live = await waitForData(page);
 
+  await page.getByText("More context", { exact: true }).click();
   const largest = page.locator('[data-rail="largest"]');
   await expect(largest).toContainText("6.4");
   await largest.click();
@@ -1444,7 +1446,8 @@ test("a section can be opened from the panel, not only by a gesture", async ({ p
   await page.goto("/");
   await waitForData(page);
 
-  // From the largest, which is in a margin and so has a trend to cut across.
+  // The context action must still reach the selected event.
+  await page.getByText("More context", { exact: true }).click();
   await page.locator('[data-rail="largest"]').click();
   const panel = page.locator(".zone-panel");
   await expect(panel).toBeVisible();
@@ -1485,7 +1488,7 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   await expect(slider).toBeVisible();
 
   // The feeds fold on their own, because they are set once. Behind the fold, not gone.
-  const feeds = only("Feeds and layers");
+  const feeds = only("Earthquake display & sky guides");
   await expect(feeds).toBeVisible();
   // `exact`, or the accessible name of every event row that names its agency matches too.
   const usgs = page.getByRole("button", { name: "USGS", exact: true });

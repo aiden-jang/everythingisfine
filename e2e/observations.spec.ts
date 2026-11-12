@@ -9,7 +9,7 @@ test("feed status names unavailable sources without increasing the background co
   const toggle = page.getByRole("button", { name: "Feed status, 6/7 available" });
   await expect(toggle.getByText("6/7", { exact: true })).toBeVisible();
   await toggle.press("Enter");
-  const panel = page.getByRole("region", { name: "Feed status", exact: true });
+  const panel = page.getByRole("region", { name: "Background feed status", exact: true });
   await expect(panel).toBeInViewport({ ratio: 1 });
   await expect(panel.getByRole("listitem")).toHaveCount(7);
   await expect(panel).toContainText("7 background feeds checked. 1 unavailable.");
