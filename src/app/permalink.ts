@@ -1,4 +1,4 @@
-import { LAT_LIMIT } from "../globe/framing";
+import { LAT_LIMIT, ZOOM_MAX } from "../globe/framing";
 import type { SourceId } from "../data/types";
 import type { RampName } from "../globe/ramp";
 import type { SectionLine } from "./section";
@@ -97,7 +97,7 @@ export function decode(fragment: string): Partial<Permalink> {
      * Sanity only. The real floor depends on the viewport, which the decoder does not have: it is 0.64
      * on a desktop map and 0.19 on a phone. `flyTo` re-clamps every shared camera against the live frame.
      */
-    out.zoom = clamp(at[2]!, 0.05, 3);
+    out.zoom = clamp(at[2]!, 0.05, ZOOM_MAX);
   }
 
   const m = Number(params.get("m"));

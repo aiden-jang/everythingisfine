@@ -90,7 +90,13 @@ export function ObservatoryScenePicker({
   onScene: (scene: EarthScene) => void;
 }): JSX.Element {
   return (
-    <div className="observatory-scenes" role="group" aria-label="Earth scenes">
+    <div
+      id="observatory-scenes"
+      tabIndex={-1}
+      className="observatory-scenes"
+      role="group"
+      aria-label="Earth scenes"
+    >
       {OBSERVATORY_SCENES.map((option) => (
         <button
           key={option.id}
@@ -103,7 +109,9 @@ export function ObservatoryScenePicker({
           aria-label={option.name}
           disabled={!ready}
           aria-describedby={
-            option.id === "depth" && ready && !deepAvailable ? "depth-availability" : undefined
+            option.id === "depth" && scene === "depth" && ready && !deepAvailable
+              ? "depth-availability"
+              : undefined
           }
         >
           <SceneDiagram scene={option.id} />

@@ -5,7 +5,12 @@ import { createLocalSkyCamera } from "./localSkyCamera";
 import type { CameraState, Controls, Framing } from "./controlsTypes";
 export type { CameraState, Controls } from "./controlsTypes";
 import { createPlanetarium } from "./planetarium";
-import { createGeographicProjection, createUnfoldCamera, perspectiveAngle } from "./cameraProjection";
+import {
+  createGeographicPicking,
+  createGeographicProjection,
+  createUnfoldCamera,
+  perspectiveAngle,
+} from "./cameraProjection";
 import { createDepthDive } from "./depthDive";
 import { createCameraRig } from "./cameraRig";
 import {
@@ -18,17 +23,14 @@ import {
 } from "./cameraFlight";
 import { LAT_LIMIT } from "./framing";
 import { createOrbitDistance } from "./orbitDistance";
-import { Raycaster, Vector2, Vector3, type PerspectiveCamera } from "three";
+import type { PerspectiveCamera } from "three";
 import { DEG, spanDeg, toVec3 } from "../geo/sphere";
-import { MAP_HALF_WIDTH, projectionMoving } from "./morph";
+import { MAP_HALF_WIDTH } from "./morph";
 
 /* Orbiting the globe, hand-written. OrbitControls slides a pan target, and on a sphere there is no target
    to slide - only a rotation that puts the same coastline back under the pointer. See ARCHITECTURE.md#srcglobecontrolsts. */
 
-/* Zoom is magnification: 1 is the framing shot, 2 is twice as close, distance is fit/zoom. Don't store
-   it as a multiple of the distance - the wheel handler duly zoomed out when scrolled up. */
-/* A long flight pulls back over the middle and settles, or arriving looks the same as nudging. Short
-   hops get none of it: a camera that dollies out for a nudge is drawing attention to itself. */
+// A long flight pulls back in the middle; short nudges keep their distance.
 const ARC_MIN_DEG = 25;
 const ARC_FULL_DEG = 110;
 /** Extra distance at the top of the arc, as a fraction of the flight's own magnification. */
@@ -75,9 +77,6 @@ export function createControls(
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   const guidance = createCameraGuidance();
 
-  const raycaster = new Raycaster();
-  const ndc = new Vector2();
-  const hit = new Vector3();
   const project = createGeographicProjection(camera, canvas);
   const unfold = createUnfoldCamera(camera);
   const interruptFraming = (): void => {
@@ -109,49 +108,7 @@ export function createControls(
 
   const angleAt = (px: number, atDist?: number): number => perspectiveAngle(px, atDist ?? dist(), focalPx());
 
-  /** Geographic point under a client-space pixel, or null if the ray misses the globe. */
-  const pick = (clientX: number, clientY: number): { lon: number; lat: number } | null => {
-    if (projectionMoving(morph)) return null;
-    const r = canvas.getBoundingClientRect();
-    ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
-    raycaster.setFromCamera(ndc, camera);
-
-    const o = raycaster.ray.origin;
-    const d = raycaster.ray.direction;
-
-    /*
-     * On the map the ray meets a plane, not a ball. Raycasting the sphere still returns an answer,
-     * which is worse than none: hover looked like it worked and named the wrong earthquake.
-     */
-    if (morph === 1) {
-      if (Math.abs(d.z) < 1e-6) return null;
-      const t = -o.z / d.z;
-      if (t < 0) return null;
-      const x = o.x + d.x * t;
-      const y = o.y + d.y * t;
-      if (Math.abs(y) > 1) return null;
-      return {
-        lon: (((((x / MAP_HALF_WIDTH) * 180 + 180) % 360) + 360) % 360) - 180,
-        lat: y * 90,
-      };
-    }
-
-    // Analytic against the unit sphere, not against the ocean mesh: tessellation cannot throw it off
-    // and it still answers while the mesh is rebuilding.
-    const b = o.dot(d);
-    const c = o.lengthSq() - 1;
-    const disc = b * b - c;
-    if (disc < 0) return null;
-
-    hit
-      .copy(d)
-      .multiplyScalar(-b - Math.sqrt(disc))
-      .add(o);
-    return {
-      lon: Math.atan2(hit.x, hit.z) / DEG,
-      lat: Math.asin(Math.max(-1, Math.min(1, hit.y))) / DEG,
-    };
-  };
+  const pick = createGeographicPicking(camera, canvas, () => morph);
 
   const apply = (): void => {
     if (morph > 0) {
@@ -209,23 +166,27 @@ export function createControls(
     });
   };
 
-  /*
-   * Through the spring, never straight onto the camera: assigning `zoom` gives a correct, anchored
-   * staircase. The anchoring solves against a hypothetical camera moved to where it is heading, which is
-   * what lets ten fast notches travel ten notches instead of racing the animation.
-   */
+  // Anchor against the pending pose so successive wheel events do not compound a moving reference.
   const zoomAt = (factor: number, clientX: number, clientY: number): void => {
     interruptFraming();
-    const before = pick(clientX, clientY);
+    const anchored = pick(clientX, clientY) !== null;
     const base = intended();
     const nextZoom = clampZoom(base.zoom * factor);
 
     const wasLon = lon;
     const wasLat = lat;
     const wasZoom = zoom;
+    const wasLens = camera.zoom;
     lon = base.lon;
     lat = base.lat;
+    zoom = base.zoom;
+    camera.zoom = (wasLens * distance.magnification(zoom, morph)) / distance.magnification(wasZoom, morph);
+    camera.updateProjectionMatrix();
+    apply();
+    const before = anchored ? pick(clientX, clientY) : null;
     zoom = nextZoom;
+    camera.zoom = (wasLens * distance.magnification(zoom, morph)) / distance.magnification(wasZoom, morph);
+    camera.updateProjectionMatrix();
     apply();
 
     if (before) {
@@ -251,6 +212,8 @@ export function createControls(
     lon = wasLon;
     lat = wasLat;
     zoom = wasZoom;
+    camera.zoom = wasLens;
+    camera.updateProjectionMatrix();
     apply();
     aim(dest);
   };
@@ -268,11 +231,9 @@ export function createControls(
       },
       drag: (prev, next, lastMove, elapsed) => {
         if (morph > 0.5) {
-          const perPixel = (2 * dist() * Math.tan((fovDeg / 2) * DEG)) / canvas.clientHeight;
+          const perPixel = dist() / focalPx();
           lon -= (((next.x - prev.x) * perPixel) / MAP_HALF_WIDTH) * 180;
-          const halfView = dist() * Math.tan((fovDeg / 2) * DEG);
-          const room = Math.max(0, 1 - halfView) * 90;
-          lat = Math.max(-room, Math.min(room, lat + (next.y - prev.y) * perPixel * 90));
+          lat = clampLat(lat + (next.y - prev.y) * perPixel * 90);
           lon = ((((lon + 180) % 360) + 360) % 360) - 180;
           vLon = vLat = 0;
         } else {
@@ -398,6 +359,7 @@ export function createControls(
       apply();
     },
     morph: () => morph,
+    magnification: () => distance.magnification(zoom, morph),
     setPlanetarium: (on) => {
       sky.set(on);
       if (morph === 0) sky.step(0, reduced.matches);

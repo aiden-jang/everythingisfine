@@ -2521,6 +2521,10 @@ and tour flights remain navigation. That explicit replay also clears any scene f
 
 ### src/globe/cameraProjection.ts
 
+Geographic picking and projection share the current camera matrices. Map drags convert pixels
+through the effective lens rather than assuming a unit camera zoom; latitude is bounded by the
+geographic limit, not snapped into a new viewport-dependent interval on the first drag.
+
 The sphere's perspective inverse uses the camera distance and focal length, with a linear continuation
 at the limb. Both drag anchoring and panel lift use it. The derivation remains under
 [controls](#srcglobecontrolsts), where those geographic interactions are coordinated.
@@ -2578,6 +2582,13 @@ Arrival callbacks still release playback when interrupted. Replay positions and 
 driving the camera during manual exploration. Orbital views retain their focus and honor zoom;
 Float Dive fades its screen-space water away to expose the geographic camera. Local sky and
 Moonfall keep their specialized direction and surface-route controls.
+
+### src/globe/orbitDistance.ts
+
+Globe zoom preserves the authored distance through 3×, then magnifies the lens through 12× while
+keeping the eye outside the atmosphere. The map interpolates to its own plane distance without the
+sphere’s altitude floor. Orbital scenes already zoom through distance around their own focus, so
+orbital framing blends out the extra globe lens to avoid applying magnification twice.
 
 ### src/globe/controls.ts
 

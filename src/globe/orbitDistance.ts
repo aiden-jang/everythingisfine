@@ -22,8 +22,12 @@ export function createOrbitDistance(camera: PerspectiveCamera, fovDeg: number) {
       heightFit = byHeight;
     },
     at(zoom: number, morph: number): number {
-      // Keep the camera outside the atmosphere even when fit changes under maximum magnification.
-      return Math.max(ORBIT_FLOOR, (fit + (mapFit() - fit) * morph) / zoom);
+      // Retain authored framing, then transfer extra magnification from the globe lens to map distance.
+      const framed = Math.max(ORBIT_FLOOR, (fit + (mapFit() - fit) * morph) / Math.min(3, zoom));
+      return Math.max(0.18, framed / Math.max(1, zoom / 3) ** morph);
+    },
+    magnification(zoom: number, morph: number): number {
+      return Math.max(1, zoom / 3) ** (1 - morph);
     },
     clamp(zoom: number, morph: number): number {
       // The globe has a fixed lower bound. A zoomed-out map can show a full repeated world.

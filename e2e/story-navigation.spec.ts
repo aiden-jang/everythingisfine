@@ -143,3 +143,71 @@ test("Float Dive yields to exploration without discarding the selected measureme
   await expect(depth).toHaveValue(held);
   expect((await pose(page)).manual).toBe(false);
 });
+
+for (const [id, title] of [
+  ["seafloor", "Seafloor Flight"],
+  ["katrina", "Eye of the Storm"],
+]) {
+  test(`${title} map dragging keeps geography beneath the pointer @dev`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 950 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await installFeeds(page, { presentation: "fresh", empty: true });
+    await page.goto(`/#v=observe&story=${id}`);
+    const panel = page.getByRole("region", { name: title!, exact: true });
+    await expect(panel.getByRole("slider").first()).toBeVisible();
+    await panel.getByRole("button", { name: "Map", exact: true }).click();
+    await expect.poll(async () => (await pose(page)).map).toBe(1);
+    const anchor = await page.evaluate(() =>
+      (
+        window as unknown as {
+          __globe: { pick: (x: number, y: number) => { lon: number; lat: number } | null };
+        }
+      ).__globe.pick(1000, 350),
+    );
+    expect(anchor).not.toBeNull();
+    await page.mouse.move(1000, 350);
+    await page.mouse.down();
+    await page.mouse.move(1060, 374, { steps: 6 });
+    await page.mouse.up();
+    const moved = await page.evaluate(
+      (point) =>
+        (
+          window as unknown as {
+            __globe: { project: (lon: number, lat: number) => { x: number; y: number } };
+          }
+        ).__globe.project(point!.lon, point!.lat),
+      anchor,
+    );
+    expect(moved.x).toBeCloseTo(1060, 0);
+    expect(moved.y).toBeCloseTo(374, 0);
+    await expect(page.getByRole("button", { name: "Recenter", exact: true })).toBeVisible();
+  });
+}
+
+test("globe and map use the wider zoom range and preserve it in shared links @dev", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh" });
+  await page.goto("/#v=explore&at=0,0,3");
+  await expect.poll(async () => (await pose(page)).zoom).toBe(3);
+  const apparentWidth = () =>
+    page.evaluate(() => {
+      const c = (
+        window as unknown as { __globe: { project: (lon: number, lat: number) => { x: number; y: number } } }
+      ).__globe;
+      return c.project(1, 0).x - c.project(-1, 0).x;
+    });
+  const before = await apparentWidth();
+  await page.locator("#globe-view").focus();
+  for (let i = 0; i < 7; i++) await page.keyboard.press("+");
+  await expect.poll(async () => (await pose(page)).zoom).toBe(12);
+  await expect.poll(apparentWidth).toBeGreaterThan(before * 3.5);
+  for (let i = 0; i < 20; i++) await page.keyboard.press("-");
+  await expect.poll(async () => (await pose(page)).zoom).toBe(0.4);
+  await page.goto("/#v=explore&p=map&at=0,30,10");
+  await expect.poll(async () => (await pose(page)).zoom).toBe(10);
+  await expect.poll(async () => (await pose(page)).map).toBe(1);
+  await page.reload();
+  await expect.poll(async () => (await pose(page)).zoom).toBe(10);
+  expect((await pose(page)).lat).toBeCloseTo(30, 1);
+});

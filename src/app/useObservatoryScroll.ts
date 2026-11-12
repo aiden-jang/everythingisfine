@@ -10,7 +10,7 @@ export function useObservatoryScroll(
   useLayoutEffect(() => {
     controls.current?.scrollTo(0, browsing ? (scroll.current ?? 0) : 0);
     controls.current?.querySelector<HTMLElement>(".observatory-story")?.scrollTo(0, 0);
-    // Opening the default library must not scroll past the introduction; an explicit choice should reveal it.
+    // Restoring a catalogue keeps its scroll; an explicit scene choice reveals the search field.
     if (browsing && reveal.current) {
       reveal.current = false;
       controls.current?.querySelector<HTMLInputElement>('input[name="story"]')?.scrollIntoView({

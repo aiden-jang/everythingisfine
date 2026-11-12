@@ -158,7 +158,9 @@ Scene navigation stores camera and logical view snapshots in memory; browser his
 an opaque entry identifier. Snapshots omit bitmaps and lunar rendering resources. Moonfall restores
 its traverse, distance and projection on a fresh lunar scene, and Float Dive restores its paused sample.
 The shared-link writer preserves that history state. The title clears story browsing
-and returns to the Live Earth overview without replaying the entrance or replacing the canvas.
+and returns to the compact Live Earth overview without replaying the entrance or replacing the canvas.
+Scene buttons toggle their catalogue; the initial overview has none selected. Explore’s catalogue
+entry explicitly opens the all-scenes browser.
 
 The `src/app/journeys/` catalogue provides guided paths and a contextual onward link for each story.
 It is separate from `src/app/journeys.ts`, which selects scientific readings for the narrated globe

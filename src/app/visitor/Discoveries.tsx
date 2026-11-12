@@ -51,7 +51,7 @@ export function Discoveries({
       {!aurora.unavailable && aurora.forecastAt !== undefined && (
         <button
           type="button"
-          onClick={() => navigation.open("aurora", "open-observations")}
+          onClick={() => navigation.open("aurora", "observatory-scenes")}
           disabled={!!navigation.unavailable("aurora")}
         >
           <span>

@@ -9,6 +9,9 @@ export function createOrbitalFraming() {
   const target = new Vector3();
   let dirty = false;
   return {
+    magnification(gain: number, morph: number) {
+      return 1 + (gain - 1) * (1 - amount * (1 - morph));
+    },
     set(orbit: ObservationFrame["orbit"]) {
       if (orbit && !goal && amount === 0) {
         focus.fromArray(orbit.focus);

@@ -52,7 +52,7 @@ export function ObservationDeckShell({
   const close = () => {
     onClose();
     requestAnimationFrame(() =>
-      document.getElementById(deck.trigger ?? "open-observations")?.focus({ preventScroll: !fromExplore }),
+      document.getElementById(deck.trigger ?? "observatory-scenes")?.focus({ preventScroll: !fromExplore }),
     );
   };
   const closeLabel = deck.trigger?.startsWith("event-story-")

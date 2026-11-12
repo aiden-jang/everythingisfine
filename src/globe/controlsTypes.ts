@@ -40,6 +40,7 @@ export interface Controls {
   /** 0 globe, 1 map. Drag becomes a pan and the facing tests fade out as this reaches 1. */
   setMorph: (t: number) => void;
   morph: () => number;
+  magnification: () => number;
   setPlanetarium: (on: boolean) => void;
   setLocalSky: (view: TonightView | null, restore: boolean) => void;
   localSky: { amount: () => number; ready: () => boolean; up: Vector3 };

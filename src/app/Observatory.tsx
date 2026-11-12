@@ -56,6 +56,7 @@ export interface ObservatoryProps {
   >;
   radar: ReturnType<typeof useObservatory>["radar"];
   onScene: (scene: EarthScene) => void;
+  onHome: () => void;
   onExplore: () => void;
   onPickDate: () => void;
   tour: {
@@ -107,12 +108,13 @@ function ObservatoryContent({
   radar,
   feedNote,
   onScene,
+  onHome,
   onExplore,
   onPickDate,
   tour,
   onHistory,
 }: ObservatoryProps): JSX.Element {
-  const { open: stories, setOpen: setStories, scroll: storyScroll } = browser;
+  const { open: stories, scroll: storyScroll } = browser;
   const active = tour.at !== null;
   const solar = sun.active && !active;
   const browsing =
@@ -277,22 +279,9 @@ function ObservatoryContent({
                     <button type="button" onClick={onExplore} className="observatory-primary">
                       Explore the globe <span aria-hidden="true">↗</span>
                     </button>
-                    {!aurora.run && (
-                      <button
-                        type="button"
-                        id="open-observations"
-                        aria-controls={stories && !solar ? "stories-panel" : undefined}
-                        aria-expanded={solar ? undefined : stories}
-                        onClick={
-                          solar
-                            ? closeSun
-                            : () => {
-                                if (!stories) revealStories();
-                                setStories(!stories);
-                              }
-                        }
-                      >
-                        {solar ? "Back to stars" : "Stories & layers"}
+                    {solar && (
+                      <button type="button" id="back-to-stars" onClick={closeSun}>
+                        Back to stars
                       </button>
                     )}
                   </div>
@@ -312,6 +301,10 @@ function ObservatoryContent({
                   ready={ready}
                   deepAvailable={deepAvailable}
                   onScene={(next) => {
+                    if (browser.category === next) {
+                      onHome();
+                      return;
+                    }
                     revealStories();
                     observations.setQuery("");
                     browser.select(next);
@@ -319,7 +312,7 @@ function ObservatoryContent({
                   }}
                 />
               )}
-              {!active && !solar && !aurora.run && ready && !deepAvailable && (
+              {browsing && scene === "depth" && ready && !deepAvailable && (
                 <p id="depth-availability" className="observatory-depth-note">
                   No earthquake at least 70 km deep in this window. Recorded depth stories are still
                   available.
@@ -340,8 +333,8 @@ function ObservatoryContent({
                     storyScroll.current = tour.controls.current?.scrollTop ?? 0;
                   }}
                   onDismiss={() => {
-                    setStories(false);
-                    document.getElementById("open-observations")?.focus();
+                    onHome();
+                    document.getElementById("observatory-scenes")?.focus();
                   }}
                 >
                   <div className="observatory-actions">

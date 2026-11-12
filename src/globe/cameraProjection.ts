@@ -1,6 +1,6 @@
-import { Vector3, type PerspectiveCamera } from "three";
+import { Raycaster, Vector2, Vector3, type PerspectiveCamera } from "three";
 import { DEG } from "../geo/sphere";
-import { MAP_HALF_WIDTH, mapRepeatSpacing, unfoldPoint } from "./morph";
+import { MAP_HALF_WIDTH, mapRepeatSpacing, projectionMoving, unfoldPoint } from "./morph";
 
 const wrap = (lon: number): number => lon - 360 * Math.floor((lon + 180) / 360);
 
@@ -82,5 +82,58 @@ export function createUnfoldCamera(camera: PerspectiveCamera) {
       camera.lookAt(target);
       camera.rotateZ(-0.065 * pullback);
     },
+  };
+}
+
+/** Read the geographic surface beneath a pixel in either projection. */
+export function createGeographicPicking(
+  camera: PerspectiveCamera,
+  canvas: HTMLCanvasElement,
+  morph: () => number,
+) {
+  const raycaster = new Raycaster();
+  const ndc = new Vector2();
+  const hit = new Vector3();
+  return (clientX: number, clientY: number): { lon: number; lat: number } | null => {
+    if (projectionMoving(morph())) return null;
+    const r = canvas.getBoundingClientRect();
+    ndc.set(((clientX - r.left) / r.width) * 2 - 1, -((clientY - r.top) / r.height) * 2 + 1);
+    raycaster.setFromCamera(ndc, camera);
+
+    const o = raycaster.ray.origin;
+    const d = raycaster.ray.direction;
+
+    /*
+     * On the map the ray meets a plane, not a ball. Raycasting the sphere still returns an answer,
+     * which is worse than none: hover looked like it worked and named the wrong earthquake.
+     */
+    if (morph() === 1) {
+      if (Math.abs(d.z) < 1e-6) return null;
+      const t = -o.z / d.z;
+      if (t < 0) return null;
+      const x = o.x + d.x * t;
+      const y = o.y + d.y * t;
+      if (Math.abs(y) > 1) return null;
+      return {
+        lon: (((((x / MAP_HALF_WIDTH) * 180 + 180) % 360) + 360) % 360) - 180,
+        lat: y * 90,
+      };
+    }
+
+    // Analytic against the unit sphere, not against the ocean mesh: tessellation cannot throw it off
+    // and it still answers while the mesh is rebuilding.
+    const b = o.dot(d);
+    const c = o.lengthSq() - 1;
+    const disc = b * b - c;
+    if (disc < 0) return null;
+
+    hit
+      .copy(d)
+      .multiplyScalar(-b - Math.sqrt(disc))
+      .add(o);
+    return {
+      lon: Math.atan2(hit.x, hit.z) / DEG,
+      lat: Math.asin(Math.max(-1, Math.min(1, hit.y))) / DEG,
+    };
   };
 }

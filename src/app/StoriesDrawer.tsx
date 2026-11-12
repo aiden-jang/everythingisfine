@@ -138,7 +138,7 @@ export function StoriesDrawer({
                       ready={ready}
                       open={() => {
                         sun.toggle();
-                        requestAnimationFrame(() => document.getElementById("open-observations")?.focus());
+                        requestAnimationFrame(() => document.getElementById("back-to-stars")?.focus());
                       }}
                     />
                   </Group>

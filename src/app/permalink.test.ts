@@ -101,7 +101,7 @@ describe("permalinks", () => {
     // people edit them, and an old link outlives the shape it was written against.
     expect(out.lon).toBeCloseTo(-81, 5);
     expect(out.lat).toBe(-85);
-    expect(out.zoom).toBe(3);
+    expect(out.zoom).toBe(12);
   });
 
   it("drops a source or ramp it does not recognise", () => {
@@ -250,7 +250,7 @@ describe("bounds read from the controls rather than restated", () => {
     // stop the camera ending up inside the planet or a million radii away.
     expect(decode("at=0,0,0").zoom).toBe(0.05);
     expect(decode("at=0,0,-4").zoom).toBe(0.05);
-    expect(decode("at=0,0,1e9").zoom).toBe(3);
+    expect(decode("at=0,0,1e9").zoom).toBe(12);
   });
 
   it("clamps latitude to the limit the camera actually has", () => {

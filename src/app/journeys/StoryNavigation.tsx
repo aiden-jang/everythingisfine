@@ -50,7 +50,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   }, [active, route]);
   const unavailable = (id: string) =>
     !props.ready ? "The globe is still opening." : id === "aurora" ? props.aurora.unavailable : null;
-  function navigate(id: string, trigger = "open-observations", saved?: Visit) {
+  function navigate(id: string, trigger = "observatory-scenes", saved?: Visit) {
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
     props.onScene(story.scene);
@@ -72,7 +72,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         ...memory,
         resume(visit) {
           setRoute(null);
-          navigate(visit.id, "open-observations", visit);
+          navigate(visit.id, "observatory-scenes", visit);
         },
         route:
           route && journeys.find((journey) => journey.id === route.id)?.steps[route.step]?.id === active

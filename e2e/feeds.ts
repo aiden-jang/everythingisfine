@@ -471,14 +471,14 @@ export async function openStories(page: Page) {
   const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
   if ((await scenes.isVisible()) && (await scenes.locator('[aria-pressed="true"]').count()) === 0)
     await page.getByRole("button", { name: "Live Earth", exact: true }).click();
-  const toggle = page.getByRole("button", { name: "Stories & layers", exact: true });
-  if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
-  return toggle;
+  const catalogue = page.getByRole("region", { name: "Stories and layers", exact: true });
+  await expect(catalogue).toBeVisible();
+  return scenes;
 }
 
 export async function revealStoryTools(page: Page) {
-  const toggle = page.getByRole("button", { name: "Stories & layers", exact: true });
-  if (await toggle.isVisible()) await openStories(page);
+  if (await page.getByRole("group", { name: "Earth scenes", exact: true }).isVisible())
+    await openStories(page);
 }
 export async function saveImageButton(page: Page) {
   const toggle = page.getByRole("button", { name: "View options", exact: true });

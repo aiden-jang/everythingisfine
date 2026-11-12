@@ -8,7 +8,7 @@ test("a fresh overview exposes every scene and selecting one opens its content @
   const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
-  await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toHaveCount(0);
   const explore = await page.getByRole("button", { name: "Explore the globe", exact: true }).boundingBox();
   const picker = await scenes.boundingBox();
   expect(explore!.y + explore!.height).toBeLessThan(picker!.y);
@@ -17,10 +17,11 @@ test("a fresh overview exposes every scene and selecting one opens its content @
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
   await page.goBack();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
+  await page.getByRole("button", { name: "Live Earth", exact: true }).click();
   await page.getByRole("button", { name: "Storm Radar", exact: true }).click();
   await page.getByRole("button", { name: "Back to Live Earth", exact: true }).click();
-  await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
-  await expect(page.locator("#overview-story-radar")).toBeFocused();
+  await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
+  await expect(page.locator("#open-storm-radar")).toBeFocused();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
@@ -92,4 +93,17 @@ test("Explore switches independent layers without rebuilding the globe @dev", as
   await expect(storms).toHaveAttribute("aria-pressed", "false");
   await layers.getByRole("button", { name: /All stories & data/ }).click();
   await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toBeVisible();
+});
+
+test("the full catalogue returns to its original entry after a story @dev", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: /All stories & data/ }).click();
+  const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
+  const radar = page.locator("#overview-story-radar");
+  await radar.click();
+  await page.getByRole("button", { name: "Back to Live Earth", exact: true }).click();
+  await expect(radar).toBeFocused();
+  await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
 });

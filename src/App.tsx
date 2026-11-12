@@ -509,7 +509,10 @@ export function App(): JSX.Element {
     if (next.scene === "live" && archived) backToLive();
     flyTo.current(...next.camera);
   };
-
+  function returnHome() {
+    observatory.home(stopTour);
+    flyTo.current(145, 12, 1);
+  }
   const section = useMemo(
     () =>
       sectionLine
@@ -525,7 +528,6 @@ export function App(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [feed.store, sectionLine, filters, snapshot.revision, slabOn, slabData],
   );
-
   useEffect(() => {
     if (!missingShared) return;
     const [source, id] = missingShared.split(":") as [SourceId, string];
@@ -1022,10 +1024,7 @@ export function App(): JSX.Element {
         rotation={observatory.rotation}
         ready={observatory.canCapture}
         observing={observatory.observing}
-        onHome={() => {
-          observatory.home(stopTour);
-          flyTo.current(145, 12, 1);
-        }}
+        onHome={returnHome}
         onReset={resetView}
         {...{
           headShown,
@@ -1087,6 +1086,7 @@ export function App(): JSX.Element {
             feedNote={observatoryFeedNote(snapshot.statuses, feeds.silent)}
             deepAvailable={journey.deepest !== null}
             onScene={chooseEarthScene}
+            onHome={returnHome}
             onExplore={openExplorer}
             onPickDate={() => {
               openExplorer();
@@ -1173,7 +1173,7 @@ export function App(): JSX.Element {
             feeds={feeds}
             archived={archived}
             onRadar={() => observatory.radar.open()}
-            onBrowse={() => observatory.home(stopTour)}
+            onBrowse={() => observatory.home(stopTour, true)}
           />
           <HazardList hazards={hazards} markId={markId} onHazard={selectMark} />
           {mapLayers.enabled.earthquakes && (

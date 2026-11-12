@@ -217,12 +217,12 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
+  await page.getByRole("button", { name: "Below the Surface", exact: true }).click();
   await expect(
     page.getByText(
       "No earthquake at least 70 km deep in this window. Recorded depth stories are still available.",
     ),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Below the Surface", exact: true }).click();
   await expect(page.getByRole("button", { name: "Rupture Reveal", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Explore the globe" }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();

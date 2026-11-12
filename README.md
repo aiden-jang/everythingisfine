@@ -26,15 +26,16 @@ do not support browser CORS. The local server supplies the same routes without a
 
 ## Observe and explore
 
-A fresh visit opens the observatory with the shared globe and the full story catalogue. No scene is
-preselected; choosing Live Earth, Below the Surface or After Dark opens that scene’s content immediately.
+A fresh visit opens a compact introduction beside the shared globe, with no scene selected.
+Choosing Live Earth, Below the Surface or After Dark opens its content immediately; choosing the
+selected scene again collapses the catalogue and returns to the introduction.
 **Explore** opens the scientific controls. The wordmark returns to the Live Earth landing view. Browser Back restores the previous view. Choose **Reset view** in Explore to clear the selection, filters, and held time and replay the globe’s arrival.
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
 **Save image** adds the displayed story’s title, time and source to supported canvas views.
 Photograph overlays and Sun Watch do not offer an incomplete canvas-only export.
 Use **Fullscreen** on desktop for a larger viewing area.
-**Stories & layers** starts open; it contains tours, featured experiences, live observations, forecasts,
-predictions, and replays. **View options** holds image and clip capture, fullscreen and the landing globe’s
+Each scene contains tours, featured experiences, live observations, forecasts, predictions, and
+replays. Explore also offers a direct entry to the full catalogue. **View options** holds image and clip capture, fullscreen and the landing globe’s
 auto-rotation setting. Dragging pauses rotation; it resumes after 1.5 idle seconds.
 Search by subject, place, or year across all three scenes. The thumbnails are recorded views;
 open a story for its source, date, and current availability. Closing a story returns to its search
@@ -178,10 +179,12 @@ contiguous-US detail view. Uncovered areas are marked, rather than presented as 
 - Drag to orbit, scroll to zoom, or use the arrow keys and `+` / `-`. Press `0` to reset the camera.
 - Select an earthquake to pin its details and see each agency's original magnitude and scale.
 - Change magnitude, feeds, or the time window. Search by region or place.
+- Zoom from a wide overview to 12× with the wheel, pinch or keyboard. On the map, dragging follows
+  the pointer at the current magnification.
 - Choose **Map** to unfold the globe at its seam. Choose **Globe** to wrap it back up. On the flat map,
   draw a cross-section with Shift-drag. Release the line to fold it open into the depth chart.
 - Browse any completed UTC day, including notable earthquakes and eclipses. Find the total eclipse
-  of 8 April 2024 under **Stories & layers → Replays** in the Observatory or **Eclipses** in Explore. Choose
+  of 8 April 2024 under **Live Earth → Replays** in the Observatory or **Eclipses** in Explore. Choose
   **Watch eclipse** in Globe view, then pause or scrub to follow the shadow at a specific UTC time.
 - Pin an earthquake and open **Follow the wave**. Pick a nearby city to see the estimated P and
   S arrivals, with a fixed overview under reduced motion. The city picker lists up to six places

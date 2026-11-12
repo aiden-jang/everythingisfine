@@ -247,7 +247,9 @@ export function createScenePresentation(
       const target = lens
         ? (lens.globe + (lens.map - lens.globe) * projection.value) * Math.min(1, camera.aspect)
         : 1;
-      const zoom = target ** (lensReveal * lensReveal * (3 - 2 * lensReveal));
+      const zoom =
+        target ** (lensReveal * lensReveal * (3 - 2 * lensReveal)) *
+        orbital.magnification(controls.magnification(), projection.value);
       if (camera.zoom !== zoom) {
         camera.zoom = zoom;
         camera.updateProjectionMatrix();

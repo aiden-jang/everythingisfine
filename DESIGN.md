@@ -146,15 +146,16 @@ On wide screens, the introduction and globe occupy separate columns. On phones, 
 above a bounded introduction with owned scrolling. The globe stage carries a UTC readout and one
 scene-specific reference. The three scene controls share a quiet ruled strip with a clear active
 underline and a small globe, depth or constellation diagram. A finite trace marks a selection;
-reduced motion keeps the diagram still. Featured journeys live in the open Stories & layers list.
+reduced motion keeps the diagram still. Featured journeys live inside the selected scene’s catalogue.
 Controls stay reachable in short landscape views.
 Live Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
 Their temporary overrides do not overwrite saved scientific settings. The observatory retains source
 status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
-Keep tours, featured experiences and the full selection in **Stories & layers**, grouped by data type.
+Keep tours, featured experiences and the full selection inside each scene, grouped by data type.
 **Explore the globe** comes before the three illustrated scene filters. The landing overview starts
-with none selected and Stories & layers open. Selecting a scene immediately exposes its entries and brings
-the search field into view on narrow screens. Initial load preserves the introduction. Closing an
+with none selected and the catalogue collapsed. Selecting a scene exposes its entries and brings
+the search field into view on narrow screens; selecting it again returns to the compact landing view.
+There is no separate disclosure button for content the scene selection already opens. Closing an
 experience returns focus to its entry point and restores the drawer’s scroll position.
 Story thumbnails show recorded captures of their actual views. Guided journeys use the drawer’s
 existing quiet rows and each story’s reading panel, with manual steps, visible source context and
@@ -214,7 +215,10 @@ The opening is a finite horizon-to-orbit shot with a close lens, a vertical fram
 settling bank. **Reset view** can replay it. Navigation retains critically damped springs: long
 flights pull back and bank proportionally; short hops remain direct. Grabbing or steering interrupts
 the shot, and its lens offset settles independently. The flat map clears the cinematic lens.
-Camera keys, pointer, touch and wheel preserve the same bounds and motion policy.
+Camera keys, pointer, touch and wheel preserve the same bounds and motion policy. Zoom spans 0.4×
+to 12× on the globe, using lens magnification for close views without entering the atmosphere. The
+map has its own plane distance and a viewport-aware overview; panning follows screen pixels at the
+actual lens magnification and never snaps latitude to a newly calculated viewport boundary.
 Lost focus, backgrounding and dialog changes release held input.
 
 After Dark pitches the actual camera toward the sky, leaving Earth as a curved horizon.
@@ -394,7 +398,7 @@ the view, or changing the profile or harbor. It is not a field recording, and ne
 
 ## Discovery and return visits
 
-The landing stays quiet. Stories & layers gives each scene one featured entry, a compact current-data
+The landing stays quiet. The selected scene exposes one featured entry, a compact current-data
 discovery list, and returning visitors their recent views. Sources and times explain why a suggestion
 is relevant; no new feed or fabricated highlight is required. Saved views are local and removable.
 A save confirms what was retained, while unavailable historical live scans explain the fallback.

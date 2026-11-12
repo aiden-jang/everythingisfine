@@ -81,7 +81,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     restore: restorePresentation,
   } = usePresentation(() => initialPresentation(shared), clearViews, before);
   const [browser, setBrowser] = useState({
-    open: true,
+    open: !!shared.story,
     home: 0,
     category: shared.story ? scene : (null as EarthScene | null),
   });
@@ -92,7 +92,11 @@ export function useObservatory(shared: Partial<Permalink>) {
     (next: EarthScene, at: CutawayFocus | null = null) => {
       before();
       setScene(next);
-      setBrowser((value) => ({ ...value, open: true, category: value.category === null ? null : next }));
+      setBrowser((value) => ({
+        ...value,
+        open: true,
+        category: value.open && value.category === null ? null : next,
+      }));
       setFocus(at);
       setTourStop(null);
       setRun(null);
@@ -142,21 +146,17 @@ export function useObservatory(shared: Partial<Permalink>) {
       ...browser,
       scroll: browserScroll,
       select: (category: EarthScene) => setBrowser((value) => ({ ...value, open: true, category })),
-      setOpen: (open: boolean) => {
-        before();
-        setBrowser((value) => ({ ...value, open }));
-      },
     },
     checkpoint,
     visitCheckpoint,
-    home(prepare: () => void) {
+    home(prepare: () => void, browse = false) {
       before();
       sharedView.current = false;
       browserScroll.current = 0;
       observations.setQuery("");
       observeScene(() => {
         chooseScene("live");
-        setBrowser((value) => ({ open: true, home: value.home + 1, category: null }));
+        setBrowser((value) => ({ open: browse, home: value.home + 1, category: null }));
         prepare();
       });
     },
@@ -334,7 +334,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         if (radarOrigin.current === "explore") changePresentation("explore", true, undefined, false);
         else {
           setRadarView(null);
-          if (radarEntry.current.story) observations.open("atmospheric-river", "open-observations");
+          if (radarEntry.current.story) observations.open("atmospheric-river", "observatory-scenes");
         }
       },
       update: updateRadar,

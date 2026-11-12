@@ -65,7 +65,7 @@ test("related stories cross scenes and return to an available catalogue control"
   await page.getByRole("button", { name: /^Lights Return/ }).click();
   await expect(page.getByRole("heading", { name: "Lights Return", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /Back to After Dark/ }).click();
-  await expect(page.getByRole("button", { name: "Stories & layers", exact: true })).toBeFocused();
+  await expect(page.getByRole("group", { name: "Earth scenes", exact: true })).toBeFocused();
 });
 
 for (const view of ["Meteor Nights", "Moonfall"] as const) {

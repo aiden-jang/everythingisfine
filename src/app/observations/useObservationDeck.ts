@@ -81,7 +81,7 @@ export function useObservationDeck(shared?: StoryMoment, before = () => {}) {
       closeView();
       setTrigger(null);
       requestAnimationFrame(() => {
-        const target = [origin, fallback, "open-observations"]
+        const target = [origin, fallback, "observatory-scenes"]
           .map((id) => (id ? document.getElementById(id) : null))
           .find((element) => element?.getClientRects().length);
         target?.focus({ preventScroll: true });
