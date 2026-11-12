@@ -54,11 +54,6 @@ export interface Controls {
   project: (lon: number, lat: number, radius?: number) => { x: number; y: number } | null;
   /** Degrees of map covered by one screen pixel. Only meaningful once flat. See ARCHITECTURE.md#srcglobecontrolsts. */
   degPerPx: (atZoom?: number) => number;
-  /**
-   * How far around the globe a pixel offset from the centre actually is.
-   *
-   * Not `degPerPx * px`. That is the flat map's straight line; this camera sits about two radii out, so
-   * the sphere's curve decides, and the two disagree threefold at the distances a panel lift asks about.
-   */
+  /** Pixel offset in degrees: spherical perspective blends into a straight line as the map unfolds. */
   degForPx: (px: number, atZoom?: number) => number;
 }

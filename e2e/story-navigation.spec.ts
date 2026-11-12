@@ -1,8 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, openStories, revealStoryTools } from "./feeds";
 
-const pose = (page: Page) =>
-  page.evaluate(() => {
+const pose = async (page: Page) => {
+  await page.waitForFunction(() => Boolean((window as unknown as { __globe?: unknown }).__globe));
+  return page.evaluate(() => {
     const controls = (
       window as unknown as {
         __globe: {
@@ -14,6 +15,7 @@ const pose = (page: Page) =>
     ).__globe;
     return { ...controls.state(), map: controls.morph(), manual: controls.guidance.read() };
   });
+};
 
 async function wheel(page: Page, x = 1050, y = 350) {
   await page.mouse.move(x, y);

@@ -8,7 +8,7 @@ const MAX_LIFT_DEG = 22;
 
 export function createFlightTarget(controls: Controls, wake: () => void, reveal: () => void): FlyTo {
   return (lon, lat, zoom, liftPx, entrance) => {
-    // Pixel lift uses the sphere's perspective, not the flat map's degrees-per-pixel approximation.
+    // The lift follows the current projection; a close map has no spherical horizon.
     if (liftPx)
       lat = Math.max(
         -LAT_LIMIT,

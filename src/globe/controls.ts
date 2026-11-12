@@ -25,7 +25,6 @@ import { LAT_LIMIT } from "./framing";
 import { createOrbitDistance } from "./orbitDistance";
 import type { PerspectiveCamera } from "three";
 import { DEG, spanDeg, toVec3 } from "../geo/sphere";
-import { MAP_HALF_WIDTH } from "./morph";
 
 /* Orbiting the globe, hand-written. OrbitControls slides a pan target, and on a sphere there is no target
    to slide - only a rotation that puts the same coastline back under the pointer. See ARCHITECTURE.md#srcglobecontrolsts. */
@@ -106,7 +105,12 @@ export function createControls(
    */
   const focalPx = (): number => (camera.zoom * canvas.clientHeight) / (2 * Math.tan((fovDeg / 2) * DEG));
 
-  const angleAt = (px: number, atDist?: number): number => perspectiveAngle(px, atDist ?? dist(), focalPx());
+  // Blend the two projections' navigation scales; the unfolding camera can be inside a unit sphere.
+  const angleAt = (px: number, atZoom = zoom): number => {
+    const globe = perspectiveAngle(px, distance.at(atZoom, 0), focalPx());
+    const map = ((px * distance.at(atZoom, 1)) / focalPx()) * 90 * DEG;
+    return globe + (map - globe) * morph;
+  };
 
   const pick = createGeographicPicking(camera, canvas, () => morph);
 
@@ -230,26 +234,21 @@ export function createControls(
         vLon = vLat = vZoom = 0;
       },
       drag: (prev, next, lastMove, elapsed) => {
-        if (morph > 0.5) {
-          const perPixel = dist() / focalPx();
-          lon -= (((next.x - prev.x) * perPixel) / MAP_HALF_WIDTH) * 180;
-          lat = clampLat(lat + (next.y - prev.y) * perPixel * 90);
+        const r = canvas.getBoundingClientRect();
+        const cx = r.left + r.width / 2,
+          cy = r.top + r.height / 2;
+        const swept = (from: number, to: number, centre: number): number =>
+          (angleAt(to - centre) - angleAt(from - centre)) / DEG;
+        const lonScale = 1 + (1 - morph) * (1 / Math.max(0.25, Math.cos(lat * DEG)) - 1);
+        lon -= swept(prev.x, next.x, cx) * lonScale;
+        lat = clampLat(lat + swept(prev.y, next.y, cy));
+        if (morph > 0) {
           lon = ((((lon + 180) % 360) + 360) % 360) - 180;
           vLon = vLat = 0;
-        } else {
-          const r = canvas.getBoundingClientRect();
-          const cx = r.left + r.width / 2,
-            cy = r.top + r.height / 2;
-          const swept = (from: number, to: number, centre: number): number =>
-            (angleAt(to - centre) - angleAt(from - centre)) / DEG;
-          const lonScale = 1 / Math.max(0.25, Math.cos(lat * DEG));
-          lon -= swept(prev.x, next.x, cx) * lonScale;
-          lat = clampLat(lat + swept(prev.y, next.y, cy));
-          if (elapsed > 0.004) {
-            const cap = (v: number) => Math.max(-MOMENTUM_MAX, Math.min(MOMENTUM_MAX, v));
-            vLon = cap((-swept(lastMove.x, next.x, cx) * lonScale) / elapsed);
-            vLat = cap(swept(lastMove.y, next.y, cy) / elapsed);
-          }
+        } else if (elapsed > 0.004) {
+          const cap = (v: number) => Math.max(-MOMENTUM_MAX, Math.min(MOMENTUM_MAX, v));
+          vLon = cap((-swept(lastMove.x, next.x, cx) * lonScale) / elapsed);
+          vLat = cap(swept(lastMove.y, next.y, cy) / elapsed);
         }
         apply();
       },
@@ -391,7 +390,7 @@ export function createControls(
     // Visible height at distance d is 2 d tan(fov/2), and `focalPx` is the reciprocal half of that, so
     // a pixel is d/focalPx world units and a world unit is 90 degrees.
     degPerPx: (atZoom) => (90 * (atZoom === undefined ? dist() : distAt(atZoom))) / focalPx(),
-    degForPx: (px, atZoom) => angleAt(px, atZoom === undefined ? undefined : distAt(atZoom)) / DEG,
+    degForPx: (px, atZoom) => angleAt(px, atZoom) / DEG,
     setFit: (d, byHeight) => {
       distance.fit(d, byHeight);
       apply();
