@@ -3064,9 +3064,12 @@ Tōhoku depth cutaway are insets over the same canvas.
 Storm Radar uses the same scene and camera as the other Observatory views. The raster follows its
 provider's bounds and projection. The shared scan player owns decoded images; the renderer owns only
 the selected texture. A missing image clears that texture while retaining the scan time. The catalogue's
-cinematic `radar` view hides event marks and suspends picking. Explore uses `radar-layer`, which leaves
+cinematic `radar` view hides event marks and suspends picking. Explore uses `map-layers`, which leaves
 the camera, event catalogue and picking alone. Enabling or scrubbing the layer does not configure a
-camera target. Both presentations reuse one raster surface and the globe/map morph.
+camera target. Both presentations reuse one raster surface and the globe/map morph. Explore also
+composes wind paths and lightning marks into the existing observation layer. Each retains its own
+source time; the composed frame does not set the globe clock or imply simultaneous observations.
+Unchanged geometry arrays retain their identity, so scrubbing lightning does not rebuild wind paths.
 
 **The globe's palette, brightest last: sea, land, graticule, coast, plates**
 

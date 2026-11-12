@@ -225,7 +225,7 @@ export function createObservationLayer(morph: { value: number }) {
     orbital.value = view?.frame.orbit ? 1 : 0;
     if (view?.target !== prior?.target) reveal = 0;
     object.visible = !!view;
-    if (view?.frame !== prior?.frame) travel = 0;
+    if (view?.frame.paths !== prior?.frame.paths || view?.frame.raster !== prior?.frame.raster) travel = 0;
     if (view?.frame.paths !== prior?.frame.paths) {
       const paths = rows();
       for (const { points, color = INK } of view?.frame.paths ?? []) {

@@ -1,6 +1,7 @@
 import type { Group, Object3D, PerspectiveCamera, Vector3, WebGLRenderer } from "three";
 import type { AuroraRun } from "../sources/auroraRoute";
-import { isGlobalRadar, type RadarLayerView, type RadarView } from "../app/radar/radarCamera";
+import { isGlobalRadar, type RadarView } from "../app/radar/radarCamera";
+import type { MapLayerPresentation } from "../app/weatherLayers";
 import type { Controls } from "./controls";
 import type { createSurfaceLayers } from "./surfaceLayers";
 import { createAuroraVeil } from "./auroraVeil";
@@ -20,12 +21,12 @@ import { createOrbitalFraming } from "./orbitalFraming";
 import { createObservationPicking } from "./observationPicking";
 
 export type GlobePresentation =
-  "planetarium" | "dayline" | "landing" | AuroraRun | LocalView | RadarLayerView | null;
+  "planetarium" | "dayline" | "landing" | AuroraRun | LocalView | MapLayerPresentation | null;
 export type TonightPresentation = TonightView & { moonfall?: MoonfallView };
 type LocalView = RadarView | TonightPresentation | FloatDiveView | ObservationView;
 
 export function isLocalView(mode: GlobePresentation): mode is LocalView {
-  return mode !== null && typeof mode === "object" && "kind" in mode && mode.kind !== "radar-layer";
+  return mode !== null && typeof mode === "object" && "kind" in mode && mode.kind !== "map-layers";
 }
 
 export function isShadowChase(mode: GlobePresentation): boolean {
@@ -130,8 +131,8 @@ export function createScenePresentation(
     const observation = local?.kind === "observation" ? local : null;
     picking.set(observation);
     const weather = local?.kind === "radar" ? local : null;
-    const radarLayer =
-      mode && typeof mode === "object" && "kind" in mode && mode.kind === "radar-layer" ? mode : null;
+    const mapLayers =
+      mode && typeof mode === "object" && "kind" in mode && mode.kind === "map-layers" ? mode : null;
     const float = local?.kind === "float-dive" ? local : null;
     const route = mode && typeof mode === "object" && "route" in mode ? mode.route : null;
     skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);
@@ -190,6 +191,7 @@ export function createScenePresentation(
     dive?.set(float, mode === "dayline");
     const overlay =
       observation ??
+      mapLayers?.observation ??
       (weather?.lightning
         ? { kind: "observation" as const, frame: weather.lightning, image: null, target: weather.target }
         : null);
@@ -222,7 +224,7 @@ export function createScenePresentation(
       if (
         mode === "dayline" ||
         mode === null ||
-        radarLayer ||
+        mapLayers ||
         ((returningFromArchive || observationTarget) && mode === "planetarium")
       )
         controls.flyTo(returnCamera.lon, returnCamera.lat, returnCamera.zoom);
@@ -230,7 +232,7 @@ export function createScenePresentation(
     }
     observationTarget = observation?.target;
     radarTarget = weather?.target;
-    const radarFrame = weather ?? radarLayer;
+    const radarFrame = weather ?? mapLayers?.radar;
     if (radarFrame && !radar) {
       radar = createRadarSurface(projection);
       spin.add(radar.object);

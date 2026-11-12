@@ -1,0 +1,169 @@
+import { readFileSync } from "node:fs";
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test, type Page } from "@playwright/test";
+import { installFeeds } from "./feeds";
+
+// Small synthetic NetCDF/HDF5 fixtures exercise the real provider decoders without a live service.
+const wind = readFileSync(new URL("./fixtures/weather-wind.nc", import.meta.url));
+const lightning = readFileSync(new URL("./fixtures/weather-lightning.nc", import.meta.url));
+const now = new Date("2026-11-12T16:00:00Z");
+const camera = (page: Page) =>
+  page.evaluate(() => {
+    const globe = (
+      window as unknown as {
+        __globe?: { state: () => { lon: number; lat: number; zoom: number }; morph: () => number };
+      }
+    ).__globe;
+    return globe ? { ...globe.state(), morph: globe.morph() } : null;
+  });
+
+async function sources(page: Page) {
+  let windFailed = true;
+  const calls = { wind: 0, lightning: 0 };
+  await page.clock.setFixedTime(now);
+  await page.route("https://pae-paha.pacioos.hawaii.edu/**", (route) => {
+    calls.wind++;
+    return windFailed
+      ? route.fulfill({ status: 503 })
+      : route.fulfill({ body: wind, contentType: "application/x-netcdf" });
+  });
+  await page.route("https://noaa-goes19.s3.amazonaws.com/**", (route) => {
+    calls.lightning++;
+    if (route.request().url().endsWith(".nc"))
+      return route.fulfill({ body: lightning, contentType: "application/x-netcdf" });
+    const hour = new URL(route.request().url()).searchParams.get("prefix")?.split("/").filter(Boolean).at(-1);
+    const stamps = hour === "15" ? ["155000", "155500"] : ["160000"];
+    return route.fulfill({
+      contentType: "application/xml",
+      body: `<ListBucketResult>${stamps.map((stamp) => `<Contents><Key>GLM-L2-LCFA/2026/316/${hour}/OR_GLM-L2-LCFA_G19_s2026316${stamp}0_e20263161600300_c20263161600400.nc</Key></Contents>`).join("")}</ListBucketResult>`,
+    });
+  });
+  return {
+    calls,
+    recover: () => {
+      windFailed = false;
+    },
+  };
+}
+
+for (const width of [1440, 390]) {
+  test(`wind and lightning layer playback preserves the shared scene at ${width}px @dev`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.emulateMedia({ reducedMotion: width === 390 ? "reduce" : "no-preference" });
+    await installFeeds(page);
+    const source = await sources(page);
+    source.recover();
+    const errors: string[] = [];
+    page.on("pageerror", (error) => errors.push(error.message));
+    await page.goto("/#v=explore&at=-80,25,1.4");
+    await expect.poll(async () => (await camera(page))?.zoom).toBe(1.4);
+    const pose = await camera(page);
+    const canvas = await page.locator("#globe-view canvas").elementHandle();
+    const layers = page.getByRole("region", { name: "Map layers", exact: true });
+    expect(source.calls).toEqual({ wind: 0, lightning: 0 });
+    await layers.getByText("Add layer", { exact: true }).click();
+    await layers.getByRole("button", { name: /^Add surface wind / }).click();
+    const windPanel = layers.getByRole("region", { name: "Surface wind playback" });
+    await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /16:00/);
+    await layers.getByText("Add layer", { exact: true }).click();
+    await layers.getByRole("button", { name: /^Add lightning / }).click();
+    const lightningPanel = layers.getByRole("region", { name: "Lightning playback" });
+    await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /16:00/);
+    await expect(lightningPanel).toContainText("Satellite detections: 3");
+    await expect(windPanel).toBeHidden();
+    await expect(layers.locator('.layer-playback-toggle[aria-expanded="true"]')).toHaveCount(1);
+    await lightningPanel.getByRole("slider").press("Home");
+    await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /15:50/);
+    await lightningPanel.getByRole("button", { name: "Play", exact: true }).click();
+    await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /16:00/);
+    await expect(lightningPanel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+    expect(await camera(page)).toEqual(pose);
+    await layers.getByRole("button", { name: "Surface wind controls", exact: true }).click();
+    await windPanel.getByRole("slider").press("End");
+    await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
+    await page.getByRole("button", { name: "Map", exact: true }).click();
+    await expect.poll(async () => (await camera(page))?.morph).toBe(1);
+    const mapPose = await camera(page);
+    await windPanel.getByRole("slider").press("Home");
+    expect(await camera(page)).toEqual(mapPose);
+    expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
+      true,
+    );
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/weather-layers-${width}.png` });
+    await page.locator("#chrome-rail").evaluate((rail) => {
+      rail.scrollTop = 0;
+    });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/weather-overview-${width}.png` });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+    await layers.getByRole("button", { name: "Surface wind", exact: true }).click();
+    await layers.getByRole("button", { name: "Lightning", exact: true }).click();
+    await expect(layers.getByText("Add layer", { exact: true })).toBeFocused();
+    await expect(layers.getByRole("button", { name: "Surface wind", exact: true })).toHaveCount(0);
+    expect(await camera(page)).toEqual(mapPose);
+    expect(errors).toEqual([]);
+  });
+
+  test(`weather layers report recovery and remember disabled sources at ${width}px @dev`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 900 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await installFeeds(page);
+    const source = await sources(page);
+    await page.goto("/#v=explore&at=-80,25,1.4");
+    await expect.poll(async () => (await camera(page))?.zoom).toBe(1.4);
+    const pose = await camera(page);
+    const layers = page.getByRole("region", { name: "Map layers", exact: true });
+    await layers.getByText("Add layer", { exact: true }).click();
+    await layers.getByRole("button", { name: /^Add surface wind / }).click();
+    const windPanel = layers.getByRole("region", { name: "Surface wind playback" });
+    await expect(windPanel.getByRole("status")).toContainText("Couldn’t reach NOAA GFS surface wind.");
+    expect(await camera(page)).toEqual(pose);
+    source.recover();
+    await windPanel.getByRole("button", { name: "Retry surface wind" }).click();
+    await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /16:00/);
+    await layers.getByText("Add layer", { exact: true }).click();
+    await layers.getByRole("button", { name: /^Add lightning / }).click();
+    await expect(layers.getByRole("region", { name: "Lightning playback" })).toContainText(
+      "Satellite detections: 3",
+    );
+    await page.getByRole("button", { name: /^Feed status,/ }).click();
+    const feedPanel = page.getByRole("region", { name: "Background feed status" });
+    await expect(feedPanel).toContainText("9 background feeds checked.");
+    for (const label of ["NOAA GFS surface wind", "NOAA GOES-East lightning"])
+      await expect(feedPanel.getByRole("listitem").filter({ hasText: label })).toContainText("Available");
+    await page.keyboard.press("Escape");
+    expect((await new AxeBuilder({ page }).include(".map-layers").analyze()).violations).toEqual([]);
+    const requests = { ...source.calls };
+    await layers.getByRole("button", { name: "Surface wind", exact: true }).click();
+    await layers.getByRole("button", { name: "Lightning", exact: true }).click();
+    await page.reload();
+    await expect(layers.getByText("Add layer", { exact: true })).toBeVisible();
+    await expect(layers.getByRole("button", { name: "Surface wind", exact: true })).toHaveCount(0);
+    await expect(layers.getByRole("button", { name: "Lightning", exact: true })).toHaveCount(0);
+    expect(source.calls).toEqual(requests);
+  });
+}
+
+test("saved weather layers wait for Explore and stay out of earthquake archives @dev", async ({ page }) => {
+  await installFeeds(page, { presentation: "fresh" });
+  await page.addInitScript(() =>
+    localStorage.setItem("eif.mapLayers", JSON.stringify({ wind: true, lightning: true, radar: false })),
+  );
+  const source = await sources(page);
+  source.recover();
+  await page.goto("/");
+  await expect(page.getByRole("button", { name: "Explore the globe", exact: true })).toBeVisible();
+  expect(source.calls).toEqual({ wind: 0, lightning: 0 });
+  await page.goto("/#d=2011-03-11");
+  await expect(page.getByRole("button", { name: "Surface wind", exact: true })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Lightning", exact: true })).toBeDisabled();
+  expect(source.calls).toEqual({ wind: 0, lightning: 0 });
+  await page.getByRole("button", { name: "back to live", exact: true }).click();
+  await expect.poll(() => source.calls.wind).toBeGreaterThan(0);
+  await expect.poll(() => source.calls.lightning).toBeGreaterThan(0);
+});

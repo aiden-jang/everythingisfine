@@ -64,6 +64,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/float/`, `src/sources/argo.ts`, and `src/globe/floatPresentation.ts` | Argo catalogue and profile validation, sample playback, and the shared globe’s float sequence |
 | `src/app/observations/`, `src/sources/observations/`, and `src/globe/observationLayer.ts` | Optional observations and replays, provider readers, shared playback, and projected data layers |
 | `src/app/radar/`, `src/sources/{radar,rainviewer}.ts`, and `src/globe/radarSurface.ts` | Storm Radar controls, international/US catalogues, and globe overlay |
+| `src/app/{MapLayers,LayerPlayback,WeatherLayer}.tsx`, `useMapLayers.ts`, and `weatherLayers.ts` | Optional Explore weather sources, independent clocks, feed health and shared-scene composition |
 | `src/app/Observatory.tsx` | Intro, scene choices, captured-story narration and tour controls |
 | `src/app/GlobeHeader.tsx` | Shared masthead, capture, source status and explorer tools |
 | `src/app/CanvasFooter.tsx` | Explorer credit and input hints |
@@ -314,7 +315,7 @@ disclosed beside the control; the sound is not a field recording or an ambient l
 Storm Radar loads on demand from Live Earth or Explore. RainViewer is the default international
 network; NOAA MRMS remains the contiguous-US detail option, including existing US region visits.
 Explore's radar toggle defaults on, respects a saved off choice, and mounts the shared scan player only
-while enabled outside archive mode. It supplies a `radar-layer` presentation: no camera target, catalogue hiding or picking
+while enabled outside archive mode. It contributes to a `map-layers` presentation: no camera target, catalogue hiding or picking
 override. The catalogue retains the cinematic `radar` presentation and regional controls. The two
 entries never mount their scan loaders together; leaving either releases decoded images and requests.
 Both use the shared globe/map and preserve the selected provider timestamp during playback.
@@ -322,6 +323,13 @@ The background feed panel includes RainViewer while Explore's layer is active, u
 catalogue and latest-image health without another request. Off radar remains listed outside the count.
 Empty results, delayed scans and missing imagery have distinct messages; failed refreshes retain the
 last successful check time.
+Surface wind and lightning are optional additions through the same layer controls. They reuse the
+GFS surface forecast and GOES-East GLM readers, lazy-load only when enabled in Explore, and cancel
+requests on leaving or disabling the layer. An accordion exposes one player while preserving the
+other layers' selections and independent timestamps. Their frames contribute paths and marks to
+the existing observation renderer, with stable geometry references and no additional canvas.
+The feed total includes each enabled source, reports failure independently, and retains its last
+successful check. Archived earthquakes do not mount current weather sources.
 RainViewer’s past-only catalogue supplies up to two hours of ten-minute composites. Each frame combines
 four zoom-one 512-pixel tiles into a bounded overview, using the supported Universal Blue palette.
 Mercator latitude is mapped onto the globe’s geographic mesh; NOAA retains its geographic raster bounds.

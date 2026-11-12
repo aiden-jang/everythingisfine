@@ -29,6 +29,8 @@ export const mapLayerNames = {
   volcanoes: "Volcanoes",
   aurora: "Aurora forecast",
   radar: "Storm radar",
+  wind: "Surface wind",
+  lightning: "Lightning",
 } as const;
 export type MapLayer = keyof typeof mapLayerNames;
 export type MapLayers = Record<MapLayer, boolean>;
@@ -40,6 +42,8 @@ export const defaultMapLayers: MapLayers = {
   volcanoes: true,
   aurora: true,
   radar: true,
+  wind: false,
+  lightning: false,
 };
 
 export function readMapLayers(raw: string | null, target?: string): MapLayers {
@@ -90,6 +94,8 @@ export function markBelongsToLayer(mark: string | null, layer: MapLayer): boolea
     earthquakes: "quake",
     aurora: "aurora",
     radar: "radar",
+    wind: "wind",
+    lightning: "lightning",
   }[layer];
   return mark?.startsWith(`${kind}:`) ?? false;
 }

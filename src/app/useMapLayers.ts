@@ -4,10 +4,29 @@ import { stored, store } from "./stored";
 import { readMapLayers, type MapLayer } from "./layerVisibility";
 import type { RadarLayerView, RadarView } from "./radar/radarCamera";
 import type { FeedRow } from "./feedStatus";
+import {
+  weatherLayers,
+  weatherOverlay,
+  type WeatherLayerId,
+  type WeatherLayerView,
+  type PlaybackLayer,
+  type MapLayerPresentation,
+} from "./weatherLayers";
 
 export function useMapLayers(filters: Filters, observing: boolean, target?: string, archived = false) {
   const [enabled, setEnabled] = useState(() => readMapLayers(stored("mapLayers"), target));
   const [radarView, updateRadar] = useState<RadarView | null>(null);
+  const [weather, setWeather] = useState<Partial<Record<WeatherLayerId, WeatherLayerView>>>({});
+  const [expanded, expand] = useState<PlaybackLayer | null>("radar");
+  const active = !observing && !archived;
+  const updateWeather = useCallback((id: WeatherLayerId, view: WeatherLayerView | null) => {
+    setWeather((previous) => {
+      const next = { ...previous };
+      if (view) next[id] = view;
+      else delete next[id];
+      return next;
+    });
+  }, []);
   const radarActive = enabled.radar && !observing && !archived;
   useEffect(() => {
     if (!radarActive) updateRadar(null);
@@ -25,6 +44,7 @@ export function useMapLayers(filters: Filters, observing: boolean, target?: stri
     latest.current = next;
     store("mapLayers", JSON.stringify(next));
     setEnabled(next);
+    if (on && (layer === "radar" || layer in weatherLayers)) expand(layer as PlaybackLayer);
   }, []);
   const globeFilters = useMemo(
     () => (observing || enabled.earthquakes ? filters : { ...filters, sources: new Set<"usgs" | "emsc">() }),
@@ -34,21 +54,70 @@ export function useMapLayers(filters: Filters, observing: boolean, target?: stri
     radar?.at === undefined
       ? null
       : `Weather data by RainViewer · radar ${new Date(radar.at).toISOString().slice(0, 16).replace("T", " ")} UTC`;
+  const wind = active && enabled.wind ? weather.wind : undefined;
+  const lightning = active && enabled.lightning ? weather.lightning : undefined;
+  const observation = useMemo(
+    () => weatherOverlay(wind?.frame, lightning?.frame),
+    [wind?.frame, lightning?.frame],
+  );
+  const presentation = useMemo<MapLayerPresentation | null>(
+    () => (radar || observation ? { kind: "map-layers", radar, observation } : null),
+    [radar, observation],
+  );
+  const feeds: FeedRow[] = [
+    {
+      id: "radar",
+      label: "RainViewer storm radar",
+      state: radarActive ? (radarView?.feed?.state ?? "pending") : "off",
+      lastCheck: radarActive ? radarView?.feed?.lastCheck : undefined,
+      message: radarActive ? radarView?.feed?.message : enabled.radar ? "Loads in Explore" : undefined,
+    },
+    ...Object.entries(weatherLayers).map(([key, meta]) => {
+      const id = key as WeatherLayerId;
+      const running = active && enabled[id];
+      return {
+        id,
+        label: meta.source,
+        state: running ? (weather[id]?.feed.state ?? "pending") : "off",
+        lastCheck: running ? weather[id]?.feed.lastCheck : undefined,
+        message: running ? weather[id]?.feed.message : enabled[id] ? "Loads in Explore" : undefined,
+      } satisfies FeedRow;
+    }),
+  ];
   return {
     enabled,
     change,
     globeFilters,
     radar,
     updateRadar,
-    feed: {
-      id: "radar",
-      label: "RainViewer storm radar",
-      state: radarActive ? (radarView?.feed?.state ?? "pending") : "off",
-      lastCheck: radarActive ? radarView?.feed?.lastCheck : undefined,
-      message: radarActive ? radarView?.feed?.message : enabled.radar ? "Loads in Explore" : undefined,
-    } satisfies FeedRow,
+    active,
+    expanded,
+    expand,
+    updateWeather,
+    weather,
+    presentation,
+    feeds,
     captureNote: (inspection: string | null) =>
-      [radarCaption, inspection].filter(Boolean).join(" · ") || null,
-    canCapture: !radar || !!radar.image,
+      [
+        radarCaption,
+        ...(["wind", "lightning"] as const).flatMap((id) =>
+          active && enabled[id]
+            ? [
+                `${weatherLayers[id].source} · ${weather[id]?.frame ? `${new Date(weather[id]!.frame!.at).toISOString()}${weather[id]?.feed.state === "failed" ? " · last available" : ""}` : weather[id]?.feed.state === "failed" ? "unavailable" : "no recent data"}`,
+              ]
+            : [],
+        ),
+        inspection,
+      ]
+        .filter(Boolean)
+        .join(" · ") || null,
+    canCapture:
+      (!radar || !!radar.image) &&
+      (!active ||
+        (["wind", "lightning"] as const).every(
+          (id) =>
+            !enabled[id] ||
+            (!!weather[id] && (weather[id]!.feed.state !== "pending" || !!weather[id]!.frame)),
+        )),
   };
 }

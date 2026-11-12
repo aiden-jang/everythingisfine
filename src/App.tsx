@@ -870,7 +870,7 @@ export function App(): JSX.Element {
     shown,
     revealedNow,
   ]);
-  const feeds = feedStatus(snapshot.statuses, answered, { ...snapshot.checked, ...checked }, mapLayers.feed);
+  const feeds = feedStatus(snapshot.statuses, answered, { ...snapshot.checked, ...checked }, mapLayers.feeds);
 
   const keyOnCanvas = useNarrow() === false;
   // Compose shared legend props once so the rail and canvas cannot drift apart.
@@ -1470,7 +1470,7 @@ export function App(): JSX.Element {
               moment={overflight.run?.forecast.forecastAt ?? chase.frame ?? litAt}
               inspection={inspection.run}
               flat={flat}
-              globePresentation={observatory.globe(tourAt !== null) ?? mapLayers.radar}
+              globePresentation={observatory.globe(tourAt !== null) ?? mapLayers.presentation}
               rotateLanding={observatory.rotation.enabled}
               depthSink={observatory.depth || sinkOn}
               cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}

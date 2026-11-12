@@ -40,10 +40,23 @@ describe("what the header dot may claim", () => {
     expect(feedStatus(streams(LIVE, LIVE), layers("pending")).silent).toBeNull();
   });
 
+  it("includes only enabled weather sources in the dynamic total", () => {
+    const rows = [
+      { id: "radar", label: "Radar", state: "ok", lastCheck: 1 },
+      { id: "wind", label: "Wind", state: "failed", lastCheck: 2 },
+      { id: "lightning", label: "Lightning", state: "off", lastCheck: undefined },
+    ] as const;
+    expect(feedStatus(streams(LIVE, LIVE), layers("ok"), {}, rows)).toMatchObject({
+      arrived: 8,
+      total: 9,
+      phrase: "8 of 9 feeds available",
+    });
+  });
+
   it("counts active radar and keeps an off layer visible without claiming a failure", () => {
     const radar = { id: "radar", label: "RainViewer storm radar", lastCheck: 123 } as const;
     const status = (state: "pending" | "ok" | "failed" | "off") =>
-      feedStatus(streams(LIVE, LIVE), layers("ok"), {}, { ...radar, state });
+      feedStatus(streams(LIVE, LIVE), layers("ok"), {}, [{ ...radar, state }]);
     expect(status("pending")).toMatchObject({ arrived: 7, total: 8, settling: true });
     expect(status("ok")).toMatchObject({ arrived: 8, total: 8, phrase: "All feeds available" });
     expect(status("failed")).toMatchObject({ total: 8, phrase: "7 of 8 feeds available", settling: false });

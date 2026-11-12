@@ -6,7 +6,7 @@ type FeedKey = SourceId | HazardLayer;
 export type FeedChecks = Partial<Record<FeedKey, number>>;
 
 export interface FeedRow {
-  id: FeedKey | "radar";
+  id: FeedKey | "radar" | "wind" | "lightning";
   label: string;
   state: LayerAnswer | "off";
   lastCheck: number | undefined;
@@ -36,7 +36,7 @@ export function feedStatus(
   statuses: Record<SourceId, SourceStatus>,
   answered: Record<HazardLayer, LayerAnswer>,
   checks: FeedChecks = {},
-  radar?: FeedRow,
+  layers: readonly FeedRow[] = [],
 ): FeedStatus {
   const states: Record<FeedKey, LayerAnswer> = {
     ...answered,
@@ -49,7 +49,7 @@ export function feedStatus(
     state: states[id],
     lastCheck: checks[id],
   }));
-  if (radar) rows.push(radar);
+  rows.push(...layers);
   const arrived = rows.filter(({ state }) => state === "ok").length;
   const total = rows.filter(({ state }) => state !== "off").length;
   const settling = rows.some(({ state }) => state === "pending");

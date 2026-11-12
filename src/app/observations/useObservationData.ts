@@ -5,10 +5,12 @@ type Result = {
   data: ObservationData | null;
   state: "loading" | "ready" | "empty" | "failed";
   reason?: string;
+  lastCheck?: number | undefined;
 };
 
 export function useObservationData(source: ObservationSource, option: string) {
   const cache = useRef(new Map<string, ObservationData>());
+  const checked = useRef(new Map<string, number>());
   const [revision, retry] = useState(0);
   const [result, setResult] = useState<{ option: string; result: Result } | null>(null);
   useEffect(() => {
@@ -20,11 +22,13 @@ export function useObservationData(source: ObservationSource, option: string) {
         .then((data) => {
           if (abort.signal.aborted) return;
           if (data.frames.length) cache.current.set(option, data);
+          checked.current.set(option, Date.now());
           setResult({
             option,
             result: {
               data: cache.current.get(option) ?? null,
               state: data.frames.length ? "ready" : "empty",
+              lastCheck: checked.current.get(option),
             },
           });
         })
@@ -33,7 +37,12 @@ export function useObservationData(source: ObservationSource, option: string) {
           const detail = error instanceof ObservationDataError ? { reason: error.message } : {};
           setResult({
             option,
-            result: { data: cache.current.get(option) ?? null, state: "failed", ...detail },
+            result: {
+              data: cache.current.get(option) ?? null,
+              state: "failed",
+              lastCheck: checked.current.get(option),
+              ...detail,
+            },
           });
         })
         .finally(() => {
@@ -59,11 +68,23 @@ export function useObservationData(source: ObservationSource, option: string) {
   const state =
     result?.option === option
       ? result.result
-      : { data: cache.current.get(option) ?? null, state: "loading" as const, reason: undefined };
+      : {
+          data: cache.current.get(option) ?? null,
+          state: "loading" as const,
+          reason: undefined,
+          lastCheck: checked.current.get(option),
+        };
   return {
     ...state,
     retry() {
-      setResult({ option, result: { data: cache.current.get(option) ?? null, state: "loading" } });
+      setResult({
+        option,
+        result: {
+          data: cache.current.get(option) ?? null,
+          state: "loading",
+          lastCheck: checked.current.get(option),
+        },
+      });
       retry((value) => value + 1);
     },
   };

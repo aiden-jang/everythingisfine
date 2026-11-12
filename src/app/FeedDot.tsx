@@ -99,7 +99,10 @@ export function FeedDot({
             </li>
           ))}
         </ul>
-        <p>Radar joins the total while active in Explore. Off means it is not being checked.</p>
+        <p>
+          Radar, wind and lightning join the total while active in Explore. Off means they are not being
+          checked.
+        </p>
         <h3>Loads when opened</h3>
         <p>
           Float Dive, Sun Watch and other observatory views check their own sources when opened. Find the full
