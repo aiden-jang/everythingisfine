@@ -26,12 +26,12 @@ const marksVisible = (page: Page) =>
   );
 
 for (const width of [1440, 390]) {
-  test(`radar toggles and plays over existing layers without moving the camera at ${width}px @dev`, async ({
+  test(`radar starts on in Explore and plays without moving the camera at ${width}px @dev`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
     await page.emulateMedia({ reducedMotion: width === 390 ? "reduce" : "no-preference" });
-    await installFeeds(page);
+    await installFeeds(page, { presentation: "fresh", radar: "default" });
     await page.addInitScript(() => {
       const close = ImageBitmap.prototype.close;
       ImageBitmap.prototype.close = function () {
@@ -63,19 +63,21 @@ for (const width of [1440, 390]) {
       route.fulfill({ contentType: "image/png", body: pixel }),
     );
     await page.goto("/");
+    await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
+    expect(queries).toBe(0);
+    await expect(page.getByRole("region", { name: "Storm radar playback" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
     await expect.poll(async () => (await camera(page))?.zoom).toBe(1);
     const originalCamera = await camera(page);
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     const layers = page.getByRole("region", { name: "Map layers", exact: true });
     const toggle = layers.getByRole("button", { name: "Storm radar", exact: true });
     const controls = layers.getByRole("region", { name: "Storm radar playback" });
-    await expect(toggle).toHaveAttribute("aria-pressed", "false");
-    await expect(controls).toHaveCount(0);
-    expect(queries).toBe(0);
-    await toggle.click();
     await expect(toggle).toHaveAttribute("aria-pressed", "true");
     const status = controls.getByRole("status", { name: "Radar status" });
     await expect(status).toHaveText("Couldn’t reach RainViewer radar.");
+    expect(queries).toBe(1);
+    expect(await page.evaluate(() => localStorage.getItem("eif.mapLayers"))).toBeNull();
     await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
     expect(await marksVisible(page)).toBe(true);
     expect(await camera(page)).toEqual(originalCamera);
@@ -125,10 +127,9 @@ for (const width of [1440, 390]) {
   });
 }
 
-test("a saved radar preference stays off in the earthquake archive @dev", async ({ page }) => {
-  await installFeeds(page);
+test("the default radar layer stays off in the earthquake archive @dev", async ({ page }) => {
+  await installFeeds(page, { radar: "default" });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.addInitScript(() => localStorage.setItem("eif.mapLayers", '{"radar":true}'));
   let requests = 0;
   await page.route("https://api.rainviewer.com/public/weather-maps.json", (route) => {
     requests++;

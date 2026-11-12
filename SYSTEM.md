@@ -313,8 +313,8 @@ disclosed beside the control; the sound is not a field recording or an ambient l
 
 Storm Radar loads on demand from Live Earth or Explore. RainViewer is the default international
 network; NOAA MRMS remains the contiguous-US detail option, including existing US region visits.
-Explore's radar toggle defaults off and mounts the shared scan player only while enabled outside
-archive mode. It supplies a `radar-layer` presentation: no camera target, catalogue hiding or picking
+Explore's radar toggle defaults on, respects a saved off choice, and mounts the shared scan player only
+while enabled outside archive mode. It supplies a `radar-layer` presentation: no camera target, catalogue hiding or picking
 override. The catalogue retains the cinematic `radar` presentation and regional controls. The two
 entries never mount their scan loaders together; leaving either releases decoded images and requests.
 Both use the shared globe/map and preserve the selected provider timestamp during playback.

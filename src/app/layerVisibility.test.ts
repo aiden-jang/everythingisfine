@@ -8,7 +8,9 @@ describe("independent map layers", () => {
     expect(markBelongsToLayer(null, "earthquakes")).toBe(false);
   });
   it("validates saved preferences and keeps explicitly shared targets visible", () => {
-    expect(readMapLayers(null).radar).toBe(false);
+    expect(readMapLayers(null).radar).toBe(true);
+    expect(readMapLayers('{"earthquakes":false}').radar).toBe(true);
+    expect(readMapLayers('{"radar":false}').radar).toBe(false);
     expect(readMapLayers('{"radar":true}').radar).toBe(true);
     expect(readMapLayers("broken")).toEqual(defaultMapLayers);
     expect(readMapLayers('{"fires":false,"floods":"false"}')).toEqual({ ...defaultMapLayers, fires: false });

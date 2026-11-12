@@ -188,8 +188,8 @@ region has an independently reachable restore control and never strands a stored
 preference after resizing. Fullscreen expands the window without hiding its tools.
 
 In Explore, the rail starts with independent switches for earthquakes, tropical cyclones, wildfires,
-floods, volcanoes, aurora and storm radar. Radar starts off; enabling it preserves the camera and
-other layers and reveals compact playback, the selected scan time, and coverage information below
+floods, volcanoes, aurora and storm radar. Radar starts on unless a saved choice turns it off; it preserves
+the camera and other layers and reveals compact playback, the selected scan time, and coverage information below
 the switches. RainViewer attribution stays on the canvas even with the rail folded. The complete
 story catalogue has a direct entry. Earthquake
 controls appear only while that layer is enabled; hazard-only views retain their time window.

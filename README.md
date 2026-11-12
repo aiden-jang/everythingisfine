@@ -168,8 +168,8 @@ own direction and route controls.
 ## Explore
 
 The rail starts with independent earthquake, tropical cyclone, wildfire, flood, volcano, aurora and radar switches.
-Storm radar starts off and loads recent worldwide scans only while enabled in Explore. Its playback
-appears below the switches, using a separate clock from the earthquake timeline. Turning it off stops
+Storm radar starts on in Explore unless previously switched off, and loads recent worldwide scans only
+while enabled there. Its playback appears below the switches, using a separate clock from the earthquake timeline. Turning it off stops
 playback and releases decoded images. Recent radar is unavailable in archive mode. **All stories & data** returns to the full
 catalogue. Layer visibility stays on this device; shared event targets override a hidden layer.
 Earthquake controls fold out of the way when that layer is off, while the report time window remains.

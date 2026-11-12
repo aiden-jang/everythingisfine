@@ -39,7 +39,7 @@ export const defaultMapLayers: MapLayers = {
   floods: true,
   volcanoes: true,
   aurora: true,
-  radar: false,
+  radar: true,
 };
 
 export function readMapLayers(raw: string | null, target?: string): MapLayers {

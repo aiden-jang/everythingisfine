@@ -2172,7 +2172,7 @@ test("a first visit saves no preference the visitor never chose", async ({ page 
    * The other direction, that a real choice is saved, is what the two fold tests above already show by
    * reloading and finding the fold where they left it.
    */
-  await installFeeds(page, { presentation: "fresh" });
+  await installFeeds(page, { presentation: "fresh", radar: "default" });
   await page.goto("/");
   await waitForData(page);
 
