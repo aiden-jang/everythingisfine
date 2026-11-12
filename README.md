@@ -101,9 +101,9 @@ measurements, not field recordings.
 - **Float Dive** follows an Argo float from its North Atlantic position into a schematic ascent on the globe.
   Play or scrub measured temperature and practical salinity from depth toward the surface.
   Pick a recent Marine Institute profile or a bundled recording.
-- **Storm Radar** flies to recent radar returns on the globe over the contiguous United States.
-  Play, step, or scrub through up to an hour of NOAA scans at their published UTC times.
-  **Data & coverage** explains the source and the limits of reflectivity.
+- **Storm radar** is an independent Explore layer with playback, stepping and a scan-time slider.
+  It preserves the current camera and other layers. The catalogue's **Storm Radar** view adds regional
+  framing and optional NOAA United States detail. Coverage notes explain the sources and their limits.
 - **Million-Mile View** pulls the globe back into NASA’s DSCOVR camera view. Scrub the recorded
   2015 Moon crossing or switch to the latest published full-Earth photographs.
 - **Deep Time** replaces modern coastlines with reconstructed continents. Rewind to Pangaea on
@@ -167,8 +167,10 @@ own direction and route controls.
 
 ## Explore
 
-The rail starts with independent earthquake, tropical cyclone, wildfire, flood, volcano and aurora switches.
-Storm Radar opens its own scan timeline on the same globe. **All stories & data** returns to the full
+The rail starts with independent earthquake, tropical cyclone, wildfire, flood, volcano, aurora and radar switches.
+Storm radar starts off and loads recent worldwide scans only while enabled in Explore. Its playback
+appears below the switches, using a separate clock from the earthquake timeline. Turning it off stops
+playback and releases decoded images. Recent radar is unavailable in archive mode. **All stories & data** returns to the full
 catalogue. Layer visibility stays on this device; shared event targets override a hidden layer.
 Earthquake controls fold out of the way when that layer is off, while the report time window remains.
 The feed counter covers seven automatically checked background sources. Other views check their own

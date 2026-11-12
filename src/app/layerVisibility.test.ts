@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { allMapLayers, markBelongsToLayer, readMapLayers, visibleHazards } from "./layerVisibility";
+import { defaultMapLayers, markBelongsToLayer, readMapLayers, visibleHazards } from "./layerVisibility";
 
 describe("independent map layers", () => {
   it("keeps selections in unrelated layers", () => {
@@ -8,18 +8,20 @@ describe("independent map layers", () => {
     expect(markBelongsToLayer(null, "earthquakes")).toBe(false);
   });
   it("validates saved preferences and keeps explicitly shared targets visible", () => {
-    expect(readMapLayers("broken")).toEqual(allMapLayers);
-    expect(readMapLayers('{"fires":false,"floods":"false"}')).toEqual({ ...allMapLayers, fires: false });
+    expect(readMapLayers(null).radar).toBe(false);
+    expect(readMapLayers('{"radar":true}').radar).toBe(true);
+    expect(readMapLayers("broken")).toEqual(defaultMapLayers);
+    expect(readMapLayers('{"fires":false,"floods":"false"}')).toEqual({ ...defaultMapLayers, fires: false });
     expect(readMapLayers('{"earthquakes":false}', "quake:one").earthquakes).toBe(true);
     expect(readMapLayers('{"cyclones":false}', "cyclone:one").cyclones).toBe(true);
     expect(readMapLayers('{"fires":false}', "cyclone:one").fires).toBe(false);
   });
   it("hides only the requested layer without discarding cached observations", () => {
     const data = { cyclones: [], fires: [], floods: [], volcanoes: [], aurora: { peak: 42 } };
-    const visible = visibleHazards(data, { ...allMapLayers, aurora: false });
+    const visible = visibleHazards(data, { ...defaultMapLayers, aurora: false });
     expect(visible.aurora).toBeNull();
     expect(visible.floods).toBe(data.floods);
     expect(data.aurora).toEqual({ peak: 42 });
-    expect(visibleHazards(data, allMapLayers).aurora).toBe(data.aurora);
+    expect(visibleHazards(data, defaultMapLayers).aurora).toBe(data.aurora);
   });
 });

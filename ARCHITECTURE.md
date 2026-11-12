@@ -3061,10 +3061,12 @@ Tōhoku depth cutaway are insets over the same canvas.
 
 ### src/globe/scene.ts
 
-Storm Radar uses the same scene and camera as the other Observatory views. The curved raster patch
-shares the extent of NOAA’s geographic image request. The radar panel owns the decoded scans, and
-the renderer owns only the selected texture. A missing image clears that texture while retaining
-the scan time. The event catalogue is hidden and picking is suspended until the radar view closes.
+Storm Radar uses the same scene and camera as the other Observatory views. The raster follows its
+provider's bounds and projection. The shared scan player owns decoded images; the renderer owns only
+the selected texture. A missing image clears that texture while retaining the scan time. The catalogue's
+cinematic `radar` view hides event marks and suspends picking. Explore uses `radar-layer`, which leaves
+the camera, event catalogue and picking alone. Enabling or scrubbing the layer does not configure a
+camera target. Both presentations reuse one raster surface and the globe/map morph.
 
 **The globe's palette, brightest last: sea, land, graticule, coast, plates**
 

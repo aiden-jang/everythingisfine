@@ -4,7 +4,7 @@ import { EarthquakeContext } from "./app/EarthquakeContext";
 import { EarthquakeHeadline } from "./app/EarthquakeHeadline";
 import { MapLayers } from "./app/MapLayers";
 import { useMapLayers } from "./app/useMapLayers";
-import { markBelongsToLayer, visibleHazards } from "./app/layerVisibility";
+import { hazardsInWindow, markBelongsToLayer, visibleHazards } from "./app/layerVisibility";
 import { SourceFilter } from "./app/SourceFilter";
 import { observatoryCaption } from "./app/observatoryCaption";
 import { useSceneHistory } from "./app/useSceneHistory";
@@ -13,7 +13,7 @@ import { useGlobeCamera } from "./app/useGlobeCamera";
 import { WaveReplayControls } from "./app/WaveReplayControls";
 import { useEventInspection } from "./app/useEventInspection";
 import { SequenceReplayControls } from "./app/SequenceReplayControls";
-import { CanvasFooter } from "./app/CanvasFooter";
+import { CanvasFooter, RadarCanvasCredit } from "./app/CanvasFooter";
 import { Observatory } from "./app/Observatory";
 import { journeyFor, observatorySummary, observatoryFeedNote } from "./app/journeys";
 import { GlobeHeader } from "./app/GlobeHeader";
@@ -52,7 +52,6 @@ import { marksFor } from "./app/marks";
 import { depthBands } from "./data/depth";
 import { findSubject, MarkCard } from "./app/MarkCard";
 import { hazardGroups, outsideWindowNote } from "./app/hazards";
-import { withinWindow } from "./app/age";
 import { sizesOf } from "./app/gutenberg";
 import { SizeChart } from "./app/Sizes";
 import { createSiren, type Siren } from "./app/sound";
@@ -190,24 +189,22 @@ export function App(): JSX.Element {
   const span = snapshot.archive ?? { from: now - filters.windowMs, to: now };
   const view = chase.frame ? { at: chase.frame.at, playing: chase.playing } : clampScrub(scrub, span);
   const viewClock = view.at === null ? null : chase.frame ? eclipseClock(view.at) : clock(view.at);
-  /* The cursor reveals these layers too, quantised to the strip's bucket: playing steps it twenty times
-     a second, and these feeds are dated to the hour at best. */
+  // Hourly hazard feeds advance in timeline buckets rather than on every playback frame.
   const revealStep = filters.windowMs / BUCKETS;
   const revealAt = view.at === null ? null : Math.floor(view.at / revealStep) * revealStep;
   const inWindow = useMemo(() => {
-    /* Window first, on each layer's own date, then the cursor. `age.ts` has the argument for the dates. */
-    const shown = <T,>(list: readonly T[], dateOf: (h: T) => number | null): readonly T[] =>
-      list.filter((h) => {
-        const at = dateOf(h);
-        if (!withinWindow(at, minuteClock, filters.windowMs)) return false;
-        return revealAt === null || at === null || at <= revealAt;
-      });
-    const started = (h: { startedAt: number | null }): number | null => h.startedAt;
     return {
-      cyclones: shown(archived ? (archiveHazards?.cyclones ?? []) : cyclones, started),
-      volcanoes: shown(archived ? (archiveHazards?.volcanoes ?? []) : volcanoes, (v) => v.endedAt),
-      fires: shown(archived ? (archiveHazards?.fires ?? []) : fires, started),
-      floods: shown(archived ? (archiveHazards?.floods ?? []) : floods, started),
+      ...hazardsInWindow(
+        {
+          cyclones: archived ? (archiveHazards?.cyclones ?? []) : cyclones,
+          volcanoes: archived ? (archiveHazards?.volcanoes ?? []) : volcanoes,
+          fires: archived ? (archiveHazards?.fires ?? []) : fires,
+          floods: archived ? (archiveHazards?.floods ?? []) : floods,
+        },
+        minuteClock,
+        filters.windowMs,
+        revealAt,
+      ),
       aurora: archived ? null : aurora,
     };
   }, [
@@ -226,6 +223,7 @@ export function App(): JSX.Element {
     filters,
     observatory.observing,
     shared.event ? "quake:" : (shared.mark ?? undefined),
+    archived || archiveBusy,
   );
   const onGlobe = useMemo(
     () => (observatory.observing ? inWindow : visibleHazards(inWindow, mapLayers.enabled)),
@@ -427,13 +425,15 @@ export function App(): JSX.Element {
     mapLayers.globeFilters,
     ramp,
     overflight.run?.forecast.forecastAt ?? view.at,
-    overflight.run
-      ? "NOAA OVATION · illustrative veil"
-      : (cutaway || observatory.depthFocus) && !flat
-        ? "reference cutaway · true scale"
-        : null,
+    mapLayers.captureNote(
+      overflight.run
+        ? "NOAA OVATION · illustrative veil"
+        : (cutaway || observatory.depthFocus) && !flat
+          ? "reference cutaway · true scale"
+          : null,
+    ),
     () => observatoryCaption(observatory, litAt ?? Date.now()),
-    { ready: observatory.canCapture, key: observatory.navigation.key },
+    { ready: observatory.canCapture && mapLayers.canCapture, key: observatory.navigation.key },
   );
   const revealedNow = ((): number | null => {
     if (view.at === null) return null;
@@ -1022,7 +1022,7 @@ export function App(): JSX.Element {
       <GlobeHeader
         clip={clip}
         rotation={observatory.rotation}
-        ready={observatory.canCapture}
+        ready={observatory.canCapture && mapLayers.canCapture}
         observing={observatory.observing}
         onHome={returnHome}
         onReset={resetView}
@@ -1171,8 +1171,7 @@ export function App(): JSX.Element {
               },
             }}
             feeds={feeds}
-            archived={archived}
-            onRadar={() => observatory.radar.open()}
+            archived={archived || archiveBusy}
             onBrowse={() => observatory.home(stopTour, true)}
           />
           <HazardList hazards={hazards} markId={markId} onHazard={selectMark} />
@@ -1471,7 +1470,7 @@ export function App(): JSX.Element {
               moment={overflight.run?.forecast.forecastAt ?? chase.frame ?? litAt}
               inspection={inspection.run}
               flat={flat}
-              globePresentation={observatory.globe(tourAt !== null)}
+              globePresentation={observatory.globe(tourAt !== null) ?? mapLayers.radar}
               rotateLanding={observatory.rotation.enabled}
               depthSink={observatory.depth || sinkOn}
               cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}
@@ -1501,6 +1500,7 @@ export function App(): JSX.Element {
           </Suspense>
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]">
+            <RadarCanvasCredit radar={mapLayers.radar} />
             <EclipseReplayControls playback={chase} />
             <WaveReplayControls replay={inspection} />
             <SequenceReplayControls replay={inspection} />

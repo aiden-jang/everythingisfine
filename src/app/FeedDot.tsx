@@ -101,8 +101,8 @@ export function FeedDot({
         <p>The counter covers these background sources, not every view in the observatory.</p>
         <h3>Loads when opened</h3>
         <p>
-          Storm Radar, Float Dive and Sun Watch check their sources when opened. Find these and the full
-          catalogue in Stories &amp; layers or Explore’s All stories &amp; data.
+          Storm radar checks its source when its layer is on. Float Dive and Sun Watch load when opened. Find
+          the full catalogue in All stories &amp; data.
         </p>
         <details>
           <summary>Other observatory views</summary>

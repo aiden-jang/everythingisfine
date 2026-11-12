@@ -16,6 +16,8 @@ export interface RadarView {
   lightning?: ObservationFrame | undefined;
 }
 
+export type RadarLayerView = Pick<RadarView, "image" | "at" | "region"> & { kind: "radar-layer" };
+
 export const national: RadarCamera = { lon: -95.5, lat: 37, zoom: 1.45 };
 
 export const radarRegions = [

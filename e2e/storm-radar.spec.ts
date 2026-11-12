@@ -119,7 +119,7 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   expect(await canvas.evaluate((element, original) => element === original, globe)).toBe(true);
 });
 
-test("Storm Radar returns to Explore with the same globe", async ({ page }) => {
+test("Storm Radar remains available in the catalogue after exploring the map", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { empty: true, presentation: "fresh" });
@@ -132,18 +132,17 @@ test("Storm Radar returns to Explore with the same globe", async ({ page }) => {
   const canvas = page.locator("#globe-view canvas");
   const globe = await canvas.elementHandle();
   await revealStoryTools(page);
-  const trigger = page.getByRole("region", { name: "Map layers", exact: true }).getByRole("button", {
-    name: "Storm Radar Recent scans · worldwide network",
-    exact: true,
-  });
+  await page.getByRole("button", { name: /All stories & data/ }).click();
+  const trigger = page.locator("#overview-story-radar");
   await trigger.click();
   const scene = page.getByRole("region", { name: "Storm Radar" });
+  await scene.getByLabel("Coverage", { exact: true }).selectOption("us");
   await expect(scene.getByRole("status", { name: "Radar status" })).toHaveText(
     "No recent radar scans available.",
   );
-  await scene.getByRole("button", { name: "Back to Explore" }).click();
+  await scene.getByRole("button", { name: "Back to Live Earth" }).click();
   await expect(scene).toBeHidden();
   await expect(trigger).toBeFocused();
-  await expect(page.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toBeVisible();
   expect(await canvas.evaluate((element, original) => element === original, globe)).toBe(true);
 });

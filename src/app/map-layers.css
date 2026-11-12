@@ -102,3 +102,33 @@
   cursor: default;
   color: var(--color-dim);
 }
+
+.radar-layer-loading {
+  margin-block: 12px;
+  color: var(--color-dim);
+  font-size: 12px;
+}
+.radar-canvas-credit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 12px;
+  order: -1;
+  width: 100%;
+  color: var(--color-dim);
+  font-size: 11px;
+}
+.radar-canvas-credit a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 8px;
+  background: var(--color-deck);
+  pointer-events: auto;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.radar-canvas-credit time {
+  background: var(--color-deck);
+  font-variant-numeric: tabular-nums;
+}

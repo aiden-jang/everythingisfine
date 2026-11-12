@@ -16,7 +16,7 @@ export function useArchive(
 ) {
   const [archiveDay, setArchiveDay] = useState("");
   const [archiveHazards, setArchiveHazards] = useState<History | null>(null);
-  const [archiveBusy, setArchiveBusy] = useState(false);
+  const [archiveBusy, setArchiveBusy] = useState(() => !!sharedDay && isArchivableDay(sharedDay, Date.now()));
   const [archiveNote, setArchiveNote] = useState<string | null>(null);
   const [dayCounts, setDayCounts] = useState<Record<string, number | null>>({});
   const countsAsked = useRef(false);

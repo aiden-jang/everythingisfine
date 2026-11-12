@@ -29,11 +29,13 @@ export function RadarStage({
   initialRegion,
   initialAt,
   global,
+  layer = false,
 }: {
   onView: (view: RadarView) => void;
   initialRegion?: string | undefined;
   initialAt?: number | undefined;
   global: boolean;
+  layer?: boolean;
 }): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
@@ -86,9 +88,9 @@ export function RadarStage({
   }
 
   useEffect(() => {
-    if (global || !latestImage || focus !== undefined) return;
+    if (layer || global || !latestImage || focus !== undefined) return;
     setFocus(strongestRegion(latestImage) ?? null);
-  }, [focus, latestImage, global]);
+  }, [focus, latestImage, global, layer]);
 
   useEffect(() => {
     if (!playing || !selected || image === undefined || document.hidden) return;
@@ -240,7 +242,7 @@ export function RadarStage({
               {shortTime(scans[0].at)}–{shortTime(latest.at)} UTC
             </span>
           )}
-          {!global && (
+          {!layer && !global && (
             <button
               type="button"
               aria-pressed={showLightning}
@@ -264,22 +266,24 @@ export function RadarStage({
         </div>
       </div>
       <div className="radar-reading">
-        <div className="radar-place">
-          <h3>{place}</h3>
-          <label>
-            <span className="sr-only">Radar region</span>
-            <select value={regionId} onChange={(event) => setRegionId(event.currentTarget.value)}>
-              {!global && <option value="auto">Auto focus</option>}
-              {!global && <option value="national">United States</option>}
-              {(global ? globalRadarRegions : radarRegions).map(({ id, name }) => (
-                <option key={id} value={id}>
-                  {name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        {!problem && (
+        {!layer && (
+          <div className="radar-place">
+            <h3>{place}</h3>
+            <label>
+              <span className="sr-only">Radar region</span>
+              <select value={regionId} onChange={(event) => setRegionId(event.currentTarget.value)}>
+                {!global && <option value="auto">Auto focus</option>}
+                {!global && <option value="national">United States</option>}
+                {(global ? globalRadarRegions : radarRegions).map(({ id, name }) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        )}
+        {!layer && !problem && (
           <p role="status" aria-label="Radar status">
             {statusMessage}
           </p>

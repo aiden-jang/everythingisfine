@@ -1,6 +1,6 @@
 import type { Group, Object3D, PerspectiveCamera, Vector3, WebGLRenderer } from "three";
 import type { AuroraRun } from "../sources/auroraRoute";
-import { isGlobalRadar, type RadarView } from "../app/radar/radarCamera";
+import { isGlobalRadar, type RadarLayerView, type RadarView } from "../app/radar/radarCamera";
 import type { Controls } from "./controls";
 import type { createSurfaceLayers } from "./surfaceLayers";
 import { createAuroraVeil } from "./auroraVeil";
@@ -19,12 +19,13 @@ import type { ObservationView } from "../app/observations/types";
 import { createOrbitalFraming } from "./orbitalFraming";
 import { createObservationPicking } from "./observationPicking";
 
-export type GlobePresentation = "planetarium" | "dayline" | "landing" | AuroraRun | LocalView | null;
+export type GlobePresentation =
+  "planetarium" | "dayline" | "landing" | AuroraRun | LocalView | RadarLayerView | null;
 export type TonightPresentation = TonightView & { moonfall?: MoonfallView };
 type LocalView = RadarView | TonightPresentation | FloatDiveView | ObservationView;
 
 export function isLocalView(mode: GlobePresentation): mode is LocalView {
-  return mode !== null && typeof mode === "object" && "kind" in mode;
+  return mode !== null && typeof mode === "object" && "kind" in mode && mode.kind !== "radar-layer";
 }
 
 export function isShadowChase(mode: GlobePresentation): boolean {
@@ -129,6 +130,8 @@ export function createScenePresentation(
     const observation = local?.kind === "observation" ? local : null;
     picking.set(observation);
     const weather = local?.kind === "radar" ? local : null;
+    const radarLayer =
+      mode && typeof mode === "object" && "kind" in mode && mode.kind === "radar-layer" ? mode : null;
     const float = local?.kind === "float-dive" ? local : null;
     const route = mode && typeof mode === "object" && "route" in mode ? mode.route : null;
     skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);
@@ -208,10 +211,6 @@ export function createScenePresentation(
     catalogue.visible = local === null;
     if (weather) {
       returnCamera ??= controls.state();
-      if (!radar) {
-        radar = createRadarSurface(projection);
-        spin.add(radar.object);
-      }
       const { target } = weather;
       if (guided && target !== radarTarget) controls.flyTo(target.lon, target.lat, target.zoom);
     } else if (observation) {
@@ -223,6 +222,7 @@ export function createScenePresentation(
       if (
         mode === "dayline" ||
         mode === null ||
+        radarLayer ||
         ((returningFromArchive || observationTarget) && mode === "planetarium")
       )
         controls.flyTo(returnCamera.lon, returnCamera.lat, returnCamera.zoom);
@@ -230,7 +230,12 @@ export function createScenePresentation(
     }
     observationTarget = observation?.target;
     radarTarget = weather?.target;
-    radar?.setImage(weather?.image ?? null, isGlobalRadar(weather?.region));
+    const radarFrame = weather ?? radarLayer;
+    if (radarFrame && !radar) {
+      radar = createRadarSurface(projection);
+      spin.add(radar.object);
+    }
+    radar?.setImage(radarFrame?.image ?? null, isGlobalRadar(radarFrame?.region));
     dayline.value = showDayline ? lights.reveal.value : 0;
   }
 

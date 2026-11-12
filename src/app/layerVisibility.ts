@@ -1,4 +1,25 @@
 import type { HazardInput } from "./hazards";
+import { withinWindow } from "./age";
+
+export function hazardsInWindow(
+  data: HazardInput,
+  now: number,
+  windowMs: number,
+  revealAt: number | null,
+): HazardInput {
+  const shown = <T>(list: readonly T[], dateOf: (h: T) => number | null): readonly T[] =>
+    list.filter((h) => {
+      const at = dateOf(h);
+      return withinWindow(at, now, windowMs) && (revealAt === null || at === null || at <= revealAt);
+    });
+  const started = (h: { startedAt: number | null }) => h.startedAt;
+  return {
+    cyclones: shown(data.cyclones, started),
+    volcanoes: shown(data.volcanoes, (v) => v.endedAt),
+    fires: shown(data.fires, started),
+    floods: shown(data.floods, started),
+  };
+}
 
 export const mapLayerNames = {
   earthquakes: "Earthquakes",
@@ -7,16 +28,18 @@ export const mapLayerNames = {
   floods: "Floods",
   volcanoes: "Volcanoes",
   aurora: "Aurora forecast",
+  radar: "Storm radar",
 } as const;
 export type MapLayer = keyof typeof mapLayerNames;
 export type MapLayers = Record<MapLayer, boolean>;
-export const allMapLayers: MapLayers = {
+export const defaultMapLayers: MapLayers = {
   earthquakes: true,
   cyclones: true,
   fires: true,
   floods: true,
   volcanoes: true,
   aurora: true,
+  radar: false,
 };
 
 export function readMapLayers(raw: string | null, target?: string): MapLayers {
@@ -26,7 +49,7 @@ export function readMapLayers(raw: string | null, target?: string): MapLayers {
   } catch {
     saved = null;
   }
-  const layers = { ...allMapLayers };
+  const layers = { ...defaultMapLayers };
   for (const key of Object.keys(layers) as MapLayer[]) {
     const value = saved && typeof saved === "object" ? (saved as Record<string, unknown>)[key] : undefined;
     if (typeof value === "boolean") layers[key] = value;
@@ -66,6 +89,7 @@ export function markBelongsToLayer(mark: string | null, layer: MapLayer): boolea
     volcanoes: "volcano",
     earthquakes: "quake",
     aurora: "aurora",
+    radar: "radar",
   }[layer];
   return mark?.startsWith(`${kind}:`) ?? false;
 }

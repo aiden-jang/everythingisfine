@@ -1,3 +1,5 @@
+import type { RadarLayerView } from "./radar/radarCamera";
+
 export function CanvasFooter({
   flat,
   playing,
@@ -52,4 +54,24 @@ export function CanvasFooter({
       </div>
     </div>
   );
+}
+
+export function RadarCanvasCredit({ radar }: { radar: RadarLayerView | null }): JSX.Element | null {
+  return radar ? (
+    <p className="radar-canvas-credit">
+      <a
+        href="https://www.rainviewer.com/"
+        target="_blank"
+        rel="noreferrer"
+        aria-describedby="external-link-hint"
+      >
+        Weather data by RainViewer
+      </a>
+      {radar.at !== undefined && (
+        <time dateTime={new Date(radar.at).toISOString()}>
+          Radar · {new Date(radar.at).toISOString().slice(11, 16)} UTC
+        </time>
+      )}
+    </p>
+  ) : null;
 }

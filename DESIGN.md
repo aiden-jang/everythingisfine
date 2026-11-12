@@ -188,7 +188,10 @@ region has an independently reachable restore control and never strands a stored
 preference after resizing. Fullscreen expands the window without hiding its tools.
 
 In Explore, the rail starts with independent switches for earthquakes, tropical cyclones, wildfires,
-floods, volcanoes and aurora. Radar and the complete story catalogue have direct entries. Earthquake
+floods, volcanoes, aurora and storm radar. Radar starts off; enabling it preserves the camera and
+other layers and reveals compact playback, the selected scan time, and coverage information below
+the switches. RainViewer attribution stays on the canvas even with the rail folded. The complete
+story catalogue has a direct entry. Earthquake
 controls appear only while that layer is enabled; hazard-only views retain their time window.
 The earthquake count, timeline and search precede archive browsing; extra earthquake context folds away. In archive
 mode the chosen date and return-to-live action stay prominent. The glossary starts
@@ -266,10 +269,11 @@ reveals a schematic water column in the same canvas. The instrument rises into s
 while the plots follow the measured levels. Scrubbing stops playback at the selected sample.
 Reduced motion opens directly with a fixed instrument and manual playback.
 
-Storm Radar flies from the current globe view to the contiguous United States or an area with
-visible returns. NOAA reflectivity colors belong to the raster. The scan controls stay in the
-Observatory panel, and scrubbing changes only the scan at its published UTC time. Region changes
-reuse the camera flight. Reduced motion cuts directly to the chosen view.
+The Storm radar layer updates only the raster while the viewer steers the shared globe or map.
+Its independent scan time remains visible; playback never drives the earthquake timeline.
+The catalogue's Storm Radar view offers authored regional flights and optional NOAA detail.
+Provider colors belong to the raster. Region changes reuse the camera flight, and reduced motion
+cuts directly to the chosen view. Both entries share the scan player and bounded image loader.
 
 The optional observation views keep one timeline through the existing globe and map morph.
 Orbital Pass adds a city horizon, Tide Watch adds a measured gauge, and Wind Atlas traces
