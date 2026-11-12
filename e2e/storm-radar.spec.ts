@@ -104,7 +104,7 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   await slider.press("Home");
   catalogueDown = true;
   await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
-  const status = scene.getByRole("status");
+  const status = scene.getByRole("status", { name: "Radar status" });
   await expect(status).toContainText("Showing the last available radar scans.");
   await expect(status.locator("time")).toHaveAttribute("datetime", timestamp(2));
   await expect(time).toHaveAttribute("datetime", timestamp(0));
@@ -134,7 +134,9 @@ test("Storm Radar returns to Explore with the same globe", async ({ page }) => {
   const trigger = page.getByRole("button", { name: "Storm Radar", exact: true });
   await trigger.click();
   const scene = page.getByRole("region", { name: "Storm Radar" });
-  await expect(scene.getByRole("status")).toHaveText("No recent radar scans available.");
+  await expect(scene.getByRole("status", { name: "Radar status" })).toHaveText(
+    "No recent radar scans available.",
+  );
   await scene.getByRole("button", { name: "Back to Explore" }).click();
   await expect(scene).toBeHidden();
   await expect(trigger).toBeFocused();

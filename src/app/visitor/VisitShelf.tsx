@@ -63,7 +63,9 @@ export function VisitShelf() {
           </button>
         )}
       </details>
-      <span role="status">{library.notice}</span>
+      <span role="status" aria-label="Visit library status">
+        {library.notice}
+      </span>
     </section>
   );
 }
@@ -83,7 +85,9 @@ export function SaveVisit() {
           ? "Update saved view"
           : "Save view"}
       </button>
-      <span role="status">{navigation.library.notice}</span>
+      <span role="status" aria-label="Saved view status">
+        {navigation.library.notice}
+      </span>
     </div>
   );
 }

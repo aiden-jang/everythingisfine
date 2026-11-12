@@ -144,14 +144,18 @@ export function RadarStage({
 
   return (
     <div className="radar-stage-controls">
-      {expired && <p role="status">The saved scan has expired. Showing the latest available scan.</p>}
+      {expired && (
+        <p role="status" aria-label="Saved radar scan status">
+          The saved scan has expired. Showing the latest available scan.
+        </p>
+      )}
       <div className="radar-transport">
         <div className="radar-clock">
           <label htmlFor={id}>{atLatest ? "Latest scan" : "Scan time"}</label>
           {selected && <time dateTime={new Date(selected.at).toISOString()}>{timeLabel}</time>}
         </div>
         {problem && (
-          <p className="radar-warning" role="status">
+          <p className="radar-warning" role="status" aria-label="Radar status">
             {statusMessage}
           </p>
         )}
@@ -227,7 +231,7 @@ export function RadarStage({
             Lightning
           </button>
           {showLightning && selected && (
-            <p role="status">
+            <p role="status" aria-label="Lightning status">
               {lightning === undefined
                 ? "Checking GOES-East…"
                 : lightning.failed
@@ -255,7 +259,11 @@ export function RadarStage({
             </select>
           </label>
         </div>
-        {!problem && <p role="status">{statusMessage}</p>}
+        {!problem && (
+          <p role="status" aria-label="Radar status">
+            {statusMessage}
+          </p>
+        )}
         {canRetry && (
           <button type="button" className="radar-retry" onClick={retry}>
             Retry NOAA

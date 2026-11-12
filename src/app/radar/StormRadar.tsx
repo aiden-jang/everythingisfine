@@ -74,7 +74,13 @@ export function StormRadar({
           Map
         </button>
       </div>
-      <Suspense fallback={<p role="status">Opening Storm Radar…</p>}>
+      <Suspense
+        fallback={
+          <p role="status" aria-label="Radar status">
+            Opening Storm Radar…
+          </p>
+        }
+      >
         <RadarStage onView={onView} initialRegion={entry.region} initialAt={entry.at} />
       </Suspense>
       <details className="radar-coverage">

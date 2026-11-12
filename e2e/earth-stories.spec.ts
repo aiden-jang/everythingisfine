@@ -72,8 +72,14 @@ for (const [id, title, action] of stories) {
         },
       });
     });
+    if (id === "fault") {
+      await panel.getByRole("button", { name: "Save view", exact: true }).click();
+      await expect(panel.getByRole("status", { name: "Saved view status" })).toContainText(
+        "Saved on this device",
+      );
+    }
     await panel.getByRole("button", { name: "Share this moment", exact: true }).click();
-    await expect(panel.getByRole("status")).toContainText("Link copied");
+    await expect(panel.getByRole("status", { name: "Sharing status" })).toContainText("Link copied");
     const url = await page.evaluate(() => Reflect.get(window, "copiedStory") as string);
     const fragment = new URL(url).hash;
     expect(fragment).toContain(`story=${id}`);
