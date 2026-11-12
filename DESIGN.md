@@ -193,6 +193,10 @@ the camera and other layers and reveals compact playback, the selected scan time
 the switches. RainViewer attribution stays on the canvas even with the rail folded. The complete
 story catalogue has a direct entry. Earthquake
 controls appear only while that layer is enabled; hazard-only views retain their time window.
+Earthquake reports have a separate disclosure: opening weather controls folds the report controls without
+changing marker visibility. The layer guide names each enabled overlay's meaning and limits. A partial
+source failure remains visible on its switch. Timestamps use the same full UTC date in playback, canvas
+readouts and the source panel. Background wind paths are quieter than story paths so event marks remain legible.
 The earthquake count, timeline and search precede archive browsing; extra earthquake context folds away. In archive
 mode the chosen date and return-to-live action stay prominent. The glossary starts
 folded and the magnitude scale remains visible. New viewers start with plate
@@ -200,7 +204,8 @@ movement arrows, deep seismicity and constellation figures off; saved choices wi
 
 Phone layouts keep the subject visible above a draggable, keyboard-operable sheet.
 Expand globe or Expand map enlarges the canvas; Recent earthquakes opens more list space and
-reveals recent events. The handle has a 44px target. Intermediate heights,
+reveals recent events. With earthquakes hidden, that shortcut becomes Layers & activity and returns to
+the layer controls. The handle has a 44px target. Intermediate heights,
 selection closing and preserved list position remain supported. Short landscape
 and tablet views need their own reflow checks, not only portrait-phone coverage.
 

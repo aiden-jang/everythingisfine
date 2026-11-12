@@ -53,9 +53,12 @@ export function useStill(
       moment: stillMoment(cursor, archive?.from ?? Date.now(), archive !== null),
       // From `onGlobe`, not the raw feeds, or a still of an archived day counts layers it does not show.
       verdict: verdictLine(stillCounts.current),
+      magnitudeScale: filters.sources.size > 0,
       filter: [
-        [...filters.sources].map((source) => SOURCE_NAMES[source]).join(" / ") || "No earthquake sources",
-        `M${filters.minMagnitude.toFixed(1)}+ · ${scope}`,
+        filters.sources.size > 0
+          ? [...filters.sources].map((source) => SOURCE_NAMES[source]).join(" / ")
+          : "Earthquake layer off",
+        filters.sources.size > 0 ? `M${filters.minMagnitude.toFixed(1)}+ · ${scope}` : null,
         inspection,
       ]
         .filter(Boolean)

@@ -1,3 +1,5 @@
+import { ActivityDisclosure } from "./app/ActivityDisclosure";
+import { EarthquakeComparisons } from "./app/EarthquakeComparisons";
 import { HazardList } from "./app/HazardList";
 import { LayerWindow } from "./app/LayerWindow";
 import { EarthquakeContext } from "./app/EarthquakeContext";
@@ -13,7 +15,7 @@ import { useGlobeCamera } from "./app/useGlobeCamera";
 import { WaveReplayControls } from "./app/WaveReplayControls";
 import { useEventInspection } from "./app/useEventInspection";
 import { SequenceReplayControls } from "./app/SequenceReplayControls";
-import { CanvasFooter } from "./app/CanvasFooter";
+import { CanvasFooter, CanvasStamp } from "./app/CanvasFooter";
 import { LayerReadout } from "./app/LayerReadout";
 import { Observatory } from "./app/Observatory";
 import { journeyFor, observatorySummary, observatoryFeedNote } from "./app/journeys";
@@ -27,7 +29,6 @@ import { reportAnalytics } from "../analytics/browser";
 import { useGlobeResources } from "./app/useGlobeResources";
 import { useGlobeTour } from "./app/useGlobeTour";
 import { GlobeLoading } from "./globe/GlobeLoading";
-import { stillMoment } from "./app/still";
 import { useFeedSnapshot } from "./app/useFeedSnapshot";
 import { useStill } from "./app/useStill";
 import { RegionalResults } from "./app/RegionalResults";
@@ -58,17 +59,7 @@ import { SizeChart } from "./app/Sizes";
 import { createSiren, type Siren } from "./app/sound";
 import { lunarEclipse, solarEclipse } from "./geo/eclipse";
 import { closestTo, localZone, viewerPlace } from "./app/viewer";
-import {
-  BASELINE_DAYS,
-  BASELINE_FROM,
-  BASELINE_MIN_MAGNITUDE,
-  BASELINE_TO,
-  BASELINE_WEEKS,
-  comparableCount,
-  rankDay,
-  type Span as BaselineSpan,
-  sharePercent,
-} from "./data/baseline";
+import { comparableCount, rankDay, type Span as BaselineSpan } from "./data/baseline";
 import { boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE } from "./geo/boundaryDistance";
 import { MobileNavigation } from "./app/MobileNavigation";
 import { ViewNotices } from "./app/ViewNotices";
@@ -90,22 +81,13 @@ import { Dial } from "./app/Dial";
 import { decode } from "./app/permalink";
 import { replaceViewLocation } from "./app/viewLocation";
 import { seconds } from "./app/arrival";
-import { timesLabel, versusReference } from "./app/versus";
+import { versusReference } from "./app/versus";
 import { tick } from "./app/touch";
-import { recordWhen, SINCE, superlativeFor, UNTIL } from "./app/superlative";
+import { superlativeFor } from "./app/superlative";
 import { type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
-import {
-  clock,
-  corroborationNote,
-  energyPercent,
-  magnitude,
-  place,
-  quietNote,
-  quietParts,
-  compactSpan,
-} from "./app/format";
+import { clock, corroborationNote, magnitude, place, quietNote, quietParts, compactSpan } from "./app/format";
 
 /* Built here and not in an effect. In an effect, StrictMode mounts twice and you get two WebSockets. */
 const feed = createFeed();
@@ -225,6 +207,7 @@ export function App(): JSX.Element {
     observatory.backgroundLayers,
     shared.event ? "quake:" : (shared.mark ?? undefined),
     archived || archiveBusy,
+    shared,
   );
   const onGlobe = useMemo(() => visibleHazards(inWindow, mapLayers.enabled), [inWindow, mapLayers.enabled]);
   const hazardTally = useMemo(() => {
@@ -409,7 +392,11 @@ export function App(): JSX.Element {
     playing: view.playing,
     mapOn,
     presentation: observatory.presentation,
+    scene: observatory.scene,
+    catalogue: observatory.browser.open ? (observatory.browser.category ?? "all") : undefined,
     getMoment: observatory.observations.getMoment,
+    layers: mapLayers.enabled,
+    layerTimes: mapLayers.selectedTimes,
     camera,
     lastWritten,
   });
@@ -1035,6 +1022,7 @@ export function App(): JSX.Element {
           chromeFloats,
           setHeadOpen,
           snapshot,
+          earthquakes: mapLayers.enabled.earthquakes,
           flat,
           setFlat,
           ramp,
@@ -1153,7 +1141,13 @@ export function App(): JSX.Element {
           />
         )}
         {!markSubject && !(shownQuake && pinned) && railShown ? (
-          <MobileNavigation canvasHeight={sheetCanvas} flat={flat} onResize={setSheetCanvas} />
+          <MobileNavigation
+            canvasHeight={sheetCanvas}
+            flat={flat}
+            onResize={setSheetCanvas}
+            earthquakes={mapLayers.enabled.earthquakes}
+            onActivity={() => mapLayers.openActivity(true)}
+          />
         ) : null}
         <aside
           aria-label="Map layers and recent activity"
@@ -1179,32 +1173,6 @@ export function App(): JSX.Element {
             onBrowse={() => observatory.home(stopTour, true)}
           />
           <HazardList hazards={hazards} markId={markId} onHazard={selectMark} />
-          {mapLayers.enabled.earthquakes && (
-            <EarthquakeHeadline
-              time={
-                archived
-                  ? `Archive · ${loadedDay ?? archiveDay} UTC`
-                  : view.at === null
-                    ? "Live"
-                    : view.playing
-                      ? "Replaying"
-                      : `Paused at ${viewClock}`
-              }
-              loading={
-                snapshot.coveredSince !== null
-                  ? null
-                  : earthquakeFeedsDown
-                    ? "Neither feed is answering yet."
-                    : archiveBusy && archiveDay
-                      ? `Asking USGS and EMSC for ${archiveDay}.`
-                      : `Loading earthquake reports for the last ${compactSpan(filters.windowMs)}…`
-              }
-              count={headline}
-              coverage={coverage.label}
-              moment={replay ? clock(replay.at) : viewClock}
-              replaying={!!replay || view.playing}
-            />
-          )}
           {!archived && feeds.silent ? (
             <div className="tb-notes">
               <span className="label">Feeds</span>
@@ -1240,7 +1208,36 @@ export function App(): JSX.Element {
             />
           )}
           {mapLayers.enabled.earthquakes && (
-            <>
+            <ActivityDisclosure
+              open={mapLayers.activityOpen}
+              onOpen={mapLayers.openActivity}
+              headline={
+                <EarthquakeHeadline
+                  time={
+                    archived
+                      ? `Archive · ${loadedDay ?? archiveDay} UTC`
+                      : view.at === null
+                        ? "Live"
+                        : view.playing
+                          ? "Replaying"
+                          : `Paused at ${viewClock}`
+                  }
+                  loading={
+                    snapshot.coveredSince !== null
+                      ? null
+                      : earthquakeFeedsDown
+                        ? "Neither feed is answering yet."
+                        : archiveBusy && archiveDay
+                          ? `Asking USGS and EMSC for ${archiveDay}.`
+                          : `Loading earthquake reports for the last ${compactSpan(filters.windowMs)}…`
+                  }
+                  count={headline}
+                  coverage={coverage.label}
+                  moment={replay ? clock(replay.at) : viewClock}
+                  replaying={!!replay || view.playing}
+                />
+              }
+            >
               <div data-rail="legend">{marksFilter}</div>
               {/* A phone has no canvas corner to spare, so there the key goes back into the column. */}
               {keyOnCanvas ? null : <div className="mt-4">{marksKey}</div>}
@@ -1298,7 +1295,7 @@ export function App(): JSX.Element {
                   document.getElementById("mag")?.focus();
                 }}
               />
-            </>
+            </ActivityDisclosure>
           )}
           {(!query || !mapLayers.enabled.earthquakes) && regionalResults}
           {!archived && archiveControls}
@@ -1327,73 +1324,13 @@ export function App(): JSX.Element {
                 <p className="text-[11px] leading-relaxed text-faint">{quiet.note}</p>
               </div>
             ) : null}
-            {strongest && !replay && edge.complete && energyShare !== null && energyShare > 0.5 ? (
-              <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
-                That one event is <span className="text-dim tabular-nums">{energyPercent(energyShare)}</span>{" "}
-                of the energy released in the window. Magnitude is logarithmic: two points of it is a thousand
-                times the energy.
-              </p>
-            ) : null}
-            {baseline ? (
-              <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
-                <span className="text-dim tabular-nums">{baseline.count}</span>
-                {" at M"}
-                <span className="tabular-nums">{BASELINE_MIN_MAGNITUDE}</span>
-                {"+: "}
-                {baseline.direction} than{" "}
-                <span className="text-dim tabular-nums">{sharePercent(baseline.share)}%</span> of the{" "}
-                <span className="tabular-nums">
-                  {(baselineSpan === "week" ? BASELINE_WEEKS : BASELINE_DAYS).toLocaleString("en")}
-                </span>{" "}
-                {baselineSpan === "week" ? "weeks" : "days"} from {BASELINE_FROM} to {BASELINE_TO}.
-              </p>
-            ) : null}
-            {/* Silent when nothing is drawn, or a cursor parked before anything arrived names a region beside
-            an empty globe. */}
-            {ceiling && strongest && !replay && edge.complete && (revealedNow ?? shown) > 0 ? (
-              <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
-                {ceiling.beaten ? (
-                  <>
-                    {"Larger than anything in "}
-                    {ceiling.region}
-                    {" from "}
-                    {SINCE}
-                    {" to "}
-                    {UNTIL}
-                    {". Previous best: M"}
-                    <span className="text-dim tabular-nums">{ceiling.record.toFixed(1)}</span>
-                    {", "}
-                    {recordWhen(ceiling.day)}
-                    {"."}
-                  </>
-                ) : (
-                  <>
-                    {"Largest in "}
-                    {ceiling.region}
-                    {", "}
-                    {SINCE}
-                    {" to "}
-                    {UNTIL}
-                    {": M"}
-                    <span className="text-dim tabular-nums">{ceiling.record.toFixed(1)}</span>
-                    {", "}
-                    {recordWhen(ceiling.day)}
-                    {"."}
-                  </>
-                )}
-              </p>
-            ) : null}
-            {versus && !replay && edge.complete ? (
-              <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
-                {versus.exceeded
-                  ? "This window has released "
-                  : `${versus.day.what}, ${versus.day.day.slice(0, 4)}, released `}
-                <span className="text-dim tabular-nums">{timesLabel(versus.times)}</span>
-                {versus.exceeded
-                  ? ` times the energy of ${versus.day.what} in ${versus.day.day.slice(0, 4)}, the largest ever recorded.`
-                  : " times the energy of everything in this window, from one earthquake."}
-              </p>
-            ) : null}
+            <EarthquakeComparisons
+              energyShare={strongest && !replay && edge.complete ? energyShare : null}
+              baseline={baseline}
+              baselineSpan={baselineSpan}
+              ceiling={strongest && !replay && edge.complete && (revealedNow ?? shown) > 0 ? ceiling : null}
+              versus={!replay && edge.complete ? versus : null}
+            />
             {near && here ? (
               <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
                 Closest to {here.label} was{" "}
@@ -1443,17 +1380,12 @@ export function App(): JSX.Element {
           style={{ left: railWidth - 6 }}
         />
 
-        {observatory.observing || !keyOnCanvas || section || markSubject || (shownQuake && pinned) ? null : (
-          <div
-            className="pointer-events-auto absolute right-4 bottom-4 z-[1] max-h-[46dvh] w-[300px]
-              overflow-y-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50
-              md:max-h-[calc(100dvh_-_var(--head-h)_-_6rem)]"
-          >
-            {marksKey}
-          </div>
-        )}
-
-        <section id="globe-view" tabIndex={-1} aria-label="Globe" className="zone-canvas relative bg-void">
+        <section
+          id="globe-view"
+          tabIndex={-1}
+          aria-label={flat ? "Map" : "Globe"}
+          className="zone-canvas relative bg-void"
+        >
           <Suspense fallback={<GlobeLoading />}>
             <Globe
               feed={feed}
@@ -1498,8 +1430,19 @@ export function App(): JSX.Element {
               onReplay={receiveReplay}
             />
           </Suspense>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 xl:left-[var(--rail-w)]">
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 md:left-[var(--rail-w)]">
             {!observatory.observing && <LayerReadout controls={mapLayers} />}
+            {observatory.observing ||
+            !mapLayers.enabled.earthquakes ||
+            !keyOnCanvas ||
+            section ||
+            markSubject ||
+            (shownQuake && pinned) ? null : (
+              <div className="canvas-legend pointer-events-auto ml-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
+                {marksKey}
+              </div>
+            )}
+
             <EclipseReplayControls playback={chase} />
             <WaveReplayControls replay={inspection} />
             <SequenceReplayControls replay={inspection} />
@@ -1526,15 +1469,7 @@ export function App(): JSX.Element {
           </div>
         </section>
 
-        {!headShown && (snapshot.archive !== null || view.at !== null) ? (
-          <div className="stamp pointer-events-none absolute bottom-4 left-4 z-[2] bg-deck/40 px-3 py-2 font-mono text-[11px] text-faint backdrop-blur-xl backdrop-saturate-50">
-            {stillMoment(
-              view.at,
-              snapshot.archive ? snapshot.archive.from : clockAt(),
-              snapshot.archive !== null,
-            )}
-          </div>
-        ) : null}
+        {!headShown && <CanvasStamp cursor={view.at} day={snapshot.archive?.from ?? null} />}
 
         {markSubject ? (
           <MarkCard

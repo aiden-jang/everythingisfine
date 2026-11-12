@@ -46,6 +46,80 @@ async function sources(page: Page) {
   };
 }
 
+test("a shared weather view overrides recipient preferences without saving them @dev", async ({
+  page,
+  browser,
+}) => {
+  await installFeeds(page);
+  (await sources(page)).recover();
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#v=explore&p=map&layers=wind,lightning&windAt=1794502800&lightningAt=1794498600");
+  const windPanel = page.getByRole("region", { name: "Surface wind playback" });
+  await page.getByRole("button", { name: "Surface wind controls", exact: true }).click();
+  await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
+  await windPanel.getByRole("slider").press("Home");
+  const expected = await windPanel.locator("time").getAttribute("datetime");
+  await expect
+    .poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("windAt"))
+    .toBe(String(Date.parse(expected!) / 1000));
+  const link = page.url();
+  const recipient = await browser.newContext({ reducedMotion: "reduce" });
+  try {
+    const other = await recipient.newPage();
+    await installFeeds(other);
+    (await sources(other)).recover();
+    await other.addInitScript(() =>
+      localStorage.setItem(
+        "eif.mapLayers",
+        JSON.stringify({ wind: false, lightning: false, earthquakes: true }),
+      ),
+    );
+    await other.goto(link);
+    const layers = other.getByRole("region", { name: "Map layers", exact: true });
+    await expect(layers.getByRole("button", { name: "Earthquakes", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    await expect(layers.getByRole("button", { name: "Surface wind", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect.poll(async () => (await camera(other))?.morph).toBe(1);
+    await layers.getByRole("button", { name: "Surface wind controls", exact: true }).click();
+    const restored = other.getByRole("region", { name: "Surface wind playback" });
+    await expect(restored.locator("time")).toHaveAttribute("datetime", expected!);
+    await expect(restored.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+    expect(await other.evaluate(() => JSON.parse(localStorage.getItem("eif.mapLayers")!))).toEqual({
+      wind: false,
+      lightning: false,
+      earthquakes: true,
+    });
+    await other.reload();
+    await layers.getByRole("button", { name: "Surface wind controls", exact: true }).click();
+    await expect(restored.locator("time")).toHaveAttribute("datetime", expected!);
+    await other.getByRole("button", { name: "Globe", exact: true }).click();
+    await expect.poll(async () => (await camera(other))?.morph).toBe(0);
+    await expect(restored.locator("time")).toHaveAttribute("datetime", expected!);
+  } finally {
+    await recipient.close();
+  }
+});
+
+test("an expired shared weather moment explains its fallback and remains paused", async ({ page }) => {
+  await installFeeds(page);
+  (await sources(page)).recover();
+  await page.goto("/#v=explore&layers=wind&windAt=1700000000");
+  await page.getByRole("button", { name: "Surface wind controls", exact: true }).click();
+  const panel = page.getByRole("region", { name: "Surface wind playback" });
+  await expect(
+    panel.getByText("The selected time is no longer available. Showing the nearest available step.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  await expect(panel.locator("time")).toHaveAttribute("datetime", "2026-11-12T15:00:00.000Z");
+});
+
 for (const width of [1440, 390]) {
   test(`wind and lightning layer playback preserves the shared scene at ${width}px @dev`, async ({
     page,
@@ -124,7 +198,8 @@ for (const width of [1440, 390]) {
     await expect(windPanel.getByRole("status")).toContainText("Couldn’t reach NOAA GFS surface wind.");
     expect(await camera(page)).toEqual(pose);
     source.recover();
-    await windPanel.getByRole("button", { name: "Retry surface wind" }).click();
+    if (width === 390) await page.evaluate(() => window.dispatchEvent(new Event("online")));
+    else await windPanel.getByRole("button", { name: "Retry surface wind" }).click();
     await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /16:00/);
     await layers.getByText("Add layer", { exact: true }).click();
     await layers.getByRole("button", { name: /^Add lightning / }).click();

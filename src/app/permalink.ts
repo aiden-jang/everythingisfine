@@ -7,10 +7,12 @@ import { nearestWindow } from "./windows";
 import { readStoryMoment, writeStoryMoment, type StoryMoment } from "./observations/storyMoment";
 // Import the bounds, don't retype them. A retyped bound is what caused the clamp bug in `decode`.
 import { MAG_MAX, MAG_MIN } from "../globe/ramp";
+import { readLayers, writeLayers, type SharedLayers } from "./layerLink";
+import type { EarthScene } from "./useObservatory";
 
 /* "Look at this" as a link. See ARCHITECTURE.md#srcapppermalinkts. */
 
-export interface Permalink {
+export interface Permalink extends SharedLayers {
   story?: StoryMoment | undefined;
   lon: number;
   lat: number;
@@ -21,6 +23,8 @@ export interface Permalink {
   ramp: RampName;
   flat?: boolean;
   presentation?: "observe" | "explore";
+  scene?: EarthScene;
+  catalogue?: EarthScene | "all";
   /** `source:id`, or null. Not our internal key. */
   event: string | null;
   /** The two ends of the cross-section, or null. A link with one always lands on the map, because that is the only place a section exists. */
@@ -54,6 +58,8 @@ export function encode(state: Permalink): string {
   ];
   if (state.flat !== undefined) parts.push(`p=${state.flat ? "map" : "globe"}`);
   if (state.presentation) parts.push(`v=${state.presentation}`);
+  if (state.scene) parts.push(`scene=${state.scene}`);
+  if (state.catalogue) parts.push(`catalogue=${state.catalogue}`);
   if (state.event) parts.push(`e=${state.event}`);
   // Seconds, not milliseconds. The strip is 24 buckets wide, so a shared moment is good to about a minute.
   if (state.cursor !== null) parts.push(`c=${Math.round(state.cursor / 1000)}`);
@@ -66,10 +72,10 @@ export function encode(state: Permalink): string {
         `,${round(wrapLon(toLon), 2)},${round(toLat, 2)}`,
     );
   }
-  if (!state.story) return parts.join("&");
   const params = new URLSearchParams(parts.join("&"));
-  writeStoryMoment(params, state.story);
-  return params.toString();
+  writeLayers(params, state);
+  if (state.story) writeStoryMoment(params, state.story);
+  return !state.layers && !state.layerTimes && !state.story ? parts.join("&") : params.toString();
 }
 
 const SOURCES: readonly string[] = ["usgs", "emsc"];
@@ -79,8 +85,8 @@ const clamp = (value: number, lo: number, hi: number): number => Math.max(lo, Ma
 
 /** A fragment back into state. Treat every field as untrusted: people edit URLs and chat clients cut them off. */
 export function decode(fragment: string): Partial<Permalink> {
-  const out: Partial<Permalink> = {};
   const params = new URLSearchParams(fragment.replace(/^#/, ""));
+  const out: Partial<Permalink> = readLayers(params);
   const story = readStoryMoment(params);
   if (story) out.story = story;
 
@@ -88,6 +94,11 @@ export function decode(fragment: string): Partial<Permalink> {
   if (projection === "map" || projection === "globe") out.flat = projection === "map";
   const presentation = params.get("v");
   if (presentation === "observe" || presentation === "explore") out.presentation = presentation;
+  const scene = params.get("scene");
+  if (scene === "live" || scene === "depth" || scene === "night") out.scene = scene;
+  const catalogue = params.get("catalogue");
+  if (catalogue === "live" || catalogue === "depth" || catalogue === "night" || catalogue === "all")
+    out.catalogue = catalogue;
 
   const at = params.get("at")?.split(",").map(Number);
   if (at && at.length === 3 && at.every((n) => Number.isFinite(n))) {

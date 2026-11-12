@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Filters } from "../data/types";
 import { stored, store } from "./stored";
-import { readMapLayers, type MapLayer } from "./layerVisibility";
+import { mapLayerNames, readMapLayers, type MapLayer } from "./layerVisibility";
+import { layerTime } from "./layerTime";
 import type { RadarLayerView, RadarView } from "./radar/radarCamera";
 import type { FeedRow } from "./feedStatus";
+import { latestLayerTimes, type LayerTimes, type SharedLayers } from "./layerLink";
 import {
   weatherLayers,
   weatherOverlay,
@@ -14,16 +16,31 @@ import {
   type MapLayerPresentation,
 } from "./weatherLayers";
 
-export function useMapLayers(filters: Filters, background: boolean, target?: string, archived = false) {
-  const [enabled, setEnabled] = useState(() => readMapLayers(stored("mapLayers"), target));
+export function useMapLayers(
+  filters: Filters,
+  background: boolean,
+  target?: string,
+  archived = false,
+  shared: SharedLayers = {},
+) {
+  const [enabled, setEnabled] = useState(() =>
+    readMapLayers(shared.layers ? JSON.stringify(shared.layers) : stored("mapLayers"), target),
+  );
   const [radarView, updateRadar] = useState<RadarView | null>(null);
   const [weather, setWeather] = useState<Partial<Record<WeatherLayerId, WeatherLayerView>>>({});
-  const [expanded, expand] = useState<PlaybackLayer | null>("radar");
-  const [selectedTimes, setSelectedTimes] = useState<Record<PlaybackLayer, number | null>>({
-    radar: null,
-    wind: null,
-    lightning: null,
-  });
+  const [expanded, setExpanded] = useState<PlaybackLayer | null>("radar");
+  const [activityOpen, setActivityOpen] = useState(true);
+  const expand = useCallback((id: PlaybackLayer | null) => {
+    setExpanded(id);
+    if (id !== null) setActivityOpen(false);
+  }, []);
+  const openActivity = useCallback((open: boolean) => {
+    setActivityOpen(open);
+    if (open) setExpanded(null);
+  }, []);
+  const [selectedTimes, setSelectedTimes] = useState<LayerTimes>(
+    () => shared.layerTimes ?? { ...latestLayerTimes },
+  );
   const selectTime = useCallback((id: PlaybackLayer, at: number | null) => {
     setSelectedTimes((previous) => ({ ...previous, [id]: at }));
   }, []);
@@ -48,21 +65,23 @@ export function useMapLayers(filters: Filters, background: boolean, target?: str
     [radarActive, radarView],
   );
   const latest = useRef(enabled);
-  const change = useCallback((layer: MapLayer, on: boolean) => {
-    const next = { ...latest.current, [layer]: on };
-    latest.current = next;
-    store("mapLayers", JSON.stringify(next));
-    setEnabled(next);
-    if (on && (layer === "radar" || layer in weatherLayers)) expand(layer as PlaybackLayer);
-  }, []);
+  const change = useCallback(
+    (layer: MapLayer, on: boolean) => {
+      const next = { ...latest.current, [layer]: on };
+      latest.current = next;
+      store("mapLayers", JSON.stringify(next));
+      setEnabled(next);
+      if (on && layer === "earthquakes") openActivity(true);
+      if (on && (layer === "radar" || layer in weatherLayers)) expand(layer as PlaybackLayer);
+    },
+    [expand, openActivity],
+  );
   const globeFilters = useMemo(
     () => (enabled.earthquakes ? filters : { ...filters, sources: new Set<"usgs" | "emsc">() }),
     [filters, enabled.earthquakes],
   );
   const radarCaption =
-    radar?.at === undefined
-      ? null
-      : `Weather data by RainViewer · radar ${new Date(radar.at).toISOString().slice(0, 16).replace("T", " ")} UTC`;
+    radar?.at === undefined ? null : `Weather data by RainViewer · radar ${layerTime(radar.at)}`;
   const wind = active && enabled.wind ? weather.wind : undefined;
   const lightning = active && enabled.lightning ? weather.lightning : undefined;
   const observation = useMemo(
@@ -96,6 +115,8 @@ export function useMapLayers(filters: Filters, background: boolean, target?: str
   ];
   return {
     enabled,
+    activityOpen,
+    openActivity,
     change,
     globeFilters,
     radar,
@@ -111,11 +132,19 @@ export function useMapLayers(filters: Filters, background: boolean, target?: str
     feeds,
     captureNote: (inspection: string | null) =>
       [
+        active
+          ? `Layers: ${
+              (Object.keys(enabled) as MapLayer[])
+                .filter((id) => enabled[id])
+                .map((id) => mapLayerNames[id])
+                .join(", ") || "all off"
+            }`
+          : null,
         radarCaption,
         ...(["wind", "lightning"] as const).flatMap((id) =>
           active && enabled[id]
             ? [
-                `${weatherLayers[id].source} · ${weather[id]?.frame ? `${new Date(weather[id]!.frame!.at).toISOString()}${weather[id]?.feed.state === "failed" ? " · last available" : ""}` : weather[id]?.feed.state === "failed" ? "unavailable" : "no recent data"}`,
+                `${weatherLayers[id].source} · ${weather[id]?.frame ? `${layerTime(weather[id]!.frame!.at)}${weather[id]?.lastAvailable ? " · last available" : ""}` : weather[id]?.feed.state === "failed" ? "unavailable" : "no recent data"}`,
               ]
             : [],
         ),

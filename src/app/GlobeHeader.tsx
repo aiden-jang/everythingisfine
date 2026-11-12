@@ -16,6 +16,7 @@ interface Props {
   dismiss: () => void;
   ready: boolean;
   observing: boolean;
+  earthquakes: boolean;
   onHome: () => void;
   onReset: () => void;
   headShown: boolean;
@@ -45,6 +46,7 @@ export function GlobeHeader({
   download,
   dismiss,
   observing,
+  earthquakes,
   ready,
   onHome,
   onReset,
@@ -107,7 +109,7 @@ export function GlobeHeader({
         {/* These ignore the filters, so each has to say whose number it is: at magnitude 4 the headline read
             5 while this row read 160. Wide screens only - from `sm` up they took ~380px of a 768px header. */}
         <div
-          className={`${observing ? "!hidden" : ""} hidden items-baseline gap-5 ${snapshot.coveredSince === null ? "" : "2xl:flex"}`}
+          className={`${observing || !earthquakes ? "!hidden" : ""} hidden items-baseline gap-5 ${snapshot.coveredSince === null ? "" : "2xl:flex"}`}
         >
           {(
             [

@@ -103,6 +103,8 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/CopyLink.tsx` | Pinned-event link copying and recovery when clipboard access is refused |
 | `src/app/viewLocation.ts` | Publish same-document URL changes and subscribe copy controls to the current address |
 | `src/app/permalink.ts` | Parse and encode a shareable view without persisting playback motion |
+| `src/app/{layerLink,layerMetadata,layerTime}.ts` | Shared layer state, coverage definitions, source health and consistent UTC labels |
+| `src/globe/{overlayPlacement,graphicsRecovery}.ts` | Geographic HUD positioning and recovery of the existing graphics context |
 | `src/globe/animation.ts` | Bound long pauses while retaining elapsed time on slow displays |
 
 The main component and scene modules still coordinate several features. Their existing size
@@ -333,6 +335,10 @@ other layers' selections and independent timestamps. Selected times live above t
 detour, archive visit or disabled layer releases data resources without losing the chosen moment.
 Returning reopens paused; following latest remains distinct from holding a timestamp. An expired
 selection reports its fallback rather than silently presenting it as the same scan.
+The URL carries the enabled layer set and held weather times independently of device preferences.
+Shared coverage metadata drives the switches and layer guide. Event sources remain checked when their
+markers are hidden; optional weather sources leave the feed total when off. Live weather retries on
+reconnection, retaining existing data with its original time while recovery is pending.
 The shared readout names wind forecasts and GOES-East lightning with their own timestamps on landing,
 globe and map. Their frames contribute paths and marks to
 the existing observation renderer, with stable geometry references and no additional canvas.

@@ -2,13 +2,14 @@ import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { searchStories } from "../storyIndex";
 import type { Visit } from "./library";
 import "./visitor.css";
+import { layerTime } from "../layerTime";
 
 const title = (id: string) => searchStories.find((story) => story.id === id)?.title ?? id;
 export function visitNote(visit: Visit) {
   if (visit.position.sky?.lunar) return `Traverse ${visit.position.sky.lunar.eva + 1} · Apollo 17, 1972`;
   if (visit.position.sky) return `${visit.position.sky.city} · saved sky`;
   const at = visit.position.moment?.at ?? visit.position.radar?.at;
-  if (at !== undefined) return `${new Date(at).toISOString().slice(0, 16).replace("T", " ")} UTC`;
+  if (at !== undefined) return layerTime(at);
   if (visit.position.float) return "Saved float profile and depth";
   return "Opens the latest available view";
 }

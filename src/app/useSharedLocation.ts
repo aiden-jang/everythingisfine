@@ -17,7 +17,11 @@ interface Props {
   playing: boolean;
   mapOn: boolean;
   presentation: "observe" | "explore";
+  scene: Permalink["scene"];
+  catalogue: Permalink["catalogue"];
   getMoment: () => Permalink["story"];
+  layers: Permalink["layers"];
+  layerTimes: Permalink["layerTimes"];
   camera: MutableRefObject<CameraState>;
   lastWritten: MutableRefObject<string>;
 }
@@ -34,7 +38,11 @@ export function useSharedLocation({
   playing,
   mapOn,
   presentation,
+  scene,
+  catalogue,
   getMoment,
+  layers,
+  layerTimes,
   camera,
   lastWritten,
 }: Props) {
@@ -55,7 +63,11 @@ export function useSharedLocation({
         ramp,
         flat: mapOn,
         presentation,
+        ...(scene ? { scene } : {}),
+        ...(catalogue ? { catalogue } : {}),
         story: getMoment(),
+        ...(layers ? { layers } : {}),
+        ...(layerTimes ? { layerTimes } : {}),
         event: reading ? `${reading.source}:${reading.id}` : null,
         day: archive ? new Date(archive.from).toISOString().slice(0, 10) : null,
         mark: markId,
@@ -79,7 +91,11 @@ export function useSharedLocation({
     heldCursor,
     mapOn,
     presentation,
+    scene,
+    catalogue,
     getMoment,
+    layers,
+    layerTimes,
     feed,
     camera,
     lastWritten,

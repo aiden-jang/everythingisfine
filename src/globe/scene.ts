@@ -496,7 +496,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       const near: { key: string; lon: number; lat: number; magnitude: number; depthKm: number }[] = [];
       let worst = Infinity;
       store.forEach((quake) => {
-        if (!matches(quake as never, filters, now)) return;
+        if (!matches(quake as never, filters, now) || !events.includesTime(quake.primary.time)) return;
         const { lon, lat, magnitude, depthKm } = quake.primary;
         const km = distanceKm(under.lon, under.lat, lon, lat);
         if (near.length >= SHORTLIST && km >= worst) return;
@@ -513,8 +513,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       let bestKey: string | null = null;
       let bestScore = Infinity;
       for (const candidate of near) {
-        // Projected at the depth it is drawn at, so the pointer agrees with the marker rather than with the
-        // epicentre above it. Flat, the sink is off and this is the surface again.
+        // Pick at the drawn depth, not the epicentre above it; flat projection has no sink.
         const at = controls.project(
           candidate.lon,
           candidate.lat,
@@ -522,8 +521,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
         );
         if (!at) continue;
         const d = Math.hypot(at.x - clientX, at.y - clientY);
-        // Asked of the shader's own formula rather than copied from it. Writing the constants out twice is
-        // what lets the pointer drift away from the picture.
+        // Use the shader's radius so picking cannot drift from the drawing.
         const radius = markerRadiusPx(candidate.magnitude, markerScale());
         if (d > radius + slopPx) continue;
         // Ranked by how far outside the marker the pointer is, so a big marker does not win simply for

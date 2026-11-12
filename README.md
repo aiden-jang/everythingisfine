@@ -177,11 +177,18 @@ clean, with playback controls in Explore; moving between them preserves the same
 Storm radar starts on unless previously switched off, and loads recent worldwide scans while enabled
 on either surface. Its playback appears below the switches, using a separate clock from the earthquake timeline. Turning it off stops
 playback and releases decoded images. Recent radar is unavailable in archive mode. **All stories & data** returns to the full
-catalogue. Layer visibility stays on this device; shared event targets override a hidden layer.
-Earthquake controls fold out of the way when that layer is off, while the report time window remains.
+catalogue. Shared links preserve the open scene category as well as the globe or map view.
+Layer choices are remembered on this device, while shared links carry their own layer combination
+and held radar, wind and lightning times. Opening a link does not overwrite saved device preferences.
+Older links keep their existing behavior, and shared event targets remain visible. Playback always reopens paused;
+an expired weather selection explains which available frame replaced it.
+**Earthquake reports** folds independently of layer visibility. Opening another weather control folds those
+details away without hiding earthquake markers. On phones, the sheet shortcut follows the visible layers.
+**Layer guide** explains the enabled overlays and their coverage; all clocks use explicit UTC dates.
 The feed counter covers seven background sources plus radar, wind and lightning while active on the landing globe or in Explore.
 Disabled weather layers stay listed as off but are excluded from the total. Other views check their own sources when opened; a recorded
-journey is not a live feed. Tropical cyclones are global GDACS reports,
+journey is not a live feed. Source availability is separate from visibility: earthquake reports use two
+sources, and event sources continue checking when their markers are hidden. Tropical cyclones are global GDACS reports,
 while Storm Radar uses RainViewer’s worldwide available radar coverage with an optional NOAA
 contiguous-US detail view. Uncovered areas are marked, rather than presented as clear weather.
 

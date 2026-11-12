@@ -1,3 +1,4 @@
+import { layerTime } from "./layerTime";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { loadSource } from "./observations/load";
 import { observations } from "./observations/catalogue";
@@ -17,7 +18,6 @@ type Props = {
   selectedAt: number | null;
   onSelect: (id: WeatherLayerId, at: number | null) => void;
 };
-const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", dateStyle: "medium", timeStyle: "short" });
 
 export function WeatherLayer({ id, onView, selectedAt, onSelect }: Props): JSX.Element {
   const [source, setSource] = useState<ObservationSource | null>(null);
@@ -81,7 +81,10 @@ function WeatherPlayer({
   const index = frame ? (frames?.indexOf(frame) ?? 0) : 0;
   const latestAt = frames?.at(-1)?.at;
   const feed = useMemo(() => weatherFeed(id, state, lastCheck, latestAt), [id, state, lastCheck, latestAt]);
-  useLayoutEffect(() => onView(id, { frame, feed }), [id, frame, feed, onView]);
+  useLayoutEffect(
+    () => onView(id, { frame, feed, lastAvailable: !!frame && state !== "ready" }),
+    [id, frame, feed, state, onView],
+  );
   useEffect(() => {
     if (!playing || !frames?.length) return;
     let timer = 0;
@@ -102,7 +105,7 @@ function WeatherPlayer({
     };
   }, [playing, frames, index, select]);
   const meta = weatherLayers[id];
-  const time = frame ? `${clock.format(frame.at)} UTC` : "";
+  const time = frame ? layerTime(frame.at) : "";
   const status =
     state === "loading"
       ? `Checking ${meta.source}…`

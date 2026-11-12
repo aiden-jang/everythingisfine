@@ -38,6 +38,20 @@ export const STILL_HEIGHT = 1200;
  */
 const CAPTION_H = 118;
 
+export function wrapProvenance(text: string, measure: (line: string) => number, width: number): string[] {
+  const lines: string[] = [];
+  let line = "";
+  for (const word of text.split(/\s+/)) {
+    const next = line ? `${line} ${word}` : word;
+    if (line && measure(next) > width) {
+      lines.push(line);
+      line = word;
+    } else line = next;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
 /**
  * The caption's three lines of text, in the order they are drawn. Separated from the drawing so it can be
  * asserted without a canvas: what a still claims is the part worth testing, and `fillText` is not.
@@ -103,7 +117,10 @@ export function drawStill(
 
   /* Cropped to the frame, not letterboxed into it. Never cropped below the shorter side of the canvas,
      because that is the most the globe can span. See ARCHITECTURE.md#srcappstillts. */
-  const frameH = STILL_HEIGHT - CAPTION_H;
+  const [mark, verdict, moment, provenance] = captionLines(caption);
+  ctx.font = "14px Geist, Helvetica Neue, Arial, sans-serif";
+  const sourceLines = wrapProvenance(provenance, (line) => ctx.measureText(line).width, STILL_WIDTH - 80);
+  const frameH = STILL_HEIGHT - CAPTION_H - Math.max(0, sourceLines.length - 1) * 18;
   const frameAspect = STILL_WIDTH / frameH;
   const shortest = Math.min(globeWidth, globeHeight);
   let sw = globeWidth;
@@ -120,7 +137,6 @@ export function drawStill(
     ctx.drawImage(globe, (STILL_WIDTH - w) / 2, (frameH - h) / 2, w, h);
   }
 
-  const [mark, verdict, moment, provenance] = captionLines(caption);
   const baseline = frameH + 34;
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = theme.ink;
@@ -131,8 +147,10 @@ export function drawStill(
   if (verdict !== null) ctx.fillText(verdict, 40, baseline + 28, 780);
   ctx.fillStyle = theme.faint;
   ctx.fillText(moment, 40, baseline + (verdict ? 52 : 28), 780);
-  ctx.font = "12px Geist, Helvetica Neue, Arial, sans-serif";
-  ctx.fillText(provenance, 40, STILL_HEIGHT - 12, STILL_WIDTH - 80);
+  ctx.font = "14px Geist, Helvetica Neue, Arial, sans-serif";
+  sourceLines.forEach((line, index) =>
+    ctx.fillText(line, 40, STILL_HEIGHT - 12 - (sourceLines.length - index - 1) * 18),
+  );
   if (caption.magnitudeScale === false) {
     ctx.textAlign = "right";
     ctx.font = "500 16px Geist, Helvetica Neue, Arial, sans-serif";

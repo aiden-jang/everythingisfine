@@ -42,6 +42,7 @@ export interface ObservationFrame {
   raster?: ObservationRaster;
   measurements?: readonly Measurement[];
   flow?: boolean;
+  pathOpacity?: number;
   tide?: { observed: number; predicted?: number | undefined; min: number; max: number };
   camera?: CameraState;
   details?: { title: string; rows: readonly Measurement[] };

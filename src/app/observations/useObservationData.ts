@@ -58,11 +58,14 @@ export function useObservationData(source: ObservationSource, option: string) {
       document.removeEventListener("visibilitychange", visible);
       start();
     }
-    start();
+    const online = () => retry((value) => value + 1);
+    if (source.refreshMs) window.addEventListener("online", online);
+    tick();
     return () => {
       abort.abort();
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", visible);
+      window.removeEventListener("online", online);
     };
   }, [source, option, revision]);
   const state =

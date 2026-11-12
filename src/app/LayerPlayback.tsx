@@ -1,15 +1,9 @@
+import { layerTime } from "./layerTime";
 import type { ReactNode } from "react";
 import type { PlaybackLayer } from "./weatherLayers";
 import { mapLayerNames } from "./layerVisibility";
 import type { FeedRow } from "./feedStatus";
 
-const clock = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "UTC",
-  month: "short",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-});
 export function LayerPlayback({
   id,
   expanded,
@@ -42,11 +36,11 @@ export function LayerPlayback({
           <path d="m2 2 4 4 4-4" fill="none" stroke="currentColor" strokeWidth="1.5" />
         </svg>
       </button>
-      <small id={`${id}-playback-time`}>
+      <small id={`${id}-playback-time`} hidden={expanded}>
         {state === "failed" ? "Source unavailable" : state === "pending" ? "Checking source…" : ""}
         {at !== undefined && (state === "failed" || state === "pending") ? " · " : ""}
         {at !== undefined ? (
-          <time dateTime={new Date(at).toISOString()}>{clock.format(at)} UTC</time>
+          <time dateTime={new Date(at).toISOString()}>{layerTime(at)}</time>
         ) : state === "ok" ? (
           "No recent data"
         ) : (

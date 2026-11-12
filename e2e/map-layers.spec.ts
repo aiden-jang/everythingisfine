@@ -1,6 +1,35 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds } from "./feeds";
 
+test("phone navigation follows the visible layers and the guide explains empty coverage", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page);
+  await page.goto("/#v=explore&layers=fires,floods");
+  await expect(page.getByRole("button", { name: "Recent earthquakes", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Layers & activity", exact: true }).click();
+  const layers = page.getByRole("region", { name: "Map layers", exact: true });
+  await expect(layers.getByRole("button", { name: "Wildfires", exact: true })).toBeInViewport();
+  await layers.getByText("Layer guide", { exact: true }).click();
+  await expect(layers.getByText(/Reported flood events, not a map/)).toBeVisible();
+  await layers.getByRole("button", { name: "Wildfires", exact: true }).click();
+  await layers.getByRole("button", { name: "Floods", exact: true }).click();
+  await expect(layers.getByText(/All layers are off/)).toBeVisible();
+  await layers.getByRole("button", { name: "Earthquakes", exact: true }).click();
+  await page.getByRole("button", { name: "Recent earthquakes", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Recent earthquakes" })).toBeInViewport();
+  const status = page.getByRole("button", { name: /^Feed status,/ });
+  await status.click();
+  await page.setViewportSize({ width: 844, height: 390 });
+  const popup = page.getByRole("region", { name: "Background feed status", exact: true });
+  await expect(popup).toBeVisible();
+  const bounds = await popup.boundingBox();
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(390);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(844);
+});
+
 test("hidden base layers stay hidden through landing, scene categories and both projections @dev", async ({
   page,
 }) => {

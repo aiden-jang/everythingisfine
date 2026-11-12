@@ -1,4 +1,5 @@
-import { useId, useRef, type JSX } from "react";
+import { useEffect, useId, useRef, type JSX } from "react";
+import { layerTime } from "./layerTime";
 import type { FeedStatus, FeedRow } from "./feedStatus";
 import { observations } from "./observations/catalogue";
 import "./feed-status.css";
@@ -9,8 +10,6 @@ const LABEL: Record<FeedRow["state"], string> = {
   failed: "Couldn’t reach feed",
   off: "Off",
 };
-
-const clock = new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", hour: "2-digit", minute: "2-digit" });
 
 export function FeedDot({
   feeds,
@@ -24,6 +23,22 @@ export function FeedDot({
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
+  const position = () => {
+    const rect = trigger.current?.getBoundingClientRect();
+    if (!rect || !panel.current) return;
+    panel.current.style.setProperty(
+      "--feed-top",
+      `${Math.max(12, Math.min(Math.ceil(rect.bottom + 6), window.innerHeight - 100))}px`,
+    );
+    panel.current.style.setProperty("--feed-offset", `${window.innerWidth - rect.right}px`);
+  };
+  useEffect(() => {
+    const move = () => {
+      if (panel.current?.matches(":popover-open")) position();
+    };
+    window.addEventListener("resize", move);
+    return () => window.removeEventListener("resize", move);
+  }, []);
   if (archiveFrom !== null)
     return (
       <span className="font-mono text-[11px] text-dim">
@@ -42,12 +57,7 @@ export function FeedDot({
         ref={trigger}
         {...{ popovertarget: id }}
         aria-controls={id}
-        onClick={() => {
-          const rect = trigger.current?.getBoundingClientRect();
-          if (!rect || !panel.current) return;
-          panel.current.style.insetBlockStart = `${Math.ceil(rect.bottom + 6)}px`;
-          panel.current.style.setProperty("--feed-offset", `${window.innerWidth - rect.right}px`);
-        }}
+        onClick={position}
       >
         <span className={`inline-block size-[6px] rounded-full ${dot}`} aria-hidden="true" />
         <span className="sr-only">Feed status,</span>
@@ -92,7 +102,7 @@ export function FeedDot({
                     dateTime={new Date(lastCheck).toISOString()}
                     title={new Date(lastCheck).toISOString()}
                   >
-                    {clock.format(lastCheck)} UTC
+                    {layerTime(lastCheck)}
                   </time>
                 </small>
               )}
@@ -101,7 +111,8 @@ export function FeedDot({
         </ul>
         <p>
           Enabled weather layers join the total on the landing globe and in Explore. They pause in other
-          views. Off means they are not being checked.
+          views. Off means they are not being checked. These are source counts, not visible layer counts:
+          earthquakes use two sources, and event sources keep checking when their markers are hidden.
         </p>
         <h3>Loads when opened</h3>
         <p>

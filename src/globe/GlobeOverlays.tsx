@@ -42,12 +42,12 @@ export function GlobeOverlays({
         data-orbit-readout
         data-visible="false"
         aria-hidden="true"
-        className="orbit-readout pointer-events-none absolute top-[var(--scene-hud-top)] left-4 xl:ml-[var(--rail-w)] xl:translate-x-8 border border-hairline bg-deck/90 px-2 py-1 font-mono text-[10px] text-dim tabular-nums"
+        className="orbit-readout pointer-events-none absolute top-[var(--scene-hud-top)] left-4 md:ml-[var(--rail-w)] md:translate-x-8 border border-hairline bg-deck/90 px-2 py-1 font-mono text-[10px] text-dim tabular-nums"
       />
       {cutaway ? (
         <div
           role="status"
-          className="cutaway-note pointer-events-none absolute top-[var(--scene-hud-top)] left-4 max-w-[220px] border border-hairline bg-deck/95 p-2 text-[10px] text-dim xl:ml-[var(--rail-w)] xl:translate-x-8"
+          className="cutaway-note pointer-events-none absolute top-[var(--scene-hud-top)] left-4 max-w-[220px] border border-hairline bg-deck/95 p-2 text-[10px] text-dim md:ml-[var(--rail-w)] md:translate-x-8"
         >
           <span className="label block">Regional cutaway · true scale</span>
           <span className="mt-1 block font-mono tabular-nums">{geographicCoordinates(cutaway)}</span>
@@ -79,7 +79,7 @@ export function GlobeOverlays({
         /* Offset past the rail, like the bottom band. The canvas is full-bleed and the rail floats over
            it, so a bar at the container's own left edge is drawn underneath the rail. */
         className="pointer-events-none absolute bottom-32 left-4 opacity-0 transition-opacity duration-200 md:bottom-[76px]
-          xl:ml-[var(--rail-w)]"
+          md:ml-[var(--rail-w)]"
       >
         <span ref={scaleText} className="block font-mono text-[10.5px] text-faint tabular-nums" />
         {/* Ticked at both ends. A bare line has no start or finish, and the eye measures from wherever it

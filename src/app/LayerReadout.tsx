@@ -1,3 +1,4 @@
+import { layerTime } from "./layerTime";
 import { RadarCanvasCredit } from "./CanvasFooter";
 import type { useMapLayers } from "./useMapLayers";
 import type { WeatherLayerId } from "./weatherLayers";
@@ -22,8 +23,8 @@ export function LayerReadout({
             return (
               <span key={id}>
                 {id === "wind" ? "GFS wind forecast" : "GOES-East lightning"} ·{" "}
-                <time dateTime={time}>{time.slice(5, 16).replace("T", " ")} UTC</time>
-                {view.feed.state === "failed" ? " · last available" : ""}
+                <time dateTime={time}>{layerTime(view.frame!.at)}</time>
+                {view.lastAvailable ? " · last available" : ""}
               </span>
             );
           })}

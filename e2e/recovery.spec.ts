@@ -1,6 +1,129 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds, waitForData } from "./feeds";
 
+test("archived earthquakes stay visible and selectable through projection and zoom @dev", async ({
+  page,
+}) => {
+  await installFeeds(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#v=explore&d=2011-03-11&p=map");
+  await expect(page.getByText("2011-03-11 UTC · Full day", { exact: true })).toBeVisible();
+  const drawn = () =>
+    page.evaluate(
+      () =>
+        (window as unknown as { __events: { object: { geometry: { drawRange: { count: number } } } } })
+          .__events?.object.geometry.drawRange.count ?? 0,
+    );
+  await expect.poll(drawn).toBeGreaterThan(0);
+  for (const name of ["Globe", "Map"]) {
+    await page.getByRole("button", { name, exact: true }).click();
+    await expect
+      .poll(() =>
+        page.evaluate(() => (window as unknown as { __globe: { morph: () => number } }).__globe.morph()),
+      )
+      .toBe(name === "Map" ? 1 : 0);
+    await expect.poll(drawn).toBeGreaterThan(0);
+    await page.locator("#globe-view").focus();
+    await page.keyboard.press("+");
+    await expect.poll(drawn).toBeGreaterThan(0);
+  }
+  const point = await page.evaluate(() => {
+    const world = window as unknown as {
+      __feed: {
+        store: {
+          forEach: (fn: (quake: { key: string; primary: { lon: number; lat: number } }) => void) => void;
+        };
+      };
+      __globe: { project: (lon: number, lat: number) => { x: number; y: number } | null };
+      __hitTest: (x: number, y: number) => string | null;
+    };
+    let hit: { x: number; y: number } | null = null;
+    world.__feed.store.forEach((q) => {
+      const p = world.__globe.project(q.primary.lon, q.primary.lat);
+      if (
+        !hit &&
+        p &&
+        document.elementFromPoint(p.x, p.y)?.tagName === "CANVAS" &&
+        world.__hitTest(p.x, p.y) === q.key
+      )
+        hit = p;
+    });
+    return hit;
+  });
+  expect(point).not.toBeNull();
+  await page.mouse.move(point!.x, point!.y);
+  await expect(page.locator("#globe-view .bg-raised")).toHaveCSS("opacity", "1");
+  await page.mouse.click(point!.x, point!.y);
+  await expect(page.getByRole("button", { name: "Copy link", exact: true })).toBeVisible();
+  await page.getByRole("slider", { name: "Time in the window", exact: true }).press("Home");
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        type Q = { key: string; primary: { lon: number; lat: number; time: number } };
+        const world = window as unknown as {
+          __feed: { store: { forEach: (fn: (q: Q) => void) => void; get: (id: string) => Q } };
+          __globe: { project: (lon: number, lat: number) => { x: number; y: number } | null };
+          __hitTest: (x: number, y: number) => string | null;
+        };
+        let invisibleHits = 0;
+        world.__feed.store.forEach((q) => {
+          const at = world.__globe.project(q.primary.lon, q.primary.lat);
+          const hit = at ? world.__hitTest(at.x, at.y) : null;
+          if (hit && world.__feed.store.get(hit).primary.time > Date.parse("2011-03-11T00:00:00Z"))
+            invisibleHits++;
+        });
+        return invisibleHits;
+      }),
+    )
+    .toBe(0);
+  await page.getByRole("button", { name: "back to live", exact: true }).click();
+  await expect.poll(drawn).toBeGreaterThan(0);
+});
+
+test("a lost graphics context restores the same scene and view @dev", async ({ page }) => {
+  await installFeeds(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#v=explore&p=map&at=175,25,2&layers=earthquakes,fires");
+  await waitForData(page);
+  const canvas = page.locator("#globe-view canvas");
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as unknown as { __globe?: { morph: () => number } }).__globe?.morph()),
+    )
+    .toBe(1);
+  const before = await canvas.elementHandle();
+  const lose = await canvas.evaluate((node) => {
+    const context = (node as HTMLCanvasElement).getContext("webgl2")!;
+    const extension = context.getExtension("WEBGL_lose_context");
+    if (!extension) return false;
+    extension.loseContext();
+    return true;
+  });
+  expect(lose).toBe(true);
+  await expect(page.getByText("The globe’s graphics were interrupted.", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Try the globe again", exact: true }).click();
+  await expect(page.getByText("The globe’s graphics were interrupted.", { exact: true })).toBeHidden();
+  expect(await before!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+  expect(
+    await page.evaluate(() =>
+      (
+        window as unknown as {
+          __globe: { state: () => { lon: number; lat: number; zoom: number }; morph: () => number };
+        }
+      ).__globe.state(),
+    ),
+  ).toMatchObject({ lon: 175, lat: 25, zoom: 2 });
+  const layers = page.getByRole("region", { name: "Map layers", exact: true });
+  await expect(layers.getByRole("button", { name: "Wildfires", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(layers.getByRole("button", { name: "Floods", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "false",
+  );
+});
+
 test("WebGL failure leaves events usable and can recover", async ({ page }) => {
   await page.addInitScript(() => {
     const original = HTMLCanvasElement.prototype.getContext;

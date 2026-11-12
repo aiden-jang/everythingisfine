@@ -1,3 +1,4 @@
+import { layerTime } from "../layerTime";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RadarScan } from "../../sources/radar";
 import {
@@ -13,16 +14,7 @@ import { useRadarLightning } from "./useRadarLightning";
 import { useRadarScans } from "./useRadarScans";
 import { radarFeedHealth } from "./radarFeedHealth";
 
-const format = new Intl.DateTimeFormat("en-GB", {
-  month: "short",
-  day: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  second: "2-digit",
-  timeZone: "UTC",
-  hourCycle: "h23",
-});
-const label = (at: number) => format.format(at) + " UTC";
+const label = layerTime;
 const shortTime = (at: number) => new Date(at).toISOString().slice(11, 16);
 
 export function RadarStage({

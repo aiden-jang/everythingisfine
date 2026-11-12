@@ -1,6 +1,11 @@
 .map-layers {
   margin-bottom: 0;
 }
+.canvas-legend {
+  width: 300px;
+  max-height: min(36dvh, calc(100dvh - var(--head-h) - 200px));
+  overflow-y: auto;
+}
 .map-layers h2 {
   margin-bottom: 10px;
   font-size: 15px;
@@ -52,6 +57,9 @@
   font-size: 11px;
   color: var(--color-dim);
 }
+.map-layers small[hidden] {
+  display: none;
+}
 .map-layer-open {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -78,12 +86,12 @@
   display: none;
 }
 
-.zone-rail.rail > .titleblock {
+.zone-rail.rail .titleblock {
   position: static;
   margin-top: 0;
   padding-top: 0;
 }
-.zone-rail.rail > .titleblock .tb-cell {
+.zone-rail.rail .titleblock .tb-cell {
   flex-direction: row;
   display: flex;
   align-items: baseline;
@@ -91,7 +99,7 @@
   padding: 0;
   border: 0;
 }
-.zone-rail.rail > .titleblock .view-mode {
+.zone-rail.rail .titleblock .view-mode {
   background: transparent;
 }
 
@@ -105,6 +113,14 @@
   cursor: pointer;
   font-size: 12px;
   color: var(--color-dim);
+}
+.map-layer-help {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 12px;
+}
+.map-layer-help > details[open] {
+  grid-column: 1 / -1;
 }
 .map-layer-picker[open] > summary {
   color: var(--color-ink);
@@ -188,6 +204,9 @@
   cursor: default;
   color: var(--color-dim);
 }
+.map-layer-open + .layer-playback {
+  margin-top: 14px;
+}
 
 .radar-layer-loading {
   margin-block: 12px;
@@ -230,4 +249,66 @@
 }
 .weather-canvas-readout span {
   background: var(--color-deck);
+}
+
+.activity-disclosure {
+  margin-top: 16px;
+  border-top: 1px solid var(--color-hairline);
+}
+.activity-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.activity-heading > .titleblock {
+  flex: 1;
+  min-width: 0;
+}
+.activity-heading > button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  min-height: 44px;
+  padding-block: 12px;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.activity-heading > button[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.activity-disclosure .titleblock {
+  position: static;
+}
+
+.layer-guide {
+  margin-bottom: 8px;
+  color: var(--color-dim);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.layer-guide summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+}
+.layer-guide dl > div {
+  margin-block: 12px;
+}
+.layer-guide dt {
+  color: var(--color-ink);
+  font-weight: 500;
+}
+.layer-guide dd,
+.layer-guide p {
+  max-width: 65ch;
+  overflow-wrap: anywhere;
+}
+.activity-heading > button:hover,
+.layer-guide summary:hover {
+  color: var(--color-ink);
+  background: var(--color-raised);
 }

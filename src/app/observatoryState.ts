@@ -8,6 +8,7 @@ export function initialPresentation(shared: Partial<Permalink>, read = stored): 
   if (shared.story) return "observe";
   if (shared.section && !shared.presentation) return "explore";
   if (shared.presentation) return shared.presentation;
+  if (shared.scene || shared.catalogue) return "observe";
   if (shared.event || shared.mark || shared.day || shared.cursor != null || shared.flat !== undefined)
     return "explore";
   const saved = read("presentation");

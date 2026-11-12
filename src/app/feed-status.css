@@ -16,10 +16,10 @@
 .feed-popover {
   position: fixed;
   --feed-offset: 12px;
-  inset: 58px auto auto;
+  inset: var(--feed-top, 58px) auto auto;
   inset-inline-end: clamp(12px, var(--feed-offset), max(12px, 100vw - 367px));
   width: min(355px, calc(100vw - 24px));
-  max-height: calc(100dvh - 76px);
+  max-height: calc(100dvh - var(--feed-top, 58px) - 12px);
   margin: 0;
   overflow: auto;
   overscroll-behavior: contain;
@@ -74,7 +74,7 @@
 }
 
 .feed-popover summary {
-  min-height: 32px;
+  min-height: 44px;
   align-content: center;
   cursor: pointer;
 }

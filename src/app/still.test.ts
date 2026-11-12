@@ -1,5 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { captionLines, drawStill, stillMoment, STILL_HEIGHT, STILL_WIDTH, verdictLine } from "./still";
+import {
+  captionLines,
+  drawStill,
+  stillMoment,
+  STILL_HEIGHT,
+  STILL_WIDTH,
+  verdictLine,
+  wrapProvenance,
+} from "./still";
 
 const NOW = Date.parse("2026-08-21T04:12:30Z");
 
@@ -134,7 +142,12 @@ describe("a still taken while an archived day is on screen", () => {
 it("keeps the whole scientific canvas and omits an unrelated earthquake legend", () => {
   const drawImage = vi.fn();
   const fillText = vi.fn();
-  const ctx = { fillRect: vi.fn(), drawImage, fillText } as unknown as CanvasRenderingContext2D;
+  const ctx = {
+    fillRect: vi.fn(),
+    drawImage,
+    fillText,
+    measureText: (text: string) => ({ width: text.length * 7 }),
+  } as unknown as CanvasRenderingContext2D;
   const image = {} as CanvasImageSource;
   drawStill(
     ctx,
@@ -154,4 +167,13 @@ it("keeps the whole scientific canvas and omits an unrelated earthquake legend",
   expect(drawImage).toHaveBeenCalledWith(image, 0, expect.any(Number), 1200, 675);
   expect(fillText.mock.calls.map(([text]) => text)).toContain("Moonfall");
   expect(fillText.mock.calls.map(([text]) => text)).not.toContain("magnitude");
+});
+
+it("wraps long multi-source captions without dropping attribution or timestamps", () => {
+  const text =
+    "Weather data by RainViewer · radar 12 Nov 2026, 16:00 UTC · NOAA GFS forecast 12 Nov 2026, 17:00 UTC · GOES-East lightning 12 Nov 2026, 15:50 UTC · example.test";
+  const lines = wrapProvenance(text, (line) => line.length * 7, 400);
+  expect(lines.length).toBeGreaterThan(1);
+  expect(lines.every((line) => line.length * 7 <= 400)).toBe(true);
+  expect(lines.join(" ")).toBe(text);
 });

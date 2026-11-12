@@ -295,7 +295,7 @@ export function createObservationLayer(morph: { value: number }) {
       sweep.value = prior.frame.raster?.sweep && !reduced ? travel * 1.1 - 0.05 : 1.05;
       const sweeping = prior.frame.raster?.sweep && !reduced && travel < 1;
       const flowing = prior.frame.flow && !reduced && travel < 1;
-      lineMaterial.uniforms.opacity!.value = strength * 0.88;
+      lineMaterial.uniforms.opacity!.value = strength * (prior.frame.pathOpacity ?? 0.88);
       lineMaterial.uniforms.phase!.value = flowing ? travel : -1;
       return reveal < 1 || !!flowing || !!sweeping || unfolding || lifting;
     },

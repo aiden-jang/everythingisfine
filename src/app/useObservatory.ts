@@ -35,7 +35,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         ? "depth"
         : ["lights", "shadow", "orbit"].includes(shared.story?.id ?? "")
           ? "night"
-          : "live",
+          : (shared.scene ?? "live"),
   );
   const [focus, setFocus] = useState<CutawayFocus | null>(null);
   const [tourStop, setTourStop] = useState<Stop | null>(null);
@@ -81,9 +81,9 @@ export function useObservatory(shared: Partial<Permalink>) {
     restore: restorePresentation,
   } = usePresentation(() => initialPresentation(shared), clearViews, before);
   const [browser, setBrowser] = useState({
-    open: !!shared.story,
+    open: !!shared.story || !!shared.catalogue,
     home: 0,
-    category: shared.story ? scene : (null as EarthScene | null),
+    category: shared.story ? scene : shared.catalogue === "all" ? null : (shared.catalogue ?? null),
   });
   const browserScroll = useRef(0);
   const sharedView = useRef(shared.lon !== undefined || !!shared.day || shared.cursor != null);

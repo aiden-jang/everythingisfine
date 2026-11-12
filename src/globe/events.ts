@@ -157,6 +157,7 @@ export interface EventLayer {
   setGlobeRadius: (px: number) => void;
   /** Surface or true depth: 0 or 1, eased between. A uniform, so nothing rewrites fifty thousand positions. */
   setDepthSink: (value: number) => void;
+  includesTime: (at: number) => boolean;
   /** Writes the visible subset into the buffers. Returns how many are drawn. See ARCHITECTURE.md#srcglobeeventsts. */
   sync: (
     store: Store,
@@ -194,6 +195,7 @@ export function createEventLayer(
   const focuses = new Float32Array(capacity);
   /** Reused between syncs. A fresh Map per filter tick is the allocation the budget catches. */
   const cellFor = new Map<number, number>();
+  let through = Infinity;
 
   const geometry = new BufferGeometry();
   const positionAttr = new BufferAttribute(positions, 3);
@@ -250,6 +252,7 @@ export function createEventLayer(
   object.renderOrder = 5;
 
   return {
+    includesTime: (at) => at <= through,
     object,
     setRamp: (name) => {
       texture.dispose();
@@ -272,6 +275,7 @@ export function createEventLayer(
     },
 
     sync: (store, filters, now, zoom = 3, revealUntil, focus = null) => {
+      through = revealUntil ?? Infinity;
       const cell = cellSizeDeg(zoom);
       /*
        * Answered on the CPU, per marker, not from an attribute. A cluster stands for events that do

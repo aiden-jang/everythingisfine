@@ -140,9 +140,12 @@ export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean
     };
     void load();
     document.addEventListener("visibilitychange", visibility);
+    window.addEventListener("online", refresh.current);
+    const online = refresh.current;
     return () => {
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", visibility);
+      window.removeEventListener("online", online);
       const current = request;
       request = null;
       current?.abort();

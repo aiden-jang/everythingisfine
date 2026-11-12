@@ -1,6 +1,38 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds, openStories } from "./feeds";
 
+test("a shared scene opens the same category in a fresh browser @dev", async ({ page, browser }) => {
+  await installFeeds(page, { presentation: "fresh" });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await expect
+    .poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("catalogue"))
+    .toBe("night");
+  const recipient = await browser.newContext({ reducedMotion: "reduce" });
+  try {
+    const other = await recipient.newPage();
+    await installFeeds(other, { presentation: "fresh" });
+    await other.goto(page.url());
+    await expect(other.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(other.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
+    await other.getByRole("button", { name: "After Dark", exact: true }).click();
+    await expect
+      .poll(() => new URLSearchParams(new URL(other.url()).hash.slice(1)).has("catalogue"))
+      .toBe(false);
+    await other.reload();
+    await expect(other.getByRole("region", { name: "Stories and layers", exact: true })).toHaveCount(0);
+    await expect(
+      other.getByRole("group", { name: "Earth scenes" }).locator('[aria-pressed="true"]'),
+    ).toHaveCount(0);
+  } finally {
+    await recipient.close();
+  }
+});
+
 test("Home restores all scenes and browser Back restores it on the same globe @dev", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });

@@ -1262,6 +1262,15 @@ Everything lives in the fragment, so nothing is sent to a server and the deploym
 The chosen event travels as the agency's id, never ours. Our key is an arrival counter, so `q12` is a
 different earthquake on every machine: the link would look like it worked and show the wrong thing.
 
+The permalink also preserves the scene and open catalogue category independently of projection;
+an absent category retains the compact landing. Story links retain their own scene precedence.
+
+`layerLink.ts` owns the background-layer fragment: an explicit allowlisted set, including all off,
+and independent held radar/wind/lightning timestamps in epoch seconds. An absent set preserves legacy
+device defaults; an unknown set is ignored. Shared settings initialize state without writing preferences.
+Only a user's layer change persists them. `useMapLayers` keeps these selections above the loaders;
+view changes release data resources without losing the moment, and returning never restores autoplay.
+
 **Longitude back into [-180, 180). The camera's is not**
 
 Longitude back into [-180, 180). The camera's is not.
@@ -1515,6 +1524,9 @@ the data, and a still is shared by hand with no cache to blame.
 Moonfall names the Apollo traverse, and story views use their own frame time and source. These
 exports omit the earthquake legend and fit the complete canvas so routes and map edges survive.
 The live earthquake view retains its magnitude scale and globe-centered crop.
+Weather-only captures omit that scale. Source provenance wraps at a measured width, growing the caption
+area instead of horizontally compressing its text. Enabled background layers and each weather time travel
+with the export; story-specific captions continue to take precedence.
 
 Compose it; never grab the canvas raw. The globe's context has a zero clear alpha, so a bare capture is a
 globe on transparency, and the chrome that explains it is DOM sitting over the canvas.
@@ -2417,12 +2429,24 @@ the header's measured height with a ResizeObserver, including narrow-phone wrapp
 
 ### src/globe/Globe.tsx
 
+Marker filtering, picking, hover labels and the entrance replay share the feed's reference clock:
+the archived day's end while browsing an archive, otherwise the current time. The renderer caches
+the archive boundary on feed announcements, so camera frames do not allocate feed snapshots. Picking also respects the event layer’s drawn time boundary,
+so pausing the timeline cannot select earthquakes that have not appeared yet.
+
 **The canvas, and the smallest possible amount of React around it. three.js owns everything **
 
 The canvas, and the smallest possible amount of React around it. three.js owns everything inside it.
 
 The pinned ring and the hover tooltip are plain DOM written from the frame loop, not state: they move
 every frame the camera does, and state would re-render the rail sixty times a second.
+
+`overlayPlacement.ts` owns geographic positioning of tooltip, selection, section and map-scale overlays.
+Filtered hover targets disappear, while a deliberately pinned event can retain its excluded-filter notice.
+`graphicsRecovery.ts` watches context loss without replacing the shared scene. Drawing and capture stop
+while graphics are unavailable; context restoration redraws current state and resumes the existing loop.
+Listeners are detached with the renderer. Startup failure retains its separate retry path.
+Development-only scene inspection is isolated in `debugScene.ts`.
 
 The landing rotation shares this loop and the geographic camera. It starts only after camera motion
 settles, pauses on steering, and resumes 1.5 idle seconds after the gesture and momentum end.

@@ -5,6 +5,8 @@ import "./map-layers.css";
 import { lazy, Suspense, useRef } from "react";
 import { weatherLayers, type WeatherLayerId, type PlaybackLayer } from "./weatherLayers";
 import { LayerPlayback } from "./LayerPlayback";
+import { LayerGuide } from "./LayerGuide";
+import { layerHealth, layerMetadata } from "./layerMetadata";
 
 const RadarLayer = lazy(() =>
   import("./radar/RadarLayer").then(({ RadarLayer }) => ({ default: RadarLayer })),
@@ -12,18 +14,6 @@ const RadarLayer = lazy(() =>
 const WeatherLayer = lazy(() =>
   import("./WeatherLayer").then(({ WeatherLayer }) => ({ default: WeatherLayer })),
 );
-
-const coverage: Record<MapLayer, string> = {
-  earthquakes: "Global reports",
-  cyclones: "Global tracks",
-  fires: "Reported fires",
-  floods: "Reported floods",
-  volcanoes: "Eruption episodes",
-  aurora: "Polar forecast",
-  radar: "Recent scans · worldwide network",
-  wind: weatherLayers.wind.coverage,
-  lightning: weatherLayers.lightning.coverage,
-};
 
 export function MapLayers({
   controls,
@@ -49,11 +39,7 @@ export function MapLayers({
       <div className="map-layer-switches">
         {(Object.keys(mapLayerNames) as MapLayer[]).map((layer) => {
           if (layer in weatherLayers && !controls.enabled[layer]) return null;
-          const sources = feeds.rows.filter(({ id }) =>
-            layer === "earthquakes" ? id === "usgs" || id === "emsc" : id === layer,
-          );
-          const unavailable =
-            !archived && sources.length > 0 && sources.every(({ state }) => state === "failed");
+          const health = !archived && controls.enabled[layer] ? layerHealth(layer, feeds.rows) : null;
           const disabled = archived && (layer === "aurora" || layer === "radar" || layer in weatherLayers);
           return (
             <button
@@ -65,7 +51,7 @@ export function MapLayers({
               aria-describedby={`map-layer-${layer}`}
               aria-controls={layer === "radar" && controls.radar ? "radar-layer-controls" : undefined}
               disabled={disabled}
-              data-unavailable={unavailable || disabled || undefined}
+              data-unavailable={health || disabled || undefined}
               onClick={() => toggle(layer)}
             >
               <span>
@@ -79,37 +65,43 @@ export function MapLayers({
                   ? layer !== "aurora"
                     ? "Return to live for recent data"
                     : "No archive forecast"
-                  : unavailable
-                    ? "Feed unavailable"
-                    : coverage[layer]}
+                  : (health ?? layerMetadata[layer].coverage)}
               </small>
             </button>
           );
         })}
       </div>
-      <details className="map-layer-picker" ref={picker}>
-        <summary>Add layer</summary>
-        <div className="map-layer-switches" role="group" aria-label="Weather layers">
-          {(Object.keys(weatherLayers) as WeatherLayerId[]).map((id) => (
-            <button
-              type="button"
-              key={id}
-              disabled={archived || controls.enabled[id]}
-              onClick={() => {
-                controls.change(id, true);
-                if (picker.current) picker.current.open = false;
-                requestAnimationFrame(() => document.getElementById(`${id}-playback-toggle`)?.focus());
-              }}
-            >
-              <span>
-                {controls.enabled[id] ? "Added" : "Add"} {weatherLayers[id].label.toLowerCase()}
-              </span>
-              <small>{weatherLayers[id].coverage}</small>
-            </button>
-          ))}
-        </div>
-        {archived && <p>Return to live to add weather layers.</p>}
-      </details>
+      <div className="map-layer-help">
+        <details className="map-layer-picker" ref={picker}>
+          <summary>Add layer</summary>
+          <div className="map-layer-switches" role="group" aria-label="Weather layers">
+            {(Object.keys(weatherLayers) as WeatherLayerId[]).map((id) => (
+              <button
+                type="button"
+                key={id}
+                disabled={archived || controls.enabled[id]}
+                onClick={() => {
+                  controls.change(id, true);
+                  if (picker.current) picker.current.open = false;
+                  requestAnimationFrame(() => document.getElementById(`${id}-playback-toggle`)?.focus());
+                }}
+              >
+                <span>
+                  {controls.enabled[id] ? "Added" : "Add"} {weatherLayers[id].label.toLowerCase()}
+                </span>
+                <small>{weatherLayers[id].coverage}</small>
+              </button>
+            ))}
+          </div>
+          {archived && <p>Return to live to add weather layers.</p>}
+        </details>
+        <LayerGuide enabled={controls.enabled} />
+      </div>
+      <button type="button" className="map-layer-open" onClick={onBrowse}>
+        <span>All stories & data</span>
+        <small>Ocean, weather, space and recorded journeys</small>
+        <span aria-hidden="true">→</span>
+      </button>
       {controls.radar && (
         <LayerPlayback
           id="radar"
@@ -158,11 +150,6 @@ export function MapLayers({
               </LayerPlayback>
             ),
         )}
-      <button type="button" className="map-layer-open" onClick={onBrowse}>
-        <span>All stories & data</span>
-        <small>Ocean, weather, space and recorded journeys</small>
-        <span aria-hidden="true">→</span>
-      </button>
     </section>
   );
 }

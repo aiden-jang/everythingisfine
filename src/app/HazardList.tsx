@@ -26,11 +26,11 @@ export function HazardList({
                     data-hazard-row={row.id}
                     aria-current={markId === row.id || undefined}
                     onClick={() => onHazard(row.id)}
-                    className={`-mx-1 flex w-[calc(100%+0.5rem)] cursor-pointer items-baseline gap-2 rounded-[2px] px-1 py-1 text-left transition-colors hover:bg-raised ${
+                    className={`-mx-1 flex min-h-11 w-[calc(100%+0.5rem)] cursor-pointer items-center gap-2 rounded-[2px] px-1 py-2 text-left transition-colors hover:bg-raised ${
                       markId === row.id ? "bg-raised" : ""
                     }`}
                   >
-                    <span className="min-w-0 flex-1 truncate text-[11px] text-dim">{row.name}</span>
+                    <span className="min-w-0 flex-1 text-xs break-words text-dim">{row.name}</span>
                     {row.measure ? (
                       <span className="shrink-0 font-mono text-[10.5px] text-faint tabular-nums">
                         {row.measure}

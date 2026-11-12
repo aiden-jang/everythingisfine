@@ -225,6 +225,8 @@ test("every control clears 44px where there is a finger", async ({ browser }) =>
     return bad;
   });
   expect(small).toEqual([]);
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/touch-phone.png` });
   await context.close();
 });
 

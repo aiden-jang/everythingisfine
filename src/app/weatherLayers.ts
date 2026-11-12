@@ -3,17 +3,19 @@ import type { ObservationData, ObservationFrame, ObservationView } from "./obser
 import type { RadarLayerView } from "./radar/radarCamera";
 import type { GlobePresentation } from "../globe/scenePresentation";
 import { nearest } from "../sources/observations/common";
+import { layerMetadata } from "./layerMetadata";
+import { mapLayerNames } from "./layerVisibility";
 
 export const weatherLayers = {
   wind: {
-    label: "Surface wind",
+    label: mapLayerNames.wind,
     source: "NOAA GFS surface wind",
-    coverage: "Global forecast · 10 m above surface",
+    coverage: layerMetadata.wind.coverage,
   },
   lightning: {
-    label: "Lightning",
+    label: mapLayerNames.lightning,
     source: "NOAA GOES-East lightning",
-    coverage: "Satellite detections · GOES-East coverage",
+    coverage: layerMetadata.lightning.coverage,
   },
 } as const;
 export type WeatherLayerId = keyof typeof weatherLayers;
@@ -21,6 +23,7 @@ export type PlaybackLayer = WeatherLayerId | "radar";
 export interface WeatherLayerView {
   frame: ObservationFrame | undefined;
   feed: Pick<FeedRow, "state" | "lastCheck" | "message">;
+  lastAvailable?: boolean;
 }
 export interface MapLayerPresentation {
   kind: "map-layers";
@@ -60,6 +63,7 @@ export function weatherOverlay(
     frame: {
       at: wind?.at ?? lightning!.at,
       ...(wind?.paths ? { paths: wind.paths, flow: wind.flow ?? false } : {}),
+      pathOpacity: 0.48,
       ...(lightning?.marks ? { marks: lightning.marks } : {}),
     },
   };

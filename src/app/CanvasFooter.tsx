@@ -1,4 +1,14 @@
+import { layerTime } from "./layerTime";
+import { stillMoment } from "./still";
 import type { RadarLayerView } from "./radar/radarCamera";
+
+export function CanvasStamp({ cursor, day }: { cursor: number | null; day: number | null }) {
+  return cursor !== null || day !== null ? (
+    <div className="stamp pointer-events-none absolute bottom-4 left-4 z-[2] bg-deck/40 px-3 py-2 font-mono text-[11px] text-faint backdrop-blur-xl backdrop-saturate-50">
+      {stillMoment(cursor, day ?? Date.now(), day !== null)}
+    </div>
+  ) : null;
+}
 
 export function CanvasFooter({
   flat,
@@ -14,9 +24,9 @@ export function CanvasFooter({
   return (
     <div
       className="relative order-2 flex w-full flex-wrap items-end gap-x-6 gap-y-2
-              md:justify-center"
+              md:justify-center md:max-xl:flex-col md:max-xl:items-start"
     >
-      <p className="creator-credit py-1.5 text-[11px] text-faint md:absolute md:bottom-0 md:left-0">
+      <p className="creator-credit py-1.5 text-[11px] text-faint xl:absolute xl:bottom-0 xl:left-0">
         made by{" "}
         <a
           href="https://www.aidenjang.com"
@@ -29,7 +39,7 @@ export function CanvasFooter({
           aiden jang
         </a>
       </p>
-      <div className="key-hints pointer-events-auto bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50">
+      <div className="key-hints pointer-events-auto md:max-xl:order-first bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50">
         {/* What the keys do in this projection: a row saying orbit while the drag pans is worse than none. */}
         {(
           [
@@ -68,9 +78,7 @@ export function RadarCanvasCredit({ radar }: { radar: RadarLayerView | null }): 
         Weather data by RainViewer
       </a>
       {radar.at !== undefined && (
-        <time dateTime={new Date(radar.at).toISOString()}>
-          Radar · {new Date(radar.at).toISOString().slice(11, 16)} UTC
-        </time>
+        <time dateTime={new Date(radar.at).toISOString()}>Radar · {layerTime(radar.at)}</time>
       )}
     </p>
   ) : null;
