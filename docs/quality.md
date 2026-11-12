@@ -18,9 +18,12 @@ stable across GitHub runner-image migrations.
 - Recorded feeds replace the external agency calls and EMSC socket. These tests do not establish
   current provider availability; `pnpm run test:live` is an explicit, separate check.
 
-One software-rendered globe runs per runner. `tools/browser-shards.mjs` distributes adjacent tests
-round-robin across isolated shards, so the responsive and motion cases do not all land on one runner.
-Every test belongs to exactly one shard; an unsharded run keeps the complete inventory.
+One software-rendered globe runs per runner. `tools/browser-shards.mjs` balances estimated runtime
+across isolated shards, placing expensive cases first. `tools/browser-costs.json` holds rounded
+per-file means from the Ubuntu run cited in the scheduler; refresh estimates from successful test
+durations when workloads change. Unknown files use a typical cost and still run. Estimates affect
+assignment only, never assertions, timeouts or retries. Every test belongs to exactly one shard;
+each runner retains declaration order, and an unsharded run keeps the complete inventory.
 CI keeps core checks and browser runners parallel, then deploys the assets from the successful
 core build only after every shard passes. Failure traces and screenshots remain available.
 
