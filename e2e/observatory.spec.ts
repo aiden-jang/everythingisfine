@@ -175,17 +175,23 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
       }),
     )
     .toBe(true);
+  // An immediate reversal can cancel the outward flight before the globe has moved.
+  await expect
+    .poll(() => page.locator(".zone-canvas").evaluate((node) => node.getAnimations().length))
+    .toBe(0);
   await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
   expect(await contexts()).toBe(original);
-  expect(
-    await page.evaluate(() => {
-      const { flights, canvas } = (
-        window as unknown as { observatoryScene: { flights: number; canvas: HTMLCanvasElement | null } }
-      ).observatoryScene;
-      return { flights, sameCanvas: canvas === document.querySelector(".zone-canvas canvas") };
-    }),
-  ).toEqual({ flights: 2, sameCanvas: true });
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const { flights, canvas } = (
+          window as unknown as { observatoryScene: { flights: number; canvas: HTMLCanvasElement | null } }
+        ).observatoryScene;
+        return { flights, sameCanvas: canvas === document.querySelector(".zone-canvas canvas") };
+      }),
+    )
+    .toEqual({ flights: 2, sameCanvas: true });
   expect(errors).toEqual([]);
 });
 
