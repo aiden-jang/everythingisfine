@@ -135,7 +135,7 @@ for (const width of [1440, 390]) {
     await expect.poll(async () => (await camera(page))?.zoom).toBe(1.4);
     const pose = await camera(page);
     const canvas = await page.locator("#globe-view canvas").elementHandle();
-    const layers = page.getByRole("region", { name: "Map layers", exact: true });
+    const layers = page.getByRole("region", { name: "Map layers", exact: true, includeHidden: true });
     expect(source.calls).toEqual({ wind: 0, lightning: 0 });
     await layers.getByRole("button", { name: "Surface wind", exact: true }).click();
     await openLayer(page, "Surface wind");
@@ -144,7 +144,7 @@ for (const width of [1440, 390]) {
     await page.getByRole("button", { name: "Back to layers", exact: true }).click();
     await layers.getByRole("button", { name: "Lightning", exact: true }).click();
     await openLayer(page, "Lightning");
-    const lightningPanel = layers.getByRole("region", { name: "Lightning playback" });
+    const lightningPanel = layers.getByRole("region", { name: "Lightning playback", includeHidden: true });
     await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /16:00/);
     await expect(lightningPanel).toContainText("Satellite detections: 3");
     await expect(windPanel).toBeHidden();
@@ -152,6 +152,18 @@ for (const width of [1440, 390]) {
     await lightningPanel.getByRole("slider").press("Home");
     await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /15:50/);
     await lightningPanel.getByRole("button", { name: "Play", exact: true }).click();
+    await page.getByRole("tab", { name: "Stories", exact: true }).click();
+    const pausedTime = await lightningPanel
+      .getByRole("slider", { includeHidden: true })
+      .getAttribute("aria-valuetext");
+    const requestsWhileBrowsing = { ...source.calls };
+    await page.waitForTimeout(1900);
+    expect(
+      await lightningPanel.getByRole("slider", { includeHidden: true }).getAttribute("aria-valuetext"),
+    ).toBe(pausedTime);
+    expect(source.calls).toEqual(requestsWhileBrowsing);
+    await page.getByRole("tab", { name: "Layers", exact: true }).click();
+    await expect(layers.locator("#layer-inspector-title")).toHaveText("Lightning");
     await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /16:00/);
     await expect(lightningPanel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
     expect(await camera(page)).toEqual(pose);

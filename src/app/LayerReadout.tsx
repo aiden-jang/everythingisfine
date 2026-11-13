@@ -12,7 +12,7 @@ export function LayerReadout({
   const id = `layer-times-${useId()}`;
   const panel = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  if (!controls.active) return null;
+  if (!controls.active || controls.suspended) return null;
   const weather = (["wind", "lightning"] as WeatherLayerId[]).filter(
     (id) => controls.enabled[id] && controls.weather[id]?.frame,
   );

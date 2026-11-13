@@ -30,7 +30,7 @@ export function StoriesDrawer({
 }: {
   children: ReactNode;
   discoveries?: ReactNode;
-  browse: Pick<Observatory["browser"], "expanded" | "sections" | "expand" | "fold">;
+  browse: Pick<Observatory["browser"], "expanded" | "sections" | "expand" | "fold" | "select">;
   visible?: boolean;
   scene: EarthScene | null;
   ready: boolean;
@@ -74,6 +74,28 @@ export function StoriesDrawer({
           else onDismiss();
         }}
       >
+        <div className="story-selection-heading">
+          <h2 id="story-selection-title" tabIndex={-1}>
+            {deck.query.trim()
+              ? "Search all stories"
+              : scene
+                ? { live: "Live Earth", depth: "Below the Surface", night: "After Dark" }[scene]
+                : "All stories"}
+          </h2>
+          {scene && !deck.query.trim() && (
+            <button
+              type="button"
+              onClick={() => {
+                browse.select(null);
+                requestAnimationFrame(() =>
+                  document.getElementById("story-selection-title")?.focus({ preventScroll: true }),
+                );
+              }}
+            >
+              Show all
+            </button>
+          )}
+        </div>
         <StorySearch deck={deck} ready={ready} aurora={aurora} />
         <p className="story-preview-hint">Hold a story to preview its region.</p>
         {!deck.query.trim() && (
@@ -128,9 +150,7 @@ export function StoriesDrawer({
                     if (all) requestAnimationFrame(() => rail()?.scrollTo({ top: selectionScroll.current }));
                   }}
                 >
-                  {all
-                    ? "Show selected stories"
-                    : `View all ${browseStories(scene, true).length + 1} stories`}
+                  {all ? "Show highlights" : `View all ${browseStories(scene, true).length + 1} stories`}
                 </button>
                 <button
                   type="button"

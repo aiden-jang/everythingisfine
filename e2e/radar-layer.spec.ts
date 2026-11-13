@@ -1,3 +1,4 @@
+import type { Object3D } from "three";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, openLayer } from "./feeds";
@@ -263,3 +264,77 @@ test("the default radar layer stays off in the earthquake archive @dev", async (
   );
   expect(requests).toBe(1);
 });
+
+for (const width of [1440, 390]) {
+  test(`story browsing hides layers and restores the held layer view at ${width}px @dev`, async ({
+    page,
+  }) => {
+    const { queries } = await prepareRadar(page, width, false);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.goto(`/#v=explore&at=15,25,1.5${width === 390 ? "&p=map" : ""}`);
+    await expect.poll(async () => (await camera(page))?.zoom).toBe(1.5);
+    const pose = await camera(page);
+    const canvas = await page.locator("#globe-view canvas").elementHandle();
+    const layers = page.getByRole("tabpanel", { name: "Layers", exact: true });
+    await layers.getByRole("button", { name: "Wildfires", exact: true }).click();
+    const preferences = await page.evaluate(() => localStorage.getItem("eif.mapLayers"));
+    const controls = page.getByRole("region", { name: "Storm radar playback", includeHidden: true });
+    await expect(controls.locator(".radar-warning")).toHaveCount(0);
+    await expect(controls.getByRole("slider", { name: "Radar scan time" })).toBeEnabled();
+    await controls.getByRole("slider", { name: "Radar scan time" }).press("ArrowLeft");
+    const held = await controls.locator("time").getAttribute("datetime");
+    const player = await controls.elementHandle();
+    const counts = () =>
+      page.evaluate(() => {
+        const world = window as unknown as {
+          __events: { object: Object3D & { geometry: { drawRange: { count: number } } } };
+          __marks: () => { id: string }[];
+        };
+        let root = world.__events.object as Object3D;
+        while (root.parent) root = root.parent;
+        return {
+          radar: root.getObjectByName("storm-radar")?.visible ?? false,
+          quakes: world.__events.object.geometry.drawRange.count,
+          hazards: world.__marks().filter(({ id }) => /^(cyclone|fire|flood|volcano):/.test(id)).length,
+        };
+      });
+    await expect.poll(async () => (await counts()).radar).toBe(true);
+    await expect.poll(async () => (await counts()).quakes).toBeGreaterThan(0);
+    await expect.poll(async () => (await counts()).hazards).toBeGreaterThan(0);
+    await page.getByRole("tab", { name: "Stories", exact: true }).click();
+    await expect.poll(counts).toEqual({ radar: false, quakes: 0, hazards: 0 });
+    await expect(page.locator(".layer-readout")).toHaveCount(0);
+    expect(await controls.evaluate((node, original) => node === original, player)).toBe(true);
+    expect(queries()).toBe(1);
+    await page.getByRole("button", { name: width === 390 ? "Globe" : "Map", exact: true }).click();
+    await page.evaluate(() =>
+      (
+        window as unknown as { __globe: { flyTo: (lon: number, lat: number, zoom: number) => void } }
+      ).__globe.flyTo(80, -20, 2),
+    );
+    await expect.poll(async () => (await camera(page))?.lon).toBe(80);
+    const storiesTab = page.getByRole("tab", { name: "Stories", exact: true });
+    await storiesTab.focus();
+    await storiesTab.press("ArrowLeft");
+    await expect.poll(() => camera(page)).toEqual(pose);
+    await expect(controls.locator("time")).toHaveAttribute("datetime", held!);
+    await expect(layers.getByRole("button", { name: "Wildfires", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    await expect.poll(async () => (await counts()).radar).toBe(true);
+    await expect.poll(async () => (await counts()).quakes).toBeGreaterThan(0);
+    await expect.poll(async () => (await counts()).hazards).toBeGreaterThan(0);
+    expect(await page.evaluate(() => localStorage.getItem("eif.mapLayers"))).toEqual(preferences);
+    expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
+      true,
+    );
+    await controls.getByRole("button", { name: "Play scans", exact: true }).click();
+    await page.getByRole("tab", { name: "Stories", exact: true }).click();
+    const pausedAt = await controls.locator("time").getAttribute("datetime");
+    await page.waitForTimeout(1200);
+    expect(await controls.locator("time").getAttribute("datetime")).toBe(pausedAt);
+    await page.getByRole("tab", { name: "Layers", exact: true }).click();
+    await expect(controls.locator("time")).not.toHaveAttribute("datetime", pausedAt!);
+  });
+}

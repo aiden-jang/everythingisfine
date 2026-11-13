@@ -14,12 +14,13 @@ import {
 
 type Props = {
   id: WeatherLayerId;
+  suspended: boolean;
   onView: (id: WeatherLayerId, view: WeatherLayerView | null) => void;
   selectedAt: number | null;
   onSelect: (id: WeatherLayerId, at: number | null) => void;
 };
 
-export function WeatherLayer({ id, onView, selectedAt, onSelect }: Props): JSX.Element {
+export function WeatherLayer({ id, onView, selectedAt, onSelect, suspended }: Props): JSX.Element {
   const [source, setSource] = useState<ObservationSource | null>(null);
   const [failed, setFailed] = useState(false);
   const [revision, retry] = useState(0);
@@ -43,7 +44,14 @@ export function WeatherLayer({ id, onView, selectedAt, onSelect }: Props): JSX.E
     };
   }, [id, onView, revision]);
   return source ? (
-    <WeatherPlayer id={id} onView={onView} source={source} selectedAt={selectedAt} onSelect={onSelect} />
+    <WeatherPlayer
+      suspended={suspended}
+      id={id}
+      onView={onView}
+      source={source}
+      selectedAt={selectedAt}
+      onSelect={onSelect}
+    />
   ) : (
     <div role="status">
       <p>
@@ -70,6 +78,7 @@ function WeatherPlayer({
   id,
   onView,
   source,
+  suspended,
   selectedAt,
   onSelect,
 }: Props & { source: ObservationSource }): JSX.Element {
@@ -86,7 +95,7 @@ function WeatherPlayer({
     [id, frame, feed, state, onView],
   );
   useEffect(() => {
-    if (!playing || !frames?.length) return;
+    if (suspended || !playing || !frames?.length) return;
     let timer = 0;
     function step() {
       window.clearTimeout(timer);
@@ -103,7 +112,7 @@ function WeatherPlayer({
       window.clearTimeout(timer);
       document.removeEventListener("visibilitychange", step);
     };
-  }, [playing, frames, index, select]);
+  }, [playing, frames, index, select, suspended]);
   const meta = weatherLayers[id];
   const time = frame ? layerTime(frame.at) : "";
   const status =

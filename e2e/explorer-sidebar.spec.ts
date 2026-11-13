@@ -136,6 +136,12 @@ for (const width of [1440, 812, 390]) {
     await expect(stories.locator("#story-library-panel-visits")).toBeVisible();
     await library.click();
     await expect(stories.getByRole("button", { name: "Saved & recent", exact: true })).toBeHidden();
+    await expect(stories.getByRole("heading", { name: "All stories", exact: true })).toBeVisible();
+    await stories.getByRole("button", { name: "After Dark", exact: true }).click();
+    await expect(stories.getByRole("heading", { name: "After Dark", exact: true })).toBeVisible();
+    await stories.getByRole("button", { name: "Show all", exact: true }).click();
+    await expect(stories.getByRole("heading", { name: "All stories", exact: true })).toBeVisible();
+    await expect(stories.locator('.observatory-scenes [aria-pressed="true"]')).toHaveCount(0);
     await stories.getByRole("button", { name: "After Dark", exact: true }).click();
     expect(await camera()).toEqual(pose);
     const search = stories.getByRole("searchbox", { name: "Find a story", exact: true });

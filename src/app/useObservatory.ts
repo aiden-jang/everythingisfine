@@ -146,6 +146,16 @@ export function useObservatory(shared: Partial<Permalink>) {
   });
   return {
     observing,
+    browsingStories: !observing
+      ? browser.pane === "stories"
+      : browser.open &&
+        !tourStop &&
+        !sunActive &&
+        !auroraRun &&
+        !tonight &&
+        !floatView &&
+        !radarView &&
+        !observations.entry,
     backgroundLayers:
       !observing || (scene === "live" && !depth && !observations.entry && !floatView && !radarView),
     presentation,

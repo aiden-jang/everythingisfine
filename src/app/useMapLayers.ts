@@ -22,6 +22,7 @@ export function useMapLayers(
   target?: string,
   archived = false,
   shared: SharedLayers = {},
+  suspended = false,
 ) {
   const [savedLayers, setEnabled] = useState(() =>
     readMapLayers(shared.layers ? JSON.stringify(shared.layers) : stored("mapLayers"), target),
@@ -42,7 +43,14 @@ export function useMapLayers(
   const selectTime = useCallback((id: PlaybackLayer, at: number | null) => {
     setSelectedTimes((previous) => ({ ...previous, [id]: at }));
   }, []);
-  const active = background && !archived;
+  const active = (background || suspended) && !archived;
+  const visible = useMemo(
+    () =>
+      suspended
+        ? (Object.fromEntries(Object.keys(enabled).map((id) => [id, false])) as typeof enabled)
+        : enabled,
+    [enabled, suspended],
+  );
   useEffect(() => {
     if (archived) setIsolated(null);
   }, [archived]);
@@ -74,11 +82,11 @@ export function useMapLayers(
     setEnabled(next);
   }, []);
   const globeFilters = useMemo(
-    () => (enabled.earthquakes ? filters : { ...filters, sources: new Set<"usgs" | "emsc">() }),
-    [filters, enabled.earthquakes],
+    () => (visible.earthquakes ? filters : { ...filters, sources: new Set<"usgs" | "emsc">() }),
+    [filters, visible.earthquakes],
   );
   const radarCaption =
-    radar?.at === undefined ? null : `Weather data by RainViewer · radar ${layerTime(radar.at)}`;
+    suspended || radar?.at === undefined ? null : `Weather data by RainViewer · radar ${layerTime(radar.at)}`;
   const wind = active && enabled.wind ? weather.wind : undefined;
   const lightning = active && enabled.lightning ? weather.lightning : undefined;
   const observation = useMemo(
@@ -86,8 +94,8 @@ export function useMapLayers(
     [wind?.frame, lightning?.frame],
   );
   const presentation = useMemo<MapLayerPresentation | null>(
-    () => (radar || observation ? { kind: "map-layers", radar, observation } : null),
-    [radar, observation],
+    () => (!suspended && (radar || observation) ? { kind: "map-layers", radar, observation } : null),
+    [radar, observation, suspended],
   );
   const compose = useMemo(() => composeMapLayers(presentation), [presentation]);
   const feeds: FeedRow[] = [
@@ -112,6 +120,8 @@ export function useMapLayers(
   ];
   return {
     enabled,
+    visible,
+    suspended,
     inspector,
     inspect,
     isolated: archived ? null : isolated,
@@ -132,7 +142,7 @@ export function useMapLayers(
     feeds,
     captureNote: (inspection: string | null) =>
       [
-        active
+        active && !suspended
           ? `Layers: ${
               (Object.keys(enabled) as MapLayer[])
                 .filter((id) => enabled[id])
@@ -142,23 +152,24 @@ export function useMapLayers(
           : null,
         radarCaption,
         ...(["wind", "lightning"] as const).flatMap((id) =>
-          active && enabled[id]
+          active && !suspended && enabled[id]
             ? [
                 `${weatherLayers[id].source} · ${weather[id]?.frame ? `${layerTime(weather[id]!.frame!.at)}${weather[id]?.lastAvailable ? " · last available" : ""}` : weather[id]?.feed.state === "failed" ? "unavailable" : "no recent data"}`,
               ]
             : [],
         ),
-        inspection,
+        suspended ? null : inspection,
       ]
         .filter(Boolean)
         .join(" · ") || null,
     canCapture:
-      (!radar || !!radar.image) &&
-      (!active ||
-        (["wind", "lightning"] as const).every(
-          (id) =>
-            !enabled[id] ||
-            (!!weather[id] && (weather[id]!.feed.state !== "pending" || !!weather[id]!.frame)),
-        )),
+      suspended ||
+      ((!radar || !!radar.image) &&
+        (!active ||
+          (["wind", "lightning"] as const).every(
+            (id) =>
+              !enabled[id] ||
+              (!!weather[id] && (weather[id]!.feed.state !== "pending" || !!weather[id]!.frame)),
+          ))),
   };
 }

@@ -30,7 +30,7 @@ export interface ObservatoryProps {
     radarAt: number | undefined;
     flat: boolean;
     read: () => CameraState;
-    restore: (camera: CameraState) => void;
+    restore: (camera: CameraState, flat?: boolean) => void;
     radarTime: (at: number | null) => void;
   };
   discoveries: DiscoveriesData;
@@ -300,12 +300,12 @@ export function Observatory({
                   ready={ready}
                   deepAvailable={deepAvailable}
                   onScene={(next) => {
+                    observations.setQuery("");
                     if (browser.category === next) {
-                      onHome();
+                      browser.select(null);
                       return;
                     }
                     revealStories();
-                    observations.setQuery("");
                     browser.select(next);
                     onScene(next);
                   }}

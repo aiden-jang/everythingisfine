@@ -139,6 +139,7 @@ export function MapLayers({
               <Suspense fallback={<p role="status">Loading radar controls…</p>}>
                 <RadarLayer
                   compact={layer === null}
+                  suspended={controls.suspended}
                   onView={controls.updateRadar}
                   initialAt={controls.selectedTimes.radar}
                   onSelect={controls.selectTime}
@@ -206,6 +207,7 @@ export function MapLayers({
                 <Suspense fallback={<p role="status">Loading {weatherLayers[id].label.toLowerCase()}…</p>}>
                   <WeatherLayer
                     id={id}
+                    suspended={controls.suspended}
                     onView={controls.updateWeather}
                     selectedAt={controls.selectedTimes[id]}
                     onSelect={controls.selectTime}

@@ -24,6 +24,7 @@ export function RadarStage({
   onSelect,
   global,
   layer = false,
+  suspended = false,
 }: {
   onView: (view: RadarView) => void;
   initialRegion?: string | undefined;
@@ -31,6 +32,7 @@ export function RadarStage({
   onSelect?: (at: number | null) => void;
   global: boolean;
   layer?: boolean;
+  suspended?: boolean;
 }): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
@@ -106,7 +108,7 @@ export function RadarStage({
   }, [focus, latestImage, global, layer]);
 
   useEffect(() => {
-    if (!playing || !selected || image === undefined || document.hidden) return;
+    if (suspended || !playing || !selected || image === undefined || document.hidden) return;
     const next = scans[index + 1];
     const timer = window.setTimeout(
       () => {
@@ -116,7 +118,7 @@ export function RadarStage({
       index === scans.length - 1 ? 820 : 510,
     );
     return () => window.clearTimeout(timer);
-  }, [image, index, playing, scans, selected, seek]);
+  }, [image, index, playing, scans, selected, seek, suspended]);
 
   useEffect(() => {
     function visibility() {

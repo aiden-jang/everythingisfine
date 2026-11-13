@@ -183,7 +183,12 @@ records, forecasts and predictions rather than implying synchronized time or cau
 
 The Stories tab opens with one large featured image and three recommendations; Library reveals
 the saved, guided, archive and feed sections while preserving their disclosure state. Search and
-the full catalogue still route through the same story navigation.
+the full catalogue still route through the same story navigation. The heading identifies All stories or
+the selected category; Show all resets that filter without leaving Stories. Search explicitly covers
+all categories. Browsing temporarily hides background overlays and pauses their playback without
+changing stored layer choices. Radar and weather players remain mounted while browsing; opening a
+story releases the background players so the story owns its data. Returning to Layers restores the
+inspector, layer selections, scan positions, camera and projection. The canvas stays mounted throughout.
 
 Story thumbnails are cropped captures of the actual rendered views, loaded lazily as WebP assets.
 Featured Float Dive, Rupture Reveal and Moonfall crops retain native detail; the radar and sky
@@ -376,8 +381,7 @@ the existing observation renderer, with stable geometry references and no additi
 The feed total includes each enabled source, reports failure independently, and retains its last
 successful check. Archived earthquakes and cinematic views do not mount current weather sources.
 Landing composition retains its day/night lighting and automatic rotation while sharing these overlays.
-Base-layer visibility choices also apply in the scene categories; explicit stories own their separate
-source data. Guided depth stops pause background weather until the surface view returns.
+Scene-category browsing hides base layers; explicit stories own their separate source data. Guided depth stops pause background weather until the surface view returns.
 RainViewer’s past-only catalogue supplies up to two hours of ten-minute composites. Each frame combines
 four zoom-one 512-pixel tiles into a bounded overview, using the supported Universal Blue palette.
 Mercator latitude is mapped onto the globe’s geographic mesh; NOAA retains its geographic raster bounds.

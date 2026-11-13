@@ -22,3 +22,19 @@ export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boo
   );
   return { flyTo, camera, read, onReady };
 }
+
+export function explorerCamera(
+  read: { readonly current: () => CameraState },
+  flyTo: { readonly current: FlyTo },
+  flat: boolean,
+  setFlat: (flat: boolean) => void,
+) {
+  return {
+    flat,
+    read: () => read.current(),
+    restore: (saved: CameraState, map?: boolean) => {
+      if (map !== undefined && map !== flat) setFlat(map);
+      flyTo.current(saved.lon, saved.lat, saved.zoom);
+    },
+  };
+}

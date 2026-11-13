@@ -7,13 +7,14 @@ import { EarthquakeContext, NearbyEarthquake } from "./app/EarthquakeContext";
 import { EarthquakeOptions } from "./app/EarthquakeOptions";
 import { EarthquakeInspector } from "./app/EarthquakeInspector";
 import { MapLayers } from "./app/MapLayers";
+import { storyBackdrop } from "./app/storyBackdrop";
 import { useMapLayers } from "./app/useMapLayers";
 import { hazardsInWindow, markBelongsToLayer, visibleHazards } from "./app/layerVisibility";
 import { SourceFilter } from "./app/SourceFilter";
 import { observatoryCaption } from "./app/observatoryCaption";
 import { useSceneHistory } from "./app/useSceneHistory";
 import { useSharedLocation } from "./app/useSharedLocation";
-import { useGlobeCamera } from "./app/useGlobeCamera";
+import { explorerCamera, useGlobeCamera } from "./app/useGlobeCamera";
 import { WaveReplayControls } from "./app/WaveReplayControls";
 import { useEventInspection } from "./app/useEventInspection";
 import { SequenceReplayControls } from "./app/SequenceReplayControls";
@@ -207,8 +208,9 @@ export function App(): JSX.Element {
     shared.event || shared.day ? "quake:" : (shared.mark ?? undefined),
     archived || archiveBusy,
     shared,
+    observatory.browsingStories,
   );
-  const onGlobe = useMemo(() => visibleHazards(inWindow, mapLayers.enabled), [inWindow, mapLayers.enabled]);
+  const onGlobe = useMemo(() => visibleHazards(inWindow, mapLayers.visible), [inWindow, mapLayers.visible]);
   const hazardTally = useMemo(() => {
     const held = archived
       ? {
@@ -496,7 +498,7 @@ export function App(): JSX.Element {
   }
   const section = useMemo(
     () =>
-      sectionLine
+      sectionLine && !mapLayers.suspended
         ? buildSection(
             feed.store,
             sectionLine,
@@ -507,7 +509,7 @@ export function App(): JSX.Element {
           )
         : null,
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [feed.store, sectionLine, filters, snapshot.revision, slabOn, slabData],
+    [feed.store, sectionLine, filters, snapshot.revision, slabOn, slabData, mapLayers.suspended],
   );
   useEffect(() => {
     if (!missingShared) return;
@@ -523,7 +525,7 @@ export function App(): JSX.Element {
   // The panel outlives the pin by one exit transition; see where it is rendered.
   const lastPinned = useRef(pinned);
   if (pinned) lastPinned.current = pinned;
-  const shownQuake = pinned ?? lastPinned.current;
+  const shownQuake = mapLayers.suspended ? undefined : (pinned ?? lastPinned.current);
   /* Must stay below the selection: the far-side figure is one of these marks and needs the pinned
   event's position, and it is gated on that event still being pinned - the toggle is in the panel, so
   dismissed, the arcs would have no explanation and no way off. */
@@ -607,19 +609,19 @@ export function App(): JSX.Element {
     () =>
       marksFor({
         ...onGlobe,
-        farSide,
-        motion: motionOn && !observatory.observing ? motionData : [],
+        farSide: mapLayers.suspended ? null : farSide,
+        motion: motionOn && !mapLayers.suspended && !observatory.observing ? motionData : [],
         here,
       }),
-    [onGlobe, farSide, motionOn, motionData, here, observatory.observing],
+    [onGlobe, farSide, motionOn, motionData, here, observatory.observing, mapLayers.suspended],
   );
   useEffect(() => {
-    // Only if it genuinely fell out of the buffer. A refresh must never clear the panel.
+    // A refresh must not clear a selection still in the buffer.
     if (selected && !feed.store.get(selected)) setSelected(null);
   }, [selected, snapshot.revision]);
 
   useTimelinePlayback(
-    scrub.playing && !chase.frame && !observatory.observing,
+    scrub.playing && !mapLayers.suspended && !chase.frame && !observatory.observing,
     filters.windowMs,
     setScrub,
     snapshot.archive,
@@ -977,14 +979,11 @@ export function App(): JSX.Element {
       onResize={setRegionsHeight}
     />
   );
-
   const observatoryProps: ObservatoryProps = {
     explorer: {
       radarAt: mapLayers.radarAt,
-      flat,
+      ...explorerCamera(readCamera, flyTo, flat, setFlat),
       radarTime: (at) => mapLayers.selectTime("radar", at),
-      read: () => readCamera.current(),
-      restore: (saved) => flyTo.current(saved.lon, saved.lat, saved.zoom),
     },
     discoveries: {
       now: minuteClock,
@@ -1371,7 +1370,7 @@ export function App(): JSX.Element {
               <Globe
                 feed={feed}
                 filters={mapLayers.globeFilters}
-                selected={observatory.localReadings || !mapLayers.enabled.earthquakes ? null : selected}
+                selected={observatory.localReadings || !mapLayers.visible.earthquakes ? null : selected}
                 ramp={ramp}
                 focus={focusSpan}
                 aurora={observatory.observations.entry ? null : (overflight.run?.forecast ?? onGlobe.aurora)}
@@ -1398,6 +1397,7 @@ export function App(): JSX.Element {
                     : null
                 }
                 section={sectionLine}
+                {...storyBackdrop(observatory.browsingStories)}
                 onSection={(line, hinge) => setSectionLine(line && hinge ? { ...line, hinge } : line)}
                 onSelect={selectQuake}
                 onReady={onReady}
@@ -1414,7 +1414,7 @@ export function App(): JSX.Element {
             <div className="canvas-information pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 md:left-[var(--rail-w)]">
               {!observatory.observing && <LayerReadout controls={mapLayers} />}
               {observatory.observing ||
-              !mapLayers.enabled.earthquakes ||
+              !mapLayers.visible.earthquakes ||
               section ||
               markSubject ||
               (shownQuake && pinned) ? null : (
