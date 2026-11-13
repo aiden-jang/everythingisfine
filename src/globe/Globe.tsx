@@ -15,7 +15,7 @@ import { createTapGesture } from "./tapGesture";
 import { observeViewport } from "./observeViewport";
 import { useLandingRotation } from "./useLandingRotation";
 import { attachSectionDrawing } from "./sectionDrawing";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { matches } from "../data/filter";
 import { loadStars, type FigureTable } from "../geo/stars";
 import { createGlobe, type GlobeMoment } from "./scene";
@@ -598,9 +598,9 @@ export function Globe({
     };
   }, [feed, onReady, onSelect, onCapture, onSelectMark, attempt, rotation]);
 
-  // A filter move, a new selection or a held hour redraws rather than rebuilds. Hover only changes whole
-  // hours, so this fires once per bar crossed, not per mouse move.
-  useEffect(() => {
+  // Commit visibility before paint so controls cannot show a hidden layer while its old wavefronts remain.
+  // A filter, selection or held hour redraws the existing scene without rebuilding it.
+  useLayoutEffect(() => {
     redrawRef.current();
     wakeRef.current();
   }, [filters, selected, focus, scrubAt, flat]);
