@@ -13,6 +13,7 @@ export async function seafloorStory(): Promise<EarthStoryData> {
     const reading = terrainSample(grid, lon, lat)!;
     return {
       at: date("2026-01-01") + i,
+      sequence: true,
       timeLabel: `${Math.round(progress * 100)}% · ${i < 35 ? "Across the Pacific" : i < 95 ? "Into the trench" : "Challenger Deep region"}`,
       caption: "GEBCO 2026 terrain · an authored flight over the measured and inferred seafloor",
       marks: [{ lon, lat, lift: 0.072, size: 9, color: 0xe8e4bd }],
@@ -56,6 +57,7 @@ export async function glacierStory(choice: string): Promise<EarthStoryData> {
   const paths = selected.paths.map((points) => ({ points: points.map(point), color: 0xddebf0 }));
   const frames = Array.from({ length: 49 }, (_, i): StoryFrame => ({
     at: date(`${choice}-01-01`) + i,
+    sequence: true,
     timeLabel: `${choice} mean velocity · ${Math.round((i / 48) * 100)}% of illustrative trace`,
     caption: "A year of motion through the annual mean field · illustrative trajectories",
     raster: { url: atlasImage(selected.image), bounds: data.bounds },

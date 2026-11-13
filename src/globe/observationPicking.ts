@@ -4,13 +4,14 @@ import { createTapGesture } from "./tapGesture";
 
 export function createObservationPicking(canvas: HTMLCanvasElement, controls: Controls) {
   let pick: ObservationView["onPick"];
+  let sphere = false;
   const tap = createTapGesture();
   const down = (event: PointerEvent) => {
-    if (!pick || event.button !== 0 || controls.morph() !== 1) return;
+    if (!pick || event.button !== 0 || (!sphere && controls.morph() !== 1)) return;
     tap.down(event);
   };
   const up = (event: PointerEvent) => {
-    if (!tap.up(event) || !pick || controls.morph() !== 1) return;
+    if (!tap.up(event) || !pick || (!sphere && controls.morph() !== 1)) return;
     const point = controls.pick(event.clientX, event.clientY);
     event.preventDefault();
     if (point) pick(point);
@@ -22,6 +23,7 @@ export function createObservationPicking(canvas: HTMLCanvasElement, controls: Co
   return {
     set(view: ObservationView | null) {
       pick = view?.onPick;
+      sphere = view?.pickOnGlobe ?? false;
     },
     dispose() {
       canvas.removeEventListener("pointerdown", down, true);

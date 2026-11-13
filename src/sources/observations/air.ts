@@ -34,6 +34,7 @@ function airFrame(input: string, at: number, city: City) {
     },
     marks: readings.map((point) => ({
       ...point,
+      reading: { label: point.label, value: `${point.value.toFixed(1)} µg/m³ PM₂.₅` },
       size: 8 + Math.min(21, Math.sqrt(Math.max(0, point.value)) * 2),
       color: point.value > 35 ? 0xefb88d : point.value > 12 ? 0xd9d49b : 0x8ad4cc,
     })),

@@ -98,7 +98,15 @@ and exposes selected earthquakes through the same detail flow.
 Story framing is interruptible on the shared globe and map. A deliberate drag, pinch, wheel or
 camera key takes control without pausing the data timeline. Recenter restores the latest shot;
 projection changes and frame updates preserve manual control. A new story starts with its own
-framing. Map selection waits for a tap, so it does not consume pan or pinch gestures.
+framing. A visible following-camera control can release an authored shot before a gesture.
+Map selection waits for a tap, so it does not consume pan or pinch gestures. Supported globe markers
+use the same rule and an equivalent keyboard selector. City labels appear only at close Explore zoom,
+with collision spacing and a small visible limit; geographic story previews never steal the camera.
+
+Date comparisons hold one camera and switch actual observations without inventing intermediate images.
+Two-place comparisons preserve source definitions, both timestamps and any local datum differences.
+Layer focus is temporary and restores the visitor's chosen combination. Regional summaries distinguish
+unanswered sources from an empty observed result.
 
 Stars, moon, planets and eclipse geometry follow the displayed time. Constellation
 figures are optional interpretation and start off. Layer labels explain their
@@ -161,6 +169,11 @@ Story thumbnails show recorded captures of their actual views. Guided journeys u
 existing quiet rows and each story’s reading panel, with manual steps, visible source context and
 a return to free exploration. Onward links explain the relationship without implying shared dates
 or causation between independent records. Keep the scientific scene large and the controls neutral.
+
+Featured experiences precede recent visits. Story discovery supports focus, hover and touch-hold
+regional previews with an explicit Locate action. Timeline milestones use the dataset's actual imagery
+and time resolution; synthetic flights say progress. Endings hold the final observation and evidence,
+with onward exploration available. Reopening resumes a saved moment; replaying the entrance is explicit.
 
 Story headings keep the return action above the title and the projection choice nearby; short
 landscape observation panels put Back beside the title to keep playback visible. Moonfall’s

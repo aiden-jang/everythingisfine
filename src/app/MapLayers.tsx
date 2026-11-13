@@ -1,7 +1,9 @@
+import { PlaceContext, type PlaceContextProps } from "./discovery/PlaceContext";
 import { mapLayerNames, type MapLayer } from "./layerVisibility";
 import type { useMapLayers } from "./useMapLayers";
 import type { FeedStatus } from "./feedStatus";
 import "./map-layers.css";
+import "./discovery/discovery.css";
 import { lazy, Suspense, useRef } from "react";
 import { weatherLayers, type WeatherLayerId, type PlaybackLayer } from "./weatherLayers";
 import { LayerPlayback } from "./LayerPlayback";
@@ -17,11 +19,13 @@ const WeatherLayer = lazy(() =>
 
 export function MapLayers({
   controls,
+  places,
   feeds,
   archived,
   onBrowse,
 }: {
   controls: ReturnType<typeof useMapLayers>;
+  places: PlaceContextProps;
   feeds: FeedStatus;
   archived: boolean;
   onBrowse: () => void;
@@ -36,6 +40,14 @@ export function MapLayers({
   return (
     <section className="map-layers" aria-label="Map layers">
       <h2>Layers</h2>
+      {controls.isolated ? (
+        <div className="layer-isolation" role="status">
+          <span>Only {mapLayerNames[controls.isolated].toLowerCase()}</span>
+          <button type="button" onClick={() => controls.isolate(null)}>
+            Restore layers
+          </button>
+        </div>
+      ) : null}
       <div className="map-layer-switches">
         {(Object.keys(mapLayerNames) as MapLayer[]).map((layer) => {
           if (layer in weatherLayers && !controls.enabled[layer]) return null;
@@ -97,11 +109,29 @@ export function MapLayers({
         </details>
         <LayerGuide enabled={controls.enabled} />
       </div>
+      {!archived && (
+        <label className="layer-focus">
+          <span>Focus</span>
+          <select
+            aria-label="Focus on one layer"
+            value={controls.isolated ?? ""}
+            onChange={(event) => controls.isolate((event.currentTarget.value || null) as MapLayer | null)}
+          >
+            <option value="">All chosen layers</option>
+            {(Object.keys(mapLayerNames) as MapLayer[]).map((id) => (
+              <option key={id} value={id}>
+                {mapLayerNames[id]}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <button type="button" className="map-layer-open" onClick={onBrowse}>
         <span>All stories & data</span>
         <small>Ocean, weather, space and recorded journeys</small>
         <span aria-hidden="true">→</span>
       </button>
+      <PlaceContext {...places} />
       {controls.radar && (
         <LayerPlayback
           id="radar"

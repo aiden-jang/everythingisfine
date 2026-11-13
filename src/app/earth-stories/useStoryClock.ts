@@ -70,6 +70,11 @@ export function useStoryClock(
       setPosition(Math.max(0, Math.min(count - 1, index)));
     },
     pause,
+    replay() {
+      setPosition(0);
+      setCinematic(!matchMedia("(prefers-reduced-motion: reduce)").matches);
+      setPlaying(!matchMedia("(prefers-reduced-motion: reduce)").matches);
+    },
     toggle() {
       if (!playing && position >= count - 1) {
         setPosition(0);

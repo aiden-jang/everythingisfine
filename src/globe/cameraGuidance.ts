@@ -5,18 +5,24 @@ export function createCameraGuidance() {
   const listeners = new Set<() => void>();
   let key: unknown = null;
   let manual = false;
+  let tracking = false;
   let restore = () => {};
   const publish = () => {
     for (const listener of listeners) listener();
   };
   return {
-    configure(next: unknown, recenter: () => void) {
+    configure(next: unknown, recenter: () => void, moving = false) {
       restore = recenter;
-      if (key === next) return;
+      const trackingChanged = tracking !== moving;
+      tracking = moving;
+      if (key === next) {
+        if (trackingChanged) publish();
+        return;
+      }
       key = next;
       const changed = manual;
       manual = false;
-      if (changed) publish();
+      if (changed || trackingChanged) publish();
     },
     interrupt() {
       if (key === null || manual) return false;
@@ -26,6 +32,7 @@ export function createCameraGuidance() {
     },
     following: () => !manual,
     read: () => manual,
+    tracking: () => tracking,
     subscribe(listener: () => void) {
       listeners.add(listener);
       return () => {

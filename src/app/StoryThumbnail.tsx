@@ -22,9 +22,13 @@ const aliases: Record<string, string> = {
   "featured-moonfall": "moonfall",
 };
 
-export function StoryThumbnail({ id }: { id: string }): JSX.Element | null {
+export function storyKey(id: string): string {
   const key = id.replace(/^open-(story-)?/, "");
-  const src = previews[aliases[key] ?? key];
+  return aliases[key] ?? key;
+}
+
+export function StoryThumbnail({ id }: { id: string }): JSX.Element | null {
+  const src = previews[storyKey(id)];
   return src ? (
     <img
       className="story-thumbnail"

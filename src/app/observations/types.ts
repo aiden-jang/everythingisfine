@@ -10,6 +10,7 @@ export interface GeoPoint {
 }
 
 export interface ObservationMark extends GeoPoint {
+  reading?: Measurement;
   size?: number;
   color?: number;
 }
@@ -35,6 +36,7 @@ export interface Measurement {
 export interface ObservationFrame {
   at: number;
   timeLabel?: string;
+  sequence?: boolean;
   reconstruction?: boolean;
   photograph?: { url: string; alt: string };
   marks?: readonly ObservationMark[];
@@ -110,6 +112,7 @@ export interface ObservationView {
   terrain?: { grid: ObservationTerrain; progress: number };
   moonImage?: HTMLImageElement | null;
   onPick?: ((point: GeoPoint) => void) | undefined;
+  pickOnGlobe?: boolean;
   lens?: { globe: number; map: number };
   sky?: TonightView | undefined;
   follow?: ReplayCamera | undefined;

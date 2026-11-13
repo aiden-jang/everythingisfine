@@ -18,7 +18,7 @@ const RADIUS_EVENTS = 1.006;
 
 /** Marker radius in CSS pixels: `BASE + SCALE * (magnitude - MAG_MIN) ^ EXPONENT`. See ARCHITECTURE.md#srcglobeeventsts. */
 const RADIUS_BASE = 1.0;
-const RADIUS_SCALE = 3.6;
+const RADIUS_SCALE = 2.8;
 const RADIUS_EXPONENT = 0.7;
 
 /**

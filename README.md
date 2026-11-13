@@ -43,7 +43,9 @@ result or drawer entry. **Keep exploring** offers a related view with context fo
 observations and time period. **Share this moment** copies the story, timestamp, projection, and selected
 city or chapter. Links open paused; recent feeds explain when the linked observation has expired.
 
-Each scene has a featured starting point: Float Dive, Rupture Reveal, or Moonfall.
+Each scene has a featured starting point before recent visits: Float Dive, Rupture Reveal, or Moonfall.
+Focus or hover over a geographically anchored story to preview its region without moving the globe.
+On touch screens, hold the story. **Locate** moves to that region; opening the story starts its own view.
 **Worth looking at today** uses the current earthquake reports, available NOAA aurora forecast,
 and calculated sky above the selected city. Dates and sources stay attached; unavailable or expired
 readings are not advertised as current.
@@ -52,7 +54,11 @@ Recent visits appear under **Pick up where you left off**. **Save view** keeps o
 on this device; **Update saved view** replaces its saved point. Recorded stories retain their held time and projection; Moonfall retains its traverse,
 Tonight’s Sky its city and time, and Float Dive its measured depth. Live views reload their providers;
 a radar scan may expire and a recent float profile may become unavailable. **Saved views** lets you
-remove bookmarks or clear recent visits. No account or remote storage is involved.
+remove bookmarks or clear recent visits. Reopening a catalogue entry also resumes its saved moment.
+Earth-story timelines show dated milestones, an explicit **Replay entrance**, and a closing evidence
+summary. **Compare dates** switches actual observations while holding the camera; annual and monthly
+products keep their stated time resolution. Authored flight progress and plate reconstructions do not
+pretend to be dated observation comparisons. No account or remote storage is involved.
 
 **Record 10-second clip** records the existing canvas as a silent video with its source and date.
 Start recording, then replay or scrub within the view. Stop early or cancel, preview the result, then
@@ -161,11 +167,21 @@ Scenes are temporary: returning to Explore restores the saved layer and projecti
 Observe or Explore remembers that presentation; opening the app alone saves no new preference.
 On the shared globe and map, drag, pinch, scroll or use camera keys to take control of a story’s
 framing. Its timeline keeps running. **Recenter** (also double-click or `0`) restores the current shot
-without restarting the story. Float Dive fades back to the globe while you explore; Recenter returns
+without restarting the story. A following-camera control can release an authored shot while its data keeps playing. Float Dive fades back to the globe while you explore; Recenter returns
 to its underwater view at the selected measurement. Local sky and lunar surface views retain their
 own direction and route controls.
 
 ## Explore
+
+**Focus** temporarily isolates one layer; **Restore layers** returns to the exact saved combination.
+Changing a switch ends isolation. **Around a place** summarizes enabled reports within 500 km of a
+selected city using the chosen earthquake window and cursor. Missing feeds remain explicit; weather
+rasters keep their separate scan and forecast clocks. Close city labels appear as you zoom into Explore.
+
+**Air Watch** supports monitor inspection on both projections, with a keyboard-accessible selector.
+It reports the nearest recorded monitor within 100 km, never an interpolated concentration. Air Watch
+and Tide Watch can compare a second place on demand, showing both source times and matching measurement
+names. Tide heights use each harbor's local datum and must not be treated as global elevation differences.
 
 The rail starts with independent earthquake, tropical cyclone, wildfire, flood, volcano, aurora and radar switches.
 **Add layer** offers optional surface wind and lightning. Enabled layers join the switches; only one

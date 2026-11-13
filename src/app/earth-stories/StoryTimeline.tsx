@@ -1,0 +1,108 @@
+import type { EarthStoryData } from "./types";
+import type { useStoryClock } from "./useStoryClock";
+import { FrameComparison } from "../observations/FrameComparison";
+import { layerTime } from "../layerTime";
+import { refreshAnnotations } from "../../globe/annotationInput";
+
+type Clock = ReturnType<typeof useStoryClock>;
+export function StoryTimeline({
+  data,
+  index,
+  clock,
+  busy,
+  label,
+  time,
+  restored,
+}: {
+  data: EarthStoryData;
+  index: number;
+  clock: Clock;
+  busy: boolean;
+  label: string;
+  time: string;
+  restored: boolean;
+}) {
+  const frame = data.frames[index]!;
+  const nearest = (at: number) =>
+    data.frames.reduce(
+      (best, item, i) => (Math.abs(item.at - at) < Math.abs(data.frames[best]!.at - at) ? i : best),
+      0,
+    );
+  const milestones = data.chapters.length
+    ? data.chapters
+    : [
+        { at: data.frames[0]!.at, label: "First observation" },
+        { at: data.frames.at(-1)!.at, label: "Last observation" },
+      ];
+  return (
+    <>
+      {restored && (
+        <p className="observation-note">Opened at a saved moment. Replay entrance to begin again.</p>
+      )}
+      <div className="story-time">
+        <label htmlFor="earth-story-time">{label}</label>
+        <time dateTime={new Date(frame.at).toISOString()}>{time}</time>
+        <input
+          id="earth-story-time"
+          className="scrub-slider"
+          type="range"
+          min={0}
+          max={data.frames.length - 1}
+          value={index}
+          aria-valuetext={time}
+          disabled={busy}
+          onInput={(event) => clock.seek(event.currentTarget.valueAsNumber)}
+        />
+      </div>
+      <div className="observatory-actions">
+        <button
+          data-playback-start={!clock.playing || undefined}
+          type="button"
+          onClick={clock.toggle}
+          disabled={busy}
+        >
+          {clock.playing ? "Pause" : index === data.frames.length - 1 ? "Replay" : "Play"}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            refreshAnnotations({ camera: "resume" });
+            clock.replay();
+          }}
+          disabled={busy}
+        >
+          Replay entrance
+        </button>
+      </div>
+      <div className="story-milestones" role="group" aria-label="Story moments">
+        {milestones.map((chapter) => {
+          const at = nearest(chapter.at),
+            item = data.frames[at]!;
+          const image = item.photograph?.url ?? item.raster?.url;
+          return (
+            <button
+              type="button"
+              key={chapter.label}
+              disabled={busy}
+              aria-label={chapter.label}
+              aria-pressed={index === at}
+              onClick={() => clock.seek(at)}
+            >
+              {image && <img src={image} alt="" loading="lazy" decoding="async" width="160" height="72" />}
+              <strong>{chapter.label}</strong>
+              <small>{item.timeLabel ?? layerTime(item.at)}</small>
+            </button>
+          );
+        })}
+      </div>
+      <FrameComparison frames={data.frames} index={index} select={clock.seek} />
+      {index === data.frames.length - 1 && !clock.playing && (
+        <div className="story-finish" role="status">
+          <strong>{frame.sequence ? "End of this sequence" : "Last available moment"}</strong>
+          <p>{frame.caption}</p>
+          <small>{frame.timeLabel ?? layerTime(frame.at)}. Explore this view or continue below.</small>
+        </div>
+      )}
+    </>
+  );
+}

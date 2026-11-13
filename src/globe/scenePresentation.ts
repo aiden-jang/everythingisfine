@@ -160,6 +160,7 @@ export function createScenePresentation(
           controls.setPlanetarium(true);
         }
       },
+      !!observation?.follow || !!observation?.shadow || !!float || !!route,
     );
     const guided = controls.guidance.following();
     const returningFromArchive = arrival.set(observation);
@@ -268,7 +269,7 @@ export function createScenePresentation(
         controls.apply,
         (observationTarget?.zoom ?? 1) / controls.state().zoom,
       );
-      if (observationTarget) positionObservationAnchors(canvas, controls);
+      positionObservationAnchors(canvas, controls, !!observationTarget || !!skyView || planetarium);
       dive?.size(camera.aspect);
       const amount = controls.localSky.amount();
       lights.apply(amount);

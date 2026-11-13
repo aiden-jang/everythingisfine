@@ -1,3 +1,5 @@
+import { storyMapTarget } from "./mapFraming";
+import { StoryTimeline } from "./StoryTimeline";
 import { nearestFrame } from "./nearestFrame";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
@@ -99,16 +101,17 @@ export function StoryPlayer({
         ? curtainImage.status
         : lunarImage.status;
   waiting.current = busy || !ready || status === "loading" || status === "failed";
+  const mapTarget = useMemo(() => storyMapTarget(data), [data]);
   const target = useMemo(
     () =>
       id === "dust" && slice
         ? dustTarget
         : selected
           ? { ...data.target, lon: selected.lon, lat: selected.lat }
-          : panel.map && data.mapTarget
-            ? data.mapTarget
+          : panel.map
+            ? mapTarget
             : data.target,
-    [selected, data.target, data.mapTarget, panel.map, id, slice],
+    [selected, data.target, mapTarget, panel.map, id, slice],
   );
   const localSky = useMemo(
     () => (skyMode && !panel.map ? data.sky?.(frame.at) : undefined),
@@ -279,44 +282,18 @@ export function StoryPlayer({
           </button>
         </div>
       )}
-      <div className="story-time">
-        <label htmlFor="earth-story-time">
-          {data.timelineLabel ??
-            (id === "fire" ? "Detection time" : id === "comet" ? "July 2020 · UTC" : "Observation time")}
-        </label>
-        <time dateTime={new Date(frame.at).toISOString()}>{time}</time>
-        <input
-          id="earth-story-time"
-          className="scrub-slider"
-          type="range"
-          min={0}
-          max={data.frames.length - 1}
-          value={index}
-          aria-valuetext={time}
-          disabled={busy}
-          onInput={(event) => clock.seek(event.currentTarget.valueAsNumber)}
-        />
-      </div>
-      <div className="observatory-actions">
-        <button
-          data-playback-start={!clock.playing || undefined}
-          type="button"
-          onClick={clock.toggle}
-          disabled={busy}
-        >
-          {clock.playing ? "Pause" : index === data.frames.length - 1 ? "Replay" : "Play"}
-        </button>
-        {data.chapters.map((chapter) => (
-          <button
-            type="button"
-            key={chapter.label}
-            disabled={busy}
-            onClick={() => clock.seek(nearestFrame(data, chapter.at))}
-          >
-            {chapter.label}
-          </button>
-        ))}
-      </div>
+      <StoryTimeline
+        data={data}
+        index={index}
+        clock={clock}
+        busy={busy}
+        time={time}
+        restored={!!initial}
+        label={
+          data.timelineLabel ??
+          (id === "fire" ? "Detection time" : id === "comet" ? "July 2020 · UTC" : "Observation time")
+        }
+      />
       {frame.measurements && (
         <dl className="observation-values">
           {frame.measurements.map((m) => (

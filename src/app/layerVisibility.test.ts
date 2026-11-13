@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { defaultMapLayers, markBelongsToLayer, readMapLayers, visibleHazards } from "./layerVisibility";
+import {
+  defaultMapLayers,
+  isolateLayer,
+  markBelongsToLayer,
+  readMapLayers,
+  visibleHazards,
+} from "./layerVisibility";
 
 describe("independent map layers", () => {
   it("keeps selections in unrelated layers", () => {
@@ -26,4 +32,17 @@ describe("independent map layers", () => {
     expect(data.aurora).toEqual({ peak: 42 });
     expect(visibleHazards(data, defaultMapLayers).aurora).toBe(data.aurora);
   });
+});
+
+it("temporary isolation restores the exact saved selection without mutating it", () => {
+  const saved = { ...defaultMapLayers, fires: false, radar: false, wind: true };
+  const before = { ...saved };
+  const focused = isolateLayer(saved, "radar");
+  expect(
+    Object.entries(focused)
+      .filter(([, on]) => on)
+      .map(([id]) => id),
+  ).toEqual(["radar"]);
+  expect(saved).toEqual(before);
+  expect(isolateLayer(saved, null)).toBe(saved);
 });

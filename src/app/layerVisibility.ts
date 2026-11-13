@@ -34,6 +34,10 @@ export const mapLayerNames = {
 } as const;
 export type MapLayer = keyof typeof mapLayerNames;
 export type MapLayers = Record<MapLayer, boolean>;
+export function isolateLayer(layers: MapLayers, focus: MapLayer | null): MapLayers {
+  if (focus === null) return layers;
+  return Object.fromEntries(Object.keys(layers).map((id) => [id, id === focus])) as MapLayers;
+}
 export const defaultMapLayers: MapLayers = {
   earthquakes: true,
   cyclones: true,

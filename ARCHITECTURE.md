@@ -2758,9 +2758,10 @@ Float32Arrays and creates no objects, which is what keeps hour four as cheap as 
 
 Marker radius in CSS pixels: `BASE + SCALE * (magnitude - MAG_MIN) ^ EXPONENT`.
 
-The exponent is the whole design. At 1.0 an M7 covers the country it happened in. At 0.5 the entire
-scale spanned 4.6px to 8.8px, so the key promised "size shows it too" and the globe showed dots.
-0.7 holds the small end still and opens the top to 13.5px.
+The exponent preserves a readable difference between small and large events without allowing a
+large reading to cover its region. The scale keeps coastlines and weather overlays visible at orbital
+zoom. Shader, legend and hit testing share the same coefficients; visual tuning must not change the
+underlying magnitude, normalize each viewport independently, or leave a larger invisible hit target.
 
 **How far below the surface an event sits, in globe radii**
 

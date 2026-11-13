@@ -18,6 +18,7 @@ export function useObservationDeck(shared?: StoryMoment, before = () => {}) {
   const [map, setMap] = useState(shared?.map ?? false);
   const [horizon, setHorizon] = useState(shared?.chapter === "horizon");
   const [query, setQuery] = useState("");
+  const pending = useRef(false);
   const active = useRef(entry);
   active.current = entry;
   const projection = useRef(map);
@@ -25,7 +26,10 @@ export function useObservationDeck(shared?: StoryMoment, before = () => {}) {
   const update = useCallback(
     (next: ObservationView | null) => {
       if (active.current !== entry) return;
-      setView(next ? { ...next, cameraKey: entry ?? "observation" } : null);
+      if (next) pending.current = false;
+      setView((previous) =>
+        next ? { ...next, cameraKey: entry ?? "observation" } : pending.current ? previous : null,
+      );
       const id = active.current;
       if (id && next)
         memory.current.set(id, { ...memory.current.get(id), id, map: projection.current, at: next.frame.at });
@@ -54,6 +58,7 @@ export function useObservationDeck(shared?: StoryMoment, before = () => {}) {
     checkpoint.current();
     const id = active.current;
     if (id) memory.current.set(id, { ...memory.current.get(id), id, map: projection.current });
+    pending.current = false;
     active.current = null;
     setView(null);
     setEntry(null);
@@ -66,6 +71,7 @@ export function useObservationDeck(shared?: StoryMoment, before = () => {}) {
     entry,
     capture: () => snapshot,
     restore(saved: typeof snapshot) {
+      pending.current = false;
       active.current = saved.entry;
       setEntry(saved.entry);
       setTrigger(saved.trigger);
@@ -100,10 +106,23 @@ export function useObservationDeck(shared?: StoryMoment, before = () => {}) {
     open(next: StoryId, from: string, resume?: StoryMoment) {
       before();
       if (resume?.id === next) memory.current.set(next, resume);
+      pending.current = true;
       active.current = next;
       setTrigger(from);
-      setView(null);
-      setMap(memory.current.get(next)?.map ?? false);
+      setView((previous) =>
+        previous
+          ? {
+              kind: "observation",
+              cameraKey: next,
+              target: previous.target,
+              frame: { at: previous.frame.at },
+              image: null,
+              capture: false,
+              ...(previous.lens ? { lens: previous.lens } : {}),
+            }
+          : null,
+      );
+      setMap(memory.current.get(next)?.map ?? projection.current);
       setHorizon(memory.current.get(next)?.chapter === "horizon");
       setEntry(next);
     },

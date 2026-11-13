@@ -54,3 +54,26 @@ test.each([false, true])(
     expect(arrive).toHaveBeenCalledOnce();
   },
 );
+
+test("follow controls track motion without taking the camera back from the visitor", () => {
+  const guide = createCameraGuidance(),
+    restore = vi.fn(),
+    notify = vi.fn();
+  const unsubscribe = guide.subscribe(notify);
+  guide.configure("route", restore, true);
+  expect(guide.tracking()).toBe(true);
+  expect(guide.following()).toBe(true);
+  guide.interrupt();
+  guide.configure("route", restore, false);
+  expect(guide.read()).toBe(true);
+  expect(guide.tracking()).toBe(false);
+  guide.configure("route", restore, true);
+  expect(guide.following()).toBe(false);
+  guide.recenter();
+  expect(restore).toHaveBeenCalledOnce();
+  expect(guide.following()).toBe(true);
+  unsubscribe();
+  notify.mockClear();
+  guide.configure("next", restore, false);
+  expect(notify).not.toHaveBeenCalled();
+});

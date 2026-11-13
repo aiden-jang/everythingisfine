@@ -40,3 +40,32 @@ test("map picking waits for a tap and leaves drags, pinches and canceled gesture
   send("pointerup", 1, 100);
   expect(pick).toHaveBeenCalledOnce();
 });
+
+test("globe inspection is opt-in and releases its handler when the view changes", () => {
+  const canvas = new EventTarget() as HTMLCanvasElement;
+  const point = { lon: -74, lat: 40.7 };
+  const controls = { morph: () => 0, pick: () => point } as unknown as Controls;
+  const picking = createObservationPicking(canvas, controls),
+    pick = vi.fn();
+  const tap = () => {
+    for (const type of ["pointerdown", "pointerup"])
+      canvas.dispatchEvent(
+        Object.assign(new Event(type), {
+          pointerId: 1,
+          clientX: 50,
+          clientY: 50,
+          button: 0,
+        }),
+      );
+  };
+  picking.set({ onPick: pick } as unknown as ObservationView);
+  tap();
+  expect(pick).not.toHaveBeenCalled();
+  picking.set({ onPick: pick, pickOnGlobe: true } as unknown as ObservationView);
+  tap();
+  expect(pick).toHaveBeenCalledExactlyOnceWith(point);
+  picking.set(null);
+  tap();
+  expect(pick).toHaveBeenCalledOnce();
+  picking.dispose();
+});

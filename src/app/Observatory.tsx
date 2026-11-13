@@ -345,6 +345,7 @@ function ObservatoryContent({
                     document.getElementById("observatory-scenes")?.focus();
                   }}
                 >
+                  <FeaturedStory scene={scene} />
                   <div className="observatory-actions">
                     <button
                       type="button"
@@ -357,7 +358,6 @@ function ObservatoryContent({
                     </button>
                     {ready && !tour.available && scene === "night" && <TourUnavailable note={empty.text} />}
                   </div>
-                  <FeaturedStory scene={scene} />
                   <Discoveries data={discoveries} aurora={aurora} city={skyCity.city} />
                   {!aurora.run && scene === "night" ? auroraControls : null}
                   {!active && scene !== "night" && (

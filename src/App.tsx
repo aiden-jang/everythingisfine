@@ -1,3 +1,4 @@
+import { closeDetail } from "./app/closeDetail";
 import { ActivityDisclosure } from "./app/ActivityDisclosure";
 import { EarthquakeComparisons } from "./app/EarthquakeComparisons";
 import { HazardList } from "./app/HazardList";
@@ -475,23 +476,12 @@ export function App(): JSX.Element {
     reportAnalytics({ name: "explore_opened" });
     observatory.exploreScene(stopTour);
   };
-  const closeReading = (kind: "quake" | "hazard" | "section") => {
-    const selector =
-      kind === "quake"
-        ? '#recent-earthquakes [aria-current="true"]'
-        : kind === "hazard"
-          ? '[data-hazard-row][aria-current="true"]'
-          : null;
-    const returnTo = selector ? document.querySelector<HTMLElement>(selector) : null;
-    if (kind === "quake") setSelected(null);
-    else if (kind === "hazard") setMarkId(null);
-    else setSectionLine(null);
-    requestAnimationFrame(() =>
-      (returnTo?.checkVisibility() ? returnTo : document.getElementById("globe-view"))?.focus({
-        preventScroll: true,
-      }),
-    );
-  };
+  const closeReading = (kind: "quake" | "hazard" | "section") =>
+    closeDetail(kind, () => {
+      if (kind === "quake") setSelected(null);
+      else if (kind === "hazard") setMarkId(null);
+      else setSectionLine(null);
+    });
   const chooseEarthScene = (scene: EarthScene): void => {
     stopTour();
     const next = earthSceneTarget(scene, journey.deepest, view.at ?? clockAt());
@@ -1157,6 +1147,15 @@ export function App(): JSX.Element {
           hidden={!railShown}
         >
           <MapLayers
+            places={{
+              feed,
+              filters: mapLayers.globeFilters,
+              at: view.at ?? now,
+              now,
+              revision: snapshot.revision,
+              hazards,
+              feeds,
+            }}
             controls={{
               ...mapLayers,
               change: (layer, on) => {

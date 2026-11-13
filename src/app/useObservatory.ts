@@ -89,7 +89,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const sharedView = useRef(shared.lon !== undefined || !!shared.day || shared.cursor != null);
   const [rotation, setRotation] = useStoredFlag("landingRotation", true);
   const chooseScene = useCallback(
-    (next: EarthScene, at: CutawayFocus | null = null) => {
+    (next: EarthScene, at: CutawayFocus | null = null, keepDeck = false) => {
       before();
       setScene(next);
       setBrowser((value) => ({
@@ -104,7 +104,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       setRadarView(null);
       setTonightView(null);
       setFloatView(null);
-      closeObservations();
+      if (!keepDeck) closeObservations();
     },
     [closeObservations, before, setTonightView],
   );
@@ -163,6 +163,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       });
     },
     navigation: {
+      prepareStory: (next: EarthScene, keepDeck: boolean) => chooseScene(next, null, keepDeck),
       key: [
         presentation,
         scene,

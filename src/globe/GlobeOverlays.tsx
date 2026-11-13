@@ -1,4 +1,5 @@
 import { CameraRecenter } from "./CameraRecenter";
+import { PlaceLabels } from "./PlaceLabels";
 import type { CameraGuidance } from "./cameraGuidance";
 import { geographicCoordinates } from "./orbitReadout";
 import type { CutawayFocus } from "./cutaway";
@@ -36,6 +37,7 @@ export function GlobeOverlays({
 }: OverlayRefs): JSX.Element {
   return (
     <>
+      <PlaceLabels />
       {guide ? <CameraRecenter guide={guide} wake={wake} /> : null}
       <div
         ref={orbit}

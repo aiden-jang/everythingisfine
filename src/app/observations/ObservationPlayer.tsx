@@ -1,4 +1,7 @@
 import { MeasurementSound } from "../MeasurementSound";
+import { PlaceComparison } from "./PlaceComparison";
+import { ObservationInspection, useObservationInspection } from "./ObservationInspection";
+import { FrameComparison } from "./FrameComparison";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { nearest } from "../../sources/observations/common";
 import { observations, type ObservationId } from "./catalogue";
@@ -55,6 +58,8 @@ export function ObservationPlayer({
   const latest = frames.at(-1);
   const holding = state !== "ready" && latest !== undefined;
   const canHold = id === "deep" || id === "swell";
+  const inspection = useObservationInspection(frame);
+  const inspect = inspection.pick;
 
   useLayoutEffect(() => {
     if (canHold && (!data || !frame) && state === "loading") return;
@@ -76,6 +81,8 @@ export function ObservationPlayer({
             frame,
             image: element,
             sky,
+            ...(id === "air" ? { onPick: inspect, pickOnGlobe: true } : {}),
+            ...(!map && playing && frame.camera ? { follow: frame.camera } : {}),
             ...(data.lens ? { lens: data.lens, arrive: regionalArrival } : {}),
           }
         : null,
@@ -86,7 +93,22 @@ export function ObservationPlayer({
         chapter: horizon ? "horizon" : photo ? "photo" : "",
         ...(id === "orbit" ? { city: option } : {}),
       });
-  }, [data, frame, element, horizon, map, update, canHold, state, remember, option, id, photo]);
+  }, [
+    data,
+    frame,
+    element,
+    horizon,
+    map,
+    update,
+    canHold,
+    state,
+    remember,
+    option,
+    id,
+    photo,
+    inspect,
+    playing,
+  ]);
 
   useEffect(() => {
     if (!playing || status === "loading") return;
@@ -212,6 +234,20 @@ export function ObservationPlayer({
             </details>
           )}
           {data.series && <ObservationChart series={data.series} at={frame.at} units={data.units} />}
+          {id === "air" && (
+            <ObservationInspection frame={frame} inspection={inspection} source={metadata.source} />
+          )}
+          {(id === "air" || id === "tide") && (
+            <PlaceComparison source={source} option={option} data={data} frame={frame} tide={id === "tide"} />
+          )}
+          <FrameComparison
+            frames={frames}
+            index={index}
+            select={(next) => {
+              setPlaying(false);
+              setSelectedAt(frames[next]!.at);
+            }}
+          />
           {id === "tide" && state === "ready" && frame.tide && (
             <MeasurementSound
               key={option}

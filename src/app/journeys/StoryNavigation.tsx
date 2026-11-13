@@ -53,7 +53,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   function navigate(id: string, trigger = "observatory-scenes", saved?: Visit) {
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
-    props.onScene(story.scene);
+    const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
+    saved ??= memory.library.recent.find((visit) => visit.id === id);
+    props.views.navigation.prepareStory(story.scene, !standalone);
     deck.setTrigger(trigger);
     if (saved?.position.sky) props.views.skyCity.select(saved.position.sky.city);
     if (id === "sky" || id === "meteors" || id === "moonfall") tonight.open(id, saved?.position.sky);

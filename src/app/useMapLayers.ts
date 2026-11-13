@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Filters } from "../data/types";
 import { stored, store } from "./stored";
-import { mapLayerNames, readMapLayers, type MapLayer } from "./layerVisibility";
+import { isolateLayer, mapLayerNames, readMapLayers, type MapLayer } from "./layerVisibility";
 import { layerTime } from "./layerTime";
 import type { RadarLayerView, RadarView } from "./radar/radarCamera";
 import type { FeedRow } from "./feedStatus";
@@ -23,8 +23,13 @@ export function useMapLayers(
   archived = false,
   shared: SharedLayers = {},
 ) {
-  const [enabled, setEnabled] = useState(() =>
+  const [savedLayers, setEnabled] = useState(() =>
     readMapLayers(shared.layers ? JSON.stringify(shared.layers) : stored("mapLayers"), target),
+  );
+  const [isolated, setIsolated] = useState<MapLayer | null>(null);
+  const enabled = useMemo(
+    () => isolateLayer(savedLayers, archived ? null : isolated),
+    [savedLayers, archived, isolated],
   );
   const [radarView, updateRadar] = useState<RadarView | null>(null);
   const [weather, setWeather] = useState<Partial<Record<WeatherLayerId, WeatherLayerView>>>({});
@@ -45,6 +50,9 @@ export function useMapLayers(
     setSelectedTimes((previous) => ({ ...previous, [id]: at }));
   }, []);
   const active = background && !archived;
+  useEffect(() => {
+    if (archived) setIsolated(null);
+  }, [archived]);
   const updateWeather = useCallback((id: WeatherLayerId, view: WeatherLayerView | null) => {
     setWeather((previous) => {
       const next = { ...previous };
@@ -64,9 +72,10 @@ export function useMapLayers(
         : null,
     [radarActive, radarView],
   );
-  const latest = useRef(enabled);
+  const latest = useRef(savedLayers);
   const change = useCallback(
     (layer: MapLayer, on: boolean) => {
+      setIsolated(null);
       const next = { ...latest.current, [layer]: on };
       latest.current = next;
       store("mapLayers", JSON.stringify(next));
@@ -115,6 +124,12 @@ export function useMapLayers(
   ];
   return {
     enabled,
+    isolated: archived ? null : isolated,
+    isolate(layer: MapLayer | null) {
+      setIsolated(layer);
+      if (layer === "earthquakes") openActivity(true);
+      if (layer === "radar" || (layer && layer in weatherLayers)) expand(layer as PlaybackLayer);
+    },
     activityOpen,
     openActivity,
     change,
