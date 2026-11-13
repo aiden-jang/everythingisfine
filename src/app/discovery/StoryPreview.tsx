@@ -32,8 +32,9 @@ export function StoryPreview({ children }: { children: ReactNode }) {
         if (event.pointerType !== "touch") return;
         const button = event.target instanceof Element ? event.target.closest("button[id]") : null;
         const region = button ? storyPlace(button.id) : null;
-        if (!region) return;
         cancelTouch();
+        touch.current = null;
+        if (!region) return;
         touch.current = {
           x: event.clientX,
           y: event.clientY,
@@ -59,6 +60,7 @@ export function StoryPreview({ children }: { children: ReactNode }) {
         if (touch.current?.held) event.preventDefault();
       }}
       onPointerLeave={(event) => {
+        cancelTouch();
         if (
           !(event.relatedTarget instanceof Element && event.relatedTarget.closest(".discovery-preview")) &&
           !document.activeElement?.closest("#stories-panel")

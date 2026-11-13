@@ -20,6 +20,7 @@ test("isolating a layer restores choices without changing saved preferences", as
   const before = await layers
     .locator('button[aria-pressed="true"]')
     .evaluateAll((buttons) => buttons.map((b) => b.getAttribute("aria-label")));
+  await layers.getByText("Focus", { exact: true }).click();
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 844 });
     await layers.getByRole("combobox", { name: "Focus on one layer" }).selectOption("fires");
@@ -64,7 +65,7 @@ test("keyboard previews do not move the camera, and date comparisons preserve fr
   await time.press("End");
   await panel.getByRole("button", { name: "Map", exact: true }).click();
   await panel.getByText("Compare dates", { exact: true }).click();
-  await panel.getByRole("button", { name: "Compare with first observation", exact: true }).click();
+  await panel.getByRole("button", { name: "Compare with first moment", exact: true }).click();
   const held = await camera(page);
   await panel.getByRole("button", { name: /^Earlier/ }).click();
   await expect(time).toHaveValue("0");
@@ -145,4 +146,65 @@ test("monitor inspection and place comparisons retain their source, time and sha
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: test.info().outputPath("phone-place-comparison.png") });
+});
+
+test("close city labels stay anchored on the globe and map without crowding the view @dev", async ({
+  page,
+}) => {
+  await installFeeds(page, { empty: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/#v=explore&at=139.7,35.7,3&layers=");
+  const labels = page.locator(".place-labels span:visible");
+  await expect(labels.filter({ hasText: "Tokyo" })).toBeVisible();
+  for (const projection of ["globe", "map"]) {
+    if (projection === "map") await page.getByRole("button", { name: "Map", exact: true }).click();
+    await expect.poll(async () => labels.count()).toBeGreaterThan(0);
+    expect(await labels.count()).toBeLessThanOrEqual(5);
+    const offsets = await labels.evaluateAll((nodes) => {
+      const globe = (
+        window as unknown as {
+          __globe: { project: (lon: number, lat: number, radius: number) => { x: number; y: number } | null };
+        }
+      ).__globe;
+      return nodes.map((node) => {
+        const el = node as HTMLElement,
+          b = el.getBoundingClientRect();
+        const projected = globe.project(Number(el.dataset.lon), Number(el.dataset.lat), 1.01);
+        return projected ? Math.hypot(b.x + b.width / 2 - projected.x, b.bottom - projected.y) : Infinity;
+      });
+    });
+    expect(Math.max(...offsets)).toBeLessThan(1);
+  }
+});
+
+test("a delayed final image keeps its prior timestamp and cannot announce an unseen ending", async ({
+  page,
+}) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route(/aral-2021[^/]*\.webp/, async (route) => {
+    await held;
+    await route.continue();
+  });
+  try {
+    await page.goto("/#v=observe&story=aral");
+    const panel = page.getByRole("region", { name: "Vanishing Sea", exact: true });
+    const shown = panel.locator(".story-time time");
+    await expect(shown).toHaveAttribute("datetime", "1984-06-01T12:00:00.000Z");
+    await expect(panel.getByText("Loading the selected observations…", { exact: true })).toHaveCount(0);
+    await panel.getByRole("slider").press("End");
+    await expect(panel.getByText("Loading the selected observations…", { exact: true })).toBeVisible();
+    await expect(shown).toHaveAttribute("datetime", "1984-06-01T12:00:00.000Z");
+    await expect(panel.getByText("Last available moment", { exact: true })).toHaveCount(0);
+    release();
+    await expect(shown).toHaveAttribute("datetime", "2021-06-01T12:00:00.000Z");
+    await expect(panel.getByText("Last available moment", { exact: true })).toBeVisible();
+  } finally {
+    release();
+  }
 });

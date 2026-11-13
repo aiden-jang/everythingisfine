@@ -36,7 +36,7 @@ function Story({
       id={id}
       type="button"
       disabled={!ready}
-      onClick={() => (navigation ? navigation.open(storyKey(id), id) : open())}
+      onClick={() => (navigation ? navigation.open(storyKey(id), id, true) : open())}
       aria-labelledby={`${id}-title`}
       aria-describedby={`${id}-note`}
     >

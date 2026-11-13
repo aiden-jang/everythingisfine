@@ -1,4 +1,4 @@
-import type { EarthStoryData } from "./types";
+import type { EarthStoryData, StoryFrame } from "./types";
 import type { useStoryClock } from "./useStoryClock";
 import { FrameComparison } from "../observations/FrameComparison";
 import { layerTime } from "../layerTime";
@@ -7,6 +7,8 @@ import { refreshAnnotations } from "../../globe/annotationInput";
 type Clock = ReturnType<typeof useStoryClock>;
 export function StoryTimeline({
   data,
+  frame,
+  settled,
   index,
   clock,
   busy,
@@ -15,6 +17,8 @@ export function StoryTimeline({
   restored,
 }: {
   data: EarthStoryData;
+  frame: StoryFrame;
+  settled: boolean;
   index: number;
   clock: Clock;
   busy: boolean;
@@ -22,7 +26,6 @@ export function StoryTimeline({
   time: string;
   restored: boolean;
 }) {
-  const frame = data.frames[index]!;
   const nearest = (at: number) =>
     data.frames.reduce(
       (best, item, i) => (Math.abs(item.at - at) < Math.abs(data.frames[best]!.at - at) ? i : best),
@@ -31,8 +34,8 @@ export function StoryTimeline({
   const milestones = data.chapters.length
     ? data.chapters
     : [
-        { at: data.frames[0]!.at, label: "First observation" },
-        { at: data.frames.at(-1)!.at, label: "Last observation" },
+        { at: data.frames[0]!.at, label: "First moment" },
+        { at: data.frames.at(-1)!.at, label: "Last moment" },
       ];
   return (
     <>
@@ -96,13 +99,16 @@ export function StoryTimeline({
         })}
       </div>
       <FrameComparison frames={data.frames} index={index} select={clock.seek} />
-      {index === data.frames.length - 1 && !clock.playing && (
-        <div className="story-finish" role="status">
-          <strong>{frame.sequence ? "End of this sequence" : "Last available moment"}</strong>
-          <p>{frame.caption}</p>
-          <small>{frame.timeLabel ?? layerTime(frame.at)}. Explore this view or continue below.</small>
-        </div>
-      )}
+      {settled &&
+        index === data.frames.length - 1 &&
+        frame.at === data.frames[index]!.at &&
+        !clock.playing && (
+          <div className="story-finish" role="status">
+            <strong>{frame.sequence ? "End of this sequence" : "Last available moment"}</strong>
+            <p>{frame.caption}</p>
+            <small>{frame.timeLabel ?? layerTime(frame.at)}. Explore this view or continue below.</small>
+          </div>
+        )}
     </>
   );
 }

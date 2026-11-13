@@ -284,6 +284,8 @@ export function StoryPlayer({
       )}
       <StoryTimeline
         data={data}
+        frame={{ ...frame, caption }}
+        settled={!busy && status === "ready"}
         index={index}
         clock={clock}
         busy={busy}

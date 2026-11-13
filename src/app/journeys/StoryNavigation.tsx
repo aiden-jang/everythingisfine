@@ -15,7 +15,7 @@ const Navigation = createContext<{
   resume: (visit: Visit) => void;
   route: { id: string; step: number } | null;
   unavailable: (id: string) => string | null;
-  open: (id: string, trigger?: string) => void;
+  open: (id: string, trigger?: string, keepScene?: boolean) => void;
   start: (id: string) => void;
   step: (index: number) => void;
   finish: (complete: boolean) => void;
@@ -50,12 +50,12 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   }, [active, route]);
   const unavailable = (id: string) =>
     !props.ready ? "The globe is still opening." : id === "aurora" ? props.aurora.unavailable : null;
-  function navigate(id: string, trigger = "observatory-scenes", saved?: Visit) {
+  function navigate(id: string, trigger = "observatory-scenes", saved?: Visit, keepScene = false) {
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
     const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
     saved ??= memory.library.recent.find((visit) => visit.id === id);
-    props.views.navigation.prepareStory(story.scene, !standalone);
+    props.views.navigation.prepareStory(keepScene ? props.scene : story.scene, !standalone);
     deck.setTrigger(trigger);
     if (saved?.position.sky) props.views.skyCity.select(saved.position.sky.city);
     if (id === "sky" || id === "meteors" || id === "moonfall") tonight.open(id, saved?.position.sky);
@@ -81,9 +81,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
             ? route
             : null,
         unavailable,
-        open(id, trigger) {
+        open(id, trigger, keepScene) {
           setRoute(null);
-          navigate(id, trigger);
+          navigate(id, trigger, undefined, keepScene);
         },
         start(id) {
           const first = journeys.find((journey) => journey.id === id)?.steps[0];

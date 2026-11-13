@@ -43,18 +43,18 @@ export function FrameComparison({
       }}
     >
       <summary>Compare dates</summary>
-      <p>Switch between two observations at the same framing.</p>
+      <p>Switch between two available times at the same framing.</p>
       <div className="observatory-actions">
         <button
           type="button"
           onClick={() => {
-            const after = Math.max(1, index);
+            const after = index > 0 ? index : frames.length - 1;
             const next = { before: 0, after, first: frames[0]!, last: frames[after]! };
             setPair(next);
             choose(next.after);
           }}
         >
-          {valid ? "Use current moment" : "Compare with first observation"}
+          {valid ? "Use current moment" : "Compare with first moment"}
         </button>
       </div>
       {valid && (

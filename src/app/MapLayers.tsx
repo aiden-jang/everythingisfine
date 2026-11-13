@@ -108,30 +108,33 @@ export function MapLayers({
           {archived && <p>Return to live to add weather layers.</p>}
         </details>
         <LayerGuide enabled={controls.enabled} />
+        {!archived && (
+          <details className="layer-focus-control">
+            <summary>Focus</summary>
+            <label className="layer-focus">
+              <span>Layer</span>
+              <select
+                aria-label="Focus on one layer"
+                value={controls.isolated ?? ""}
+                onChange={(event) => controls.isolate((event.currentTarget.value || null) as MapLayer | null)}
+              >
+                <option value="">All chosen layers</option>
+                {(Object.keys(mapLayerNames) as MapLayer[]).map((id) => (
+                  <option key={id} value={id}>
+                    {mapLayerNames[id]}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </details>
+        )}
+        <PlaceContext {...places} />
       </div>
-      {!archived && (
-        <label className="layer-focus">
-          <span>Focus</span>
-          <select
-            aria-label="Focus on one layer"
-            value={controls.isolated ?? ""}
-            onChange={(event) => controls.isolate((event.currentTarget.value || null) as MapLayer | null)}
-          >
-            <option value="">All chosen layers</option>
-            {(Object.keys(mapLayerNames) as MapLayer[]).map((id) => (
-              <option key={id} value={id}>
-                {mapLayerNames[id]}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
       <button type="button" className="map-layer-open" onClick={onBrowse}>
         <span>All stories & data</span>
         <small>Ocean, weather, space and recorded journeys</small>
         <span aria-hidden="true">→</span>
       </button>
-      <PlaceContext {...places} />
       {controls.radar && (
         <LayerPlayback
           id="radar"

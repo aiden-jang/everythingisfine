@@ -108,7 +108,8 @@
   font-size: 12px;
   line-height: 1.6;
 }
-.place-context summary {
+.place-context summary,
+.layer-focus-control summary {
   min-height: 44px;
   align-content: center;
   cursor: pointer;
@@ -153,4 +154,9 @@
     font-size: 11px;
     color: var(--color-dim);
   }
+}
+
+.layer-focus-control {
+  font-size: 12px;
+  color: var(--color-dim);
 }
