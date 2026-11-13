@@ -569,6 +569,7 @@ test("the globe is operable from the keyboard, and the keys are written down", a
   await installFeeds(page, { silent: true });
   await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
   await openLayer(page);
+  await page.locator("#globe-view").focus();
   await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
 
   // The hints moved onto the map, next to the thing the keys move.
@@ -1131,6 +1132,7 @@ test("the transport has a keyboard path, and the keys are written down", async (
   await page.goto("/");
   await waitForData(page);
   await openLayer(page);
+  await page.locator("#globe-view").focus();
 
   const zones = page.locator(".zones");
   await expect(zones).toContainText("play");
@@ -1490,10 +1492,6 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   await waitForData(page);
   await openLayer(page);
 
-  /*
-   * Filtered to the visible copy. The key is mounted twice - the canvas corner from `md` up, the rail on a
-   * phone - and only one is ever shown, so `.first()` picks by DOM order and lands on the hidden one.
-   */
   const only = (text: string) => page.getByText(text).filter({ visible: true });
   const key = only("Map legend");
   const explanation = only("Larger marks = higher magnitude");
@@ -1522,6 +1520,7 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   // Remembered, because a panel somebody closed is a preference too.
   await page.reload();
   await waitForData(page);
+  await openLayer(page);
   await expect(only("Larger marks = higher magnitude")).toHaveCount(0);
   await expect(page.locator("#mag")).toBeVisible();
 
@@ -2037,16 +2036,16 @@ test("a finger-width miss still opens the earthquake it was aimed at", { tag: "@
   await expect(page.locator(".zone-panel", { hasText: "Pinned event" })).toBeVisible();
 });
 
-/* Below 1280 the key has no edge of its own to sit on, so it goes back into the rail. Exactly one copy
-   is ever in the tree, or the same paragraph is read out twice. */
 test("the marks key is reachable at every width", async ({ page }) => {
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
 
   for (const [w, h] of [
+    [320, 640],
     [390, 844],
     [768, 1024],
+    [812, 375],
     [1024, 768],
     [1440, 900],
   ] as const) {
@@ -2059,6 +2058,13 @@ test("the marks key is reachable at every width", async ({ page }) => {
           .filter((s) => (s as HTMLElement).checkVisibility()).length,
     );
     expect(shown, `visible copies of the key at ${w}x${h}`).toBe(1);
+    const toggle = page.getByText("Map legend", { exact: true });
+    await expect(toggle).toBeInViewport({ ratio: 1 });
+    await toggle.click();
+    await expect(page.locator(".canvas-legend")).toBeInViewport({ ratio: 1 });
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+    if (w === 320) await page.screenshot({ path: test.info().outputPath("phone-map-legend.png") });
+    await toggle.click();
   }
 });
 

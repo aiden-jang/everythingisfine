@@ -9,7 +9,6 @@ export function EarthquakeInspector({
   stats,
   options,
   filters,
-  legend,
   timeline,
   query,
   clockBins,
@@ -20,7 +19,6 @@ export function EarthquakeInspector({
   stats: FeedSnapshot["stats"];
   headline: ComponentProps<typeof EarthquakeHeadline>;
   filters: ReactNode;
-  legend: ReactNode;
   timeline: ReactNode;
   query: { value: string; change: (value: string) => void; pickFirst: () => void };
   clockBins: ComponentProps<typeof Dial>["counts"];
@@ -31,7 +29,6 @@ export function EarthquakeInspector({
     <section className="earthquake-inspector" aria-label="Earthquake activity">
       <EarthquakeHeadline {...headline} />
       <div data-rail="legend">{filters}</div>
-      {legend && <div className="mt-4">{legend}</div>}
 
       {timeline}
 

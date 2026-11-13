@@ -214,7 +214,7 @@ test("a historical shortcut frames an actual archived event and keeps capture av
   const download = page.waitForEvent("download");
   await (await saveImageButton(page)).click();
   expect((await download).suggestedFilename()).toMatch(/\.png$/);
-  await openStories(page);
+  await openStories(page, "all");
   await page.getByRole("button", { name: "Japan, 2011", exact: true }).click();
   await expect(page).toHaveURL(/d=2011-03-11/);
   await expect(page.getByRole("complementary", { name: "Pinned earthquake" })).toBeVisible();
@@ -308,6 +308,7 @@ test("a shared map restores Explore and the Observatory preserves the held view"
   await installFeeds(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
+  await openLayer(page);
   await page.getByRole("button", { name: "Map", exact: true }).click();
   const transport = page.getByRole("slider", { name: "Time in the window" });
   await transport.press("ArrowLeft");
@@ -325,6 +326,7 @@ test("a shared map restores Explore and the Observatory preserves the held view"
     await installFeeds(recipient, { presentation: "fresh" });
     await recipient.goto(link);
     await expect(recipient.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
+    await openLayer(recipient);
     await expect(recipient.getByRole("button", { name: "Return to live", exact: true })).toBeVisible();
   } finally {
     await recipient.close();

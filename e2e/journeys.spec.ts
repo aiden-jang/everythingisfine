@@ -30,7 +30,7 @@ for (const [id, titles] of [
     await page.route("**/api/observations/river", (route) => route.abort());
     await page.goto("/");
     const canvas = await page.locator("#globe-view canvas").elementHandle();
-    await openStories(page);
+    await openStories(page, "all");
     await page.locator(`#journey-${id}`).click();
     const journey = page.getByRole("region", { name: "Current journey", exact: true });
     await expect(journey).toContainText("1 of 3");

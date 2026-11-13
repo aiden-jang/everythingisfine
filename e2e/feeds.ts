@@ -475,8 +475,8 @@ export async function waitForData(page: Page): Promise<number> {
   return held;
 }
 
-/** Open the complete catalogue through its real navigation, including its secondary tools. */
-export async function openStories(page: Page) {
+/** Reach the catalogue through real navigation; secondary tools are opt-in. */
+export async function openStories(page: Page, expand: "catalogue" | "all" | "search" = "catalogue") {
   const tab = page.getByRole("tab", { name: "Stories", exact: true });
   if (await tab.isVisible()) await tab.click();
   const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
@@ -488,8 +488,10 @@ export async function openStories(page: Page) {
     await page.getByRole("button", { name: "Live Earth", exact: true }).click();
   const catalogue = page.getByRole("region", { name: "Stories and layers", exact: true });
   await expect(catalogue).toBeVisible();
+  if (expand === "search") return scenes;
   const all = catalogue.getByRole("button", { name: /^View all \d+ stories$/ });
   if (await all.isVisible()) await all.click();
+  if (expand !== "all") return scenes;
   for (const label of [
     "Your visits & saved views",
     "Guided journeys & tours",
@@ -504,7 +506,7 @@ export async function openStories(page: Page) {
 
 export async function revealStoryTools(page: Page) {
   if (await page.getByRole("group", { name: "Earth scenes", exact: true }).isVisible())
-    await openStories(page);
+    await openStories(page, "all");
 }
 
 export async function openLayer(page: Page, name = "Earthquakes") {

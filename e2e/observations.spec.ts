@@ -60,8 +60,10 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   expect(attempts).toBe(0);
   const catalogue = page.getByRole("region", { name: "Stories and layers" });
   const tideRow = catalogue.getByRole("button", { name: "Tide Watch", exact: true });
-  await expect(tideRow).toHaveAccessibleDescription("Compare measured and predicted tides.");
-  await expect(tideRow.getByText("Compare measured and predicted tides.")).toBeVisible();
+  await expect(tideRow).toHaveAccessibleDescription(
+    "Recent observations Compare measured and predicted tides.",
+  );
+  await expect(tideRow.locator("..").getByText("Compare measured and predicted tides.")).toBeVisible();
   await tideRow.evaluate((row) => row.scrollIntoView({ block: "center" }));
   const sidebar = page.locator(".observatory-intro").filter({ has: catalogue });
   const scroll = await sidebar.evaluate((panel) => panel.scrollTop);
@@ -172,6 +174,7 @@ test("the Moon crossing, reconstructed plates, and wave forecasts reuse the Obse
   await page.getByRole("button", { name: "Back to Observatory", exact: true }).click();
   await expect(epic).toBeFocused();
 
+  await page.getByRole("button", { name: "Below the Surface", exact: true }).click();
   await openStories(page);
   await page.getByRole("button", { name: "Deep Time", exact: true }).click();
   await page.getByRole("button", { name: /Pangaea/ }).click();
@@ -180,8 +183,10 @@ test("the Moon crossing, reconstructed plates, and wave forecasts reuse the Obse
   await page.getByRole("combobox", { name: "Follow a place" }).selectOption("Rio de Janeiro");
   await expect(page.getByText("Rio de Janeiro’s plate position")).toBeVisible();
   await expect(age).toHaveAttribute("aria-valuetext", "230 million years ago");
-  await page.getByRole("button", { name: "Back to Observatory", exact: true }).click();
+  await page.getByRole("button", { name: "Back to Below the Surface", exact: true }).click();
 
+  await page.getByRole("button", { name: "Live Earth", exact: true }).click();
+  await openStories(page);
   await page.getByRole("button", { name: "Swell Lines", exact: true }).click();
   const swell = page.getByRole("region", { name: "Swell Lines", exact: true });
   await expect(swell.getByText("4.3 m", { exact: true })).toBeVisible();

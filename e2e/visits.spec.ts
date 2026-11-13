@@ -8,13 +8,13 @@ test("discovery changes with the scene and keeps the same globe", async ({ page 
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
-  await openStories(page);
+  await openStories(page, "all");
   await expect(page.locator(".featured-story button")).toHaveAccessibleName("Float Dive");
   await expect(page.getByRole("region", { name: "Worth looking at today" })).toContainText(
     "calculated for a level horizon",
   );
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
-  await openStories(page);
+  await openStories(page, "all");
   await expect(page.locator(".featured-story button")).toHaveAccessibleName("Moonfall");
   await page.locator(".featured-story button").click();
   await expect(page.getByRole("group", { name: "Lunar view" })).toBeVisible();
@@ -29,7 +29,7 @@ test("a saved lunar traverse resumes after a new page visit", async ({ page }) =
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
-  await openStories(page);
+  await openStories(page, "all");
   await page.locator(".featured-story button").click();
   await page.getByRole("combobox", { name: "Rover traverse" }).selectOption("1");
   const distance = page.getByRole("slider", { name: "Mapped distance" });
@@ -38,7 +38,7 @@ test("a saved lunar traverse resumes after a new page visit", async ({ page }) =
   await page.getByRole("button", { name: "Save view", exact: true }).click();
   await expect(page.locator(".visit-save")).toContainText("Saved on this device");
   await page.goto("/");
-  await openStories(page);
+  await openStories(page, "all");
   await page
     .getByRole("region", { name: "Your visits" })
     .getByRole("button", { name: /Moonfall Traverse 2/ })
@@ -55,14 +55,14 @@ test("a saved float returns to its measured depth after a new page visit", async
     route.fulfill({ json: { table: { rows: [] } } }),
   );
   await page.goto("/");
-  await openStories(page);
+  await openStories(page, "all");
   await page.locator(".featured-story button").click();
   const depth = page.getByRole("slider", { name: "Ascent depth" });
   await depth.press("End");
   const value = await depth.inputValue();
   await page.getByRole("button", { name: "Save view", exact: true }).click();
   await page.goto("/");
-  await openStories(page);
+  await openStories(page, "all");
   const shelf = page.getByRole("region", { name: "Your visits" });
   await shelf.getByText("Saved views (1)", { exact: true }).click();
   await shelf
@@ -81,7 +81,7 @@ test("saved views and recent history can be cleared independently", async ({ pag
     localStorage.setItem("eif.visits", JSON.stringify({ version: 1, recent: [visit], saved: [visit] }));
   });
   await page.goto("/");
-  await openStories(page);
+  await openStories(page, "all");
   const shelf = page.getByRole("region", { name: "Your visits" });
   await shelf.getByText("Saved views (1)", { exact: true }).click();
   await shelf.getByRole("button", { name: "Remove saved Float Dive" }).click();
@@ -107,7 +107,7 @@ test("refused storage keeps a usable visit without promising persistence", async
   await page.getByRole("button", { name: home }).click();
   await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
   await page.getByRole("button", { name: home }).click();
-  await openStories(page);
+  await openStories(page, "all");
   await expect(page.getByRole("region", { name: "Your visits" })).toContainText("Eye of the Storm");
   expect(await page.evaluate(() => localStorage.getItem("eif.visits"))).toBeNull();
 });

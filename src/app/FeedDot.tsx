@@ -20,7 +20,7 @@ export function FeedDot({
   archiveFrom: number | null;
   compact?: boolean;
 }): JSX.Element {
-  const id = useId();
+  const id = `feed-status-${useId()}`;
   const trigger = useRef<HTMLButtonElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const position = () => {

@@ -220,7 +220,8 @@ reachable when inspecting another layer. Find a place is distinct from report an
 Radar starts on unless a saved choice turns it off. Its compact canvas caption combines visible
 RainViewer attribution with the selected scan time. It stays visible when the rail folds. Guided
 regional radar is a secondary action inside the radar inspector; returning restores the camera and
-compatible scan time. Background wind paths remain quieter than story paths.
+compatible scan time. The map legend stays with the canvas at every width, independent of the open
+inspector. Background wind paths remain quieter than story paths.
 
 The header offers projection, source status and View options at every width. Capture, fullscreen,
 rotation and reset share that menu; keyboard help is a quiet optional disclosure. Phone layouts keep

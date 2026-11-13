@@ -18,7 +18,7 @@ for (const [id, query, back] of [
     await page.route("**/json/goes/**", (route) => route.abort());
     await page.route("https://opengeo.ncep.noaa.gov/**", (route) => route.abort());
     await page.goto("/");
-    await openStories(page);
+    await openStories(page, "search");
     const search = page.getByRole("searchbox", { name: "Find a story" });
     await expect(search).toBeInViewport({ ratio: 1 });
     await search.fill(query);

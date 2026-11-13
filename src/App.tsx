@@ -47,7 +47,7 @@ import { createFeed, DEFAULT_FILTERS } from "./app/feed";
 import { countByRegion } from "./app/regions";
 import { search, type Hit } from "./app/search";
 import { useRolling } from "./app/roll";
-import { useFloatingChrome, useNarrow } from "./app/useNarrow";
+import { useFloatingChrome } from "./app/useNarrow";
 import { useStoredFlag, useStoredName, useStoredNumber } from "./app/useStored";
 import { newestEpisode } from "./sources/volcanoes";
 import { summarise, FEED_CAP } from "./sources/wildfires";
@@ -854,8 +854,6 @@ export function App(): JSX.Element {
   ]);
   const feeds = feedStatus(snapshot.statuses, answered, { ...snapshot.checked, ...checked }, mapLayers.feeds);
 
-  const keyOnCanvas = useNarrow() === false;
-  // Compose shared legend props once so the rail and canvas cannot drift apart.
   const marksFilter = (
     <MagnitudeFilter
       ramp={ramp}
@@ -1261,7 +1259,6 @@ export function App(): JSX.Element {
                       replaying: !!replay || view.playing,
                     }}
                     filters={marksFilter}
-                    legend={keyOnCanvas ? null : marksKey}
                     timeline={timeline}
                     query={{
                       value: query,
@@ -1420,7 +1417,6 @@ export function App(): JSX.Element {
               {!observatory.observing && <LayerReadout controls={mapLayers} />}
               {observatory.observing ||
               !mapLayers.enabled.earthquakes ||
-              !keyOnCanvas ||
               section ||
               markSubject ||
               (shownQuake && pinned) ? null : (

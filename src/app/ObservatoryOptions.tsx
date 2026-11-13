@@ -19,7 +19,7 @@ export function ObservatoryOptions({
   saveStill: () => void;
   rotation: { enabled: boolean; set: (enabled: boolean) => void };
 }): JSX.Element {
-  const id = useId();
+  const id = `view-options-${useId()}`;
   const panel = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   return (
