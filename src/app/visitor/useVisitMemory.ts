@@ -29,7 +29,7 @@ export function useVisitMemory(props: ObservatoryProps, active: string | null) {
       position.radar = {
         map: observations.map,
         ...(props.radar.view.region ? { region: props.radar.view.region } : {}),
-        ...(props.radar.view.at !== undefined ? { at: props.radar.view.at } : {}),
+        ...(props.radar.view.selectedAt !== undefined ? { at: props.radar.view.selectedAt } : {}),
       };
     return { id: active, seen: opened.current.at, position };
   };

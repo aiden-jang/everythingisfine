@@ -980,7 +980,7 @@ export function App(): JSX.Element {
 
   const observatoryProps: ObservatoryProps = {
     explorer: {
-      radarAt: mapLayers.radar?.at,
+      radarAt: mapLayers.radarAt,
       flat,
       radarTime: (at) => mapLayers.selectTime("radar", at),
       read: () => readCamera.current(),

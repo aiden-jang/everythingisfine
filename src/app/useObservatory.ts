@@ -344,6 +344,7 @@ export function useObservatory(shared: Partial<Permalink>) {
             target: radarCamera(region),
             region: region ?? "world",
             image: null,
+            selectedAt: at,
           });
         };
         if (observing) open();

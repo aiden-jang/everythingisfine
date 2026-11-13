@@ -186,7 +186,7 @@ export function MapLayers({
             type="button"
             id="open-explorer-radar"
             className="layer-story-link"
-            onClick={() => navigation?.openRadar(controls.radar?.at, flat)}
+            onClick={() => navigation?.openRadar(controls.radarAt, flat)}
           >
             Follow a radar region <span>Guided view · same available scans</span>
           </button>

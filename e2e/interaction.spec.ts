@@ -1330,10 +1330,17 @@ test("the map carries a scale, and it names the latitude it is true at", async (
   await expect(scale).toContainText(/^[\d,]+ km at 0°$/);
   // The rule, by its own hook. Matching on the text instead found the Globe's root div, whose text
   // contains the label too, and measured the selection ring inside it: equal every time, for nothing.
-  const ruleWidth = () =>
-    page.evaluate(() => document.querySelector("[data-scale] > div")?.getBoundingClientRect().width ?? 0);
-  const atEquator = await ruleWidth();
-  expect(atEquator).toBeGreaterThan(20);
+  const reading = () =>
+    scale.evaluate((element) => {
+      const label = element.textContent!.match(/([\d,]+) km at (\d+)°/)!;
+      return {
+        width: element.querySelector("div")!.getBoundingClientRect().width,
+        km: Number(label[1]!.replaceAll(",", "")),
+        latitude: Number(label[2]),
+      };
+    });
+  const atEquator = await reading();
+  expect(atEquator.width).toBeGreaterThan(20);
 
   // North, and the bar has to change. The camera keys only fire while nothing has focus, which the Map button
   // still had, so the blur is the part that makes this test test anything.
@@ -1341,10 +1348,11 @@ test("the map carries a scale, and it names the latitude it is true at", async (
   for (let i = 0; i < 6; i += 1) await page.keyboard.press("ArrowUp");
 
   await expect(scale).toContainText(/km at \d+°N$/);
-  const atLatitude = await ruleWidth();
-  // Longer, for the same round number of kilometres. If this ever comes back equal, the `cos` has been
-  // dropped and the bar is quoting an equatorial measurement over Alaska.
-  expect(atLatitude).toBeGreaterThan(atEquator + 5);
+  const atLatitude = await reading();
+  // The ruler may choose a different round distance after panning. Compare pixels for the same distance.
+  const sameDistance = (atLatitude.width * atEquator.km) / atLatitude.km;
+  expect(sameDistance).toBeGreaterThan(atEquator.width + 5);
+  expect(sameDistance / atEquator.width).toBeCloseTo(1 / Math.cos((atLatitude.latitude * Math.PI) / 180), 1);
 });
 
 test("the legend says what a ring is, since nothing else did", async ({ page }) => {
@@ -1815,7 +1823,8 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
     head: boolean;
     rail: boolean;
     resizer: number;
-    hintsCentre: number;
+    footerCentre: number;
+    hintsRight: number;
     railWidth: number;
   }> =>
     page.evaluate(() => {
@@ -1824,13 +1833,15 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
         return el !== null && (el as HTMLElement).checkVisibility();
       };
       const hints = document.querySelector(".key-hints")!.getBoundingClientRect();
+      const footer = document.querySelector(".canvas-footer")!.getBoundingClientRect();
       return {
         head: shown("#chrome-head"),
         rail: shown("#chrome-rail"),
         // The handle is a sibling of the rail rather than a child, so folding the rail leaves it behind:
         // measured once as a one-pixel bright line down a frame whose whole point is that it is empty.
         resizer: document.querySelector('[aria-label="Rail width"]')?.getBoundingClientRect().width ?? -1,
-        hintsCentre: Math.round((hints.left + hints.right) / 2),
+        footerCentre: Math.round((footer.left + footer.right) / 2),
+        hintsRight: Math.round(hints.right),
         railWidth: Math.round(document.querySelector("#chrome-rail")!.getBoundingClientRect().width),
       };
     });
@@ -1846,8 +1857,9 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
   expect(folded.rail, "the panel folds").toBe(false);
   expect(folded.head, "and the bar is still there").toBe(true);
   expect(folded.resizer, "the rail's handle goes with the rail").toBe(0);
-  // `--rail-w` is what the bottom band is measured from, so the keys recentre on the whole canvas.
-  expect(folded.hintsCentre, "the hints recentre").toBeLessThan(open.hintsCentre);
+  // The footer reclaims the panel's space while keyboard help stays at the right edge.
+  expect(folded.footerCentre, "the footer recentres").toBeLessThan(open.footerCentre);
+  expect(folded.hintsRight).toBe(open.hintsRight);
 
   await page.reload();
   await waitForData(page);
@@ -1857,7 +1869,8 @@ test("the panel folds where it covers the globe, and stays folded", async ({ pag
   await page.waitForTimeout(400);
   const back = await chrome();
   expect(back.rail).toBe(true);
-  expect(back.hintsCentre).toBe(open.hintsCentre);
+  expect(back.footerCentre).toBe(open.footerCentre);
+  expect(back.hintsRight).toBe(open.hintsRight);
 
   /*
    * The rail comes back the width it was. It did not: the fold shipped storing "1" and "0" under `rail`,

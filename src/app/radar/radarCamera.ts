@@ -14,6 +14,8 @@ export interface RadarView {
   target: RadarCamera;
   image: ImageBitmap | null;
   at?: number | undefined;
+  // Selection survives navigation even while its image is loading or unavailable.
+  selectedAt?: number | undefined;
   lightning?: ObservationFrame | undefined;
   feed?: RadarFeedHealth | undefined;
 }

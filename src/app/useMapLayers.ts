@@ -124,6 +124,7 @@ export function useMapLayers(
     updateRadar,
     active,
     selectedTimes,
+    radarAt: radarView?.selectedAt ?? selectedTimes.radar ?? undefined,
     selectTime,
     updateWeather,
     weather,

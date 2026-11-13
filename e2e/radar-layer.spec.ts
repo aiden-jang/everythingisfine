@@ -33,6 +33,19 @@ for (const width of [1440, 390]) {
     await page.emulateMedia({ reducedMotion: width === 390 ? "reduce" : "no-preference" });
     await installFeeds(page, { presentation: "fresh", radar: "default" });
     await page.addInitScript(() => {
+      const create = window.createImageBitmap.bind(window);
+      window.createImageBitmap = async (...args: Parameters<typeof createImageBitmap>) => {
+        const source = args[0];
+        if (
+          source instanceof HTMLCanvasElement &&
+          source.width === 1024 &&
+          document.documentElement.dataset["holdRadarImages"] === "true"
+        )
+          await new Promise<void>((resolve) =>
+            window.addEventListener("release-radar-images", () => resolve(), { once: true }),
+          );
+        return create(...args);
+      };
       const close = ImageBitmap.prototype.close;
       ImageBitmap.prototype.close = function () {
         if (this.width === 1024) {
@@ -124,14 +137,22 @@ for (const width of [1440, 390]) {
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/radar-layer-${width}.png` });
     expect((await new AxeBuilder({ page }).include(".map-layers").analyze()).violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+    await page.evaluate(() => (document.documentElement.dataset["holdRadarImages"] = "true"));
     await layers.getByRole("button", { name: /Follow a radar region/ }).click();
     const guided = page.getByRole("region", { name: "Storm Radar", exact: true });
     await expect(guided.locator(".radar-clock time")).toHaveAttribute(
       "datetime",
       new Date(times[1]!).toISOString(),
     );
+    await expect(guided.getByRole("status", { name: "Radar status" })).toHaveText(
+      "Loading the selected scan…",
+    );
     await guided.getByRole("button", { name: "Back to radar layer", exact: true }).click();
     await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
+    await page.evaluate(() => {
+      delete document.documentElement.dataset["holdRadarImages"];
+      window.dispatchEvent(new Event("release-radar-images"));
+    });
     await expect.poll(() => camera(page)).toEqual(mapCamera);
     await expect(page.locator("#open-explorer-radar")).toBeFocused();
     await page.getByRole("tab", { name: "Stories", exact: true }).click();

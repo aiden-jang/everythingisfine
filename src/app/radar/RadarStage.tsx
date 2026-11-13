@@ -83,10 +83,11 @@ export function RadarStage({
         target,
         image: image ?? null,
         at: image ? selected?.at : undefined,
+        selectedAt: restored ? selected?.at : initialAt,
         lightning: lightning?.frame ?? undefined,
         feed,
       }),
-    [image, lightning, onView, target, selected?.at, regionId, feed],
+    [image, lightning, onView, target, selected?.at, regionId, feed, restored, initialAt],
   );
 
   const seek = useCallback(

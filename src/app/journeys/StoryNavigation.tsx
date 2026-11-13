@@ -121,7 +121,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           origin.current = null;
           props.views.visitCheckpoint.current();
           if (active === "radar" && props.radar.view && isGlobalRadar(props.radar.view.region))
-            props.explorer.radarTime(props.radar.view.at ?? null);
+            props.explorer.radarTime(props.radar.view.selectedAt ?? null);
           props.views.navigation.restore(saved.route);
           props.explorer.restore(saved.camera);
           setRoute(null);
