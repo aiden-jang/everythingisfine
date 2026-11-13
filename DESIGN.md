@@ -315,8 +315,9 @@ inspector. A collapsed legend occupies only its label width. On phones, its read
 viewport-bounded overlay with Close and Escape, keeping the trigger reachable at every sheet height.
 Phone keyboard help lives in View options so it does not cover the globe. Detailed radar, wind and
 lightning times open through Sources & times in a native, viewport-bounded popover at every width; Close and Escape
-return focus to its trigger. Radar attribution remains outside that disclosure, and the full scan
-date stays available in the inspector and timestamp title. The phone author link sits at the
+return focus to its trigger. Radar attribution remains outside that disclosure. Phones keep the scan
+time inside the disclosure and player so the canvas footer stays on one row; desktop also shows UTC
+beside the attribution. The full scan date stays available in the inspector. The phone author link sits at the
 bottom edge with safe-area support; the scrolling rail has enough bottom padding to keep its final
 content reachable above the credit. Background wind paths remain quieter than story paths.
 

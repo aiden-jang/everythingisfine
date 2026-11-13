@@ -180,7 +180,9 @@
   .radar-canvas-credit a {
     min-height: 44px;
   }
-  .radar-credit-prefix {
+  .radar-credit-prefix,
+  .radar-canvas-credit > time,
+  .radar-canvas-credit > span {
     display: none;
   }
   .canvas-footer {
