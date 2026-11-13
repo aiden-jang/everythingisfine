@@ -15,7 +15,7 @@ export function browseStories(scene: EarthScene | null, all: boolean): readonly 
   );
   if (all) return list;
   const ids = scene ? suggested[scene] : ["radar", "sky", "rupture", "aurora"];
-  return ids.flatMap((id) => list.filter((story) => story.id === id));
+  return ids.slice(0, 3).flatMap((id) => list.filter((story) => story.id === id));
 }
 export function storyKind(id: string): string {
   if (["orbit", "sky", "shadow", "meteors", "apophis"].includes(id)) return "Prediction";

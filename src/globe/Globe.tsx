@@ -623,7 +623,7 @@ export function Globe({
   );
 
   return (
-    <div className="relative h-full w-full [--scene-hud-top:76px]">
+    <div className="globe-scene relative h-full w-full [--scene-hud-top:76px]">
       {unavailable ? (
         <GlobeUnavailable
           lost={unavailable === "lost"}

@@ -12,8 +12,10 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   const sheet = page.getByRole("separator", { name: "Sheet height", exact: true });
   const navigation = page.getByRole("navigation", { name: "Explore", exact: true });
   const canvas = await page.locator("#globe-view canvas").elementHandle();
+  const header = (await page.locator("#chrome-head").boundingBox())!;
+  expect((await canvas!.boundingBox())!.y).toBeGreaterThanOrEqual(header.y + header.height);
   const size = () => sheet.getAttribute("aria-valuenow");
-  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.46)));
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.34)));
   await navigation.getByRole("button", { name: "Expand globe", exact: true }).click();
   const collapsed = Number(await size());
   await navigation.getByRole("button", { name: "Layers", exact: true }).click();
@@ -126,6 +128,14 @@ for (const width of [1440, 812, 390]) {
     );
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/stories-${width}.png` });
+    const library = stories.getByRole("button", { name: "Library", exact: true });
+    await expect(library).toHaveAttribute("aria-expanded", "false");
+    await expect(stories.getByRole("button", { name: "Saved & recent", exact: true })).toBeHidden();
+    await library.click();
+    await stories.getByRole("button", { name: "Saved & recent", exact: true }).click();
+    await expect(stories.locator("#story-library-panel-visits")).toBeVisible();
+    await library.click();
+    await expect(stories.getByRole("button", { name: "Saved & recent", exact: true })).toBeHidden();
     await stories.getByRole("button", { name: "After Dark", exact: true }).click();
     expect(await camera()).toEqual(pose);
     const search = stories.getByRole("searchbox", { name: "Find a story", exact: true });
@@ -176,7 +186,7 @@ for (const title of ["Lights Return", "Shadow Chase"]) {
     await expect(trigger).toBeFocused();
     await search.fill("");
     await expect(page.getByRole("button", { name: "Float Dive", exact: true })).toHaveAccessibleDescription(
-      "Argo ocean measurements Follow a measured profile from the deep Atlantic toward the surface.",
+      "Argo ocean measurements Follow a measured profile toward the surface.",
     );
     await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toHaveAccessibleDescription(
       "Recent observations Scrub recent radar from around the world on the globe.",

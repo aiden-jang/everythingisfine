@@ -14,3 +14,7 @@ playwright-report
 # Generated review output; authored references and curated README images stay tracked.
 /docs/ui-qa/
 /docs/ui-review/
+
+# Local design comparisons and review state.
+/.impeccable/
+/assets/plates/

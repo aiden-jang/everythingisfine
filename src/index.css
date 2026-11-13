@@ -147,8 +147,8 @@
     /* Phone: globe on top, rail becomes a sheet you scroll under it. A passive watchable
        visualization gets most of its shared links opened on a phone. */
     /* `--canvas-h` is the phone sheet's handle, unset until somebody drags it. */
-    --sheet-min: max(28dvh, min(220px, 60dvh));
-    --sheet-default: max(46dvh, min(280px, 72dvh));
+    --sheet-min: max(20dvh, min(180px, 60dvh));
+    --sheet-default: max(34dvh, min(280px, 72dvh));
     --sheet-position: clamp(var(--sheet-min), var(--canvas-h, var(--sheet-default)), 82dvh);
     grid-template-rows: var(--sheet-position) 1fr;
     grid-template-areas: "canvas" "rail";

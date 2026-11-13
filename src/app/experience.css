@@ -38,6 +38,9 @@
   font-size: 11px;
 }
 .featured-story-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
   color: var(--color-ink);
   text-decoration: underline;
   text-underline-offset: 4px;

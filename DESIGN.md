@@ -1,3 +1,67 @@
+---
+name: Everything Is Fine
+description: A dark observation deck for real Earth and sky readings.
+colors:
+  void: "#050b16"
+  sphere: "#0a101c"
+  land: "#1e293f"
+  coast: "#555663"
+  plate: "#646478"
+  deck: "#0a1322"
+  raised: "#101d33"
+  ink: "#e8edf5"
+  dim: "#a9b5c7"
+  faint: "#8997ae"
+  hairline: "rgb(148 163 184 / 0.14)"
+typography:
+  interface:
+    fontFamily: '"Geist Variable", ui-sans-serif, system-ui, sans-serif'
+  reading:
+    fontFamily: '"Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace'
+  explore-tab:
+    fontSize: "22px"
+    letterSpacing: "-0.02em"
+  story-heading:
+    fontSize: "clamp(28px, 2.5vw, 40px)"
+    letterSpacing: "-0.035em"
+  story-row:
+    fontSize: "19px"
+    letterSpacing: "-0.025em"
+rounded:
+  projection: "6px"
+  control: "7px"
+  feature: "9px"
+spacing:
+  compact: "8px"
+  control: "12px"
+  row: "16px"
+  rail: "clamp(20px, 2.35vw, 38px)"
+components:
+  explore-rail:
+    backgroundColor: "{colors.void}"
+    padding: "{spacing.rail}"
+  explore-tab:
+    typography: "{typography.explore-tab}"
+  story-hero:
+    typography: "{typography.story-heading}"
+    rounded: "{rounded.feature}"
+  story-row:
+    typography: "{typography.story-row}"
+  story-search:
+    rounded: "{rounded.control}"
+    padding: "0 12px 0 38px"
+  projection-current:
+    backgroundColor: "{colors.raised}"
+    rounded: "{rounded.projection}"
+    padding: "0 12px"
+  library-toggle:
+    height: "44px"
+  layer-times:
+    backgroundColor: "{colors.deck}"
+    rounded: "{rounded.control}"
+    padding: "12px 16px 20px"
+---
+
 # Design system: Everything Is Fine
 
 A live global event instrument. The globe is the first screen, real observations
@@ -37,17 +101,17 @@ brightness, weight and a visible ring. No saturated button accents, status dots,
 selection colors or browser-default range tints. This includes text selection,
 focus outlines and scrollbars.
 
-`src/index.css` owns the tokens:
+`src/index.css` owns the runtime colors; the frontmatter records their normative design values.
 
-| Token | Value |
+| Token | Role |
 | --- | --- |
-| Void | `#050b16` |
-| Sphere | `#0a101c` |
-| Land | `#1e293f` |
-| Coast / plate | `#555663` / `#646478` |
-| Deck / raised | `#0a1322` / `#101d33` |
-| Text / dim / faint | `#e8edf5` / `#a9b5c7` / `#8997ae` |
-| Hairline | `rgb(148 163 184 / 0.14)` |
+| Void | Page and desktop Explore rail |
+| Sphere | Globe surface |
+| Land | Geographic land |
+| Coast / plate | Geographic boundaries |
+| Deck / raised | Panels and selected controls |
+| Ink / dim / faint | Primary, secondary and supporting text |
+| Hairline | Quiet separators and control edges |
 
 A 2px text-color focus ring with a 2px offset remains visible. Never use pure black.
 The atmospheric rim may use `rgb(120 150 190 / 0.16)` along the globe silhouette;
@@ -119,9 +183,12 @@ identifiers, timestamps and magnitudes. All updating numbers use tabular figures
 No serif or decorative display face. Keep labels readable instead of using
 weight or very faint gray as a substitute for hierarchy.
 
-The sentence-case masthead is 18px desktop / 16px phone, weight 600 with tight
-tracking. The Explore count is 38px, the selected magnitude is 40px, and detail and place headings
-20px. Small metadata has deliberate spacing, and long agency/place names wrap.
+The sentence-case masthead uses weight 600 and tight tracking. Explore's desktop masthead grows
+from 24–32px to 28–34px at the wide breakpoint; the phone retains its compact 16px treatment.
+Explore tabs and story titles use the frontmatter's desktop roles, with smaller phone labels and
+larger wide-screen rows. The featured title stays prominent above its source and explanatory line.
+The Explore count is 38px, the selected magnitude is 40px, and detail and place headings are 20px.
+Small metadata has deliberate spacing, and long agency/place names wrap.
 
 ## 6. Components
 
@@ -159,16 +226,23 @@ Controls stay reachable in short landscape views.
 Live Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
 Their temporary overrides do not overwrite saved scientific settings. The observatory retains source
 status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
-Keep one featured experience and up to four initial suggestions inside each scene. In Explore,
-compact story rows show the data type; accessible descriptions and the full catalogue retain the
-explanation. Saved visits, journeys, archives and feed discoveries use quiet text disclosures beneath
-the list. The full catalogue remains a deliberate choice.
+Keep one featured experience and three initial suggestions inside each scene. In Explore, the
+featured story uses a full-width recorded image, a readable lower gradient, title, source, short
+description and Open story cue. Three compact image rows follow, with their data type visible;
+accessible descriptions and the full catalogue retain the explanation. View all and Library share
+the footer below the selection. Library reveals Saved & recent, Guided journeys, Archives and
+From feeds; those sections keep their individual disclosures. The full catalogue remains a
+deliberate choice.
 **Explore the globe** comes before the three illustrated scene filters. The landing overview starts
 with none selected and the catalogue collapsed. Selecting a scene exposes its entries and brings
 the search field into view on narrow screens; selecting it again returns to the compact landing view.
 There is no separate disclosure button for content the scene selection already opens. Closing an
 experience returns focus to its entry point and restores the drawer’s scroll position.
-Story thumbnails show recorded captures of their actual views. Guided journeys use the drawer’s
+Story thumbnails show recorded captures of their actual views. Float Dive, Rupture Reveal and
+Moonfall retain native-resolution crops for the large feature; radar and sky previews are bounded
+600px-wide crops. Load these WebP assets lazily and keep their capture origin, crop and conversion
+in adjacent sidecars. Scientific imagery must come from the app's real rendered content, never
+generated data or design-mockup pixels. Guided journeys use the drawer’s
 existing quiet rows and each story’s reading panel, with manual steps, visible source context and
 a return to free exploration. Onward links explain the relationship without implying shared dates
 or causation between independent records. Keep the scientific scene large and the controls neutral.
@@ -201,7 +275,10 @@ flat-map palette. Presentation crossfades are finite and skipped under reduced m
 
 Keep a fixed viewport with owned scrolling regions; horizontal page overflow is
 a failure. At desktop the globe continues behind the floating rail/detail panels.
-The 60px header groups view controls separately from utility actions. Folding a
+Explore's initial rail width is 29.5% of the viewport, bounded to 320–480px; saved widths still
+take precedence within the existing 264–620px resize bounds. Its header is 72px from 768px wide
+and 76px from 1280px wide. The paired Globe/Map control identifies the current projection and
+offers the other alongside it. Utility actions stay grouped separately. Folding a
 region has an independently reachable restore control and never strands a stored
 preference after resizing. Fullscreen expands the window without hiding its tools.
 
@@ -225,24 +302,31 @@ shared report window clearly named. Wind, lightning, radar and aurora retain ind
 Recent weather does not masquerade as an archived observation. Archive date and return-to-live stay
 reachable when inspecting another layer. Find a place is distinct from report and story search.
 
-Radar starts on unless a saved choice turns it off. Its compact canvas caption combines visible
-RainViewer attribution with the selected scan time. It stays visible when the rail folds. Guided
+Radar starts on unless a saved choice turns it off. One canvas information strip groups source
+attribution, independent layer times and the legend; a secondary ruled row holds the author credit
+and optional keyboard help on desktop. The compact radar caption keeps RainViewer attribution
+visible with the selected UTC scan time, including when the rail folds. Guided
 regional radar is a secondary action inside the radar inspector; returning restores the camera and
 compatible scan time. The map legend stays with the canvas at every width, independent of the open
 inspector. A collapsed legend occupies only its label width. On phones, its reading opens in a
 viewport-bounded overlay with Close and Escape, keeping the trigger reachable at every sheet height.
-Phone keyboard help lives in View options so it does not cover the globe. Radar attribution stays
-visible alongside a compact UTC scan time;
-the full date remains available in the inspector and timestamp title. Background wind paths remain
-quieter than story paths.
+Phone keyboard help lives in View options so it does not cover the globe. Detailed wind and
+lightning times open through Layer times in a native, viewport-bounded popover; Close and Escape
+return focus to its trigger. Radar attribution remains outside that disclosure, and the full scan
+date stays available in the inspector and timestamp title. The phone author link sits at the
+bottom edge with safe-area support; the scrolling rail has enough bottom padding to keep its final
+content reachable above the credit. Background wind paths remain quieter than story paths.
 
 The header offers projection, source status and View options at every width. Capture, fullscreen,
 rotation and reset share that menu; keyboard help is a quiet optional disclosure. Phone layouts keep
 the subject above a draggable, keyboard-operable sheet. Expand globe/map enlarges the canvas; the
 other shortcut names the current pane rather than assuming earthquake activity. The handle and
-interactive controls have 44px targets. The sheet opens at half height, expands for browsing, and
-collapses to give the globe more room.
-Its drag handle snaps to those three positions; keyboard arrows allow intermediate adjustments and
+interactive controls have 44px targets. The phone globe row starts at 34% of viewport height, with
+a 280px floor bounded by 72% on very short screens. Its lower stop is 20%, with a 180px floor
+bounded by 60%; its upper stop is 82%. Browsing expands the sheet by reducing the globe row;
+expanding the globe reduces the sheet. Within that row, the Explore canvas clears the 68px header
+and leaves 12px below, keeping the default globe complete above the sheet.
+The drag handle snaps to those three positions; keyboard arrows allow intermediate adjustments and
 Home/End reach the extremes. Stored heights are bounded to the current viewport after rotation,
 with enough canvas clearance for the header and legend on short screens.
 Selection closing and preserved list position remain supported. Check short landscape and tablet

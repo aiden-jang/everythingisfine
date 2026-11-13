@@ -258,6 +258,17 @@ test("saved weather layers load on the landing globe and stay out of earthquake 
   await expect(readout).toContainText("GFS wind forecast");
   await expect(readout).toContainText("GOES-East lightning");
   await expect(readout.locator("time")).toHaveCount(2);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(readout).toBeHidden();
+  const times = page.getByRole("button", { name: "Layer times", exact: true });
+  await times.click();
+  await expect(readout).toBeInViewport({ ratio: 1 });
+  await expect(readout.locator("time")).toHaveCount(2);
+  await readout.getByRole("button", { name: "Close layer times", exact: true }).press("Escape");
+  await expect(readout).toBeHidden();
+  await expect(times).toBeFocused();
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await expect(readout).toBeVisible();
   const beforeArchive = { ...source.calls };
   await page.goto("/#d=2011-03-11");
   await page.getByRole("button", { name: "Back to layers", exact: true }).click();

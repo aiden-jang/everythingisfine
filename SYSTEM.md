@@ -125,6 +125,9 @@ Preferences write in their setters, never on initial mount. A shared link can ov
 view without turning defaults into stored choices. The sheet height uses the same preference path.
 `ExploreSheet.tsx` owns its three snap positions,
 viewport bounds and tap alternatives; `Resizer.tsx` supplies pointer and keyboard resizing.
+Explore's default desktop rail is proportional to the viewport within bounded initial widths;
+stored widths still use the existing resize limits. The phone stops bound the canvas row, and its
+inner scene clears the header and sheet edge. These layout changes keep the same renderer mounted.
 Restoration validates named choices and finite numbers before they reach rendering or layout.
 Resize cancellation, lost window focus and unmount release the drag's page styles.
 The application has a persistent heading and main landmark. Panels have distinct names;
@@ -178,7 +181,13 @@ story entry points. Steps advance only on request; finishing leaves the current 
 exploration. Each view retains its own data, time and controls. Prompts distinguish independent
 records, forecasts and predictions rather than implying synchronized time or causation.
 
-Story thumbnails are cropped captures of the actual rendered views, loaded as small WebP assets.
+The Stories tab opens with one large featured image and three recommendations; Library reveals
+the saved, guided, archive and feed sections while preserving their disclosure state. Search and
+the full catalogue still route through the same story navigation.
+
+Story thumbnails are cropped captures of the actual rendered views, loaded lazily as WebP assets.
+Featured Float Dive, Rupture Reveal and Moonfall crops retain native detail; the radar and sky
+previews are downsampled to 600px wide. They remain separate runtime URLs rather than inline data.
 Their origin sidecars describe the recorded UI capture; they do not establish current provider
 availability or make the preview a live reading. The catalogue adds no backend or persisted route
 state; story entry continues to use the existing renderer and on-demand provider lifecycle.
@@ -357,7 +366,10 @@ Shared coverage metadata drives the layer list and per-layer source disclosure. 
 markers are hidden; optional weather sources leave the feed total when off. Live weather retries on
 reconnection, retaining existing data with its original time while recovery is pending.
 The shared readout names wind forecasts and GOES-East lightning with their own timestamps on landing,
-globe and map. Their frames contribute paths and marks to
+globe and map. Explore groups source times, radar attribution and legend at the canvas edge, with
+author credit and keyboard help secondary. On phones, Layer times uses a native popover for wind
+and lightning details; Close and Escape restore trigger focus, and radar attribution stays visible.
+Their frames contribute paths and marks to
 the existing observation renderer, with stable geometry references and no additional canvas.
 The feed total includes each enabled source, reports failure independently, and retains its last
 successful check. Archived earthquakes and cinematic views do not mount current weather sources.

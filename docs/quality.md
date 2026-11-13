@@ -45,6 +45,8 @@ coverage checks playback labels and reachable onward links. Audio checks establi
 is required, pitch follows the measured value and leaving the view closes the voice; unit checks
 cover finite inputs, throttling, hidden-tab silence and voice cleanup. Catalogue and preview checks keep story
 destinations and recorded thumbnail coverage aligned with the available views.
+Explore checks retain three initial recommendations, the Library disclosure, search and return context,
+the shared renderer across projection changes, and reachable phone Layer times with Escape dismissal.
 
 Visit checks cover scene discovery, local bookmarks, resume after a new page visit, measured float
 depth and refused storage. Clip checks decode the actual browser-produced video, check rendered
@@ -62,6 +64,9 @@ EIF_CAPTURE_UI=/private/tmp/eif-review pnpm exec playwright test e2e/quality.spe
 ```
 
 Review the actual images for hierarchy, readable labels, canvas space, clipping and notice placement.
+For Explore, check the large story preview and three recommendations at desktop widths, the complete
+default phone globe below its header, and the readout and Library controls at every sheet stop.
+Include the author credit and final scrollable content when checking bottom-edge clearance.
 Geometric assertions support that review; they cannot establish whether the interface feels good.
 Keep each run in an ignored local output directory; historical reviews remain in Git history.
 
@@ -80,8 +85,11 @@ keep runtime and installation assets separate. Earlier audit records remain in G
 history. Use synthetic data and remove private information from shared evidence.
 
 Story thumbnails in `src/assets/story-previews/` are curated runtime assets with origin sidecars.
-Keep the full captures used to produce them in temporary review output. A recorded thumbnail is
-neither evidence of current feed availability nor a live observation.
+Keep these assets and their provenance tracked; keep full source captures, comparison plates and
+design-tool review state in ignored local output. Large feature previews retain genuine rendered
+detail without upsampling, and compact radar and sky previews are bounded to 600px wide. Sidecars
+record the source capture, crop and conversion. A recorded thumbnail is neither evidence of current
+feed availability nor a live observation; generated scientific imagery and mockup pixels are not sources.
 
 For a local animation recording, set `EIF_CAPTURE_MOTION=1` when running
 `pnpm run test:e2e e2e/cinematic.spec.ts e2e/planetarium.spec.ts e2e/unfold.spec.ts e2e/section-fold.spec.ts`.

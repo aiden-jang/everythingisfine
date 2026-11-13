@@ -115,20 +115,41 @@ export function StoriesDrawer({
                   );
                 })}
               </div>
-              <button
-                className="story-browse-all"
-                type="button"
-                aria-expanded={all}
-                onClick={() => {
-                  if (!all) selectionScroll.current = rail()?.scrollTop ?? 0;
-                  expand(all ? null : key);
-                  if (all) requestAnimationFrame(() => rail()?.scrollTo({ top: selectionScroll.current }));
-                }}
-              >
-                {all ? "Show selected stories" : `View all ${browseStories(scene, true).length + 1} stories`}
-              </button>
+              <div className="story-browse-footer">
+                <button
+                  className="story-browse-all"
+                  type="button"
+                  aria-expanded={all}
+                  onClick={() => {
+                    if (!all) selectionScroll.current = rail()?.scrollTop ?? 0;
+                    expand(all ? null : key);
+                    if (all) requestAnimationFrame(() => rail()?.scrollTo({ top: selectionScroll.current }));
+                  }}
+                >
+                  {all
+                    ? "Show selected stories"
+                    : `View all ${browseStories(scene, true).length + 1} stories`}
+                </button>
+                <button
+                  type="button"
+                  className="story-library-toggle"
+                  aria-expanded={browse.sections.includes("library")}
+                  aria-controls="story-library"
+                  onClick={() => browse.fold("library", !browse.sections.includes("library"))}
+                >
+                  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                    <path
+                      d="M12 5v15m0-15C9 3 5 3 2 4v15c3-1 7-1 10 1 3-2 7-2 10-1V4c-3-1-7-1-10 1Z"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    />
+                  </svg>
+                  Library
+                </button>
+              </div>
             </section>
-            <div className="story-library">
+            <div id="story-library" className="story-library" hidden={!browse.sections.includes("library")}>
               <div className="story-library-links" aria-label="Story library">
                 {sections
                   .filter(([id]) => id !== "feeds" || discoveries)

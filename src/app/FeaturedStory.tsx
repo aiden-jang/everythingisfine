@@ -7,7 +7,7 @@ const featured = {
     id: "float",
     title: "Float Dive",
     note: "Argo ocean measurements",
-    reason: "Follow a measured profile from the deep Atlantic toward the surface.",
+    reason: "Follow a measured profile toward the surface.",
   },
   depth: {
     id: "rupture",
@@ -43,6 +43,9 @@ export function FeaturedStory({ scene }: { scene: EarthScene }): JSX.Element {
         <span id={`${id}-note`}>{story.reason}</span>
         <span className="featured-story-link" aria-hidden="true">
           Open story
+          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
+            <path d="M3 10h13m-5-5 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
         </span>
       </span>
     </div>

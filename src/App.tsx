@@ -94,7 +94,7 @@ const feed = createFeed();
 // Share bounds between resizing and restoring saved rail widths.
 const RAIL_MIN = 264;
 const RAIL_MAX = 620;
-const RAIL_DEFAULT = 356;
+const RAIL_DEFAULT = Math.min(480, Math.max(320, Math.round(window.innerWidth * 0.295)));
 // Read before the first render. In an effect it shows the default globe first, then jumps.
 const shared = decode(window.location.hash);
 
@@ -1411,7 +1411,7 @@ export function App(): JSX.Element {
                 onReplay={receiveReplay}
               />
             </Suspense>
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 md:left-[var(--rail-w)]">
+            <div className="canvas-information pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 md:left-[var(--rail-w)]">
               {!observatory.observing && <LayerReadout controls={mapLayers} />}
               {observatory.observing ||
               !mapLayers.enabled.earthquakes ||

@@ -22,11 +22,8 @@ export function CanvasFooter({
   clearable: boolean;
 }): JSX.Element {
   return (
-    <div
-      className="relative order-2 flex w-full flex-wrap items-end gap-x-6 gap-y-2
-              md:justify-center md:max-xl:flex-col md:max-xl:items-start"
-    >
-      <p className="creator-credit py-1.5 text-[11px] text-faint xl:absolute xl:bottom-0 xl:left-0">
+    <div className="canvas-footer">
+      <p className="creator-credit text-faint">
         made by{" "}
         <a
           href="https://www.aidenjang.com"
@@ -58,13 +55,7 @@ export function KeyboardHelp({
   mobile?: boolean;
 }) {
   return (
-    <details
-      className={
-        mobile
-          ? "mobile-key-hints"
-          : "key-hints pointer-events-auto md:max-xl:order-first bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50"
-      }
-    >
+    <details className={mobile ? "mobile-key-hints" : "key-hints pointer-events-auto text-faint"}>
       <summary>Keyboard controls</summary>
       <div className="keyboard-controls">
         {/* What the keys do in this projection: a row saying orbit while the drag pans is worse than none. */}
@@ -109,7 +100,7 @@ export function RadarCanvasCredit({ radar }: { radar: RadarLayerView | null }): 
         aria-label="Radar by RainViewer"
         aria-describedby="external-link-hint"
       >
-        Radar by RainViewer
+        <span className="radar-credit-prefix">Radar by </span>RainViewer
       </a>
     </p>
   ) : null;

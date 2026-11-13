@@ -1,4 +1,4 @@
 {
-  "prompt": "Source: actual Everything Is Fine float view captured locally on 10 November 2026 from its public scientific provider or bundled source archive. This is a recorded UI preview, not a live measurement. Cropped and resampled to 128 by 112 pixels; original capture retained outside the repository during review. No generated imagery.",
-  "createdAt": "2026-11-10T05:20:32.003Z"
+  "prompt": "Source: actual Everything Is Fine shared-renderer UI capture made locally at 2026-11-10T05:17:24.424Z, original file /private/tmp/eif-catalogue-finish-20261110/float-preview.png, source SHA-256 7f6b451ac6efc661b864b4e8de774377bc4d988653e6cca57b4c00866c734fcc. Argo WMO 6901932, cycle 268, 20 October 2026 measured profile; estimated depth 512 m, pressure 517.7 dbar, temperature 4.47 °C, practical salinity 34.935. The water and orange float are the app’s schematic ascent renderer, not an underwater photograph. Original capture is 920 by 790 pixels. Production crop: x=0, y=24, width=920, height=600; native crop dimensions retained with no upsampling. Converted with cwebp 1.6.0 at quality 90, method 6. UI caption and controls excluded. This is a recorded story preview, not a live measurement. No generated imagery, invented scientific content, or pixels from a design mockup.",
+  "createdAt": "2026-11-13T18:15:25.161Z"
 }

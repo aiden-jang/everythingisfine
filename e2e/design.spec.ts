@@ -300,7 +300,7 @@ test("a shared link previews as something", async ({ page }) => {
   expect(Number(res.headers()["content-length"] ?? 0)).toBeGreaterThan(10_000);
 });
 
-test("the globe always gets a real share of the screen", async ({ page }) => {
+test("the globe keeps a generous desktop and expanded phone canvas", async ({ page }) => {
   // The tablet band gave the rail an `auto` row and the canvas the remainder. On a 900 by 700 laptop that
   // remainder was 153px, and every screenshot of the band had been taken tall enough to hide it.
   await installFeeds(page);
@@ -315,12 +315,13 @@ test("the globe always gets a real share of the screen", async ({ page }) => {
     [390, 844],
   ] as const) {
     await page.setViewportSize({ width: w, height: h });
+    if (w < 768) await page.getByRole("button", { name: "Expand globe", exact: true }).click();
     await page.waitForTimeout(500);
     const share = await page.evaluate(
       () =>
         (document.querySelector("canvas") as HTMLElement).getBoundingClientRect().height / window.innerHeight,
     );
-    // The desktop layout gives the globe nearly everything; the tablet band is the constrained one.
+    // Phone story browsing starts compact; its Expand globe action must still provide room to explore.
     expect(share, `canvas share at ${w}x${h}`).toBeGreaterThanOrEqual(0.44);
   }
 });

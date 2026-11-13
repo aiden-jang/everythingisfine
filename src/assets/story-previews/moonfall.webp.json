@@ -1,4 +1,4 @@
 {
-  "prompt": "Source: actual Everything Is Fine moonfall view captured locally on 10 November 2026 from its public scientific provider or bundled source archive. This is a recorded UI preview, not a live measurement. Cropped and resampled to 128 by 112 pixels; original capture retained outside the repository during review. No generated imagery.",
-  "createdAt": "2026-11-10T05:20:32.379Z"
+  "prompt": "Source: actual Everything Is Fine shared-renderer UI capture made locally at 2026-11-10T05:14:36.448Z, original file /private/tmp/eif-catalogue-finish-20261110/moonfall-preview.png, source SHA-256 0e21b4bf794016baaa094e85ccc4eea416395781fbb4710ae1e0255091997237. Apollo 17 in Taurus–Littrow Valley, December 1972. LRO / USGS terrain and mapped rover traverse; initial mapped distance 0.00 of 2.62 km. The crop removes the playback controls. Original capture is 920 by 790 pixels. Production crop: x=0, y=24, width=920, height=600; native crop dimensions retained with no upsampling. Converted with cwebp 1.6.0 at quality 90, method 6. UI caption and controls excluded. This is a recorded story preview, not a live measurement. No generated imagery, invented scientific content, or pixels from a design mockup.",
+  "createdAt": "2026-11-13T18:15:25.492Z"
 }

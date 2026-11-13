@@ -37,11 +37,16 @@ Use **Fullscreen** on desktop for a larger viewing area.
 Each scene contains tours, featured experiences, live observations, forecasts, predictions, and
 replays. Explore keeps story browsing inside its Stories tab. **View options** holds image and clip capture, fullscreen and the landing globe’s
 auto-rotation setting. Dragging pauses rotation; it resumes after 1.5 idle seconds.
-**Find a story** searches subjects, places and years across all three scenes. The initial list has one featured experience and a short selection; **View all** opens the full selection. Saved & recent, Guided journeys, Archives and From feeds open from the text controls below the list. The thumbnails are recorded views;
+**Find a story** searches subjects, places and years across all three scenes. The initial list has one large featured preview and three compact recommendations; **View all** opens the full selection. **Library** reveals Saved & recent, Guided journeys, Archives and From feeds below the list. The thumbnails are recorded views;
 open a story for its source, date, and current availability. Closing a story returns to its search
 result or drawer entry, including its filter, scroll, focus and Explore camera. **Keep exploring** offers a related view with context for its separate
 observations and time period. **Share this moment** copies the story, timestamp, projection, and selected
 city or chapter. Links open paused; recent feeds explain when the linked observation has expired.
+
+On desktop, the paired **Globe / Map** control switches the shared view. Source times and the legend
+sit together below the canvas. On phones, the globe stays above the adjustable sheet; use its handle
+or the **Expand globe/map** control to change the space available. **Layer times** opens detailed
+wind and lightning timestamps while the radar source and scan time remain visible.
 
 Each scene has a featured starting point before recent visits: Float Dive, Rupture Reveal, or Moonfall.
 Focus or hover over a geographically anchored story to preview its region without moving the globe.

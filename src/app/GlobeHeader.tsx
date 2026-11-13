@@ -67,15 +67,20 @@ export function GlobeHeader({
         </button>
         <div className="observatory-header-actions">
           {!observing && (
-            <button
-              type="button"
-              id="view-projection"
-              className="observatory-save"
-              onClick={() => setFlat((value) => !value)}
-              aria-description={flat ? "Switch to globe" : "Switch to map"}
-            >
-              {flat ? "Globe" : "Map"}
-            </button>
+            <div className="projection-switch" role="group" aria-label="Projection" data-flat={flat}>
+              <span className="projection-current" aria-current="true">
+                {flat ? "Map" : "Globe"}
+              </span>
+              <button
+                type="button"
+                id="view-projection"
+                className="observatory-save"
+                onClick={() => setFlat((value) => !value)}
+                aria-description={flat ? "Switch to globe" : "Switch to map"}
+              >
+                {flat ? "Globe" : "Map"}
+              </button>
+            </div>
           )}
           <FeedDot compact={!observing} feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
           <ObservatoryOptions

@@ -493,6 +493,8 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
   const all = catalogue.getByRole("button", { name: /^View all \d+ stories$/ });
   if (await all.isVisible()) await all.click();
   if (expand !== "all") return scenes;
+  const library = catalogue.getByRole("button", { name: "Library", exact: true });
+  if ((await library.getAttribute("aria-expanded")) === "false") await library.click();
   for (const label of ["Saved & recent", "Guided journeys", "From feeds", "Archives"]) {
     const summary = catalogue.getByRole("button", { name: label, exact: true });
     if ((await summary.count()) && (await summary.getAttribute("aria-expanded")) === "false")

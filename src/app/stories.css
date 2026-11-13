@@ -13,7 +13,7 @@
   margin-bottom: 2px;
 }
 
-.stories-group > div > button {
+.stories-group > div:not(.story-browse-footer) > button {
   display: grid;
   gap: 2px;
   align-content: center;
@@ -26,21 +26,21 @@
   text-align: left;
 }
 
-.stories-group > div > button:hover:not(:disabled) {
+.stories-group > div:not(.story-browse-footer) > button:hover:not(:disabled) {
   background: var(--color-deck);
 }
 
-.stories-group > div > button:disabled {
+.stories-group > div:not(.story-browse-footer) > button:disabled {
   opacity: 0.55;
 }
 
-.stories-group > div > button > small {
+.stories-group > div:not(.story-browse-footer) > button > small {
   color: var(--color-dim);
   font-size: 11px;
   line-height: 1.4;
 }
 
-.stories-group > div > button:has(.story-thumbnail) {
+.stories-group > div:not(.story-browse-footer) > button:has(.story-thumbnail) {
   grid-template-columns: 64px minmax(0, 1fr);
   column-gap: 12px;
   padding-block: 12px;
