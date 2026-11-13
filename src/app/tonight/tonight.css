@@ -171,7 +171,21 @@
 
 @media (max-height: 620px) and (min-width: 600px) {
   .observatory-intro[data-tonight] {
-    gap: 8px;
+    gap: 6px;
+    padding-block: 8px;
+  }
+
+  .observatory-intro .tonight-mode {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  .observatory-intro .tonight-mode button {
+    padding-inline: 8px;
+  }
+
+  .tonight-clock time {
+    font-size: 16px;
   }
 }
 

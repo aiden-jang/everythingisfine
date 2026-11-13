@@ -39,7 +39,7 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await expect(horizon).toContainText("Facing E · 90°");
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);
   await page.setViewportSize({ width: 812, height: 375 });
-  await expect(slider).toBeInViewport();
+  await expect(slider).toBeInViewport({ ratio: 1 });
   await expect(page.getByRole("link", { name: "aiden jang", exact: true })).toBeInViewport();
   await page.keyboard.press("Escape");
   await expect(open).toBeFocused();
