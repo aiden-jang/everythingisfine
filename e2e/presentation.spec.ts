@@ -156,6 +156,7 @@ test("switching the historical depth layer off removes its markers @dev", async 
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
   await page.getByText("Earthquake display & sky guides", { exact: true }).filter({ visible: true }).click();
   const layer = () =>
     page.evaluate(() => {

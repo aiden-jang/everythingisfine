@@ -124,6 +124,7 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
   await page.goto("/");
   await expect.poll(() => radarTexture(page)).not.toBeNull();
   await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await openLayer(page, "Storm radar");
   await page.getByRole("region", { name: "Storm radar playback" }).getByRole("slider").press("Home");
   await page
     .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
