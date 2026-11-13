@@ -198,6 +198,7 @@ test("the shared URL follows a held cursor and returning to live", async ({ page
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
   const cursor = page.getByRole("slider", { name: "Time in the window", exact: true });
   await cursor.press("Home");
   await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).has("c")).toBe(true);

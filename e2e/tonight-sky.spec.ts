@@ -45,7 +45,9 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await expect(open).toBeFocused();
   await openStories(page);
   await expect(page.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
-  await expect(page.getByRole("combobox", { name: "City" })).toHaveValue("Tokyo");
+  await open.click();
+  await expect(city).toHaveValue("Tokyo");
+  await page.keyboard.press("Escape");
   const meteorButton = page.getByRole("button", { name: "Meteor Nights", exact: true });
   await meteorButton.click();
   const meteor = page.getByRole("region", { name: "Meteor Nights" });

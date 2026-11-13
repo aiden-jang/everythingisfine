@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { Mesh, MeshBasicMaterial, Object3D } from "three";
-import { installFeeds } from "./feeds";
+import { installFeeds, openLayer } from "./feeds";
 
 // Synthetic radar pixels make the actual scene texture observable without depending on today's storms.
 const pixel = Buffer.from(
@@ -63,10 +63,15 @@ for (const width of [1440, 390]) {
     const credit = await readout.locator(".radar-canvas-credit").boundingBox();
     const sunlight = await readout.getByText("Sun overhead", { exact: true }).boundingBox();
     expect(credit).not.toBeNull();
-    expect(sunlight!.y).toBeGreaterThanOrEqual(credit!.y + credit!.height);
+    expect(sunlight).not.toBeNull();
+    expect(
+      sunlight!.y >= credit!.y + credit!.height || sunlight!.x >= credit!.x + credit!.width,
+      "radar attribution and solar readout occupy separate space in the wrapping footer",
+    ).toBe(true);
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/landing-radar-${width}.png` });
     await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+    await openLayer(page, "Storm radar");
     const controls = page.getByRole("region", { name: "Storm radar playback" });
     await expect(controls).toBeVisible();
     expect(await radarTexture(page)).toBe(texture);
@@ -159,6 +164,7 @@ test("Home leaves archive mode and browser Back recovers the recorded day @dev",
   await installFeeds(page, { radar: "default" });
   await radarSource(page);
   await page.goto("/#d=2011-03-11");
+  await page.getByRole("button", { name: "Back to layers", exact: true }).click();
   const toggle = page
     .getByRole("region", { name: "Map layers", exact: true })
     .getByRole("button", { name: "Storm radar", exact: true });

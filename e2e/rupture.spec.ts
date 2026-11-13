@@ -6,8 +6,9 @@ test("Tōhoku reveals the modeled fault before the estimated shaking", async ({ 
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
+  await page.getByRole("button", { name: "Below the Surface", exact: true }).click();
   await openStories(page);
-  const trigger = page.getByRole("button", { name: "Watch Tōhoku rupture" });
+  const trigger = page.getByRole("button", { name: "Rupture Reveal", exact: true });
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
   await trigger.click();
@@ -72,7 +73,7 @@ test("Tōhoku archive exposes both maps on a small phone with reduced motion", a
       }),
   );
   await page.goto("/");
-  await openStories(page);
+  await openStories(page, "all");
   await page.getByRole("button", { name: /Japan, 2011/ }).click();
   await expect(page).toHaveURL(/d=2011-03-11/);
   const pinned = page.getByRole("complementary", { name: "Pinned earthquake" });

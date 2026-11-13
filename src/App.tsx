@@ -1220,7 +1220,7 @@ export function App(): JSX.Element {
                   />
                 }
               >
-                {archived && archiveControls}
+                {archived && mapLayers.inspector === "earthquakes" && archiveControls}
                 {mapLayers.enabled.earthquakes && (
                   <EarthquakeInspector
                     stats={snapshot.stats}
