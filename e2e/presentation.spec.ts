@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, waitForData, saveImageButton } from "./feeds";
+import { openLayer, installFeeds, waitForData, saveImageButton } from "./feeds";
 
 for (const width of [1440, 390, 320]) {
   test(`regional inspection stays usable at ${width}px`, async ({ page }) => {
@@ -14,6 +14,7 @@ for (const width of [1440, 390, 320]) {
     });
     await page.goto("/");
     await waitForData(page);
+    await openLayer(page);
     const feeds = page
       .getByText("Earthquake display & sky guides", { exact: true })
       .filter({ visible: true });
@@ -53,7 +54,6 @@ for (const width of [1440, 390, 320]) {
     await expect(cutaway).toHaveAttribute("aria-pressed", "false");
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await feeds.click();
-    if (width < 768) await page.getByRole("button", { name: "Recent earthquakes", exact: true }).click();
     await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
     if (width < 1280) await expect(page.locator(".zone-panel")).toHaveCSS("position", "absolute");
     expect(errors).toEqual([]);
@@ -85,6 +85,7 @@ async function openSceneEffects(page: Page, reduced = false): Promise<void> {
   });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
   await page.getByText("Earthquake display & sky guides", { exact: true }).filter({ visible: true }).click();
   await page.getByRole("button", { name: "Constellations", exact: true }).filter({ visible: true }).click();
   await page.getByRole("button", { name: "Regional cutaway", exact: true }).filter({ visible: true }).click();

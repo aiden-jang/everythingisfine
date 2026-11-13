@@ -31,7 +31,7 @@ test("a cinematic story yields during arrival, keeps its time, and recenters the
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
   await openStories(page);
-  await page.getByRole("button", { name: "Follow Hurricane Katrina" }).click();
+  await page.getByRole("button", { name: "Eye of the Storm" }).click();
   const panel = page.getByRole("region", { name: "Eye of the Storm" });
   const time = panel.getByRole("slider", { name: "Track time" });
   await expect(time).toBeVisible();

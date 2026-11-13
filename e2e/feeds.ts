@@ -475,18 +475,64 @@ export async function waitForData(page: Page): Promise<number> {
   return held;
 }
 
+/** Open the complete catalogue through its real navigation, including its secondary tools. */
 export async function openStories(page: Page) {
+  const tab = page.getByRole("tab", { name: "Stories", exact: true });
+  if (await tab.isVisible()) await tab.click();
   const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
-  if ((await scenes.isVisible()) && (await scenes.locator('[aria-pressed="true"]').count()) === 0)
+  if (
+    !(await tab.isVisible()) &&
+    (await scenes.isVisible()) &&
+    (await scenes.locator('[aria-pressed="true"]').count()) === 0
+  )
     await page.getByRole("button", { name: "Live Earth", exact: true }).click();
   const catalogue = page.getByRole("region", { name: "Stories and layers", exact: true });
   await expect(catalogue).toBeVisible();
+  const all = catalogue.getByRole("button", { name: /^View all \d+ stories$/ });
+  if (await all.isVisible()) await all.click();
+  for (const label of [
+    "Your visits & saved views",
+    "Guided journeys & tours",
+    "From available feeds",
+    "Earthquake & eclipse archives",
+  ]) {
+    const summary = catalogue.locator("details:not([open]) > summary").filter({ hasText: label });
+    if (await summary.count()) await summary.click();
+  }
   return scenes;
 }
 
 export async function revealStoryTools(page: Page) {
   if (await page.getByRole("group", { name: "Earth scenes", exact: true }).isVisible())
     await openStories(page);
+}
+
+export async function openLayer(page: Page, name = "Earthquakes") {
+  const tab = page.getByRole("tab", { name: "Layers", exact: true });
+  await expect(tab).toBeVisible();
+  await tab.click();
+  const title = page.getByRole("heading", { name, exact: true });
+  if (await title.isVisible()) return;
+  const back = page.getByRole("button", { name: "Back to layers", exact: true });
+  if (await back.isVisible()) await back.click();
+  await page.getByRole("button", { name: `${name} details`, exact: true }).click();
+  await expect(title).toBeVisible();
+}
+
+export async function earthquakeOptions(page: Page) {
+  await openLayer(page);
+  const toggle = page.getByText("Display, alerts & tour", { exact: true });
+  if (!(await toggle.locator("..").getAttribute("open"))) {
+    const open = await toggle.locator("..").evaluate((element) => element.hasAttribute("open"));
+    if (!open) await toggle.click();
+  }
+}
+
+export async function viewOptions(page: Page) {
+  const panel = page.getByRole("region", { name: "View options", exact: true });
+  if (!(await panel.isVisible()))
+    await page.getByRole("button", { name: "View options", exact: true }).click();
+  return panel;
 }
 export async function saveImageButton(page: Page) {
   const toggle = page.getByRole("button", { name: "View options", exact: true });

@@ -37,11 +37,13 @@ export function ShadowChase({
   onView,
   onMap,
   onClose,
+  closeLabel,
 }: {
   city: SkyCity;
   onView: (view: ObservationView) => void;
   onMap: (map: boolean) => void;
   onClose: () => void;
+  closeLabel: string;
 }): JSX.Element {
   const { initial, remember } = useStorySession();
   const back = useRef<HTMLButtonElement>(null);
@@ -210,9 +212,9 @@ export function ShadowChase({
           <div className="observation-heading">
             <h2 id="shadow-title">Shadow Chase</h2>
             <div className="observatory-actions">
-              <button type="button" onClick={onClose} ref={back} aria-label="Back to After Dark">
-                <span className="observation-back-full">Back to After Dark</span>
-                <span className="observation-back-compact">After Dark</span>
+              <button type="button" onClick={onClose} ref={back} aria-label={closeLabel}>
+                <span className="observation-back-full">{closeLabel}</span>
+                <span className="observation-back-compact">Back</span>
               </button>
             </div>
           </div>

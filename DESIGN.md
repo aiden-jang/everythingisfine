@@ -159,7 +159,7 @@ Controls stay reachable in short landscape views.
 Live Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
 Their temporary overrides do not overwrite saved scientific settings. The observatory retains source
 status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
-Keep tours, featured experiences and the full selection inside each scene, grouped by data type.
+Keep one featured experience and a short initial selection inside each scene. Data type appears on each entry; the full catalogue, saved visits, guided journeys and archives are deliberate choices.
 **Explore the globe** comes before the three illustrated scene filters. The landing overview starts
 with none selected and the catalogue collapsed. Selecting a scene exposes its entries and brings
 the search field into view on narrow screens; selecting it again returns to the compact landing view.
@@ -170,7 +170,7 @@ existing quiet rows and each story’s reading panel, with manual steps, visible
 a return to free exploration. Onward links explain the relationship without implying shared dates
 or causation between independent records. Keep the scientific scene large and the controls neutral.
 
-Featured experiences precede recent visits. Story discovery supports focus, hover and touch-hold
+Featured experiences precede a short selection. Recent visits sit in their own disclosure. Story discovery supports focus, hover and touch-hold
 regional previews with an explicit Locate action. Timeline milestones use the dataset's actual imagery
 and time resolution; synthetic flights say progress. Endings hold the final observation and evidence,
 with onward exploration available. Reopening resumes a saved moment; replaying the entrance is explicit.
@@ -200,27 +200,34 @@ The 60px header groups view controls separately from utility actions. Folding a
 region has an independently reachable restore control and never strands a stored
 preference after resizing. Fullscreen expands the window without hiding its tools.
 
-In Explore, the rail starts with independent switches for earthquakes, tropical cyclones, wildfires,
-floods, volcanoes, aurora and storm radar. Radar starts on unless a saved choice turns it off; it preserves
-the camera and other layers and reveals compact playback, the selected scan time, and coverage information below
-the switches. RainViewer attribution stays on the canvas even with the rail folded. The complete
-story catalogue has a direct entry. Earthquake
-controls appear only while that layer is enabled; hazard-only views retain their time window.
-Earthquake reports have a separate disclosure: opening weather controls folds the report controls without
-changing marker visibility. The layer guide names each enabled overlay's meaning and limits. A partial
-source failure remains visible on its switch. Timestamps use the same full UTC date in playback, canvas
-readouts and the source panel. Background wind paths are quieter than story paths so event marks remain legible.
-The earthquake count, timeline and search precede archive browsing; extra earthquake context folds away. In archive
-mode the chosen date and return-to-live action stay prominent. The glossary starts
-folded and the magnitude scale remains visible. New viewers start with plate
-movement arrows, deep seismicity and constellation figures off; saved choices win.
+In Explore, Layers and Stories share the existing rail and canvas. Changing tabs never changes
+projection, camera, playback or visibility. Scene diagrams filter Stories without taking the visitor
+back to the landing page. Story returns restore pane, category, query, scroll, focus and camera.
+At tablet widths and above, the canvas reserves room for the rail so it cannot cover the globe.
 
-Phone layouts keep the subject visible above a draggable, keyboard-operable sheet.
-Expand globe or Expand map enlarges the canvas; Recent earthquakes opens more list space and
-reveals recent events. With earthquakes hidden, that shortcut becomes Layers & activity and returns to
-the layer controls. The handle has a 44px target. Intermediate heights,
-selection closing and preserved list position remain supported. Short landscape
-and tablet views need their own reflow checks, not only portrait-phone coverage.
+Layers use quiet divided rows, with independent visibility and details controls. All nine layers
+have equal weight; no inspector opens initially except for an archived or shared earthquake target.
+One inspector shows readings, source meaning, coverage and contextual controls. Enabled players
+stay mounted when another inspector opens. Source failures are visible beside the affected layer.
+Temporary isolation restores the chosen combination without changing stored preferences.
+
+Earthquake counts, filters, timeline, search, archive, display choices, sound and tour controls belong
+together in the earthquake inspector. Other reports use equally accessible inspectors with the
+shared report window clearly named. Wind, lightning, radar and aurora retain independent source times.
+Recent weather does not masquerade as an archived observation. Archive date and return-to-live stay
+reachable when inspecting another layer. Find a place is distinct from report and story search.
+
+Radar starts on unless a saved choice turns it off. Its compact canvas caption combines visible
+RainViewer attribution with the selected scan time. It stays visible when the rail folds. Guided
+regional radar is a secondary action inside the radar inspector; returning restores the camera and
+compatible scan time. Background wind paths remain quieter than story paths.
+
+The header offers projection, source status and View options at every width. Capture, fullscreen,
+rotation and reset share that menu; keyboard help is a quiet optional disclosure. Phone layouts keep
+the subject above a draggable, keyboard-operable sheet. Expand globe/map enlarges the canvas; the
+other shortcut names the current pane rather than assuming earthquake activity. The handle and
+interactive controls have 44px targets. Intermediate heights, selection closing and preserved list
+position remain supported. Check short landscape and tablet reflow as well as portrait phones.
 
 ## 8. Motion
 

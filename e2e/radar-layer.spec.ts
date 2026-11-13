@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openLayer } from "./feeds";
 
 const pixel = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGOQW///PwAFhwLMAV5hdQAAAABJRU5ErkJggg==",
@@ -74,6 +74,7 @@ for (const width of [1440, 390]) {
     const toggle = layers.getByRole("button", { name: "Storm radar", exact: true });
     const controls = layers.getByRole("region", { name: "Storm radar playback" });
     await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await openLayer(page, "Storm radar");
     const status = controls.getByRole("status", { name: "Radar status" });
     await expect(status).toHaveText("Couldn’t reach RainViewer radar.");
     expect(queries).toBe(1);
@@ -113,14 +114,26 @@ for (const width of [1440, 390]) {
     await slider.press("ArrowLeft");
     await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
     expect(await marksVisible(page)).toBe(true);
+    await page.getByRole("button", { name: "Back to layers", exact: true }).click();
     await expect(layers.getByRole("button", { name: "Earthquakes", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
+    await openLayer(page, "Storm radar");
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/radar-layer-${width}.png` });
     expect((await new AxeBuilder({ page }).include(".map-layers").analyze()).violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+    await layers.getByRole("button", { name: /Follow a radar region/ }).click();
+    const guided = page.getByRole("region", { name: "Storm Radar", exact: true });
+    await expect(guided.locator(".radar-clock time")).toHaveAttribute(
+      "datetime",
+      new Date(times[1]!).toISOString(),
+    );
+    await guided.getByRole("button", { name: "Back to radar layer", exact: true }).click();
+    await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
+    await expect.poll(() => camera(page)).toEqual(mapCamera);
+    await expect(page.locator("#open-explorer-radar")).toBeFocused();
     const closed = Number(await page.locator("html").getAttribute("data-closed-radar-frames"));
     await toggle.click();
     await expect(controls).toHaveCount(0);
@@ -153,6 +166,7 @@ test("the default radar layer stays off in the earthquake archive @dev", async (
     return route.fulfill({ json: { host: "https://tilecache.rainviewer.com", radar: { past: [] } } });
   });
   await page.goto("/#d=2011-03-11");
+  await page.getByRole("button", { name: "Back to layers", exact: true }).click();
   const radar = page.getByRole("button", { name: "Storm radar", exact: true });
   await expect(radar).toBeDisabled();
   await expect(radar).toHaveAttribute("aria-pressed", "false");
@@ -160,6 +174,7 @@ test("the default radar layer stays off in the earthquake archive @dev", async (
   expect(requests).toBe(0);
   await page.getByRole("button", { name: "back to live", exact: true }).click();
   await expect(radar).toHaveAttribute("aria-pressed", "true");
+  await openLayer(page, "Storm radar");
   await expect(page.getByRole("status", { name: "Radar status" })).toHaveText(
     "No recent radar scans available.",
   );

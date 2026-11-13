@@ -1,14 +1,19 @@
 import { reportAnalytics } from "../../../analytics/browser";
 import { useJourneyAnalytics } from "../visitor/useJourneyAnalytics";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { ObservatoryProps } from "../Observatory";
 import { searchStories } from "../storyIndex";
 import type { StoryId } from "../observations/useObservationDeck";
+import { isGlobalRadar } from "../radar/radarCamera";
 import { journeys } from "./catalogue";
 import { useVisitMemory } from "../visitor/useVisitMemory";
 import type { Visit } from "../visitor/library";
 
 const Navigation = createContext<{
+  fromExplore: boolean;
+  returnLabel: string | undefined;
+  openRadar: (at: number | undefined, map: boolean) => void;
+  returnToBrowse: () => boolean;
   active: string | null;
   library: ReturnType<typeof useVisitMemory>["library"];
   current: () => Visit | null;
@@ -24,6 +29,12 @@ const Navigation = createContext<{
 export const useStoryNavigation = () => useContext(Navigation);
 
 export function StoryNavigation({ children, ...props }: ObservatoryProps & { children: ReactNode }) {
+  const origin = useRef<{
+    route: ReturnType<ObservatoryProps["views"]["navigation"]["capture"]>;
+    camera: ReturnType<ObservatoryProps["explorer"]["read"]>;
+    scroll: number;
+    trigger: string;
+  } | null>(null);
   const [route, setRoute] = useState<{ id: string; step: number } | null>(null);
   const { observations: deck, tonight, sun, floatDive } = props.views;
   const active =
@@ -47,15 +58,29 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   const memory = useVisitMemory(props, active);
   useEffect(() => {
     if (route && active === null) setRoute(null);
+    if (active === null) origin.current = null;
   }, [active, route]);
   const unavailable = (id: string) =>
     !props.ready ? "The globe is still opening." : id === "aurora" ? props.aurora.unavailable : null;
+  function rememberOrigin(trigger: string) {
+    if (props.views.observing) return;
+    origin.current = {
+      route: props.views.navigation.capture(),
+      camera: props.explorer.read(),
+      scroll: document.getElementById("chrome-rail")?.scrollTop ?? 0,
+      trigger,
+    };
+  }
   function navigate(id: string, trigger = "observatory-scenes", saved?: Visit, keepScene = false) {
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
+    rememberOrigin(trigger);
     const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
     saved ??= memory.library.recent.find((visit) => visit.id === id);
-    props.views.navigation.prepareStory(keepScene ? props.scene : story.scene, !standalone);
+    props.views.navigation.prepareStory(
+      keepScene && props.views.observing ? props.scene : story.scene,
+      !standalone,
+    );
     deck.setTrigger(trigger);
     if (saved?.position.sky) props.views.skyCity.select(saved.position.sky.city);
     if (id === "sky" || id === "meteors" || id === "moonfall") tonight.open(id, saved?.position.sky);
@@ -71,6 +96,35 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     <Navigation.Provider
       value={{
         active,
+        fromExplore: origin.current !== null,
+        returnLabel: origin.current
+          ? origin.current.route.browser.pane === "stories"
+            ? "Back to stories"
+            : "Back to radar layer"
+          : undefined,
+        openRadar(at, map) {
+          rememberOrigin("open-explorer-radar");
+          setRoute(null);
+          props.views.navigation.prepareStory("live", false);
+          props.radar.open("world", false, at);
+          deck.setMap(map);
+        },
+        returnToBrowse() {
+          const saved = origin.current;
+          if (!saved) return false;
+          origin.current = null;
+          props.views.visitCheckpoint.current();
+          if (active === "radar" && props.radar.view && isGlobalRadar(props.radar.view.region))
+            props.explorer.radarTime(props.radar.view.at ?? null);
+          props.views.navigation.restore(saved.route);
+          props.explorer.restore(saved.camera);
+          setRoute(null);
+          requestAnimationFrame(() => {
+            document.getElementById("chrome-rail")?.scrollTo(0, saved.scroll);
+            document.getElementById(saved.trigger)?.focus({ preventScroll: true });
+          });
+          return true;
+        },
         ...memory,
         resume(visit) {
           setRoute(null);

@@ -1,3 +1,4 @@
+import { storyKind } from "./storyBrowse";
 import { StoryThumbnail } from "./StoryThumbnail";
 import type { useAuroraOverflight } from "./useAuroraOverflight";
 import type { useObservatory } from "./useObservatory";
@@ -19,7 +20,7 @@ export function StorySearch({
   return (
     <>
       <label className="story-search">
-        <span>Find a story or layer</span>
+        <span>Find a story</span>
         <input
           type="search"
           name="story"
@@ -47,7 +48,10 @@ export function StorySearch({
               >
                 <StoryThumbnail id={story.id} />
                 <span>{story.title}</span>
-                <small>{story.id === "aurora" ? (aurora.unavailable ?? story.summary) : story.summary}</small>
+                <small>
+                  <span className="story-kind">{storyKind(story.id)}</span>
+                  {story.id === "aurora" ? (aurora.unavailable ?? story.summary) : story.summary}
+                </small>
               </button>
             ))}
           </div>

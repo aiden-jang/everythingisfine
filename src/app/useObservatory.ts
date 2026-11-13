@@ -83,6 +83,12 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [browser, setBrowser] = useState({
     open: !!shared.story || !!shared.catalogue,
     home: 0,
+    expanded: null as string | null,
+    sections: [] as string[],
+    pane:
+      shared.catalogue && shared.presentation === "explore"
+        ? ("stories" as const)
+        : ("layers" as "layers" | "stories"),
     category: shared.story ? scene : shared.catalogue === "all" ? null : (shared.catalogue ?? null),
   });
   const browserScroll = useRef(0);
@@ -147,7 +153,24 @@ export function useObservatory(shared: Partial<Permalink>) {
     browser: {
       ...browser,
       scroll: browserScroll,
-      select: (category: EarthScene) => setBrowser((value) => ({ ...value, open: true, category })),
+      expand: (expanded: string | null) => setBrowser((value) => ({ ...value, expanded })),
+      fold: (id: string, open: boolean) =>
+        setBrowser((value) =>
+          value.sections.includes(id) === open
+            ? value
+            : {
+                ...value,
+                sections: open ? [...value.sections, id] : value.sections.filter((key) => key !== id),
+              },
+        ),
+      show: (pane: "layers" | "stories") => {
+        before();
+        setBrowser((value) => ({ ...value, pane }));
+      },
+      select: (category: EarthScene | null) => {
+        before();
+        setBrowser((value) => ({ ...value, open: true, category }));
+      },
     },
     checkpoint,
     visitCheckpoint,
@@ -158,14 +181,18 @@ export function useObservatory(shared: Partial<Permalink>) {
       observations.setQuery("");
       observeScene(() => {
         chooseScene("live");
-        setBrowser((value) => ({ open: browse, home: value.home + 1, category: null }));
+        setBrowser((value) => ({ ...value, open: browse, home: value.home + 1, category: null }));
         prepare();
       });
     },
     navigation: {
-      prepareStory: (next: EarthScene, keepDeck: boolean) => chooseScene(next, null, keepDeck),
+      prepareStory: (next: EarthScene, keepDeck: boolean) => {
+        if (observing) chooseScene(next, null, keepDeck);
+        else changePresentation("observe", true, () => chooseScene(next, null, keepDeck), false);
+      },
       key: [
         presentation,
+        observing ? "observe" : browser.pane,
         scene,
         browser.open,
         browser.category ?? "all",

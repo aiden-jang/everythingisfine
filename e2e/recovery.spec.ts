@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, waitForData } from "./feeds";
+import { openLayer, installFeeds, waitForData } from "./feeds";
 
 test("archived earthquakes stay visible and selectable through projection and zoom @dev", async ({
   page,
@@ -139,6 +139,7 @@ test("WebGL failure leaves events usable and can recover", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("The globe could not start.", { exact: true })).toBeVisible();
   await waitForData(page);
+  await openLayer(page);
   const event = page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first();
   await expect(event).toBeVisible();
   await event.click();
@@ -153,6 +154,7 @@ test("an archive response cannot undo returning to live", async ({ page }) => {
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
   await page.getByLabel("Open archive date", { exact: true }).fill("2011-03-11");
   await page.getByRole("button", { name: "Open date", exact: true }).click();
   await expect(page.getByText("2011-03-11 UTC · Full day", { exact: true })).toBeVisible();

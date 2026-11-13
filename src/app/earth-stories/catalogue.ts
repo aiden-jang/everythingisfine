@@ -77,7 +77,6 @@ export const earthStories = {
 } as const;
 
 export type EarthStoryId = keyof typeof earthStories;
-export const earthStoryIds = Object.keys(earthStories) as EarthStoryId[];
 export function isEarthStory(id: string): id is EarthStoryId {
   return Object.hasOwn(earthStories, id);
 }

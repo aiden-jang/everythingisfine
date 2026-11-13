@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { openLayer, installFeeds } from "./feeds";
 
 const capture = process.env["EIF_CAPTURE_MOTION"] === "1";
 test.use({ video: capture ? { mode: "on", size: { width: 960, height: 600 } } : "off" });
@@ -31,6 +31,7 @@ for (const [width, height] of [
         errors.push(message.text());
     });
     await page.goto("/");
+    await openLayer(page);
     await expect.poll(async () => (await pose(page))?.morph).toBe(0);
     await expect(
       page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first(),

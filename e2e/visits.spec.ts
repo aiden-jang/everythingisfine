@@ -9,14 +9,14 @@ test("discovery changes with the scene and keeps the same globe", async ({ page 
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await openStories(page);
-  await expect(page.locator(".featured-story")).toHaveAccessibleName("Float Dive");
+  await expect(page.locator(".featured-story button")).toHaveAccessibleName("Float Dive");
   await expect(page.getByRole("region", { name: "Worth looking at today" })).toContainText(
     "calculated for a level horizon",
   );
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await openStories(page);
-  await expect(page.locator(".featured-story")).toHaveAccessibleName("Moonfall");
-  await page.locator(".featured-story").click();
+  await expect(page.locator(".featured-story button")).toHaveAccessibleName("Moonfall");
+  await page.locator(".featured-story button").click();
   await expect(page.getByRole("group", { name: "Lunar view" })).toBeVisible();
   await page.getByRole("button", { name: home }).click();
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
@@ -30,7 +30,7 @@ test("a saved lunar traverse resumes after a new page visit", async ({ page }) =
   await page.goto("/");
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await openStories(page);
-  await page.locator(".featured-story").click();
+  await page.locator(".featured-story button").click();
   await page.getByRole("combobox", { name: "Rover traverse" }).selectOption("1");
   const distance = page.getByRole("slider", { name: "Mapped distance" });
   await distance.press("End");
@@ -56,7 +56,7 @@ test("a saved float returns to its measured depth after a new page visit", async
   );
   await page.goto("/");
   await openStories(page);
-  await page.locator(".featured-story").click();
+  await page.locator(".featured-story button").click();
   const depth = page.getByRole("slider", { name: "Ascent depth" });
   await depth.press("End");
   const value = await depth.inputValue();

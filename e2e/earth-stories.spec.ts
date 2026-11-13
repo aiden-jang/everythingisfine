@@ -97,7 +97,7 @@ test("story search finds another scene and returns to the retained query on a na
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await openStories(page);
-  const search = page.getByRole("searchbox", { name: "Find a story or layer" });
+  const search = page.getByRole("searchbox", { name: "Find a story" });
   await search.fill("NEOWISE");
   await page.locator("#search-story-comet").click();
   await expect(page.locator("#earth-story-time")).toBeVisible();
@@ -127,7 +127,7 @@ test("story search starts an available aurora flight from the live scene", async
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await openStories(page);
-  await page.getByRole("searchbox", { name: "Find a story or layer" }).fill("aurora");
+  await page.getByRole("searchbox", { name: "Find a story" }).fill("aurora");
   await page.locator("#search-story-aurora").click();
   await expect(page.getByRole("heading", { name: "Into the auroral oval." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Replay flight" })).toBeVisible();

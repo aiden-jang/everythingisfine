@@ -126,34 +126,6 @@ export function ObservatoryScenePicker({
   );
 }
 
-export function ObservatoryFeatured({
-  scene,
-  ready,
-  radar,
-  deep,
-}: {
-  scene: Exclude<EarthScene, "night">;
-  ready: boolean;
-  radar: () => void;
-  deep: () => void;
-}): JSX.Element {
-  return (
-    <div className="observatory-actions" aria-label="Featured views" role="group">
-      {scene === "live" ? (
-        <>
-          <button type="button" id="open-storm-radar" onClick={radar} disabled={!ready}>
-            Storm Radar
-          </button>
-        </>
-      ) : (
-        <button type="button" id="open-deep-time" onClick={deep} disabled={!ready}>
-          Deep Time
-        </button>
-      )}
-    </div>
-  );
-}
-
 export function SunCredits(): JSX.Element {
   return (
     <div className="sun-credits" aria-label="Sun Watch sources">

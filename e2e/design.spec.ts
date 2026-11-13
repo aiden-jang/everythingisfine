@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, waitForData } from "./feeds";
+import { earthquakeOptions, openLayer, installFeeds, waitForData } from "./feeds";
 
 /* DESIGN.md section 13, as tests rather than as a list. An audit performed once is worth very little: two
    of these rules were broken by accident during the build and neither by a decision. See ARCHITECTURE.md#e2edesignspects. */
@@ -78,6 +78,7 @@ for (const bp of BREAKPOINTS) {
     await installFeeds(page);
     await page.goto("/");
     await waitForData(page);
+    await openLayer(page);
 
     // With something pinned, so the detail panel is audited too rather than skipped for being
     // absent, which is exactly how a panel ends up the one place a stray colour survives.
@@ -346,6 +347,7 @@ test("the colourblind ramp survives a reload", async ({ page }) => {
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await earthquakeOptions(page);
 
   const toggle = page.getByRole("button", { name: /magnitude colors/i });
   await expect(toggle).toHaveAttribute("aria-pressed", "false");
@@ -354,6 +356,7 @@ test("the colourblind ramp survives a reload", async ({ page }) => {
 
   await page.reload();
   await waitForData(page);
+  await earthquakeOptions(page);
   // Persisted, because re-choosing an accessibility setting every visit is its own barrier.
   await expect(page.getByRole("button", { name: /magnitude colors/i })).toHaveAttribute(
     "aria-pressed",
@@ -373,6 +376,7 @@ test("the rail's controls stay above its fold", async ({ page }) => {
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   /*
    * Measured against the rail's own box, not the viewport. The rail is a scroll container with
@@ -447,7 +451,7 @@ test("the desktop rail is the only thing in it that scrolls", async ({ page }) =
   await installFeeds(page, { count: 200 });
   await page.goto("/");
   await waitForData(page);
-  await page.getByText(/^Storms, fires, floods and volcanoes \(/).click();
+  await openLayer(page);
 
   const seen = await page.evaluate(() => {
     const rail = document.querySelector(".rail") as HTMLElement;
@@ -481,6 +485,7 @@ test("scrolling over the regions box carries on into the rail", async ({ page })
   await installFeeds(page, { count: 200 });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
   await page.waitForTimeout(1_200);
 
   // At the bottom, where the box is on screen and already scrolled to its own top.
@@ -510,6 +515,7 @@ test("the events are reachable, not clipped out of the rail", async ({ page }) =
   await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   for (const [w, h] of [
     [1440, 900],

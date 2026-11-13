@@ -5,7 +5,7 @@ async function openKilauea(page: Page) {
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
   await openStories(page);
-  const trigger = page.getByRole("button", { name: "Follow Kīlauea’s lava" });
+  const trigger = page.getByRole("button", { name: "Kīlauea" });
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
   await trigger.click();

@@ -1,3 +1,4 @@
+import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { lazy, Suspense } from "react";
 import type { StoryId, useObservationDeck } from "./useObservationDeck";
 import type { SkyCityPreference } from "../tonight/SkyCityPicker";
@@ -48,22 +49,26 @@ export function ObservationDeckShell({
   onClose: () => void;
   onRadar: () => void;
 }): JSX.Element {
+  const navigation = useStoryNavigation();
   const fromExplore = deck.trigger?.startsWith("archive-story-") || deck.trigger?.startsWith("event-story-");
   const close = () => {
+    if (navigation?.returnToBrowse()) return;
     onClose();
     requestAnimationFrame(() =>
       document.getElementById(deck.trigger ?? "observatory-scenes")?.focus({ preventScroll: !fromExplore }),
     );
   };
-  const closeLabel = deck.trigger?.startsWith("event-story-")
-    ? "Back to earthquake"
-    : deck.trigger?.startsWith("archive-story-")
-      ? "Back to archive"
-      : scene === "night"
-        ? "Back to After Dark"
-        : scene === "depth"
-          ? "Back to Below the Surface"
-          : "Back to Observatory";
+  const closeLabel = navigation?.fromExplore
+    ? "Back to stories"
+    : deck.trigger?.startsWith("event-story-")
+      ? "Back to earthquake"
+      : deck.trigger?.startsWith("archive-story-")
+        ? "Back to archive"
+        : scene === "night"
+          ? "Back to After Dark"
+          : scene === "depth"
+            ? "Back to Below the Surface"
+            : "Back to Observatory";
   return (
     <StorySession.Provider key={entry} value={deck.session}>
       <Suspense
@@ -101,9 +106,15 @@ export function ObservationDeckShell({
             onRadar={onRadar}
           />
         ) : entry === "lights" ? (
-          <LightsReturn onView={deck.update} onClose={close} />
+          <LightsReturn onView={deck.update} onClose={close} closeLabel={closeLabel} />
         ) : entry === "shadow" ? (
-          <ShadowChase city={city.city} onView={deck.update} onMap={deck.setMap} onClose={close} />
+          <ShadowChase
+            city={city.city}
+            onView={deck.update}
+            onMap={deck.setMap}
+            onClose={close}
+            closeLabel={closeLabel}
+          />
         ) : entry === "kilauea" ? (
           <KilaueaJourney onView={deck.update} onMap={deck.setMap} onClose={close} closeLabel={closeLabel} />
         ) : isReplay(entry) ? (

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { installFeeds, waitForData } from "./feeds";
+import { openLayer, installFeeds, waitForData } from "./feeds";
 
 for (const width of [390, 1440]) {
   for (const state of ["live", "pinned"] as const) {
@@ -10,8 +10,8 @@ for (const width of [390, 1440]) {
       await installFeeds(page);
       await page.goto("/");
       await waitForData(page);
+      await openLayer(page);
       if (state === "pinned") {
-        if (width < 768) await page.getByRole("button", { name: "Recent earthquakes", exact: true }).click();
         await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
         await expect(page.getByRole("button", { name: "Copy link", exact: true })).toBeVisible();
       }

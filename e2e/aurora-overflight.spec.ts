@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, revealStoryTools } from "./feeds";
 
-const follow = (page: Page) => page.getByRole("button", { name: "Follow the aurora" });
+const follow = (page: Page) => page.locator("#open-aurora-overflight");
 
 test("After Dark follows the NOAA forecast and returns to the stars", { tag: "@dev" }, async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });

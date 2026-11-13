@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { installFeeds, waitForData } from "./feeds";
+import { openLayer, installFeeds, waitForData } from "./feeds";
 
 test.use({ timezoneId: "America/New_York" });
 test("pinned event timestamps name the local date and offset", async ({ page }) => {
@@ -10,6 +10,7 @@ test("pinned event timestamps name the local date and offset", async ({ page }) 
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
   await expect(page.getByRole("link", { name: "aiden jang", exact: true })).toHaveAccessibleDescription(
     "Opens in a new tab",
   );

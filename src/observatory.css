@@ -511,7 +511,7 @@
   }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 768px) {
   .frame[data-presentation="explore"] .zones {
     grid-template-columns: var(--rail-w) minmax(0, 1fr);
     grid-template-areas: ". canvas";

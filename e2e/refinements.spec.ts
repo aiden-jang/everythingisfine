@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, waitForData } from "./feeds";
+import { openLayer, installFeeds, waitForData } from "./feeds";
 
 test("event links remain copyable when clipboard access is refused", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
@@ -21,6 +21,7 @@ test("event links remain copyable when clipboard access is refused", async ({ pa
   });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
   await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
   await expect(page).toHaveURL((url) => new URLSearchParams(url.hash.slice(1)).get("e") === "usgs:fx4h");
   await expect(page.getByRole("button", { name: "Copy citation", exact: true })).toHaveCount(0);
@@ -61,6 +62,7 @@ test("forced colors keep event selection and sharing usable", async ({ page }) =
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
   await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
   const recent = page.getByRole("region", { name: "Recent earthquakes" });
   const selected = recent.locator('button[aria-current="true"]');

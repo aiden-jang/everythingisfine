@@ -3073,6 +3073,18 @@ and apparent scale while the readings enter separately. The renderer sizes its d
 from the settled layout. On wide screens the readings rail reserves its own width in Explore
 and shares the Observatory background. Reduced motion and unsupported browsers update directly.
 
+`ExplorerSidebar` owns the Layers/Stories tabs and their independent scroll positions. Its pane
+and category belong to `useObservatory` navigation snapshots. `MapLayers` separates saved visibility
+from one transient inspector; inspecting never starts a feed or changes the camera. Its hidden
+player containers remain mounted while another inspector is open. `EarthquakeInspector` owns the
+quake-specific reading hierarchy, while `LayerSources` explains each source's independent check time.
+`storyBrowse.ts` selects a short initial catalogue without duplicating the featured story.
+
+`StoryNavigation` wraps both Explore and Observe. An Explore entry records the navigation snapshot,
+camera, rail scroll and trigger. Closing a story restores that context, preserving query and category;
+browser history separately restores the correct scroll owner. Radar's explicit layer-to-guided path
+hands over the current scan and only copies back timestamps from the compatible worldwide provider.
+
 The globe instance survives presentation and grid changes. Header and footer composition live in
 `GlobeHeader.tsx` and `CanvasFooter.tsx`; no camera or source subscription depends on those elements.
 Returning to the Observatory keeps the selected event, filters, and held moment available in Explore.

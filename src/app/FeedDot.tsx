@@ -117,7 +117,7 @@ export function FeedDot({
         <h3>Loads when opened</h3>
         <p>
           Float Dive, Sun Watch and other observatory views check their own sources when opened. Find the full
-          catalogue in All stories &amp; data.
+          catalogue in Explore’s Stories tab or the landing page’s scene categories.
         </p>
         <details>
           <summary>Other observatory views</summary>

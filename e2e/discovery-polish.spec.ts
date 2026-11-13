@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, openStories, waitForData } from "./feeds";
+import { openLayer, installFeeds, openStories, waitForData } from "./feeds";
 
 const camera = (page: Page) =>
   page.evaluate(() => {
@@ -20,13 +20,14 @@ test("isolating a layer restores choices without changing saved preferences", as
   const before = await layers
     .locator('button[aria-pressed="true"]')
     .evaluateAll((buttons) => buttons.map((b) => b.getAttribute("aria-label")));
-  await layers.getByText("Focus", { exact: true }).click();
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 844 });
-    await layers.getByRole("combobox", { name: "Focus on one layer" }).selectOption("fires");
+    await openLayer(page, "Wildfires");
+    await layers.getByRole("button", { name: "Show only this layer", exact: true }).click();
     await expect(layers.getByRole("status")).toContainText("Only wildfires");
-    await expect(layers.locator('button[aria-pressed="true"]')).toHaveCount(1);
+    await expect(layers.locator('.layer-list button[aria-pressed="true"]')).toHaveCount(1);
     await layers.getByRole("button", { name: "Restore layers" }).click();
+    await layers.getByRole("button", { name: "Back to layers", exact: true }).click();
     expect(
       await layers
         .locator('button[aria-pressed="true"]')
@@ -35,7 +36,7 @@ test("isolating a layer restores choices without changing saved preferences", as
     expect(await page.evaluate(() => localStorage.getItem("eif.mapLayers"))).toBe(saved);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
-  await layers.getByText("Around a place", { exact: true }).click();
+  await layers.getByText("Find a place", { exact: true }).click();
   await layers.getByRole("combobox", { name: "Place", exact: true }).selectOption("Tokyo");
   await expect(layers.getByRole("region", { name: "Observations around Tokyo" })).toContainText(
     "Available reports only",
@@ -51,7 +52,7 @@ test("keyboard previews do not move the camera, and date comparisons preserve fr
   await page.setViewportSize({ width: 1440, height: 950 });
   await page.goto("/");
   await openStories(page);
-  await page.getByRole("searchbox", { name: "Find a story or layer" }).fill("Aral");
+  await page.getByRole("searchbox", { name: "Find a story" }).fill("Aral");
   const story = page.locator("#search-story-aral");
   const before = await camera(page);
   await story.focus();
@@ -92,7 +93,7 @@ test.describe("touch discovery", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     await openStories(page);
-    await page.getByRole("searchbox", { name: "Find a story or layer" }).fill("Tonga");
+    await page.getByRole("searchbox", { name: "Find a story" }).fill("Tonga");
     const story = page.locator("#search-story-tonga");
     await story.dispatchEvent("pointerdown", {
       pointerType: "touch",

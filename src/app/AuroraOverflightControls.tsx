@@ -8,6 +8,7 @@ export function AuroraOverflightControls({
   ready,
   solar,
   onReturn,
+  returnLabel = "Back to stars",
   onSunWatch,
   onTonight,
   city,
@@ -19,6 +20,7 @@ export function AuroraOverflightControls({
   onTonight: () => void;
   city: SkyCityPreference;
   onReturn: () => void;
+  returnLabel?: string | undefined;
 }): JSX.Element {
   const primary = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
@@ -62,7 +64,7 @@ export function AuroraOverflightControls({
               </button>
             )}
             <button type="button" onClick={onReturn}>
-              Back to stars
+              {returnLabel}
             </button>
           </>
         )}

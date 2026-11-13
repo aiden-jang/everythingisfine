@@ -26,9 +26,11 @@ interface Landing {
 export function LightsReturn({
   onView,
   onClose,
+  closeLabel,
 }: {
   onView: (view: ObservationView) => void;
   onClose: () => void;
+  closeLabel: string;
 }): JSX.Element {
   const { initial, remember } = useStorySession();
   const back = useRef<HTMLButtonElement>(null);
@@ -228,7 +230,7 @@ export function LightsReturn({
             <h2 id="lights-title">Lights Return</h2>
             <div className="observatory-actions">
               <button type="button" onClick={close} ref={back}>
-                Back to After Dark
+                {closeLabel}
               </button>
             </div>
           </div>

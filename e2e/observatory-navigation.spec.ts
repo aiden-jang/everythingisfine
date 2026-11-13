@@ -41,7 +41,7 @@ test("Home restores all scenes and browser Back restores it on the same globe @d
   const canvas = await page.locator("canvas").elementHandle();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await openStories(page);
-  await page.getByRole("searchbox", { name: "Find a story or layer" }).fill("moon");
+  await page.getByRole("searchbox", { name: "Find a story" }).fill("moon");
   await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
   await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toHaveCount(0);
@@ -53,7 +53,7 @@ test("Home restores all scenes and browser Back restores it on the same globe @d
     "aria-pressed",
     "true",
   );
-  await expect(page.getByRole("searchbox", { name: "Find a story or layer" })).toHaveValue("moon");
+  await expect(page.getByRole("searchbox", { name: "Find a story" })).toHaveValue("moon");
   await page.goForward();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
   expect(await canvas!.evaluate((node) => node === document.querySelector("canvas"))).toBe(true);

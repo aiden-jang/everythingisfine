@@ -1,7 +1,10 @@
 import type { Quake } from "../data/types";
 import { rampColorAt, type RampName } from "../globe/ramp";
 import { QUIET_BAND_KM } from "../geo/boundaryDistance";
-import { ago, agoShort, place } from "./format";
+import { ago, agoShort, place, magnitude } from "./format";
+import type { closestTo } from "./viewer";
+import { seconds } from "./arrival";
+
 export function EarthquakeContext({
   strongest,
   percent,
@@ -76,5 +79,27 @@ export function EarthquakeContext({
         </div>
       ) : null}
     </>
+  );
+}
+
+export function NearbyEarthquake({
+  near,
+  label,
+}: {
+  near: NonNullable<ReturnType<typeof closestTo>>;
+  label: string;
+}) {
+  return (
+    <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
+      Closest to {label} was <span className="text-dim tabular-nums">{magnitude(near.quake.primary)}</span>{" "}
+      {place(near.quake.primary.place)},{" "}
+      <span className="text-dim tabular-nums">{Math.round(near.km).toLocaleString("en")}</span> km away.
+      {near.p !== null && (
+        <>
+          {" "}
+          The shaking would have reached it in <span className="text-dim">{seconds(near.p)}</span>.
+        </>
+      )}
+    </p>
   );
 }

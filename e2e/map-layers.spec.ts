@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openLayer } from "./feeds";
 
 test("phone navigation follows the visible layers and the guide explains empty coverage", async ({
   page,
@@ -9,16 +9,19 @@ test("phone navigation follows the visible layers and the guide explains empty c
   await installFeeds(page);
   await page.goto("/#v=explore&layers=fires,floods");
   await expect(page.getByRole("button", { name: "Recent earthquakes", exact: true })).toHaveCount(0);
-  await page.getByRole("button", { name: "Layers & activity", exact: true }).click();
+  await page.getByRole("button", { name: "Layers", exact: true }).click();
   const layers = page.getByRole("region", { name: "Map layers", exact: true });
   await expect(layers.getByRole("button", { name: "Wildfires", exact: true })).toBeInViewport();
-  await layers.getByText("Layer guide", { exact: true }).click();
+  await openLayer(page, "Floods");
+  await layers.getByText("About this layer & sources", { exact: true }).click();
   await expect(layers.getByText(/Reported flood events, not a map/)).toBeVisible();
+  await page.getByRole("button", { name: "Back to layers", exact: true }).click();
   await layers.getByRole("button", { name: "Wildfires", exact: true }).click();
   await layers.getByRole("button", { name: "Floods", exact: true }).click();
   await expect(layers.getByText(/All layers are off/)).toBeVisible();
   await layers.getByRole("button", { name: "Earthquakes", exact: true }).click();
-  await page.getByRole("button", { name: "Recent earthquakes", exact: true }).click();
+  await openLayer(page);
+  await page.getByRole("region", { name: "Recent earthquakes" }).scrollIntoViewIfNeeded();
   await expect(page.getByRole("region", { name: "Recent earthquakes" })).toBeInViewport();
   const status = page.getByRole("button", { name: /^Feed status,/ });
   await status.click();
@@ -145,7 +148,9 @@ test("Explore switches independent layers without rebuilding the globe @dev", as
           .__events.object.geometry.drawRange.count,
     );
   await expect.poll(drawnEarthquakes).toBeGreaterThan(0);
+  await openLayer(page);
   await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
+  await page.getByRole("button", { name: "Back to layers", exact: true }).click();
   const selection = page.locator(".zone-panel");
   await expect(selection).toBeVisible();
   const selectedPlace = await selection.getByRole("heading").innerText();
@@ -158,13 +163,17 @@ test("Explore switches independent layers without rebuilding the globe @dev", as
   await expect(selection).toBeHidden();
   await expect.poll(drawnEarthquakes).toBe(0);
   await expect(page.locator("#mag")).toHaveCount(0);
+  await openLayer(page, "Tropical cyclones");
   await expect(page.getByRole("region", { name: "Layer time window", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Back to layers", exact: true }).click();
   await expect(layers.getByRole("button", { name: "Tropical cyclones", exact: true })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
   await earthquakes.click();
+  await openLayer(page);
   await expect(page.locator("#mag")).toBeVisible();
+  await page.getByRole("button", { name: "Back to layers", exact: true }).click();
   await expect.poll(drawnEarthquakes).toBeGreaterThan(0);
   const storms = layers.getByRole("button", { name: "Tropical cyclones", exact: true });
   await expect
@@ -191,7 +200,7 @@ test("Explore switches independent layers without rebuilding the globe @dev", as
   expect(await canvas!.evaluate((node) => node === document.querySelector("canvas"))).toBe(true);
   await page.reload();
   await expect(storms).toHaveAttribute("aria-pressed", "false");
-  await layers.getByRole("button", { name: /All stories & data/ }).click();
+  await page.getByRole("tab", { name: "Stories", exact: true }).click();
   await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toBeVisible();
 });
 
@@ -199,11 +208,11 @@ test("the full catalogue returns to its original entry after a story @dev", asyn
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page);
   await page.goto("/");
-  await page.getByRole("button", { name: /All stories & data/ }).click();
+  await page.getByRole("tab", { name: "Stories", exact: true }).click();
   const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
-  const radar = page.locator("#overview-story-radar");
+  const radar = page.locator("#open-storm-radar");
   await radar.click();
-  await page.getByRole("button", { name: "Back to Live Earth", exact: true }).click();
+  await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(radar).toBeFocused();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
 });

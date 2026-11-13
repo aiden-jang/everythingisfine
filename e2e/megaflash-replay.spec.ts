@@ -9,7 +9,7 @@ test("Megaflash starts on the storm and keeps the full trace and keyboard scrub 
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
   await openStories(page);
-  const trigger = page.getByRole("button", { name: "Watch Megaflash" });
+  const trigger = page.getByRole("button", { name: "Megaflash" });
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
   await trigger.click();

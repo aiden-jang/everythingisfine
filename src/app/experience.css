@@ -4,6 +4,7 @@
 }
 
 .featured-story {
+  position: relative;
   display: grid;
   grid-template-columns: 80px minmax(0, 1fr);
   align-items: center;
@@ -41,12 +42,13 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
-.featured-story:hover:not(:disabled) .featured-story-link {
+.featured-story:hover:has(button:not(:disabled)) .featured-story-link {
   text-decoration-thickness: 2px;
 }
-.featured-story:disabled {
-  opacity: 0.5;
-  cursor: default;
+.featured-story button {
+  min-height: 44px;
+  text-align: left;
+  cursor: pointer;
 }
 .observatory-intro[data-browsing] .observatory-story h2 {
   font-size: 34px;

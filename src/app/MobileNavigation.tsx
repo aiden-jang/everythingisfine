@@ -4,16 +4,14 @@ interface MobileNavigationProps {
   canvasHeight: number;
   flat: boolean;
   onResize: (height: number) => void;
-  earthquakes: boolean;
-  onActivity: () => void;
+  panel: string;
 }
 
 export function MobileNavigation({
   canvasHeight,
   flat,
   onResize,
-  earthquakes,
-  onActivity,
+  panel,
 }: MobileNavigationProps): JSX.Element {
   const [preset, setPreset] = useState<{ recent: boolean; height: number }>();
   const show = (recent: boolean): void => {
@@ -21,15 +19,11 @@ export function MobileNavigation({
     setPreset({ recent, height });
     onResize(height);
     if (!recent) return;
-    if (earthquakes) onActivity();
     requestAnimationFrame(() => {
-      const rail = document.getElementById("chrome-rail");
-      const list = rail?.querySelector(earthquakes ? '[aria-label="Recent earthquakes"]' : ".map-layers");
-      if (rail && list) {
-        rail.scrollTo({
-          top: rail.scrollTop + list.getBoundingClientRect().top - rail.getBoundingClientRect().top - 64,
-        });
-      }
+      document.getElementById("chrome-rail")?.scrollTo({ top: 0 });
+      document
+        .querySelector<HTMLElement>('.explorer-tabs [aria-selected="true"]')
+        ?.focus({ preventScroll: true });
     });
   };
   return (
@@ -48,7 +42,7 @@ export function MobileNavigation({
         aria-pressed={preset?.height === canvasHeight && preset.recent}
         onClick={() => show(true)}
       >
-        {earthquakes ? "Recent earthquakes" : "Layers & activity"}
+        {panel}
       </button>
     </nav>
   );

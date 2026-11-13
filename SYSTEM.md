@@ -56,7 +56,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/capture/` | Bounded local video encoding from the existing renderer, preview and delivery |
 | `src/app/visitor/` | Feed-derived discoveries, bounded local visit library and aggregate journey signals |
 | `src/app/stillDelivery.ts` | Attached download links and deferred object URL cleanup |
-| `src/app/Utilities.tsx` | Mobile disclosure focus, outside dismissal, Escape and resize lifetime |
+| `src/app/ObservatoryOptions.tsx` | Shared utility popover, capture, fullscreen, rotation and contextual reset |
 | `src/app/useGlobeResources.ts` | Deferred geometry and timezone data, retained while disabled, with completion cleanup |
 | `src/app/useObservatory.ts`, `observatoryState.ts` | First-visit and saved presentation, temporary scene overrides and story browser state |
 | `src/app/usePresentation.ts` | Interruptible globe/panel handoff without rebuilding the renderer |
@@ -64,7 +64,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/float/`, `src/sources/argo.ts`, and `src/globe/floatPresentation.ts` | Argo catalogue and profile validation, sample playback, and the shared globe’s float sequence |
 | `src/app/observations/`, `src/sources/observations/`, and `src/globe/observationLayer.ts` | Optional observations and replays, provider readers, shared playback, and projected data layers |
 | `src/app/radar/`, `src/sources/{radar,rainviewer}.ts`, and `src/globe/radarSurface.ts` | Storm Radar controls, international/US catalogues, and globe overlay |
-| `src/app/{MapLayers,LayerPlayback,LayerReadout,WeatherLayer}.tsx`, `useMapLayers.ts`, and `weatherLayers.ts` | Shared layer controls, weather clocks, feed health and scene composition |
+| `src/app/{ExplorerSidebar,MapLayers,LayerSources,LayerReadout,WeatherLayer}.tsx`, `useMapLayers.ts`, and `weatherLayers.ts` | Layer/story navigation, independent inspectors, weather clocks, feed health and scene composition |
 | `src/app/Observatory.tsx` | Intro, scene choices, captured-story narration and tour controls |
 | `src/app/GlobeHeader.tsx` | Shared masthead, capture, source status and explorer tools |
 | `src/app/CanvasFooter.tsx` | Explorer credit and input hints |
@@ -171,7 +171,7 @@ entry explicitly opens the all-scenes browser.
 
 The `src/app/journeys/` catalogue provides guided paths and a contextual onward link for each story.
 It is separate from `src/app/journeys.ts`, which selects scientific readings for the narrated globe
-tour. `StoryNavigation` keeps guided progress in memory and delegates to the existing scene and
+tour. `StoryNavigation` wraps both presentations, retains the Explore entry context and camera, keeps guided progress in memory and delegates to the existing scene and
 story entry points. Steps advance only on request; finishing leaves the current view open for free
 exploration. Each view retains its own data, time and controls. Prompts distinguish independent
 records, forecasts and predictions rather than implying synchronized time or causation.
@@ -338,20 +338,20 @@ landing globe, Live Earth overview and Explore while enabled outside archive mod
 rail retains that player across the landing/Explore handoff. It contributes to a `map-layers` presentation: no camera target, catalogue hiding or picking
 override. The catalogue retains the cinematic `radar` presentation and regional controls. The two
 entries never mount their scan loaders together; leaving either releases decoded images and requests.
-Both use the shared globe/map and preserve the selected provider timestamp during playback.
+Both use the shared globe/map and preserve the selected provider timestamp during playback. The guided entry receives the layer scan; closing it restores the Explore camera and copies back only a compatible RainViewer timestamp.
 The background feed panel includes RainViewer while the shared layer is active, using the same loader's
 catalogue and latest-image health without another request. Off radar remains listed outside the count.
 Empty results, delayed scans and missing imagery have distinct messages; failed refreshes retain the
 last successful check time.
 Surface wind and lightning are optional additions through the same layer controls. They reuse the
 GFS surface forecast and GOES-East GLM readers, lazy-load when enabled on the landing globe or in Explore,
-and cancel requests when disabled or entering another scene. An accordion exposes one player while preserving the
+and cancel requests when disabled or entering another scene. One inspector exposes a player while preserving the
 other layers' selections and independent timestamps. Selected times live above the players so a scene
 detour, archive visit or disabled layer releases data resources without losing the chosen moment.
 Returning reopens paused; following latest remains distinct from holding a timestamp. An expired
 selection reports its fallback rather than silently presenting it as the same scan.
 The URL carries the enabled layer set and held weather times independently of device preferences.
-Shared coverage metadata drives the switches and layer guide. Event sources remain checked when their
+Shared coverage metadata drives the layer list and per-layer source disclosure. Event sources remain checked when their
 markers are hidden; optional weather sources leave the feed total when off. Live weather retries on
 reconnection, retaining existing data with its original time while recovery is pending.
 The shared readout names wind forecasts and GOES-East lightning with their own timestamps on landing,

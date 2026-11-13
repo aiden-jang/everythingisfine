@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, waitForData, saveImageButton } from "./feeds";
+import { earthquakeOptions, openLayer, installFeeds, waitForData, saveImageButton } from "./feeds";
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
 
@@ -14,6 +14,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     });
     await page.goto("/");
     await waitForData(page);
+    await openLayer(page);
     await expect(page.locator("canvas")).toBeVisible();
     const capture = async (state: string): Promise<void> => {
       const layout = await page.evaluate(() => {
@@ -59,7 +60,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await capture("depth-key");
     await marks.click();
     if (width < 768) {
-      await page.getByRole("button", { name: "More view controls", exact: true }).click();
+      await page.getByRole("button", { name: "View options", exact: true }).click();
       await capture("utilities");
     }
     await (await saveImageButton(page)).click();
@@ -69,10 +70,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     expect(notice!.x + notice!.width).toBeLessThanOrEqual(width);
     await capture("share-recovery");
     await page.getByRole("button", { name: "Dismiss", exact: true }).click();
-    await expect(
-      page.getByRole("button", { name: width < 768 ? "More view controls" : "Save image", exact: true }),
-    ).toBeFocused();
-    if (width < 768) await page.getByRole("button", { name: "Recent earthquakes", exact: true }).click();
+    await expect(page.getByRole("button", { name: "View options", exact: true })).toBeFocused();
     await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
     await expect(page.getByRole("button", { name: "Copy link", exact: true })).toBeVisible();
     await capture("pinned");
@@ -84,10 +82,10 @@ test("mobile utilities dismiss with Escape and return keyboard focus", async ({ 
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
-  const toggle = page.getByRole("button", { name: "More view controls", exact: true });
+  const toggle = page.getByRole("button", { name: "View options", exact: true });
   await toggle.focus();
   await page.keyboard.press("Enter");
-  const colors = page.getByRole("button", { name: "Magnitude colors · Thermal", exact: true });
+  const colors = page.getByRole("button", { name: /Auto-rotate globe/ });
   await expect(colors).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(colors).toBeHidden();
@@ -99,11 +97,11 @@ test("mobile utilities dismiss outside and when focus leaves", async ({ page }) 
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
-  await page.getByRole("button", { name: "More view controls", exact: true }).click();
-  const sound = page.getByRole("button", { name: "Sound off", exact: true });
+  await page.getByRole("button", { name: "View options", exact: true }).click();
+  const sound = page.getByRole("button", { name: "Save image", exact: true });
   await page.getByRole("button", { name: "Expand globe", exact: true }).click();
   await expect(sound).toBeHidden();
-  await page.getByRole("button", { name: "More view controls", exact: true }).click();
+  await page.getByRole("button", { name: "View options", exact: true }).click();
   await page.getByRole("button", { name: "Map", exact: true }).focus();
   await expect(sound).toBeHidden();
 });
@@ -122,6 +120,7 @@ test("invalid saved preferences cannot break the globe or layout", async ({ page
   await expect(page.locator("canvas")).toBeVisible();
   expect(errors).toEqual([]);
   expect(await page.locator(".rail").evaluate((el) => el.getBoundingClientRect().width)).toBeGreaterThan(200);
+  await earthquakeOptions(page);
   await expect(page.getByRole("button", { name: "Magnitude colors · Thermal", exact: true })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem("eif.ramp"))).toBe("unknown-palette");
 });
@@ -201,10 +200,10 @@ test("a missing globe explains why a still cannot be captured", async ({ page })
   await installFeeds(page);
   await page.goto("/");
   await expect(page.getByText("The globe could not start.", { exact: true })).toBeVisible();
-  await (await saveImageButton(page)).click();
-  await expect(
-    page.getByText("The globe is not ready. Try again after it appears.", { exact: true }),
-  ).toBeVisible();
+  const capture = await saveImageButton(page);
+  await expect(capture).toBeDisabled();
+  await expect(capture).toHaveAccessibleDescription("Image capture is unavailable for this view.");
+  await expect(page.getByText("Image capture is unavailable for this view.", { exact: true })).toBeVisible();
 });
 
 test("copy feedback belongs to the pinned link that requested it", async ({ page }) => {
@@ -226,6 +225,7 @@ test("copy feedback belongs to the pinned link that requested it", async ({ page
   });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
   const events = page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button");
   await events.nth(0).click();
   await page.getByRole("button", { name: "Copy link", exact: true }).click();

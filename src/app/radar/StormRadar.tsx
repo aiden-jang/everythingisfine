@@ -46,12 +46,14 @@ export function RadarReadout({ map, region }: { map: boolean; region?: string | 
 
 export function StormRadar({
   fromExplore,
+  returnLabel,
   onClose,
   onView,
   projection,
   entry,
 }: {
   fromExplore: boolean;
+  returnLabel?: string | undefined;
   entry: { region?: string; story?: boolean; at?: number };
   onClose: () => void;
   onView: (view: RadarView) => void;
@@ -62,11 +64,9 @@ export function StormRadar({
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
   useObservatoryEscape(onClose);
 
-  const backLabel = entry.story
-    ? "Back to Atmospheric River"
-    : fromExplore
-      ? "Back to Explore"
-      : "Back to Live Earth";
+  const backLabel =
+    returnLabel ??
+    (entry.story ? "Back to Atmospheric River" : fromExplore ? "Back to Explore" : "Back to Live Earth");
   return (
     <>
       <div className="radar-heading">

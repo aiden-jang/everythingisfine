@@ -39,29 +39,32 @@ export function CanvasFooter({
           aiden jang
         </a>
       </p>
-      <div className="key-hints pointer-events-auto md:max-xl:order-first bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50">
-        {/* What the keys do in this projection: a row saying orbit while the drag pans is worse than none. */}
-        {(
-          [
-            ["arrows", flat ? "pan" : "orbit"],
-            ["+ -", "zoom"],
-            ["0", "reset"],
-            ["space", playing ? "pause" : "play"],
-            [", .", "step"],
-            ...(archived ? [["[ ]", "day"] as const] : []),
-            ...(flat ? [["shift-drag", "section"] as const] : []),
-            ["f", "full"],
-            /* Only when there is something to clear, or the app offers `esc` on every first load. `markId`
+      <details className="key-hints pointer-events-auto md:max-xl:order-first bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50">
+        <summary>Keyboard controls</summary>
+        <div className="keyboard-controls">
+          {/* What the keys do in this projection: a row saying orbit while the drag pans is worse than none. */}
+          {(
+            [
+              ["arrows", flat ? "pan" : "orbit"],
+              ["+ -", "zoom"],
+              ["0", "reset"],
+              ["space", playing ? "pause" : "play"],
+              [", .", "step"],
+              ...(archived ? [["[ ]", "day"] as const] : []),
+              ...(flat ? [["shift-drag", "section"] as const] : []),
+              ["f", "full"],
+              /* Only when there is something to clear, or the app offers `esc` on every first load. `markId`
                 belongs in this list and in the ladder: a mark card is a pin. */
-            ...(clearable ? [["esc", "clear"] as const] : []),
-          ] as const
-        ).map(([key, what]) => (
-          <span key={key} className="mr-3 inline-flex items-baseline gap-1.5">
-            <span className="text-dim">{key}</span>
-            {what}
-          </span>
-        ))}
-      </div>
+              ...(clearable ? [["esc", "clear"] as const] : []),
+            ] as const
+          ).map(([key, what]) => (
+            <span key={key} className="mr-3 inline-flex items-baseline gap-1.5">
+              <span className="text-dim">{key}</span>
+              {what}
+            </span>
+          ))}
+        </div>
+      </details>
     </div>
   );
 }
@@ -69,17 +72,19 @@ export function CanvasFooter({
 export function RadarCanvasCredit({ radar }: { radar: RadarLayerView | null }): JSX.Element | null {
   return radar ? (
     <p className="radar-canvas-credit">
+      {radar.at !== undefined && (
+        <time dateTime={new Date(radar.at).toISOString()}>Radar · {layerTime(radar.at)}</time>
+      )}
+      {radar.at !== undefined && <span aria-hidden="true">·</span>}
       <a
         href="https://www.rainviewer.com/"
         target="_blank"
         rel="noreferrer"
+        aria-label="Radar by RainViewer"
         aria-describedby="external-link-hint"
       >
-        Weather data by RainViewer
+        Radar by RainViewer
       </a>
-      {radar.at !== undefined && (
-        <time dateTime={new Date(radar.at).toISOString()}>Radar · {layerTime(radar.at)}</time>
-      )}
     </p>
   ) : null;
 }

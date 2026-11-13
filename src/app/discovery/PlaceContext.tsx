@@ -34,14 +34,14 @@ export function nearbyQuakes(
   return found.sort((a, b) => b.primary.time - a.primary.time);
 }
 export function PlaceContext(props: PlaceContextProps) {
-  const [open, setOpen] = useState(false);
   return (
-    <details className="place-context" onToggle={(event) => setOpen(event.currentTarget.open)}>
-      <summary>Around a place</summary>
-      {open && <PlaceReadings {...props} />}
+    <details className="place-context">
+      <summary>Find a place</summary>
+      <PlaceReadings {...props} />
     </details>
   );
 }
+
 function PlaceReadings({ feed, filters, at, now, revision, hazards, feeds }: PlaceContextProps) {
   const [name, setName] = useState("");
   const place = skyCities.find((city) => city.name === name);

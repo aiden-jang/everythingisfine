@@ -122,11 +122,13 @@ export function FloatDivePanel({
   onView,
   onClose,
   resume,
+  returnLabel = "Back to Live Earth",
 }: {
   view: FloatDiveView | null;
   onView: (view: FloatDiveView) => void;
   onClose: () => void;
   resume?: VisitPosition["float"];
+  returnLabel?: string | undefined;
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
@@ -139,8 +141,8 @@ export function FloatDivePanel({
       <div className="float-heading">
         <h2>Float Dive</h2>
         <div className="observatory-actions float-actions">
-          <button type="button" ref={back} onClick={onClose} aria-label="Back to Live Earth">
-            Back to Live Earth
+          <button type="button" ref={back} onClick={onClose} aria-label={returnLabel}>
+            {returnLabel}
           </button>
         </div>
       </div>

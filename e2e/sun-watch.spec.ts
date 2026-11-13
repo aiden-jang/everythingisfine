@@ -39,7 +39,7 @@ test("Sun Watch loads on demand and flies back to Earth inside After Dark", asyn
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await openStories(page);
   await revealStoryTools(page);
-  await expect(page.getByRole("button", { name: "Follow the aurora" })).toBeEnabled();
+  await expect(page.locator("#open-aurora-overflight")).toBeEnabled();
   expect(requests).toEqual({ wind: 0, xray: 0 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.getByRole("button", { name: "Sun Watch", exact: true }).click();
@@ -53,7 +53,7 @@ test("Sun Watch loads on demand and flies back to Earth inside After Dark", asyn
   await expect(stage.getByText("Earth · After Dark")).toBeVisible();
   expect(requests).toEqual({ wind: 1, xray: 1 });
   await revealStoryTools(page);
-  await page.getByRole("button", { name: "Follow the aurora" }).click();
+  await page.locator("#open-aurora-overflight").click();
   await expect(stage).toBeHidden();
   await expect(page.getByRole("group", { name: "Globe readout" })).toContainText("30% model chance");
 });
@@ -84,5 +84,5 @@ test("reduced motion keeps the measurements and aurora available during a solar-
   await page.getByRole("button", { name: "Back to stars", exact: true }).click();
   await expect(page.getByRole("button", { name: "Sun Watch", exact: true })).toBeFocused();
   await revealStoryTools(page);
-  await expect(page.getByRole("button", { name: "Follow the aurora" })).toBeEnabled();
+  await expect(page.locator("#open-aurora-overflight")).toBeEnabled();
 });

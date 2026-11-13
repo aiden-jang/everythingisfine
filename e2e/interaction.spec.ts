@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, waitForData, saveImageButton } from "./feeds";
+import { earthquakeOptions, openLayer, installFeeds, waitForData, saveImageButton } from "./feeds";
 
 /*
  * The claims that only a browser can settle. Each is here because the alternative would be to assert it in
@@ -68,14 +68,11 @@ test("the first live seed includes a useful backlog", async ({ page }) => {
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   // The seed count is independent of the entrance replay's gradually revealed events.
-  const reported = page
-    .locator("#chrome-head")
-    .getByText("Earthquakes before filters", { exact: true })
-    .locator("..")
-    .locator("span")
-    .first();
+  await page.getByText("Report totals", { exact: true }).click();
+  const reported = page.getByText("Earthquakes before filters", { exact: true }).locator("..").locator("dd");
   await expect(reported).toBeVisible();
   expect(Number((await reported.textContent())?.replace(/,/g, ""))).toBeGreaterThan(50);
   await expect(page.getByText("All feeds available", { exact: true })).toBeVisible();
@@ -88,6 +85,7 @@ test("a pinned selection survives a data refresh", { tag: "@dev" }, async ({ pag
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   const feed = page.getByRole("region", { name: "Recent earthquakes" });
   const items = feed.getByRole("button");
@@ -138,6 +136,7 @@ test("the globe is operable with the canvas hidden", async ({ page }) => {
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   // Not merely aria-hidden: actually invisible, so nothing can be passing by accident through the
   // canvas that a screen reader user would never have reached.
@@ -240,6 +239,7 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   const items = page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button");
   await items.first().focus();
@@ -247,6 +247,7 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   await expect(page.locator(".zone-panel")).toBeVisible();
   const pinnedText = await page.locator(".zone-panel").innerText();
 
+  await earthquakeOptions(page);
   await page.getByRole("button", { name: /magnitude colors/i }).click();
   await expect.poll(() => linkField(page, "e"), { timeout: 5_000 }).toMatch(/^(usgs|emsc):[\w.-]+$/);
 
@@ -264,6 +265,7 @@ test("a shared link restores the view on a fresh page", async ({ page }) => {
   await waitForData(fresh);
 
   await expect(fresh.locator(".zone-panel")).toBeVisible();
+  await earthquakeOptions(fresh);
   await expect(fresh.getByRole("button", { name: /magnitude colors/i })).toHaveAttribute(
     "aria-pressed",
     "true",
@@ -281,6 +283,7 @@ test("an hour can be held from the keyboard, and let go", async ({ page }) => {
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   const strip = page.locator("[data-ramp]").filter({ has: page.locator(".gap-px") });
   const readout = strip.locator("span.font-mono").first();
@@ -305,6 +308,7 @@ test("a swarm can be walked one event at a time", async ({ page }) => {
   await installFeeds(page, { count: 200 });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   // Into the densest region, where a pinned event certainly has neighbours either side of it in time.
   await page
@@ -338,6 +342,7 @@ test("the window buttons move the data and the headline follows", async ({ page 
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   const headline = page.locator(".zone-rail [data-event-count]");
   const count = async (): Promise<number> => Number((await headline.innerText()).replace(/[^0-9]/g, ""));
@@ -382,6 +387,7 @@ test("holding a bucket on the strip reads it, and lets go", async ({ page }) => 
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   const strip = page.locator("[data-ramp]").filter({ has: page.locator(".gap-px") });
   const readout = strip.locator("span.font-mono").first();
@@ -421,6 +427,7 @@ test("a revised magnitude says what the agency first said", async ({ page }) => 
 
   // Filtered to M6 and above so the routed event is the only thing that can be in the list.
   await page.goto("/#at=-177,51,1&m=6&w=24&s=usgs&r=thermal");
+  await openLayer(page);
 
   const row = page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button", { name: /Adak/ });
   await expect(row).toBeVisible({ timeout: 25_000 });
@@ -438,7 +445,10 @@ test("a revised magnitude says what the agency first said", async ({ page }) => 
   await expect(panel).toContainText("USGS first said M 6.1 → M 6.4, 25 km → 41 km deep");
   // The current value is what the headline and the marker use, not the first one.
   await expect(panel.locator(".text-\\[40px\\]")).toContainText("6.4");
-  await expect(page.locator("#chrome-head")).toContainText("revised");
+  await page.getByText("Report totals", { exact: true }).click();
+  await expect(page.getByText("Reports revised", { exact: true }).locator("..").locator("dd")).not.toHaveText(
+    "0",
+  );
 });
 
 test("before any data lands, the rail says what it is waiting for", async ({ page }) => {
@@ -447,6 +457,7 @@ test("before any data lands, the rail says what it is waiting for", async ({ pag
   await installFeeds(page, { silent: true });
 
   await page.goto("/");
+  await openLayer(page);
   const rail = page.locator(".zone-rail");
   await expect(rail).toContainText("Loading earthquake reports for the last 7d…");
   await expect(rail).not.toContainText("nothing yet");
@@ -508,6 +519,7 @@ test("the sequence says whether the big one has already happened", async ({ page
   });
 
   await page.goto("/#at=120,-8,1&m=4&w=24&s=usgs&r=thermal");
+  await openLayer(page);
 
   const row = page
     .getByRole("region", { name: "Recent earthquakes" })
@@ -556,6 +568,7 @@ test("the globe is operable from the keyboard, and the keys are written down", a
   // interface. A sighted person with no mouse could not move the globe at all.
   await installFeeds(page, { silent: true });
   await page.goto("/#at=140,20,1&m=2&w=24&s=usgs&r=thermal");
+  await openLayer(page);
   await expect(page.locator("canvas")).toBeVisible({ timeout: 25_000 });
 
   // The hints moved onto the map, next to the thing the keys move.
@@ -591,6 +604,7 @@ test("a dead feed says so, and does not claim a covered day", async ({ page }) =
      `SourceStatus` carried both while nothing read them. See ARCHITECTURE.md#e2einteractionspects. */
   await installFeeds(page, { dead: true });
   await page.goto("/");
+  await openLayer(page);
 
   const rail = page.locator(".zone-rail");
   await expect(rail).toContainText("USGS is not answering", { timeout: 25_000 });
@@ -704,6 +718,7 @@ test("a pinned event the filters exclude says so", async ({ page }) => {
   await installFeeds(page, { usgs: [at(2.7, "small")] });
 
   await page.goto("/#at=120,-8,1&m=2&w=24&s=usgs&r=thermal");
+  await openLayer(page);
   const row = page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button", { name: /small/ });
   await expect(row).toBeVisible({ timeout: 25_000 });
   await row.click();
@@ -742,6 +757,7 @@ test("the rail names the largest event and flies to it", async ({ page }) => {
     usgs: [at(6.3, "mainshock", 480, 120), at(2.4, "newer", 5, -70), at(2.9, "newest", 2, -71)],
   });
   await page.goto("/#at=0,0,1&m=2&w=24&s=usgs&r=thermal");
+  await openLayer(page);
 
   await page.getByText("More context", { exact: true }).click();
   const largest = page.getByRole("button", { name: /Largest/ });
@@ -818,6 +834,7 @@ test("the rail resizes in both directions, by pointer and by key", async ({ page
   await installFeeds(page, { count: 240 });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   const height = page.getByRole("separator", { name: "Regions height" });
   const before = Number(await height.getAttribute("aria-valuenow"));
@@ -870,6 +887,7 @@ test("the rail resizes in both directions, by pointer and by key", async ({ page
     .toBe(String(keyed + 32));
   await page.reload();
   await waitForData(page);
+  await openLayer(page);
   expect(
     Number(await page.getByRole("separator", { name: "Rail width" }).getAttribute("aria-valuenow")),
   ).toBe(wide + 16);
@@ -1037,9 +1055,11 @@ test("holding the cursor part way through draws part of the window", async ({ pa
   await installFeeds(page, { count: 400 });
   await page.goto("/#w=24");
   await waitForData(page);
+  await openLayer(page);
   // Measure the whole window after the entrance stops revealing it.
   await expect(page.getByText("replaying the last day", { exact: true })).toBeHidden();
   const live = await waitForData(page);
+  await openLayer(page);
 
   await page.getByRole("slider", { name: "Time in the window" }).fill("400");
   await page.waitForTimeout(700);
@@ -1072,6 +1092,7 @@ test("playing advances the cursor against the wall clock", async ({ page }) => {
   await installFeeds(page, { count: 400 });
   await page.goto("/#w=24");
   await waitForData(page);
+  await openLayer(page);
   await page.waitForTimeout(4000);
 
   await page.getByRole("button", { name: "Play the window through" }).click();
@@ -1109,6 +1130,7 @@ test("the transport has a keyboard path, and the keys are written down", async (
   await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   const zones = page.locator(".zones");
   await expect(zones).toContainText("play");
@@ -1181,6 +1203,7 @@ test("the chrome says how far back each agency actually covers", async ({ page }
   await installFeeds(page, { count: 400, emscCappedHours: 6 });
   await page.goto("/#w=24");
   await waitForData(page);
+  await openLayer(page);
 
   // On the activity strip, against its own axis, rather than on the source toggles: the axis is what the
   // durations have to be read against, and both would be the same span measured twice.
@@ -1217,6 +1240,7 @@ test("with both agencies covering the window, nothing is caveated", async ({ pag
   await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   const activity = page.locator("[data-activity]");
   // Both bars full, and no caveat, because there is no asymmetry to caveat.
@@ -1234,6 +1258,7 @@ test("the rail can be searched, and says what it cannot search", async ({ page }
   await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
   await page.waitForTimeout(4000);
 
   const rail = page.locator('[data-rail="regions"]');
@@ -1272,6 +1297,7 @@ test("enter takes the first result, so the box does not swallow the query", asyn
   await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
   await page.waitForTimeout(4000);
 
   await page.getByLabel("Find earthquake reports").fill("flores");
@@ -1394,6 +1420,7 @@ test("the largest event is a way in, in time as well as in space", async ({ page
   await installFeeds(page, { usgs: features });
   await page.goto("/");
   const live = await waitForData(page);
+  await openLayer(page);
 
   await page.getByText("More context", { exact: true }).click();
   const largest = page.locator('[data-rail="largest"]');
@@ -1415,6 +1442,7 @@ test("the largest event is a way in, in time as well as in space", async ({ page
   await expect
     .poll(async () => {
       held = await waitForData(page);
+      await openLayer(page);
       return held;
     })
     .toBeLessThan(live);
@@ -1434,6 +1462,7 @@ test("a section can be opened from the panel, not only by a gesture", async ({ p
   await installFeeds(page, { count: 400 });
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   // The context action must still reach the selected event.
   await page.getByText("More context", { exact: true }).click();
@@ -1459,6 +1488,7 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   /*
    * Filtered to the visible copy. The key is mounted twice - the canvas corner from `md` up, the rail on a
@@ -1510,6 +1540,7 @@ test("a copied link reopens the same event, not merely the same view", async ({ 
   await installFeeds(page, { count: 400 });
   await page.goto("/#at=145,12,1&m=2&w=24&s=usgs,emsc&r=thermal");
   await waitForData(page);
+  await openLayer(page);
 
   await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
   const panel = page.locator('.zone-panel[data-open="true"]');
@@ -1557,7 +1588,8 @@ test("the tour names where the camera is, not where it is going", { tag: "@dev" 
   await page.goto("/#at=145,12,1&m=2&w=24&s=usgs,emsc&r=thermal");
   await waitForData(page);
 
-  await page.getByRole("button", { name: /^Tour$/ }).click();
+  await earthquakeOptions(page);
+  await page.getByRole("button", { name: "Earthquake tour", exact: true }).click();
 
   // Sampled in the page rather than by polling from here: a round trip per sample is slower than the stop it
   // is trying to observe, and a sparse series lands on the transitions and manufactures its own findings.
@@ -1599,6 +1631,7 @@ test("pinning flies in, and the far side pulls back to the same place", { tag: "
   await installFeeds(page, { count: 400 });
   await page.goto("/#at=145,12,1&m=2&w=24&s=usgs,emsc&r=thermal");
   await waitForData(page);
+  await openLayer(page);
   await cameraStill(page);
 
   await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
@@ -1692,15 +1725,16 @@ test("sound opens no audio device until it is asked to", async ({ page }) => {
   // A page that has never been asked for sound has no business holding a device open.
   expect(await made()).toBe(0);
 
-  const toggle = page.getByRole("button", { name: /^Sound (on|off)$/ });
-  await expect(toggle).toHaveText("Sound off");
+  await earthquakeOptions(page);
+  const toggle = page.getByRole("button", { name: /^Earthquake alerts (on|off)$/ });
+  await expect(toggle).toHaveText("Earthquake alerts off");
   await toggle.click();
-  await expect(toggle).toHaveText("Sound on");
+  await expect(toggle).toHaveText("Earthquake alerts on");
   await expect.poll(made, { timeout: 10_000 }).toBe(1);
 
   // And back off again, which is the half that leaks if nobody checks it.
   await toggle.click();
-  await expect(toggle).toHaveText("Sound off");
+  await expect(toggle).toHaveText("Earthquake alerts off");
   expect(await made()).toBe(1);
 });
 
@@ -1714,6 +1748,7 @@ test("fullscreen makes the window bigger and takes nothing away", async ({ page 
   await installFeeds(page, { count: 400 });
   await page.goto("/#at=145,12,1&m=2&w=24&s=usgs,emsc&r=thermal");
   await waitForData(page);
+  await openLayer(page);
 
   const chrome = (): Promise<Record<string, number | string | boolean>> =>
     page.evaluate(() => {
@@ -1856,7 +1891,7 @@ test("the bar folds where it is a row of its own, and stays folded", async ({ pa
   await expect(page.getByLabel("Hide the panel")).toHaveCount(0);
 
   // The fold lives in the overflow menu at this width: as a button of its own it wrapped the header.
-  await page.getByRole("button", { name: "More view controls" }).click();
+  await page.getByRole("button", { name: "View options" }).click();
   await page.getByRole("button", { name: "Hide bar" }).click();
   await page.waitForTimeout(400);
   expect(await bar(), "the bar folds").toBe(false);
@@ -1884,24 +1919,19 @@ test("the bar's own fold does not make the bar taller", async ({ page }) => {
 
   const bar = page.locator("#chrome-head");
   const height = () => bar.evaluate((element) => element.getBoundingClientRect().height);
-  const more = page.getByRole("button", { name: "More view controls" });
-  const colors = page.getByRole("button", { name: /Magnitude colors/ });
+  const more = page.getByRole("button", { name: "View options" });
   expect(await height(), "the bar is one row tall at 414px").toBeLessThanOrEqual(68);
-  await expect(colors).toBeVisible();
-
   for (const width of [390, 375, 320]) {
     await page.setViewportSize({ width, height: 740 });
     expect(await height(), `the bar is one row tall at ${width}px`).toBeLessThanOrEqual(68);
   }
   await expect(page.getByText("7/7", { exact: true })).toBeVisible();
-  await expect(colors).toBeHidden();
   await more.press("Enter");
-  await expect(colors).toBeFocused();
-  await colors.press("Enter");
+  const rotation = page.getByRole("button", { name: /Auto-rotate globe/ });
+  await expect(rotation).toBeFocused();
+  await rotation.press("Escape");
   await expect(more).toBeFocused();
   await more.click();
-  await expect(colors).toHaveAttribute("aria-pressed", "true");
-
   await expect(page.getByRole("button", { name: "Hide bar" })).toBeVisible();
   await page.getByRole("button", { name: "Hide bar" }).click();
   await page.waitForTimeout(400);
@@ -2044,6 +2074,7 @@ for (const [w, h] of [
     await installFeeds(page, { count: 200 });
     await page.goto("/");
     await waitForData(page);
+    await openLayer(page);
     await page.waitForTimeout(900);
 
     const row = page.locator("section[aria-label='Recent earthquakes'] button").first();
@@ -2134,6 +2165,7 @@ test("the archive field says what it takes, and warns about the thin years", asy
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
 
   const field = page.getByLabel("Open archive date");
   /* The outermost of the wrappers holding the field, or `.last()` lands on the row holding the input and
@@ -2167,21 +2199,21 @@ test("a first visit saves no preference the visitor never chose", async ({ page 
   expect(saved, "nothing was touched, so nothing is remembered").toEqual([]);
 });
 
-test("mobile exploration switches between globe space and recent events", async ({ page }) => {
+test("mobile exploration switches between globe space and the current inspector", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await installFeeds(page);
   await page.goto("/");
   await waitForData(page);
+  await openLayer(page);
   const navigation = page.getByRole("navigation", { name: "Explore" });
   await navigation.getByRole("button", { name: "Expand globe", exact: true }).click();
   const globeHeight = await page
     .getByRole("separator", { name: "Sheet height" })
     .getAttribute("aria-valuenow");
-  await navigation.getByRole("button", { name: "Recent earthquakes", exact: true }).click();
+  await navigation.getByRole("button", { name: "Layer details", exact: true }).click();
   const recentHeight = await page
     .getByRole("separator", { name: "Sheet height" })
     .getAttribute("aria-valuenow");
   expect(Number(globeHeight)).toBeGreaterThan(Number(recentHeight));
-  const recent = page.getByRole("region", { name: "Recent earthquakes" });
-  await expect(recent.getByRole("heading", { name: "Recent", exact: true })).toBeInViewport();
+  await expect(page.getByRole("heading", { name: "Earthquakes", exact: true })).toBeInViewport();
 });

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { viewOptions, installFeeds } from "./feeds";
 
 test.use({
   video:
@@ -88,7 +88,8 @@ for (const [width, height] of [
       await page.screenshot({ path: test.info().outputPath(`depth-reveal-${width}.png`) });
       await page.getByRole("button", { name: "Explore the globe" }).click();
       await expect(page.locator("#chrome-rail")).toBeVisible();
-      if (width < 768) await page.getByRole("button", { name: "More view controls", exact: true }).click();
+      if (width < 768) await page.getByRole("button", { name: "View options", exact: true }).click();
+      await viewOptions(page);
       await page.getByRole("button", { name: "Reset view & filters", exact: true }).click();
       await expect.poll(async () => (await pose()).zoom).toBeGreaterThan(1.2);
       await expect.poll(async () => (await pose()).lon).toBe(145);

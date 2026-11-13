@@ -17,7 +17,8 @@ export function VisitShelf() {
   const navigation = useStoryNavigation();
   if (!navigation) return null;
   const { library } = navigation;
-  if (!library.recent.length && !library.saved.length) return null;
+  if (!library.recent.length && !library.saved.length)
+    return <p>Stories you open and views you save will appear here, only on this device.</p>;
   const row = (visit: Visit, saved: boolean) => (
     <div className="visit-row" key={visit.id}>
       <button

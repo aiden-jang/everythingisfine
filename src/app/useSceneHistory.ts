@@ -3,7 +3,7 @@ import { flushSync } from "react-dom";
 import type { CameraState } from "../globe/controls";
 import type { FlyTo } from "../globe/cameraTarget";
 
-type Snapshot<T> = { value: T; camera: CameraState; scroll: number; focus: string };
+type Snapshot<T> = { value: T; camera: CameraState; scroll: number; scrollTarget: string; focus: string };
 
 export function useSceneHistory<T>({
   route,
@@ -35,7 +35,13 @@ export function useSceneHistory<T>({
       current.snapshots.set(current.id, {
         value: latest.current.capture(),
         camera: { ...readCamera.current() },
-        scroll: document.getElementById("observatory-intro")?.scrollTop ?? 0,
+        scroll:
+          document.getElementById(
+            document.querySelector('[data-presentation="explore"]') ? "chrome-rail" : "observatory-intro",
+          )?.scrollTop ?? 0,
+        scrollTarget: document.querySelector('[data-presentation="explore"]')
+          ? "chrome-rail"
+          : "observatory-intro",
         focus: document.activeElement?.id ?? "",
       });
     };
@@ -52,7 +58,7 @@ export function useSceneHistory<T>({
       flushSync(() => latest.current.restore(saved.value));
       flyTo.current(saved.camera.lon, saved.camera.lat, saved.camera.zoom);
       requestAnimationFrame(() => {
-        document.getElementById("observatory-intro")?.scrollTo(0, saved.scroll);
+        document.getElementById(saved.scrollTarget)?.scrollTo(0, saved.scroll);
         const focus = document.getElementById(saved.focus);
         if (focus?.getClientRects().length) focus.focus({ preventScroll: true });
       });

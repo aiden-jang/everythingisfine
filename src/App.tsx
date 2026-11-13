@@ -1,10 +1,11 @@
 import { closeDetail } from "./app/closeDetail";
-import { ActivityDisclosure } from "./app/ActivityDisclosure";
+import { ExplorerSidebar } from "./app/ExplorerSidebar";
+import { StoryNavigation } from "./app/journeys/StoryNavigation";
 import { EarthquakeComparisons } from "./app/EarthquakeComparisons";
-import { HazardList } from "./app/HazardList";
 import { LayerWindow } from "./app/LayerWindow";
-import { EarthquakeContext } from "./app/EarthquakeContext";
-import { EarthquakeHeadline } from "./app/EarthquakeHeadline";
+import { EarthquakeContext, NearbyEarthquake } from "./app/EarthquakeContext";
+import { EarthquakeOptions } from "./app/EarthquakeOptions";
+import { EarthquakeInspector } from "./app/EarthquakeInspector";
 import { MapLayers } from "./app/MapLayers";
 import { useMapLayers } from "./app/useMapLayers";
 import { hazardsInWindow, markBelongsToLayer, visibleHazards } from "./app/layerVisibility";
@@ -18,7 +19,7 @@ import { useEventInspection } from "./app/useEventInspection";
 import { SequenceReplayControls } from "./app/SequenceReplayControls";
 import { CanvasFooter, CanvasStamp } from "./app/CanvasFooter";
 import { LayerReadout } from "./app/LayerReadout";
-import { Observatory } from "./app/Observatory";
+import { Observatory, type ObservatoryProps } from "./app/Observatory";
 import { journeyFor, observatorySummary, observatoryFeedNote } from "./app/journeys";
 import { GlobeHeader } from "./app/GlobeHeader";
 import { earthSceneTarget, useObservatory, type EarthScene } from "./app/useObservatory";
@@ -65,7 +66,6 @@ import { boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE } 
 import { MobileNavigation } from "./app/MobileNavigation";
 import { ViewNotices } from "./app/ViewNotices";
 import { sharedEarthquakeNotice, sharedHazardNotice } from "./app/linkNotices";
-import { EventList } from "./app/EventList";
 import { earthquakeCoverage, earthquakeEmpty, earthquakeReach } from "./app/earthquakeStatus";
 import { feedStatus } from "./app/feedStatus";
 import { useHazardLayers } from "./app/useHazardLayers";
@@ -78,17 +78,15 @@ import { CrossSection } from "./app/CrossSection";
 import { buildSection, type SectionHinge, type SectionLine } from "./app/section";
 import { BUCKETS, histogram, totalIn } from "./app/histogram";
 import { diurnal } from "./app/diurnal";
-import { Dial } from "./app/Dial";
 import { decode } from "./app/permalink";
 import { replaceViewLocation } from "./app/viewLocation";
-import { seconds } from "./app/arrival";
 import { versusReference } from "./app/versus";
 import { tick } from "./app/touch";
 import { superlativeFor } from "./app/superlative";
 import { type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
-import { clock, corroborationNote, magnitude, place, quietNote, quietParts, compactSpan } from "./app/format";
+import { clock, corroborationNote, quietNote, quietParts, compactSpan } from "./app/format";
 
 /* Built here and not in an effect. In an effect, StrictMode mounts twice and you get two WebSockets. */
 const feed = createFeed();
@@ -206,7 +204,7 @@ export function App(): JSX.Element {
   const mapLayers = useMapLayers(
     filters,
     observatory.backgroundLayers,
-    shared.event ? "quake:" : (shared.mark ?? undefined),
+    shared.event || shared.day ? "quake:" : (shared.mark ?? undefined),
     archived || archiveBusy,
     shared,
   );
@@ -394,7 +392,9 @@ export function App(): JSX.Element {
     mapOn,
     presentation: observatory.presentation,
     scene: observatory.scene,
-    catalogue: observatory.browser.open ? (observatory.browser.category ?? "all") : undefined,
+    catalogue: (observatory.observing ? observatory.browser.open : observatory.browser.pane === "stories")
+      ? (observatory.browser.category ?? "all")
+      : undefined,
     getMoment: observatory.observations.getMoment,
     layers: mapLayers.enabled,
     layerTimes: mapLayers.selectedTimes,
@@ -637,9 +637,10 @@ export function App(): JSX.Element {
       return feed.snapshot().archive ?? { from: at - filters.windowMs, to: at };
     };
     const onKey = (e: KeyboardEvent): void => {
-      if (e.key === "Escape" && !document.querySelector("[data-feed-popover]:popover-open")) {
+      if (e.key === "Escape" && !document.querySelector(":popover-open")) {
         // One rung at a time, innermost first: closing the pin and the section together undoes two decisions
         // with one press.
+        if (e.defaultPrevented || e.cancelBubble) return;
         if (query) setQuery("");
         else if (sectionLine) setSectionLine(null);
         else if (scrub.at !== null) setScrub(LIVE);
@@ -979,543 +980,530 @@ export function App(): JSX.Element {
     />
   );
 
-  return (
-    <main className="frame" data-presentation={observatory.presentation}>
-      <a
-        className="skip-controls"
-        href={observatory.observing ? "#observatory-intro" : "#chrome-rail"}
-        onClick={(event) => {
-          event.preventDefault();
-          document
-            .querySelector<HTMLElement>(
-              observatory.observing
-                ? "#observatory-intro"
-                : railShown
-                  ? "#chrome-rail"
-                  : "#show-top-bar, [aria-controls=chrome-rail]",
-            )
-            ?.focus();
-        }}
-      >
-        Skip to controls
-      </a>
-      <h1 className="sr-only">Everything Is Fine</h1>
-      <GlobeHeader
-        clip={clip}
-        rotation={observatory.rotation}
-        ready={observatory.canCapture && mapLayers.canCapture}
-        observing={observatory.observing}
-        onHome={returnHome}
-        onReset={resetView}
-        {...{
-          headShown,
-          chromeFloats,
-          setHeadOpen,
-          snapshot,
-          earthquakes: mapLayers.enabled.earthquakes,
-          flat,
-          setFlat,
-          ramp,
-          setRamp,
-          sound,
-          setSound,
-          tourAt,
-          startTour,
-          stopTour,
-          tourButton,
-          saving,
-          saveStill,
-          feeds,
-          notice,
-          download,
-          dismiss,
-        }}
-        tourDisabled={journey.stops.length === 0 || !observatory.ready}
-      />
-      <div
-        className="zones"
-        style={
-          {
-            ...(headShown ? {} : { "--head-h": "0px" }),
-            "--rail-w": railShown ? `${railWidth}px` : "0px",
-            "--regions-h": `${regionsHeight}px`,
-            ...(sheetCanvas > 0 ? { "--canvas-h": `${sheetCanvas}px` } : {}),
-          } as React.CSSProperties
-        }
-      >
-        {observatory.observing ? (
-          <Observatory
-            discoveries={{
-              now: minuteClock,
-              quake:
-                !archived &&
-                view.at === null &&
-                journey.stops[0]?.reading &&
-                snapshot.statuses[journey.stops[0].reading.source].kind !== "failing"
-                  ? (journey.stops[0] ?? null)
-                  : null,
-              inspect: selectQuake,
-            }}
-            scene={observatory.scene}
-            at={overflight.run?.forecast.forecastAt ?? litAt ?? minuteClock}
-            ready={observatory.ready}
-            empty={emptyEarthquakes}
-            summary={
-              shown === 0 && emptyEarthquakes.kind !== "empty"
-                ? emptyEarthquakes.text
-                : observatorySummary(shown, filters, coverage, loadedDay)
-            }
-            feedNote={observatoryFeedNote(snapshot.statuses, feeds.silent)}
-            deepAvailable={journey.deepest !== null}
-            onScene={chooseEarthScene}
-            onHome={returnHome}
-            onExplore={openExplorer}
-            onPickDate={() => {
-              openExplorer();
-              setRailOpen(true);
-              requestAnimationFrame(() =>
-                document.querySelector<HTMLElement>("#archive-day, #archive-return")?.focus(),
-              );
-            }}
-            aurora={overflight}
-            views={observatory}
-            radar={observatory.radar}
-            layerReadout={<LayerReadout controls={mapLayers} />}
-            onHistory={(day) => {
+  const observatoryProps: ObservatoryProps = {
+    explorer: {
+      radarTime: (at) => mapLayers.selectTime("radar", at),
+      read: () => readCamera.current(),
+      restore: (saved) => flyTo.current(saved.lon, saved.lat, saved.zoom),
+    },
+    discoveries: {
+      now: minuteClock,
+      quake:
+        !archived &&
+        view.at === null &&
+        journey.stops[0]?.reading &&
+        snapshot.statuses[journey.stops[0].reading.source].kind !== "failing"
+          ? (journey.stops[0] ?? null)
+          : null,
+      inspect: selectQuake,
+    },
+    scene: observatory.scene,
+    at: overflight.run?.forecast.forecastAt ?? litAt ?? minuteClock,
+    ready: observatory.ready,
+    empty: emptyEarthquakes,
+    summary:
+      shown === 0 && emptyEarthquakes.kind !== "empty"
+        ? emptyEarthquakes.text
+        : observatorySummary(shown, filters, coverage, loadedDay),
+    feedNote: observatoryFeedNote(snapshot.statuses, feeds.silent),
+    deepAvailable: journey.deepest !== null,
+    onScene: chooseEarthScene,
+    onHome: returnHome,
+    onExplore: openExplorer,
+    onPickDate: () => {
+      openExplorer();
+      mapLayers.inspect("earthquakes");
+      observatory.browser.show("layers");
+      setRailOpen(true);
+      requestAnimationFrame(() =>
+        document.querySelector<HTMLElement>("#archive-day, #archive-return")?.focus(),
+      );
+    },
+    aurora: overflight,
+    views: observatory,
+    radar: observatory.radar,
+    layerReadout: <LayerReadout controls={mapLayers} />,
+    onHistory: (day) => {
+      stopTour();
+      enterExplore();
+      mapLayers.inspect("earthquakes");
+      observatory.browser.show("layers");
+      const eclipseDay = day === APRIL_ECLIPSE_DAY;
+      historyIntent.current = eclipseDay ? null : day;
+      if (eclipseDay) setFlat(false);
+      setScrub(LIVE);
+      setSectionLine(null);
+      void archiveState.loadArchive(day);
+    },
+    tour: {
+      at: tourAt,
+      stop: touring,
+      length: tourLength,
+      paused: tourPaused,
+      button: tourButton,
+      controls: tourControls,
+      start: startTour,
+      stopTour,
+      next: nextTour,
+      previous: previousTour,
+      pause: togglePause,
+      available: journey.stops.length > 0,
+      inspect:
+        touring?.key && feed.store.get(touring.key)
+          ? () => {
+              const key = touring.key!;
               stopTour();
               enterExplore();
-              const eclipseDay = day === APRIL_ECLIPSE_DAY;
-              historyIntent.current = eclipseDay ? null : day;
-              if (eclipseDay) setFlat(false);
-              setScrub(LIVE);
-              setSectionLine(null);
-              void archiveState.loadArchive(day);
-            }}
-            tour={{
-              at: tourAt,
-              stop: touring,
-              length: tourLength,
-              paused: tourPaused,
-              button: tourButton,
-              controls: tourControls,
-              start: startTour,
-              stopTour,
-              next: nextTour,
-              previous: previousTour,
-              pause: togglePause,
-              available: journey.stops.length > 0,
-              inspect:
-                touring?.key && feed.store.get(touring.key)
-                  ? () => {
-                      const key = touring.key!;
-                      stopTour();
-                      enterExplore();
-                      selectQuake(key);
-                    }
-                  : null,
-            }}
-          />
-        ) : null}
-        {observatory.observing || markSubject || (shownQuake && pinned) ? null : (
-          <Resizer
-            axis="y"
-            label="Sheet height"
-            value={sheetCanvas > 0 ? sheetCanvas : Math.round(window.innerHeight * 0.6)}
-            min={Math.round(window.innerHeight * 0.46)}
-            max={Math.round(window.innerHeight * 0.82)}
-            measure={(e) => e.clientY}
-            onChange={setSheetCanvas}
-            grip
-            className="absolute inset-x-0 z-[2] md:hidden"
-            style={{ top: `calc(var(--canvas-h, 60dvh) - 6px)` }}
-          />
-        )}
-        {!markSubject && !(shownQuake && pinned) && railShown ? (
-          <MobileNavigation
-            canvasHeight={sheetCanvas}
-            flat={flat}
-            onResize={setSheetCanvas}
-            earthquakes={mapLayers.enabled.earthquakes}
-            onActivity={() => mapLayers.openActivity(true)}
-          />
-        ) : null}
-        <aside
-          aria-label="Map layers and recent activity"
-          id="chrome-rail"
-          tabIndex={-1}
-          className="zone-rail rail border-hairline p-5 max-md:border-b md:border-r"
-          hidden={!railShown}
-        >
-          <MapLayers
-            places={{
-              feed,
-              filters: mapLayers.globeFilters,
-              at: view.at ?? now,
-              now,
-              revision: snapshot.revision,
-              hazards,
-              feeds,
-            }}
-            controls={{
-              ...mapLayers,
-              change: (layer, on) => {
-                mapLayers.change(layer, on);
-                if (!on && layer === "earthquakes") {
-                  setSelected(null);
-                  setSectionLine(null);
-                }
-                if (!on && markBelongsToLayer(markId, layer)) setMarkId(null);
-              },
-            }}
-            feeds={feeds}
-            archived={archived || archiveBusy}
-            onBrowse={() => observatory.home(stopTour, true)}
-          />
-          <HazardList hazards={hazards} markId={markId} onHazard={selectMark} />
-          {!archived && feeds.silent ? (
-            <div className="tb-notes">
-              <span className="label">Feeds</span>
-              <p className="text-[11px] leading-relaxed text-faint">{feeds.silent}</p>
-            </div>
-          ) : null}
-          <ViewNotices
-            statuses={snapshot.statuses}
-            archiveDay={archived ? loadedDay : null}
-            cursor={view.at}
-            staleCursor={!archiveBusy && staleCursor}
-            earthquakeNotice={sharedEarthquakeNotice(
-              pinned ? null : missingShared,
-              snapshot,
-              loadedDay,
-              archiveBusy,
-            )}
-            hazardNotice={sharedHazardNotice(
-              markId === shared.mark && !markSubject ? markId : null,
-              archived,
-              archiveHazards,
-              answered,
-            )}
-          />
+              selectQuake(key);
+            }
+          : null,
+    },
+  };
 
-          {archived && archiveControls}
-          {!mapLayers.enabled.earthquakes && !archived && (
-            <LayerWindow
-              hours={hours}
-              onChange={changeWindow}
-              held={view.at !== null}
-              onLive={() => setScrub(LIVE)}
+  return (
+    <StoryNavigation {...observatoryProps}>
+      <main className="frame" data-presentation={observatory.presentation}>
+        <a
+          className="skip-controls"
+          href={observatory.observing ? "#observatory-intro" : "#chrome-rail"}
+          onClick={(event) => {
+            event.preventDefault();
+            document
+              .querySelector<HTMLElement>(
+                observatory.observing
+                  ? "#observatory-intro"
+                  : railShown
+                    ? "#chrome-rail"
+                    : "#show-top-bar, [aria-controls=chrome-rail]",
+              )
+              ?.focus();
+          }}
+        >
+          Skip to controls
+        </a>
+        <h1 className="sr-only">Everything Is Fine</h1>
+        <GlobeHeader
+          clip={clip}
+          rotation={observatory.rotation}
+          ready={observatory.canCapture && mapLayers.canCapture}
+          observing={observatory.observing}
+          onHome={returnHome}
+          onReset={resetView}
+          {...{
+            headShown,
+            chromeFloats,
+            setHeadOpen,
+            snapshot,
+            flat,
+            setFlat,
+            saving,
+            saveStill,
+            feeds,
+            notice,
+            download,
+            dismiss,
+          }}
+        />
+        <div
+          className="zones"
+          style={
+            {
+              ...(headShown ? {} : { "--head-h": "0px" }),
+              "--rail-w": railShown ? `${railWidth}px` : "0px",
+              "--regions-h": `${regionsHeight}px`,
+              ...(sheetCanvas > 0 ? { "--canvas-h": `${sheetCanvas}px` } : {}),
+            } as React.CSSProperties
+          }
+        >
+          {observatory.observing ? <Observatory {...observatoryProps} /> : null}
+          {observatory.observing || markSubject || (shownQuake && pinned) ? null : (
+            <Resizer
+              axis="y"
+              label="Sheet height"
+              value={sheetCanvas > 0 ? sheetCanvas : Math.round(window.innerHeight * 0.6)}
+              min={Math.round(window.innerHeight * 0.46)}
+              max={Math.round(window.innerHeight * 0.82)}
+              measure={(e) => e.clientY}
+              onChange={setSheetCanvas}
+              grip
+              className="absolute inset-x-0 z-[2] md:hidden"
+              style={{ top: `calc(var(--canvas-h, 60dvh) - 6px)` }}
             />
           )}
-          {mapLayers.enabled.earthquakes && (
-            <ActivityDisclosure
-              open={mapLayers.activityOpen}
-              onOpen={mapLayers.openActivity}
-              headline={
-                <EarthquakeHeadline
-                  time={
-                    archived
-                      ? `Archive · ${loadedDay ?? archiveDay} UTC`
-                      : view.at === null
-                        ? "Live"
-                        : view.playing
-                          ? "Replaying"
-                          : `Paused at ${viewClock}`
-                  }
-                  loading={
-                    snapshot.coveredSince !== null
-                      ? null
-                      : earthquakeFeedsDown
-                        ? "Neither feed is answering yet."
-                        : archiveBusy && archiveDay
-                          ? `Asking USGS and EMSC for ${archiveDay}.`
-                          : `Loading earthquake reports for the last ${compactSpan(filters.windowMs)}…`
-                  }
-                  count={headline}
-                  coverage={coverage.label}
-                  moment={replay ? clock(replay.at) : viewClock}
-                  replaying={!!replay || view.playing}
-                />
+          {!markSubject && !(shownQuake && pinned) && railShown ? (
+            <MobileNavigation
+              canvasHeight={sheetCanvas}
+              flat={flat}
+              onResize={setSheetCanvas}
+              panel={
+                observatory.browser.pane === "stories"
+                  ? "Stories"
+                  : mapLayers.inspector
+                    ? "Layer details"
+                    : "Layers"
+              }
+            />
+          ) : null}
+          <aside
+            aria-label="Map layers and recent activity"
+            id="chrome-rail"
+            tabIndex={-1}
+            className="zone-rail rail border-hairline p-5 max-md:border-b md:border-r"
+            hidden={!railShown}
+          >
+            <ExplorerSidebar
+              context={observatoryProps}
+              notices={
+                <>
+                  {!archived && feeds.silent ? (
+                    <div className="tb-notes">
+                      <span className="label">Feeds</span>
+                      <p className="text-[11px] leading-relaxed text-faint">{feeds.silent}</p>
+                    </div>
+                  ) : null}
+                  <ViewNotices
+                    statuses={snapshot.statuses}
+                    archiveDay={archived ? loadedDay : null}
+                    cursor={view.at}
+                    staleCursor={!archiveBusy && staleCursor}
+                    earthquakeNotice={sharedEarthquakeNotice(
+                      pinned ? null : missingShared,
+                      snapshot,
+                      loadedDay,
+                      archiveBusy,
+                    )}
+                    hazardNotice={sharedHazardNotice(
+                      markId === shared.mark && !markSubject ? markId : null,
+                      archived,
+                      archiveHazards,
+                      answered,
+                    )}
+                  />
+                </>
               }
             >
-              <div data-rail="legend">{marksFilter}</div>
-              {/* A phone has no canvas corner to spare, so there the key goes back into the column. */}
-              {keyOnCanvas ? null : <div className="mt-4">{marksKey}</div>}
-
-              {timeline}
-
-              <div data-rail="when">
-                <div
-                  role="search"
-                  className="mb-1.5 flex flex-col gap-1 xl:flex-row xl:items-baseline xl:gap-2"
-                >
-                  <label htmlFor="find" className="label shrink-0">
-                    Find earthquake reports
-                  </label>
-                  <input
-                    id="find"
-                    type="text"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key !== "Enter") return;
-                      const first = results.hits[0];
-                      if (first) pick(first);
-                    }}
-                    placeholder="a region or a place"
-                    autoComplete="off"
-                    spellCheck={false}
-                    className="min-w-0 flex-1 border border-hairline bg-transparent px-1.5 py-1
-                  text-[12px] text-ink placeholder:text-faint"
+              {archived && mapLayers.inspector !== "earthquakes" && archiveControls}
+              <MapLayers
+                places={{
+                  feed,
+                  filters: mapLayers.globeFilters,
+                  at: view.at ?? now,
+                  now,
+                  revision: snapshot.revision,
+                  hazards,
+                  feeds,
+                }}
+                controls={{
+                  ...mapLayers,
+                  change: (layer, on) => {
+                    mapLayers.change(layer, on);
+                    if (!on && layer === "earthquakes") {
+                      setSelected(null);
+                      setSectionLine(null);
+                    }
+                    if (!on && markBelongsToLayer(markId, layer)) setMarkId(null);
+                  },
+                }}
+                feeds={feeds}
+                aurora={onGlobe.aurora}
+                archived={archived || archiveBusy}
+                markId={markId}
+                onHazard={selectMark}
+                flat={flat}
+                canDismiss={
+                  !query && !sectionLine && scrub.at === null && !selected && !markId && tourAt === null
+                }
+                window={
+                  <LayerWindow
+                    hours={hours}
+                    onChange={changeWindow}
+                    held={view.at !== null}
+                    onLive={() => setScrub(LIVE)}
                   />
-                </div>
-                <details>
-                  <summary className="disclose text-[11px] text-faint hover:text-dim">Time of day</summary>
-                  <Dial counts={clockBins} />
-                </details>
-              </div>
-
-              {query && regionalResults}
-              <EventList
-                quakes={recent}
-                selected={selected}
-                onSelect={selectQuake}
-                announceAbove={announceAbove}
-                onAnnounceAboveChange={setAnnounceAbove}
-                onNews={onNews}
-                empty={emptyEarthquakes}
-                now={now}
-                archived={archived}
-                onClearFilters={() => {
-                  setFilters((current) => ({
-                    ...current,
-                    minMagnitude: DEFAULT_FILTERS.minMagnitude,
-                    sources: new Set(DEFAULT_FILTERS.sources),
-                  }));
-                  document.getElementById("mag")?.focus();
-                }}
-              />
-            </ActivityDisclosure>
-          )}
-          {(!query || !mapLayers.enabled.earthquakes) && regionalResults}
-          {!archived && archiveControls}
-          <details className="context-fold" hidden={!mapLayers.enabled.earthquakes}>
-            <summary className="disclose text-dim">More context</summary>
-            {!replay && !flat && (
-              <EarthquakeContext
-                strongest={strongest}
-                percent={quiet.parts?.percent ?? null}
-                shown={shown}
-                empty={emptyEarthquakes.short}
-                now={now}
-                archived={archived}
-                ramp={ramp}
-                onLargest={() => {
-                  if (!strongest) return;
-                  setSelected(strongest.key);
-                  flyTo.current(strongest.primary.lon, strongest.primary.lat, 1.9);
-                  setScrub(clampScrub({ at: strongest.primary.time, playing: false }, span));
-                }}
-              />
-            )}
-            {!replay && quiet.note ? (
-              <div className="tb-notes">
-                <span className="label">Notes</span>
-                <p className="text-[11px] leading-relaxed text-faint">{quiet.note}</p>
-              </div>
-            ) : null}
-            <EarthquakeComparisons
-              energyShare={strongest && !replay && edge.complete ? energyShare : null}
-              baseline={baseline}
-              baselineSpan={baselineSpan}
-              ceiling={strongest && !replay && edge.complete && (revealedNow ?? shown) > 0 ? ceiling : null}
-              versus={!replay && edge.complete ? versus : null}
-            />
-            {near && here ? (
-              <p className="mt-1.5 text-[11px] leading-relaxed text-faint">
-                Closest to {here.label} was{" "}
-                <span className="text-dim tabular-nums">{magnitude(near.quake.primary)}</span>{" "}
-                {place(near.quake.primary.place)},{" "}
-                <span className="text-dim tabular-nums">{Math.round(near.km).toLocaleString("en")}</span>
-                {" km away."}
-                {near.p === null ? null : (
-                  <>
-                    {" The shaking would have reached it in "}
-                    <span className="text-dim">{seconds(near.p)}</span>
-                    {"."}
-                  </>
+                }
+              >
+                {archived && archiveControls}
+                {mapLayers.enabled.earthquakes && (
+                  <EarthquakeInspector
+                    stats={snapshot.stats}
+                    options={
+                      <EarthquakeOptions
+                        ramp={ramp}
+                        setRamp={setRamp}
+                        sound={sound}
+                        setSound={setSound}
+                        tourAt={tourAt}
+                        startTour={startTour}
+                        stopTour={stopTour}
+                        tourButton={tourButton}
+                        tourDisabled={journey.stops.length === 0 || !observatory.ready}
+                      />
+                    }
+                    headline={{
+                      time: archived
+                        ? `Archive · ${loadedDay ?? archiveDay} UTC`
+                        : view.at === null
+                          ? "Live"
+                          : view.playing
+                            ? "Replaying"
+                            : `Paused at ${viewClock}`,
+                      loading:
+                        snapshot.coveredSince !== null
+                          ? null
+                          : earthquakeFeedsDown
+                            ? "Neither feed is answering yet."
+                            : archiveBusy && archiveDay
+                              ? `Asking USGS and EMSC for ${archiveDay}.`
+                              : `Loading earthquake reports for the last ${compactSpan(filters.windowMs)}…`,
+                      count: headline,
+                      coverage: coverage.label,
+                      moment: replay ? clock(replay.at) : viewClock,
+                      replaying: !!replay || view.playing,
+                    }}
+                    filters={marksFilter}
+                    legend={keyOnCanvas ? null : marksKey}
+                    timeline={timeline}
+                    query={{
+                      value: query,
+                      change: setQuery,
+                      pickFirst: () => {
+                        const first = results.hits[0];
+                        if (first) pick(first);
+                      },
+                    }}
+                    clockBins={clockBins}
+                    regionalResults={regionalResults}
+                    list={{
+                      quakes: recent,
+                      selected: selected,
+                      onSelect: selectQuake,
+                      announceAbove: announceAbove,
+                      onAnnounceAboveChange: setAnnounceAbove,
+                      onNews: onNews,
+                      empty: emptyEarthquakes,
+                      now: now,
+                      archived: archived,
+                      onClearFilters: () => {
+                        setFilters((current) => ({
+                          ...current,
+                          minMagnitude: DEFAULT_FILTERS.minMagnitude,
+                          sources: new Set(DEFAULT_FILTERS.sources),
+                        }));
+                        document.getElementById("mag")?.focus();
+                      },
+                    }}
+                  />
                 )}
-              </p>
-            ) : null}
-          </details>
-        </aside>
+                {(!query || !mapLayers.enabled.earthquakes) && regionalResults}
+                {!archived && archiveControls}
+                <details className="context-fold" hidden={!mapLayers.enabled.earthquakes}>
+                  <summary className="disclose text-dim">More context</summary>
+                  {!replay && !flat && (
+                    <EarthquakeContext
+                      strongest={strongest}
+                      percent={quiet.parts?.percent ?? null}
+                      shown={shown}
+                      empty={emptyEarthquakes.short}
+                      now={now}
+                      archived={archived}
+                      ramp={ramp}
+                      onLargest={() => {
+                        if (!strongest) return;
+                        setSelected(strongest.key);
+                        flyTo.current(strongest.primary.lon, strongest.primary.lat, 1.9);
+                        setScrub(clampScrub({ at: strongest.primary.time, playing: false }, span));
+                      }}
+                    />
+                  )}
+                  {!replay && quiet.note ? (
+                    <div className="tb-notes">
+                      <span className="label">Notes</span>
+                      <p className="text-[11px] leading-relaxed text-faint">{quiet.note}</p>
+                    </div>
+                  ) : null}
+                  <EarthquakeComparisons
+                    energyShare={strongest && !replay && edge.complete ? energyShare : null}
+                    baseline={baseline}
+                    baselineSpan={baselineSpan}
+                    ceiling={
+                      strongest && !replay && edge.complete && (revealedNow ?? shown) > 0 ? ceiling : null
+                    }
+                    versus={!replay && edge.complete ? versus : null}
+                  />
+                  {near && here && <NearbyEarthquake near={near} label={here.label} />}
+                </details>
+              </MapLayers>
+            </ExplorerSidebar>
+          </aside>
 
-        {/* Keep the toggle at the edge where the rail folds. */}
-        {chromeFloats && !observatory.observing ? (
-          <button
-            type="button"
-            onClick={() => setRailOpen(!railOpen)}
-            aria-label={railOpen ? "Hide the panel" : "Show the panel"}
-            aria-expanded={railOpen}
-            aria-controls="chrome-rail"
-            className="absolute top-[calc(var(--head-h)_+_1rem)] z-[2] cursor-pointer bg-deck/60 px-2.5
+          {/* Keep the toggle at the edge where the rail folds. */}
+          {chromeFloats && !observatory.observing ? (
+            <button
+              type="button"
+              onClick={() => setRailOpen(!railOpen)}
+              aria-label={railOpen ? "Hide the panel" : "Show the panel"}
+              aria-expanded={railOpen}
+              aria-controls="chrome-rail"
+              className="absolute top-[calc(var(--head-h)_+_1rem)] z-[2] cursor-pointer bg-deck/60 px-2.5
               py-3 font-mono text-[15px] leading-none text-dim backdrop-blur-xl backdrop-saturate-50
               transition-colors hover:text-ink"
-            /* Clear of the resize handle, or the button eats the top of the drag target. */
-            style={{ left: railOpen ? railWidth + 6 : 0 }}
+              /* Clear of the resize handle, or the button eats the top of the drag target. */
+              style={{ left: railOpen ? railWidth + 6 : 0 }}
+            >
+              {railOpen ? "\u2039" : "\u203a"}
+            </button>
+          ) : null}
+
+          <Resizer
+            axis="x"
+            label="Rail width"
+            value={railWidth}
+            min={RAIL_MIN}
+            max={RAIL_MAX}
+            measure={(e) => e.clientX}
+            onChange={setRailWidth}
+            className={railShown ? "absolute inset-y-0 hidden xl:block" : "hidden"}
+            style={{ left: railWidth - 6 }}
+          />
+
+          <section
+            id="globe-view"
+            tabIndex={-1}
+            aria-label={flat ? "Map" : "Globe"}
+            className="zone-canvas relative bg-void"
           >
-            {railOpen ? "\u2039" : "\u203a"}
-          </button>
-        ) : null}
-
-        <Resizer
-          axis="x"
-          label="Rail width"
-          value={railWidth}
-          min={RAIL_MIN}
-          max={RAIL_MAX}
-          measure={(e) => e.clientX}
-          onChange={setRailWidth}
-          className={railShown ? "absolute inset-y-0 hidden xl:block" : "hidden"}
-          style={{ left: railWidth - 6 }}
-        />
-
-        <section
-          id="globe-view"
-          tabIndex={-1}
-          aria-label={flat ? "Map" : "Globe"}
-          className="zone-canvas relative bg-void"
-        >
-          <Suspense fallback={<GlobeLoading />}>
-            <Globe
-              feed={feed}
-              filters={mapLayers.globeFilters}
-              selected={observatory.localReadings || !mapLayers.enabled.earthquakes ? null : selected}
-              ramp={ramp}
-              focus={focusSpan}
-              aurora={observatory.observations.entry ? null : (overflight.run?.forecast ?? onGlobe.aurora)}
-              marks={marks}
-              scrubAt={view.at}
-              /* Which moment the light is of. `clockAt` is the app's answer to what time is on screen, and a
+            <Suspense fallback={<GlobeLoading />}>
+              <Globe
+                feed={feed}
+                filters={mapLayers.globeFilters}
+                selected={observatory.localReadings || !mapLayers.enabled.earthquakes ? null : selected}
+                ramp={ramp}
+                focus={focusSpan}
+                aurora={observatory.observations.entry ? null : (overflight.run?.forecast ?? onGlobe.aurora)}
+                marks={marks}
+                scrubAt={view.at}
+                /* Which moment the light is of. `clockAt` is the app's answer to what time is on screen, and a
                held cursor overrides it with the same precedence `stillMoment` uses, so the terminator and
                the caption cannot disagree. See ARCHITECTURE.md#srcapptsx. */
-              moment={overflight.run?.forecast.forecastAt ?? chase.frame ?? litAt}
-              inspection={inspection.run}
-              flat={flat}
-              globePresentation={mapLayers.compose(observatory.globe(tourAt !== null))}
-              rotateLanding={observatory.rotation.enabled}
-              depthSink={observatory.depth || sinkOn}
-              cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}
-              slab={
-                ((!observatory.observing && slabOn) || observatory.depth) && slabData.length > 0
-                  ? slabData
-                  : null
-              }
-              figures={
-                ((!observatory.observing && figuresOn) || observatory.night) && figureData.length > 0
-                  ? figureData
-                  : null
-              }
-              section={sectionLine}
-              onSection={(line, hinge) => setSectionLine(line && hinge ? { ...line, hinge } : line)}
-              onSelect={selectQuake}
-              onReady={onReady}
-              onCapture={onCapture}
-              onFrame={clip.onFrame}
-              onSelectMark={selectMark}
-              onCamera={(state) => {
-                camera.current = state;
-                observeTourCamera(state);
-              }}
-              onReplay={receiveReplay}
-            />
-          </Suspense>
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 md:left-[var(--rail-w)]">
-            {!observatory.observing && <LayerReadout controls={mapLayers} />}
-            {observatory.observing ||
-            !mapLayers.enabled.earthquakes ||
-            !keyOnCanvas ||
-            section ||
-            markSubject ||
-            (shownQuake && pinned) ? null : (
-              <div className="canvas-legend pointer-events-auto ml-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
-                {marksKey}
-              </div>
-            )}
-
-            <EclipseReplayControls playback={chase} />
-            <WaveReplayControls replay={inspection} />
-            <SequenceReplayControls replay={inspection} />
-            {section && !observatory.observing && !chase.frame && !inspection.run ? (
-              <CrossSection
-                data={section}
-                hinge={sectionLine?.hinge}
-                inset={Boolean(markSubject || (shownQuake && pinned))}
-                ramp={ramp}
-                store={feed.store}
-                selected={selected}
-                onSelect={selectQuake}
-                onClose={() => closeReading("section")}
-              />
-            ) : null}
-            {chase.frame || inspection.run ? null : (
-              <CanvasFooter
+                moment={overflight.run?.forecast.forecastAt ?? chase.frame ?? litAt}
+                inspection={inspection.run}
                 flat={flat}
-                playing={view.playing}
-                archived={archived}
-                clearable={Boolean(query || sectionLine || view.at !== null || selected || markId)}
+                globePresentation={mapLayers.compose(observatory.globe(tourAt !== null))}
+                rotateLanding={observatory.rotation.enabled}
+                depthSink={observatory.depth || sinkOn}
+                cutaway={observatory.observing ? observatory.depthFocus : flat ? null : cutaway}
+                slab={
+                  ((!observatory.observing && slabOn) || observatory.depth) && slabData.length > 0
+                    ? slabData
+                    : null
+                }
+                figures={
+                  ((!observatory.observing && figuresOn) || observatory.night) && figureData.length > 0
+                    ? figureData
+                    : null
+                }
+                section={sectionLine}
+                onSection={(line, hinge) => setSectionLine(line && hinge ? { ...line, hinge } : line)}
+                onSelect={selectQuake}
+                onReady={onReady}
+                onCapture={onCapture}
+                onFrame={clip.onFrame}
+                onSelectMark={selectMark}
+                onCamera={(state) => {
+                  camera.current = state;
+                  observeTourCamera(state);
+                }}
+                onReplay={receiveReplay}
               />
-            )}
-          </div>
-        </section>
+            </Suspense>
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 md:left-[var(--rail-w)]">
+              {!observatory.observing && <LayerReadout controls={mapLayers} />}
+              {observatory.observing ||
+              !mapLayers.enabled.earthquakes ||
+              !keyOnCanvas ||
+              section ||
+              markSubject ||
+              (shownQuake && pinned) ? null : (
+                <div className="canvas-legend pointer-events-auto ml-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
+                  {marksKey}
+                </div>
+              )}
 
-        {!headShown && <CanvasStamp cursor={view.at} day={snapshot.archive?.from ?? null} />}
+              <EclipseReplayControls playback={chase} />
+              <WaveReplayControls replay={inspection} />
+              <SequenceReplayControls replay={inspection} />
+              {section && !observatory.observing && !chase.frame && !inspection.run ? (
+                <CrossSection
+                  data={section}
+                  hinge={sectionLine?.hinge}
+                  inset={Boolean(markSubject || (shownQuake && pinned))}
+                  ramp={ramp}
+                  store={feed.store}
+                  selected={selected}
+                  onSelect={selectQuake}
+                  onClose={() => closeReading("section")}
+                />
+              ) : null}
+              {chase.frame || inspection.run ? null : (
+                <CanvasFooter
+                  flat={flat}
+                  playing={view.playing}
+                  archived={archived}
+                  clearable={Boolean(query || sectionLine || view.at !== null || selected || markId)}
+                />
+              )}
+            </div>
+          </section>
 
-        {markSubject ? (
-          <MarkCard
-            found={markSubject}
-            now={now}
-            archived={archived}
-            onClose={() => closeReading("hazard")}
-          />
-        ) : shownQuake && !observatory.observing ? (
-          <DetailPanel
-            open={pinned !== undefined && !inspection.run}
-            quake={shownQuake}
-            store={feed.store}
-            filters={filters}
-            ramp={ramp}
-            excluded={!matches(shownQuake, filters, now)}
-            revision={snapshot.revision}
-            now={now}
-            archived={archived}
-            onClose={() => closeReading("quake")}
-            onRupture={() => observatory.openRecordedStory("rupture", "event-story-rupture")}
-            onInspect={
-              observatory.ready
-                ? (run, opener) => {
-                    setFlat(false);
-                    onCutaway(false);
-                    setFarSideOf(null);
-                    setScrub((current) => (current.playing ? { ...current, playing: false } : current));
-                    inspection.start(run, opener);
-                  }
-                : null
-            }
-            onSection={(line) => {
-              setSectionLine(line);
-              setFlat(true);
-              flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 1.6);
-            }}
-            boundaryKm={boundaryKmOf(shownQuake)}
-            onSelect={selectQuake}
-            farSide={farSideOf === shownQuake.key}
-            onFarSide={(on) => {
-              setFarSideOf(on ? shownQuake.key : null);
-              if (on) flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 0.9);
-            }}
-          />
-        ) : null}
-      </div>
-    </main>
+          {!headShown && <CanvasStamp cursor={view.at} day={snapshot.archive?.from ?? null} />}
+
+          {markSubject ? (
+            <MarkCard
+              found={markSubject}
+              now={now}
+              archived={archived}
+              onClose={() => closeReading("hazard")}
+            />
+          ) : shownQuake && !observatory.observing ? (
+            <DetailPanel
+              open={pinned !== undefined && !inspection.run}
+              quake={shownQuake}
+              store={feed.store}
+              filters={filters}
+              ramp={ramp}
+              excluded={!matches(shownQuake, filters, now)}
+              revision={snapshot.revision}
+              now={now}
+              archived={archived}
+              onClose={() => closeReading("quake")}
+              onRupture={() => observatory.openRecordedStory("rupture", "event-story-rupture")}
+              onInspect={
+                observatory.ready
+                  ? (run, opener) => {
+                      setFlat(false);
+                      onCutaway(false);
+                      setFarSideOf(null);
+                      setScrub((current) => (current.playing ? { ...current, playing: false } : current));
+                      inspection.start(run, opener);
+                    }
+                  : null
+              }
+              onSection={(line) => {
+                setSectionLine(line);
+                setFlat(true);
+                flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 1.6);
+              }}
+              boundaryKm={boundaryKmOf(shownQuake)}
+              onSelect={selectQuake}
+              farSide={farSideOf === shownQuake.key}
+              onFarSide={(on) => {
+                setFarSideOf(on ? shownQuake.key : null);
+                if (on) flyTo.current(shownQuake.primary.lon, shownQuake.primary.lat, 0.9);
+              }}
+            />
+          ) : null}
+        </div>
+      </main>
+    </StoryNavigation>
   );
 }

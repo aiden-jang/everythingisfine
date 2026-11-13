@@ -132,15 +132,15 @@ test("Storm Radar remains available in the catalogue after exploring the map", a
   const canvas = page.locator("#globe-view canvas");
   const globe = await canvas.elementHandle();
   await revealStoryTools(page);
-  await page.getByRole("button", { name: /All stories & data/ }).click();
-  const trigger = page.locator("#overview-story-radar");
+  await page.getByRole("tab", { name: "Stories", exact: true }).click();
+  const trigger = page.locator("#open-storm-radar");
   await trigger.click();
   const scene = page.getByRole("region", { name: "Storm Radar" });
   await scene.getByLabel("Coverage", { exact: true }).selectOption("us");
   await expect(scene.getByRole("status", { name: "Radar status" })).toHaveText(
     "No recent radar scans available.",
   );
-  await scene.getByRole("button", { name: "Back to Live Earth" }).click();
+  await scene.getByRole("button", { name: "Back to stories" }).click();
   await expect(scene).toBeHidden();
   await expect(trigger).toBeFocused();
   await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toBeVisible();

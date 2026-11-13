@@ -33,16 +33,9 @@ export function useMapLayers(
   );
   const [radarView, updateRadar] = useState<RadarView | null>(null);
   const [weather, setWeather] = useState<Partial<Record<WeatherLayerId, WeatherLayerView>>>({});
-  const [expanded, setExpanded] = useState<PlaybackLayer | null>("radar");
-  const [activityOpen, setActivityOpen] = useState(true);
-  const expand = useCallback((id: PlaybackLayer | null) => {
-    setExpanded(id);
-    if (id !== null) setActivityOpen(false);
-  }, []);
-  const openActivity = useCallback((open: boolean) => {
-    setActivityOpen(open);
-    if (open) setExpanded(null);
-  }, []);
+  const [inspector, inspect] = useState<MapLayer | null>(() =>
+    archived || target?.startsWith("quake:") ? "earthquakes" : null,
+  );
   const [selectedTimes, setSelectedTimes] = useState<LayerTimes>(
     () => shared.layerTimes ?? { ...latestLayerTimes },
   );
@@ -73,18 +66,13 @@ export function useMapLayers(
     [radarActive, radarView],
   );
   const latest = useRef(savedLayers);
-  const change = useCallback(
-    (layer: MapLayer, on: boolean) => {
-      setIsolated(null);
-      const next = { ...latest.current, [layer]: on };
-      latest.current = next;
-      store("mapLayers", JSON.stringify(next));
-      setEnabled(next);
-      if (on && layer === "earthquakes") openActivity(true);
-      if (on && (layer === "radar" || layer in weatherLayers)) expand(layer as PlaybackLayer);
-    },
-    [expand, openActivity],
-  );
+  const change = useCallback((layer: MapLayer, on: boolean) => {
+    setIsolated(null);
+    const next = { ...latest.current, [layer]: on };
+    latest.current = next;
+    store("mapLayers", JSON.stringify(next));
+    setEnabled(next);
+  }, []);
   const globeFilters = useMemo(
     () => (enabled.earthquakes ? filters : { ...filters, sources: new Set<"usgs" | "emsc">() }),
     [filters, enabled.earthquakes],
@@ -124,21 +112,17 @@ export function useMapLayers(
   ];
   return {
     enabled,
+    inspector,
+    inspect,
     isolated: archived ? null : isolated,
     isolate(layer: MapLayer | null) {
       setIsolated(layer);
-      if (layer === "earthquakes") openActivity(true);
-      if (layer === "radar" || (layer && layer in weatherLayers)) expand(layer as PlaybackLayer);
     },
-    activityOpen,
-    openActivity,
     change,
     globeFilters,
     radar,
     updateRadar,
     active,
-    expanded,
-    expand,
     selectedTimes,
     selectTime,
     updateWeather,

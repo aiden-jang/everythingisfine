@@ -19,7 +19,7 @@ for (const [id, query, back] of [
     await page.route("https://opengeo.ncep.noaa.gov/**", (route) => route.abort());
     await page.goto("/");
     await openStories(page);
-    const search = page.getByRole("searchbox", { name: "Find a story or layer" });
+    const search = page.getByRole("searchbox", { name: "Find a story" });
     await expect(search).toBeInViewport({ ratio: 1 });
     await search.fill(query);
     await page.locator(`#search-story-${id}`).click();

@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openLayer } from "./feeds";
 
 // Small synthetic NetCDF/HDF5 fixtures exercise the real provider decoders without a live service.
 const wind = readFileSync(new URL("./fixtures/weather-wind.nc", import.meta.url));
@@ -55,7 +55,7 @@ test("a shared weather view overrides recipient preferences without saving them 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/#v=explore&p=map&layers=wind,lightning&windAt=1794502800&lightningAt=1794498600");
   const windPanel = page.getByRole("region", { name: "Surface wind playback" });
-  await page.getByRole("button", { name: "Surface wind controls", exact: true }).click();
+  await openLayer(page, "Surface wind");
   await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
   await windPanel.getByRole("slider").press("Home");
   const expected = await windPanel.locator("time").getAttribute("datetime");
@@ -85,7 +85,7 @@ test("a shared weather view overrides recipient preferences without saving them 
       "true",
     );
     await expect.poll(async () => (await camera(other))?.morph).toBe(1);
-    await layers.getByRole("button", { name: "Surface wind controls", exact: true }).click();
+    await openLayer(other, "Surface wind");
     const restored = other.getByRole("region", { name: "Surface wind playback" });
     await expect(restored.locator("time")).toHaveAttribute("datetime", expected!);
     await expect(restored.getByRole("button", { name: "Play", exact: true })).toBeVisible();
@@ -95,7 +95,7 @@ test("a shared weather view overrides recipient preferences without saving them 
       earthquakes: true,
     });
     await other.reload();
-    await layers.getByRole("button", { name: "Surface wind controls", exact: true }).click();
+    await openLayer(other, "Surface wind");
     await expect(restored.locator("time")).toHaveAttribute("datetime", expected!);
     await other.getByRole("button", { name: "Globe", exact: true }).click();
     await expect.poll(async () => (await camera(other))?.morph).toBe(0);
@@ -109,7 +109,7 @@ test("an expired shared weather moment explains its fallback and remains paused"
   await installFeeds(page);
   (await sources(page)).recover();
   await page.goto("/#v=explore&layers=wind&windAt=1700000000");
-  await page.getByRole("button", { name: "Surface wind controls", exact: true }).click();
+  await openLayer(page, "Surface wind");
   const panel = page.getByRole("region", { name: "Surface wind playback" });
   await expect(
     panel.getByText("The selected time is no longer available. Showing the nearest available step.", {
@@ -137,24 +137,25 @@ for (const width of [1440, 390]) {
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     const layers = page.getByRole("region", { name: "Map layers", exact: true });
     expect(source.calls).toEqual({ wind: 0, lightning: 0 });
-    await layers.getByText("Add layer", { exact: true }).click();
-    await layers.getByRole("button", { name: /^Add surface wind / }).click();
+    await layers.getByRole("button", { name: "Surface wind", exact: true }).click();
+    await openLayer(page, "Surface wind");
     const windPanel = layers.getByRole("region", { name: "Surface wind playback" });
     await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /16:00/);
-    await layers.getByText("Add layer", { exact: true }).click();
-    await layers.getByRole("button", { name: /^Add lightning / }).click();
+    await page.getByRole("button", { name: "Back to layers", exact: true }).click();
+    await layers.getByRole("button", { name: "Lightning", exact: true }).click();
+    await openLayer(page, "Lightning");
     const lightningPanel = layers.getByRole("region", { name: "Lightning playback" });
     await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /16:00/);
     await expect(lightningPanel).toContainText("Satellite detections: 3");
     await expect(windPanel).toBeHidden();
-    await expect(layers.locator('.layer-playback-toggle[aria-expanded="true"]')).toHaveCount(1);
+    await expect(layers.locator("#layer-inspector-title")).toHaveText("Lightning");
     await lightningPanel.getByRole("slider").press("Home");
     await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /15:50/);
     await lightningPanel.getByRole("button", { name: "Play", exact: true }).click();
     await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /16:00/);
     await expect(lightningPanel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
     expect(await camera(page)).toEqual(pose);
-    await layers.getByRole("button", { name: "Surface wind controls", exact: true }).click();
+    await openLayer(page, "Surface wind");
     await windPanel.getByRole("slider").press("End");
     await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
     await page.getByRole("button", { name: "Map", exact: true }).click();
@@ -173,10 +174,14 @@ for (const width of [1440, 390]) {
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/weather-overview-${width}.png` });
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+    await page.getByRole("button", { name: "Back to layers", exact: true }).click();
     await layers.getByRole("button", { name: "Surface wind", exact: true }).click();
     await layers.getByRole("button", { name: "Lightning", exact: true }).click();
-    await expect(layers.getByText("Add layer", { exact: true })).toBeFocused();
-    await expect(layers.getByRole("button", { name: "Surface wind", exact: true })).toHaveCount(0);
+    await expect(layers.getByRole("button", { name: "Lightning", exact: true })).toBeFocused();
+    await expect(layers.getByRole("button", { name: "Surface wind", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
     expect(await camera(page)).toEqual(mapPose);
     expect(errors).toEqual([]);
   });
@@ -192,8 +197,8 @@ for (const width of [1440, 390]) {
     await expect.poll(async () => (await camera(page))?.zoom).toBe(1.4);
     const pose = await camera(page);
     const layers = page.getByRole("region", { name: "Map layers", exact: true });
-    await layers.getByText("Add layer", { exact: true }).click();
-    await layers.getByRole("button", { name: /^Add surface wind / }).click();
+    await layers.getByRole("button", { name: "Surface wind", exact: true }).click();
+    await openLayer(page, "Surface wind");
     const windPanel = layers.getByRole("region", { name: "Surface wind playback" });
     await expect(windPanel.getByRole("status")).toContainText("Couldn’t reach NOAA GFS surface wind.");
     expect(await camera(page)).toEqual(pose);
@@ -201,8 +206,9 @@ for (const width of [1440, 390]) {
     if (width === 390) await page.evaluate(() => window.dispatchEvent(new Event("online")));
     else await windPanel.getByRole("button", { name: "Retry surface wind" }).click();
     await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /16:00/);
-    await layers.getByText("Add layer", { exact: true }).click();
-    await layers.getByRole("button", { name: /^Add lightning / }).click();
+    await page.getByRole("button", { name: "Back to layers", exact: true }).click();
+    await layers.getByRole("button", { name: "Lightning", exact: true }).click();
+    await openLayer(page, "Lightning");
     await expect(layers.getByRole("region", { name: "Lightning playback" })).toContainText(
       "Satellite detections: 3",
     );
@@ -214,12 +220,19 @@ for (const width of [1440, 390]) {
     await page.keyboard.press("Escape");
     expect((await new AxeBuilder({ page }).include(".map-layers").analyze()).violations).toEqual([]);
     const requests = { ...source.calls };
+    await page.getByRole("button", { name: "Back to layers", exact: true }).click();
     await layers.getByRole("button", { name: "Surface wind", exact: true }).click();
     await layers.getByRole("button", { name: "Lightning", exact: true }).click();
     await page.reload();
-    await expect(layers.getByText("Add layer", { exact: true })).toBeVisible();
-    await expect(layers.getByRole("button", { name: "Surface wind", exact: true })).toHaveCount(0);
-    await expect(layers.getByRole("button", { name: "Lightning", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeVisible();
+    await expect(layers.getByRole("button", { name: "Surface wind", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    await expect(layers.getByRole("button", { name: "Lightning", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
     expect(source.calls).toEqual(requests);
   });
 }
@@ -237,7 +250,9 @@ test("saved weather layers load on the landing globe and stay out of earthquake 
   await expect(page.getByRole("button", { name: "Explore the globe", exact: true })).toBeVisible();
   await expect.poll(() => source.calls.wind).toBeGreaterThan(0);
   await expect.poll(() => source.calls.lightning).toBeGreaterThan(0);
-  await expect(page.locator("#lightning-playback-content")).toContainText("Satellite detections: 3");
+  await expect(page.getByRole("region", { name: "Lightning playback", includeHidden: true })).toContainText(
+    "Satellite detections: 3",
+  );
   const readout = page.getByLabel("Weather layer times", { exact: true });
   await expect(readout).toBeVisible();
   await expect(readout).toContainText("GFS wind forecast");
@@ -245,6 +260,7 @@ test("saved weather layers load on the landing globe and stay out of earthquake 
   await expect(readout.locator("time")).toHaveCount(2);
   const beforeArchive = { ...source.calls };
   await page.goto("/#d=2011-03-11");
+  await page.getByRole("button", { name: "Back to layers", exact: true }).click();
   await expect(page.getByRole("button", { name: "Surface wind", exact: true })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Lightning", exact: true })).toBeDisabled();
   expect(source.calls).toEqual(beforeArchive);
@@ -260,14 +276,14 @@ test("weather selections survive a cinematic detour without resuming playback @d
   source.recover();
   await page.goto("/");
   const layers = page.getByRole("region", { name: "Map layers", exact: true });
-  for (const name of ["surface wind", "lightning"]) {
-    await layers.getByText("Add layer", { exact: true }).click();
-    await layers.getByRole("button", { name: new RegExp(`^Add ${name} `) }).click();
+  for (const name of ["Surface wind", "Lightning"]) {
+    await layers.getByRole("button", { name, exact: true }).click();
   }
+  await openLayer(page, "Lightning");
   const windPanel = page.getByRole("region", { name: "Surface wind playback" });
   const lightningPanel = page.getByRole("region", { name: "Lightning playback" });
   await lightningPanel.getByRole("slider").press("Home");
-  await layers.getByRole("button", { name: "Surface wind controls", exact: true }).click();
+  await openLayer(page, "Surface wind");
   await windPanel.getByRole("slider").press("End");
   await page
     .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
@@ -279,7 +295,7 @@ test("weather selections survive a cinematic detour without resuming playback @d
   await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
   await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
   await expect(windPanel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
-  await layers.getByRole("button", { name: "Lightning controls", exact: true }).click();
+  await openLayer(page, "Lightning");
   await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /15:50/);
   await expect(lightningPanel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Map", exact: true }).click();

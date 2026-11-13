@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, waitForData, openStories, saveImageButton, revealStoryTools } from "./feeds";
+import {
+  openLayer,
+  installFeeds,
+  waitForData,
+  openStories,
+  saveImageButton,
+  revealStoryTools,
+} from "./feeds";
 
 for (const [width, height] of [
   [320, 640],
@@ -66,6 +73,7 @@ for (const [width, height] of [
     await expect(page.locator("#chrome-rail")).toBeVisible();
     await expect(stage).toBeHidden();
     await expect(page.getByText("An observatory by")).toBeHidden();
+    await openLayer(page);
     await expect(page.getByRole("region", { name: "Recent earthquakes" })).toBeVisible();
     expect(errors).toEqual([]);
   });
@@ -207,7 +215,7 @@ test("a historical shortcut frames an actual archived event and keeps capture av
   await (await saveImageButton(page)).click();
   expect((await download).suggestedFilename()).toMatch(/\.png$/);
   await openStories(page);
-  await page.getByRole("button", { name: "Japan, 2011 ↗", exact: true }).click();
+  await page.getByRole("button", { name: "Japan, 2011", exact: true }).click();
   await expect(page).toHaveURL(/d=2011-03-11/);
   await expect(page.getByRole("complementary", { name: "Pinned earthquake" })).toBeVisible();
   await expect(page.getByRole("button", { name: "back to live", exact: true })).toBeVisible();
@@ -232,6 +240,7 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await expect(page.getByRole("button", { name: "Rupture Reveal", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Explore the globe" }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
+  await openLayer(page);
   await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("status")).toHaveText(
     "No earthquakes reported in this window.",
   );

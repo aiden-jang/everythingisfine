@@ -75,7 +75,7 @@ for (const view of ["Meteor Nights", "Moonfall"] as const) {
     await installFeeds(page, { presentation: "fresh", empty: true });
     await page.goto("/");
     await openStories(page);
-    await page.getByRole("searchbox", { name: "Find a story or layer" }).fill("Tonight’s Sky");
+    await page.getByRole("searchbox", { name: "Find a story" }).fill("Tonight’s Sky");
     await page.locator("#search-story-sky").click();
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     const city = page.getByRole("combobox", { name: "City", exact: true });

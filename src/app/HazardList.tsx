@@ -3,18 +3,17 @@ export function HazardList({
   hazards,
   markId,
   onHazard,
+  inline = false,
 }: {
+  inline?: boolean;
   hazards: HazardGroup[];
   markId: string | null;
   onHazard: (id: string) => void;
 }): JSX.Element | null {
-  return (
+  const rows = (
     <>
       {hazards.length > 0 ? (
-        <details className="mt-3">
-          <summary className="disclose text-[11px] text-faint hover:text-dim">
-            Storms, fires, floods and volcanoes ({hazardCount(hazards)})
-          </summary>
+        <div className="hazard-reports">
           <div className="mt-1.5 max-h-[240px] overflow-y-auto pr-1 xl:max-h-none xl:overflow-visible xl:pr-0">
             {hazards.map((group) => (
               <div key={group.kind} className="mt-1.5 first:mt-0">
@@ -46,8 +45,16 @@ export function HazardList({
               </div>
             ))}
           </div>
-        </details>
+        </div>
       ) : null}
     </>
+  );
+  return inline ? (
+    rows
+  ) : (
+    <details className="mt-3">
+      <summary className="disclose">Storms, fires, floods and volcanoes ({hazardCount(hazards)})</summary>
+      {rows}
+    </details>
   );
 }

@@ -1,18 +1,12 @@
 import { SunWatch, TonightSky, TonightCompass, FloatDive } from "./ObservatoryViews";
-import { StoryNavigation } from "./journeys/StoryNavigation";
+import { useStoryNavigation } from "./journeys/StoryNavigation";
+import type { CameraState } from "../globe/controls";
 import { ExperienceEnding } from "./journeys/ExperienceEnding";
 import { Suspense, type RefObject, type ReactNode } from "react";
 import { useObservatoryScroll } from "./useObservatoryScroll";
-import {
-  ObservatoryStage,
-  ObservatoryScenePicker,
-  ObservatoryFeatured,
-  SunCredits,
-  TourUnavailable,
-} from "./ObservatoryStage";
+import { ObservatoryStage, ObservatoryScenePicker, SunCredits, TourUnavailable } from "./ObservatoryStage";
 import { ObservatoryTourControls } from "./ObservatoryTourControls";
 import { Discoveries, type DiscoveriesData } from "./visitor/Discoveries";
-import { FeaturedStory } from "./FeaturedStory";
 import { StoriesDrawer } from "./StoriesDrawer";
 import { MoonfallReadout } from "./moonfall/MoonfallReadout";
 import { FloatReadout } from "./float/FloatReadout";
@@ -32,6 +26,11 @@ import { ObservationCredit } from "./observations/ObservationCredit";
 import { ObservationDeckShell } from "./observations/ObservationEntry";
 
 export interface ObservatoryProps {
+  explorer: {
+    read: () => CameraState;
+    restore: (camera: CameraState) => void;
+    radarTime: (at: number | null) => void;
+  };
   discoveries: DiscoveriesData;
   scene: EarthScene;
   at: number;
@@ -43,6 +42,7 @@ export interface ObservatoryProps {
   aurora: ReturnType<typeof useAuroraOverflight>;
   views: Pick<
     ReturnType<typeof useObservatory>,
+    | "observing"
     | "sun"
     | "tonight"
     | "floatDive"
@@ -78,15 +78,7 @@ export interface ObservatoryProps {
   onHistory: (day: string) => void;
 }
 
-export function Observatory(props: ObservatoryProps): JSX.Element {
-  return (
-    <StoryNavigation {...props}>
-      <ObservatoryContent {...props} />
-    </StoryNavigation>
-  );
-}
-
-function ObservatoryContent({
+export function Observatory({
   layerReadout,
   discoveries,
   scene,
@@ -96,17 +88,7 @@ function ObservatoryContent({
   summary,
   deepAvailable,
   aurora,
-  views: {
-    sun,
-    tonight,
-    floatDive,
-    observations,
-    skyCity,
-    openAfterDarkArchive,
-    closeStory,
-    browser,
-    navigation,
-  },
+  views: { sun, tonight, floatDive, observations, skyCity, closeStory, browser, navigation },
   radar,
   feedNote,
   onScene,
@@ -116,6 +98,10 @@ function ObservatoryContent({
   tour,
   onHistory,
 }: ObservatoryProps): JSX.Element {
+  const navigationContext = useStoryNavigation();
+  const closeView = (fallback: () => void) => () => {
+    if (!navigationContext?.returnToBrowse()) fallback();
+  };
   const { open: stories, scroll: storyScroll } = browser;
   const active = tour.at !== null;
   const solar = sun.active && !active;
@@ -127,13 +113,14 @@ function ObservatoryContent({
     browsing,
     [navigation.key, tour.at, browser.home].join(":"),
   );
-  const closeSun = () => observations.returnTo("open-sun-watch", sun.toggle);
+  const closeSun = closeView(() => observations.returnTo("open-sun-watch", sun.toggle));
   const auroraControls = (
     <AuroraOverflightControls
       aurora={aurora}
       ready={ready}
       solar={solar}
-      onReturn={() => observations.returnTo("open-aurora-overflight", () => onScene("night"))}
+      returnLabel={navigationContext?.returnLabel}
+      onReturn={closeView(() => observations.returnTo("open-aurora-overflight", () => onScene("night")))}
       onSunWatch={sun.toggle}
       onTonight={() => tonight.open()}
       city={skyCity}
@@ -220,20 +207,22 @@ function ObservatoryContent({
               <FloatDive
                 view={floatDive.view}
                 resume={floatDive.entry}
+                returnLabel={navigationContext?.returnLabel}
                 onView={floatDive.update}
-                onClose={() => observations.returnTo("open-featured-float", floatDive.close)}
+                onClose={closeView(() => observations.returnTo("open-featured-float", floatDive.close))}
               />
             </Suspense>
           ) : radar.active ? (
             <StormRadar
               projection={observations}
               fromExplore={radar.fromExplore}
+              returnLabel={navigationContext?.returnLabel}
               entry={radar.entry}
               onView={radar.update}
-              onClose={() => {
+              onClose={closeView(() => {
                 const trigger = radar.fromExplore ? "open-explorer-radar" : "open-storm-radar";
                 observations.returnTo(trigger, radar.close);
-              }}
+              })}
             />
           ) : tonight.active ? (
             <Suspense fallback={<p role="status">Opening Tonight’s Sky…</p>}>
@@ -246,8 +235,8 @@ function ObservatoryContent({
                 initialLunar={tonight.entry.lunar}
                 initialLook={tonight.entry.look}
                 initialMoment={tonight.entry.moment}
-                returnLabel="Back to After Dark"
-                onClose={() => {
+                returnLabel={navigationContext?.returnLabel ?? "Back to After Dark"}
+                onClose={closeView(() => {
                   const id =
                     tonight.entry.mode === "meteors"
                       ? "open-meteor-nights"
@@ -255,7 +244,7 @@ function ObservatoryContent({
                         ? "open-featured-moonfall"
                         : "open-tonight-sky";
                   observations.returnTo(id, tonight.close);
-                }}
+                })}
               />
             </Suspense>
           ) : (
@@ -289,7 +278,7 @@ function ObservatoryContent({
                     </button>
                     {solar && (
                       <button type="button" id="back-to-stars" onClick={closeSun}>
-                        Back to stars
+                        {navigationContext?.returnLabel ?? "Back to stars"}
                       </button>
                     )}
                   </div>
@@ -328,15 +317,14 @@ function ObservatoryContent({
               )}
               {browsing && (
                 <StoriesDrawer
+                  browse={browser}
                   scene={browser.category}
                   ready={ready}
-                  sun={sun}
-                  tonight={tonight}
                   observations={observations}
-                  openArchive={openAfterDarkArchive}
                   aurora={aurora}
                   onHistory={onHistory}
                   onPickDate={onPickDate}
+                  discoveries={<Discoveries data={discoveries} aurora={aurora} city={skyCity.city} />}
                   onSelect={() => {
                     storyScroll.current = tour.controls.current?.scrollTop ?? 0;
                   }}
@@ -345,7 +333,6 @@ function ObservatoryContent({
                     document.getElementById("observatory-scenes")?.focus();
                   }}
                 >
-                  <FeaturedStory scene={scene} />
                   <div className="observatory-actions">
                     <button
                       type="button"
@@ -358,16 +345,6 @@ function ObservatoryContent({
                     </button>
                     {ready && !tour.available && scene === "night" && <TourUnavailable note={empty.text} />}
                   </div>
-                  <Discoveries data={discoveries} aurora={aurora} city={skyCity.city} />
-                  {!aurora.run && scene === "night" ? auroraControls : null}
-                  {!active && scene !== "night" && (
-                    <ObservatoryFeatured
-                      scene={scene}
-                      ready={ready}
-                      radar={() => radar.open()}
-                      deep={() => observations.open("deep", "open-deep-time")}
-                    />
-                  )}
                 </StoriesDrawer>
               )}
               {(solar || aurora.run) && auroraControls}

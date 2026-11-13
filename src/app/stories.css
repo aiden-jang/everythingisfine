@@ -52,6 +52,50 @@
   object-fit: cover;
   border-radius: 5px;
 }
+.story-choice {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  column-gap: 12px;
+  padding: 8px 6px 12px;
+  border-bottom: 1px solid var(--color-hairline);
+  align-items: center;
+}
+.story-choice > button {
+  min-height: 44px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.story-choice > small {
+  grid-column: 2;
+  color: var(--color-dim);
+  font-size: 11px;
+  line-height: 1.4;
+}
+.story-choice > button::after,
+.featured-story button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.story-choice:has(button:disabled),
+.featured-story:has(button:disabled) {
+  opacity: 0.55;
+}
+.story-choice > button:focus-visible,
+.featured-story button:focus-visible {
+  outline: none;
+}
+.story-choice > button:focus-visible::after,
+.featured-story button:focus-visible::after {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+.story-choice:hover:has(button:not(:disabled)) {
+  background: var(--color-deck);
+}
 .related-stories {
   padding-top: 8px;
   border-top: 1px solid var(--color-hairline);
