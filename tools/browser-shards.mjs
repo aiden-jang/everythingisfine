@@ -2,7 +2,7 @@ import { basename } from "node:path";
 import costs from "./browser-costs.json" with { type: "json" };
 import cases from "./browser-case-costs.json" with { type: "json" };
 
-// Ubuntu software-WebGL run 43464908433 (f5e6144): file means plus cases ≥10s from their mean.
+// Ubuntu software-WebGL run 43513298325 (dd38a4b): passing-case means and ≥10s outliers.
 // Estimates only schedule work; renamed and new tests still run with the file or typical cost.
 export const estimatedSeconds = (test) => {
   const file = basename(test.location.file);
