@@ -1,3 +1,4 @@
+import { useReadingArrival } from "./useReadingArrival";
 import { useRef, type ReactNode } from "react";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { VisitShelf } from "./visitor/VisitShelf";
@@ -47,6 +48,7 @@ export function StoriesDrawer({
   const entries = browseStories(scene, all);
   const selectionScroll = useRef(0);
   const container = useRef<HTMLDivElement>(null);
+  useReadingArrival(container, `${key}:${all}`);
   const rail = () => container.current?.closest<HTMLElement>("#chrome-rail, #observatory-intro");
   const sections = [
     ["visits", "Saved & recent"],

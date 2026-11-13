@@ -39,6 +39,9 @@
 .layer-list {
   margin-block: 24px 8px;
 }
+.layer-list[data-inspecting] {
+  margin: 0;
+}
 .layer-group + .layer-group {
   margin-top: 16px;
   padding-top: 20px;
@@ -46,7 +49,7 @@
 }
 .layer-group h2 {
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 550;
   color: var(--color-dim);
 }
@@ -102,7 +105,7 @@
   min-width: 0;
   min-height: 46px;
   text-align: left;
-  font-size: 14px;
+  font-size: 16px;
   border-radius: 7px;
   cursor: pointer;
 }
@@ -118,9 +121,13 @@
 }
 .layer-inspect .layer-status {
   grid-column: 2 / 3;
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--color-dim);
+}
+.layer-row[hidden],
+.layer-group[hidden] {
+  display: none;
 }
 .layer-row:hover,
 .layer-row:focus-within {
@@ -147,14 +154,15 @@
 }
 .layer-inspector-heading h2 {
   margin: 0;
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 550;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   overflow-wrap: anywhere;
 }
 .layer-inspector-heading p {
+  margin-top: 8px;
   color: var(--color-dim);
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.6;
 }
 .layer-solo,
@@ -359,7 +367,7 @@
   border: 1px solid var(--color-hairline);
   border-radius: 7px;
   background: var(--color-raised);
-  font-size: 13px;
+  font-size: 16px;
   color: var(--color-ink);
 }
 .place-search {
@@ -513,26 +521,6 @@
 .story-library .story-secondary[hidden] {
   display: none;
 }
-#explorer-layers,
-#explorer-stories {
-  animation: explorer-arrive 160ms ease-out;
-}
-@keyframes explorer-arrive {
-  from {
-    opacity: 0.65;
-    transform: translateY(3px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  #explorer-layers,
-  #explorer-stories {
-    animation: none;
-  }
-}
 @media (max-width: 767px) {
   .explorer-tabs {
     top: -28px;
@@ -668,7 +656,7 @@
     height: 54px;
   }
   #explorer-stories .story-choice button {
-    font-size: 17px;
+    font-size: 15px;
   }
   #explorer-stories .story-choice .story-kind {
     font-size: 13px;
@@ -701,10 +689,10 @@
     font-size: 14px;
   }
   #explorer-stories .observatory-scenes {
-    margin-bottom: 22px;
+    margin-bottom: 16px;
   }
   #explorer-stories .observatory-scenes button {
-    min-height: 80px;
+    min-height: 68px;
   }
   #explorer-stories .scene-symbol {
     width: 48px;
@@ -715,7 +703,7 @@
   }
   #explorer-stories .explorer-search input {
     padding-left: 58px;
-    font-size: 18px;
+    font-size: 16px;
   }
   #explorer-stories .explorer-search > svg {
     left: 18px;
@@ -724,20 +712,20 @@
     height: 22px;
   }
   #explorer-stories .stories-drawer {
-    gap: 22px;
+    gap: 18px;
   }
   #explorer-stories .featured-story {
-    min-height: clamp(240px, 16.6vw, 264px);
+    min-height: clamp(212px, 15vw, 240px);
   }
   #explorer-stories .featured-story > span {
-    padding: clamp(88px, 6.3vw, 100px) 22px 18px;
+    padding: 72px 22px 18px;
     font-size: 16px;
   }
   #explorer-stories .featured-story small {
-    font-size: 18px;
+    font-size: 15px;
   }
   #explorer-stories .featured-story-link {
-    font-size: 17px;
+    font-size: 15px;
   }
   #explorer-stories .story-choice {
     grid-template-columns: clamp(88px, 6.43vw, 102px) minmax(0, 1fr) 16px;

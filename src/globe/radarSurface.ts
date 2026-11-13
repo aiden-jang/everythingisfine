@@ -33,6 +33,7 @@ export function createRadarSurface(morph: { value: number }) {
       worldwide = global;
     }
     if ((material.map?.image ?? null) === image) return;
+    const arriving = !material.map && image !== null;
     material.map?.dispose();
     material.map = image ? new Texture(image) : null;
     if (material.map) {
@@ -43,9 +44,18 @@ export function createRadarSurface(morph: { value: number }) {
       material.map.colorSpace = SRGBColorSpace;
       material.map.needsUpdate = true;
     }
+    if (arriving) material.opacity = 0;
     object.visible = image !== null;
     material.needsUpdate = true;
   }
 
-  return { object, setImage };
+  return {
+    object,
+    setImage,
+    step(dt: number, reduced: boolean): boolean {
+      if (!object.visible || material.opacity === 1) return false;
+      material.opacity = reduced ? 1 : Math.min(1, material.opacity + dt / 0.24);
+      return material.opacity < 1;
+    },
+  };
 }

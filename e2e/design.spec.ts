@@ -421,11 +421,7 @@ test("the rail's controls stay above its fold", async ({ page }) => {
     expect(now.window, `window buttons at ${w}x${h}`).toBe(true);
   }
 
-  /*
-   * Below 1280 the rail lies down into a strip capped at 34dvh, or becomes a sheet under the globe on a
-   * phone. Neither holds everything at once and neither is meant to, so the promise there is that the
-   * controls are reachable by scrolling the rail rather than clipped out of it.
-   */
+  // Smaller screens scroll the rail; controls must remain reachable rather than clipped out of it.
   for (const [w, h] of [
     [1024, 768],
     [900, 1000],

@@ -36,6 +36,16 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   await open.click();
   const dive = page.getByRole("region", { name: "Float Dive" });
   await expect(dive.getByText(/Recorded profile · Cycle 268/)).toBeVisible();
+  expect(
+    await dive.locator("[data-float-depth]").evaluate((node) => parseFloat(getComputedStyle(node).fontSize)),
+  ).toBeGreaterThanOrEqual(40);
+  expect(
+    await dive
+      .locator(".float-value strong")
+      .first()
+      .evaluate((node) => parseFloat(getComputedStyle(node).fontSize)),
+  ).toBeGreaterThanOrEqual(20);
+  await expect(dive.locator(".float-value strong").first()).toBeInViewport({ ratio: 1 });
   const picker = dive.getByRole("combobox", { name: "Float profile" });
   await picker.selectOption({ label: "30 Oct 2026 · WMO 6901932" });
   await expect(dive.getByText(/Recent profile · Cycle 269/)).toBeVisible();

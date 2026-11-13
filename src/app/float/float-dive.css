@@ -1,7 +1,7 @@
 .observatory-intro[data-float-dive] {
   display: grid;
   align-content: start;
-  gap: 12px;
+  gap: 16px;
 }
 
 .float-heading,
@@ -32,7 +32,7 @@
 .float-depth,
 .float-value,
 .float-edges {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   line-height: 1.45;
 }
 
@@ -69,25 +69,36 @@
 }
 
 .float-depth {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 2px 6px;
+  display: grid;
+  justify-items: start;
+  gap: 4px;
 }
 
 .float-depth strong {
-  font-size: 1rem;
+  font-family: var(--font-sans);
+  font-size: clamp(40px, 4.5vw, 64px);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
   white-space: nowrap;
+}
+
+.float-depth strong span {
+  font-size: 0.42em;
+  letter-spacing: normal;
 }
 
 .float-transport button {
   min-width: 108px;
 }
 
-.float-depth strong,
 .float-value strong {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-variant-numeric: tabular-nums;
+  font-size: clamp(20px, 2vw, 28px);
+  font-weight: 500;
+  color: var(--color-ink);
 }
 
 .float-scrub,
@@ -133,8 +144,7 @@
 .float-trace {
   min-width: 0;
   padding: 6px 8px;
-  border: 1px solid var(--color-hairline);
-  border-radius: 7px;
+  border-top: 1px solid var(--color-hairline);
   color: #e8bc8e;
 }
 
@@ -143,8 +153,9 @@
 }
 
 .float-value {
-  flex-wrap: wrap;
-  justify-content: start;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
 }
 
 .float-value span {
@@ -180,7 +191,13 @@
 
 @media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
   .frame[data-presentation="observe"] .zones:has([data-float-dive]) {
-    grid-template-rows: minmax(150px, 1fr) clamp(350px, 56dvh, 465px);
+    grid-template-rows: minmax(150px, 1fr) clamp(350px, 53dvh, 465px);
+  }
+  .observatory-intro[data-float-dive] {
+    gap: 8px;
+  }
+  .float-summary {
+    display: none;
   }
 }
 
@@ -191,5 +208,21 @@
 
   .float-summary {
     display: none;
+  }
+
+  .float-depth strong {
+    font-size: 34px;
+  }
+  .float-depth {
+    gap: 0;
+  }
+  .float-summary,
+  .float-depth small {
+    font-size: 12px;
+  }
+  .float-picker,
+  .float-meta,
+  .float-source {
+    font-size: 12px;
   }
 }

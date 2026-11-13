@@ -62,7 +62,9 @@ function Measurements({ view, sound }: { view: FloatDiveView; sound: boolean }):
       <div className="float-transport">
         <div className="float-depth">
           <span>Estimated depth</span>
-          <strong data-float-depth>{depth}</strong>
+          <strong data-float-depth>
+            {meters.format(sample.depth)} <span>m</span>
+          </strong>
           <small>{sample.pressure.toFixed(1)} dbar</small>
         </div>
         <div className="observatory-actions float-actions">

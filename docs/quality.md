@@ -46,7 +46,10 @@ is required, pitch follows the measured value and leaving the view closes the vo
 cover finite inputs, throttling, hidden-tab silence and voice cleanup. Catalogue and preview checks keep story
 destinations and recorded thumbnail coverage aligned with the available views.
 Explore checks retain three initial recommendations, the Library disclosure, search and return context,
-the shared renderer across projection changes, and reachable phone Layer times with Escape dismissal.
+the shared renderer across projection changes, and reachable Sources & times with Escape dismissal,
+compact radar player identity,
+and readable depth and temperature values. Presentation travel yields to steering and reduced motion;
+radar reveal tests establish a finite animation without blending successive scan images.
 
 Visit checks cover scene discovery, local bookmarks, resume after a new page visit, measured float
 depth and refused storage. Clip checks decode the actual browser-produced video, check rendered

@@ -297,7 +297,10 @@ stay mounted when another inspector opens. Source failures are visible beside th
 Temporary isolation restores the chosen combination without changing stored preferences.
 
 Earthquake counts, filters, timeline, search, archive, display choices, sound and tour controls belong
-together in the earthquake inspector. Other reports use equally accessible inspectors with the
+together in the earthquake inspector. The radar row includes its compact scan player while enabled. The
+same mounted player expands
+in the inspector, preserving the selected scan and playback. Other reports use equally accessible
+inspectors with the
 shared report window clearly named. Wind, lightning, radar and aurora retain independent source times.
 Recent weather does not masquerade as an archived observation. Archive date and return-to-live stay
 reachable when inspecting another layer. Find a place is distinct from report and story search.
@@ -310,8 +313,8 @@ regional radar is a secondary action inside the radar inspector; returning resto
 compatible scan time. The map legend stays with the canvas at every width, independent of the open
 inspector. A collapsed legend occupies only its label width. On phones, its reading opens in a
 viewport-bounded overlay with Close and Escape, keeping the trigger reachable at every sheet height.
-Phone keyboard help lives in View options so it does not cover the globe. Detailed wind and
-lightning times open through Layer times in a native, viewport-bounded popover; Close and Escape
+Phone keyboard help lives in View options so it does not cover the globe. Detailed radar, wind and
+lightning times open through Sources & times in a native, viewport-bounded popover at every width; Close and Escape
 return focus to its trigger. Radar attribution remains outside that disclosure, and the full scan
 date stays available in the inspector and timestamp title. The phone author link sits at the
 bottom edge with safe-area support; the scrolling rail has enough bottom padding to keep its final
@@ -321,7 +324,7 @@ The header offers projection, source status and View options at every width. Cap
 rotation and reset share that menu; keyboard help is a quiet optional disclosure. Phone layouts keep
 the subject above a draggable, keyboard-operable sheet. Expand globe/map enlarges the canvas; the
 other shortcut names the current pane rather than assuming earthquake activity. The handle and
-interactive controls have 44px targets. The phone globe row starts at 34% of viewport height, with
+interactive controls have 44px targets. The phone globe row starts at 43% of viewport height, with
 a 280px floor bounded by 72% on very short screens. Its lower stop is 20%, with a 180px floor
 bounded by 60%; its upper stop is 82%. Browsing expands the sheet by reducing the globe row;
 expanding the globe reduces the sheet. Within that row, the Explore canvas clears the 68px header
@@ -392,7 +395,10 @@ settles to an overview at the Buras landfall. Track dots mark published fixes. W
 the published quadrant radii, and the readings change at the fixes. Scrubbing and reduced motion
 use the fixed overview.
 
-Float Dive travels to the float’s recorded surfacing coordinates, holds the locator ring, then
+Float Dive gives the estimated depth the main reading size, with pressure, measured temperature,
+practical salinity and the sample traces kept adjacent to playback. Story returns and controls use
+the same reading scale as Explore. Float Dive travels to the float’s recorded surfacing coordinates,
+holds the locator ring, then
 reveals a schematic water column in the same canvas. The instrument rises into surface light
 while the plots follow the measured levels. Scrubbing stops playback at the selected sample.
 Reduced motion opens directly with a fixed instrument and manual playback.
@@ -444,7 +450,11 @@ opening. Bright stars may leave short photographic exposure trails along camera 
 directions and resting brightness remain unchanged. Reset the exposure after idle, tab pauses and
 viewport changes. Scene lighting may briefly catch the surface and atmosphere during a reveal;
 this is a display treatment, not another measurement layer. A regional cutaway uses actual earthquake depths and clearly labelled reference guides;
-it is not a model of the crust. Its depth guides draw in sequence at their true radii. Camera coordinates appear briefly during user input. Every effect
+it is not a model of the crust. Its depth guides draw in sequence at their true radii. Panel arrivals
+retain readable content and cancel on replacement. Steering cancels presentation travel;
+reduced motion and hidden tabs settle it immediately. Radar fades in once on enabling; changing
+scans swaps the actual rasters immediately, without blending observations. Camera coordinates appear
+briefly during user input. Every effect
 finishes and releases the frame loop, except the explicitly controlled Live Earth landing rotation.
 
 Respect reduced motion completely: skip entrance rotation, camera easing and

@@ -15,7 +15,7 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   const header = (await page.locator("#chrome-head").boundingBox())!;
   expect((await canvas!.boundingBox())!.y).toBeGreaterThanOrEqual(header.y + header.height);
   const size = () => sheet.getAttribute("aria-valuenow");
-  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.34)));
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.43)));
   await navigation.getByRole("button", { name: "Expand globe", exact: true }).click();
   const collapsed = Number(await size());
   await navigation.getByRole("button", { name: "Layers", exact: true }).click();
@@ -194,3 +194,37 @@ for (const title of ["Lights Return", "Shadow Chase"]) {
     expect((await new AxeBuilder({ page }).include("#chrome-rail").analyze()).violations).toEqual([]);
   });
 }
+
+test("panel arrivals work in both directions and settle without replacing the canvas @dev", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page);
+  await page.addInitScript(() => {
+    const arrivals: string[] = [];
+    Object.assign(window, { panelArrivals: arrivals });
+    const animate = Element.prototype.animate;
+    Element.prototype.animate = function (frames, options) {
+      if (this.id === "explorer-layers" || this.id === "explorer-stories") arrivals.push(this.id);
+      return animate.call(this, frames, options);
+    };
+  });
+  await page.goto("/#v=explore&at=15,25,1");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await expect(page.getByRole("button", { name: "Volcanoes details", exact: true })).toBeVisible();
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  const arrivals = () =>
+    page.evaluate(() => (window as unknown as { panelArrivals: string[] }).panelArrivals);
+  await page.getByRole("tab", { name: "Stories", exact: true }).click();
+  await expect.poll(arrivals).toEqual(["explorer-stories"]);
+  await page.getByRole("tab", { name: "Layers", exact: true }).click();
+  await expect.poll(arrivals).toEqual(["explorer-stories", "explorer-layers"]);
+  await expect
+    .poll(() => page.locator("#explorer-layers").evaluate((node) => node.getAnimations().length))
+    .toBe(0);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByRole("tab", { name: "Stories", exact: true }).click();
+  await expect(page.getByRole("tabpanel", { name: "Stories", exact: true })).toBeVisible();
+  expect(await arrivals()).toEqual(["explorer-stories", "explorer-layers"]);
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});

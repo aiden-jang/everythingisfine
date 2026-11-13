@@ -42,12 +42,35 @@ export function usePresentation(initial: () => Presentation, clearViews: () => v
     },
     [clearViews, before],
   );
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    const stop = () => {
       for (const animation of transition.current) animation.cancel();
-    },
-    [],
-  );
+      transition.current = [];
+    };
+    const steer = (event: Event) => {
+      if (event.target instanceof Element && event.target.closest("#globe-view")) stop();
+    };
+    const visibility = () => {
+      if (document.hidden) stop();
+    };
+    const motion = matchMedia("(prefers-reduced-motion: reduce)");
+    const preference = () => {
+      if (motion.matches) stop();
+    };
+    document.addEventListener("pointerdown", steer, true);
+    document.addEventListener("wheel", steer, { capture: true, passive: true });
+    document.addEventListener("keydown", steer, true);
+    document.addEventListener("visibilitychange", visibility);
+    motion.addEventListener("change", preference);
+    return () => {
+      stop();
+      document.removeEventListener("pointerdown", steer, true);
+      document.removeEventListener("wheel", steer, true);
+      document.removeEventListener("keydown", steer, true);
+      document.removeEventListener("visibilitychange", visibility);
+      motion.removeEventListener("change", preference);
+    };
+  }, []);
   useEffect(() => {
     if (presentation !== "explore" || !focusExplorer.current) return;
     focusExplorer.current = false;

@@ -25,59 +25,71 @@ const marksVisible = (page: Page) =>
       ).__events.object.parent.visible,
   );
 
+async function prepareRadar(page: Page, width: number, unavailable = true) {
+  await page.setViewportSize({ width, height: 900 });
+  await page.emulateMedia({ reducedMotion: width === 390 ? "reduce" : "no-preference" });
+  await installFeeds(page, { presentation: "fresh", radar: "default" });
+  await page.addInitScript(() => {
+    const create = window.createImageBitmap.bind(window);
+    window.createImageBitmap = async (...args: Parameters<typeof createImageBitmap>) => {
+      const source = args[0];
+      if (
+        source instanceof HTMLCanvasElement &&
+        source.width === 1024 &&
+        document.documentElement.dataset["holdRadarImages"] === "true"
+      )
+        await new Promise<void>((resolve) =>
+          window.addEventListener("release-radar-images", () => resolve(), { once: true }),
+        );
+      return create(...args);
+    };
+    const close = ImageBitmap.prototype.close;
+    ImageBitmap.prototype.close = function () {
+      if (this.width === 1024) {
+        const root = document.documentElement;
+        root.dataset["closedRadarFrames"] = String(Number(root.dataset["closedRadarFrames"] ?? 0) + 1);
+      }
+      close.call(this);
+    };
+  });
+  let queries = 0;
+
+  const now = Math.floor(Date.now() / 600_000) * 600_000;
+  const times = [now - 1200_000, now - 600_000, now];
+  await page.route("https://api.rainviewer.com/public/weather-maps.json", (route) => {
+    queries++;
+    return unavailable
+      ? route.fulfill({ status: 503 })
+      : route.fulfill({
+          json: {
+            host: "https://tilecache.rainviewer.com",
+            radar: {
+              past: times.map((at, index) => ({ time: at / 1000, path: `/v2/radar/frame${index}` })),
+            },
+          },
+        });
+  });
+  await page.route("https://tilecache.rainviewer.com/**", (route) =>
+    route.fulfill({ contentType: "image/png", body: pixel }),
+  );
+  return {
+    times,
+    now,
+    queries: () => queries,
+    recover: () => {
+      unavailable = false;
+    },
+  };
+}
+
 for (const width of [1440, 390]) {
   test(`radar starts on in Explore and plays without moving the camera at ${width}px @dev`, async ({
     page,
   }) => {
-    await page.setViewportSize({ width, height: 900 });
-    await page.emulateMedia({ reducedMotion: width === 390 ? "reduce" : "no-preference" });
-    await installFeeds(page, { presentation: "fresh", radar: "default" });
-    await page.addInitScript(() => {
-      const create = window.createImageBitmap.bind(window);
-      window.createImageBitmap = async (...args: Parameters<typeof createImageBitmap>) => {
-        const source = args[0];
-        if (
-          source instanceof HTMLCanvasElement &&
-          source.width === 1024 &&
-          document.documentElement.dataset["holdRadarImages"] === "true"
-        )
-          await new Promise<void>((resolve) =>
-            window.addEventListener("release-radar-images", () => resolve(), { once: true }),
-          );
-        return create(...args);
-      };
-      const close = ImageBitmap.prototype.close;
-      ImageBitmap.prototype.close = function () {
-        if (this.width === 1024) {
-          const root = document.documentElement;
-          root.dataset["closedRadarFrames"] = String(Number(root.dataset["closedRadarFrames"] ?? 0) + 1);
-        }
-        close.call(this);
-      };
-    });
-    let queries = 0;
-    let unavailable = true;
-    const now = Math.floor(Date.now() / 600_000) * 600_000;
-    const times = [now - 1200_000, now - 600_000, now];
-    await page.route("https://api.rainviewer.com/public/weather-maps.json", (route) => {
-      queries++;
-      return unavailable
-        ? route.fulfill({ status: 503 })
-        : route.fulfill({
-            json: {
-              host: "https://tilecache.rainviewer.com",
-              radar: {
-                past: times.map((at, index) => ({ time: at / 1000, path: `/v2/radar/frame${index}` })),
-              },
-            },
-          });
-    });
-    await page.route("https://tilecache.rainviewer.com/**", (route) =>
-      route.fulfill({ contentType: "image/png", body: pixel }),
-    );
+    const { times, now, queries, recover } = await prepareRadar(page, width);
     await page.goto("/");
     await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
-    await expect.poll(() => queries).toBe(1);
+    await expect.poll(queries).toBe(1);
     await expect(page.locator("#radar-layer-controls")).toBeHidden();
     await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
     await expect.poll(async () => (await camera(page))?.zoom).toBe(1);
@@ -87,10 +99,15 @@ for (const width of [1440, 390]) {
     const toggle = layers.getByRole("button", { name: "Storm radar", exact: true });
     const controls = layers.getByRole("region", { name: "Storm radar playback" });
     await expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await expect(controls).toBeVisible();
+    await expect(controls).toHaveAttribute("data-compact", "true");
+    const player = await controls.elementHandle();
     await openLayer(page, "Storm radar");
+    expect(await controls.evaluate((node, original) => node === original, player)).toBe(true);
+    await expect(controls).not.toHaveAttribute("data-compact", "true");
     const status = controls.getByRole("status", { name: "Radar status" });
     await expect(status).toHaveText("Couldn’t reach RainViewer radar.");
-    expect(queries).toBe(1);
+    expect(queries()).toBe(1);
     expect(await page.evaluate(() => localStorage.getItem("eif.mapLayers"))).toBeNull();
     const feedToggle = page.getByRole("button", { name: /^Feed status,/ });
     const feedPanel = page.getByRole("region", { name: "Background feed status", exact: true });
@@ -103,7 +120,7 @@ for (const width of [1440, 390]) {
     await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
     expect(await marksVisible(page)).toBe(true);
     expect(await camera(page)).toEqual(originalCamera);
-    unavailable = false;
+    recover();
     await controls.getByRole("button", { name: "Retry RainViewer" }).click();
     await expect(status).toHaveCount(0);
     await expect(feedToggle).toHaveAccessibleName(/All feeds available|8\/8 available/);
@@ -137,6 +154,44 @@ for (const width of [1440, 390]) {
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/radar-layer-${width}.png` });
     expect((await new AxeBuilder({ page }).include(".map-layers").analyze()).violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+    const closed = Number(await page.locator("html").getAttribute("data-closed-radar-frames"));
+    await toggle.click();
+    await expect(controls).toHaveCount(0);
+    await expect(feedToggle).toHaveAccessibleName(/All feeds available|7\/7 available/);
+    await feedToggle.click();
+    await expect(radarFeed).toContainText("Off");
+    await page.keyboard.press("Escape");
+    await expect
+      .poll(async () => Number(await page.locator("html").getAttribute("data-closed-radar-frames")))
+      .toBeGreaterThanOrEqual(closed + 3);
+    const stoppedAt = queries();
+    await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+    await expect.poll(queries).toBe(stoppedAt);
+    expect(await camera(page)).toEqual(mapCamera);
+    expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
+      true,
+    );
+    await page.reload();
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+    expect(queries()).toBe(stoppedAt);
+  });
+
+  test(`radar detours preserve the selected scan, camera and return focus at ${width}px @dev`, async ({
+    page,
+  }) => {
+    const { times } = await prepareRadar(page, width, false);
+    await page.goto("/#v=explore&at=15,25,1");
+    const canvas = await page.locator("#globe-view canvas").elementHandle();
+    const layers = page.getByRole("region", { name: "Map layers", exact: true });
+    await openLayer(page, "Storm radar");
+    const controls = layers.getByRole("region", { name: "Storm radar playback" });
+    const time = controls.locator(".radar-clock time");
+    await expect(time).toHaveAttribute("datetime", new Date(times[2]!).toISOString());
+    await page.getByRole("button", { name: "Map", exact: true }).click();
+    await expect.poll(async () => (await camera(page))?.morph).toBe(1);
+    const mapCamera = await camera(page);
+    await controls.getByRole("slider", { name: "Radar scan time" }).press("ArrowLeft");
+    await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
     await page.evaluate(() => (document.documentElement.dataset["holdRadarImages"] = "true"));
     await layers.getByRole("button", { name: /Follow a radar region/ }).click();
     const guided = page.getByRole("region", { name: "Storm Radar", exact: true });
@@ -170,26 +225,10 @@ for (const width of [1440, 390]) {
     await expect.poll(() => camera(page)).toEqual(mapCamera);
     await page.getByRole("tab", { name: "Layers", exact: true }).click();
     await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
-    const closed = Number(await page.locator("html").getAttribute("data-closed-radar-frames"));
-    await toggle.click();
-    await expect(controls).toHaveCount(0);
-    await expect(feedToggle).toHaveAccessibleName(/All feeds available|7\/7 available/);
-    await feedToggle.click();
-    await expect(radarFeed).toContainText("Off");
-    await page.keyboard.press("Escape");
-    await expect
-      .poll(async () => Number(await page.locator("html").getAttribute("data-closed-radar-frames")))
-      .toBeGreaterThanOrEqual(closed + 3);
-    const stoppedAt = queries;
-    await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
-    await expect.poll(() => queries).toBe(stoppedAt);
-    expect(await camera(page)).toEqual(mapCamera);
+
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
       true,
     );
-    await page.reload();
-    await expect(toggle).toHaveAttribute("aria-pressed", "false");
-    expect(queries).toBe(stoppedAt);
   });
 }
 

@@ -59,3 +59,25 @@ test("world radar preserves Mercator latitude, both date-line edges, and replace
   object.geometry.dispose();
   object.material.dispose();
 });
+
+test("radar reveals once, keeps scan changes immediate, and releases its frame loop", () => {
+  const radar = createRadarSurface({ value: 0 });
+  const image = { width: 2, height: 2 } as ImageBitmap;
+  radar.setImage(image);
+  expect(radar.object.material.opacity).toBe(0);
+  expect(radar.step(0.12, false)).toBe(true);
+  expect(radar.object.material.opacity).toBeCloseTo(0.5);
+  expect(radar.step(0.12, false)).toBe(false);
+  expect(radar.object.material.opacity).toBe(1);
+  radar.setImage({ width: 2, height: 2 } as ImageBitmap);
+  expect(radar.object.material.opacity).toBe(1);
+  expect(radar.step(0.1, false)).toBe(false);
+  radar.setImage(null);
+  expect(radar.step(0.1, false)).toBe(false);
+  radar.setImage(image);
+  expect(radar.step(0, true)).toBe(false);
+  expect(radar.object.material.opacity).toBe(1);
+  radar.setImage(null);
+  radar.object.geometry.dispose();
+  radar.object.material.dispose();
+});

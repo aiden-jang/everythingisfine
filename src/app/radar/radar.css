@@ -273,3 +273,50 @@
   color: var(--color-dim);
   letter-spacing: normal;
 }
+
+.radar-layer[data-compact] {
+  margin: 4px 0 12px 34px;
+  padding: 8px 12px;
+  background: var(--color-raised);
+  border-radius: 7px;
+}
+.radar-layer[data-compact] .radar-transport {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0 10px;
+  padding: 0;
+  border: 0;
+}
+.radar-layer[data-compact] .radar-clock {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: baseline;
+}
+.radar-layer[data-compact] .radar-clock time strong {
+  font-size: 16px;
+}
+.radar-layer[data-compact] .radar-playback {
+  grid-row: 2;
+  grid-column: 1;
+  display: block;
+  margin: 0;
+}
+.radar-layer[data-compact] .radar-playback button {
+  min-height: 44px;
+  padding: 6px 0;
+  border: 0;
+  white-space: nowrap;
+}
+.radar-layer[data-compact] .radar-scrub {
+  grid-row: 2;
+  grid-column: 2;
+}
+.radar-layer[data-compact] .radar-warning {
+  grid-column: 1 / -1;
+}
+.radar-layer[data-compact]
+  :is(.radar-clock time span, .radar-actions:not(.radar-playback), .radar-layer-note),
+.radar-layer[data-compact] .radar-playback button:is(:first-child, :last-child) {
+  display: none;
+}

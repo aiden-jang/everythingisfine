@@ -59,7 +59,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/ObservatoryOptions.tsx` | Shared utility popover, capture, fullscreen, rotation and contextual reset |
 | `src/app/useGlobeResources.ts` | Deferred geometry and timezone data, retained while disabled, with completion cleanup |
 | `src/app/useObservatory.ts`, `observatoryState.ts` | First-visit and saved presentation, temporary scene overrides and story browser state |
-| `src/app/usePresentation.ts` | Interruptible globe/panel handoff without rebuilding the renderer |
+| `src/app/usePresentation.ts`, `src/app/useReadingArrival.ts` | Interruptible globe/panel handoff and finite content arrivals without rebuilding the renderer |
 | `src/app/useSceneHistory.ts` | In-memory scene, browser-scroll and camera restoration for browser Back/Forward |
 | `src/app/float/`, `src/sources/argo.ts`, and `src/globe/floatPresentation.ts` | Argo catalogue and profile validation, sample playback, and the shared globe’s float sequence |
 | `src/app/observations/`, `src/sources/observations/`, and `src/globe/observationLayer.ts` | Optional observations and replays, provider readers, shared playback, and projected data layers |
@@ -356,8 +356,10 @@ Empty results, delayed scans and missing imagery have distinct messages; failed 
 last successful check time.
 Surface wind and lightning are optional additions through the same layer controls. They reuse the
 GFS surface forecast and GOES-East GLM readers, lazy-load when enabled on the landing globe or in Explore,
-and cancel requests when disabled or entering another scene. One inspector exposes a player while preserving the
-other layers' selections and independent timestamps. Selected times live above the players so a scene
+and cancel requests when disabled or entering another scene. Radar keeps one mounted player beneath its
+catalogue row, compact in the overview and expanded in
+its inspector. Other inspectors expose their players while preserving the other layers' selections
+and independent timestamps. Selected times live above the players so a scene
 detour, archive visit or disabled layer releases data resources without losing the chosen moment.
 Returning reopens paused; following latest remains distinct from holding a timestamp. An expired
 selection reports its fallback rather than silently presenting it as the same scan.
@@ -367,7 +369,7 @@ markers are hidden; optional weather sources leave the feed total when off. Live
 reconnection, retaining existing data with its original time while recovery is pending.
 The shared readout names wind forecasts and GOES-East lightning with their own timestamps on landing,
 globe and map. Explore groups source times, radar attribution and legend at the canvas edge, with
-author credit and keyboard help secondary. On phones, Layer times uses a native popover for wind
+author credit and keyboard help secondary. Sources & times uses a native popover at every width for radar, wind
 and lightning details; Close and Escape restore trigger focus, and radar attribution stays visible.
 Their frames contribute paths and marks to
 the existing observation renderer, with stable geometry references and no additional canvas.

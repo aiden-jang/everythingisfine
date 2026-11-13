@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
+import { useReadingArrival } from "./useReadingArrival";
 import type { ObservatoryProps } from "./Observatory";
 import { Discoveries } from "./visitor/Discoveries";
 import { StoriesDrawer } from "./StoriesDrawer";
@@ -15,6 +16,8 @@ export function ExplorerSidebar({
   notices: ReactNode;
 }) {
   const { browser, observations } = context.views;
+  const panel = useRef<HTMLDivElement>(null);
+  useReadingArrival(panel, browser.pane);
   const scrolls = useRef({ layers: 0, stories: 0 });
   const previous = useRef(browser.pane);
   useLayoutEffect(() => {
@@ -61,6 +64,7 @@ export function ExplorerSidebar({
       </div>
       {notices}
       <div
+        ref={browser.pane === "layers" ? panel : undefined}
         id="explorer-layers"
         role="tabpanel"
         aria-labelledby="explorer-layers-tab"
@@ -69,6 +73,7 @@ export function ExplorerSidebar({
         {children}
       </div>
       <div
+        ref={browser.pane === "stories" ? panel : undefined}
         id="explorer-stories"
         role="tabpanel"
         aria-labelledby="explorer-stories-tab"

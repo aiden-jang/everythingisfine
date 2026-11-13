@@ -82,7 +82,7 @@
   text-align: left;
 }
 .observatory-intro :is(.observation-heading, .tonight-heading, .radar-heading, .float-heading) h2 {
-  font-size: clamp(32px, 3.6vw, 56px);
+  font-size: clamp(30px, 3vw, 42px);
   line-height: 1.05;
   text-wrap: balance;
 }
@@ -106,8 +106,9 @@
   font-size: 12px;
 }
 @media (max-height: 620px) and (min-width: 600px) {
-  .observatory-intro .observation-heading {
+  .observatory-intro :is(.observation-heading, .float-heading) {
     flex-direction: row;
+    flex-wrap: wrap;
     align-items: center;
     gap: 8px 12px;
   }
@@ -162,5 +163,23 @@
   }
   .observatory-scenes {
     margin-top: 12px;
+  }
+}
+
+.observatory-intro
+  :is(.observation-heading, .tonight-heading, .radar-heading, .float-heading)
+  > .observatory-actions
+  button {
+  font-size: 14px;
+}
+.observatory-intro .observatory-actions button {
+  font-size: 14px;
+}
+@media (max-height: 720px) {
+  .observatory-intro :is(.observation-heading, .tonight-heading, .radar-heading, .float-heading) {
+    gap: 4px;
+  }
+  .observatory-intro :is(.observation-heading, .tonight-heading, .radar-heading, .float-heading) h2 {
+    font-size: 28px;
   }
 }

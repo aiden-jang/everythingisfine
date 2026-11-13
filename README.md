@@ -45,8 +45,9 @@ city or chapter. Links open paused; recent feeds explain when the linked observa
 
 On desktop, the paired **Globe / Map** control switches the shared view. Source times and the legend
 sit together below the canvas. On phones, the globe stays above the adjustable sheet; use its handle
-or the **Expand globe/map** control to change the space available. **Layer times** opens detailed
-wind and lightning timestamps while the radar source and scan time remain visible.
+or the **Expand globe/map** control to change the space available. **Sources & times** opens detailed
+radar, wind and lightning timestamps at every width while radar attribution stays visible. Radar playback
+also sits beneath its layer row; opening its inspector expands the same player without resetting the scan.
 
 Each scene has a featured starting point before recent visits: Float Dive, Rupture Reveal, or Moonfall.
 Focus or hover over a geographically anchored story to preview its region without moving the globe.

@@ -51,12 +51,13 @@
 .tonight-clock {
   flex-wrap: wrap;
   color: var(--color-dim);
-  font-size: 0.75rem;
+  font-size: 0.875rem;
 }
 
 .tonight-clock time {
   color: var(--color-ink);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-size: 20px;
   font-variant-numeric: tabular-nums;
 }
 

@@ -78,6 +78,7 @@ export function createScenePresentation(
   function step(dt: number, reduced: boolean) {
     dayline.value = showDayline ? lights.reveal.value : 0;
     veil?.trace(controls.auroraSweep());
+    const radarArriving = radar?.step(dt, reduced);
     const diving = dive?.step(dt, reduced);
     const lunar = skyView?.moonfall?.step(dt, reduced);
     const approaching = arrival.step(dt, reduced);
@@ -113,6 +114,7 @@ export function createScenePresentation(
     }
     if (rotate && !following) controls.apply();
     return (
+      radarArriving ||
       easing ||
       following ||
       tracing ||

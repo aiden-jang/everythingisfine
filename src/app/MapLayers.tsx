@@ -1,3 +1,4 @@
+import { useReadingArrival } from "./useReadingArrival";
 import { lazy, Suspense, useRef, type ReactNode } from "react";
 import { PlaceContext, type PlaceContextProps } from "./discovery/PlaceContext";
 import { mapLayerNames, type MapLayer } from "./layerVisibility";
@@ -49,6 +50,8 @@ export function MapLayers({
 }) {
   const navigation = useStoryNavigation();
   const layer = controls.inspector;
+  const panel = useRef<HTMLElement>(null);
+  useReadingArrival(panel, layer ?? "overview");
   const disabled = (id: MapLayer) => archived && (id === "aurora" || id === "radar" || id in weatherLayers);
   const listScroll = useRef(0);
   const inspect = (id: MapLayer) => {
@@ -71,6 +74,7 @@ export function MapLayers({
   const groups = places.hazards.filter((group) => group.kind === hazardKind);
   return (
     <section
+      ref={panel}
       className="map-layers"
       aria-label="Map layers"
       onKeyDown={(event) => {
@@ -91,13 +95,6 @@ export function MapLayers({
       )}
       <div hidden={layer !== null}>
         {!archived && <PlaceContext {...places} />}
-        <LayerCatalogue
-          controls={controls}
-          feeds={feeds}
-          archived={archived}
-          disabled={disabled}
-          onInspect={inspect}
-        />
         {Object.values(controls.enabled).every((on) => !on) && (
           <p role="status">All layers are off. Choose a layer to show its observations.</p>
         )}
@@ -130,6 +127,37 @@ export function MapLayers({
           ) : null}
         </div>
       )}
+      <LayerCatalogue
+        controls={controls}
+        feeds={feeds}
+        archived={archived}
+        disabled={disabled}
+        onInspect={inspect}
+        radar={
+          <div hidden={layer !== "radar" && layer !== null}>
+            {controls.radar && (
+              <Suspense fallback={<p role="status">Loading radar controls…</p>}>
+                <RadarLayer
+                  compact={layer === null}
+                  onView={controls.updateRadar}
+                  initialAt={controls.selectedTimes.radar}
+                  onSelect={controls.selectTime}
+                />
+              </Suspense>
+            )}
+            {layer === "radar" && !archived && (
+              <button
+                type="button"
+                id="open-explorer-radar"
+                className="layer-story-link"
+                onClick={() => navigation?.openRadar(controls.radarAt, flat)}
+              >
+                Follow a radar region <span>Guided view · same available scans</span>
+              </button>
+            )}
+          </div>
+        }
+      />
       <div hidden={layer !== "earthquakes"}>{children}</div>
       {hazardKind && (
         <section aria-label={`${mapLayerNames[layer!]} reports`} className="layer-reports">
@@ -170,28 +198,6 @@ export function MapLayers({
           )}
         </p>
       )}
-      {/* Players stay mounted while inspecting another layer, preserving scan time and subscriptions. */}
-      <div hidden={layer !== "radar"}>
-        {controls.radar && (
-          <Suspense fallback={<p role="status">Loading radar controls…</p>}>
-            <RadarLayer
-              onView={controls.updateRadar}
-              initialAt={controls.selectedTimes.radar}
-              onSelect={controls.selectTime}
-            />
-          </Suspense>
-        )}
-        {layer === "radar" && !archived && (
-          <button
-            type="button"
-            id="open-explorer-radar"
-            className="layer-story-link"
-            onClick={() => navigation?.openRadar(controls.radarAt, flat)}
-          >
-            Follow a radar region <span>Guided view · same available scans</span>
-          </button>
-        )}
-      </div>
       {controls.active &&
         (Object.keys(weatherLayers) as WeatherLayerId[]).map(
           (id) =>

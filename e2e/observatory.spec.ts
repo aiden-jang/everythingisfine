@@ -200,6 +200,23 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
       }),
     )
     .toEqual({ flights: 2, sameCanvas: true });
+  const interrupted = await page
+    .getByRole("button", { name: "Explore the globe" })
+    .evaluate((button: HTMLButtonElement) => {
+      button.click();
+      const zone = document.querySelector(".zone-canvas")!;
+      const canvas = document.querySelector("#globe-view canvas")!;
+      const before = zone.getAnimations().some((motion) => motion.id === "globe-presentation");
+      canvas.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, pointerId: 1 }));
+      const after = zone.getAnimations().length;
+      canvas.dispatchEvent(new PointerEvent("pointerup", { bubbles: true, pointerId: 1 }));
+      return { before, after };
+    });
+  expect(interrupted).toEqual({ before: true, after: 0 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByRole("tab", { name: "Stories", exact: true }).click();
+  expect(await page.locator("#explorer-stories").evaluate((node) => node.getAnimations().length)).toBe(0);
+  expect(await contexts()).toBe(original);
   expect(errors).toEqual([]);
 });
 
