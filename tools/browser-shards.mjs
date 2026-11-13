@@ -1,9 +1,14 @@
 import { basename } from "node:path";
 import costs from "./browser-costs.json" with { type: "json" };
+import cases from "./browser-case-costs.json" with { type: "json" };
 
-// Rounded per-file means from Ubuntu software-WebGL run 43289885155 (50c5702).
-// Estimates only schedule work; new files still run with the typical fallback cost.
-export const estimatedSeconds = (test) => costs[basename(test.location.file)] ?? 15;
+// Ubuntu software-WebGL run 43464908433 (f5e6144): file means plus cases ≥10s from their mean.
+// Estimates only schedule work; renamed and new tests still run with the file or typical cost.
+export const estimatedSeconds = (test) => {
+  const file = basename(test.location.file);
+  const title = test.title?.replace(/ @dev$/, "");
+  return cases[`${file} › ${title}`] ?? costs[file] ?? 15;
+};
 
 export default class BrowserShards {
   async preprocess({ config, suite, testRun }) {

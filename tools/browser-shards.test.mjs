@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import BrowserShards, { estimatedSeconds } from "./browser-shards.mjs";
 import costs from "./browser-costs.json" with { type: "json" };
+import cases from "./browser-case-costs.json" with { type: "json" };
 
 async function shard(tests, total) {
   const groups = [];
@@ -75,6 +76,25 @@ test("every recorded estimate is a positive finite cost", () => {
     assert.ok(Number.isFinite(seconds) && seconds > 0, file);
     assert.equal(estimatedSeconds(entry(file, file)), seconds);
   }
+  for (const [key, seconds] of Object.entries(cases)) {
+    const [file, title] = key.split(" › ");
+    assert.ok(file in costs && title, key);
+    assert.ok(Number.isFinite(seconds) && seconds > 0, key);
+    assert.equal(estimatedSeconds({ ...entry(key, file), title }), seconds);
+    assert.equal(estimatedSeconds({ ...entry(key, file), title: `${title} @dev` }), seconds);
+    assert.equal(estimatedSeconds({ ...entry(key, file), title: "renamed case" }), costs[file]);
+  }
+});
+
+test("slow and fast cases in the same file are balanced independently", async () => {
+  const tests = Object.entries(cases).map(([key], id) => {
+    const [file, title] = key.split(" › ");
+    return { ...entry(id, file), title };
+  });
+  const groups = await shard(tests, 6);
+  assert.equal(new Set(groups.flat()).size, tests.length);
+  const seconds = groups.map((group) => group.reduce((sum, test) => sum + estimatedSeconds(test), 0));
+  assert.ok(Math.max(...seconds) - Math.min(...seconds) <= Math.max(...tests.map(estimatedSeconds)));
 });
 
 test("an unsharded local run retains the complete suite", async () => {
