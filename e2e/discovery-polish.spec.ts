@@ -92,9 +92,10 @@ test.describe("touch discovery", () => {
     await installFeeds(page, { presentation: "fresh", empty: true });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    await openStories(page);
+    await openStories(page, "search");
     await page.getByRole("searchbox", { name: "Find a story" }).fill("Tonga");
     const story = page.locator("#search-story-tonga");
+    await expect(page.getByText("Story region · preview")).toBeHidden();
     await story.dispatchEvent("pointerdown", {
       pointerType: "touch",
       pointerId: 1,
