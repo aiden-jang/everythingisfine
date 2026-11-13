@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { sheetStops } from "./sheetLayout";
 
 interface MobileNavigationProps {
   canvasHeight: number;
+  viewportHeight: number;
   flat: boolean;
   onResize: (height: number) => void;
   panel: string;
@@ -9,18 +10,16 @@ interface MobileNavigationProps {
 
 export function MobileNavigation({
   canvasHeight,
+  viewportHeight,
   flat,
   onResize,
   panel,
 }: MobileNavigationProps): JSX.Element {
-  const [preset, setPreset] = useState<{ recent: boolean; height: number }>();
-  const show = (recent: boolean): void => {
-    const height = Math.round(window.innerHeight * (recent ? 0.46 : 0.82));
-    setPreset({ recent, height });
-    onResize(height);
-    if (!recent) return;
+  const [expanded, half, collapsed] = sheetStops(viewportHeight);
+  const current = canvasHeight || half;
+  const show = () => {
+    onResize(current <= half && current > expanded ? expanded : half);
     requestAnimationFrame(() => {
-      document.getElementById("chrome-rail")?.scrollTo({ top: 0 });
       document
         .querySelector<HTMLElement>('.explorer-tabs [aria-selected="true"]')
         ?.focus({ preventScroll: true });
@@ -31,18 +30,27 @@ export function MobileNavigation({
       <button
         type="button"
         aria-controls="chrome-rail"
-        aria-pressed={preset?.height === canvasHeight && !preset.recent}
-        onClick={() => show(false)}
+        aria-label={flat ? "Expand map" : "Expand globe"}
+        title={flat ? "Expand map" : "Expand globe"}
+        aria-pressed={current === collapsed}
+        onClick={() => onResize(collapsed)}
       >
-        {flat ? "Expand map" : "Expand globe"}
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="m6 9 6 6 6-6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
       </button>
       <button
         type="button"
         aria-controls="chrome-rail"
-        aria-pressed={preset?.height === canvasHeight && preset.recent}
-        onClick={() => show(true)}
+        aria-label={panel}
+        title={current <= half && current > expanded ? "Expand panel" : "Half-height panel"}
+        aria-description="Show the panel at half height. Activate again to expand it."
+        aria-pressed={current <= half}
+        onClick={show}
       >
-        {panel}
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="m6 15 6-6 6 6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
       </button>
     </nav>
   );

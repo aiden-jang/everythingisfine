@@ -17,7 +17,7 @@ import { useGlobeCamera } from "./app/useGlobeCamera";
 import { WaveReplayControls } from "./app/WaveReplayControls";
 import { useEventInspection } from "./app/useEventInspection";
 import { SequenceReplayControls } from "./app/SequenceReplayControls";
-import { CanvasFooter, CanvasStamp } from "./app/CanvasFooter";
+import { CanvasFooter, CanvasStamp, KeyboardHelp } from "./app/CanvasFooter";
 import { LayerReadout } from "./app/LayerReadout";
 import { Observatory, type ObservatoryProps } from "./app/Observatory";
 import { journeyFor, observatorySummary, observatoryFeedNote } from "./app/journeys";
@@ -63,7 +63,7 @@ import { lunarEclipse, solarEclipse } from "./geo/eclipse";
 import { closestTo, localZone, viewerPlace } from "./app/viewer";
 import { comparableCount, rankDay, type Span as BaselineSpan } from "./data/baseline";
 import { boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE } from "./geo/boundaryDistance";
-import { MobileNavigation } from "./app/MobileNavigation";
+import { ExploreSheet } from "./app/ExploreSheet";
 import { ViewNotices } from "./app/ViewNotices";
 import { sharedEarthquakeNotice, sharedHazardNotice } from "./app/linkNotices";
 import { earthquakeCoverage, earthquakeEmpty, earthquakeReach } from "./app/earthquakeStatus";
@@ -276,7 +276,7 @@ export function App(): JSX.Element {
   const [railWidth, setRailWidth] = useStoredNumber("rail", RAIL_DEFAULT, (n) =>
     Math.min(RAIL_MAX, Math.max(RAIL_MIN, n)),
   );
-  /* 0 means "nobody has dragged it", so the stylesheet's `60dvh` stays the only place that decides. */
+  /* 0 leaves the sheet at its default position until the visitor chooses a height. */
   const [sheetCanvas, setSheetCanvas] = useStoredNumber("sheet", 0, (n) => Math.max(0, n));
   const [regionsHeight, setRegionsHeight] = useStoredNumber("regions", 132);
   const [sectionLine, setSectionLine] = useState<(SectionLine & { hinge?: SectionHinge }) | null>(
@@ -980,6 +980,8 @@ export function App(): JSX.Element {
 
   const observatoryProps: ObservatoryProps = {
     explorer: {
+      radarAt: mapLayers.radar?.at,
+      flat,
       radarTime: (at) => mapLayers.selectTime("radar", at),
       read: () => readCamera.current(),
       restore: (saved) => flyTo.current(saved.lon, saved.lat, saved.zoom),
@@ -1081,6 +1083,15 @@ export function App(): JSX.Element {
         </a>
         <h1 className="sr-only">Everything Is Fine</h1>
         <GlobeHeader
+          keyboard={
+            <KeyboardHelp
+              mobile
+              flat={flat}
+              playing={view.playing}
+              archived={archived}
+              clearable={Boolean(query || sectionLine || view.at !== null || selected || markId)}
+            />
+          }
           clip={clip}
           rotation={observatory.rotation}
           ready={observatory.canCapture && mapLayers.canCapture}
@@ -1115,24 +1126,11 @@ export function App(): JSX.Element {
         >
           {observatory.observing ? <Observatory {...observatoryProps} /> : null}
           {observatory.observing || markSubject || (shownQuake && pinned) ? null : (
-            <Resizer
-              axis="y"
-              label="Sheet height"
-              value={sheetCanvas > 0 ? sheetCanvas : Math.round(window.innerHeight * 0.6)}
-              min={Math.round(window.innerHeight * 0.46)}
-              max={Math.round(window.innerHeight * 0.82)}
-              measure={(e) => e.clientY}
-              onChange={setSheetCanvas}
-              grip
-              className="absolute inset-x-0 z-[2] md:hidden"
-              style={{ top: `calc(var(--canvas-h, 60dvh) - 6px)` }}
-            />
-          )}
-          {!markSubject && !(shownQuake && pinned) && railShown ? (
-            <MobileNavigation
-              canvasHeight={sheetCanvas}
-              flat={flat}
+            <ExploreSheet
+              height={sheetCanvas}
               onResize={setSheetCanvas}
+              flat={flat}
+              visible={railShown}
               panel={
                 observatory.browser.pane === "stories"
                   ? "Stories"
@@ -1141,7 +1139,7 @@ export function App(): JSX.Element {
                     : "Layers"
               }
             />
-          ) : null}
+          )}
           <aside
             aria-label="Map layers and recent activity"
             id="chrome-rail"

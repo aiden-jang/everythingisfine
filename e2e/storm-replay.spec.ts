@@ -4,7 +4,7 @@ import { installFeeds, openStories } from "./feeds";
 async function openStorm(page: Page) {
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
-  await openStories(page);
+  await openStories(page, "search");
   const trigger = page.getByRole("button", { name: "Eye of the Storm", exact: true });
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();

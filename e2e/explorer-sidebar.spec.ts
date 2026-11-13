@@ -2,6 +2,67 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { installFeeds } from "./feeds";
 
+test("phone sheet offers three sizes without losing the globe or covering its controls @dev", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page);
+  await page.goto("/#v=explore&at=15,25,1.5");
+  const sheet = page.getByRole("separator", { name: "Sheet height", exact: true });
+  const navigation = page.getByRole("navigation", { name: "Explore", exact: true });
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  const size = () => sheet.getAttribute("aria-valuenow");
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.46)));
+  await navigation.getByRole("button", { name: "Expand globe", exact: true }).click();
+  const collapsed = Number(await size());
+  await navigation.getByRole("button", { name: "Layers", exact: true }).click();
+  const half = Number(await size());
+  await navigation.getByRole("button", { name: "Layers", exact: true }).click();
+  const expanded = Number(await size());
+  expect(collapsed).toBeGreaterThan(half);
+  expect(half).toBeGreaterThan(expanded);
+  await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeInViewport();
+  const legend = page.getByRole("region", { name: "Map legend", exact: true });
+  await page.getByText("Map legend", { exact: true }).click();
+  await expect(legend).toBeInViewport({ ratio: 1 });
+  await expect(legend.getByRole("button", { name: "Close legend" })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(legend).toBeHidden();
+  await expect(page.getByText("Map legend", { exact: true })).toBeFocused();
+  await page.getByText("Map legend", { exact: true }).click();
+  await page.getByRole("button", { name: "View options", exact: true }).click();
+  await expect(legend).toBeHidden();
+  await page.keyboard.press("Escape");
+  await sheet.press("End");
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(collapsed));
+  await sheet.press("Home");
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(expanded));
+  const grip = (await sheet.boundingBox())!;
+  await page.mouse.move(grip.x + grip.width / 2, grip.y + grip.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(grip.x + grip.width / 2, half + 20, { steps: 8 });
+  await page.mouse.up();
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(half));
+  await sheet.press("End");
+  await page.setViewportSize({ width: 667, height: 375 });
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(375 * 0.82)));
+  await navigation.getByRole("button", { name: "Layers", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeInViewport();
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await page.getByRole("button", { name: "View options", exact: true }).click();
+  await page.getByText("Keyboard controls", { exact: true }).filter({ visible: true }).click();
+  await expect(page.locator(".mobile-key-hints .keyboard-controls")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByText("Map legend", { exact: true }).click();
+  await expect(legend).toBeInViewport({ ratio: 1 });
+  await page.setViewportSize({ width: 812, height: 375 });
+  await expect(page.locator(".map-legend-popover")).toHaveCount(0);
+  await expect(page.locator(".canvas-legend details").first()).toHaveAttribute("open", "");
+  await expect(page.locator(".canvas-legend")).toBeInViewport({ ratio: 1 });
+});
+
 for (const width of [1440, 812, 390]) {
   test(`Explore separates layer visibility, inspection and stories at ${width}px @dev`, async ({ page }) => {
     await page.setViewportSize({ width, height: width === 812 ? 375 : 900 });
@@ -11,6 +72,12 @@ for (const width of [1440, 812, 390]) {
     const layers = page.getByRole("tabpanel", { name: "Layers", exact: true });
     await expect(layers).toBeVisible();
     await expect(layers.getByRole("button", { name: / details$/ })).toHaveCount(9);
+    await expect(layers.getByRole("region", { name: "Weather & sky", exact: true })).toBeVisible();
+    await expect(layers.getByRole("region", { name: "Reported events", exact: true })).toBeVisible();
+    if (width === 1440)
+      await expect(layers.getByRole("button", { name: "Volcanoes details", exact: true })).toBeInViewport();
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/layers-${width}.png` });
     await expect(page.getByRole("region", { name: "Earthquake activity" })).toBeHidden();
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     if (width >= 768) {
@@ -55,8 +122,10 @@ for (const width of [1440, 812, 390]) {
     const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
     await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
     await expect(stories.getByRole("region", { name: "Selected stories" }).getByRole("button")).toHaveCount(
-      7,
+      5,
     );
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/stories-${width}.png` });
     await stories.getByRole("button", { name: "After Dark", exact: true }).click();
     expect(await camera()).toEqual(pose);
     const search = stories.getByRole("searchbox", { name: "Find a story", exact: true });

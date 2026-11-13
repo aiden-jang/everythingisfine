@@ -159,7 +159,10 @@ Controls stay reachable in short landscape views.
 Live Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
 Their temporary overrides do not overwrite saved scientific settings. The observatory retains source
 status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
-Keep one featured experience and a short initial selection inside each scene. Data type appears on each entry; the full catalogue, saved visits, guided journeys and archives are deliberate choices.
+Keep one featured experience and up to four initial suggestions inside each scene. In Explore,
+compact story rows show the data type; accessible descriptions and the full catalogue retain the
+explanation. Saved visits, journeys, archives and feed discoveries use quiet text disclosures beneath
+the list. The full catalogue remains a deliberate choice.
 **Explore the globe** comes before the three illustrated scene filters. The landing overview starts
 with none selected and the catalogue collapsed. Selecting a scene exposes its entries and brings
 the search field into view on narrow screens; selecting it again returns to the compact landing view.
@@ -179,7 +182,9 @@ Story headings keep the return action above the title and the projection choice 
 landscape observation panels put Back beside the title to keep playback visible. Moonfall’s
 playback dock sits over the terrain on roomy desktops and returns to the scrolling control panel
 on smaller screens. Radar prioritizes the selected scan time and playback before optional coverage
-information. Source disclosures, unavailable states, and scientific distinctions remain readable.
+information. Explore presents the UTC time prominently with its date beneath it, and has one source
+and coverage disclosure. Its Stories entry opens the same current scan and projection. Source
+disclosures, unavailable states, and scientific distinctions remain readable.
 
 Guided narration uses captured primary readings and regional counts. Explain magnitude scales,
 reported depth, historical reference points and the time scope; never manufacture a journey between
@@ -205,8 +210,11 @@ projection, camera, playback or visibility. Scene diagrams filter Stories withou
 back to the landing page. Story returns restore pane, category, query, scroll, focus and camera.
 At tablet widths and above, the canvas reserves room for the rail so it cannot cover the globe.
 
-Layers use quiet divided rows, with independent visibility and details controls. All nine layers
-have equal weight; no inspector opens initially except for an archived or shared earthquake target.
+Layers use compact icon rows grouped into Weather & sky and Reported events, with independent
+visibility switches and details controls. Coverage descriptions live in the inspector; loading and
+unavailable states stay beside the affected row. Place search precedes the groups, with an explicit
+Locate action so typing never moves the camera. All nine layers have equal weight; no inspector
+opens initially except for an archived or shared earthquake target.
 One inspector shows readings, source meaning, coverage and contextual controls. Enabled players
 stay mounted when another inspector opens. Source failures are visible beside the affected layer.
 Temporary isolation restores the chosen combination without changing stored preferences.
@@ -221,14 +229,24 @@ Radar starts on unless a saved choice turns it off. Its compact canvas caption c
 RainViewer attribution with the selected scan time. It stays visible when the rail folds. Guided
 regional radar is a secondary action inside the radar inspector; returning restores the camera and
 compatible scan time. The map legend stays with the canvas at every width, independent of the open
-inspector. Background wind paths remain quieter than story paths.
+inspector. A collapsed legend occupies only its label width. On phones, its reading opens in a
+viewport-bounded overlay with Close and Escape, keeping the trigger reachable at every sheet height.
+Phone keyboard help lives in View options so it does not cover the globe. Radar attribution stays
+visible alongside a compact UTC scan time;
+the full date remains available in the inspector and timestamp title. Background wind paths remain
+quieter than story paths.
 
 The header offers projection, source status and View options at every width. Capture, fullscreen,
 rotation and reset share that menu; keyboard help is a quiet optional disclosure. Phone layouts keep
 the subject above a draggable, keyboard-operable sheet. Expand globe/map enlarges the canvas; the
 other shortcut names the current pane rather than assuming earthquake activity. The handle and
-interactive controls have 44px targets. Intermediate heights, selection closing and preserved list
-position remain supported. Check short landscape and tablet reflow as well as portrait phones.
+interactive controls have 44px targets. The sheet opens at half height, expands for browsing, and
+collapses to give the globe more room.
+Its drag handle snaps to those three positions; keyboard arrows allow intermediate adjustments and
+Home/End reach the extremes. Stored heights are bounded to the current viewport after rotation,
+with enough canvas clearance for the header and legend on short screens.
+Selection closing and preserved list position remain supported. Check short landscape and tablet
+reflow as well as portrait phones.
 
 ## 8. Motion
 

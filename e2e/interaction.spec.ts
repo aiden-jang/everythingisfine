@@ -2062,9 +2062,14 @@ test("the marks key is reachable at every width", async ({ page }) => {
     await expect(toggle).toBeInViewport({ ratio: 1 });
     await toggle.click();
     await expect(page.locator(".canvas-legend")).toBeInViewport({ ratio: 1 });
+    if (w < 768)
+      await expect(page.getByRole("region", { name: "Map legend", exact: true })).toBeInViewport({
+        ratio: 1,
+      });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     if (w === 320) await page.screenshot({ path: test.info().outputPath("phone-map-legend.png") });
-    await toggle.click();
+    if (w < 768) await page.getByRole("button", { name: "Close legend", exact: true }).click();
+    else await toggle.click();
   }
 });
 

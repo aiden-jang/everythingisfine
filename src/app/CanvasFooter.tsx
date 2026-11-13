@@ -39,33 +39,57 @@ export function CanvasFooter({
           aiden jang
         </a>
       </p>
-      <details className="key-hints pointer-events-auto md:max-xl:order-first bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50">
-        <summary>Keyboard controls</summary>
-        <div className="keyboard-controls">
-          {/* What the keys do in this projection: a row saying orbit while the drag pans is worse than none. */}
-          {(
-            [
-              ["arrows", flat ? "pan" : "orbit"],
-              ["+ -", "zoom"],
-              ["0", "reset"],
-              ["space", playing ? "pause" : "play"],
-              [", .", "step"],
-              ...(archived ? [["[ ]", "day"] as const] : []),
-              ...(flat ? [["shift-drag", "section"] as const] : []),
-              ["f", "full"],
-              /* Only when there is something to clear, or the app offers `esc` on every first load. `markId`
-                belongs in this list and in the ladder: a mark card is a pin. */
-              ...(clearable ? [["esc", "clear"] as const] : []),
-            ] as const
-          ).map(([key, what]) => (
-            <span key={key} className="mr-3 inline-flex items-baseline gap-1.5">
-              <span className="text-dim">{key}</span>
-              {what}
-            </span>
-          ))}
-        </div>
-      </details>
+      <KeyboardHelp flat={flat} playing={playing} archived={archived} clearable={clearable} />
     </div>
+  );
+}
+
+export function KeyboardHelp({
+  flat,
+  playing,
+  archived,
+  clearable,
+  mobile = false,
+}: {
+  flat: boolean;
+  playing: boolean;
+  archived: boolean;
+  clearable: boolean;
+  mobile?: boolean;
+}) {
+  return (
+    <details
+      className={
+        mobile
+          ? "mobile-key-hints"
+          : "key-hints pointer-events-auto md:max-xl:order-first bg-deck/40 px-2.5 py-1.5 font-mono text-[10.5px] text-faint backdrop-blur-xl backdrop-saturate-50"
+      }
+    >
+      <summary>Keyboard controls</summary>
+      <div className="keyboard-controls">
+        {/* What the keys do in this projection: a row saying orbit while the drag pans is worse than none. */}
+        {(
+          [
+            ["arrows", flat ? "pan" : "orbit"],
+            ["+ -", "zoom"],
+            ["0", "reset"],
+            ["space", playing ? "pause" : "play"],
+            [", .", "step"],
+            ...(archived ? [["[ ]", "day"] as const] : []),
+            ...(flat ? [["shift-drag", "section"] as const] : []),
+            ["f", "full"],
+            /* Only when there is something to clear, or the app offers `esc` on every first load. `markId`
+                belongs in this list and in the ladder: a mark card is a pin. */
+            ...(clearable ? [["esc", "clear"] as const] : []),
+          ] as const
+        ).map(([key, what]) => (
+          <span key={key} className="mr-3 inline-flex items-baseline gap-1.5">
+            <span className="text-dim">{key}</span>
+            {what}
+          </span>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -73,7 +97,9 @@ export function RadarCanvasCredit({ radar }: { radar: RadarLayerView | null }): 
   return radar ? (
     <p className="radar-canvas-credit">
       {radar.at !== undefined && (
-        <time dateTime={new Date(radar.at).toISOString()}>Radar · {layerTime(radar.at)}</time>
+        <time dateTime={new Date(radar.at).toISOString()} title={layerTime(radar.at)}>
+          Radar · {new Date(radar.at).toISOString().slice(11, 16)} UTC
+        </time>
       )}
       {radar.at !== undefined && <span aria-hidden="true">·</span>}
       <a

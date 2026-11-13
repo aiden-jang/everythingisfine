@@ -244,3 +244,32 @@
 .radar-layer .radar-stage-controls {
   display: block;
 }
+
+.radar-layer .radar-clock {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-start;
+  gap: 6px;
+}
+.radar-layer .radar-clock time {
+  font-family: var(--font-sans);
+  display: grid;
+  gap: 5px;
+  letter-spacing: -0.02em;
+}
+.radar-layer .radar-transport {
+  padding-top: 18px;
+}
+.radar-layer .radar-coverage {
+  margin-top: 12px;
+}
+
+.radar-layer .radar-clock time strong {
+  font-size: 26px;
+  font-weight: 550;
+}
+.radar-layer .radar-clock time span {
+  font-size: 12px;
+  color: var(--color-dim);
+  letter-spacing: normal;
+}

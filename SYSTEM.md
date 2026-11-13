@@ -64,10 +64,10 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/float/`, `src/sources/argo.ts`, and `src/globe/floatPresentation.ts` | Argo catalogue and profile validation, sample playback, and the shared globe’s float sequence |
 | `src/app/observations/`, `src/sources/observations/`, and `src/globe/observationLayer.ts` | Optional observations and replays, provider readers, shared playback, and projected data layers |
 | `src/app/radar/`, `src/sources/{radar,rainviewer}.ts`, and `src/globe/radarSurface.ts` | Storm Radar controls, international/US catalogues, and globe overlay |
-| `src/app/{ExplorerSidebar,MapLayers,LayerSources,LayerReadout,WeatherLayer}.tsx`, `useMapLayers.ts`, and `weatherLayers.ts` | Layer/story navigation, independent inspectors, weather clocks, feed health and scene composition |
+| `src/app/{ExplorerSidebar,MapLayers,LayerCatalogue,LayerSources,LayerReadout,WeatherLayer}.tsx`, `useMapLayers.ts`, and `weatherLayers.ts` | Layer/story navigation, independent inspectors, weather clocks, feed health and scene composition |
 | `src/app/Observatory.tsx` | Intro, scene choices, captured-story narration and tour controls |
 | `src/app/GlobeHeader.tsx` | Shared masthead, capture, source status and explorer tools |
-| `src/app/CanvasFooter.tsx` | Explorer credit and input hints |
+| `src/app/CanvasFooter.tsx`, `MapLegend.tsx` | Explorer credit, input hints and responsive map legend |
 | `src/app/journeys.ts` | Filtered reading selection, factual captions and scoped summary |
 | `src/app/journeys/` | Manual guided paths, contextual onward links, and navigation through existing story and scene controls |
 | `src/app/discovery/` | Regional story previews, filtered nearby reports, and shared discovery styling |
@@ -123,6 +123,8 @@ EMSC constructor refusals enter the normal reconnect path; failed sockets close 
 
 Preferences write in their setters, never on initial mount. A shared link can override the initial
 view without turning defaults into stored choices. The sheet height uses the same preference path.
+`ExploreSheet.tsx` owns its three snap positions,
+viewport bounds and tap alternatives; `Resizer.tsx` supplies pointer and keyboard resizing.
 Restoration validates named choices and finite numbers before they reach rendering or layout.
 Resize cancellation, lost window focus and unmount release the drag's page styles.
 The application has a persistent heading and main landmark. Panels have distinct names;

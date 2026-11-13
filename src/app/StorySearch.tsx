@@ -19,14 +19,18 @@ export function StorySearch({
   const matches = findStories(deck.query);
   return (
     <>
-      <label className="story-search">
-        <span>Find a story</span>
+      <label className="story-search explorer-search">
+        <span className="sr-only">Find a story</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="m15 15 6 6" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
         <input
           type="search"
           name="story"
           autoComplete="off"
           value={deck.query}
-          placeholder="Tonga, comet, 2019…"
+          placeholder="Find a story…"
           onInput={(e) => deck.setQuery(e.currentTarget.value)}
         />
       </label>

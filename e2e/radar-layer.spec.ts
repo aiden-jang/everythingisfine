@@ -134,6 +134,21 @@ for (const width of [1440, 390]) {
     await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
     await expect.poll(() => camera(page)).toEqual(mapCamera);
     await expect(page.locator("#open-explorer-radar")).toBeFocused();
+    await page.getByRole("tab", { name: "Stories", exact: true }).click();
+    await page.getByRole("button", { name: "Storm Radar", exact: true }).click();
+    await expect(guided.locator(".radar-clock time")).toHaveAttribute(
+      "datetime",
+      new Date(times[1]!).toISOString(),
+    );
+    await expect(guided.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await guided.getByRole("button", { name: "Back to stories", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toBeFocused();
+    await expect.poll(() => camera(page)).toEqual(mapCamera);
+    await page.getByRole("tab", { name: "Layers", exact: true }).click();
+    await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
     const closed = Number(await page.locator("html").getAttribute("data-closed-radar-frames"));
     await toggle.click();
     await expect(controls).toHaveCount(0);

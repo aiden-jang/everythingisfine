@@ -37,7 +37,7 @@ Use **Fullscreen** on desktop for a larger viewing area.
 Each scene contains tours, featured experiences, live observations, forecasts, predictions, and
 replays. Explore keeps story browsing inside its Stories tab. **View options** holds image and clip capture, fullscreen and the landing globe’s
 auto-rotation setting. Dragging pauses rotation; it resumes after 1.5 idle seconds.
-**Find a story** searches subjects, places and years across all three scenes. The initial list has one featured experience and a short selection; **View all** opens the full selection. Saved visits, guided journeys, feed discoveries and archives each have a separate disclosure. The thumbnails are recorded views;
+**Find a story** searches subjects, places and years across all three scenes. The initial list has one featured experience and a short selection; **View all** opens the full selection. Saved & recent, Guided journeys, Archives and From feeds open from the text controls below the list. The thumbnails are recorded views;
 open a story for its source, date, and current availability. Closing a story returns to its search
 result or drawer entry, including its filter, scroll, focus and Explore camera. **Keep exploring** offers a related view with context for its separate
 observations and time period. **Share this moment** copies the story, timestamp, projection, and selected
@@ -174,7 +174,7 @@ own direction and route controls.
 ## Explore
 
 **Focus** temporarily isolates one layer; **Restore layers** returns to the exact saved combination.
-Changing a switch ends isolation. **Around a place** summarizes enabled reports within 500 km of a
+Changing a switch ends isolation. **Find a place** summarizes enabled reports within 500 km of a
 selected city using the chosen earthquake window and cursor. Missing feeds remain explicit; weather
 rasters keep their separate scan and forecast clocks. Close city labels appear as you zoom into Explore.
 
@@ -183,12 +183,13 @@ It reports the nearest recorded monitor within 100 km, never an interpolated con
 and Tide Watch can compare a second place on demand, showing both source times and matching measurement
 names. Tide heights use each harbor's local datum and must not be treated as global elevation differences.
 
-The **Layers** tab lists earthquakes, tropical cyclones, wildfires, floods, volcanoes, aurora,
-storm radar, surface wind and lightning with equal prominence. Checkboxes change visibility; a
+The **Layers** tab groups weather and sky overlays separately from reported events: earthquakes, tropical cyclones, wildfires, floods, volcanoes, aurora,
+storm radar, surface wind and lightning with equal prominence. Switches change visibility; a
 layer's name opens its readings, coverage and controls. No inspector opens by default. Only one
 inspector is visible, while enabled players remain mounted and keep their own timestamps.
 **Show only this layer** is temporary; **Restore layers** restores your choices. **Find a place**
-shows available reports around one of the supported cities. **Find earthquake reports** searches
+shows available reports around one of the supported cities; **Locate** moves the globe or map there.
+**Find earthquake reports** searches
 reported earthquakes and regions within the earthquake inspector.
 
 Storm radar starts on unless previously switched off. Surface wind and lightning start off.
@@ -196,7 +197,8 @@ Enabled layers appear on the landing globe, Live Earth overview and Explore. Eac
 keeps its own timestamp without moving the camera or changing the earthquake timeline. Turning
 one off cancels its requests and releases decoded images. Recent weather is unavailable in an
 archive; the archived date and return-to-live action remain accessible from any inspector.
-**Follow a radar region** opens the cinematic radar view using the layer's scan. Returning restores
+**Follow a radar region** opens the cinematic radar view using the layer's scan. Opening Storm Radar
+from Explore’s Stories tab also preserves that scan and projection. Returning restores
 the Explore camera and preserves compatible worldwide scan times; NOAA detail has a separate source.
 RainViewer credit and the selected scan time remain together on the canvas, even with the panel folded.
 
@@ -206,7 +208,9 @@ Older links keep their behavior, and shared event targets remain visible. Playba
 an expired weather selection explains which available frame replaced it.
 **About this layer & sources** explains meaning, coverage and source availability. Forecast, observation
 and source-check times remain distinct, with explicit UTC dates. The phone's sheet shortcut follows
-the current pane: Layers, Stories or Layer details. Earthquake display choices, sound alerts, tours,
+the current pane: Layers, Stories or Layer details. Tap its up control for half height, again to expand;
+the down control gives the globe more room. Drag the handle between those positions, or use its arrow
+keys and Home/End. Phone keyboard help is in View options. Earthquake display choices, sound alerts, tours,
 archive browsing and extra context stay within the earthquake inspector.
 The feed counter covers seven background sources plus radar, wind and lightning while active on the landing globe or in Explore.
 Disabled weather layers stay listed as off but are excluded from the total. Other views check their own sources when opened; a recorded

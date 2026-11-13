@@ -1,4 +1,5 @@
 import { LayerOptions } from "./LayerOptions";
+import { MapLegend } from "./MapLegend";
 import { DepthKey } from "./DepthKey";
 import type { ReactElement, ReactNode } from "react";
 import { MAG_MAX, MAG_MIN, rampColorAt, type RampName } from "../globe/ramp";
@@ -172,315 +173,302 @@ export function MagnitudeFilter({
 
   if (part === "key") {
     return (
-      <div data-ramp>
-        {/* Everything below the scale is explanation and folds away. Controls above, commentary below. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
-        <details open={keyOpen}>
-          <summary
-            className="disclose text-[11px] text-faint hover:text-dim"
-            onClick={(e) => {
-              e.preventDefault();
-              onKeyOpen(!keyOpen);
-            }}
-          >
-            Map legend
-          </summary>
+      <MapLegend open={keyOpen} onChange={onKeyOpen}>
+        {/* Size carries the same value, so a colourblind viewer and a small screen both still read it. */}
+        <div className="mt-2.5 flex items-center gap-2.5 text-[11px] text-faint">
+          <span className="flex items-baseline gap-1.5">
+            {[2, 4, 6].map((m) => (
+              <span
+                key={m}
+                className="inline-block rounded-full"
+                style={{
+                  width: `${2 * (1.7 + 2.9 * Math.sqrt(m - 1))}px`,
+                  height: `${2 * (1.7 + 2.9 * Math.sqrt(m - 1))}px`,
+                  background: rampColorAt(ramp, (m - MAG_MIN) / (MAG_MAX - MAG_MIN)),
+                }}
+              />
+            ))}
+          </span>
+          <span>Larger marks = higher magnitude</span>
+        </div>
 
-          {/* Size carries the same value, so a colourblind viewer and a small screen both still read it. */}
-          <div className="mt-2.5 flex items-center gap-2.5 text-[11px] text-faint">
-            <span className="flex items-baseline gap-1.5">
-              {[2, 4, 6].map((m) => (
-                <span
-                  key={m}
-                  className="inline-block rounded-full"
-                  style={{
-                    width: `${2 * (1.7 + 2.9 * Math.sqrt(m - 1))}px`,
-                    height: `${2 * (1.7 + 2.9 * Math.sqrt(m - 1))}px`,
-                    background: rampColorAt(ramp, (m - MAG_MIN) / (MAG_MAX - MAG_MIN)),
-                  }}
-                />
-              ))}
-            </span>
-            <span>Larger marks = higher magnitude</span>
-          </div>
+        <DepthKey ramp={ramp} />
 
-          <DepthKey ramp={ramp} />
-
-          {/* The counts stay, the reasoning folds. "66 above 70 km, 54 between 70 and 300" is the part anybody
+        {/* The counts stay, the reasoning folds. "66 above 70 km, 54 between 70 and 300" is the part anybody
           reads, and the slab explanation behind it is two more lines. */}
-          <KeyRow note={depthNote(depth)} />
+        <KeyRow note={depthNote(depth)} />
 
-          {sinkOn ? (
-            <KeyRow note="Deep events sit inside the globe. Orbit to see their distance below the surface." />
-          ) : null}
+        {sinkOn ? (
+          <KeyRow note="Deep events sit inside the globe. Orbit to see their distance below the surface." />
+        ) : null}
 
-          {/* An unexplained line on a data visualisation is a question mark, and somebody could read these as
+        {/* An unexplained line on a data visualisation is a question mark, and somebody could read these as
           a second data layer rather than as the geography the events follow.
 
           The motion toggle hangs off this row because it is a second reading of these exact lines, not
           another layer. Off by default: 231 arrows is a mark in every margin on the planet. */}
-          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-            <span className="inline-block h-px w-[38px] shrink-0 bg-plate opacity-90" />
-            <span>plate boundaries</span>
-          </div>
+        <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+          <span className="inline-block h-px w-[38px] shrink-0 bg-plate opacity-90" />
+          <span>plate boundaries</span>
+        </div>
 
-          {motion ? (
-            <details className="mt-2">
-              <summary className="disclose text-[11px] text-faint">Plate motion</summary>
-              <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-                <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-                  <path
-                    d="M -7 6 L 5 -6 M 5 -6 L -1 -6 M 5 -6 L 5 0"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.6}
-                    className="text-dim"
-                  />
-                </svg>
-                <span>{motionNote(motion)}</span>
-              </div>
-            </details>
-          ) : null}
+        {motion ? (
+          <details className="mt-2">
+            <summary className="disclose text-[11px] text-faint">Plate motion</summary>
+            <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+              <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                <path
+                  d="M -7 6 L 5 -6 M 5 -6 L -1 -6 M 5 -6 L 5 0"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  className="text-dim"
+                />
+              </svg>
+              <span>{motionNote(motion)}</span>
+            </div>
+          </details>
+        ) : null}
 
-          {/* Its own row, not hung off the boundaries: this is a second population of events - older,
+        {/* Its own row, not hung off the boundaries: this is a second population of events - older,
           differently thresholded, not from today - which is exactly what a viewer must not mistake for the
           marks beside it. So the row says how many, how deep, how big, and over what years. */}
-          {slabOn ? (
+        {slabOn ? (
+          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+            <span
+              className="inline-block size-[7px] shrink-0 rounded-full"
+              style={{ background: "var(--color-plate)" }}
+            />
+            {/* Dated, not relative: the table stops at 2025-08-01 and does not move, so "over five years"
+              is wrong by however long since the generator ran, and silently gets wronger. */}
+            <span>
+              the deep ones, {SLAB_FROM} to {SLAB_TO}
+            </span>
+          </div>
+        ) : null}
+
+        {slabOn && slabCount > 0 ? (
+          <KeyRow
+            note={
+              `${slabCount.toLocaleString("en")} events below ${SLAB_MIN_DEPTH_KM} km, ` +
+              `M${SLAB_MIN_MAGNITUDE} and up. Nothing that deep happens ` +
+              `outside a subducting plate, so this is where the plates went. Not today's earthquakes, ` +
+              `which is why they carry no colour.`
+            }
+          />
+        ) : null}
+
+        {/* The rings were the one mark nothing named. A ring appears when an event arrives, expands for
+          fifteen seconds and is gone, so a first-time viewer gets one look at it. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
+        {/* A spiral for a swatch, because the mark is a spiral. Light gets colour and marks get shapes, so
+          this one is shape all the way down to its legend entry. */}
+        {cyclones.length > 0 ? (
+          <KeyRow
+            note={cycloneNote(cyclones, category, archived)}
+            glyph={
+              <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                <path
+                  d={SPIRAL_PATH}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  className="text-dim"
+                />
+              </svg>
+            }
+          />
+        ) : null}
+
+        {/* A triangle, which cannot be read as a magnitude dot. Under the storms because it is the one layer
+          here that is not live, and the line beside it says so. */}
+        {volcanoes > 0 ? (
+          <KeyRow
+            note={volcanoNote(volcanoes, volcanoesSince, now, archived)}
+            glyph={
+              <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                <path
+                  d={VOLCANO_PATH}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  className="text-dim"
+                />
+              </svg>
+            }
+          />
+        ) : null}
+
+        {/* A flame and the wavy lines water gets, both achromatic. The sentences carry the honesty each feed
+          needs - the fire count is a floor, the flood severity does not exist - because a glyph cannot
+          caveat itself. */}
+        {fires.count > 0 ? (
+          <KeyRow
+            note={wildfireNote(fires, fireCap, archived)}
+            glyph={
+              <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                <path
+                  d={FLAME_PATH}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.6}
+                  className="text-dim"
+                />
+              </svg>
+            }
+          />
+        ) : null}
+
+        {floods > 0 ? (
+          <KeyRow
+            note={floodNote(floods, floodCountries, archived)}
+            glyph={
+              <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                {WAVE_PATHS.map((d) => (
+                  <path
+                    key={d}
+                    d={d}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.4}
+                    className="text-dim"
+                  />
+                ))}
+              </svg>
+            }
+          />
+        ) : null}
+
+        {/* Last of the layer rows, and the only one that appears because a layer is absent. Without it, a
+          24-hour window silently deletes all four and the globe just looks empty. */}
+        <KeyRow note={outsideWindow} />
+
+        {/* The sound leads with what it is not. A tone presented as what an earthquake sounds like would be
+          the one outright falsehood here: real ground motion is below hearing. */}
+        {sound !== null ? (
+          <KeyRow
+            note={soundNote(sound)}
+            glyph={
+              <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
+                <path
+                  d="M -8 0 L -3 0 L 2 -7 L 2 7 L -3 0 M 5 -4 Q 8 0 5 4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                  className="text-dim"
+                />
+              </svg>
+            }
+          />
+        ) : null}
+
+        {/* Below the marks rather than among them, because it is light and they are data. The swatch is a
+          wash instead of a glyph for the same reason. */}
+        {aurora ? (
+          <KeyRow
+            note={auroraNote(aurora.peak, aurora.forecastAt, aurora.estimatedTime)}
+            glyph={
+              <span
+                className="mt-[3px] inline-block h-[9px] w-[13px] shrink-0 rounded-[2px]"
+                style={{ background: "linear-gradient(180deg, #7fc9a6 0%, rgba(127,201,166,0) 100%)" }}
+              />
+            }
+          />
+        ) : null}
+
+        {/* Required, not optional: a dark patch appearing on the planet with nothing naming it is the exact
+          case this panel's rule exists for. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
+        {eclipse ? (
+          <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
+            <span
+              className="mt-[4px] inline-block size-[7px] shrink-0 rounded-full"
+              style={{
+                background: eclipse.kind === "lunar" ? "var(--color-eclipsed)" : "var(--color-void)",
+              }}
+            />
+            <span>
+              {eclipse.kind === "total"
+                ? "the dark spot is the moon's shadow, placed to a few hundred km"
+                : eclipse.kind === "annular"
+                  ? "the moon's shadow, too far out to cover the sun: a ring, not a blackout"
+                  : "the moon is red because it is in the Earth's shadow, lit through our sunsets"}
+            </span>
+          </div>
+        ) : null}
+
+        {/* Both rows say the fact a viewer would otherwise get wrong. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
+        {sky ? (
+          <>
+            <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+              <span
+                className="inline-block size-[5px] shrink-0 rounded-full"
+                style={{ background: "var(--color-star)" }}
+              />
+              <span>the stars are the real ones, down to magnitude 6</span>
+            </div>
+            {/* The planets are drawn as stars on purpose, so the sentence has to carry what the picture
+              deliberately does not: five of them are not stars and will have moved by next week. */}
             <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
               <span
                 className="inline-block size-[7px] shrink-0 rounded-full"
-                style={{ background: "var(--color-plate)" }}
+                style={{ background: "var(--color-star)" }}
               />
-              {/* Dated, not relative: the table stops at 2025-08-01 and does not move, so "over five years"
-              is wrong by however long since the generator ran, and silently gets wronger. */}
-              <span>
-                the deep ones, {SLAB_FROM} to {SLAB_TO}
-              </span>
+              <span>five of them are planets, and they wander</span>
             </div>
-          ) : null}
-
-          {slabOn && slabCount > 0 ? (
-            <KeyRow
-              note={
-                `${slabCount.toLocaleString("en")} events below ${SLAB_MIN_DEPTH_KM} km, ` +
-                `M${SLAB_MIN_MAGNITUDE} and up. Nothing that deep happens ` +
-                `outside a subducting plate, so this is where the plates went. Not today's earthquakes, ` +
-                `which is why they carry no colour.`
-              }
-            />
-          ) : null}
-
-          {/* The rings were the one mark nothing named. A ring appears when an event arrives, expands for
-          fifteen seconds and is gone, so a first-time viewer gets one look at it. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
-          {/* A spiral for a swatch, because the mark is a spiral. Light gets colour and marks get shapes, so
-          this one is shape all the way down to its legend entry. */}
-          {cyclones.length > 0 ? (
-            <KeyRow
-              note={cycloneNote(cyclones, category, archived)}
-              glyph={
-                <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-                  <path
-                    d={SPIRAL_PATH}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.6}
-                    className="text-dim"
-                  />
-                </svg>
-              }
-            />
-          ) : null}
-
-          {/* A triangle, which cannot be read as a magnitude dot. Under the storms because it is the one layer
-          here that is not live, and the line beside it says so. */}
-          {volcanoes > 0 ? (
-            <KeyRow
-              note={volcanoNote(volcanoes, volcanoesSince, now, archived)}
-              glyph={
-                <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-                  <path
-                    d={VOLCANO_PATH}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.6}
-                    className="text-dim"
-                  />
-                </svg>
-              }
-            />
-          ) : null}
-
-          {/* A flame and the wavy lines water gets, both achromatic. The sentences carry the honesty each feed
-          needs - the fire count is a floor, the flood severity does not exist - because a glyph cannot
-          caveat itself. */}
-          {fires.count > 0 ? (
-            <KeyRow
-              note={wildfireNote(fires, fireCap, archived)}
-              glyph={
-                <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-                  <path
-                    d={FLAME_PATH}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.6}
-                    className="text-dim"
-                  />
-                </svg>
-              }
-            />
-          ) : null}
-
-          {floods > 0 ? (
-            <KeyRow
-              note={floodNote(floods, floodCountries, archived)}
-              glyph={
-                <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-                  {WAVE_PATHS.map((d) => (
-                    <path
-                      key={d}
-                      d={d}
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.4}
-                      className="text-dim"
-                    />
-                  ))}
-                </svg>
-              }
-            />
-          ) : null}
-
-          {/* Last of the layer rows, and the only one that appears because a layer is absent. Without it, a
-          24-hour window silently deletes all four and the globe just looks empty. */}
-          <KeyRow note={outsideWindow} />
-
-          {/* The sound leads with what it is not. A tone presented as what an earthquake sounds like would be
-          the one outright falsehood here: real ground motion is below hearing. */}
-          {sound !== null ? (
-            <KeyRow
-              note={soundNote(sound)}
-              glyph={
-                <svg viewBox="-11 -11 22 22" className="mt-[2px] size-[13px] shrink-0" aria-hidden="true">
-                  <path
-                    d="M -8 0 L -3 0 L 2 -7 L 2 7 L -3 0 M 5 -4 Q 8 0 5 4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                    className="text-dim"
-                  />
-                </svg>
-              }
-            />
-          ) : null}
-
-          {/* Below the marks rather than among them, because it is light and they are data. The swatch is a
-          wash instead of a glyph for the same reason. */}
-          {aurora ? (
-            <KeyRow
-              note={auroraNote(aurora.peak, aurora.forecastAt, aurora.estimatedTime)}
-              glyph={
-                <span
-                  className="mt-[3px] inline-block h-[9px] w-[13px] shrink-0 rounded-[2px]"
-                  style={{ background: "linear-gradient(180deg, #7fc9a6 0%, rgba(127,201,166,0) 100%)" }}
-                />
-              }
-            />
-          ) : null}
-
-          {/* Required, not optional: a dark patch appearing on the planet with nothing naming it is the exact
-          case this panel's rule exists for. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
-          {eclipse ? (
-            <div className="mt-2 flex items-start gap-2.5 text-[11px] leading-relaxed text-faint">
-              <span
-                className="mt-[4px] inline-block size-[7px] shrink-0 rounded-full"
-                style={{
-                  background: eclipse.kind === "lunar" ? "var(--color-eclipsed)" : "var(--color-void)",
-                }}
-              />
-              <span>
-                {eclipse.kind === "total"
-                  ? "the dark spot is the moon's shadow, placed to a few hundred km"
-                  : eclipse.kind === "annular"
-                    ? "the moon's shadow, too far out to cover the sun: a ring, not a blackout"
-                    : "the moon is red because it is in the Earth's shadow, lit through our sunsets"}
-              </span>
-            </div>
-          ) : null}
-
-          {/* Both rows say the fact a viewer would otherwise get wrong. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
-          {sky ? (
-            <>
-              <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-                <span
-                  className="inline-block size-[5px] shrink-0 rounded-full"
-                  style={{ background: "var(--color-star)" }}
-                />
-                <span>the stars are the real ones, down to magnitude 6</span>
-              </div>
-              {/* The planets are drawn as stars on purpose, so the sentence has to carry what the picture
-              deliberately does not: five of them are not stars and will have moved by next week. */}
-              <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-                <span
-                  className="inline-block size-[7px] shrink-0 rounded-full"
-                  style={{ background: "var(--color-star)" }}
-                />
-                <span>five of them are planets, and they wander</span>
-              </div>
-              <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-                <span
-                  className="inline-block size-[9px] shrink-0 rounded-full"
-                  style={{ background: "var(--color-moon)" }}
-                />
-                <span>the small disc is the moon, at its real size</span>
-              </div>
-            </>
-          ) : null}
-
-          {/* The only row here describing something nobody measured. There is no honest number to print beside
-          a constellation, so the row says whose idea it is rather than what it counts. */}
-          {figuresOn ? (
             <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-              <span className="inline-block h-[1px] w-[7px] shrink-0 bg-current opacity-60" />
-              <span>the lines are the constellations people drew</span>
+              <span
+                className="inline-block size-[9px] shrink-0 rounded-full"
+                style={{ background: "var(--color-moon)" }}
+              />
+              <span>the small disc is the moon, at its real size</span>
             </div>
-          ) : null}
+          </>
+        ) : null}
 
-          {/* The rings' words were JSX rather than a note, so the row could interpolate the playback
+        {/* The only row here describing something nobody measured. There is no honest number to print beside
+          a constellation, so the row says whose idea it is rather than what it counts. */}
+        {figuresOn ? (
+          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+            <span className="inline-block h-[1px] w-[7px] shrink-0 bg-current opacity-60" />
+            <span>the lines are the constellations people drew</span>
+          </div>
+        ) : null}
+
+        {/* The rings' words were JSX rather than a note, so the row could interpolate the playback
           multiplier. A template string carries that and lets the row take the same shape as the rest. */}
-          <KeyRow
-            // The pair is the head; why they are sped up and what the gap measures are the body.
-            note={
-              "two rings leave each new epicentre. " +
-              "The P-wave, and the slower S behind it. " +
-              `Sped up \u00d7${PLAYBACK} or they would not appear to move, and the gap between them is ` +
-              "how distance to a quake is measured."
-            }
-            glyph={
-              /* Two circles, which is literally what is drawn: the outer is the P front and the inner the S.
+        <KeyRow
+          // The pair is the head; why they are sped up and what the gap measures are the body.
+          note={
+            "two rings leave each new epicentre. " +
+            "The P-wave, and the slower S behind it. " +
+            `Sped up \u00d7${PLAYBACK} or they would not appear to move, and the gap between them is ` +
+            "how distance to a quake is measured."
+          }
+          glyph={
+            /* Two circles, which is literally what is drawn: the outer is the P front and the inner the S.
              On the ramp like the markers, since a ring carries its own event's magnitude colour. */
-              <span className="relative mt-[3px] inline-block size-[13px] shrink-0">
-                <span
-                  className="absolute inset-[3.5px] rounded-full border"
-                  style={{ borderColor: rampColorAt(ramp, 0.55) }}
-                />
-                <span
-                  className="absolute inset-0 rounded-full border opacity-45"
-                  style={{ borderColor: rampColorAt(ramp, 0.55) }}
-                />
-              </span>
-            }
-          />
+            <span className="relative mt-[3px] inline-block size-[13px] shrink-0">
+              <span
+                className="absolute inset-[3.5px] rounded-full border"
+                style={{ borderColor: rampColorAt(ramp, 0.55) }}
+              />
+              <span
+                className="absolute inset-0 rounded-full border opacity-45"
+                style={{ borderColor: rampColorAt(ramp, 0.55) }}
+              />
+            </span>
+          }
+        />
 
-          {/* The city goes in the row rather than in a tooltip, because a tooltip needs the mark found first
+        {/* The city goes in the row rather than in a tooltip, because a tooltip needs the mark found first
           and this mark exists to be found. "Roughly" is not modesty: a timezone can be a thousand
           kilometres wide, so somebody in Vancouver gets a tick over Los Angeles. */}
-          {herePlace ? (
-            <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-              <span className="inline-block size-[9px] shrink-0 border border-current opacity-70" />
-              <span>the four ticks are roughly you, near {herePlace}</span>
-            </div>
-          ) : null}
-        </details>
-      </div>
+        {herePlace ? (
+          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+            <span className="inline-block size-[9px] shrink-0 border border-current opacity-70" />
+            <span>the four ticks are roughly you, near {herePlace}</span>
+          </div>
+        ) : null}
+      </MapLegend>
     );
   }
 

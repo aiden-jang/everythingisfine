@@ -22,6 +22,7 @@ index to the matching implementation note.
 - [src/app/Dial.tsx](#srcappdialtsx)
 - [src/app/EventList.tsx](#srcappeventlisttsx)
 - [src/app/MagnitudeFilter.tsx](#srcappmagnitudefiltertsx)
+- [src/app/MapLegend.tsx](#srcappmaplegendtsx)
 - [src/app/MarkCard.tsx](#srcappmarkcardtsx)
 - [src/app/Resizer.tsx](#srcappresizertsx)
 - [src/app/Sequence.tsx](#srcappsequencetsx)
@@ -670,16 +671,6 @@ Which half to draw.
 in different places - the rail and a panel of its own - so this splits rather than hides: two copies
 with one hidden would put a second `#mag` in the accessibility tree.
 
-**Everything below the scale is explanation and folds away. Controls above, commentary below**
-
-Everything below the scale is explanation and folds away. Controls above, commentary below.
-
-Open by default. Remember only that somebody closed it: folding it shut out of the box would hide
-the argument from everyone who never finds the toggle.
-
-`preventDefault` on the summary so React owns `open`. React 18 does not listen for `toggle`, so the
-browser's own state cannot be read back, and this state is persisted.
-
 **The rings were the one mark nothing named. A ring appears when an event arrives, expands f**
 
 The rings were the one mark nothing named. A ring appears when an event arrives, expands for fifteen
@@ -716,6 +707,14 @@ Earthquake display and sky guides fold to leave room for the time window and pla
 The magnitude ramp stays open. Independent hazard toggles sit above these settings, so choosing
 what appears on the globe does not require finding an earthquake-specific menu. The map legend
 explains symbols; it does not contain display controls.
+
+### src/app/MapLegend.tsx
+
+The outer disclosure starts collapsed and remembers the visitor's choice. Phones use a native
+popover so its content can scroll within the viewport independently of the globe's changing sheet
+height; desktop keeps the same content inline. Both use the existing open state. Close and Escape
+return focus to the summary; native outside dismissal synchronizes the controlled state through
+a DOM toggle listener. The summary prevents its default toggle so there is one owner of `open`.
 
 ### src/app/MarkCard.tsx
 

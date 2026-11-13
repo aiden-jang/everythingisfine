@@ -58,7 +58,8 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await expect(diagram).toBeVisible();
     expect((await diagram.boundingBox())!.width).toBeLessThanOrEqual(width);
     await capture("depth-key");
-    await marks.click();
+    if (width < 768) await page.getByRole("button", { name: "Close legend", exact: true }).click();
+    else await marks.click();
     if (width < 768) {
       await page.getByRole("button", { name: "View options", exact: true }).click();
       await capture("utilities");
@@ -99,7 +100,7 @@ test("mobile utilities dismiss outside and when focus leaves", async ({ page }) 
   await waitForData(page);
   await page.getByRole("button", { name: "View options", exact: true }).click();
   const sound = page.getByRole("button", { name: "Save image", exact: true });
-  await page.getByRole("button", { name: "Expand globe", exact: true }).click();
+  await page.locator("#globe-view canvas").click({ position: { x: 12, y: 80 } });
   await expect(sound).toBeHidden();
   await page.getByRole("button", { name: "View options", exact: true }).click();
   await page.getByRole("button", { name: "Map", exact: true }).focus();

@@ -147,7 +147,10 @@
     /* Phone: globe on top, rail becomes a sheet you scroll under it. A passive watchable
        visualization gets most of its shared links opened on a phone. */
     /* `--canvas-h` is the phone sheet's handle, unset until somebody drags it. */
-    grid-template-rows: var(--canvas-h, 60dvh) 1fr;
+    --sheet-min: max(28dvh, min(220px, 60dvh));
+    --sheet-default: max(46dvh, min(280px, 72dvh));
+    --sheet-position: clamp(var(--sheet-min), var(--canvas-h, var(--sheet-default)), 82dvh);
+    grid-template-rows: var(--sheet-position) 1fr;
     grid-template-areas: "canvas" "rail";
     /* Declare one column so a named area cannot create implicit columns wider than a phone. */
     grid-template-columns: 1fr;
@@ -938,18 +941,19 @@
 @media (width < 768px) {
   .mobile-navigation {
     position: absolute;
-    top: calc(var(--canvas-h, 60dvh) + 8px);
-    right: 12px;
-    left: 12px;
+    top: calc(var(--sheet-position) + 16px);
+    right: 16px;
     z-index: 3;
     display: flex;
-    justify-content: space-between;
-    background: var(--color-void);
+    gap: 4px;
     pointer-events: none;
   }
   .mobile-navigation button {
+    display: grid;
+    place-items: center;
+    min-width: 44px;
     min-height: 44px;
-    padding: 0 12px;
+    padding: 0;
     border: 1px solid var(--color-hairline);
     border-radius: 7px;
     background: var(--color-deck);
@@ -958,8 +962,8 @@
     pointer-events: auto;
   }
   .zone-rail {
-    padding-top: 64px;
-    scroll-padding-top: 64px;
+    padding-top: 28px;
+    scroll-padding-top: 88px;
   }
 }
 

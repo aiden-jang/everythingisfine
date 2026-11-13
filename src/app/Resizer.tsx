@@ -14,6 +14,7 @@ export interface ResizerProps {
   /** Draws a short bar across the middle instead of a hairline. For a handle nobody can hover: on a phone
    * the hairline only appears on reach, and a touch never reaches. */
   grip?: boolean;
+  snap?: number[];
   className?: string;
   style?: React.CSSProperties;
 }
@@ -27,23 +28,34 @@ export function Resizer({
   measure,
   onChange,
   grip = false,
+  snap,
   className,
   style,
 }: ResizerProps): JSX.Element {
   const dragging = useRef(false);
-  const latest = useRef({ measure, onChange });
-  latest.current = { measure, onChange };
+  const lastValue = useRef<number | null>(null);
+  const latest = useRef({ measure, onChange, snap });
+  latest.current = { measure, onChange, snap };
 
   useEffect(() => {
     const onMove = (e: PointerEvent): void => {
       if (!dragging.current) return;
       e.preventDefault();
       const { measure: m, onChange: change } = latest.current;
-      change(Math.max(min, Math.min(max, m(e))));
+      lastValue.current = Math.max(min, Math.min(max, m(e)));
+      change(lastValue.current);
     };
     const onUp = (): void => {
       if (!dragging.current) return;
       dragging.current = false;
+      const stops = latest.current.snap;
+      if (lastValue.current !== null && stops?.length) {
+        const current = lastValue.current;
+        latest.current.onChange(
+          stops.reduce((a, b) => (Math.abs(a - current) < Math.abs(b - current) ? a : b)),
+        );
+      }
+      lastValue.current = null;
       document.body.style.cursor = "";
       // Text selection is off during a drag, because dragging across a list of place names otherwise
       // highlights all of them and the drag ends with half the rail selected.
@@ -81,10 +93,16 @@ export function Resizer({
       onPointerDown={(e) => {
         e.preventDefault();
         dragging.current = true;
+        lastValue.current = null;
         document.body.style.cursor = horizontal ? "row-resize" : "col-resize";
         document.body.style.userSelect = "none";
       }}
       onKeyDown={(e) => {
+        if (e.key === "Home" || e.key === "End") {
+          e.preventDefault();
+          onChange(e.key === "Home" ? min : max);
+          return;
+        }
         const step = e.shiftKey ? 48 : 16;
         if (e.key === less) onChange(Math.max(min, value - step));
         else if (e.key === more) onChange(Math.min(max, value + step));

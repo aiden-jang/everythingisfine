@@ -108,27 +108,11 @@
   font-size: 12px;
   line-height: 1.6;
 }
-.place-context summary,
 .layer-focus-control summary {
   min-height: 44px;
   align-content: center;
   cursor: pointer;
   color: var(--color-ink);
-}
-.place-context label {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  gap: 12px;
-}
-.place-context select {
-  min-width: 0;
-  min-height: 44px;
-  border: 1px solid var(--color-hairline);
-  border-radius: 7px;
-  padding: 8px;
-  color: var(--color-ink);
-  background: var(--color-deck);
 }
 .place-context p {
   margin-block: 10px;

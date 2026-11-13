@@ -4,9 +4,9 @@ import type { EarthScene } from "./useObservatory";
 
 export const featuredIds = { live: "float", depth: "rupture", night: "moonfall" } as const;
 const suggested = {
-  live: ["radar", "katrina", "aral", "iceberg", "rain", "kilauea"],
+  live: ["radar", "katrina", "aral", "iceberg"],
   depth: ["deep", "seafloor", "fault"],
-  night: ["sky", "aurora", "sun", "shadow", "orbit", "meteors"],
+  night: ["sky", "aurora", "sun", "shadow"],
 };
 export function browseStories(scene: EarthScene | null, all: boolean): readonly SearchStory[] {
   const focus = scene ?? "live";
@@ -14,7 +14,7 @@ export function browseStories(scene: EarthScene | null, all: boolean): readonly 
     (story) => (!scene || story.scene === scene) && story.id !== featuredIds[focus],
   );
   if (all) return list;
-  const ids = scene ? suggested[scene] : ["radar", "sky", "rupture", "aral", "aurora", "seafloor"];
+  const ids = scene ? suggested[scene] : ["radar", "sky", "rupture", "aurora"];
   return ids.flatMap((id) => list.filter((story) => story.id === id));
 }
 export function storyKind(id: string): string {

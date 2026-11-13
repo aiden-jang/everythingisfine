@@ -42,7 +42,7 @@ export const layerMetadata: Record<
     sources: ["radar"],
     coverage: "Recent scans · worldwide network",
     meaning:
-      "Observed radar returns where participating networks provide coverage. Stripes indicate no listed coverage; blank does not always mean dry.",
+      "Observed composites from participating radar networks, not a forecast. Stripes indicate no listed coverage; blank does not always mean dry. Coverage varies by country and does not report station outages. Frame time is the composite time; individual radars can be older. The past two hours are available in ten-minute steps at regional rather than street-level detail. Radar has its own clock, independent of the earthquake timeline.",
   },
   wind: {
     sources: ["wind"],

@@ -184,7 +184,25 @@ export function RadarStage({
           <label htmlFor={id}>
             {global ? (atLatest ? "Latest frame" : "Frame time") : atLatest ? "Latest scan" : "Scan time"}
           </label>
-          {selected && <time dateTime={new Date(selected.at).toISOString()}>{timeLabel}</time>}
+          {selected && (
+            <time dateTime={new Date(selected.at).toISOString()}>
+              {layer ? (
+                <>
+                  <strong>{shortTime(selected.at)} UTC</strong>
+                  <span>
+                    {new Intl.DateTimeFormat("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                      timeZone: "UTC",
+                    }).format(selected.at)}
+                  </span>
+                </>
+              ) : (
+                timeLabel
+              )}
+            </time>
+          )}
         </div>
         {problem && (
           <p className="radar-warning" role="status" aria-label="Radar status">

@@ -2,7 +2,7 @@ import { ClipNotice } from "./capture/ClipControls";
 import type { Clip } from "./capture/useClip";
 import { ObservatoryOptions } from "./ObservatoryOptions";
 import { StillNotice } from "./StillNotice";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, SetStateAction, ReactNode } from "react";
 import type { FeedSnapshot } from "./feed";
 import type { FeedStatus } from "./feedStatus";
 import { FeedDot } from "./FeedDot";
@@ -25,6 +25,7 @@ interface Props {
   saving: boolean;
   saveStill: () => void;
   feeds: FeedStatus;
+  keyboard: ReactNode;
   rotation: { enabled: boolean; set: (enabled: boolean) => void };
 }
 
@@ -47,6 +48,7 @@ export function GlobeHeader({
   saveStill,
   feeds,
   rotation,
+  keyboard,
 }: Props): JSX.Element {
   return (
     <>
@@ -85,6 +87,7 @@ export function GlobeHeader({
           >
             {!observing && (
               <>
+                {keyboard}
                 <button
                   type="button"
                   onClick={onReset}

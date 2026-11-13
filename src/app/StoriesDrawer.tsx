@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { VisitShelf } from "./visitor/VisitShelf";
 import { JourneyPicker } from "./journeys/JourneyPicker";
@@ -45,10 +45,20 @@ export function StoriesDrawer({
   const key = scene ?? "all";
   const all = expanded === key;
   const entries = browseStories(scene, all);
+  const selectionScroll = useRef(0);
+  const container = useRef<HTMLDivElement>(null);
+  const rail = () => container.current?.closest<HTMLElement>("#chrome-rail, #observatory-intro");
+  const sections = [
+    ["visits", "Saved & recent"],
+    ["journeys", "Guided journeys"],
+    ["archives", "Archives"],
+    ["feeds", "From feeds"],
+  ] as const;
   if (!visible) return null;
   return (
     <StoryPreview>
       <div
+        ref={container}
         id="stories-panel"
         className="stories-drawer"
         aria-label="Stories and layers"
@@ -68,7 +78,9 @@ export function StoriesDrawer({
           <>
             <FeaturedStory scene={scene ?? "live"} />
             <section className="stories-group" aria-label={all ? "All stories" : "Selected stories"}>
-              <h3>{all ? "All stories in this selection" : "Start exploring"}</h3>
+              <h3 className={all ? undefined : "sr-only"}>
+                {all ? "All stories in this selection" : "Start exploring"}
+              </h3>
               <div>
                 {entries.map((story) => {
                   const id = storyButtonId(story.id);
@@ -86,8 +98,19 @@ export function StoriesDrawer({
                       </button>
                       <small id={`${id}-note`}>
                         <span className="story-kind">{storyKind(story.id)}</span>
-                        {navigation?.unavailable(story.id) ?? story.summary}
+                        <span className={!all && !navigation?.unavailable(story.id) ? "sr-only" : undefined}>
+                          {navigation?.unavailable(story.id) ?? story.summary}
+                        </span>
                       </small>
+                      <svg
+                        className="story-choice-chevron"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        height="16"
+                        aria-hidden="true"
+                      >
+                        <path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                      </svg>
                     </div>
                   );
                 })}
@@ -96,59 +119,84 @@ export function StoriesDrawer({
                 className="story-browse-all"
                 type="button"
                 aria-expanded={all}
-                onClick={() => expand(all ? null : key)}
+                onClick={() => {
+                  if (!all) selectionScroll.current = rail()?.scrollTop ?? 0;
+                  expand(all ? null : key);
+                  if (all) requestAnimationFrame(() => rail()?.scrollTo({ top: selectionScroll.current }));
+                }}
               >
                 {all ? "Show selected stories" : `View all ${browseStories(scene, true).length + 1} stories`}
               </button>
             </section>
-            <details
-              className="story-secondary"
-              open={browse.sections.includes("visits")}
-              onToggle={(event) => browse.fold("visits", event.currentTarget.open)}
-            >
-              <summary>Your visits & saved views</summary>
-              <VisitShelf />
-            </details>
-            <details
-              className="story-secondary"
-              open={browse.sections.includes("journeys")}
-              onToggle={(event) => browse.fold("journeys", event.currentTarget.open)}
-            >
-              <summary>Guided journeys & tours</summary>
-              <JourneyPicker />
-              {children}
-            </details>
-            {discoveries && (
-              <details
-                className="story-secondary"
-                open={browse.sections.includes("feeds")}
-                onToggle={(event) => browse.fold("feeds", event.currentTarget.open)}
-              >
-                <summary>From available feeds</summary>
-                {discoveries}
-              </details>
-            )}
-            <details
-              className="story-secondary"
-              open={browse.sections.includes("archives")}
-              onToggle={(event) => browse.fold("archives", event.currentTarget.open)}
-            >
-              <summary>Earthquake & eclipse archives</summary>
-              <div className="story-archive-actions">
-                <button type="button" onClick={() => onHistory("2011-03-11")}>
-                  Japan, 2011
-                </button>
-                <button type="button" onClick={() => onHistory("2013-05-24")}>
-                  Deep beneath Okhotsk
-                </button>
-                <button type="button" onClick={() => onHistory(APRIL_ECLIPSE_DAY)}>
-                  Total eclipse, 2024
-                </button>
-                <button type="button" onClick={onPickDate}>
-                  Pick a past date
-                </button>
+            <div className="story-library">
+              <div className="story-library-links" aria-label="Story library">
+                {sections
+                  .filter(([id]) => id !== "feeds" || discoveries)
+                  .map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      id={`story-library-${id}`}
+                      aria-expanded={browse.sections.includes(id)}
+                      aria-controls={`story-library-panel-${id}`}
+                      onClick={() => {
+                        browse.fold(id, !browse.sections.includes(id));
+                      }}
+                    >
+                      {label}
+                    </button>
+                  ))}
               </div>
-            </details>
+              <section
+                id="story-library-panel-visits"
+                className="story-secondary"
+                aria-labelledby="story-library-visits"
+                hidden={!browse.sections.includes("visits")}
+              >
+                <VisitShelf />
+              </section>
+              <section
+                id="story-library-panel-journeys"
+                className="story-secondary"
+                aria-labelledby="story-library-journeys"
+                hidden={!browse.sections.includes("journeys")}
+              >
+                <JourneyPicker />
+                {children}
+              </section>
+              {discoveries && (
+                <section
+                  id="story-library-panel-feeds"
+                  className="story-secondary"
+                  aria-labelledby="story-library-feeds"
+                  hidden={!browse.sections.includes("feeds")}
+                >
+                  {discoveries}
+                </section>
+              )}
+              <section
+                id="story-library-panel-archives"
+                className="story-secondary"
+                aria-labelledby="story-library-archives"
+                hidden={!browse.sections.includes("archives")}
+              >
+                <p>Earthquake and eclipse archives</p>
+                <div className="story-archive-actions">
+                  <button type="button" onClick={() => onHistory("2011-03-11")}>
+                    Japan, 2011
+                  </button>
+                  <button type="button" onClick={() => onHistory("2013-05-24")}>
+                    Deep beneath Okhotsk
+                  </button>
+                  <button type="button" onClick={() => onHistory(APRIL_ECLIPSE_DAY)}>
+                    Total eclipse, 2024
+                  </button>
+                  <button type="button" onClick={onPickDate}>
+                    Pick a past date
+                  </button>
+                </div>
+              </section>
+            </div>
           </>
         )}
       </div>

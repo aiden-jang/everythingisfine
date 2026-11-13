@@ -478,10 +478,11 @@ export async function waitForData(page: Page): Promise<number> {
 /** Reach the catalogue through real navigation; secondary tools are opt-in. */
 export async function openStories(page: Page, expand: "catalogue" | "all" | "search" = "catalogue") {
   const tab = page.getByRole("tab", { name: "Stories", exact: true });
-  if (await tab.isVisible()) await tab.click();
+  const exploring = await tab.isVisible();
+  if (exploring && (await tab.getAttribute("aria-selected")) !== "true") await tab.click();
   const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
   if (
-    !(await tab.isVisible()) &&
+    !exploring &&
     (await scenes.isVisible()) &&
     (await scenes.locator('[aria-pressed="true"]').count()) === 0
   )
@@ -492,14 +493,10 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
   const all = catalogue.getByRole("button", { name: /^View all \d+ stories$/ });
   if (await all.isVisible()) await all.click();
   if (expand !== "all") return scenes;
-  for (const label of [
-    "Your visits & saved views",
-    "Guided journeys & tours",
-    "From available feeds",
-    "Earthquake & eclipse archives",
-  ]) {
-    const summary = catalogue.locator("details:not([open]) > summary").filter({ hasText: label });
-    if (await summary.count()) await summary.click();
+  for (const label of ["Saved & recent", "Guided journeys", "From feeds", "Archives"]) {
+    const summary = catalogue.getByRole("button", { name: label, exact: true });
+    if ((await summary.count()) && (await summary.getAttribute("aria-expanded")) === "false")
+      await summary.click();
   }
   return scenes;
 }
@@ -512,7 +509,7 @@ export async function revealStoryTools(page: Page) {
 export async function openLayer(page: Page, name = "Earthquakes") {
   const tab = page.getByRole("tab", { name: "Layers", exact: true });
   await expect(tab).toBeVisible();
-  await tab.click();
+  if ((await tab.getAttribute("aria-selected")) !== "true") await tab.click();
   const title = page.getByRole("heading", { name, exact: true });
   if (await title.isVisible()) return;
   const back = page.getByRole("button", { name: "Back to layers", exact: true });

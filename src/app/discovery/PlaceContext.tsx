@@ -35,16 +35,15 @@ export function nearbyQuakes(
 }
 export function PlaceContext(props: PlaceContextProps) {
   return (
-    <details className="place-context">
-      <summary>Find a place</summary>
+    <div className="place-context place-search">
       <PlaceReadings {...props} />
-    </details>
+    </div>
   );
 }
 
 function PlaceReadings({ feed, filters, at, now, revision, hazards, feeds }: PlaceContextProps) {
   const [name, setName] = useState("");
-  const place = skyCities.find((city) => city.name === name);
+  const place = skyCities.find((city) => city.name.toLowerCase() === name.trim().toLowerCase());
   const quakes = useMemo(() => {
     void revision;
     return place ? nearbyQuakes(feed, filters, at, now, place) : [];
@@ -57,24 +56,33 @@ function PlaceReadings({ feed, filters, at, now, revision, hazards, feeds }: Pla
   const unavailable = feeds.rows.filter((row) => row.state === "failed" || row.state === "pending");
   return (
     <>
-      <label>
-        <span>Place</span>
-        <select
+      <label className="explorer-search">
+        <span className="sr-only">Find a place</span>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+          <path d="m15 15 6 6" stroke="currentColor" strokeWidth="1.5" />
+        </svg>
+        <input
+          type="search"
+          name="place"
+          autoComplete="off"
+          placeholder="Find a place…"
+          list="explorer-places"
           value={name}
-          onChange={(event) => {
-            setName(event.currentTarget.value);
-            const selected = skyCities.find((city) => city.name === event.currentTarget.value);
-            if (selected) refreshAnnotations(selected);
-          }}
-        >
-          <option value="">Choose a place</option>
+          onInput={(event) => setName(event.currentTarget.value)}
+        />
+        <datalist id="explorer-places">
           {skyCities.map((city) => (
-            <option key={city.name}>{city.name}</option>
+            <option key={city.name} value={city.name} />
           ))}
-        </select>
+        </datalist>
       </label>
+      {name && !place && <p>Choose a city from the suggestions to see nearby reports.</p>}
       {place && (
         <section aria-label={`Observations around ${name}`}>
+          <button type="button" className="place-locate" onClick={() => refreshAnnotations(place)}>
+            Locate {place.name}
+          </button>
           <p>Within 500 km · chosen layers and time window. Available reports only.</p>
           <p>
             {quakes.length} earthquake{quakes.length === 1 ? "" : "s"} · {other.length} other reported event

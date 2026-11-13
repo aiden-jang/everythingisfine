@@ -27,6 +27,8 @@ import { ObservationDeckShell } from "./observations/ObservationEntry";
 
 export interface ObservatoryProps {
   explorer: {
+    radarAt: number | undefined;
+    flat: boolean;
     read: () => CameraState;
     restore: (camera: CameraState) => void;
     radarTime: (at: number | null) => void;

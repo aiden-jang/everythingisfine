@@ -76,6 +76,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     if (!story || unavailable(id)) return;
     rememberOrigin(trigger);
     const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
+    const resuming = saved !== undefined;
     saved ??= memory.library.recent.find((visit) => visit.id === id);
     props.views.navigation.prepareStory(
       keepScene && props.views.observing ? props.scene : story.scene,
@@ -87,8 +88,13 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     else if (id === "aurora") props.aurora.start();
     else if (id === "sun") sun.toggle();
     else if (id === "radar") {
-      props.radar.open(saved?.position.radar?.region, false, saved?.position.radar?.at);
-      deck.setMap(saved?.position.radar?.map ?? false);
+      const exploring = !props.views.observing && !resuming;
+      props.radar.open(
+        exploring ? "world" : saved?.position.radar?.region,
+        false,
+        exploring ? props.explorer.radarAt : saved?.position.radar?.at,
+      );
+      deck.setMap(exploring ? props.explorer.flat : (saved?.position.radar?.map ?? false));
     } else if (id === "float") floatDive.open(saved?.position.float);
     else deck.open(id as StoryId, trigger, saved?.position.moment);
   }

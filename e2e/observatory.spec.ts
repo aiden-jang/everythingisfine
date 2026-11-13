@@ -321,6 +321,7 @@ test("a shared map restores Explore and the Observatory preserves the held view"
   expect(new URLSearchParams(new URL(page.url()).hash.slice(1)).get("c")).toBe(
     new URLSearchParams(new URL(link).hash.slice(1)).get("c"),
   );
+  await page.close();
   const recipient = await browser.newPage({ reducedMotion: "reduce" });
   try {
     await installFeeds(recipient, { presentation: "fresh" });

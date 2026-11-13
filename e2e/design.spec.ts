@@ -119,14 +119,17 @@ for (const bp of BREAKPOINTS) {
     const overflow = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
       inner: window.innerWidth,
-      widest: Math.max(
-        ...Array.from(document.querySelectorAll("body *")).map((el) =>
-          Math.round(el.getBoundingClientRect().right),
-        ),
-      ),
+      widest: Array.from(document.querySelectorAll("body *"))
+        .map((el) => ({
+          tag: el.tagName,
+          className: el.getAttribute("class"),
+          text: el.textContent?.trim().slice(0, 80),
+          right: Math.round(el.getBoundingClientRect().right),
+        }))
+        .sort((a, b) => b.right - a.right)[0]!,
     }));
     expect(overflow.scrollWidth).toBeLessThanOrEqual(overflow.inner);
-    expect(overflow.widest).toBeLessThanOrEqual(overflow.inner + 1);
+    expect(overflow.widest.right, JSON.stringify(overflow.widest)).toBeLessThanOrEqual(overflow.inner + 1);
   });
 
   test(`every control is reachable at ${bp.name}`, async ({ page }) => {

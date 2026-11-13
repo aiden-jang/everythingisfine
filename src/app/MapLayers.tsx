@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, useRef, type ReactNode } from "react";
 import { PlaceContext, type PlaceContextProps } from "./discovery/PlaceContext";
 import { mapLayerNames, type MapLayer } from "./layerVisibility";
 import type { useMapLayers } from "./useMapLayers";
@@ -8,6 +8,7 @@ import { layerHealth, layerMetadata } from "./layerMetadata";
 import type { Aurora } from "../sources/aurora";
 import { layerTime } from "./layerTime";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
+import { LayerCatalogue, LayerVisibility } from "./LayerCatalogue";
 import { LayerSources } from "./LayerSources";
 import { HazardList } from "./HazardList";
 import "./map-layers.css";
@@ -49,28 +50,22 @@ export function MapLayers({
   const navigation = useStoryNavigation();
   const layer = controls.inspector;
   const disabled = (id: MapLayer) => archived && (id === "aurora" || id === "radar" || id in weatherLayers);
+  const listScroll = useRef(0);
+  const inspect = (id: MapLayer) => {
+    listScroll.current = document.getElementById("chrome-rail")?.scrollTop ?? 0;
+    controls.inspect(id);
+    requestAnimationFrame(() => {
+      document.getElementById("chrome-rail")?.scrollTo({ top: 0 });
+      document.getElementById("layer-inspector-title")?.focus({ preventScroll: true });
+    });
+  };
   const back = () => {
     controls.inspect(null);
-    requestAnimationFrame(() => document.getElementById(`inspect-${layer}`)?.focus({ preventScroll: true }));
+    requestAnimationFrame(() => {
+      document.getElementById("chrome-rail")?.scrollTo({ top: listScroll.current });
+      document.getElementById(`inspect-${layer}`)?.focus({ preventScroll: true });
+    });
   };
-  const visibility = (id: MapLayer) => (
-    <button
-      type="button"
-      className="layer-visibility"
-      aria-label={mapLayerNames[id]}
-      aria-description={`Toggle ${mapLayerNames[id].toLowerCase()} visibility`}
-      aria-pressed={controls.enabled[id] && !disabled(id)}
-      disabled={disabled(id)}
-      onClick={() => controls.change(id, !controls.enabled[id])}
-    >
-      <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-        <rect x="1.5" y="1.5" width="13" height="13" rx="3" fill="none" stroke="currentColor" />
-        {controls.enabled[id] && !disabled(id) && (
-          <path d="m4 8 3 3 5-6" fill="none" stroke="currentColor" strokeWidth="1.5" />
-        )}
-      </svg>
-    </button>
-  );
   const health = layer ? layerHealth(layer, feeds.rows) : null;
   const hazardKind = layer && layer in hazardKinds ? hazardKinds[layer as keyof typeof hazardKinds] : null;
   const groups = places.hazards.filter((group) => group.kind === hazardKind);
@@ -95,44 +90,17 @@ export function MapLayers({
         </div>
       )}
       <div hidden={layer !== null}>
-        <p className="layer-intro">Choose what appears. Open a layer for its readings and controls.</p>
-        <div className="layer-list">
-          {(Object.keys(mapLayerNames) as MapLayer[]).map((id) => {
-            const status = !archived && controls.enabled[id] ? layerHealth(id, feeds.rows) : null;
-            return (
-              <div className="layer-row" key={id}>
-                {visibility(id)}
-                <div className="layer-entry">
-                  <button
-                    type="button"
-                    id={`inspect-${id}`}
-                    className="layer-inspect"
-                    aria-label={`${mapLayerNames[id]} details`}
-                    aria-describedby={`layer-${id}-coverage`}
-                    onClick={() => {
-                      controls.inspect(id);
-                      requestAnimationFrame(() =>
-                        document.getElementById("layer-inspector-title")?.focus({ preventScroll: true }),
-                      );
-                    }}
-                  >
-                    <span>{mapLayerNames[id]}</span>
-                    <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-                      <path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                    </svg>
-                  </button>
-                  <small id={`layer-${id}-coverage`}>
-                    {disabled(id) ? "Unavailable in this archive" : (status ?? layerMetadata[id].coverage)}
-                  </small>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {!archived && <PlaceContext {...places} />}
+        <LayerCatalogue
+          controls={controls}
+          feeds={feeds}
+          archived={archived}
+          disabled={disabled}
+          onInspect={inspect}
+        />
         {Object.values(controls.enabled).every((on) => !on) && (
           <p role="status">All layers are off. Choose a layer to show its observations.</p>
         )}
-        {!archived && <PlaceContext {...places} />}
       </div>
       {layer && (
         <div className="layer-inspector-heading">
@@ -143,7 +111,12 @@ export function MapLayers({
             <h2 id="layer-inspector-title" tabIndex={-1}>
               {mapLayerNames[layer]}
             </h2>
-            {visibility(layer)}
+            <LayerVisibility
+              layer={layer}
+              on={controls.enabled[layer]}
+              disabled={disabled(layer)}
+              onChange={(on) => controls.change(layer, on)}
+            />
           </div>
           <p>{layerMetadata[layer].coverage}</p>
           {disabled(layer) ? (
@@ -155,15 +128,6 @@ export function MapLayers({
           ) : health ? (
             <p role="status">{health}</p>
           ) : null}
-          {!archived && (
-            <button
-              type="button"
-              className="layer-solo"
-              onClick={() => controls.isolate(controls.isolated === layer ? null : layer)}
-            >
-              {controls.isolated === layer ? "Restore chosen layers" : "Show only this layer"}
-            </button>
-          )}
         </div>
       )}
       <div hidden={layer !== "earthquakes"}>{children}</div>
@@ -244,6 +208,15 @@ export function MapLayers({
               </div>
             ),
         )}
+      {layer && !archived && (
+        <button
+          type="button"
+          className="layer-solo"
+          onClick={() => controls.isolate(controls.isolated === layer ? null : layer)}
+        >
+          {controls.isolated === layer ? "Restore chosen layers" : "Show only this layer"}
+        </button>
+      )}
       {layer && <LayerSources layer={layer} feeds={feeds} />}
     </section>
   );
