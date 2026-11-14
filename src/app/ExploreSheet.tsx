@@ -20,7 +20,7 @@ export function ExploreSheet({
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
   }, []);
-  const stops = sheetStops(viewport);
+  const stops = sheetStops(viewport, panel === "Stories");
   const current = Math.min(stops[2]!, Math.max(stops[0]!, height || stops[1]!));
   return (
     <>

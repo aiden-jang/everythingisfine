@@ -4,7 +4,7 @@
   top: calc(-1 * var(--explorer-pad, 20px));
   z-index: 2;
   gap: 32px;
-  margin: calc(-1 * var(--explorer-pad, 20px)) calc(-1 * var(--explorer-pad, 20px)) 22px;
+  margin: calc(-1 * var(--explorer-pad, 20px)) calc(-1 * var(--explorer-pad, 20px)) 16px;
   padding: 14px var(--explorer-pad, 20px) 0;
   background: inherit;
 }
@@ -396,40 +396,55 @@
   padding-block: 6px;
 }
 #explorer-stories .stories-drawer {
-  gap: 16px;
+  gap: 12px;
   border-bottom: 0;
+}
+#explorer-stories .story-selection-heading:not(:has(button)) {
+  min-height: 28px;
+}
+#explorer-stories .story-search {
+  margin-top: 0;
 }
 #explorer-stories .featured-story {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: end;
-  min-height: 240px;
+  min-height: 216px;
   gap: 0;
   margin: 0;
   padding: 0;
   border: 0;
   border-radius: 9px;
   isolation: isolate;
+  background: var(--color-void);
 }
 #explorer-stories .featured-story img {
   position: absolute;
   inset: 0;
   z-index: -1;
   width: 100%;
-  height: 100%;
+  height: 148px;
   object-fit: cover;
+  object-position: center top;
   border-radius: inherit;
+  mask-image: linear-gradient(#000 60%, transparent);
+}
+#explorer-stories .featured-story img[data-story="float"] {
+  object-position: left top;
+}
+.story-thumbnail[data-story="sky"] {
+  filter: brightness(2);
 }
 #explorer-stories .featured-story > span {
   gap: 4px;
-  padding: 88px 20px 18px;
+  padding: 68px 16px 12px;
   border-radius: inherit;
-  background: linear-gradient(transparent 25%, rgb(5 11 22 / 90%) 70%);
+  background: linear-gradient(transparent 12%, rgb(5 11 22 / 92%) 65%);
   font-size: 14px;
   line-height: 1.5;
 }
 #explorer-stories .featured-story strong {
-  font-size: clamp(28px, 2.5vw, 40px);
+  font-size: clamp(28px, 2.15vw, 36px);
   font-weight: 600;
   letter-spacing: -0.035em;
   line-height: 1.12;
@@ -441,7 +456,7 @@
   display: inline-flex;
   align-items: center;
   gap: 12px;
-  min-height: 36px;
+  min-height: 32px;
   margin-top: 4px;
   font-size: 15px;
 }
@@ -479,7 +494,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 4px 16px;
-  margin-top: 18px;
+  margin-top: 8px;
 }
 .story-library-toggle {
   display: inline-flex;
@@ -526,6 +541,9 @@
   display: none;
 }
 @media (max-width: 767px) {
+  .zones:has(#explorer-stories:not([hidden])) {
+    --sheet-default: max(34dvh, min(240px, 65dvh));
+  }
   .explorer-tabs {
     top: -28px;
     padding-top: 16px;
@@ -537,6 +555,7 @@
     background: var(--color-deck);
     scroll-padding-top: 88px;
     padding-bottom: max(64px, calc(44px + env(safe-area-inset-bottom)));
+    border-radius: 16px 16px 0 0;
   }
 }
 
@@ -635,7 +654,7 @@
     min-height: 182px;
   }
   #explorer-stories .featured-story > span {
-    padding: 52px 16px 12px;
+    padding: 50px 16px 10px;
     font-size: 13px;
   }
   #explorer-stories .featured-story button {
@@ -654,6 +673,10 @@
   #explorer-stories .story-choice {
     grid-template-columns: 72px minmax(0, 1fr) 16px;
     gap: 2px 12px;
+    padding: 10px;
+    border: 1px solid var(--color-hairline);
+    border-radius: 9px;
+    margin-bottom: 8px;
   }
   #explorer-stories .story-choice .story-thumbnail {
     width: 72px;
@@ -693,7 +716,7 @@
     font-size: 14px;
   }
   #explorer-stories .observatory-scenes {
-    margin-bottom: 16px;
+    margin-bottom: 8px;
   }
   #explorer-stories .observatory-scenes button {
     min-height: 68px;
@@ -715,16 +738,6 @@
     width: 22px;
     height: 22px;
   }
-  #explorer-stories .stories-drawer {
-    gap: 18px;
-  }
-  #explorer-stories .featured-story {
-    min-height: clamp(212px, 15vw, 240px);
-  }
-  #explorer-stories .featured-story > span {
-    padding: 72px 22px 18px;
-    font-size: 16px;
-  }
   #explorer-stories .featured-story small {
     font-size: 15px;
   }
@@ -732,18 +745,18 @@
     font-size: 15px;
   }
   #explorer-stories .story-choice {
-    grid-template-columns: clamp(88px, 6.43vw, 102px) minmax(0, 1fr) 16px;
+    grid-template-columns: 76px minmax(0, 1fr) 16px;
     padding-block: 7px;
   }
   #explorer-stories .story-choice .story-thumbnail {
-    width: clamp(88px, 6.43vw, 102px);
-    height: clamp(62px, 4.4vw, 70px);
+    width: 76px;
+    height: 56px;
   }
   #explorer-stories .story-choice > button {
-    font-size: clamp(19px, 1.4vw, 22px);
+    font-size: 18px;
   }
   #explorer-stories .story-choice .story-kind {
-    font-size: clamp(14px, 1.075vw, 17px);
+    font-size: 14px;
   }
   .story-browse-all {
     font-size: 19px;

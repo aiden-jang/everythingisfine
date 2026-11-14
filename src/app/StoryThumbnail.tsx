@@ -32,6 +32,7 @@ export function StoryThumbnail({ id }: { id: string }): JSX.Element | null {
   return src ? (
     <img
       className="story-thumbnail"
+      data-story={storyKey(id)}
       src={src}
       alt=""
       title="Recorded view preview; open for the source and current availability."

@@ -22,7 +22,7 @@ typography:
     fontSize: "22px"
     letterSpacing: "-0.02em"
   story-heading:
-    fontSize: "clamp(28px, 2.5vw, 40px)"
+    fontSize: "clamp(28px, 2.15vw, 36px)"
     letterSpacing: "-0.035em"
   story-row:
     fontSize: "19px"
@@ -228,14 +228,17 @@ Their temporary overrides do not overwrite saved scientific settings. The observ
 status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
 Keep one featured experience and three initial suggestions inside each scene. In Explore, the
 featured story uses a full-width recorded image, a readable lower gradient, title, source, short
-description and Open story cue. Three compact image rows follow, with their data type visible;
+description and Open story cue. Frame the artwork above the text, with the float at the upper right;
+the image fades into the reading surface instead of competing with the copy. Keep category, heading
+and search spacing compact. Three compact image rows follow, with their data type visible;
 accessible descriptions and the full catalogue retain the explanation. View all and Library share
 the footer below the selection. Library reveals Saved & recent, Guided journeys, Archives and
 From feeds; those sections keep their individual disclosures. The full catalogue remains a
 deliberate choice.
 **Explore the globe** comes before the three illustrated scene filters. The landing overview starts
 with none selected and the catalogue collapsed. Selecting a scene exposes its entries and brings
-the search field into view on narrow screens; selecting it again returns to the compact landing view.
+the search field into view on narrow screens; selecting it again returns to All stories. The wordmark
+returns to the compact landing view.
 There is no separate disclosure button for content the scene selection already opens. Closing an
 experience returns focus to its entry point and restores the drawer’s scroll position.
 Story thumbnails show recorded captures of their actual views. Float Dive, Rupture Reveal and
@@ -326,7 +329,9 @@ rotation and reset share that menu; keyboard help is a quiet optional disclosure
 the subject above a draggable, keyboard-operable sheet. Expand globe/map enlarges the canvas; the
 other shortcut names the current pane rather than assuming earthquake activity. The handle and
 interactive controls have 44px targets. The phone globe row starts at 43% of viewport height, with
-a 280px floor bounded by 72% on very short screens. Its lower stop is 20%, with a 180px floor
+a 280px floor bounded by 72% on very short screens. Stories starts at 34%, with a 240px floor bounded
+by 65%, so its featured cover and the next complete row fit on a portrait phone. A manually adjusted
+height takes precedence in either pane. Its lower stop is 20%, with a 180px floor
 bounded by 60%; its upper stop is 82%. Browsing expands the sheet by reducing the globe row;
 expanding the globe reduces the sheet. Within that row, the Explore canvas clears the 68px header
 and leaves 12px below, keeping the default globe complete above the sheet.

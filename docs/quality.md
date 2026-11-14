@@ -20,8 +20,8 @@ stable across GitHub runner-image migrations.
 
 One software-rendered globe runs per runner. `tools/browser-shards.mjs` balances estimated runtime
 across isolated shards, placing expensive cases first. `tools/browser-costs.json` holds rounded
-per-file means and `tools/browser-case-costs.json` records cases at least ten seconds from their
-file's mean, keyed by file and title so line edits do not invalidate them. Both use the Ubuntu run
+per-file means and `tools/browser-case-costs.json` records measured passing cases,
+keyed by file and title so line edits do not invalidate them. Both use the Ubuntu run
 cited in the scheduler; refresh estimates from successful test
 durations when workloads change. Unknown files use a typical cost and still run. Estimates affect
 assignment only, never assertions, timeouts or retries. Every test belongs to exactly one shard;

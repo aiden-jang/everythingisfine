@@ -17,6 +17,18 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   expect((await canvas!.boundingBox())!.y).toBeGreaterThanOrEqual(header.y + header.height);
   const size = () => sheet.getAttribute("aria-valuenow");
   await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.43)));
+  await page.getByRole("tab", { name: "Stories", exact: true }).click();
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.34)));
+  const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
+  const firstRow = stories.locator(".story-choice").first();
+  await expect(firstRow).toBeInViewport({ ratio: 1 });
+  const row = (await firstRow.boundingBox())!;
+  expect(row.y + row.height).toBeLessThanOrEqual((await page.locator(".creator-credit").boundingBox())!.y);
+  expect(
+    Math.abs((await page.locator("#chrome-rail").boundingBox())!.y - Number(await size())),
+  ).toBeLessThanOrEqual(1);
+  await page.getByRole("tab", { name: "Layers", exact: true }).click();
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.43)));
   await navigation.getByRole("button", { name: "Collapse panel", exact: true }).click();
   const collapsed = Number(await size());
   await navigation.getByRole("button", { name: "Expand panel", exact: true }).click();
@@ -47,6 +59,9 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await page.mouse.move(grip.x + grip.width / 2, half + 20, { steps: 8 });
   await page.mouse.up();
   await expect(sheet).toHaveAttribute("aria-valuenow", String(half));
+  await page.getByRole("tab", { name: "Stories", exact: true }).click();
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(half));
+  await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await sheet.press("End");
   await page.setViewportSize({ width: 667, height: 375 });
   await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(375 * 0.82)));
@@ -128,6 +143,17 @@ for (const width of [1440, 812, 390]) {
       stories.getByRole("region", { name: "Selected stories" }).locator(".story-choice > button"),
     ).toHaveCount(3);
     await expect(stories.getByRole("button", { name: "Preview Rupture Reveal", exact: true })).toBeVisible();
+    if (width !== 812) {
+      const firstRow = stories.locator(".story-choice").first();
+      await expect(firstRow).toBeInViewport({ ratio: 1 });
+      const row = (await firstRow.boundingBox())!;
+      const credit = (await page.locator(".creator-credit").boundingBox())!;
+      expect(row.y + row.height).toBeLessThanOrEqual(credit.y);
+      if (width === 1440)
+        await expect(stories.getByRole("button", { name: /^View all \d+ stories$/ })).toBeInViewport({
+          ratio: 1,
+        });
+    }
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/stories-${width}.png` });
     const library = stories.getByRole("button", { name: "Library", exact: true });

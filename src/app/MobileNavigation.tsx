@@ -8,7 +8,7 @@ interface MobileNavigationProps {
 }
 
 export function MobileNavigation({ canvasHeight, viewportHeight, onResize, panel }: MobileNavigationProps) {
-  const [, half, collapsed] = sheetStops(viewportHeight);
+  const [, half, collapsed] = sheetStops(viewportHeight, panel === "Stories");
   const open = (canvasHeight || half) < collapsed;
   const label = open ? "Collapse panel" : "Expand panel";
   return (
