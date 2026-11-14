@@ -1,3 +1,4 @@
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
@@ -191,6 +192,8 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     : isVapor
       ? "Brightness-temperature change from the previous 10-minute scan."
       : "False-color infrared shows the eruption cloud expanding over the Pacific.";
+
+  useStoryCompletion(ended && !view.playing);
 
   function toggle() {
     const current = clock.current;

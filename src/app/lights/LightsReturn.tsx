@@ -1,3 +1,4 @@
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
@@ -52,6 +53,7 @@ export function LightsReturn({
   const timeline = useId();
   const compareId = useId();
   const frame = lightsPeriods[index]!;
+  useStoryCompletion(index === LAST && !playing);
   const displayed = compare && split === 100 ? lightsPeriods[0] : frame;
 
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);

@@ -18,6 +18,7 @@ for (const [id, title] of [
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await openStories(page);
     await page.getByRole("searchbox", { name: "Find a story" }).fill(title);
+    await page.getByRole("button", { name: "Search all stories", exact: true }).click();
     await page.locator(`#search-story-${id}`).click();
     const panel = page.getByRole("region", { name: title, exact: true });
     const timeline = panel.getByRole("slider");

@@ -1,3 +1,4 @@
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { animationDelta } from "../../globe/animation";
@@ -150,6 +151,7 @@ export function SunWatch({ onClose }: { onClose: () => void }): JSX.Element {
   }, []);
 
   const { leg } = solarFrame(view.at);
+  useStoryCompletion(view.at >= FLIGHT_END && !view.playing);
   const caption =
     leg === "sun"
       ? image === undefined

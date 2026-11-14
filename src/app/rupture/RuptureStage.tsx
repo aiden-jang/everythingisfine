@@ -1,3 +1,4 @@
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
@@ -82,6 +83,7 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const elapsed = useRef(clock);
   const { element: coast } = useObservationImage(japan.url);
   const running = mode === "playing" || mode === "paused";
+  useStoryCompletion(mode === "shaking");
   const displayed = running ? beatAt(clock) : mode;
   const caption = captions[displayed];
   const frame = running ? revealFrame(clock) : stillFrame(mode);

@@ -1,3 +1,4 @@
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
@@ -134,6 +135,7 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const { at } = flashFrame(view.elapsed, view.fixed);
   const before = at < 0;
   const complete = at >= DURATION;
+  useStoryCompletion(complete && !view.playing);
   const label = flashTime(at);
   const progress = before ? -1 : stepAt(at);
   const scanCaption = waiting

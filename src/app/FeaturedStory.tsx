@@ -1,3 +1,4 @@
+import { StoryPreviewButton } from "./discovery/StoryPreview";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { StoryThumbnail } from "./StoryThumbnail";
 import type { EarthScene } from "./useObservatory";
@@ -47,6 +48,7 @@ export function FeaturedStory({ scene }: { scene: EarthScene }): JSX.Element {
             <path d="M3 10h13m-5-5 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
           </svg>
         </span>
+        <StoryPreviewButton id={story.id} title={story.title} />
       </span>
     </div>
   );

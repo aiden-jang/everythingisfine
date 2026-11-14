@@ -75,7 +75,7 @@
   line-height: 1.4;
 }
 .story-choice > button::after,
-.featured-story button::after {
+.featured-story button:not([data-story-preview])::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -85,11 +85,11 @@
   opacity: 0.55;
 }
 .story-choice > button:focus-visible,
-.featured-story button:focus-visible {
+.featured-story button:not([data-story-preview]):focus-visible {
   outline: none;
 }
 .story-choice > button:focus-visible::after,
-.featured-story button:focus-visible::after {
+.featured-story button:not([data-story-preview]):focus-visible::after {
   outline: 2px solid var(--color-ink);
   outline-offset: 2px;
 }

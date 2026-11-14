@@ -1,5 +1,7 @@
+import { quietLayer } from "./layerQuiet";
+import { matches } from "../data/filter";
 import { useReadingArrival } from "./useReadingArrival";
-import { lazy, Suspense, useRef, type ReactNode } from "react";
+import { lazy, Suspense, useRef, useMemo, type ReactNode } from "react";
 import { PlaceContext, type PlaceContextProps } from "./discovery/PlaceContext";
 import { mapLayerNames, type MapLayer } from "./layerVisibility";
 import type { useMapLayers } from "./useMapLayers";
@@ -69,9 +71,26 @@ export function MapLayers({
       document.getElementById(`inspect-${layer}`)?.focus({ preventScroll: true });
     });
   };
-  const health = layer ? layerHealth(layer, feeds.rows) : null;
+  const health = layer && !archived ? layerHealth(layer, feeds.rows) : null;
   const hazardKind = layer && layer in hazardKinds ? hazardKinds[layer as keyof typeof hazardKinds] : null;
   const groups = places.hazards.filter((group) => group.kind === hazardKind);
+  const quakeCount = useMemo(() => {
+    void places.revision;
+    let count = 0;
+    places.feed.store.forEach((quake) => {
+      if (quake.primary.time <= places.at && matches(quake, places.filters, places.now)) count++;
+    });
+    return count;
+  }, [places.feed, places.revision, places.at, places.filters, places.now]);
+  const counts: Partial<Record<MapLayer, number>> = { earthquakes: quakeCount };
+  for (const [id, kind] of Object.entries(hazardKinds))
+    counts[id as MapLayer] = places.hazards.find((group) => group.kind === kind)?.rows.length ?? 0;
+  if (aurora) counts.aurora = aurora.peak;
+  if (controls.weather.wind?.frame) counts.wind = controls.weather.wind.frame.paths?.length ?? 0;
+  if (controls.weather.lightning?.frame)
+    counts.lightning = controls.weather.lightning.frame.marks?.length ?? 0;
+  const quiet = (id: MapLayer) => quietLayer(id, feeds.rows, counts[id], archived);
+
   return (
     <section
       ref={panel}
@@ -122,15 +141,14 @@ export function MapLayers({
             </p>
           ) : !controls.enabled[layer] ? (
             <p>This layer is hidden. Turn it on to show its observations.</p>
-          ) : health ? (
-            <p role="status">{health}</p>
+          ) : quiet(layer) ? (
+            <p role="status">{quiet(layer)}</p>
           ) : null}
         </div>
       )}
       <LayerCatalogue
         controls={controls}
-        feeds={feeds}
-        archived={archived}
+        quiet={quiet}
         disabled={disabled}
         onInspect={inspect}
         radar={

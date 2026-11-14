@@ -80,9 +80,10 @@ test("keyboard previews do not move the camera, and date comparisons preserve fr
   await story.click();
   await expect(time).toHaveValue("20");
   await expect(panel.getByText(/Opened at a saved moment/)).toBeVisible();
-  await panel.getByRole("button", { name: "Restart", exact: true }).click();
+  await panel.getByRole("button", { name: "Replay", exact: true }).click();
   await expect(time).toHaveValue("0");
-  await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+  await panel.getByRole("button", { name: "Pause", exact: true }).click();
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
 

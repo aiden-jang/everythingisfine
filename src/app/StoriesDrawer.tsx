@@ -1,6 +1,8 @@
 import { useReadingArrival } from "./useReadingArrival";
 import { useRef, type ReactNode } from "react";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
+import { ContinueVisit } from "./visitor/ContinueVisit";
+import { StoryPreviewButton } from "./discovery/StoryPreview";
 import { VisitShelf } from "./visitor/VisitShelf";
 import { JourneyPicker } from "./journeys/JourneyPicker";
 import { StoryThumbnail } from "./StoryThumbnail";
@@ -58,7 +60,7 @@ export function StoriesDrawer({
   ] as const;
   if (!visible) return null;
   return (
-    <StoryPreview>
+    <StoryPreview scope={`${key}:${deck.query}`}>
       <div
         ref={container}
         id="stories-panel"
@@ -77,7 +79,9 @@ export function StoriesDrawer({
         <div className="story-selection-heading">
           <h2 id="story-selection-title" tabIndex={-1}>
             {deck.query.trim()
-              ? "Search all stories"
+              ? scene
+                ? `Search ${{ live: "Live Earth", depth: "Below the Surface", night: "After Dark" }[scene]}`
+                : "Search all stories"
               : scene
                 ? { live: "Live Earth", depth: "Below the Surface", night: "After Dark" }[scene]
                 : "All stories"}
@@ -96,10 +100,17 @@ export function StoriesDrawer({
             </button>
           )}
         </div>
-        <StorySearch deck={deck} ready={ready} aurora={aurora} />
-        <p className="story-preview-hint">Hold a story to preview its region.</p>
+        <StorySearch
+          deck={deck}
+          ready={ready}
+          aurora={aurora}
+          scene={scene}
+          onSearchAll={() => browse.select(null)}
+        />
+
         {!deck.query.trim() && (
           <>
+            <ContinueVisit scene={scene} />
             <FeaturedStory scene={scene ?? "live"} />
             <section className="stories-group" aria-label={all ? "All stories" : "Selected stories"}>
               <h3 className={all ? undefined : "sr-only"}>
@@ -125,6 +136,7 @@ export function StoriesDrawer({
                         <span className={!all && !navigation?.unavailable(story.id) ? "sr-only" : undefined}>
                           {navigation?.unavailable(story.id) ?? story.summary}
                         </span>
+                        <StoryPreviewButton id={story.id} title={story.title} />
                       </small>
                       <svg
                         className="story-choice-chevron"

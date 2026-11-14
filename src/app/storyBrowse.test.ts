@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { browseStories, featuredIds, storyKind } from "./storyBrowse";
-import { searchStories } from "./storyIndex";
+import { findStories, searchStories } from "./storyIndex";
 
 describe("story browsing", () => {
   for (const scene of [null, "live", "depth", "night"] as const) {
@@ -29,4 +29,12 @@ describe("story browsing", () => {
     expect(storyKind("katrina")).toBe("Recorded story");
     expect(storyKind("deep")).toBe("Reconstruction");
   });
+});
+
+it("keeps subject search inside the chosen scene while allowing the full catalogue", () => {
+  expect(findStories("Aral", "night")).toEqual([]);
+  expect(findStories("Aral", "live").map(({ id }) => id)).toContain("aral");
+  expect(findStories("Aral", null).map(({ id }) => id)).toContain("aral");
+  expect(findStories("Moonfall", "live")).toEqual([]);
+  expect(findStories("Moonfall", "night").map(({ id }) => id)).toContain("moonfall");
 });

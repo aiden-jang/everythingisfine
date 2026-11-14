@@ -1,3 +1,4 @@
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { useEffect, useId, useState, useSyncExternalStore } from "react";
 import { createMoonfall, type MoonfallProgress, type MoonfallView } from "../../globe/moonfall/scene";
@@ -71,6 +72,7 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
   const id = useId();
   const route = traverses[eva]!;
   const length = Math.round(route.km * 1000);
+  useStoryCompletion(!flying && !playing && meters >= length);
   const distance = `${km.format(meters / 1000)} of ${km.format(route.km)} km`;
   const act = (update: () => void) => {
     update();

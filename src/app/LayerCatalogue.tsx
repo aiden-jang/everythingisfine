@@ -1,7 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { mapLayerNames, type MapLayer } from "./layerVisibility";
-import { layerHealth, layerMetadata } from "./layerMetadata";
-import type { FeedStatus } from "./feedStatus";
+import { layerMetadata } from "./layerMetadata";
 import type { useMapLayers } from "./useMapLayers";
 import { LayerIcon } from "./LayerIcon";
 
@@ -40,16 +39,14 @@ export function LayerVisibility({
 
 export function LayerCatalogue({
   controls,
-  feeds,
+  quiet,
   disabled,
-  archived,
   onInspect,
   radar,
 }: {
   controls: ReturnType<typeof useMapLayers>;
-  feeds: FeedStatus;
+  quiet: (id: MapLayer) => string | null;
   disabled: (id: MapLayer) => boolean;
-  archived: boolean;
   onInspect: (id: MapLayer) => void;
   radar: ReactNode;
 }) {
@@ -66,8 +63,8 @@ export function LayerCatalogue({
           {group.layers.map((id) => {
             const status = disabled(id)
               ? "Unavailable in this archive"
-              : !archived && controls.enabled[id]
-                ? layerHealth(id, feeds.rows)
+              : controls.enabled[id]
+                ? quiet(id)
                 : null;
             return (
               <Fragment key={id}>

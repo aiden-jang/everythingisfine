@@ -1,3 +1,4 @@
+import { PlaybackButton } from "./PlaybackButton";
 import { layerTime } from "./layerTime";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { loadSource } from "./observations/load";
@@ -160,15 +161,14 @@ function WeatherPlayer({
                 }}
               />
               <div className="weather-layer-actions">
-                <button
-                  type="button"
+                <PlaybackButton
+                  playing={playing}
+                  ended={index === frames.length - 1}
                   onClick={() => {
                     if (!playing && index === frames.length - 1) select(frames[0]!.at);
                     play(!playing);
                   }}
-                >
-                  {playing ? "Pause" : "Play"}
-                </button>
+                />
                 <button
                   type="button"
                   onClick={() => {

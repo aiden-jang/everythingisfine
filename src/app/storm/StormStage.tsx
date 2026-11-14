@@ -1,3 +1,4 @@
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
@@ -114,6 +115,7 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
       ? "Peak offshore intensity"
       : "Across the Gulf";
   const progress = stormClock(storm.at);
+  useStoryCompletion(ended && !view.playing);
   const atFix = storm.at === fix.time;
 
   function toggle() {

@@ -1,3 +1,4 @@
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
@@ -66,6 +67,7 @@ export function KilaueaJourney({
   const { element, status } = useObservationImage(relief);
   const arrive = useCallback(() => setArrived(true), []);
   const at = snapshots[index]!.at;
+  useStoryCompletion(index === LAST && !playing);
   const title =
     split !== null || index === LAST
       ? "A new shoreline"

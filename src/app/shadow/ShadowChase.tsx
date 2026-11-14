@@ -1,3 +1,4 @@
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -153,6 +154,8 @@ export function ShadowChase({
     }
     setMode(next);
   }
+
+  useStoryCompletion(at >= end && !clock.playing);
 
   const event = circumstances?.totality
     ? "Total solar eclipse"

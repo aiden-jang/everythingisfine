@@ -1,3 +1,4 @@
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { StoryLoading } from "../StoryLoading";
 import { useJourneyGestures } from "../journeyCamera";
 import { storyMapTarget } from "./mapFraming";
@@ -121,6 +122,7 @@ export function StoryPlayer({
   );
   const time = frame.timeLabel ?? format.format(frame.at) + " UTC";
   const duration = Math.max(1, data.frames.length - 1);
+  useStoryCompletion(!busy && status === "ready" && !clock.playing && clock.position >= duration);
   useLayoutEffect(() => {
     if (frame.raster && (!element || element.src !== new URL(frame.raster.url, location.href).href)) return;
     onView({

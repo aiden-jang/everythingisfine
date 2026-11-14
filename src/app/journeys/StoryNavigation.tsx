@@ -1,6 +1,8 @@
+import { refreshAnnotations } from "../../globe/annotationInput";
+import type { StoryPlace } from "../discovery/places";
 import { reportAnalytics } from "../../../analytics/browser";
 import { useJourneyAnalytics } from "../visitor/useJourneyAnalytics";
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { ObservatoryProps } from "../Observatory";
 import { searchStories } from "../storyIndex";
 import type { StoryId } from "../observations/useObservationDeck";
@@ -16,7 +18,11 @@ const Navigation = createContext<{
   active: string | null;
   library: ReturnType<typeof useVisitMemory>["library"];
   current: () => Visit | null;
-  resume: (visit: Visit) => void;
+  resume: (visit: Visit, trigger?: string) => void;
+  preview: (place?: StoryPlace, restore?: boolean) => void;
+  browsingStories: boolean;
+  completed: boolean;
+  completion: (id: string, complete: boolean) => void;
   route: { id: string; step: number } | null;
   unavailable: (id: string) => string | null;
   open: (id: string, trigger?: string, keepScene?: boolean) => void;
@@ -28,6 +34,16 @@ const Navigation = createContext<{
 export const useStoryNavigation = () => useContext(Navigation);
 
 export function StoryNavigation({ children, ...props }: ObservatoryProps & { children: ReactNode }) {
+  const [completion, setCompletion] = useState<{ id: string; complete: boolean } | null>(null);
+  const reportCompletion = useCallback((id: string, complete: boolean) => {
+    setCompletion((previous) =>
+      previous?.id === id && previous.complete === complete ? previous : { id, complete },
+    );
+  }, []);
+  const previewOrigin = useRef<{
+    camera: ReturnType<ObservatoryProps["explorer"]["read"]>;
+    flat: boolean;
+  } | null>(null);
   const origin = useRef<{
     route: ReturnType<ObservatoryProps["views"]["navigation"]["capture"]>;
     camera: ReturnType<ObservatoryProps["explorer"]["read"]>;
@@ -69,10 +85,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     const scrollTarget = props.views.observing ? "observatory-intro" : "chrome-rail";
     origin.current = {
       route: props.views.navigation.capture(),
-      camera: props.explorer.read(),
+      camera: previewOrigin.current?.camera ?? props.explorer.read(),
       scroll: document.getElementById(scrollTarget)?.scrollTop ?? 0,
       scrollTarget,
-      flat: props.explorer.flat,
+      flat: previewOrigin.current?.flat ?? props.explorer.flat,
       label: (props.views.observing ? props.views.browser.open : props.views.browser.pane === "stories")
         ? "Back to stories"
         : props.views.observing
@@ -85,6 +101,8 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
     rememberOrigin(trigger);
+    previewOrigin.current = null;
+    reportCompletion(id, false);
     const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
     const resuming = saved !== undefined;
     saved ??= memory.library.recent.find((visit) => visit.id === id);
@@ -112,6 +130,21 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     <Navigation.Provider
       value={{
         active,
+        completed: completion?.id === active && completion.complete,
+        completion: reportCompletion,
+        browsingStories: props.views.observing
+          ? props.views.browser.open
+          : props.views.browser.pane === "stories",
+        preview(place, restore = true) {
+          if (place) {
+            previewOrigin.current ??= { camera: props.explorer.read(), flat: props.explorer.flat };
+            refreshAnnotations(place);
+          } else if (previewOrigin.current) {
+            const saved = previewOrigin.current;
+            previewOrigin.current = null;
+            if (restore) props.explorer.restore(saved.camera, saved.flat);
+          }
+        },
         returnLabel: origin.current?.label,
         openRadar(at, map) {
           rememberOrigin("open-explorer-radar");
@@ -137,9 +170,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           return true;
         },
         ...memory,
-        resume(visit) {
+        resume(visit, trigger = "observatory-scenes") {
           setRoute(null);
-          navigate(visit.id, "observatory-scenes", visit);
+          navigate(visit.id, trigger, visit);
         },
         route:
           route && journeys.find((journey) => journey.id === route.id)?.steps[route.step]?.id === active

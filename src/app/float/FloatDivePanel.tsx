@@ -1,3 +1,4 @@
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import type { VisitPosition } from "../visitor/library";
 import { MeasurementSound } from "../MeasurementSound";
@@ -35,6 +36,7 @@ function trace(samples: readonly ArgoSample[], field: "temperature" | "salinity"
 function Measurements({ view, sound }: { view: FloatDiveView; sound: boolean }): JSX.Element {
   const { index, playing } = useSyncExternalStore(view.subscribe, view.read);
   const { samples } = view.profile;
+  useStoryCompletion(index === samples.length - 1 && !playing);
   const sample = samples[index]!;
   const depth = `${meters.format(sample.depth)} m`;
   const traces = useMemo(

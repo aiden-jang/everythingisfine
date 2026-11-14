@@ -165,7 +165,7 @@ for (const width of [1440, 390]) {
     await page.getByRole("tab", { name: "Layers", exact: true }).click();
     await expect(layers.locator("#layer-inspector-title")).toHaveText("Lightning");
     await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /16:00/);
-    await expect(lightningPanel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+    await expect(lightningPanel.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
     expect(await camera(page)).toEqual(pose);
     await openLayer(page, "Surface wind");
     await windPanel.getByRole("slider").press("End");
@@ -321,7 +321,7 @@ test("weather selections survive a cinematic detour without resuming playback @d
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
   await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
-  await expect(windPanel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  await expect(windPanel.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
   await openLayer(page, "Lightning");
   await expect(lightningPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /15:50/);
   await expect(lightningPanel.getByRole("button", { name: "Play", exact: true })).toBeVisible();

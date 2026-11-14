@@ -123,13 +123,15 @@ export const searchStories: readonly SearchStory[] = [
 ];
 export const normalizeStoryQuery = (query: string) =>
   query.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
-export function findStories(query: string): readonly SearchStory[] {
+export function findStories(query: string, scene: EarthScene | null = null): readonly SearchStory[] {
   const terms = normalizeStoryQuery(query).split(/\s+/).filter(Boolean);
   return terms.length
-    ? searchStories.filter((story) =>
-        terms.every((term) =>
-          normalizeStoryQuery(`${story.title} ${story.summary} ${story.keywords}`).includes(term),
-        ),
+    ? searchStories.filter(
+        (story) =>
+          (!scene || story.scene === scene) &&
+          terms.every((term) =>
+            normalizeStoryQuery(`${story.title} ${story.summary} ${story.keywords}`).includes(term),
+          ),
       )
     : [];
 }

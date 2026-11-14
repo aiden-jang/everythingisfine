@@ -37,8 +37,8 @@ Use **Fullscreen** on desktop for a larger viewing area.
 Each scene contains tours, featured experiences, live observations, forecasts, predictions, and
 replays. Explore keeps story browsing inside its Stories tab. **View options** holds image and clip capture, fullscreen and the landing globe’s
 auto-rotation setting. Dragging pauses rotation; it resumes after 1.5 idle seconds.
-**Find a story** searches subjects, places and years across all three scenes. The initial list has one large featured preview and three compact recommendations; **View all** opens the full selection. **Library** reveals Saved & recent, Guided journeys, Archives and From feeds below the list. The thumbnails are recorded views;
-open a story for its source, date, and current availability. Closing a story returns to its search
+**Find a story** searches subjects, places and years within the selected category. **Search all stories** broadens the search without clearing the query. The initial list has one large featured preview and three compact recommendations; **View all** opens the full selection. **Library** reveals Saved & recent, Guided journeys, Archives and From feeds below the list. The thumbnails are recorded views;
+open a story for its source, date, and current availability. Regional stories also offer **Preview** to locate their region on the same globe or map; dismissing the preview restores your viewpoint. Closing a story returns to its search
 result or drawer entry, including its category, filter, scroll, focus and viewpoint. **Keep exploring** offers a related view with context for its separate
 observations and time period. **Share this moment** copies the story, timestamp, projection, and selected
 city or chapter. Links open paused; recent feeds explain when the linked observation has expired.
@@ -61,7 +61,8 @@ on this device; **Update saved view** replaces its saved point. Recorded stories
 Tonight’s Sky its city and time, and Float Dive its measured depth. Live views reload their providers;
 a radar scan may expire and a recent float profile may become unavailable. **Saved views** lets you
 remove bookmarks or clear recent visits. Reopening a catalogue entry also resumes its saved moment.
-Earth-story timelines show dated milestones, an explicit **Restart**, and a closing evidence
+A compact **Continue** action in Stories resumes the most recent visit in that category, without opening Library. At the end of finite playback, **Up next** reveals one related story without automatically opening it or moving focus.
+Earth-story timelines show dated milestones, **Restart** while partway through or **Replay** at the end, and a closing evidence
 summary. **Compare dates** switches actual observations while holding the camera; annual and monthly
 products keep their stated time resolution. Authored flight progress and plate reconstructions do not
 pretend to be dated observation comparisons. No account or remote storage is involved.

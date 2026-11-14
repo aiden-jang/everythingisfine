@@ -448,7 +448,7 @@
   row-gap: 3px;
   border: 0;
 }
-#explorer-stories .story-choice button {
+#explorer-stories .story-choice > button {
   align-self: end;
   min-height: 26px;
   font-size: 19px;
@@ -655,7 +655,7 @@
     width: 72px;
     height: 54px;
   }
-  #explorer-stories .story-choice button {
+  #explorer-stories .story-choice > button {
     font-size: 15px;
   }
   #explorer-stories .story-choice .story-kind {
@@ -735,7 +735,7 @@
     width: clamp(88px, 6.43vw, 102px);
     height: clamp(62px, 4.4vw, 70px);
   }
-  #explorer-stories .story-choice button {
+  #explorer-stories .story-choice > button {
     font-size: clamp(19px, 1.4vw, 22px);
   }
   #explorer-stories .story-choice .story-kind {

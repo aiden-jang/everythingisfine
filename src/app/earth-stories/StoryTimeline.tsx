@@ -41,7 +41,10 @@ export function StoryTimeline({
   return (
     <>
       {restored && (
-        <p className="observation-note">Opened at a saved moment. Choose Restart to begin again.</p>
+        <p className="observation-note">
+          Opened at a saved moment. Choose {index === data.frames.length - 1 ? "Replay" : "Restart"} to begin
+          again.
+        </p>
       )}
       <div className="story-time">
         <label htmlFor="earth-story-time">{label}</label>
@@ -65,17 +68,19 @@ export function StoryTimeline({
           onClick={clock.toggle}
           disabled={busy}
         />
-        <button
-          type="button"
-          title="Restart the story and its cinematic entrance"
-          onClick={() => {
-            refreshAnnotations({ camera: "resume" });
-            clock.replay();
-          }}
-          disabled={busy}
-        >
-          Restart
-        </button>
+        {index < data.frames.length - 1 && (
+          <button
+            type="button"
+            title="Restart the story and its cinematic entrance"
+            onClick={() => {
+              refreshAnnotations({ camera: "resume" });
+              clock.replay();
+            }}
+            disabled={busy}
+          >
+            Restart
+          </button>
+        )}
       </div>
       <div className="story-milestones" role="group" aria-label="Story moments">
         {milestones.map((chapter) => {

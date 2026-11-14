@@ -1,3 +1,4 @@
+import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { MeasurementSound } from "../MeasurementSound";
 import { PlaceComparison } from "./PlaceComparison";
@@ -58,6 +59,9 @@ export function ObservationPlayer({
   const metadata = observations[id];
   const latest = frames.at(-1);
   const holding = state !== "ready" && latest !== undefined;
+  useStoryCompletion(
+    selectedAt !== null && frames.length > 1 && index === frames.length - 1 && !playing && state === "ready",
+  );
   const canHold = id === "deep" || id === "swell";
   const inspection = useObservationInspection(frame);
   const inspect = inspection.pick;

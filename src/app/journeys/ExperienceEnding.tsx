@@ -9,9 +9,10 @@ export function ExperienceEnding({ id }: { id?: string } = {}) {
   const navigation = useStoryNavigation();
   const details = useRef<HTMLDetailsElement>(null);
   const active = id ?? navigation?.active;
+  const completed = navigation?.completed ?? false;
   useEffect(() => {
-    if (details.current) details.current.open = false;
-  }, [active]);
+    if (details.current) details.current.open = completed;
+  }, [active, completed, navigation?.route]);
   if (!active || !navigation) return null;
   const route =
     navigation.route &&
@@ -81,14 +82,14 @@ export function ExperienceEnding({ id }: { id?: string } = {}) {
         ref={details}
         className="related-stories"
         onToggle={() => {
-          if (details.current?.open)
+          if (details.current?.open && !completed)
             details.current.scrollIntoView({
               block: "nearest",
               behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
             });
         }}
       >
-        <summary>Keep exploring</summary>
+        <summary>{completed ? "Up next" : "Keep exploring"}</summary>
         <p>{next[1]}</p>
         <button type="button" disabled={!!reason} onClick={() => navigation.open(story.id)}>
           <strong>{story.title}</strong>
