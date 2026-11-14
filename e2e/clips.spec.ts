@@ -2,9 +2,10 @@ import { expect, test } from "@playwright/test";
 import { installFeeds } from "./feeds";
 
 const now = Date.parse("2026-11-12T04:00:00Z");
+const sunnyView = "/#v=observe&at=145,12,1";
 
 test.beforeEach(async ({ page }) => {
-  // Keep the starting hemisphere sunlit: these checks measure clipping, not changing day/night shading.
+  // Freeze captions and day/night shading; the pixel clipping check also fixes its viewpoint.
   await page.clock.setFixedTime(new Date(now));
 });
 
@@ -98,7 +99,7 @@ test("the mobile recording notice leaves the visible globe intact", async ({ pag
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", now });
-  await page.goto("/");
+  await page.goto(sunnyView);
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
   const lowerGlobePixels = async () => {
     // This strip is below the notice and above the HUD, where an ordinary overlay cropped WebGL.
