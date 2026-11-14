@@ -89,7 +89,7 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   await expect(slider).toBeInViewport({ ratio: 1 });
   expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
   await page.setViewportSize({ width: 390, height: 844 });
-  await tide.getByRole("button", { name: "Back to Observatory", exact: true }).click();
+  await tide.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(tideRow).toBeFocused();
   expect(await sidebar.evaluate((panel) => panel.scrollTop)).toBe(scroll);
   await page.keyboard.press("Escape");
@@ -127,7 +127,7 @@ test("Orbital Pass shares the city and time between the horizon, globe and map",
   await expect(page.getByRole("group", { name: "Orbital Pass on the map" })).toBeVisible();
   await expect(slider).toHaveAttribute("aria-valuetext", time!);
   await expect(city).toHaveValue("Tokyo");
-  await pass.getByRole("button", { name: "Back to After Dark", exact: true }).click();
+  await pass.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(open).toBeFocused();
 });
 
@@ -171,7 +171,7 @@ test("the Moon crossing, reconstructed plates, and wave forecasts reuse the Obse
   const first = await shot.getAttribute("src");
   await page.getByRole("slider", { name: "Photograph time" }).press("End");
   await expect(shot).not.toHaveAttribute("src", first!);
-  await page.getByRole("button", { name: "Back to Observatory", exact: true }).click();
+  await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(epic).toBeFocused();
 
   await page.getByRole("button", { name: "Below the Surface", exact: true }).click();

@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import { MeasurementSound } from "../MeasurementSound";
 import { PlaceComparison } from "./PlaceComparison";
 import { ObservationInspection, useObservationInspection } from "./ObservationInspection";
@@ -181,20 +182,6 @@ export function ObservationPlayer({
               {id === "rain" && " · Data arrives several hours after observation"}
             </span>
             {frames.length > 1 && (
-              <div className="observatory-actions">
-                <button
-                  data-playback-start={!playing || undefined}
-                  type="button"
-                  onClick={() => {
-                    if (!playing && index === frames.length - 1) setSelectedAt(frames[0]!.at);
-                    setPlaying(!playing);
-                  }}
-                >
-                  {playing ? "Pause" : index === frames.length - 1 ? "Replay" : "Play"}
-                </button>
-              </div>
-            )}
-            {frames.length > 1 && (
               <input
                 className="scrub-slider observation-scrub"
                 aria-label={metadata.time}
@@ -208,6 +195,18 @@ export function ObservationPlayer({
                   setSelectedAt(frames[event.currentTarget.valueAsNumber]!.at);
                 }}
               />
+            )}
+            {frames.length > 1 && (
+              <div className="observatory-actions">
+                <PlaybackButton
+                  playing={playing}
+                  ended={index === frames.length - 1}
+                  onClick={() => {
+                    if (!playing && index === frames.length - 1) setSelectedAt(frames[0]!.at);
+                    setPlaying(!playing);
+                  }}
+                />
+              </div>
             )}
           </div>
           {frame.measurements?.length ? (

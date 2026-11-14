@@ -20,7 +20,7 @@ const pose = async (page: Page) => {
 async function wheel(page: Page, x = 1050, y = 350) {
   await page.mouse.move(x, y);
   await page.mouse.wheel(0, -220);
-  await expect(page.getByRole("button", { name: "Recenter", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Recenter view", exact: true })).toBeVisible();
 }
 
 test("a cinematic story yields during arrival, keeps its time, and recenters the current shot @dev", async ({
@@ -52,7 +52,7 @@ test("a cinematic story yields during arrival, keeps its time, and recenters the
   await expect.poll(async () => (await pose(page)).map).toBe(1);
   expect((await pose(page)).manual).toBe(true);
   await expect(time).toHaveValue(held);
-  await page.getByRole("button", { name: "Recenter", exact: true }).click();
+  await page.getByRole("button", { name: "Recenter view", exact: true }).click();
   await expect.poll(async () => (await pose(page)).manual).toBe(false);
   await expect(time).toHaveValue(held);
   expect(await page.locator("#globe-view canvas").evaluate((el, old) => el === old, original)).toBe(true);
@@ -86,7 +86,7 @@ test("phone pinch explores the story and its Recenter stays reachable @dev", asy
   });
   await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
   await expect.poll(async () => (await pose(page)).zoom).toBeGreaterThan(before.zoom);
-  const recenter = page.getByRole("button", { name: "Recenter", exact: true });
+  const recenter = page.getByRole("button", { name: "Recenter view", exact: true });
   await expect(recenter).toBeInViewport({ ratio: 1 });
   await page.screenshot({ path: test.info().outputPath("story-recenter-phone.png") });
   await recenter.click();
@@ -112,7 +112,7 @@ test("map section taps still pick while dragging and zooming remain available @d
   await expect(panel.getByRole("status").filter({ hasText: "Choose" })).toHaveText(
     "Choose two points inside the terrain to measure a depth section.",
   );
-  await page.getByRole("button", { name: "Recenter", exact: true }).click();
+  await page.getByRole("button", { name: "Resume journey", exact: true }).click();
   const point = await page.evaluate(() =>
     (
       window as unknown as { __globe: { project: (lon: number, lat: number) => { x: number; y: number } } }
@@ -141,7 +141,7 @@ test("Float Dive yields to exploration without discarding the selected measureme
   await wheel(page);
   expect((await pose(page)).zoom).toBeGreaterThan(before.zoom);
   await expect(depth).toHaveValue(held);
-  await page.getByRole("button", { name: "Recenter", exact: true }).click();
+  await page.getByRole("button", { name: "Recenter view", exact: true }).click();
   await expect(depth).toHaveValue(held);
   expect((await pose(page)).manual).toBe(false);
 });
@@ -183,7 +183,9 @@ for (const [id, title] of [
     );
     expect(moved.x).toBeCloseTo(1060, 0);
     expect(moved.y).toBeCloseTo(374, 0);
-    await expect(page.getByRole("button", { name: "Recenter", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: id === "seafloor" ? "Resume journey" : "Recenter view", exact: true }),
+    ).toBeVisible();
   });
 }
 

@@ -142,10 +142,10 @@ for (const width of [1440, 390]) {
     const slider = controls.getByRole("slider", { name: "Radar scan time" });
     await slider.press("Home");
     await expect(time).toHaveAttribute("datetime", new Date(times[0]!).toISOString());
-    await controls.getByRole("button", { name: "Play scans", exact: true }).click();
+    await controls.getByRole("button", { name: "Play", exact: true }).click();
     await expect(controls.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
     await expect(time).toHaveAttribute("datetime", new Date(now).toISOString());
-    await expect(controls.getByRole("button", { name: "Play scans", exact: true })).toBeVisible();
+    await expect(controls.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
     expect(await camera(page)).toEqual(originalCamera);
     await page.getByRole("button", { name: "Map", exact: true }).click();
     await expect.poll(async () => (await camera(page))?.morph).toBe(1);
@@ -211,7 +211,7 @@ for (const width of [1440, 390]) {
     await expect(guided.getByRole("status", { name: "Radar status" })).toHaveText(
       "Loading the selected scan…",
     );
-    await guided.getByRole("button", { name: "Back to radar layer", exact: true }).click();
+    await guided.getByRole("button", { name: "Back to layers", exact: true }).click();
     await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
     await page.evaluate(() => {
       delete document.documentElement.dataset["holdRadarImages"];
@@ -329,7 +329,7 @@ for (const width of [1440, 390]) {
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
       true,
     );
-    await controls.getByRole("button", { name: "Play scans", exact: true }).click();
+    await controls.getByRole("button", { name: "Play", exact: true }).click();
     await page.getByRole("tab", { name: "Stories", exact: true }).click();
     const pausedAt = await controls.locator("time").getAttribute("datetime");
     await page.waitForTimeout(1200);

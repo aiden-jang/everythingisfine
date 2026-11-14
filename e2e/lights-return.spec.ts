@@ -19,7 +19,7 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   const open = page.getByRole("button", { name: "Lights Return", exact: true });
   await open.click();
   const panel = page.getByRole("region", { name: "Lights Return" });
-  await expect(panel.getByRole("button", { name: "Back to After Dark" })).toBeFocused();
+  await expect(panel.getByRole("button", { name: "Back to stories" })).toBeFocused();
   await expect(panel.getByRole("status", { name: "Image loading status" })).toHaveText(
     "NASA’s archived images couldn’t load.",
   );
@@ -49,10 +49,10 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   await expect(active).toHaveJSProperty("naturalWidth", 1840);
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(period).toBeInViewport();
-  await panel.getByRole("button", { name: "Replay recovery" }).click();
+  await panel.getByRole("button", { name: "Replay" }).click();
   await expect(active).toHaveAttribute("src", /maria-before-/);
   await expect(active).toHaveAttribute("src", /maria-early-/);
-  await panel.getByRole("button", { name: "Pause replay" }).click();
+  await panel.getByRole("button", { name: "Pause" }).click();
   await expect(period).toHaveValue("1");
   await page.keyboard.press("Escape");
   await expect(open).toBeFocused();
@@ -63,12 +63,12 @@ test("Lights Return compares NASA recovery periods and returns to the same After
   await expect(stage.getByText("Approaching the island", { exact: true })).toBeVisible();
   await expect(active).toHaveAttribute("src", /maria-early-/);
   await expect(period).toHaveValue("1");
-  await expect(panel.getByRole("button", { name: "Play recovery", exact: true })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   await period.press("End");
   await compare.click();
   await divider.press("End");
   await expect(stage.locator(".lights-archive")).toHaveCSS("opacity", "1");
-  await panel.getByRole("button", { name: "Back to After Dark" }).click();
+  await panel.getByRole("button", { name: "Back to stories" }).click();
   await expect(open).toBeFocused();
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);
   expect(errors).toEqual([]);

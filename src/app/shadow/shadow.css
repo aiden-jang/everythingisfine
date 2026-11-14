@@ -75,14 +75,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-.shadow-timeline-row button {
-  min-width: 64px;
+.shadow-timeline .story-playback {
   min-height: 44px;
   border: 1px solid var(--color-hairline);
   border-radius: 7px;
 }
 
-.shadow-timeline-row button:hover {
+.shadow-timeline .story-playback:hover {
   background: var(--color-raised);
 }
 

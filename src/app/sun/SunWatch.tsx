@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { animationDelta } from "../../globe/animation";
 import {
@@ -204,14 +205,7 @@ export function SunWatch({ onClose }: { onClose: () => void }): JSX.Element {
             ))}
           </div>
           {!reduced && (
-            <button
-              data-playback-start={!view.playing || undefined}
-              className="sun-play"
-              type="button"
-              onClick={toggle}
-            >
-              {view.playing ? "Pause" : view.at === FLIGHT_END ? "Replay" : "Play"}
-            </button>
+            <PlaybackButton playing={view.playing} ended={view.at === FLIGHT_END} onClick={toggle} />
           )}
         </div>
         <SolarReadouts wind={wind} xray={xray} />

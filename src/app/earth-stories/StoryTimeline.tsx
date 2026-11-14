@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import type { EarthStoryData, StoryFrame } from "./types";
 import type { useStoryClock } from "./useStoryClock";
 import { FrameComparison } from "../observations/FrameComparison";
@@ -40,7 +41,7 @@ export function StoryTimeline({
   return (
     <>
       {restored && (
-        <p className="observation-note">Opened at a saved moment. Replay entrance to begin again.</p>
+        <p className="observation-note">Opened at a saved moment. Choose Restart to begin again.</p>
       )}
       <div className="story-time">
         <label htmlFor="earth-story-time">{label}</label>
@@ -58,23 +59,22 @@ export function StoryTimeline({
         />
       </div>
       <div className="observatory-actions">
-        <button
-          data-playback-start={!clock.playing || undefined}
-          type="button"
+        <PlaybackButton
+          playing={clock.playing}
+          ended={index === data.frames.length - 1}
           onClick={clock.toggle}
           disabled={busy}
-        >
-          {clock.playing ? "Pause" : index === data.frames.length - 1 ? "Replay" : "Play"}
-        </button>
+        />
         <button
           type="button"
+          title="Restart the story and its cinematic entrance"
           onClick={() => {
             refreshAnnotations({ camera: "resume" });
             clock.replay();
           }}
           disabled={busy}
         >
-          Replay entrance
+          Restart
         </button>
       </div>
       <div className="story-milestones" role="group" aria-label="Story moments">

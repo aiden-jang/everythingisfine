@@ -1,5 +1,6 @@
 .observatory-intro[data-float-dive] {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 16px;
 }
@@ -62,7 +63,7 @@
 
 .float-transport {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr);
   align-items: center;
   padding-block: 10px 8px;
   border-block: 1px solid var(--color-hairline);
@@ -70,8 +71,13 @@
 
 .float-depth {
   display: grid;
-  justify-items: start;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
   gap: 4px;
+}
+
+.float-depth > span {
+  grid-column: 1 / -1;
 }
 
 .float-depth strong {

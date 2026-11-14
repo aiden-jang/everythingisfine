@@ -1,3 +1,4 @@
+import { StoryLoading } from "../StoryLoading";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useObservatoryEscape } from "../useObservatoryEscape";
@@ -199,13 +200,11 @@ export function ObservationDeck({
               </div>
             )
           ) : (
-            <p className="observation-note" role="status">
-              Opening {title}…
-            </p>
+            <StoryLoading>Opening {title}…</StoryLoading>
           )}
           {id === "iceberg" && (
             <details className="observation-details">
-              <summary>Satellite image sources</summary>
+              <summary>Sources &amp; coverage</summary>
               <div className="lights-links">
                 <a
                   href="https://science.nasa.gov/earth/earth-observatory/iceberg-a-68a-nears-south-georgia-147535/"

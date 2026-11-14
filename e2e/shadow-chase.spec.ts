@@ -17,7 +17,7 @@ test("Shadow Chase follows the globe and uses the saved city for local circumsta
   await trigger.click();
   const panel = page.getByRole("region", { name: "Shadow Chase" });
   const stage = page.getByRole("group", { name: "Eclipse visualization" });
-  await expect(panel.getByRole("button", { name: "Back to After Dark" })).toBeFocused();
+  await expect(panel.getByRole("button", { name: "Back to stories" })).toBeFocused();
   await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
 
   const shadow = panel.getByRole("slider", { name: "Shadow time" });
@@ -95,6 +95,6 @@ test("normal motion starts the flight and reaches the saved city when animation 
   expect(await page.evaluate(() => localStorage.getItem("eif.sky-city"))).toBe("London");
 
   await page.evaluate(() => document.documentElement.removeAttribute("data-stall-frames"));
-  await panel.getByRole("button", { name: "Back to After Dark" }).click();
+  await panel.getByRole("button", { name: "Back to stories" }).click();
   await expect(trigger).toBeFocused();
 });

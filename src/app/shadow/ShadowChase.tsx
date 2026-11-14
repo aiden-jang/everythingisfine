@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { eclipseFrom, greatestEclipse, localEclipse } from "../../geo/eclipse2027";
@@ -248,16 +249,6 @@ export function ShadowChase({
               <div className="shadow-timeline-row">
                 <label htmlFor={timeline}>{local ? "Local eclipse time" : "Shadow time"}</label>
                 <time dateTime={new Date(at).toISOString()}>{time}</time>
-                <button
-                  data-playback-start={!clock.playing || undefined}
-                  type="button"
-                  onClick={() => {
-                    if (local && !clock.playing && at === circumstances?.peak) clock.reset(start, true);
-                    else clock.toggle();
-                  }}
-                >
-                  {clock.playing ? "Pause" : at >= end ? "Replay" : "Play"}
-                </button>
               </div>
               <input
                 id={timeline}
@@ -283,6 +274,14 @@ export function ShadowChase({
                 }}
               />
               <div className="observatory-actions shadow-actions">
+                <PlaybackButton
+                  playing={clock.playing}
+                  ended={at >= end}
+                  onClick={() => {
+                    if (local && !clock.playing && at === circumstances?.peak) clock.reset(start, true);
+                    else clock.toggle();
+                  }}
+                />
                 {local ? (
                   <button type="button" onClick={() => clock.seek(circumstances!.peak)}>
                     Peak eclipse
@@ -355,7 +354,7 @@ export function ShadowChase({
             </dl>
           )}
           <details className="shadow-sources">
-            <summary>Prediction data and viewing safety</summary>
+            <summary>Sources &amp; viewing safety</summary>
             <p className="observation-note">
               Eclipse Predictions by Fred Espenak, NASA’s GSFC. The globe follows NASA’s two-minute path
               samples. City estimates use NASA’s Besselian elements at sea level with a geometric horizon. The

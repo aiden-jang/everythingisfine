@@ -83,7 +83,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/globe/nightSurface.ts` | Night, eclipse and aurora surface shader |
 | `src/globe/cameraFlight.ts` | Finite arrival path, spring integration and flight-bank targets |
 | `src/globe/cameraRig.ts` | Interruptible lens bank and horizon offset, cleared on the map and under reduced motion |
-| `src/globe/cameraInput.ts`, `src/globe/cameraGuidance.ts` | Gesture arbitration and manual story-camera ownership, with Recenter at the current timeline position |
+| `src/globe/cameraInput.ts`, `src/globe/cameraGuidance.ts` | Gesture arbitration and manual story-camera ownership, with Recenter view at the current timeline position |
 | `src/globe/cameraTarget.ts` | Shared camera callback, perspective panel lift and explicit arrival replay |
 | `src/app/sun/` | On-demand solar flight, separate live observation windows and feed state |
 | `src/sources/spaceWeather.ts` | NOAA primary wind and GOES X-ray decoders |
@@ -408,6 +408,15 @@ The still exporter copies the drawing buffer before the browser composites it.
 Sharing starts in the same click. A refused sheet retains its file behind an explicit download
 action; cancellation does not create a download. Capability probing and capture failures stay recoverable.
 Shared controls update the URL before paint; moving playback keeps its periodic URL cadence.
+
+Story playback uses `src/app/PlaybackButton.tsx` for Play, Pause and Replay; Restart in the
+Earth-story timeline repeats the cinematic entrance. `src/app/journeyCamera.ts` connects
+interrupted Earth-story playback to Resume journey on the shared globe without resetting time.
+Loading observations and radar imagery retain the current globe until a usable view is ready.
+Story navigation keeps the original category, scroll, projection, viewpoint and focus target across
+onward stories. Sources & coverage disclosures hold secondary explanations; essential timestamps,
+uncertainty and required attribution remain beside the visualization. The phone panel has one
+Expand/Collapse action; its drag handle and keyboard controls retain all three sheet sizes.
 
 ## Validation
 

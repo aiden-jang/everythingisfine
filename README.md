@@ -39,13 +39,13 @@ replays. Explore keeps story browsing inside its Stories tab. **View options** h
 auto-rotation setting. Dragging pauses rotation; it resumes after 1.5 idle seconds.
 **Find a story** searches subjects, places and years across all three scenes. The initial list has one large featured preview and three compact recommendations; **View all** opens the full selection. **Library** reveals Saved & recent, Guided journeys, Archives and From feeds below the list. The thumbnails are recorded views;
 open a story for its source, date, and current availability. Closing a story returns to its search
-result or drawer entry, including its filter, scroll, focus and Explore camera. **Keep exploring** offers a related view with context for its separate
+result or drawer entry, including its category, filter, scroll, focus and viewpoint. **Keep exploring** offers a related view with context for its separate
 observations and time period. **Share this moment** copies the story, timestamp, projection, and selected
 city or chapter. Links open paused; recent feeds explain when the linked observation has expired.
 
 On desktop, the paired **Globe / Map** control switches the shared view. Source times and the legend
 sit together below the canvas. On phones, the globe stays above the adjustable sheet; use its handle
-or the **Expand globe/map** control to change the space available. **Sources & times** opens detailed
+or the **Expand / Collapse panel** control to change the space available. **Sources & times** opens detailed
 radar, wind and lightning timestamps at every width while radar attribution stays visible. Radar playback
 also sits beneath its layer row; opening its inspector expands the same player without resetting the scan.
 
@@ -61,7 +61,7 @@ on this device; **Update saved view** replaces its saved point. Recorded stories
 Tonight’s Sky its city and time, and Float Dive its measured depth. Live views reload their providers;
 a radar scan may expire and a recent float profile may become unavailable. **Saved views** lets you
 remove bookmarks or clear recent visits. Reopening a catalogue entry also resumes its saved moment.
-Earth-story timelines show dated milestones, an explicit **Replay entrance**, and a closing evidence
+Earth-story timelines show dated milestones, an explicit **Restart**, and a closing evidence
 summary. **Compare dates** switches actual observations while holding the camera; annual and monthly
 products keep their stated time resolution. Authored flight progress and plate reconstructions do not
 pretend to be dated observation comparisons. No account or remote storage is involved.
@@ -172,9 +172,10 @@ words arrive with a staggered reveal. These are finite presentation effects; red
 Scenes are temporary: returning to Explore restores the saved layer and projection choices. Choosing
 Observe or Explore remembers that presentation; opening the app alone saves no new preference.
 On the shared globe and map, drag, pinch, scroll or use camera keys to take control of a story’s
-framing. Its timeline keeps running. **Recenter** (also double-click or `0`) restores the current shot
-without restarting the story. A following-camera control can release an authored shot while its data keeps playing. Float Dive fades back to the globe while you explore; Recenter returns
-to its underwater view at the selected measurement. Local sky and lunar surface views retain their
+framing. Earth-story flights pause when you steer; **Resume journey** continues from that moment.
+Other replays keep their timeline running; **Recenter view** restores their current shot without
+restarting it. **Take control** releases a following camera. Float Dive fades back to the globe while
+you explore; Recenter view returns to its underwater view at the selected measurement. Local sky and lunar surface views retain their
 own direction and route controls.
 
 ## Explore

@@ -93,7 +93,7 @@ for (const view of ["Meteor Nights", "Moonfall"] as const) {
     );
     await expect(city).toHaveValue("Seoul");
     await expect(time).toHaveValue(savedTime);
-    await expect(page.getByRole("button", { name: "Back to After Dark", exact: true })).toBeFocused();
+    await expect(page.getByRole("button", { name: "Back to stories", exact: true })).toBeFocused();
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
       true,
     );

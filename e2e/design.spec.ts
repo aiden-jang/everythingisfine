@@ -315,13 +315,13 @@ test("the globe keeps a generous desktop and expanded phone canvas", async ({ pa
     [390, 844],
   ] as const) {
     await page.setViewportSize({ width: w, height: h });
-    if (w < 768) await page.getByRole("button", { name: "Expand globe", exact: true }).click();
+    if (w < 768) await page.getByRole("button", { name: "Collapse panel", exact: true }).click();
     await page.waitForTimeout(500);
     const share = await page.evaluate(
       () =>
         (document.querySelector("canvas") as HTMLElement).getBoundingClientRect().height / window.innerHeight,
     );
-    // Phone story browsing starts compact; its Expand globe action must still provide room to explore.
+    // Phone story browsing starts compact; its Collapse panel action must still provide room to explore.
     expect(share, `canvas share at ${w}x${h}`).toBeGreaterThanOrEqual(0.44);
   }
 });

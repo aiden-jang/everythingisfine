@@ -118,9 +118,9 @@ test("Moonfall reuses the sky canvas and restores the city, time, and bearing", 
   await expect(valley).toContainText("Taurus–Littrow Valley");
   await distance.press("End");
   await expect(distance).toHaveValue("250");
-  await moonfall.getByRole("button", { name: "Replay traverse" }).click();
+  await moonfall.getByRole("button", { name: "Replay" }).click();
   await expect.poll(async () => Number(await distance.inputValue())).toBeLessThan(250);
-  await moonfall.getByRole("button", { name: "Pause traverse" }).click();
+  await moonfall.getByRole("button", { name: "Pause" }).click();
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(distance).toBeInViewport();
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);

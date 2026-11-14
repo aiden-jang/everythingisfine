@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { ReplayInset } from "../observations/ReplayInset";
@@ -278,14 +279,12 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
             onInput={(event) => update(survey(Number(event.currentTarget.value)))}
           />
           <div className="archive-scene-controls">
-            <button
-              data-playback-start={!view.playing || undefined}
-              type="button"
+            <PlaybackButton
+              playing={view.playing}
+              ended={ended}
               className="archive-scene-button"
               onClick={toggle}
-            >
-              {view.playing ? "Pause" : ended ? "Replay" : "Play"}
-            </button>
+            />
             <button type="button" className="archive-scene-button" onClick={() => update(survey(ERUPTION))}>
               Eruption
             </button>

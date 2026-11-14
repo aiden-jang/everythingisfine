@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { useObservationImage } from "../observations/useObservationData";
@@ -252,18 +253,12 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
                 Recorded waves
               </button>
               {!reduced && (
-                <button
-                  data-playback-start={mode !== "playing" || undefined}
-                  type="button"
+                <PlaybackButton
+                  playing={mode === "playing"}
+                  ended={mode !== "playing" && mode !== "paused"}
                   className="archive-scene-button"
                   onClick={playback}
-                >
-                  {mode === "playing"
-                    ? "Pause reveal"
-                    : mode === "paused"
-                      ? "Resume reveal"
-                      : "Replay reveal"}
-                </button>
+                />
               )}
             </div>
             {displayed === "approach" ? (

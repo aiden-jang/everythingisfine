@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ObservationCredit } from "../observations/ObservationCredit";
@@ -204,22 +205,7 @@ export function KilaueaJourney({
               <label htmlFor={id}>{split === null ? "Mapped extent date" : "Compare before and after"}</label>{" "}
               · {time}
             </span>
-            <div className="observatory-actions">
-              <button
-                data-playback-start={!playing || undefined}
-                type="button"
-                onClick={() => {
-                  if (!playing && (split !== null || index === LAST)) {
-                    setSplit(null);
-                    setIndex(0);
-                  }
-                  setFootage(false);
-                  setPlaying(!playing);
-                }}
-              >
-                {playing ? "Pause" : split !== null || index === LAST ? "Replay" : "Play"}
-              </button>
-            </div>
+
             <input
               id={id}
               className="scrub-slider observation-scrub"
@@ -234,6 +220,20 @@ export function KilaueaJourney({
                 else setSplit(next);
               }}
             />
+            <div className="observatory-actions">
+              <PlaybackButton
+                playing={playing}
+                ended={split !== null || index === LAST}
+                onClick={() => {
+                  if (!playing && (split !== null || index === LAST)) {
+                    setSplit(null);
+                    setIndex(0);
+                  }
+                  setFootage(false);
+                  setPlaying(!playing);
+                }}
+              />
+            </div>
           </div>
           <div className="observatory-actions">
             <button type="button" onClick={() => inspect(0)}>

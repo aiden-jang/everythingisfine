@@ -67,7 +67,7 @@ for (const width of [1440, 390]) {
     await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
     await slider.press("Home");
     await expect(time).toHaveAttribute("datetime", new Date(times[0]!).toISOString());
-    await scene.getByRole("button", { name: "Play scans" }).click();
+    await scene.getByRole("button", { name: "Play", exact: true }).click();
     await expect(scene.getByText("Latest frame", { exact: true })).toBeVisible();
     await expect(time).toHaveAttribute("datetime", new Date(times[2]!).toISOString());
     expect(requests.filter((path) => path.includes("coverage"))).toHaveLength(4);
@@ -85,7 +85,7 @@ for (const width of [1440, 390]) {
     expect(audit.violations).toEqual([]);
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/global-radar-${width}.png` });
-    await scene.getByRole("button", { name: "Back to Live Earth" }).click();
+    await scene.getByRole("button", { name: "Back to stories" }).click();
     expect(await canvas.evaluate((node, first) => node === first, original)).toBe(true);
   });
 }

@@ -1,3 +1,4 @@
+import { StoryLoading } from "../StoryLoading";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { lazy, Suspense } from "react";
 import type { StoryId, useObservationDeck } from "./useObservationDeck";
@@ -58,9 +59,9 @@ export function ObservationDeckShell({
       document.getElementById(deck.trigger ?? "observatory-scenes")?.focus({ preventScroll: !fromExplore }),
     );
   };
-  const closeLabel = navigation?.fromExplore
-    ? "Back to stories"
-    : deck.trigger?.startsWith("event-story-")
+  const closeLabel =
+    navigation?.returnLabel ??
+    (deck.trigger?.startsWith("event-story-")
       ? "Back to earthquake"
       : deck.trigger?.startsWith("archive-story-")
         ? "Back to archive"
@@ -68,14 +69,14 @@ export function ObservationDeckShell({
           ? "Back to After Dark"
           : scene === "depth"
             ? "Back to Below the Surface"
-            : "Back to Observatory";
+            : "Back to Observatory");
   return (
     <StorySession.Provider key={entry} value={deck.session}>
       <Suspense
         fallback={
           <div className="observatory-sidebar">
             <section className="observatory-intro" aria-label="Opening story">
-              <p role="status">
+              <StoryLoading>
                 Opening{" "}
                 {isEarthStory(entry)
                   ? earthStories[entry].title
@@ -83,7 +84,7 @@ export function ObservationDeckShell({
                     ? observations[entry as keyof typeof observations].title
                     : "story"}
                 …
-              </p>
+              </StoryLoading>
               <div className="observatory-actions">
                 <button type="button" onClick={close}>
                   {closeLabel}

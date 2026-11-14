@@ -10,7 +10,6 @@ import { useVisitMemory } from "../visitor/useVisitMemory";
 import type { Visit } from "../visitor/library";
 
 const Navigation = createContext<{
-  fromExplore: boolean;
   returnLabel: string | undefined;
   openRadar: (at: number | undefined, map: boolean) => void;
   returnToBrowse: () => boolean;
@@ -33,6 +32,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     route: ReturnType<ObservatoryProps["views"]["navigation"]["capture"]>;
     camera: ReturnType<ObservatoryProps["explorer"]["read"]>;
     scroll: number;
+    scrollTarget: string;
+    flat: boolean;
+    label: string;
     trigger: string;
   } | null>(null);
   const [route, setRoute] = useState<{ id: string; step: number } | null>(null);
@@ -63,11 +65,19 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   const unavailable = (id: string) =>
     !props.ready ? "The globe is still opening." : id === "aurora" ? props.aurora.unavailable : null;
   function rememberOrigin(trigger: string) {
-    if (props.views.observing) return;
+    if (active !== null || origin.current) return;
+    const scrollTarget = props.views.observing ? "observatory-intro" : "chrome-rail";
     origin.current = {
       route: props.views.navigation.capture(),
       camera: props.explorer.read(),
-      scroll: document.getElementById("chrome-rail")?.scrollTop ?? 0,
+      scroll: document.getElementById(scrollTarget)?.scrollTop ?? 0,
+      scrollTarget,
+      flat: props.explorer.flat,
+      label: (props.views.observing ? props.views.browser.open : props.views.browser.pane === "stories")
+        ? "Back to stories"
+        : props.views.observing
+          ? "Back to home"
+          : "Back to layers",
       trigger,
     };
   }
@@ -102,12 +112,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     <Navigation.Provider
       value={{
         active,
-        fromExplore: origin.current !== null,
-        returnLabel: origin.current
-          ? origin.current.route.browser.pane === "stories"
-            ? "Back to stories"
-            : "Back to radar layer"
-          : undefined,
+        returnLabel: origin.current?.label,
         openRadar(at, map) {
           rememberOrigin("open-explorer-radar");
           setRoute(null);
@@ -123,10 +128,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           if (active === "radar" && props.radar.view && isGlobalRadar(props.radar.view.region))
             props.explorer.radarTime(props.radar.view.selectedAt ?? null);
           props.views.navigation.restore(saved.route);
-          props.explorer.restore(saved.camera);
+          props.explorer.restore(saved.camera, saved.flat);
           setRoute(null);
           requestAnimationFrame(() => {
-            document.getElementById("chrome-rail")?.scrollTo(0, saved.scroll);
+            document.getElementById(saved.scrollTarget)?.scrollTo(0, saved.scroll);
             document.getElementById(saved.trigger)?.focus({ preventScroll: true });
           });
           return true;

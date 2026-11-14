@@ -36,7 +36,7 @@ test("Atmospheric River and River Pulse open distinct views from the catalogue a
   const forecast = page.getByRole("region", { name: "Atmospheric River", exact: true });
   await expect(forecast.getByRole("combobox", { name: "Forecast", exact: true })).toBeVisible();
   await expect(forecast.getByRole("slider", { name: "Forecast valid time", exact: true })).toBeVisible();
-  await forecast.getByRole("button", { name: "Back to Observatory", exact: true }).click();
+  await forecast.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(atmospheric).toBeFocused();
   await pulse.click();
   const gauges = page.getByRole("region", { name: "River Pulse", exact: true });

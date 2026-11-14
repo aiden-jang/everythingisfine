@@ -81,7 +81,7 @@ test("reduced motion keeps the measurements and aurora available during a solar-
   await stage.getByRole("button", { name: "Sun", exact: true }).click();
   await expect(stage.getByText("NASA SDO archive · 10 Sep 2025")).toBeVisible();
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth - innerWidth)).toBe(0);
-  await page.getByRole("button", { name: "Back to stars", exact: true }).click();
+  await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(page.getByRole("button", { name: "Sun Watch", exact: true })).toBeFocused();
   await revealStoryTools(page);
   await expect(page.locator("#open-aurora-overflight")).toBeEnabled();

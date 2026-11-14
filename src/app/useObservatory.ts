@@ -13,7 +13,8 @@ import { useSkyView } from "./useSkyView";
 import { createFloatPlayback } from "./float/floatPlayback";
 import { useSkyCity } from "./tonight/SkyCityPicker";
 import type { GlobePresentation } from "../globe/scenePresentation";
-import { radarCamera, type RadarView } from "./radar/radarCamera";
+import { radarCamera } from "./radar/radarCamera";
+import { useRadarPresentation } from "./radar/useRadarPresentation";
 import { usePresentation } from "./usePresentation";
 import { useStoredFlag } from "./useStored";
 import { earthStories, isEarthStory } from "./earth-stories/catalogue";
@@ -23,6 +24,7 @@ export type Presentation = "observe" | "explore";
 
 export function useObservatory(shared: Partial<Permalink>) {
   const checkpoint = useRef<() => void>(() => {});
+  const loadingBackdrop = useRef<"dayline" | "planetarium">("dayline");
   const visitCheckpoint = useRef<() => void>(() => {});
   const before = useCallback(() => {
     visitCheckpoint.current();
@@ -47,13 +49,14 @@ export function useObservatory(shared: Partial<Permalink>) {
   const { view: tonightView, entry: skyEntry, setView: setTonightView, update: updateSky } = sky;
   const floatEntry = useRef<VisitPosition["float"]>();
   const [floatView, setFloatView] = useState<FloatDiveView | "opening" | null>(null);
-  const [radarView, setRadarView] = useState<RadarView | null>(null);
+  const {
+    view: radarView,
+    setView: setRadarView,
+    update: updateRadar,
+    opening: radarOpening,
+  } = useRadarPresentation();
   const updateFloat = useCallback(
     (next: FloatDiveView | null) => setFloatView((active) => (active === null ? null : next)),
-    [],
-  );
-  const updateRadar = useCallback(
-    (next: RadarView | null) => setRadarView((active) => (active === null ? null : next)),
     [],
   );
   const observations = useObservationDeck(shared.story, before);
@@ -70,7 +73,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     setFloatView(null);
     closeObservations();
     storyFromExplore.current = false;
-  }, [closeObservations, setTonightView]);
+  }, [closeObservations, setTonightView, setRadarView]);
   const {
     presentation,
     changePresentation,
@@ -112,7 +115,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       setFloatView(null);
       if (!keepDeck) closeObservations();
     },
-    [closeObservations, before, setTonightView],
+    [closeObservations, before, setTonightView, setRadarView],
   );
   const observing = presentation === "observe";
   const night = observing && scene === "night";
@@ -197,6 +200,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     },
     navigation: {
       prepareStory: (next: EarthScene, keepDeck: boolean) => {
+        loadingBackdrop.current = night ? "planetarium" : "dayline";
         if (observing) chooseScene(next, null, keepDeck);
         else changePresentation("observe", true, () => chooseScene(next, null, keepDeck), false);
       },
@@ -277,6 +281,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       else observations.close();
     },
     openAfterDarkArchive(archive: AfterDarkArchive) {
+      loadingBackdrop.current = "planetarium";
       setRun(null);
       setSunWatch(false);
       observations.open(archive, archive === "lights" ? "open-lights-return" : "open-shadow-chase");
@@ -381,16 +386,11 @@ export function useObservatory(shared: Partial<Permalink>) {
       update: updateRadar,
     },
     globe(guided: boolean): GlobePresentation {
-      if (observations.entry)
-        return (
-          observations.view ??
-          (observations.entry === "lights" || observations.entry === "shadow" ? "planetarium" : "dayline")
-        );
+      if (observations.entry) return observations.view ?? loadingBackdrop.current;
+      if (floatView === "opening" || radarOpening) return loadingBackdrop.current;
       if (night) return sunActive ? null : (localSky ?? auroraRun ?? "planetarium");
       return observing && scene === "live" && !guided
-        ? ((floatView === "opening" ? null : floatView) ??
-            radarView ??
-            (floatView === "opening" || sharedView.current ? "dayline" : "landing"))
+        ? (floatView ?? radarView ?? (sharedView.current ? "dayline" : "landing"))
         : null;
     },
     setTourStop,

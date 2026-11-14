@@ -2230,11 +2230,11 @@ test("mobile exploration switches between globe space and the current inspector"
   await waitForData(page);
   await openLayer(page);
   const navigation = page.getByRole("navigation", { name: "Explore" });
-  await navigation.getByRole("button", { name: "Expand globe", exact: true }).click();
+  await navigation.getByRole("button", { name: "Collapse panel", exact: true }).click();
   const globeHeight = await page
     .getByRole("separator", { name: "Sheet height" })
     .getAttribute("aria-valuenow");
-  await navigation.getByRole("button", { name: "Layer details", exact: true }).click();
+  await navigation.getByRole("button", { name: "Expand panel", exact: true }).click();
   const recentHeight = await page
     .getByRole("separator", { name: "Sheet height" })
     .getAttribute("aria-valuenow");

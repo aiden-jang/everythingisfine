@@ -1128,7 +1128,6 @@ export function App(): JSX.Element {
             <ExploreSheet
               height={sheetCanvas}
               onResize={setSheetCanvas}
-              flat={flat}
               visible={railShown}
               panel={
                 observatory.browser.pane === "stories"

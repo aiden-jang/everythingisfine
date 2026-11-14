@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import { layerTime } from "../layerTime";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { RadarScan } from "../../sources/radar";
@@ -239,14 +240,12 @@ export function RadarStage({
           >
             Previous
           </button>
-          <button
-            data-playback-start={!playing || undefined}
-            type="button"
+          <PlaybackButton
+            playing={playing}
+            ended={index === scans.length - 1}
             disabled={scans.length < 2}
             onClick={togglePlay}
-          >
-            {playing ? "Pause" : "Play scans"}
-          </button>
+          />
           <button
             type="button"
             aria-label="Next radar scan"

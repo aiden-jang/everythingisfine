@@ -59,7 +59,7 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   expect(queries).toBe(0);
   await trigger.click();
   const scene = page.getByRole("region", { name: "Storm Radar" });
-  await expect(scene.getByRole("button", { name: "Back to Live Earth" })).toBeFocused();
+  await expect(scene.getByRole("button", { name: "Back to stories" })).toBeFocused();
   await expect(page.getByRole("group", { name: "Radar on the globe" })).toBeInViewport();
   expect(await canvas.evaluate((element, original) => element === original, globe)).toBe(true);
   await scene.getByLabel("Coverage", { exact: true }).selectOption("us");
@@ -91,14 +91,14 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   await expect(canvas).toHaveAttribute("data-radar-uploads", "2");
   await scene.getByLabel("Radar region").selectOption({ label: "Great Lakes" });
   await expect(scene.getByRole("heading", { name: "Great Lakes" })).toBeVisible();
-  await scene.getByRole("button", { name: "Play scans" }).click();
+  await scene.getByRole("button", { name: "Play", exact: true }).click();
   await expect(time).toHaveAttribute("datetime", timestamp(2));
   await expect(scene.getByText("Latest scan", { exact: true })).toBeVisible();
   await expect(scene.getByRole("button", { name: "Latest", exact: true })).toBeInViewport();
   await page.setViewportSize({ width: 812, height: 375 });
   await scene.getByLabel("Radar region").selectOption("national");
   await expect(slider).toBeInViewport({ ratio: 1 });
-  await expect(scene.getByRole("button", { name: "Play scans" })).toBeInViewport({ ratio: 1 });
+  await expect(scene.getByRole("button", { name: "Replay", exact: true })).toBeInViewport({ ratio: 1 });
   await scene.getByRole("button", { name: "Map", exact: true }).click();
   await expect(page.getByRole("group", { name: "Radar on the map" })).toBeVisible();
   await expect(time).toHaveAttribute("datetime", timestamp(2));

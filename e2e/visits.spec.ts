@@ -70,7 +70,7 @@ test("a saved float returns to its measured depth after a new page visit", async
     .getByRole("button", { name: /Float Dive Saved float/ })
     .click();
   await expect(depth).toHaveValue(value);
-  await expect(page.getByRole("button", { name: "Replay ascent" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Replay" })).toBeVisible();
 });
 
 test("saved views and recent history can be cleared independently", async ({ page }) => {

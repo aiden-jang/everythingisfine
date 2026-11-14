@@ -1,7 +1,9 @@
+import { StoryLoading } from "../StoryLoading";
+import { useJourneyGestures } from "../journeyCamera";
 import { storyMapTarget } from "./mapFraming";
 import { StoryTimeline } from "./StoryTimeline";
 import { nearestFrame } from "./nearestFrame";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { useObservationImage } from "../observations/useObservationData";
 import { ObservationChart } from "../observations/ObservationChart";
@@ -120,12 +122,7 @@ export function StoryPlayer({
   const time = frame.timeLabel ?? format.format(frame.at) + " UTC";
   const duration = Math.max(1, data.frames.length - 1);
   useLayoutEffect(() => {
-    if (
-      status !== "failed" &&
-      frame.raster &&
-      (!element || element.src !== new URL(frame.raster.url, location.href).href)
-    )
-      return;
+    if (frame.raster && (!element || element.src !== new URL(frame.raster.url, location.href).href)) return;
     onView({
       kind: "observation",
       frame: viewFrame,
@@ -190,17 +187,7 @@ export function StoryPlayer({
     lunarImage.element,
     status,
   ]);
-  const pause = clock.pause;
-  useEffect(() => {
-    const canvas = document.querySelector(".zone-canvas canvas");
-    const stop = () => pause();
-    canvas?.addEventListener("pointerdown", stop);
-    canvas?.addEventListener("wheel", stop, { passive: true });
-    return () => {
-      canvas?.removeEventListener("pointerdown", stop);
-      canvas?.removeEventListener("wheel", stop);
-    };
-  }, [pause]);
+  useJourneyGestures(clock.pause, clock.resume, clock.position < duration);
   const chooseSite = (value: string) => {
     setSite(value);
     const point = data.sites?.find((p) => p.id === value);
@@ -282,6 +269,7 @@ export function StoryPlayer({
           </button>
         </div>
       )}
+      {(busy || status === "loading") && <StoryLoading>Loading the selected observations…</StoryLoading>}
       <StoryTimeline
         data={data}
         frame={{ ...frame, caption }}
@@ -339,11 +327,6 @@ export function StoryPlayer({
           ))}
         </ul>
       )}
-      {(busy || status === "loading") && (
-        <p role="status" className="observation-note">
-          Loading the selected observations…
-        </p>
-      )}
       {failed && (
         <p role="status" className="observation-note">
           The selected data could not load. Previous observations stay visible.{" "}
@@ -369,7 +352,6 @@ export function StoryPlayer({
           </button>
         </p>
       )}
-      <p className="observation-note">{meta.note}</p>
     </ReplayPanel>
   );
 }

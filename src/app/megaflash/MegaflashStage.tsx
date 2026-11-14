@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { flashGeography, flashLens, flashTarget } from "./flashGlobe";
@@ -220,14 +221,12 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
             onChange={(event) => update(inspect(timeAtStep(event.currentTarget.valueAsNumber)))}
           />
           <div className="archive-scene-controls">
-            <button
-              data-playback-start={!view.playing || undefined}
-              type="button"
+            <PlaybackButton
+              playing={view.playing}
+              ended={complete}
               className="archive-scene-button"
               onClick={togglePlay}
-            >
-              {view.playing ? "Pause" : complete ? "Replay" : "Play"}
-            </button>
+            />
             <button
               type="button"
               className="archive-scene-button"

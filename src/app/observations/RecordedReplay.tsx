@@ -109,7 +109,7 @@ export function ReplayPanel({
           <ShareMoment />
           <ExperienceEnding />
           <details className="replay-sources">
-            <summary>Replay sources</summary>
+            <summary>Sources &amp; coverage</summary>
             <div>{sources}</div>
           </details>
         </section>

@@ -1,3 +1,4 @@
+import { StoryLoading } from "../StoryLoading";
 import { useEffect, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { useStorySession } from "../observations/StorySession";
@@ -44,11 +45,12 @@ export function EarthStory(props: Props): JSX.Element {
         sources={<a href={earthStories[id].url}>{earthStories[id].source}</a>}
       >
         <StoryChoices id={id} city={city} choice={choice} select={setChoice} />
-        <p role="status">
-          {failed
-            ? "The selected data could not load."
-            : "Preparing the observations. The globe stays ready."}
-        </p>
+        {failed ? (
+          <p role="status">The selected data could not load.</p>
+        ) : (
+          <StoryLoading>Preparing the observations. You can still explore the globe.</StoryLoading>
+        )}
+
         {failed && (
           <button type="button" onClick={() => setRetry((n) => n + 1)}>
             Try again

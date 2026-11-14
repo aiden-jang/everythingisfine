@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import {
@@ -259,46 +260,6 @@ export function LightsReturn({
           )}
           {status === "ready" && (
             <>
-              <div className="observatory-actions lights-actions">
-                {!landing && (
-                  <button
-                    type="button"
-                    ref={skip}
-                    onClick={() => {
-                      play.current?.focus({ preventScroll: true });
-                      setLanding({ scale: 1, animate: false });
-                    }}
-                  >
-                    Skip approach
-                  </button>
-                )}
-                <button
-                  data-playback-start={!playing || undefined}
-                  type="button"
-                  ref={play}
-                  onClick={() => {
-                    if (playing) setPlaying(false);
-                    else {
-                      if (index === LAST) setIndex(0);
-                      setCompare(false);
-                      setPlaying(true);
-                    }
-                  }}
-                >
-                  {playing ? "Pause replay" : index === LAST ? "Replay recovery" : "Play recovery"}
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={compare}
-                  disabled={!landing || index === 0}
-                  onClick={() => {
-                    setPlaying(false);
-                    setCompare(!compare);
-                  }}
-                >
-                  Compare with before
-                </button>
-              </div>
               <div className="lights-timeline">
                 <div className="lights-row">
                   <label htmlFor={timeline}>Night-light period</label>
@@ -320,6 +281,44 @@ export function LightsReturn({
                     if (selected === 0) setCompare(false);
                   }}
                 />
+              </div>
+              <div className="observatory-actions lights-actions">
+                {!landing && (
+                  <button
+                    type="button"
+                    ref={skip}
+                    onClick={() => {
+                      play.current?.focus({ preventScroll: true });
+                      setLanding({ scale: 1, animate: false });
+                    }}
+                  >
+                    Skip approach
+                  </button>
+                )}
+                <PlaybackButton
+                  playing={playing}
+                  ended={index === LAST}
+                  buttonRef={play}
+                  onClick={() => {
+                    if (playing) setPlaying(false);
+                    else {
+                      if (index === LAST) setIndex(0);
+                      setCompare(false);
+                      setPlaying(true);
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  aria-pressed={compare}
+                  disabled={!landing || index === 0}
+                  onClick={() => {
+                    setPlaying(false);
+                    setCompare(!compare);
+                  }}
+                >
+                  Compare with before
+                </button>
               </div>
               {compare && (
                 <div className="lights-timeline">
@@ -349,7 +348,7 @@ export function LightsReturn({
             trace the uneven return of light.
           </p>
           <details className="lights-sources">
-            <summary>Data and interpretation</summary>
+            <summary>Sources &amp; coverage</summary>
             <p className="observation-note">
               These are Black Marble HD images from NASA’s Scientific Visualization Studio. The three
               post-storm views average multiple nights. Brightness indicates light detected from orbit, a

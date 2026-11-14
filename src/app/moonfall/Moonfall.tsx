@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import { useEffect, useId, useState, useSyncExternalStore } from "react";
 import { createMoonfall, type MoonfallProgress, type MoonfallView } from "../../globe/moonfall/scene";
 import { loadLunarSurvey, lunarSources, traverses } from "../../sources/moonfall/apollo17";
@@ -139,13 +140,7 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
           onChange={(event) => act(() => view.seek((length * event.currentTarget.valueAsNumber) / 250))}
         />
         <div className="observatory-actions moonfall-actions">
-          <button
-            data-playback-start={!playing || undefined}
-            type="button"
-            onClick={() => act(view.toggleRoute)}
-          >
-            {playing ? "Pause traverse" : meters >= length ? "Replay traverse" : "Play traverse"}
-          </button>
+          <PlaybackButton playing={playing} ended={meters >= length} onClick={() => act(view.toggleRoute)} />
           <span className="moonfall-route-note">
             {station === null ? route.title : route.stations[station]?.name}
           </span>

@@ -39,7 +39,7 @@ test("After Dark follows the NOAA forecast and returns to the stars", { tag: "@d
   await expect.poll(async () => (await flight()).sweep).toBe(1);
   await expect.poll(async () => (await flight()).ready).toBe(true);
   expect(Math.abs((await flight()).lat)).toBeGreaterThanOrEqual(72);
-  await page.getByRole("button", { name: "Back to stars" }).click();
+  await page.getByRole("button", { name: "Back to stories" }).click();
   await expect(readout).toContainText("Catalogue sky");
   await expect(follow(page)).toBeFocused();
   await expect.poll(async () => (await flight()).sweep).toBe(0);

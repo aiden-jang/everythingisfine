@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import { useEffect, useId, useLayoutEffect, useMemo, useState } from "react";
 import {
   aimAt,
@@ -162,17 +163,15 @@ export function MeteorNights({
         </div>
       </div>
       <div className="observatory-actions meteor-actions">
-        <button
-          data-playback-start={!playing || undefined}
-          type="button"
+        <PlaybackButton
+          playing={playing}
+          ended={at >= night.end}
           onClick={() => {
             if (!playing && at >= night.end)
               onView(skyFrame(city, shower, night.start, trail, following ? undefined : view?.look));
             setPlaying(!playing);
           }}
-        >
-          {playing ? "Pause night" : "Play night"}
-        </button>
+        />
         <button
           type="button"
           aria-pressed={following}

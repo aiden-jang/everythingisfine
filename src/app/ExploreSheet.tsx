@@ -6,13 +6,11 @@ import { sheetStops } from "./sheetLayout";
 export function ExploreSheet({
   height,
   onResize,
-  flat,
   panel,
   visible,
 }: {
   height: number;
   onResize: (height: number) => void;
-  flat: boolean;
   panel: string;
   visible: boolean;
 }) {
@@ -43,7 +41,6 @@ export function ExploreSheet({
         <MobileNavigation
           canvasHeight={current}
           viewportHeight={viewport}
-          flat={flat}
           onResize={onResize}
           panel={panel}
         />

@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { gulf, stormGeography, stormLens, stormTarget } from "./stormGlobe";
@@ -172,14 +173,12 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
             onInput={(event) => update(seekTo(Number(event.currentTarget.value)))}
           />
           <div className="archive-scene-controls">
-            <button
-              data-playback-start={!view.playing || undefined}
-              type="button"
+            <PlaybackButton
+              playing={view.playing}
+              ended={ended}
               className="archive-scene-button"
               onClick={toggle}
-            >
-              {view.playing ? "Pause" : ended ? "Replay" : "Play"}
-            </button>
+            />
             <button
               type="button"
               className="archive-scene-button"

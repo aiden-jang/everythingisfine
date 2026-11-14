@@ -15,11 +15,11 @@ test("Tōhoku reveals the modeled fault before the estimated shaking", async ({ 
   const reveal = page.getByRole("region", { name: "The Tōhoku rupture" });
   await expect(reveal.getByRole("heading", { name: "Off the coast of Honshu" })).toBeVisible();
   await expect(reveal.getByRole("heading", { name: "Modeled fault movement" })).toBeVisible();
-  await reveal.getByRole("button", { name: "Pause reveal" }).press("Enter");
-  await expect(reveal.getByRole("button", { name: "Resume reveal" })).toBeVisible();
+  await reveal.getByRole("button", { name: "Pause" }).press("Enter");
+  await expect(reveal.getByRole("button", { name: "Play" })).toBeVisible();
   await expect(reveal.getByRole("heading", { name: "Modeled fault movement" })).toBeVisible();
-  await reveal.getByRole("button", { name: "Resume reveal" }).click();
-  await expect(reveal.getByRole("button", { name: "Replay reveal" })).toBeVisible();
+  await reveal.getByRole("button", { name: "Play" }).click();
+  await expect(reveal.getByRole("button", { name: "Replay" })).toBeVisible();
   await expect(reveal.getByRole("heading", { name: "Estimated surface shaking" })).toBeVisible();
   await expect(reveal.getByText("Intensity · MMI")).toBeVisible();
   await expect(page.getByRole("group", { name: "The Tōhoku rupture on the globe" })).toContainText(
@@ -96,7 +96,7 @@ test("Tōhoku archive exposes both maps on a small phone with reduced motion", a
   );
   await reveal.getByRole("button", { name: "Estimated surface shaking", exact: true }).click();
   await expect(reveal.getByRole("heading", { name: "Estimated surface shaking" })).toBeVisible();
-  await reveal.getByText("Replay sources", { exact: true }).click();
+  await reveal.getByText("Sources & coverage", { exact: true }).click();
   await expect(reveal.getByRole("link", { name: "USGS ShakeMap" })).toBeVisible();
   const overflow = () => reveal.evaluate((panel) => panel.scrollWidth - panel.clientWidth);
   await expect.poll(overflow).toBe(0);

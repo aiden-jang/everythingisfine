@@ -103,7 +103,7 @@ test("story search finds another scene and returns to the retained query on a na
   await expect(page.locator("#earth-story-time")).toBeVisible();
   await page.screenshot({ path: test.info().outputPath("phone-comet.png") });
   const canvas = await page.locator("#globe-view canvas").elementHandle();
-  await page.getByRole("button", { name: "Back to After Dark", exact: true }).click();
+  await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(search).toHaveValue("NEOWISE");
   await expect(page.locator("#search-story-comet")).toBeFocused();
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
@@ -131,7 +131,7 @@ test("story search starts an available aurora flight from the live scene", async
   await page.locator("#search-story-aurora").click();
   await expect(page.getByRole("heading", { name: "Into the auroral oval." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Replay flight" })).toBeVisible();
-  await page.getByRole("button", { name: "Back to stars", exact: true }).click();
+  await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(page.locator("#search-story-aurora")).toBeFocused();
 });
 
@@ -147,7 +147,7 @@ test("normal-motion entry can be interrupted and never replaces the shared canva
   await panel.getByRole("button", { name: "1970", exact: true }).click();
   await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   await expect(panel.locator(".story-time time")).toHaveAttribute("datetime", "1970-01-01T12:00:00.000Z");
-  await panel.getByRole("button", { name: "Back to Observatory", exact: true }).click();
+  await panel.getByRole("button", { name: "Back to stories", exact: true }).click();
   expect(await original!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
     true,
   );

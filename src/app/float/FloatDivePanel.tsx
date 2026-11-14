@@ -1,3 +1,4 @@
+import { PlaybackButton } from "../PlaybackButton";
 import type { VisitPosition } from "../visitor/library";
 import { MeasurementSound } from "../MeasurementSound";
 import { useLayoutEffect, useMemo, useRef, useSyncExternalStore } from "react";
@@ -67,11 +68,6 @@ function Measurements({ view, sound }: { view: FloatDiveView; sound: boolean }):
           </strong>
           <small>{sample.pressure.toFixed(1)} dbar</small>
         </div>
-        <div className="observatory-actions float-actions">
-          <button data-playback-start={!playing || undefined} type="button" onClick={view.toggle}>
-            {playing ? "Pause" : index === samples.length - 1 ? "Replay ascent" : "Play ascent"}
-          </button>
-        </div>
         <input
           type="range"
           className="scrub-slider float-scrub"
@@ -83,8 +79,11 @@ function Measurements({ view, sound }: { view: FloatDiveView; sound: boolean }):
           aria-valuetext={depth}
         />
         <div className="float-edges">
-          <span>Deepest reading</span>
-          <span>Shallowest reading</span>
+          <span>{meters.format(samples[0]!.depth)} m</span>
+          <div className="observatory-actions float-actions">
+            <PlaybackButton playing={playing} ended={index === samples.length - 1} onClick={view.toggle} />
+          </div>
+          <span>{meters.format(samples.at(-1)!.depth)} m</span>
         </div>
       </div>
       <div className="float-measurements">
@@ -208,9 +207,14 @@ export function FloatDivePanel({
         )}
         {catalogue.state === "ready" && catalogue.stations.length === 0 && <p>No recent profiles found.</p>}
       </div>
+      <details className="replay-sources">
+        <summary>Sources &amp; coverage</summary>
+        <p>
+          Each step shows a measured sample. Depth is estimated from pressure and the ascent is compressed for
+          playback.
+        </p>
+      </details>
       <p className="float-source">
-        Each step shows a measured sample. Depth is estimated from pressure and the ascent is compressed for
-        playback.{" "}
         <a href={ARGO_DOI} target="_blank" rel="noreferrer" aria-describedby="external-link-hint">
           Argo data
         </a>

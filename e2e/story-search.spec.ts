@@ -2,12 +2,12 @@ import { expect, test } from "@playwright/test";
 import { installFeeds, openStories } from "./feeds";
 
 for (const [id, query, back] of [
-  ["sky", "Tonight’s Sky", "Back to After Dark"],
-  ["meteors", "Meteor Nights", "Back to After Dark"],
-  ["moonfall", "Moonfall", "Back to After Dark"],
-  ["sun", "Sun Watch", "Back to stars"],
-  ["radar", "Storm Radar", "Back to Live Earth"],
-  ["float", "Float Dive", "Back to Live Earth"],
+  ["sky", "Tonight’s Sky", "Back to stories"],
+  ["meteors", "Meteor Nights", "Back to stories"],
+  ["moonfall", "Moonfall", "Back to stories"],
+  ["sun", "Sun Watch", "Back to stories"],
+  ["radar", "Storm Radar", "Back to stories"],
+  ["float", "Float Dive", "Back to stories"],
 ] as const) {
   test(`${query} returns keyboard focus to its search result`, async ({ page }) => {
     if (id === "sky") await page.setViewportSize({ width: 320, height: 640 });
