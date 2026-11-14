@@ -188,15 +188,18 @@ test(
 
       // Feed data can arrive before the lazy globe initializes; wait for the camera, not its motion.
       await expect.poll(() => cameraNow(page)).not.toBeNull();
-      const camera = (): Promise<{ lon: number; zoom: number }> =>
+      const camera = (): Promise<{ lon: number; lat: number; zoom: number }> =>
         page.evaluate(() =>
-          (window as unknown as { __globe: { state: () => { lon: number; zoom: number } } }).__globe.state(),
+          (
+            window as unknown as { __globe: { state: () => { lon: number; lat: number; zoom: number } } }
+          ).__globe.state(),
         );
 
       // The entrance starts 42 degrees back and springs forward. Skipped, not shortened, so the
       // camera is at the framing longitude from the very first frame.
       const atLoad = await camera();
-      expect(atLoad.lon).toBeCloseTo(145, 1);
+      expect(atLoad.lon).toBeCloseTo(-74.006, 3);
+      expect(atLoad.lat).toBeCloseTo(40.7128, 3);
       expect(atLoad.zoom).toBeCloseTo(1, 2);
 
       // Flying to a region arrives rather than travels.
@@ -226,7 +229,8 @@ test("the entrance settles exactly on the framing shot", { tag: "@dev" }, async 
   // Wait for the spring to stop, then assert where it stopped. Those are two different claims and
   // only the second one is what this test is about.
   const resting = await cameraStill(page);
-  expect(resting.lon).toBeCloseTo(145, 3);
+  expect(resting.lon).toBeCloseTo(-74.006, 3);
+  expect(resting.lat).toBeCloseTo(40.7128, 3);
 });
 
 /*
@@ -590,14 +594,14 @@ test("the globe is operable from the keyboard, and the keys are written down", a
   await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).toMatch(/,1\.25$/);
 
   await page.keyboard.press("Digit0");
-  await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).toMatch(/^145,12,1$/);
+  await expect.poll(() => linkField(page, "at"), { timeout: CAMERA_SETTLE_MS }).toBe("-74.01,40.71,1");
 
   // A focused control keeps its own arrows. One global handler that fired regardless of focus would
   // break every slider it sits next to.
   await page.locator("#mag").focus();
   await page.keyboard.press("ArrowRight");
   await expect(page.locator(".zones")).toContainText("Magnitude 2.1 and above");
-  expect(linkField(page, "at")).toBe("145,12,1");
+  expect(linkField(page, "at")).toBe("-74.01,40.71,1");
 });
 
 test("a dead feed says so, and does not claim a covered day", async ({ page }) => {

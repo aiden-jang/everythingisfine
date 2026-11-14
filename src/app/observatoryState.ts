@@ -1,3 +1,4 @@
+import { DEFAULT_CAMERA } from "../globe/framing";
 import type { Permalink } from "./permalink";
 import { stored } from "./stored";
 import type { CutawayFocus } from "../globe/cutaway";
@@ -40,5 +41,5 @@ export function earthSceneTarget(
     const sun = subsolarPoint(at);
     return { scene, focus: null, camera: [sun.lon + 180, -sun.lat, 0.92] };
   }
-  return { scene, focus: null, camera: [145, 12, 1] };
+  return { scene, focus: null, camera: [DEFAULT_CAMERA.lon, DEFAULT_CAMERA.lat, DEFAULT_CAMERA.zoom] };
 }

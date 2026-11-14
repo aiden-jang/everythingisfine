@@ -136,7 +136,9 @@ for (const projection of ["globe", "map"]) {
     await page.getByRole("button", { name: "View options", exact: true }).click();
     await page.screenshot({ path: test.info().outputPath(`reset-${projection}.png`) });
     await page.getByRole("button", { name: "Reset camera", exact: true }).click();
-    await expect.poll(camera).toEqual({ lon: 145, lat: 12, zoom: 1, morph: projection === "map" ? 1 : 0 });
+    await expect
+      .poll(camera)
+      .toEqual({ lon: -74.006, lat: 40.7128, zoom: 1, morph: projection === "map" ? 1 : 0 });
     const after = await page.evaluate(() => Object.fromEntries(new URLSearchParams(location.hash.slice(1))));
     for (const key of ["p", "m", "w", "c", "layers"]) expect(after[key]).toBe(before[key]);
     expect(

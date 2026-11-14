@@ -1,3 +1,4 @@
+import { DEFAULT_CAMERA } from "./framing";
 import { createNightSurface } from "./nightSurface";
 import { createScenePresentation, type GlobePresentation } from "./scenePresentation";
 import { lightSurface } from "./surfaceMaterial";
@@ -114,9 +115,6 @@ const BLUEPRINT = {
 } as const;
 const COLOR_RIM = new Color(0x7896be);
 const COLOR_GLINT = new Color(0xa8c4e4);
-
-/* The Ring of Fire faces the viewer, because that is where the earthquakes are. */
-const FRAMING = { lon: 145, lat: 12 } as const;
 
 const FOV = 32;
 /** Fraction of the smaller viewport dimension the globe fills. */
@@ -363,7 +361,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   world.traverse((o) => {
     o.frustumCulled = false;
   });
-  const controls = createControls(camera, canvas, FRAMING, FOV);
+  const controls = createControls(camera, canvas, DEFAULT_CAMERA, FOV);
   const modern = [fill, coast, plateLines, plateEdge];
   const presentation = createScenePresentation(spin, catalogue, controls, sunDir, lights, dayline, canvas);
   const inspection = createEventPresentation(camera, controls, catalogue);

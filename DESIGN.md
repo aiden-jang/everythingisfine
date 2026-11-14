@@ -351,6 +351,9 @@ shared camera views, guided tours and stories keep their own framing. Rotation s
 tabs and under reduced motion; it does not advance the data clock or continually rewrite the URL.
 No perpetual chrome loops. Data appears promptly; fetching never waits for animation.
 
+Fresh visits and camera reset center on New York at the wide overview zoom in both globe and map.
+Shared links, saved views and story framing keep their own coordinates.
+
 The opening is a finite horizon-to-orbit shot with a close lens, a vertical framing offset and a
 settling bank. **Reset view** can replay it. Navigation retains critically damped springs: long
 flights pull back and bank proportionally; short hops remain direct. Grabbing or steering interrupts
