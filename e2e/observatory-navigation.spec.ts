@@ -9,11 +9,13 @@ test("a shared scene opens the same category in a fresh browser @dev", async ({ 
   await expect
     .poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("catalogue"))
     .toBe("night");
+  const sharedUrl = page.url();
+  await page.close();
   const recipient = await browser.newContext({ reducedMotion: "reduce" });
   try {
     const other = await recipient.newPage();
     await installFeeds(other, { presentation: "fresh" });
-    await other.goto(page.url());
+    await other.goto(sharedUrl);
     await expect(other.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -21,13 +23,21 @@ test("a shared scene opens the same category in a fresh browser @dev", async ({ 
     await expect(other.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
     await other.getByRole("button", { name: "After Dark", exact: true }).click();
     await expect
-      .poll(() => new URLSearchParams(new URL(other.url()).hash.slice(1)).has("catalogue"))
-      .toBe(false);
+      .poll(() => new URLSearchParams(new URL(other.url()).hash.slice(1)).get("catalogue"))
+      .toBe("all");
     await other.reload();
-    await expect(other.getByRole("region", { name: "Stories and layers", exact: true })).toHaveCount(0);
+    await expect(other.getByRole("region", { name: "Stories and layers", exact: true })).toBeVisible();
+    await expect(other.getByRole("heading", { name: "All stories", exact: true })).toBeVisible();
     await expect(
       other.getByRole("group", { name: "Earth scenes" }).locator('[aria-pressed="true"]'),
     ).toHaveCount(0);
+    await other.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
+    await expect
+      .poll(() => new URLSearchParams(new URL(other.url()).hash.slice(1)).has("catalogue"))
+      .toBe(false);
+    await other.reload();
+    await expect(other.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+    await expect(other.getByRole("region", { name: "Stories and layers", exact: true })).toHaveCount(0);
   } finally {
     await recipient.close();
   }
