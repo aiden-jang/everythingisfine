@@ -110,9 +110,10 @@ export function FeedDot({
           ))}
         </ul>
         <p>
-          Enabled weather layers join the total on the landing globe and in Explore. They pause in other
-          views. Off means they are not being checked. These are source counts, not visible layer counts:
-          earthquakes use two sources, and event sources keep checking when their markers are hidden.
+          Enabled weather layers join the total on the landing globe and in Explore. Browsing stories hides
+          them while source checks continue. Opening a story pauses these background layers. Off means they
+          are not being checked. These are source counts, not visible layer counts: earthquakes use two
+          sources, and event sources keep checking when their markers are hidden.
         </p>
         <h3>Loads when opened</h3>
         <p>

@@ -46,7 +46,7 @@ export function GlobeOverlays({
         aria-hidden="true"
         className="orbit-readout pointer-events-none absolute top-[var(--scene-hud-top)] left-4 md:ml-[var(--rail-w)] md:translate-x-8 border border-hairline bg-deck/90 px-2 py-1 font-mono text-[10px] text-dim tabular-nums"
       />
-      {cutaway ? (
+      {cutaway && !cutaway.cameraOnly ? (
         <div
           role="status"
           className="cutaway-note pointer-events-none absolute top-[var(--scene-hud-top)] left-4 max-w-[220px] border border-hairline bg-deck/95 p-2 text-[10px] text-dim md:ml-[var(--rail-w)] md:translate-x-8"

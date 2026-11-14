@@ -418,10 +418,16 @@ onward stories. Sources & coverage disclosures hold secondary explanations; esse
 uncertainty and required attribution remain beside the visualization. The phone panel has one
 Expand/Collapse action; its drag handle and keyboard controls retain all three sheet sizes.
 Category-scoped search uses the same catalogue as browsing; widening to All stories keeps the query.
-Continue exposes the latest matching local visit. Explicit regional previews save their camera origin
+The return action classifies the latest matching local visit as unfinished, completed or current-data.
+Completion is an optional, validated field in the existing device-only visit record; older records remain readable.
+Library Undo merges only removed entries, preserving newer saved moments and visits. Explicit regional previews save their camera origin
 in story navigation so both dismissal and story return restore the pre-preview viewpoint.
 Finite players report completion through `src/app/journeys/useStoryCompletion.ts`; the existing
 related-story disclosure opens at the end without scrolling, focus changes or automatic navigation.
+Recommendations use curated topic connections and bounded recent history, excluding the preceding story
+and unavailable views. Reset camera uses the shared camera guidance and leaves observation state intact.
+Story browsing hides depth overlays while preserving the category’s camera dive. Story entry changes
+update the shared URL immediately, so a quick reload after returning cannot reopen the previous story.
 `src/app/layerQuiet.ts` keeps pending, failed and empty observations distinct beside enabled layers,
 with coverage caveats for radar, lightning and aurora.
 

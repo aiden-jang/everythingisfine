@@ -69,29 +69,31 @@ export function LayerCatalogue({
             return (
               <Fragment key={id}>
                 <div className="layer-row" hidden={controls.inspector !== null}>
-                  <button
-                    type="button"
-                    id={`inspect-${id}`}
-                    className="layer-inspect"
-                    aria-label={`${mapLayerNames[id]} details`}
-                    aria-describedby={`layer-${id}-coverage`}
-                    onClick={() => onInspect(id)}
-                  >
-                    <LayerIcon layer={id} />
-                    <span className="layer-name">{mapLayerNames[id]}</span>
-                    <svg
-                      className="layer-chevron"
-                      viewBox="0 0 16 16"
-                      width="16"
-                      height="16"
-                      aria-hidden="true"
+                  <div className="layer-summary">
+                    <button
+                      type="button"
+                      id={`inspect-${id}`}
+                      className="layer-inspect"
+                      aria-label={`${mapLayerNames[id]} details`}
+                      aria-describedby={`layer-${id}-coverage`}
+                      onClick={() => onInspect(id)}
                     >
-                      <path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                    </svg>
+                      <LayerIcon layer={id} />
+                      <span className="layer-name">{mapLayerNames[id]}</span>
+                      <svg
+                        className="layer-chevron"
+                        viewBox="0 0 16 16"
+                        width="16"
+                        height="16"
+                        aria-hidden="true"
+                      >
+                        <path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                      </svg>
+                    </button>
                     <small id={`layer-${id}-coverage`} className={status ? "layer-status" : "sr-only"}>
                       {status ?? layerMetadata[id].coverage}
                     </small>
-                  </button>
+                  </div>
                   <LayerVisibility
                     layer={id}
                     on={controls.enabled[id]}

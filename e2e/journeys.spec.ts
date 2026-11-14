@@ -86,7 +86,10 @@ for (const view of ["Meteor Nights", "Moonfall"] as const) {
     const savedTime = await time.inputValue();
     await page.getByRole("button", { name: view, exact: true }).click();
     await page.getByText("Keep exploring", { exact: true }).click();
+    await expect(page.locator(".related-stories button strong")).not.toHaveText("Tonight’s Sky");
     await page.locator(".related-stories button").click();
+    await page.getByRole("button", { name: "Back to stories", exact: true }).click();
+    await page.locator("#search-story-sky").click();
     await expect(page.getByRole("heading", { name: "Tonight’s Sky", exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: "Sky view", exact: true })).toHaveAttribute(
       "aria-pressed",

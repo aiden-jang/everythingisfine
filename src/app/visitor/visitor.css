@@ -65,6 +65,18 @@
   border-top: 1px solid var(--color-hairline);
   margin-top: 16px;
 }
+.visit-feedback {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.visit-feedback button {
+  min-height: 44px;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
 .discovery-list {
   display: grid;
   gap: 12px;

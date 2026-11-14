@@ -28,8 +28,8 @@ do not support browser CORS. The local server supplies the same routes without a
 
 A fresh visit opens a compact introduction beside the shared globe, with no scene selected.
 Choosing Live Earth, Below the Surface or After Dark opens its content immediately; choosing the
-selected scene again collapses the catalogue and returns to the introduction.
-**Explore** opens a sidebar with **Layers** and **Stories**, beside the same globe or map. The wordmark returns to the Live Earth landing view. Browser Back restores the previous view. Choose **Reset view & filters** in View options to clear the selection, filters, and held time and replay the globe’s arrival.
+selected scene again shows All stories. The wordmark closes the catalogue and returns to the introduction.
+**Explore** opens a sidebar with **Layers** and **Stories**, beside the same globe or map. The wordmark returns to the Live Earth landing view. Browser Back restores the previous view. **Reset camera** in View options recenters the current view without changing its projection, layers, filters or held time. Choose **Reset view & filters** in View options to clear the selection, filters, and held time and replay the globe’s arrival.
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
 **Save image** adds the displayed story’s title, time and source to supported canvas views.
 Photograph overlays and Sun Watch do not offer an incomplete canvas-only export.
@@ -60,8 +60,8 @@ Recent visits appear under **Pick up where you left off**. **Save view** keeps o
 on this device; **Update saved view** replaces its saved point. Recorded stories retain their held time and projection; Moonfall retains its traverse,
 Tonight’s Sky its city and time, and Float Dive its measured depth. Live views reload their providers;
 a radar scan may expire and a recent float profile may become unavailable. **Saved views** lets you
-remove bookmarks or clear recent visits. Reopening a catalogue entry also resumes its saved moment.
-A compact **Continue** action in Stories resumes the most recent visit in that category, without opening Library. At the end of finite playback, **Up next** reveals one related story without automatically opening it or moving focus.
+remove bookmarks or clear recent visits; **Undo** restores the last removal while you remain in the app. Reopening a catalogue entry also resumes its saved moment.
+A compact return action in Stories uses **Continue** for an unfinished story, **Watch again** for a completed story, and **Open latest** for a current-data view. Saved views in Library still reopen their exact saved moment. At the end of finite playback, **Up next** reveals one related story without automatically opening it or moving focus. It prefers a related view absent from recent history and avoids the view you just came from; source and date differences remain explicit.
 Earth-story timelines show dated milestones, **Restart** while partway through or **Replay** at the end, and a closing evidence
 summary. **Compare dates** switches actual observations while holding the camera; annual and monthly
 products keep their stated time resolution. Authored flight progress and plate reconstructions do not

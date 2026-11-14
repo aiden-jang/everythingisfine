@@ -1,3 +1,4 @@
+import { visitAction, restartVisit } from "../visitor/visitAction";
 import { refreshAnnotations } from "../../globe/annotationInput";
 import type { StoryPlace } from "../discovery/places";
 import { reportAnalytics } from "../../../analytics/browser";
@@ -18,7 +19,7 @@ const Navigation = createContext<{
   active: string | null;
   library: ReturnType<typeof useVisitMemory>["library"];
   current: () => Visit | null;
-  resume: (visit: Visit, trigger?: string) => void;
+  resume: (visit: Visit, trigger?: string, smart?: boolean) => void;
   preview: (place?: StoryPlace, restore?: boolean) => void;
   browsingStories: boolean;
   completed: boolean;
@@ -73,7 +74,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
               ? "aurora"
               : null);
   useJourneyAnalytics(active);
-  const memory = useVisitMemory(props, active);
+  const memory = useVisitMemory(props, active, completion?.id === active && completion.complete);
   useEffect(() => {
     if (route && active === null) setRoute(null);
     if (active === null) origin.current = null;
@@ -97,7 +98,13 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       trigger,
     };
   }
-  function navigate(id: string, trigger = "observatory-scenes", saved?: Visit, keepScene = false) {
+  function navigate(
+    id: string,
+    trigger = "observatory-scenes",
+    saved?: Visit,
+    keepScene = false,
+    fresh = false,
+  ) {
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
     rememberOrigin(trigger);
@@ -105,14 +112,15 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     reportCompletion(id, false);
     const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
     const resuming = saved !== undefined;
-    saved ??= memory.library.recent.find((visit) => visit.id === id);
+    if (!fresh) saved ??= memory.library.recent.find((visit) => visit.id === id);
     props.views.navigation.prepareStory(
       keepScene && props.views.observing ? props.scene : story.scene,
       !standalone,
     );
     deck.setTrigger(trigger);
     if (saved?.position.sky) props.views.skyCity.select(saved.position.sky.city);
-    if (id === "sky" || id === "meteors" || id === "moonfall") tonight.open(id, saved?.position.sky);
+    if (id === "sky" || id === "meteors" || id === "moonfall")
+      tonight.open(id, fresh && id !== "moonfall" ? null : saved?.position.sky);
     else if (id === "aurora") props.aurora.start();
     else if (id === "sun") sun.toggle();
     else if (id === "radar") {
@@ -124,7 +132,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       );
       deck.setMap(exploring ? props.explorer.flat : (saved?.position.radar?.map ?? false));
     } else if (id === "float") floatDive.open(saved?.position.float);
-    else deck.open(id as StoryId, trigger, saved?.position.moment);
+    else deck.open(id as StoryId, trigger, saved?.position.moment ?? (fresh ? null : undefined));
   }
   return (
     <Navigation.Provider
@@ -170,9 +178,16 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           return true;
         },
         ...memory,
-        resume(visit, trigger = "observatory-scenes") {
+        resume(visit, trigger = "observatory-scenes", smart = false) {
           setRoute(null);
-          navigate(visit.id, trigger, visit);
+          const action = smart ? visitAction(visit) : "Continue";
+          navigate(
+            visit.id,
+            trigger,
+            action === "Continue" ? visit : restartVisit(visit),
+            false,
+            action !== "Continue",
+          );
         },
         route:
           route && journeys.find((journey) => journey.id === route.id)?.steps[route.step]?.id === active

@@ -44,7 +44,7 @@ export function useSkyView(city: string) {
       setView(saved.view);
       setEntry({ ...saved.entry, revision: entry.revision + 1 });
     },
-    open(mode: Entry["mode"] = "sky", resume?: VisitPosition["sky"]) {
+    open(mode: Entry["mode"] = "sky", resume?: VisitPosition["sky"] | null) {
       const previous = memory.current;
       setEntry((last) => ({
         mode,
@@ -56,7 +56,7 @@ export function useSkyView(city: string) {
               ...(resume.lunar ? { lunar: resume.lunar } : {}),
             }
           : {}),
-        ...(!resume && previous?.city.name === city
+        ...(resume === undefined && previous?.city.name === city
           ? { look: previous.look, moment: { city: previous.city.name, at: previous.at } }
           : {}),
       }));

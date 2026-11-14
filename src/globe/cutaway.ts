@@ -18,6 +18,7 @@ export interface CutawayFocus {
   lon: number;
   lat: number;
   dive?: true;
+  cameraOnly?: true;
 }
 const ANGLE = 20 * DEG;
 const INNER_RADIUS = 1 - CUTAWAY_DEPTH_KM / EARTH_RADIUS_KM;
@@ -176,6 +177,7 @@ export function createCutaway() {
       material.customProgramCacheKey = () => `${cacheKey}-cutaway`;
     },
     set(focus: CutawayFocus | null): void {
+      if (focus?.cameraOnly) focus = null;
       target = focus ? 1 : 0;
       if (focus && progress === 0) guideProgress = 0;
       if (focus) {

@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { SaveVisit } from "../visitor/VisitShelf";
 import { searchStories } from "../storyIndex";
-import { journeys, onward } from "./catalogue";
+import { journeys } from "./catalogue";
+import { recommendStory } from "./recommendation";
 import { useStoryNavigation } from "./StoryNavigation";
 import "./journeys.css";
 
@@ -71,9 +72,9 @@ export function ExperienceEnding({ id }: { id?: string } = {}) {
       </>
     );
   }
-  const next = onward[active];
-  const story = searchStories.find((entry) => entry.id === next?.[0]);
-  if (!next || !story) return null;
+  const next = recommendStory(active, navigation.library.recent, navigation.unavailable);
+  const story = searchStories.find((entry) => entry.id === next?.id);
+  if (!next || !story) return <SaveVisit />;
   const reason = navigation.unavailable(story.id);
   return (
     <>
@@ -90,7 +91,7 @@ export function ExperienceEnding({ id }: { id?: string } = {}) {
         }}
       >
         <summary>{completed ? "Up next" : "Keep exploring"}</summary>
-        <p>{next[1]}</p>
+        <p>{next.reason}</p>
         <button type="button" disabled={!!reason} onClick={() => navigation.open(story.id)}>
           <strong>{story.title}</strong>
           <span>{reason ?? story.summary}</span>

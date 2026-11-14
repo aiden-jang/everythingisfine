@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { stored, store } from "../stored";
 import { readLibrary, rememberVisit, type Library, type Visit } from "./library";
+import { restoreVisits, type RemovedVisits } from "./restoreVisits";
 
 // Keep refused writes through Explore's unmount; a page reload still clears this fallback.
 let sessionFallback: Library | null = null;
@@ -10,6 +11,7 @@ export function useVisitLibrary() {
   const latest = useRef(library);
   const persisted = useRef(sessionFallback === null);
   const [notice, setNotice] = useState("");
+  const [removed, setRemoved] = useState<RemovedVisits | null>(null);
   const change = useCallback((update: (value: Library) => Library) => {
     const next = update(latest.current);
     if (JSON.stringify(next) === JSON.stringify(latest.current)) return persisted.current;
@@ -22,6 +24,17 @@ export function useVisitLibrary() {
   return {
     ...library,
     notice,
+    canUndo: removed !== null,
+    undo() {
+      if (!removed) return;
+      const saved = change((value) => restoreVisits(value, removed));
+      setRemoved(null);
+      setNotice(
+        saved
+          ? "Restored on this device."
+          : "Restored for this visit. This browser could not save the change.",
+      );
+    },
     visit: useCallback(
       (visit: Visit) => {
         change((value) => rememberVisit(value, visit, "recent"));
@@ -29,6 +42,7 @@ export function useVisitLibrary() {
       [change],
     ),
     save(visit: Visit) {
+      setRemoved(null);
       const persisted = change((value) => rememberVisit(value, { ...visit, seen: Date.now() }, "saved"));
       setNotice(
         persisted
@@ -39,6 +53,9 @@ export function useVisitLibrary() {
       );
     },
     remove(id: string) {
+      const items = latest.current.saved.filter((entry) => entry.id === id);
+      if (!items.length) return;
+      setRemoved({ list: "saved", items });
       const saved = change((value) => ({ ...value, saved: value.saved.filter((entry) => entry.id !== id) }));
       setNotice(
         saved
@@ -47,6 +64,8 @@ export function useVisitLibrary() {
       );
     },
     clearRecent() {
+      if (!latest.current.recent.length) return;
+      setRemoved({ list: "recent", items: latest.current.recent });
       const saved = change((value) => ({ ...value, recent: [] }));
       setNotice(
         saved

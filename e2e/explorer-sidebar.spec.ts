@@ -124,9 +124,10 @@ for (const width of [1440, 812, 390]) {
     await page.getByRole("tab", { name: "Stories", exact: true }).click();
     const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
     await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
-    await expect(stories.getByRole("region", { name: "Selected stories" }).getByRole("button")).toHaveCount(
-      5,
-    );
+    await expect(
+      stories.getByRole("region", { name: "Selected stories" }).locator(".story-choice > button"),
+    ).toHaveCount(3);
+    await expect(stories.getByRole("button", { name: "Preview Rupture Reveal", exact: true })).toBeVisible();
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/stories-${width}.png` });
     const library = stories.getByRole("button", { name: "Library", exact: true });
@@ -147,6 +148,11 @@ for (const width of [1440, 812, 390]) {
     expect(await camera()).toEqual(pose);
     const search = stories.getByRole("searchbox", { name: "Find a story", exact: true });
     await search.fill("Vanishing Sea");
+    await expect(stories.getByRole("region", { name: "Search results" })).toContainText(
+      "No matches in After Dark",
+    );
+    await stories.getByRole("button", { name: "Search all stories", exact: true }).click();
+    await expect(search).toHaveValue("Vanishing Sea");
     await expect(stories.getByRole("region", { name: "Search results" })).toContainText("1 match");
     const story = stories.getByRole("region", { name: "Search results" }).getByRole("button").first();
     const trigger = await story.getAttribute("id");
@@ -158,8 +164,9 @@ for (const width of [1440, 812, 390]) {
     await expect(page.locator(`#${trigger}`)).toBeFocused();
     await expect(stories.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(
       "aria-pressed",
-      "true",
+      "false",
     );
+    await expect(stories.getByRole("heading", { name: "Search all stories", exact: true })).toBeVisible();
     await expect.poll(camera).toEqual(pose);
     expect(
       await canvas!.evaluate((element) => element === document.querySelector("#globe-view canvas")),
@@ -171,6 +178,9 @@ for (const width of [1440, 812, 390]) {
       "false",
     );
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+    await expect(
+      layers.getByRole("button", { name: "Aurora forecast details", exact: true }),
+    ).toHaveAccessibleDescription("Polar forecast · check near the poles");
     expect((await new AxeBuilder({ page }).include("#chrome-rail").analyze()).violations).toEqual([]);
   });
 }

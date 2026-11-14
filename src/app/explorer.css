@@ -95,14 +95,17 @@
   cursor: default;
   opacity: 0.5;
 }
+.layer-summary {
+  flex: 1;
+  min-width: 0;
+}
 .layer-inspect {
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr) 16px;
   align-items: center;
   gap: 2px 12px;
   padding: 10px 8px 10px 0;
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   min-height: 46px;
   text-align: left;
   font-size: 16px;
@@ -119,8 +122,9 @@
 .layer-name {
   overflow-wrap: anywhere;
 }
-.layer-inspect .layer-status {
-  grid-column: 2 / 3;
+.layer-summary .layer-status {
+  display: block;
+  margin: -6px 24px 10px 34px;
   font-size: 12px;
   line-height: 1.5;
   color: var(--color-dim);

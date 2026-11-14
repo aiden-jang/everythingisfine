@@ -183,7 +183,8 @@ test("the Moon crossing, reconstructed plates, and wave forecasts reuse the Obse
   await page.getByRole("combobox", { name: "Follow a place" }).selectOption("Rio de Janeiro");
   await expect(page.getByText("Rio de Janeiro’s plate position")).toBeVisible();
   await expect(age).toHaveAttribute("aria-valuetext", "230 million years ago");
-  await page.getByRole("button", { name: "Back to Below the Surface", exact: true }).click();
+  await page.getByRole("button", { name: "Back to stories", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Deep Time", exact: true })).toBeFocused();
 
   await page.getByRole("button", { name: "Live Earth", exact: true }).click();
   await openStories(page);

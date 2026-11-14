@@ -131,16 +131,18 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
     .click();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect.poll(() => radarTexture(page)).toBeNull();
-  await expect(page.locator("#radar-layer-controls")).toHaveCount(0);
+  await expect(page.locator("#radar-layer-controls")).toBeHidden();
   await page.getByRole("button", { name: /^Feed status,/ }).click();
   await expect(
     page
       .getByRole("region", { name: "Background feed status" })
       .getByRole("listitem")
       .filter({ hasText: "RainViewer storm radar" }),
-  ).toContainText("Paused in this view");
+  ).toContainText("Available");
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+    .click();
   await expect.poll(() => radarTexture(page)).not.toBeNull();
   await expect(page.locator(".radar-canvas-credit time")).toHaveAttribute(
     "datetime",

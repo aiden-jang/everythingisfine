@@ -6,6 +6,7 @@ import type { Dispatch, SetStateAction, ReactNode } from "react";
 import type { FeedSnapshot } from "./feed";
 import type { FeedStatus } from "./feedStatus";
 import { FeedDot } from "./FeedDot";
+import { refreshAnnotations } from "../globe/annotationInput";
 
 interface Props {
   clip: Clip;
@@ -93,6 +94,13 @@ export function GlobeHeader({
             {!observing && (
               <>
                 {keyboard}
+                <button
+                  type="button"
+                  onClick={() => refreshAnnotations({ camera: "reset" })}
+                  aria-description="Recenter the camera without changing layers, filters or time"
+                >
+                  Reset camera
+                </button>
                 <button
                   type="button"
                   onClick={onReset}

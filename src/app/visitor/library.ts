@@ -13,6 +13,7 @@ export interface VisitPosition {
 export interface Visit {
   id: string;
   seen: number;
+  completed?: boolean;
   position: VisitPosition;
 }
 export interface Library {
@@ -85,7 +86,7 @@ export function readVisit(value: unknown): Visit | null {
       if (time(radar.at)) position.radar.at = radar.at;
     }
   }
-  return { id: raw.id, seen: raw.seen, position };
+  return { id: raw.id, seen: raw.seen, position, ...(raw.completed === true ? { completed: true } : {}) };
 }
 
 export function readLibrary(text: string | null): Library {

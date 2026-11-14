@@ -84,6 +84,7 @@ for (const [width, height] of [
         });
       await expect.poll(async () => (await depthView()).settled).toBe(true);
       expect((await depthView()).gap).toBeGreaterThan(0.04);
+      await expect(page.locator(".cutaway-note")).toHaveCount(0);
       await page.waitForTimeout(1050);
       await page.screenshot({ path: test.info().outputPath(`depth-reveal-${width}.png`) });
       await page.getByRole("button", { name: "Explore the globe" }).click();

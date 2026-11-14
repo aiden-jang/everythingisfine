@@ -61,6 +61,10 @@ describe("finite scene presentation", () => {
     cutaway.step(0, true, 0);
     expect(cutaway.object.visible).toBe(true);
     expect(center.x).toBeCloseTo(1);
+    cutaway.set({ lon: 90, lat: 0, dive: true, cameraOnly: true });
+    cutaway.step(0, true, 0);
+    expect(cutaway.isOpen()).toBe(false);
+    expect(cutaway.object.visible).toBe(false);
     cutaway.set(null);
     expect(cutaway.step(0, true, 0)).toBe(false);
     expect(cutaway.object.visible).toBe(false);

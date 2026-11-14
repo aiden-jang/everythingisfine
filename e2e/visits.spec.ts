@@ -88,7 +88,10 @@ test("saved views and recent history can be cleared independently", async ({ pag
   await expect(shelf).toContainText("Saved views (0)");
   await expect(shelf).toContainText("Float Dive");
   await shelf.getByRole("button", { name: "Clear recent visits" }).click();
-  await expect(shelf).toHaveCount(0);
+  await expect(shelf).toContainText("Recent visits cleared.");
+  await shelf.getByRole("button", { name: "Undo", exact: true }).click();
+  await expect(shelf).toContainText("Float Dive");
+  await expect(shelf).toContainText("Saved views (0)");
 });
 
 test("refused storage keeps a usable visit without promising persistence", async ({ page }) => {

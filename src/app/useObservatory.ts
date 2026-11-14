@@ -316,7 +316,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       active: tonight,
       view: localSky,
       entry: skyEntry,
-      open(mode: "sky" | "meteors" | "moonfall" = "sky", resume?: VisitPosition["sky"]) {
+      open(mode: "sky" | "meteors" | "moonfall" = "sky", resume?: VisitPosition["sky"] | null) {
         before();
         sky.open(mode, resume);
         setRun(null);

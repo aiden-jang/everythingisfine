@@ -4,7 +4,7 @@ import type { Visit, VisitPosition } from "./library";
 import { useVisitLibrary } from "./useVisitLibrary";
 
 // Capture before navigation disposes the player. See ARCHITECTURE.md#srcappvisitorusevisitmemoryts.
-export function useVisitMemory(props: ObservatoryProps, active: string | null) {
+export function useVisitMemory(props: ObservatoryProps, active: string | null, completed: boolean) {
   const library = useVisitLibrary();
   const latest = useRef<() => Visit | null>(() => null);
   const opened = useRef({ id: active, at: Date.now() });
@@ -31,7 +31,7 @@ export function useVisitMemory(props: ObservatoryProps, active: string | null) {
         ...(props.radar.view.region ? { region: props.radar.view.region } : {}),
         ...(props.radar.view.selectedAt !== undefined ? { at: props.radar.view.selectedAt } : {}),
       };
-    return { id: active, seen: opened.current.at, position };
+    return { id: active, seen: opened.current.at, position, ...(completed ? { completed: true } : {}) };
   };
   latest.current = read;
   const visit = library.visit;

@@ -3,6 +3,7 @@ import { searchStories } from "../storyIndex";
 import type { Visit } from "./library";
 import "./visitor.css";
 import { layerTime } from "../layerTime";
+import { useRef } from "react";
 
 const title = (id: string) => searchStories.find((story) => story.id === id)?.title ?? id;
 export function visitNote(visit: Visit) {
@@ -14,11 +15,10 @@ export function visitNote(visit: Visit) {
   return "Opens the latest available view";
 }
 export function VisitShelf() {
+  const feedback = useRef<HTMLDivElement>(null);
   const navigation = useStoryNavigation();
   if (!navigation) return null;
   const { library } = navigation;
-  if (!library.recent.length && !library.saved.length)
-    return <p>Stories you open and views you save will appear here, only on this device.</p>;
   const row = (visit: Visit, saved: boolean) => (
     <div className="visit-row" key={visit.id}>
       <button
@@ -45,6 +45,9 @@ export function VisitShelf() {
   );
   return (
     <section className="visit-shelf" aria-label="Your visits">
+      {!library.recent.length && !library.saved.length && (
+        <p>Stories you open and views you save will appear here, only on this device.</p>
+      )}
       {library.recent.length > 0 && (
         <>
           <h3>Pick up where you left off</h3>
@@ -65,9 +68,22 @@ export function VisitShelf() {
           </button>
         )}
       </details>
-      <span role="status" aria-label="Visit library status">
-        {library.notice}
-      </span>
+      <div ref={feedback} className="visit-feedback" tabIndex={-1}>
+        <span role="status" aria-label="Visit library status">
+          {library.notice}
+        </span>
+        {library.canUndo && (
+          <button
+            type="button"
+            onClick={() => {
+              library.undo();
+              feedback.current?.focus({ preventScroll: true });
+            }}
+          >
+            Undo
+          </button>
+        )}
+      </div>
     </section>
   );
 }

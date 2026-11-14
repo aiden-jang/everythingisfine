@@ -46,8 +46,9 @@ export function useObservationDeck(shared?: StoryMoment, before = () => {}) {
   );
   const current = useCallback(() => {
     const id = active.current;
+    if (id !== entry) return;
     return id ? { ...memory.current.get(id), id, map: projection.current } : undefined;
-  }, []);
+  }, [entry]);
   const session = {
     initial: entry ? memory.current.get(entry) : undefined,
     remember,
@@ -103,8 +104,9 @@ export function useObservationDeck(shared?: StoryMoment, before = () => {}) {
     query,
     setQuery,
     setHorizon,
-    open(next: StoryId, from: string, resume?: StoryMoment) {
+    open(next: StoryId, from: string, resume?: StoryMoment | null) {
       before();
+      if (resume === null) memory.current.delete(next);
       if (resume?.id === next) memory.current.set(next, resume);
       pending.current = true;
       active.current = next;

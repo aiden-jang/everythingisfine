@@ -2,9 +2,9 @@ import { useId } from "react";
 import type { eclipseFrom } from "../../geo/eclipse2027";
 
 export function EclipseDisc({ frame }: { frame: ReturnType<typeof eclipseFrom> }): JSX.Element {
-  const light = useId();
-  const corona = useId();
-  const aperture = useId();
+  const light = `eclipse-light-${useId()}`;
+  const corona = `eclipse-corona-${useId()}`;
+  const aperture = `eclipse-aperture-${useId()}`;
   const radius = 29;
   return (
     <svg

@@ -9,6 +9,6 @@ const clear: Partial<GlobeProps> = {
   inspection: null,
 };
 
-export function storyBackdrop(browsing: boolean): Partial<GlobeProps> {
-  return browsing ? clear : {};
+export function storyBackdrop(browsing: boolean, focus: GlobeProps["cutaway"] = null): Partial<GlobeProps> {
+  return browsing ? { ...clear, cutaway: focus ? { ...focus, cameraOnly: true } : null } : {};
 }

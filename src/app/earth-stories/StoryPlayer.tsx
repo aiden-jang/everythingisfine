@@ -65,7 +65,7 @@ export function StoryPlayer({
   const [start] = useState(() => nearestFrame(data, restoredAt));
   const selected = data.sites?.find((p) => p.id === site);
   const waiting = useRef(true);
-  const clock = useStoryClock(data.frames.length, start, waiting, !!initial);
+  const clock = useStoryClock(data.frames.length, start, waiting, initial?.at !== undefined);
   const index = Math.min(data.frames.length - 1, Math.floor(clock.position));
   const current = data.frames[index]!;
   const requested = useMemo(() => data.geometry?.(current) ?? current, [data, current]);
@@ -280,7 +280,7 @@ export function StoryPlayer({
         clock={clock}
         busy={busy}
         time={time}
-        restored={!!initial}
+        restored={initial?.at !== undefined}
         label={
           data.timelineLabel ??
           (id === "fire" ? "Detection time" : id === "comet" ? "July 2020 · UTC" : "Observation time")

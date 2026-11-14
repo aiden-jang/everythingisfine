@@ -1396,7 +1396,7 @@ export function App(): JSX.Element {
                     : null
                 }
                 section={sectionLine}
-                {...storyBackdrop(observatory.browsingStories)}
+                {...storyBackdrop(observatory.browsingStories, observatory.depthFocus)}
                 onSection={(line, hinge) => setSectionLine(line && hinge ? { ...line, hinge } : line)}
                 onSelect={selectQuake}
                 onReady={onReady}
