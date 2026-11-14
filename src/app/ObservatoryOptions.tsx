@@ -32,10 +32,6 @@ export function ObservatoryOptions({
         {...{ popovertarget: id }}
         aria-controls={id}
         onClick={() => {
-          requestAnimationFrame(() => {
-            if (panel.current?.matches(":popover-open"))
-              panel.current.querySelector<HTMLButtonElement>("button")?.focus();
-          });
           const rect = trigger.current?.getBoundingClientRect();
           if (rect && panel.current) {
             panel.current.style.insetBlockStart = `${rect.bottom + 8}px`;
@@ -59,7 +55,12 @@ export function ObservatoryOptions({
             panel.current?.hidePopover();
         }}
       >
-        <button type="button" aria-pressed={rotation.enabled} onClick={() => rotation.set(!rotation.enabled)}>
+        <button
+          autoFocus
+          type="button"
+          aria-pressed={rotation.enabled}
+          onClick={() => rotation.set(!rotation.enabled)}
+        >
           Auto-rotate globe <span>{rotation.enabled ? "On" : "Off"}</span>
         </button>
         <p>On the landing page only. Drag to pause; rotation resumes after 1.5 idle seconds.</p>

@@ -102,8 +102,14 @@ test("mobile utilities dismiss outside and when focus leaves", async ({ page }) 
   const sound = page.getByRole("button", { name: "Save image", exact: true });
   await page.locator("#globe-view canvas").click({ position: { x: 12, y: 80 } });
   await expect(sound).toBeHidden();
-  await page.getByRole("button", { name: "View options", exact: true }).click();
-  await page.getByRole("button", { name: "Map", exact: true }).focus();
+  // Leave before the next animation frame: opening a menu must not steal focus back later.
+  await page
+    .getByRole("button", { name: "View options", exact: true })
+    .evaluate((button: HTMLButtonElement) => {
+      button.click();
+      document.getElementById("view-projection")?.focus();
+    });
+  await expect(page.getByRole("button", { name: "Map", exact: true })).toBeFocused();
   await expect(sound).toBeHidden();
 });
 
