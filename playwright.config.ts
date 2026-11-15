@@ -25,7 +25,7 @@ export default defineConfig({
   shard: shard ? { current: Number(shard[1]), total: Number(shard[2]) } : null,
   use: {
     baseURL: "http://localhost:31600",
-    trace: "retain-on-failure",
+    trace: "on-first-retry",
     screenshot: "only-on-failure",
   },
   retries: 1,

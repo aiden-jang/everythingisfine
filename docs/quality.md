@@ -27,7 +27,8 @@ durations when workloads change. Unknown files use a typical cost and still run.
 assignment only, never assertions, timeouts or retries. Every test belongs to exactly one shard;
 each runner retains declaration order, and an unsharded run keeps the complete inventory.
 CI keeps core checks and browser runners parallel, then deploys the assets from the successful
-core build only after every shard passes. Failure traces and screenshots remain available.
+core build only after every shard passes. Failed attempts retain screenshots; the first retry
+records a trace, avoiding tracing overhead on every passing software-rendered journey.
 
 Accessibility journeys scan live and pinned states at phone and desktop widths with axe.
 They check landmark structure, visible-label matching and the applicable automated accessibility rules.

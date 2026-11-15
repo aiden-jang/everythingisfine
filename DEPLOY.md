@@ -15,7 +15,8 @@ The browser matrix distributes tests across isolated runners, each using one Chr
 Ordinary journeys load the production build. The tagged camera and store probes use a separate
 development origin, so internal instrumentation never becomes part of the release bundle.
 Every shard must succeed before deployment can start; a failed, skipped or cancelled shard blocks
-release. Test results include durations; failure artifacts include screenshots and traces.
+release. Test results include durations; failed attempts retain screenshots and the first retry
+records a trace.
 
 Deployment depends directly on `check` and the complete `e2e` matrix. It downloads the production assets built
 by `check`, then deploys them through Wrangler. The artifact belongs to the same workflow run,
