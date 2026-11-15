@@ -20,6 +20,8 @@ test("a shared scene opens the same category in a fresh browser @dev", async ({ 
       "aria-pressed",
       "true",
     );
+    await expect(other.getByRole("button", { name: "Shadow Chase", exact: true })).toBeVisible();
+    await other.getByRole("button", { name: /^View all \d+ stories$/ }).click();
     await expect(other.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
     await other.getByRole("button", { name: "After Dark", exact: true }).click();
     await expect

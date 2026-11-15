@@ -130,6 +130,8 @@ test("a fresh overview exposes every scene and selecting one opens its content @
   await expect(page.locator("#open-storm-radar")).toBeFocused();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
+  await expect(page.getByRole("button", { name: "Shadow Chase", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
   await expect(page.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Below the Surface", exact: true }).click();
   await expect(page.getByRole("button", { name: "Rupture Reveal", exact: true })).toBeVisible();
