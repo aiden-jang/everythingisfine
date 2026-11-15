@@ -1102,11 +1102,11 @@ export function App(): JSX.Element {
           }
         >
           {observatory.observing ? <Observatory {...observatoryProps} /> : null}
-          {observatory.observing || markSubject || (shownQuake && pinned) ? null : (
+          {observatory.observing ? null : (
             <ExploreSheet
               height={sheetCanvas}
               onResize={setSheetCanvas}
-              visible={railShown}
+              visible={railShown && !markSubject && !(shownQuake && pinned)}
               panel={
                 observatory.browser.pane === "stories"
                   ? "Stories"

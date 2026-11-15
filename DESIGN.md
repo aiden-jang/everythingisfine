@@ -327,6 +327,7 @@ left inset is 34px on desktop, 24px below 900px and 18px at 380px or less. The b
 the greater of 8px and the safe-area inset; its anchor has a 44px target below 900px. The phone
 Explore sheet ends above a separate 60px credit band plus the safe-area inset. Its scrollport,
 snap positions and navigation share that reservation so controls cannot scroll behind the credit.
+Pinned phone detail cards respect the same band, with the selected marker centered in the visible globe strip.
 Float Dive keeps its reading allocation above the shared credit reservation.
 Background wind paths remain quieter than story paths.
 

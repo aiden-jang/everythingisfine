@@ -2131,6 +2131,8 @@ for (const [w, h] of [
     expect(seen.marker, "clear of the sheet").toBeLessThan(seen.bottom - 24);
     // And centred in it: the lift is arithmetic, not a guess, so this is tight on purpose.
     expect(Math.abs(seen.marker - seen.centre), "centred in the strip").toBeLessThan(8);
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/pin-${w}.png` });
   });
 }
 

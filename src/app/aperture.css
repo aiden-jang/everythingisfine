@@ -346,6 +346,10 @@
     margin-bottom: var(--credit-space);
     padding-bottom: 24px;
   }
+  .frame[data-presentation="explore"] .zone-panel {
+    bottom: var(--credit-space);
+    max-height: min(calc(var(--panel-share) * 100dvh), calc(100% - var(--credit-space)));
+  }
   .frame[data-presentation="explore"] .creator-credit::before {
     position: fixed;
     inset: auto 0 0;

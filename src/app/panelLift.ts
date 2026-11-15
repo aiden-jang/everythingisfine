@@ -11,6 +11,8 @@ export function liftForPanel(): number {
   const box = canvas.getBoundingClientRect();
   const zoneBox = zones.getBoundingClientRect();
   const share = Number(getComputedStyle(document.documentElement).getPropertyValue("--panel-share")) || 0.7;
-  const sheetTop = zoneBox.bottom - Math.min(share * window.innerHeight, zoneBox.height);
+  const rail = document.getElementById("chrome-rail");
+  const footer = rail ? parseFloat(getComputedStyle(rail).marginBottom) || 0 : 0;
+  const sheetTop = zoneBox.bottom - footer - Math.min(share * window.innerHeight, zoneBox.height - footer);
   return Math.max(0, Math.round((box.bottom - Math.min(box.bottom, sheetTop)) / 2));
 }

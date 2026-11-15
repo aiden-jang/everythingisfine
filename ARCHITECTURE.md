@@ -3080,6 +3080,8 @@ render the complete source. `GlobeHeader` owns the one viewport-anchored `Creato
 the moving canvas and scrolling readers. Rails and phone sheets reserve its footer space.
 `ExploreSheet` reads the resolved footer margin, including safe-area space, on mounting and resizing.
 `sheetStops` supplies one bounded set of positions to CSS, the separator and `MobileNavigation`.
+The layout owner stays mounted while a pinned card hides its controls. Phone detail cards end above
+the same footer reservation; the camera lift uses that future panel edge before the card mounts.
 The visible panel width remains the stored resize value; its desktop inset and gap contribute
 separately to the canvas reservation and handle position.
 

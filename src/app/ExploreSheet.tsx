@@ -52,7 +52,7 @@ export function ExploreSheet({
         measure={(event) => event.clientY}
         onChange={onResize}
         grip
-        className="absolute inset-x-0 z-[2] md:hidden"
+        className={visible ? "absolute inset-x-0 z-[2] md:hidden" : "hidden"}
         style={{ top: "calc(var(--sheet-position) - 6px)" }}
       />
       {visible && <MobileNavigation canvasHeight={current} stops={stops} onResize={onResize} panel={panel} />}
