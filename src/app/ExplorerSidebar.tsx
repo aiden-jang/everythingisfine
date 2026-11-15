@@ -4,8 +4,7 @@ import type { ObservatoryProps } from "./Observatory";
 import { Discoveries } from "./visitor/Discoveries";
 import { StoriesDrawer } from "./StoriesDrawer";
 import { ObservatoryScenePicker } from "./ObservatoryStage";
-import "./explorer.css";
-import "./discovery-layout.css";
+import "./explore-panel.css";
 
 export function ExplorerSidebar({
   context,

@@ -235,19 +235,6 @@
   margin-top: 8px;
   padding-top: 0;
 }
-#explorer-stories .observatory-scenes {
-  grid-template-columns: 1fr 1.5fr 1fr;
-  margin: 0 0 12px;
-  gap: 12px;
-}
-#explorer-stories .observatory-scenes button {
-  padding-inline: 2px;
-}
-#explorer-stories .scene-label {
-  font-size: 14px;
-  max-width: 100%;
-  min-height: 1.4em;
-}
 #explorer-stories .stories-drawer {
   margin-top: 0;
   padding-top: 0;
@@ -390,16 +377,6 @@
   color: var(--color-ink);
   text-decoration: underline;
   text-underline-offset: 4px;
-}
-#explorer-stories .observatory-scenes {
-  padding-block: 0 8px;
-  border-top: 0;
-}
-#explorer-stories .observatory-scenes button {
-  min-height: 68px;
-  min-width: 0;
-  align-content: start;
-  padding-block: 6px;
 }
 #explorer-stories .stories-drawer {
   gap: 12px;
@@ -566,15 +543,6 @@
   .frame[data-presentation="explore"] .zone-head {
     padding-inline: clamp(20px, 2.35vw, 38px);
   }
-  #explorer-stories .observatory-scenes button {
-    justify-items: center;
-    text-align: center;
-  }
-  #explorer-stories .observatory-scenes {
-    margin-bottom: 12px;
-    padding-bottom: 0;
-    border-bottom: 0;
-  }
   #explorer-stories .explorer-search input {
     min-height: 48px;
     font-size: 15px;
@@ -637,14 +605,6 @@
   }
   .explorer-tabs button {
     font-size: 19px;
-  }
-  #explorer-stories .observatory-scenes {
-    margin-bottom: 8px;
-    padding-bottom: 0;
-  }
-  #explorer-stories .observatory-scenes button {
-    min-height: 60px;
-    padding-block: 2px;
   }
   #explorer-stories .featured-story {
     grid-template-columns: 100px minmax(0, 1fr);
@@ -714,19 +674,6 @@
   .projection-current,
   .frame[data-presentation="explore"] .observatory-save {
     font-size: 14px;
-  }
-  #explorer-stories .observatory-scenes {
-    margin-bottom: 8px;
-  }
-  #explorer-stories .observatory-scenes button {
-    min-height: 68px;
-  }
-  #explorer-stories .scene-symbol {
-    width: 48px;
-    height: 36px;
-  }
-  #explorer-stories .scene-label {
-    font-size: 16px;
   }
   #explorer-stories .explorer-search input {
     padding-left: 58px;

@@ -416,7 +416,9 @@ empty or unavailable feeds.
 
 In Explore, All stories is an explicit category beside the three scenes. Compact diagram-led categories
 reuse the landing symbols at a smaller scale inside the reading panel. One recorded-view feature precedes three
-initial compact recommendations. The feature's actual image sits above its title, source, short
+initial compact recommendations. The panel loads its base and discovery styles through one ordered CSS entry;
+story filters own their sizes independently of the three landing presets.
+The feature's actual image sits above its title, source, short
 promise and Open story action on desktop; on phones it sits beside the reading text. Text has its
 own plain reading surface rather than sitting over a feature-image gradient. Initial recommendation
 rows keep the title and data type visible while preserving each promise as accessible text; the

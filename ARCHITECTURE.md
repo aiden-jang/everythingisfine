@@ -3085,6 +3085,10 @@ the same footer reservation; the camera lift uses that future panel edge before 
 The visible panel width remains the stored resize value; its desktop inset and gap contribute
 separately to the canvas reservation and handle position.
 
+`ExplorerSidebar` loads `explore-panel.css`, which combines baseline and discovery rules in one
+ordered CSS module. The four story filters own their sizing in `discovery-layout.css`; landing-preset
+sizing does not override them during cold loading or live style updates.
+
 `ExplorerSidebar` owns the Layers/Stories tabs and their independent scroll positions. Its pane
 and category belong to `useObservatory` navigation snapshots. `MapLayers` separates saved visibility
 from one transient inspector; inspecting never starts a feed or changes the camera. Its hidden
