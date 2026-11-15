@@ -1,3 +1,4 @@
+import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { PlaybackButton } from "../PlaybackButton";
 import type { EarthStoryData, StoryFrame } from "./types";
 import type { useStoryClock } from "./useStoryClock";
@@ -27,6 +28,8 @@ export function StoryTimeline({
   time: string;
   restored: boolean;
 }) {
+  const navigation = useStoryNavigation();
+  const showRestore = restored && (!navigation || !!navigation.returnLabel);
   const nearest = (at: number) =>
     data.frames.reduce(
       (best, item, i) => (Math.abs(item.at - at) < Math.abs(data.frames[best]!.at - at) ? i : best),
@@ -40,7 +43,7 @@ export function StoryTimeline({
       ];
   return (
     <>
-      {restored && (
+      {showRestore && (
         <p className="observation-note">
           Opened at a saved moment. Choose {index === data.frames.length - 1 ? "Replay" : "Restart"} to begin
           again.

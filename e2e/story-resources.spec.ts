@@ -35,7 +35,7 @@ test("revisiting different stories releases replaced graphics resources @dev", a
       textures: textures.size,
     });
   });
-  await page.goto("/");
+  await page.goto("/#v=explore");
   await openStories(page, "search");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   const readings: { buffers: number; textures: number }[] = [];
@@ -58,11 +58,11 @@ test("revisiting different stories releases replaced graphics resources @dev", a
       ),
     );
   }
+  await test
+    .info()
+    .attach("graphics-resources", { body: JSON.stringify(readings), contentType: "application/json" });
   expect(readings[0]!.buffers).toBeGreaterThan(0);
   expect(readings[2]!.buffers).toBeLessThanOrEqual(readings[1]!.buffers);
   expect(readings[2]!.textures).toBeLessThanOrEqual(readings[1]!.textures);
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
-  await test
-    .info()
-    .attach("graphics-resources", { body: JSON.stringify(readings), contentType: "application/json" });
 });

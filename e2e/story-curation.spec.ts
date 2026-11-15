@@ -57,6 +57,7 @@ test("a shared story gives context, holds its moment, and ends with a finding @d
     "Missing observations are not dry land",
   );
   await expect(panel.getByText("Up next", { exact: true })).toBeVisible();
+  await panel.getByRole("region", { name: "What this view showed" }).scrollIntoViewIfNeeded();
   await page.screenshot({ path: test.info().outputPath("story-finding.png") });
 });
 
