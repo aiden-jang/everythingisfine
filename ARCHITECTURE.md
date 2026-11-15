@@ -2647,6 +2647,9 @@ During unfolding, navigation blends this spherical scale with the flat map's lin
 Each scale uses its own endpoint distance. A close map's camera distance can be less than one
 globe radius, where the spherical inverse has no real-valued solution. Blending the
 navigation scales keeps dragging finite without locking input during the transition.
+Unfolding during the opening flight removes the horizon entrance while keeping its geographic
+destination as an ordinary spring target. The displayed pose does not jump, the requested location
+still arrives, and user steering can interrupt the remaining flight.
 
 **Longitude is squeezed by latitude and the drag has to undo it: a horizontal drag moves the**
 

@@ -51,6 +51,9 @@ the shared renderer across projection changes, and reachable Sources & times wit
 compact radar player identity,
 and readable depth and temperature values. Presentation travel yields to steering and reduced motion;
 radar reveal tests establish a finite animation without blending successive scan images.
+Camera-preview checks wait for the complete starting camera and projection before opening Stories
+and saving its return view. A nondefault map view keeps dismiss, pane changes and story returns
+from passing on a reset to the home camera.
 
 Visit checks cover scene discovery, local bookmarks, resume after a new page visit, measured float
 depth and refused storage. Clip checks decode the actual browser-produced video, check rendered

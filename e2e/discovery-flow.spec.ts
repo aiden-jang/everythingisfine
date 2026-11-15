@@ -1,14 +1,15 @@
 import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, openStories, openLayer } from "./feeds";
+import { DEFAULT_CAMERA } from "../src/globe/framing";
 
 const camera = (page: Page) =>
   page.evaluate(() => {
     const globe = (
       window as unknown as {
-        __globe: { state: () => { lon: number; lat: number; zoom: number }; morph: () => number };
+        __globe?: { state: () => { lon: number; lat: number; zoom: number }; morph: () => number };
       }
     ).__globe;
-    return { ...globe.state(), morph: globe.morph() };
+    return globe ? { ...globe.state(), morph: globe.morph() } : null;
   });
 async function start(page: Page, width = 1440) {
   await page.setViewportSize({ width, height: 950 });
@@ -45,20 +46,21 @@ for (const width of [1440, 390]) {
   test(`a visible preview restores the view and a story return keeps the original camera at ${width}px @dev`, async ({
     page,
   }) => {
-    await start(page, width);
-    if (width === 1440) {
-      await page.emulateMedia({ reducedMotion: "no-preference" });
-      await page.goto("/#v=explore&p=map");
-      await expect(page.getByRole("tab", { name: "Stories", exact: true })).toBeVisible();
-      await openStories(page, "search");
-      await expect.poll(async () => (await camera(page)).morph).toBe(1);
-    }
+    const before =
+      width === 1440 ? { lon: -122.42, lat: 37.77, zoom: 1.6, morph: 1 } : { ...DEFAULT_CAMERA, morph: 0 };
+    await page.setViewportSize({ width, height: 950 });
+    await installFeeds(page, { presentation: "fresh", empty: true });
+    await page.emulateMedia({ reducedMotion: width === 1440 ? "no-preference" : "reduce" });
+    await page.goto(width === 1440 ? "/#v=explore&p=map&at=-122.42,37.77,1.6" : "/");
+    // Stories saves its return view on opening; projection completion alone does not mean arrival.
+    await expect.poll(() => camera(page)).toEqual(before);
+    await openStories(page, "search");
     await page.getByRole("searchbox", { name: "Find a story" }).fill("Aral");
-    const before = await camera(page);
-    const canvas = await page.locator("#globe-view canvas").elementHandle();
     const preview = page.getByRole("button", { name: "Preview Vanishing Sea", exact: true });
+    await expect(preview).toBeEnabled();
+    const canvas = await page.locator("#globe-view canvas").elementHandle();
     await preview.click();
-    await expect.poll(async () => (await camera(page)).lon).toBeCloseTo(59.5, 1);
+    await expect.poll(async () => (await camera(page))?.lon).toBeCloseTo(59.5, 1);
     await page.getByRole("button", { name: "Dismiss location preview" }).click();
     await expect.poll(() => camera(page)).toEqual(before);
     await expect(preview).toBeFocused();
@@ -70,17 +72,19 @@ for (const width of [1440, 390]) {
       await expect.poll(() => camera(page)).toEqual(before);
     }
     await preview.click();
-    await expect.poll(async () => (await camera(page)).lon).toBeCloseTo(59.5, 1);
+    await expect.poll(async () => (await camera(page))?.lon).toBeCloseTo(59.5, 1);
     await page.screenshot({ path: test.info().outputPath(`preview-${width}.png`) });
     await page.locator("#search-story-aral").click();
     await page.getByRole("button", { name: "Back to stories", exact: true }).click();
     await expect.poll(() => camera(page)).toEqual(before);
-    expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
-      true,
-    );
-    expect(
-      await page.locator("#stories-panel").evaluate((node) => node.scrollWidth <= node.clientWidth),
-    ).toBe(true);
+    const layout = await canvas!.evaluate((node) => {
+      const panel = document.getElementById("stories-panel")!;
+      return {
+        sameCanvas: node === document.querySelector("#globe-view canvas"),
+        fitsPanel: panel.scrollWidth <= panel.clientWidth,
+      };
+    });
+    expect(layout).toEqual({ sameCanvas: true, fitsPanel: true });
   });
 }
 

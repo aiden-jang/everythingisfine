@@ -348,7 +348,7 @@ export function createControls(
     },
     project: (pLon, pLat, radius = 1) => project(pLon, pLat, radius, morph, lon),
     setMorph: (t) => {
-      if (t > 0 && target?.intro) target = null;
+      if (t > 0 && target?.intro) target = { lon: target.lon, lat: target.lat, zoom: target.zoom };
       morph = Math.max(0, Math.min(1, t));
       stepFraming(0);
       // The floor moves with the morph, so a camera parked beyond the globe's has to be brought back

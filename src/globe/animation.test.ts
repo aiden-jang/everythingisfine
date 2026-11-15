@@ -23,7 +23,7 @@ describe("camera motion on slow displays", () => {
     expect(slow.lon).toBeCloseTo(100, 2);
   });
 
-  it("steering and a map interrupt arrival at the displayed pose", () => {
+  it("steering interrupts arrival at the displayed pose", () => {
     const listeners = new Map<string, (event: unknown) => void>();
     vi.stubGlobal("window", {
       matchMedia: () => ({ matches: false }),
@@ -52,15 +52,35 @@ describe("camera motion on slow displays", () => {
     listeners.get("keydown")!({ key: "ArrowRight", preventDefault: () => {} });
     for (let i = 0; i < 180; i++) controls.step(1 / 60);
     expect(controls.state().lon).toBe(beforeKey.lon + 8);
-    controls.flyTo(145, 12, 1);
-    controls.enter();
-    const beforeMap = controls.state();
-    controls.setMorph(1);
-    for (let i = 0; i < 180; i++) controls.step(1 / 60);
-    expect(controls.state().lon).toBe(beforeMap.lon);
-    expect(controls.state().lat).toBe(beforeMap.lat);
     detach();
   });
+
+  it.each([1 / 60, 1 / 5])(
+    "unfolding keeps the arrival destination without a jump at %fs per frame",
+    (dt) => {
+      vi.stubGlobal("window", { matchMedia: () => ({ matches: false }) });
+      const controls = createControls(
+        new PerspectiveCamera(),
+        { clientWidth: 800, clientHeight: 600 } as HTMLCanvasElement,
+        { lon: 0, lat: 0 },
+        45,
+      );
+      const destination = { lon: -122.42, lat: 37.77, zoom: 1.6 };
+      controls.flyTo(destination.lon, destination.lat, destination.zoom);
+      controls.enter();
+      for (let elapsed = 0; elapsed < 0.4; elapsed += dt) controls.step(dt);
+      const displayed = controls.state();
+      expect(displayed).not.toEqual(destination);
+      controls.setMorph(0.25);
+      expect(controls.state()).toEqual(displayed);
+      for (let elapsed = 0; elapsed < 3; elapsed += dt) {
+        controls.setMorph(Math.min(1, 0.25 + elapsed));
+        controls.step(dt);
+      }
+      expect(controls.state()).toEqual(destination);
+      expect(controls.step(dt)).toBe(false);
+    },
+  );
 
   it("bounds a resumed tab's first step without destabilizing the flight", () => {
     expect(animationDelta(30)).toBe(0.25);
