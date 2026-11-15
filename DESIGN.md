@@ -396,7 +396,7 @@ Empty phone lists occupy their status height rather than reserving absent rows.
 The landing Explore action uses an open underline and directional cue. Utility buttons use
 neutral borders and brightness-based hover; inputs remain transparent on the reading deck, with
 a visible hairline and square field corners. Explore tabs use an ink underline, while selected
-text categories use the raised fill. The shared focus treatment remains visible across each variant.
+diagram-led story filters use the raised fill. The shared focus treatment remains visible across each variant.
 
 ### Observatory presentation and discovery
 
@@ -408,14 +408,14 @@ reachable controls and source disclosure.
 
 Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
 Their temporary overrides do not overwrite saved scientific settings. The three scene controls
-use globe, depth and constellation diagrams on the landing, with a finite selection trace and a
+use matching globe, depth and constellation diagrams on the landing and story filters, with a finite selection trace and a
 still diagram under reduced motion. Selecting a scene opens its catalogue; selecting it again
 returns to All stories. There is no separate disclosure for content that the selection already opens.
 The observatory retains source status, scoped counts, capture and direct Explore access, including
 empty or unavailable feeds.
 
-In Explore, All stories is an explicit category beside the three scenes. Compact text categories
-replace the landing diagrams inside the reading panel. One recorded-view feature precedes three
+In Explore, All stories is an explicit category beside the three scenes. Compact diagram-led categories
+reuse the landing symbols at a smaller scale inside the reading panel. One recorded-view feature precedes three
 initial compact recommendations. The feature's actual image sits above its title, source, short
 promise and Open story action on desktop; on phones it sits beside the reading text. Text has its
 own plain reading surface rather than sitting over a feature-image gradient. Initial recommendation
@@ -758,7 +758,7 @@ timeline timing stay intact. Reduced motion restores full configured resolution.
 
 - **Do** keep the real globe as the shared observation surface and preserve geographic camera control.
 - **Do** use Alumni Sans for the invitation and selected player headings, Geist for reading, and tabular figures for updating numbers.
-- **Do** keep landing diagrams and use compact text categories inside Explore.
+- **Do** keep matching scene diagrams on the landing and in compact story filters inside Explore.
 - **Do** separate recorded feature imagery from its source text and preserve capture provenance.
 - **Do** keep View all, Saved & recent and From today’s feeds discoverable, with unavailable reasons visible.
 - **Do** preserve camera, projection, pane, category, query, scroll and focus when returning from a story.

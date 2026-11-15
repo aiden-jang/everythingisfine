@@ -159,6 +159,9 @@ for (const width of [1440, 812, 390]) {
     await expect(layers.getByRole("button", { name: "Earthquakes details", exact: true })).toBeFocused();
     await page.getByRole("tab", { name: "Stories", exact: true }).click();
     const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
+    const diagrams = stories.locator(".observatory-categories .scene-symbol");
+    await expect(diagrams).toHaveCount(3);
+    await Promise.all([0, 1, 2].map((index) => expect(diagrams.nth(index)).toBeInViewport({ ratio: 1 })));
     await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
     await expect(
       stories.getByRole("region", { name: "Selected stories" }).locator(".story-choice > button"),
