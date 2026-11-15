@@ -6,7 +6,6 @@ import type { SkyCityPreference } from "../tonight/SkyCityPicker";
 import type { EarthScene } from "../useObservatory";
 import { RecordedReplay } from "./RecordedReplay";
 import { isReplay } from "./replays";
-import { ObservationCredit } from "./ObservationCredit";
 import { StorySession } from "./StorySession";
 import { observations } from "./catalogue";
 import { earthStories } from "../earth-stories/catalogue";
@@ -91,7 +90,6 @@ export function ObservationDeckShell({
                 </button>
               </div>
             </section>
-            <ObservationCredit />
           </div>
         }
       >

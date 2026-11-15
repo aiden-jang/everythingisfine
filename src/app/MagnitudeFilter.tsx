@@ -474,7 +474,7 @@ export function MagnitudeFilter({
 
   return (
     // `data-ramp` marks an element outside the canvas allowed to paint the magnitude ramp, which the
-    // design-contract test excludes by name rather than by loosening the rule. See DESIGN.md 3.1.
+    // design-contract test excludes by name rather than by loosening the rule. See DESIGN.md Colors / Neutral.
     <div data-ramp>
       <label className="label block" htmlFor="mag">
         Magnitude {value.toFixed(1)} and above

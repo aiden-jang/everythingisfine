@@ -40,7 +40,7 @@ test("a shared scene opens the same category in a fresh browser @dev", async ({ 
       .poll(() => new URLSearchParams(new URL(other.url()).hash.slice(1)).has("catalogue"))
       .toBe(false);
     await other.reload();
-    await expect(other.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+    await expect(other.getByRole("heading", { name: "Look closer." })).toBeVisible();
     await expect(other.getByRole("region", { name: "Stories and layers", exact: true })).toHaveCount(0);
   } finally {
     await recipient.close();
@@ -59,7 +59,7 @@ test("Home restores all scenes and browser Back restores it on the same globe @d
   await page
     .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
     .click();
-  await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
   await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toHaveCount(0);
   await expect(
     page.getByRole("group", { name: "Earth scenes" }).locator('[aria-pressed="true"]'),
@@ -71,7 +71,7 @@ test("Home restores all scenes and browser Back restores it on the same globe @d
   );
   await expect(page.getByRole("searchbox", { name: "Find a story" })).toHaveValue("moon");
   await page.goForward();
-  await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
   expect(await canvas!.evaluate((node) => node === document.querySelector("canvas"))).toBe(true);
 });
 
@@ -100,7 +100,7 @@ test("rapid scene and presentation changes finish at the latest choice @dev", as
     .toBe(0);
   expect(await canvas!.evaluate((node) => node === document.querySelector("canvas"))).toBe(true);
   await page.goBack();
-  await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
 });
 
 for (const width of [1440, 390]) {
@@ -134,7 +134,7 @@ for (const width of [1440, 390]) {
         })
         .click();
       await expect(stories).toHaveCount(0);
-      await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeInViewport();
+      await expect(page.getByRole("heading", { name: "Look closer." })).toBeInViewport();
     }
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
       true,

@@ -23,7 +23,7 @@ describe("the rate is derived, not typed in", () => {
   });
 
   it("covers the ground the physics says over a known interval", () => {
-    // Eighty seconds of a real P-wave is about 480km. That is the sentence DESIGN.md 3.3 makes,
+    // Eighty seconds of a real P-wave is about 480km. That is the sentence DESIGN.md Colors / Scientific encodings makes,
     // and this is the assertion that keeps the sentence honest.
     const km = TRUE_RATE_DEG_PER_S * 80 * (Math.PI / 180) * EARTH_RADIUS_KM;
     expect(km).toBeCloseTo(480, 0);

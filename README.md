@@ -20,7 +20,8 @@ pnpm install --frozen-lockfile
 pnpm run dev
 ```
 
-Open <http://localhost:31600>. Fonts and map geometry are bundled. Most feeds load directly in
+Open <http://localhost:31600>. Fonts and map geometry are bundled. Aperture’s display type is
+Alumni Sans, self-hosted under the [SIL Open Font License](src/assets/fonts/OFL.txt); Geist carries controls and readings. Most feeds load directly in
 the browser; GFS and Coral Reef Watch use fixed cached same-origin routes because their providers
 do not support browser CORS. The local server supplies the same routes without a key or account.
 

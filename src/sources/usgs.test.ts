@@ -43,7 +43,7 @@ describe("parsing a real USGS response", () => {
     const { readings } = parseUsgs(recorded, 1_700_000_000_000);
     const scales = new Set(readings.map((r) => r.scale));
     // The recording contains mb, md and ml. If this ever collapses to one value, something is
-    // normalising the scale away, which is the thing DESIGN.md section 10 forbids.
+    // normalising the scale away, which is the thing DESIGN.md Honest numbers and source context forbids.
     expect(scales.size).toBeGreaterThan(1);
     expect([...scales].every((s) => s !== "unknown")).toBe(true);
   });
@@ -154,7 +154,7 @@ describe("polling behaviour specific to USGS", () => {
     source.start({ onReadings: () => {}, onStatus: () => {}, onSeeded: () => {} });
     await runtime.flush();
 
-    // A minute of empty globe on load would fail DESIGN.md section 8 outright.
+    // A minute of empty globe on load would fail DESIGN.md Components outright.
     expect(calls).toBe(1);
     source.stop();
   });

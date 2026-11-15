@@ -126,9 +126,6 @@
   border-top: 1px solid var(--color-hairline);
   font-size: 11px;
 }
-.creator-credit {
-  flex-shrink: 0;
-}
 .key-hints {
   margin-left: auto;
 }
@@ -188,15 +185,6 @@
   .canvas-footer {
     padding-top: 0;
     border: 0;
-  }
-  .frame[data-presentation="explore"] .creator-credit {
-    position: fixed;
-    inset: auto 0 0;
-    z-index: 5;
-    text-align: center;
-    padding-bottom: env(safe-area-inset-bottom);
-    background: var(--color-deck);
-    border-top: 1px solid var(--color-hairline);
   }
 }
 

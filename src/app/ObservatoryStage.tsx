@@ -58,12 +58,6 @@ export function ObservatoryStage({
           : geographicCoordinates(subsolarPoint(at));
   return (
     <div className="observatory-stage" data-stage={mode} role="group" aria-label="Globe readout">
-      <div className="stage-corners" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
       <div key={mode} className="stage-ident">
         <span className="stage-rule" aria-hidden="true" />
         <span>{mode === "live" ? "Day–night boundary" : sceneName}</span>

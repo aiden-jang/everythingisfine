@@ -4,7 +4,6 @@ import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { eclipseFrom, greatestEclipse, localEclipse } from "../../geo/eclipse2027";
 import { bearingLabel, type SkyCity, type TonightView } from "../../geo/tonight";
-import { ObservationCredit } from "../observations/ObservationCredit";
 import type { ObservationView } from "../observations/types";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { EclipseDisc } from "./EclipseDisc";
@@ -382,7 +381,6 @@ export function ShadowChase({
           <ShareMoment />
           <ExperienceEnding />
         </section>
-        <ObservationCredit />
       </div>
     </>
   );

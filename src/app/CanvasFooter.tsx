@@ -23,19 +23,6 @@ export function CanvasFooter({
 }): JSX.Element {
   return (
     <div className="canvas-footer">
-      <p className="creator-credit text-faint">
-        made by{" "}
-        <a
-          href="https://www.aidenjang.com"
-          target="_blank"
-          aria-describedby="external-link-hint"
-          rel="noreferrer"
-          // Inline-flex lets the mobile minimum height apply to the link.
-          className="pointer-events-auto inline-flex items-center text-faint underline decoration-from-font underline-offset-2 transition-colors hover:text-dim max-md:min-h-11"
-        >
-          aiden jang
-        </a>
-      </p>
       <KeyboardHelp flat={flat} playing={playing} archived={archived} clearable={clearable} />
     </div>
   );

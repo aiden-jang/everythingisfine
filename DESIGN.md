@@ -1,63 +1,123 @@
 ---
 name: Everything Is Fine
-description: A dark observation deck for real Earth and sky readings.
+description: Aperture, a planet-first observation deck for real Earth, ocean and sky readings.
 colors:
-  void: "#050b16"
+  void: "#091219"
   sphere: "#0a101c"
   land: "#1e293f"
   coast: "#555663"
   plate: "#646478"
-  deck: "#0a1322"
-  raised: "#101d33"
-  ink: "#e8edf5"
-  dim: "#a9b5c7"
-  faint: "#8997ae"
+  star: "#c8d2e2"
+  moon: "#b8b4ae"
+  eclipsed: "#6e4b3c"
+  deck: "#111f26"
+  raised: "#1a2d35"
+  ink: "#edf3f3"
+  dim: "#a4b6bc"
+  faint: "#8da3ab"
   hairline: "rgb(148 163 184 / 0.14)"
+  rim: "rgb(120 150 190 / 0.16)"
 typography:
+  display:
+    fontFamily: '"Alumni Sans", "Geist Variable", ui-sans-serif, system-ui, sans-serif'
+    fontSize: "clamp(88px, 8.2vw, 128px)"
+    fontWeight: 600
+    lineHeight: 0.86
+    letterSpacing: "-0.025em"
+  story-display:
+    fontFamily: '"Alumni Sans", "Geist Variable", ui-sans-serif, system-ui, sans-serif'
+    fontSize: "clamp(38px, 3.5vw, 54px)"
+    fontWeight: 600
+    lineHeight: 0.98
+    letterSpacing: "-0.02em"
   interface:
     fontFamily: '"Geist Variable", ui-sans-serif, system-ui, sans-serif'
   reading:
     fontFamily: '"Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace'
   body:
     fontSize: "16px"
+  action:
+    fontSize: "15px"
   control:
     fontSize: "14px"
   caption:
     fontSize: "13px"
+  label:
+    fontSize: "12px"
+  metadata:
+    fontSize: "11px"
   brand:
-    fontSize: "clamp(20px, 1.65vw, 25px)"
+    fontSize: "20px"
+    fontWeight: 600
+    lineHeight: 1.04
     letterSpacing: "-0.035em"
   explore-tab:
     fontSize: "22px"
+    fontWeight: 550
     letterSpacing: "-0.02em"
   story-heading:
-    fontSize: "clamp(28px, 2.15vw, 36px)"
-    letterSpacing: "-0.035em"
+    fontSize: "clamp(27px, 2.1vw, 34px)"
+    fontWeight: 550
+    lineHeight: 1.08
+    letterSpacing: "-0.03em"
   story-row:
     fontSize: "19px"
+    fontWeight: 550
+    lineHeight: 1.25
     letterSpacing: "-0.025em"
+  inspector-heading:
+    fontSize: "28px"
+    fontWeight: 550
+    letterSpacing: "-0.03em"
+  magnitude:
+    fontSize: "40px"
 rounded:
+  field: "2px"
   projection: "6px"
   control: "7px"
-  feature: "9px"
+  card: "9px"
+  explorer-sheet: "16px"
+  observatory-sheet: "20px"
 spacing:
   compact: "8px"
   control: "12px"
   row: "16px"
+  panel: "22px"
   rail: "clamp(20px, 2.35vw, 38px)"
 components:
+  explore-action:
+    backgroundColor: "transparent"
+    textColor: "{colors.ink}"
+    typography: "{typography.action}"
+    padding: "10px 0"
+  utility-button:
+    textColor: "{colors.dim}"
+    rounded: "{rounded.control}"
+    padding: "0 10px"
+    height: "44px"
+  utility-button-hover:
+    backgroundColor: "{colors.raised}"
+    textColor: "{colors.ink}"
   explore-rail:
-    backgroundColor: "{colors.void}"
-    padding: "{spacing.rail}"
+    backgroundColor: "{colors.deck}"
+    padding: "{spacing.panel}"
   explore-tab:
     typography: "{typography.explore-tab}"
+  story-category:
+    rounded: "{rounded.projection}"
+    padding: "8px 5px"
+  story-category-selected:
+    backgroundColor: "{colors.raised}"
+    textColor: "{colors.ink}"
   story-hero:
     typography: "{typography.story-heading}"
-    rounded: "{rounded.feature}"
+    rounded: "{rounded.field}"
   story-row:
     typography: "{typography.story-row}"
   story-search:
-    rounded: "{rounded.control}"
+    backgroundColor: "transparent"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.field}"
     padding: "0 12px 0 38px"
   projection-current:
     backgroundColor: "{colors.raised}"
@@ -69,41 +129,43 @@ components:
     backgroundColor: "{colors.deck}"
     rounded: "{rounded.control}"
     padding: "12px 16px 20px"
+  creator-credit:
+    textColor: "{colors.dim}"
+    typography: "{typography.metadata}"
 ---
 
-# Design system: Everything Is Fine
+# Design System: Everything Is Fine
 
-A live global event instrument. The globe is the first screen, real observations
-supply its movement, and the interface explains what the sources can establish.
-This is the current visual contract. [SYSTEM.md](SYSTEM.md) owns the system map;
-[ARCHITECTURE.md](ARCHITECTURE.md) indexes implementation constraints.
+## Overview
 
-## 1. Atmosphere
+**Creative North Star: "Aperture"**
 
-A dark observation deck: quiet, stable and instrument-like. Spend density on
-readable numbers and controls while leaving the globe air. Data can move;
-interface composition should remain still once an interaction settles.
+Aperture is a dark observation deck with the planet as its observation surface. Deep teal
+space, pale ink and condensed display type give the invitation its scale. Quiet ruled controls
+leave room for real geography, observations and the sky; scientific colors retain their meaning.
 
-## 2. Zero-cost and data boundaries
+The same globe reframes from the invitation into exploration and cinematic stories. Composition
+is deliberate and open at the entrance, then dense where reading and operating require it. Motion
+is finite and interruptible, and the interface settles once an interaction completes.
 
-The visualization must render without an account, paid service or API key. Most public
-providers are reached directly from the browser. USGS polling and EMSC push/catalogue
-readings share a reconciliation policy, while GDACS, EONET and NOAA supply their
-respective layers. See [provider coverage](README.md#data-and-attribution).
+**Key Characteristics:**
 
-A small Worker serves static assets and bounded anonymous aggregate analytics;
-its only feed relay is three fixed GFS and Coral Reef Watch routes cached for an hour.
-The relay accepts no parameters and stores no account data or database. Fonts are self-hosted.
-Preferences stay on the device and view state stays in the URL. Privacy-aware
-analytics must retain its documented allowlist and opt-out boundaries.
+- One shared globe and map across the invitation, exploration and cinematic stories.
+- Alumni Sans for the invitation and selected story headings; Geist for readable interface text.
+- Deep teal surfaces, pale ink and neutral controls with distinct scientific color encodings.
+- Recorded story imagery separated from its reading text, with complete discovery and return paths.
+- A stable lower-left author credit and continuous, reversible world framing.
 
-Both agencies' readings remain visible. A stable primary reading positions the
-marker; it is not a claim that one agency is correct. Never average magnitudes
-from different scales or silently turn two accounts into an unquestioned fact.
+[PRODUCT.md](PRODUCT.md) owns product truth, [SYSTEM.md](SYSTEM.md) owns the system map, and
+[ARCHITECTURE.md](ARCHITECTURE.md) indexes implementation constraints. The Observatory surface
+contract carries the approved first-viewport composition; this system records its reusable rules.
 
-## 3. Data and interface color
+## Colors
 
-### 3.1 Interface chrome
+Aperture uses deep teal and pale ink for the interface, with the established scientific
+neutral geography and source-owned ramps kept distinct.
+
+### Neutral
 
 Keep controls neutral and low-chroma. Active, focused and selected states use
 brightness, weight and a visible ring. No saturated button accents, status dots,
@@ -112,18 +174,20 @@ focus outlines and scrollbars.
 
 `src/index.css` owns the runtime colors; the frontmatter records their normative design values.
 
-| Token | Role |
-| --- | --- |
-| Void | Page and desktop Explore rail |
-| Sphere | Globe surface |
-| Land | Geographic land |
-| Coast / plate | Geographic boundaries |
-| Deck / raised | Panels and selected controls |
-| Ink / dim / faint | Primary, secondary and supporting text |
-| Hairline | Quiet separators and control edges |
+| Token             | Role                                            |
+| ----------------- | ----------------------------------------------- |
+| Void              | Deep teal page, landing and open canvas ground  |
+| Sphere            | Globe surface                                   |
+| Land              | Geographic land                                 |
+| Coast / plate     | Geographic boundaries                           |
+| Deck / raised     | Blue-green reading panels and selected controls |
+| Ink / dim / faint | Primary, secondary and supporting text          |
+| Hairline          | Quiet separators and control edges              |
 
-A 2px text-color focus ring with a 2px offset remains visible. Never use pure black.
-The atmospheric rim may use `rgb(120 150 190 / 0.16)` along the globe silhouette;
+A 2px text-color focus ring with a 2px offset remains visible. Keep the dark teal ground
+distinct from pure black. Star, moon and eclipsed tokens describe scientific legend swatches;
+they do not become interface accents.
+The atmospheric rim uses the named rim token along the globe silhouette;
 it is a named visual exception, not permission for colored controls.
 
 Data-ramp marks outside the canvas carry `data-ramp`, including legends and the
@@ -131,7 +195,7 @@ individual values or swatches that explain a data encoding. The design test
 excludes only the canvas and those explicitly marked elements. A whole panel must
 not be exempted. Event-list text stays neutral rather than becoming a rainbow.
 
-### 3.2 Magnitude and depth
+### Scientific encodings: magnitude and depth
 
 `src/globe/ramp.ts` owns Thermal and Cividis and supplies the legend's exact
 colors. Magnitude controls ramp position and marker radius; the same size mapping
@@ -145,7 +209,7 @@ expresses transient interaction state rather than another permanent quantity.
 The glossary's optional depth diagram uses neutral linework and is explicitly
 labeled schematic and not to scale. It illustrates the view, without sample observations.
 
-### 3.3 Wavefronts
+### Scientific encodings: wavefronts
 
 An arriving earthquake creates an expanding ring centered on its epicentre.
 Propagation uses approximately 6 km/s crustal P-wave velocity, played at ×20 with
@@ -156,7 +220,254 @@ Never draw an arc between unrelated earthquakes: neither feed supplies a journey
 from one event to another. A cross-section or distance measurement is an explicit
 viewer action and must identify what it measures.
 
-## 4. Globe, map and sky
+**The Data Color Rule.** Neutral chrome never borrows a scientific ramp. Mark data encodings precisely and keep legends faithful to the rendered measurements.
+
+## Typography
+
+**Display Font:** Self-hosted Alumni Sans, with Geist and the interface sans stack as fallbacks.
+**Body Font:** Self-hosted Geist Variable, with the interface sans stack as fallbacks.
+**Label/Mono Font:** Self-hosted Geist Mono Variable for coordinates, identifiers, timestamps and magnitudes.
+
+**Character:** Condensed Alumni Sans gives the invitation a clear silhouette. Geist keeps controls,
+source context and story descriptions readable; the mono family makes geographic readings steady.
+Alumni Sans is a variable upright font licensed by the adjacent SIL Open Font License file.
+
+### Hierarchy
+
+- **Display:** The frontmatter's display role belongs to “Look closer.” on the full landing view.
+  It uses a close line height and regular numeric forms. Tall layouts below 900px use
+  `clamp(76px, 16vw, 116px)`; the narrowest tall phones use 68px and short viewports use 52px.
+- **Story display:** Alumni Sans uses the story-display role in observation, Tonight’s Sky,
+  radar and Float Dive player headings. Other reading and scene headings retain their established type.
+- **Featured story title:** Geist uses the story-heading role above the source and short promise,
+  with a 28px phone treatment. This title is reading content, separate from the image.
+- **Title and navigation:** Inspector headings use the inspector-heading role. Explore tabs use
+  the explore-tab role, 19px on phones and `clamp(22px, 1.65vw, 26px)` at the wide breakpoint.
+  Recommendation titles use the story-row role, 15px on phones and 18px at wide desktop widths.
+- **Body and controls:** Body/search, action, control and caption roles maintain the established
+  16–13px reading hierarchy. Landing prose has a 29ch measure, 14px desktop type and a 1.7 line
+  height, becoming 13px/1.6 on tall smaller screens. Labels and source metadata use their named roles.
+- **Wordmark:** The compact two-line “Everything / is fine.” uses the brand role, with 17px type
+  below 768px. Its identity and line break stay stable across home, Explore and players.
+- **Scientific readings:** Keep the selected magnitude at 40px, detail/place headings at 20px,
+  and each inspector's established count treatment. These values are reading hierarchy, not display decoration.
+
+**The Steady Readout Rule.** Use tabular figures for updating numbers; display headlines and the wordmark use regular figures. Long agency and place names wrap instead of clipping.
+
+## Layout
+
+### Aperture invitation
+
+The full-viewport landing uses a real oversized globe on the right, extending beyond the viewport,
+with the large invitation at the left. The desktop canvas is an 82vw square positioned 32vw from
+the left and 2dvh from the top. The introduction uses a 42% reading track and open remaining space;
+its top inset is responsive, with 34px horizontal and 64px bottom clearance. The Explore action is
+an underlined text control, and the three diagram-led scenes form a quiet ruled strip along the
+lower edge. A source-aware story action occupies the lower right on desktop.
+
+Tall layouts below 900px place the 120vw globe above and behind the bounded introduction,
+with the introduction owning vertical scrolling and 24px side insets. The action, source context
+and scene controls remain reachable below the headline. Viewports at 620px high or less use the
+compact headline, reduced gaps and owned scrolling; the established player landscape layouts
+continue to keep playback visible. Do not turn the oversized canvas into horizontal page scrolling.
+
+### Explore and reading regions
+
+Keep a fixed viewport with owned scrolling regions; horizontal page overflow is
+a failure. At desktop the globe continues behind the floating rail/detail panels.
+Explore's initial rail reservation is 29.5% of the viewport, bounded to 320–480px; saved widths still
+take precedence within the existing 264–620px resize bounds. At 900px and above, the visible deck
+is inset 24px from the left, 20px below the header and 54px above the bottom; its width is the rail
+reservation minus 36px and its internal padding is 22px. Its header is 72px from 768px wide
+and 76px from 1280px wide. The paired Globe/Map control identifies the current projection and
+offers the other alongside it. Utility actions stay grouped separately. Folding a
+region has an independently reachable restore control and never strands a stored
+preference after resizing. Fullscreen expands the window without hiding its tools.
+
+In Explore, Layers and Stories share the existing rail and canvas. Changing tabs never changes
+projection, camera, playback or visibility. Scene categories filter Stories without taking the visitor
+back to the landing page. Story returns restore pane, category, query, scroll, focus and camera.
+At tablet widths and above, the canvas reserves room for the rail so it cannot cover the globe.
+
+Layers use compact icon rows grouped into Weather & sky and Reported events, with independent
+visibility switches and details controls. Coverage descriptions live in the inspector; loading and
+unavailable states stay beside the affected row. Place search precedes the groups, with an explicit
+Locate action so typing never moves the camera. All nine layers have equal weight; no inspector
+opens initially except for an archived or shared earthquake target.
+One inspector shows readings, source meaning, coverage and contextual controls. Enabled players
+stay mounted when another inspector opens. Source failures are visible beside the affected layer.
+Temporary isolation restores the chosen combination without changing stored preferences.
+
+Earthquake counts, filters, timeline, search, archive, display choices, sound and tour controls belong
+together in the earthquake inspector. The radar row includes its compact scan player while enabled. The
+same mounted player expands
+in the inspector, preserving the selected scan and playback. Other reports use equally accessible
+inspectors with the
+shared report window clearly named. Wind, lightning, radar and aurora retain independent source times.
+Recent weather does not masquerade as an archived observation. Archive date and return-to-live stay
+reachable when inspecting another layer. Find a place is distinct from report and story search.
+
+Radar starts on unless a saved choice turns it off. One canvas information strip groups source
+attribution, independent layer times and the legend; optional keyboard help remains separate
+from the fixed author credit. The compact radar caption keeps RainViewer attribution
+visible with the selected UTC scan time, including when the rail folds. Guided
+regional radar is a secondary action inside the radar inspector; returning restores the camera and
+compatible scan time. The map legend stays with the canvas at every width, independent of the open
+inspector. A collapsed legend occupies only its label width. On phones, its reading opens in a
+viewport-bounded overlay with Close and Escape, keeping the trigger reachable at every sheet height.
+Phone keyboard help lives in View options so it does not cover the globe. Detailed radar, wind and
+lightning times open through Sources & times in a native, viewport-bounded popover at every width; Close and Escape
+return focus to its trigger. Radar attribution remains outside that disclosure. Phones keep the scan
+time inside the disclosure and player so the canvas footer stays on one row; desktop also shows UTC
+beside the attribution. The full scan date stays available in the inspector. The author credit stays
+at the lower-left viewport edge across home, scenes, Explore and players, outside the moving
+canvas and reading regions. It is rendered once by `CreatorCredit` through `GlobeHeader`. Its
+left inset is 34px on desktop, 24px below 900px and 18px at 380px or less. The bottom inset is
+the greater of 8px and the safe-area inset; its anchor has a 44px target below 900px. The phone
+Explore sheet reserves at least 64px of bottom padding, with safe-area support, so the final
+content clears the fixed credit band. Background wind paths remain quieter than story paths.
+
+The header offers projection, source status and View options at every width. Capture, fullscreen,
+rotation and reset share that menu; keyboard help is a quiet optional disclosure. Phone layouts keep
+the subject above a draggable, keyboard-operable sheet. Expand globe/map enlarges the canvas; the
+other shortcut names the current pane rather than assuming earthquake activity. The handle and
+interactive controls have 44px targets. The phone globe row starts at 43% of viewport height, with
+a 280px floor bounded by 72% on very short screens. Stories starts at 34%, with a 240px floor bounded
+by 65%, to expose the recorded cover and compact story selection on a portrait phone. A manually adjusted
+height takes precedence in either pane. Its lower stop is 20%, with a 180px floor
+bounded by 60%; its upper stop is 82%. Browsing expands the sheet by reducing the globe row;
+expanding the globe reduces the sheet. Within that row, the Explore canvas clears the 68px header
+and leaves 12px below, keeping the default globe complete above the sheet.
+The drag handle snaps to those three positions; keyboard arrows allow intermediate adjustments and
+Home/End reach the extremes. Stored heights are bounded to the current viewport after rotation,
+with enough canvas clearance for the header and legend on short screens.
+Selection closing and preserved list position remain supported. Check short landscape and tablet
+reflow as well as portrait phones.
+
+## Elevation & Depth
+
+Depth comes from the real globe, atmospheric form and tonal layering: void behind deck, raised
+within deck, then pale readings. The desktop Explore panel is a flat reading surface. Hairlines,
+open rows and restrained corners organize the controls; there is no card-shadow system. Existing
+translucent header, detail and rail treatments use restrained blur where they overlay the canvas.
+Focus rings and selection brackets are interaction signals, not ambient glows.
+
+**The Quiet Chrome Rule.** Use tonal separation, neutral rules and brightness for hierarchy. Reserve hue for scientific encodings and the bounded globe atmosphere.
+
+## Shapes
+
+The circle of the globe is the dominant silhouette. The Explore text action is square and ruled;
+search fields and featured image crops use the field radius. Projection controls use the projection
+radius, ordinary controls and recommendation thumbnails use the control radius, and the projection
+pair or phone recommendation container uses the card radius. Phone Explore and Observatory sheets
+use their separate rounded upper-corner roles. Cards remain open reading groups rather than
+floating tiles. Active categories use a small filled shape; selected scene diagrams use a quiet
+underline. Preserve neutral corner brackets around selected observations.
+
+## Components
+
+### Buttons, fields and reading controls
+
+Buttons and toggles have flat raised fills, neutral borders, 7px corners and
+brightness-based selection. Press feedback can move 1px. Phone hit areas are at
+least 44px. Labels and accessible descriptions explain layer switches; icon-only
+controls need meaningful names.
+
+The summary uses open rows and internal rules. Analysis belongs under More
+context, but feed-silence and unavailable-source warnings remain visible. Agency
+readings use aligned rows for scale, coordinates and time. The detail sheet has
+one consistent Close action, including hazard details with their own caveats.
+
+Filters answer immediately without Apply. A pinned selection survives refresh
+and remains explicitly labeled when excluded by filters. Point hover provides
+an informative tooltip, with equivalent keyboard access through the event list.
+
+Render geography before feeds answer. Loading is different from a successful
+empty result. A failing source is named with its reason and retry, and must not
+blank working layers. An empty filter result has a useful widening/reset action.
+Empty phone lists occupy their status height rather than reserving absent rows.
+
+The landing Explore action uses an open underline and directional cue. Utility buttons use
+neutral borders and brightness-based hover; inputs remain transparent on the reading deck, with
+a visible hairline and square field corners. Explore tabs use an ink underline, while selected
+text categories use the raised fill. The shared focus treatment remains visible across each variant.
+
+### Observatory presentation and discovery
+
+A fresh visit leads with the real planet and “Look closer.” Direct content links expose their
+content without an introduction in front; existing saved presentation choices retain Explore.
+The compact two-line wordmark returns to the invitation. The globe stage carries a UTC readout
+and scene-specific reference where space allows. Phone and short-height layouts prioritize the
+reachable controls and source disclosure.
+
+Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
+Their temporary overrides do not overwrite saved scientific settings. The three scene controls
+use globe, depth and constellation diagrams on the landing, with a finite selection trace and a
+still diagram under reduced motion. Selecting a scene opens its catalogue; selecting it again
+returns to All stories. There is no separate disclosure for content that the selection already opens.
+The observatory retains source status, scoped counts, capture and direct Explore access, including
+empty or unavailable feeds.
+
+In Explore, All stories is an explicit category beside the three scenes. Compact text categories
+replace the landing diagrams inside the reading panel. One recorded-view feature precedes three
+initial compact recommendations. The feature's actual image sits above its title, source, short
+promise and Open story action on desktop; on phones it sits beside the reading text. Text has its
+own plain reading surface rather than sitting over a feature-image gradient. Initial recommendation
+rows keep the title and data type visible while preserving each promise as accessible text; the
+full catalogue shows those promises visibly. Unavailable reasons stay visible in either mode.
+View all and Saved & recent remain reachable beneath the selection, with From today’s feeds directly
+discoverable and guided journeys and archives secondary. Category, search and heading gaps stay compact.
+
+Story thumbnails show recorded captures of their actual views. Float Dive, Rupture Reveal and
+Moonfall retain native-resolution crops for the large feature; radar and sky previews are bounded
+600px-wide crops. Load these WebP assets lazily and keep capture origin, crop and conversion in
+adjacent sidecars. Scientific imagery must come from the app's real rendered content, never generated
+data or design-mockup pixels. Guided journeys use quiet rows and each story's reading panel, with
+manual steps, visible source context and a return to free exploration. Onward links explain the
+relationship without implying shared dates or causation between independent records.
+
+Featured experiences precede a short selection. Saved visits have a direct disclosure; a relevant
+Continue action precedes the feature. Story discovery supports focus, hover and touch-hold regional
+previews with an explicit Locate action. Timeline milestones use the dataset's actual imagery and
+time resolution; synthetic flights say progress. Endings hold the final observation and evidence,
+with onward exploration available. Reopening resumes a saved moment; replaying the entrance is explicit.
+Closing an experience returns focus to its entry point and restores the drawer's scroll position.
+
+Story headings keep the return action above the title and the projection choice nearby; short
+landscape observation panels put Back beside the title to keep playback visible. Moonfall’s
+playback dock sits over the terrain on roomy desktops and returns to the scrolling control panel
+on smaller screens. Radar prioritizes the selected scan time and playback before optional coverage
+information. Explore presents the UTC time prominently with its date beneath it, and has one source
+and coverage disclosure. Its Stories entry opens the same current scan and projection. Source
+disclosures, unavailable states, and scientific distinctions remain readable.
+
+Guided narration uses captured primary readings and regional counts. Explain magnitude scales,
+reported depth, historical reference points and the time scope; never manufacture a journey between
+unrelated earthquakes. Reading time begins at camera arrival and pauses in hidden tabs. Viewer
+interaction ends the tour except within its narration and controls. Escape always stops it.
+
+Earth traces the day–night boundary from the displayed Sun direction. The sweep settles into
+a thin reference line. Reduced motion shows the full boundary immediately. Surface lighting may
+use the displayed sun and the sphere's actual normals to improve form. It must not fabricate
+topography, add photographic textures, dim earthquake measurements, or alter the flat-map palette.
+Presentation crossfades are finite and skipped under reduced motion.
+
+### Shared world layout motion
+
+The landing and Explore reframe the existing canvas without remounting the renderer. A reversible
+560ms globe translation/scale uses `cubic-bezier(0.22, 1, 0.36, 1)`; the reading region arrives over
+320ms using `cubic-bezier(0.16, 1, 0.3, 1)`. These are composition transitions, separate from the
+camera paths inside established stories. Interrupted travel continues from the displayed pose.
+Canvas gestures or camera keys, a hidden tab and reduced motion cancel composition travel.
+The author credit stays outside both moving regions.
+
+`useWorldLayout` owns the shared layout transition and its cancellation. `usePresentation` owns
+presentation state, saved preference and focus; it does not own the canvas animation. Story camera
+hooks retain their geographic shots. Panel motion retains readable content and never delays data.
+
+**The Shared World Rule.** Reframe the mounted globe and map; preserve camera control, source subscriptions, story playback and synchronous capture through every presentation change.
+
+### Globe, map and scientific scene
 
 The explorer canvas fills the viewport behind responsive panels. Vector geography and
 readable event marks replace photographic Earth textures. Day/night follows the
@@ -185,175 +496,7 @@ Stars, moon, planets and eclipse geometry follow the displayed time. Constellati
 figures are optional interpretation and start off. Layer labels explain their
 meaning and limits. Saved preferences take precedence over new-visitor defaults.
 
-## 5. Typography
-
-Self-hosted Geist carries display and UI; Geist Mono carries coordinates,
-identifiers, timestamps and magnitudes. All updating numbers use tabular figures.
-No serif or decorative display face. Keep labels readable instead of using
-weight or very faint gray as a substitute for hierarchy.
-
-The sentence-case masthead uses weight 600 and tight tracking. Explore's desktop masthead grows
-from 24–32px to 28–34px at the wide breakpoint; the phone retains its compact 16px treatment.
-Explore tabs and story titles use the frontmatter's desktop roles, with smaller phone labels and
-larger wide-screen rows. The featured title stays prominent above its source and explanatory line.
-The Explore count is 38px, the selected magnitude is 40px, and detail and place headings are 20px.
-Small metadata has deliberate spacing, and long agency/place names wrap.
-
-## 6. Components
-
-Buttons and toggles have flat raised fills, neutral borders, 7px corners and
-brightness-based selection. Press feedback can move 1px. Phone hit areas are at
-least 44px. Labels and accessible descriptions explain layer switches; icon-only
-controls need meaningful names.
-
-The summary uses open rows and internal rules. Analysis belongs under More
-context, but feed-silence and unavailable-source warnings remain visible. Agency
-readings use aligned rows for scale, coordinates and time. The detail sheet has
-one consistent Close action, including hazard details with their own caveats.
-
-Filters answer immediately without Apply. A pinned selection survives refresh
-and remains explicitly labeled when excluded by filters. Point hover provides
-an informative tooltip, with equivalent keyboard access through the event list.
-
-Render geography before feeds answer. Loading is different from a successful
-empty result. A failing source is named with its reason and retry, and must not
-blank working layers. An empty filter result has a useful widening/reset action.
-Empty phone lists occupy their status height rather than reserving absent rows.
-
-## Observatory presentation
-
-A fresh visit leads with the planet and “Meanwhile, on Earth.” The editorial heading uses Geist,
-with larger, tighter type than the scientific controls. It remains neutral and readable. Existing
-saved layouts stay in Explore; direct content links expose their content without an intro in front.
-
-On wide screens, the introduction and globe occupy separate columns. On phones, the planet sits
-above a bounded introduction with owned scrolling. The globe stage carries a UTC readout and one
-scene-specific reference. The three scene controls share a quiet ruled strip with a clear active
-underline and a small globe, depth or constellation diagram. A finite trace marks a selection;
-reduced motion keeps the diagram still. Featured journeys live inside the selected scene’s catalogue.
-Controls stay reachable in short landscape views.
-Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
-Their temporary overrides do not overwrite saved scientific settings. The observatory retains source
-status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
-Keep one featured experience and three initial suggestions inside each scene. In Explore, the
-featured story uses a full-width recorded image, a readable lower gradient, title, source, short
-description and Open story cue. Frame the artwork above the text, with the float at the upper right;
-the image fades into the reading surface instead of competing with the copy. Keep category, heading
-and search spacing compact. Three compact image rows follow, with their data type visible;
-a short visible description explains what opening the story reveals. View all and Saved & recent
-share the footer below the selection. Current discoveries open directly from From today’s feeds;
-guided journeys and archives remain secondary. The full catalogue remains a deliberate choice.
-In Explore, All stories is an explicit category beside Earth, Below the Surface and After Dark.
-Compact text categories replace the landing diagrams only inside the explorer.
-**Explore the globe** comes before the three illustrated scene filters. The landing overview starts
-with none selected and the catalogue collapsed. Selecting a scene exposes its entries and brings
-the search field into view on narrow screens; selecting it again returns to All stories. The wordmark
-returns to the compact landing view. Its name, icon and type scale remain stable across views;
-Earth, ocean & sky supplies context on desktop. A single starting story or Continue action
-follows the illustrated categories.
-There is no separate disclosure button for content the scene selection already opens. Closing an
-experience returns focus to its entry point and restores the drawer’s scroll position.
-Story thumbnails show recorded captures of their actual views. Float Dive, Rupture Reveal and
-Moonfall retain native-resolution crops for the large feature; radar and sky previews are bounded
-600px-wide crops. Load these WebP assets lazily and keep their capture origin, crop and conversion
-in adjacent sidecars. Scientific imagery must come from the app's real rendered content, never
-generated data or design-mockup pixels. Guided journeys use the drawer’s
-existing quiet rows and each story’s reading panel, with manual steps, visible source context and
-a return to free exploration. Onward links explain the relationship without implying shared dates
-or causation between independent records. Keep the scientific scene large and the controls neutral.
-
-Featured experiences precede a short selection. Saved visits have a direct disclosure; a relevant Continue action precedes the feature. Story discovery supports focus, hover and touch-hold
-regional previews with an explicit Locate action. Timeline milestones use the dataset's actual imagery
-and time resolution; synthetic flights say progress. Endings hold the final observation and evidence,
-with onward exploration available. Reopening resumes a saved moment; replaying the entrance is explicit.
-
-Story headings keep the return action above the title and the projection choice nearby; short
-landscape observation panels put Back beside the title to keep playback visible. Moonfall’s
-playback dock sits over the terrain on roomy desktops and returns to the scrolling control panel
-on smaller screens. Radar prioritizes the selected scan time and playback before optional coverage
-information. Explore presents the UTC time prominently with its date beneath it, and has one source
-and coverage disclosure. Its Stories entry opens the same current scan and projection. Source
-disclosures, unavailable states, and scientific distinctions remain readable.
-
-Guided narration uses captured primary readings and regional counts. Explain magnitude scales,
-reported depth, historical reference points and the time scope; never manufacture a journey between
-unrelated earthquakes. Reading time begins at camera arrival and pauses in hidden tabs. Viewer
-interaction ends the tour except within its narration and controls. Escape always stops it.
-
-Earth traces the day–night boundary from the displayed Sun direction. The sweep settles into
-a thin reference line. Reduced motion shows the full boundary immediately. Surface lighting may
-use the displayed sun and the sphere's actual normals to improve form. It must
-not fabricate topography, add photographic textures, dim earthquake measurements, or alter the
-flat-map palette. Presentation crossfades are finite and skipped under reduced motion.
-
-## 7. Layout
-
-Keep a fixed viewport with owned scrolling regions; horizontal page overflow is
-a failure. At desktop the globe continues behind the floating rail/detail panels.
-Explore's initial rail width is 29.5% of the viewport, bounded to 320–480px; saved widths still
-take precedence within the existing 264–620px resize bounds. Its header is 72px from 768px wide
-and 76px from 1280px wide. The paired Globe/Map control identifies the current projection and
-offers the other alongside it. Utility actions stay grouped separately. Folding a
-region has an independently reachable restore control and never strands a stored
-preference after resizing. Fullscreen expands the window without hiding its tools.
-
-In Explore, Layers and Stories share the existing rail and canvas. Changing tabs never changes
-projection, camera, playback or visibility. Scene diagrams filter Stories without taking the visitor
-back to the landing page. Story returns restore pane, category, query, scroll, focus and camera.
-At tablet widths and above, the canvas reserves room for the rail so it cannot cover the globe.
-
-Layers use compact icon rows grouped into Weather & sky and Reported events, with independent
-visibility switches and details controls. Coverage descriptions live in the inspector; loading and
-unavailable states stay beside the affected row. Place search precedes the groups, with an explicit
-Locate action so typing never moves the camera. All nine layers have equal weight; no inspector
-opens initially except for an archived or shared earthquake target.
-One inspector shows readings, source meaning, coverage and contextual controls. Enabled players
-stay mounted when another inspector opens. Source failures are visible beside the affected layer.
-Temporary isolation restores the chosen combination without changing stored preferences.
-
-Earthquake counts, filters, timeline, search, archive, display choices, sound and tour controls belong
-together in the earthquake inspector. The radar row includes its compact scan player while enabled. The
-same mounted player expands
-in the inspector, preserving the selected scan and playback. Other reports use equally accessible
-inspectors with the
-shared report window clearly named. Wind, lightning, radar and aurora retain independent source times.
-Recent weather does not masquerade as an archived observation. Archive date and return-to-live stay
-reachable when inspecting another layer. Find a place is distinct from report and story search.
-
-Radar starts on unless a saved choice turns it off. One canvas information strip groups source
-attribution, independent layer times and the legend; a secondary ruled row holds the author credit
-and optional keyboard help on desktop. The compact radar caption keeps RainViewer attribution
-visible with the selected UTC scan time, including when the rail folds. Guided
-regional radar is a secondary action inside the radar inspector; returning restores the camera and
-compatible scan time. The map legend stays with the canvas at every width, independent of the open
-inspector. A collapsed legend occupies only its label width. On phones, its reading opens in a
-viewport-bounded overlay with Close and Escape, keeping the trigger reachable at every sheet height.
-Phone keyboard help lives in View options so it does not cover the globe. Detailed radar, wind and
-lightning times open through Sources & times in a native, viewport-bounded popover at every width; Close and Escape
-return focus to its trigger. Radar attribution remains outside that disclosure. Phones keep the scan
-time inside the disclosure and player so the canvas footer stays on one row; desktop also shows UTC
-beside the attribution. The full scan date stays available in the inspector. The phone author link sits at the
-bottom edge with safe-area support; the scrolling rail has enough bottom padding to keep its final
-content reachable above the credit. Background wind paths remain quieter than story paths.
-
-The header offers projection, source status and View options at every width. Capture, fullscreen,
-rotation and reset share that menu; keyboard help is a quiet optional disclosure. Phone layouts keep
-the subject above a draggable, keyboard-operable sheet. Expand globe/map enlarges the canvas; the
-other shortcut names the current pane rather than assuming earthquake activity. The handle and
-interactive controls have 44px targets. The phone globe row starts at 43% of viewport height, with
-a 280px floor bounded by 72% on very short screens. Stories starts at 34%, with a 240px floor bounded
-by 65%, so its featured cover and the next complete row fit on a portrait phone. A manually adjusted
-height takes precedence in either pane. Its lower stop is 20%, with a 180px floor
-bounded by 60%; its upper stop is 82%. Browsing expands the sheet by reducing the globe row;
-expanding the globe reduces the sheet. Within that row, the Explore canvas clears the 68px header
-and leaves 12px below, keeping the default globe complete above the sheet.
-The drag handle snaps to those three positions; keyboard arrows allow intermediate adjustments and
-Home/End reach the extremes. Stored heights are bounded to the current viewport after rotation,
-with enough canvas clearance for the header and legend on short screens.
-Selection closing and preserved list position remain supported. Check short landscape and tablet
-reflow as well as portrait phones.
-
-## 8. Motion
+### Camera, scene and story motion
 
 Only the Earth landing view has ambient rotation: a slow camera orbit after the entrance
 settles, at 2.4 degrees per second with an eased start. Steering pauses it immediately; it resumes
@@ -484,7 +627,7 @@ Respect reduced motion completely: skip entrance rotation, camera easing and
 secondary travel rather than merely shortening them. Keep events and every action
 available. Replay, held time, archive mode and the sky share the displayed moment.
 
-## 9. Accessibility
+### Accessibility
 
 The canvas is hidden from assistive technology; the parallel event list carries
 the information and actions. It is a real part of the product. Use roving focus
@@ -497,7 +640,7 @@ agree. Maintain contrast, focus and 44px phone targets in both ramp modes, all
 sheet positions and every folded/loading/error state. Browser scans do not prove
 spoken screen-reader output or physical-device usability.
 
-## 10. Honest numbers
+### Honest numbers and source context
 
 Keep magnitude scales attached. State the real coverage left edge, unanswered
 sources, raw readings, distinct events and matched accounts. Counts describe the
@@ -514,7 +657,26 @@ pretend one day's earthquakes are current. A still names its held/archive/live
 moment and states only its captured evidence. No unlabelled sample data, invented
 counts or placeholder events on the production globe.
 
-## 11. Performance and verification
+### Source and zero-cost boundaries
+
+The visualization must render without an account, paid service or API key. Most public
+providers are reached directly from the browser. USGS polling and EMSC push/catalogue
+readings share a reconciliation policy, while GDACS, EONET and NOAA supply their
+respective layers. See [provider coverage](README.md#data-and-attribution).
+
+A small Worker serves static assets and bounded anonymous aggregate analytics;
+its feed relay is three fixed GFS and Coral Reef Watch routes cached for an hour.
+The relay accepts no parameters and stores no account data or database. The approved location
+route returns coordinates rounded to 0.1 degree without storing location or sending location analytics.
+Fonts are self-hosted.
+Preferences stay on the device and view state stays in the URL. Privacy-aware
+analytics must retain its documented allowlist and opt-out boundaries.
+
+Both agencies' readings remain visible. A stable primary reading positions the
+marker; it is not a claim that one agency is correct. Never average magnitudes
+from different scales or silently turn two accounts into an unquestioned fact.
+
+### Performance and verification
 
 CPU gates measure update work against a reference workload in the same process.
 Use `src/globe/events.perf.test.ts` for enforced budgets; measurements are not
@@ -532,10 +694,15 @@ limits. Record hardware/conditions with any new performance finding in temporary
 review output. Tests do not establish physical phone thermals, audio quality or
 real-world provider availability.
 
-## 12. Scope and sound
+The oversized Aperture stage uses viewport scissoring to avoid drawing offscreen fragments;
+this clipping does not reduce geometry or configured pixel density. Still and video capture, and
+compositor-driven layout travel, render the complete source canvas so hidden-edge pixels remain
+available. This is separate from the existing sustained-load frame budget that adapts high-density
+drawing while preserving geometry and observation timing.
 
-The app opens directly on the globe without registration, a source setup screen
-or a separate landing page. Preserve keyless feeds, sharing, timeline/archive,
+### Scope and sound
+
+The Aperture invitation uses the live shared globe without registration or a source setup screen. Preserve keyless feeds, sharing, timeline/archive,
 optional layers and accessible controls. A paid provider or private-data backend
 changes the product boundary and requires an explicit decision.
 
@@ -549,19 +716,7 @@ the selected temperature or measured water level to pitch, with the mapping stat
 neutral Listen/Mute control. Sound starts only after a gesture and stops on hiding the tab, leaving
 the view, or changing the profile or harbor. It is not a field recording, and never an ambient loop.
 
-## 13. Banned
-
-- Saturated interface accents, accent glows, pure black, serif typography or emoji.
-- Globe rotation outside the controlled Earth landing view, perpetual interface loops or bouncing exploration cues.
-- Photographic Earth textures, decorative cloud layers or night-light overlays.
-- Proportional figures in updating numbers, clipped names or horizontal page overflow.
-- Spinners hiding the product, or blanking good data because another source failed.
-- Mandatory accounts/API keys or a setup page before the first useful frame.
-- Unexplained bare magnitudes, hidden deduplication or inaccurate coverage/liveness.
-- Relationships fabricated between observations, or pins lost on a feed refresh.
-- Performance claims without the hardware and measurement conditions.
-
-## Discovery and return visits
+### Discovery and return visits
 
 The landing stays quiet. The selected scene exposes one featured entry, a compact current-data
 discovery list, and returning visitors their recent views. Sources and times explain why a suggestion
@@ -572,9 +727,9 @@ Video recording lives beside Save image in View options. Its short status sits o
 leaving playback and navigation reachable. Recording does not introduce a second scene or change
 its geometry. The preview appears only after recording ends and can be dismissed immediately.
 
-### Curated discovery and story continuity
+#### Curated discovery and story continuity
 
-The first visit offers one source-aware story beneath the scene diagrams: recent radar when a
+The first visit offers one source-aware story alongside the invitation: recent radar when a
 scan is less than half an hour old, otherwise an available aurora forecast, otherwise a recorded
 Argo profile. Returning visitors keep Continue in the same place. No feed answer claims that rain
 or aurora is visible at the visitor’s location. The editorial catalogue order mixes Earth, ocean
@@ -590,3 +745,31 @@ Same-place data frames retain their geographic arrival and reveal even when sour
 a new target object. Sustained slow frame pacing can reduce drawing resolution on high-density
 displays, with a native-pixel floor and recovery hysteresis. Geometry, textures, observations and
 timeline timing stay intact. Reduced motion restores full configured resolution.
+
+## Do's and Don'ts
+
+### Do:
+
+- **Do** keep the real globe as the shared observation surface and preserve geographic camera control.
+- **Do** use Alumni Sans for the invitation and selected player headings, Geist for reading, and tabular figures for updating numbers.
+- **Do** keep landing diagrams and use compact text categories inside Explore.
+- **Do** separate recorded feature imagery from its source text and preserve capture provenance.
+- **Do** keep View all, Saved & recent and From today’s feeds discoverable, with unavailable reasons visible.
+- **Do** preserve camera, projection, pane, category, query, scroll and focus when returning from a story.
+- **Do** keep the author credit anchored at the lower left across presentations, outside moving and scrolling regions.
+- **Do** preserve source distinctions, independent layer times, reduced motion and keyboard access.
+- **Do** keep rounded location optional to override; shared views and deliberate camera movement take priority.
+- **Do** retain scientific content and marker sizes when the existing frame budget adapts high-density drawing.
+
+### Don't:
+
+- **Don’t** use saturated interface accents, accent glows, pure-black surfaces, serif typography or emoji.
+- **Don’t** rotate the globe outside the controlled Earth landing view or introduce perpetual decorative interface motion.
+- **Don’t** add photographic Earth textures, decorative cloud layers or night-light overlays to the shared globe.
+- **Don’t** use proportional figures in updating numbers, clip names or allow horizontal page overflow.
+- **Don’t** hide the product behind loading spinners or blank working layers because another source failed.
+- **Don’t** require accounts, API keys or setup before the first useful frame.
+- **Don’t** show unexplained bare magnitudes, hide deduplication or misstate coverage and liveness.
+- **Don’t** fabricate relationships between observations or lose pinned selections on feed refresh.
+- **Don’t** reduce scientific geometry, capture extent or story information to make the Aperture layout cheaper.
+- **Don’t** make performance claims without hardware and measurement conditions.

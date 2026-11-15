@@ -1,6 +1,6 @@
-export function ObservationCredit(): JSX.Element {
+export function CreatorCredit(): JSX.Element {
   return (
-    <p className="observatory-credit">
+    <p className="creator-credit">
       An observatory by{" "}
       <a
         href="https://www.aidenjang.com"

@@ -1,3 +1,4 @@
+import { observatoryIntroduction } from "./observatoryIntroduction";
 import { SunWatch, TonightSky, TonightCompass, FloatDive } from "./ObservatoryViews";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import type { CameraState } from "../globe/controls";
@@ -23,7 +24,6 @@ import "./float/float-dive.css";
 import "./float/float-profile.css";
 import "./measurement-sound.css";
 import "./moonfall/moonfall.css";
-import { ObservationCredit } from "./observations/ObservationCredit";
 import { ObservationDeckShell } from "./observations/ObservationEntry";
 import { LandingStory } from "./LandingStory";
 import { StoryBoundary } from "./StoryBoundary";
@@ -48,6 +48,7 @@ export interface ObservatoryProps {
   views: Pick<
     ReturnType<typeof useObservatory>,
     | "observing"
+    | "landing"
     | "sun"
     | "tonight"
     | "floatDive"
@@ -108,7 +109,7 @@ function ObservatoryContent({
   summary,
   deepAvailable,
   aurora,
-  views: { sun, tonight, floatDive, observations, skyCity, closeStory, browser, navigation },
+  views: { sun, tonight, floatDive, observations, skyCity, closeStory, browser, navigation, landing },
   radar,
   feedNote,
   onScene,
@@ -146,30 +147,15 @@ function ObservatoryContent({
       city={skyCity}
     />
   );
-  const title = active
-    ? (tour.stop?.heading ?? "Taking the long way around.")
-    : scene === "depth"
-      ? "Beneath the surface."
-      : scene === "night"
-        ? solar
-          ? "Sun Watch"
-          : aurora.run
-            ? "Into the auroral oval."
-            : "The other side of day."
-        : "Meanwhile, on Earth.";
-  const description = active
-    ? (tour.stop?.description ?? "Travelling to the next view. The story begins when the camera arrives.")
-    : scene === "depth"
-      ? deepAvailable
-        ? "Look through a regional cutaway at reported earthquake depths. The faint points show historical seismicity."
-        : "Explore recorded earthquakes, fault motion and the history of Earth’s plates."
-      : scene === "night"
-        ? solar
-          ? "See what GOES measures in X-rays and what spacecraft sample in the solar wind upstream of Earth. Aurora has its own forecast."
-          : aurora.run
-            ? "Follow NOAA’s forecast over Earth’s dark side. The raised glow illustrates the modeled oval."
-            : "Earth settles into the horizon as constellations trace overhead. The sky follows the UTC readout."
-        : "A live view of earthquakes, changing skies, and a restless planet.";
+  const { title, description } = observatoryIntroduction({
+    active,
+    stop: tour.stop,
+    scene,
+    solar,
+    aurora: !!aurora.run,
+    deepAvailable,
+    landing,
+  });
   if (observations.entry)
     return (
       <ObservationDeckShell
@@ -294,7 +280,10 @@ function ObservatoryContent({
                 <>
                   <div className="observatory-actions observatory-entry-actions">
                     <button type="button" onClick={onExplore} className="observatory-primary">
-                      Explore the globe <span aria-hidden="true">↗</span>
+                      Explore the globe
+                      <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                        <path d="m5 15 10-10M5 5h10v10" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                      </svg>
                     </button>
                     {solar && (
                       <button type="button" id="back-to-stars" onClick={closeSun}>
@@ -308,6 +297,11 @@ function ObservatoryContent({
                       className="observatory-summary"
                     >
                       {summary}
+                      {landing && feedNote && (
+                        <span className="observatory-source-note" role="status">
+                          {feedNote}
+                        </span>
+                      )}
                     </p>
                   ) : null}
                 </>
@@ -369,7 +363,7 @@ function ObservatoryContent({
                 </StoriesDrawer>
               )}
               {(solar || aurora.run) && auroraControls}
-              {feedNote ? (
+              {feedNote && !landing ? (
                 <p className="observatory-source-note" role="status">
                   {feedNote}
                 </p>
@@ -378,7 +372,6 @@ function ObservatoryContent({
           )}
           {(floatDive.active || radar.active || solar || aurora.run) && <ExperienceEnding />}
         </section>
-        <ObservationCredit />
       </div>
       {solar && (
         <Suspense

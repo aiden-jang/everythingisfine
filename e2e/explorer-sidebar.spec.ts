@@ -111,6 +111,9 @@ for (const width of [1440, 812, 390]) {
     await expect(layers.getByRole("region", { name: "Reported events", exact: true })).toBeVisible();
     if (width === 1440)
       await expect(layers.getByRole("button", { name: "Volcanoes details", exact: true })).toBeInViewport();
+    await expect
+      .poll(() => page.evaluate(() => Boolean((window as unknown as { __globe?: unknown }).__globe)))
+      .toBe(true);
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/layers-${width}.png` });
     await expect(page.getByRole("region", { name: "Earthquake activity" })).toBeHidden();
@@ -123,9 +126,6 @@ for (const width of [1440, 812, 390]) {
     }
     const camera = () =>
       page.evaluate(() => (window as unknown as { __globe: { state: () => unknown } }).__globe.state());
-    await expect
-      .poll(() => page.evaluate(() => Boolean((window as unknown as { __globe?: unknown }).__globe)))
-      .toBe(true);
     const pose = await camera();
     await layers.getByRole("button", { name: "Wildfires", exact: true }).click();
     await expect(layers.getByRole("button", { name: "Wildfires", exact: true })).toHaveAttribute(

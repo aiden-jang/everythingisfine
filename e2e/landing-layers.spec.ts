@@ -50,7 +50,7 @@ for (const width of [1440, 390]) {
     await expect.poll(() => radarTexture(page)).not.toBeNull();
     const texture = await radarTexture(page);
     const canvas = await page.locator("#globe-view canvas").elementHandle();
-    await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
     await expect(page.locator("#chrome-rail")).toBeHidden();
     await expect(page.locator(".radar-canvas-credit time")).toHaveAttribute(
       "datetime",
@@ -61,13 +61,17 @@ for (const width of [1440, 390]) {
     );
     const readout = page.getByRole("group", { name: "Globe readout" });
     const credit = await readout.locator(".radar-canvas-credit").boundingBox();
-    const sunlight = await readout.getByText("Sun overhead", { exact: true }).boundingBox();
     expect(credit).not.toBeNull();
-    expect(sunlight).not.toBeNull();
-    expect(
-      sunlight!.y >= credit!.y + credit!.height || sunlight!.x >= credit!.x + credit!.width,
-      "radar attribution and solar readout occupy separate space in the wrapping footer",
-    ).toBe(true);
+    if (width >= 900) {
+      const sunlight = await readout.getByText("Sun overhead", { exact: true }).boundingBox();
+      expect(sunlight).not.toBeNull();
+      expect(
+        sunlight!.y >= credit!.y + credit!.height || sunlight!.x >= credit!.x + credit!.width,
+        "radar attribution and solar readout occupy separate space in the wrapping footer",
+      ).toBe(true);
+    }
+    await expect(readout.getByRole("link", { name: /RainViewer/ })).toBeInViewport({ ratio: 1 });
+    await expect(readout.getByRole("button", { name: "Sources & times", exact: true })).toBeInViewport();
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/landing-radar-${width}.png` });
     await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
@@ -88,7 +92,7 @@ for (const width of [1440, 390]) {
         exact: true,
       })
       .click();
-    await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
     expect(await radarTexture(page)).toBe(selected);
     expect(source.calls()).toBe(1);
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
@@ -191,7 +195,7 @@ test("Home leaves archive mode and browser Back recovers the recorded day @dev",
       exact: true,
     })
     .click();
-  await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
   await expect.poll(() => radarTexture(page)).not.toBeNull();
   await expect(page.locator(".observatory-summary").first()).not.toContainText("2011");
   await page.goBack();

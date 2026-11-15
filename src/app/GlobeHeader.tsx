@@ -7,6 +7,7 @@ import type { FeedSnapshot } from "./feed";
 import type { FeedStatus } from "./feedStatus";
 import { FeedDot } from "./FeedDot";
 import { Wordmark } from "./Wordmark";
+import { CreatorCredit } from "./CreatorCredit";
 import { refreshAnnotations } from "../globe/annotationInput";
 
 interface Props {
@@ -30,6 +31,29 @@ interface Props {
   feeds: FeedStatus;
   keyboard: ReactNode;
   rotation: { enabled: boolean; set: (enabled: boolean) => void };
+}
+
+export function SkipControls({ observing, railShown }: { observing: boolean; railShown: boolean }) {
+  return (
+    <a
+      className="skip-controls"
+      href={observing ? "#observatory-intro" : "#chrome-rail"}
+      onClick={(event) => {
+        event.preventDefault();
+        document
+          .querySelector<HTMLElement>(
+            observing
+              ? "#observatory-intro"
+              : railShown
+                ? "#chrome-rail"
+                : "#show-top-bar, [aria-controls=chrome-rail]",
+          )
+          ?.focus();
+      }}
+    >
+      Skip to controls
+    </a>
+  );
 }
 
 export function GlobeHeader({
@@ -122,6 +146,7 @@ export function GlobeHeader({
       </header>
 
       <ClipNotice clip={clip} />
+      <CreatorCredit />
 
       {/* The way back. The fold control goes with the bar, so the unfold cannot live there. */}
       {headShown ? null : (

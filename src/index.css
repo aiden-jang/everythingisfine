@@ -1,9 +1,9 @@
 @import "tailwindcss";
 @import "./motion.css";
 @import "./observatory.css";
+@import "./app/aperture.css";
 
-/* Self-hosted rather than linked from a font CDN. Geist over Inter: Inter is the default-looking
-   choice and reads as unconsidered. Geist Mono carries every coordinate, timestamp and magnitude. */
+/* Fonts are self-hosted. Geographic readings use the mono family; display type loads from aperture.css. */
 /* `wght` rather than the index: upright axis only, no italic faces, and nothing here is italic.
    The subsets are left alone deliberately. They look like dead weight in the build output but each
    carries a `unicode-range`, so a browser fetches Cyrillic only if a glyph needs it, and EMSC
@@ -13,7 +13,7 @@
 
 @theme {
   /* Chrome stays below the chroma ceiling; brighter text keeps small readouts legible. */
-  --color-void: #050b16;
+  --color-void: #091219;
   --color-sphere: #0a101c;
   --color-land: #1e293f;
   /* Read by the cross-section's swatches, and kept equal to `NEUTRAL` in `scene.ts` on purpose: those
@@ -27,15 +27,15 @@
   --color-moon: #b8b4ae;
   /* The moon legend uses lower chroma than the shader to stay within the UI color budget. */
   --color-eclipsed: #6e4b3c;
-  --color-deck: #0a1322;
-  --color-raised: #101d33;
+  --color-deck: #111f26;
+  --color-raised: #1a2d35;
   --color-hairline: rgb(148 163 184 / 0.14);
-  --color-ink: #e8edf5;
-  --color-dim: #a9b5c7;
+  --color-ink: #edf3f3;
+  --color-dim: #a4b6bc;
   /* Secondary text must remain readable against the deck, including small timestamps. */
-  --color-faint: #8997ae;
+  --color-faint: #8da3ab;
 
-  /* The one named exception, per DESIGN.md 3.1: it sits on the silhouette where no marker is drawn
+  /* The one named exception, per DESIGN.md Colors / Neutral: it sits on the silhouette where no marker is drawn
      and never encodes a value. Named because an unstated exception becomes a precedent. */
   --color-rim: rgb(120 150 190 / 0.16);
 

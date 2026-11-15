@@ -1,5 +1,4 @@
 import { Component, createRef, type ReactNode } from "react";
-import { ObservationCredit } from "./observations/ObservationCredit";
 
 export class StoryBoundary extends Component<
   {
@@ -54,7 +53,6 @@ export class StoryBoundary extends Component<
             </button>
           </div>
         </section>
-        <ObservationCredit />
       </div>
     );
   }

@@ -60,7 +60,7 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/ObservatoryOptions.tsx` | Shared utility popover, capture, fullscreen, rotation and contextual reset |
 | `src/app/useGlobeResources.ts` | Deferred geometry and timezone data, retained while disabled, with completion cleanup |
 | `src/app/useObservatory.ts`, `observatoryState.ts` | First-visit and saved presentation, temporary scene overrides and story browser state |
-| `src/app/usePresentation.ts`, `src/app/useReadingArrival.ts` | Interruptible globe/panel handoff and finite content arrivals without rebuilding the renderer |
+| `src/app/usePresentation.ts`, `src/app/useWorldLayout.ts`, `src/app/useReadingArrival.ts` | Presentation state, interruptible globe/panel handoff and finite content arrivals without rebuilding the renderer |
 | `src/app/useSceneHistory.ts` | In-memory scene, browser-scroll and camera restoration for browser Back/Forward |
 | `src/app/float/`, `src/sources/argo.ts`, and `src/globe/floatPresentation.ts` | Argo catalogue and profile validation, sample playback, and the shared globe’s float sequence |
 | `src/app/observations/`, `src/sources/observations/`, and `src/globe/observationLayer.ts` | Optional observations and replays, provider readers, shared playback, and projected data layers |

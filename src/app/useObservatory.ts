@@ -153,6 +153,14 @@ export function useObservatory(shared: Partial<Permalink>) {
   });
   return {
     observing,
+    landing:
+      observing &&
+      scene === "live" &&
+      !browser.open &&
+      !tourStop &&
+      !floatView &&
+      !radarView &&
+      !observations.entry,
     browsingStories: !observing
       ? browser.pane === "stories"
       : browser.open &&

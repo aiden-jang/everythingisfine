@@ -39,11 +39,14 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await capture("live");
     if (width >= 768) {
       const rail = (await page.locator("#chrome-rail").boundingBox())!;
-      for (const selector of [".creator-credit", ".key-hints", ".canvas-legend"]) {
+      for (const selector of [".key-hints", ".canvas-legend"]) {
         const box = (await page.locator(selector).boundingBox())!;
         expect(box.x, `${selector} clears the rail`).toBeGreaterThanOrEqual(rail.x + rail.width);
       }
       const credit = (await page.locator(".creator-credit").boundingBox())!;
+      expect(credit.y, "the fixed credit has its own space below the rail").toBeGreaterThanOrEqual(
+        rail.y + rail.height,
+      );
       const hints = (await page.locator(".key-hints").boundingBox())!;
       expect(credit.y >= hints.y + hints.height || hints.x >= credit.x + credit.width).toBe(true);
     }

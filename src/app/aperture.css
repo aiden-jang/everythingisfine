@@ -1,0 +1,352 @@
+@font-face {
+  font-family: "Alumni Sans";
+  src: url("../assets/fonts/alumni-sans.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+.frame[data-landing] {
+  overflow: clip;
+}
+.frame[data-landing] .zones {
+  display: block;
+  padding: 0;
+  overflow: clip;
+}
+.frame[data-landing] .zone-canvas {
+  position: absolute;
+  width: 82vw;
+  height: 82vw;
+  left: 32vw;
+  top: 2dvh;
+}
+.frame[data-landing] .observatory-sidebar {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  pointer-events: none;
+}
+.frame[data-landing] .observatory-intro {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto auto auto;
+  align-content: start;
+  gap: 16px 32px;
+  padding: clamp(140px, 22dvh, 230px) 34px 64px;
+  overflow: clip;
+  max-height: none;
+  height: 100%;
+  align-self: stretch;
+}
+.frame[data-landing] .observatory-story {
+  grid-column: 1;
+  align-self: start;
+  pointer-events: auto;
+}
+.frame[data-landing] .observatory-story h2 {
+  max-width: none;
+  font-family: "Alumni Sans", var(--font-sans);
+  font-size: clamp(88px, 8.2vw, 128px);
+  line-height: 0.86;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  text-wrap: nowrap;
+  font-variant-numeric: normal;
+}
+.frame[data-landing] .observatory-description {
+  max-width: 29ch;
+  margin-top: 24px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.frame[data-landing] .observatory-entry-actions {
+  grid-column: 1;
+  margin: 0;
+}
+.frame[data-landing] .observatory-entry-actions .observatory-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  min-width: 190px;
+  padding: 10px 0;
+  background: transparent;
+  color: var(--color-ink);
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  border-radius: 0;
+  font-size: 15px;
+  pointer-events: auto;
+}
+.frame[data-landing] .observatory-summary {
+  grid-column: 1;
+  max-width: 39ch;
+  margin: 0;
+  font-size: 11px;
+}
+.frame[data-landing] .observatory-scenes {
+  grid-column: 1 / -1;
+  margin: 0;
+  border-bottom: 0;
+  pointer-events: auto;
+}
+.frame[data-landing] .observatory-scenes button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 62px;
+  padding: 16px 0;
+}
+.frame[data-landing] .scene-symbol {
+  width: 30px;
+  height: 26px;
+  margin: 0;
+}
+.frame[data-landing] .scene-label {
+  font-size: 13px;
+}
+.frame[data-landing] :is(.landing-story-entry, .story-continue) {
+  grid-column: 2;
+  grid-row: 2 / 4;
+  align-self: end;
+  justify-self: end;
+  width: min(100%, 260px);
+  padding: 12px 16px;
+  background: var(--color-void);
+  pointer-events: auto;
+}
+.frame[data-landing] .observatory-source-note {
+  display: block;
+  margin-top: 4px;
+}
+.frame[data-landing] .observatory-stage {
+  position: absolute;
+  inset: 100px 34px 12px auto;
+  width: 440px;
+}
+.frame[data-landing] .stage-ident {
+  inset: auto;
+  top: 0;
+  right: 0;
+  height: max-content;
+  justify-content: flex-start;
+  writing-mode: vertical-rl;
+}
+.frame[data-landing] .stage-rule {
+  display: none;
+}
+.frame[data-landing] .stage-readout {
+  inset: auto 0 0 auto;
+  gap: 12px;
+  font-size: 11px;
+}
+.frame[data-landing] .stage-readout > .layer-readout {
+  flex-basis: 100%;
+  justify-content: flex-end;
+  pointer-events: auto;
+}
+.frame[data-landing] .creator-credit {
+  pointer-events: auto;
+}
+.frame .creator-credit {
+  position: absolute;
+  left: 34px;
+  bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 5;
+  padding: 0;
+  pointer-events: auto;
+  color: var(--color-dim);
+  font-size: 11px;
+}
+.frame .creator-credit a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  text-decoration: none;
+}
+.frame .creator-credit a:hover {
+  text-decoration: underline;
+}
+.observatory-intro :is(.observation-heading, .tonight-heading, .radar-heading, .float-heading) h2 {
+  font-family: "Alumni Sans", var(--font-sans);
+  font-variant-numeric: normal;
+  font-size: clamp(38px, 3.5vw, 54px);
+  line-height: 0.98;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+@media (min-width: 768px) {
+  .frame[data-presentation="explore"] #chrome-rail {
+    bottom: 54px;
+  }
+}
+@media (min-width: 900px) {
+  .frame[data-presentation="observe"] .observatory-header {
+    height: 88px;
+    padding-inline: 34px;
+  }
+  .frame[data-presentation="explore"] #chrome-rail {
+    top: calc(var(--head-h) + 20px);
+    bottom: 54px;
+    left: 24px;
+    width: calc(var(--rail-w) - 36px);
+    --explorer-pad: 22px;
+    padding: 22px;
+    background: var(--color-deck);
+  }
+}
+@media (max-width: 899px) and (min-height: 621px) {
+  .frame[data-landing] .zone-canvas {
+    width: 120vw;
+    height: 120vw;
+    left: 6vw;
+    top: 3dvh;
+  }
+  .frame[data-landing] .observatory-intro {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto auto auto auto;
+    gap: 12px;
+    padding: clamp(280px, 39dvh, 480px) 24px 100px;
+    overflow-y: auto;
+    pointer-events: none;
+  }
+  .frame[data-landing] .observatory-story h2 {
+    font-size: clamp(76px, 16vw, 116px);
+  }
+  .frame[data-landing] .observatory-description {
+    margin-top: 14px;
+    max-width: 29ch;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .frame[data-landing] .observatory-scenes {
+    grid-column: 1;
+    grid-row: 5;
+  }
+  .frame[data-landing] .observatory-scenes button {
+    display: grid;
+    gap: 5px;
+    align-content: start;
+    min-height: 68px;
+    padding-block: 12px 0;
+  }
+  .frame[data-landing] .scene-label {
+    font-size: 11px;
+  }
+  .frame[data-landing] .scene-symbol {
+    width: 26px;
+    height: 22px;
+  }
+  .frame[data-landing] :is(.landing-story-entry, .story-continue) {
+    grid-column: 1;
+    grid-row: 4;
+    width: 100%;
+    padding: 0;
+    background: transparent;
+  }
+  .frame[data-landing] .landing-story-entry small {
+    display: none;
+  }
+  .frame[data-landing] .landing-story-entry:disabled small {
+    display: block;
+  }
+  .frame[data-landing] .landing-story-entry {
+    min-height: 44px;
+    align-content: center;
+  }
+  .frame[data-landing] .observatory-stage {
+    inset: 82px 24px 56px;
+    width: auto;
+    height: auto;
+  }
+  .frame[data-landing] .stage-readout {
+    display: flex;
+    padding: 0;
+    background: transparent;
+  }
+  .frame[data-landing] .stage-readout > div:not(.layer-readout),
+  .frame[data-landing] .stage-readout > time {
+    display: none;
+  }
+  .frame .creator-credit {
+    left: 24px;
+  }
+}
+@media (max-width: 380px) and (min-height: 621px) {
+  .frame[data-landing] .observatory-intro {
+    padding: 210px 18px 104px;
+    gap: 8px;
+  }
+  .frame[data-landing] .observatory-story h2 {
+    font-size: 68px;
+  }
+  .frame[data-landing] .observatory-description {
+    margin-top: 10px;
+    font-size: 12px;
+  }
+  .frame[data-landing] .observatory-scenes button {
+    min-height: 62px;
+  }
+  .frame .creator-credit {
+    left: 18px;
+  }
+}
+@media (max-height: 620px) {
+  .frame[data-landing] .observatory-intro {
+    padding-top: 80px;
+    padding-bottom: 64px;
+    gap: 8px 24px;
+    overflow-y: auto;
+    pointer-events: none;
+  }
+  .frame[data-landing] .observatory-story h2 {
+    font-size: 52px;
+  }
+  .frame[data-landing] .observatory-description {
+    font-size: 12px;
+    margin-top: 8px;
+  }
+  .frame[data-landing] .observatory-scenes button {
+    min-height: 50px;
+    padding: 4px 0;
+  }
+  .frame[data-landing] .stage-ident {
+    display: none;
+  }
+  .frame[data-landing] .landing-story-entry {
+    align-self: end;
+  }
+  .frame[data-landing] .landing-story-entry small {
+    display: none;
+  }
+}
+
+@media (max-width: 899px) {
+  .frame .creator-credit {
+    left: 24px;
+  }
+  .frame .creator-credit a {
+    min-height: 44px;
+  }
+}
+@media (max-width: 767px) {
+  .frame[data-presentation="explore"] .creator-credit::before {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: -1;
+    height: calc(60px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--color-hairline);
+    background: var(--color-deck);
+    content: "";
+  }
+}
+@media (max-width: 380px) {
+  .frame .creator-credit {
+    left: 18px;
+  }
+}

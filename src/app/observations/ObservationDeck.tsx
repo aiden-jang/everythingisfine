@@ -5,7 +5,6 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { observations, type ObservationId } from "./catalogue";
 import { loadSource } from "./load";
-import { ObservationCredit } from "./ObservationCredit";
 import { TideGauge } from "./TideGauge";
 import { ObservationPlayer } from "./ObservationPlayer";
 import type { ObservationSource } from "./types";
@@ -242,7 +241,6 @@ export function ObservationDeck({
           <ShareMoment />
           <ExperienceEnding />
         </section>
-        <ObservationCredit />
       </div>
     </>
   );

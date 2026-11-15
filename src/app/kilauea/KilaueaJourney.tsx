@@ -2,7 +2,6 @@ import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
-import { ObservationCredit } from "../observations/ObservationCredit";
 import type { ObservationRaster, ObservationView } from "../observations/types";
 import { useObservationImage } from "../observations/useObservationData";
 import { useObservatoryEscape } from "../useObservatoryEscape";
@@ -299,7 +298,6 @@ export function KilaueaJourney({
           <ShareMoment />
           <ExperienceEnding />
         </section>
-        <ObservationCredit />
       </div>
     </>
   );

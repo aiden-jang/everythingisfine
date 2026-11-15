@@ -24,7 +24,7 @@ async function open(page: Page, width = 1440, reduced = false, fragment = "") {
   await page.emulateMedia({ reducedMotion: reduced ? "reduce" : "no-preference" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto(`/${fragment}`);
-  await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
   await expect.poll(async () => (await camera(page))?.zoom, { timeout: 20_000 }).toBe(1);
 }
 

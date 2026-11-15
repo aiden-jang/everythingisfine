@@ -11,7 +11,8 @@
     grid-area: welcome;
     z-index: 1;
     display: grid;
-    grid-template-rows: minmax(0, 1fr) auto;
+    grid-template-rows: minmax(0, 1fr);
+    padding-bottom: 48px;
     min-height: 0;
     min-width: 0;
   }
@@ -181,7 +182,7 @@
     line-height: 1.3;
   }
   .observatory-stage {
-    --stage-ink: #9dcfdc;
+    --stage-ink: var(--color-dim);
     --stage-inset: clamp(16px, 2.3vw, 34px);
     grid-area: canvas;
     position: relative;
@@ -191,12 +192,6 @@
     color: var(--color-dim);
     font: 11px / 1.45 var(--font-mono);
     font-variant-numeric: tabular-nums;
-  }
-  .observatory-stage[data-stage="depth"] {
-    --stage-ink: #e2b892;
-  }
-  .observatory-stage:is([data-stage="night"], [data-stage="aurora"]) {
-    --stage-ink: #b9bbeb;
   }
   .stage-corners {
     position: absolute;
@@ -265,18 +260,6 @@
     font-size: 11px;
     line-height: 1.45;
   }
-  .observatory-credit {
-    padding: 0 var(--observatory-inline) max(8px, env(safe-area-inset-bottom));
-    font-size: 10px;
-    color: var(--color-faint);
-  }
-  .observatory-credit a {
-    display: inline-flex;
-    align-items: center;
-    min-height: 32px;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-  }
   .observatory-header-actions {
     display: flex;
     align-items: center;
@@ -301,7 +284,6 @@
   .observatory-tour-step button:hover:not(:disabled) {
     background: var(--color-raised);
   }
-  .frame[data-presentation="observe"] .creator-credit,
   .frame[data-presentation="observe"] .key-hints {
     display: none;
   }

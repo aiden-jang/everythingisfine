@@ -9,6 +9,7 @@ export function LandingStory(): JSX.Element | null {
   if (!navigation) return null;
   if (navigation.library.recent.length) return <ContinueVisit scene={null} />;
   const story = intended.current ?? navigation.invitation;
+  const unavailable = navigation.unavailable(story.id);
   return (
     <button
       type="button"
@@ -20,12 +21,11 @@ export function LandingStory(): JSX.Element | null {
       onPointerDown={() => {
         intended.current = story;
       }}
-      disabled={!!navigation.unavailable(story.id)}
+      disabled={!!unavailable}
       onClick={() => navigation.open(story.id, "start-story")}
     >
-      <span>{navigation.unavailable(story.id) ?? "Start with a story"}</span>
       <strong>{story.label}</strong>
-      <small>{story.note}</small>
+      <small>{unavailable ?? story.note}</small>
       <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
         <path d="M3 10h13m-5-5 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
       </svg>

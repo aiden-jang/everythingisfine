@@ -1,3 +1,4 @@
+import { useWorldLayout } from "./app/useWorldLayout";
 import { closeDetail } from "./app/closeDetail";
 import { ExplorerSidebar } from "./app/ExplorerSidebar";
 import { StoryNavigation } from "./app/journeys/StoryNavigation";
@@ -22,7 +23,7 @@ import { CanvasFooter, CanvasStamp, KeyboardHelp } from "./app/CanvasFooter";
 import { LayerReadout } from "./app/LayerReadout";
 import { Observatory, type ObservatoryProps } from "./app/Observatory";
 import { journeyFor, observatorySummary, observatoryFeedNote } from "./app/journeys";
-import { GlobeHeader } from "./app/GlobeHeader";
+import { GlobeHeader, SkipControls } from "./app/GlobeHeader";
 import { earthSceneTarget, useObservatory, type EarthScene } from "./app/useObservatory";
 import { useAuroraOverflight } from "./app/useAuroraOverflight";
 import { useCutaway } from "./app/useCutaway";
@@ -105,6 +106,7 @@ export function App(): JSX.Element {
   const historyIntent = useRef<string | null>(null);
   const observatory = useObservatory(shared);
   const { enterExplore, enterObserve, chooseScene, setReady: setGlobeReady } = observatory;
+  useWorldLayout(`${observatory.presentation}:${observatory.landing}`);
   const { flyTo, camera, home, read: readCamera, onReady } = useGlobeCamera(shared, setGlobeReady);
   const [liveFilters, setFilters] = useState<Filters>(() => ({
     minMagnitude: shared.minMagnitude ?? DEFAULT_FILTERS.minMagnitude,
@@ -1049,25 +1051,12 @@ export function App(): JSX.Element {
 
   return (
     <StoryNavigation {...observatoryProps}>
-      <main className="frame" data-presentation={observatory.presentation}>
-        <a
-          className="skip-controls"
-          href={observatory.observing ? "#observatory-intro" : "#chrome-rail"}
-          onClick={(event) => {
-            event.preventDefault();
-            document
-              .querySelector<HTMLElement>(
-                observatory.observing
-                  ? "#observatory-intro"
-                  : railShown
-                    ? "#chrome-rail"
-                    : "#show-top-bar, [aria-controls=chrome-rail]",
-              )
-              ?.focus();
-          }}
-        >
-          Skip to controls
-        </a>
+      <main
+        className="frame"
+        data-presentation={observatory.presentation}
+        data-landing={observatory.landing || undefined}
+      >
+        <SkipControls observing={observatory.observing} railShown={railShown} />
         <h1 className="sr-only">Everything Is Fine</h1>
         <GlobeHeader
           keyboard={
@@ -1391,7 +1380,7 @@ export function App(): JSX.Element {
                 onSelect={selectQuake}
                 onReady={onReady}
                 onCapture={onCapture}
-                onFrame={clip.onFrame}
+                {...(clip.recording ? { onFrame: clip.onFrame } : {})}
                 onSelectMark={selectMark}
                 onCamera={(state) => {
                   camera.current = state;

@@ -63,7 +63,7 @@ export function Sequence({ nearby, quake, store, ramp, onReplay }: SequenceProps
   })();
 
   return (
-    // Paints the magnitude ramp outside the canvas. See DESIGN.md 3.1.
+    // Paints the magnitude ramp outside the canvas. See DESIGN.md Colors / Neutral.
     <div data-ramp className="mt-3">
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-[11px] text-faint">Sequence</span>

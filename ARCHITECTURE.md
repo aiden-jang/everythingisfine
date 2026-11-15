@@ -3066,11 +3066,18 @@ same sun vector, and fades to a factor of one on the flat map.
 `useObservatory.ts` reads existing saved layout preferences before deciding the initial presentation.
 Legacy links to an event, held time, archive, or section open Explore. New links include projection
 and presentation. Initialization leaves saved preferences alone. Presets override
-rendered layers and framing temporarily. Explore restores saved choices. A synchronous commit
-moves the live globe into the Explore grid. The canvas container animates from its previous center
-and apparent scale while the readings enter separately. The renderer sizes its drawing buffer
+rendered layers and framing temporarily. Explore restores saved choices. `useWorldLayout.ts` measures the settled layout after navigation and reframes the same canvas
+from its previous visible center and scale. An interrupted transition contributes its displayed pose
+to the next one; steering cancels it. Reading panels arrive separately. `usePresentation.ts` owns
+presentation state and focus rather than renderer motion. The renderer sizes its drawing buffer
 from the settled layout. On wide screens the readings rail reserves its own width in Explore
-and shares the Observatory background. Reduced motion and unsupported browsers update directly.
+and uses the shared deck surface. Reduced motion and unsupported browsers update directly.
+
+The oversized landing canvas retains its full drawing resolution. `visibleCanvas.ts` computes a
+viewport intersection in canvas coordinates and rounds its edges outward; renderer scissoring
+skips only fragments beyond the screen. Compositor travel, synchronous stills and video recording
+render the complete source. `GlobeHeader` owns the one viewport-anchored `CreatorCredit`, outside
+the moving canvas and scrolling readers. Rails and phone sheets reserve its footer space.
 
 `ExplorerSidebar` owns the Layers/Stories tabs and their independent scroll positions. Its pane
 and category belong to `useObservatory` navigation snapshots. `MapLayers` separates saved visibility

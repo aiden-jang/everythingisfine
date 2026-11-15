@@ -34,6 +34,23 @@ test("unknown symbols fail documentation verification", () => {
   assert.match(result.stderr, /nothing named `missingSymbol`/);
 });
 
+test("design token metadata is not mistaken for source identifiers", () => {
+  const result = check("---\ntypography:\n  fontWeight: 600\n  lineHeight: 1.2\n---\nUse validSymbol.\n");
+  assert.equal(result.status, 0, result.stderr);
+});
+
+test("source names after frontmatter still fail at their original line", () => {
+  const result = check("---\nfontWeight: 600\n---\nUse missingSymbol.\n");
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stderr, /README\.md:4: nothing named `missingSymbol`/);
+});
+
+test("frontmatter paths still need to exist", () => {
+  const result = check("---\nsourceFile: src/missing.ts\n---\n");
+  assert.equal(result.status, 1, result.stderr);
+  assert.match(result.stderr, /README\.md:2: no such file `src\/missing.ts`/);
+});
+
 test("GitHub policies are checked", () => {
   const result = check("", "Use missingPolicySymbol.\n");
   assert.equal(result.status, 1, result.stderr);

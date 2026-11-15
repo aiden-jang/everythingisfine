@@ -151,7 +151,7 @@ export function Timeline({
 
   return (
     // Paints the magnitude ramp outside the canvas, so it carries the marker the design contract excludes
-    // by name. See DESIGN.md 3.1.
+    // by name. See DESIGN.md Colors / Neutral.
     <div data-ramp>
       <div className="flex items-baseline justify-between gap-3">
         {/* Still a label, just no longer an uppercase badge: the slider below needs an accessible name,

@@ -1,10 +1,13 @@
 import type { WebGLRenderer } from "three";
 import { createFrameBudget } from "./frameBudget";
+import { createCanvasClip } from "./visibleCanvas";
 
 export function createRenderResolution(
   renderer: WebGLRenderer,
   markers: readonly { setPixelRatio: (ratio: number) => void }[],
+  canvas: HTMLCanvasElement,
 ) {
+  const clip = createCanvasClip(renderer, canvas);
   const budget = createFrameBudget();
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   let width = 0,
@@ -21,8 +24,9 @@ export function createRenderResolution(
       height = nextHeight;
       apply();
     },
-    frame() {
+    frame(full = false) {
       if (width && height && budget.sample(performance.now(), reduced.matches, document.hidden)) apply();
+      return clip(full);
     },
   };
 }

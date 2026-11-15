@@ -242,7 +242,7 @@ export function createUsgsSource(runtime: Runtime, urls: string | UsgsUrls = {})
       liveSince = null;
       seeded = false;
       seen = new Map();
-      // Immediately, not after the first interval. A minute of empty globe on load would fail DESIGN.md 8.
+      // Immediately, not after the first interval. A minute of empty globe on load would fail DESIGN.md Components.
       void poll();
     },
     stop: () => {

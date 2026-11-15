@@ -148,8 +148,8 @@ export function Globe({
     setGuide(globe.controls.guidance);
     const detachRotation = rotation.attach(el, globe.controls, () => wakeRef.current());
     const readout = createOrbitReadout(orbit.current);
-    const draw = () => {
-      globe.render();
+    const draw = (full = false) => {
+      globe.render(full || !!live.current.onFrame);
       live.current.onFrame?.(el);
     };
     globe.resize();
@@ -167,7 +167,7 @@ export function Globe({
       if (!el2 || contextLost) return null;
       // Apply wavefront visibility before the synchronous capture.
       globe.rings.step(0, visibleRing);
-      draw();
+      draw(true);
       return el2;
     });
 

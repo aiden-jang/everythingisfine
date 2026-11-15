@@ -30,7 +30,7 @@ export interface Controls {
   pick: (clientX: number, clientY: number) => { lon: number; lat: number } | null;
   /** The whole camera in three numbers. This is exactly what a permalink has to carry. */
   state: () => CameraState;
-  /** Springs the camera to a place. Instant under reduced motion, per DESIGN.md section 8. */
+  /** Springs the camera to a place. Instant under reduced motion, per DESIGN.md Components / Camera, scene and story motion. */
   flyTo: (lon: number, lat: number, zoom?: number) => void;
   guidance: CameraGuidance;
   setReplayAngle: (bank: number, pitch: number) => void;

@@ -73,6 +73,8 @@ const NOT_OURS = new Set(["devDependencies", "dataLayer", "npmjs"]);
 
 for (const doc of LIVE) {
   const source = readFileSync(doc, "utf8");
+  const frontmatter = /^---\r?\n[\s\S]*?\r?\n(?:---|\.\.\.)(?:\r?\n|$)/.exec(source)?.[0];
+  const metadataLines = frontmatter?.split("\n").length ?? 0;
   for (const match of source.matchAll(/\]\((?:<([^>]+)>|([^\s)]+))\)/g)) {
     const target = (match[1] ?? match[2]).split(/[?#]/)[0];
     if (!target || /^[a-z][a-z\d+.-]*:/i.test(target)) continue;
@@ -106,6 +108,8 @@ for (const doc of LIVE) {
     }
 
     // Bare, not just `name()`: a rename can sit in a sentence with no parentheses and no backticks.
+    // Token metadata uses schema keys, not source identifiers; paths and links still resolve above.
+    if (frontmatter && i < metadataLines - (frontmatter.endsWith("\n") ? 1 : 0)) return;
     for (const m of line.matchAll(/(?<!\\)\b([a-z][a-z0-9]*[A-Z][A-Za-z0-9]*)\b/g)) {
       if (!NOT_OURS.has(m[1]) && !named(m[1])) problems.push(`${at}: nothing named \`${m[1]}\` in the code`);
     }

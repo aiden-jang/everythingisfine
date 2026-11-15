@@ -9,7 +9,6 @@ import {
   mariaStudy,
   puertoRico,
 } from "../../sources/observations/blackMarble";
-import { ObservationCredit } from "../observations/ObservationCredit";
 import type { ObservationView } from "../observations/types";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 
@@ -374,7 +373,6 @@ export function LightsReturn({
           <ShareMoment />
           <ExperienceEnding />
         </section>
-        <ObservationCredit />
       </div>
     </>
   );

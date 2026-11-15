@@ -145,15 +145,6 @@
 }
 
 @media (max-height: 780px) and (min-width: 900px) {
-  .observatory-intro[data-scene="live"]:not([data-browsing]):not([data-storm-radar]):not([data-float-dive])
-    .observatory-story
-    h2 {
-    font-size: clamp(40px, 3.5vw, 50px);
-  }
-  .observatory-intro[data-scene="live"] .observatory-entry-actions {
-    gap: 4px 10px;
-    margin-top: 14px;
-  }
   .featured-story img {
     height: 72px;
   }

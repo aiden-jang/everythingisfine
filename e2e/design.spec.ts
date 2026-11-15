@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { earthquakeOptions, openLayer, installFeeds, waitForData } from "./feeds";
 
-/* DESIGN.md section 13, as tests rather than as a list. An audit performed once is worth very little: two
+/* DESIGN.md Do's and Don'ts, as tests rather than as a list. An audit performed once is worth very little: two
    of these rules were broken by accident during the build and neither by a decision. See ARCHITECTURE.md#e2edesignspects. */
 
 const BREAKPOINTS = [
@@ -115,7 +115,7 @@ for (const bp of BREAKPOINTS) {
     await page.goto("/");
     await waitForData(page);
 
-    // A build failure, per DESIGN.md section 7, not a cosmetic bug.
+    // A build failure, per DESIGN.md Layout, not a cosmetic bug.
     const overflow = await page.evaluate(() => ({
       scrollWidth: document.documentElement.scrollWidth,
       inner: window.innerWidth,

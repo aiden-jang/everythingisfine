@@ -605,7 +605,7 @@ test("the globe is operable from the keyboard, and the keys are written down", a
 });
 
 test("a dead feed says so, and does not claim a covered day", async ({ page }) => {
-  /* Two bugs in one state. DESIGN.md 6 specifies a hairline notice naming the source and the retry, and
+  /* Two bugs in one state. DESIGN.md Components specifies a hairline notice naming the source and the retry, and
      `SourceStatus` carried both while nothing read them. See ARCHITECTURE.md#e2einteractionspects. */
   await installFeeds(page, { dead: true });
   await page.goto("/");

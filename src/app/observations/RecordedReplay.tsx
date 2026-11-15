@@ -2,7 +2,6 @@ import { SharedStory } from "./SharedStory";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { lazy, useLayoutEffect, useRef, type ReactNode } from "react";
 import { useObservatoryEscape } from "../useObservatoryEscape";
-import { ObservationCredit } from "./ObservationCredit";
 import type { ObservationView } from "./types";
 import type { ReplayId } from "./replays";
 import { ShareMoment } from "./StorySession";
@@ -115,7 +114,6 @@ export function ReplayPanel({
             <div>{sources}</div>
           </details>
         </section>
-        <ObservationCredit />
       </div>
     </>
   );

@@ -1,7 +1,7 @@
 import { MORPH_GLSL } from "./morph";
 
 /*
- * The blue haze on the rim. The one hue in this app that means nothing; DESIGN.md 3.1 allows it.
+ * The blue haze on the rim. The one hue in this app that means nothing; DESIGN.md Colors / Neutral allows it.
  *
  * Don't rewrite it as a fresnel term. Fresnel peaks at the shell's edge, not the planet's, which draws a
  * bright ring floating off the globe with a dark gap inside it.

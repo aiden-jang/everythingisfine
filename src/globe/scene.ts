@@ -80,13 +80,12 @@ const MARK_SLOP_PX = 18;
 const SHORTLIST = 8;
 
 /* The globe's palette, brightest last: sea, land, graticule, coast, plates. See ARCHITECTURE.md#srcglobescenets. */
-const COLOR_SPHERE = 0x031120;
-/* Must equal `--color-void` in `index.css`. Nothing checks it, and the canvas fades to this. */
-const COLOR_LAND = 0x1c3d52;
-const COLOR_COAST = 0x245b83;
-const COLOR_GRATICULE = 0x13334e;
+const COLOR_SPHERE = 0x102730;
+const COLOR_LAND = 0x2d4b53;
+const COLOR_COAST = 0x7297a0;
+const COLOR_GRATICULE = 0x31515d;
 /* Brighter than the coastline on purpose: the boundary is why the earthquakes are in a line. */
-const COLOR_PLATES = 0x316a97;
+const COLOR_PLATES = 0x92aeb4;
 
 /* Greyer geography, for the colourblind ramp. That ramp is blue, and blue geography behind it stops being a
    separate thing you can see. Re-pick these by eye; scaling the blue ones down does not work. See ARCHITECTURE.md#srcglobescenets. */
@@ -123,7 +122,7 @@ const FILL = 0.86;
 
 export interface Globe {
   resize: () => void;
-  render: () => void;
+  render: (full?: boolean) => void;
   dispose: () => void;
   controls: Controls;
   events: EventLayer;
@@ -367,7 +366,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const presentation = createScenePresentation(spin, catalogue, controls, sunDir, lights, dayline, canvas);
   const inspection = createEventPresentation(camera, controls, catalogue);
   spin.add(inspection.object);
-  const resolution = createRenderResolution(renderer, [events, slab, starfield, planets]);
+  const resolution = createRenderResolution(renderer, [events, slab, starfield, planets], canvas);
   let markerScale = (): number => 1;
   const resize = (): void => {
     const parent = canvas.parentElement;
@@ -578,8 +577,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       writeAurora(aurora, grid);
       material.uniforms["uAuroraOn"]!.value = 1;
     },
-    render: () => {
-      resolution.frame();
+    render: (full = false) => {
+      if (!resolution.frame(full)) return;
       if (presentation.renderMoon(renderer, camera.aspect)) return;
       const at = inspection.recordedAt() ?? (moment === null ? Date.now() : null);
       if (at !== null) {
