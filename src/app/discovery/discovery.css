@@ -117,6 +117,20 @@
 .place-context p {
   margin-block: 10px;
 }
+.device-location-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.device-location-actions a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: var(--text-caption);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .place-context li {
   padding-block: 10px;
   border-bottom: 1px solid var(--color-hairline);

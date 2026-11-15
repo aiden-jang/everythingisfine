@@ -87,7 +87,10 @@ test("hidden base layers stay hidden through landing, scene categories and both 
   await page.getByRole("button", { name: "Map", exact: true }).click();
   await expect.poll(counts).toEqual({ quakes: 0, rings: 0, hazards: 0 });
   await page
-    .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+    .getByRole("button", {
+      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      exact: true,
+    })
     .click();
   for (const name of ["Earth", "Below the Surface", "After Dark"]) {
     await page.getByRole("button", { name, exact: true }).click();

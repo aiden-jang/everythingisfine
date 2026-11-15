@@ -31,7 +31,9 @@ test("a shared scene opens the same category in a fresh browser @dev", async ({ 
     await expect(
       other.getByRole("group", { name: "Earth scenes" }).locator('[aria-pressed="true"]'),
     ).toHaveCount(0);
-    await other.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
+    await other
+      .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
+      .click();
     await expect
       .poll(() => new URLSearchParams(new URL(other.url()).hash.slice(1)).has("catalogue"))
       .toBe(false);
@@ -52,7 +54,9 @@ test("Home restores all scenes and browser Back restores it on the same globe @d
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await openStories(page);
   await page.getByRole("searchbox", { name: "Find a story" }).fill("moon");
-  await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
+  await page
+    .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
+    .click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
   await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toHaveCount(0);
   await expect(
@@ -85,7 +89,7 @@ test("rapid scene and presentation changes finish at the latest choice @dev", as
   );
   await page.getByRole("button", { name: "Explore the globe", exact: true }).dispatchEvent("click");
   await page
-    .getByRole("button", { name: "Everything Is Fine, back to the Observatory" })
+    .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
     .dispatchEvent("click");
   await page.getByRole("button", { name: "Explore the globe", exact: true }).dispatchEvent("click");
   await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
@@ -122,7 +126,10 @@ for (const width of [1440, 390]) {
       await expect(stories.getByRole("heading", { name: "All stories", exact: true })).toBeVisible();
       await expect(category).toBeFocused();
       await page
-        .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+        .getByRole("button", {
+          name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+          exact: true,
+        })
         .click();
       await expect(stories).toHaveCount(0);
       await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeInViewport();

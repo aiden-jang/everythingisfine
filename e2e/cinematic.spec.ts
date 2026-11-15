@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { viewOptions, installFeeds } from "./feeds";
+import { DEFAULT_CAMERA } from "../src/globe/framing";
 
 test.use({
   video:
@@ -93,9 +94,12 @@ for (const [width, height] of [
       await viewOptions(page);
       await page.getByRole("button", { name: "Reset view & filters", exact: true }).click();
       await expect.poll(async () => (await pose()).zoom).toBeGreaterThan(1.2);
-      await expect.poll(async () => (await pose()).lon).toBe(145);
+      await expect.poll(async () => (await pose()).lon).toBe(DEFAULT_CAMERA.lon);
+      await expect.poll(async () => (await pose()).lat).toBe(DEFAULT_CAMERA.lat);
       await expect.poll(async () => (await pose()).zoom).toBe(1);
-      await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
+      await page
+        .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
+        .click();
       await page.emulateMedia({ reducedMotion: "reduce" });
       const dive = page.getByRole("button", { name: "Below the Surface", exact: true });
       await dive.click();

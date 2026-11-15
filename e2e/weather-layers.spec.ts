@@ -313,7 +313,10 @@ test("weather selections survive a cinematic detour without resuming playback @d
   await openLayer(page, "Surface wind");
   await windPanel.getByRole("slider").press("End");
   await page
-    .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+    .getByRole("button", {
+      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      exact: true,
+    })
     .click();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect(windPanel).toHaveCount(0);

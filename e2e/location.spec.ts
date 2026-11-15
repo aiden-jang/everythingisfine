@@ -47,7 +47,10 @@ test("approximate arrival keeps rounded framing on the same globe and map @dev",
   await expect.poll(() => camera(page)).toMatchObject({ lon: 151.2, lat: -33.9 });
   await page.keyboard.press("Escape");
   await page
-    .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+    .getByRole("button", {
+      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      exact: true,
+    })
     .click();
   await expect.poll(() => camera(page)).toMatchObject({ lon: 151.2, lat: -33.9 });
 });

@@ -77,7 +77,9 @@ test("the reveal survives a saved map and restores its flat framing", { tag: "@d
     page.evaluate(() => (window as unknown as { __globe?: { morph: () => number } }).__globe?.morph());
   await expect.poll(morph).toBe(1);
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
+  await page
+    .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
+    .click();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect.poll(morph).toBe(0);
   await expect.poll(async () => (await earthPosition(page)).y).toBeGreaterThan(0.98);

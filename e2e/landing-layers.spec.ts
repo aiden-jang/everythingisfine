@@ -83,7 +83,10 @@ for (const width of [1440, 390]) {
     );
     const selected = await radarTexture(page);
     await page
-      .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+      .getByRole("button", {
+        name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+        exact: true,
+      })
       .click();
     await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
     expect(await radarTexture(page)).toBe(selected);
@@ -127,7 +130,10 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
   await openLayer(page, "Storm radar");
   await page.getByRole("region", { name: "Storm radar playback" }).getByRole("slider").press("Home");
   await page
-    .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+    .getByRole("button", {
+      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      exact: true,
+    })
     .click();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect.poll(() => radarTexture(page)).toBeNull();
@@ -141,7 +147,10 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
   ).toContainText("Available");
   await page.keyboard.press("Escape");
   await page
-    .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+    .getByRole("button", {
+      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      exact: true,
+    })
     .click();
   await expect.poll(() => radarTexture(page)).not.toBeNull();
   await expect(page.locator(".radar-canvas-credit time")).toHaveAttribute(
@@ -152,7 +161,10 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
   await page.getByRole("button", { name: "Storm radar", exact: true }).click();
   await expect.poll(() => radarTexture(page)).toBeNull();
   await page
-    .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+    .getByRole("button", {
+      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      exact: true,
+    })
     .click();
   await expect(page.locator(".radar-canvas-credit")).toHaveCount(0);
   const before = source.calls();
@@ -174,7 +186,10 @@ test("Home leaves archive mode and browser Back recovers the recorded day @dev",
   await expect(toggle).toBeDisabled();
   await expect(page.getByRole("button", { name: "back to live", exact: true })).toBeVisible();
   await page
-    .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
+    .getByRole("button", {
+      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      exact: true,
+    })
     .click();
   await expect(page.getByRole("heading", { name: "Meanwhile, on Earth." })).toBeVisible();
   await expect.poll(() => radarTexture(page)).not.toBeNull();

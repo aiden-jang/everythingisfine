@@ -5,7 +5,7 @@ export function Wordmark({ onHome }: { onHome: () => void }): JSX.Element {
     <button
       type="button"
       onClick={onHome}
-      aria-label="Everything Is Fine, back to the Observatory"
+      aria-label="Everything is fine. Earth, ocean & sky, back to the Observatory"
       className="wordmark"
     >
       <img src="/icon.svg" alt="" width="32" height="32" />
