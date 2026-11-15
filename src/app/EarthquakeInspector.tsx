@@ -60,7 +60,6 @@ export function EarthquakeInspector({
       </div>
 
       {query.value && regionalResults}
-      <EventList {...list} />
       {options}
       <details className="layer-sources">
         <summary>Report totals</summary>
@@ -79,6 +78,7 @@ export function EarthquakeInspector({
           ))}
         </dl>
       </details>
+      <EventList {...list} />
     </section>
   );
 }

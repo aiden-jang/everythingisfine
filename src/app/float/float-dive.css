@@ -175,7 +175,8 @@
 
 @media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
   .frame[data-presentation="observe"] .zones:has([data-float-dive]) {
-    grid-template-rows: minmax(150px, 1fr) clamp(350px, 53dvh, 465px);
+    /* Preserve the reader's room above the shared credit reservation. */
+    grid-template-rows: minmax(150px, 1fr) calc(clamp(350px, 53dvh, 465px) + 48px);
   }
   .observatory-intro[data-float-dive] {
     gap: 8px;

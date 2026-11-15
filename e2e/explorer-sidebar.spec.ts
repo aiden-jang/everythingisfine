@@ -33,9 +33,9 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   const header = (await page.locator("#chrome-head").boundingBox())!;
   expect((await canvas!.boundingBox())!.y).toBeGreaterThanOrEqual(header.y + header.height);
   const size = () => sheet.getAttribute("aria-valuenow");
-  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.43)));
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.43) - 60));
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
-  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.34)));
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.34) - 60));
   const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
   const firstRow = stories.locator(".story-choice").first();
   await expect(firstRow).toBeInViewport({ ratio: 1 });
@@ -45,11 +45,13 @@ test("phone sheet offers three sizes without losing the globe or covering its co
     Math.abs((await page.locator("#chrome-rail").boundingBox())!.y - Number(await size())),
   ).toBeLessThanOrEqual(1);
   await page.getByRole("tab", { name: "Layers", exact: true }).click();
-  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.43)));
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.43) - 60));
   await navigation.getByRole("button", { name: "More globe", exact: true }).click();
   const collapsed = Number(await size());
   await navigation.getByRole("button", { name: "More controls", exact: true }).click();
   const half = Number(await size());
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/sheet-390.png` });
   await sheet.press("Home");
   const expanded = Number(await size());
   expect(collapsed).toBeGreaterThan(half);
@@ -81,9 +83,11 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await sheet.press("End");
   await page.setViewportSize({ width: 667, height: 375 });
-  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(375 * 0.82)));
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(375 * 0.82) - 60));
   await navigation.getByRole("button", { name: "More controls", exact: true }).click();
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeInViewport();
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/sheet-667.png` });
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await page.getByRole("button", { name: "View options", exact: true }).click();

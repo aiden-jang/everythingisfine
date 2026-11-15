@@ -275,10 +275,10 @@ continue to keep playback visible. Do not turn the oversized canvas into horizon
 
 Keep a fixed viewport with owned scrolling regions; horizontal page overflow is
 a failure. At desktop the globe continues behind the floating rail/detail panels.
-Explore's initial rail reservation is 29.5% of the viewport, bounded to 320–480px; saved widths still
+Explore's initial panel width is 29.5% of the viewport, bounded to 320–480px; saved widths still
 take precedence within the existing 264–620px resize bounds. At 900px and above, the visible deck
-is inset 24px from the left, 20px below the header and 54px above the bottom; its width is the rail
-reservation minus 36px and its internal padding is 22px. Its header is 72px from 768px wide
+is inset 24px from the left, 20px below the header and 54px above the bottom. The canvas reserves
+the panel width plus 36px for its inset and gap; internal panel padding is 22px. Its header is 72px from 768px wide
 and 76px from 1280px wide. The paired Globe/Map control identifies the current projection and
 offers the other alongside it. Utility actions stay grouped separately. Folding a
 region has an independently reachable restore control and never strands a stored
@@ -306,6 +306,7 @@ inspectors with the
 shared report window clearly named. Wind, lightning, radar and aurora retain independent source times.
 Recent weather does not masquerade as an archived observation. Archive date and return-to-live stay
 reachable when inspecting another layer. Find a place is distinct from report and story search.
+Supplemental inspector disclosures use an 8px gap and retain their 44px controls.
 
 Radar starts on unless a saved choice turns it off. One canvas information strip groups source
 attribution, independent layer times and the legend; optional keyboard help remains separate
@@ -324,8 +325,10 @@ at the lower-left viewport edge across home, scenes, Explore and players, outsid
 canvas and reading regions. It is rendered once by `CreatorCredit` through `GlobeHeader`. Its
 left inset is 34px on desktop, 24px below 900px and 18px at 380px or less. The bottom inset is
 the greater of 8px and the safe-area inset; its anchor has a 44px target below 900px. The phone
-Explore sheet reserves at least 64px of bottom padding, with safe-area support, so the final
-content clears the fixed credit band. Background wind paths remain quieter than story paths.
+Explore sheet ends above a separate 60px credit band plus the safe-area inset. Its scrollport,
+snap positions and navigation share that reservation so controls cannot scroll behind the credit.
+Float Dive keeps its reading allocation above the shared credit reservation.
+Background wind paths remain quieter than story paths.
 
 The header offers projection, source status and View options at every width. Capture, fullscreen,
 rotation and reset share that menu; keyboard help is a quiet optional disclosure. Phone layouts keep
@@ -334,8 +337,10 @@ other shortcut names the current pane rather than assuming earthquake activity. 
 interactive controls have 44px targets. The phone globe row starts at 43% of viewport height, with
 a 280px floor bounded by 72% on very short screens. Stories starts at 34%, with a 240px floor bounded
 by 65%, to expose the recorded cover and compact story selection on a portrait phone. A manually adjusted
-height takes precedence in either pane. Its lower stop is 20%, with a 180px floor
-bounded by 60%; its upper stop is 82%. Browsing expands the sheet by reducing the globe row;
+height takes precedence in either pane. The baseline lower stop is 20%, with a 180px floor
+bounded by 60%; its upper stop is 82%. Phone stops subtract the credit reservation, with a
+150px minimum globe allocation bounded by 40% on short screens. One shared calculation drives
+the sheet, navigation and accessible resize values. Browsing expands the sheet by reducing the globe row;
 expanding the globe reduces the sheet. Within that row, the Explore canvas clears the 68px header
 and leaves 12px below, keeping the default globe complete above the sheet.
 The drag handle snaps to those three positions; keyboard arrows allow intermediate adjustments and

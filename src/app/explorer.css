@@ -230,6 +230,11 @@
 .earthquake-inspector [data-event-count] {
   font-size: 26px;
 }
+.earthquake-inspector > .layer-sources,
+.map-layers > .layer-sources {
+  margin-top: 8px;
+  padding-top: 0;
+}
 #explorer-stories .observatory-scenes {
   grid-template-columns: 1fr 1.5fr 1fr;
   margin: 0 0 12px;

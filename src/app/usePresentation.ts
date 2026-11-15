@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { store } from "./stored";
 import type { Presentation } from "./useObservatory";
 
@@ -8,11 +9,15 @@ export function usePresentation(initial: () => Presentation, clearViews: () => v
   const changePresentation = useCallback(
     (next: Presentation, animate: boolean, prepare?: () => void, remember = true) => {
       before();
-      focusExplorer.current = remember && animate && next === "explore";
-      setPresentation(next);
-      clearViews();
-      prepare?.();
-      if (remember) store("presentation", next);
+      const update = () => {
+        focusExplorer.current = remember && animate && next === "explore";
+        setPresentation(next);
+        clearViews();
+        prepare?.();
+        if (remember) store("presentation", next);
+      };
+      if (animate) flushSync(update);
+      else update();
     },
     [clearViews, before],
   );

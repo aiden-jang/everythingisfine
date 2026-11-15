@@ -529,13 +529,20 @@ test("the events are reachable, not clipped out of the rail", async ({ page }) =
       const rail = document.querySelector(".rail") as HTMLElement;
       rail.scrollTop = rail.scrollHeight;
       const box = rail.getBoundingClientRect();
+      const tabs = rail.querySelector(".explorer-tabs")?.getBoundingClientRect();
       const list = rail.querySelector("section[aria-label='Recent earthquakes']");
       if (!list) return -1;
       return Array.from(list.querySelectorAll("button")).filter((b) => {
         const r = b.getBoundingClientRect();
-        return r.height > 0 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1;
+        return (
+          r.height > 0 &&
+          r.top >= Math.max(box.top, tabs?.bottom ?? box.top) - 1 &&
+          r.bottom <= box.bottom + 1
+        );
       }).length;
     });
     expect(rows, `event rows reachable at ${w}x${h}`).toBeGreaterThan(0);
+    if (w === 1024 && process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/rows-1024.png` });
   }
 });

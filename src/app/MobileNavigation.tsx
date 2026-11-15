@@ -1,14 +1,12 @@
-import { sheetStops } from "./sheetLayout";
-
 interface MobileNavigationProps {
   canvasHeight: number;
-  viewportHeight: number;
+  stops: readonly [number, number, number];
   onResize: (height: number) => void;
   panel: string;
 }
 
-export function MobileNavigation({ canvasHeight, viewportHeight, onResize, panel }: MobileNavigationProps) {
-  const [, half, collapsed] = sheetStops(viewportHeight, panel === "Stories");
+export function MobileNavigation({ canvasHeight, stops, onResize, panel }: MobileNavigationProps) {
+  const [, half, collapsed] = stops;
   const open = (canvasHeight || half) < collapsed;
   const label = open ? "More globe" : "More controls";
   return (

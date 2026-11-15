@@ -196,10 +196,12 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
   const original = await contexts();
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.getByRole("button", { name: "Explore the globe" }).click();
-  await expect(page.locator("#chrome-rail")).toBeVisible();
-  await expect(page.locator("#view-projection")).toBeFocused();
   const rail = page.locator("#chrome-rail");
-  await expect(rail).toHaveCSS("background-color", "rgb(17, 31, 38)");
+  await Promise.all([
+    expect(rail).toBeVisible(),
+    expect(page.locator("#view-projection")).toBeFocused(),
+    expect(rail).toHaveCSS("background-color", "rgb(17, 31, 38)"),
+  ]);
   await expect
     .poll(() =>
       page.evaluate(() => {
@@ -243,8 +245,12 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
   expect(interrupted).toEqual({ before: true, after: 0 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
-  expect(await page.locator("#explorer-stories").evaluate((node) => node.getAnimations().length)).toBe(0);
-  expect(await contexts()).toBe(original);
+  const [readingMotions, finalContexts] = await Promise.all([
+    page.locator("#explorer-stories").evaluate((node) => node.getAnimations().length),
+    contexts(),
+  ]);
+  expect(readingMotions).toBe(0);
+  expect(finalContexts).toBe(original);
   expect(errors).toEqual([]);
 });
 

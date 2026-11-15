@@ -124,8 +124,8 @@ EMSC constructor refusals enter the normal reconnect path; failed sockets close 
 
 Preferences write in their setters, never on initial mount. A shared link can override the initial
 view without turning defaults into stored choices. The sheet height uses the same preference path.
-`ExploreSheet.tsx` owns its three snap positions,
-viewport bounds and tap alternatives; `Resizer.tsx` supplies pointer and keyboard resizing.
+`ExploreSheet.tsx` measures the footer reservation and shares `sheetStops` with CSS, accessible
+resize values and tap alternatives; `Resizer.tsx` supplies pointer and keyboard resizing.
 Explore's default desktop rail is proportional to the viewport within bounded initial widths;
 stored widths still use the existing resize limits. The phone stops bound the canvas row, and its
 inner scene clears the header and sheet edge. These layout changes keep the same renderer mounted.

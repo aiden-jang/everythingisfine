@@ -3078,6 +3078,10 @@ viewport intersection in canvas coordinates and rounds its edges outward; render
 skips only fragments beyond the screen. Compositor travel, synchronous stills and video recording
 render the complete source. `GlobeHeader` owns the one viewport-anchored `CreatorCredit`, outside
 the moving canvas and scrolling readers. Rails and phone sheets reserve its footer space.
+`ExploreSheet` reads the resolved footer margin, including safe-area space, on mounting and resizing.
+`sheetStops` supplies one bounded set of positions to CSS, the separator and `MobileNavigation`.
+The visible panel width remains the stored resize value; its desktop inset and gap contribute
+separately to the canvas reservation and handle position.
 
 `ExplorerSidebar` owns the Layers/Stories tabs and their independent scroll positions. Its pane
 and category belong to `useObservatory` navigation snapshots. `MapLayers` separates saved visibility

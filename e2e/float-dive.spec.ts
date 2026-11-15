@@ -94,6 +94,8 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
       .evaluate((node) => parseFloat(getComputedStyle(node).fontSize)),
   ).toBeGreaterThanOrEqual(20);
   await expect(dive.locator(".float-value strong").first()).toBeInViewport({ ratio: 1 });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/float-reading-390.png` });
   const picker = dive.getByRole("combobox", { name: "Float profile" });
   await picker.selectOption({ label: "30 Oct 2026 · WMO 6901932" });
   await expect(dive.getByText(/Recent profile · Cycle 269/)).toBeVisible();

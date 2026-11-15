@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 import { Resizer } from "./Resizer";
 import { MobileNavigation } from "./MobileNavigation";
 import { sheetStops } from "./sheetLayout";
@@ -14,13 +14,31 @@ export function ExploreSheet({
   panel: string;
   visible: boolean;
 }) {
-  const [viewport, setViewport] = useState(window.innerHeight);
-  useEffect(() => {
-    const resize = () => setViewport(window.innerHeight);
+  const [viewport, setViewport] = useState({ height: window.innerHeight, footer: 0 });
+  useLayoutEffect(() => {
+    const resize = () => {
+      const rail = document.getElementById("chrome-rail");
+      setViewport({
+        height: window.innerHeight,
+        footer: rail ? parseFloat(getComputedStyle(rail).marginBottom) || 0 : 0,
+      });
+    };
+    resize();
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
   }, []);
-  const stops = sheetStops(viewport, panel === "Stories");
+  const stops = sheetStops(viewport.height, panel === "Stories", viewport.footer);
+  const [first, half, last] = stops;
+  useLayoutEffect(() => {
+    const zones = document.querySelector<HTMLElement>(".zones");
+    if (!zones) return;
+    zones.style.setProperty("--sheet-min", `${first}px`);
+    zones.style.setProperty("--sheet-default", `${half}px`);
+    zones.style.setProperty("--sheet-max", `${last}px`);
+    return () => {
+      for (const name of ["--sheet-min", "--sheet-default", "--sheet-max"]) zones.style.removeProperty(name);
+    };
+  }, [first, half, last]);
   const current = Math.min(stops[2]!, Math.max(stops[0]!, height || stops[1]!));
   return (
     <>
@@ -37,14 +55,7 @@ export function ExploreSheet({
         className="absolute inset-x-0 z-[2] md:hidden"
         style={{ top: "calc(var(--sheet-position) - 6px)" }}
       />
-      {visible && (
-        <MobileNavigation
-          canvasHeight={current}
-          viewportHeight={viewport}
-          onResize={onResize}
-          panel={panel}
-        />
-      )}
+      {visible && <MobileNavigation canvasHeight={current} stops={stops} onResize={onResize} panel={panel} />}
     </>
   );
 }

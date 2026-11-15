@@ -1095,7 +1095,7 @@ export function App(): JSX.Element {
           style={
             {
               ...(headShown ? {} : { "--head-h": "0px" }),
-              "--rail-w": railShown ? `${railWidth}px` : "0px",
+              "--rail-panel-w": railShown ? `${railWidth}px` : "0px",
               "--regions-h": `${regionsHeight}px`,
               ...(sheetCanvas > 0 ? { "--canvas-h": `${sheetCanvas}px` } : {}),
             } as React.CSSProperties
@@ -1320,7 +1320,7 @@ export function App(): JSX.Element {
               py-3 font-mono text-[15px] leading-none text-dim backdrop-blur-xl backdrop-saturate-50
               transition-colors hover:text-ink"
               /* Clear of the resize handle, or the button eats the top of the drag target. */
-              style={{ left: railOpen ? railWidth + 6 : 0 }}
+              style={{ left: railOpen ? "calc(var(--rail-w) - 6px)" : 0 }}
             >
               {railOpen ? "\u2039" : "\u203a"}
             </button>
@@ -1332,10 +1332,10 @@ export function App(): JSX.Element {
             value={railWidth}
             min={RAIL_MIN}
             max={RAIL_MAX}
-            measure={(e) => e.clientX}
+            measure={(e) => e.clientX - 24}
             onChange={setRailWidth}
             className={railShown ? "absolute inset-y-0 hidden xl:block" : "hidden"}
-            style={{ left: railWidth - 6 }}
+            style={{ left: "calc(var(--rail-w) - 18px)" }}
           />
 
           <section
