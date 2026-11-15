@@ -1,5 +1,6 @@
 import type { Plugin, ViteDevServer } from "vite";
 import { relayObservation } from "./observations";
+import { approximateLocation } from "./location";
 
 /** The same fixed routes in local Vite, without Cloudflare bindings or a remote development relay. */
 export function observationDevelopment(): Plugin {
@@ -20,9 +21,11 @@ export function observationDevelopment(): Plugin {
   const install = (server: Pick<ViteDevServer, "middlewares">) => {
     server.middlewares.use((request, response, next) => {
       const { url, method } = request as { url?: string; method?: string };
-      if (!url?.startsWith("/api/observations/")) return next();
+      const location = url?.split("?")[0] === "/api/location";
+      if (!location && !url?.startsWith("/api/observations/")) return next();
       const input = new Request(`http://localhost${url}`, { method: method ?? "GET" });
-      void relayObservation(input, cache)
+      // Local requests deliberately have no edge geolocation metadata.
+      void Promise.resolve(location ? approximateLocation(input) : relayObservation(input, cache))
         .then(async (result) => {
           response.writeHead(result.status, Object.fromEntries(result.headers));
           response.end(new Uint8Array(await result.arrayBuffer()));

@@ -38,7 +38,8 @@ accounts and the rail distinguishes raw readings from distinct events.
 
 | Module | Responsibility |
 | --- | --- |
-| `worker/index.ts` | Static-asset fallback, bounded anonymous analytics ingestion, and fixed observation-route dispatch |
+| `worker/index.ts` | Static-asset fallback, bounded anonymous analytics ingestion, approximate location, and fixed observation-route dispatch |
+| `worker/location.ts` | Uncached rounded location from Cloudflare metadata; no storage or external request; local development returns no estimate |
 | `worker/observations.ts` and `worker/development.ts` | Three cached read-only NOAA / NSF Unidata subsets, shared by the Worker and local Vite servers |
 | `analytics/` | Closed event schema, privacy-aware browser transport and aggregate dataset writes |
 | `src/app/useArchive.ts` | Archive request ownership, stale-response protection, date navigation, source coverage |
@@ -168,7 +169,7 @@ Scene navigation stores camera and logical view snapshots in memory; browser his
 an opaque entry identifier. Snapshots omit bitmaps and lunar rendering resources. Moonfall restores
 its traverse, distance and projection on a fresh lunar scene, and Float Dive restores its paused sample.
 The shared-link writer preserves that history state. The title clears story browsing
-and returns to the compact Live Earth overview without replaying the entrance or replacing the canvas.
+and returns to the compact Earth overview without replaying the entrance or replacing the canvas.
 Home leaves the earthquake archive; browser Back can reload the captured archive day. A held moment
 within the current earthquake window remains selected across the landing/Explore handoff.
 Scene buttons toggle their catalogue; the initial overview has none selected. Explore’s catalogue
@@ -181,11 +182,12 @@ story entry points. Steps advance only on request; finishing leaves the current 
 exploration. Each view retains its own data, time and controls. Prompts distinguish independent
 records, forecasts and predictions rather than implying synchronized time or causation.
 
-The Stories tab opens with one large featured image and three recommendations; Library reveals
-the saved, guided, archive and feed sections while preserving their disclosure state. Search and
-the full catalogue still route through the same story navigation. The heading identifies All stories or
-the selected category; Show all resets that filter without leaving Stories. Search explicitly covers
-all categories. Browsing temporarily hides background overlays and pauses their playback without
+The Stories tab opens with one large featured image and three recommendations. Saved & recent
+is directly accessible; current discoveries have a From today’s feeds disclosure, while guided
+journeys and archives stay secondary. Search and the full catalogue use the same story navigation.
+All stories is an explicit selected category; a category filter scopes search and Search all stories
+broadens it without clearing the query. A story render or module failure stays within StoryBoundary,
+which preserves the globe and offers the original return destination or a page reload. Browsing temporarily hides background overlays and pauses their playback without
 changing stored layer choices. Radar and weather players remain mounted while browsing; opening a
 story releases the background players so the story owns its data. Returning to Layers restores the
 inspector, layer selections, scan positions, camera and projection. The canvas stays mounted throughout.
@@ -334,12 +336,12 @@ the first 90 minutes after the event. The plots preserve five-second minimum and
 and normalize each instrument independently. The onset markers use sustained motion above the
 preceding baseline. Optional audio resamples each recording at 900 times its original rate.
 
-Float Dive loads on demand from Live Earth. The browser requests ascending North Atlantic
+Float Dive loads on demand from Earth. The browser requests ascending North Atlantic
 profiles from the Marine Institute ERDDAP and validates each level’s pressure, temperature and
 salinity quality flags. Two bundled recordings from the same source stay available offline.
 The instrument is schematic and the ascent is compressed. The readout uses the original
 samples, with depth estimated from pressure using the
-[Fofonoff and Millard equation](https://doi.org/10.25607/OBP-1450).
+[Fofonoff and Millard equation](https://doi.org/10.25607/OBP-1450). The optional measured-profile plot labels its axes and selected sample. The ending compares measured endpoints. Validated Float Dive links reopen the selected profile and sample paused; a missing profile is disclosed instead of silently claiming an exact restoration.
 
 Float Dive temperature and Tide Watch measured water level offer optional synthesized tones.
 `MeasurementSound` creates Web Audio only after a listener’s gesture. `measurementVoice.ts` maps
@@ -347,10 +349,10 @@ finite readings into pitch, throttles updates and permits one short, quiet tone 
 tabs, unmounting, and profile or harbor changes close the voice and clear the opt-in. The mapping is
 disclosed beside the control; the sound is not a field recording or an ambient loop.
 
-Storm Radar shares its player between the background layer and the Live Earth radar view. RainViewer is the default international
+Storm Radar shares its player between the background layer and the Earth radar view. RainViewer is the default international
 network; NOAA MRMS remains the contiguous-US detail option, including existing US region visits.
 The radar toggle defaults on, respects a saved off choice, and mounts the shared scan player on the
-landing globe, Live Earth overview and Explore while enabled outside archive mode. The hidden Explore
+landing globe, Earth overview and Explore while enabled outside archive mode. The hidden Explore
 rail retains that player across the landing/Explore handoff. It contributes to a `map-layers` presentation: no camera target, catalogue hiding or picking
 override. The catalogue retains the cinematic `radar` presentation and regional controls. The two
 entries never mount their scan loaders together; leaving either releases decoded images and requests.

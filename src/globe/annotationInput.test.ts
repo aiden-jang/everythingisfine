@@ -30,3 +30,25 @@ test("annotation updates wake the shared scene without moving it until Locate is
   send();
   expect(wake).not.toHaveBeenCalled();
 });
+
+test("camera reset uses the visit's home area but preserves a story's own framing", () => {
+  const canvas = new EventTarget() as HTMLCanvasElement;
+  const guidance = createCameraGuidance();
+  const flyTo = vi.fn(),
+    restore = vi.fn();
+  const detach = attachAnnotations(canvas, { guidance, flyTo } as unknown as Controls, vi.fn());
+  const reset = () =>
+    canvas.dispatchEvent(
+      new CustomEvent("scene-annotation", {
+        detail: { camera: "reset", home: { lon: 151.2, lat: -33.9, zoom: 1 } },
+      }),
+    );
+  reset();
+  expect(flyTo).toHaveBeenCalledExactlyOnceWith(151.2, -33.9, 1);
+  guidance.configure("story", restore);
+  guidance.interrupt();
+  reset();
+  expect(restore).toHaveBeenCalledOnce();
+  expect(flyTo).toHaveBeenCalledOnce();
+  detach();
+});

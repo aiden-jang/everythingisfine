@@ -151,11 +151,6 @@
   min-width: 0;
   padding: 6px 8px;
   border-top: 1px solid var(--color-hairline);
-  color: #e8bc8e;
-}
-
-.float-trace[data-reading="salinity"] {
-  color: #8bd7cf;
 }
 
 .float-value {
@@ -166,23 +161,6 @@
 
 .float-value span {
   color: var(--color-dim);
-}
-
-.float-trace svg {
-  display: block;
-  width: 100%;
-  height: clamp(25px, 6vh, 45px);
-  stroke: currentColor;
-  stroke-width: 1.25;
-  fill: none;
-}
-
-.float-trace circle {
-  fill: currentColor;
-}
-
-.float-axis {
-  stroke: var(--color-hairline);
 }
 
 .float-source a {

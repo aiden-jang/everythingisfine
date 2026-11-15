@@ -112,7 +112,7 @@ for (const width of [1440, 390]) {
     await page.getByRole("button", { name: "Back to stories", exact: true }).click();
     await expect(search).toHaveValue("Aral");
     await expect(trigger).toBeFocused();
-    await expect(page.getByRole("button", { name: "Live Earth", exact: true })).toHaveAttribute(
+    await expect(page.getByRole("button", { name: "Earth", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
@@ -136,7 +136,7 @@ for (const width of [1440, 390, 320]) {
     if (width < 768) {
       const navigation = page.getByRole("navigation", { name: "Explore", exact: true });
       await expect(navigation.getByRole("button")).toHaveCount(1);
-      await expect(navigation.getByRole("button", { name: "Collapse panel" })).toBeInViewport({ ratio: 1 });
+      await expect(navigation.getByRole("button", { name: "More globe" })).toBeInViewport({ ratio: 1 });
       await page.screenshot({ path: test.info().outputPath(`panel-${width}.png`) });
     }
     await openStories(page, "search");

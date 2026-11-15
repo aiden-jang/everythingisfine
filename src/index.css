@@ -50,6 +50,9 @@
 
   --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --text-caption: 0.8125rem;
+  --text-control: 0.875rem;
+  --text-body: 1rem;
 }
 
 @layer base {
@@ -61,10 +64,8 @@
    * which on a phone made the rail's prose jump a size against chrome that had not moved - two type scales
    * in one view, neither of them the one in `DESIGN.md`.
    */
-    html {
-      -webkit-text-size-adjust: 100%;
-      text-size-adjust: 100%;
-    }
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 
     /* The document stays viewport-sized; lists and the phone rail own scrolling. clip prevents programmatic overflow too. */
     overflow: clip;
@@ -751,12 +752,6 @@
 }
 
 /* Controls stay neutral so the event ramp remains the only signal with hue. */
-.wordmark {
-  gap: 1px;
-  font-size: 18px;
-  font-weight: 600;
-  letter-spacing: -0.045em;
-}
 .zone-head {
   background: color-mix(in srgb, var(--color-void) 82%, transparent);
   backdrop-filter: blur(20px) saturate(0.45);
@@ -812,9 +807,6 @@
   box-shadow: inset 2px 0 var(--color-ink);
 }
 @media (max-width: 767px) {
-  .wordmark {
-    font-size: 16px;
-  }
   .zone-head {
     gap: 8px;
     padding-inline: 16px;

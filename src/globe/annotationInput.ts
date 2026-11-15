@@ -1,7 +1,9 @@
 import { DEFAULT_CAMERA } from "./framing";
 import type { Controls } from "./controls";
 
-type AnnotationInput = { lon: number; lat: number } | { camera: "hold" | "resume" | "reset" };
+type AnnotationInput =
+  | { lon: number; lat: number }
+  | { camera: "hold" | "resume" | "reset"; home?: { lon: number; lat: number; zoom: number } };
 
 export function refreshAnnotations(point?: AnnotationInput) {
   document
@@ -14,8 +16,10 @@ export function attachAnnotations(canvas: HTMLCanvasElement, controls: Controls,
     const point = (event as CustomEvent<AnnotationInput | undefined>).detail;
     if (point && "camera" in point) {
       if (point.camera === "hold") controls.guidance.interrupt();
-      else if (!controls.guidance.recenter() && point.camera === "reset")
-        controls.flyTo(DEFAULT_CAMERA.lon, DEFAULT_CAMERA.lat, DEFAULT_CAMERA.zoom);
+      else if (!controls.guidance.recenter() && point.camera === "reset") {
+        const home = point.home ?? DEFAULT_CAMERA;
+        controls.flyTo(home.lon, home.lat, home.zoom);
+      }
     } else if (point && Number.isFinite(point.lon) && Number.isFinite(point.lat)) {
       controls.guidance.interrupt();
       controls.flyTo(point.lon, point.lat, Math.max(1.4, Math.min(3, controls.state().zoom)));

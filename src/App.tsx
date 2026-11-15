@@ -63,7 +63,8 @@ import { createSiren, type Siren } from "./app/sound";
 import { lunarEclipse, solarEclipse } from "./geo/eclipse";
 import { closestTo, localZone, viewerPlace } from "./app/viewer";
 import { comparableCount, rankDay, type Span as BaselineSpan } from "./data/baseline";
-import { boundarySegments, nearestBoundaryKm, QUIET_BAND_KM, QUIET_BAND_SHARE } from "./geo/boundaryDistance";
+import { boundarySegments, nearestBoundaryKm } from "./geo/boundaryDistance";
+import { boundarySummary } from "./app/boundarySummary";
 import { ExploreSheet } from "./app/ExploreSheet";
 import { ViewNotices } from "./app/ViewNotices";
 import { sharedEarthquakeNotice, sharedHazardNotice } from "./app/linkNotices";
@@ -87,7 +88,7 @@ import { superlativeFor } from "./app/superlative";
 import { type RampName } from "./globe/ramp";
 import { matches, windowStart } from "./data/filter";
 import type { Filters, Quake, SourceId } from "./data/types";
-import { clock, corroborationNote, quietNote, quietParts, compactSpan } from "./app/format";
+import { clock, corroborationNote, compactSpan } from "./app/format";
 
 /* Built here and not in an effect. In an effect, StrictMode mounts twice and you get two WebSockets. */
 const feed = createFeed();
@@ -104,7 +105,7 @@ export function App(): JSX.Element {
   const historyIntent = useRef<string | null>(null);
   const observatory = useObservatory(shared);
   const { enterExplore, enterObserve, chooseScene, setReady: setGlobeReady } = observatory;
-  const { flyTo, camera, read: readCamera, onReady } = useGlobeCamera(shared, setGlobeReady);
+  const { flyTo, camera, home, read: readCamera, onReady } = useGlobeCamera(shared, setGlobeReady);
   const [liveFilters, setFilters] = useState<Filters>(() => ({
     minMagnitude: shared.minMagnitude ?? DEFAULT_FILTERS.minMagnitude,
     windowMs: shared.windowHours === undefined ? DEFAULT_FILTERS.windowMs : shared.windowHours * 3_600_000,
@@ -288,7 +289,7 @@ export function App(): JSX.Element {
   const [ramp, setRamp] = useStoredName<RampName>("ramp", "thermal", ["thermal", "cividis"], shared.ramp);
   const [announceAbove, setAnnounceAbove] = useStoredNumber("announceAbove", 4.5);
   const [markId, setMarkId] = useState<string | null>(shared.day ? null : (shared.mark ?? null));
-  /* Never reload here. There is no backend, so the buffer is every event on screen. */
+  /* Never reload here: the in-memory buffer owns the events on screen. */
   const resetView = useCallback(() => {
     setQuery("");
     setSectionLine(null);
@@ -300,12 +301,12 @@ export function App(): JSX.Element {
     // Only when there is an archive to leave: `resumeLive` clears the store.
     if (feed.snapshot().archive !== null) backToLive();
     if (feed.setWindow(DEFAULT_FILTERS.windowMs)) setPendingRev(feed.snapshot().revision);
-    flyTo.current(145, 12, 1, 0, true);
+    flyTo.current(home.current.lon, home.current.lat, home.current.zoom, 0, true);
     replaceViewLocation(window.location.pathname + window.location.search);
     // The writer only writes while the hash is the one it last wrote, which is what protects a pasted
     // link. Emptying it without saying so leaves the writer refusing to write again.
     lastWritten.current = window.location.hash;
-  }, [backToLive, flyTo]);
+  }, [backToLive, flyTo, home]);
   const [farSideOf, setFarSideOf] = useState<string | null>(null);
   const [keyOpen, setKeyOpen] = useStoredFlag("legendKey", false);
   const [motionOn, setMotionOn] = useStoredFlag("motion", false);
@@ -397,7 +398,7 @@ export function App(): JSX.Element {
     catalogue: (observatory.observing ? observatory.browser.open : observatory.browser.pane === "stories")
       ? (observatory.browser.category ?? "all")
       : undefined,
-    getMoment: observatory.observations.getMoment,
+    getMoment: observatory.getMoment,
     layers: mapLayers.enabled,
     layerTimes: mapLayers.selectedTimes,
     camera,
@@ -486,7 +487,7 @@ export function App(): JSX.Element {
     });
   const chooseEarthScene = (scene: EarthScene): void => {
     stopTour();
-    const next = earthSceneTarget(scene, journey.deepest, view.at ?? clockAt());
+    const next = earthSceneTarget(scene, journey.deepest, view.at ?? clockAt(), home.current);
     chooseScene(next.scene, next.focus);
     if (next.scene === "live" && archived) backToLive();
     flyTo.current(...next.camera);
@@ -494,7 +495,7 @@ export function App(): JSX.Element {
   function returnHome() {
     observatory.home(stopTour);
     if (archived || archiveBusy) backToLive();
-    flyTo.current(145, 12, 1);
+    flyTo.current(home.current.lon, home.current.lat, home.current.zoom);
   }
   const section = useMemo(
     () =>
@@ -535,28 +536,15 @@ export function App(): JSX.Element {
     () => (tracedReading ? { lon: tracedReading.lon, lat: tracedReading.lat } : null),
     [tracedReading],
   );
-  /* The 9.4% area share is measured on a cos-weighted grid in `boundaryDistance.ts`, so it means area
-  and not a count of cells. */
-  const quiet = useMemo((): {
-    note: string | null;
-    parts: { percent: number; times: number } | null;
-  } => {
-    if (segments.length === 0) return { note: null, parts: null };
-    let near = 0;
-    let total = 0;
-    feed.store.forEach((quake) => {
-      if (!matches(quake, filters, clockAt())) return;
-      total += 1;
-      const km = boundaryKmOf(quake);
-      if (km !== null && km <= QUIET_BAND_KM) near += 1;
-    });
-    return {
-      note: quietNote(near, total, QUIET_BAND_KM, QUIET_BAND_SHARE),
-      parts: quietParts(near, total, QUIET_BAND_SHARE),
-    };
+  const quiet = useMemo(
+    () =>
+      segments.length
+        ? boundarySummary(feed.store, filters, clockAt(), boundaryKmOf)
+        : { note: null, parts: null },
     // New readings change this spatial tally under unchanged filters.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [snapshot.revision, filters, segments, boundaryKmOf, clockAt]);
+    [snapshot.revision, filters, segments, boundaryKmOf, clockAt],
+  );
   // Looked up at render, not captured on click: the feeds refresh every ten minutes and a captured
   // card keeps describing a storm that is gone.
   const hazards = useMemo(
@@ -1096,6 +1084,7 @@ export function App(): JSX.Element {
           ready={observatory.canCapture && mapLayers.canCapture}
           observing={observatory.observing}
           onHome={returnHome}
+          home={home}
           onReset={resetView}
           {...{
             headShown,
@@ -1179,6 +1168,7 @@ export function App(): JSX.Element {
               {archived && mapLayers.inspector !== "earthquakes" && archiveControls}
               <MapLayers
                 places={{
+                  ready: observatory.ready,
                   feed,
                   filters: mapLayers.globeFilters,
                   at: view.at ?? now,

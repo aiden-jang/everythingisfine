@@ -1505,7 +1505,7 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   await openLayer(page);
 
   const only = (text: string) => page.getByText(text).filter({ visible: true });
-  const key = only("Map legend");
+  const key = only("Legend");
   const explanation = only("Larger marks = higher magnitude");
   const slider = page.locator("#mag");
 
@@ -1536,7 +1536,7 @@ test("the key folds away and the controls do not go with it", async ({ page }) =
   await expect(only("Larger marks = higher magnitude")).toHaveCount(0);
   await expect(page.locator("#mag")).toBeVisible();
 
-  await only("Map legend").click();
+  await only("Legend").click();
   await expect(only("Larger marks = higher magnitude")).toBeVisible();
 });
 
@@ -1771,7 +1771,7 @@ test("fullscreen makes the window bigger and takes nothing away", async ({ page 
         head: shown("#chrome-head"),
         rail: shown("#chrome-rail"),
         hints: shown(".key-hints"),
-        key: document.body.innerText.includes("Map legend"),
+        key: document.body.innerText.includes("Legend"),
         panels: document.querySelectorAll(".zone-panel").length,
         full: document.fullscreenElement ? document.fullscreenElement.className : "",
       };
@@ -2071,16 +2071,16 @@ test("the marks key is reachable at every width", async ({ page }) => {
     const shown = await page.evaluate(
       () =>
         Array.from(document.querySelectorAll("summary"))
-          .filter((s) => /Map legend/.test(s.textContent || ""))
+          .filter((s) => /Legend/.test(s.textContent || ""))
           .filter((s) => (s as HTMLElement).checkVisibility()).length,
     );
     expect(shown, `visible copies of the key at ${w}x${h}`).toBe(1);
-    const toggle = page.getByText("Map legend", { exact: true });
+    const toggle = page.getByText("Legend", { exact: true });
     await expect(toggle).toBeInViewport({ ratio: 1 });
     await toggle.click();
     await expect(page.locator(".canvas-legend")).toBeInViewport({ ratio: 1 });
     if (w < 768)
-      await expect(page.getByRole("region", { name: "Map legend", exact: true })).toBeInViewport({
+      await expect(page.getByRole("region", { name: "Legend", exact: true })).toBeInViewport({
         ratio: 1,
       });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -2234,11 +2234,11 @@ test("mobile exploration switches between globe space and the current inspector"
   await waitForData(page);
   await openLayer(page);
   const navigation = page.getByRole("navigation", { name: "Explore" });
-  await navigation.getByRole("button", { name: "Collapse panel", exact: true }).click();
+  await navigation.getByRole("button", { name: "More globe", exact: true }).click();
   const globeHeight = await page
     .getByRole("separator", { name: "Sheet height" })
     .getAttribute("aria-valuenow");
-  await navigation.getByRole("button", { name: "Expand panel", exact: true }).click();
+  await navigation.getByRole("button", { name: "More controls", exact: true }).click();
   const recentHeight = await page
     .getByRole("separator", { name: "Sheet height" })
     .getAttribute("aria-valuenow");

@@ -36,7 +36,7 @@ for (const [width, height] of [
     await expect(explore).toBeVisible();
     const depth = page.getByRole("button", { name: "Below the Surface", exact: true });
     await expect(depth).toBeEnabled();
-    for (const scene of ["Live Earth", "Below the Surface", "After Dark"])
+    for (const scene of ["Earth", "Below the Surface", "After Dark"])
       await expect(page.getByRole("button", { name: scene, exact: true })).toBeInViewport({ ratio: 1 });
     const bounds = await page.evaluate(() => {
       const canvas = document.querySelector("canvas")!.getBoundingClientRect();
@@ -310,7 +310,7 @@ test("a missing WebGL context still offers the source readings", async ({ page }
     } as typeof get;
   });
   await page.goto("/");
-  for (const scene of ["Live Earth", "Below the Surface", "After Dark"])
+  for (const scene of ["Earth", "Below the Surface", "After Dark"])
     await expect(page.getByRole("button", { name: scene, exact: true })).toBeDisabled();
   await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toBeHidden();
   await expect(page.getByRole("button", { name: "Explore the globe" })).toBeVisible();

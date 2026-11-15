@@ -110,11 +110,17 @@ export function FeedDot({
           ))}
         </ul>
         <p>
-          Enabled weather layers join the total on the landing globe and in Explore. Browsing stories hides
-          them while source checks continue. Opening a story pauses these background layers. Off means they
-          are not being checked. These are source counts, not visible layer counts: earthquakes use two
-          sources, and event sources keep checking when their markers are hidden.
+          Available means a source answered. Its reports may still cover only part of the world or time
+          period.
         </p>
+        <details>
+          <summary>How the count works</summary>
+          <p>
+            The count includes sources, not visible layers: earthquakes use two sources. Hiding event markers
+            keeps their sources connected. Enabled weather layers join the total; opening a story pauses them.
+            Off means a source is not being checked.
+          </p>
+        </details>
         <h3>Loads when opened</h3>
         <p>
           Float Dive, Sun Watch and other observatory views check their own sources when opened. Find the full

@@ -48,7 +48,7 @@ for (const [width, height] of [
       await expect.poll(async () => (await earthPosition(page)).ready).toBe(true);
       await page.waitForTimeout(1100);
       await page.screenshot({ path: test.info().outputPath(`planetarium-${width}.png`) });
-      await page.getByRole("button", { name: "Live Earth", exact: true }).click();
+      await page.getByRole("button", { name: "Earth", exact: true }).click();
       await expect.poll(async () => Math.abs((await earthPosition(page)).y - 0.5)).toBeLessThan(0.01);
       await page.screenshot({ path: test.info().outputPath(`earth-return-${width}.png`) });
       await page.emulateMedia({ reducedMotion: "reduce" });

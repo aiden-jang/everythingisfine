@@ -6,6 +6,7 @@ import type { Dispatch, SetStateAction, ReactNode } from "react";
 import type { FeedSnapshot } from "./feed";
 import type { FeedStatus } from "./feedStatus";
 import { FeedDot } from "./FeedDot";
+import { Wordmark } from "./Wordmark";
 import { refreshAnnotations } from "../globe/annotationInput";
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
   ready: boolean;
   observing: boolean;
   onHome: () => void;
+  home: { readonly current: { lon: number; lat: number; zoom: number } };
   onReset: () => void;
   headShown: boolean;
   chromeFloats: boolean;
@@ -38,6 +40,7 @@ export function GlobeHeader({
   observing,
   ready,
   onHome,
+  home,
   onReset,
   headShown,
   chromeFloats,
@@ -58,14 +61,7 @@ export function GlobeHeader({
         className={`zone-head flex items-center gap-6 px-5 py-3 xl:border-b xl:border-hairline ${observing ? "observatory-header" : ""}`}
         hidden={!headShown}
       >
-        <button
-          type="button"
-          onClick={onHome}
-          aria-label="Everything Is Fine, back to the Observatory"
-          className="wordmark flex min-h-11 cursor-pointer items-center whitespace-nowrap max-md:self-start"
-        >
-          Everything is fine<span aria-hidden="true">.</span>
-        </button>
+        <Wordmark onHome={onHome} />
         <div className="observatory-header-actions">
           {!observing && (
             <div className="projection-switch" role="group" aria-label="Projection" data-flat={flat}>
@@ -96,7 +92,7 @@ export function GlobeHeader({
                 {keyboard}
                 <button
                   type="button"
-                  onClick={() => refreshAnnotations({ camera: "reset" })}
+                  onClick={() => refreshAnnotations({ camera: "reset", home: home.current })}
                   aria-description="Recenter the camera without changing layers, filters or time"
                 >
                   Reset camera

@@ -53,10 +53,8 @@ export function StoriesDrawer({
   useReadingArrival(container, `${key}:${all}`);
   const rail = () => container.current?.closest<HTMLElement>("#chrome-rail, #observatory-intro");
   const sections = [
-    ["visits", "Saved & recent"],
     ["journeys", "Guided journeys"],
     ["archives", "Archives"],
-    ["feeds", "From feeds"],
   ] as const;
   if (!visible) return null;
   return (
@@ -80,10 +78,10 @@ export function StoriesDrawer({
           <h2 id="story-selection-title" tabIndex={-1}>
             {deck.query.trim()
               ? scene
-                ? `Search ${{ live: "Live Earth", depth: "Below the Surface", night: "After Dark" }[scene]}`
+                ? `Search ${{ live: "Earth", depth: "Below the Surface", night: "After Dark" }[scene]}`
                 : "Search all stories"
               : scene
-                ? { live: "Live Earth", depth: "Below the Surface", night: "After Dark" }[scene]
+                ? { live: "Earth", depth: "Below the Surface", night: "After Dark" }[scene]
                 : "All stories"}
           </h2>
           {scene && !deck.query.trim() && (
@@ -133,7 +131,7 @@ export function StoriesDrawer({
                       </button>
                       <small id={`${id}-note`}>
                         <span className="story-kind">{storyKind(story.id)}</span>
-                        <span className={!all && !navigation?.unavailable(story.id) ? "sr-only" : undefined}>
+                        <span className="story-promise">
                           {navigation?.unavailable(story.id) ?? story.summary}
                         </span>
                         <StoryPreviewButton id={story.id} title={story.title} />
@@ -167,9 +165,10 @@ export function StoriesDrawer({
                 <button
                   type="button"
                   className="story-library-toggle"
-                  aria-expanded={browse.sections.includes("library")}
-                  aria-controls="story-library"
-                  onClick={() => browse.fold("library", !browse.sections.includes("library"))}
+                  id="story-library-visits"
+                  aria-expanded={browse.sections.includes("visits")}
+                  aria-controls="story-library-panel-visits"
+                  onClick={() => browse.fold("visits", !browse.sections.includes("visits"))}
                 >
                   <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                     <path
@@ -179,37 +178,54 @@ export function StoriesDrawer({
                       strokeWidth="1.5"
                     />
                   </svg>
-                  Library
+                  Saved &amp; recent
                 </button>
               </div>
             </section>
+            <section
+              id="story-library-panel-visits"
+              className="story-secondary"
+              aria-labelledby="story-library-visits"
+              hidden={!browse.sections.includes("visits")}
+            >
+              <VisitShelf />
+            </section>
+            {discoveries && (
+              <details
+                className="story-today"
+                open={browse.sections.includes("feeds")}
+                onToggle={(event) => browse.fold("feeds", event.currentTarget.open)}
+              >
+                <summary>From today’s feeds</summary>
+                {discoveries}
+              </details>
+            )}
+            <button
+              type="button"
+              className="story-library-toggle"
+              aria-expanded={browse.sections.includes("library")}
+              aria-controls="story-library"
+              onClick={() => browse.fold("library", !browse.sections.includes("library"))}
+            >
+              Guided journeys &amp; archives
+            </button>
             <div id="story-library" className="story-library" hidden={!browse.sections.includes("library")}>
               <div className="story-library-links" aria-label="Story library">
-                {sections
-                  .filter(([id]) => id !== "feeds" || discoveries)
-                  .map(([id, label]) => (
-                    <button
-                      key={id}
-                      type="button"
-                      id={`story-library-${id}`}
-                      aria-expanded={browse.sections.includes(id)}
-                      aria-controls={`story-library-panel-${id}`}
-                      onClick={() => {
-                        browse.fold(id, !browse.sections.includes(id));
-                      }}
-                    >
-                      {label}
-                    </button>
-                  ))}
+                {sections.map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    id={`story-library-${id}`}
+                    aria-expanded={browse.sections.includes(id)}
+                    aria-controls={`story-library-panel-${id}`}
+                    onClick={() => {
+                      browse.fold(id, !browse.sections.includes(id));
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
-              <section
-                id="story-library-panel-visits"
-                className="story-secondary"
-                aria-labelledby="story-library-visits"
-                hidden={!browse.sections.includes("visits")}
-              >
-                <VisitShelf />
-              </section>
               <section
                 id="story-library-panel-journeys"
                 className="story-secondary"
@@ -219,16 +235,6 @@ export function StoriesDrawer({
                 <JourneyPicker />
                 {children}
               </section>
-              {discoveries && (
-                <section
-                  id="story-library-panel-feeds"
-                  className="story-secondary"
-                  aria-labelledby="story-library-feeds"
-                  hidden={!browse.sections.includes("feeds")}
-                >
-                  {discoveries}
-                </section>
-              )}
               <section
                 id="story-library-panel-archives"
                 className="story-secondary"

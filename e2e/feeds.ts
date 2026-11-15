@@ -179,6 +179,7 @@ const EMSC_SEED_LIMIT = 600;
 /** Routes both feeds and stubs the socket. Call before `page.goto`. See ARCHITECTURE.md#e2efeedsts. */
 export async function installFeeds(page: Page, options: FeedOptions = {}): Promise<void> {
   const { usgs, empty, silent, dead, seed, count, emscCappedHours, now: fixedNow } = options;
+  await page.route("**/api/location", (route) => route.fulfill({ json: { location: null } }));
 
   // Isolate unrelated journeys from radar imagery; radar scenarios exercise the real default separately.
   if (options.radar !== "default")
@@ -486,20 +487,23 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
     (await scenes.isVisible()) &&
     (await scenes.locator('[aria-pressed="true"]').count()) === 0
   )
-    await page.getByRole("button", { name: "Live Earth", exact: true }).click();
+    await page.getByRole("button", { name: "Earth", exact: true }).click();
   const catalogue = page.getByRole("region", { name: "Stories and layers", exact: true });
   await expect(catalogue).toBeVisible();
   if (expand === "search") return scenes;
   const all = catalogue.getByRole("button", { name: /^View all \d+ stories$/ });
   if (await all.isVisible()) await all.click();
   if (expand !== "all") return scenes;
-  const library = catalogue.getByRole("button", { name: "Library", exact: true });
+  const library = catalogue.getByRole("button", { name: "Guided journeys & archives", exact: true });
   if ((await library.getAttribute("aria-expanded")) === "false") await library.click();
-  for (const label of ["Saved & recent", "Guided journeys", "From feeds", "Archives"]) {
+  for (const label of ["Saved & recent", "Guided journeys", "Archives"]) {
     const summary = catalogue.getByRole("button", { name: label, exact: true });
     if ((await summary.count()) && (await summary.getAttribute("aria-expanded")) === "false")
       await summary.click();
   }
+  const today = catalogue.locator(".story-today");
+  if ((await today.count()) && !(await today.evaluate((node) => (node as HTMLDetailsElement).open)))
+    await today.locator("summary").click();
   return scenes;
 }
 

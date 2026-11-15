@@ -1,0 +1,77 @@
+.float-profile {
+  border-top: 1px solid var(--color-hairline);
+  padding-top: 10px;
+}
+.float-profile summary {
+  min-height: 44px;
+  align-content: center;
+  font-size: 14px;
+  cursor: pointer;
+}
+.float-profile-fields {
+  display: flex;
+  gap: 8px;
+}
+.float-profile-fields button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--color-dim);
+  cursor: pointer;
+}
+.float-profile-fields button[aria-pressed="true"] {
+  color: var(--color-ink);
+  background: var(--color-raised);
+}
+.float-profile svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 14px;
+}
+.float-profile text {
+  fill: var(--color-dim);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.float-profile-grid {
+  stroke: var(--color-hairline);
+  stroke-width: 1px;
+  fill: none;
+}
+.float-profile-line {
+  fill: none;
+  stroke-width: 1.5px;
+}
+.float-profile-line[data-field="temperature"] {
+  stroke: #e8bc8e;
+}
+.float-profile-line[data-field="salinity"] {
+  stroke: #8bd7cf;
+}
+.float-profile-sample {
+  fill: var(--color-ink);
+}
+.float-profile p,
+.float-takeaway small {
+  color: var(--color-dim);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.float-takeaway {
+  display: grid;
+  gap: 10px;
+  padding-block: 16px;
+  border-block: 1px solid var(--color-hairline);
+}
+.float-takeaway h3 {
+  font-size: 20px;
+  line-height: 1.35;
+  letter-spacing: -0.02em;
+  font-weight: 500;
+}
+.float-takeaway p {
+  font-size: 14px;
+  line-height: 1.6;
+}

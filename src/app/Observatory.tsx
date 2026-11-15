@@ -20,10 +20,13 @@ import "./experience.css";
 import "./sun/sun-watch.css";
 import "./tonight/tonight.css";
 import "./float/float-dive.css";
+import "./float/float-profile.css";
 import "./measurement-sound.css";
 import "./moonfall/moonfall.css";
 import { ObservationCredit } from "./observations/ObservationCredit";
 import { ObservationDeckShell } from "./observations/ObservationEntry";
+import { LandingStory } from "./LandingStory";
+import { StoryBoundary } from "./StoryBoundary";
 
 export interface ObservatoryProps {
   explorer: {
@@ -80,7 +83,22 @@ export interface ObservatoryProps {
   onHistory: (day: string) => void;
 }
 
-export function Observatory({
+export function Observatory(props: ObservatoryProps): JSX.Element {
+  const navigation = useStoryNavigation();
+  return (
+    <StoryBoundary
+      resetKey={props.views.navigation.key}
+      closeLabel={navigation?.returnLabel ?? "Back to home"}
+      onClose={() => {
+        if (!navigation?.returnToBrowse()) props.onHome();
+      }}
+    >
+      <ObservatoryContent {...props} />
+    </StoryBoundary>
+  );
+}
+
+function ObservatoryContent({
   layerReadout,
   discoveries,
   scene,
@@ -311,6 +329,7 @@ export function Observatory({
                   }}
                 />
               )}
+              {!browsing && !active && !solar && !aurora.run && scene === "live" && <LandingStory />}
               {browsing && scene === "depth" && ready && !deepAvailable && (
                 <p id="depth-availability" className="observatory-depth-note">
                   No earthquake at least 70 km deep in this window. Recorded depth stories are still

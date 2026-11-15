@@ -66,7 +66,7 @@ export function StormRadar({
 
   const backLabel =
     returnLabel ??
-    (entry.story ? "Back to Atmospheric River" : fromExplore ? "Back to Explore" : "Back to Live Earth");
+    (entry.story ? "Back to Atmospheric River" : fromExplore ? "Back to Explore" : "Back to Earth");
   return (
     <>
       <div className="radar-heading">

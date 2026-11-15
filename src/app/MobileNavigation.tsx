@@ -10,7 +10,7 @@ interface MobileNavigationProps {
 export function MobileNavigation({ canvasHeight, viewportHeight, onResize, panel }: MobileNavigationProps) {
   const [, half, collapsed] = sheetStops(viewportHeight, panel === "Stories");
   const open = (canvasHeight || half) < collapsed;
-  const label = open ? "Collapse panel" : "Expand panel";
+  const label = open ? "More globe" : "More controls";
   return (
     <nav aria-label="Explore" className="mobile-navigation md:hidden">
       <button
@@ -29,7 +29,7 @@ export function MobileNavigation({ canvasHeight, viewportHeight, onResize, panel
             strokeWidth="1.5"
           />
         </svg>
-        <span>{open ? "Collapse" : "Expand"}</span>
+        <span>{label}</span>
       </button>
     </nav>
   );

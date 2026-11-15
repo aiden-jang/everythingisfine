@@ -2,6 +2,23 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import { installFeeds } from "./feeds";
 
+test("today’s feed discovery restores its disclosure and trigger after a story", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page);
+  await page.goto("/");
+  await page.getByRole("tab", { name: "Stories", exact: true }).click();
+  const today = page.locator(".story-today");
+  await today.locator("summary").click();
+  const trigger = page.locator("#discovery-aurora");
+  await expect(trigger).toBeEnabled();
+  await trigger.click();
+  await page.getByRole("button", { name: "Back to stories", exact: true }).click();
+  await expect(today).toHaveAttribute("open", "");
+  await expect(trigger).toBeFocused();
+  await expect(trigger).toBeInViewport();
+});
+
 test("phone sheet offers three sizes without losing the globe or covering its controls @dev", async ({
   page,
 }) => {
@@ -29,23 +46,23 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   ).toBeLessThanOrEqual(1);
   await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.43)));
-  await navigation.getByRole("button", { name: "Collapse panel", exact: true }).click();
+  await navigation.getByRole("button", { name: "More globe", exact: true }).click();
   const collapsed = Number(await size());
-  await navigation.getByRole("button", { name: "Expand panel", exact: true }).click();
+  await navigation.getByRole("button", { name: "More controls", exact: true }).click();
   const half = Number(await size());
   await sheet.press("Home");
   const expanded = Number(await size());
   expect(collapsed).toBeGreaterThan(half);
   expect(half).toBeGreaterThan(expanded);
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeInViewport();
-  const legend = page.getByRole("region", { name: "Map legend", exact: true });
-  await page.getByText("Map legend", { exact: true }).click();
+  const legend = page.getByRole("region", { name: "Legend", exact: true });
+  await page.getByText("Legend", { exact: true }).click();
   await expect(legend).toBeInViewport({ ratio: 1 });
   await expect(legend.getByRole("button", { name: "Close legend" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(legend).toBeHidden();
-  await expect(page.getByText("Map legend", { exact: true })).toBeFocused();
-  await page.getByText("Map legend", { exact: true }).click();
+  await expect(page.getByText("Legend", { exact: true })).toBeFocused();
+  await page.getByText("Legend", { exact: true }).click();
   await page.getByRole("button", { name: "View options", exact: true }).click();
   await expect(legend).toBeHidden();
   await page.keyboard.press("Escape");
@@ -65,7 +82,7 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await sheet.press("End");
   await page.setViewportSize({ width: 667, height: 375 });
   await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(375 * 0.82)));
-  await navigation.getByRole("button", { name: "Expand panel", exact: true }).click();
+  await navigation.getByRole("button", { name: "More controls", exact: true }).click();
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeInViewport();
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
@@ -73,7 +90,7 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await page.getByText("Keyboard controls", { exact: true }).filter({ visible: true }).click();
   await expect(page.locator(".mobile-key-hints .keyboard-controls")).toBeVisible();
   await page.keyboard.press("Escape");
-  await page.getByText("Map legend", { exact: true }).click();
+  await page.getByText("Legend", { exact: true }).click();
   await expect(legend).toBeInViewport({ ratio: 1 });
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(page.locator(".map-legend-popover")).toHaveCount(0);
@@ -156,20 +173,24 @@ for (const width of [1440, 812, 390]) {
     }
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/stories-${width}.png` });
-    const library = stories.getByRole("button", { name: "Library", exact: true });
-    await expect(library).toHaveAttribute("aria-expanded", "false");
-    await expect(stories.getByRole("button", { name: "Saved & recent", exact: true })).toBeHidden();
-    await library.click();
-    await stories.getByRole("button", { name: "Saved & recent", exact: true }).click();
+    const saved = stories.getByRole("button", { name: "Saved & recent", exact: true });
+    await expect(saved).toHaveAttribute("aria-expanded", "false");
+    await saved.click();
     await expect(stories.locator("#story-library-panel-visits")).toBeVisible();
-    await library.click();
-    await expect(stories.getByRole("button", { name: "Saved & recent", exact: true })).toBeHidden();
-    await expect(stories.getByRole("heading", { name: "All stories", exact: true })).toBeVisible();
+    await saved.click();
+    await expect(stories.locator("#story-library-panel-visits")).toBeHidden();
+    await expect(stories.getByRole("button", { name: "All stories", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     await stories.getByRole("button", { name: "After Dark", exact: true }).click();
     await expect(stories.getByRole("heading", { name: "After Dark", exact: true })).toBeVisible();
-    await stories.getByRole("button", { name: "Show all", exact: true }).click();
+    await stories.getByRole("button", { name: "All stories", exact: true }).click();
     await expect(stories.getByRole("heading", { name: "All stories", exact: true })).toBeVisible();
-    await expect(stories.locator('.observatory-scenes [aria-pressed="true"]')).toHaveCount(0);
+    await expect(stories.getByRole("button", { name: "All stories", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     await stories.getByRole("button", { name: "After Dark", exact: true }).click();
     expect(await camera()).toEqual(pose);
     const search = stories.getByRole("searchbox", { name: "Find a story", exact: true });
@@ -229,7 +250,7 @@ for (const title of ["Lights Return", "Shadow Chase"]) {
     await expect(trigger).toBeFocused();
     await search.fill("");
     await expect(page.getByRole("button", { name: "Float Dive", exact: true })).toHaveAccessibleDescription(
-      "Argo ocean measurements Follow a measured profile toward the surface.",
+      "Measured ocean profiles · Argo Follow a measured profile toward the surface.",
     );
     await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toHaveAccessibleDescription(
       "Recent observations Scrub recent radar from around the world on the globe.",

@@ -76,7 +76,7 @@ test("rapid scene and presentation changes finish at the latest choice @dev", as
   await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeEnabled();
   const canvas = await page.locator("canvas").elementHandle();
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  for (const name of ["After Dark", "Below the Surface", "Live Earth", "After Dark"]) {
+  for (const name of ["After Dark", "Below the Surface", "Earth", "After Dark"]) {
     await page.getByRole("button", { name, exact: true }).dispatchEvent("click");
   }
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(
@@ -111,7 +111,7 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole("button", { name: "Stories & layers", exact: true })).toHaveCount(0);
     await expect(stories).toHaveCount(0);
     await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
-    for (const name of ["Live Earth", "Below the Surface", "After Dark"]) {
+    for (const name of ["Earth", "Below the Surface", "After Dark"]) {
       const category = scenes.getByRole("button", { name, exact: true });
       await category.click();
       await expect(category).toHaveAttribute("aria-pressed", "true");

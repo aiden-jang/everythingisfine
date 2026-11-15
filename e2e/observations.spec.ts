@@ -186,7 +186,7 @@ test("the Moon crossing, reconstructed plates, and wave forecasts reuse the Obse
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(page.getByRole("button", { name: "Deep Time", exact: true })).toBeFocused();
 
-  await page.getByRole("button", { name: "Live Earth", exact: true }).click();
+  await page.getByRole("button", { name: "Earth", exact: true }).click();
   await openStories(page);
   await page.getByRole("button", { name: "Swell Lines", exact: true }).click();
   const swell = page.getByRole("region", { name: "Swell Lines", exact: true });

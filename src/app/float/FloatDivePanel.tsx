@@ -2,11 +2,15 @@ import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import type { VisitPosition } from "../visitor/library";
 import { MeasurementSound } from "../MeasurementSound";
-import { useLayoutEffect, useMemo, useRef, useSyncExternalStore } from "react";
-import { ARGO_DOI, ARGO_PROVIDER, type ArgoSample, type ArgoStation } from "../../sources/argo";
+import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
+import { ARGO_DOI, ARGO_PROVIDER, type ArgoStation } from "../../sources/argo";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import type { FloatDiveView } from "./floatPlayback";
 import { useArgoProfiles } from "./useArgoProfiles";
+import { FloatProfile } from "./FloatProfile";
+import { profileTakeaway } from "./profileGeometry";
+import { ShareMoment } from "../observations/StorySession";
+import { floatMoment } from "./floatMoment";
 
 const date = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
@@ -20,45 +24,17 @@ function name({ wmo, at }: ArgoStation) {
   return `${date.format(at)} · WMO ${wmo}`;
 }
 
-function trace(samples: readonly ArgoSample[], field: "temperature" | "salinity") {
-  const values = samples.map((sample) => sample[field]);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const first = samples[0]!.depth;
-  const span = first - samples.at(-1)!.depth;
-  const points = samples.map((sample) => ({
-    x: 4 + ((first - sample.depth) / span) * 112,
-    y: max > min ? 32 - ((sample[field] - min) / (max - min)) * 28 : 18,
-  }));
-  return { points, line: points.map(({ x, y }) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") };
-}
-
 function Measurements({ view, sound }: { view: FloatDiveView; sound: boolean }): JSX.Element {
   const { index, playing } = useSyncExternalStore(view.subscribe, view.read);
   const { samples } = view.profile;
   useStoryCompletion(index === samples.length - 1 && !playing);
   const sample = samples[index]!;
   const depth = `${meters.format(sample.depth)} m`;
-  const traces = useMemo(
-    () =>
-      [
-        {
-          ...trace(samples, "temperature"),
-          label: "Temperature",
-          field: "temperature",
-          suffix: " °C",
-          digits: 2,
-        },
-        {
-          ...trace(samples, "salinity"),
-          label: "Practical salinity",
-          field: "salinity",
-          suffix: "",
-          digits: 3,
-        },
-      ] as const,
-    [samples],
-  );
+  const takeaway = profileTakeaway(samples);
+  const fields = [
+    { label: "Temperature", field: "temperature", suffix: " °C", digits: 2 },
+    { label: "Practical salinity", field: "salinity", suffix: "", digits: 3 },
+  ] as const;
 
   return (
     <>
@@ -89,7 +65,7 @@ function Measurements({ view, sound }: { view: FloatDiveView; sound: boolean }):
         </div>
       </div>
       <div className="float-measurements">
-        {traces.map(({ label, field, line, points, suffix, digits }) => (
+        {fields.map(({ label, field, suffix, digits }) => (
           <div className="float-trace" data-reading={field} key={field}>
             <div className="float-value">
               <span>{label}</span>
@@ -98,14 +74,22 @@ function Measurements({ view, sound }: { view: FloatDiveView; sound: boolean }):
                 {suffix}
               </strong>
             </div>
-            <svg viewBox="0 0 120 36" aria-hidden="true">
-              <path d="M4 32H116 M4 4V32" className="float-axis" />
-              <polyline points={line} />
-              <circle cx={points[index]!.x} cy={points[index]!.y} r={2.8} />
-            </svg>
           </div>
         ))}
       </div>
+      <FloatProfile samples={samples} index={index} />
+      <p className="sr-only" role="status">
+        {index === samples.length - 1 && !playing
+          ? `Profile complete. ${takeaway.heading} ${takeaway.reading}`
+          : ""}
+      </p>
+      {index === samples.length - 1 && !playing && (
+        <section className="float-takeaway" aria-label="What this profile showed">
+          <h3>{takeaway.heading}</h3>
+          <p>{takeaway.reading}</p>
+          <small>One location and one date. This profile alone does not establish a global trend.</small>
+        </section>
+      )}
       {sound && (
         <MeasurementSound
           key={view.profile.id}
@@ -125,7 +109,7 @@ export function FloatDivePanel({
   onView,
   onClose,
   resume,
-  returnLabel = "Back to Live Earth",
+  returnLabel = "Back to Earth",
 }: {
   view: FloatDiveView | null;
   onView: (view: FloatDiveView) => void;
@@ -155,7 +139,7 @@ export function FloatDivePanel({
         <select value={value} onChange={(event) => select(event.currentTarget.value)}>
           {!view && (
             <option value="" disabled>
-              Opening recorded profile…
+              {resume ? "Restoring saved profile…" : "Opening recorded profile…"}
             </option>
           )}
           <optgroup label="Recorded profiles">
@@ -177,6 +161,7 @@ export function FloatDivePanel({
         </select>
       </label>
       {view && <Measurements view={view} sound={!pending && !problem} />}
+      {view && <ShareMoment current={() => floatMoment(view)} />}
       <div className="float-meta">
         {view && (
           <p>

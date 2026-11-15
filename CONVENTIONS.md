@@ -28,6 +28,8 @@ anonymous aggregate-events endpoint and three fixed observation routes for GFS t
 Coral Reef Watch heat stress and one temperature pixel. These providers lack browser CORS;
 the relay accepts no query parameters, caches hourly and owns no account data or database.
 Adding a data backend or paid provider changes the product boundary and needs an explicit decision.
+The approved `/api/location` route returns only validated coordinates rounded to 0.1 degree from
+Cloudflare request metadata. It is private and uncached, with no database or location analytics.
 
 USGS and EMSC may describe the same earthquake differently. Preserve both accounts and their
 magnitude scales; do not average them into a number neither agency published. Association uses

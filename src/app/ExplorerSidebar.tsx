@@ -5,6 +5,7 @@ import { Discoveries } from "./visitor/Discoveries";
 import { StoriesDrawer } from "./StoriesDrawer";
 import { ObservatoryScenePicker } from "./ObservatoryStage";
 import "./explorer.css";
+import "./discovery-layout.css";
 
 export function ExplorerSidebar({
   context,
@@ -92,6 +93,10 @@ export function ExplorerSidebar({
             scene={browser.category}
             ready={context.ready}
             deepAvailable={context.deepAvailable}
+            onAll={() => {
+              observations.setQuery("");
+              browser.select(null);
+            }}
             onScene={(next) => {
               observations.setQuery("");
               browser.select(browser.category === next ? null : next);

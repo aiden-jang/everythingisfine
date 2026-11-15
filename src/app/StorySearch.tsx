@@ -25,7 +25,7 @@ export function StorySearch({
   const input = useRef<HTMLInputElement>(null);
   const matches = findStories(deck.query, scene);
   const scope = scene
-    ? { live: "Live Earth", depth: "Below the Surface", night: "After Dark" }[scene]
+    ? { live: "Earth", depth: "Below the Surface", night: "After Dark" }[scene]
     : "all stories";
   return (
     <>

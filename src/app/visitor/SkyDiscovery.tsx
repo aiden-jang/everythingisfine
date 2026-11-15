@@ -20,13 +20,17 @@ export function SkyDiscovery({ city, now }: { city: SkyCity; now: number }) {
   if (!navigation) return null;
   return (
     <button
+      id="discovery-sky"
       type="button"
       onClick={() =>
-        navigation.resume({
-          id: "sky",
-          seen: now,
-          position: { sky: { city: city.name, at: sky.at, look: sky.look } },
-        })
+        navigation.resume(
+          {
+            id: "sky",
+            seen: now,
+            position: { sky: { city: city.name, at: sky.at, look: sky.look } },
+          },
+          "discovery-sky",
+        )
       }
       disabled={!!navigation.unavailable("sky")}
     >

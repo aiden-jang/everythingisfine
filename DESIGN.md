@@ -18,6 +18,15 @@ typography:
     fontFamily: '"Geist Variable", ui-sans-serif, system-ui, sans-serif'
   reading:
     fontFamily: '"Geist Mono Variable", ui-monospace, SFMono-Regular, Menlo, monospace'
+  body:
+    fontSize: "16px"
+  control:
+    fontSize: "14px"
+  caption:
+    fontSize: "13px"
+  brand:
+    fontSize: "clamp(20px, 1.65vw, 25px)"
+    letterSpacing: "-0.035em"
   explore-tab:
     fontSize: "22px"
     letterSpacing: "-0.02em"
@@ -223,7 +232,7 @@ scene-specific reference. The three scene controls share a quiet ruled strip wit
 underline and a small globe, depth or constellation diagram. A finite trace marks a selection;
 reduced motion keeps the diagram still. Featured journeys live inside the selected scene’s catalogue.
 Controls stay reachable in short landscape views.
-Live Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
+Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
 Their temporary overrides do not overwrite saved scientific settings. The observatory retains source
 status, scoped counts, capture and a direct Explore action, including empty or unavailable feeds.
 Keep one featured experience and three initial suggestions inside each scene. In Explore, the
@@ -231,14 +240,17 @@ featured story uses a full-width recorded image, a readable lower gradient, titl
 description and Open story cue. Frame the artwork above the text, with the float at the upper right;
 the image fades into the reading surface instead of competing with the copy. Keep category, heading
 and search spacing compact. Three compact image rows follow, with their data type visible;
-accessible descriptions and the full catalogue retain the explanation. View all and Library share
-the footer below the selection. Library reveals Saved & recent, Guided journeys, Archives and
-From feeds; those sections keep their individual disclosures. The full catalogue remains a
-deliberate choice.
+a short visible description explains what opening the story reveals. View all and Saved & recent
+share the footer below the selection. Current discoveries open directly from From today’s feeds;
+guided journeys and archives remain secondary. The full catalogue remains a deliberate choice.
+In Explore, All stories is an explicit category beside Earth, Below the Surface and After Dark.
+Compact text categories replace the landing diagrams only inside the explorer.
 **Explore the globe** comes before the three illustrated scene filters. The landing overview starts
 with none selected and the catalogue collapsed. Selecting a scene exposes its entries and brings
 the search field into view on narrow screens; selecting it again returns to All stories. The wordmark
-returns to the compact landing view.
+returns to the compact landing view. Its name, icon and type scale remain stable across views;
+Earth, ocean & sky supplies context on desktop. A single starting story or Continue action
+follows the illustrated categories.
 There is no separate disclosure button for content the scene selection already opens. Closing an
 experience returns focus to its entry point and restores the drawer’s scroll position.
 Story thumbnails show recorded captures of their actual views. Float Dive, Rupture Reveal and
@@ -250,7 +262,7 @@ existing quiet rows and each story’s reading panel, with manual steps, visible
 a return to free exploration. Onward links explain the relationship without implying shared dates
 or causation between independent records. Keep the scientific scene large and the controls neutral.
 
-Featured experiences precede a short selection. Recent visits sit in their own disclosure. Story discovery supports focus, hover and touch-hold
+Featured experiences precede a short selection. Saved visits have a direct disclosure; a relevant Continue action precedes the feature. Story discovery supports focus, hover and touch-hold
 regional previews with an explicit Locate action. Timeline milestones use the dataset's actual imagery
 and time resolution; synthetic flights say progress. Endings hold the final observation and evidence,
 with onward exploration available. Reopening resumes a saved moment; replaying the entrance is explicit.
@@ -268,7 +280,7 @@ reported depth, historical reference points and the time scope; never manufactur
 unrelated earthquakes. Reading time begins at camera arrival and pauses in hidden tabs. Viewer
 interaction ends the tour except within its narration and controls. Escape always stops it.
 
-Live Earth traces the day–night boundary from the displayed Sun direction. The sweep settles into
+Earth traces the day–night boundary from the displayed Sun direction. The sweep settles into
 a thin reference line. Reduced motion shows the full boundary immediately. Surface lighting may
 use the displayed sun and the sphere's actual normals to improve form. It must
 not fabricate topography, add photographic textures, dim earthquake measurements, or alter the
@@ -343,7 +355,7 @@ reflow as well as portrait phones.
 
 ## 8. Motion
 
-Only the Live Earth landing view has ambient rotation: a slow camera orbit after the entrance
+Only the Earth landing view has ambient rotation: a slow camera orbit after the entrance
 settles, at 2.4 degrees per second with an eased start. Steering pauses it immediately; it resumes
 1.5 seconds after the last gesture and its momentum settle. **View options** provides a persistent
 auto-rotation setting alongside image capture and fullscreen. Explore,
@@ -351,8 +363,10 @@ shared camera views, guided tours and stories keep their own framing. Rotation s
 tabs and under reduced motion; it does not advance the data clock or continually rewrite the URL.
 No perpetual chrome loops. Data appears promptly; fetching never waits for animation.
 
-Fresh visits and camera reset center on New York at the wide overview zoom in both globe and map.
-Shared links, saved views and story framing keep their own coordinates.
+Fresh visits use an approximate location, rounded to 0.1 degree, at the wide overview zoom in both
+globe and map. New York remains the fallback when location is unavailable. Shared links, saved
+views and story framing keep their own coordinates; a late estimate never interrupts interaction.
+**Use device location** is optional and requests browser permission only after activation.
 
 The opening is a finite horizon-to-orbit shot with a close lens, a vertical framing offset and a
 settling bank. **Reset view** can replay it. Navigation retains critically damped springs: long
@@ -464,7 +478,7 @@ retain readable content and cancel on replacement. Steering cancels presentation
 reduced motion and hidden tabs settle it immediately. Radar fades in once on enabling; changing
 scans swaps the actual rasters immediately, without blending observations. Camera coordinates appear
 briefly during user input. Every effect
-finishes and releases the frame loop, except the explicitly controlled Live Earth landing rotation.
+finishes and releases the frame loop, except the explicitly controlled Earth landing rotation.
 
 Respect reduced motion completely: skip entrance rotation, camera easing and
 secondary travel rather than merely shortening them. Keep events and every action
@@ -538,7 +552,7 @@ the view, or changing the profile or harbor. It is not a field recording, and ne
 ## 13. Banned
 
 - Saturated interface accents, accent glows, pure black, serif typography or emoji.
-- Globe rotation outside the controlled Live Earth landing view, perpetual interface loops or bouncing exploration cues.
+- Globe rotation outside the controlled Earth landing view, perpetual interface loops or bouncing exploration cues.
 - Photographic Earth textures, decorative cloud layers or night-light overlays.
 - Proportional figures in updating numbers, clipped names or horizontal page overflow.
 - Spinners hiding the product, or blanking good data because another source failed.

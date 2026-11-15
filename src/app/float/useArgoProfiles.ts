@@ -39,14 +39,17 @@ export function useArgoProfiles(
   const [pending, setPending] = useState<string | null>(null);
   const [problem, setProblem] = useState<"resume" | "selection" | null>(null);
   const request = useRef<AbortController | null>(null);
+  const restored = useRef(false);
 
   useEffect(() => {
     if (view || !saved[0]) return;
+    if (resume?.profile.startsWith("recent/") && !problem && catalogue.state !== "error") return;
     const profile = saved.find(({ id }) => `recorded/${id}` === resume?.profile) ?? saved[0];
     const playback = createFloatPlayback(profile, !resume && motion(), "recorded");
     if (resume?.profile === `recorded/${profile.id}`) playback.seek(resume.index);
+    else if (resume) setProblem("resume");
     onView(playback);
-  }, [onView, view, resume]);
+  }, [onView, view, resume, catalogue.state, problem]);
 
   useEffect(() => {
     const abort = new AbortController();
@@ -65,6 +68,7 @@ export function useArgoProfiles(
 
   const select = useCallback(
     (key: string, index?: number) => {
+      if (index === undefined) restored.current = true;
       request.current?.abort();
       request.current = null;
       setPending(null);
@@ -100,7 +104,6 @@ export function useArgoProfiles(
     },
     [catalogue.stations, onView],
   );
-  const restored = useRef(false);
   useEffect(() => {
     if (restored.current || !resume?.profile.startsWith("recent/") || catalogue.state !== "ready") return;
     restored.current = true;

@@ -18,6 +18,7 @@ import { useRadarPresentation } from "./radar/useRadarPresentation";
 import { usePresentation } from "./usePresentation";
 import { useStoredFlag } from "./useStored";
 import { earthStories, isEarthStory } from "./earth-stories/catalogue";
+import { useFloatView } from "./float/useFloatView";
 
 export type EarthScene = "live" | "depth" | "night";
 export type Presentation = "observe" | "explore";
@@ -47,19 +48,20 @@ export function useObservatory(shared: Partial<Permalink>) {
   const skyCity = useSkyCity(shared.story?.city);
   const sky = useSkyView(skyCity.name);
   const { view: tonightView, entry: skyEntry, setView: setTonightView, update: updateSky } = sky;
-  const floatEntry = useRef<VisitPosition["float"]>();
-  const [floatView, setFloatView] = useState<FloatDiveView | "opening" | null>(null);
+  const {
+    entry: floatEntry,
+    view: floatView,
+    setView: setFloatView,
+    controls: floatDive,
+    moment: getFloatMoment,
+  } = useFloatView(shared.story, before);
   const {
     view: radarView,
     setView: setRadarView,
     update: updateRadar,
     opening: radarOpening,
   } = useRadarPresentation();
-  const updateFloat = useCallback(
-    (next: FloatDiveView | null) => setFloatView((active) => (active === null ? null : next)),
-    [],
-  );
-  const observations = useObservationDeck(shared.story, before);
+  const observations = useObservationDeck(shared.story?.id === "float" ? undefined : shared.story, before);
   const closeObservations = observations.close;
   const radarEntry = useRef<{ region?: string; story?: boolean; at?: number }>({});
   const radarOrigin = useRef<Presentation>("observe");
@@ -73,7 +75,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     setFloatView(null);
     closeObservations();
     storyFromExplore.current = false;
-  }, [closeObservations, setTonightView, setRadarView]);
+  }, [closeObservations, setTonightView, setRadarView, setFloatView]);
   const {
     presentation,
     changePresentation,
@@ -115,7 +117,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       setFloatView(null);
       if (!keepDeck) closeObservations();
     },
-    [closeObservations, before, setTonightView, setRadarView],
+    [closeObservations, before, setTonightView, setRadarView, setFloatView],
   );
   const observing = presentation === "observe";
   const night = observing && scene === "night";
@@ -142,9 +144,11 @@ export function useObservatory(shared: Partial<Permalink>) {
     sky: sky.capture(),
     deck: observations.capture(),
     float:
-      floatView === null || floatView === "opening"
-        ? floatView
-        : { profile: floatView.profile, source: floatView.source, index: floatView.read().index },
+      floatView === "opening"
+        ? { opening: true as const, entry: floatEntry.current }
+        : floatView === null
+          ? null
+          : { profile: floatView.profile, source: floatView.source, index: floatView.read().index },
     radar: radarView ? { ...radarView, image: null } : null,
   });
   return {
@@ -237,12 +241,12 @@ export function useObservatory(shared: Partial<Permalink>) {
           setSunWatch(saved.sunWatch);
           sky.restore(saved.sky);
           let float: FloatDiveView | "opening" | null = null;
-          if (saved.float === "opening") float = "opening";
+          if (saved.float && "opening" in saved.float) float = "opening";
           else if (saved.float) {
             float = createFloatPlayback(saved.float.profile, false, saved.float.source);
             float.seek(saved.float.index);
           }
-          floatEntry.current = undefined;
+          floatEntry.current = saved.float && "opening" in saved.float ? saved.float.entry : undefined;
           setFloatView(float);
           setRadarView(saved.radar);
           setBrowser(saved.browser);
@@ -262,6 +266,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         (!!observations.view && observations.view.capture !== false && !observations.view.frame.photograph)),
     localReadings: radarView !== null || tonight || floatView !== null || !!observations.entry,
     observations,
+    getMoment: () => getFloatMoment() ?? observations.getMoment(),
     openRecordedStory(id: ReplayId | "kilauea" | "iceberg", from: string) {
       if (observing) observations.open(id, from);
       else
@@ -328,21 +333,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         setTonightView(null);
       },
     },
-    floatDive: {
-      active: floatView !== null,
-      view: floatView === "opening" ? null : floatView,
-      entry: floatEntry.current,
-      open: (resume?: VisitPosition["float"]) => {
-        before();
-        floatEntry.current = resume;
-        setFloatView("opening");
-      },
-      update: updateFloat,
-      close: () => {
-        before();
-        setFloatView(null);
-      },
-    },
+    floatDive,
     radar: {
       active: radarView !== null,
       view: radarView,

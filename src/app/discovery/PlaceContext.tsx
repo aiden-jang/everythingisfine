@@ -8,8 +8,10 @@ import { matches } from "../../data/filter";
 import { distanceKm } from "../../geo/sphere";
 import { layerTime } from "../layerTime";
 import { refreshAnnotations } from "../../globe/annotationInput";
+import { DeviceLocation } from "../location/DeviceLocation";
 
 export interface PlaceContextProps {
+  ready: boolean;
   feed: Feed;
   filters: Filters;
   at: number;
@@ -41,7 +43,7 @@ export function PlaceContext(props: PlaceContextProps) {
   );
 }
 
-function PlaceReadings({ feed, filters, at, now, revision, hazards, feeds }: PlaceContextProps) {
+function PlaceReadings({ ready, feed, filters, at, now, revision, hazards, feeds }: PlaceContextProps) {
   const [name, setName] = useState("");
   const place = skyCities.find((city) => city.name.toLowerCase() === name.trim().toLowerCase());
   const quakes = useMemo(() => {
@@ -77,6 +79,7 @@ function PlaceReadings({ feed, filters, at, now, revision, hazards, feeds }: Pla
           ))}
         </datalist>
       </label>
+      <DeviceLocation ready={ready} />
       {name && !place && <p>Choose a city from the suggestions to see nearby reports.</p>}
       {place && (
         <section aria-label={`Observations around ${name}`}>

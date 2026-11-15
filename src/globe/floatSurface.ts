@@ -37,7 +37,7 @@ const water = /* glsl */ `
     float grain = 1.0 - smoothstep(0.018, 0.065, length(fract(flecks) - vec2(seed, fract(seed * 7.9))));
     color += vec3(0.12, 0.23, 0.23) * grain * step(0.71, seed) * (1.0 - surface) * mix(0.36, 1.0, light);
 
-    vec2 f = p - vec2(x, mix(-0.11, mix(-0.61, 0.51, ascent), motion));
+    vec2 f = p - vec2(x, mix(-0.61, 0.51, ascent));
     float halo = exp(-dot(f * vec2(1.6, 1.0), f * vec2(1.6, 1.0)) * 27.0);
     color += vec3(0.11, 0.16, 0.13) * halo;
     float lamp = exp(-length(f - vec2(0.0, 0.128)) * 30.0);

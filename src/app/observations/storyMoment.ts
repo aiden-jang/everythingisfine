@@ -1,6 +1,7 @@
 import { observations } from "./catalogue";
 import { replays } from "./replays";
 import { earthStories } from "../earth-stories/catalogue";
+import { readFloatMoment } from "../float/floatMoment";
 
 export interface StoryMoment {
   id: string;
@@ -18,6 +19,7 @@ const ids = new Set([
   "lights",
   "shadow",
   "kilauea",
+  "float",
 ]);
 const safe = (value: string | null) =>
   value && /^[\p{L}\p{N} .,:_+/-]{1,80}$/u.test(value) ? value : undefined;
@@ -36,6 +38,7 @@ export function readStoryMoment(params: URLSearchParams): StoryMoment | undefine
   if (city) result.city = city;
   if (choice) result.choice = choice;
   if (chapter) result.chapter = chapter;
+  if (id === "float" && !readFloatMoment(result)) return;
   return result;
 }
 

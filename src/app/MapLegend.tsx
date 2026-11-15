@@ -41,11 +41,11 @@ export function MapLegend({
             onChange(!open);
           }}
         >
-          Map legend
+          Legend
         </summary>
         <div
           ref={panel}
-          {...(narrow ? { popover: "auto", role: "region", "aria-label": "Map legend" } : {})}
+          {...(narrow ? { popover: "auto", role: "region", "aria-label": "Legend" } : {})}
           className={narrow ? "map-legend-popover" : undefined}
           onKeyDown={(event) => {
             if (narrow && event.key === "Escape") {

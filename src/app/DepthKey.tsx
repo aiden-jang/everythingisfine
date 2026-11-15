@@ -3,7 +3,7 @@ import { rampColorAt, type RampName } from "../globe/ramp";
 export function DepthKey({ ramp }: { ramp: RampName }): JSX.Element {
   return (
     <>
-      <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+      <div className="mt-2 flex items-center gap-2.5 text-caption text-faint">
         <span className="flex items-baseline gap-1.5">
           {[0, 0.55, 1].map((depth) => (
             <span
@@ -28,7 +28,7 @@ export function DepthKey({ ramp }: { ramp: RampName }): JSX.Element {
         </span>
         <span>solid is shallow, hollow is deep</span>
       </div>
-      <details className="mt-2 text-[11px] text-faint">
+      <details className="mt-2 text-caption text-faint">
         <summary className="disclose hover:text-dim">Depth, in section</summary>
         <figure className="mt-2 border border-hairline p-3">
           <svg viewBox="0 0 240 112" className="w-full text-dim" aria-hidden="true">
@@ -38,7 +38,7 @@ export function DepthKey({ ramp }: { ramp: RampName }): JSX.Element {
               <path d="M80 28h50M80 89h50" strokeDasharray="3 4" />
               <circle cx="130" cy="89" r="5" />
             </g>
-            <g fill="currentColor" fontSize="11">
+            <g fill="currentColor" fontSize="12">
               <text x="160" y="23">
                 surface
               </text>

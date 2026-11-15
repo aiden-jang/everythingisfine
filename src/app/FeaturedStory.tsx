@@ -7,7 +7,7 @@ const featured = {
   live: {
     id: "float",
     title: "Float Dive",
-    note: "Argo ocean measurements",
+    note: "Measured ocean profiles · Argo",
     reason: "Follow a measured profile toward the surface.",
   },
   depth: {
@@ -27,6 +27,7 @@ export function FeaturedStory({ scene }: { scene: EarthScene }): JSX.Element {
   const navigation = useStoryNavigation();
   const story = featured[scene];
   const id = `open-featured-${story.id}`;
+  const unavailable = navigation?.unavailable(story.id);
   return (
     <div className="featured-story">
       <StoryThumbnail id={story.id} />
@@ -34,14 +35,14 @@ export function FeaturedStory({ scene }: { scene: EarthScene }): JSX.Element {
         <button
           id={id}
           type="button"
-          disabled={!navigation || !!navigation.unavailable(story.id)}
+          disabled={!navigation || !!unavailable}
           onClick={() => navigation?.open(story.id, id)}
           aria-describedby={`${id}-source ${id}-note`}
         >
           <strong>{story.title}</strong>
         </button>
         <small id={`${id}-source`}>{story.note}</small>
-        <span id={`${id}-note`}>{story.reason}</span>
+        <span id={`${id}-note`}>{unavailable ?? story.reason}</span>
         <span className="featured-story-link" aria-hidden="true">
           Open story
           <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">

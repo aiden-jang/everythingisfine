@@ -35,7 +35,6 @@ export function StoryThumbnail({ id }: { id: string }): JSX.Element | null {
       data-story={storyKey(id)}
       src={src}
       alt=""
-      title="Recorded view preview; open for the source and current availability."
       width="64"
       height="56"
       loading="lazy"

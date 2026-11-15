@@ -1,27 +1,48 @@
 import { DEFAULT_CAMERA } from "../globe/framing";
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import type { FlyTo } from "../globe/cameraTarget";
 import type { CameraState } from "../globe/controls";
 import type { Permalink } from "./permalink";
+import { mayLocateInitially } from "./location/position";
+import { requestApproximateLocation } from "./location/approximate";
 
 export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boolean) => void) {
   const flyTo = useRef<FlyTo>(() => {});
+  const home = useRef<CameraState>({ ...DEFAULT_CAMERA });
+  const untouched = useRef(true);
+  const stopLocation = useRef<() => void>(() => {});
+  const flight = useRef<FlyTo | null>(null);
   const camera = useRef<CameraState>({
     lon: shared.lon ?? DEFAULT_CAMERA.lon,
     lat: shared.lat ?? DEFAULT_CAMERA.lat,
     zoom: shared.zoom ?? DEFAULT_CAMERA.zoom,
   });
   const read = useRef(() => camera.current);
+  useEffect(() => {
+    if (!untouched.current || !mayLocateInitially(shared)) return;
+    const stop = requestApproximateLocation((point) => {
+      home.current = { ...point, zoom: DEFAULT_CAMERA.zoom };
+      camera.current = { ...camera.current, ...point };
+      flight.current?.(point.lon, point.lat, camera.current.zoom);
+    });
+    stopLocation.current = stop;
+    return stop;
+  }, [shared]);
   const onReady = useCallback(
     (fly: FlyTo, current: () => CameraState) => {
-      flyTo.current = fly;
+      flight.current = fly;
+      flyTo.current = (...args) => {
+        untouched.current = false;
+        stopLocation.current();
+        fly(...args);
+      };
       read.current = current;
       setReady(true);
       fly(camera.current.lon, camera.current.lat, camera.current.zoom);
     },
     [setReady],
   );
-  return { flyTo, camera, read, onReady };
+  return { flyTo, camera, read, onReady, home };
 }
 
 export function explorerCamera(

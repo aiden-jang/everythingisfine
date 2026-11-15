@@ -89,7 +89,7 @@ test("hidden base layers stay hidden through landing, scene categories and both 
   await page
     .getByRole("button", { name: "Everything Is Fine, back to the Observatory", exact: true })
     .click();
-  for (const name of ["Live Earth", "Below the Surface", "After Dark"]) {
+  for (const name of ["Earth", "Below the Surface", "After Dark"]) {
     await page.getByRole("button", { name, exact: true }).click();
     await expect.poll(counts).toEqual({ quakes: 0, rings: 0, hazards: 0 });
     await page.getByRole("button", { name, exact: true }).click();
@@ -116,11 +116,11 @@ test("a fresh overview exposes every scene and selecting one opens its content @
   const picker = await scenes.boundingBox();
   expect(explore!.y + explore!.height).toBeLessThan(picker!.y);
   const canvas = await page.locator("canvas").elementHandle();
-  await page.getByRole("button", { name: "Live Earth", exact: true }).click();
+  await page.getByRole("button", { name: "Earth", exact: true }).click();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
   await page.goBack();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
-  await page.getByRole("button", { name: "Live Earth", exact: true }).click();
+  await page.getByRole("button", { name: "Earth", exact: true }).click();
   await page.getByRole("button", { name: "Storm Radar", exact: true }).click();
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
@@ -214,5 +214,8 @@ test("the full catalogue returns to its original entry after a story @dev", asyn
   await radar.click();
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(radar).toBeFocused();
-  await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
+  await expect(scenes.getByRole("button", { name: "All stories", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
 });

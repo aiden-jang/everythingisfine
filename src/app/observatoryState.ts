@@ -33,6 +33,7 @@ export function earthSceneTarget(
   scene: EarthScene,
   deepest: CutawayFocus | null,
   at: number,
+  home: { lon: number; lat: number; zoom: number } = DEFAULT_CAMERA,
 ): { scene: EarthScene; focus: CutawayFocus | null; camera: [number, number, number] } {
   if (scene === "depth" && deepest) {
     return { scene, focus: { ...deepest, dive: true }, camera: [deepest.lon, deepest.lat, 1.9] };
@@ -41,5 +42,5 @@ export function earthSceneTarget(
     const sun = subsolarPoint(at);
     return { scene, focus: null, camera: [sun.lon + 180, -sun.lat, 0.92] };
   }
-  return { scene, focus: null, camera: [DEFAULT_CAMERA.lon, DEFAULT_CAMERA.lat, DEFAULT_CAMERA.zoom] };
+  return { scene, focus: null, camera: [home.lon, home.lat, home.zoom] };
 }

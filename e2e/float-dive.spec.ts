@@ -1,5 +1,51 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, revealStoryTools } from "./feeds";
+import { installFeeds, revealStoryTools, openStories } from "./feeds";
+
+test("a pending recent Float Dive link survives reload and Back without becoming the bundled profile", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page);
+  const station = ["6901932", 269, "2026-10-30T12:24:00Z", 59.92957, -48.718805, "R", "A"];
+  const profile = `recent/6901932/269/${Date.parse(station[2] as string)}`;
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let requested = 0;
+  await page.route("https://erddap.marine.ie/**", async (route) => {
+    if (route.request().url().includes("distinct"))
+      return route.fulfill({ json: { table: { rows: [station] } } });
+    requested++;
+    await held;
+    if (route.request().failure()) return;
+    await route.fulfill({
+      json: {
+        table: { rows: Array.from({ length: 11 }, (_, i) => [i * 100, 18 - i, 33 + i / 10, "1", "1", "1"]) },
+      },
+    });
+  });
+  const requestedProfile = () => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("choice");
+  await page.goto(
+    `/#${new URLSearchParams({ story: "float", choice: profile, chapter: "4", v: "observe" })}`,
+  );
+  await expect.poll(() => requested).toBe(1);
+  expect(requestedProfile()).toBe(profile);
+  await page.reload();
+  await expect.poll(() => requested).toBe(2);
+  expect(requestedProfile()).toBe(profile);
+  await page.getByRole("button", { name: "Everything Is Fine, back to the Observatory" }).click();
+  await page.goBack();
+  await expect.poll(() => requested).toBe(3);
+  expect(requestedProfile()).toBe(profile);
+  release();
+  const dive = page.getByRole("region", { name: "Float Dive" });
+  await expect(dive.getByText(/Recent profile · Cycle 269/)).toBeVisible();
+  await expect(dive.getByText("12.00 °C", { exact: true })).toBeVisible();
+  await expect(dive.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  expect(requestedProfile()).toBe(profile);
+  expect(new URLSearchParams(new URL(page.url()).hash.slice(1)).get("chapter")).toBe("4");
+});
 
 test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -75,3 +121,50 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);
   expect(errors).toEqual([]);
 });
+
+for (const width of [1440, 390])
+  test(`Float Dive explains measured scales and shares the selected sample paused at ${width}px`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width, height: 844 });
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await installFeeds(page);
+    await page.route("https://erddap.marine.ie/**", (route) =>
+      route.fulfill({ json: { table: { rows: [] } } }),
+    );
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        value: { writeText: () => Promise.reject(new Error("Unavailable")) },
+      });
+    });
+    await page.goto("/");
+    await openStories(page, "search");
+    await page.getByRole("searchbox", { name: "Find a story" }).fill("Float Dive");
+    await page.locator("#search-story-float").click();
+    const dive = page.getByRole("region", { name: "Float Dive" });
+    const depth = dive.getByRole("slider", { name: "Ascent depth" });
+    await expect(depth).toBeVisible();
+    await depth.press("End");
+    const lastDepth = await depth.getAttribute("aria-valuetext");
+    await expect(dive.getByRole("region", { name: "What this profile showed" })).toContainText("warmer than");
+    await dive.getByText("View measured profile", { exact: true }).click();
+    const profile = dive.getByRole("img", { name: /Temperature \(°C\) by estimated depth/ });
+    await expect(profile).toBeVisible();
+    await expect(profile).toContainText("Depth increases downward");
+    await dive.getByRole("button", { name: "Salinity", exact: true }).click();
+    await expect(dive.getByRole("img", { name: /Practical salinity by estimated depth/ })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+    if (process.env["EIF_CAPTURE_UI"]) {
+      await dive.locator(".float-profile").scrollIntoViewIfNeeded();
+      await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/float-profile-${width}.png` });
+      await dive.locator(".float-takeaway").scrollIntoViewIfNeeded();
+      await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/float-ending-${width}.png` });
+    }
+    await dive.getByRole("button", { name: "Share this moment" }).click();
+    const link = await dive.getByRole("textbox", { name: "Story link" }).inputValue();
+    expect(new URLSearchParams(new URL(link).hash.slice(1)).get("story")).toBe("float");
+    await page.goto(link);
+    await expect(depth).toHaveAttribute("aria-valuetext", lastDepth!);
+    await expect(dive.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
+    await expect(dive.getByText(/Recorded profile · Cycle 268/)).toBeVisible();
+  });

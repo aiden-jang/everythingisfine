@@ -15,17 +15,20 @@ export function useStorySession() {
   return { initial: initial.current, remember: session?.remember };
 }
 
-export function ShareMoment(): JSX.Element | null {
+export function ShareMoment({
+  current,
+}: { current?: () => StoryMoment | undefined } = {}): JSX.Element | null {
   const session = useContext(StorySession);
   const [status, setStatus] = useState("");
   const [fallback, setFallback] = useState("");
-  if (!session) return null;
+  const read = current ?? session?.current;
+  if (!read) return null;
   return (
     <div className="story-share">
       <button
         type="button"
         onClick={async () => {
-          const moment = session.current();
+          const moment = read();
           if (!moment) return;
           const url = new URL(window.location.href);
           const params = new URLSearchParams();

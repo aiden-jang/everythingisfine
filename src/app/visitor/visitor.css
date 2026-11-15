@@ -17,7 +17,7 @@
   min-height: 44px;
   padding-block: 10px;
   text-align: left;
-  font-size: 12px;
+  font-size: var(--text-control);
   cursor: pointer;
 }
 .visit-row button:first-child {
@@ -37,7 +37,7 @@
 .visit-shelf [role="status"],
 .visit-save span {
   color: var(--color-dim);
-  font-size: 11px;
+  font-size: var(--text-caption);
   line-height: 1.5;
 }
 .visit-row button:hover,
@@ -51,7 +51,7 @@
 .visit-save button {
   min-height: 44px;
   align-content: center;
-  font-size: 12px;
+  font-size: var(--text-control);
   cursor: pointer;
 }
 .visit-shelf > details {
@@ -73,7 +73,7 @@
 }
 .visit-feedback button {
   min-height: 44px;
-  font-size: 12px;
+  font-size: var(--text-control);
   text-decoration: underline;
   text-underline-offset: 4px;
 }
@@ -100,7 +100,7 @@
 }
 .discovery-list small {
   color: var(--color-dim);
-  font-size: 11px;
+  font-size: var(--text-caption);
   line-height: 1.5;
 }
 .discovery-list button:hover > span {
