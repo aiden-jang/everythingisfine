@@ -1,5 +1,6 @@
 import { createContext, useContext, useRef, useState } from "react";
-import { writeStoryMoment, type StoryMoment } from "./storyMoment";
+import type { StoryMoment } from "./storyMoment";
+import { storyShare } from "./storyShare";
 
 export interface StorySessionValue {
   initial: StoryMoment | undefined;
@@ -30,16 +31,25 @@ export function ShareMoment({
         onClick={async () => {
           const moment = read();
           if (!moment) return;
-          const url = new URL(window.location.href);
-          const params = new URLSearchParams();
-          writeStoryMoment(params, moment);
-          url.hash = params.toString();
+          const share = storyShare(moment, window.location.href);
+          setStatus("");
+          setFallback("");
           try {
-            await navigator.clipboard.writeText(url.href);
+            if (navigator.canShare?.(share)) {
+              try {
+                await navigator.share(share);
+                setFallback("");
+                setStatus("Moment shared. It opens paused at this moment.");
+                return;
+              } catch (error) {
+                if (error instanceof Error && error.name === "AbortError") return;
+              }
+            }
+            await navigator.clipboard.writeText(share.url);
             setFallback("");
             setStatus("Link copied. It opens paused at this moment.");
           } catch {
-            setFallback(url.href);
+            setFallback(share.url);
             setStatus("Copy the link below.");
           }
         }}

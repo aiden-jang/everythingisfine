@@ -138,3 +138,27 @@
     padding-block: 14px;
   }
 }
+.landing-story-entry small {
+  grid-column: 1;
+  color: var(--color-dim);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+.landing-story-entry svg {
+  grid-row: 1 / 4;
+}
+.shared-story {
+  margin-block: 12px 18px;
+  padding: 12px 14px;
+  border-left: 2px solid var(--color-faint);
+  background: var(--color-deck);
+  font-size: var(--text-control);
+  line-height: 1.55;
+}
+.shared-story strong {
+  font-weight: 550;
+}
+.shared-story p {
+  margin-top: 5px;
+  color: var(--color-dim);
+}

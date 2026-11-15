@@ -1,31 +1,14 @@
+import { featuredStories } from "./storyCuration";
+import { searchStories } from "./storyIndex";
 import { StoryPreviewButton } from "./discovery/StoryPreview";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { StoryThumbnail } from "./StoryThumbnail";
 import type { EarthScene } from "./useObservatory";
 
-const featured = {
-  live: {
-    id: "float",
-    title: "Float Dive",
-    note: "Measured ocean profiles · Argo",
-    reason: "Follow a measured profile toward the surface.",
-  },
-  depth: {
-    id: "rupture",
-    title: "Rupture Reveal",
-    note: "Recorded event · Japan, 2011",
-    reason: "See where Tōhoku’s fault moved, then compare the recorded waves.",
-  },
-  night: {
-    id: "moonfall",
-    title: "Moonfall",
-    note: "Recorded journey · Apollo 17, 1972",
-    reason: "Leave the night sky and follow the rover across Taurus–Littrow.",
-  },
-} as const;
 export function FeaturedStory({ scene }: { scene: EarthScene }): JSX.Element {
   const navigation = useStoryNavigation();
-  const story = featured[scene];
+  const selection = featuredStories[scene];
+  const story = searchStories.find(({ id }) => id === selection.id)!;
   const id = `open-featured-${story.id}`;
   const unavailable = navigation?.unavailable(story.id);
   return (
@@ -41,8 +24,8 @@ export function FeaturedStory({ scene }: { scene: EarthScene }): JSX.Element {
         >
           <strong>{story.title}</strong>
         </button>
-        <small id={`${id}-source`}>{story.note}</small>
-        <span id={`${id}-note`}>{unavailable ?? story.reason}</span>
+        <small id={`${id}-source`}>{selection.note}</small>
+        <span id={`${id}-note`}>{unavailable ?? selection.reason}</span>
         <span className="featured-story-link" aria-hidden="true">
           Open story
           <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">

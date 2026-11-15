@@ -423,3 +423,8 @@ The SVG globe mark in `public/icon.svg` also has committed 32px browser and
 own mask. The PNGs are raster derivatives of that SVG, without changing the globe.
 
 Aggregate traffic and feature-event coverage, privacy boundaries and queries: [Analytics](docs/ANALYTICS.md).
+
+New visits offer one starting story from available recent radar, a current aurora forecast, or
+a recorded Argo profile. Stories also have an editorial browsing order; the full catalogue remains
+searchable. Completed journeys explain what their sources establish before suggesting another view.
+Shared moments open with context and support the device share sheet when available.

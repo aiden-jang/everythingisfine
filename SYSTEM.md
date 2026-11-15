@@ -443,3 +443,10 @@ separate origins. Daily live checks are informational and separate from merge ch
 
 [DEPLOY.md](DEPLOY.md) describes CI and release behavior. [DESIGN.md](DESIGN.md) owns visual rules.
 [ARCHITECTURE.md](ARCHITECTURE.md) indexes non-obvious constraints referenced by source and tests.
+
+Story discovery uses `src/app/storyCuration.ts` for editorial order and the first-visit invitation.
+`journeys/findings.ts` supplies source-grounded completion context, while Float Dive derives its
+conclusion from the selected samples. `observations/storyShare.ts` builds isolated moment links
+and native share metadata. `globe/observationTransition.ts` compares geographic targets by value;
+`globe/frameBudget.ts` and `renderResolution.ts` adapt high-density drawing under sustained load
+without changing scientific content or camera timing.

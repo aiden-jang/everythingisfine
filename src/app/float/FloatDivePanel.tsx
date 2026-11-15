@@ -1,3 +1,4 @@
+import { SharedStory } from "../observations/SharedStory";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import type { VisitPosition } from "../visitor/library";
@@ -134,6 +135,7 @@ export function FloatDivePanel({
         </div>
       </div>
       <p className="float-summary">Follow an Argo float from the deep Atlantic toward the surface.</p>
+      {resume && view && <SharedStory moment={floatMoment(view)} />}
       <label className="float-picker">
         <span>Float profile</span>
         <select value={value} onChange={(event) => select(event.currentTarget.value)}>

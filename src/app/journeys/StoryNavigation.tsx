@@ -1,3 +1,4 @@
+import { firstInvitation } from "../storyCuration";
 import { visitAction, restartVisit } from "../visitor/visitAction";
 import { refreshAnnotations } from "../../globe/annotationInput";
 import type { StoryPlace } from "../discovery/places";
@@ -13,6 +14,7 @@ import { useVisitMemory } from "../visitor/useVisitMemory";
 import type { Visit } from "../visitor/library";
 
 const Navigation = createContext<{
+  invitation: ReturnType<typeof firstInvitation>;
   returnLabel: string | undefined;
   openRadar: (at: number | undefined, map: boolean) => void;
   returnToBrowse: () => boolean;
@@ -137,6 +139,12 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   return (
     <Navigation.Provider
       value={{
+        invitation: firstInvitation({
+          now: props.at,
+          radarAt: props.explorer.radarAt,
+          auroraAt: props.aurora.forecastAt,
+          auroraAvailable: !props.aurora.unavailable,
+        }),
         active,
         completed: completion?.id === active && completion.complete,
         completion: reportCompletion,
@@ -173,7 +181,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           setRoute(null);
           requestAnimationFrame(() => {
             document.getElementById(saved.scrollTarget)?.scrollTo(0, saved.scroll);
-            document.getElementById(saved.trigger)?.focus({ preventScroll: true });
+            (
+              document.getElementById(saved.trigger) ??
+              document.getElementById(saved.trigger === "start-story" ? "continue-story" : saved.scrollTarget)
+            )?.focus({ preventScroll: true });
           });
           return true;
         },

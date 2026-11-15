@@ -1,10 +1,23 @@
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import { SaveVisit } from "../visitor/VisitShelf";
 import { searchStories } from "../storyIndex";
 import { journeys } from "./catalogue";
 import { recommendStory } from "./recommendation";
 import { useStoryNavigation } from "./StoryNavigation";
 import "./journeys.css";
+
+const StoryFinding = lazy(() =>
+  import("./StoryFinding")
+    .then(({ StoryFinding }) => ({ default: StoryFinding }))
+    .catch(() => ({ default: () => null })),
+);
+function Finding({ id, completed }: { id: string; completed: boolean }) {
+  return completed ? (
+    <Suspense fallback={null}>
+      <StoryFinding id={id} completed />
+    </Suspense>
+  ) : null;
+}
 
 export function ExperienceEnding({ id }: { id?: string } = {}) {
   const navigation = useStoryNavigation();
@@ -28,6 +41,7 @@ export function ExperienceEnding({ id }: { id?: string } = {}) {
     const nextTitle = searchStories.find((entry) => entry.id === next?.id)?.title;
     return (
       <>
+        <Finding id={active} completed={completed} />
         <SaveVisit />
         <section className="guided-journey" aria-label="Current journey">
           <h3>
@@ -74,10 +88,17 @@ export function ExperienceEnding({ id }: { id?: string } = {}) {
   }
   const next = recommendStory(active, navigation.library.recent, navigation.unavailable);
   const story = searchStories.find((entry) => entry.id === next?.id);
-  if (!next || !story) return <SaveVisit />;
+  if (!next || !story)
+    return (
+      <>
+        <Finding id={active} completed={completed} />
+        <SaveVisit />
+      </>
+    );
   const reason = navigation.unavailable(story.id);
   return (
     <>
+      <Finding id={active} completed={completed} />
       <SaveVisit />
       <details
         ref={details}

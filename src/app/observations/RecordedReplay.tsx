@@ -1,3 +1,4 @@
+import { SharedStory } from "./SharedStory";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { lazy, useLayoutEffect, useRef, type ReactNode } from "react";
 import { useObservatoryEscape } from "../useObservatoryEscape";
@@ -97,6 +98,7 @@ export function ReplayPanel({
             </div>
           </div>
           <p className="observation-note">{subtitle}</p>
+          <SharedStory />
           <div className="observatory-actions" role="group" aria-label="Observation projection">
             <button type="button" aria-pressed={!map} onClick={() => onMap(false)}>
               Globe

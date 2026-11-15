@@ -1,3 +1,4 @@
+import { createRenderResolution } from "./renderResolution";
 import { DEFAULT_CAMERA } from "./framing";
 import { createNightSurface } from "./nightSurface";
 import { createScenePresentation, type GlobePresentation } from "./scenePresentation";
@@ -366,6 +367,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   const presentation = createScenePresentation(spin, catalogue, controls, sunDir, lights, dayline, canvas);
   const inspection = createEventPresentation(camera, controls, catalogue);
   spin.add(inspection.object);
+  const resolution = createRenderResolution(renderer, [events, slab, starfield, planets]);
   let markerScale = (): number => 1;
   const resize = (): void => {
     const parent = canvas.parentElement;
@@ -374,14 +376,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     const { clientWidth: width, clientHeight: height } = parent;
     if (width < 1 || height < 1) return;
 
-    const dpr = Math.min(window.devicePixelRatio, 2);
-    renderer.setPixelRatio(dpr);
-    renderer.setSize(width, height, false);
-    // Marker sizes are in CSS pixels, so the shader needs the ratio the renderer actually used.
-    events.setPixelRatio(dpr);
-    slab.setPixelRatio(dpr);
-    starfield.setPixelRatio(dpr);
-    planets.setPixelRatio(dpr);
+    resolution.resize(width, height);
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 
@@ -584,6 +579,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       material.uniforms["uAuroraOn"]!.value = 1;
     },
     render: () => {
+      resolution.frame();
       if (presentation.renderMoon(renderer, camera.aspect)) return;
       const at = inspection.recordedAt() ?? (moment === null ? Date.now() : null);
       if (at !== null) {

@@ -571,3 +571,22 @@ A save confirms what was retained, while unavailable historical live scans expla
 Video recording lives beside Save image in View options. Its short status sits over the canvas,
 leaving playback and navigation reachable. Recording does not introduce a second scene or change
 its geometry. The preview appears only after recording ends and can be dismissed immediately.
+
+### Curated discovery and story continuity
+
+The first visit offers one source-aware story beneath the scene diagrams: recent radar when a
+scan is less than half an hour old, otherwise an available aurora forecast, otherwise a recorded
+Argo profile. Returning visitors keep Continue in the same place. No feed answer claims that rain
+or aurora is visible at the visitor’s location. The editorial catalogue order mixes Earth, ocean
+and sky; the complete catalogue and search retain every experience.
+
+A completed story holds a concise finding before onward discovery. Findings distinguish measured
+data, modeled fields, predictions and illustration; Float Dive keeps its sample-derived conclusion.
+Shared story links explain the saved starting position without covering the visualization. Native
+sharing supplies the actual story title and description; cancellation stays quiet and unsupported
+sharing retains the copyable-link path.
+
+Same-place data frames retain their geographic arrival and reveal even when source code creates
+a new target object. Sustained slow frame pacing can reduce drawing resolution on high-density
+displays, with a native-pixel floor and recovery hysteresis. Geometry, textures, observations and
+timeline timing stay intact. Reduced motion restores full configured resolution.

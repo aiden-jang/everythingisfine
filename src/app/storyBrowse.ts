@@ -1,20 +1,20 @@
+import { featuredStories, sceneHighlights, storyRank } from "./storyCuration";
 import { observations } from "./observations/catalogue";
 import { searchStories, type SearchStory } from "./storyIndex";
 import type { EarthScene } from "./useObservatory";
 
-export const featuredIds = { live: "float", depth: "rupture", night: "moonfall" } as const;
-const suggested = {
-  live: ["radar", "katrina", "aral", "iceberg"],
-  depth: ["deep", "seafloor", "fault"],
-  night: ["sky", "aurora", "sun", "shadow"],
-};
+export const featuredIds = {
+  live: featuredStories.live.id,
+  depth: featuredStories.depth.id,
+  night: featuredStories.night.id,
+} as const;
 export function browseStories(scene: EarthScene | null, all: boolean): readonly SearchStory[] {
   const focus = scene ?? "live";
   const list = searchStories.filter(
     (story) => (!scene || story.scene === scene) && story.id !== featuredIds[focus],
   );
-  if (all) return list;
-  const ids = scene ? suggested[scene] : ["radar", "sky", "rupture", "aurora"];
+  if (all) return list.sort((a, b) => storyRank(a.id) - storyRank(b.id));
+  const ids = scene ? sceneHighlights[scene] : ["radar", "sky", "rupture"];
   return ids.slice(0, 3).flatMap((id) => list.filter((story) => story.id === id));
 }
 export function storyKind(id: string): string {

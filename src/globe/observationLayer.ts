@@ -1,3 +1,4 @@
+import { newObservationPlace } from "./observationTransition";
 import {
   BufferAttribute,
   BufferGeometry,
@@ -151,7 +152,7 @@ export function createObservationLayer(morph: { value: number }) {
       uniforms: {
         orbital,
         uMorph: morph,
-        pixelRatio: { value: Math.min(devicePixelRatio || 1, 2) },
+        pixelRatio: { value: 1 },
         reveal: { value: 1 },
       },
       vertexShader: /* glsl */ `
@@ -211,6 +212,9 @@ export function createObservationLayer(morph: { value: number }) {
   line.renderOrder = 5;
   dot.renderOrder = 6;
   raster.frustumCulled = line.frustumCulled = dot.frustumCulled = false;
+  dot.onBeforeRender = (renderer) => {
+    dot.material.uniforms["pixelRatio"]!.value = renderer.getPixelRatio();
+  };
   raster.visible = object.visible = false;
   object.add(raster, line, dot);
   let prior: ObservationView | null = null;
@@ -223,7 +227,7 @@ export function createObservationLayer(morph: { value: number }) {
     terrain.set(view?.terrain);
     moon.set(view);
     orbital.value = view?.frame.orbit ? 1 : 0;
-    if (view?.target !== prior?.target) reveal = 0;
+    if (newObservationPlace(view, prior)) reveal = 0;
     object.visible = !!view;
     if (view?.frame.paths !== prior?.frame.paths || view?.frame.raster !== prior?.frame.raster) travel = 0;
     if (view?.frame.paths !== prior?.frame.paths) {

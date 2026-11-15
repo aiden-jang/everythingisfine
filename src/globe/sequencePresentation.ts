@@ -51,6 +51,9 @@ export function createSequencePresentation(framing: ReturnType<typeof createRegi
       }`,
   });
   const object = new Points(new BufferGeometry(), material);
+  object.onBeforeRender = (renderer) => {
+    material.uniforms["uPixelRatio"]!.value = renderer.getPixelRatio();
+  };
   object.frustumCulled = false;
   object.renderOrder = 9;
   object.visible = false;
@@ -90,7 +93,6 @@ export function createSequencePresentation(framing: ReturnType<typeof createRegi
       object.geometry.setDrawRange(0, frame.shown);
       material.uniforms["uClock"]!.value = frame.elapsed;
       material.uniforms["uQuiet"]!.value = reduced;
-      material.uniforms["uPixelRatio"]!.value = Math.min(devicePixelRatio, 2);
       return frame.moving;
     },
     dispose(): void {

@@ -1,3 +1,4 @@
+import { newObservationPlace } from "./observationTransition";
 import type { ObservationView } from "../app/observations/types";
 import { spanDeg } from "../geo/sphere";
 import type { Controls } from "./controls";
@@ -10,7 +11,7 @@ export function createObservationArrival(controls: Controls, canvas: HTMLCanvasE
     set(view: ObservationView | null) {
       const next = view?.arrive ? view : null;
       const returning = active !== null && next === null;
-      if (next?.arrive !== active?.arrive || next?.target !== active?.target) {
+      if (next?.arrive !== active?.arrive || newObservationPlace(next, active)) {
         elapsed = 0;
         arrived = false;
       }

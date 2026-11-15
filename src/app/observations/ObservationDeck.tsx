@@ -1,3 +1,4 @@
+import { SharedStory } from "./SharedStory";
 import { StoryLoading } from "../StoryLoading";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
@@ -130,6 +131,7 @@ export function ObservationDeck({
             </div>
           </div>
           <p className="observation-note observation-introduction">{meta.description}</p>
+          <SharedStory />
           {id !== "epic" && (
             <div
               className="observatory-actions observation-projection"
