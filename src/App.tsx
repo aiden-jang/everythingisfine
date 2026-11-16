@@ -8,7 +8,7 @@ import { EarthquakeContext, NearbyEarthquake } from "./app/EarthquakeContext";
 import { EarthquakeOptions } from "./app/EarthquakeOptions";
 import { EarthquakeInspector } from "./app/EarthquakeInspector";
 import { MapLayers } from "./app/MapLayers";
-import { storyBackdrop } from "./app/storyBackdrop";
+import { observatoryBackdrop } from "./app/storyBackdrop";
 import { useMapLayers } from "./app/useMapLayers";
 import { hazardsInWindow, markBelongsToLayer, visibleHazards } from "./app/layerVisibility";
 import { SourceFilter } from "./app/SourceFilter";
@@ -1375,7 +1375,7 @@ export function App(): JSX.Element {
                     : null
                 }
                 section={sectionLine}
-                {...storyBackdrop(observatory.browsingStories, observatory.depthFocus)}
+                {...observatoryBackdrop(observatory)}
                 onSection={(line, hinge) => setSectionLine(line && hinge ? { ...line, hinge } : line)}
                 onSelect={selectQuake}
                 onReady={onReady}

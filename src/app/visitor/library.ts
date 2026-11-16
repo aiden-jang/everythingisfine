@@ -7,7 +7,7 @@ import { skyCities } from "../tonight/cities";
 export interface VisitPosition {
   moment?: StoryMoment;
   sky?: { city: string; at: number; look: SkyLook; lunar?: MoonfallProgress };
-  float?: { profile: string; index: number };
+  float?: { profile: string; index: number; map?: boolean };
   radar?: { region?: string; at?: number; map: boolean };
 }
 export interface Visit {
@@ -15,6 +15,13 @@ export interface Visit {
   seen: number;
   completed?: boolean;
   position: VisitPosition;
+  observation?: {
+    at: number;
+    depth: number;
+    temperature: number;
+    salinity: number;
+    note?: string;
+  };
 }
 export interface Library {
   version: 1;
@@ -77,7 +84,11 @@ export function readVisit(value: unknown): Visit | null {
       Number.isInteger(float.index) &&
       finite(float.index, 0, 20_000)
     )
-      position.float = { profile: float.profile, index: float.index };
+      position.float = {
+        profile: float.profile,
+        index: float.index,
+        ...(float.map === true ? { map: true } : {}),
+      };
     const radar = source.radar;
     if (radar && typeof radar.map === "boolean") {
       position.radar = { map: radar.map };
@@ -86,7 +97,33 @@ export function readVisit(value: unknown): Visit | null {
       if (time(radar.at)) position.radar.at = radar.at;
     }
   }
-  return { id: raw.id, seen: raw.seen, position, ...(raw.completed === true ? { completed: true } : {}) };
+  const visit: Visit = {
+    id: raw.id,
+    seen: raw.seen,
+    position,
+    ...(raw.completed === true ? { completed: true } : {}),
+  };
+  const observation = raw.observation;
+  if (
+    raw.id === "float" &&
+    position.float &&
+    observation &&
+    time(observation.at) &&
+    observation.at === Number(position.float.profile.split("/").at(-1)) &&
+    finite(observation.depth, 0, 12_000) &&
+    finite(observation.temperature, -3, 50) &&
+    finite(observation.salinity, 0, 50)
+  ) {
+    visit.observation = {
+      at: observation.at,
+      depth: observation.depth,
+      temperature: observation.temperature,
+      salinity: observation.salinity,
+    };
+    if (typeof observation.note === "string" && observation.note.length <= 280 && observation.note.trim())
+      visit.observation.note = observation.note.trim();
+  }
+  return visit;
 }
 
 export function readLibrary(text: string | null): Library {

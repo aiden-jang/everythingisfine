@@ -170,7 +170,7 @@ function ObservatoryContent({
   return (
     <>
       {floatDive.active ? (
-        <FloatReadout view={floatDive.view} />
+        <FloatReadout view={floatDive.view} projection={observations} />
       ) : radar.active ? (
         <RadarReadout map={observations.map} region={radar.view?.region} />
       ) : tonight.view?.moonfall ? (
@@ -215,6 +215,7 @@ function ObservatoryContent({
                 resume={floatDive.entry}
                 returnLabel={navigationContext?.returnLabel}
                 onView={floatDive.update}
+                projection={observations}
                 onClose={closeView(() => observations.returnTo("open-featured-float", floatDive.close))}
               />
             </Suspense>

@@ -11,7 +11,7 @@ for (const width of [1440, 390]) {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
     const entry = page.locator("#start-story");
-    await expect(entry).toContainText("Follow an ocean float");
+    await expect(entry).toContainText("What’s beneath this patch of ocean?");
     await expect(entry).toContainText("Recorded Argo profile");
     await page.screenshot({ path: test.info().outputPath(`first-minute-${width}.png`) });
     const canvas = await page.locator("#globe-view canvas").elementHandle();

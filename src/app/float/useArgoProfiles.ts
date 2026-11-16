@@ -31,7 +31,7 @@ async function get(url: string, signal: AbortSignal) {
 
 export function useArgoProfiles(
   view: FloatDiveView | null,
-  onView: (view: FloatDiveView) => void,
+  onView: (view: FloatDiveView, deliberate?: boolean) => void,
   resume?: VisitPosition["float"],
 ) {
   const [catalogue, setCatalogue] = useState<Catalogue>({ state: "loading", stations: [] });
@@ -75,7 +75,7 @@ export function useArgoProfiles(
       setProblem(null);
       const local = saved.find(({ id }) => `recorded/${id}` === key);
       if (local) {
-        onView(createFloatPlayback(local, motion(), "recorded"));
+        onView(createFloatPlayback(local, motion(), "recorded"), index === undefined);
         return;
       }
       const remote = catalogue.stations.find(({ id }) => `recent/${id}` === key);
@@ -90,7 +90,7 @@ export function useArgoProfiles(
           if (profile) {
             const playback = createFloatPlayback(profile, index === undefined && motion(), "recent");
             if (index !== undefined) playback.seek(index);
-            onView(playback);
+            onView(playback, index === undefined);
           } else setProblem(index === undefined ? "selection" : "resume");
         })
         .catch(() => {

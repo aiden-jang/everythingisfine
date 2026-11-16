@@ -24,7 +24,12 @@ export function useVisitMemory(props: ObservatoryProps, active: string | null, c
         ...(sky.moonfall ? { lunar: sky.moonfall.read() } : {}),
       };
     const float = floatDive.view;
-    if (float) position.float = { profile: `${float.source}/${float.profile.id}`, index: float.read().index };
+    if (float)
+      position.float = {
+        profile: `${float.source}/${float.profile.id}`,
+        index: float.read().index,
+        ...(observations.map ? { map: true } : {}),
+      };
     if (props.radar.view)
       position.radar = {
         map: observations.map,

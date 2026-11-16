@@ -7,6 +7,10 @@ import { useRef } from "react";
 
 const title = (id: string) => searchStories.find((story) => story.id === id)?.title ?? id;
 export function visitNote(visit: Visit) {
+  if (visit.observation) {
+    const { at, depth, temperature, salinity } = visit.observation;
+    return `${layerTime(at)} · ${Math.round(depth).toLocaleString()} m · ${temperature.toFixed(2)} °C · ${salinity.toFixed(3)} salinity`;
+  }
   if (visit.position.sky?.lunar) return `Traverse ${visit.position.sky.lunar.eva + 1} · Apollo 17, 1972`;
   if (visit.position.sky) return `${visit.position.sky.city} · saved sky`;
   const at = visit.position.moment?.at ?? visit.position.radar?.at;
@@ -31,6 +35,9 @@ export function VisitShelf() {
           <span aria-hidden="true">→</span>
         </span>
         <small>{navigation.unavailable(visit.id) ?? visitNote(visit)}</small>
+        {visit.observation?.note && (
+          <small className="visit-observation-note">{visit.observation.note}</small>
+        )}
       </button>
       {saved && (
         <button
@@ -89,7 +96,7 @@ export function VisitShelf() {
 }
 export function SaveVisit() {
   const navigation = useStoryNavigation();
-  if (!navigation?.active) return null;
+  if (!navigation?.active || navigation.active === "float") return null;
   return (
     <div className="visit-save">
       <button

@@ -70,24 +70,11 @@ export const storyOrder = [
 const priority = new Map<string, number>(storyOrder.map((id, index) => [id, index]));
 export const storyRank = (id: string) => priority.get(id) ?? storyOrder.length;
 
-export function firstInvitation(input: {
-  now: number;
-  radarAt?: number | undefined;
-  auroraAt?: number | undefined;
-  auroraAvailable: boolean;
-}) {
-  if (input.radarAt !== undefined && input.radarAt <= input.now && input.now - input.radarAt < 30 * 60_000)
-    return { id: "radar", label: "Follow the recent rain", note: "Recent radar · coverage varies by region" };
-  if (input.auroraAvailable && input.auroraAt !== undefined)
-    return {
-      id: "aurora",
-      label: "Fly through the aurora forecast",
-      note: "NOAA forecast · a prediction, not a sighting",
-    };
+export function firstInvitation() {
   return {
     id: "float",
-    label: "Follow an ocean float",
-    note: "Recorded Argo profile · explore at your own pace",
+    label: "What’s beneath this patch of ocean?",
+    note: "Recorded Argo profile · follow one float toward the surface",
   };
 }
 

@@ -341,7 +341,13 @@ profiles from the Marine Institute ERDDAP and validates each level’s pressure,
 salinity quality flags. Two bundled recordings from the same source stay available offline.
 The instrument is schematic and the ascent is compressed. The readout uses the original
 samples, with depth estimated from pressure using the
-[Fofonoff and Millard equation](https://doi.org/10.25607/OBP-1450). The optional measured-profile plot labels its axes and selected sample. The ending compares measured endpoints. Validated Float Dive links reopen the selected profile and sample paused; a missing profile is disclosed instead of silently claiming an exact restoration.
+[Fofonoff and Millard equation](https://doi.org/10.25607/OBP-1450). The measured-profile inspector shares the selected sample with the instrument and playback;
+its temperature and salinity scales derive from the selected profile. A bounded ocean section
+leaves the shared geography visible and retracts for Locate. The ending derives its finding from
+measured samples, including an interior temperature maximum when present. Saved observations
+keep the source date, reading and optional device-only note in the existing visit library.
+Validated Float Dive links reopen the selected profile, sample and projection paused; a missing
+profile is disclosed instead of silently claiming an exact restoration.
 
 Float Dive temperature and Tide Watch measured water level offer optional synthesized tones.
 `MeasurementSound` creates Web Audio only after a listener’s gesture. `measurementVoice.ts` maps

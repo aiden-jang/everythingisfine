@@ -1,11 +1,11 @@
-import { Group, Mesh, MeshBasicMaterial, PlaneGeometry, RingGeometry, ShaderMaterial, Vector3 } from "three";
-import { toVec3 } from "../geo/sphere";
+import { Group, Mesh, PlaneGeometry, ShaderMaterial, Vector4 } from "three";
 
 const water = /* glsl */ `
   uniform float reveal;
   uniform float ascent;
   uniform float aspect;
   uniform float motion;
+  uniform vec4 bounds;
   varying vec2 screen;
 
   float capsule(vec2 p, vec2 a, vec2 b, float radius) {
@@ -14,8 +14,10 @@ const water = /* glsl */ `
   }
 
   void main() {
-    vec2 p = screen;
-    p.x *= aspect;
+    vec2 uv = screen * 0.5 + 0.5;
+    vec2 local = (uv - bounds.xy) / (bounds.zw - bounds.xy);
+    if (local.x < 0.0 || local.x > 1.0 || local.y < 0.0 || local.y > 1.0) discard;
+    vec2 p = (local * 2.0 - 1.0) * vec2(aspect, 1.0);
     float height = 0.64 + 0.025 * sin(p.x * 6.0) + 0.012 * cos(p.x * 13.0);
     float below = max(0.0, height - p.y);
     float light = mix(0.11, 1.0, pow(ascent, 2.4));
@@ -30,7 +32,7 @@ const water = /* glsl */ `
     color = mix(color, sky, surface);
     color += vec3(0.23, 0.43, 0.42) * exp(-abs(p.y - height) * 128.0);
 
-    float x = clamp(aspect * 0.12, 0.07, 0.23);
+    float x = 0.0;
     vec2 flecks = p * 22.0 + vec2(ascent * 0.7, -ascent * 9.0) * motion;
     vec2 cell = floor(flecks);
     float seed = fract(sin(dot(cell, vec2(11.27, 47.83))) * 151.13);
@@ -53,17 +55,25 @@ const water = /* glsl */ `
     color *= 1.0 - 0.24 * smoothstep(0.3, 1.55, length(screen * vec2(1.0, 0.72)));
     float tide = mix(-1.35, 1.26, reveal);
     float immersion = 1.0 - smoothstep(tide - 0.13, tide + 0.27, p.y + 0.04 * sin(p.x * 4.0));
-    gl_FragColor = vec4(color, mix(reveal, immersion, motion));
+    float edge = smoothstep(0.0, 0.018, local.x) * (1.0 - smoothstep(0.982, 1.0, local.x));
+    edge *= smoothstep(0.0, 0.018, local.y) * (1.0 - smoothstep(height + 0.05, height + 0.16, p.y));
+    gl_FragColor = vec4(color, mix(reveal, immersion, motion) * edge * 0.96);
   }
 `;
 
 export function createFloatSurface() {
   const object = new Group();
-  const pin = new Mesh(new RingGeometry(0.014, 0.019, 40), new MeshBasicMaterial({ color: 0x93e0d5 }));
+  const bounds = new Vector4(0.08, 0.12, 0.94, 0.9);
   const sheet = new Mesh(
     new PlaneGeometry(2, 2),
     new ShaderMaterial({
-      uniforms: { reveal: { value: 0 }, ascent: { value: 0 }, aspect: { value: 1 }, motion: { value: 1 } },
+      uniforms: {
+        reveal: { value: 0 },
+        ascent: { value: 0 },
+        aspect: { value: 1 },
+        motion: { value: 1 },
+        bounds: { value: bounds },
+      },
       vertexShader: /* glsl */ `
         varying vec2 screen;
         void main() {
@@ -79,23 +89,30 @@ export function createFloatSurface() {
   );
   sheet.renderOrder = 100;
   sheet.frustumCulled = false;
-  pin.visible = sheet.visible = false;
-  object.add(pin, sheet);
+  sheet.visible = false;
+  object.add(sheet);
+  let inspection = 0;
   return {
     object,
-    locate(lon: number, lat: number) {
-      pin.position.set(...toVec3(lon, lat, 1.012));
-      pin.quaternion.setFromUnitVectors(new Vector3(0, 0, 1), pin.position.clone().normalize());
-    },
-    draw(reveal: number, ascent: number, locating: boolean, reduced: boolean) {
-      pin.visible = locating && reveal < 1;
+    draw(reveal: number, ascent: number, inspecting: number, reduced: boolean) {
+      inspection = inspecting;
       sheet.visible = reveal > 0;
       sheet.material.uniforms.reveal!.value = reveal * reveal * (3 - 2 * reveal);
       sheet.material.uniforms.ascent!.value = ascent;
       sheet.material.uniforms.motion!.value = reduced ? 0 : 1;
     },
-    size(aspect: number) {
-      sheet.material.uniforms.aspect!.value = aspect;
+    size(width: number, height: number, clearance: number) {
+      if (width <= 0 || height <= 0) return { x: 0.5, y: 0.5 };
+      const compact = width < 600;
+      const panel = compact ? Math.min(236, width * 0.64) : 280;
+      bounds.set(0.07, clearance, 0.94 - (panel / width) * inspection, 0.91);
+      sheet.material.uniforms.aspect!.value =
+        ((bounds.z - bounds.x) * width) / ((bounds.w - bounds.y) * height);
+      return {
+        x: (bounds.x + bounds.z) / 2,
+        y:
+          bounds.y + ((-0.61 + 1.12 * sheet.material.uniforms.ascent!.value + 1) / 2) * (bounds.w - bounds.y),
+      };
     },
   };
 }

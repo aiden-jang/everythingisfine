@@ -49,10 +49,10 @@ describe("Argo ascent readings", () => {
     playback.step(4);
     expect(playback.read().index).toBe(3);
     playback.seek(6);
-    expect(playback.read()).toEqual({ index: 6, playing: false });
+    expect(playback.read()).toEqual({ index: 6, playing: false, inspecting: false, stage: "rise" });
     expect(playback.depth()).toBe(profile.samples[6]!.depth);
     playback.toggle();
     expect(playback.step(12)).toBe(false);
-    expect(playback.read()).toEqual({ index: 10, playing: false });
+    expect(playback.read()).toEqual({ index: 10, playing: false, inspecting: false, stage: "notice" });
   });
 });

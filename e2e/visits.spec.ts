@@ -60,16 +60,31 @@ test("a saved float returns to its measured depth after a new page visit", async
   const depth = page.getByRole("slider", { name: "Ascent depth" });
   await depth.press("End");
   const value = await depth.inputValue();
-  await page.getByRole("button", { name: "Save view", exact: true }).click();
+  await page
+    .getByRole("group", { name: "Float projection" })
+    .getByRole("button", { name: "Map", exact: true })
+    .click();
+  await page.getByText("Add a note (optional)", { exact: true }).click();
+  await page
+    .getByRole("textbox", { name: /A note for this observation/ })
+    .fill("The warmer water was below the shallowest sample.");
+  await page.getByRole("button", { name: "Keep this observation", exact: true }).click();
   await page.goto("/");
   await openStories(page, "all");
   const shelf = page.getByRole("region", { name: "Your visits" });
   await shelf.getByText("Saved views (1)", { exact: true }).click();
   await shelf
     .locator("details")
-    .getByRole("button", { name: /Float Dive Saved float/ })
+    .getByRole("button", { name: /Float Dive .* °C/ })
     .click();
   await expect(depth).toHaveValue(value);
+  await expect(
+    page.getByRole("group", { name: "Float projection" }).getByRole("button", { name: "Map", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page.getByText("Add a note (optional)", { exact: true }).click();
+  await expect(page.getByRole("textbox", { name: /A note for this observation/ })).toHaveValue(
+    "The warmer water was below the shallowest sample.",
+  );
   await expect(page.getByRole("button", { name: "Replay" })).toBeVisible();
 });
 

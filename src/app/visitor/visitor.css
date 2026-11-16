@@ -40,6 +40,11 @@
   font-size: var(--text-caption);
   line-height: 1.5;
 }
+.visit-row .visit-observation-note {
+  color: var(--color-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
 .visit-row button:hover,
 .visit-shelf > details > button:hover,
 .visit-save button:hover {

@@ -781,3 +781,12 @@ timeline timing stay intact. Reduced motion restores full configured resolution.
 - **Don’t** fabricate relationships between observations or lose pinned selections on feed refresh.
 - **Don’t** reduce scientific geometry, capture extent or story information to make the Aperture layout cheaper.
 - **Don’t** make performance claims without hardware and measurement conditions.
+
+### Float Dive inspection
+
+Float Dive uses the existing shared world for Locate, Rise and Notice. Its bounded ocean
+section leaves geographic context visible. The measurement inspector opens beside the float;
+the selected chart point, instrument reading and playback refer to the same sample. The
+playback deck stays reachable independently of the scrolling reading panel. On phones,
+inspection reserves more room for the chart and instrument. The recorded invitation retains
+its source context at every width. Optional notes remain secondary to keeping an observation.

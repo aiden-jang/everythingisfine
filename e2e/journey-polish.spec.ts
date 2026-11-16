@@ -124,7 +124,7 @@ for (const width of [1440, 390]) {
 }
 
 for (const width of [1440, 390, 320]) {
-  test(`playback follows the scrubber and the phone panel has one action at ${width}px @dev`, async ({
+  test(`persistent playback keeps its controls together and the phone panel has one action at ${width}px @dev`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 900 });
@@ -148,7 +148,9 @@ for (const width of [1440, 390, 320]) {
     const scrubber = (await transport.getByRole("slider").boundingBox())!;
     const play = transport.getByRole("button", { name: "Play", exact: true });
     const button = (await play.boundingBox())!;
-    expect(button.y).toBeGreaterThanOrEqual(scrubber.y + scrubber.height);
+    expect(button.x + button.width).toBeLessThanOrEqual(scrubber.x);
+    expect(button.y + button.height / 2).toBeGreaterThanOrEqual(scrubber.y);
+    expect(button.y + button.height / 2).toBeLessThanOrEqual(scrubber.y + scrubber.height);
     expect(button.height).toBeGreaterThanOrEqual(44);
     await play.click();
     await expect(transport.getByRole("button", { name: "Pause", exact: true })).toBeVisible();

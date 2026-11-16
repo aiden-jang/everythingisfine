@@ -24,6 +24,7 @@ export type EarthScene = "live" | "depth" | "night";
 export type Presentation = "observe" | "explore";
 
 export function useObservatory(shared: Partial<Permalink>) {
+  const story = shared.story;
   const checkpoint = useRef<() => void>(() => {});
   const loadingBackdrop = useRef<"dayline" | "planetarium">("dayline");
   const visitCheckpoint = useRef<() => void>(() => {});
@@ -61,7 +62,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     update: updateRadar,
     opening: radarOpening,
   } = useRadarPresentation();
-  const observations = useObservationDeck(shared.story?.id === "float" ? undefined : shared.story, before);
+  const observations = useObservationDeck(story?.id === "float" ? undefined : story, before, story?.map);
   const closeObservations = observations.close;
   const radarEntry = useRef<{ region?: string; story?: boolean; at?: number }>({});
   const radarOrigin = useRef<Presentation>("observe");
@@ -274,7 +275,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         (!!observations.view && observations.view.capture !== false && !observations.view.frame.photograph)),
     localReadings: radarView !== null || tonight || floatView !== null || !!observations.entry,
     observations,
-    getMoment: () => getFloatMoment() ?? observations.getMoment(),
+    getMoment: () => getFloatMoment(observations.map) ?? observations.getMoment(),
     openRecordedStory(id: ReplayId | "kilauea" | "iceberg", from: string) {
       if (observing) observations.open(id, from);
       else

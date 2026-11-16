@@ -189,7 +189,7 @@ export function createScenePresentation(
     oval = route;
 
     if (float && !dive) {
-      dive = createFloatPresentation(controls);
+      dive = createFloatPresentation(controls, canvas);
       spin.add(dive.object);
     }
     dive?.set(float, mode === "dayline");
@@ -272,7 +272,7 @@ export function createScenePresentation(
         (observationTarget?.zoom ?? 1) / controls.state().zoom,
       );
       positionObservationAnchors(canvas, controls, !!observationTarget || !!skyView || planetarium);
-      dive?.size(camera.aspect);
+      dive?.size();
       const amount = controls.localSky.amount();
       lights.apply(amount);
       return localLight?.draw(camera, amount, controls.localSky.ready() ? skyView : null) ?? 1;

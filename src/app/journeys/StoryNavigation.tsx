@@ -133,18 +133,16 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         exploring ? props.explorer.radarAt : saved?.position.radar?.at,
       );
       deck.setMap(exploring ? props.explorer.flat : (saved?.position.radar?.map ?? false));
-    } else if (id === "float") floatDive.open(saved?.position.float);
-    else deck.open(id as StoryId, trigger, saved?.position.moment ?? (fresh ? null : undefined));
+    } else if (id === "float") {
+      const exploring = !props.views.observing && !resuming;
+      deck.setMap(exploring ? props.explorer.flat : (saved?.position.float?.map ?? false));
+      floatDive.open(saved?.position.float);
+    } else deck.open(id as StoryId, trigger, saved?.position.moment ?? (fresh ? null : undefined));
   }
   return (
     <Navigation.Provider
       value={{
-        invitation: firstInvitation({
-          now: props.at,
-          radarAt: props.explorer.radarAt,
-          auroraAt: props.aurora.forecastAt,
-          auroraAvailable: !props.aurora.unavailable,
-        }),
+        invitation: firstInvitation(),
         active,
         completed: completion?.id === active && completion.complete,
         completion: reportCompletion,

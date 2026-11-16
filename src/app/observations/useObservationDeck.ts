@@ -8,14 +8,18 @@ import type { ObservationView } from "./types";
 export type AfterDarkArchive = "lights" | "shadow";
 export type StoryId = ObservationId | AfterDarkArchive | ReplayId | EarthStoryId | "kilauea";
 
-export function useObservationDeck(shared?: StoryMoment, before = () => {}) {
+export function useObservationDeck(
+  shared?: StoryMoment,
+  before = () => {},
+  initialMap = shared?.map ?? false,
+) {
   const checkpoint = useRef(before);
   checkpoint.current = before;
   const memory = useRef(new Map<string, StoryMoment>(shared ? [[shared.id, shared]] : []));
   const [entry, setEntry] = useState<StoryId | null>((shared?.id as StoryId) ?? null);
   const [trigger, setTrigger] = useState<string | null>(null);
   const [view, setView] = useState<ObservationView | null>(null);
-  const [map, setMap] = useState(shared?.map ?? false);
+  const [map, setMap] = useState(initialMap);
   const [horizon, setHorizon] = useState(shared?.chapter === "horizon");
   const [query, setQuery] = useState("");
   const pending = useRef(false);

@@ -27,10 +27,18 @@ test("a pending recent Float Dive link survives reload and Back without becoming
   });
   const requestedProfile = () => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("choice");
   await page.goto(
-    `/#${new URLSearchParams({ story: "float", choice: profile, chapter: "4", v: "observe" })}`,
+    `/#${new URLSearchParams({ story: "float", choice: profile, chapter: "4", v: "observe", p: "map" })}`,
   );
   await expect.poll(() => requested).toBe(1);
   expect(requestedProfile()).toBe(profile);
+  await expect(
+    page.getByRole("group", { name: "Float projection" }).getByRole("button", { name: "Map", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await page
+    .getByRole("group", { name: "Float projection" })
+    .getByRole("button", { name: "Globe", exact: true })
+    .click();
+  await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("p")).toBe("globe");
   await page.reload();
   await expect.poll(() => requested).toBe(2);
   expect(requestedProfile()).toBe(profile);
@@ -44,7 +52,7 @@ test("a pending recent Float Dive link survives reload and Back without becoming
   const dive = page.getByRole("region", { name: "Float Dive" });
   await expect(dive.getByText(/Recent profile · Cycle 269/)).toBeVisible();
   await expect(dive.getByText("12.00 °C", { exact: true })).toBeVisible();
-  await expect(dive.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   expect(requestedProfile()).toBe(profile);
   expect(new URLSearchParams(new URL(page.url()).hash.slice(1)).get("chapter")).toBe("4");
 });
@@ -96,17 +104,18 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   await expect(dive.locator(".float-value strong").first()).toBeInViewport({ ratio: 1 });
   if (process.env["EIF_CAPTURE_UI"])
     await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/float-reading-390.png` });
+  await dive.getByText("Profile & evidence", { exact: true }).click();
   const picker = dive.getByRole("combobox", { name: "Float profile" });
   await picker.selectOption({ label: "30 Oct 2026 · WMO 6901932" });
   await expect(dive.getByText(/Recent profile · Cycle 269/)).toBeVisible();
-  const depth = dive.getByRole("slider", { name: "Ascent depth" });
+  const depth = page.getByRole("slider", { name: "Ascent depth" });
   await expect(depth).toHaveAttribute("aria-valuetext", "988 m");
   await expect(dive.getByText("8.00 °C", { exact: true })).toBeVisible();
   await depth.press("End");
   await expect(depth).toHaveAttribute("aria-valuetext", "0 m");
   await expect(dive.getByText("18.00 °C", { exact: true })).toBeVisible();
   await expect(dive.getByText("33.000", { exact: true })).toBeVisible();
-  await expect(dive.getByRole("button", { name: "Replay" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Replay" })).toBeVisible();
   await picker.selectOption({ label: "1 Nov 2026 · WMO 6901937" });
   await expect(dive.getByText(/Still showing .* cycle/)).toBeVisible();
   await expect(depth).toHaveAttribute("aria-valuetext", "0 m");
@@ -148,20 +157,25 @@ for (const width of [1440, 390])
     await page.getByRole("searchbox", { name: "Find a story" }).fill("Float Dive");
     await page.locator("#search-story-float").click();
     const dive = page.getByRole("region", { name: "Float Dive" });
-    const depth = dive.getByRole("slider", { name: "Ascent depth" });
+    const depth = page.getByRole("slider", { name: "Ascent depth" });
     await expect(depth).toBeVisible();
     await depth.press("End");
     const lastDepth = await depth.getAttribute("aria-valuetext");
-    await expect(dive.getByRole("region", { name: "What this profile showed" })).toContainText("warmer than");
-    await dive.getByText("View measured profile", { exact: true }).click();
-    const profile = dive.getByRole("img", { name: /Temperature \(°C\) by estimated depth/ });
+    const finding = dive.getByRole("region", { name: "What this profile showed" });
+    await expect(finding.getByRole("heading")).toHaveText(/Warmest at 62\s+m\./);
+    await expect(finding).toContainText("6.90 °C at 62 m");
+    await page.getByRole("button", { name: "View measured profile", exact: true }).click();
+    const profile = page.getByRole("img", { name: /Temperature \(°C\) by estimated depth/ });
     await expect(profile).toBeVisible();
     await expect(profile).toContainText("Depth increases downward");
-    await dive.getByRole("button", { name: "Salinity", exact: true }).click();
-    await expect(dive.getByRole("img", { name: /Practical salinity by estimated depth/ })).toBeVisible();
+    await page
+      .getByRole("region", { name: "Measured float profile" })
+      .getByRole("button", { name: "Salinity", exact: true })
+      .click();
+    await expect(page.getByRole("img", { name: /Practical salinity by estimated depth/ })).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     if (process.env["EIF_CAPTURE_UI"]) {
-      await dive.locator(".float-profile").scrollIntoViewIfNeeded();
+      await page.locator(".float-profile").scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/float-profile-${width}.png` });
       await dive.locator(".float-takeaway").scrollIntoViewIfNeeded();
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/float-ending-${width}.png` });
@@ -171,6 +185,6 @@ for (const width of [1440, 390])
     expect(new URLSearchParams(new URL(link).hash.slice(1)).get("story")).toBe("float");
     await page.goto(link);
     await expect(depth).toHaveAttribute("aria-valuetext", lastDepth!);
-    await expect(dive.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
     await expect(dive.getByText(/Recorded profile · Cycle 268/)).toBeVisible();
   });

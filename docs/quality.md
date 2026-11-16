@@ -104,3 +104,9 @@ feed availability nor a live observation; generated scientific imagery and mocku
 For a local animation recording, set `EIF_CAPTURE_MOTION=1` when running
 `pnpm run test:e2e e2e/cinematic.spec.ts e2e/planetarium.spec.ts e2e/unfold.spec.ts e2e/section-fold.spec.ts`.
 Normal verification keeps video capture off. Recorded output follows the temporary-artifact policy above.
+
+Float Dive journeys cover linked sample inspection, measured findings, projection-preserving
+links, source recovery and saved observations. The persistent playback deck remains reachable
+through portrait and landscape changes; chart selection and return navigation retain the
+original world canvas. Notes and source readings survive a new page visit through the local
+visit library, without writing on entry.

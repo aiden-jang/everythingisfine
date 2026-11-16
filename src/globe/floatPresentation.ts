@@ -2,10 +2,11 @@ import type { FloatDiveView } from "../app/float/floatPlayback";
 import { spanDeg } from "../geo/sphere";
 import type { Controls } from "./controls";
 import { createFloatSurface } from "./floatSurface";
+import { placeFloatReading } from "./floatPlacement";
 
 const ZOOM = 1.35;
 
-export function createFloatPresentation(controls: Controls) {
+export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasElement) {
   const surface = createFloatSurface();
   let wanted: FloatDiveView | null = null;
   let showing: FloatDiveView | null = null;
@@ -14,11 +15,21 @@ export function createFloatPresentation(controls: Controls) {
   let landed = 0;
   let arrived = false;
   let readyToPlay = false;
+  let inspection = 0;
   let reveal = 0;
 
   return {
     object: surface.object,
-    size: surface.size,
+    size() {
+      const box = canvas.getBoundingClientRect();
+      const deck = canvas.closest(".zones")?.querySelector(".float-transport")?.getBoundingClientRect();
+      const clearance =
+        deck && box.height > 0
+          ? Math.max(0.1, Math.min(0.72, (box.bottom - deck.top + 16) / box.height))
+          : 0.1;
+      const point = surface.size(canvas.clientWidth, canvas.clientHeight, clearance);
+      placeFloatReading(canvas, point.x, point.y, reveal > 0.95);
+    },
     set(view: FloatDiveView | null, returnToGlobe: boolean) {
       if (view === wanted) {
         if (!view) restore = returnToGlobe;
@@ -27,6 +38,10 @@ export function createFloatPresentation(controls: Controls) {
       wanted?.pause();
       wanted = view;
       restore = returnToGlobe;
+      if (view || !returnToGlobe) {
+        reveal = inspection = 0;
+        surface.draw(0, 0, 0, false);
+      }
       if (view) returnCamera ??= controls.state();
     },
     step(dt: number, reduced: boolean) {
@@ -39,7 +54,6 @@ export function createFloatPresentation(controls: Controls) {
           arrived = readyToPlay = false;
           if (showing) {
             const { lon, lat } = showing.profile;
-            surface.locate(lon, lat);
             if (controls.guidance.following()) controls.flyTo(lon, lat, ZOOM);
           } else {
             if (restore && returnCamera) {
@@ -51,7 +65,7 @@ export function createFloatPresentation(controls: Controls) {
         }
       }
       if (!showing) {
-        surface.draw(0, 0, false, reduced);
+        surface.draw(0, 0, 0, reduced);
         return returning;
       }
 
@@ -67,15 +81,20 @@ export function createFloatPresentation(controls: Controls) {
           arrived = true;
         if (arrived) landed += dt;
         if (!controls.guidance.following()) reveal = reduced ? 0 : Math.max(0, reveal - dt / 0.4);
+        else if (showing.read().stage === "locate") reveal = reduced ? 0 : Math.max(0, reveal - dt / 0.55);
         else if (arrived && (reduced || landed >= 0.38))
           reveal = reduced ? 1 : Math.min(1, reveal + dt / 1.35);
         if (reveal === 1 || !controls.guidance.following()) readyToPlay = true;
-        if (readyToPlay) rising = showing.step(dt);
+        if (readyToPlay && showing.read().stage !== "locate") rising = showing.step(dt);
       }
       const first = showing.profile.samples[0]!.depth;
       const last = showing.profile.samples.at(-1)!.depth;
-      surface.draw(reveal, (first - showing.depth()) / (first - last), showing === wanted, reduced);
-      return rising || showing !== wanted || reveal !== (controls.guidance.following() ? 1 : 0);
+      const inspect = showing.read().inspecting ? 1 : 0;
+      inspection = reduced ? inspect : inspection + (inspect - inspection) * -Math.expm1(-9 * dt);
+      if (Math.abs(inspection - inspect) < 0.001) inspection = inspect;
+      surface.draw(reveal, (first - showing.depth()) / (first - last), inspection, reduced);
+      const visible = controls.guidance.following() && showing.read().stage !== "locate" ? 1 : 0;
+      return rising || showing !== wanted || reveal !== visible || inspection !== inspect;
     },
   };
 }

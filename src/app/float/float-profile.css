@@ -1,25 +1,76 @@
 .float-profile {
-  border-top: 1px solid var(--color-hairline);
-  padding-top: 10px;
+  position: absolute;
+  top: 64px;
+  right: 24px;
+  z-index: 2;
+  width: 260px;
+  padding: 14px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 2px;
+  background: var(--color-deck);
+  pointer-events: auto;
+  font-family: var(--font-sans);
+  max-height: calc(100% - 290px);
+  overflow-y: auto;
+  animation: float-profile-arrive 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.float-profile summary {
+@keyframes float-profile-arrive {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .float-profile {
+    animation: none;
+  }
+}
+.float-profile[data-inline] {
+  position: relative;
+  inset: auto;
+  width: 100%;
+}
+.float-profile-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.float-profile-heading h2 {
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.float-profile-heading > button {
   min-height: 44px;
-  align-content: center;
-  font-size: 14px;
+  padding-inline: 6px;
+  color: var(--color-dim);
+  font-size: 12px;
   cursor: pointer;
+}
+.float-profile-heading > button:hover {
+  color: var(--color-ink);
 }
 .float-profile-fields {
   display: flex;
-  gap: 8px;
+  gap: 4px;
+  padding-block: 4px 8px;
+  border-bottom: 1px solid var(--color-hairline);
 }
 .float-profile-fields button {
   min-height: 44px;
-  padding: 8px 12px;
-  border-radius: 6px;
+  padding: 8px 10px;
+  border-radius: 2px;
   font-size: 13px;
   color: var(--color-dim);
   cursor: pointer;
 }
+.float-profile-fields button:hover,
 .float-profile-fields button[aria-pressed="true"] {
   color: var(--color-ink);
   background: var(--color-raised);
@@ -28,11 +79,14 @@
   display: block;
   width: 100%;
   height: auto;
-  margin-top: 14px;
+  margin-block: 14px 10px;
+  cursor: ns-resize;
+  touch-action: none;
 }
 .float-profile text {
   fill: var(--color-dim);
-  font-size: 14px;
+  font-family: var(--font-mono);
+  font-size: 17px;
   font-variant-numeric: tabular-nums;
 }
 .float-profile-grid {
@@ -42,7 +96,7 @@
 }
 .float-profile-line {
   fill: none;
-  stroke-width: 1.5px;
+  stroke-width: 2px;
 }
 .float-profile-line[data-field="temperature"] {
   stroke: #e8bc8e;
@@ -50,10 +104,46 @@
 .float-profile-line[data-field="salinity"] {
   stroke: #8bd7cf;
 }
+.float-profile-selection {
+  fill: none;
+  stroke: var(--color-dim);
+  stroke-width: 1px;
+  stroke-dasharray: 3 5;
+  opacity: 0.5;
+}
 .float-profile-sample {
   fill: var(--color-ink);
+  stroke: var(--color-deck);
+  stroke-width: 2px;
 }
-.float-profile p,
+.float-profile-inspect {
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+  color: var(--color-dim);
+}
+.float-profile-inspect > span {
+  display: grid;
+  gap: 3px;
+}
+.float-profile-inspect strong {
+  color: var(--color-ink);
+  font-size: 13px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.float-profile-inspect input {
+  width: 100%;
+  min-height: 36px;
+}
+.float-profile p {
+  color: var(--color-dim);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.float-profile-help {
+  margin-top: 8px;
+}
 .float-takeaway small {
   color: var(--color-dim);
   font-size: 13px;
@@ -74,4 +164,52 @@
 .float-takeaway p {
   font-size: 14px;
   line-height: 1.6;
+}
+
+@media (max-width: 899px) {
+  .float-profile {
+    top: 60px;
+    right: 16px;
+    width: min(236px, 64%);
+    padding: 12px;
+  }
+}
+
+@media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
+  .float-profile {
+    max-height: calc(100% - 74px);
+    padding: 10px 12px;
+  }
+  .float-profile-heading h2 {
+    font-size: 15px;
+  }
+  .float-profile-fields {
+    padding-block: 0;
+  }
+  .float-profile svg {
+    margin-block: 8px 4px;
+  }
+  .float-profile-inspect > span {
+    display: block;
+    font-size: 0;
+  }
+  .float-profile-inspect strong {
+    font-size: 13px;
+  }
+  .float-profile > p {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+@media (max-height: 620px) and (min-width: 600px) {
+  .float-profile {
+    top: 54px;
+    max-height: calc(100% - 180px);
+  }
 }
