@@ -26,6 +26,21 @@ export function FloatMeasurements({ view, sound }: { view: FloatDiveView; sound:
       if (zones) delete zones.dataset["floatInspecting"];
     };
   }, [stage, inspecting]);
+  useLayoutEffect(() => {
+    if (stage !== "notice") return;
+    const intro = document.getElementById("observatory-intro");
+    const finding = intro?.querySelector<HTMLElement>(".float-takeaway");
+    const focused = document.activeElement;
+    if (!intro || !finding) return;
+    if (intro.contains(focused) && focused?.matches("input, textarea, select, [contenteditable]")) return;
+    const panel = intro.getBoundingClientRect();
+    const result = finding.getBoundingClientRect();
+    // Scroll the reading pane alone so the finding cannot move the shared world or its playback deck.
+    intro.scrollTo({
+      top: intro.scrollTop + result.top - panel.top - 16,
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
+    });
+  }, [stage, view]);
   return (
     <>
       <div className="float-reading">

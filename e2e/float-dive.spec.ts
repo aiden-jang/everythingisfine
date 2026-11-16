@@ -164,6 +164,12 @@ for (const width of [1440, 390])
     const finding = dive.getByRole("region", { name: "What this profile showed" });
     await expect(finding.getByRole("heading")).toHaveText(/Warmest at 62\s+m\./);
     await expect(finding).toContainText("6.90 °C at 62 m");
+    await expect(finding.getByRole("heading")).toBeInViewport({ ratio: 1 });
+    if (width === 390) {
+      const copy = (await finding.locator("p").first().boundingBox())!;
+      const playback = (await page.getByRole("group", { name: "Float Dive playback" }).boundingBox())!;
+      expect(copy.y + copy.height).toBeLessThanOrEqual(playback.y);
+    }
     await page.getByRole("button", { name: "View measured profile", exact: true }).click();
     const profile = page.getByRole("img", { name: /Temperature \(°C\) by estimated depth/ });
     await expect(profile).toBeVisible();
