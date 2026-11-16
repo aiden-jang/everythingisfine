@@ -49,7 +49,7 @@ auto-rotation setting. Dragging pauses rotation; it resumes after 1.5 idle secon
 open a story for its source, date, and current availability. Regional stories also offer **Preview** to locate their region on the same globe or map; dismissing the preview restores your viewpoint. Closing a story returns to its search
 result or drawer entry, including its category, filter, scroll, focus and viewpoint. **Keep exploring** offers a related view with context for its separate
 observations and time period. **Share this moment** copies the story, timestamp, projection, and selected
-city or chapter. Float Dive links retain the profile and selected sample. Links open paused; recent feeds explain when the linked observation has expired.
+city or chapter. Float Dive links retain the profile, selected sample and globe/map projection. Links open paused; recent feeds explain when the linked observation has expired.
 
 On desktop, the paired **Globe / Map** control switches the shared view. Source times and the legend
 sit together below the canvas. On phones, the globe stays above the adjustable sheet; use its handle
@@ -66,7 +66,8 @@ readings are not advertised as current.
 
 Recent visits appear under **Pick up where you left off**. **Save view** keeps one bookmark per story
 on this device; **Update saved view** replaces its saved point. Recorded stories retain their held time and projection; Moonfall retains its traverse,
-Tonight’s Sky its city and time, and Float Dive its measured depth. Live views reload their providers;
+Tonight’s Sky its city and time, and Float Dive its measured depth and projection. In Float Dive,
+**Keep this observation** saves the reading, source date and an optional note; **Update kept observation** replaces that bookmark. Live views reload their providers;
 a radar scan may expire and a recent float profile may become unavailable. **Saved views** lets you
 remove bookmarks or clear recent visits; **Undo** restores the last removal while you remain in the app. Reopening a catalogue entry also resumes its saved moment.
 A compact return action on the landing page and in Stories uses **Continue** for an unfinished story, **Watch again** for a completed story, and **Open latest** for a current-data view. Saved views still reopen their exact saved moment. At the end of finite playback, **Up next** reveals one related story without automatically opening it or moving focus. It prefers a related view absent from recent history and avoids the view you just came from; source and date differences remain explicit.
@@ -121,7 +122,7 @@ measurements, not field recordings.
   raised glow illustrates the footprint. Reduced motion opens the polar view directly.
 - **Float Dive** follows an Argo float from its North Atlantic position into a schematic ascent on the globe.
   Play or scrub measured temperature and practical salinity from depth toward the surface.
-  Pick a recent Marine Institute profile or a bundled recording. **View measured profile** plots the readings against depth with explicit units and ranges. The ending compares the deepest and shallowest measured temperatures; it does not claim a global trend.
+  **Locate**, **Rise** and **Notice** connect its location, ascent and measured finding. **View measured profile** links chart selection to the float and its readout, with explicit units and ranges. **Profile & evidence** offers recent Marine Institute profiles and bundled recordings. The ending identifies a measured temperature maximum when present or compares the endpoints; it does not claim a global trend.
 - **Storm radar** is an independent Explore layer with playback, stepping and a scan-time slider.
   It preserves the current camera and other layers. The catalogue's **Storm Radar** view adds regional
   framing and optional NOAA United States detail. Coverage notes explain the sources and their limits.
@@ -425,7 +426,7 @@ own mask. The PNGs are raster derivatives of that SVG, without changing the glob
 
 Aggregate traffic and feature-event coverage, privacy boundaries and queries: [Analytics](docs/ANALYTICS.md).
 
-New visits offer one starting story from available recent radar, a current aurora forecast, or
-a recorded Argo profile. Stories also have an editorial browsing order; the full catalogue remains
+New visits start with a recorded Argo investigation that works independently of recent feed availability.
+Stories also have an editorial browsing order; the full catalogue remains
 searchable. Completed journeys explain what their sources establish before suggesting another view.
 Shared moments open with context and support the device share sheet when available.

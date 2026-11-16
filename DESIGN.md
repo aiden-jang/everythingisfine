@@ -737,9 +737,9 @@ its geometry. The preview appears only after recording ends and can be dismissed
 
 #### Curated discovery and story continuity
 
-The first visit offers one source-aware story alongside the invitation: recent radar when a
-scan is less than half an hour old, otherwise an available aurora forecast, otherwise a recorded
-Argo profile. Returning visitors keep Continue in the same place. No feed answer claims that rain
+The first visit offers the recorded Float Dive investigation alongside the invitation, with its
+source context visible at every width. Its editorial priority does not depend on a recent feed
+response. Returning visitors keep Continue in the same place. No feed answer claims that rain
 or aurora is visible at the visitor’s location. The editorial catalogue order mixes Earth, ocean
 and sky; the complete catalogue and search retain every experience.
 
@@ -790,3 +790,4 @@ the selected chart point, instrument reading and playback refer to the same samp
 playback deck stays reachable independently of the scrolling reading panel. On phones,
 inspection reserves more room for the chart and instrument. The recorded invitation retains
 its source context at every width. Optional notes remain secondary to keeping an observation.
+Notice brings the finding into the reading pane without scrolling the shared world or playback.
