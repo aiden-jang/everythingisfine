@@ -63,14 +63,22 @@ test("onward recommendations avoid the last story and preserve the original retu
   page,
 }) => {
   await start(page, 1440);
-  await page.getByRole("searchbox", { name: "Find a story" }).fill("Aral");
+  const search = page.getByRole("searchbox", { name: "Find a story" });
+  await search.fill("Aral");
   await page.locator("#search-story-aral").click();
-  await page.locator(".related-stories summary").click();
-  await expect(page.locator(".related-stories button strong")).toHaveText("Water Weight");
-  await page.locator(".related-stories button").click();
-  await page.locator(".related-stories summary").click();
-  await expect(page.locator(".related-stories button strong")).not.toHaveText("Vanishing Sea");
-  await page.getByRole("button", { name: "Back to stories", exact: true }).click();
+  const aral = page.getByRole("region", { name: "Vanishing Sea", exact: true });
+  // Loading panels also contain recommendations; their controls are replaced by the player.
+  await expect(aral.getByRole("slider").first()).toBeVisible();
+  await aral.locator(".related-stories summary").click();
+  await expect(aral.locator(".related-stories button strong")).toHaveText("Water Weight");
+  await aral.locator(".related-stories button").click();
+  const water = page.getByRole("region", { name: "Water Weight", exact: true });
+  await expect(water.getByRole("slider").first()).toBeVisible();
+  await expect(aral).toHaveCount(0);
+  await water.locator(".related-stories summary").click();
+  await expect(water.locator(".related-stories button strong")).toHaveText("River Pulse");
+  await water.getByRole("button", { name: "Back to stories", exact: true }).click();
+  await expect(search).toHaveValue("Aral");
   await expect(page.locator("#search-story-aral")).toBeFocused();
 });
 

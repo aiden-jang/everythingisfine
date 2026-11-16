@@ -54,6 +54,9 @@ radar reveal tests establish a finite animation without blending successive scan
 Camera-preview checks wait for the complete starting camera and projection before opening Stories
 and saving its return view. A nondefault map view keeps dismiss, pane changes and story returns
 from passing on a reset to the home camera.
+Onward-recommendation checks wait for each story's player before opening recommendations; loading
+panels expose temporary controls that are replaced on arrival. Destination, next recommendation,
+original query and return focus are checked against the loaded story panels.
 
 Visit checks cover scene discovery, local bookmarks, resume after a new page visit, measured float
 depth and refused storage. Clip checks decode the actual browser-produced video, check rendered
