@@ -105,7 +105,7 @@ export function ExperienceEnding({ id, showFinding = true }: { id?: string; show
         className="related-stories"
         onToggle={() => {
           if (details.current?.open && !completed)
-            details.current.scrollIntoView({
+            details.current.querySelector("button")?.scrollIntoView({
               block: "nearest",
               behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
             });

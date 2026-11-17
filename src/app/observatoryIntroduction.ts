@@ -48,3 +48,6 @@ export function observatoryIntroduction({
           : "A live view of earthquakes, changing skies, and a restless planet.";
   return { title, description };
 }
+export function observatoryReadingLabel(float: boolean, player: boolean) {
+  return float ? "Float Dive" : player ? undefined : "Earth observatory";
+}

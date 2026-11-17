@@ -59,7 +59,11 @@ test("Katrina’s reduced-motion map supports the NOAA fixes and keyboard scrubb
   const slider = panel.getByRole("slider", { name: "Track time" });
   const stage = page.getByRole("group", { name: "Eye of the Storm on the map" });
   await panel.getByRole("button", { name: "Map", exact: true }).click();
-  await expect(stage.getByText("Track overview")).toBeVisible();
+  await expect(stage.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(slider).toHaveAttribute("aria-valuetext", "29 Aug · 11:10 UTC");
   await expect(panel.getByText("Wind extent unavailable for this position.")).toBeVisible();
   await panel.getByRole("button", { name: "Inspect offshore peak", exact: true }).click();
   await expect(panel.getByText("150 kt max wind")).toBeVisible();

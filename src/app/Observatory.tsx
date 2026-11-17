@@ -1,4 +1,4 @@
-import { observatoryIntroduction } from "./observatoryIntroduction";
+import { observatoryIntroduction, observatoryReadingLabel } from "./observatoryIntroduction";
 import { SunWatch, TonightSky, TonightCompass, FloatDive } from "./ObservatoryViews";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import type { CameraState } from "../globe/controls";
@@ -213,8 +213,9 @@ function ObservatoryContent({
             data-storm-radar={radar.active || undefined}
             data-tonight={tonight.active || undefined}
             data-float-dive={floatDive.active || undefined}
-            aria-label={floatDive.active ? "Float Dive" : radar.active ? undefined : "Earth observatory"}
-            role={tonight.active || radar.active ? "presentation" : undefined}
+            aria-label={observatoryReadingLabel(floatDive.active, tonight.active || radar.active)}
+            aria-labelledby={tonight.active ? "local-sky-title" : undefined}
+            role={tonight.active || radar.active ? "group" : undefined}
           >
             {floatDive.active ? (
               <Suspense fallback={<p role="status">Opening Float Dive…</p>}>

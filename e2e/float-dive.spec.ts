@@ -189,11 +189,11 @@ for (const width of [1440, 390])
       for (const phoneWidth of [390, 320]) {
         await page.setViewportSize({ width: phoneWidth, height: phoneWidth === 320 ? 640 : 844 });
         await expect(control).toBeInViewport({ ratio: 1 });
+        await expect(projection).toBeInViewport({ ratio: 1 });
         const camera = (await control.boundingBox())!;
         const buttons = (await projection.boundingBox())!;
         const panel = (await inspector.boundingBox())!;
-        expect(Math.abs(camera.y - buttons.y)).toBeLessThanOrEqual(2);
-        expect(camera.x + camera.width).toBeLessThan(buttons.x);
+        expect(buttons.y).toBeGreaterThanOrEqual(panel.y + panel.height);
         expect(camera.y + camera.height).toBeLessThanOrEqual(panel.y);
         await control.click();
         await page.getByRole("button", { name: "Recenter view", exact: true }).click();

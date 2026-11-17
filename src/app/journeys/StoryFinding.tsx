@@ -12,7 +12,7 @@ export function StoryFinding({ id, completed }: { id: string; completed: boolean
       <p>{finding}</p>
       {navigation?.returnLabel && (
         <button type="button" onClick={() => navigation.returnToBrowse()}>
-          {navigation.returnLabel}
+          Return to your place
         </button>
       )}
     </section>

@@ -186,6 +186,11 @@
     padding-block: 8px;
   }
 }
+@media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
+  .frame[data-presentation="observe"] .zones:has(.replay-sidebar) {
+    grid-template-rows: minmax(155px, 1fr) clamp(400px, 60dvh, 560px);
+  }
+}
 
 @media (max-height: 620px) and (min-width: 600px) {
   .story-dock-host {

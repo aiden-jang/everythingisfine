@@ -231,7 +231,7 @@
 }
 
 @media (max-width: 599px) {
-  .frame[data-presentation="observe"] .zones:has(.storm-finding) {
+  .frame[data-presentation="observe"] .zones:has(.replay-sidebar):has(.storm-finding) {
     grid-template-rows: minmax(145px, 1fr) clamp(480px, 71dvh, 650px);
   }
   .observation-panel:has(.storm-finding) > .observation-note,

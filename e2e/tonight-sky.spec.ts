@@ -47,7 +47,7 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await slider.press("End");
   const sunrise = await time.getAttribute("datetime");
   expect(Date.parse(sunrise!) - Date.parse(sunset!)).toBeGreaterThan(10 * 3_600_000);
-  await expect(targets).not.toHaveText(sunsetReadings);
+  await expect(targets).not.toHaveText(sunsetReadings, { useInnerText: true });
   await expect(horizon).toContainText("Facing E · 90°");
   const sunriseReadings = await targets.innerText();
   await sky.getByRole("button", { name: "Meteor Nights", exact: true }).click();
@@ -59,7 +59,7 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await linkedMeteor.getByRole("button", { name: "Sky view", exact: true }).click();
   await expect(city).toHaveValue("Tokyo");
   await expect(time).toHaveAttribute("datetime", sunrise!);
-  await expect(targets).toHaveText(sunriseReadings);
+  await expect(targets).toHaveText(sunriseReadings, { useInnerText: true });
   await expect(horizon).toContainText("Facing E · 90°");
   await expect(horizon.locator("[data-radiant-arc]")).toHaveCount(0);
   await sky.getByRole("button", { name: "Meteor Nights", exact: true }).click();

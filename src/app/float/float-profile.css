@@ -179,7 +179,7 @@
 
 @media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
   .float-profile {
-    max-height: calc(100% - 74px);
+    max-height: calc(100% - 140px);
     padding: 10px 12px;
   }
   .float-profile-heading h2 {

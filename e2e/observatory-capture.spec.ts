@@ -31,7 +31,7 @@ test("the featured lunar journey keeps its canvas and saves its own scientific c
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
   await openStories(page);
   await page.getByRole("button", { name: "Moonfall", exact: true }).click();
-  const moon = page.locator("#observatory-intro");
+  const moon = page.getByRole("region", { name: "Moonfall", exact: true });
   await expect(page.getByRole("group", { name: "Lunar view" })).toContainText("Taurus–Littrow Valley");
   await expect(moon).toHaveRole("region");
   await expect(moon).toHaveAccessibleName("Moonfall");
