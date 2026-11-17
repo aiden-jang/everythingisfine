@@ -44,6 +44,9 @@ export function savedVisitKey(visit: Visit): string {
   if (visit.id === "moonfall" && lunar && lunar.station !== null)
     return `moonfall:${lunar.eva}:${lunar.station}`;
   const moment = visit.position.moment;
+  if (visit.id === "katrina" && moment?.chapter === "compare" && moment.at !== undefined)
+    return `katrina:${moment.at}`;
+  if (visit.id === "kilauea" && moment?.chapter === "compare") return "kilauea:compare";
   return visit.id === "tonga" && moment?.choice && moment.at !== undefined
     ? `tonga:${moment.choice}:${Math.floor(moment.at / 60_000)}`
     : visit.id;

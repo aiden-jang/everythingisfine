@@ -271,9 +271,12 @@ the modeled slip, then ShakeMap contours appear on the shared surface. Recorded 
 station marks while the traces and optional audio stay in the readings panel. Regenerate the packed
 asset with [make-tohoku.mjs](tools/make-tohoku.mjs).
 
-Katrina’s camera follows the interpolated center. The track and wind radii stay registered to Earth,
-while the readout retains the latest NOAA fix at or before the cursor. Regenerate the packed
-HURDAT2 track with [make-katrina.mjs](tools/make-katrina.mjs).
+Katrina opens with a resized WebP of [NASA Terra MODIS imagery from 28 August 2005 at 17:00 UTC](https://science.nasa.gov/earth/earth-observatory/hurricane-katrina-15395/),
+courtesy of the MODIS Rapid Response Team at Goddard Space Flight Center. The photograph dissolves
+as the camera follows the interpolated center. The track and measured wind radii stay registered to
+Earth. The final Gulf overview holds the camera steady while the reader compares any of seven NOAA
+fixes. Each fix can be saved independently. Regenerate the packed HURDAT2 track with
+[make-katrina.mjs](tools/make-katrina.mjs).
 
 Tonga crossfades two compressed satellite atlases into the shared globe and map. Its replay clock
 follows scan-start times, then drives the estimated wavefront and cursor in the observed pressure
@@ -287,9 +290,11 @@ a new endpoint. `tools/tonga-share-pages.mjs` emits their HTML; regenerate the t
 images with `node tools/tonga-share-cards.mjs`. `pressureShare` validates these routes before the
 client normalizes the path and opens the paused recipient view.
 
-Kīlauea draws the survey and coastline comparison onto one geographically anchored texture in the
-shared globe and map. The regional camera magnifies that surface after arrival. Dated lava increments
-accumulate into each snapshot. The HVO footage is a separate layer in the same story.
+Kīlauea flies from Fissure 8 to Kapoho Bay as dated USGS lava increments accumulate. The coastline
+comparison packs the before and after surveys into one geographically registered texture. Its
+divider changes a shader uniform, keeping the camera steady and avoiding texture uploads while
+scrubbing. The saved comparison restores the divider and projection. The HVO footage remains
+available at the ocean-entry snapshot.
 The data generator [make-kilauea.py](tools/make-kilauea.py) uses Python with NumPy, Pillow,
 PyProj, PyShp, and Shapely, plus FFmpeg for the HVO excerpt.
 

@@ -21,13 +21,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.storm-transport {
-  display: grid;
-  width: min(100%, 29rem);
-  min-width: 0;
-  gap: 6px;
-}
-
 .storm-timeline {
   display: flex;
   flex-wrap: wrap;
@@ -84,7 +77,7 @@
 }
 
 .storm-invitation h3,
-.storm-finding h3 {
+.storm-finding > h3 {
   max-width: 10ch;
   font-family: "Alumni Sans", var(--font-sans);
   font-size: clamp(48px, 5.4vw, 72px);
@@ -94,7 +87,7 @@
   text-wrap: balance;
 }
 
-.storm-finding h3 {
+.storm-finding > h3 {
   max-width: 15ch;
   font-size: clamp(40px, 4vw, 54px);
 }
@@ -175,22 +168,6 @@
   line-height: 1.5;
 }
 
-.storm-finding-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 18px;
-}
-
-.storm-finding-actions button {
-  min-height: 44px;
-  color: var(--color-ink);
-  font-size: 13px;
-  text-align: start;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-  cursor: pointer;
-}
-
 .storm-records {
   border-top: 1px solid var(--color-hairline);
 }
@@ -231,68 +208,118 @@
 }
 
 @media (max-width: 599px) {
-  .frame[data-presentation="observe"] .zones:has(.replay-sidebar):has(.storm-finding) {
-    grid-template-rows: minmax(145px, 1fr) clamp(480px, 71dvh, 650px);
-  }
-  .observation-panel:has(.storm-finding) > .observation-note,
-  .observation-panel:has(.storm-finding) .observation-heading h2,
-  .zones:has(.storm-finding) .replay-stage .stage-readout {
-    display: none;
-  }
-  .storm-wind-chart svg {
-    max-height: 128px;
-  }
-  .storm-wind-chart text {
-    font-size: 14px;
-  }
   .storm-invitation,
   .storm-finding {
-    gap: 12px;
+    gap: 10px;
   }
 
   .storm-invitation h3 {
     max-width: none;
     font-size: 48px;
   }
-
-  .storm-invitation p,
-  .storm-finding > p {
-    font-size: 14px;
-  }
 }
+
+.storm-archive {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 48%;
+  pointer-events: none;
+}
+
 @media (prefers-reduced-motion: no-preference) {
-  .frame[data-presentation="observe"] .zones:has([data-storm-phase]) {
-    transition: grid-template-rows 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  .storm-archive {
+    transition:
+      opacity 120ms linear,
+      scale 120ms linear;
   }
 }
 
-.storm-finding {
-  padding: 20px;
-  border-radius: 3px;
+.storm-journey .stage-ident {
+  width: fit-content;
+  padding: 4px 7px;
+  background: var(--color-void);
+}
+
+.storm-map-labels {
+  position: absolute;
+  inset: 0;
+}
+
+.storm-map-labels span {
+  position: absolute;
+  visibility: hidden;
+  padding: 3px 5px;
+  background: var(--color-void);
+  color: var(--color-ink);
+  white-space: nowrap;
+  transform: translate(9px, -110%);
+}
+
+.storm-finding-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.storm-finding-actions button {
+  display: grid;
+  align-content: center;
+  min-height: 44px;
+  padding: 7px 9px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 5px;
+  color: var(--color-ink);
+  font-size: 13px;
+  text-align: start;
+  cursor: pointer;
+}
+
+.storm-finding-actions button[aria-pressed="true"] {
+  border-color: var(--color-faint);
+  background: var(--color-raised);
+}
+
+.storm-keep-actions {
+  margin-block: 0;
+}
+
+.storm-keep-actions p {
+  flex-basis: 100%;
+}
+
+.storm-reading .storm-measurements strong {
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.storm-keep-actions .storm-keep {
   background: var(--color-ink);
   color: var(--color-void);
 }
-.storm-finding :is(p, button, summary, figcaption) {
-  color: inherit;
-}
-.storm-finding .storm-wind-chart text {
-  fill: currentColor;
-}
-.storm-finding .storm-wind-chart :is(line, polyline) {
-  stroke: currentColor;
-}
-.storm-finding .storm-wind-chart circle {
-  fill: currentColor;
-  stroke: var(--color-ink);
-}
-.storm-finding :is(button, summary):focus-visible {
-  outline-color: var(--color-void);
-}
-.storm-finding .storm-records button:hover {
-  background: transparent;
-  color: inherit;
-  text-decoration: underline;
-}
-.storm-finding .storm-wind-chart line {
-  opacity: 0.2;
+
+@media (max-width: 599px) {
+  .storm-journey:has(.storm-map-labels) .stage-readout {
+    inset: calc(var(--stage-inset) + 2px) calc(var(--stage-inset) + 12px) auto auto;
+  }
+
+  .storm-journey:has(.storm-map-labels) .stage-readout time {
+    display: none;
+  }
+
+  .storm-finding {
+    gap: 10px;
+  }
+
+  .storm-finding > h3 {
+    max-width: none;
+    font-size: clamp(32px, 8vw, 42px);
+  }
+
+  .storm-finding > p {
+    font-size: 13px;
+    line-height: 1.45;
+  }
 }

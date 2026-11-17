@@ -9,6 +9,7 @@ import { StoryDockProvider } from "./StoryDock";
 import { StoryProjection } from "./StoryProjection";
 import "../archive-scene.css";
 import "../storm/storm.css";
+import "../kilauea/kilauea.css";
 import "../megaflash/megaflash.css";
 import "../rupture/recorded-waves.css";
 import "../tonga/tonga.css";
@@ -56,6 +57,7 @@ export function ReplayPanel({
   focusOnEntry = true,
   ending = true,
   finding = true,
+  save = true,
   className = "",
   sharing = true,
   evidence,
@@ -71,6 +73,7 @@ export function ReplayPanel({
   focusOnEntry?: boolean;
   ending?: boolean;
   finding?: boolean;
+  save?: boolean;
   className?: string;
   sharing?: boolean;
   evidence?: ReactNode;
@@ -122,7 +125,7 @@ export function ReplayPanel({
             <SharedStory />
             {children}
             {sharing && <ShareMoment />}
-            {ending && <ExperienceEnding showFinding={finding} />}
+            {ending && <ExperienceEnding showFinding={finding} showSave={save} />}
             <details className="replay-sources">
               <summary>Sources &amp; coverage</summary>
               <div>{sources}</div>

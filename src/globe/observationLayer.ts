@@ -10,6 +10,7 @@ import {
   Mesh,
   MeshBasicMaterial,
   Points,
+  ShaderChunk,
   ShaderMaterial,
   SphereGeometry,
   SRGBColorSpace,
@@ -195,19 +196,32 @@ export function createObservationLayer(morph: { value: number }) {
   );
   morphable(raster.material, morph);
   const sweep = { value: 1 };
+  const divider = { value: -1 };
   const compileRaster = raster.material.onBeforeCompile;
   raster.material.onBeforeCompile = (shader, renderer) => {
     compileRaster(shader, renderer);
     shader.uniforms.sweep = sweep;
-    shader.fragmentShader = `uniform float sweep;\n${shader.fragmentShader}`.replace(
-      "#include <map_fragment>",
-      `#include <map_fragment>
+    shader.uniforms.surveyDivider = divider;
+    const mapFragment = ShaderChunk.map_fragment.replace(
+      "texture2D( map, vMapUv )",
+      `texture2D( map, surveyDivider < 0.0 ? vMapUv :
+        vec2(vMapUv.x, 0.5 * clamp(vMapUv.y, 0.001, 0.999) + 0.5 * (1.0 - step(surveyDivider, vMapUv.x))))`,
+    );
+    shader.fragmentShader =
+      `uniform float sweep;\nuniform float surveyDivider;\n${shader.fragmentShader}`.replace(
+        "#include <map_fragment>",
+        `${mapFragment}
        #ifdef USE_MAP
        diffuseColor.a *= smoothstep(vMapUv.x - 0.025, vMapUv.x + 0.025, sweep);
+       if (surveyDivider > 0.0 && surveyDivider < 1.0) {
+         float edge = fwidth(vMapUv.x);
+         float white = 1.0 - smoothstep(0.1 * edge, 1.2 * edge, abs(vMapUv.x - surveyDivider));
+         diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.90, 0.92, 0.90), white);
+       }
        #endif`,
-    );
+      );
   };
-  raster.material.customProgramCacheKey = () => "fm-morph-radar-sweep";
+  raster.material.customProgramCacheKey = () => "fm-morph-radar-sweep-survey";
   raster.renderOrder = 4;
   line.renderOrder = 5;
   dot.renderOrder = 6;
@@ -248,6 +262,7 @@ export function createObservationLayer(morph: { value: number }) {
       dot.geometry.dispose();
       dot.geometry = marks.geometry();
     }
+    divider.value = view?.surveyDivider ?? -1;
     const image = view?.frame.raster ? (view.surface ?? view.image) : null;
     const priorImage = prior?.frame.raster ? (prior.surface ?? prior.image) : null;
     if (image !== priorImage) {
@@ -262,7 +277,8 @@ export function createObservationLayer(morph: { value: number }) {
         raster.material.map.needsUpdate = true;
       }
       raster.material.needsUpdate = true;
-    } else if (view?.surface && raster.material.map) raster.material.map.needsUpdate = true;
+    } else if (view?.surface && view.surveyDivider === undefined && raster.material.map)
+      raster.material.map.needsUpdate = true;
     const bounds = view?.frame.raster?.bounds ?? FULL;
     const corners = view?.frame.raster?.corners;
     if (

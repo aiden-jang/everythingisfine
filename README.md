@@ -173,17 +173,19 @@ measurements, not field recordings.
   beneath the ocean and then to estimated shaking across Japan. Choose **Fault movement** or
   **Surface shaking** to inspect either view. **Recorded waves** shows the stations on Earth and compares their traces on a
   shared timeline and offers optional sonification. Reduced motion opens the finished fault view.
-- **Follow Hurricane Katrina** banks over the Gulf and follows NOAA’s 2005 best track to landfall
-  near Buras, Louisiana. Fresh visits begin with **Follow the storm**. Its ending compares the recorded offshore peak with landfall and exposes all seven positions. Pause, scrub, or jump to the offshore peak and landfall. Reduced motion
-  opens a fixed overview with the same readings.
+- **Eye of the Storm** opens on NASA’s Terra image of Katrina. **Follow the storm** banks over
+  the Gulf along NOAA’s 2005 best track to Buras, Louisiana. At the end, compare the offshore peak
+  and landfall from a fixed camera, inspect any of seven recorded positions, or keep an exact
+  reading. Reduced motion opens the same comparison directly.
 - **Tonga’s shockwave** begins with **Follow the wave**, then opens the original infrared and
   water-vapor sequence before pulling back to the estimated atmospheric wave. **Inspect record**
   connects a station on the world to its measured pressure trace. Drag the trace or use arrow keys
   to select a minute, keep multiple readings, or share a finding that opens paused at that reading.
   Reduced motion retains the same scans, timeline and stations with fixed framing.
-- **Follow Kīlauea’s lava** flies to Hawaiʻi and follows the 2018 flow from Fissure 8 to Kapoho Bay.
-  Scrub dated USGS maps, compare the former shore with the August 9 footprint on either projection,
-  or open the HVO footage at the ocean-entry chapter.
+- **Kīlauea** follows the 2018 flow from Fissure 8 to Kapoho Bay. Scrub dated USGS maps, open
+  the HVO footage at ocean entry, or use **Compare coast** to slide between the former shore and
+  the August 9 footprint. The shoreline stays registered on the globe and map, and the slider
+  position can be saved.
 - **Iceberg Drift** follows A-68A and its 13 recorded fragments on the globe and map. Choose an
   iceberg to jump to its last listed position, or open a satellite image at one of three chapters.
 - **Watch Megaflash** slows down a 2017 lightning flash from the southern Plains. Follow the
@@ -336,7 +338,7 @@ Use the [visitor walkthrough](docs/visitor-review.md) for real-phone and first-v
 | Coastlines and replay cities | Natural Earth, public domain |
 | Plate boundaries | PB2002, Bird (2003), simplified for display |
 | Tōhoku rupture and shaking | USGS finite-fault model and preferred ShakeMap Atlas MMI contours |
-| Katrina replay | NOAA National Hurricane Center Atlantic HURDAT2 best track |
+| Katrina replay | NOAA National Hurricane Center Atlantic HURDAT2 best track, NASA Terra MODIS imagery |
 | Tonga replay | NOAA GOES-17 ABI bands 13 and 8, one-minute ASOS via Iowa Environmental Mesonet, Wright et al. (2022) |
 | Kīlauea replay | USGS lower East Rift Zone chronology, HVO helicopter footage, 3DEP reference relief, Hawaiʻi Statewide GIS historic coast |
 | Iceberg Drift | UK Polar Data Centre A-68A and descendant tracks, NASA Earth Observatory images from Terra MODIS, Landsat 8 and NOAA-20 VIIRS |
@@ -361,7 +363,8 @@ fault visible. The shaking contours show estimated intensity for the event. [USG
 Katrina’s replay interpolates the storm center and available 34- and 64-knot quadrant radii between
 published fixes. The readout keeps each fix’s estimated maximum sustained winds and central
 pressure. The radii are missing at the Buras fix, so that view omits the overlays.
-[NHC Katrina report](https://www.nhc.noaa.gov/data/tcr/AL122005_Katrina.pdf).
+[NHC Katrina report](https://www.nhc.noaa.gov/data/tcr/AL122005_Katrina.pdf) ·
+[NASA Terra MODIS opening image](https://science.nasa.gov/earth/earth-observatory/hurricane-katrina-15395/).
 
 Tonga’s satellite views use colorized crops of the original infrared scans and differences
 between consecutive water-vapor scans. The scan labels use UTC start times. The globe’s ring

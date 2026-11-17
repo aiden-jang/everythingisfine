@@ -115,7 +115,13 @@ export function ObservationDeckShell({
             closeLabel={closeLabel}
           />
         ) : entry === "kilauea" ? (
-          <KilaueaJourney onView={deck.update} onMap={deck.setMap} onClose={close} closeLabel={closeLabel} />
+          <KilaueaJourney
+            map={deck.map}
+            onView={deck.update}
+            onMap={deck.setMap}
+            onClose={close}
+            closeLabel={closeLabel}
+          />
         ) : isReplay(entry) ? (
           <RecordedReplay
             entry={entry}

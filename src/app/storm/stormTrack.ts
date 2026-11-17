@@ -15,7 +15,7 @@ const mix = (a: number, b: number, t: number) => a + (b - a) * t;
 const ease = (x: number) => x * x * (3 - 2 * x);
 
 export function stormAt(minute: number) {
-  const at = START + 60_000 * Math.max(0, Math.min(TRACK_MINUTES, minute));
+  const at = START + Math.round(60_000 * Math.max(0, Math.min(TRACK_MINUTES, minute)));
   const index = FIXES.findIndex((fix) => fix.time > at);
   const fixIndex = index === -1 ? FIXES.length - 1 : index - 1;
   const from = FIXES[fixIndex]!;

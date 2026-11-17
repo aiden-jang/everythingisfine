@@ -29,17 +29,22 @@ test("Katrina’s camera flight reaches the recorded Buras landfall and can repl
   await panel.getByRole("button", { name: "Map", exact: true }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", pausedAt!);
   await panel.getByRole("button", { name: "Play", exact: true }).click();
-  await expect(panel.getByRole("heading", { name: "The peak came offshore.", exact: true })).toBeVisible();
+  await expect(panel.getByRole("heading", { name: "Two points. One storm.", exact: true })).toBeVisible();
+  await panel.getByText("All seven recorded positions", { exact: true }).click();
   await expect(
     panel.getByRole("img", { name: "Katrina’s seven recorded wind readings" }).locator("circle"),
   ).toHaveCount(7);
-  await expect(
-    panel.getByText("NOAA recorded 150 kt offshore, then 110 kt at landfall near Buras, Louisiana.", {
-      exact: false,
-    }),
-  ).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Inspect offshore peak" })).toContainText("150 kt");
+  await expect(panel.getByRole("button", { name: "Inspect landfall" })).toContainText("110 kt");
   await expect(panel.getByRole("heading", { name: "Landfall near Buras, Louisiana" })).toBeVisible();
-  await expect(panel.getByText("110 kt max wind")).toBeVisible();
+  await expect(panel.locator(".storm-measurements").getByText("110 kt", { exact: true })).toBeVisible();
+  await expect(panel.getByRole("slider", { name: "Recorded fix" })).toHaveAttribute(
+    "aria-valuetext",
+    "29 Aug · 11:10 UTC",
+  );
+  await panel.getByRole("button", { name: "Inspect offshore peak", exact: true }).click();
+  await expect(panel.getByRole("slider", { name: "Recorded fix" })).toHaveValue("3");
+  await panel.getByRole("button", { name: "Back to replay", exact: true }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", "29 Aug · 11:10 UTC");
   await panel.getByRole("button", { name: "Replay", exact: true }).click();
   await expect(panel.getByRole("heading", { name: "Across the Gulf" })).toBeVisible();
@@ -54,9 +59,9 @@ test("Katrina’s reduced-motion map supports the NOAA fixes and keyboard scrubb
   const { panel, canvas, original } = await openStorm(page);
   await expect(panel.getByRole("heading", { name: "Across the Gulf.", exact: true })).toBeVisible();
   await panel.getByRole("button", { name: "Follow the storm", exact: true }).click();
-  await expect(panel.getByRole("heading", { name: "The peak came offshore.", exact: true })).toBeVisible();
+  await expect(panel.getByRole("heading", { name: "Two points. One storm.", exact: true })).toBeVisible();
   await expect(panel.getByRole("button", { name: "Pause", exact: true })).toHaveCount(0);
-  const slider = panel.getByRole("slider", { name: "Track time" });
+  const slider = panel.getByRole("slider", { name: "Recorded fix" });
   const stage = page.getByRole("group", { name: "Eye of the Storm on the map" });
   await panel.getByRole("button", { name: "Map", exact: true }).click();
   await expect(stage.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
@@ -66,14 +71,14 @@ test("Katrina’s reduced-motion map supports the NOAA fixes and keyboard scrubb
   await expect(slider).toHaveAttribute("aria-valuetext", "29 Aug · 11:10 UTC");
   await expect(panel.getByText("Wind extent unavailable for this position.")).toBeVisible();
   await panel.getByRole("button", { name: "Inspect offshore peak", exact: true }).click();
-  await expect(panel.getByText("150 kt max wind")).toBeVisible();
+  await expect(panel.locator(".storm-measurements").getByText("150 kt", { exact: true })).toBeVisible();
   await expect(panel.getByText("64 kt radius")).toBeVisible();
   await expect(slider).toHaveAttribute("aria-valuetext", "28 Aug · 18:00 UTC");
   await slider.press("Home");
   await expect(slider).toHaveAttribute("aria-valuetext", "28 Aug · 00:00 UTC");
-  await expect(panel.getByText("100 kt max wind")).toBeVisible();
+  await expect(panel.locator(".storm-measurements").getByText("100 kt", { exact: true })).toBeVisible();
   await slider.press("End");
-  await expect(panel.getByText("920 mb")).toBeVisible();
+  await expect(panel.locator(".storm-measurements").getByText("920 hPa", { exact: true })).toBeVisible();
   await panel.getByRole("button", { name: "Globe", exact: true }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", "29 Aug · 11:10 UTC");
   expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
@@ -116,14 +121,14 @@ test("a kept Katrina peak reopens exactly paused without the invitation", async 
   const { panel, trigger } = await openStorm(page);
   await panel.getByRole("button", { name: "Follow the storm", exact: true }).click();
   await panel.getByRole("button", { name: "Inspect offshore peak", exact: true }).click();
-  await panel.getByRole("button", { name: "Save view", exact: true }).click();
+  await panel.getByRole("button", { name: "Keep this fix", exact: true }).click();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("eif.visits-v2")!).saved[0]);
-  expect(saved.position.moment.at).toBe(Date.parse("2005-08-28T18:00:00Z"));
+  expect(saved.position.moment).toMatchObject({ at: Date.parse("2005-08-28T18:00:00Z"), chapter: "compare" });
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();
   await trigger.click();
-  await expect(panel.getByRole("slider", { name: "Track time" })).toHaveValue("1080");
-  await expect(panel.getByText("150 kt max wind", { exact: true })).toBeVisible();
+  await expect(panel.getByRole("slider", { name: "Recorded fix" })).toHaveValue("3");
+  await expect(panel.locator(".storm-measurements").getByText("150 kt", { exact: true })).toBeVisible();
   await expect(panel.getByRole("button", { name: "Follow the storm", exact: true })).toHaveCount(0);
   await expect(panel.getByRole("button", { name: "Pause", exact: true })).toHaveCount(0);
 });

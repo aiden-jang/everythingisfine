@@ -102,6 +102,8 @@ export interface ObservationView {
   target: CameraState;
   image: HTMLImageElement | null;
   surface?: HTMLCanvasElement;
+  /** Split in longitudinal UV space for a surface containing the before and after surveys stacked vertically. */
+  surveyDivider?: number;
   curtain?: {
     points: readonly GeoPoint[];
     heightKm: number;

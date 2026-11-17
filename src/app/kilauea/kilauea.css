@@ -1,0 +1,46 @@
+.kilauea-narrative {
+  display: grid;
+  gap: 9px;
+}
+
+.kilauea-narrative h3 {
+  font:
+    600 clamp(36px, 5vw, 66px) / 0.95 "Alumni Sans",
+    var(--font-sans);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.kilauea-actions {
+  margin-block: 0;
+}
+
+.kilauea-actions .kilauea-follow {
+  background: var(--color-ink);
+  color: var(--color-void);
+}
+
+.kilauea-coast-labels {
+  position: absolute;
+  inset: auto var(--stage-inset) calc(var(--stage-inset) + 57px) var(--stage-inset);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 8px;
+  color: var(--color-ink);
+}
+
+.kilauea-coast-labels span {
+  padding: 4px 7px;
+  background: var(--color-void);
+}
+
+.kilauea-journey .survey-transport input {
+  accent-color: #ffc688;
+}
+
+@media (min-width: 900px) {
+  .kilauea-coast-labels {
+    bottom: calc(var(--stage-inset) + var(--story-dock-height, 0px) + 90px);
+  }
+}

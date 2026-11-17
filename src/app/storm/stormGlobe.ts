@@ -29,12 +29,11 @@ function windPath(storm: Frame["storm"], radii: number[], color: number): Observ
 export function stormGeography(
   { storm, camera }: Frame,
   cinematic: boolean,
+  comparing: boolean,
 ): Pick<ObservationView, "frame" | "follow"> {
   const center = { lon: storm.lon, lat: storm.lat };
-  const paths: ObservationPath[] = [
-    { color: 0x8d785f, points: track },
-    { color: 0xffce8f, points: [...track.slice(0, storm.fixIndex + 1), center] },
-  ];
+  const paths: ObservationPath[] = [{ color: comparing ? 0xa6f2e3 : 0x738e99, points: track }];
+  if (!comparing) paths.push({ color: 0xa6f2e3, points: [...track.slice(0, storm.fixIndex + 1), center] });
   if (storm.r34) paths.push(windPath(storm, storm.r34, 0xa5c9d9));
   if (storm.r64) paths.push(windPath(storm, storm.r64, 0xf1bd77));
   return {
@@ -46,17 +45,19 @@ export function stormGeography(
         ...track.map((point, index) => ({
           ...point,
           size: 8,
-          color: index <= storm.fixIndex ? 0xe2b67e : 0x947c66,
+          color: index <= storm.fixIndex || comparing ? 0xa6f2e3 : 0x738e99,
         })),
         { ...center, lift: 0.015, size: 25, color: 0xffdfac },
       ],
     },
-    follow: {
-      lon: camera.lon,
-      lat: camera.lat,
-      zoom: 2.25 + (0.255 - camera.distance) * 2,
-      bank: cinematic ? camera.bank * DEG : 0,
-      pitch: cinematic ? camera.pitch * DEG * 0.085 : 0,
-    },
+    follow: comparing
+      ? undefined
+      : {
+          lon: camera.lon,
+          lat: camera.lat,
+          zoom: 2.25 + (0.255 - camera.distance) * 2,
+          bank: cinematic ? camera.bank * DEG : 0,
+          pitch: cinematic ? camera.pitch * DEG * 0.085 : 0,
+        },
   };
 }

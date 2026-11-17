@@ -18,7 +18,10 @@ export function visitNote(visit: Visit) {
   if (lunar)
     return `${lunarTraverses[lunar.eva]?.stations[lunar.station ?? -1] ?? `Traverse ${lunar.eva + 1}`} · Apollo 17, 1972`;
   if (visit.position.sky) return `${visit.position.sky.city} · saved sky`;
-  const at = visit.position.moment?.at ?? visit.position.radar?.at;
+  const moment = visit.position.moment;
+  if (visit.id === "kilauea" && moment?.chapter === "compare")
+    return `Kapoho Bay · Shoreline divider at ${moment.choice ?? "50"}%`;
+  const at = moment?.at ?? visit.position.radar?.at;
   if (at !== undefined) return layerTime(at);
   if (visit.position.float) return "Saved float profile and depth";
   return "Opens the latest available view";
@@ -110,12 +113,13 @@ export function SaveVisit() {
         type="button"
         onClick={() => {
           const visit = navigation.current();
-          const previous = navigation.library.saved.find(({ id }) => id === visit?.id);
+          const previous =
+            visit && navigation.library.saved.find((entry) => savedVisitKey(entry) === savedVisitKey(visit));
           if (visit)
             navigation.library.save({ ...visit, ...(previous?.note ? { note: previous.note } : {}) });
         }}
       >
-        {navigation.library.saved.some(({ id }) => id === navigation.active)
+        {navigation.library.saved.some((entry) => savedVisitKey(entry) === navigation.active)
           ? "Update saved view"
           : "Save view"}
       </button>

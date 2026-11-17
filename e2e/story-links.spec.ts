@@ -11,6 +11,15 @@ const restores = [
     map: true,
   },
   {
+    id: "katrina",
+    title: "Eye of the Storm",
+    at: "2005-08-28T18:00:00Z",
+    slider: "Recorded fix",
+    value: "3",
+    chapter: "compare",
+    map: true,
+  },
+  {
     id: "tonga",
     title: "Tonga’s shockwave",
     at: "2022-01-15T13:00:00Z",
@@ -45,7 +54,9 @@ const restores = [
 ] as const;
 
 for (const entry of restores) {
-  test(`${entry.title} restores its archived selection and stays paused`, async ({ page }) => {
+  test(`${entry.title} restores its ${"chapter" in entry ? entry.chapter.split(":")[0] : "archived"} selection and stays paused`, async ({
+    page,
+  }) => {
     await installFeeds(page, { presentation: "fresh", empty: true });
     await page.emulateMedia({ reducedMotion: "no-preference" });
     const params = new URLSearchParams({ story: entry.id, v: "observe" });

@@ -212,3 +212,40 @@
     top: calc(var(--stage-inset) + 36px);
   }
 }
+
+.survey-transport {
+  display: grid;
+  grid-column: 1 / -1;
+  min-width: 0;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.replay-region:is(.storm-journey, .kilauea-journey) .stage-readout {
+  inset-block: calc(var(--stage-inset) + 37px) auto;
+  width: fit-content;
+  padding: 4px 7px;
+  background: var(--color-void);
+}
+
+.survey-transport[data-comparing="true"] {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.survey-transport[data-comparing="true"] .story-dock-time {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 900px) {
+  .survey-transport {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .survey-transport[data-comparing] .story-dock-time {
+    grid-column: 1;
+  }
+
+  .survey-transport .story-dock-actions {
+    grid-area: 1 / 2 / span 2;
+  }
+}

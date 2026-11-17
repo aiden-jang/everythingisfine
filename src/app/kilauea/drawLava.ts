@@ -99,7 +99,7 @@ function paintSurvey(
       ctx.strokeStyle = "#ebaa77a0";
       ctx.stroke(map.fresh);
     }
-    ctx.fillStyle = mode === "after" ? "#dc985e" : "#bc7348";
+    ctx.fillStyle = mode === "after" ? "#ffc688" : "#bc7348";
     ctx.fill(map.delta, "evenodd");
   }
   ctx.lineWidth = 1.15 * unit;
@@ -175,15 +175,14 @@ function place(
   ctx.restore();
 }
 
-export function drawLavaSurface(
-  canvas: HTMLCanvasElement,
+function surveyFrame(
+  ctx: Context,
+  width: number,
+  height: number,
   index: number,
   relief: HTMLImageElement | null,
-  comparison: number | null,
+  mode: "dated" | "before" | "after",
 ) {
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return;
-  const { width, height } = canvas;
   const scale = width / (east - west);
   const projection: SurfaceProjection = {
     scale,
@@ -195,35 +194,42 @@ export function drawLavaSurface(
   };
   ctx.fillStyle = "#112638";
   ctx.fillRect(0, 0, width, height);
-  const frame = { index, accent: 0.9 };
-  if (comparison === null) {
-    paintSurvey(ctx, frame, relief, projection, "dated");
-  } else {
-    const center =
-      comparison === 0
-        ? width
-        : comparison === 100
-          ? 0
-          : projection.point([bay[0]! - 650 + (0.5 - comparison / 100) * 13_000, 0])[0];
-    for (const [start, extent, mode] of [
-      [0, center, "before"],
-      [center, width - center, "after"],
-    ] as const) {
-      if (extent <= 0) continue;
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(start, 0, extent, height);
-      ctx.clip();
-      paintSurvey(ctx, frame, relief, projection, mode);
-      ctx.restore();
-    }
-    if (comparison > 0 && comparison < 100) {
-      ctx.fillStyle = "#e2edf6";
-      ctx.fillRect(center, 0, 2, height);
-    }
-  }
+  paintSurvey(ctx, { index, accent: 0.9 }, relief, projection, mode);
   place(ctx, projection.point(vent), "Fissure 8", width, height, true);
   place(ctx, projection.point(bay), "Kapoho Bay", width, height, true);
+}
+
+export function drawLavaSurface(canvas: HTMLCanvasElement, index: number, relief: HTMLImageElement | null) {
+  const context = canvas.getContext("2d");
+  if (context) surveyFrame(context, canvas.width, canvas.height, index, relief, "dated");
+}
+
+export function drawLavaComparison(relief: HTMLImageElement | null) {
+  const atlas = document.createElement("canvas");
+  atlas.width = 1280;
+  atlas.height = 2048;
+  const ctx = atlas.getContext("2d");
+  if (ctx) {
+    const height = atlas.height / 2;
+    ctx.save();
+    for (const mode of ["before", "after"] as const) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, atlas.width, height);
+      ctx.clip();
+      surveyFrame(ctx, atlas.width, height, LAST, relief, mode);
+      ctx.restore();
+      ctx.translate(0, height);
+    }
+    ctx.restore();
+  }
+  return atlas;
+}
+
+export function coastlineDivider(percent: number) {
+  if (percent <= 0) return 1;
+  if (percent >= 100) return 0;
+  return (bay[0]! - 650 + (0.5 - percent / 100) * 13_000 - west) / (east - west);
 }
 
 export function drawLavaFootage(canvas: HTMLCanvasElement, image: HTMLImageElement, elapsed: number) {

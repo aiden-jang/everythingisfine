@@ -15,6 +15,7 @@ async function openKilauea(page: Page) {
 test("Kīlauea plays the survey and opens USGS footage on the shared globe", async ({ page }) => {
   await page.setViewportSize({ width: 1100, height: 760 });
   const { trigger, panel, canvas, original } = await openKilauea(page);
+  await panel.getByRole("button", { name: "Follow the lava", exact: true }).click();
   await expect(panel.getByRole("heading", { name: "Fissure 8 reopens" })).toBeVisible();
   await panel.getByRole("button", { name: "Pause", exact: true }).click();
   await panel.getByRole("button", { name: "Ocean entry" }).click();
@@ -32,7 +33,7 @@ test("Kīlauea keeps the same coastline comparison on globe and map", async ({ p
   await page.setViewportSize({ width: 320, height: 640 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   const { panel, canvas, original } = await openKilauea(page);
-  await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  await expect(panel.getByRole("button", { name: "Follow the lava", exact: true })).toBeVisible();
   await panel.getByRole("button", { name: "Ocean entry" }).click();
   await expect(panel.getByRole("slider", { name: "Mapped extent date" })).toHaveAttribute(
     "aria-valuetext",
@@ -49,6 +50,16 @@ test("Kīlauea keeps the same coastline comparison on globe and map", async ({ p
   await expect(compare).toHaveAttribute("aria-valuetext", "August 9 coastline");
   await panel.getByRole("button", { name: "Globe", exact: true }).click();
   await expect(page.getByRole("group", { name: "Kīlauea on the globe" })).toContainText("August 9, 2018");
+  await compare.press("ArrowLeft");
+  await expect(compare).toHaveValue("99");
+  await panel.getByRole("button", { name: "Keep this comparison" }).click();
+  const kept = await page.evaluate(() => JSON.parse(localStorage.getItem("eif.visits-v2")!).saved[0]);
+  expect(kept.position.moment).toMatchObject({ chapter: "compare", choice: "99" });
+  await panel.getByRole("button", { name: "Back to replay", exact: true }).click();
+  await expect(panel.getByRole("slider", { name: "Mapped extent date" })).toHaveAttribute(
+    "aria-valuetext",
+    "Jun 4 · 22:00 HST",
+  );
   expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
 });
 
