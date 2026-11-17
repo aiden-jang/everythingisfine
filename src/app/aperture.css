@@ -47,7 +47,6 @@
 .frame[data-landing] .observatory-story {
   grid-column: 1;
   align-self: start;
-  pointer-events: auto;
 }
 .frame[data-landing] .observatory-story h2 {
   max-width: none;
@@ -72,6 +71,9 @@
   flex-direction: column;
   gap: 6px;
 }
+.frame[data-landing] .observatory-entry-actions > button {
+  pointer-events: auto;
+}
 .frame[data-landing] .observatory-entry-actions .observatory-primary {
   display: inline-flex;
   align-items: center;
@@ -84,7 +86,6 @@
   border: 0;
   border-radius: 2px;
   font-size: 15px;
-  pointer-events: auto;
 }
 .frame[data-landing] .observatory-summary {
   grid-column: 1;
