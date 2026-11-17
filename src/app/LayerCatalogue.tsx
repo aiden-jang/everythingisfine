@@ -1,4 +1,4 @@
-import { Fragment, type ReactNode } from "react";
+import { Fragment } from "react";
 import { mapLayerNames, type MapLayer } from "./layerVisibility";
 import { layerMetadata } from "./layerMetadata";
 import type { useMapLayers } from "./useMapLayers";
@@ -42,13 +42,11 @@ export function LayerCatalogue({
   quiet,
   disabled,
   onInspect,
-  radar,
 }: {
   controls: ReturnType<typeof useMapLayers>;
   quiet: (id: MapLayer) => string | null;
   disabled: (id: MapLayer) => boolean;
   onInspect: (id: MapLayer) => void;
-  radar: ReactNode;
 }) {
   return (
     <div className="layer-list" data-inspecting={controls.inspector !== null || undefined}>
@@ -101,7 +99,6 @@ export function LayerCatalogue({
                     onChange={(on) => controls.change(id, on)}
                   />
                 </div>
-                {id === "radar" && radar}
               </Fragment>
             );
           })}

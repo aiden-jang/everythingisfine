@@ -2,6 +2,7 @@ import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
+import { StoryDock } from "../observations/StoryDock";
 import { flashGeography, flashLens, flashTarget } from "./flashGlobe";
 import {
   DURATION,
@@ -207,10 +208,10 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
             </span>
           </div>
         </div>
-        <div className="flash-transport">
-          <div className="flash-time">
+        <StoryDock>
+          <div className="flash-time story-dock-time">
             <label htmlFor={id}>Flash elapsed time</label>
-            <span>{label}</span>
+            <span className="story-dock-readout">{label}</span>
           </div>
           <input
             id={id}
@@ -229,17 +230,19 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
               className="archive-scene-button"
               onClick={togglePlay}
             />
-            <button
-              type="button"
-              className="archive-scene-button"
-              onClick={() => update(inspect(timeAtStep(-1)))}
-            >
-              Before flash
-            </button>
-            <button type="button" className="archive-scene-button" onClick={() => update(inspect(DURATION))}>
-              Full extent
-            </button>
           </div>
+        </StoryDock>
+        <div className="archive-scene-controls">
+          <button
+            type="button"
+            className="archive-scene-button"
+            onClick={() => update(inspect(timeAtStep(-1)))}
+          >
+            Before flash
+          </button>
+          <button type="button" className="archive-scene-button" onClick={() => update(inspect(DURATION))}>
+            Full extent
+          </button>
         </div>
       </div>
     </ReplayPanel>

@@ -36,7 +36,7 @@ test("isolating a layer restores choices without changing saved preferences", as
     expect(await page.evaluate(() => localStorage.getItem("eif.mapLayers"))).toBe(saved);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   }
-  await layers.getByRole("combobox", { name: "Find a place", exact: true }).fill("Tokyo");
+  await layers.getByRole("combobox", { name: "Choose a featured city", exact: true }).fill("Tokyo");
   await layers.getByRole("button", { name: "Locate Tokyo", exact: true }).click();
   await expect(layers.getByRole("region", { name: "Observations around Tokyo" })).toContainText(
     "Available reports only",

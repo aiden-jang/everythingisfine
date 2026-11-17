@@ -5,6 +5,7 @@ import type { useStoryClock } from "./useStoryClock";
 import { FrameComparison } from "../observations/FrameComparison";
 import { layerTime } from "../layerTime";
 import { refreshAnnotations } from "../../globe/annotationInput";
+import { StoryDock } from "../observations/StoryDock";
 
 type Clock = ReturnType<typeof useStoryClock>;
 export function StoryTimeline({
@@ -49,42 +50,44 @@ export function StoryTimeline({
           again.
         </p>
       )}
-      <div className="story-time">
-        <label htmlFor="earth-story-time">{label}</label>
-        <time dateTime={new Date(frame.at).toISOString()}>{time}</time>
-        <input
-          id="earth-story-time"
-          className="scrub-slider"
-          type="range"
-          min={0}
-          max={data.frames.length - 1}
-          value={index}
-          aria-valuetext={time}
-          disabled={busy}
-          onInput={(event) => clock.seek(event.currentTarget.valueAsNumber)}
-        />
-      </div>
-      <div className="observatory-actions">
-        <PlaybackButton
-          playing={clock.playing}
-          ended={index === data.frames.length - 1}
-          onClick={clock.toggle}
-          disabled={busy}
-        />
-        {index < data.frames.length - 1 && (
-          <button
-            type="button"
-            title="Restart the story and its cinematic entrance"
-            onClick={() => {
-              refreshAnnotations({ camera: "resume" });
-              clock.replay();
-            }}
+      <StoryDock>
+        <div className="story-time">
+          <label htmlFor="earth-story-time">{label}</label>
+          <time dateTime={new Date(frame.at).toISOString()}>{time}</time>
+          <input
+            id="earth-story-time"
+            className="scrub-slider"
+            type="range"
+            min={0}
+            max={data.frames.length - 1}
+            value={index}
+            aria-valuetext={time}
             disabled={busy}
-          >
-            Restart
-          </button>
-        )}
-      </div>
+            onInput={(event) => clock.seek(event.currentTarget.valueAsNumber)}
+          />
+        </div>
+        <div className="observatory-actions">
+          <PlaybackButton
+            playing={clock.playing}
+            ended={index === data.frames.length - 1}
+            onClick={clock.toggle}
+            disabled={busy}
+          />
+          {index < data.frames.length - 1 && (
+            <button
+              type="button"
+              title="Restart the story and its cinematic entrance"
+              onClick={() => {
+                refreshAnnotations({ camera: "resume" });
+                clock.replay();
+              }}
+              disabled={busy}
+            >
+              Restart
+            </button>
+          )}
+        </div>
+      </StoryDock>
       <div className="story-milestones" role="group" aria-label="Story moments">
         {milestones.map((chapter) => {
           const at = nearest(chapter.at),

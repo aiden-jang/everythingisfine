@@ -2,6 +2,7 @@ import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
+import { StoryDock } from "../observations/StoryDock";
 import { ReplayInset } from "../observations/ReplayInset";
 import { tongaGeography, tongaTarget } from "./tongaGlobe";
 import { paintTongaScan, type Satellite } from "./drawTonga";
@@ -268,27 +269,31 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
               </p>
             )}
           </div>
-          <div className="tonga-time">
-            <label htmlFor={id}>Replay time</label>
-            <time dateTime={timeIso(minute)}>{timeLabel(minute)} UTC</time>
-          </div>
-          <input
-            id={id}
-            className="scrub-slider tonga-scrub"
-            type="range"
-            min={START}
-            max={END}
-            value={Math.floor(minute)}
-            aria-valuetext={`${timeLabel(minute)} UTC`}
-            onInput={(event) => update(survey(Number(event.currentTarget.value)))}
-          />
-          <div className="archive-scene-controls">
-            <PlaybackButton
-              playing={view.playing}
-              ended={ended}
-              className="archive-scene-button"
-              onClick={toggle}
+          <StoryDock>
+            <div className="tonga-time story-dock-time">
+              <label htmlFor={id}>Replay time</label>
+              <time dateTime={timeIso(minute)}>{timeLabel(minute)} UTC</time>
+            </div>
+            <input
+              id={id}
+              className="scrub-slider tonga-scrub"
+              type="range"
+              min={START}
+              max={END}
+              value={Math.floor(minute)}
+              aria-valuetext={`${timeLabel(minute)} UTC`}
+              onInput={(event) => update(survey(Number(event.currentTarget.value)))}
             />
+            <div className="archive-scene-controls">
+              <PlaybackButton
+                playing={view.playing}
+                ended={ended}
+                className="archive-scene-button"
+                onClick={toggle}
+              />
+            </div>
+          </StoryDock>
+          <div className="archive-scene-controls">
             <button type="button" className="archive-scene-button" onClick={() => update(survey(ERUPTION))}>
               Eruption
             </button>

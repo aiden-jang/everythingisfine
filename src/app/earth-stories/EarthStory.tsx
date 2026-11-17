@@ -1,5 +1,5 @@
 import { StoryLoading } from "../StoryLoading";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { useStorySession } from "../observations/StorySession";
 import type { SkyCityPreference } from "../tonight/SkyCityPicker";
@@ -9,6 +9,7 @@ import type { EarthStoryData } from "./types";
 import { StoryPlayer } from "./StoryPlayer";
 import { storyChoice, usesCity } from "./storySelection";
 import { StoryChoices } from "./StoryChoices";
+import { captureStoryFocus } from "./replacementFocus";
 type Props = ReplayProps & { id: EarthStoryId; city: SkyCityPreference; onRadar: () => void };
 
 export function EarthStory(props: Props): JSX.Element {
@@ -18,6 +19,11 @@ export function EarthStory(props: Props): JSX.Element {
   const [loaded, setLoaded] = useState<{ data: EarthStoryData; key: string; choice: string } | null>(null);
   const [failed, setFailed] = useState(false);
   const [retry, setRetry] = useState(0);
+  const restoreFocus = useRef<(() => void) | undefined>();
+  useLayoutEffect(() => {
+    restoreFocus.current?.();
+    restoreFocus.current = undefined;
+  }, [loaded]);
   const key = `${id}:${choice}:${usesCity(id) ? city.name : ""}`;
   useEffect(() => {
     let active = true;
@@ -25,7 +31,10 @@ export function EarthStory(props: Props): JSX.Element {
     void loadEarthStory(id, choice, city.city)
       .then((data) => {
         if (!data.frames.length) throw new Error("No archive observations");
-        if (active) setLoaded({ data, key, choice });
+        if (active) {
+          restoreFocus.current = captureStoryFocus();
+          setLoaded({ data, key, choice });
+        }
       })
       .catch(() => {
         if (active) setFailed(true);
@@ -66,7 +75,7 @@ export function EarthStory(props: Props): JSX.Element {
       displayedChoice={loaded.choice}
       choice={choice}
       setChoice={setChoice}
-      busy={loaded.key !== key}
+      busy={loaded.key !== key && !failed}
       failed={failed}
       retry={() => setRetry((n) => n + 1)}
     />

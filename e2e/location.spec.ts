@@ -39,7 +39,7 @@ test("approximate arrival keeps rounded framing on the same globe and map @dev",
       true,
     );
   }
-  await page.getByRole("combobox", { name: "Find a place", exact: true }).fill("Tokyo");
+  await page.getByRole("combobox", { name: "Choose a featured city", exact: true }).fill("Tokyo");
   await page.getByRole("button", { name: "Locate Tokyo", exact: true }).click();
   await expect.poll(async () => (await camera(page))?.lon).toBeCloseTo(139.7, 0);
   await page.getByRole("button", { name: "View options", exact: true }).click();
@@ -157,7 +157,7 @@ test("denied device location keeps the current view and city search usable @dev"
     page.getByText("Location permission was denied. You can still choose a city.", { exact: true }),
   ).toBeVisible();
   expect(await camera(page)).toEqual(before);
-  await page.getByRole("combobox", { name: "Find a place", exact: true }).fill("Tokyo");
+  await page.getByRole("combobox", { name: "Choose a featured city", exact: true }).fill("Tokyo");
   await page.getByRole("button", { name: "Locate Tokyo", exact: true }).click();
   await expect(page.getByRole("region", { name: "Observations around Tokyo" })).toBeVisible();
   await expect.poll(async () => (await camera(page))?.lon).toBeCloseTo(139.7, 0);

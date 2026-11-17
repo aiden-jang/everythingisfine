@@ -3,6 +3,7 @@ import type { ObservationView } from "../observations/types";
 import stations from "../../sources/observations/recordings/tohoku-waves.json";
 
 import { useStorySession } from "../observations/StorySession";
+import { StoryDock } from "../observations/StoryDock";
 
 const origin = Date.parse("2011-03-11T05:46:24Z");
 const duration = 90 * 60;
@@ -189,32 +190,36 @@ export function RecordedWaves({
             <StationPicker label="First station" index={first} other={second} select={setFirst} />
             <StationPicker label="Second station" index={second} other={first} select={setSecond} />
           </div>
-          <label className="recorded-time">
-            <span>Recording time · {timeAt(seconds)}</span>
-            <input
-              ref={cursor}
-              className="scrub-slider"
-              type="range"
-              min="0"
-              max={duration}
-              step="1"
-              value={seconds}
-              aria-valuetext={timeAt(seconds)}
-              onChange={(event) => seek(event.currentTarget.valueAsNumber)}
-            />
-          </label>
+          <StoryDock label="Recorded wave playback">
+            <label className="recorded-time">
+              <span>Recording time · {timeAt(seconds)}</span>
+              <input
+                ref={cursor}
+                className="scrub-slider"
+                type="range"
+                min="0"
+                max={duration}
+                step="1"
+                value={seconds}
+                aria-valuetext={timeAt(seconds)}
+                onChange={(event) => seek(event.currentTarget.valueAsNumber)}
+              />
+            </label>
+            <div className="archive-scene-controls">
+              <button
+                data-playback-start={!running || undefined}
+                type="button"
+                className="archive-scene-button"
+                onClick={() => {
+                  if (seconds >= duration) setSeconds(0);
+                  play(!running);
+                }}
+              >
+                {running ? "Pause recording" : seconds >= duration ? "Replay recording" : "Play recording"}
+              </button>
+            </div>
+          </StoryDock>
           <div className="archive-scene-controls">
-            <button
-              data-playback-start={!running || undefined}
-              type="button"
-              className="archive-scene-button"
-              onClick={() => {
-                if (seconds >= duration) setSeconds(0);
-                play(!running);
-              }}
-            >
-              {running ? "Pause recording" : seconds >= duration ? "Replay recording" : "Play recording"}
-            </button>
             {a.first !== null && (
               <button type="button" className="archive-scene-button" onClick={() => seek(a.first!)}>
                 Jump to {a.id} onset

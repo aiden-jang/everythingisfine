@@ -136,7 +136,7 @@
 }
 .float-profile-inspect input {
   width: 100%;
-  min-height: 36px;
+  min-height: 44px;
 }
 .float-profile p {
   color: var(--color-dim);
@@ -197,16 +197,6 @@
   }
   .float-profile-inspect strong {
     font-size: 13px;
-  }
-  .float-profile > p {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
   }
 }
 @media (max-height: 620px) and (min-width: 600px) {

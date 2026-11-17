@@ -146,37 +146,34 @@ export function MapLayers({
           ) : null}
         </div>
       )}
-      <LayerCatalogue
-        controls={controls}
-        quiet={quiet}
-        disabled={disabled}
-        onInspect={inspect}
-        radar={
-          <div hidden={layer !== "radar" && layer !== null}>
-            {controls.radar && (
-              <Suspense fallback={<p role="status">Loading radar controls…</p>}>
-                <RadarLayer
-                  compact={layer === null}
-                  suspended={controls.suspended}
-                  onView={controls.updateRadar}
-                  initialAt={controls.selectedTimes.radar}
-                  onSelect={controls.selectTime}
-                />
-              </Suspense>
-            )}
-            {layer === "radar" && !archived && (
-              <button
-                type="button"
-                id="open-explorer-radar"
-                className="layer-story-link"
-                onClick={() => navigation?.openRadar(controls.radarAt, flat)}
-              >
-                Follow a radar region <span>Guided view · same available scans</span>
-              </button>
-            )}
-          </div>
-        }
-      />
+      <div
+        className="layer-player"
+        data-expanded={layer === "radar" || undefined}
+        hidden={layer !== "radar" && layer !== null}
+      >
+        {controls.radar && (
+          <Suspense fallback={<p role="status">Loading radar controls…</p>}>
+            <RadarLayer
+              compact={layer === null}
+              suspended={controls.suspended}
+              onView={controls.updateRadar}
+              initialAt={controls.selectedTimes.radar}
+              onSelect={controls.selectTime}
+            />
+          </Suspense>
+        )}
+        {layer === "radar" && !archived && (
+          <button
+            type="button"
+            id="open-explorer-radar"
+            className="layer-story-link"
+            onClick={() => navigation?.openRadar(controls.radarAt, flat)}
+          >
+            Follow a radar region <span>Guided view · same available scans</span>
+          </button>
+        )}
+      </div>
+      <LayerCatalogue controls={controls} quiet={quiet} disabled={disabled} onInspect={inspect} />
       <div hidden={layer !== "earthquakes"}>{children}</div>
       {hazardKind && (
         <section aria-label={`${mapLayerNames[layer!]} reports`} className="layer-reports">

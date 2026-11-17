@@ -12,6 +12,7 @@ import { ObservationChart } from "./ObservationChart";
 import { DeepTimePin } from "./DeepTimePin";
 import { useObservationData, useObservationImage } from "./useObservationData";
 import { observationReadiness } from "./observationReadiness";
+import { StoryDock } from "./StoryDock";
 
 import { useStorySession } from "./StorySession";
 
@@ -197,41 +198,43 @@ export function ObservationPlayer({
       )}
       {frame && data && (
         <>
-          <div className="observation-transport">
-            <span>
-              {id === "lightning" && frame === latest ? "Latest available scan" : metadata.time}
-              {" · "}
-              {frame.timeLabel ? time : <time dateTime={new Date(frame.at).toISOString()}>{time}</time>}
-              {id === "rain" && " · Data arrives several hours after observation"}
-            </span>
-            {frames.length > 1 && (
-              <input
-                className="scrub-slider observation-scrub"
-                aria-label={metadata.time}
-                aria-valuetext={time}
-                type="range"
-                min={0}
-                max={frames.length - 1}
-                value={index}
-                onChange={(event) => {
-                  setPlaying(false);
-                  setSelectedAt(frames[event.currentTarget.valueAsNumber]!.at);
-                }}
-              />
-            )}
-            {frames.length > 1 && (
-              <div className="observatory-actions">
-                <PlaybackButton
-                  playing={playing}
-                  ended={index === frames.length - 1}
-                  onClick={() => {
-                    if (!playing && index === frames.length - 1) setSelectedAt(frames[0]!.at);
-                    setPlaying(!playing);
+          <StoryDock>
+            <div className="observation-transport">
+              <span>
+                {id === "lightning" && frame === latest ? "Latest available scan" : metadata.time}
+                {" · "}
+                {frame.timeLabel ? time : <time dateTime={new Date(frame.at).toISOString()}>{time}</time>}
+                {id === "rain" && " · Data arrives several hours after observation"}
+              </span>
+              {frames.length > 1 && (
+                <input
+                  className="scrub-slider observation-scrub"
+                  aria-label={metadata.time}
+                  aria-valuetext={time}
+                  type="range"
+                  min={0}
+                  max={frames.length - 1}
+                  value={index}
+                  onChange={(event) => {
+                    setPlaying(false);
+                    setSelectedAt(frames[event.currentTarget.valueAsNumber]!.at);
                   }}
                 />
-              </div>
-            )}
-          </div>
+              )}
+              {frames.length > 1 && (
+                <div className="observatory-actions">
+                  <PlaybackButton
+                    playing={playing}
+                    ended={index === frames.length - 1}
+                    onClick={() => {
+                      if (!playing && index === frames.length - 1) setSelectedAt(frames[0]!.at);
+                      setPlaying(!playing);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </StoryDock>
           {frame.measurements?.length ? (
             <dl className="observation-values">
               {frame.measurements.map(({ label, value }) => (

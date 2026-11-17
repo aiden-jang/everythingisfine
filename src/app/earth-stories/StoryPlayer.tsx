@@ -198,6 +198,7 @@ export function StoryPlayer({
   return (
     <ReplayPanel
       {...panel}
+      focusOnEntry={false}
       title={meta.title}
       location={localSky ? `${city.name} · ${new Date(frame.at).getUTCFullYear()} sky` : meta.location}
       subtitle={meta.summary}

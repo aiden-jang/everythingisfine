@@ -2,6 +2,7 @@ import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
+import { StoryDock } from "../observations/StoryDock";
 import { useObservationImage } from "../observations/useObservationData";
 import { ReplayInset } from "../observations/ReplayInset";
 import { japan, ruptureGeography, ruptureLens, ruptureTarget } from "./ruptureGlobe";
@@ -255,12 +256,15 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
                 Recorded waves
               </button>
               {!reduced && (
-                <PlaybackButton
-                  playing={mode === "playing"}
-                  ended={mode !== "playing" && mode !== "paused"}
-                  className="archive-scene-button"
-                  onClick={playback}
-                />
+                <StoryDock>
+                  <div className="story-dock-time">{caption.title}</div>
+                  <PlaybackButton
+                    playing={mode === "playing"}
+                    ended={mode !== "playing" && mode !== "paused"}
+                    className="archive-scene-button"
+                    onClick={playback}
+                  />
+                </StoryDock>
               )}
             </div>
             {displayed === "approach" ? (

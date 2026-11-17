@@ -10,6 +10,8 @@ import { ObservationPlayer } from "./ObservationPlayer";
 import type { ObservationSource } from "./types";
 import type { useObservationDeck } from "./useObservationDeck";
 import { swellBuoys } from "./swellBuoys";
+import { StoryDockProvider } from "./StoryDock";
+import { StoryProjection } from "./StoryProjection";
 
 import { ShareMoment, useStorySession } from "./StorySession";
 
@@ -65,9 +67,9 @@ export function ObservationDeck({
   }, [id, revision]);
 
   return (
-    <>
+    <section className="replay-region" aria-label={title}>
       <div
-        className="observatory-stage"
+        className="observatory-stage replay-stage"
         data-stage="observation"
         role="group"
         aria-label={
@@ -111,137 +113,121 @@ export function ObservationDeck({
           {id === "epic" ? "DSCOVR camera" : deck.map ? "Map" : deck.horizon ? "Local horizon" : "Globe"} ·{" "}
           {meta.group}
         </div>
-      </div>
-      <div className="observatory-sidebar">
-        <section
-          id="observatory-intro"
-          className="observatory-intro observation-panel"
-          tabIndex={-1}
-          aria-label={title}
-          data-observation={deck.entry}
-        >
-          <div className="observation-heading">
-            <h2>{title}</h2>
-            <div className="observatory-actions">
-              <button type="button" ref={back} onClick={onClose} aria-label={closeLabel}>
-                <span className="observation-back-full">{closeLabel}</span>
-                <span className="observation-back-compact">Back</span>
-              </button>
-            </div>
-          </div>
-          <p className="observation-note observation-introduction">{meta.description}</p>
-          <SharedStory />
-          {id !== "epic" && (
-            <div
-              className="observatory-actions observation-projection"
-              role="group"
-              aria-label="Observation projection"
-            >
+        {id !== "epic" && (
+          <StoryProjection
+            map={deck.map}
+            globeActive={!deck.map && !deck.horizon}
+            onMap={(map) => {
+              deck.setHorizon(false);
+              deck.setMap(map);
+            }}
+          >
+            {id === "orbit" && (
               <button
                 type="button"
-                aria-pressed={!deck.map && !deck.horizon}
+                aria-pressed={deck.horizon}
                 onClick={() => {
                   deck.setMap(false);
-                  deck.setHorizon(false);
+                  deck.setHorizon(true);
                 }}
               >
-                Globe
+                Local sky
               </button>
-              <button
-                type="button"
-                aria-pressed={deck.map}
-                onClick={() => {
-                  deck.setHorizon(false);
-                  deck.setMap(true);
-                }}
-              >
-                Map
-              </button>
-              {id === "orbit" && (
-                <button
-                  type="button"
-                  aria-pressed={deck.horizon}
-                  onClick={() => {
-                    deck.setMap(false);
-                    deck.setHorizon(true);
-                  }}
-                >
-                  Local sky
-                </button>
-              )}
-            </div>
-          )}
-          {id === "iceberg" && photograph && !deck.map && (
-            <div className="observatory-actions">
-              <button type="button" aria-pressed={photo} onClick={() => setPhoto(!photo)}>
-                {photo ? "Return to tracks" : "Show satellite image"}
-              </button>
-            </div>
-          )}
-          {loaded?.id === id ? (
-            loaded.source ? (
-              <ObservationPlayer
-                key={id}
-                id={id}
-                source={loaded.source}
-                horizon={deck.horizon}
-                photo={photo}
-                map={deck.map}
-                update={deck.update}
-                {...(picker ? { picker } : {})}
-              />
-            ) : (
-              <div className="observation-note" role="status">
-                <p>This view couldn’t open.</p>
-                <div className="observatory-actions">
-                  <button type="button" onClick={() => retry((value) => value + 1)}>
-                    Try again
-                  </button>
-                </div>
-              </div>
-            )
-          ) : (
-            <StoryLoading>Opening {title}…</StoryLoading>
-          )}
-          {id === "iceberg" && (
-            <details className="observation-details">
-              <summary>Sources &amp; coverage</summary>
-              <div className="lights-links">
-                <a
-                  href="https://science.nasa.gov/earth/earth-observatory/iceberg-a-68a-nears-south-georgia-147535/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Terra MODIS
-                </a>
-                <a
-                  href="https://science.nasa.gov/earth/earth-observatory/iceberg-goes-with-the-flow-147715/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Landsat 8
-                </a>
-                <a
-                  href="https://science.nasa.gov/earth/earth-observatory/pieces-of-iceberg-a-68a-147785/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  NOAA-20 VIIRS
-                </a>
-                <a
-                  href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  OGL v3.0
-                </a>
-              </div>
-            </details>
-          )}
-          <ShareMoment />
-          <ExperienceEnding />
-        </section>
+            )}
+          </StoryProjection>
+        )}
       </div>
-    </>
+      <div className="observatory-sidebar replay-sidebar">
+        <StoryDockProvider>
+          <div
+            id="observatory-intro"
+            className="observatory-intro observation-panel"
+            tabIndex={-1}
+            data-observation={deck.entry}
+          >
+            <div className="observation-heading">
+              <h2>{title}</h2>
+              <div className="observatory-actions">
+                <button type="button" ref={back} onClick={onClose} aria-label={closeLabel}>
+                  <span className="observation-back-full">{closeLabel}</span>
+                  <span className="observation-back-compact">Back</span>
+                </button>
+              </div>
+            </div>
+            <p className="observation-note observation-introduction">{meta.description}</p>
+            <SharedStory />
+            {id === "iceberg" && photograph && !deck.map && (
+              <div className="observatory-actions">
+                <button type="button" aria-pressed={photo} onClick={() => setPhoto(!photo)}>
+                  {photo ? "Return to tracks" : "Show satellite image"}
+                </button>
+              </div>
+            )}
+            {loaded?.id === id ? (
+              loaded.source ? (
+                <ObservationPlayer
+                  key={id}
+                  id={id}
+                  source={loaded.source}
+                  horizon={deck.horizon}
+                  photo={photo}
+                  map={deck.map}
+                  update={deck.update}
+                  {...(picker ? { picker } : {})}
+                />
+              ) : (
+                <div className="observation-note" role="status">
+                  <p>This view couldn’t open.</p>
+                  <div className="observatory-actions">
+                    <button type="button" onClick={() => retry((value) => value + 1)}>
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              )
+            ) : (
+              <StoryLoading>Opening {title}…</StoryLoading>
+            )}
+            {id === "iceberg" && (
+              <details className="observation-details">
+                <summary>Sources &amp; coverage</summary>
+                <div className="lights-links">
+                  <a
+                    href="https://science.nasa.gov/earth/earth-observatory/iceberg-a-68a-nears-south-georgia-147535/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Terra MODIS
+                  </a>
+                  <a
+                    href="https://science.nasa.gov/earth/earth-observatory/iceberg-goes-with-the-flow-147715/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Landsat 8
+                  </a>
+                  <a
+                    href="https://science.nasa.gov/earth/earth-observatory/pieces-of-iceberg-a-68a-147785/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    NOAA-20 VIIRS
+                  </a>
+                  <a
+                    href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    OGL v3.0
+                  </a>
+                </div>
+              </details>
+            )}
+            <ShareMoment />
+            <ExperienceEnding />
+          </div>
+        </StoryDockProvider>
+      </div>
+    </section>
   );
 }

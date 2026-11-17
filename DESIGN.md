@@ -834,3 +834,25 @@ deck and carry the selected value, place, time, evidence kind and source. Export
 Inspection has one active sample control. The wider Float journey remains visible as context while
 the profile inspector owns scrubbing. Evidence unfolds with finite motion; findings settle before
 reading and kept cards arrive once. Reduced motion presents the same content immediately.
+
+
+### Shared cinematic journeys
+
+Recorded observations and Earth stories use one retained playback dock outside the reading scrollport.
+It sits over the world on desktop and short landscape layouts, and below the phone reading panel.
+Projection uses the same world-footer component, including Float Dive; local-sky views retain their
+compass instead of an inappropriate map switch. Controls remain mounted across panel scrolling and resizing.
+Source replacement preserves the focused logical control and reading position. A failed selection
+ends its loading status and leaves the previous data available for manual inspection.
+
+Katrina’s fresh invitation precedes its existing Gulf flight. Saved moments bypass that invitation.
+Its ending plots the seven published wind readings and distinguishes the offshore maximum from the
+Buras landfall. Other completed records retain their subject-specific interpretation on a pale reading
+surface, with the source caveats and return action. Findings arrive once and settle without motion
+under reduced motion.
+
+Tonight’s Sky leads with a target chosen from the computed above-horizon bodies. Visible targets
+precede a secondary below-horizon disclosure. City and night remain available, while Moonfall and
+Meteor Nights follow the observing content. Switching back from a shower restores the held sky time
+and bearing for the same city. The radar player stays mounted when its inspector opens, and remains
+reachable while the layer list scrolls. The city selector names its curated scope explicitly.

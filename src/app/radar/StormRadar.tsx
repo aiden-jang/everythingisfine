@@ -2,15 +2,24 @@ import { lazy, Suspense, useLayoutEffect, useRef, useState } from "react";
 import { RADAR_SERVICE } from "../../sources/radar";
 import { isGlobalRadar, type RadarView } from "./radarCamera";
 import { useObservatoryEscape } from "../useObservatoryEscape";
+import { StoryProjection } from "../observations/StoryProjection";
 import "./radar.css";
 
 const RadarStage = lazy(() => import("./RadarStage").then(({ RadarStage }) => ({ default: RadarStage })));
 
-export function RadarReadout({ map, region }: { map: boolean; region?: string | undefined }): JSX.Element {
+export function RadarReadout({
+  map,
+  onMap,
+  region,
+}: {
+  map: boolean;
+  onMap: (map: boolean) => void;
+  region?: string | undefined;
+}): JSX.Element {
   const global = isGlobalRadar(region);
   return (
     <div
-      className="observatory-stage"
+      className="observatory-stage replay-stage"
       data-stage="radar"
       role="group"
       aria-label={map ? "Radar on the map" : "Radar on the globe"}
@@ -40,6 +49,7 @@ export function RadarReadout({ map, region }: { map: boolean; region?: string | 
       <div className="stage-readout">
         {global ? "International radar network" : "Contiguous United States"}
       </div>
+      <StoryProjection map={map} onMap={onMap} label="Radar projection" />
     </div>
   );
 }
@@ -49,7 +59,6 @@ export function StormRadar({
   returnLabel,
   onClose,
   onView,
-  projection,
   entry,
 }: {
   fromExplore: boolean;
@@ -57,7 +66,6 @@ export function StormRadar({
   entry: { region?: string; story?: boolean; at?: number };
   onClose: () => void;
   onView: (view: RadarView) => void;
-  projection: { map: boolean; setMap: (map: boolean) => void };
 }): JSX.Element {
   const [global, setGlobal] = useState(() => isGlobalRadar(entry.region));
   const back = useRef<HTMLButtonElement>(null);
@@ -77,18 +85,6 @@ export function StormRadar({
             <span className="observation-back-compact">Back</span>
           </button>
         </div>
-      </div>
-      <div
-        className="observatory-actions radar-actions radar-projection"
-        role="group"
-        aria-label="Radar projection"
-      >
-        <button type="button" aria-pressed={!projection.map} onClick={() => projection.setMap(false)}>
-          Globe
-        </button>
-        <button type="button" aria-pressed={projection.map} onClick={() => projection.setMap(true)}>
-          Map
-        </button>
       </div>
       <div className="radar-place">
         <label htmlFor="radar-source">Coverage</label>

@@ -1,4 +1,5 @@
 import { PlaybackButton } from "../PlaybackButton";
+import { StoryDock } from "../observations/StoryDock";
 import { useEffect, useId, useLayoutEffect, useMemo, useState } from "react";
 import {
   aimAt,
@@ -120,58 +121,62 @@ export function MeteorNights({
           ))}
         </select>
       </label>
-      <div className="tonight-time">
-        <div className="tonight-clock">
-          <label htmlFor={range}>City local time</label>
-          <time dateTime={new Date(at).toISOString()}>{describe(at)}</time>
+      <StoryDock label="Meteor Nights playback">
+        <div className="tonight-time">
+          <div className="tonight-clock">
+            <label htmlFor={range}>City local time</label>
+            <time dateTime={new Date(at).toISOString()}>{describe(at)}</time>
+          </div>
+          <input
+            className="scrub-slider tonight-scrub"
+            id={range}
+            type="range"
+            min={0}
+            max={Math.floor(span / MINUTE)}
+            value={Math.round((at - night.start) / MINUTE)}
+            aria-valuetext={describe(at)}
+            onChange={(event) => {
+              setPlaying(false);
+              onView(
+                skyFrame(
+                  city,
+                  shower,
+                  night.start + event.currentTarget.valueAsNumber * MINUTE,
+                  trail,
+                  following ? undefined : view?.look,
+                ),
+              );
+            }}
+          />
+          <div className="meteor-window-track" aria-hidden="true">
+            {night.windows.map((window) => (
+              <span
+                key={window.start}
+                style={{
+                  left: `${(100 * (window.start - night.start)) / span}%`,
+                  width: `${(100 * (window.end - window.start)) / span}%`,
+                }}
+              />
+            ))}
+          </div>
+          <div className="tonight-clock tonight-edges">
+            <span>{describe(night.start)}</span>
+            <span>{describe(night.end)}</span>
+          </div>
         </div>
-        <input
-          className="scrub-slider tonight-scrub"
-          id={range}
-          type="range"
-          min={0}
-          max={Math.floor(span / MINUTE)}
-          value={Math.round((at - night.start) / MINUTE)}
-          aria-valuetext={describe(at)}
-          onChange={(event) => {
-            setPlaying(false);
-            onView(
-              skyFrame(
-                city,
-                shower,
-                night.start + event.currentTarget.valueAsNumber * MINUTE,
-                trail,
-                following ? undefined : view?.look,
-              ),
-            );
-          }}
-        />
-        <div className="meteor-window-track" aria-hidden="true">
-          {night.windows.map((window) => (
-            <span
-              key={window.start}
-              style={{
-                left: `${(100 * (window.start - night.start)) / span}%`,
-                width: `${(100 * (window.end - window.start)) / span}%`,
-              }}
-            />
-          ))}
+        <div className="story-dock-actions">
+          <PlaybackButton
+            playing={playing}
+            ended={at >= night.end}
+            onClick={() => {
+              if (!playing && at >= night.end)
+                onView(skyFrame(city, shower, night.start, trail, following ? undefined : view?.look));
+              setPlaying(!playing);
+            }}
+          />
         </div>
-        <div className="tonight-clock tonight-edges">
-          <span>{describe(night.start)}</span>
-          <span>{describe(night.end)}</span>
-        </div>
-      </div>
+      </StoryDock>
       <div className="observatory-actions meteor-actions">
-        <PlaybackButton
-          playing={playing}
-          ended={at >= night.end}
-          onClick={() => {
-            if (!playing && at >= night.end)
-              onView(skyFrame(city, shower, night.start, trail, following ? undefined : view?.look));
-            setPlaying(!playing);
-          }}
-        />
         <button
           type="button"
           aria-pressed={following}

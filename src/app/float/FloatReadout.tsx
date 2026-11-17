@@ -1,6 +1,7 @@
 import { geographicCoordinates } from "../../globe/orbitReadout";
 import { useSyncExternalStore } from "react";
 import type { FloatDiveView } from "./floatPlayback";
+import { StoryProjection } from "../observations/StoryProjection";
 
 function Reading({ view }: { view: FloatDiveView }) {
   const { index, stage } = useSyncExternalStore(view.subscribe, view.read);
@@ -50,14 +51,7 @@ export function FloatReadout({
         <span className="stage-rule" aria-hidden="true" />
         <span>{profile ? `Argo · WMO ${profile.wmo}` : "Argo · North Atlantic"}</span>
       </div>
-      <div className="float-stage-tools observatory-actions" role="group" aria-label="Float projection">
-        <button type="button" aria-pressed={!projection.map} onClick={() => projection.setMap(false)}>
-          Globe
-        </button>
-        <button type="button" aria-pressed={projection.map} onClick={() => projection.setMap(true)}>
-          Map
-        </button>
-      </div>
+      <StoryProjection map={projection.map} onMap={projection.setMap} label="Float projection" />
       {view && <Reading view={view} />}
       <div id="float-profile-stage" />
       {profile && (

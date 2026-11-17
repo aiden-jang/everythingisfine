@@ -1,6 +1,16 @@
 import { PlaybackButton } from "../PlaybackButton";
 import { layerTime } from "../layerTime";
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { StoryDock } from "../observations/StoryDock";
 import type { RadarScan } from "../../sources/radar";
 import {
   radarRegions,
@@ -17,6 +27,10 @@ import { radarFeedHealth } from "./radarFeedHealth";
 
 const label = layerTime;
 const shortTime = (at: number) => new Date(at).toISOString().slice(11, 16);
+
+function RadarTransport({ layer, children }: { layer: boolean; children: ReactNode }): JSX.Element {
+  return layer ? <>{children}</> : <StoryDock label="Radar playback">{children}</StoryDock>;
+}
 
 export function RadarStage({
   onView,
@@ -184,80 +198,82 @@ export function RadarStage({
         </p>
       )}
       <div className="radar-transport">
-        <div className="radar-clock">
-          <label htmlFor={id}>
-            {global ? (atLatest ? "Latest frame" : "Frame time") : atLatest ? "Latest scan" : "Scan time"}
-          </label>
-          {selected && (
-            <time dateTime={new Date(selected.at).toISOString()}>
-              {layer ? (
-                <>
-                  <strong>{shortTime(selected.at)} UTC</strong>
-                  <span>
-                    {new Intl.DateTimeFormat("en-GB", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                      timeZone: "UTC",
-                    }).format(selected.at)}
-                  </span>
-                </>
-              ) : (
-                timeLabel
-              )}
-            </time>
-          )}
-        </div>
         {problem && (
           <p className="radar-warning" role="status" aria-label="Radar status">
             {statusMessage}
           </p>
         )}
-        <input
-          id={id}
-          className="scrub-slider radar-scrub"
-          type="range"
-          min={0}
-          max={Math.max(0, scans.length - 1)}
-          value={index}
-          disabled={scans.length < 2}
-          aria-label="Radar scan time"
-          aria-valuetext={timeLabel}
-          onChange={(event) => {
-            setPlaying(false);
-            seek(scans[event.currentTarget.valueAsNumber] ?? null);
-          }}
-        />
-        <div className="observatory-actions radar-actions radar-playback">
-          <button
-            type="button"
-            aria-label="Previous radar scan"
-            disabled={index === 0 || scans.length < 2}
-            onClick={() => {
-              setPlaying(false);
-              seek(scans[index - 1] ?? null);
-            }}
-          >
-            Previous
-          </button>
-          <PlaybackButton
-            playing={playing}
-            ended={index === scans.length - 1}
+        <RadarTransport layer={layer}>
+          <div className="radar-clock">
+            <label htmlFor={id}>
+              {global ? (atLatest ? "Latest frame" : "Frame time") : atLatest ? "Latest scan" : "Scan time"}
+            </label>
+            {selected && (
+              <time dateTime={new Date(selected.at).toISOString()}>
+                {layer ? (
+                  <>
+                    <strong>{shortTime(selected.at)} UTC</strong>
+                    <span>
+                      {new Intl.DateTimeFormat("en-GB", {
+                        day: "numeric",
+                        month: "short",
+                        year: "numeric",
+                        timeZone: "UTC",
+                      }).format(selected.at)}
+                    </span>
+                  </>
+                ) : (
+                  timeLabel
+                )}
+              </time>
+            )}
+          </div>
+          <input
+            id={id}
+            className="scrub-slider radar-scrub"
+            type="range"
+            min={0}
+            max={Math.max(0, scans.length - 1)}
+            value={index}
             disabled={scans.length < 2}
-            onClick={togglePlay}
-          />
-          <button
-            type="button"
-            aria-label="Next radar scan"
-            disabled={index >= scans.length - 1 || scans.length < 2}
-            onClick={() => {
+            aria-label="Radar scan time"
+            aria-valuetext={timeLabel}
+            onChange={(event) => {
               setPlaying(false);
-              seek(scans[index + 1] ?? null);
+              seek(scans[event.currentTarget.valueAsNumber] ?? null);
             }}
-          >
-            Next
-          </button>
-        </div>
+          />
+          <div className="observatory-actions radar-actions radar-playback">
+            <button
+              type="button"
+              aria-label="Previous radar scan"
+              disabled={index === 0 || scans.length < 2}
+              onClick={() => {
+                setPlaying(false);
+                seek(scans[index - 1] ?? null);
+              }}
+            >
+              Previous
+            </button>
+            <PlaybackButton
+              playing={playing}
+              ended={index === scans.length - 1}
+              disabled={scans.length < 2}
+              onClick={togglePlay}
+            />
+            <button
+              type="button"
+              aria-label="Next radar scan"
+              disabled={index >= scans.length - 1 || scans.length < 2}
+              onClick={() => {
+                setPlaying(false);
+                seek(scans[index + 1] ?? null);
+              }}
+            >
+              Next
+            </button>
+          </div>
+        </RadarTransport>
         <div className="observatory-actions radar-actions">
           <button
             type="button"

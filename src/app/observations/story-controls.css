@@ -1,0 +1,209 @@
+.replay-region {
+  display: contents;
+}
+
+.replay-sidebar {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.replay-sidebar > .observatory-intro {
+  align-self: stretch;
+}
+
+.story-dock-host:empty {
+  display: none;
+}
+
+.story-dock-host {
+  min-width: 0;
+  padding-inline: var(--observatory-inline);
+}
+
+.story-dock {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  border-top: 1px solid var(--color-hairline);
+  padding-block: 10px 12px;
+  background: var(--color-deck);
+  color: var(--color-ink);
+  font-size: 14px;
+  animation: story-dock-arrive 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.story-dock :is(.story-time, .observation-transport) {
+  border: 0;
+  padding: 0;
+  gap: 4px;
+}
+
+.story-dock-time {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 12px;
+  color: var(--color-dim);
+  font-size: 13px;
+}
+
+.story-dock :is(time, .story-dock-readout) {
+  color: var(--color-ink);
+  font: 13px/1.5 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.story-dock input[type="range"] {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+}
+
+.story-dock-actions,
+.story-dock :is(.observatory-actions, .archive-scene-controls) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.story-dock button,
+.story-projection button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  color: var(--color-dim);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.story-dock button[data-playback-start] {
+  color: var(--color-ink);
+}
+
+.story-dock button:hover:not(:disabled),
+.story-projection button:is(:hover, [aria-pressed="true"]) {
+  color: var(--color-ink);
+  border-color: var(--color-faint);
+  background: var(--color-raised);
+}
+
+.story-dock button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.story-projection {
+  position: absolute;
+  inset: auto var(--stage-inset, 16px) var(--stage-inset, 16px) auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: calc(100% - 2 * var(--stage-inset, 16px));
+  padding: 4px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 9px;
+  background: var(--color-deck);
+  font-family: var(--font-sans);
+  pointer-events: auto;
+}
+
+@keyframes story-dock-arrive {
+  from {
+    transform: translateY(12px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-dock {
+    animation: none;
+  }
+}
+
+.story-projection button {
+  border-color: transparent;
+}
+
+.replay-stage .stage-readout {
+  bottom: calc(var(--stage-inset) + 64px);
+}
+
+@media (min-width: 900px) {
+  .story-dock-host {
+    position: fixed;
+    inset: auto 24px 96px calc(var(--observatory-width) + 24px);
+    display: grid;
+    justify-items: center;
+    padding: 0;
+    pointer-events: none;
+  }
+
+  .story-dock {
+    width: min(100%, 740px);
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 18px;
+    padding: 12px 18px;
+    border: 1px solid var(--color-hairline);
+    border-radius: 9px;
+    pointer-events: auto;
+  }
+
+  .story-dock > :is(.story-dock-time, .recorded-time, .story-time, .observation-transport) {
+    grid-column: 1;
+  }
+
+  .story-dock > :is(.story-time, .recorded-time, .observation-transport) {
+    grid-row: 1 / span 2;
+  }
+
+  .story-dock > input[type="range"] {
+    grid-column: 1;
+  }
+
+  .story-dock > :is(.story-dock-actions, .observatory-actions, .archive-scene-controls, .story-playback) {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .replay-stage .stage-readout {
+    bottom: calc(var(--stage-inset) + var(--story-dock-height, 0px) + 128px);
+  }
+}
+
+@media (max-width: 899px) {
+  .replay-sidebar {
+    overflow: hidden;
+  }
+
+  .story-dock {
+    padding-block: 8px;
+  }
+}
+
+@media (max-height: 620px) and (min-width: 600px) {
+  .story-dock-host {
+    position: fixed;
+    inset: auto 16px 76px calc(max(280px, 42vw) + 16px);
+    padding: 0;
+    pointer-events: none;
+  }
+
+  .story-dock {
+    padding: 10px 12px;
+    border: 1px solid var(--color-hairline);
+    border-radius: 9px;
+    pointer-events: auto;
+  }
+
+  .replay-stage .stage-readout {
+    bottom: auto;
+    top: calc(var(--stage-inset) + 36px);
+  }
+}

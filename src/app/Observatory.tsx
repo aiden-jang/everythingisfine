@@ -29,6 +29,7 @@ import { ObservationDeckShell } from "./observations/ObservationEntry";
 import { ObservatoryEntryActions } from "./ObservatoryEntryActions";
 import { LandingStory } from "./LandingStory";
 import { StoryBoundary } from "./StoryBoundary";
+import { StoryDockProvider } from "./observations/StoryDock";
 
 export interface ObservatoryProps {
   explorer: {
@@ -170,11 +171,15 @@ function ObservatoryContent({
       />
     );
   return (
-    <>
+    <section
+      className="replay-region"
+      aria-labelledby={tonight.active ? "local-sky-title" : undefined}
+      aria-label={radar.active ? "Storm Radar" : undefined}
+    >
       {floatDive.active ? (
         <FloatReadout view={floatDive.view} projection={observations} />
       ) : radar.active ? (
-        <RadarReadout map={observations.map} region={radar.view?.region} />
+        <RadarReadout map={observations.map} onMap={observations.setMap} region={radar.view?.region} />
       ) : tonight.view?.moonfall ? (
         <MoonfallReadout view={tonight.view.moonfall} />
       ) : tonight.active ? (
@@ -192,187 +197,188 @@ function ObservatoryContent({
           />
         )
       )}
-      <div className="observatory-sidebar">
-        <section
-          id="observatory-intro"
-          tabIndex={-1}
-          className="observatory-intro"
-          ref={tour.controls}
-          onScroll={(event) => {
-            if (browsing) storyScroll.current = event.currentTarget.scrollTop;
-          }}
-          data-scene={active ? "tour" : scene}
-          data-browsing={browsing || undefined}
-          data-sun-watch={solar || undefined}
-          data-storm-radar={radar.active || undefined}
-          data-tonight={tonight.active || undefined}
-          data-float-dive={floatDive.active || undefined}
-          aria-label={floatDive.active ? "Float Dive" : radar.active ? "Storm Radar" : "Earth observatory"}
-          aria-labelledby={tonight.active ? "local-sky-title" : undefined}
-        >
-          {floatDive.active ? (
-            <Suspense fallback={<p role="status">Opening Float Dive…</p>}>
-              <FloatDive
-                view={floatDive.view}
-                resume={floatDive.entry}
+      <div className={`observatory-sidebar${tonight.active || radar.active ? " replay-sidebar" : ""}`}>
+        <StoryDockProvider>
+          <section
+            id="observatory-intro"
+            tabIndex={-1}
+            className="observatory-intro"
+            ref={tour.controls}
+            onScroll={(event) => {
+              if (browsing) storyScroll.current = event.currentTarget.scrollTop;
+            }}
+            data-scene={active ? "tour" : scene}
+            data-browsing={browsing || undefined}
+            data-sun-watch={solar || undefined}
+            data-storm-radar={radar.active || undefined}
+            data-tonight={tonight.active || undefined}
+            data-float-dive={floatDive.active || undefined}
+            aria-label={floatDive.active ? "Float Dive" : radar.active ? undefined : "Earth observatory"}
+            role={tonight.active || radar.active ? "presentation" : undefined}
+          >
+            {floatDive.active ? (
+              <Suspense fallback={<p role="status">Opening Float Dive…</p>}>
+                <FloatDive
+                  view={floatDive.view}
+                  resume={floatDive.entry}
+                  returnLabel={navigationContext?.returnLabel}
+                  onView={floatDive.update}
+                  projection={observations}
+                  onClose={closeView(() => observations.returnTo("open-featured-float", floatDive.close))}
+                />
+              </Suspense>
+            ) : radar.active ? (
+              <StormRadar
+                fromExplore={radar.fromExplore}
                 returnLabel={navigationContext?.returnLabel}
-                onView={floatDive.update}
-                projection={observations}
-                onClose={closeView(() => observations.returnTo("open-featured-float", floatDive.close))}
-              />
-            </Suspense>
-          ) : radar.active ? (
-            <StormRadar
-              projection={observations}
-              fromExplore={radar.fromExplore}
-              returnLabel={navigationContext?.returnLabel}
-              entry={radar.entry}
-              onView={radar.update}
-              onClose={closeView(() => {
-                const trigger = radar.fromExplore ? "open-explorer-radar" : "open-storm-radar";
-                observations.returnTo(trigger, radar.close);
-              })}
-            />
-          ) : tonight.active ? (
-            <Suspense fallback={<p role="status">Opening Tonight’s Sky…</p>}>
-              <TonightSky
-                key={tonight.entry.revision}
-                view={tonight.view}
-                onView={tonight.update}
-                preference={skyCity}
-                initialMode={tonight.entry.mode}
-                initialLunar={tonight.entry.lunar}
-                initialLook={tonight.entry.look}
-                initialMoment={tonight.entry.moment}
-                returnLabel={navigationContext?.returnLabel ?? "Back to After Dark"}
+                entry={radar.entry}
+                onView={radar.update}
                 onClose={closeView(() => {
-                  const id =
-                    tonight.entry.mode === "meteors"
-                      ? "open-meteor-nights"
-                      : tonight.entry.mode === "moonfall"
-                        ? "open-featured-moonfall"
-                        : "open-tonight-sky";
-                  observations.returnTo(id, tonight.close);
+                  const trigger = radar.fromExplore ? "open-explorer-radar" : "open-storm-radar";
+                  observations.returnTo(trigger, radar.close);
                 })}
               />
-            </Suspense>
-          ) : (
-            <>
-              <div className="observatory-story" aria-live="polite" aria-atomic="true">
-                <h2 key={title}>
-                  {landing ? (
-                    <>
-                      Look
-                      <br />
-                      closer.
-                    </>
-                  ) : (
-                    title
-                  )}
-                </h2>
-                <p key={description} className="observatory-description">
-                  {description}
-                </p>
-                {active && tour.stop ? (
-                  <p
-                    className="observatory-location"
-                    data-tour-location={`${tour.stop.lon},${tour.stop.lat}`}
-                  >
-                    {tour.stop.name}{" "}
-                    <span>
-                      {geographicCoordinates(tour.stop)} · Stop {Math.min((tour.at ?? 0) + 1, tour.length)} of{" "}
-                      {tour.length}
-                    </span>
+            ) : tonight.active ? (
+              <Suspense fallback={<p role="status">Opening Tonight’s Sky…</p>}>
+                <TonightSky
+                  key={tonight.entry.revision}
+                  view={tonight.view}
+                  onView={tonight.update}
+                  preference={skyCity}
+                  initialMode={tonight.entry.mode}
+                  initialLunar={tonight.entry.lunar}
+                  initialLook={tonight.entry.look}
+                  initialMoment={tonight.entry.moment}
+                  returnLabel={navigationContext?.returnLabel ?? "Back to After Dark"}
+                  onClose={closeView(() => {
+                    const id =
+                      tonight.entry.mode === "meteors"
+                        ? "open-meteor-nights"
+                        : tonight.entry.mode === "moonfall"
+                          ? "open-featured-moonfall"
+                          : "open-tonight-sky";
+                    observations.returnTo(id, tonight.close);
+                  })}
+                />
+              </Suspense>
+            ) : (
+              <>
+                <div className="observatory-story" aria-live="polite" aria-atomic="true">
+                  <h2 key={title}>
+                    {landing ? (
+                      <>
+                        Look
+                        <br />
+                        closer.
+                      </>
+                    ) : (
+                      title
+                    )}
+                  </h2>
+                  <p key={description} className="observatory-description">
+                    {description}
                   </p>
-                ) : null}
-              </div>
-              {solar && <SunCredits />}
-              {active ? (
-                <ObservatoryTourControls tour={tour} onExplore={onExplore} />
-              ) : (
-                <>
-                  <ObservatoryEntryActions
-                    landing={landing}
-                    solar={solar}
-                    explore={onExplore}
-                    closeSun={closeSun}
-                  />
-                  {scene !== "night" && !landing ? (
+                  {active && tour.stop ? (
                     <p
-                      id={ready && !tour.available ? "tour-availability" : undefined}
-                      className="observatory-summary"
+                      className="observatory-location"
+                      data-tour-location={`${tour.stop.lon},${tour.stop.lat}`}
                     >
-                      {summary}
+                      {tour.stop.name}{" "}
+                      <span>
+                        {geographicCoordinates(tour.stop)} · Stop {Math.min((tour.at ?? 0) + 1, tour.length)}{" "}
+                        of {tour.length}
+                      </span>
                     </p>
                   ) : null}
-                </>
-              )}
-              {!active && !solar && !aurora.run && (
-                <ObservatoryScenePicker
-                  scene={browser.category}
-                  ready={ready}
-                  deepAvailable={deepAvailable}
-                  onScene={(next) => {
-                    observations.setQuery("");
-                    if (browser.category === next) {
-                      browser.select(null);
-                      return;
-                    }
-                    revealStories();
-                    browser.select(next);
-                    onScene(next);
-                  }}
-                />
-              )}
-              {!browsing && !active && !solar && !aurora.run && scene === "live" && <LandingStory />}
-              {browsing && scene === "depth" && ready && !deepAvailable && (
-                <p id="depth-availability" className="observatory-depth-note">
-                  No earthquake at least 70 km deep in this window. Recorded depth stories are still
-                  available.
-                </p>
-              )}
-              {browsing && (
-                <StoriesDrawer
-                  browse={browser}
-                  scene={browser.category}
-                  ready={ready}
-                  observations={observations}
-                  aurora={aurora}
-                  onHistory={onHistory}
-                  onPickDate={onPickDate}
-                  discoveries={<Discoveries data={discoveries} aurora={aurora} city={skyCity.city} />}
-                  onSelect={() => {
-                    storyScroll.current = tour.controls.current?.scrollTop ?? 0;
-                  }}
-                  onDismiss={() => {
-                    onHome();
-                    document.getElementById("observatory-scenes")?.focus();
-                  }}
-                >
-                  <div className="observatory-actions">
-                    <button
-                      type="button"
-                      ref={tour.button}
-                      onClick={tour.start}
-                      disabled={!ready || !tour.available}
-                      aria-describedby={ready && !tour.available ? "tour-availability" : undefined}
-                    >
-                      Take a tour <span aria-hidden="true">→</span>
-                    </button>
-                    {ready && !tour.available && scene === "night" && <TourUnavailable note={empty.text} />}
-                  </div>
-                </StoriesDrawer>
-              )}
-              {(solar || aurora.run) && auroraControls}
-              {feedNote && !landing ? (
-                <p className="observatory-source-note" role="status">
-                  {feedNote}
-                </p>
-              ) : null}
-            </>
-          )}
-          {(floatDive.active || radar.active || solar || aurora.run) && <ExperienceEnding />}
-        </section>
+                </div>
+                {solar && <SunCredits />}
+                {active ? (
+                  <ObservatoryTourControls tour={tour} onExplore={onExplore} />
+                ) : (
+                  <>
+                    <ObservatoryEntryActions
+                      landing={landing}
+                      solar={solar}
+                      explore={onExplore}
+                      closeSun={closeSun}
+                    />
+                    {scene !== "night" && !landing ? (
+                      <p
+                        id={ready && !tour.available ? "tour-availability" : undefined}
+                        className="observatory-summary"
+                      >
+                        {summary}
+                      </p>
+                    ) : null}
+                  </>
+                )}
+                {!active && !solar && !aurora.run && (
+                  <ObservatoryScenePicker
+                    scene={browser.category}
+                    ready={ready}
+                    deepAvailable={deepAvailable}
+                    onScene={(next) => {
+                      observations.setQuery("");
+                      if (browser.category === next) {
+                        browser.select(null);
+                        return;
+                      }
+                      revealStories();
+                      browser.select(next);
+                      onScene(next);
+                    }}
+                  />
+                )}
+                {!browsing && !active && !solar && !aurora.run && scene === "live" && <LandingStory />}
+                {browsing && scene === "depth" && ready && !deepAvailable && (
+                  <p id="depth-availability" className="observatory-depth-note">
+                    No earthquake at least 70 km deep in this window. Recorded depth stories are still
+                    available.
+                  </p>
+                )}
+                {browsing && (
+                  <StoriesDrawer
+                    browse={browser}
+                    scene={browser.category}
+                    ready={ready}
+                    observations={observations}
+                    aurora={aurora}
+                    onHistory={onHistory}
+                    onPickDate={onPickDate}
+                    discoveries={<Discoveries data={discoveries} aurora={aurora} city={skyCity.city} />}
+                    onSelect={() => {
+                      storyScroll.current = tour.controls.current?.scrollTop ?? 0;
+                    }}
+                    onDismiss={() => {
+                      onHome();
+                      document.getElementById("observatory-scenes")?.focus();
+                    }}
+                  >
+                    <div className="observatory-actions">
+                      <button
+                        type="button"
+                        ref={tour.button}
+                        onClick={tour.start}
+                        disabled={!ready || !tour.available}
+                        aria-describedby={ready && !tour.available ? "tour-availability" : undefined}
+                      >
+                        Take a tour <span aria-hidden="true">→</span>
+                      </button>
+                      {ready && !tour.available && scene === "night" && <TourUnavailable note={empty.text} />}
+                    </div>
+                  </StoriesDrawer>
+                )}
+                {(solar || aurora.run) && auroraControls}
+                {feedNote && !landing ? (
+                  <p className="observatory-source-note" role="status">
+                    {feedNote}
+                  </p>
+                ) : null}
+              </>
+            )}
+            {(floatDive.active || radar.active || solar || aurora.run) && <ExperienceEnding />}
+          </section>
+        </StoryDockProvider>
       </div>
       {solar && (
         <Suspense
@@ -385,6 +391,6 @@ function ObservatoryContent({
           <SunWatch onClose={closeSun} />
         </Suspense>
       )}
-    </>
+    </section>
   );
 }

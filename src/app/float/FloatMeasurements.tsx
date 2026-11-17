@@ -23,10 +23,27 @@ export function FloatMeasurements({
 }) {
   const { index, playing, inspecting, stage } = useSyncExternalStore(view.subscribe, view.read);
   const focusPlayback = useRef(false);
+  const transport = useRef<HTMLElement>(null);
   const { samples } = view.profile;
   const sample = samples[index]!;
   const takeaway = useMemo(() => profileTakeaway(samples), [samples]);
   useStoryCompletion(stage === "notice");
+  useLayoutEffect(() => {
+    const element = transport.current;
+    const zones = element?.closest<HTMLElement>(".zones");
+    if (!element || !zones) return;
+    const measure = () => {
+      const bottom = parseFloat(getComputedStyle(element).bottom) || 0;
+      zones.style.setProperty("--float-dock-clearance", `${element.offsetHeight + bottom + 16}px`);
+    };
+    const resize = new ResizeObserver(measure);
+    resize.observe(element);
+    measure();
+    return () => {
+      resize.disconnect();
+      zones.style.removeProperty("--float-dock-clearance");
+    };
+  }, []);
   useLayoutEffect(() => {
     const intro = document.getElementById("observatory-intro");
     const zones = intro?.closest<HTMLElement>(".zones");
@@ -91,7 +108,7 @@ export function FloatMeasurements({
         </div>
       </div>
       {createPortal(
-        <section className="float-transport" role="group" aria-label="Float Dive playback">
+        <section ref={transport} className="float-transport" role="group" aria-label="Float Dive playback">
           <div className="float-chapters" role="group" aria-label="Float Dive chapters">
             <button type="button" aria-pressed={stage === "locate"} onClick={view.locate}>
               Locate
@@ -137,7 +154,7 @@ export function FloatMeasurements({
               {inspecting ? "Close profile" : "View measured profile"}
             </button>
           </div>
-          <small>Ascent compressed for playback · depth estimated from pressure</small>
+          <small>Illustrated section · measured samples · depth estimated from pressure</small>
         </section>,
         document.querySelector(".zones")!,
       )}

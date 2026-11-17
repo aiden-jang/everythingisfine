@@ -123,7 +123,7 @@ measurements, not field recordings.
   totality in Luxor.
 - **Tonight’s Sky** descends to a selected city from After Dark. Scrub from local sunset to sunrise,
   use the compass to turn, or point at the Moon and five bright planets. Angles are calculated for a
-  level horizon. Where a crossing is absent, the timeline uses a local evening or morning endpoint.
+  level horizon. A computed visible target provides the opening invitation; below-horizon bodies remain available in a disclosure. Where a crossing is absent, the timeline uses a local evening or morning endpoint.
 - **Moonfall** is featured in the After Dark drawer and also opens from Tonight’s Sky. Fly from lunar orbit into
   Taurus–Littrow and switch between Terrain and Landing map without resetting the rover traverse
   or geology stop. Back returns to the opening screen, sky view, or drawer that opened it.
@@ -173,7 +173,7 @@ measurements, not field recordings.
   **Surface shaking** to inspect either view. **Recorded waves** shows the stations on Earth and compares their traces on a
   shared timeline and offers optional sonification. Reduced motion opens the finished fault view.
 - **Follow Hurricane Katrina** banks over the Gulf and follows NOAA’s 2005 best track to landfall
-  near Buras, Louisiana. Pause, scrub, or jump to the offshore peak and landfall. Reduced motion
+  near Buras, Louisiana. Fresh visits begin with **Follow the storm**. Its ending compares the recorded offshore peak with landfall and exposes all seven positions. Pause, scrub, or jump to the offshore peak and landfall. Reduced motion
   opens a fixed overview with the same readings.
 - **Watch Tonga’s shockwave** opens on infrared and water-vapor scans of the 2022 eruption,
   then pulls back to follow the estimated atmospheric wave. Pick a ground station to jump to
@@ -205,7 +205,7 @@ own direction and route controls.
 ## Explore
 
 **Focus** temporarily isolates one layer; **Restore layers** returns to the exact saved combination.
-Changing a switch ends isolation. **Find a place** summarizes enabled reports within 500 km of a
+Changing a switch ends isolation. **Choose a featured city** summarizes enabled reports within 500 km of a
 selected city using the chosen earthquake window and cursor. Missing feeds remain explicit; weather
 rasters keep their separate scan and forecast clocks. Close city labels appear as you zoom into Explore.
 
@@ -214,11 +214,13 @@ It reports the nearest recorded monitor within 100 km, never an interpolated con
 and Tide Watch can compare a second place on demand, showing both source times and matching measurement
 names. Tide heights use each harbor's local datum and must not be treated as global elevation differences.
 
+Recorded stories keep playback outside the scrolling reading panel. Projection remains beside the world, and switching archives preserves keyboard focus. A failed replacement keeps the previous observations inspectable.
+
 The **Layers** tab groups weather and sky overlays separately from reported events: earthquakes, tropical cyclones, wildfires, floods, volcanoes, aurora,
 storm radar, surface wind and lightning with equal prominence. Switches change visibility; a
 layer's name opens its readings, coverage and controls. No inspector opens by default. Only one
 inspector is visible, while enabled players remain mounted and keep their own timestamps.
-**Show only this layer** is temporary; **Restore layers** restores your choices. **Find a place**
+**Show only this layer** is temporary; **Restore layers** restores your choices. **Choose a featured city**
 shows available reports around one of the supported cities; **Locate** moves the globe or map there.
 **Find earthquake reports** searches
 reported earthquakes and regions within the earthquake inspector.

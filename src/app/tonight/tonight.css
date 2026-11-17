@@ -6,8 +6,8 @@
 .tonight-heading,
 .tonight-city,
 .tonight-clock,
-.tonight-objects summary,
-.tonight-objects li button {
+.tonight-objects li button,
+.tonight-below li {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -15,7 +15,7 @@
 }
 
 .tonight-heading h2 {
-  font-size: clamp(34px, 4vw, 64px);
+  font-size: clamp(38px, 3.5vw, 54px);
   line-height: 1;
   font-weight: 580;
   letter-spacing: -0.04em;
@@ -24,6 +24,52 @@
 .tonight-back,
 .tonight-compass .observatory-actions {
   margin: 0;
+}
+
+.tonight-invitation h3 {
+  max-width: 10ch;
+  font-family: "Alumni Sans", var(--font-sans);
+  font-size: clamp(38px, 4.5vw, 54px);
+  font-weight: 600;
+  line-height: 0.98;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.tonight-invitation p {
+  max-width: 34ch;
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-dim);
+}
+
+.tonight-invitation .tonight-invitation-context {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tonight-invitation .observatory-actions {
+  margin-top: 14px;
+  gap: 6px;
+}
+
+.tonight-invitation .tonight-find {
+  background: var(--color-ink);
+  color: var(--color-void);
+}
+@media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
+  .frame[data-presentation="observe"] .zones:has([data-tonight]):has(.tonight-invitation) {
+    grid-template-rows: minmax(145px, 1fr) clamp(450px, 66dvh, 620px);
+  }
+  .observatory-intro:has(.tonight-invitation) .tonight-heading h2 {
+    font-size: 18px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .frame[data-presentation="observe"] .zones:has([data-tonight]) {
+    transition: grid-template-rows 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
 }
 
 .tonight-city {
@@ -46,6 +92,17 @@
 .tonight-time {
   padding-block: 12px 11px;
   border-block: 1px solid var(--color-hairline);
+}
+
+.story-dock .tonight-time {
+  grid-column: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.story-dock[aria-label="Tonight’s Sky time"] .tonight-time {
+  grid-column: 1 / -1;
 }
 
 .tonight-clock {
@@ -71,13 +128,22 @@
   font-size: 0.6875rem;
 }
 
-.tonight-objects summary {
-  min-height: 44px;
-  cursor: pointer;
-  font-size: 0.875rem;
+.tonight-objects h3 {
+  font-size: 16px;
+  font-weight: 550;
 }
 
-.tonight-objects summary::before {
+.tonight-below summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-dim);
+}
+
+.tonight-below summary::before {
   content: "";
   flex: none;
   width: 6px;
@@ -87,19 +153,14 @@
   transform: rotate(-45deg);
 }
 
-.tonight-objects[open] summary::before {
+.tonight-below[open] summary::before {
   transform: translateY(-2px) rotate(45deg);
 }
 
-.tonight-objects summary span:first-child {
-  margin-right: auto;
-}
-
-.tonight-objects summary span:last-child,
 .tonight-objects small,
 .tonight-objects li button span:last-child,
 .tonight-objects p {
-  font-size: 0.6875rem;
+  font-size: 12px;
   color: var(--color-dim);
 }
 
@@ -111,7 +172,8 @@
   width: 100%;
   min-height: 44px;
   text-align: start;
-  font-size: 0.8125rem;
+  padding-block: 10px;
+  font-size: 15px;
   cursor: pointer;
 }
 
@@ -119,18 +181,49 @@
   background: var(--color-deck);
 }
 
-.tonight-objects li button:disabled {
-  cursor: default;
-  color: var(--color-dim);
+.tonight-objects strong {
+  font-weight: 550;
 }
 
 .tonight-objects small {
-  margin-inline-start: 8px;
+  display: block;
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
 }
 
 .tonight-objects p {
   margin-top: 10px;
   line-height: 1.5;
+}
+
+.tonight-objects .tonight-visibility {
+  margin-block: 5px 10px;
+}
+
+.tonight-below {
+  border-block: 1px solid var(--color-hairline);
+}
+
+.tonight-below li {
+  min-height: 44px;
+  font-size: 13px;
+  color: var(--color-dim);
+}
+
+.tonight-below li small {
+  margin: 0;
+}
+
+.tonight-onward {
+  padding-top: 12px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.tonight-onward p {
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-dim);
 }
 
 .tonight-compass {

@@ -143,32 +143,23 @@
 .float-evidence > :not(summary) {
   margin-top: 12px;
 }
-.float-stage-tools {
-  position: absolute;
-  z-index: 6;
-  right: 20px;
-  top: 14px;
-  pointer-events: auto;
-  margin: 0;
-  gap: 4px;
-  font-family: var(--font-sans);
-}
-.float-stage-tools button {
-  min-height: 44px;
-  padding: 6px 10px;
-  background: var(--color-void);
-  border-radius: 5px;
-  border: 1px solid var(--color-hairline);
-  font-size: 12px;
-}
-.float-stage-tools button[aria-pressed="true"] {
-  background: var(--color-raised);
-}
+
 .float-reading-layer,
 #float-profile-stage {
   position: absolute;
   inset: 0;
   pointer-events: none;
+}
+.observatory-stage[data-stage="float"] .stage-readout {
+  bottom: calc(var(--float-dock-clearance, 248px) + 64px);
+}
+.observatory-stage[data-stage="float"] .story-projection {
+  bottom: var(--float-dock-clearance, 248px);
+}
+@media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
+  .observatory-stage[data-stage="float"] .story-projection {
+    bottom: var(--stage-inset);
+  }
 }
 .float-reading-layer {
   z-index: 4;
@@ -318,13 +309,7 @@
   .float-depth small {
     display: none;
   }
-  .float-stage-tools {
-    top: 8px;
-    right: 10px;
-  }
-  .float-stage-tools button {
-    padding-inline: 8px;
-  }
+
   .zones:has([data-float-dive]) .camera-recenter {
     top: 8px;
   }
@@ -349,13 +334,7 @@
   .observatory-intro[data-float-dive] .float-heading h2 {
     font-size: 36px;
   }
-  .float-stage-tools {
-    top: 4px;
-    right: 8px;
-  }
-  .float-stage-tools button {
-    padding-inline: 6px;
-  }
+
   .observatory-stage[data-stage="float"] .stage-ident {
     display: none;
   }
@@ -455,10 +434,7 @@
     padding: 4px 10px;
   }
   .float-transport .float-chapters button {
-    min-height: 32px;
-  }
-  .float-transport > small {
-    display: none;
+    min-height: 44px;
   }
   .float-inspect-toggle {
     max-width: 76px;

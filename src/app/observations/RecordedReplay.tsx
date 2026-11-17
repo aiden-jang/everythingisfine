@@ -5,6 +5,8 @@ import { useObservatoryEscape } from "../useObservatoryEscape";
 import type { ObservationView } from "./types";
 import type { ReplayId } from "./replays";
 import { ShareMoment } from "./StorySession";
+import { StoryDockProvider } from "./StoryDock";
+import { StoryProjection } from "./StoryProjection";
 import "../archive-scene.css";
 import "../storm/storm.css";
 import "../megaflash/megaflash.css";
@@ -48,6 +50,9 @@ export function ReplayPanel({
   inset,
   sources,
   children,
+  focusOnEntry = true,
+  ending = true,
+  finding = true,
 }: Omit<ReplayProps, "onView"> & {
   title: string;
   location: string;
@@ -57,14 +62,19 @@ export function ReplayPanel({
   inset?: ReactNode;
   sources: ReactNode;
   children: ReactNode;
+  focusOnEntry?: boolean;
+  ending?: boolean;
+  finding?: boolean;
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
-  useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
+  useLayoutEffect(() => {
+    if (focusOnEntry) back.current?.focus({ preventScroll: true });
+  }, [focusOnEntry]);
   useObservatoryEscape(onClose);
   return (
-    <>
+    <section className="replay-region" aria-label={title}>
       <div
-        className="observatory-stage"
+        className="observatory-stage replay-stage"
         data-stage="observation"
         role="group"
         aria-label={`${title} on the ${map ? "map" : "globe"}`}
@@ -84,37 +94,32 @@ export function ReplayPanel({
           <span>{status}</span>
           {at}
         </div>
+        <StoryProjection map={map} onMap={onMap} />
       </div>
-      <div className="observatory-sidebar">
-        <section id="observatory-intro" className="observatory-intro observation-panel" aria-label={title}>
-          <div className="observation-heading">
-            <h2>{title}</h2>
-            <div className="observatory-actions">
-              <button type="button" ref={back} onClick={onClose} aria-label={closeLabel}>
-                <span className="observation-back-full">{closeLabel}</span>
-                <span className="observation-back-compact">Back</span>
-              </button>
+      <div className="observatory-sidebar replay-sidebar">
+        <StoryDockProvider>
+          <div id="observatory-intro" className="observatory-intro observation-panel" tabIndex={-1}>
+            <div className="observation-heading">
+              <h2>{title}</h2>
+              <div className="observatory-actions">
+                <button type="button" ref={back} onClick={onClose} aria-label={closeLabel}>
+                  <span className="observation-back-full">{closeLabel}</span>
+                  <span className="observation-back-compact">Back</span>
+                </button>
+              </div>
             </div>
+            <p className="observation-note">{subtitle}</p>
+            <SharedStory />
+            {children}
+            <ShareMoment />
+            {ending && <ExperienceEnding showFinding={finding} />}
+            <details className="replay-sources">
+              <summary>Sources &amp; coverage</summary>
+              <div>{sources}</div>
+            </details>
           </div>
-          <p className="observation-note">{subtitle}</p>
-          <SharedStory />
-          <div className="observatory-actions" role="group" aria-label="Observation projection">
-            <button type="button" aria-pressed={!map} onClick={() => onMap(false)}>
-              Globe
-            </button>
-            <button type="button" aria-pressed={map} onClick={() => onMap(true)}>
-              Map
-            </button>
-          </div>
-          {children}
-          <ShareMoment />
-          <ExperienceEnding />
-          <details className="replay-sources">
-            <summary>Sources &amp; coverage</summary>
-            <div>{sources}</div>
-          </details>
-        </section>
+        </StoryDockProvider>
       </div>
-    </>
+    </section>
   );
 }

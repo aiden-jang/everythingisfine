@@ -1,20 +1,15 @@
 import type { MoonfallProgress } from "../../globe/moonfall/scene";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { lazy, Suspense, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import {
-  aimAt,
-  bearingLabel,
-  localNight,
-  openingSky,
-  skyBodies,
-  type SkyLook,
-  type TonightView,
-} from "../../geo/tonight";
+import { aimAt, localNight, openingSky, skyBodies, type SkyLook, type TonightView } from "../../geo/tonight";
 import type { TonightPresentation } from "../../globe/scenePresentation";
 import { sunElevation } from "../../geo/sun";
 import { useObservatoryEscape } from "../useObservatoryEscape";
+import { StoryDock } from "../observations/StoryDock";
 import { SkyCityPicker, type SkyCityPreference } from "./SkyCityPicker";
 import { MeteorNights } from "./MeteorNights";
+import { SkyObjects } from "./SkyObjects";
+import { skyDirection, skyTargets } from "./skyTargets";
 
 const MINUTE = 60_000;
 const Moonfall = lazy(() => import("../moonfall/Moonfall").then(({ Moonfall }) => ({ default: Moonfall })));
@@ -52,7 +47,8 @@ export function TonightSky({
   const rangeId = useId();
   const [openedAt] = useState(() => Date.now());
   const [mode, setMode] = useState(initialMode === "moonfall" ? "sky" : initialMode);
-  const [modeLook, setModeLook] = useState(initialLook);
+  const [meteorDeparture, setMeteorDeparture] = useState<TonightView | null>(null);
+  const [observing, setObserving] = useState(Boolean(initialMoment || initialLook));
   const { city } = preference;
   const night = useMemo(() => {
     const at = initialMoment?.city === city.name ? initialMoment.at : openedAt;
@@ -87,8 +83,7 @@ export function TonightSky({
     initialMode === "moonfall" || initialLunar ? depart(current) : null,
   );
   const at = current.at;
-  const readings = current.bodies;
-  const above = readings.filter((body) => body.altitude > 0).length;
+  const { target } = skyTargets(current.bodies);
   const sun = sunElevation(city.lon, city.lat, at);
   const sky = sun >= -0.833 ? "Daylight" : sun > -18 ? "Twilight" : "Dark sky";
 
@@ -142,108 +137,131 @@ export function TonightSky({
           </button>
         </div>
       </div>
+      {mode === "sky" && !observing && (
+        <section className="tonight-invitation" aria-label="Start observing">
+          <h3>{target ? `Look ${skyDirection(target.azimuth)}.` : "Move through the night."}</h3>
+          <p>
+            {target
+              ? `${target.name === "Moon" ? "The Moon" : target.name} is above ${city.name}’s horizon. Start there, then move through the night.`
+              : `The Moon and planets are below ${city.name}’s horizon at this time. Try another moment in the night.`}
+          </p>
+          <p className="tonight-invitation-context">
+            {city.name} · {format.local.format(at)} · Calculated sky
+          </p>
+          <div className="observatory-actions">
+            {target && (
+              <button
+                type="button"
+                className="tonight-find"
+                onClick={() => {
+                  onView({ ...current, look: aimAt(target), targetName: target.name });
+                  setObserving(true);
+                  requestAnimationFrame(() =>
+                    document.querySelector<HTMLButtonElement>(".tonight-objects button")?.focus(),
+                  );
+                }}
+              >
+                Find {target.name === "Moon" ? "the Moon" : target.name}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setObserving(true);
+                requestAnimationFrame(() =>
+                  document.querySelector<HTMLSelectElement>(".tonight-city select")?.focus(),
+                );
+              }}
+            >
+              Change city or night
+            </button>
+          </div>
+        </section>
+      )}
       <SkyCityPicker city={city.name} select={preference.select} />
-      <div className="observatory-actions tonight-mode" role="group" aria-label="Local sky view">
-        <button
-          type="button"
-          aria-pressed={mode === "sky"}
-          onClick={() => {
-            if (mode === "sky") return;
-            onView({ ...opening, look: current.look });
-            setMode("sky");
-          }}
-        >
-          Sky view
-        </button>
-        <button
-          type="button"
-          aria-pressed={mode === "meteors"}
-          onClick={() => {
-            if (mode === "meteors") return;
-            setModeLook(current.look);
-            setMode("meteors");
-          }}
-        >
-          Meteor Nights
-        </button>
-        {mode === "sky" && (
-          <button
-            type="button"
-            id="open-moonfall"
-            onClick={() => {
-              const flight = depart(current);
-              setDeparture(flight);
-              onView(flight.aim);
-            }}
-          >
-            Moonfall
-          </button>
-        )}
-      </div>
       {mode === "meteors" ? (
-        <MeteorNights city={city} view={view} initialLook={modeLook} onView={onView} />
+        <MeteorNights
+          city={city}
+          view={view}
+          initialLook={meteorDeparture?.city.name === city.name ? meteorDeparture.look : initialLook}
+          onView={onView}
+        />
       ) : (
         <>
-          <div className="tonight-time">
-            <div className="tonight-clock">
-              <label htmlFor={rangeId}>City local time</label>
-              <time dateTime={new Date(at).toISOString()}>{format.local.format(at)}</time>
+          <StoryDock label="Tonight’s Sky time">
+            <div className="tonight-time">
+              <div className="tonight-clock">
+                <label htmlFor={rangeId}>City local time</label>
+                <time dateTime={new Date(at).toISOString()}>{format.local.format(at)}</time>
+              </div>
+              <input
+                id={rangeId}
+                type="range"
+                className="scrub-slider tonight-scrub"
+                min={0}
+                max={(night.end - night.start) / MINUTE}
+                value={(at - night.start) / MINUTE}
+                aria-valuetext={format.local.format(at)}
+                onChange={(event) => {
+                  const at = night.start + event.currentTarget.valueAsNumber * MINUTE;
+                  onView({ ...current, at, bodies: skyBodies(city, at) });
+                  setObserving(true);
+                }}
+              />
+              <div className="tonight-clock tonight-edges">
+                <span>
+                  {night.sunset ? "Sunset" : "Evening"} · {format.clock.format(night.start)}
+                </span>
+                <span>
+                  {night.sunrise ? "Sunrise" : "Morning"} · {format.clock.format(night.end)}
+                </span>
+              </div>
             </div>
-            <input
-              id={rangeId}
-              type="range"
-              className="scrub-slider tonight-scrub"
-              min={0}
-              max={(night.end - night.start) / MINUTE}
-              value={(at - night.start) / MINUTE}
-              aria-valuetext={format.local.format(at)}
-              onChange={(event) => {
-                const at = night.start + event.currentTarget.valueAsNumber * MINUTE;
-                onView({ ...current, at, bodies: skyBodies(city, at) });
-              }}
-            />
-            <div className="tonight-clock tonight-edges">
-              <span>
-                {night.sunset ? "Sunset" : "Evening"} · {format.clock.format(night.start)}
-              </span>
-              <span>
-                {night.sunrise ? "Sunrise" : "Morning"} · {format.clock.format(night.end)}
-              </span>
-            </div>
-          </div>
-          <details className="tonight-objects" open>
-            <summary>
-              <span>Moon &amp; planets</span>
-              <span>
-                {sky} · {above} {above === 1 ? "object" : "objects"} above the horizon
-              </span>
-            </summary>
-            <ul>
-              {readings.map((body) => (
-                <li key={body.name}>
-                  <button
-                    type="button"
-                    disabled={body.altitude <= 0}
-                    aria-label={body.altitude > 0 ? `Point at ${body.name}` : `${body.name}, below horizon`}
-                    onClick={() => onView({ ...current, look: aimAt(body), targetName: body.name })}
-                  >
-                    <span>
-                      {body.name}
-                      {body.lit !== null && <small>{body.lit}% lit</small>}
-                    </span>
-                    <span>
-                      {body.altitude > 0
-                        ? `${Math.round(body.altitude)}° ↑ · ${bearingLabel(body.azimuth)}`
-                        : "Below horizon"}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-            <p>Calculated positions at a level horizon. Clouds and light pollution affect what you’ll see.</p>
-          </details>
+          </StoryDock>
+          <SkyObjects current={current} sky={sky} onView={onView} />
         </>
       )}
+      <div className="tonight-onward">
+        <p>{mode === "sky" ? "Explore another sky experience" : "Return to your observing moment"}</p>
+        <div className="observatory-actions tonight-mode" role="group" aria-label="Local sky view">
+          <button
+            type="button"
+            aria-pressed={mode === "sky"}
+            onClick={() => {
+              if (mode === "sky") return;
+              onView(meteorDeparture?.city.name === city.name ? meteorDeparture : opening);
+              setMode("sky");
+              setObserving(true);
+            }}
+          >
+            Sky view
+          </button>
+          <button
+            type="button"
+            aria-pressed={mode === "meteors"}
+            onClick={() => {
+              if (mode === "meteors") return;
+              setMeteorDeparture(current);
+              setMode("meteors");
+            }}
+          >
+            Meteor Nights
+          </button>
+          {mode === "sky" && (
+            <button
+              type="button"
+              id="open-moonfall"
+              onClick={() => {
+                const flight = depart(current);
+                setDeparture(flight);
+                onView(flight.aim);
+              }}
+            >
+              Moonfall
+            </button>
+          )}
+        </div>
+      </div>
       <ExperienceEnding id={mode} />
     </>
   );

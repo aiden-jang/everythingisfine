@@ -221,6 +221,26 @@ test("the current-feed error gives an explicit archive recovery without silently
     }),
   ).toBeVisible();
   await expect(panel.locator(".story-time time")).toHaveAttribute("datetime", at);
+  await expect(panel.getByText("Loading the selected observations…", { exact: true })).toHaveCount(0);
+  await expect(panel.getByRole("slider")).toBeEnabled();
+  await panel.getByRole("slider").press("Home");
+  await expect(panel.locator(".story-time time")).not.toHaveAttribute("datetime", at);
+});
+
+test("changing an archive season preserves keyboard focus and the shared world", async ({ page }) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#v=observe&story=ozone");
+  const panel = page.getByRole("region", { name: "Ozone Season", exact: true });
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  const season = panel.getByRole("combobox", { name: "Compare season", exact: true });
+  await season.focus();
+  await season.selectOption("2019");
+  await expect(season).toHaveValue("2019");
+  await expect(panel.locator(".story-time time")).toHaveAttribute("datetime", /^2019-/);
+  await expect(panel.getByText("Loading the selected observations…", { exact: true })).toHaveCount(0);
+  await expect(season).toBeFocused();
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });
 
 test("Pacific radar opens from the forecast and returns to the retained forecast moment", async ({

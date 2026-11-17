@@ -19,7 +19,7 @@ function Finding({ id, completed }: { id: string; completed: boolean }) {
   ) : null;
 }
 
-export function ExperienceEnding({ id }: { id?: string } = {}) {
+export function ExperienceEnding({ id, showFinding = true }: { id?: string; showFinding?: boolean } = {}) {
   const navigation = useStoryNavigation();
   const details = useRef<HTMLDetailsElement>(null);
   const active = id ?? navigation?.active;
@@ -41,7 +41,7 @@ export function ExperienceEnding({ id }: { id?: string } = {}) {
     const nextTitle = searchStories.find((entry) => entry.id === next?.id)?.title;
     return (
       <>
-        <Finding id={active} completed={completed} />
+        {showFinding && <Finding id={active} completed={completed} />}
         <SaveVisit />
         <section className="guided-journey" aria-label="Current journey">
           <h3>
@@ -91,14 +91,14 @@ export function ExperienceEnding({ id }: { id?: string } = {}) {
   if (!next || !story)
     return (
       <>
-        <Finding id={active} completed={completed} />
+        {showFinding && <Finding id={active} completed={completed} />}
         <SaveVisit />
       </>
     );
   const reason = navigation.unavailable(story.id);
   return (
     <>
-      <Finding id={active} completed={completed} />
+      {showFinding && <Finding id={active} completed={completed} />}
       <SaveVisit />
       <details
         ref={details}
