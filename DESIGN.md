@@ -239,7 +239,8 @@ Alumni Sans is a variable upright font licensed by the adjacent SIL Open Font Li
 - **Display:** The frontmatter's display role belongs to “Look closer.” on the full landing view.
   It has a deliberate two-line break, close line height and regular numeric forms. Tall layouts
   below 900px use `clamp(76px, 23vw, 108px)`; tall phones at 380px or narrower use 60px and
-  viewports no taller than 620px use 52px.
+  viewports no taller than 620px use 52px. Desktop layouts from 621px to 860px high use
+  `clamp(88px, 15dvh, 124px)` so the headline leaves room for the description and actions.
 - **Story display:** Alumni Sans uses the story-display role in observation, Tonight’s Sky,
   radar and Float Dive player headings. Other reading and scene headings retain their established type.
 - **Featured story title:** Alumni Sans uses the story-heading role above the source and short promise,
@@ -270,12 +271,16 @@ Explore stories is a pale filled action; Explore the layers is a quiet secondary
 diagram-led scenes form a ruled strip along the lower edge. A recorded thumbnail, question and
 source context occupy the lower-right invitation on desktop. Earthquake counts belong to exploration
 rather than the editorial opening; feed availability remains accessible in the header.
+Desktop layouts from 621px to 860px high reduce the top inset to 80px and place the two entry
+actions side by side, preserving separate space for the invitation, actions and diagram strip.
 
 Tall layouts below 900px place the 120vw globe above and behind the bounded introduction,
 with the introduction owning vertical scrolling and 24px side insets. The action, source context
 and scene controls remain reachable below the headline. Viewports at 620px high or less use the
 compact headline, reduced gaps and owned scrolling; the established player landscape layouts
-continue to keep playback visible. Do not turn the oversized canvas into horizontal page scrolling.
+continue to keep playback visible. Landscape layouts at least 600px wide use a 64px top inset
+and side-by-side entry actions; the story invitation sits beside the copy and actions so the
+scene strip keeps its own row. Do not turn the oversized canvas into horizontal page scrolling.
 
 ### Explore and reading regions
 

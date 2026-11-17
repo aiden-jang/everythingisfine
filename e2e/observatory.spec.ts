@@ -14,6 +14,11 @@ for (const [width, height] of [
   [768, 1024],
   [812, 375],
   [1024, 768],
+  [1420, 621],
+  [1420, 645],
+  [1420, 821],
+  [1920, 821],
+  [1920, 861],
   [1440, 900],
 ]) {
   test(`the observatory fits at ${width}x${height}`, async ({ page }) => {
@@ -59,7 +64,7 @@ for (const [width, height] of [
     expect(height! - (creditPosition!.y + creditPosition!.height)).toBeLessThanOrEqual(24);
     const collisions = await page
       .locator(
-        ".observatory-primary, .observatory-scenes button, .creator-credit a, #start-story, #continue-story",
+        ".observatory-story, .observatory-entry-actions > button, .observatory-scenes button, .creator-credit a, #start-story, #continue-story",
       )
       .evaluateAll((nodes) => {
         const boxes = nodes.map((node) => ({
@@ -77,7 +82,7 @@ for (const [width, height] of [
             ),
         );
       });
-    expect(collisions, "landing controls and the fixed credit have separate space").toEqual([]);
+    expect(collisions, "landing copy, controls and the fixed credit have separate space").toEqual([]);
     await page.screenshot({ path: test.info().outputPath(`observe-live-${width}.png`) });
     await page.getByRole("button", { name: "After Dark", exact: true }).click();
     await expect(page.getByRole("heading", { name: "The other side of day." })).toBeVisible();
