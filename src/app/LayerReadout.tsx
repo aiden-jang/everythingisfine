@@ -25,8 +25,16 @@ export function LayerReadout({
       <RadarCanvasCredit radar={controls.radar} />
       {(weather.length > 0 || controls.radar) && (
         <>
-          <button ref={trigger} className="layer-times-toggle" type="button" {...{ popovertarget: id }}>
-            Sources & times
+          <button
+            ref={trigger}
+            className="layer-times-toggle"
+            aria-label="Sources & times"
+            type="button"
+            {...{ popovertarget: id }}
+          >
+            <span>
+              Sources<span className="layer-times-suffix"> &amp; times</span>
+            </span>
             <svg viewBox="0 0 12 12" width="12" height="12" aria-hidden="true">
               <path d="m3 4 3 3 3-3" fill="none" stroke="currentColor" strokeWidth="1.5" />
             </svg>

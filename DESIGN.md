@@ -811,7 +811,8 @@ Explore the layers. A recorded thumbnail makes the first investigation tangible.
 Earth, Below the Surface and After Dark diagrams remain the category language.
 
 Find and Saved occupy stable positions in the shared header. On phones they use labelled icon
-buttons with full touch targets; projection stays beside the world. Opening the local collection
+buttons with full touch targets; projection shares the world’s footer row with Legend and sources,
+so expanding the sheet cannot cover either control. Opening the local collection
 preserves the current world and search. Its pale evidence cards contrast with the dark observation
 deck and carry the selected value, place, time, evidence kind and source. Exported cards exclude notes.
 

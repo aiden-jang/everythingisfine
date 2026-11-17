@@ -10,6 +10,7 @@ import { Wordmark } from "./Wordmark";
 import { CreatorCredit } from "./CreatorCredit";
 import { refreshAnnotations } from "../globe/annotationInput";
 import { HeaderNavigation } from "./HeaderNavigation";
+import { ProjectionSwitch } from "./ProjectionSwitch";
 
 interface Props {
   clip: Clip;
@@ -89,22 +90,7 @@ export function GlobeHeader({
         <Wordmark onHome={onHome} />
         <div className="observatory-header-actions">
           <HeaderNavigation />
-          {!observing && (
-            <div className="projection-switch" role="group" aria-label="Projection" data-flat={flat}>
-              <span className="projection-current" aria-current="true">
-                {flat ? "Map" : "Globe"}
-              </span>
-              <button
-                type="button"
-                id="view-projection"
-                className="observatory-save"
-                onClick={() => setFlat((value) => !value)}
-                aria-description={flat ? "Switch to globe" : "Switch to map"}
-              >
-                {flat ? "Globe" : "Map"}
-              </button>
-            </div>
-          )}
+          {!observing && <ProjectionSwitch flat={flat} setFlat={setFlat} visible={headShown} />}
           <FeedDot compact={!observing} feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
           <ObservatoryOptions
             clip={clip}
