@@ -123,7 +123,7 @@ test("refused storage keeps a usable visit without promising persistence", async
   await page.getByRole("button", { name: "Save view", exact: true }).click();
   await expect(page.locator(".visit-save")).toContainText("Saved for this visit");
   await page.getByRole("button", { name: home }).click();
-  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
   await page.getByRole("button", { name: home }).click();
   await openStories(page, "all");
   await expect(page.getByRole("region", { name: "Your visits" })).toContainText("Eye of the Storm");

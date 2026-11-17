@@ -7,6 +7,7 @@ import { fetchWildfires, type Wildfire } from "../sources/wildfires";
 import { timedFetch } from "../sources/types";
 import type { HazardLayer } from "./format";
 import type { FeedChecks, LayerAnswer } from "./feedStatus";
+import { pollVisible } from "./pollVisible";
 
 const POLL_MS = 10 * 60_000;
 
@@ -50,29 +51,29 @@ export function useHazardLayers(): HazardLayers {
         checked: ok ? { ...checked, [layer]: at } : checked,
       }));
     };
-    const load = (): void => {
-      void fetchAurora(timedFetch, answerFor("aurora")).then((next) => {
-        if (alive && next) setAurora(next);
-      });
-      void fetchCyclones(timedFetch, answerFor("cyclones")).then((next) => {
-        if (alive) setCyclones(next);
-      });
-      void fetchWildfires(timedFetch, answerFor("fires")).then((next) => {
-        if (alive) setFires(next);
-      });
-      void fetchFloods(timedFetch, answerFor("floods")).then((next) => {
-        if (alive) setFloods(next);
-      });
-    };
-    load();
+    const load = () =>
+      Promise.all([
+        fetchAurora(timedFetch, answerFor("aurora")).then((next) => {
+          if (alive && next) setAurora(next);
+        }),
+        fetchCyclones(timedFetch, answerFor("cyclones")).then((next) => {
+          if (alive) setCyclones(next);
+        }),
+        fetchWildfires(timedFetch, answerFor("fires")).then((next) => {
+          if (alive) setFires(next);
+        }),
+        fetchFloods(timedFetch, answerFor("floods")).then((next) => {
+          if (alive) setFloods(next);
+        }),
+      ]);
     /* Once, not on the ten-minute clock: the newest episode is weeks old, so polling learns nothing. */
     void fetchVolcanoes(timedFetch, answerFor("volcanoes")).then((next) => {
       if (alive) setVolcanoes(next);
     });
-    const id = window.setInterval(load, POLL_MS);
+    const stop = pollVisible(load, POLL_MS);
     return () => {
       alive = false;
-      window.clearInterval(id);
+      stop();
     };
   }, []);
 

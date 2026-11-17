@@ -43,6 +43,8 @@ export function observatoryIntroduction({
           : aurora
             ? "Follow NOAA’s forecast over Earth’s dark side. The raised glow illustrates the modeled oval."
             : "Earth settles into the horizon as constellations trace overhead. The sky follows the UTC readout."
-        : "A live view of earthquakes, changing skies, and a restless planet.";
+        : landing
+          ? "Earth, ocean and sky. Extraordinary things, hiding in plain sight."
+          : "A live view of earthquakes, changing skies, and a restless planet.";
   return { title, description };
 }

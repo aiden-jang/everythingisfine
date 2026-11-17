@@ -20,6 +20,7 @@ export function usePlaybackBoundary(
         close();
     };
     const key = (event: KeyboardEvent) => {
+      if (document.querySelector("#saved-observations")) return;
       if (event.key === "Escape") {
         event.preventDefault();
         event.stopImmediatePropagation();

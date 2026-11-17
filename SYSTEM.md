@@ -68,6 +68,9 @@ accounts and the rail distinguishes raw readings from distinct events.
 | `src/app/{ExplorerSidebar,MapLayers,LayerCatalogue,LayerSources,LayerReadout,WeatherLayer}.tsx`, `useMapLayers.ts`, and `weatherLayers.ts` | Layer/story navigation, independent inspectors, weather clocks, feed health and scene composition |
 | `src/app/Observatory.tsx` | Intro, scene choices, captured-story narration and tour controls |
 | `src/app/GlobeHeader.tsx` | Shared masthead, capture, source status and explorer tools |
+| `src/app/HeaderNavigation.tsx`, `visitor/SavedCollection.tsx` | Persistent search and lazy-loaded local evidence collection over the shared world |
+| `src/app/panelReturn.ts`, `usePanelReturn.ts` | Cancellable scroll and visible-focus restoration for story and browser returns |
+| `src/app/visitor/visitEvidence.ts`, `exportEvidence.ts` | Source-specific saved evidence descriptions and local PNG cards without private notes |
 | `src/app/CanvasFooter.tsx`, `MapLegend.tsx` | Explorer credit, input hints and responsive map legend |
 | `src/app/journeys.ts` | Filtered reading selection, factual captions and scoped summary |
 | `src/app/journeys/` | Manual guided paths, contextual onward links, and navigation through existing story and scene controls |
@@ -191,6 +194,15 @@ which preserves the globe and offers the original return destination or a page r
 changing stored layer choices. Radar and weather players remain mounted while browsing; opening a
 story releases the background players so the story owns its data. Returning to Layers restores the
 inspector, layer selections, scan positions, camera and projection. The canvas stays mounted throughout.
+
+The shared header keeps Find and Saved reachable during search and playback. The evidence collection
+is loaded on demand; saved records remain bounded to one per story with the existing version-one
+storage contract. Legacy Float observations remain readable. Tonga cards derive pressure only from
+an actual archived station sample; sky cards identify calculations and radar cards explain scan expiry.
+Observation raster changes retain the previous complete globe frame until matching pixels are ready,
+with the retained time stated while loading. Source failure ends the handoff rather than assigning
+old imagery to a new timestamp. Background hazard polling avoids overlapping requests and sleeps
+while the document is hidden.
 
 Story thumbnails are cropped captures of the actual rendered views, loaded lazily as WebP assets.
 Featured Float Dive, Rupture Reveal and Moonfall crops retain native detail; the radar and sky

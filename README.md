@@ -36,7 +36,11 @@ Camera coordinates can appear in shared view links. See the
 [location privacy notice](https://accounts.aidenjang.com/privacy#legal-location-in-everything-is-fine).
 Choosing Earth, Below the Surface or After Dark opens its content immediately; choosing the
 selected scene again shows All stories. The wordmark closes the catalogue and returns to the introduction.
-**Explore** opens a sidebar with **Layers** and **Stories**, beside the same globe or map. The wordmark returns to the Earth landing view. Browser Back restores the previous view. **Reset camera** in View options recenters the current view without changing its projection, layers, filters or held time. Choose **Reset view & filters** in View options to clear the selection, filters, and held time and replay the globe’s arrival.
+**Explore stories** opens the curated catalogue; **Explore the layers** opens the layer controls beside
+the same globe or map. The sidebar's **Layers** and **Stories** tabs switch between them. The wordmark
+returns to the Earth landing view. Browser Back restores the previous view. **Reset camera** in View
+options recenters the current view without changing its projection, layers, filters or held time.
+Choose **Reset view & filters** to clear the selection, filters, and held time and replay the globe’s arrival.
 A failed story module offers a return to the prior view and an explicit page reload without replacing the shared globe.
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
 **Save image** adds the displayed story’s title, time and source to supported canvas views.
@@ -75,6 +79,14 @@ Earth-story timelines show dated milestones, **Restart** while partway through o
 summary. **Compare dates** switches actual observations while holding the camera; annual and monthly
 products keep their stated time resolution. Authored flight progress and plate reconstructions do not
 pretend to be dated observation comparisons. No account or remote storage is involved.
+
+**Find** in the header opens story search from any view. **Saved** opens your kept observations
+and recent journeys without clearing a search or replacing the globe. Evidence cards distinguish
+measured Float Dive and Tonga readings, calculated sky positions, and saved radar scan times.
+Add an optional local note, reopen the saved moment, or download a source-labelled image card.
+Notes are excluded from exported cards. Saving again updates that story's existing bookmark.
+Charts with multiple series also offer **Read the chart**, with each series' endpoints, range and
+nearest recorded sample; these readings are never interpolated for animation.
 
 **Record 10-second clip** records the existing canvas as a silent video with its source and date.
 Start recording, then replay or scrub within the view. Stop early or cancel, preview the result, then

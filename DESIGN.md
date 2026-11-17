@@ -20,7 +20,7 @@ colors:
 typography:
   display:
     fontFamily: '"Alumni Sans", "Geist Variable", ui-sans-serif, system-ui, sans-serif'
-    fontSize: "clamp(88px, 8.2vw, 128px)"
+    fontSize: "clamp(112px, 12vw, 176px)"
     fontWeight: 600
     lineHeight: 0.86
     letterSpacing: "-0.025em"
@@ -56,7 +56,8 @@ typography:
     fontWeight: 550
     letterSpacing: "-0.02em"
   story-heading:
-    fontSize: "clamp(27px, 2.1vw, 34px)"
+    fontFamily: '"Alumni Sans", "Geist Variable", ui-sans-serif, system-ui, sans-serif'
+    fontSize: "clamp(34px, 3vw, 44px)"
     fontWeight: 550
     lineHeight: 1.08
     letterSpacing: "-0.03em"
@@ -86,10 +87,11 @@ spacing:
   rail: "clamp(20px, 2.35vw, 38px)"
 components:
   explore-action:
-    backgroundColor: "transparent"
-    textColor: "{colors.ink}"
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.void}"
     typography: "{typography.action}"
-    padding: "10px 0"
+    rounded: "{rounded.field}"
+    padding: "12px 18px"
   utility-button:
     textColor: "{colors.dim}"
     rounded: "{rounded.control}"
@@ -235,12 +237,14 @@ Alumni Sans is a variable upright font licensed by the adjacent SIL Open Font Li
 ### Hierarchy
 
 - **Display:** The frontmatter's display role belongs to “Look closer.” on the full landing view.
-  It uses a close line height and regular numeric forms. Tall layouts below 900px use
-  `clamp(76px, 16vw, 116px)`; the narrowest tall phones use 68px and short viewports use 52px.
+  It has a deliberate two-line break, close line height and regular numeric forms. Tall layouts
+  below 900px use `clamp(76px, 23vw, 108px)`; tall phones at 380px or narrower use 60px and
+  viewports no taller than 620px use 52px.
 - **Story display:** Alumni Sans uses the story-display role in observation, Tonight’s Sky,
   radar and Float Dive player headings. Other reading and scene headings retain their established type.
-- **Featured story title:** Geist uses the story-heading role above the source and short promise,
-  with a 28px phone treatment. This title is reading content, separate from the image.
+- **Featured story title:** Alumni Sans uses the story-heading role above the source and short promise,
+  with a 34px phone treatment. This title is reading content, separate from the image. The landing
+  invitation uses a 28px condensed title beside its recorded thumbnail, or 23px on narrow tall phones.
 - **Title and navigation:** Inspector headings use the inspector-heading role. Explore tabs use
   the explore-tab role, 19px on phones and `clamp(22px, 1.65vw, 26px)` at the wide breakpoint.
   Recommendation titles use the story-row role, 15px on phones and 18px at wide desktop widths.
@@ -261,9 +265,11 @@ Alumni Sans is a variable upright font licensed by the adjacent SIL Open Font Li
 The full-viewport landing uses a real oversized globe on the right, extending beyond the viewport,
 with the large invitation at the left. The desktop canvas is an 82vw square positioned 32vw from
 the left and 2dvh from the top. The introduction uses a 42% reading track and open remaining space;
-its top inset is responsive, with 34px horizontal and 64px bottom clearance. The Explore action is
-an underlined text control, and the three diagram-led scenes form a quiet ruled strip along the
-lower edge. A source-aware story action occupies the lower right on desktop.
+its top inset is `clamp(112px, 15dvh, 160px)`, with 34px horizontal and 64px bottom clearance.
+Explore stories is a pale filled action; Explore the layers is a quiet secondary action. The three
+diagram-led scenes form a ruled strip along the lower edge. A recorded thumbnail, question and
+source context occupy the lower-right invitation on desktop. Earthquake counts belong to exploration
+rather than the editorial opening; feed availability remains accessible in the header.
 
 Tall layouts below 900px place the 120vw globe above and behind the bounded introduction,
 with the introduction owning vertical scrolling and 24px side insets. The action, source context
@@ -331,7 +337,8 @@ Pinned phone detail cards respect the same band, with the selected marker center
 Float Dive keeps its reading allocation above the shared credit reservation.
 Background wind paths remain quieter than story paths.
 
-The header offers projection, source status and View options at every width. Capture, fullscreen,
+The header offers Find, Saved, source status and View options at every width. On narrow phones,
+projection sits just beneath the header beside the world. Capture, fullscreen,
 rotation and reset share that menu; keyboard help is a quiet optional disclosure. Phone layouts keep
 the subject above a draggable, keyboard-operable sheet. Expand globe/map enlarges the canvas; the
 other shortcut names the current pane rather than assuming earthquake activity. The handle and
@@ -362,10 +369,10 @@ Focus rings and selection brackets are interaction signals, not ambient glows.
 
 ## Shapes
 
-The circle of the globe is the dominant silhouette. The Explore text action is square and ruled;
+The circle of the globe is the dominant silhouette. The primary Explore stories action uses the field radius;
 search fields and featured image crops use the field radius. Projection controls use the projection
 radius, ordinary controls and recommendation thumbnails use the control radius, and the projection
-pair or phone recommendation container uses the card radius. Phone Explore and Observatory sheets
+pair uses the card radius. Phone recommendations use open ruled rows. Explore and Observatory sheets
 use their separate rounded upper-corner roles. Cards remain open reading groups rather than
 floating tiles. Active categories use a small filled shape; selected scene diagrams use a quiet
 underline. Preserve neutral corner brackets around selected observations.
@@ -393,7 +400,8 @@ empty result. A failing source is named with its reason and retry, and must not
 blank working layers. An empty filter result has a useful widening/reset action.
 Empty phone lists occupy their status height rather than reserving absent rows.
 
-The landing Explore action uses an open underline and directional cue. Utility buttons use
+The landing Explore stories action uses pale ink fill and a directional cue; Explore the layers
+is a text action. Utility buttons use
 neutral borders and brightness-based hover; inputs remain transparent on the reading deck, with
 a visible hairline and square field corners. Explore tabs use an ink underline, while selected
 diagram-led story filters use the raised fill. The shared focus treatment remains visible across each variant.
@@ -790,4 +798,23 @@ the selected chart point, instrument reading and playback refer to the same samp
 playback deck stays reachable independently of the scrolling reading panel. On phones,
 inspection reserves more room for the chart and instrument. The recorded invitation retains
 its source context at every width. Optional notes remain secondary to keeping an observation.
-Notice brings the finding into the reading pane without scrolling the shared world or playback.
+While the profile is open, its sample slider owns inspection and the ascent transport shows a selected
+depth readout instead of a second slider. The panel unfolds over 520ms and the finding settles over
+420ms; both are finite and skip motion entirely under reduced motion. The phone inspector can grow
+to 300px within its canvas allocation and scrolls its own content. Notice brings the finding into
+the reading pane without scrolling the shared world or playback.
+
+### Connected discovery and kept evidence
+
+The opening gives the two-line invitation an editorial scale and separates Explore stories from
+Explore the layers. A recorded thumbnail makes the first investigation tangible. The familiar
+Earth, Below the Surface and After Dark diagrams remain the category language.
+
+Find and Saved occupy stable positions in the shared header. On phones they use labelled icon
+buttons with full touch targets; projection stays beside the world. Opening the local collection
+preserves the current world and search. Its pale evidence cards contrast with the dark observation
+deck and carry the selected value, place, time, evidence kind and source. Exported cards exclude notes.
+
+Inspection has one active sample control. The wider Float journey remains visible as context while
+the profile inspector owns scrubbing. Evidence unfolds with finite motion; findings settle before
+reading and kept cards arrive once. Reduced motion presents the same content immediately.

@@ -22,7 +22,7 @@ for (const width of [1440, 390]) {
     await expect(entry).toBeHidden();
     await expect(page.locator("#continue-story")).toContainText("Float Dive");
     await expect(page.locator("#continue-story")).toBeFocused();
-    await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+    await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
     await openStories(page, "search");
     await expect(page.locator(".story-choice > button")).toHaveText([
       "Storm Radar",

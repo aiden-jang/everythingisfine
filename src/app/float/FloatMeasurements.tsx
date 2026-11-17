@@ -77,21 +77,27 @@ export function FloatMeasurements({ view, sound }: { view: FloatDiveView; sound:
           </div>
           <div className="float-playback-row">
             <PlaybackButton playing={playing} ended={index === samples.length - 1} onClick={view.toggle} />
-            <div className="float-track">
+            <div className="float-track" data-inspecting={inspecting || undefined}>
               <div className="float-edges">
                 <span>{meters.format(samples[0]!.depth)} m</span>
                 <span>{meters.format(samples.at(-1)!.depth)} m</span>
               </div>
-              <input
-                type="range"
-                className="scrub-slider float-scrub"
-                min={0}
-                max={samples.length - 1}
-                value={index}
-                onChange={(event) => view.seek(event.currentTarget.valueAsNumber)}
-                aria-label="Ascent depth"
-                aria-valuetext={`${meters.format(sample.depth)} m`}
-              />
+              {inspecting ? (
+                <p className="float-inspection-position">
+                  {meters.format(sample.depth)} m · inspect the profile above
+                </p>
+              ) : (
+                <input
+                  type="range"
+                  className="scrub-slider float-scrub"
+                  min={0}
+                  max={samples.length - 1}
+                  value={index}
+                  onChange={(event) => view.seek(event.currentTarget.valueAsNumber)}
+                  aria-label="Ascent depth"
+                  aria-valuetext={`${meters.format(sample.depth)} m`}
+                />
+              )}
             </div>
             <button
               type="button"

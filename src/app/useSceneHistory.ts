@@ -1,4 +1,5 @@
 import { useLayoutEffect, useRef, useState, type MutableRefObject } from "react";
+import { usePanelReturn } from "./usePanelReturn";
 import { flushSync } from "react-dom";
 import type { CameraState } from "../globe/controls";
 import type { FlyTo } from "../globe/cameraTarget";
@@ -18,6 +19,7 @@ export function useSceneHistory<T>({
   flyTo: MutableRefObject<FlyTo>;
   lastWritten: MutableRefObject<string>;
 }) {
+  const panelReturn = usePanelReturn();
   const [state] = useState(() => ({
     session: crypto.randomUUID(),
     id: 0,
@@ -31,6 +33,7 @@ export function useSceneHistory<T>({
   useLayoutEffect(() => {
     const current = state;
     checkpoint.current = () => {
+      panelReturn.cancel();
       if (current.restoring || latest.current.key !== current.key) return;
       current.snapshots.set(current.id, {
         value: latest.current.capture(),
@@ -57,18 +60,14 @@ export function useSceneHistory<T>({
       lastWritten.current = location.hash;
       flushSync(() => latest.current.restore(saved.value));
       flyTo.current(saved.camera.lon, saved.camera.lat, saved.camera.zoom);
-      requestAnimationFrame(() => {
-        document.getElementById(saved.scrollTarget)?.scrollTo(0, saved.scroll);
-        const focus = document.getElementById(saved.focus);
-        if (focus?.getClientRects().length) focus.focus({ preventScroll: true });
-      });
+      panelReturn.restore({ scrollTarget: saved.scrollTarget, scroll: saved.scroll, focus: saved.focus });
     };
     window.addEventListener("popstate", back);
     return () => {
       window.removeEventListener("popstate", back);
       checkpoint.current = () => {};
     };
-  }, [checkpoint, readCamera, flyTo, lastWritten, state]);
+  }, [checkpoint, readCamera, flyTo, lastWritten, state, panelReturn]);
   useLayoutEffect(() => {
     const current = state;
     if (current.key !== route.key) {

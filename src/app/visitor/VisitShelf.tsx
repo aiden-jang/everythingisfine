@@ -35,8 +35,8 @@ export function VisitShelf() {
           <span aria-hidden="true">→</span>
         </span>
         <small>{navigation.unavailable(visit.id) ?? visitNote(visit)}</small>
-        {visit.observation?.note && (
-          <small className="visit-observation-note">{visit.observation.note}</small>
+        {(visit.note || visit.observation?.note) && (
+          <small className="visit-observation-note">{visit.note ?? visit.observation?.note}</small>
         )}
       </button>
       {saved && (
@@ -96,14 +96,16 @@ export function VisitShelf() {
 }
 export function SaveVisit() {
   const navigation = useStoryNavigation();
-  if (!navigation?.active || navigation.active === "float") return null;
+  if (!navigation?.active || ["float", "tonga"].includes(navigation.active)) return null;
   return (
     <div className="visit-save">
       <button
         type="button"
         onClick={() => {
           const visit = navigation.current();
-          if (visit) navigation.library.save(visit);
+          const previous = navigation.library.saved.find(({ id }) => id === visit?.id);
+          if (visit)
+            navigation.library.save({ ...visit, ...(previous?.note ? { note: previous.note } : {}) });
         }}
       >
         {navigation.library.saved.some(({ id }) => id === navigation.active)

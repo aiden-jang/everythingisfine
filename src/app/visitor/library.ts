@@ -14,6 +14,7 @@ export interface Visit {
   id: string;
   seen: number;
   completed?: boolean;
+  note?: string;
   position: VisitPosition;
   observation?: {
     at: number;
@@ -103,6 +104,7 @@ export function readVisit(value: unknown): Visit | null {
     position,
     ...(raw.completed === true ? { completed: true } : {}),
   };
+  if (typeof raw.note === "string" && raw.note.length <= 280 && raw.note.trim()) visit.note = raw.note.trim();
   const observation = raw.observation;
   if (
     raw.id === "float" &&

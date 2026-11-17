@@ -4,13 +4,14 @@ import { MeasurementSound } from "../MeasurementSound";
 import { PlaceComparison } from "./PlaceComparison";
 import { ObservationInspection, useObservationInspection } from "./ObservationInspection";
 import { FrameComparison } from "./FrameComparison";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { nearest } from "../../sources/observations/common";
 import { observations, type ObservationId } from "./catalogue";
 import type { ObservationFrame, ObservationSource, ObservationView } from "./types";
 import { ObservationChart } from "./ObservationChart";
 import { DeepTimePin } from "./DeepTimePin";
 import { useObservationData, useObservationImage } from "./useObservationData";
+import { observationReadiness } from "./observationReadiness";
 
 import { useStorySession } from "./StorySession";
 
@@ -59,14 +60,30 @@ export function ObservationPlayer({
   const metadata = observations[id];
   const latest = frames.at(-1);
   const holding = state !== "ready" && latest !== undefined;
-  useStoryCompletion(
-    selectedAt !== null && frames.length > 1 && index === frames.length - 1 && !playing && state === "ready",
-  );
   const canHold = id === "deep" || id === "swell";
   const inspection = useObservationInspection(frame);
   const inspect = inspection.pick;
+  const presented = useRef<ObservationFrame | null>(null);
+  const readiness = observationReadiness({
+    hasFrame: !!frame,
+    loadingData: state === "loading",
+    raster: !!frame?.raster,
+    image: status,
+  });
+  const preparing = readiness === "preparing";
+  const heldFrame = preparing ? presented.current : null;
+  const heldTime = heldFrame ? (heldFrame.timeLabel ?? `${clock.format(heldFrame.at)} UTC`) : null;
+  useStoryCompletion(
+    selectedAt !== null &&
+      frames.length > 1 &&
+      index === frames.length - 1 &&
+      !playing &&
+      state === "ready" &&
+      readiness === "ready",
+  );
 
   useLayoutEffect(() => {
+    if (preparing) return;
     if (canHold && (!data || !frame) && state === "loading") return;
     const sky =
       horizon && frame?.localSky
@@ -92,6 +109,7 @@ export function ObservationPlayer({
           }
         : null,
     );
+    presented.current = readiness === "ready" ? (frame ?? null) : null;
     if (frame)
       remember?.({
         choice: option,
@@ -113,6 +131,8 @@ export function ObservationPlayer({
     photo,
     inspect,
     playing,
+    preparing,
+    readiness,
   ]);
 
   useEffect(() => {
@@ -152,7 +172,6 @@ export function ObservationPlayer({
             value={option}
             onChange={(event) => {
               if (!canHold) {
-                update(null);
                 setSelectedAt(null);
               }
               setPlaying(false);
@@ -315,9 +334,16 @@ export function ObservationPlayer({
       )}
       {status === "loading" && (
         <p className="observation-note" role="status">
-          {frame?.photograph && element
-            ? "Loading this image… Showing the last loaded photograph."
-            : "Loading this image…"}
+          {heldTime !== null
+            ? `Loading this image… The globe still shows ${heldTime}.`
+            : frame?.photograph && element
+              ? "Loading this image… Showing the last loaded photograph."
+              : "Loading this image…"}
+        </p>
+      )}
+      {state === "loading" && heldTime !== null && status !== "loading" && (
+        <p className="observation-note" role="status">
+          The globe still shows {heldTime} while these readings load.
         </p>
       )}
       {data && <p className="observation-note">{data.note}</p>}

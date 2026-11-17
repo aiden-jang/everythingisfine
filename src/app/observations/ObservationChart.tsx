@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import type { ObservationSeries } from "./types";
+import { summarizeSeries } from "./seriesSummary";
+import { layerTime } from "../layerTime";
 
 const WIDTH = 260;
 const HEIGHT = 66;
@@ -60,6 +62,27 @@ export function ObservationChart({
           {label(chart.min)} to {label(chart.max)}
         </span>
       </div>
+      <details className="observation-details">
+        <summary>Read the chart</summary>
+        {series.map((entry) => {
+          const summary = summarizeSeries(entry, at);
+          if (!summary) return null;
+          return (
+            <section key={entry.label} aria-label={entry.label}>
+              <h3>{entry.label}</h3>
+              <p>
+                {summary.count} samples. From {label(summary.first[1])} at {layerTime(summary.first[0])}
+                {" to "}
+                {label(summary.last[1])} at {layerTime(summary.last[0])}.{" Range: "}
+                {label(summary.min)} to {label(summary.max)}.
+              </p>
+              <p>
+                Nearest recorded sample: {label(summary.selected[1])} · {layerTime(summary.selected[0])}.
+              </p>
+            </section>
+          );
+        })}
+      </details>
     </div>
   );
 }

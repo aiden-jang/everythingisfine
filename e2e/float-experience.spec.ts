@@ -36,7 +36,8 @@ test("normal-motion Float Dive links its measured sample across the shared globe
   await page.screenshot({ path: test.info().outputPath("float-inspect-desktop.png") });
   const sample = profile.getByRole("slider", { name: "Inspect profile sample" });
   await sample.press("End");
-  await expect(depth).toHaveValue("596");
+  await expect(depth).toBeHidden();
+  await expect(sample).toHaveValue("596");
   await expect(page.locator("[data-float-depth]")).toContainText("3");
   await profile.getByRole("button", { name: "Salinity", exact: true }).click();
   await expect(profile.getByRole("img", { name: /Practical salinity by estimated depth/ })).toBeVisible();
@@ -44,7 +45,8 @@ test("normal-motion Float Dive links its measured sample across the shared globe
     .getByRole("group", { name: "Float projection" })
     .getByRole("button", { name: "Map", exact: true })
     .click();
-  await expect(depth).toHaveValue("596");
+  await expect(depth).toBeHidden();
+  await expect(sample).toHaveValue("596");
   await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("p")).toBe("map");
   const audit = await new AxeBuilder({ page })
     .include("#observatory-intro")

@@ -29,7 +29,7 @@ for (const [width, height] of [
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
     const stage = page.getByRole("group", { name: "Globe readout" });
-    const explore = page.getByRole("button", { name: "Explore the globe" });
+    const explore = page.getByRole("button", { name: /^Explore (the globe|the layers)$/ });
     const depth = page.getByRole("button", { name: "Below the Surface", exact: true });
     const credit = page.getByRole("link", { name: "aiden jang", exact: true });
     await Promise.all([
@@ -121,7 +121,7 @@ test("scenes preserve existing preferences and shared event links open the explo
     .click();
   await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
-  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   await expect(page.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Show the panel", exact: true })).toBeVisible();
   expect(
@@ -154,7 +154,7 @@ test("tour controls pause, advance, stop and leave the readings accessible", asy
   await expect(page.locator(".observatory-location")).not.toHaveAttribute("data-tour-location", first!);
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   await expect(tour).toBeVisible();
-  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   await waitForData(page);
 });
 
@@ -195,7 +195,7 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
     );
   const original = await contexts();
   await page.emulateMedia({ reducedMotion: "no-preference" });
-  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   const rail = page.locator("#chrome-rail");
   await Promise.all([
     expect(rail).toBeVisible(),
@@ -231,7 +231,7 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
     )
     .toEqual({ flights: 2, sameCanvas: true });
   const interrupted = await page
-    .getByRole("button", { name: "Explore the globe" })
+    .getByRole("button", { name: /^Explore (the globe|the layers)$/ })
     .evaluate((button: HTMLButtonElement) => {
       button.click();
       const zone = document.querySelector(".zone-canvas")!;
@@ -277,8 +277,8 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { empty: true, presentation: "fresh" });
   await page.goto("/");
-  await expect(page.locator(".observatory-summary")).toContainText("0 earthquakes");
   await revealStoryTools(page);
+  await expect(page.locator(".observatory-summary")).toContainText("0 earthquakes");
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
@@ -289,7 +289,7 @@ test("an empty view stays honest and keeps exploration available", async ({ page
     ),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: "Rupture Reveal", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
   await openLayer(page);
   await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("status")).toHaveText(
@@ -301,11 +301,11 @@ test("unavailable earthquake feeds do not masquerade as an empty or loading view
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { dead: true, presentation: "fresh" });
   await page.goto("/");
+  await revealStoryTools(page);
   await expect(page.locator(".observatory-source-note")).toContainText("USGS and EMSC are not answering");
   await expect(page.locator(".observatory-summary")).toContainText("Earthquake feeds unavailable.");
-  await revealStoryTools(page);
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
-  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
 });
 
@@ -349,8 +349,8 @@ test("a missing WebGL context still offers the source readings", async ({ page }
   for (const scene of ["Earth", "Below the Surface", "After Dark"])
     await expect(page.getByRole("button", { name: scene, exact: true })).toBeDisabled();
   await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toBeHidden();
-  await expect(page.getByRole("button", { name: "Explore the globe" })).toBeVisible();
-  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await expect(page.getByRole("button", { name: /^Explore (the globe|the layers)$/ })).toBeVisible();
+  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   await waitForData(page);
 });
 
@@ -371,7 +371,7 @@ test("a shared map restores Explore and the Observatory preserves the held view"
     .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
     .click();
   await expect(page.locator("main")).toHaveAttribute("data-presentation", "observe");
-  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   await expect(page).toHaveURL(/p=map&v=explore.*&c=/);
   expect(new URLSearchParams(new URL(page.url()).hash.slice(1)).get("c")).toBe(
     new URLSearchParams(new URL(link).hash.slice(1)).get("c"),

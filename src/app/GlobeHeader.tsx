@@ -9,6 +9,7 @@ import { FeedDot } from "./FeedDot";
 import { Wordmark } from "./Wordmark";
 import { CreatorCredit } from "./CreatorCredit";
 import { refreshAnnotations } from "../globe/annotationInput";
+import { HeaderNavigation } from "./HeaderNavigation";
 
 interface Props {
   clip: Clip;
@@ -87,6 +88,7 @@ export function GlobeHeader({
       >
         <Wordmark onHome={onHome} />
         <div className="observatory-header-actions">
+          <HeaderNavigation />
           {!observing && (
             <div className="projection-switch" role="group" aria-label="Projection" data-flat={flat}>
               <span className="projection-current" aria-current="true">

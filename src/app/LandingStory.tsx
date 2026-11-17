@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import type { firstInvitation } from "./storyCuration";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
+import { StoryThumbnail } from "./StoryThumbnail";
 import { ContinueVisit } from "./visitor/ContinueVisit";
 
 export function LandingStory(): JSX.Element | null {
@@ -24,6 +25,7 @@ export function LandingStory(): JSX.Element | null {
       disabled={!!unavailable}
       onClick={() => navigation.open(story.id, "start-story")}
     >
+      <StoryThumbnail id={story.id} />
       <strong>{story.label}</strong>
       <small>{unavailable ?? story.note}</small>
       <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">

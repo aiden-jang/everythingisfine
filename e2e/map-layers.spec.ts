@@ -98,7 +98,7 @@ test("hidden base layers stay hidden through landing, scene categories and both 
     await page.getByRole("button", { name, exact: true }).click();
     await expect.poll(counts).toEqual({ quakes: 0, rings: 0, hazards: 0 });
   }
-  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
   await expect
     .poll(() =>
       page.evaluate(() => (window as unknown as { __globe: { morph: () => number } }).__globe.morph()),
@@ -115,7 +115,9 @@ test("a fresh overview exposes every scene and selecting one opens its content @
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toHaveCount(0);
-  const explore = await page.getByRole("button", { name: "Explore the globe", exact: true }).boundingBox();
+  const explore = await page
+    .getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true })
+    .boundingBox();
   const picker = await scenes.boundingBox();
   expect(explore!.y + explore!.height).toBeLessThan(picker!.y);
   const canvas = await page.locator("canvas").elementHandle();

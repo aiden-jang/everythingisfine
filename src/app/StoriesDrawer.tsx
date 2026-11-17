@@ -106,6 +106,26 @@ export function StoriesDrawer({
           onSearchAll={() => browse.select(null)}
         />
 
+        {deck.query.trim() && (
+          <button
+            type="button"
+            className="story-library-toggle"
+            id="story-library-visits"
+            aria-expanded={browse.sections.includes("visits")}
+            aria-controls="story-library-panel-visits"
+            onClick={() => browse.fold("visits", !browse.sections.includes("visits"))}
+          >
+            Saved &amp; recent
+          </button>
+        )}
+        <section
+          id="story-library-panel-visits"
+          className="story-secondary"
+          aria-labelledby="story-library-visits"
+          hidden={!browse.sections.includes("visits")}
+        >
+          <VisitShelf />
+        </section>
         {!deck.query.trim() && (
           <>
             <ContinueVisit scene={scene} />
@@ -181,14 +201,6 @@ export function StoriesDrawer({
                   Saved &amp; recent
                 </button>
               </div>
-            </section>
-            <section
-              id="story-library-panel-visits"
-              className="story-secondary"
-              aria-labelledby="story-library-visits"
-              hidden={!browse.sections.includes("visits")}
-            >
-              <VisitShelf />
             </section>
             {discoveries && (
               <details

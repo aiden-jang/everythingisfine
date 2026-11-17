@@ -460,3 +460,13 @@
   left: 16px;
   right: auto;
 }
+
+.float-inspection-position {
+  color: var(--color-dim);
+  font-size: 12px;
+  line-height: 1.5;
+  padding-block: 6px;
+}
+.float-track[data-inspecting] .float-edges {
+  display: none;
+}

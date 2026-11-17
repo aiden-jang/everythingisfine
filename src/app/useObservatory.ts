@@ -85,6 +85,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     exploreScene,
     observeScene,
     restore: restorePresentation,
+    requestExploreFocus,
   } = usePresentation(() => initialPresentation(shared), clearViews, before);
   const [browser, setBrowser] = useState({
     open: !!shared.story || !!shared.catalogue,
@@ -212,6 +213,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       });
     },
     navigation: {
+      requestExploreFocus,
       prepareStory: (next: EarthScene, keepDeck: boolean) => {
         loadingBackdrop.current = night ? "planetarium" : "dayline";
         if (observing) chooseScene(next, null, keepDeck);

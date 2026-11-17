@@ -25,6 +25,7 @@ import "./float/float-profile.css";
 import "./measurement-sound.css";
 import "./moonfall/moonfall.css";
 import { ObservationDeckShell } from "./observations/ObservationEntry";
+import { ObservatoryEntryActions } from "./ObservatoryEntryActions";
 import { LandingStory } from "./LandingStory";
 import { StoryBoundary } from "./StoryBoundary";
 
@@ -257,7 +258,17 @@ function ObservatoryContent({
           ) : (
             <>
               <div className="observatory-story" aria-live="polite" aria-atomic="true">
-                <h2 key={title}>{title}</h2>
+                <h2 key={title}>
+                  {landing ? (
+                    <>
+                      Look
+                      <br />
+                      closer.
+                    </>
+                  ) : (
+                    title
+                  )}
+                </h2>
                 <p key={description} className="observatory-description">
                   {description}
                 </p>
@@ -279,30 +290,18 @@ function ObservatoryContent({
                 <ObservatoryTourControls tour={tour} onExplore={onExplore} />
               ) : (
                 <>
-                  <div className="observatory-actions observatory-entry-actions">
-                    <button type="button" onClick={onExplore} className="observatory-primary">
-                      Explore the globe
-                      <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
-                        <path d="m5 15 10-10M5 5h10v10" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                      </svg>
-                    </button>
-                    {solar && (
-                      <button type="button" id="back-to-stars" onClick={closeSun}>
-                        {navigationContext?.returnLabel ?? "Back to stars"}
-                      </button>
-                    )}
-                  </div>
-                  {scene !== "night" ? (
+                  <ObservatoryEntryActions
+                    landing={landing}
+                    solar={solar}
+                    explore={onExplore}
+                    closeSun={closeSun}
+                  />
+                  {scene !== "night" && !landing ? (
                     <p
                       id={ready && !tour.available ? "tour-availability" : undefined}
                       className="observatory-summary"
                     >
                       {summary}
-                      {landing && feedNote && (
-                        <span className="observatory-source-note" role="status">
-                          {feedNote}
-                        </span>
-                      )}
                     </p>
                   ) : null}
                 </>

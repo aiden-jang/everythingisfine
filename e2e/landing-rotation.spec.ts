@@ -85,7 +85,7 @@ test("the landing globe rotates, pauses, and hands the same camera to Explore @d
   await page.keyboard.press("Escape");
   await moving(page);
   const before = (await camera(page))!;
-  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
   await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
   await expect(page.getByRole("button", { name: /globe rotation/ })).toHaveCount(0);
   expect(await canvas!.evaluate((node) => node === document.querySelector("canvas"))).toBe(true);

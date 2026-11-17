@@ -89,11 +89,15 @@ test("rapid scene and presentation changes finish at the latest choice @dev", as
     "aria-pressed",
     "true",
   );
-  await page.getByRole("button", { name: "Explore the globe", exact: true }).dispatchEvent("click");
+  await page
+    .getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true })
+    .dispatchEvent("click");
   await page
     .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
     .dispatchEvent("click");
-  await page.getByRole("button", { name: "Explore the globe", exact: true }).dispatchEvent("click");
+  await page
+    .getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true })
+    .dispatchEvent("click");
   await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
   await expect
     .poll(() => page.locator(".zone-canvas").evaluate((node) => node.getAnimations().length))

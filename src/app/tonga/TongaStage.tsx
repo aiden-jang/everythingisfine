@@ -6,6 +6,7 @@ import { ReplayInset } from "../observations/ReplayInset";
 import { tongaGeography, tongaTarget } from "./tongaGlobe";
 import { paintTongaScan, type Satellite } from "./drawTonga";
 import { PressureChart } from "./PressureChart";
+import { KeepPressure } from "./KeepPressure";
 import infraredUrl from "./infrared.webp?url";
 import vaporUrl from "./water-vapor.webp?url";
 import {
@@ -317,6 +318,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
             </select>
           </label>
           <PressureChart station={station} minute={minute} />
+          <KeepPressure station={station} minute={minute} map={panel.map} />
           <p className="observation-note">{help}</p>
         </div>
       </div>

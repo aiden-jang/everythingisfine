@@ -127,7 +127,7 @@ test("Storm Radar remains available in the catalogue after exploring the map", a
     route.fulfill({ json: { features: [] } }),
   );
   await page.goto("/");
-  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   await page.getByRole("button", { name: "Map", exact: true }).click();
   const canvas = page.locator("#globe-view canvas");
   const globe = await canvas.elementHandle();

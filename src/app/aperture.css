@@ -35,10 +35,10 @@
   inset: 0;
   display: grid;
   grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto auto auto;
+  grid-template-rows: minmax(0, 1fr) auto auto;
   align-content: start;
   gap: 16px 32px;
-  padding: clamp(140px, 22dvh, 230px) 34px 64px;
+  padding: clamp(112px, 15dvh, 160px) 34px 64px;
   overflow: clip;
   max-height: none;
   height: 100%;
@@ -52,11 +52,11 @@
 .frame[data-landing] .observatory-story h2 {
   max-width: none;
   font-family: "Alumni Sans", var(--font-sans);
-  font-size: clamp(88px, 8.2vw, 128px);
+  font-size: clamp(112px, 12vw, 176px);
   line-height: 0.86;
   font-weight: 600;
   letter-spacing: -0.025em;
-  text-wrap: nowrap;
+  text-wrap: balance;
   font-variant-numeric: normal;
 }
 .frame[data-landing] .observatory-description {
@@ -68,18 +68,21 @@
 .frame[data-landing] .observatory-entry-actions {
   grid-column: 1;
   margin: 0;
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 6px;
 }
 .frame[data-landing] .observatory-entry-actions .observatory-primary {
   display: inline-flex;
   align-items: center;
   justify-content: space-between;
   min-width: 190px;
-  padding: 10px 0;
-  background: transparent;
-  color: var(--color-ink);
+  min-height: 48px;
+  padding: 12px 18px;
+  background: var(--color-ink);
+  color: var(--color-void);
   border: 0;
-  border-bottom: 1px solid currentColor;
-  border-radius: 0;
+  border-radius: 2px;
   font-size: 15px;
   pointer-events: auto;
 }
@@ -115,8 +118,8 @@
   grid-row: 2 / 4;
   align-self: end;
   justify-self: end;
-  width: min(100%, 260px);
-  padding: 12px 16px;
+  width: min(100%, 330px);
+  padding: 18px 16px;
   background: var(--color-void);
   pointer-events: auto;
 }
@@ -210,14 +213,14 @@
   }
   .frame[data-landing] .observatory-intro {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(0, 1fr) auto auto auto auto;
+    grid-template-rows: minmax(0, 1fr) auto auto auto;
     gap: 12px;
-    padding: clamp(280px, 39dvh, 480px) 24px 100px;
+    padding: clamp(220px, 29dvh, 350px) 24px 94px;
     overflow-y: auto;
     pointer-events: none;
   }
   .frame[data-landing] .observatory-story h2 {
-    font-size: clamp(76px, 16vw, 116px);
+    font-size: clamp(76px, 23vw, 108px);
   }
   .frame[data-landing] .observatory-description {
     margin-top: 14px;
@@ -227,7 +230,7 @@
   }
   .frame[data-landing] .observatory-scenes {
     grid-column: 1;
-    grid-row: 5;
+    grid-row: 3;
   }
   .frame[data-landing] .observatory-scenes button {
     display: grid;
@@ -281,18 +284,39 @@
 }
 @media (max-width: 380px) and (min-height: 621px) {
   .frame[data-landing] .observatory-intro {
-    padding: 210px 18px 104px;
+    padding: 140px 18px 68px;
     gap: 8px;
   }
   .frame[data-landing] .observatory-story h2 {
-    font-size: 68px;
+    font-size: 60px;
   }
   .frame[data-landing] .observatory-description {
     margin-top: 10px;
     font-size: 12px;
   }
   .frame[data-landing] .observatory-scenes button {
-    min-height: 62px;
+    min-height: 52px;
+  }
+  .frame[data-landing] .observatory-entry-actions {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .frame[data-landing] .observatory-entry-actions .observatory-primary {
+    min-width: 0;
+    padding-inline: 10px;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .frame[data-landing] .observatory-entry-actions > button:not(.observatory-primary) {
+    font-size: 12px;
+  }
+  .frame[data-landing] .landing-story-entry strong {
+    font-size: 23px;
+  }
+  .frame[data-landing] .landing-story-entry > .story-thumbnail {
+    height: 62px;
   }
   .frame .creator-credit {
     left: 18px;

@@ -259,7 +259,9 @@ test("saved weather layers load on the landing globe and stay out of earthquake 
   const source = await sources(page);
   source.recover();
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Explore the globe", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }),
+  ).toBeVisible();
   await expect.poll(() => source.calls.wind).toBeGreaterThan(0);
   await expect.poll(() => source.calls.lightning).toBeGreaterThan(0);
   await expect(page.getByRole("region", { name: "Lightning playback", includeHidden: true })).toContainText(
@@ -322,7 +324,7 @@ test("weather selections survive a cinematic detour without resuming playback @d
   await expect(windPanel).toHaveCount(0);
   await expect(lightningPanel).toHaveCount(0);
   await page.getByRole("button", { name: "After Dark", exact: true }).click();
-  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
   await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
   await expect(windPanel.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
   await openLayer(page, "Lightning");

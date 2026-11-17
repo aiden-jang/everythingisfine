@@ -37,6 +37,7 @@ export function StorySearch({
         </svg>
         <input
           ref={input}
+          id="story-search-input"
           type="search"
           name="story"
           autoComplete="off"

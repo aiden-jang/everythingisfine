@@ -1,3 +1,4 @@
+import { usePanelReturn } from "../usePanelReturn";
 import { firstInvitation } from "../storyCuration";
 import { visitAction, restartVisit } from "../visitor/visitAction";
 import { refreshAnnotations } from "../../globe/annotationInput";
@@ -18,6 +19,7 @@ const Navigation = createContext<{
   returnLabel: string | undefined;
   openRadar: (at: number | undefined, map: boolean) => void;
   returnToBrowse: () => boolean;
+  browse: (focusSearch?: boolean) => void;
   active: string | null;
   library: ReturnType<typeof useVisitMemory>["library"];
   current: () => Visit | null;
@@ -37,6 +39,7 @@ const Navigation = createContext<{
 export const useStoryNavigation = () => useContext(Navigation);
 
 export function StoryNavigation({ children, ...props }: ObservatoryProps & { children: ReactNode }) {
+  const panelReturn = usePanelReturn();
   const [completion, setCompletion] = useState<{ id: string; complete: boolean } | null>(null);
   const reportCompletion = useCallback((id: string, complete: boolean) => {
     setCompletion((previous) =>
@@ -109,6 +112,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   ) {
     const story = searchStories.find((entry) => entry.id === id);
     if (!story || unavailable(id)) return;
+    panelReturn.cancel();
     rememberOrigin(trigger);
     previewOrigin.current = null;
     reportCompletion(id, false);
@@ -160,6 +164,21 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           }
         },
         returnLabel: origin.current?.label,
+        browse(focusSearch = false) {
+          panelReturn.cancel();
+          previewOrigin.current = null;
+          origin.current = null;
+          setRoute(null);
+          const focus = focusSearch ? "story-search-input" : "explorer-stories-tab";
+          props.views.navigation.requestExploreFocus(focus);
+          props.views.browser.show("stories");
+          props.onExplore();
+          panelReturn.restore({
+            scrollTarget: "chrome-rail",
+            scroll: props.views.browser.scroll.current,
+            focus,
+          });
+        },
         openRadar(at, map) {
           rememberOrigin("open-explorer-radar");
           setRoute(null);
@@ -177,12 +196,11 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           props.views.navigation.restore(saved.route);
           props.explorer.restore(saved.camera, saved.flat);
           setRoute(null);
-          requestAnimationFrame(() => {
-            document.getElementById(saved.scrollTarget)?.scrollTo(0, saved.scroll);
-            (
-              document.getElementById(saved.trigger) ??
-              document.getElementById(saved.trigger === "start-story" ? "continue-story" : saved.scrollTarget)
-            )?.focus({ preventScroll: true });
+          panelReturn.restore({
+            scrollTarget: saved.scrollTarget,
+            scroll: saved.scroll,
+            focus: saved.trigger,
+            fallback: saved.trigger === "start-story" ? "continue-story" : saved.scrollTarget,
           });
           return true;
         },

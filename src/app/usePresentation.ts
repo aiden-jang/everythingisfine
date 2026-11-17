@@ -5,12 +5,15 @@ import type { Presentation } from "./useObservatory";
 
 export function usePresentation(initial: () => Presentation, clearViews: () => void, before: () => void) {
   const [presentation, setPresentation] = useState(initial);
-  const focusExplorer = useRef(false);
+  const focusExplorer = useRef<string | null>(null);
+  const exploreIntent = useRef<string | null>(null);
   const changePresentation = useCallback(
     (next: Presentation, animate: boolean, prepare?: () => void, remember = true) => {
       before();
       const update = () => {
-        focusExplorer.current = remember && animate && next === "explore";
+        focusExplorer.current =
+          remember && animate && next === "explore" ? (exploreIntent.current ?? "view-projection") : null;
+        exploreIntent.current = null;
         setPresentation(next);
         clearViews();
         prepare?.();
@@ -23,9 +26,9 @@ export function usePresentation(initial: () => Presentation, clearViews: () => v
   );
   useEffect(() => {
     if (presentation !== "explore" || !focusExplorer.current) return;
-    focusExplorer.current = false;
-    const projection = document.getElementById("view-projection");
-    const target = projection?.getClientRects().length ? projection : document.getElementById("show-top-bar");
+    const intended = document.getElementById(focusExplorer.current);
+    focusExplorer.current = null;
+    const target = intended?.getClientRects().length ? intended : document.getElementById("show-top-bar");
     target?.focus({ preventScroll: true });
   }, [presentation]);
   const enterExplore = useCallback(() => changePresentation("explore", false), [changePresentation]);
@@ -40,6 +43,9 @@ export function usePresentation(initial: () => Presentation, clearViews: () => v
   );
   return {
     presentation,
+    requestExploreFocus: (target: string) => {
+      exploreIntent.current = target;
+    },
     changePresentation,
     enterExplore,
     enterObserve,
