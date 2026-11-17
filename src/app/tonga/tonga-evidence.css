@@ -187,6 +187,9 @@
 }
 
 @media (max-width: 599px) {
+  .tonga-evidence-meta {
+    margin-block-end: 0;
+  }
   .tonga-evidence-station {
     font-size: 0;
     gap: 0;
@@ -202,7 +205,8 @@
     clip-path: inset(50%);
   }
   .tonga-evidence-reading strong {
-    margin-block-start: 8px;
+    margin-block-start: 4px;
+    font-size: 36px;
   }
   .tonga-evidence-time {
     margin-block: 6px;
@@ -215,6 +219,9 @@
   .tonga-evidence-actions button {
     font-size: 11px;
     padding: 8px;
+  }
+  .tonga-evidence-actions {
+    margin-block-start: 6px;
   }
   .tonga-evidence .tonga-chart svg {
     height: 58px;
