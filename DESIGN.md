@@ -344,7 +344,8 @@ Pinned phone detail cards respect the same band, with the selected marker center
 Float Dive keeps its reading allocation above the shared credit reservation.
 Background wind paths remain quieter than story paths.
 
-The header offers Find, Saved, source status and View options at every width. On narrow phones,
+The header offers Explore, Saved, source status and View options at every width. Find remains in the
+desktop header and inside View options on phones. On narrow phones,
 projection sits just beneath the header beside the world. Capture, fullscreen,
 rotation and reset share that menu; keyboard help is a quiet optional disclosure. Phone layouts keep
 the subject above a draggable, keyboard-operable sheet. Expand globe/map enlarges the canvas; the
@@ -605,10 +606,17 @@ times stay pinned to geography. Recorded data and model output carry separate la
 Live observation playback runs when requested. Recorded journeys may open with an authored flight.
 Playback stops advancing while the page is hidden.
 
-Tonga opens on the eruption’s infrared scans, widens through the water-vapor difference scans, then
+Tonga begins with a deliberate Follow the wave invitation, opens on the eruption’s infrared scans, widens through the water-vapor difference scans, then
 pulls back into an orbit view on the shared globe. The ring is an estimate of the atmospheric wave. The station chart
 stays tied to measured pressure on the same UTC clock. Chapter jumps and reduced motion use static
 framing.
+
+Inspecting a station connects its world position to the pale measured-evidence panel. Its trace is
+the only active time control while inspecting; the cinematic clock pauses. The reading panel keeps
+its actions in view and scrolls longer source details internally. A phone gives the world its own
+upper stage and the same evidence panel the lower allocation. Keeping a second station/minute
+preserves the first and its note. Shared findings open as a paused recipient view with the measured
+value, source and date, then offer the full cinematic story.
 
 Kīlauea starts tilted over Fissure 8 and follows the mapped extent toward Kapoho Bay. The dated
 HVO overflight marks the ocean entry. The camera levels at the bay for the shoreline wipe, which

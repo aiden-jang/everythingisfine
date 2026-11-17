@@ -20,7 +20,15 @@ const charts = stations.map((station) => {
   return { x, y, path, low, high };
 });
 
-export function PressureChart({ station, minute }: { station: Station; minute: number }): JSX.Element {
+export function PressureChart({
+  station,
+  minute,
+  onSeek,
+}: {
+  station: Station;
+  minute: number;
+  onSeek?: (minute: number) => void;
+}): JSX.Element {
   const { x, y, path, low, high } = charts[stations.indexOf(station)]!;
   const reading = pressureAt(station, minute);
   const end = station.start + station.values.length - 1;
@@ -39,25 +47,46 @@ export function PressureChart({ station, minute }: { station: Station; minute: n
               : `${reading.toFixed(2)} hPa`}
         </span>
       </div>
-      <svg
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="none"
-        role="img"
-        aria-label={`${station.name} one-minute pressure readings from ${timeLabel(station.start)} to ${timeLabel(end)} UTC. Scale ${low} to ${high} hectopascals.`}
-      >
-        <path
-          d={`M0 ${inset}H${width}M0 ${height / 2}H${width}M0 ${height - inset}H${width}`}
-          className="tonga-chart-grid"
-        />
-        <path d={`M${peak} 0V${height}`} className="tonga-chart-peak" />
-        <path d={path} className="tonga-chart-trace" data-ramp="" />
-        {reading !== null && (
-          <>
-            <path d={`M${cursor} 0V${height}`} className="tonga-chart-cursor" />
-            <circle cx={cursor} cy={y(reading)} r="2.5" className="tonga-chart-dot" data-ramp="" />
-          </>
+      <div className="tonga-chart-field">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          preserveAspectRatio="none"
+          role="img"
+          aria-label={`${station.name} one-minute pressure readings from ${timeLabel(station.start)} to ${timeLabel(end)} UTC. Scale ${low} to ${high} hectopascals.`}
+        >
+          <path
+            d={`M0 ${inset}H${width}M0 ${height / 2}H${width}M0 ${height - inset}H${width}`}
+            className="tonga-chart-grid"
+          />
+          {!onSeek && <path d={`M${peak} 0V${height}`} className="tonga-chart-peak" />}
+          <path d={path} className="tonga-chart-trace" data-ramp="" />
+          {reading !== null && (
+            <>
+              <path d={`M${cursor} 0V${height}`} className="tonga-chart-cursor" />
+              <circle
+                cx={cursor}
+                cy={y(reading)}
+                r="2.5"
+                className="tonga-chart-dot"
+                data-ramp=""
+                data-evidence-point=""
+              />
+            </>
+          )}
+        </svg>
+        {onSeek && (
+          <input
+            className="pressure-sample-slider"
+            type="range"
+            min={station.start}
+            max={end}
+            value={Math.max(station.start, Math.min(end, Math.floor(minute)))}
+            aria-label="Station pressure time"
+            aria-valuetext={`${timeLabel(minute)} UTC${reading === null ? "" : ` · ${reading.toFixed(2)} hPa`}`}
+            onInput={(event) => onSeek(event.currentTarget.valueAsNumber)}
+          />
         )}
-      </svg>
+      </div>
       <div className="tonga-chart-meta">
         <time dateTime={timeIso(station.start)}>{timeLabel(station.start)}</time>
         <span>

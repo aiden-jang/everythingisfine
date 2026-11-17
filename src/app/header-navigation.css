@@ -11,6 +11,9 @@
 .header-navigation-action svg {
   flex: none;
 }
+.header-find-menu {
+  display: none;
+}
 .projection-switch[hidden] {
   display: none;
 }
@@ -23,6 +26,19 @@
   z-index: 8;
 }
 @media (max-width: 899px) {
+  .observatory-options .header-find-menu {
+    display: block;
+  }
+  .zone-head .header-find {
+    display: none;
+  }
+  .zone-head .header-navigation-action.header-explore {
+    width: auto;
+    padding-inline: 4px;
+  }
+  .zone-head .header-navigation-action.header-explore > span {
+    display: inline;
+  }
   .zone-head .header-navigation-action {
     width: 44px;
     padding-inline: 0;

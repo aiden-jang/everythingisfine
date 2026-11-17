@@ -98,10 +98,10 @@ const feed = createFeed();
 const RAIL_MIN = 264;
 const RAIL_MAX = 620;
 const RAIL_DEFAULT = Math.min(480, Math.max(320, Math.round(window.innerWidth * 0.295)));
-// Read before the first render. In an effect it shows the default globe first, then jumps.
-const shared = decode(window.location.hash);
-
 export function App(): JSX.Element {
+  // Capture the shared starting position before the first visual frame.
+  const shared = useMemo(() => decode(window.location.hash), []);
+
   const snapshot = useFeedSnapshot(feed);
   const historyIntent = useRef<string | null>(null);
   const observatory = useObservatory(shared);

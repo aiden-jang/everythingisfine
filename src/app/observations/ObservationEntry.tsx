@@ -70,7 +70,7 @@ export function ObservationDeckShell({
             ? "Back to Below the Surface"
             : "Back to Observatory");
   return (
-    <StorySession.Provider key={entry} value={deck.session}>
+    <StorySession.Provider key={`${entry}:${deck.revision}`} value={deck.session}>
       <Suspense
         fallback={
           <div className="observatory-sidebar">

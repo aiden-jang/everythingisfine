@@ -3,6 +3,7 @@ import type { StoryMoment } from "./storyMoment";
 import { storyShare } from "./storyShare";
 
 export interface StorySessionValue {
+  shared?: boolean;
   initial: StoryMoment | undefined;
   remember: (part: Partial<StoryMoment>) => void;
   current: () => StoryMoment | undefined;
@@ -13,12 +14,18 @@ export const StorySession = createContext<StorySessionValue | null>(null);
 export function useStorySession() {
   const session = useContext(StorySession);
   const initial = useRef(session?.initial);
-  return { initial: initial.current, remember: session?.remember };
+  return { initial: initial.current, shared: session?.shared ?? false, remember: session?.remember };
 }
 
 export function ShareMoment({
   current,
-}: { current?: () => StoryMoment | undefined } = {}): JSX.Element | null {
+  label = "Share this moment",
+  share = storyShare,
+}: {
+  current?: () => StoryMoment | undefined;
+  label?: string;
+  share?: typeof storyShare;
+} = {}): JSX.Element | null {
   const session = useContext(StorySession);
   const [status, setStatus] = useState("");
   const [fallback, setFallback] = useState("");
@@ -31,13 +38,13 @@ export function ShareMoment({
         onClick={async () => {
           const moment = read();
           if (!moment) return;
-          const share = storyShare(moment, window.location.href);
+          const payload = share(moment, window.location.href);
           setStatus("");
           setFallback("");
           try {
-            if (navigator.canShare?.(share)) {
+            if (navigator.canShare?.(payload)) {
               try {
-                await navigator.share(share);
+                await navigator.share(payload);
                 setFallback("");
                 setStatus("Moment shared. It opens paused at this moment.");
                 return;
@@ -45,16 +52,16 @@ export function ShareMoment({
                 if (error instanceof Error && error.name === "AbortError") return;
               }
             }
-            await navigator.clipboard.writeText(share.url);
+            await navigator.clipboard.writeText(payload.url);
             setFallback("");
             setStatus("Link copied. It opens paused at this moment.");
           } catch {
-            setFallback(share.url);
+            setFallback(payload.url);
             setStatus("Copy the link below.");
           }
         }}
       >
-        Share this moment
+        {label}
       </button>
       <span role="status" aria-label="Sharing status">
         {status}

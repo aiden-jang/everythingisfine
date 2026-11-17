@@ -117,7 +117,7 @@ test("a kept Katrina peak reopens exactly paused without the invitation", async 
   await panel.getByRole("button", { name: "Follow the storm", exact: true }).click();
   await panel.getByRole("button", { name: "Inspect offshore peak", exact: true }).click();
   await panel.getByRole("button", { name: "Save view", exact: true }).click();
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("eif.visits")!).saved[0]);
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("eif.visits-v2")!).saved[0]);
   expect(saved.position.moment.at).toBe(Date.parse("2005-08-28T18:00:00Z"));
   await page.keyboard.press("Escape");
   await expect(trigger).toBeFocused();

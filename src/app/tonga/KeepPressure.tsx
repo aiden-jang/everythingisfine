@@ -1,14 +1,17 @@
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { pressureAt, timeIso, timeLabel, type stations } from "./tongaTimeline";
+import { savedVisitKey } from "../visitor/library";
 
 export function KeepPressure({
   station,
   minute,
   map,
+  onKept,
 }: {
   station: (typeof stations)[number];
   minute: number;
   map: boolean;
+  onKept?: () => void;
 }) {
   const navigation = useStoryNavigation();
   const reading = pressureAt(station, minute);
@@ -21,17 +24,28 @@ export function KeepPressure({
         onClick={() => {
           const current = navigation.current();
           if (current?.id !== "tonga" || reading === null) return;
-          const previous = navigation.library.saved.find(({ id }) => id === "tonga");
-          navigation.library.save({
-            ...current,
-            ...(previous?.note ? { note: previous.note } : {}),
-            position: { moment: { id: "tonga", at: Date.parse(timeIso(minute)), choice: station.id, map } },
-          });
+          const { note, ...rest } = current;
+          void note;
+          const next = {
+            ...rest,
+            position: {
+              moment: {
+                id: "tonga",
+                at: Date.parse(timeIso(Math.floor(minute))),
+                choice: station.id,
+                chapter: "pressure",
+                map,
+              },
+            },
+          };
+          const previous = navigation.library.saved.find(
+            (entry) => savedVisitKey(entry) === savedVisitKey(next),
+          );
+          if (navigation.library.save({ ...next, ...(previous?.note ? { note: previous.note } : {}) }))
+            onKept?.();
         }}
       >
-        {navigation.library.saved.some(({ id }) => id === "tonga")
-          ? "Update kept observation"
-          : "Keep this observation"}
+        Keep this reading
       </button>
       <span>
         {reading === null

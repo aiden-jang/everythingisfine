@@ -16,12 +16,14 @@ export function useObservationDeck(
   const checkpoint = useRef(before);
   checkpoint.current = before;
   const memory = useRef(new Map<string, StoryMoment>(shared ? [[shared.id, shared]] : []));
+  const recipient = useRef(Boolean(shared));
   const [entry, setEntry] = useState<StoryId | null>((shared?.id as StoryId) ?? null);
   const [trigger, setTrigger] = useState<string | null>(null);
   const [view, setView] = useState<ObservationView | null>(null);
   const [map, setMap] = useState(initialMap);
   const [horizon, setHorizon] = useState(shared?.chapter === "horizon");
   const [query, setQuery] = useState("");
+  const [revision, setRevision] = useState(0);
   const pending = useRef(false);
   const active = useRef(entry);
   active.current = entry;
@@ -54,6 +56,7 @@ export function useObservationDeck(
     return id ? { ...memory.current.get(id), id, map: projection.current } : undefined;
   }, [entry]);
   const session = {
+    shared: recipient.current,
     initial: entry ? memory.current.get(entry) : undefined,
     remember,
     current,
@@ -71,11 +74,13 @@ export function useObservationDeck(
     setMap(false);
     setHorizon(false);
   }, []);
-  const snapshot = { entry, trigger, map, horizon, query };
+  const snapshot = { entry, trigger, map, horizon, query, recipient: recipient.current };
   return {
     entry,
+    revision,
     capture: () => snapshot,
     restore(saved: typeof snapshot) {
+      recipient.current = saved.recipient;
       pending.current = false;
       active.current = saved.entry;
       setEntry(saved.entry);
@@ -110,6 +115,8 @@ export function useObservationDeck(
     setHorizon,
     open(next: StoryId, from: string, resume?: StoryMoment | null) {
       before();
+      recipient.current = false;
+      setRevision((value) => value + 1);
       if (resume === null) memory.current.delete(next);
       if (resume?.id === next) memory.current.set(next, resume);
       pending.current = true;

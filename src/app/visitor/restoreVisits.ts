@@ -1,4 +1,11 @@
-import { readLibrary, type Library, type Visit } from "./library";
+import {
+  LIBRARY_MAX_LENGTH,
+  MAX_SAVED_VISITS,
+  readLibrary,
+  savedVisitKey,
+  type Library,
+  type Visit,
+} from "./library";
 
 export interface RemovedVisits {
   list: "saved" | "recent";
@@ -6,8 +13,11 @@ export interface RemovedVisits {
 }
 
 export function restoreVisits(current: Library, removed: RemovedVisits): Library {
-  const ids = new Set(current[removed.list].map(({ id }) => id));
-  const combined = [...current[removed.list], ...removed.items.filter(({ id }) => !ids.has(id))];
+  const key = removed.list === "saved" ? savedVisitKey : (value: Visit) => value.id;
+  const ids = new Set(current[removed.list].map(key));
+  const combined = [...current[removed.list], ...removed.items.filter((visit) => !ids.has(key(visit)))];
   combined.sort((a, b) => b.seen - a.seen);
-  return readLibrary(JSON.stringify({ ...current, [removed.list]: combined }));
+  if (removed.list === "saved" && combined.length > MAX_SAVED_VISITS) return current;
+  const text = JSON.stringify({ ...current, [removed.list]: combined });
+  return text.length > LIBRARY_MAX_LENGTH ? current : readLibrary(text);
 }

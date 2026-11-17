@@ -20,6 +20,7 @@ const Navigation = createContext<{
   openRadar: (at: number | undefined, map: boolean) => void;
   returnToBrowse: () => boolean;
   browse: (focusSearch?: boolean) => void;
+  explore: () => void;
   active: string | null;
   library: ReturnType<typeof useVisitMemory>["library"];
   current: () => Visit | null;
@@ -143,6 +144,24 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       floatDive.open(saved?.position.float);
     } else deck.open(id as StoryId, trigger, saved?.position.moment ?? (fresh ? null : undefined));
   }
+  function returnToBrowse() {
+    const saved = origin.current;
+    if (!saved) return false;
+    origin.current = null;
+    props.views.visitCheckpoint.current();
+    if (active === "radar" && props.radar.view && isGlobalRadar(props.radar.view.region))
+      props.explorer.radarTime(props.radar.view.selectedAt ?? null);
+    props.views.navigation.restore(saved.route);
+    props.explorer.restore(saved.camera, saved.flat);
+    setRoute(null);
+    panelReturn.restore({
+      scrollTarget: saved.scrollTarget,
+      scroll: saved.scroll,
+      focus: saved.trigger,
+      fallback: saved.trigger === "start-story" ? "continue-story" : saved.scrollTarget,
+    });
+    return true;
+  }
   return (
     <Navigation.Provider
       value={{
@@ -179,6 +198,19 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
             focus,
           });
         },
+        explore() {
+          if (active !== null && origin.current?.route.origin.presentation === "explore" && returnToBrowse())
+            return;
+          panelReturn.cancel();
+          previewOrigin.current = null;
+          origin.current = null;
+          setRoute(null);
+          const pane = props.views.browser.pane;
+          const focus = pane === "stories" ? "explorer-stories-tab" : "explorer-layers-tab";
+          props.views.navigation.requestExploreFocus(focus);
+          props.views.browser.show(pane);
+          props.onExplore();
+        },
         openRadar(at, map) {
           rememberOrigin("open-explorer-radar");
           setRoute(null);
@@ -186,24 +218,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           props.radar.open("world", false, at);
           deck.setMap(map);
         },
-        returnToBrowse() {
-          const saved = origin.current;
-          if (!saved) return false;
-          origin.current = null;
-          props.views.visitCheckpoint.current();
-          if (active === "radar" && props.radar.view && isGlobalRadar(props.radar.view.region))
-            props.explorer.radarTime(props.radar.view.selectedAt ?? null);
-          props.views.navigation.restore(saved.route);
-          props.explorer.restore(saved.camera, saved.flat);
-          setRoute(null);
-          panelReturn.restore({
-            scrollTarget: saved.scrollTarget,
-            scroll: saved.scroll,
-            focus: saved.trigger,
-            fallback: saved.trigger === "start-story" ? "continue-story" : saved.scrollTarget,
-          });
-          return true;
-        },
+        returnToBrowse,
         ...memory,
         resume(visit, trigger = "observatory-scenes", smart = false) {
           setRoute(null);

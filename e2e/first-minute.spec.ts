@@ -56,7 +56,7 @@ for (const width of [1440, 390]) {
     await expect(panel.locator(".float-observation")).toContainText("62 m · 6.90 °C");
     await expect.poll(() => panel.evaluate((element) => element.scrollTop)).toBe(0);
     await panel.getByRole("button", { name: "Keep this observation", exact: true }).click();
-    const kept = await page.evaluate(() => JSON.parse(localStorage.getItem("eif.visits")!).saved[0]);
+    const kept = await page.evaluate(() => JSON.parse(localStorage.getItem("eif.visits-v2")!).saved[0]);
     expect(kept.position.float.index).toBe(536);
     expect(kept.observation.temperature).toBe(6.896);
     expect(kept.observation.salinity).toBe(34.928);

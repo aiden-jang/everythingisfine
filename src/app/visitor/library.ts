@@ -25,12 +25,21 @@ export interface Visit {
   };
 }
 export interface Library {
-  version: 1;
+  version: 2;
   recent: Visit[];
   saved: Visit[];
 }
-export const emptyLibrary = (): Library => ({ version: 1, recent: [], saved: [] });
+export const emptyLibrary = (): Library => ({ version: 2, recent: [], saved: [] });
 const ids = new Set(searchStories.map(({ id }) => id));
+export const MAX_SAVED_VISITS = ids.size + 24;
+export const LIBRARY_MAX_LENGTH = 50_000;
+
+export function savedVisitKey(visit: Visit): string {
+  const moment = visit.position.moment;
+  return visit.id === "tonga" && moment?.choice && moment.at !== undefined
+    ? `tonga:${moment.choice}:${Math.floor(moment.at / 60_000)}`
+    : visit.id;
+}
 const finite = (value: unknown, min: number, max: number): value is number =>
   typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
 const time = (value: unknown): value is number => finite(value, -2_208_988_800_000, 4_102_444_800_000);
@@ -129,20 +138,22 @@ export function readVisit(value: unknown): Visit | null {
 }
 
 export function readLibrary(text: string | null): Library {
-  if (!text || text.length > 50_000) return emptyLibrary();
+  if (!text || text.length > LIBRARY_MAX_LENGTH) return emptyLibrary();
   try {
-    const raw = JSON.parse(text) as Library;
-    if (raw?.version !== 1) return emptyLibrary();
-    const list = (value: unknown, limit: number) => {
+    const raw = JSON.parse(text) as { version?: number; recent?: unknown; saved?: unknown };
+    if (raw?.version !== 1 && raw?.version !== 2) return emptyLibrary();
+    const list = (value: unknown, limit: number, saved = false) => {
       if (!Array.isArray(value)) return [];
       const unique = new Map<string, Visit>();
-      for (const item of value.slice(0, ids.size * 2)) {
+      for (const item of value.slice(0, MAX_SAVED_VISITS * 2)) {
         const visit = readVisit(item);
-        if (visit && !unique.has(visit.id)) unique.set(visit.id, visit);
+        if (!visit) continue;
+        const key = saved ? savedVisitKey(visit) : visit.id;
+        if (!unique.has(key)) unique.set(key, visit);
       }
       return [...unique.values()].slice(0, limit);
     };
-    return { version: 1, recent: list(raw.recent, 6), saved: list(raw.saved, ids.size) };
+    return { version: 2, recent: list(raw.recent, 6), saved: list(raw.saved, MAX_SAVED_VISITS, true) };
   } catch {
     return emptyLibrary();
   }
@@ -150,11 +161,12 @@ export function readLibrary(text: string | null): Library {
 export function rememberVisit(library: Library, visit: Visit, list: "recent" | "saved"): Library {
   const checked = readVisit(visit);
   if (!checked) return library;
-  return {
+  const key = list === "saved" ? savedVisitKey : (value: Visit) => value.id;
+  const entries = [checked, ...library[list].filter((entry) => key(entry) !== key(checked))];
+  if (list === "saved" && entries.length > MAX_SAVED_VISITS) return library;
+  const next: Library = {
     ...library,
-    [list]: [checked, ...library[list].filter(({ id }) => id !== visit.id)].slice(
-      0,
-      list === "recent" ? 6 : ids.size,
-    ),
+    [list]: list === "recent" ? entries.slice(0, 6) : entries,
   };
+  return JSON.stringify(next).length > LIBRARY_MAX_LENGTH ? library : next;
 }

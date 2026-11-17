@@ -1,6 +1,6 @@
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { searchStories } from "../storyIndex";
-import type { Visit } from "./library";
+import { savedVisitKey, type Visit } from "./library";
 import "./visitor.css";
 import { layerTime } from "../layerTime";
 import { useRef } from "react";
@@ -24,7 +24,7 @@ export function VisitShelf() {
   if (!navigation) return null;
   const { library } = navigation;
   const row = (visit: Visit, saved: boolean) => (
-    <div className="visit-row" key={visit.id}>
+    <div className="visit-row" key={saved ? savedVisitKey(visit) : visit.id}>
       <button
         type="button"
         onClick={() => navigation.resume(visit)}
@@ -43,7 +43,7 @@ export function VisitShelf() {
         <button
           type="button"
           aria-label={`Remove saved ${title(visit.id)}`}
-          onClick={() => library.remove(visit.id)}
+          onClick={() => library.remove(savedVisitKey(visit))}
         >
           Remove
         </button>

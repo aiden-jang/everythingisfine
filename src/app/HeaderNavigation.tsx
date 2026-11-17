@@ -22,7 +22,18 @@ export function HeaderNavigation() {
     <>
       <button
         type="button"
-        className="header-navigation-action"
+        className="header-navigation-action header-explore"
+        aria-description="Open Layers and Stories, or return to your previous Explore view"
+        onClick={() => {
+          setSaved(false);
+          navigation.explore();
+        }}
+      >
+        <span>Explore</span>
+      </button>
+      <button
+        type="button"
+        className="header-navigation-action header-find"
         aria-label="Find a story"
         onClick={() => {
           setSaved(false);

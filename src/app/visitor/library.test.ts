@@ -36,7 +36,7 @@ describe("local visit library", () => {
       "{",
       "null",
       "x".repeat(50_001),
-      '{"version":2,"saved":[]}',
+      '{"version":3,"saved":[]}',
       JSON.stringify({
         version: 1,
         saved: [

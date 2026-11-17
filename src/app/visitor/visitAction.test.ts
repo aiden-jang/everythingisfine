@@ -34,7 +34,7 @@ it("restarting drops held time and completion but retains the chosen record, cit
 it("undo restores only removed entries without replacing later saves or visits", () => {
   const newer = { ...visit, seen: 2000, position: { moment: { id: "aral", at: 2000, map: false } } };
   const other = { ...visit, id: "water", seen: 3000, position: {} };
-  const current = { version: 1 as const, recent: [other], saved: [newer] };
+  const current = { version: 2 as const, recent: [other], saved: [newer] };
   expect(restoreVisits(current, { list: "saved", items: [visit] }).saved).toEqual([newer]);
   const restored = restoreVisits(current, { list: "recent", items: [visit] });
   expect(restored.recent).toEqual([other, visit]);

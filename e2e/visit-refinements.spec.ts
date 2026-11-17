@@ -8,7 +8,7 @@ async function start(page: Page, width = 390) {
   await page.goto("/");
   await openStories(page, "search");
 }
-const visits = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem("eif.visits") ?? "{}"));
+const visits = (page: Page) => page.evaluate(() => JSON.parse(localStorage.getItem("eif.visits-v2") ?? "{}"));
 
 test("completed Continue restarts from the beginning after reload while unfinished visits resume", async ({
   page,
@@ -92,7 +92,8 @@ for (const blocked of [false, true]) {
       if (blocked) {
         const set = Storage.prototype.setItem;
         Storage.prototype.setItem = function (key, value) {
-          if (key === "eif.visits") throw new DOMException("Denied", "QuotaExceededError");
+          if (key === "eif.visits" || key === "eif.visits-v2")
+            throw new DOMException("Denied", "QuotaExceededError");
           set.call(this, key, value);
         };
       }

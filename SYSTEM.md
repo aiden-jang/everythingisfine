@@ -195,9 +195,11 @@ changing stored layer choices. Radar and weather players remain mounted while br
 story releases the background players so the story owns its data. Returning to Layers restores the
 inspector, layer selections, scan positions, camera and projection. The canvas stays mounted throughout.
 
-The shared header keeps Find and Saved reachable during search and playback. The evidence collection
-is loaded on demand; saved records remain bounded to one per story with the existing version-one
-storage contract. Legacy Float observations remain readable. Tonga cards derive pressure only from
+The shared header keeps Explore, Find and Saved reachable during search and playback; phones place
+Find in View options. The evidence collection is loaded on demand. The version-two library reads
+legacy records, writes a separate `eif.visits-v2` key only on changes, and bounds both record count
+and serialized size. Most stories keep one bookmark; Tonga keeps separate station/minute observations.
+New saves never evict older observations at capacity. Legacy Float observations remain readable. Tonga cards derive pressure only from
 an actual archived station sample; sky cards identify calculations and radar cards explain scan expiry.
 Observation raster changes retain the previous complete globe frame until matching pixels are ready,
 with the retained time stated while loading. Source failure ends the handoff rather than assigning
@@ -277,6 +279,13 @@ Tonga crossfades two compressed satellite atlases into the shared globe and map.
 follows scan-start times, then drives the estimated wavefront and cursor in the observed pressure
 window. The atlas metadata records the source keys and ASOS requests. Regenerate it with
 [make-tonga.py](tools/make-tonga.py) using Python with h5py, NumPy, Pillow, and fsspec with HTTP support.
+`useTongaPlayback` owns that clock and image lifecycle. `WorldEvidence` keeps the bounded reading
+panel beside the same canvas, while `evidenceConnector` projects the selected station to the chart.
+The pressure inspector seeks actual samples and keeps station/minute observations independently.
+Build-generated Tonga share pages contain source-specific metadata for the bundled readings without
+a new endpoint. `tools/tonga-share-pages.mjs` emits their HTML; regenerate the three station trace
+images with `node tools/tonga-share-cards.mjs`. `pressureShare` validates these routes before the
+client normalizes the path and opens the paused recipient view.
 
 Kīlauea draws the survey and coastline comparison onto one geographically anchored texture in the
 shared globe and map. The regional camera magnifies that surface after arrival. Dated lava increments

@@ -116,7 +116,8 @@ test("refused storage keeps a usable visit without promising persistence", async
   await page.addInitScript(() => {
     const set = Storage.prototype.setItem;
     Storage.prototype.setItem = function (key, value) {
-      if (key === "eif.visits") throw new DOMException("Denied", "QuotaExceededError");
+      if (key === "eif.visits" || key === "eif.visits-v2")
+        throw new DOMException("Denied", "QuotaExceededError");
       set.call(this, key, value);
     };
   });
@@ -128,5 +129,5 @@ test("refused storage keeps a usable visit without promising persistence", async
   await page.getByRole("button", { name: home }).click();
   await openStories(page, "all");
   await expect(page.getByRole("region", { name: "Your visits" })).toContainText("Eye of the Storm");
-  expect(await page.evaluate(() => localStorage.getItem("eif.visits"))).toBeNull();
+  expect(await page.evaluate(() => localStorage.getItem("eif.visits-v2"))).toBeNull();
 });

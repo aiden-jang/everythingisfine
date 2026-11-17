@@ -1,0 +1,289 @@
+.tonga-evidence {
+  --pressure-paper: #e4edeb;
+  --pressure-ink: #102730;
+  --pressure-dim: #405c65;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  max-height: calc(100dvh - clamp(140px, 21vh, 210px) - 80px);
+  padding: 24px;
+  border-radius: 5px;
+  background: var(--pressure-paper);
+  color: var(--pressure-ink);
+  color-scheme: light;
+  font-size: 13px;
+  animation: tonga-evidence-arrive 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.tonga-evidence-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  padding: 3px;
+  margin: -3px;
+}
+.tonga-evidence-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px;
+  margin-block-end: 20px;
+  color: var(--pressure-dim);
+  font: 10px/1.5 var(--font-mono);
+}
+.tonga-evidence-station {
+  display: grid;
+  gap: 4px;
+  color: var(--pressure-dim);
+  font-size: 11px;
+}
+.tonga-evidence-station select {
+  min-width: 0;
+  min-height: 44px;
+  width: 100%;
+  border-block-end: 1px solid #10273035;
+  background: transparent;
+  color: var(--pressure-ink);
+  font-size: 14px;
+}
+.tonga-evidence h2 {
+  margin-block: 18px 10px;
+  font:
+    500 42px/1 "Alumni Sans",
+    var(--font-sans);
+}
+.tonga-evidence .tonga-recipient-title {
+  font-size: 36px;
+}
+.tonga-evidence-reading strong {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 8px;
+  font:
+    500 48px/1.1 "Alumni Sans",
+    var(--font-sans);
+  font-variant-numeric: tabular-nums;
+}
+.tonga-evidence-reading strong span {
+  color: var(--pressure-dim);
+  font: 12px/1 var(--font-mono);
+}
+.tonga-evidence-time,
+.tonga-evidence-source {
+  margin-block: 12px;
+  color: var(--pressure-dim);
+  font-size: 11px;
+  line-height: 1.55;
+}
+.tonga-evidence .tonga-chart-meta,
+.tonga-evidence .tonga-chart-meta :is(time, span:last-child) {
+  color: var(--pressure-dim);
+  font-size: 9px;
+}
+.tonga-evidence .tonga-chart-grid {
+  stroke: #10273020;
+}
+.tonga-evidence .tonga-chart-trace {
+  stroke: #32696d;
+  stroke-width: 1.8;
+}
+.tonga-evidence .tonga-chart-dot {
+  fill: var(--pressure-ink);
+}
+.tonga-evidence .tonga-chart-cursor {
+  stroke: var(--pressure-dim);
+}
+.tonga-chart-field {
+  position: relative;
+}
+.pressure-sample-slider {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  min-height: 44px;
+  opacity: 0;
+  cursor: ew-resize;
+}
+.tonga-chart-field:focus-within {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+.tonga-evidence-coverage {
+  font-size: 11px;
+  color: var(--pressure-dim);
+}
+.tonga-evidence-coverage summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+}
+.tonga-evidence-coverage a {
+  display: block;
+  padding-block: 6px;
+  text-decoration: underline;
+}
+.tonga-evidence-actions {
+  display: grid;
+  gap: 6px;
+  margin-block-start: 14px;
+}
+.tonga-evidence button {
+  min-height: 44px;
+  border: 1px solid #10273040;
+  border-radius: 4px;
+  padding: 10px;
+  cursor: pointer;
+}
+.tonga-evidence .tonga-primary,
+.tonga-evidence .visit-save > button {
+  background: var(--pressure-ink);
+  color: var(--pressure-paper);
+}
+.tonga-evidence :focus-visible {
+  outline-color: var(--pressure-ink);
+}
+.tonga-evidence .visit-save {
+  display: grid;
+  gap: 3px;
+}
+.tonga-evidence .visit-save > span {
+  font-size: 10px;
+  color: var(--pressure-dim);
+}
+.tonga-evidence .story-share {
+  margin-block-start: 6px;
+  color: var(--pressure-dim);
+}
+.tonga-evidence .story-share button {
+  width: 100%;
+}
+.tonga-evidence .story-share input {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  color: var(--pressure-ink);
+}
+.tonga-kept-list {
+  display: grid;
+  gap: 8px;
+  margin-block: 18px;
+}
+.tonga-kept-list button {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+}
+.tonga-kept-list small {
+  display: block;
+  margin-block-start: 5px;
+  font: 9px/1.5 var(--font-mono);
+  color: var(--pressure-dim);
+}
+.tonga-kept-list strong {
+  align-self: center;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+@media (max-width: 599px) {
+  .tonga-evidence-station {
+    font-size: 0;
+    gap: 0;
+  }
+  .tonga-evidence-station select {
+    font-size: 14px;
+  }
+  .tonga-evidence-reading h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .tonga-evidence-reading strong {
+    margin-block-start: 8px;
+  }
+  .tonga-evidence-time {
+    margin-block: 6px;
+  }
+  .tonga-evidence .visit-save {
+    margin: 0;
+    border: 0;
+    align-items: stretch;
+  }
+  .tonga-evidence-actions button {
+    font-size: 11px;
+    padding: 8px;
+  }
+  .tonga-evidence .tonga-chart svg {
+    height: 58px;
+  }
+  .tonga-evidence .tonga-chart-meta:first-child {
+    display: none;
+  }
+  .tonga-evidence .story-share {
+    margin-block-start: 6px;
+  }
+}
+@media (max-height: 620px) and (min-width: 600px) {
+  .zones[data-tonga-phase] .tonga-evidence {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 8px;
+    padding: 12px;
+  }
+  .tonga-evidence-body {
+    grid-column: 1 / -1;
+  }
+  .tonga-evidence .tonga-evidence-actions {
+    display: contents;
+  }
+  .tonga-evidence .visit-save {
+    margin: 0;
+    border: 0;
+    align-items: stretch;
+  }
+  .tonga-evidence .visit-save > span {
+    display: none;
+  }
+  .tonga-evidence button {
+    padding: 6px;
+    font-size: 11px;
+  }
+  .tonga-evidence .story-share {
+    margin: 0;
+  }
+  .tonga-evidence-meta {
+    margin-block-end: 0;
+  }
+  .tonga-evidence-station {
+    font-size: 0;
+    gap: 0;
+  }
+  .tonga-evidence-station select {
+    font-size: 12px;
+  }
+  .tonga-evidence-reading h2 {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .tonga-evidence-reading strong {
+    font-size: 32px;
+  }
+  .tonga-evidence-time {
+    margin-block: 4px;
+  }
+  .tonga-evidence .tonga-chart-meta:first-child {
+    display: none;
+  }
+  .tonga-evidence .tonga-chart svg {
+    height: 54px;
+  }
+  .tonga-evidence:has(.tonga-recipient-title) {
+    grid-template-columns: 1fr 1fr;
+  }
+}

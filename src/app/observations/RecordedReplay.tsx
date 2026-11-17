@@ -12,6 +12,9 @@ import "../storm/storm.css";
 import "../megaflash/megaflash.css";
 import "../rupture/recorded-waves.css";
 import "../tonga/tonga.css";
+import "../tonga/tonga-journey.css";
+import "../tonga/tonga-evidence.css";
+import "./world-evidence.css";
 
 export interface ReplayProps {
   map: boolean;
@@ -53,6 +56,9 @@ export function ReplayPanel({
   focusOnEntry = true,
   ending = true,
   finding = true,
+  className = "",
+  sharing = true,
+  evidence,
 }: Omit<ReplayProps, "onView"> & {
   title: string;
   location: string;
@@ -65,6 +71,9 @@ export function ReplayPanel({
   focusOnEntry?: boolean;
   ending?: boolean;
   finding?: boolean;
+  className?: string;
+  sharing?: boolean;
+  evidence?: ReactNode;
 }): JSX.Element {
   const back = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
@@ -72,7 +81,7 @@ export function ReplayPanel({
   }, [focusOnEntry]);
   useObservatoryEscape(onClose);
   return (
-    <section className="replay-region" aria-label={title}>
+    <section className={`replay-region ${className}`} aria-label={title}>
       <div
         className="observatory-stage replay-stage"
         data-stage="observation"
@@ -96,6 +105,7 @@ export function ReplayPanel({
         </div>
         <StoryProjection map={map} onMap={onMap} />
       </div>
+      {evidence}
       <div className="observatory-sidebar replay-sidebar">
         <StoryDockProvider>
           <div id="observatory-intro" className="observatory-intro observation-panel" tabIndex={-1}>
@@ -111,7 +121,7 @@ export function ReplayPanel({
             <p className="observation-note">{subtitle}</p>
             <SharedStory />
             {children}
-            <ShareMoment />
+            {sharing && <ShareMoment />}
             {ending && <ExperienceEnding showFinding={finding} />}
             <details className="replay-sources">
               <summary>Sources &amp; coverage</summary>

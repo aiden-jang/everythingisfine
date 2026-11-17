@@ -1,4 +1,5 @@
 import type { Controls } from "./controls";
+import { positionEvidenceConnector } from "./evidenceConnector";
 
 export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: Controls, story = false) {
   const root = canvas.closest(".zones");
@@ -12,6 +13,7 @@ export function positionObservationAnchors(canvas: HTMLCanvasElement, controls: 
     const parent = anchor.parentElement;
     if (parent && !parents.has(parent)) parents.set(parent, parent.getBoundingClientRect());
   }
+  positionEvidenceConnector(canvas, controls, parents);
   for (const anchor of anchors) {
     const place = anchor.hasAttribute("data-place-label");
     if ((place && (story || places >= 5)) || zoom < Number(anchor.dataset["minZoom"] ?? 0)) {

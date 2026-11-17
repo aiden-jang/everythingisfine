@@ -2,6 +2,7 @@ import { RecordButton } from "./capture/ClipControls";
 import type { Clip } from "./capture/useClip";
 import { useId, useRef, type ReactNode } from "react";
 import { FullscreenButton } from "./FullscreenButton";
+import { useStoryNavigation } from "./journeys/StoryNavigation";
 import "./observatory-options.css";
 
 export function ObservatoryOptions({
@@ -22,6 +23,7 @@ export function ObservatoryOptions({
   const id = `view-options-${useId()}`;
   const panel = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const navigation = useStoryNavigation();
   return (
     <>
       <button
@@ -85,6 +87,18 @@ export function ObservatoryOptions({
         {!ready && <p id={`${id}-capture-note`}>Image capture is unavailable for this view.</p>}
         <RecordButton clip={clip} ready={ready} close={() => panel.current?.hidePopover()} />
         <FullscreenButton />
+        {navigation && (
+          <button
+            type="button"
+            className="header-find-menu"
+            onClick={() => {
+              panel.current?.hidePopover();
+              navigation.browse(true);
+            }}
+          >
+            Find a story
+          </button>
+        )}
         <div
           className="explorer-view-options"
           onClick={(event) => {

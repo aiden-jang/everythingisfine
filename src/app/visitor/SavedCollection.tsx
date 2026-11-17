@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { visitEvidence } from "./visitEvidence";
 import { EvidenceCard } from "./EvidenceCard";
-import type { Visit } from "./library";
+import { savedVisitKey, type Visit } from "./library";
 import { exportEvidence } from "./exportEvidence";
 
 function KeptItem({ visit, onClose }: { visit: Visit; onClose: () => void }) {
@@ -74,7 +74,7 @@ function KeptItem({ visit, onClose }: { visit: Visit; onClose: () => void }) {
         <button
           type="button"
           onClick={() => {
-            navigation.library.remove(visit.id);
+            navigation.library.remove(savedVisitKey(visit));
             requestAnimationFrame(() =>
               document.querySelector<HTMLElement>(".saved-collection h2")?.focus({ preventScroll: true }),
             );
@@ -120,7 +120,7 @@ export function SavedCollection({ onClose }: { onClose: () => void }) {
       {!library.saved.length && <p>Keep an observation or save a view in a story to find it here.</p>}
       <div className="saved-evidence-list">
         {library.saved.map((visit) => (
-          <KeptItem key={visit.id} visit={visit} onClose={onClose} />
+          <KeptItem key={savedVisitKey(visit)} visit={visit} onClose={onClose} />
         ))}
       </div>
       <div className="saved-feedback">

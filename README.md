@@ -82,11 +82,12 @@ summary. **Compare dates** switches actual observations while holding the camera
 products keep their stated time resolution. Authored flight progress and plate reconstructions do not
 pretend to be dated observation comparisons. No account or remote storage is involved.
 
-**Find** in the header opens story search from any view. **Saved** opens your kept observations
+**Explore** in the header returns to the browsing view; **Find** opens story search (inside **View options** on phones). **Saved** opens your kept observations
 and recent journeys without clearing a search or replacing the globe. Evidence cards distinguish
 measured Float Dive and Tonga readings, calculated sky positions, and saved radar scan times.
 Add an optional local note, reopen the saved moment, or download a source-labelled image card.
-Notes are excluded from exported cards. Saving again updates that story's existing bookmark.
+Notes are excluded from exported cards. Saving again updates that story's existing bookmark, except
+Tonga station readings: each station and minute is kept separately, with its own note.
 Charts with multiple series also offer **Read the chart**, with each series' endpoints, range and
 nearest recorded sample; these readings are never interpolated for animation.
 
@@ -175,9 +176,11 @@ measurements, not field recordings.
 - **Follow Hurricane Katrina** banks over the Gulf and follows NOAA’s 2005 best track to landfall
   near Buras, Louisiana. Fresh visits begin with **Follow the storm**. Its ending compares the recorded offshore peak with landfall and exposes all seven positions. Pause, scrub, or jump to the offshore peak and landfall. Reduced motion
   opens a fixed overview with the same readings.
-- **Watch Tonga’s shockwave** opens on infrared and water-vapor scans of the 2022 eruption,
-  then pulls back to follow the estimated atmospheric wave. Pick a ground station to jump to
-  its pressure pulse. Reduced motion opens the eruption scan with the same timeline and stations.
+- **Tonga’s shockwave** begins with **Follow the wave**, then opens the original infrared and
+  water-vapor sequence before pulling back to the estimated atmospheric wave. **Inspect record**
+  connects a station on the world to its measured pressure trace. Drag the trace or use arrow keys
+  to select a minute, keep multiple readings, or share a finding that opens paused at that reading.
+  Reduced motion retains the same scans, timeline and stations with fixed framing.
 - **Follow Kīlauea’s lava** flies to Hawaiʻi and follows the 2018 flow from Fissure 8 to Kapoho Bay.
   Scrub dated USGS maps, compare the former shore with the August 9 footprint on either projection,
   or open the HVO footage at the ocean-entry chapter.

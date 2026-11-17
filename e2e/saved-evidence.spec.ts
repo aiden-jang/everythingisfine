@@ -11,7 +11,7 @@ test("a kept pressure reading exports its source card and reopens the same stati
   await page.goto(`/#v=observe&story=tonga&t=${at}&choice=PHNL&p=map`);
   const story = page.getByRole("region", { name: "Tonga’s shockwave", exact: true });
   await expect(story.getByRole("slider", { name: "Replay time", exact: true })).toHaveValue("539");
-  await story.getByRole("button", { name: "Keep this observation", exact: true }).click();
+  await story.getByRole("button", { name: "Keep this reading", exact: true }).click();
   await expect(story.getByRole("status", { name: "Kept pressure status" })).toContainText(
     "Saved on this device",
   );
@@ -21,7 +21,7 @@ test("a kept pressure reading exports its source card and reopens the same stati
   await page.keyboard.press("Escape");
   await expect(page.getByRole("region", { name: "Saved observations", exact: true })).toHaveCount(0);
   await expect(savedTrigger).toBeFocused();
-  await expect(story.getByRole("slider", { name: "Replay time", exact: true })).toHaveValue("539");
+  await expect(story.getByRole("region", { name: "Kept Tonga readings" })).toBeVisible();
   await page.goto("/");
   await page.locator("#open-saved-observations").click();
   const collection = page.getByRole("region", { name: "Saved observations", exact: true });
@@ -54,7 +54,7 @@ test("a kept pressure reading exports its source card and reopens the same stati
   expect(png.readUInt32BE(20)).toBe(1350);
   await collection.getByRole("button", { name: "Reopen this moment", exact: true }).click();
   await expect(collection).toHaveCount(0);
-  await expect(story.getByRole("slider", { name: "Replay time", exact: true })).toHaveValue("539");
+  await expect(story.getByRole("slider", { name: "Station pressure time", exact: true })).toHaveValue("539");
   await expect(story.getByRole("combobox", { name: "Ground station" })).toHaveValue("PHNL");
   await expect(story.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
     "aria-pressed",
