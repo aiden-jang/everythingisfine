@@ -31,6 +31,14 @@ for (const [width, height] of [
     const body = await story.locator(".tonga-evidence-body").boundingBox();
     expect(bounds!.y).toBeGreaterThanOrEqual(body!.y);
     expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(body!.y + body!.height);
+    const field = story.locator(".tonga-chart-field");
+    const fieldBox = await field.boundingBox();
+    const timeBox = await story.locator(".tonga-evidence-time").boundingBox();
+    const outline = await field.evaluate((node) => {
+      const style = getComputedStyle(node);
+      return parseFloat(style.outlineWidth) + parseFloat(style.outlineOffset);
+    });
+    expect(fieldBox!.y - outline).toBeGreaterThanOrEqual(timeBox!.y + timeBox!.height);
     await expect(story.locator(".tonga-evidence-reading")).toBeInViewport();
     const paper = await story.locator(".tonga-evidence").boundingBox();
     const credit = await page.locator(".creator-credit").boundingBox();

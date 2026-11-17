@@ -106,7 +106,7 @@
 }
 .tonga-chart-field:focus-within {
   outline: 2px solid currentColor;
-  outline-offset: 4px;
+  outline-offset: -2px;
 }
 .tonga-evidence-coverage {
   font-size: 11px;
