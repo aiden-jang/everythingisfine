@@ -270,7 +270,7 @@
 
 .swell-buoys {
   position: absolute;
-  inset: auto var(--stage-inset) calc(var(--stage-inset) + 23px);
+  inset: auto var(--stage-inset) calc(var(--stage-inset) + 80px);
   display: flex;
   justify-content: end;
   gap: 5px;

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { installFeeds, openStories } from "./feeds";
 
 test("feed status names unavailable sources without increasing the background count", async ({ page }) => {
@@ -131,9 +131,7 @@ test("Orbital Pass shares the city and time between the horizon, globe and map",
   await expect(open).toBeFocused();
 });
 
-test("the Moon crossing, reconstructed plates, and wave forecasts reuse the Observatory globe", async ({
-  page,
-}) => {
+async function prepareObservation(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   const now = Date.parse("2026-11-06T18:00:00Z");
@@ -163,6 +161,13 @@ test("the Moon crossing, reconstructed plates, and wave forecasts reuse the Obse
   await page.goto("/");
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
+  return { canvas, original };
+}
+
+test("Million-Mile View changes photographs and restores its catalogue on the same canvas", async ({
+  page,
+}) => {
+  const { canvas, original } = await prepareObservation(page);
   await openStories(page);
   const epic = page.getByRole("button", { name: "Million-Mile View", exact: true });
   await epic.click();
@@ -173,7 +178,11 @@ test("the Moon crossing, reconstructed plates, and wave forecasts reuse the Obse
   await expect(shot).not.toHaveAttribute("src", first!);
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(epic).toBeFocused();
+  expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
+});
 
+test("Deep Time preserves its reconstruction age and returns on the same canvas", async ({ page }) => {
+  const { canvas, original } = await prepareObservation(page);
   await page.getByRole("button", { name: "Below the Surface", exact: true }).click();
   await openStories(page);
   await page.getByRole("button", { name: "Deep Time", exact: true }).click();
@@ -185,8 +194,11 @@ test("the Moon crossing, reconstructed plates, and wave forecasts reuse the Obse
   await expect(age).toHaveAttribute("aria-valuetext", "230 million years ago");
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(page.getByRole("button", { name: "Deep Time", exact: true })).toBeFocused();
+  expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
+});
 
-  await page.getByRole("button", { name: "Earth", exact: true }).click();
+test("Swell Lines keeps forecast and buoy readings on the shared map", async ({ page }) => {
+  const { canvas, original } = await prepareObservation(page);
   await openStories(page);
   await page.getByRole("button", { name: "Swell Lines", exact: true }).click();
   const swell = page.getByRole("region", { name: "Swell Lines", exact: true });
