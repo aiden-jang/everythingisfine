@@ -38,11 +38,15 @@ const longitude = (page: Page) =>
     () => (window as unknown as { __globe: { state: () => { lon: number } } }).__globe.state().lon,
   );
 
-for (const width of [1440, 390]) {
+for (const [width, height] of [
+  [1440, 900],
+  [390, 900],
+  [812, 375],
+] as const) {
   test(`landing radar survives the same-canvas handoff to Explore and back at ${width}px @dev`, async ({
     page,
   }) => {
-    await page.setViewportSize({ width, height: 900 });
+    await page.setViewportSize({ width, height });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await installFeeds(page, { presentation: "fresh", radar: "default" });
     const source = await radarSource(page);
@@ -71,7 +75,32 @@ for (const width of [1440, 390]) {
       ).toBe(true);
     }
     await expect(readout.getByRole("link", { name: /RainViewer/ })).toBeInViewport({ ratio: 1 });
-    await expect(readout.getByRole("button", { name: "Sources & times", exact: true })).toBeInViewport();
+    const sources = readout.getByRole("button", { name: "Sources & times", exact: true });
+    await expect(sources).toBeInViewport();
+    if (height === 375) {
+      const collisions = await page.locator(".layer-readout").evaluate((readout) => {
+        const footer = readout.getBoundingClientRect();
+        return [...document.querySelectorAll(".observatory-scenes button, .creator-credit a")]
+          .filter((node) => {
+            const control = node.getBoundingClientRect();
+            return (
+              Math.min(footer.right, control.right) > Math.max(footer.left, control.left) &&
+              Math.min(footer.bottom, control.bottom) > Math.max(footer.top, control.top)
+            );
+          })
+          .map((node) => node.textContent?.trim());
+      });
+      expect(collisions, "loaded radar attribution stays clear of scenes and creator credit").toEqual([]);
+      await sources.click();
+      const times = page.getByRole("group", { name: "Weather layer times", exact: true });
+      await expect(times).toBeVisible();
+      await expect(times.locator("time").first()).toHaveAttribute(
+        "datetime",
+        new Date(source.at).toISOString(),
+      );
+      await times.getByRole("button", { name: "Close layer times", exact: true }).click();
+      await expect(sources).toBeFocused();
+    }
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/landing-radar-${width}.png` });
     await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();

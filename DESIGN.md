@@ -280,7 +280,9 @@ and scene controls remain reachable below the headline. Viewports at 620px high 
 compact headline, reduced gaps and owned scrolling; the established player landscape layouts
 continue to keep playback visible. Landscape layouts at least 600px wide use a 64px top inset
 and side-by-side entry actions; the story invitation sits beside the copy and actions so the
-scene strip keeps its own row. Do not turn the oversized canvas into horizontal page scrolling.
+scene strip keeps its own row. The short landscape footer keeps radar attribution and Sources
+beside the creator credit, with detailed times in Sources and auxiliary solar readouts hidden.
+Do not turn the oversized canvas into horizontal page scrolling.
 
 ### Explore and reading regions
 

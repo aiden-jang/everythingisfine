@@ -390,6 +390,22 @@
   .frame[data-landing] :is(.landing-story-entry, .story-continue) {
     grid-row: 1 / 3;
   }
+  .frame[data-landing] .observatory-stage {
+    bottom: 8px;
+    width: min(440px, calc(100% - 240px));
+  }
+  .frame[data-landing] .stage-readout {
+    display: flex;
+    padding: 0;
+    background: var(--color-deck);
+  }
+  .frame[data-landing] .stage-readout > div:not(.layer-readout),
+  .frame[data-landing] .stage-readout > time {
+    display: none;
+  }
+  .frame[data-landing] :is(.layer-times-toggle, .radar-canvas-credit a) {
+    min-height: 44px;
+  }
 }
 
 @media (max-width: 899px) {
