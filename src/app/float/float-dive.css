@@ -325,6 +325,15 @@
   .float-stage-tools button {
     padding-inline: 8px;
   }
+  .zones:has([data-float-dive]) .camera-recenter {
+    top: 8px;
+  }
+  .observatory-stage[data-stage="float"] .stage-ident {
+    display: none;
+  }
+  #float-profile-stage {
+    z-index: 5;
+  }
   .observatory-stage[data-stage="float"] .stage-readout {
     display: none;
   }
@@ -456,7 +465,7 @@
   }
 }
 
-.zones:has([data-float-dive]) #globe-view > div > button {
+.zones:has([data-float-dive]) .camera-recenter {
   left: 16px;
   right: auto;
 }

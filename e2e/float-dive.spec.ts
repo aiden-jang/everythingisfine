@@ -179,6 +179,25 @@ for (const width of [1440, 390])
       .getByRole("button", { name: "Salinity", exact: true })
       .click();
     await expect(page.getByRole("img", { name: /Practical salinity by estimated depth/ })).toBeVisible();
+    if (width === 390) {
+      const control = page.getByRole("button", { name: "Take control", exact: true });
+      const projection = page.getByRole("group", { name: "Float projection" });
+      const inspector = page.getByRole("region", { name: "Measured float profile" });
+      for (const phoneWidth of [390, 320]) {
+        await page.setViewportSize({ width: phoneWidth, height: phoneWidth === 320 ? 640 : 844 });
+        await expect(control).toBeInViewport({ ratio: 1 });
+        const camera = (await control.boundingBox())!;
+        const buttons = (await projection.boundingBox())!;
+        const panel = (await inspector.boundingBox())!;
+        expect(Math.abs(camera.y - buttons.y)).toBeLessThanOrEqual(2);
+        expect(camera.x + camera.width).toBeLessThan(buttons.x);
+        expect(camera.y + camera.height).toBeLessThanOrEqual(panel.y);
+        await control.click();
+        await page.getByRole("button", { name: "Recenter view", exact: true }).click();
+        await expect(control).toBeVisible();
+      }
+      await page.setViewportSize({ width, height: 844 });
+    }
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
     if (process.env["EIF_CAPTURE_UI"]) {
       await page.locator(".float-profile").scrollIntoViewIfNeeded();
