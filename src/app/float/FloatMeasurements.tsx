@@ -1,17 +1,28 @@
 import { createPortal } from "react-dom";
-import { useLayoutEffect, useMemo, useSyncExternalStore } from "react";
+import { useLayoutEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { MeasurementSound } from "../MeasurementSound";
 import { FloatObservation } from "./FloatObservation";
+import { FloatChapter } from "./FloatChapter";
+import { FloatFinding } from "./FloatFinding";
 import { FloatProfile } from "./FloatProfile";
 import { profileTakeaway } from "./profileGeometry";
 import type { FloatDiveView } from "./floatPlayback";
 
 const meters = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
 
-export function FloatMeasurements({ view, sound }: { view: FloatDiveView; sound: boolean }) {
+export function FloatMeasurements({
+  view,
+  sound,
+  onClose,
+}: {
+  view: FloatDiveView;
+  sound: boolean;
+  onClose: () => void;
+}) {
   const { index, playing, inspecting, stage } = useSyncExternalStore(view.subscribe, view.read);
+  const focusPlayback = useRef(false);
   const { samples } = view.profile;
   const sample = samples[index]!;
   const takeaway = useMemo(() => profileTakeaway(samples), [samples]);
@@ -20,10 +31,22 @@ export function FloatMeasurements({ view, sound }: { view: FloatDiveView; sound:
     const intro = document.getElementById("observatory-intro");
     const zones = intro?.closest<HTMLElement>(".zones");
     if (intro) intro.dataset["floatStage"] = stage;
-    if (zones) zones.dataset["floatInspecting"] = String(inspecting);
+    if (zones) {
+      zones.dataset["floatInspecting"] = String(inspecting);
+      zones.dataset["floatStage"] = stage;
+    }
+    if (focusPlayback.current && stage !== "locate") {
+      focusPlayback.current = false;
+      zones
+        ?.querySelector<HTMLButtonElement>(".float-transport .story-playback")
+        ?.focus({ preventScroll: true });
+    }
     return () => {
       if (intro) delete intro.dataset["floatStage"];
-      if (zones) delete zones.dataset["floatInspecting"];
+      if (zones) {
+        delete zones.dataset["floatInspecting"];
+        delete zones.dataset["floatStage"];
+      }
     };
   }, [stage, inspecting]);
   useLayoutEffect(() => {
@@ -33,16 +56,21 @@ export function FloatMeasurements({ view, sound }: { view: FloatDiveView; sound:
     const focused = document.activeElement;
     if (!intro || !finding) return;
     if (intro.contains(focused) && focused?.matches("input, textarea, select, [contenteditable]")) return;
-    const panel = intro.getBoundingClientRect();
-    const result = finding.getBoundingClientRect();
     // Scroll the reading pane alone so the finding cannot move the shared world or its playback deck.
     intro.scrollTo({
-      top: intro.scrollTop + result.top - panel.top - 16,
+      top: 0,
       behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
     });
   }, [stage, view]);
   return (
     <>
+      <FloatChapter
+        view={view}
+        onBegin={() => {
+          focusPlayback.current = true;
+          view.toggle();
+        }}
+      />
       <div className="float-reading">
         <div className="float-depth">
           <span>Estimated depth</span>
@@ -117,23 +145,14 @@ export function FloatMeasurements({ view, sound }: { view: FloatDiveView; sound:
       <p className="sr-only" role="status">
         {stage === "notice" ? `Ascent complete. ${takeaway.finding.heading} ${takeaway.finding.reading}` : ""}
       </p>
-      {stage === "notice" && (
-        <section className="float-takeaway" aria-label="What this profile showed">
-          <h3>{takeaway.finding.heading}</h3>
-          <p>{takeaway.finding.reading}</p>
-          <button
-            type="button"
-            onClick={() => {
-              view.seek(takeaway.finding.index);
-              view.inspect(true);
-            }}
-          >
-            Inspect this sample
-          </button>
-          <small>{samples.length.toLocaleString()} measured samples. One location and one date.</small>
-        </section>
-      )}
-      <FloatObservation view={view} />
+      <FloatFinding view={view} onClose={onClose} notice={stage === "notice"}>
+        <div hidden={stage === "locate"}>
+          <FloatObservation
+            view={view}
+            sampleIndex={stage === "notice" && !inspecting ? takeaway.finding.index : undefined}
+          />
+        </div>
+      </FloatFinding>
       {sound && (
         <MeasurementSound
           key={view.profile.id}

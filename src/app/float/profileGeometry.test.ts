@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { argoStation, compileArgoProfile } from "../../sources/argo";
 import { profileGeometry, profileTakeaway } from "./profileGeometry";
 import recorded from "./recorded.json";
+import { firstFloatProfile } from "./firstProfile";
 
 const samples = [
   { depth: 1000, pressure: 1008, temperature: -1, salinity: 34.001 },
@@ -51,7 +52,7 @@ describe("measured Argo profile", () => {
     expect(takeaway.heading).toContain("warmer than");
     expect(takeaway.reading).toContain("5.60 °C at 5 m");
     expect(takeaway.finding.index).toBe(1);
-    expect(takeaway.finding.heading).toBe("Warmest at 62\u00a0m.");
+    expect(takeaway.finding.heading).toBe("The warmest water was below the surface.");
     expect(takeaway.finding.reading).toContain("6.90 °C at 62 m");
     expect(takeaway.finding.reading).toContain("shallowest sample was 5.60 °C");
   });
@@ -103,6 +104,7 @@ describe("measured Argo profile", () => {
     const saved = recorded[0]!;
     const station = argoStation(saved.station)!;
     const profile = compileArgoProfile(station, saved.measurements)!;
+    expect(profile).toMatchObject(firstFloatProfile);
     const temperature = profileGeometry(profile.samples, "temperature");
     const salinity = profileGeometry(profile.samples, "salinity");
     expect(temperature.min).toBe(3.283);

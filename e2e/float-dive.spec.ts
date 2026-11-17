@@ -92,6 +92,8 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   await open.click();
   const dive = page.getByRole("region", { name: "Float Dive" });
   await expect(dive.getByText(/Recorded profile · Cycle 268/)).toBeVisible();
+  await dive.getByRole("button", { name: "Follow the rise", exact: true }).click();
+  await page.getByRole("button", { name: "Pause", exact: true }).click();
   expect(
     await dive.locator("[data-float-depth]").evaluate((node) => parseFloat(getComputedStyle(node).fontSize)),
   ).toBeGreaterThanOrEqual(40);
@@ -113,8 +115,8 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   await expect(dive.getByText("8.00 °C", { exact: true })).toBeVisible();
   await depth.press("End");
   await expect(depth).toHaveAttribute("aria-valuetext", "0 m");
-  await expect(dive.getByText("18.00 °C", { exact: true })).toBeVisible();
-  await expect(dive.getByText("33.000", { exact: true })).toBeVisible();
+  await expect(dive.getByRole("region", { name: "What this profile showed" })).toContainText("18.00 °C");
+  await expect(dive.getByRole("region", { name: "Keep an observation" })).toContainText("33.000 salinity");
   await expect(page.getByRole("button", { name: "Replay" })).toBeVisible();
   await picker.selectOption({ label: "1 Nov 2026 · WMO 6901937" });
   await expect(dive.getByText(/Still showing .* cycle/)).toBeVisible();
@@ -157,12 +159,13 @@ for (const width of [1440, 390])
     await page.getByRole("searchbox", { name: "Find a story" }).fill("Float Dive");
     await page.locator("#search-story-float").click();
     const dive = page.getByRole("region", { name: "Float Dive" });
+    await dive.getByRole("button", { name: "Follow the rise", exact: true }).click();
     const depth = page.getByRole("slider", { name: "Ascent depth" });
     await expect(depth).toBeVisible();
     await depth.press("End");
     const lastDepth = await depth.getAttribute("aria-valuetext");
     const finding = dive.getByRole("region", { name: "What this profile showed" });
-    await expect(finding.getByRole("heading")).toHaveText(/Warmest at 62\s+m\./);
+    await expect(finding.getByRole("heading")).toHaveText("The warmest water was below the surface.");
     await expect(finding).toContainText("6.90 °C at 62 m");
     await expect(finding.getByRole("heading")).toBeInViewport({ ratio: 1 });
     if (width === 390) {

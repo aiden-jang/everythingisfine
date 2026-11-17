@@ -232,7 +232,7 @@ export function Globe({
 
     const frame = (now: number): void => {
       if (contextLost) return;
-      // Replay follows wall time; visual motion caps pauses without slowing ordinary low-frame-rate rendering.
+      // Playback follows wall time; visual motion caps pauses before integrating the camera springs.
       const rawDt = (now - last) / 1000;
       const dt = animationDelta(rawDt);
       last = now;
@@ -316,7 +316,7 @@ export function Globe({
           live.current.focus,
         );
       }
-      const presenting = globe.stepPresentation(dt, reducedMotion.matches);
+      const presenting = globe.stepPresentation(dt, reducedMotion.matches, rawDt);
       draw();
       placeOverlays();
       readout.update(globe.controls.state());

@@ -36,7 +36,9 @@ Camera coordinates can appear in shared view links. See the
 [location privacy notice](https://accounts.aidenjang.com/privacy#legal-location-in-everything-is-fine).
 Choosing Earth, Below the Surface or After Dark opens its content immediately; choosing the
 selected scene again shows All stories. The wordmark closes the catalogue and returns to the introduction.
-**Explore stories** opens the curated catalogue; **Explore the layers** opens the layer controls beside
+**Follow this story** opens the recorded Float Dive at its North Atlantic location. Choose **Follow the rise**
+when ready; the ending plots the actual profile and lets you keep its highlighted finding. **Find** opens
+the curated catalogue. **Explore the layers** opens the layer controls beside
 the same globe or map. The sidebar's **Layers** and **Stories** tabs switch between them. The wordmark
 returns to the Earth landing view. Browser Back restores the previous view. **Reset camera** in View
 options recenters the current view without changing its projection, layers, filters or held time.

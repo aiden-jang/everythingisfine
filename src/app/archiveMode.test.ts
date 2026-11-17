@@ -1,6 +1,16 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createFeed } from "./feed";
 import type { Reading } from "../data/types";
+
+// Mode tests must not start live sockets or leave network callbacks after their assertions finish.
+vi.mock("../sources/usgs", async (original) => ({
+  ...(await original<typeof import("../sources/usgs")>()),
+  createUsgsSource: () => ({ id: "usgs", start: vi.fn(), stop: vi.fn() }),
+}));
+vi.mock("../sources/emsc", async (original) => ({
+  ...(await original<typeof import("../sources/emsc")>()),
+  createEmscSource: () => ({ id: "emsc", start: vi.fn(), stop: vi.fn() }),
+}));
 
 /*
  * The mode, not the fetch. What matters here is that an archived day cannot be mistaken for now:

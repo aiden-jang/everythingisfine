@@ -46,6 +46,7 @@ export function useArgoProfiles(
     if (resume?.profile.startsWith("recent/") && !problem && catalogue.state !== "error") return;
     const profile = saved.find(({ id }) => `recorded/${id}` === resume?.profile) ?? saved[0];
     const playback = createFloatPlayback(profile, !resume && motion(), "recorded");
+    if (!resume) playback.locate();
     if (resume?.profile === `recorded/${profile.id}`) playback.seek(resume.index);
     else if (resume) setProblem("resume");
     onView(playback);

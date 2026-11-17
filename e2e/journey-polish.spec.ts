@@ -142,8 +142,10 @@ for (const width of [1440, 390, 320]) {
     await openStories(page, "search");
     await page.getByRole("searchbox", { name: "Find a story" }).fill("Float Dive");
     await page.locator("#search-story-float").click();
+    await page.getByRole("button", { name: "Follow the rise", exact: true }).click();
     const transport = page.locator(".float-transport");
     await expect(transport).toBeVisible();
+    await transport.getByRole("button", { name: "Pause", exact: true }).click();
     await transport.scrollIntoViewIfNeeded();
     const scrubber = (await transport.getByRole("slider").boundingBox())!;
     const play = transport.getByRole("button", { name: "Play", exact: true });

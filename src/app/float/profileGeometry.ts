@@ -75,7 +75,7 @@ export function profileTakeaway(samples: readonly ArgoSample[]) {
     ? {
         heading:
           warmest.length === 1
-            ? `Warmest at ${Math.round(peak.depth).toLocaleString()}\u00a0m.`
+            ? "The warmest water was below the surface."
             : "The warmest samples were below the surface.",
         reading: `${peak.temperature.toFixed(2)} °C at ${Math.round(peak.depth).toLocaleString()} m${warmest.length > 1 ? `, one of ${warmest.length} samples at the same maximum` : ""}; the shallowest sample was ${shallow.temperature.toFixed(2)} °C at ${Math.round(shallow.depth).toLocaleString()}\u00a0m.`,
         index,

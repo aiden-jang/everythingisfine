@@ -133,6 +133,7 @@ test("Float Dive yields to exploration without discarding the selected measureme
   await page.goto("/");
   await revealStoryTools(page);
   await page.getByRole("button", { name: "Float Dive", exact: true }).click();
+  await page.getByRole("button", { name: "Follow the rise", exact: true }).click();
   const depth = page
     .getByRole("group", { name: "Float Dive playback" })
     .getByRole("slider", { name: "Ascent depth" });

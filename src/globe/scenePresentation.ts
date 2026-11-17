@@ -75,11 +75,11 @@ export function createScenePresentation(
   const picking = createObservationPicking(canvas, controls);
   let orbitalMoon = false;
 
-  function step(dt: number, reduced: boolean) {
+  function step(dt: number, reduced: boolean, elapsed = dt) {
     dayline.value = showDayline ? lights.reveal.value : 0;
     veil?.trace(controls.auroraSweep());
     const radarArriving = radar?.step(dt, reduced);
-    const diving = dive?.step(dt, reduced);
+    const diving = dive?.step(dt, reduced, elapsed);
     const lunar = skyView?.moonfall?.step(dt, reduced);
     const approaching = arrival.step(dt, reduced);
     const tracing = observations?.step(dt, reduced) ?? false;

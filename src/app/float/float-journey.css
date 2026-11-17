@@ -1,0 +1,175 @@
+.float-discovery {
+  display: grid;
+  gap: 16px;
+  max-width: 36ch;
+}
+.float-invitation-location {
+  position: absolute;
+  inset: 100px 200px 110px 44%;
+  z-index: 2;
+  pointer-events: none;
+}
+.float-invitation-location button {
+  position: absolute;
+  visibility: hidden;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  min-height: 44px;
+  padding: 8px;
+  transform: translate(-22px, -50%);
+  background: var(--color-void);
+  color: var(--color-ink);
+  border-radius: 5px;
+  pointer-events: auto;
+  text-align: left;
+  font-size: 14px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.float-invitation-location button:hover {
+  background: var(--color-deck);
+}
+.float-invitation-location small {
+  display: block;
+  margin-top: 3px;
+  color: var(--color-dim);
+  font-size: 11px;
+}
+.zones[data-float-stage="locate"] .float-playback-row,
+.zones[data-float-stage="locate"] .float-transport > small,
+.observatory-intro[data-float-stage="locate"]
+  :is(.float-reading, .measurement-sound, .story-share, .related-stories) {
+  display: none;
+}
+.zones[data-float-stage="notice"][data-float-inspecting="false"] .float-reading {
+  display: none;
+}
+.observatory-intro[data-float-stage="locate"] .float-heading h2 {
+  font-size: clamp(64px, 7vw, 96px);
+  max-width: 7ch;
+  text-wrap: balance;
+}
+.float-discovery p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-dim);
+}
+.float-discovery .float-location {
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.float-begin {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  min-height: 48px;
+  padding: 12px 16px;
+  color: var(--color-void);
+  background: var(--color-ink);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.float-begin:hover {
+  background: var(--color-dim);
+}
+.observatory-intro[data-float-stage="locate"] .float-summary,
+.observatory-intro[data-float-stage="notice"] .float-summary {
+  display: none;
+}
+.observatory-intro[data-float-stage="notice"] .float-takeaway {
+  border-top: 0;
+  padding-top: 0;
+}
+.float-finding-chart {
+  display: block;
+  width: min(100%, 350px);
+  margin-inline: auto;
+}
+.float-takeaway .float-observation {
+  border-top: 0;
+  padding-top: 4px;
+}
+.float-finding-chart text {
+  fill: var(--color-dim);
+  font: 12px var(--font-mono);
+}
+.float-finding-sample {
+  fill: var(--color-ink);
+  stroke: var(--color-void);
+  stroke-width: 2px;
+}
+.float-finding-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+.float-finding-actions button {
+  min-height: 44px;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  cursor: pointer;
+}
+.float-discovery {
+  animation: float-finding-arrive 420ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .float-discovery {
+    animation: none;
+  }
+}
+@media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
+  .float-invitation-location {
+    display: none;
+  }
+  .zones:has([data-float-stage="locate"]) .observatory-sidebar {
+    padding-bottom: 108px;
+  }
+  .float-discovery {
+    gap: 10px;
+    max-width: none;
+  }
+  .float-discovery p {
+    font-size: 14px;
+  }
+  .float-begin {
+    min-height: 44px;
+  }
+  .observatory-intro[data-float-dive] .float-heading {
+    flex-wrap: wrap;
+    gap: 8px 12px;
+  }
+  .observatory-intro[data-float-dive] .float-heading h2 {
+    font-size: clamp(32px, 8.5vw, 44px);
+  }
+  .observatory-intro[data-float-stage="locate"] .float-heading h2 {
+    max-width: none;
+    font-size: clamp(40px, 12vw, 56px);
+  }
+  .frame[data-presentation="observe"] .zones[data-float-stage="notice"][data-float-inspecting="false"] {
+    grid-template-areas: "canvas";
+    grid-template-rows: minmax(0, 1fr);
+  }
+  .zones[data-float-stage="notice"][data-float-inspecting="false"] .observatory-sidebar {
+    grid-area: canvas;
+    border: 0;
+    border-radius: 0;
+    background: var(--color-void);
+  }
+  .zones[data-float-stage="notice"][data-float-inspecting="false"] :is(.observatory-stage, .camera-recenter) {
+    visibility: hidden;
+  }
+}
+@media (max-width: 380px), (max-height: 620px) {
+  .float-invitation-location {
+    display: none;
+  }
+}
+@media (max-height: 620px) and (min-width: 600px) {
+  .observatory-intro[data-float-stage="locate"] .float-heading h2 {
+    font-size: 48px;
+  }
+}

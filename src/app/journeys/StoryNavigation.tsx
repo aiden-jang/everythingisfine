@@ -139,7 +139,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       deck.setMap(exploring ? props.explorer.flat : (saved?.position.radar?.map ?? false));
     } else if (id === "float") {
       const exploring = !props.views.observing && !resuming;
-      deck.setMap(exploring ? props.explorer.flat : (saved?.position.float?.map ?? false));
+      deck.setMap(exploring || !saved ? props.explorer.flat : (saved.position.float?.map ?? false));
       floatDive.open(saved?.position.float);
     } else deck.open(id as StoryId, trigger, saved?.position.moment ?? (fresh ? null : undefined));
   }

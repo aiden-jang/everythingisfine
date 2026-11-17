@@ -22,6 +22,7 @@ import "./sun/sun-watch.css";
 import "./tonight/tonight.css";
 import "./float/float-dive.css";
 import "./float/float-profile.css";
+import "./float/float-journey.css";
 import "./measurement-sound.css";
 import "./moonfall/moonfall.css";
 import { ObservationDeckShell } from "./observations/ObservationEntry";

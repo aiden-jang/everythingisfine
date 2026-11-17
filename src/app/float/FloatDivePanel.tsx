@@ -6,6 +6,7 @@ import { useObservatoryEscape } from "../useObservatoryEscape";
 import type { FloatDiveView } from "./floatPlayback";
 import { useArgoProfiles } from "./useArgoProfiles";
 import { ShareMoment } from "../observations/StorySession";
+import { FloatTitle } from "./FloatChapter";
 import { FloatMeasurements } from "./FloatMeasurements";
 import { floatMoment } from "./floatMoment";
 
@@ -47,7 +48,7 @@ export function FloatDivePanel({
   return (
     <>
       <div className="float-heading">
-        <h2>Float Dive</h2>
+        {view ? <FloatTitle view={view} /> : <h2>Float Dive</h2>}
         <div className="observatory-actions float-actions">
           <button type="button" ref={back} onClick={onClose} aria-label={returnLabel}>
             {returnLabel}
@@ -74,7 +75,7 @@ export function FloatDivePanel({
           <time dateTime={new Date(view.profile.at).toISOString()}>{date.format(view.profile.at)} UTC</time>
         </p>
       )}
-      {view && <FloatMeasurements view={view} sound={!pending && !problem} />}
+      {view && <FloatMeasurements view={view} sound={!pending && !problem} onClose={onClose} />}
       {view && <ShareMoment current={() => floatMoment(view, projection.map)} />}
       <div className="float-meta">
         {pending ? (

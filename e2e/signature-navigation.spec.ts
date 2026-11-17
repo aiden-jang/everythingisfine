@@ -10,7 +10,7 @@ for (const width of [320, 390, 1440]) {
     await installFeeds(page, { presentation: "fresh" });
     await page.goto("/");
     const original = await page.locator("#globe-view canvas").elementHandle();
-    await expect(page.getByRole("button", { name: "Explore stories", exact: true })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Follow this story", exact: true })).toBeEnabled();
     await page.screenshot({ path: test.info().outputPath(`landing-${width}.png`) });
     await page.getByRole("button", { name: "Find a story", exact: true }).click();
     const search = page.getByRole("searchbox", { name: "Find a story", exact: true });

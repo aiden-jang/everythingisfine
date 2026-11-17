@@ -267,7 +267,7 @@ The full-viewport landing uses a real oversized globe on the right, extending be
 with the large invitation at the left. The desktop canvas is an 82vw square positioned 32vw from
 the left and 2dvh from the top. The introduction uses a 42% reading track and open remaining space;
 its top inset is `clamp(112px, 15dvh, 160px)`, with 34px horizontal and 64px bottom clearance.
-Explore stories is a pale filled action; Explore the layers is a quiet secondary action. The three
+Follow this story is a pale filled action; Explore the layers is a quiet secondary action. The three
 diagram-led scenes form a ruled strip along the lower edge. A recorded thumbnail, question and
 source context occupy the lower-right invitation on desktop. Earthquake counts belong to exploration
 rather than the editorial opening; feed availability remains accessible in the header.
@@ -376,7 +376,7 @@ Focus rings and selection brackets are interaction signals, not ambient glows.
 
 ## Shapes
 
-The circle of the globe is the dominant silhouette. The primary Explore stories action uses the field radius;
+The circle of the globe is the dominant silhouette. The primary Follow this story action uses the field radius;
 search fields and featured image crops use the field radius. Projection controls use the projection
 radius, ordinary controls and recommendation thumbnails use the control radius, and the projection
 pair uses the card radius. Phone recommendations use open ruled rows. Explore and Observatory sheets
@@ -407,7 +407,7 @@ empty result. A failing source is named with its reason and retry, and must not
 blank working layers. An empty filter result has a useful widening/reset action.
 Empty phone lists occupy their status height rather than reserving absent rows.
 
-The landing Explore stories action uses pale ink fill and a directional cue; Explore the layers
+The landing Follow this story action uses pale ink fill and a directional cue; Explore the layers
 is a text action. Utility buttons use
 neutral borders and brightness-based hover; inputs remain transparent on the reading deck, with
 a visible hairline and square field corners. Explore tabs use an ink underline, while selected
@@ -800,10 +800,18 @@ timeline timing stay intact. Reduced motion restores full configured resolution.
 ### Float Dive inspection
 
 Float Dive uses the existing shared world for Locate, Rise and Notice. Its bounded ocean
-section leaves geographic context visible. The measurement inspector opens beside the float;
+section leaves geographic context visible. Fresh visits start at Locate with a deliberate Follow the rise
+action; shared and saved links still open at their measured sample. The finding plots all actual
+temperature samples and marks the sample its Keep action stores. Inspection and ordinary scrubbing
+continue to save the currently selected sample. Returning restores the source camera, projection,
+scroll and focus; a kept observation reopens its measured depth instead of restarting playback.
+The measurement inspector opens beside the float;
 the selected chart point, instrument reading and playback refer to the same sample. The
 playback deck stays reachable independently of the scrolling reading panel. On phones,
-inspection reserves more room for the chart and instrument. The recorded invitation retains
+the final finding fills the reading surface; opening its measured profile restores the world
+and reserves more room for the chart and instrument. Playback follows elapsed time while camera
+motion uses bounded integration, so slow rendering does not stretch the measured ascent.
+The recorded invitation retains
 its source context at every width. Optional notes remain secondary to keeping an observation.
 While the profile is open, its sample slider owns inspection and the ascent transport shows a selected
 depth readout instead of a second slider. The panel unfolds over 520ms and the finding settles over
@@ -813,7 +821,7 @@ the reading pane without scrolling the shared world or playback.
 
 ### Connected discovery and kept evidence
 
-The opening gives the two-line invitation an editorial scale and separates Explore stories from
+The opening gives the two-line invitation an editorial scale and separates Follow this story from
 Explore the layers. A recorded thumbnail makes the first investigation tangible. The familiar
 Earth, Below the Surface and After Dark diagrams remain the category language.
 

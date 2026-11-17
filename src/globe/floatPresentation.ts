@@ -44,7 +44,7 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
       }
       if (view) returnCamera ??= controls.state();
     },
-    step(dt: number, reduced: boolean) {
+    step(dt: number, reduced: boolean, elapsed = dt) {
       let returning = false;
       if (showing !== wanted || (!wanted && returnCamera)) {
         reveal = reduced ? 0 : Math.max(0, reveal - dt / 0.55);
@@ -85,7 +85,7 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
         else if (arrived && (reduced || landed >= 0.38))
           reveal = reduced ? 1 : Math.min(1, reveal + dt / 1.35);
         if (reveal === 1 || !controls.guidance.following()) readyToPlay = true;
-        if (readyToPlay && showing.read().stage !== "locate") rising = showing.step(dt);
+        if (readyToPlay && showing.read().stage !== "locate") rising = showing.step(elapsed);
       }
       const first = showing.profile.samples[0]!.depth;
       const last = showing.profile.samples.at(-1)!.depth;

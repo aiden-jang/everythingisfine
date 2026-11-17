@@ -57,13 +57,14 @@ test("a saved float returns to its measured depth after a new page visit", async
   await page.goto("/");
   await openStories(page, "all");
   await page.locator(".featured-story button").click();
+  await page.getByRole("button", { name: "Follow the rise", exact: true }).click();
   const depth = page.getByRole("slider", { name: "Ascent depth" });
-  await depth.press("End");
-  const value = await depth.inputValue();
   await page
     .getByRole("group", { name: "Float projection" })
     .getByRole("button", { name: "Map", exact: true })
     .click();
+  await depth.press("End");
+  const value = "536"; // The finding keeps the recorded warm maximum, not the final surface sample.
   await page.getByText("Add a note (optional)", { exact: true }).click();
   await page
     .getByRole("textbox", { name: /A note for this observation/ })
@@ -85,7 +86,7 @@ test("a saved float returns to its measured depth after a new page visit", async
   await expect(page.getByRole("textbox", { name: /A note for this observation/ })).toHaveValue(
     "The warmer water was below the shallowest sample.",
   );
-  await expect(page.getByRole("button", { name: "Replay" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Play", exact: true })).toBeVisible();
 });
 
 test("saved views and recent history can be cleared independently", async ({ page }) => {

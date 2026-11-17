@@ -2,7 +2,7 @@ import { useId, useState, useSyncExternalStore } from "react";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import type { FloatDiveView } from "./floatPlayback";
 
-function ObservationEditor({ view }: { view: FloatDiveView }) {
+function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleIndex?: number | undefined }) {
   const navigation = useStoryNavigation();
   const { index } = useSyncExternalStore(view.subscribe, view.read);
   const profile = `${view.source}/${view.profile.id}`;
@@ -12,7 +12,7 @@ function ObservationEditor({ view }: { view: FloatDiveView }) {
   );
   const noteId = useId();
   if (!navigation || navigation.active !== "float") return null;
-  const sample = view.profile.samples[index]!;
+  const sample = view.profile.samples[sampleIndex ?? index]!;
 
   return (
     <section className="float-observation" aria-label="Keep an observation">
@@ -21,7 +21,7 @@ function ObservationEditor({ view }: { view: FloatDiveView }) {
           type="button"
           onClick={() => {
             const current = navigation.current();
-            const { index } = view.read();
+            const index = sampleIndex ?? view.read().index;
             const reading = view.profile.samples[index];
             if (current?.id !== "float" || !reading) return;
             navigation.library.save({
@@ -64,8 +64,8 @@ function ObservationEditor({ view }: { view: FloatDiveView }) {
           onChange={(event) => setNote(event.currentTarget.value.slice(0, 280))}
           placeholder="What did you notice?"
         />
+        <p>Notes stay on this device. {note.length}/280 characters.</p>
       </details>
-      <p>Notes stay on this device. {note.length}/280 characters.</p>
       <span role="status" aria-label="Kept observation status">
         {navigation.library.notice}
       </span>
@@ -73,6 +73,14 @@ function ObservationEditor({ view }: { view: FloatDiveView }) {
   );
 }
 
-export function FloatObservation({ view }: { view: FloatDiveView }) {
-  return <ObservationEditor key={`${view.source}/${view.profile.id}`} view={view} />;
+export function FloatObservation({
+  view,
+  sampleIndex,
+}: {
+  view: FloatDiveView;
+  sampleIndex?: number | undefined;
+}) {
+  return (
+    <ObservationEditor key={`${view.source}/${view.profile.id}`} view={view} sampleIndex={sampleIndex} />
+  );
 }
