@@ -199,7 +199,7 @@ test("Home leaves archive mode and browser Back recovers the recorded day @dev",
     .click();
   await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
   await expect.poll(() => radarTexture(page)).not.toBeNull();
-  await expect(page.locator(".observatory-summary").first()).not.toContainText("2011");
+  await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("d")).toBeNull();
   await page.goBack();
   await expect(toggle).toBeDisabled();
   await expect(page.getByRole("button", { name: "back to live", exact: true })).toBeVisible();
