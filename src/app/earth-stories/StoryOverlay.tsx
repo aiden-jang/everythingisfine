@@ -2,14 +2,12 @@ import type { ObservationFrame, ObservationView } from "../observations/types";
 import type { EarthStoryData } from "./types";
 
 export function StoryOverlay({
-  slice,
   localSky,
   data,
   frame,
   site,
   chooseSite,
 }: {
-  slice: boolean;
   localSky?: ObservationView["sky"];
   data: EarthStoryData;
   frame: ObservationFrame;
@@ -18,13 +16,6 @@ export function StoryOverlay({
 }): JSX.Element {
   return (
     <>
-      {slice && (
-        <div className="story-section-caption">
-          <strong>CALIPSO · 23 June 2020</strong>
-          <span>0–15 km · height exaggerated 80×</span>
-          <span>Warm colors: stronger laser backscatter. Clouds also scatter light.</span>
-        </div>
-      )}
       {localSky && (
         <div className="tonight-labels comet-labels" data-sky-labels="" aria-hidden="true">
           {localSky.bodies.map(({ name }) => (

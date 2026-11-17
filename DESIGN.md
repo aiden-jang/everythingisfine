@@ -842,6 +842,9 @@ Recorded observations and Earth stories use one retained playback dock outside t
 It sits over the world on desktop and short landscape layouts, and below the phone reading panel.
 Projection uses the same world-footer component, including Float Dive; local-sky views retain their
 compass instead of an inappropriate map switch. Controls remain mounted across panel scrolling and resizing.
+Scientific explanations and measured section charts sit beside their actions in the reading panel,
+leaving the world clear for the actual terrain, section line and lidar curtain. Newly measured sections
+reveal their chart within that panel without moving keyboard focus or the globe.
 Source replacement preserves the focused logical control and reading position. A failed selection
 ends its loading status and leaves the previous data available for manual inspection.
 

@@ -56,8 +56,6 @@
 }
 .story-section-caption,
 .terrain-section {
-  position: absolute;
-  inset: auto var(--stage-inset) calc(var(--stage-inset) + 40px);
   display: grid;
   gap: 5px;
   padding: 12px;

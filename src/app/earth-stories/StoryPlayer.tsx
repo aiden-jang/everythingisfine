@@ -206,17 +206,7 @@ export function StoryPlayer({
       at={<time dateTime={new Date(frame.at).toISOString()}>{time}</time>}
       sources={<StorySources id={id} />}
       inset={
-        <>
-          <StoryOverlay
-            slice={id === "dust" && slice}
-            localSky={localSky}
-            data={data}
-            frame={frame}
-            site={site}
-            chooseSite={chooseSite}
-          />
-          {section.overlay}
-        </>
+        <StoryOverlay localSky={localSky} data={data} frame={frame} site={site} chooseSite={chooseSite} />
       }
     >
       <StoryChoices
@@ -229,6 +219,7 @@ export function StoryPlayer({
         }}
       />
       {section.controls}
+      {section.chart}
       {id === "atmospheric-river" && (
         <div className="observatory-actions">
           <button type="button" onClick={onRadar}>
@@ -259,18 +250,27 @@ export function StoryPlayer({
         </div>
       )}
       {id === "dust" && (
-        <div className="observatory-actions">
-          <button
-            type="button"
-            aria-pressed={slice}
-            onClick={() => {
-              clock.seek(nearestFrame(data, Date.parse("2020-06-23T12:00:00Z")));
-              setSlice(!slice);
-            }}
-          >
-            {slice ? "Close lidar slice" : "Open lidar slice"}
-          </button>
-        </div>
+        <>
+          <div className="observatory-actions">
+            <button
+              type="button"
+              aria-pressed={slice}
+              onClick={() => {
+                clock.seek(nearestFrame(data, Date.parse("2020-06-23T12:00:00Z")));
+                setSlice(!slice);
+              }}
+            >
+              {slice ? "Close lidar slice" : "Open lidar slice"}
+            </button>
+          </div>
+          {slice && (
+            <div className="story-section-caption">
+              <strong>CALIPSO · 23 June 2020</strong>
+              <span>0–15 km · height exaggerated 80×</span>
+              <span>Warm colors: stronger laser backscatter. Clouds also scatter light.</span>
+            </div>
+          )}
+        </>
       )}
       {(busy || status === "loading") && <StoryLoading>Loading the selected observations…</StoryLoading>}
       <StoryTimeline

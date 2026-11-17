@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { GeoPoint, ObservationTerrain } from "../observations/types";
 import { distanceKm } from "../../geo/sphere";
 import { terrainSample, readTerrainSection, sectionSamples, type TerrainLine } from "./terrainSection";
@@ -19,6 +19,12 @@ export function useTerrainSection(
   const [start, setStart] = useState<GeoPoint | null>(null);
   const [drawing, setDrawing] = useState(false);
   const [hint, setHint] = useState("");
+  const chart = useRef<HTMLElement>(null);
+  const displayedLine = useRef(line);
+  useLayoutEffect(() => {
+    if (line && line !== displayedLine.current) chart.current?.scrollIntoView({ block: "nearest" });
+    displayedLine.current = line;
+  }, [line]);
   const pick = useCallback(
     (point: GeoPoint) => {
       if (!grid || !terrainSample(grid, point.lon, point.lat)) {
@@ -139,8 +145,8 @@ export function useTerrainSection(
         )}
       </>
     ) : null,
-    overlay: samples ? (
-      <figure className="terrain-section">
+    chart: samples ? (
+      <figure ref={chart} className="terrain-section">
         <figcaption>Seafloor along your section · sampled GEBCO depths</figcaption>
         <svg
           viewBox="0 0 340 150"

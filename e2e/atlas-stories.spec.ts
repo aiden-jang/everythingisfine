@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { installFeeds, openStories } from "./feeds";
 
 test("Atmospheric River and River Pulse open distinct views from the catalogue and shared links", async ({
@@ -55,6 +55,31 @@ async function painted(page: Page) {
     await document.fonts.ready;
     await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
   });
+}
+
+async function annotationLayouts(page: Page, annotation: Locator, name: string) {
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+    { width: 812, height: 375 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await annotation.scrollIntoViewIfNeeded();
+    await expect(annotation).toBeInViewport({ ratio: 1 });
+    const note = await annotation.boundingBox();
+    expect(note).not.toBeNull();
+    for (const control of [".story-dock", ".story-projection", ".stage-readout"]) {
+      const box = await page.locator(control).boundingBox();
+      expect(box).not.toBeNull();
+      expect(
+        Math.min(note!.x + note!.width, box!.x + box!.width) > Math.max(note!.x, box!.x) &&
+          Math.min(note!.y + note!.height, box!.y + box!.height) > Math.max(note!.y, box!.y),
+        "scientific annotations stay clear of playback, projection and stage captions",
+      ).toBe(false);
+    }
+    await painted(page);
+    await page.screenshot({ path: test.info().outputPath(`${name}-${viewport.width}.png`) });
+  }
 }
 
 const stories = [
@@ -155,7 +180,26 @@ test("seafloor sections accept coordinates and reopen at the shared measured lin
   await expect(page.getByRole("img", { name: /Depth section across/ })).toBeVisible();
   await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await annotationLayouts(page, panel.locator(".terrain-section"), "seafloor-section");
   await page.screenshot({ path: test.info().outputPath("seafloor-phone.png"), fullPage: true });
+});
+
+test("the lidar slice keeps its scientific explanation clear of shared world controls", async ({ page }) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/#v=observe&story=dust");
+  const panel = page.getByRole("region", { name: "Dust Curtain", exact: true });
+  await panel.getByRole("button", { name: "Open lidar slice", exact: true }).click();
+  const caption = panel.locator(".story-section-caption");
+  await expect(caption).toContainText("Clouds also scatter light.");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await annotationLayouts(page, caption, "lidar-caption");
+  await panel.getByRole("button", { name: "Map", exact: true }).click();
+  await expect(caption).toBeVisible();
+  await panel.getByRole("button", { name: "Globe", exact: true }).click();
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+  await panel.getByRole("button", { name: "Close lidar slice", exact: true }).click();
+  await expect(caption).toHaveCount(0);
 });
 
 for (const [id, title] of [
