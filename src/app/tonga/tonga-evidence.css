@@ -220,6 +220,9 @@
     font-size: 11px;
     padding: 8px;
   }
+  .tonga-evidence .visit-save > button {
+    font-size: 11px;
+  }
   .tonga-evidence-actions {
     margin-block-start: 6px;
   }
@@ -258,6 +261,9 @@
     padding: 6px;
     font-size: 11px;
   }
+  .tonga-evidence .visit-save > button {
+    font-size: 11px;
+  }
   .tonga-evidence .story-share {
     margin: 0;
   }
@@ -279,18 +285,43 @@
     clip-path: inset(50%);
   }
   .tonga-evidence-reading strong {
-    font-size: 32px;
+    font-size: 28px;
   }
   .tonga-evidence-time {
-    margin-block: 4px;
+    margin-block: 0;
+    font-size: 10px;
+    line-height: 1.4;
   }
   .tonga-evidence .tonga-chart-meta:first-child {
     display: none;
   }
   .tonga-evidence .tonga-chart svg {
-    height: 54px;
+    height: 50px;
   }
   .tonga-evidence:has(.tonga-recipient-title) {
     grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 599px) and (max-height: 620px) {
+  .frame[data-presentation="observe"] .zones[data-tonga-phase] {
+    grid-template-rows: 120px minmax(0, 1fr);
+  }
+  .tonga-evidence-reading strong {
+    font-size: 32px;
+  }
+  .tonga-evidence .tonga-chart svg {
+    height: 50px;
+  }
+  .tonga-world-title {
+    font-size: 22px;
+    top: 8px;
+  }
+}
+@media (max-width: 359px) {
+  .tonga-evidence-reading strong {
+    margin-block-start: 0;
+  }
+  .tonga-evidence-time {
+    margin-block: 4px;
   }
 }

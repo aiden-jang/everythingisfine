@@ -124,7 +124,8 @@
 @media (max-width: 899px) and (min-height: 621px), (max-width: 599px) {
   .frame[data-presentation="observe"] .zones[data-tonga-phase] {
     grid-template-areas: "canvas" "welcome";
-    grid-template-rows: minmax(180px, 1fr) minmax(0, min(58dvh, 470px));
+    grid-template-rows: minmax(180px, 1fr) minmax(0, min(58dvh, 470px, calc(100dvh - 284px)));
+    padding-bottom: 44px;
   }
   .zones:is([data-tonga-phase="inspect"], [data-tonga-phase="shared"], [data-tonga-phase="kept"])
     .observatory-sidebar {
@@ -133,11 +134,12 @@
   .zones[data-tonga-phase] .world-evidence {
     align-self: stretch;
     min-height: 0;
+    margin-block: 8px;
   }
   .zones[data-tonga-phase] .tonga-evidence {
     height: 100%;
     max-height: 100%;
-    padding: 16px;
+    padding: 12px;
   }
   .tonga-world-title {
     display: block;
@@ -187,7 +189,7 @@
   .zones[data-tonga-phase] .world-evidence {
     align-self: stretch;
     min-height: 0;
-    margin: 0 12px 44px;
+    margin: 0 12px 52px;
   }
   .zones[data-tonga-phase] .tonga-evidence {
     height: 100%;

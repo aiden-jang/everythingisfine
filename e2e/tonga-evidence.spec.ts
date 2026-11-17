@@ -5,9 +5,10 @@ for (const [width, height] of [
   [1440, 900],
   [390, 844],
   [320, 640],
+  [320, 568],
   [812, 375],
 ]) {
-  test(`Tonga connects its world and measured reading at ${width}px`, async ({ page }) => {
+  test(`Tonga connects its world and measured reading at ${width}×${height}`, async ({ page }) => {
     await page.setViewportSize({ width: width!, height: height! });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await installFeeds(page, { presentation: "fresh", empty: true });
@@ -25,12 +26,15 @@ for (const [width, height] of [
     await expect(sample).toHaveValue("540");
     await expect(sample).toHaveAttribute("aria-valuetext", "09:00 UTC · 1017.68 hPa");
     await expect(story.getByRole("slider", { name: "Replay time" })).toHaveCount(0);
-    const plot = story.locator(".tonga-chart-field");
+    const plot = story.locator(".tonga-chart");
     const bounds = await plot.boundingBox();
     const body = await story.locator(".tonga-evidence-body").boundingBox();
     expect(bounds!.y).toBeGreaterThanOrEqual(body!.y);
     expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(body!.y + body!.height);
     await expect(story.locator(".tonga-evidence-reading")).toBeInViewport();
+    const paper = await story.locator(".tonga-evidence").boundingBox();
+    const credit = await page.locator(".creator-credit").boundingBox();
+    if (width! < 900) expect(paper!.y + paper!.height).toBeLessThanOrEqual(credit!.y);
     await page.screenshot({ path: test.info().outputPath(`tonga-inspect-${width}.png`) });
     const evidence = story.getByRole("region", { name: "Honolulu pressure evidence" });
     for (const name of ["Keep this reading", "Back to journey", "Share finding"]) {
