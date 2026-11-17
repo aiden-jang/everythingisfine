@@ -131,8 +131,8 @@ test("Orbital Pass shares the city and time between the horizon, globe and map",
   await expect(open).toBeFocused();
 });
 
-async function prepareObservation(page: Page) {
-  await page.setViewportSize({ width: 390, height: 844 });
+async function prepareObservation(page: Page, viewport = { width: 390, height: 844 }) {
+  await page.setViewportSize(viewport);
   await page.emulateMedia({ reducedMotion: "reduce" });
   const now = Date.parse("2026-11-06T18:00:00Z");
   await page.clock.setFixedTime(new Date(now));
@@ -197,18 +197,44 @@ test("Deep Time preserves its reconstruction age and returns on the same canvas"
   expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
 });
 
-test("Swell Lines keeps forecast and buoy readings on the shared map", async ({ page }) => {
-  const { canvas, original } = await prepareObservation(page);
-  await openStories(page);
-  await page.getByRole("button", { name: "Swell Lines", exact: true }).click();
-  const swell = page.getByRole("region", { name: "Swell Lines", exact: true });
-  await expect(swell.getByText("4.3 m", { exact: true })).toBeVisible();
-  await swell.getByRole("button", { name: "Map", exact: true }).click();
-  await expect(page.getByRole("group", { name: "Swell Lines on the map" })).toBeVisible();
-  await page.getByRole("button", { name: /Show Mokapu Point/ }).click();
-  await expect(swell.getByRole("combobox", { name: "Reference buoy" })).toHaveValue("098");
-  const forecast = swell.getByRole("slider", { name: "Forecast valid time" });
-  await forecast.press("End");
-  await expect(swell.getByText("3.9 m", { exact: true })).toBeVisible();
-  expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
-});
+for (const viewport of [
+  { width: 390, height: 844 },
+  { width: 1440, height: 900 },
+  { width: 812, height: 375 },
+]) {
+  test(`Swell Lines keeps forecast and buoy readings on the shared map at ${viewport.width}px`, async ({
+    page,
+  }) => {
+    const { canvas, original } = await prepareObservation(page, viewport);
+    await openStories(page);
+    await page.getByRole("button", { name: "Swell Lines", exact: true }).click();
+    const swell = page.getByRole("region", { name: "Swell Lines", exact: true });
+    await expect(swell.getByText("4.3 m", { exact: true })).toBeVisible();
+    await swell.getByRole("button", { name: "Map", exact: true }).click();
+    await expect(page.getByRole("group", { name: "Swell Lines on the map" })).toBeVisible();
+    const shortcuts = await swell.getByRole("group", { name: "Pacific buoys" }).getByRole("button").all();
+    for (const shortcut of shortcuts) {
+      const buoy = await shortcut.boundingBox();
+      expect(buoy).not.toBeNull();
+      for (const control of [
+        swell.getByRole("button", { name: "Globe", exact: true }),
+        swell.getByRole("button", { name: "Map", exact: true }),
+        swell.locator(".story-dock"),
+      ]) {
+        const box = await control.boundingBox();
+        expect(box).not.toBeNull();
+        expect(
+          Math.min(buoy!.x + buoy!.width, box!.x + box!.width) > Math.max(buoy!.x, box!.x) &&
+            Math.min(buoy!.y + buoy!.height, box!.y + box!.height) > Math.max(buoy!.y, box!.y),
+          "buoy shortcuts stay clear of projection and playback",
+        ).toBe(false);
+      }
+    }
+    await page.getByRole("button", { name: /Show Mokapu Point/ }).click();
+    await expect(swell.getByRole("combobox", { name: "Reference buoy" })).toHaveValue("098");
+    const forecast = swell.getByRole("slider", { name: "Forecast valid time" });
+    await forecast.press("End");
+    await expect(swell.getByText("3.9 m", { exact: true })).toBeVisible();
+    expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);
+  });
+}

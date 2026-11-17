@@ -94,21 +94,6 @@ export function ObservationDeck({
           <span>{id === "iceberg" ? "Scotia Sea · South Georgia" : meta.source}</span>
         </div>
         {!deck.map && deck.view?.frame.tide && <TideGauge tide={deck.view.frame.tide} />}
-        {id === "swell" && (
-          <div className="swell-buoys" role="group" aria-label="Pacific buoys">
-            {swellBuoys.map(({ id, short, label }) => (
-              <button
-                key={id}
-                type="button"
-                aria-pressed={buoy === id}
-                aria-label={`Show ${label} buoy`}
-                onClick={() => setBuoy(id)}
-              >
-                {short}
-              </button>
-            ))}
-          </div>
-        )}
         <div className="stage-readout">
           {id === "epic" ? "DSCOVR camera" : deck.map ? "Map" : deck.horizon ? "Local horizon" : "Globe"} ·{" "}
           {meta.group}
@@ -122,6 +107,21 @@ export function ObservationDeck({
               deck.setMap(map);
             }}
           >
+            {id === "swell" && (
+              <div className="swell-buoys" role="group" aria-label="Pacific buoys">
+                {swellBuoys.map(({ id, short, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={buoy === id}
+                    aria-label={`Show ${label} buoy`}
+                    onClick={() => setBuoy(id)}
+                  >
+                    {short}
+                  </button>
+                ))}
+              </div>
+            )}
             {id === "orbit" && (
               <button
                 type="button"
