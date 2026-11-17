@@ -1,0 +1,16 @@
+diff --git a/lib/parse.js b/lib/parse.js
+index caa2b86aa5a567df33cef4bda3c7a97794f439f8..43465b999f6b54fa5c849c920016e5026e5b66ce 100644
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -292,6 +292,11 @@ const analyzeRepeatedExtglob = (body, options) => {
+ 
+   const branches = splitTopLevel(body).map(branch => branch.trim());
+ 
++  // CVE-2026-112366: a repeated wildcard can backtrack even without alternation.
++  if (branches.length === 1 && /(^|[^\\])[*?]/.test(branches[0])) {
++    return { risky: true };
++  }
++
+   if (branches.length > 1) {
+     if (
+       branches.some(branch => branch === '') ||

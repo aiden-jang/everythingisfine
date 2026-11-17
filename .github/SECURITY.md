@@ -9,3 +9,13 @@ API tokens, and other secrets. The maintained version is the current default bra
 
 Ordinary bugs and feature requests belong in public issues. This app is an exploration tool;
 provider data and approximate eclipse imagery are not emergency alerts or forecasts.
+
+## Patched build dependency
+
+The two installed picomatch versions carry a local mitigation for
+[CVE-2026-112366](https://github.com/advisories/GHSA-fc5q-39xc-vjpf), which has no published patched
+release. The patches reject repeated extglobs containing an unescaped wildcard in a single branch,
+using the parser’s existing risky-pattern fallback. Normal repository glob patterns stay supported.
+The exact advisory exception in `package.json` is paired with both lockfile-pinned patches and
+`tools/picomatch-security.test.mjs`, which tests the installed Vite and Rollup matchers in bounded
+child processes. Remove the exception and patches together when upgrading to an upstream fix.
