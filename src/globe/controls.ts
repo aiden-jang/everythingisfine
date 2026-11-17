@@ -60,22 +60,19 @@ export function createControls(
   let vLon = 0;
   let vLat = 0;
   let vZoom = 0;
-  // Reset, arc and arrival share one target so steering cancels the whole shot.
   let target: CameraTarget | null = null;
   const rig = createCameraRig(camera, canvas);
   const sky = createPlanetarium(camera);
   const state = (): CameraState => ({ lon, lat, zoom });
   const horizon = createLocalSkyCamera(camera, state, flyTo);
   const aurora = createAuroraFlight(camera);
+  let holdOverflight = false;
   const dive = createDepthDive(camera);
   const flightPose = { lon, lat, zoom },
     flightVelocity = { lon: 0, lat: 0, zoom: 0 };
-
   const intended = (): CameraState => (target && !target.intro ? target : { lon, lat, zoom });
-
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   const guidance = createCameraGuidance();
-
   const project = createGeographicProjection(camera, canvas);
   const unfold = createUnfoldCamera(camera);
   const interruptFraming = (): void => {
@@ -84,18 +81,18 @@ export function createControls(
       vLon = vLat = vZoom = 0;
     }
     sky.interrupt();
+    holdOverflight = false;
     aurora.interrupt();
     dive.interrupt();
   };
   const stepFraming = (dt: number): boolean => {
-    if (morph !== 0) return false;
+    if (morph !== 0 || holdOverflight) return false;
     const revealing = sky.step(dt, reduced.matches);
     const diving = dive.step(dt, reduced.matches, target === null);
     const flying = aurora.step(dt, reduced.matches);
     const landing = horizon.step(dt, reduced.matches, target === null);
     return revealing || diving || flying || landing;
   };
-
   const distAt = (zoom: number): number => distance.at(zoom, morph);
   const dist = (): number => distAt(zoom);
   const clampZoom = (zoom: number): number => distance.clamp(zoom, morph);
@@ -105,15 +102,12 @@ export function createControls(
    */
   const focalPx = (): number => (camera.zoom * canvas.clientHeight) / (2 * Math.tan((fovDeg / 2) * DEG));
 
-  // Blend the two projections' navigation scales; the unfolding camera can be inside a unit sphere.
   const angleAt = (px: number, atZoom = zoom): number => {
     const globe = perspectiveAngle(px, distance.at(atZoom, 0), focalPx());
     const map = ((px * distance.at(atZoom, 1)) / focalPx()) * 90 * DEG;
     return globe + (map - globe) * morph;
   };
-
   const pick = createGeographicPicking(camera, canvas, () => morph);
-
   const apply = (): void => {
     if (morph > 0) {
       unfold.place(lon, lat, dist(), morph);
@@ -159,7 +153,6 @@ export function createControls(
     target = dest;
   };
 
-  /** One key press of camera movement, in degrees and in zoom factor. */
   const nudge = (dLon: number, dLat: number, factor = 1): void => {
     interruptFraming();
     const base = intended();
@@ -265,6 +258,7 @@ export function createControls(
     });
 
   const step = (dt: number): boolean => {
+    if (holdOverflight) return false;
     const framingMoving = stepFraming(dt);
     const rigMoving = rig.step(dt, cameraRigTarget(target, { lon, lat, zoom }), reduced.matches || morph > 0);
     if (target) {
@@ -306,7 +300,7 @@ export function createControls(
   function flyTo(toLon: number, toLat: number, toZoom = zoom): void {
     sky.resume();
     const clamped = { lon: toLon, lat: clampLat(toLat), zoom: clampZoom(toZoom) };
-    if (reduced.matches) {
+    if (reduced.matches || holdOverflight) {
       // Not eased, not shortened: arrived. A half-disabled motion setting is worse than none.
       aim(clamped, true);
       return;
@@ -378,6 +372,12 @@ export function createControls(
       stepFraming(0);
       apply();
     },
+    holdOverflight: (held) => {
+      holdOverflight = held;
+      if (!held) return;
+      target = null;
+      vLon = vLat = vZoom = 0;
+    },
     auroraSweep: aurora.sweep,
     setDive: (on) => {
       dive.set(on);
@@ -385,7 +385,7 @@ export function createControls(
       apply();
     },
     diveReady: dive.ready,
-    framingReady: () => sky.ready() && dive.ready() && aurora.ready() && horizon.ready(),
+    framingReady: () => sky.ready() && dive.ready() && (holdOverflight || aurora.ready()) && horizon.ready(),
     state,
     // Visible height at distance d is 2 d tan(fov/2), and `focalPx` is the reciprocal half of that, so
     // a pixel is d/focalPx world units and a world unit is 90 degrees.

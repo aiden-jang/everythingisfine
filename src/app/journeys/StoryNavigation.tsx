@@ -69,7 +69,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       : props.radar.active
         ? "radar"
         : tonight.active
-          ? tonight.view?.moonfall
+          ? tonight.view?.lunarDeparture || tonight.view?.moonfall
             ? "moonfall"
             : tonight.view?.radiantTrail
               ? "meteors"
@@ -129,7 +129,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     if (id === "sky" || id === "meteors" || id === "moonfall")
       tonight.open(id, fresh && id !== "moonfall" ? null : saved?.position.sky);
     else if (id === "aurora") props.aurora.start();
-    else if (id === "sun") sun.toggle();
+    else if (id === "sun") sun.open(saved?.position.solar);
     else if (id === "radar") {
       const exploring = !props.views.observing && !resuming;
       props.radar.open(

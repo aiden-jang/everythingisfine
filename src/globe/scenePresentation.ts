@@ -2,7 +2,7 @@ import type { Group, Object3D, PerspectiveCamera, Vector3, WebGLRenderer } from 
 import type { AuroraRun } from "../sources/auroraRoute";
 import { isGlobalRadar, type RadarView } from "../app/radar/radarCamera";
 import type { MapLayerPresentation } from "../app/weatherLayers";
-import type { Controls } from "./controls";
+import type { CameraState, Controls } from "./controlsTypes";
 import type { createSurfaceLayers } from "./surfaceLayers";
 import { createAuroraVeil } from "./auroraVeil";
 import { createRadarSurface } from "./radarSurface";
@@ -22,7 +22,12 @@ import { createObservationPicking } from "./observationPicking";
 
 export type GlobePresentation =
   "planetarium" | "dayline" | "landing" | AuroraRun | LocalView | MapLayerPresentation | null;
-export type TonightPresentation = TonightView & { moonfall?: MoonfallView };
+export type LunarDeparture = { previous: TonightView; camera?: CameraState | undefined; scroll: number };
+export type TonightPresentation = TonightView & {
+  moonfall?: MoonfallView;
+  lunarDeparture?: LunarDeparture;
+  reference?: CameraState;
+};
 type LocalView = RadarView | TonightPresentation | FloatDiveView | ObservationView;
 
 export function isLocalView(mode: GlobePresentation): mode is LocalView {
@@ -54,6 +59,7 @@ export function createScenePresentation(
   let skyView: TonightPresentation | null = null;
   let localLight: ReturnType<typeof createLocalSkyLight> | undefined;
   let veil: ReturnType<typeof createAuroraVeil> | undefined;
+  let held: AuroraRun | null = null;
   let oval: AuroraRun["route"] | null = null;
   let radar: ReturnType<typeof createRadarSurface> | undefined;
   let observationTarget: ObservationView["target"] | undefined;
@@ -137,8 +143,12 @@ export function createScenePresentation(
     picking.set(observation);
     const weather = local?.kind === "radar" ? local : null;
     const float = local?.kind === "float-dive" ? local : null;
-    const route = mode && typeof mode === "object" && "route" in mode ? mode.route : null;
+    const overflight = mode && typeof mode === "object" && "route" in mode ? mode : null;
+    const route = overflight?.route ?? null;
+    const previousSky = skyView;
     skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);
+    if (skyView?.reference && (!previousSky?.reference || previousSky.city !== skyView.city))
+      controls.flyTo(skyView.reference.lon, skyView.reference.lat, skyView.reference.zoom);
     controls.guidance.configure(
       skyView
         ? null
@@ -174,6 +184,9 @@ export function createScenePresentation(
     if (planetarium !== (mode === "planetarium")) controls.setPlanetarium(mode === "planetarium");
     planetarium = mode === "planetarium";
     if (route !== oval && (guided || !route)) controls.setOverflight(route?.focus ?? null);
+    const heldRun = overflight?.held ? overflight : null;
+    if (heldRun !== held) controls.holdOverflight(!!heldRun);
+    held = heldRun;
     if (skyView && !localLight) {
       localLight = createLocalSkyLight(sun, controls.localSky.up, canvas);
       spin.add(localLight.object);
@@ -255,6 +268,7 @@ export function createScenePresentation(
     },
     skyOpacity(camera: PerspectiveCamera) {
       projection.value = controls.morph();
+      veil?.opacity(Math.max(0, 1 - 2 * projection.value));
       const target = lens
         ? (lens.globe + (lens.map - lens.globe) * projection.value) * Math.min(1, camera.aspect)
         : 1;
@@ -273,9 +287,15 @@ export function createScenePresentation(
       );
       positionObservationAnchors(canvas, controls, !!observationTarget || !!skyView || planetarium);
       dive?.size();
-      const amount = controls.localSky.amount();
+      const amount = controls.localSky.amount() * (1 - projection.value);
       lights.apply(amount);
-      return localLight?.draw(camera, amount, controls.localSky.ready() ? skyView : null) ?? 1;
+      return (
+        localLight?.draw(
+          camera,
+          amount,
+          projection.value === 0 && controls.localSky.ready() ? skyView : null,
+        ) ?? 1
+      );
     },
     dispose() {
       radar?.setImage(null);

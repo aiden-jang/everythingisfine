@@ -19,6 +19,7 @@ export interface AuroraRoute {
 export interface AuroraRun {
   forecast: Aurora;
   route: AuroraRoute;
+  held?: true;
 }
 
 const DARK = Math.sin(-6 * DEG);

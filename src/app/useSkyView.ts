@@ -12,13 +12,13 @@ type Entry = {
   lunar?: MoonfallProgress;
 };
 
-export function useSkyView(city: string) {
+export function useSkyView(city: string, before: () => void) {
   const [view, setView] = useState<TonightPresentation | "opening" | null>(null);
   const [entry, setEntry] = useState<Entry>({ mode: "sky", revision: 0 });
   const memory = useRef<TonightView | null>(null);
   const update = useCallback((next: TonightPresentation) => {
     // A meteor shower’s selected date must not overwrite the saved general-sky moment.
-    if (!next.moonfall && !next.radiantTrail) memory.current = next;
+    if (!next.moonfall && !next.lunarDeparture && !next.radiantTrail) memory.current = next;
     setView((active) => (active === null ? null : next));
   }, []);
   const capture = () => {
@@ -39,6 +39,10 @@ export function useSkyView(city: string) {
     entry,
     setView,
     update,
+    handoff(next: TonightPresentation) {
+      before();
+      update(next);
+    },
     capture,
     restore(saved: ReturnType<typeof capture>) {
       setView(saved.view);
@@ -63,4 +67,8 @@ export function useSkyView(city: string) {
       setView("opening");
     },
   };
+}
+
+export function skyReference(sky: TonightPresentation): TonightPresentation {
+  return { ...sky, reference: sky.reference ?? { lon: sky.city.lon, lat: sky.city.lat, zoom: 1.35 } };
 }

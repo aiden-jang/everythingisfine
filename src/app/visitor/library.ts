@@ -1,11 +1,14 @@
+import { lunarTraverses } from "../../sources/moonfall/traverses";
 import { searchStories } from "../storyIndex";
 import { readStoryMoment, writeStoryMoment, type StoryMoment } from "../observations/storyMoment";
 import type { SkyLook } from "../../geo/tonight";
 import type { MoonfallProgress } from "../../globe/moonfall/scene";
+import type { WindSample } from "../../sources/spaceWeather";
 import { skyCities } from "../tonight/cities";
 
 export interface VisitPosition {
   moment?: StoryMoment;
+  solar?: WindSample;
   sky?: { city: string; at: number; look: SkyLook; lunar?: MoonfallProgress };
   float?: { profile: string; index: number; map?: boolean };
   radar?: { region?: string; at?: number; map: boolean };
@@ -35,6 +38,11 @@ export const MAX_SAVED_VISITS = ids.size + 24;
 export const LIBRARY_MAX_LENGTH = 50_000;
 
 export function savedVisitKey(visit: Visit): string {
+  const solar = visit.position.solar;
+  if (visit.id === "sun" && solar) return `sun:${solar.source}:${solar.at}`;
+  const lunar = visit.position.sky?.lunar;
+  if (visit.id === "moonfall" && lunar && lunar.station !== null)
+    return `moonfall:${lunar.eva}:${lunar.station}`;
   const moment = visit.position.moment;
   return visit.id === "tonga" && moment?.choice && moment.at !== undefined
     ? `tonga:${moment.choice}:${Math.floor(moment.at / 60_000)}`
@@ -57,6 +65,17 @@ export function readVisit(value: unknown): Visit | null {
       const moment = readStoryMoment(params);
       if (moment) position.moment = moment;
     }
+    const solar = source.solar;
+    if (
+      raw.id === "sun" &&
+      solar &&
+      time(solar.at) &&
+      typeof solar.source === "string" &&
+      /^[A-Z0-9-]{1,20}$/.test(solar.source) &&
+      finite(solar.value, 0, 10_000) &&
+      (solar.density === null || finite(solar.density, 0, 10_000))
+    )
+      position.solar = { at: solar.at, source: solar.source, value: solar.value, density: solar.density };
     const sky = source.sky;
     if (
       sky &&
@@ -76,7 +95,9 @@ export function readVisit(value: unknown): Visit | null {
         Number.isInteger(lunar.eva) &&
         finite(lunar.eva, 0, 2) &&
         finite(lunar.meters, 0, 100_000) &&
-        (lunar.station === null || (Number.isInteger(lunar.station) && finite(lunar.station, 0, 100))) &&
+        (lunar.station === null ||
+          (Number.isInteger(lunar.station) &&
+            finite(lunar.station, 0, lunarTraverses[lunar.eva]!.stations.length - 1))) &&
         typeof lunar.mapped === "boolean"
       )
         position.sky.lunar = {

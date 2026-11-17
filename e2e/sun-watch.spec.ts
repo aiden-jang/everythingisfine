@@ -11,6 +11,13 @@ async function installSun(page: Page, windAvailable = true, xrayAge = 1) {
     return route.fulfill({
       json: [
         { time_tag, active: true, source: "SOLAR1", proton_speed: 412, proton_density: 5.2 },
+        {
+          time_tag: new Date(Date.parse(time_tag + "Z") - 60_000).toISOString(),
+          active: true,
+          source: "SOLAR1",
+          proton_speed: 388,
+          proton_density: 4.9,
+        },
         { time_tag, active: false, source: "ACE", proton_speed: 550, proton_density: 3.8 },
       ],
     });
@@ -45,6 +52,8 @@ test("Sun Watch loads on demand and flies back to Earth inside After Dark", asyn
   await page.getByRole("button", { name: "Sun Watch", exact: true }).click();
   const stage = page.getByRole("region", { name: "Sun Watch readings" });
   await expect(page.getByRole("heading", { name: "Sun Watch", exact: true })).toBeVisible();
+  await expect(stage.getByText("Earth · After Dark")).toBeVisible();
+  await stage.getByRole("button", { name: "Start solar flight" }).click();
   await expect(stage.getByText("NASA SDO archive · 10 Sep 2025")).toBeVisible();
   await expect(stage.getByText("412", { exact: true })).toBeVisible();
   await expect(stage.getByText("1.23e-6", { exact: true })).toBeVisible();
@@ -85,4 +94,36 @@ test("reduced motion keeps the measurements and aurora available during a solar-
   await expect(page.getByRole("button", { name: "Sun Watch", exact: true })).toBeFocused();
   await revealStoryTools(page);
   await expect(page.locator("#open-aurora-overflight")).toBeEnabled();
+});
+
+test("Sun Watch holds the aurora edition and projection while a wind sample is inspected", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installSun(page);
+  await page.goto("/");
+  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await revealStoryTools(page);
+  await page.locator("#open-aurora-overflight").click();
+  const world = page.getByRole("group", { name: "Globe readout" });
+  const forecast = await world.locator("time").getAttribute("datetime");
+  const canvas = page.locator("#globe-view canvas");
+  const original = await canvas.elementHandle();
+  await page.getByRole("group", { name: "Aurora projection" }).getByRole("button", { name: "Map" }).click();
+  const depart = page.getByRole("button", { name: "Visit Sun Watch" });
+  await depart.click();
+  const stage = page.getByRole("region", { name: "Sun Watch readings" });
+  await stage.getByRole("slider", { name: "Wind sample" }).press("Home");
+  await expect(stage.getByText("388", { exact: true })).toBeVisible();
+  await expect(stage.getByRole("region", { name: "GOES X-ray measurements" })).toContainText("1.23e-6");
+  await stage.getByRole("button", { name: "Keep this reading" }).click();
+  await expect(stage.getByRole("button", { name: "Reading kept" })).toBeDisabled();
+  await page.getByRole("button", { name: "Back to the oval" }).click();
+  await expect(depart).toBeFocused();
+  await expect(world.locator("time")).toHaveAttribute("datetime", forecast!);
+  await expect(
+    page.getByRole("group", { name: "Aurora projection" }).getByRole("button", { name: "Map" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(await canvas.evaluate((node, prior) => node === prior, original)).toBe(true);
 });

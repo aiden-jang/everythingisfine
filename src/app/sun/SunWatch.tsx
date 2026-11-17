@@ -1,45 +1,58 @@
+import { useObservatoryEscape } from "../useObservatoryEscape";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
-import { PlaybackButton } from "../PlaybackButton";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { animationDelta } from "../../globe/animation";
-import {
-  SOLAR_WIND_URL,
-  SPACE_WEATHER_FRESHNESS,
-  XRAY_URL,
-  solarWind,
-  xrayFlux,
-  type WindSample,
-} from "../../sources/spaceWeather";
+import { SOLAR_WIND_URL, XRAY_URL, solarWind, xrayFlux, type WindSample } from "../../sources/spaceWeather";
 import { SolarReadouts } from "./SolarReadouts";
-import { CHAPTERS, FLIGHT_END, paintSolarFlight, solarFrame } from "./solarFlight";
+import { CHAPTERS, FLIGHT_END, solarFrame, windStreaks } from "./solarFlight";
 import disk from "./solar-disk.webp?url";
 import { useSpaceWeather } from "./useSpaceWeather";
 
 const MOTION = "(prefers-reduced-motion: reduce)";
+const SCRUB_STEP = 100;
+type Playback = { at: number; playing: boolean };
 
-interface Playback {
-  at: number;
-  playing: boolean;
+function paint(style: CSSStyleDeclaration | undefined, at: number) {
+  const { diskOpacity, windOpacity, veil, push, depart } = solarFrame(at);
+  style?.setProperty("--sun-veil", String(veil));
+  style?.setProperty("--solar-disk-opacity", String(diskOpacity));
+  style?.setProperty("--solar-wind-opacity", String(windOpacity));
+  style?.setProperty("--solar-disk-shift", `${depart * -82}%`);
+  style?.setProperty("--solar-disk-scale", String(1 + push * 0.38));
+  style?.setProperty("--solar-wind-shift", `${depart * 7}%`);
 }
 
-export function SunWatch({ onClose }: { onClose: () => void }): JSX.Element {
+export function SunWatch({
+  onClose,
+  sample,
+}: {
+  onClose: () => void;
+  sample?: WindSample | undefined;
+}): JSX.Element {
   const wind = useSpaceWeather(SOLAR_WIND_URL, solarWind);
   const xray = useSpaceWeather(XRAY_URL, xrayFlux);
+  const navigation = useStoryNavigation();
   const [reduced, setReduced] = useState(() => matchMedia(MOTION).matches);
-  const [view, setView] = useState<Playback>(() =>
-    reduced ? { at: FLIGHT_END, playing: false } : { at: 0, playing: true },
-  );
-  const [image, setImage] = useState<HTMLImageElement | null | undefined>();
+  const [view, setView] = useState<Playback>({ at: FLIGHT_END, playing: false });
+  const [inspecting, setInspecting] = useState<WindSample | null>(sample ?? null);
+  const [image, setImage] = useState<"loading" | "ready" | "failed">("loading");
+  const [finished, setFinished] = useState(false);
   const stage = useRef<HTMLDivElement>(null);
-  const canvas = useRef<HTMLCanvasElement>(null);
   const clock = useRef(view);
-  const repaint = useRef(() => {});
-  const windForFlight = useRef<WindSample>();
-  const latestWind = wind.points.at(-1);
-  const currentWind =
-    latestWind && wind.status === "ok" && wind.now - latestWind.at <= SPACE_WEATHER_FRESHNESS
-      ? latestWind
-      : undefined;
+  const transportId = useId();
+  const selected = inspecting ?? wind.points.at(-1);
+  const kept = selected
+    ? navigation?.library.saved.some(
+        ({ position }) => position.solar?.at === selected.at && position.solar.source === selected.source,
+      )
+    : false;
+
+  const update = useCallback((next: Playback) => {
+    clock.current = next;
+    paint(stage.current?.style, next.at);
+    setView(next);
+  }, []);
 
   useLayoutEffect(() => {
     stage.current?.parentElement?.scrollTo(0, 0);
@@ -48,97 +61,43 @@ export function SunWatch({ onClose }: { onClose: () => void }): JSX.Element {
       ?.focus({ preventScroll: true });
   }, []);
 
-  function update(next: Playback) {
-    clock.current = next;
-    repaint.current();
-    setView(next);
-  }
-
   useEffect(() => {
-    const asset = new Image();
-    let closed = false;
-    asset.src = disk;
-    void asset.decode().then(
-      () => {
-        if (!closed) setImage(asset);
-      },
-      () => {
-        if (!closed) setImage(null);
-      },
-    );
-    return () => {
-      closed = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    const element = canvas.current!;
-    const ctx = element.getContext("2d");
-    if (!ctx) return;
-    let width = 0;
-    let height = 0;
-    repaint.current = () => {
-      const { at } = clock.current;
-      stage.current?.style.setProperty("--sun-veil", String(solarFrame(at).veil));
-      if (width > 0 && height > 0)
-        paintSolarFlight(ctx, width, height, at, image ?? null, windForFlight.current);
-    };
-    const resize = new ResizeObserver(([entry]) => {
-      if (!entry) return;
-      ({ width, height } = entry.contentRect);
-      const dpr = Math.min(2, devicePixelRatio);
-      element.width = Math.round(width * dpr);
-      element.height = Math.round(height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      repaint.current();
-    });
-    resize.observe(element);
-    return () => {
-      resize.disconnect();
-      repaint.current = () => {};
-    };
-  }, [image]);
-
-  const ready = image !== undefined && wind.status !== "waiting";
-  useEffect(() => {
-    if (!view.playing || !ready) return;
-    let previous: number | undefined;
-    let request = 0;
+    if (!view.playing || image === "loading") return;
+    let previous = 0;
+    let published = 0;
+    let frame = 0;
     function tick(now: number) {
       const current = clock.current;
       if (!current.playing) return;
-      const delta = previous === undefined ? 0 : animationDelta((now - previous) / 1000) * 1000;
+      const delta = previous ? animationDelta((now - previous) / 1000) * 1000 : 0;
       const at = Math.min(FLIGHT_END, current.at + delta);
       previous = now;
       if (at >= FLIGHT_END) {
         update({ at, playing: false });
+        setFinished(true);
         return;
       }
-      const next = { at, playing: true };
-      clock.current = next;
-      repaint.current();
-      if (solarFrame(at).leg !== solarFrame(current.at).leg) setView(next);
-      request = requestAnimationFrame(tick);
+      if (now - published >= SCRUB_STEP || solarFrame(at).leg !== solarFrame(current.at).leg) {
+        update({ at, playing: true });
+        published = now;
+      } else {
+        clock.current = { at, playing: true };
+        paint(stage.current?.style, at);
+      }
+      frame = requestAnimationFrame(tick);
     }
     function visibility() {
-      cancelAnimationFrame(request);
-      previous = undefined;
-      if (!document.hidden) request = requestAnimationFrame(tick);
+      cancelAnimationFrame(frame);
+      previous = 0;
+      if (!document.hidden) frame = requestAnimationFrame(tick);
     }
     document.addEventListener("visibilitychange", visibility);
     visibility();
     return () => {
-      cancelAnimationFrame(request);
+      cancelAnimationFrame(frame);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [ready, view.playing]);
-
-  useEffect(() => {
-    if (clock.current.at === 0 || !clock.current.playing) {
-      windForFlight.current = currentWind;
-      repaint.current();
-    }
-  }, [currentWind]);
+  }, [image, update, view.playing]);
 
   useEffect(() => {
     const motion = matchMedia(MOTION);
@@ -148,15 +107,16 @@ export function SunWatch({ onClose }: { onClose: () => void }): JSX.Element {
     }
     motion.addEventListener("change", change);
     return () => motion.removeEventListener("change", change);
-  }, []);
+  }, [update]);
 
   const { leg } = solarFrame(view.at);
-  useStoryCompletion(view.at >= FLIGHT_END && !view.playing);
+  useStoryCompletion(finished);
+  useObservatoryEscape(onClose);
   const caption =
     leg === "sun"
-      ? image === undefined
+      ? image === "loading"
         ? "Loading archive image…"
-        : image === null
+        : image === "failed"
           ? "Solar image unavailable"
           : "NASA SDO archive · 10 Sep 2025"
       : leg === "wind"
@@ -165,11 +125,7 @@ export function SunWatch({ onClose }: { onClose: () => void }): JSX.Element {
 
   function toggle() {
     const { at, playing } = clock.current;
-    if (playing) update({ at, playing: false });
-    else {
-      windForFlight.current = currentWind;
-      update({ at: at === FLIGHT_END ? 0 : at, playing: true });
-    }
+    update({ at: !playing && at === FLIGHT_END ? 0 : at, playing: !playing });
   }
 
   return (
@@ -179,14 +135,23 @@ export function SunWatch({ onClose }: { onClose: () => void }): JSX.Element {
       data-leg={leg}
       role="region"
       aria-label="Sun Watch readings"
-      onKeyDown={(event) => {
-        if (event.key !== "Escape") return;
-        event.stopPropagation();
-        onClose();
-      }}
     >
       <div className="sun-flight">
-        <canvas ref={canvas} aria-hidden="true" />
+        <div className="sun-flight-plate" aria-hidden="true">
+          <img
+            className="sun-archive-disk"
+            src={disk}
+            alt=""
+            onLoad={() => setImage("ready")}
+            onError={() => setImage("failed")}
+            hidden={image === "failed"}
+          />
+          <svg className="sun-wind-passage" viewBox="0 0 800 340" preserveAspectRatio="xMidYMid slice">
+            {windStreaks.map(({ path, opacity }) => (
+              <path key={path} d={path} opacity={opacity} />
+            ))}
+          </svg>
+        </div>
         <p className="sun-flight-caption">{caption}</p>
       </div>
       <div className="sun-console">
@@ -197,20 +162,57 @@ export function SunWatch({ onClose }: { onClose: () => void }): JSX.Element {
                 key={id}
                 type="button"
                 aria-pressed={leg === id}
-                onClick={() => {
-                  windForFlight.current = currentWind;
-                  update({ at, playing: false });
-                }}
+                onClick={() => update({ at, playing: false })}
               >
                 {label}
               </button>
             ))}
           </div>
           {!reduced && (
-            <PlaybackButton playing={view.playing} ended={view.at === FLIGHT_END} onClick={toggle} />
+            <button type="button" onClick={toggle} disabled={image === "loading"}>
+              {view.playing
+                ? "Pause"
+                : view.at < FLIGHT_END
+                  ? "Play"
+                  : finished
+                    ? "Replay"
+                    : "Start solar flight"}
+            </button>
           )}
         </div>
-        <SolarReadouts wind={wind} xray={xray} />
+        {!reduced && (view.at < FLIGHT_END || finished) && (
+          <div className="sun-flight-timeline">
+            <label htmlFor={transportId}>Flight time</label>
+            <input
+              id={transportId}
+              type="range"
+              min={0}
+              max={FLIGHT_END}
+              step={SCRUB_STEP}
+              className="scrub-slider"
+              value={Math.round(view.at / SCRUB_STEP) * SCRUB_STEP}
+              aria-valuetext={`${(view.at / 1000).toFixed(1)} seconds`}
+              onChange={(event) => update({ at: event.currentTarget.valueAsNumber, playing: false })}
+            />
+          </div>
+        )}
+        <SolarReadouts wind={wind} xray={xray} inspecting={inspecting} onInspect={setInspecting}>
+          {selected && navigation && (
+            <button
+              className="sun-keep"
+              type="button"
+              disabled={kept}
+              onClick={() => {
+                const visit = navigation.current();
+                if (!visit) return;
+                setInspecting(selected);
+                navigation.library.save({ ...visit, position: { ...visit.position, solar: selected } });
+              }}
+            >
+              {kept ? "Reading kept" : "Keep this reading"}
+            </button>
+          )}
+        </SolarReadouts>
       </div>
     </div>
   );

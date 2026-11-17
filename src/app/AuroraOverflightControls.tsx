@@ -10,6 +10,7 @@ export function AuroraOverflightControls({
   onReturn,
   returnLabel = "Back to stars",
   onSunWatch,
+  onRestoreOval,
   onTonight,
   city,
 }: {
@@ -17,6 +18,7 @@ export function AuroraOverflightControls({
   ready: boolean;
   solar: boolean;
   onSunWatch: () => void;
+  onRestoreOval: () => void;
   onTonight: () => void;
   city: SkyCityPreference;
   onReturn: () => void;
@@ -24,10 +26,10 @@ export function AuroraOverflightControls({
 }): JSX.Element {
   const primary = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
-    if (!aurora.run) return;
+    if (!aurora.run || aurora.run.held || solar) return;
     const frame = requestAnimationFrame(() => primary.current?.focus());
     return () => cancelAnimationFrame(frame);
-  }, [aurora.run]);
+  }, [aurora.run, solar]);
   const other = aurora.routes.find((route) => route.hemisphere !== aurora.run?.route.hemisphere);
   const next = nextMeteor(Date.now());
   return (
@@ -40,18 +42,23 @@ export function AuroraOverflightControls({
           className="observatory-primary"
           disabled={!ready || (!aurora.run && aurora.unavailable !== null)}
           onClick={() => {
-            if (solar) onSunWatch();
-            if (aurora.run) aurora.replay();
+            if (solar) {
+              if (!aurora.run) aurora.start();
+              onRestoreOval();
+            } else if (aurora.run) aurora.replay();
             else aurora.start();
           }}
         >
-          {aurora.run ? "Replay flight" : "Follow the aurora"}
+          {solar && aurora.run ? "Back to the oval" : aurora.run ? "Replay flight" : "Follow the aurora"}
         </button>
         <button type="button" id="open-tonight-sky" onClick={onTonight} disabled={!ready}>
           Tonight’s Sky
         </button>
-        {aurora.run && (
+        {aurora.run && !solar && (
           <>
+            <button type="button" id="visit-sun-watch" onClick={onSunWatch}>
+              Visit Sun Watch
+            </button>
             {other && (
               <button
                 type="button"
@@ -79,7 +86,7 @@ export function AuroraOverflightControls({
           )}
         </div>
       )}
-      {aurora.run ? (
+      {aurora.run && !solar ? (
         <p className="observatory-summary">
           <a
             href="https://www.spaceweather.gov/products/aurora-30-minute-forecast"
@@ -90,6 +97,11 @@ export function AuroraOverflightControls({
           </a>
           {" · "}
           {aurora.run.route.hemisphere === 1 ? "Northern oval" : "Southern oval"}
+          {aurora.forecastAt && aurora.forecastAt !== aurora.run.forecast.forecastAt && (
+            <button type="button" onClick={() => aurora.start(aurora.run?.route.hemisphere)}>
+              Open latest forecast
+            </button>
+          )}
         </p>
       ) : aurora.unavailable && !solar ? (
         <p className="observatory-summary" role="status">

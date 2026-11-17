@@ -11,3 +11,11 @@ export const TonightCompass = lazy(() =>
 export const FloatDive = lazy(() =>
   import("./float/FloatDivePanel").then(({ FloatDivePanel }) => ({ default: FloatDivePanel })),
 );
+
+export function SunLoading(): JSX.Element {
+  return (
+    <div className="observatory-stage sun-watch-loading" role="status">
+      Opening Sun Watch…
+    </div>
+  );
+}

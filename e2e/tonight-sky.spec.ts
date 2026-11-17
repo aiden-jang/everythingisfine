@@ -127,7 +127,7 @@ test("Moonfall reuses the sky canvas and restores the city, time, and bearing", 
   await horizon.getByRole("button", { name: "Look east" }).click();
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
-  const open = sky.getByRole("button", { name: "Moonfall", exact: true });
+  const open = sky.locator("#open-moonfall");
   await open.click();
   const moonfall = page.getByRole("region", { name: "Moonfall" });
   await expect(moonfall.getByRole("button", { name: "Back to Tonight’s Sky" })).toBeFocused();
@@ -169,4 +169,33 @@ test("Moonfall reuses the sky canvas and restores the city, time, and bearing", 
   await moonfall.getByRole("button", { name: "Skip descent" }).click();
   await expect(valley).toContainText("Taurus–Littrow Valley");
   expect(errors).toEqual([]);
+});
+
+test("Moonfall returns to the Earth map with the same sky time", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.clock.setFixedTime(new Date("2026-11-06T18:00:00Z"));
+  await installFeeds(page, { presentation: "fresh" });
+  await page.goto("/");
+  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await revealStoryTools(page);
+  await page.getByRole("button", { name: "Tonight’s Sky", exact: true }).click();
+  const sky = page.getByRole("region", { name: "Tonight’s Sky" });
+  const projection = page.getByRole("group", { name: "Sky reference projection" });
+  await sky.getByRole("slider", { name: "City local time" }).press("Home");
+  const at = await sky.locator("time").getAttribute("datetime");
+  await projection.getByRole("button", { name: "Map" }).click();
+  await sky.locator("#open-moonfall").click();
+  const moon = page.getByRole("region", { name: "Moonfall", exact: true });
+  await moon.getByRole("combobox", { name: "Geology stop" }).selectOption({ label: "Steno Crater" });
+  await moon.getByRole("button", { name: "Keep this stop" }).click();
+  await expect(moon.getByRole("button", { name: "Stop kept" })).toBeDisabled();
+  await moon.getByRole("button", { name: "Back to Tonight’s Sky" }).click();
+  await expect(sky.locator("time")).toHaveAttribute("datetime", at!);
+  await expect(projection.getByRole("button", { name: "Map" })).toHaveAttribute("aria-pressed", "true");
+  await sky.locator("#open-moonfall").click();
+  await expect(moon.getByRole("combobox", { name: "Geology stop" })).toBeVisible();
+  await page.goBack();
+  await expect(sky.locator("time")).toHaveAttribute("datetime", at!);
+  await expect(projection.getByRole("button", { name: "Map" })).toHaveAttribute("aria-pressed", "true");
 });

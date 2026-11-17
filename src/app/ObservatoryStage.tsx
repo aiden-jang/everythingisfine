@@ -1,3 +1,4 @@
+import { StoryProjection } from "./observations/StoryProjection";
 import { reportAnalytics } from "../../analytics/browser";
 import { SceneDiagram } from "./SceneDiagram";
 import { geographicCoordinates } from "../globe/orbitReadout";
@@ -20,12 +21,14 @@ export function ObservatoryStage({
   tour,
   aurora,
   layers,
+  projection,
 }: {
   scene: EarthScene;
   at: number;
   tour: Stop | null | undefined;
   aurora: AuroraRun | null;
   layers: ReactNode;
+  projection: { map: boolean; setMap: (map: boolean) => void };
 }): JSX.Element {
   const time = new Date(at).toISOString();
   const mode = tour !== undefined ? "tour" : aurora ? "aurora" : scene;
@@ -62,6 +65,17 @@ export function ObservatoryStage({
         <span className="stage-rule" aria-hidden="true" />
         <span>{mode === "live" ? "Day–night boundary" : sceneName}</span>
       </div>
+      {aurora && (
+        <span
+          className="sky-reference-marker"
+          data-observation-anchor=""
+          data-lon={aurora.route.focus.lon}
+          data-lat={aurora.route.focus.lat}
+        >
+          {geographicCoordinates(aurora.route.focus)}
+        </span>
+      )}
+      {aurora && <StoryProjection map={projection.map} onMap={projection.setMap} label="Aurora projection" />}
       <div key={`readout-${mode}`} className="stage-readout">
         {layers}
         <div>

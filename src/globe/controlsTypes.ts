@@ -46,6 +46,7 @@ export interface Controls {
   localSky: { amount: () => number; ready: () => boolean; up: Vector3 };
   skyReady: () => boolean;
   setOverflight: (focus: OvalPoint | null) => void;
+  holdOverflight: (held: boolean) => void;
   auroraSweep: () => number;
   setDive: (on: boolean) => void;
   diveReady: () => boolean;

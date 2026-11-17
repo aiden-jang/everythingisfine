@@ -1,3 +1,4 @@
+import { useId, type ReactNode } from "react";
 import {
   SPACE_WEATHER_FRESHNESS,
   WIND_WINDOW,
@@ -33,7 +34,15 @@ export function readingStatus(data: Readings<SpaceSample>): string {
     : `Latest reading is ${age} minutes old`;
 }
 
-function Chart({ data, wind }: { data: Readings<SpaceSample>; wind: boolean }): JSX.Element {
+function Chart({
+  data,
+  wind,
+  selected,
+}: {
+  data: Readings<SpaceSample>;
+  wind: boolean;
+  selected?: SpaceSample | undefined;
+}): JSX.Element {
   const window = wind ? WIND_WINDOW : XRAY_WINDOW;
   const latest = data.points.at(-1);
   const to = Math.max(data.now, latest?.at ?? 0);
@@ -73,7 +82,12 @@ function Chart({ data, wind }: { data: Readings<SpaceSample>; wind: boolean }): 
         >
           <path className="sun-chart-grid" d="M0 3h240 M0 21h240 M0 39h240" />
           <path className="sun-chart-line" d={path} />
-          <circle cx={x(latest!.at)} cy={y(values.at(-1)!)} r="2" />
+          {selected ? (
+            selected.at >= from &&
+            selected.at <= to && <circle cx={x(selected.at)} cy={y(selected.value)} r="2.4" />
+          ) : (
+            <circle cx={x(latest!.at)} cy={y(values.at(-1)!)} r="2" />
+          )}
         </svg>
       ) : (
         <div className="sun-chart-empty">No points in this window</div>
@@ -110,11 +124,22 @@ function Stamp({ data }: { data: Readings<SpaceSample> }): JSX.Element {
 export function SolarReadouts({
   wind,
   xray,
+  inspecting,
+  onInspect,
+  children,
 }: {
   wind: Readings<WindSample>;
   xray: Readings<SpaceSample>;
+  inspecting: WindSample | null;
+  onInspect: (sample: WindSample | null) => void;
+  children: ReactNode;
 }): JSX.Element {
-  const sample = wind.points.at(-1);
+  const range = useId();
+  const sample = inspecting ?? wind.points.at(-1);
+  const recent = wind.points.filter(({ at }) => at >= wind.now - WIND_WINDOW);
+  const exactIndex = inspecting
+    ? recent.findIndex(({ at, source }) => at === inspecting.at && source === inspecting.source)
+    : -1;
   const radiation = xray.points.at(-1);
   return (
     <div className="sun-readings" aria-label="Independent NOAA observation windows">
@@ -142,8 +167,46 @@ export function SolarReadouts({
             "Upstream spacecraft"
           )}
         </p>
-        <Chart data={wind} wind />
-        <Stamp data={wind} />
+        <Chart data={wind} wind selected={inspecting ?? undefined} />
+        {inspecting ? (
+          <p className="sun-stamp">
+            Selected reading ·{" "}
+            <time dateTime={new Date(inspecting.at).toISOString()}>
+              {dateFormat.format(inspecting.at)} UTC
+            </time>
+          </p>
+        ) : (
+          <Stamp data={wind} />
+        )}
+        <div className="sun-reading-actions">
+          {recent.length > 1 && (
+            <div>
+              <label htmlFor={range}>Wind sample</label>
+              <input
+                id={range}
+                className="scrub-slider"
+                type="range"
+                min={0}
+                max={recent.length - 1}
+                value={exactIndex >= 0 ? exactIndex : recent.length - 1}
+                aria-valuetext={
+                  sample
+                    ? `${dateFormat.format(sample.at)} UTC, ${sample.value} kilometres per second`
+                    : undefined
+                }
+                onChange={(event) => onInspect(recent[event.currentTarget.valueAsNumber] ?? null)}
+              />
+            </div>
+          )}
+          <div>
+            {children}
+            {inspecting && recent.length > 0 && (
+              <button className="sun-keep" type="button" onClick={() => onInspect(null)}>
+                Latest reading
+              </button>
+            )}
+          </div>
+        </div>
       </section>
       <section aria-label="GOES X-ray measurements">
         <div className="sun-reading-heading">

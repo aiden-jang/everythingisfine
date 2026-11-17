@@ -1,3 +1,4 @@
+import { lunarTraverses } from "../../sources/moonfall/traverses";
 import type { Visit } from "./library";
 import { searchStories } from "../storyIndex";
 import { layerTime } from "../layerTime";
@@ -79,6 +80,18 @@ export function visitEvidence(visit: Visit): VisitEvidence {
       detail: "No station reading at this saved time. Reopen the journey to inspect the available record.",
     };
   }
+  const solar = visit.position.solar;
+  if (solar)
+    return {
+      ...base,
+      kind: "Spacecraft observation",
+      time: layerTime(solar.at),
+      place: "Solar wind upstream of Earth",
+      reading: `${solar.value} km/s`,
+      detail: solar.density === null ? "Proton speed" : `Proton speed · ${solar.density} p/cm³`,
+      source: `NOAA · ${solar.source}`,
+      url: "https://www.swpc.noaa.gov/products/solar-wind",
+    };
   const sky = visit.position.sky;
   if (sky && !sky.lunar) {
     const city = skyCities.find(({ name }) => name === sky.city);
@@ -118,7 +131,12 @@ export function visitEvidence(visit: Visit): VisitEvidence {
       ? {
           place: "Apollo 17",
           time: "December 1972",
-          reading: `Traverse ${sky.lunar.eva + 1}`,
+          kind: "Mapped rover route",
+          reading:
+            lunarTraverses[sky.lunar.eva]?.stations[sky.lunar.station ?? -1] ??
+            `Traverse ${sky.lunar.eva + 1}`,
+          source: "Haase et al. · Apollo 17 traverse reconstruction",
+          url: "https://doi.org/10.1029/2018EA000408",
           detail: `${Math.round(sky.lunar.meters).toLocaleString()} m along the recorded rover route.`,
         }
       : {}),

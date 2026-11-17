@@ -1,3 +1,4 @@
+import { useSunVisit } from "./sun/useSunVisit";
 import { useCallback, useRef, useState } from "react";
 import type { VisitPosition } from "./visitor/library";
 import type { Permalink } from "./permalink";
@@ -9,7 +10,7 @@ import type { AuroraRun } from "../sources/auroraRoute";
 import { useObservationDeck, type AfterDarkArchive } from "./observations/useObservationDeck";
 import type { ReplayId } from "./observations/replays";
 import type { FloatDiveView } from "./float/floatPlayback";
-import { useSkyView } from "./useSkyView";
+import { skyReference, useSkyView } from "./useSkyView";
 import { createFloatPlayback } from "./float/floatPlayback";
 import { useSkyCity } from "./tonight/SkyCityPicker";
 import type { GlobePresentation } from "../globe/scenePresentation";
@@ -45,9 +46,9 @@ export function useObservatory(shared: Partial<Permalink>) {
   const [tourStop, setTourStop] = useState<Stop | null>(null);
   const [ready, setReady] = useState(false);
   const [run, setRun] = useState<AuroraRun | null>(null);
-  const [sunWatch, setSunWatch] = useState(false);
+  const { visit: sunWatch, setVisit: setSunWatch, ...sun } = useSunVisit(before, setRun);
   const skyCity = useSkyCity(shared.story?.city);
-  const sky = useSkyView(skyCity.name);
+  const sky = useSkyView(skyCity.name, before);
   const { view: tonightView, entry: skyEntry, setView: setTonightView, update: updateSky } = sky;
   const {
     entry: floatEntry,
@@ -70,13 +71,13 @@ export function useObservatory(shared: Partial<Permalink>) {
   const clearViews = useCallback(() => {
     setTourStop(null);
     setRun(null);
-    setSunWatch(false);
+    setSunWatch(null);
     setRadarView(null);
     setTonightView(null);
     setFloatView(null);
     closeObservations();
     storyFromExplore.current = false;
-  }, [closeObservations, setTonightView, setRadarView, setFloatView]);
+  }, [closeObservations, setTonightView, setRadarView, setFloatView, setSunWatch]);
   const {
     presentation,
     changePresentation,
@@ -113,20 +114,20 @@ export function useObservatory(shared: Partial<Permalink>) {
       setFocus(at);
       setTourStop(null);
       setRun(null);
-      setSunWatch(false);
+      setSunWatch(null);
       setRadarView(null);
       setTonightView(null);
       setFloatView(null);
       if (!keepDeck) closeObservations();
     },
-    [closeObservations, before, setTonightView, setRadarView, setFloatView],
+    [closeObservations, before, setTonightView, setRadarView, setFloatView, setSunWatch],
   );
   const observing = presentation === "observe";
   const night = observing && scene === "night";
-  const sunActive = night && sunWatch;
+  const sunActive = night && sunWatch !== null;
   const tonight = night && tonightView !== null;
   const localSky = tonight && tonightView !== "opening" ? tonightView : null;
-  const auroraRun = night && !sunActive && !tonight ? run : null;
+  const auroraRun = night && !tonight ? run : null;
   const depth = observing && !observations.entry && (tourStop?.purpose === "depth" || scene === "depth");
   const depthFocus = depth ? (tourStop?.purpose === "depth" ? tourStop : focus) : null;
   const origin = {
@@ -139,7 +140,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const capture = () => ({
     scene,
     focus,
-    run,
+    run: run && !run.held ? { ...run, held: true as const } : run,
     sunWatch,
     browser,
     origin,
@@ -227,7 +228,9 @@ export function useObservatory(shared: Partial<Permalink>) {
         browser.category ?? "all",
         observations.entry ??
           (tonight
-            ? skyEntry.mode
+            ? localSky?.lunarDeparture
+              ? "moonfall"
+              : skyEntry.mode
             : sunActive
               ? "sun"
               : floatView
@@ -299,7 +302,7 @@ export function useObservatory(shared: Partial<Permalink>) {
     openAfterDarkArchive(archive: AfterDarkArchive) {
       loadingBackdrop.current = "planetarium";
       setRun(null);
-      setSunWatch(false);
+      setSunWatch(null);
       observations.open(archive, archive === "lights" ? "open-lights-return" : "open-shadow-chase");
     },
     skyCity,
@@ -320,14 +323,7 @@ export function useObservatory(shared: Partial<Permalink>) {
         setRun(next);
       },
     },
-    sun: {
-      active: sunActive,
-      toggle() {
-        before();
-        if (!sunActive) setRun(null);
-        setSunWatch(!sunActive);
-      },
-    },
+    sun: { ...sun, active: sunActive },
     tonight: {
       active: tonight,
       view: localSky,
@@ -336,9 +332,10 @@ export function useObservatory(shared: Partial<Permalink>) {
         before();
         sky.open(mode, resume);
         setRun(null);
-        setSunWatch(false);
+        setSunWatch(null);
       },
       update: updateSky,
+      handoff: sky.handoff,
       close: () => {
         before();
         setTonightView(null);
@@ -390,7 +387,10 @@ export function useObservatory(shared: Partial<Permalink>) {
     globe(guided: boolean): GlobePresentation {
       if (observations.entry) return observations.view ?? loadingBackdrop.current;
       if (floatView === "opening" || radarOpening) return loadingBackdrop.current;
-      if (night) return sunActive ? null : (localSky ?? auroraRun ?? "planetarium");
+      if (night) {
+        if (localSky && observations.map && !localSky.moonfall) return skyReference(localSky);
+        return localSky ?? auroraRun ?? (sunActive ? null : "planetarium");
+      }
       return observing && scene === "live" && !guided
         ? (floatView ?? radarView ?? (sharedView.current ? "dayline" : "landing"))
         : null;

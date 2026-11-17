@@ -1,3 +1,4 @@
+import { StoryProjection } from "../observations/StoryProjection";
 import { bearingLabel, type TonightView } from "../../geo/tonight";
 
 const bearings = [
@@ -10,9 +11,11 @@ const bearings = [
 export function TonightCompass({
   view,
   onView,
+  projection,
 }: {
   view: TonightView | null;
   onView: (view: TonightView) => void;
+  projection: { map: boolean; setMap: (map: boolean) => void };
 }): JSX.Element {
   return (
     <div
@@ -30,7 +33,9 @@ export function TonightCompass({
       </div>
       <div className="stage-ident">
         <span className="stage-rule" aria-hidden="true" />
-        <span>{view?.city.name ?? "After Dark"} · Local horizon</span>
+        <span>
+          {view?.city.name ?? "After Dark"} · {projection.map ? "Earth reference" : "Local horizon"}
+        </span>
       </div>
       {view?.radiantTrail && (
         <svg className="meteor-arc" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
@@ -44,7 +49,20 @@ export function TonightCompass({
           </span>
         ))}
       </div>
-      {view && (
+      {view && projection.map && (
+        <span
+          className="sky-reference-marker"
+          data-observation-anchor=""
+          data-lon={view.city.lon}
+          data-lat={view.city.lat}
+        >
+          {view.city.name}
+        </span>
+      )}
+      {view && !view.radiantTrail && (
+        <StoryProjection map={projection.map} onMap={projection.setMap} label="Sky reference projection" />
+      )}
+      {view && !projection.map && (
         <div className="stage-readout tonight-compass">
           <span>
             Facing {bearingLabel(view.look.azimuth)} · {Math.round(view.look.azimuth) % 360}°

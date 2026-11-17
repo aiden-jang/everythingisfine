@@ -307,7 +307,9 @@ After Dark reuses the polled NOAA grid for aurora overflight. A flight holds one
 the camera and readout follow it. The frame loop drives the veil sweep and stops when it settles.
 Sun Watch opens over that same globe and polls the two NOAA observation endpoints independently
 while visible. Each retains its latest reading through failures with a status label and timestamp.
-Closing Sun Watch cancels both requests and returns to the stars or starts the aurora flight.
+The solar image and schematic sit over the shared scene. When opened from the oval, Sun Watch
+holds its forecast, camera and projection. Returning restores the held view and its launch control.
+Closing cancels both requests. The wind cursor selects a dated sample that can be kept in Saved.
 
 Lights Return opens from After Dark and flies the existing globe toward Puerto Rico at local midnight
 before landfall. The archive takes over from the island’s projected size. Four matching NASA Black

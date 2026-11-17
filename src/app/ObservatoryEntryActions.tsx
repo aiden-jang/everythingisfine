@@ -5,11 +5,13 @@ export function ObservatoryEntryActions({
   solar,
   explore,
   closeSun,
+  fromOval,
 }: {
   landing: boolean;
   solar: boolean;
   explore: () => void;
   closeSun: () => void;
+  fromOval: boolean;
 }) {
   const navigation = useStoryNavigation();
   const recent = navigation?.library.recent[0];
@@ -42,7 +44,7 @@ export function ObservatoryEntryActions({
           Explore the layers
         </button>
       )}
-      {solar && (
+      {solar && !fromOval && (
         <button type="button" id="back-to-stars" onClick={closeSun}>
           {navigation?.returnLabel ?? "Back to stars"}
         </button>

@@ -29,6 +29,7 @@ const vertexShader = /* glsl */ `
 const fragmentShader = /* glsl */ `
   uniform vec3 uSun;
   uniform float uTrace;
+  uniform float uOpacity;
   varying float vHeight;
   varying float vChance;
   varying float vSweep;
@@ -40,7 +41,7 @@ const fragmentShader = /* glsl */ `
     float light = pow(vChance, 0.64) * night * trace * (1.0 + 0.55 * head);
     float edge = smoothstep(0.0, 0.13, vHeight) * pow(1.0 - vHeight, 1.55);
     vec3 color = mix(vec3(0.26, 1.0, 0.64), vec3(0.39, 0.59, 0.97), vHeight);
-    gl_FragColor = vec4(color, light * edge * 1.28);
+    gl_FragColor = vec4(color, light * edge * 1.28 * uOpacity);
   }`;
 
 function softenedOval(oval: AuroraRoute["oval"]): AuroraRoute["oval"] {
@@ -66,7 +67,7 @@ export function createAuroraVeil(sun: Vector3) {
   const material = new ShaderMaterial({
     vertexShader,
     fragmentShader,
-    uniforms: { uSun: { value: sun }, uTrace: { value: 0 } },
+    uniforms: { uSun: { value: sun }, uTrace: { value: 0 }, uOpacity: { value: 1 } },
     transparent: true,
     depthWrite: false,
     side: DoubleSide,
@@ -125,6 +126,9 @@ export function createAuroraVeil(sun: Vector3) {
   return {
     object,
     set,
+    opacity: (amount: number) => {
+      material.uniforms["uOpacity"]!.value = amount;
+    },
     trace: (progress: number) => {
       material.uniforms["uTrace"]!.value = progress * 1.1;
     },

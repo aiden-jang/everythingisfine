@@ -1,3 +1,4 @@
+import { lunarTraverses } from "./traverses";
 import survey from "./recordings/traverses.json";
 import elevationUrl from "./recordings/taurus-littrow.bin?url";
 import terrainUrl from "./recordings/taurus-littrow.webp";
@@ -15,13 +16,7 @@ export const valley = { left: -7.5, right: 6, near: 6, far: -5.3, columns: 210, 
 const pointAt = (point: number[]): LunarPoint => [point[0]!, point[1]!];
 export const landing = pointAt(survey.landing);
 
-const days = [
-  { day: "11–12 Dec", title: "Steno Crater", stations: ["Steno Crater"] },
-  { day: "12–13 Dec", title: "South Massif", stations: ["Nansen", "Lara", "Shorty Crater", "Camelot"] },
-  { day: "13–14 Dec", title: "North Massif", stations: ["Station 6", "Station 7", "Station 8", "Van Serg"] },
-] as const;
-
-export const traverses = days.map((day, i) => {
+export const traverses = lunarTraverses.map((day, i) => {
   const paths = survey.tracks[i]!.map((path) => path.map(pointAt));
   let km = 0;
   const segments = paths.flatMap((path) =>

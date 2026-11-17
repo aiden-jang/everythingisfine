@@ -373,3 +373,66 @@
     animation: none;
   }
 }
+
+.tonight-invitation-context span {
+  display: block;
+}
+
+.tonight-moonfall-entry button {
+  display: grid;
+  gap: 3px;
+  align-content: center;
+  width: 100%;
+  min-height: 54px;
+  padding: 7px 0;
+  border-block: 1px solid var(--color-hairline);
+  color: var(--color-ink);
+  text-align: start;
+  cursor: pointer;
+}
+
+.tonight-moonfall-entry button:hover {
+  background: var(--color-deck);
+}
+
+.tonight-moonfall-entry strong {
+  font-size: 15px;
+  font-weight: 580;
+}
+
+.tonight-moonfall-entry span {
+  font-size: 12px;
+  color: var(--color-dim);
+}
+
+.observatory-stage[data-stage="tonight"] .story-projection,
+.observatory-stage[data-stage="aurora"] .story-projection {
+  inset: var(--stage-inset) var(--stage-inset) auto auto;
+}
+
+.sky-reference-marker {
+  position: absolute;
+  visibility: hidden;
+  padding: 3px 5px;
+  background: var(--color-void);
+  color: var(--color-ink);
+  font: 11px / 1.2 var(--font-mono);
+  white-space: nowrap;
+  transform: translate(7px, -50%);
+}
+
+.sky-reference-marker::before {
+  position: absolute;
+  top: calc(50% - 2px);
+  left: -9px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  content: "";
+}
+
+.observatory-stage:is([data-stage="tonight"], [data-stage="aurora"]):has(.story-projection) .stage-ident {
+  inset-inline-end: calc(var(--stage-inset) + 132px);
+  justify-content: start;
+}

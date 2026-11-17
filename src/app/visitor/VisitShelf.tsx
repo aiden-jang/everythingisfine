@@ -1,3 +1,4 @@
+import { lunarTraverses } from "../../sources/moonfall/traverses";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { searchStories } from "../storyIndex";
 import { savedVisitKey, type Visit } from "./library";
@@ -11,7 +12,11 @@ export function visitNote(visit: Visit) {
     const { at, depth, temperature, salinity } = visit.observation;
     return `${layerTime(at)} · ${Math.round(depth).toLocaleString()} m · ${temperature.toFixed(2)} °C · ${salinity.toFixed(3)} salinity`;
   }
-  if (visit.position.sky?.lunar) return `Traverse ${visit.position.sky.lunar.eva + 1} · Apollo 17, 1972`;
+  const solar = visit.position.solar;
+  if (solar) return `${solar.value} km/s · ${solar.source} · ${layerTime(solar.at)}`;
+  const lunar = visit.position.sky?.lunar;
+  if (lunar)
+    return `${lunarTraverses[lunar.eva]?.stations[lunar.station ?? -1] ?? `Traverse ${lunar.eva + 1}`} · Apollo 17, 1972`;
   if (visit.position.sky) return `${visit.position.sky.city} · saved sky`;
   const at = visit.position.moment?.at ?? visit.position.radar?.at;
   if (at !== undefined) return layerTime(at);
@@ -96,7 +101,9 @@ export function VisitShelf() {
 }
 export function SaveVisit() {
   const navigation = useStoryNavigation();
-  if (!navigation?.active || ["float", "tonga"].includes(navigation.active)) return null;
+  if (!navigation?.active || ["float", "tonga", "sun"].includes(navigation.active)) return null;
+  const lunar = navigation.active === "moonfall" ? navigation.current()?.position.sky?.lunar : undefined;
+  if (lunar && lunar.station !== null) return null;
   return (
     <div className="visit-save">
       <button

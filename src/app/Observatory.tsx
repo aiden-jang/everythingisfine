@@ -1,5 +1,6 @@
 import { observatoryIntroduction, observatoryReadingLabel } from "./observatoryIntroduction";
-import { SunWatch, TonightSky, TonightCompass, FloatDive } from "./ObservatoryViews";
+import { SunWatch, SunLoading, TonightSky, TonightCompass, FloatDive } from "./ObservatoryViews";
+import { useOvalReturn } from "./sun/useSunVisit";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import type { CameraState } from "../globe/controls";
 import { ExperienceEnding } from "./journeys/ExperienceEnding";
@@ -30,7 +31,6 @@ import { ObservatoryEntryActions } from "./ObservatoryEntryActions";
 import { LandingStory } from "./LandingStory";
 import { StoryBoundary } from "./StoryBoundary";
 import { StoryDockProvider } from "./observations/StoryDock";
-
 export interface ObservatoryProps {
   explorer: {
     radarAt: number | undefined;
@@ -86,7 +86,6 @@ export interface ObservatoryProps {
   };
   onHistory: (day: string) => void;
 }
-
 export function Observatory(props: ObservatoryProps): JSX.Element {
   const navigation = useStoryNavigation();
   return (
@@ -101,9 +100,9 @@ export function Observatory(props: ObservatoryProps): JSX.Element {
     </StoryBoundary>
   );
 }
-
 function ObservatoryContent({
   layerReadout,
+  explorer,
   discoveries,
   scene,
   at,
@@ -130,14 +129,17 @@ function ObservatoryContent({
   const active = tour.at !== null;
   const solar = sun.active && !active;
   const browsing =
-    stories && !active && !solar && !aurora.run && !tonight.active && !floatDive.active && !radar.active;
+    stories && ![active, solar, aurora.run, tonight.active, floatDive.active, radar.active].some(Boolean);
   const revealStories = useObservatoryScroll(
     tour.controls,
     storyScroll,
     browsing,
     [navigation.key, tour.at, browser.home].join(":"),
   );
-  const closeSun = closeView(() => observations.returnTo("open-sun-watch", sun.toggle));
+  const ovalReturn = useOvalReturn(tour.controls, sun);
+  const closeSun = aurora.run
+    ? ovalReturn.close
+    : closeView(() => observations.returnTo("open-sun-watch", sun.close));
   const auroraControls = (
     <AuroraOverflightControls
       aurora={aurora}
@@ -145,7 +147,8 @@ function ObservatoryContent({
       solar={solar}
       returnLabel={navigationContext?.returnLabel}
       onReturn={closeView(() => observations.returnTo("open-aurora-overflight", () => onScene("night")))}
-      onSunWatch={sun.toggle}
+      onSunWatch={ovalReturn.open}
+      onRestoreOval={aurora.run ? closeSun : sun.close}
       onTonight={() => tonight.open()}
       city={skyCity}
     />
@@ -184,7 +187,7 @@ function ObservatoryContent({
         <MoonfallReadout view={tonight.view.moonfall} />
       ) : tonight.active ? (
         <Suspense fallback={null}>
-          <TonightCompass view={tonight.view} onView={tonight.update} />
+          <TonightCompass view={tonight.view} onView={tonight.update} projection={observations} />
         </Suspense>
       ) : (
         !solar && (
@@ -194,6 +197,7 @@ function ObservatoryContent({
             tour={active ? tour.stop : undefined}
             aurora={aurora.run}
             layers={layerReadout}
+            projection={observations}
           />
         )
       )}
@@ -245,7 +249,10 @@ function ObservatoryContent({
                   key={tonight.entry.revision}
                   view={tonight.view}
                   onView={tonight.update}
+                  onJourney={tonight.handoff}
+                  readCamera={explorer.read}
                   preference={skyCity}
+                  projection={observations}
                   initialMode={tonight.entry.mode}
                   initialLunar={tonight.entry.lunar}
                   initialLook={tonight.entry.look}
@@ -302,6 +309,7 @@ function ObservatoryContent({
                       solar={solar}
                       explore={onExplore}
                       closeSun={closeSun}
+                      fromOval={!!aurora.run}
                     />
                     {scene !== "night" && !landing ? (
                       <p
@@ -382,14 +390,8 @@ function ObservatoryContent({
         </StoryDockProvider>
       </div>
       {solar && (
-        <Suspense
-          fallback={
-            <div className="observatory-stage sun-watch-loading" role="status">
-              Opening Sun Watch…
-            </div>
-          }
-        >
-          <SunWatch onClose={closeSun} />
+        <Suspense fallback={<SunLoading />}>
+          <SunWatch onClose={closeSun} sample={sun.sample} />
         </Suspense>
       )}
     </section>

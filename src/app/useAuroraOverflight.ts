@@ -40,7 +40,7 @@ export function useAuroraOverflight(
       if (route && current) setRun({ forecast: current, route });
     },
     replay() {
-      if (run) setRun({ ...run });
+      if (run) setRun({ forecast: run.forecast, route: { ...run.route } });
     },
   };
 }

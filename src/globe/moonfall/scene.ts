@@ -125,12 +125,13 @@ export function createMoonfall(data: Awaited<ReturnType<typeof loadLunarSurvey>>
     if (orbit) {
       const t = ease(limit(flight / 3.23));
       const close = ease(limit((flight - 2.72) / 0.65));
-      const approach = 59_000 * Math.exp(-5.55 * t - 2.37 * close);
+      const distance = lerp(384_000, 59_000, ease(limit(flight / 0.98)));
+      const approach = distance * Math.exp(-5.55 * t - 2.37 * close);
       const aim = ease(limit((flight - 1.9) / 1.25));
       site.visible = flight > 1.7;
       site.scale.setScalar(lerp(1, 0.08, close));
       camera.near = 0.6;
-      camera.far = 120_000;
+      camera.far = 460_000;
       camera.position.set(lerp(-0.4, 0.28, aim) * approach, approach, lerp(0.56, 0.86, close) * approach);
       camera.up.set(0, 0.19 * Math.sin(Math.PI * t), -1);
       target.set(0, -RADIUS * (1 - aim), 0);

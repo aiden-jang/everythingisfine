@@ -1,3 +1,5 @@
+import { StoryDock } from "../observations/StoryDock";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { useEffect, useId, useState, useSyncExternalStore } from "react";
@@ -70,8 +72,14 @@ export function Moonfall({
 function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void }): JSX.Element {
   const { eva, flying, meters, playing, station, mapped } = useSyncExternalStore(view.subscribe, view.read);
   const id = useId();
+  const navigation = useStoryNavigation();
   const route = traverses[eva]!;
   const length = Math.round(route.km * 1000);
+  const stop = station === null ? null : route.stations[station];
+  const kept = !!navigation?.library.saved.some(
+    ({ id, position }) =>
+      id === "moonfall" && position.sky?.lunar?.eva === eva && position.sky.lunar.station === station,
+  );
   useStoryCompletion(!flying && !playing && meters >= length);
   const distance = `${km.format(meters / 1000)} of ${km.format(route.km)} km`;
   const act = (update: () => void) => {
@@ -80,7 +88,28 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
   };
   return (
     <>
-      <p className="moonfall-description">Follow Apollo 17 through Taurus–Littrow, December 1972.</p>
+      <div className="moonfall-finding">
+        <h3>{flying ? "Toward the Moon." : (stop?.name ?? route.title)}</h3>
+        <p className="moonfall-description">
+          {flying
+            ? "The approach leads to the Apollo 17 landing site."
+            : `Apollo 17 · ${route.day} 1972 · Traverse ${eva + 1}`}
+        </p>
+        {stop && navigation && (
+          <div className="observatory-actions moonfall-actions">
+            <button
+              type="button"
+              disabled={kept}
+              onClick={() => {
+                const visit = navigation.current();
+                if (visit) navigation.library.save(visit);
+              }}
+            >
+              {kept ? "Stop kept" : "Keep this stop"}
+            </button>
+          </div>
+        )}
+      </div>
       <div className="observatory-actions moonfall-actions" role="group" aria-label="Lunar projection">
         <button type="button" aria-pressed={!mapped} onClick={() => act(() => view.project(false))}>
           Terrain
@@ -117,7 +146,7 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
           onChange={(event) => act(() => view.stopAt(Number(event.currentTarget.value)))}
         >
           <option value="" disabled>
-            Choose a stop
+            Inspect a stop
           </option>
           {route.stations.map(({ name }, i) => (
             <option key={name} value={i}>
@@ -126,36 +155,31 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
           ))}
         </select>
       </label>
-      <div className="tonight-time moonfall-transport" role="group" aria-label="Rover playback">
-        <div className="tonight-clock">
-          <label htmlFor={id}>Mapped distance</label>
-          <output htmlFor={id}>{distance}</output>
+      <StoryDock label="Rover playback">
+        <div className="tonight-time moonfall-transport">
+          <div className="tonight-clock">
+            <label htmlFor={id}>Mapped distance</label>
+            <output htmlFor={id}>{distance}</output>
+          </div>
+          <input
+            id={id}
+            type="range"
+            className="scrub-slider tonight-scrub"
+            min={0}
+            max={250}
+            value={Math.round((250 * meters) / length)}
+            aria-valuetext={distance}
+            onChange={(event) => act(() => view.seek((length * event.currentTarget.valueAsNumber) / 250))}
+          />
+          <div className="observatory-actions moonfall-actions">
+            <PlaybackButton
+              playing={playing}
+              ended={meters >= length}
+              onClick={() => act(view.toggleRoute)}
+            />
+          </div>
         </div>
-        <input
-          id={id}
-          type="range"
-          className="scrub-slider tonight-scrub"
-          min={0}
-          max={250}
-          value={Math.round((250 * meters) / length)}
-          aria-valuetext={distance}
-          onChange={(event) => act(() => view.seek((length * event.currentTarget.valueAsNumber) / 250))}
-        />
-        <div className="observatory-actions moonfall-actions">
-          <PlaybackButton playing={playing} ended={meters >= length} onClick={() => act(view.toggleRoute)} />
-          <span className="moonfall-route-note">
-            {station === null ? route.title : route.stations[station]?.name}
-          </span>
-        </div>
-        <div className="tonight-clock tonight-edges">
-          <span>{route.day} 1972 · UTC</span>
-          <span>Traverse {eva + 1} of 3</span>
-        </div>
-      </div>
-      <p className="moonfall-description">
-        Apollo 17 in Taurus–Littrow. Follow the rover’s mapped tracks across terrain measured from lunar
-        orbit.
-      </p>
+      </StoryDock>
       <details className="tonight-objects">
         <summary>
           <span>Terrain &amp; routes</span>
