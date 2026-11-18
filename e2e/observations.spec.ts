@@ -56,7 +56,7 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   await page.goto("/");
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
-  const more = await openStories(page);
+  await openStories(page);
   expect(attempts).toBe(0);
   const catalogue = page.getByRole("region", { name: "Stories and layers" });
   const tideRow = catalogue.getByRole("button", { name: "Tide Watch", exact: true });
@@ -93,7 +93,7 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   await expect(tideRow).toBeFocused();
   expect(await sidebar.evaluate((panel) => panel.scrollTop)).toBe(scroll);
   await page.keyboard.press("Escape");
-  await expect(more).toBeFocused();
+  await expect(page.getByRole("button", { name: "Browse stories", exact: true })).toBeFocused();
   expect(errors).toEqual([]);
 });
 

@@ -493,15 +493,13 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
   const tab = page.getByRole("tab", { name: "Stories", exact: true });
   const exploring = await tab.isVisible();
   if (exploring && (await tab.getAttribute("aria-selected")) !== "true") await tab.click();
-  const scenes = exploring
-    ? page.getByRole("group", { name: "Earth scenes", exact: true })
-    : await revealScenes(page);
+  if (!exploring) await revealScenes(page);
   const catalogue = page.getByRole("region", { name: "Stories and layers", exact: true });
   await expect(catalogue).toBeVisible();
-  if (expand === "search") return scenes;
+  if (expand === "search") return;
   const all = catalogue.getByRole("button", { name: /^View all \d+ stories$/ });
   if (await all.isVisible()) await all.click();
-  if (expand !== "all") return scenes;
+  if (expand !== "all") return;
   const library = catalogue.getByRole("button", { name: "Guided journeys & archives", exact: true });
   if ((await library.getAttribute("aria-expanded")) === "false") await library.click();
   for (const label of ["Saved & recent", "Guided journeys", "Archives"]) {
@@ -512,7 +510,6 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
   const today = catalogue.locator(".story-today");
   if ((await today.count()) && !(await today.evaluate((node) => (node as HTMLDetailsElement).open)))
     await today.locator("summary").click();
-  return scenes;
 }
 
 export async function revealStoryTools(page: Page) {

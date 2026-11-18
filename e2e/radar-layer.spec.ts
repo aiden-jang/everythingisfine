@@ -218,6 +218,7 @@ for (const width of [1440, 390]) {
     await expect.poll(() => camera(page)).toEqual(mapCamera);
     await expect(page.locator("#open-explorer-radar")).toBeFocused();
     await page.getByRole("tab", { name: "Stories", exact: true }).click();
+    await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
     await page.getByRole("button", { name: "Storm Radar", exact: true }).click();
     await expect(guided.locator(".radar-clock time")).toHaveAttribute(
       "datetime",

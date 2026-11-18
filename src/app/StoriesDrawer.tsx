@@ -51,9 +51,11 @@ export function StoriesDrawer({
   const key = scene ?? "all";
   const all = expanded === key;
   const featured = featuredIds[scene ?? "live"];
-  const recent = navigation?.library.recent.find(({ id }) =>
-    searchStories.some((story) => story.id === id && (!scene || story.scene === scene)),
-  );
+  const recent = all
+    ? undefined
+    : navigation?.library.recent.find(({ id }) =>
+        searchStories.some((story) => story.id === id && (!scene || story.scene === scene)),
+      );
   const entries = browseStories(scene, all).filter(({ id }) => id !== recent?.id);
   const featuredRow =
     recent && recent.id !== featured ? searchStories.find(({ id }) => id === featured) : null;

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, selectScene } from "./feeds";
 
 const camera = (page: Page) =>
   page.evaluate(() => {
@@ -97,6 +97,7 @@ for (const width of [1440, 390]) {
     await installFeeds(page, { presentation: "fresh", empty: true });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
+    await selectScene(page, "Earth");
     await openStories(page, "search");
     const search = page.getByRole("searchbox", { name: "Find a story" });
     await search.fill("Aral");

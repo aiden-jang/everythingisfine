@@ -422,7 +422,8 @@ again returns to All stories. Explore shows the same categories in a compact str
 All stories restores the full catalogue. Filtering keeps the query and camera in place. Switching between Layers and Stories preserves the chosen layer settings.
 The Layers tab starts with available layer controls. Location lives in Find a place, and playback
 lives within the Storm radar inspector. A recent visit replaces the large feature as the opening
-action and each story appears once in the selection.
+action in the highlights. The full catalogue keeps each entry in its original position so returning
+from a story restores the same row and scroll position.
 
 The feature's actual image sits above its title, source, short
 promise and Open story action on desktop; on phones it sits beside the reading text. Text has its

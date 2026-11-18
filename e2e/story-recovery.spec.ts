@@ -13,8 +13,8 @@ test("a failed story download leaves the shared globe and a usable return path",
   await expect(trigger).toBeEnabled();
   await trigger.click();
   const recovery = page.getByRole("region", { name: "Story unavailable" });
-  await expect(recovery.getByRole("alert")).toContainText("failed to load");
-  await expect(recovery.getByRole("button", { name: "Reload page" })).toBeVisible();
+  await expect(recovery.getByRole("heading")).toHaveText("Couldn’t open Float Dive.");
+  await expect(recovery.getByRole("button", { name: "Try again" })).toBeVisible();
   await recovery.getByRole("button", { name: "Back to stories" }).click();
   await expect(trigger).toBeFocused();
   await expect(page.getByRole("searchbox", { name: "Find a story" })).toHaveValue("Float Dive");

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, revealScenes } from "./feeds";
+import { installFeeds } from "./feeds";
 
 const now = Date.parse("2026-11-12T04:00:00Z");
 const sunnyView = "/#v=observe&at=145,12,1";
@@ -26,8 +26,8 @@ test("records the existing globe with a source caption and releases the download
   });
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
-  await revealScenes(page);
-  await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
+  await expect(page.locator("#globe-view canvas")).toBeVisible();
+  await expect(page.getByText("Loading the globe…", { exact: true })).toBeHidden();
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.getByRole("button", { name: "View options", exact: true }).click();
   await expect(page.getByRole("button", { name: "Record 10-second clip" })).toBeEnabled();
@@ -59,9 +59,10 @@ test("records the existing globe with a source caption and releases the download
   expect(lines).toContain("UTC");
   expect(lines).toContain("USGS");
   expect(lines).toContain("localhost");
-  const download = page.waitForEvent("download");
-  await panel.getByRole("button", { name: "Download clip" }).click();
-  expect((await download).suggestedFilename()).toMatch(/\.(webm|mp4)$/);
+  const downloadButton = panel.getByRole("button", { name: "Download clip" });
+  await expect(downloadButton).toBeVisible();
+  const [download] = await Promise.all([page.waitForEvent("download"), downloadButton.press("Enter")]);
+  expect(download.suggestedFilename()).toMatch(/\.(webm|mp4)$/);
   const url = await video.getAttribute("src");
   await panel.getByRole("button", { name: "Dismiss clip" }).click();
   expect(
@@ -101,8 +102,8 @@ test("the mobile recording notice leaves the visible globe intact", async ({ pag
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", now });
   await page.goto(sunnyView);
-  await revealScenes(page);
-  await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
+  await expect(page.locator("#globe-view canvas")).toBeVisible();
+  await expect(page.getByText("Loading the globe…", { exact: true })).toBeHidden();
   const lowerGlobePixels = async () => {
     // This strip is below the notice and above the HUD, where an ordinary overlay cropped WebGL.
     const screenshot = await page.screenshot();

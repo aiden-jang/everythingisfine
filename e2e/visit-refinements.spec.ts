@@ -112,6 +112,7 @@ for (const blocked of [false, true]) {
     await expect(page.locator(".story-continue")).toHaveCount(0);
     await page.screenshot({ path: test.info().outputPath(`undo-phone-${blocked}.png`) });
     await shelf.getByRole("button", { name: "Undo", exact: true }).click();
+    await page.getByRole("button", { name: "Show highlights", exact: true }).click();
     await expect(page.locator(".story-continue")).toContainText("Continue Vanishing Sea");
     await expect(shelf).toContainText("Saved views (1)");
   });

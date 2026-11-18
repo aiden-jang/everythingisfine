@@ -5,7 +5,8 @@ async function openStorm(page: Page) {
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
   await openStories(page, "search");
-  const trigger = page.getByRole("button", { name: "Eye of the Storm", exact: true });
+  await page.getByRole("searchbox", { name: "Find a story", exact: true }).fill("Eye of the Storm");
+  const trigger = page.locator("#search-story-katrina");
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
   await trigger.click();

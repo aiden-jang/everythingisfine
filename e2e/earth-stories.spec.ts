@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, selectScene } from "./feeds";
 
 const stories = [
   ["fault", "Fault Offset", "Radar sweep"],
@@ -96,7 +96,8 @@ test("story search finds another scene and returns to the retained query on a na
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
-  await openStories(page);
+  await selectScene(page, "Earth");
+  await openStories(page, "search");
   const search = page.getByRole("searchbox", { name: "Find a story" });
   await search.fill("NEOWISE");
   await page.getByRole("button", { name: "Search all stories", exact: true }).click();
@@ -127,9 +128,8 @@ test("story search starts an available aurora flight from the live scene", async
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await openStories(page);
+  await openStories(page, "search");
   await page.getByRole("searchbox", { name: "Find a story" }).fill("aurora");
-  await page.getByRole("button", { name: "Search all stories", exact: true }).click();
   await page.locator("#search-story-aurora").click();
   await expect(page.getByRole("heading", { name: "Into the auroral oval." })).toBeVisible();
   await expect(page.getByRole("button", { name: "Replay flight" })).toBeVisible();
