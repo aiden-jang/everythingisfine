@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories, selectScene } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
 
 for (const [id, query, back] of [
   ["sky", "Tonight’s Sky", "Back to stories"],
@@ -19,7 +19,11 @@ for (const [id, query, back] of [
     await page.route("https://opengeo.ncep.noaa.gov/**", (route) => route.abort());
     await page.goto("/");
     await openStories(page, "search");
-    if (["sky", "meteors", "moonfall", "sun"].includes(id)) await selectScene(page, "After Dark");
+    if (["sky", "meteors", "moonfall", "sun"].includes(id))
+      await page
+        .getByRole("group", { name: "Story categories" })
+        .getByRole("button", { name: "After Dark", exact: true })
+        .click();
     const search = page.getByRole("searchbox", { name: "Find a story" });
     await expect(search).toBeInViewport({ ratio: 1 });
     await search.fill(query);

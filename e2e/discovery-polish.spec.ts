@@ -55,8 +55,11 @@ test("keyboard previews do not move the camera, and date comparisons preserve fr
   await openStories(page);
   await page.getByRole("searchbox", { name: "Find a story" }).fill("Aral");
   const story = page.locator("#search-story-aral");
+  await expect(story).toBeEnabled();
   const before = await camera(page);
+  expect(before).toBeDefined();
   await story.focus();
+  await expect(story).toBeFocused();
   await expect(page.getByText("Story region · preview")).toBeVisible();
   expect(await camera(page)).toEqual(before);
   await page.getByRole("button", { name: "Locate", exact: true }).click();

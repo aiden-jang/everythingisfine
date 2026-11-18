@@ -128,7 +128,7 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   await expect(depth).toHaveAttribute("aria-valuetext", "0 m");
   await expect(dive.getByText(/Recent profile · Cycle 269/)).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(open).toBeFocused();
+  await expect(page.locator("#continue-story-float")).toBeFocused();
   expect(await canvas.evaluate((element, prior) => element === prior, original)).toBe(true);
   expect(errors).toEqual([]);
 });

@@ -213,13 +213,17 @@ function ObservatoryContent({
             ) : radar.active ? (
               <StormRadar
                 fromExplore={radar.fromExplore}
-                returnLabel={navigationContext?.returnLabel}
+                returnLabel={radar.entry.story ? undefined : navigationContext?.returnLabel}
                 entry={radar.entry}
                 onView={radar.update}
-                onClose={closeView(() => {
-                  const trigger = radar.fromExplore ? "open-explorer-radar" : "open-storm-radar";
-                  observations.returnTo(trigger, radar.close);
-                })}
+                onClose={
+                  radar.entry.story
+                    ? radar.close
+                    : closeView(() => {
+                        const trigger = radar.fromExplore ? "open-explorer-radar" : "open-storm-radar";
+                        observations.returnTo(trigger, radar.close);
+                      })
+                }
               />
             ) : tonight.active ? (
               <Suspense fallback={<p role="status">Opening Tonight’s Sky…</p>}>

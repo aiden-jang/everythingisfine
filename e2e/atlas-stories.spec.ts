@@ -296,12 +296,21 @@ test("Pacific radar opens from the forecast and returns to the retained forecast
   await page.route("https://nowcoast.noaa.gov/**", (route) => route.abort());
   await page.goto("/#v=observe&story=atmospheric-river&choice=9+November+2026+archive");
   const panel = page.getByRole("region", { name: "Atmospheric River", exact: true });
+  await panel.getByRole("button", { name: "Map", exact: true }).click();
   await panel.getByRole("button", { name: "Forecast end" }).click();
   const at = await panel.locator(".story-time time").getAttribute("datetime");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await panel.getByRole("button", { name: "View current Pacific radar" }).click();
   await expect(page.getByRole("combobox", { name: "Radar region" })).toHaveValue("pacific");
+  await page
+    .getByRole("group", { name: "Radar projection" })
+    .getByRole("button", { name: "Globe", exact: true })
+    .click();
   await page.getByRole("button", { name: "Back to Atmospheric River" }).click();
   await expect(panel.locator(".story-time time")).toHaveAttribute("datetime", at!);
+  await expect(panel.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });

@@ -270,8 +270,9 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           const first = journeys.find((journey) => journey.id === id)?.steps[0];
           if (!first || unavailable(first.id)) return;
           reportAnalytics({ name: "journey_started", journey: id });
-          setRoute({ id, step: 0 });
+          // Explore's synchronous handoff briefly has no active story; record the route afterward.
           navigate(first.id, `journey-${id}`);
+          setRoute({ id, step: 0 });
         },
         tour() {
           rememberOrigin("start-story-tour");
@@ -280,8 +281,8 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
         step(index) {
           const next = journeys.find((journey) => journey.id === route?.id)?.steps[index];
           if (!route || !next || unavailable(next.id)) return;
-          setRoute({ ...route, step: index });
           navigate(next.id, `journey-${route.id}`);
+          setRoute({ ...route, step: index });
         },
         finish(complete) {
           if (complete && route) reportAnalytics({ name: "journey_completed", journey: route.id });

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, openStories, selectScene } from "./feeds";
+import { installFeeds, openStories } from "./feeds";
 
 const camera = (page: Page) =>
   page.evaluate(() => {
@@ -97,14 +97,17 @@ for (const width of [1440, 390]) {
     await installFeeds(page, { presentation: "fresh", empty: true });
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    await selectScene(page, "Earth");
     await openStories(page, "search");
+    await page
+      .getByRole("group", { name: "Story categories" })
+      .getByRole("button", { name: "Earth", exact: true })
+      .click();
     const search = page.getByRole("searchbox", { name: "Find a story" });
     await search.fill("Aral");
     const trigger = page.locator("#search-story-aral");
     await trigger.scrollIntoViewIfNeeded();
     const before = await camera(page);
-    const scroll = await page.locator("#observatory-intro").evaluate((el) => el.scrollTop);
+    const scroll = await page.locator("#chrome-rail").evaluate((el) => el.scrollTop);
     await trigger.click();
     const panel = page.getByRole("region", { name: "Vanishing Sea", exact: true });
     await expect(panel.getByRole("slider")).toBeVisible();
@@ -118,7 +121,7 @@ for (const width of [1440, 390]) {
       "true",
     );
     await expect.poll(() => camera(page)).toEqual(before);
-    await expect.poll(() => page.locator("#observatory-intro").evaluate((el) => el.scrollTop)).toBe(scroll);
+    await expect.poll(() => page.locator("#chrome-rail").evaluate((el) => el.scrollTop)).toBe(scroll);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: test.info().outputPath(`returned-stories-${width}.png`) });
   });

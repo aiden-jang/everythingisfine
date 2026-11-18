@@ -65,7 +65,7 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   );
   await expect(tideRow.locator("..").getByText("Compare measured and predicted tides.")).toBeVisible();
   await tideRow.evaluate((row) => row.scrollIntoView({ block: "center" }));
-  const sidebar = page.locator(".observatory-intro").filter({ has: catalogue });
+  const sidebar = page.locator("#chrome-rail");
   const scroll = await sidebar.evaluate((panel) => panel.scrollTop);
   expect(scroll).toBeGreaterThan(0);
   await tideRow.click();
@@ -93,7 +93,7 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   await expect(tideRow).toBeFocused();
   expect(await sidebar.evaluate((panel) => panel.scrollTop)).toBe(scroll);
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("button", { name: "Browse stories", exact: true })).toBeFocused();
+  await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeFocused();
   expect(errors).toEqual([]);
 });
 

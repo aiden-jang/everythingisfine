@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, openStories, openLayer, selectScene } from "./feeds";
+import { installFeeds, openStories, openLayer } from "./feeds";
 import { DEFAULT_CAMERA } from "../src/globe/framing";
 
 const camera = (page: Page) =>
@@ -23,7 +23,10 @@ test("search scopes match the category and expanding the scope preserves the que
   page,
 }) => {
   await start(page);
-  await selectScene(page, "After Dark");
+  await page
+    .getByRole("group", { name: "Story categories" })
+    .getByRole("button", { name: "After Dark", exact: true })
+    .click();
   const search = page.getByRole("searchbox", { name: "Find a story" });
   await search.fill("Aral");
   await expect(page.getByText("No matches in After Dark. Try a place, year or subject.")).toBeVisible();
