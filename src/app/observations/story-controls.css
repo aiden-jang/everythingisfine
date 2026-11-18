@@ -134,6 +134,12 @@
   bottom: calc(var(--stage-inset) + 64px);
 }
 
+@media (max-width: 599px) {
+  .replay-stage .stage-readout {
+    max-width: calc(100% - 180px);
+  }
+}
+
 @media (min-width: 900px), (max-height: 620px) and (min-width: 600px) {
   .story-dock-host {
     position: fixed;

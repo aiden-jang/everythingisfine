@@ -1,6 +1,48 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds, openStories } from "./feeds";
 
+for (const [width, height] of [
+  [320, 568],
+  [320, 640],
+  [390, 844],
+  [844, 390],
+] as const) {
+  test(`Tonga's camera and projection controls stay separate at ${width}×${height}`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    await installFeeds(page, { presentation: "fresh", empty: true });
+    await page.goto("/#v=observe&story=tonga");
+    const story = page.getByRole("region", { name: "Tonga’s shockwave", exact: true });
+    const canvas = await page.locator("#globe-view canvas").elementHandle();
+    await story.getByRole("button", { name: "Follow the wave", exact: true }).click();
+    await story.getByRole("button", { name: "Pause", exact: true }).click();
+    await story.getByRole("button", { name: "Antipode", exact: true }).click();
+    const control = page.getByRole("button", { name: "Take control", exact: true });
+    await expect(control).toBeVisible();
+    const camera = (await control.boundingBox())!;
+    const projection = (await story.getByRole("group", { name: "Observation projection" }).boundingBox())!;
+    expect(camera.y + camera.height + 8).toBeLessThanOrEqual(projection.y);
+    const caption = (await story.locator(".stage-readout").boundingBox())!;
+    expect(
+      camera.x >= caption.x + caption.width + 8 ||
+        camera.y + camera.height + 8 <= caption.y ||
+        caption.y + caption.height + 8 <= camera.y,
+    ).toBe(true);
+    await story.getByRole("button", { name: "Map", exact: true }).click();
+    await expect(story.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await control.click();
+    await expect(page.getByRole("button", { name: "Recenter view", exact: true })).toBeVisible();
+    await story.getByRole("button", { name: "Globe", exact: true }).click();
+    expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
+      true,
+    );
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  });
+}
+
 test("Tonga transitions from satellite imagery to the atmospheric wave and can pause", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
