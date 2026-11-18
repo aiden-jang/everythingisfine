@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { viewOptions, installFeeds } from "./feeds";
+import { viewOptions, installFeeds, selectScene, revealScenes } from "./feeds";
 import { DEFAULT_CAMERA } from "../src/globe/framing";
 
 test.use({
@@ -59,11 +59,11 @@ for (const [width, height] of [
       await expect.poll(async () => Math.abs((await pose()).lon - 145)).toBeLessThan(0.001);
       await expect.poll(async () => (await pose()).zoom).toBe(1);
       await page.screenshot({ path: test.info().outputPath(`orbit-arrived-${width}.png`) });
-      await page.getByRole("button", { name: "After Dark", exact: true }).click();
+      await selectScene(page, "After Dark");
       await expect(page.getByRole("heading", { name: "The other side of day." })).toBeVisible();
       await page.waitForTimeout(600);
       await page.screenshot({ path: test.info().outputPath(`night-flight-${width}.png`) });
-      await page.getByRole("button", { name: "Below the Surface", exact: true }).click();
+      await selectScene(page, "Below the Surface");
       await expect(page.getByRole("heading", { name: "Beneath the surface." })).toBeVisible();
       const depthView = () =>
         page.evaluate(() => {
@@ -101,6 +101,7 @@ for (const [width, height] of [
         .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
         .click();
       await page.emulateMedia({ reducedMotion: "reduce" });
+      await revealScenes(page);
       const dive = page.getByRole("button", { name: "Below the Surface", exact: true });
       await dive.click();
       await expect(dive).toHaveAttribute("aria-pressed", "true");

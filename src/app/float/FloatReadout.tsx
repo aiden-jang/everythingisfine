@@ -3,21 +3,25 @@ import { useSyncExternalStore } from "react";
 import type { FloatDiveView } from "./floatPlayback";
 import { StoryProjection } from "../observations/StoryProjection";
 
-function Reading({ view }: { view: FloatDiveView }) {
+type Projection = { map: boolean; setMap: (map: boolean) => void };
+function Reading({ view, projection }: { view: FloatDiveView; projection: Projection }) {
   const { index, stage } = useSyncExternalStore(view.subscribe, view.read);
   const sample = view.profile.samples[index]!;
   return (
     <>
       {stage === "locate" && (
-        <span
-          className="float-place"
-          data-observation-anchor
-          data-lon={view.profile.lon}
-          data-lat={view.profile.lat}
-        >
-          Float {view.profile.wmo}
-          <small>{geographicCoordinates(view.profile)}</small>
-        </span>
+        <>
+          <StoryProjection map={projection.map} onMap={projection.setMap} label="Float projection" />
+          <span
+            className="float-place"
+            data-observation-anchor
+            data-lon={view.profile.lon}
+            data-lat={view.profile.lat}
+          >
+            Float {view.profile.wmo}
+            <small>{geographicCoordinates(view.profile)}</small>
+          </span>
+        </>
       )}
       <div className="float-reading-layer" aria-hidden="true">
         <svg className="float-tether">
@@ -37,22 +41,16 @@ export function FloatReadout({
   projection,
 }: {
   view: FloatDiveView | null;
-  projection: { map: boolean; setMap: (map: boolean) => void };
+  projection: Projection;
 }): JSX.Element {
   const profile = view?.profile;
   return (
-    <div
-      className="observatory-stage"
-      data-stage="float"
-      role="group"
-      aria-label="Argo float on the globe and map"
-    >
+    <div className="observatory-stage" data-stage="float" role="group" aria-label="Argo float view">
       <div className="stage-ident">
         <span className="stage-rule" aria-hidden="true" />
         <span>{profile ? `Argo · WMO ${profile.wmo}` : "Argo · North Atlantic"}</span>
       </div>
-      <StoryProjection map={projection.map} onMap={projection.setMap} label="Float projection" />
-      {view && <Reading view={view} />}
+      {view && <Reading view={view} projection={projection} />}
       <div id="float-profile-stage" />
       {profile && (
         <div className="stage-readout">{geographicCoordinates(profile)} · Illustrated ocean section</div>

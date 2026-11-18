@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { StoryPreviewButton } from "./discovery/StoryPreview";
 import { storyKind } from "./storyBrowse";
 import { StoryThumbnail } from "./StoryThumbnail";
@@ -13,8 +13,10 @@ export function StorySearch({
   ready,
   aurora,
   scene,
+  filter,
   onSearchAll,
 }: {
+  filter?: ReactNode;
   scene: import("./useObservatory").EarthScene | null;
   onSearchAll: () => void;
   deck: Observatory["observations"];
@@ -46,6 +48,7 @@ export function StorySearch({
           onInput={(e) => deck.setQuery(e.currentTarget.value)}
         />
       </label>
+      {filter}
       {deck.query.trim() && (
         <section className="stories-group" aria-label="Search results">
           <p role="status" className="observation-note">

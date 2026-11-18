@@ -89,7 +89,6 @@ for (const width of [1440, 390]) {
   }) => {
     const { times, now, queries, recover } = await prepareRadar(page, width);
     await page.goto("/");
-    await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
     await expect.poll(queries).toBe(1);
     await expect(page.locator("#radar-layer-controls")).toBeHidden();
     await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
@@ -98,14 +97,13 @@ for (const width of [1440, 390]) {
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     const layers = page.getByRole("region", { name: "Map layers", exact: true });
     const toggle = layers.getByRole("button", { name: "Storm radar", exact: true });
-    const controls = layers.getByRole("region", { name: "Storm radar playback" });
+    const controls = page.locator("#radar-layer-controls");
     await expect(toggle).toHaveAttribute("aria-pressed", "true");
-    await expect(controls).toBeVisible();
-    await expect(controls).toHaveAttribute("data-compact", "true");
+    await expect(controls).toBeHidden();
     const player = await controls.elementHandle();
     await openLayer(page, "Storm radar");
+    await expect(controls).toBeVisible();
     expect(await controls.evaluate((node, original) => node === original, player)).toBe(true);
-    await expect(controls).not.toHaveAttribute("data-compact", "true");
     const status = controls.getByRole("status", { name: "Radar status" });
     await expect(status).toHaveText("Couldn’t reach RainViewer radar.");
     expect(queries()).toBe(1);
@@ -278,12 +276,14 @@ for (const width of [1440, 390]) {
     const layers = page.getByRole("tabpanel", { name: "Layers", exact: true });
     await layers.getByRole("button", { name: "Wildfires", exact: true }).click();
     const preferences = await page.evaluate(() => localStorage.getItem("eif.mapLayers"));
-    const controls = page.getByRole("region", { name: "Storm radar playback", includeHidden: true });
+    const controls = page.locator("#radar-layer-controls");
+    await openLayer(page, "Storm radar");
     await expect(controls.locator(".radar-warning")).toHaveCount(0);
     await expect(controls.getByRole("slider", { name: "Radar scan time" })).toBeEnabled();
     await controls.getByRole("slider", { name: "Radar scan time" }).press("ArrowLeft");
     const held = await controls.locator("time").getAttribute("datetime");
     const player = await controls.elementHandle();
+    await page.getByRole("button", { name: "Back to layers", exact: true }).click();
     const counts = () =>
       page.evaluate(() => {
         const world = window as unknown as {
@@ -329,6 +329,7 @@ for (const width of [1440, 390]) {
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
       true,
     );
+    await openLayer(page, "Storm radar");
     await controls.getByRole("button", { name: "Play", exact: true }).click();
     await page.getByRole("tab", { name: "Stories", exact: true }).click();
     const pausedAt = await controls.locator("time").getAttribute("datetime");

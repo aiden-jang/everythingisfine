@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import type { Mesh, MeshBasicMaterial, Object3D } from "three";
-import { installFeeds, openLayer } from "./feeds";
+import { installFeeds, openLayer, selectScene } from "./feeds";
 
 // Synthetic radar pixels make the actual scene texture observable without depending on today's storms.
 const pixel = Buffer.from(
@@ -80,7 +80,7 @@ for (const [width, height] of [
     if (height === 375) {
       const collisions = await page.locator(".layer-readout").evaluate((readout) => {
         const footer = readout.getBoundingClientRect();
-        return [...document.querySelectorAll(".observatory-scenes button, .creator-credit a")]
+        return [...document.querySelectorAll(".observatory-entry-actions button, .creator-credit a")]
           .filter((node) => {
             const control = node.getBoundingClientRect();
             return (
@@ -90,7 +90,9 @@ for (const [width, height] of [
           })
           .map((node) => node.textContent?.trim());
       });
-      expect(collisions, "loaded radar attribution stays clear of scenes and creator credit").toEqual([]);
+      expect(collisions, "loaded radar attribution stays clear of entry actions and creator credit").toEqual(
+        [],
+      );
       await sources.click();
       const times = page.getByRole("group", { name: "Weather layer times", exact: true });
       await expect(times).toBeVisible();
@@ -168,7 +170,7 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
       exact: true,
     })
     .click();
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await expect.poll(() => radarTexture(page)).toBeNull();
   await expect(page.locator("#radar-layer-controls")).toBeHidden();
   await page.getByRole("button", { name: /^Feed status,/ }).click();

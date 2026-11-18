@@ -70,14 +70,6 @@ export const storyOrder = [
 const priority = new Map<string, number>(storyOrder.map((id, index) => [id, index]));
 export const storyRank = (id: string) => priority.get(id) ?? storyOrder.length;
 
-export function firstInvitation() {
-  return {
-    id: "float",
-    label: "What’s beneath this patch of ocean?",
-    note: "Recorded Argo profile · follow one float toward the surface",
-  };
-}
-
 export const sceneHighlights: Record<EarthScene, readonly string[]> = {
   live: ["katrina", "iceberg", "radar"],
   depth: ["seafloor", "nino", "deep"],

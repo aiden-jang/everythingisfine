@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, revealScenes } from "./feeds";
 
 const now = Date.parse("2026-11-12T04:00:00Z");
 const sunnyView = "/#v=observe&at=145,12,1";
@@ -26,6 +26,7 @@ test("records the existing globe with a source caption and releases the download
   });
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
+  await revealScenes(page);
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.getByRole("button", { name: "View options", exact: true }).click();
@@ -100,6 +101,7 @@ test("the mobile recording notice leaves the visible globe intact", async ({ pag
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", now });
   await page.goto(sunnyView);
+  await revealScenes(page);
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
   const lowerGlobePixels = async () => {
     // This strip is below the notice and above the HUD, where an ordinary overlay cropped WebGL.

@@ -6,6 +6,7 @@ import {
   openStories,
   saveImageButton,
   revealStoryTools,
+  selectScene,
 } from "./feeds";
 
 for (const [width, height] of [
@@ -35,18 +36,16 @@ for (const [width, height] of [
     await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
     const stage = page.getByRole("group", { name: "Globe readout" });
     const explore = page.getByRole("button", { name: /^Explore (the globe|the layers)$/ });
-    const depth = page.getByRole("button", { name: "Below the Surface", exact: true });
+    const browse = page.getByRole("button", { name: "Browse stories", exact: true });
     const credit = page.getByRole("link", { name: "aiden jang", exact: true });
     await Promise.all([
       expect(page.locator("#chrome-rail")).toBeHidden(),
       expect(stage).toContainText("Day–night boundary"),
       expect(stage).toContainText(/\d{2}:\d{2} UTC/),
       expect(explore).toBeVisible(),
-      expect(depth).toBeEnabled(),
+      expect(browse).toBeInViewport({ ratio: 1 }),
       expect(credit).toBeInViewport({ ratio: 1 }),
-      ...["Earth", "Below the Surface", "After Dark"].map((scene) =>
-        expect(page.getByRole("button", { name: scene, exact: true })).toBeInViewport({ ratio: 1 }),
-      ),
+      expect(page.getByRole("group", { name: "Earth scenes" })).toHaveCount(0),
     ]);
     const bounds = await page.evaluate(() => {
       const canvas = document.querySelector("canvas")!.getBoundingClientRect();
@@ -63,9 +62,7 @@ for (const [width, height] of [
     const creditPosition = await credit.boundingBox();
     expect(height! - (creditPosition!.y + creditPosition!.height)).toBeLessThanOrEqual(24);
     const collisions = await page
-      .locator(
-        ".observatory-story, .observatory-entry-actions > button, .observatory-scenes button, .creator-credit a, #start-story, #continue-story",
-      )
+      .locator(".observatory-story, .observatory-entry-actions > button, .creator-credit a")
       .evaluateAll((nodes) => {
         const boxes = nodes.map((node) => ({
           name: node.textContent?.trim(),
@@ -84,7 +81,7 @@ for (const [width, height] of [
       });
     expect(collisions, "landing copy, controls and the fixed credit have separate space").toEqual([]);
     await page.screenshot({ path: test.info().outputPath(`observe-live-${width}.png`) });
-    await page.getByRole("button", { name: "After Dark", exact: true }).click();
+    await selectScene(page, "After Dark");
     await expect(page.getByRole("heading", { name: "The other side of day." })).toBeVisible();
     await expect(stage).toContainText("Catalogue sky");
     expect(await credit.boundingBox()).toEqual(creditPosition);
@@ -92,6 +89,7 @@ for (const [width, height] of [
       "aria-pressed",
       "true",
     );
+    const depth = page.getByRole("button", { name: "Below the Surface", exact: true });
     await depth.click();
     await expect(page.getByRole("heading", { name: "Beneath the surface." })).toBeVisible();
     await expect(depth).toHaveAttribute("aria-pressed", "true");
@@ -125,7 +123,7 @@ test("scenes preserve existing preferences and shared event links open the explo
     .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
     .click();
   await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   await expect(page.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Show the panel", exact: true })).toBeVisible();
@@ -287,7 +285,7 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
-  await page.getByRole("button", { name: "Below the Surface", exact: true }).click();
+  await selectScene(page, "Below the Surface");
   await expect(
     page.getByText(
       "No earthquake at least 70 km deep in this window. Recorded depth stories are still available.",
@@ -325,7 +323,7 @@ test("the observatory keeps capture recovery and home navigation available", asy
     });
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await (await saveImageButton(page)).click();
   await expect(page.getByRole("region", { name: "View options", exact: true })).toBeHidden();
   await expect(page.getByRole("status").filter({ hasText: "Sharing is unavailable" })).toBeVisible();

@@ -30,20 +30,18 @@ do not support browser CORS. The local server supplies the same routes without a
 A fresh visit opens a compact introduction beside the shared globe, with no scene selected.
 Its starting view uses an approximate network location rounded to 0.1 degree, falling back to New York
 when unavailable. Shared links take priority, and an estimate never interrupts someone already exploring.
-In Layers, **Use device location** requests browser permission only when chosen; its coordinates are
+In Layers, open **Find a place**. **Use device location** requests browser permission only when chosen; its coordinates are
 rounded before framing the view. No location is sent to analytics or stored in an app database.
 Camera coordinates can appear in shared view links. See the
 [location privacy notice](https://accounts.aidenjang.com/privacy#legal-location-in-everything-is-fine).
-Choosing Earth, Below the Surface or After Dark opens its content immediately; choosing the
-selected scene again shows All stories. The wordmark closes the catalogue and returns to the introduction.
-**Follow this story** opens the recorded Float Dive at its North Atlantic location. Choose **Follow the rise**
-when ready; the ending plots the actual profile and lets you keep its highlighted finding. **Find** opens
-the curated catalogue. **Explore the layers** opens the layer controls beside
-the same globe or map. The sidebar's **Layers** and **Stories** tabs switch between them. The wordmark
-returns to the Earth landing view. Browser Back restores the previous view. **Reset camera** in View
+**Explore the globe** opens Layers beside the shared world. **Browse stories** opens the catalogue.
+The **Stories** tab in Explore offers the same catalogue, with a **Category** filter for Earth,
+Below the Surface or After Dark. Choose Float Dive and then **Follow the rise** to see a
+measured Argo profile and keep its finding. The wordmark returns to the landing view.
+Browser Back restores the previous view. **Reset camera** in View
 options recenters the current view without changing its projection, layers, filters or held time.
 Choose **Reset view & filters** to clear the selection, filters, and held time and replay the globe’s arrival.
-A failed story module offers a return to the prior view and an explicit page reload without replacing the shared globe.
+An interrupted story download can retry once at the linked moment. If it still fails, use **Try again** or return to browsing.
 Existing saved layouts and links to an event, archive, section, or held moment open the explorer directly.
 **Save image** adds the displayed story’s title, time and source to supported canvas views.
 Photograph overlays and Sun Watch do not offer an incomplete canvas-only export.
@@ -51,19 +49,18 @@ Use **Fullscreen** on desktop for a larger viewing area.
 Each scene contains tours, featured experiences, live observations, forecasts, predictions, and
 replays. Explore keeps story browsing inside its Stories tab. **View options** holds image and clip capture, fullscreen and the landing globe’s
 auto-rotation setting. Dragging pauses rotation; it resumes after 1.5 idle seconds.
-**Find a story** searches subjects, places and years within the selected category. **Search all stories** broadens the search without clearing the query. The initial list has one large featured preview and three compact recommendations; **View all** opens the full selection. **Saved & recent** opens your visits directly; **From today’s feeds** reveals current discoveries. **Guided journeys & archives** holds the longer routes and date tools. The thumbnails are recorded views;
+**Find a story** searches subjects, places and years within the selected category. **Search all stories** broadens the search without clearing the query. The initial list leads with a featured preview or a recent story, followed by compact recommendations; **View all** opens the full selection. **Saved & recent** opens your visits directly; **From today’s feeds** reveals current discoveries. **Guided journeys & archives** holds the longer routes and date tools. The thumbnails are recorded views;
 open a story for its source, date, and current availability. Regional stories also offer **Preview** to locate their region on the same globe or map; dismissing the preview restores your viewpoint. Closing a story returns to its search
 result or drawer entry, including its category, filter, scroll, focus and viewpoint. **Keep exploring** offers a related view with context for its separate
 observations and time period. **Share this moment** copies the story, timestamp, projection, and selected
-city or chapter. Float Dive links retain the profile, selected sample and globe/map projection. Links open paused; recent feeds explain when the linked observation has expired.
+city or chapter. Float Dive links retain the profile, selected sample and projection chosen in Locate. Links open paused; recent feeds explain when the linked observation has expired.
 
 On desktop, the paired **Globe / Map** control switches the shared view. Source times and the legend
 sit together below the canvas. On phones, the globe stays above the adjustable sheet; use its handle
 or the **More controls / More globe** control to change the space available. **Sources & times** opens detailed
-radar, wind and lightning timestamps at every width while radar attribution stays visible. Radar playback
-also sits beneath its layer row; opening its inspector expands the same player without resetting the scan.
+radar, wind and lightning timestamps at every width while radar attribution stays visible. Open **Storm radar details** to play or scrub scans; leaving the inspector preserves the selected scan.
 
-Each scene has a featured starting point before recent visits: Float Dive, Rupture Reveal, or Moonfall.
+Each scene highlights Float Dive, Rupture Reveal or Moonfall for new visitors. Returning visitors see one action for their most recent story in that category.
 Focus or hover over a geographically anchored story to preview its region without moving the globe.
 On touch screens, hold the story. **Locate** moves to that region; opening the story starts its own view.
 **Worth looking at today** uses the current earthquake reports, available NOAA aurora forecast,
@@ -76,7 +73,7 @@ Tonight’s Sky its city and time, and Float Dive its measured depth and project
 **Keep this observation** saves the reading, source date and an optional note; **Update kept observation** replaces that bookmark. Live views reload their providers;
 a radar scan may expire and a recent float profile may become unavailable. **Saved views** lets you
 remove bookmarks or clear recent visits; **Undo** restores the last removal while you remain in the app. Reopening a catalogue entry also resumes its saved moment.
-A compact return action on the landing page and in Stories uses **Continue** for an unfinished story, **Watch again** for a completed story, and **Open latest** for a current-data view. Saved views still reopen their exact saved moment. At the end of finite playback, **Up next** reveals one related story without automatically opening it or moving focus. It prefers a related view absent from recent history and avoids the view you just came from; source and date differences remain explicit.
+A compact return action in Stories uses **Continue** for an unfinished story, **Watch again** for a completed story, and **Open latest** for a current-data view. Saved views still reopen their exact saved moment. At the end of finite playback, **Up next** reveals one related story without automatically opening it or moving focus. It prefers a related view absent from recent history and avoids the view you just came from; source and date differences remain explicit.
 Earth-story timelines show dated milestones, **Restart** while partway through or **Replay** at the end, and a closing evidence
 summary. **Compare dates** switches actual observations while holding the camera; annual and monthly
 products keep their stated time resolution. Authored flight progress and plate reconstructions do not

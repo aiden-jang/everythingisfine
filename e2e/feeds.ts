@@ -476,18 +476,26 @@ export async function waitForData(page: Page): Promise<number> {
   return held;
 }
 
+export async function revealScenes(page: Page) {
+  const browse = page.getByRole("button", { name: "Browse stories", exact: true });
+  if (await browse.isVisible()) await browse.click();
+  const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
+  await expect(scenes).toBeVisible();
+  return scenes;
+}
+
+export async function selectScene(page: Page, name: "Earth" | "Below the Surface" | "After Dark") {
+  await (await revealScenes(page)).getByRole("button", { name, exact: true }).click();
+}
+
 /** Reach the catalogue through real navigation; secondary tools are opt-in. */
 export async function openStories(page: Page, expand: "catalogue" | "all" | "search" = "catalogue") {
   const tab = page.getByRole("tab", { name: "Stories", exact: true });
   const exploring = await tab.isVisible();
   if (exploring && (await tab.getAttribute("aria-selected")) !== "true") await tab.click();
-  const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
-  if (
-    !exploring &&
-    (await scenes.isVisible()) &&
-    (await scenes.locator('[aria-pressed="true"]').count()) === 0
-  )
-    await page.getByRole("button", { name: "Earth", exact: true }).click();
+  const scenes = exploring
+    ? page.getByRole("group", { name: "Earth scenes", exact: true })
+    : await revealScenes(page);
   const catalogue = page.getByRole("region", { name: "Stories and layers", exact: true });
   await expect(catalogue).toBeVisible();
   if (expand === "search") return scenes;
@@ -508,8 +516,9 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
 }
 
 export async function revealStoryTools(page: Page) {
-  if (await page.getByRole("group", { name: "Earth scenes", exact: true }).isVisible())
-    await openStories(page, "all");
+  const browse = page.getByRole("button", { name: "Browse stories", exact: true });
+  const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
+  if ((await browse.isVisible()) || (await scenes.isVisible())) await openStories(page, "all");
 }
 
 export async function openLayer(page: Page, name = "Earthquakes") {

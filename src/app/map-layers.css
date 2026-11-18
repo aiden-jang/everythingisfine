@@ -2,20 +2,10 @@
   margin-bottom: 0;
 }
 .layer-player {
-  position: sticky;
-  top: 0;
-  z-index: 3;
-  background: var(--color-deck);
   padding-block: 6px;
 }
 .layer-player[hidden] {
   display: none;
-}
-.layer-player[data-expanded] {
-  position: static;
-}
-.layer-player .radar-layer[data-compact] {
-  margin: 0;
 }
 .canvas-legend {
   width: 300px;

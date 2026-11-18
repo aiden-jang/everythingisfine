@@ -1,11 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, selectScene, revealScenes } from "./feeds";
 
 test("a shared scene opens the same category in a fresh browser @dev", async ({ page, browser }) => {
   await installFeeds(page, { presentation: "fresh" });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await expect
     .poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("catalogue"))
     .toBe("night");
@@ -23,7 +23,7 @@ test("a shared scene opens the same category in a fresh browser @dev", async ({ 
     await expect(other.getByRole("button", { name: "Shadow Chase", exact: true })).toBeVisible();
     await other.getByRole("button", { name: /^View all \d+ stories$/ }).click();
     await expect(other.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
-    await other.getByRole("button", { name: "After Dark", exact: true }).click();
+    await selectScene(other, "After Dark");
     await expect
       .poll(() => new URLSearchParams(new URL(other.url()).hash.slice(1)).get("catalogue"))
       .toBe("all");
@@ -51,9 +51,10 @@ test("Home restores all scenes and browser Back restores it on the same globe @d
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
+  await revealScenes(page);
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
   const canvas = await page.locator("canvas").elementHandle();
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await openStories(page);
   await page.getByRole("searchbox", { name: "Find a story" }).fill("moon");
   await page
@@ -79,6 +80,7 @@ test("rapid scene and presentation changes finish at the latest choice @dev", as
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
+  await revealScenes(page);
   await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeEnabled();
   const canvas = await page.locator("canvas").elementHandle();
   await page.emulateMedia({ reducedMotion: "no-preference" });
@@ -121,7 +123,9 @@ for (const width of [1440, 390]) {
     await expect(page.getByRole("button", { name: "Stories & layers", exact: true })).toHaveCount(0);
     await expect(stories).toHaveCount(0);
     await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
+    await expect(scenes).toHaveCount(0);
     for (const name of ["Earth", "Below the Surface", "After Dark"]) {
+      await revealScenes(page);
       const category = scenes.getByRole("button", { name, exact: true });
       await category.click();
       await expect(category).toHaveAttribute("aria-pressed", "true");

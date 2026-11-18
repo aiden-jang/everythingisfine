@@ -11,7 +11,8 @@ import type { EarthScene, useObservatory } from "./useObservatory";
 import { StorySearch } from "./StorySearch";
 import { StoryPreview } from "./discovery/StoryPreview";
 import { FeaturedStory } from "./FeaturedStory";
-import { browseStories, storyButtonId, storyKind } from "./storyBrowse";
+import { browseStories, featuredIds, storyButtonId, storyKind } from "./storyBrowse";
+import { searchStories } from "./storyIndex";
 import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import "./stories.css";
 
@@ -28,10 +29,12 @@ export function StoriesDrawer({
   aurora,
   children,
   discoveries,
+  filter,
   browse,
 }: {
   children: ReactNode;
   discoveries?: ReactNode;
+  filter?: ReactNode;
   browse: Pick<Observatory["browser"], "expanded" | "sections" | "expand" | "fold" | "select">;
   visible?: boolean;
   scene: EarthScene | null;
@@ -47,7 +50,14 @@ export function StoriesDrawer({
   const { expanded, expand } = browse;
   const key = scene ?? "all";
   const all = expanded === key;
-  const entries = browseStories(scene, all);
+  const featured = featuredIds[scene ?? "live"];
+  const recent = navigation?.library.recent.find(({ id }) =>
+    searchStories.some((story) => story.id === id && (!scene || story.scene === scene)),
+  );
+  const entries = browseStories(scene, all).filter(({ id }) => id !== recent?.id);
+  const featuredRow =
+    recent && recent.id !== featured ? searchStories.find(({ id }) => id === featured) : null;
+  if (featuredRow) entries.unshift(featuredRow);
   const selectionScroll = useRef(0);
   const container = useRef<HTMLDivElement>(null);
   useReadingArrival(container, `${key}:${all}`);
@@ -103,6 +113,7 @@ export function StoriesDrawer({
           ready={ready}
           aurora={aurora}
           scene={scene}
+          filter={filter}
           onSearchAll={() => browse.select(null)}
         />
 
@@ -128,8 +139,7 @@ export function StoriesDrawer({
         </section>
         {!deck.query.trim() && (
           <>
-            <ContinueVisit scene={scene} />
-            <FeaturedStory scene={scene ?? "live"} />
+            {recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene ?? "live"} />}
             <section className="stories-group" aria-label={all ? "All stories" : "Selected stories"}>
               <h3 className={all ? undefined : "sr-only"}>
                 {all ? "All stories in this selection" : "Start exploring"}

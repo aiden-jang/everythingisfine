@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, openStories, openLayer } from "./feeds";
+import { installFeeds, openStories, openLayer, selectScene } from "./feeds";
 import { DEFAULT_CAMERA } from "../src/globe/framing";
 
 const camera = (page: Page) =>
@@ -23,7 +23,7 @@ test("search scopes match the category and expanding the scope preserves the que
   page,
 }) => {
   await start(page);
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   const search = page.getByRole("searchbox", { name: "Find a story" });
   await search.fill("Aral");
   await expect(page.getByText("No matches in After Dark. Try a place, year or subject.")).toBeVisible();
@@ -103,7 +103,7 @@ test("returning visits are one action away and preserve their saved moment and f
   await expect(slider).toHaveValue("2");
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await search.fill("");
-  const resume = page.locator("#continue-story");
+  const resume = page.locator(".story-continue");
   await expect(resume).toContainText("Continue Vanishing Sea");
   await expect(resume).toBeInViewport({ ratio: 1 });
   await page.screenshot({ path: test.info().outputPath("continue-phone.png") });

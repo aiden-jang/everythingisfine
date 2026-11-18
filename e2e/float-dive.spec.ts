@@ -31,14 +31,8 @@ test("a pending recent Float Dive link survives reload and Back without becoming
   );
   await expect.poll(() => requested).toBe(1);
   expect(requestedProfile()).toBe(profile);
-  await expect(
-    page.getByRole("group", { name: "Float projection" }).getByRole("button", { name: "Map", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
-  await page
-    .getByRole("group", { name: "Float projection" })
-    .getByRole("button", { name: "Globe", exact: true })
-    .click();
-  await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("p")).toBe("globe");
+  await expect(page.getByRole("group", { name: "Float projection" })).toBeHidden();
+  expect(new URLSearchParams(new URL(page.url()).hash.slice(1)).get("p")).toBe("map");
   await page.reload();
   await expect.poll(() => requested).toBe(2);
   expect(requestedProfile()).toBe(profile);
@@ -188,16 +182,9 @@ for (const width of [1440, 390])
       const inspector = page.getByRole("region", { name: "Measured float profile" });
       for (const phoneWidth of [390, 320]) {
         await page.setViewportSize({ width: phoneWidth, height: phoneWidth === 320 ? 640 : 844 });
-        await expect(control).toBeInViewport({ ratio: 1 });
-        await expect(projection).toBeInViewport({ ratio: 1 });
-        const camera = (await control.boundingBox())!;
-        const buttons = (await projection.boundingBox())!;
-        const panel = (await inspector.boundingBox())!;
-        expect(buttons.y).toBeGreaterThanOrEqual(panel.y + panel.height);
-        expect(camera.y + camera.height).toBeLessThanOrEqual(panel.y);
-        await control.click();
-        await page.getByRole("button", { name: "Recenter view", exact: true }).click();
-        await expect(control).toBeVisible();
+        await expect(inspector).toBeInViewport();
+        await expect(projection).toBeHidden();
+        await expect(control).toBeHidden();
       }
       await page.setViewportSize({ width, height: 844 });
     }

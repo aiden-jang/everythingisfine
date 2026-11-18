@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, openLayer } from "./feeds";
+import { installFeeds, openLayer, selectScene } from "./feeds";
 
 // Small synthetic NetCDF/HDF5 fixtures exercise the real provider decoders without a live service.
 const wind = readFileSync(new URL("./fixtures/weather-wind.nc", import.meta.url));
@@ -320,10 +320,10 @@ test("weather selections survive a cinematic detour without resuming playback @d
       exact: true,
     })
     .click();
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await expect(windPanel).toHaveCount(0);
   await expect(lightningPanel).toHaveCount(0);
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
   await expect(windPanel.getByRole("slider")).toHaveAttribute("aria-valuetext", /17:00/);
   await expect(windPanel.getByRole("button", { name: "Replay", exact: true })).toBeVisible();

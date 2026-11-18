@@ -3,40 +3,7 @@
   gap: 16px;
   max-width: 36ch;
 }
-.float-invitation-location {
-  position: absolute;
-  inset: 100px 200px 110px 44%;
-  z-index: 2;
-  pointer-events: none;
-}
-.float-invitation-location button {
-  position: absolute;
-  visibility: hidden;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: max-content;
-  min-height: 44px;
-  padding: 8px;
-  transform: translate(-22px, -50%);
-  background: var(--color-void);
-  color: var(--color-ink);
-  border-radius: 5px;
-  pointer-events: auto;
-  text-align: left;
-  font-size: 14px;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.float-invitation-location button:hover {
-  background: var(--color-deck);
-}
-.float-invitation-location small {
-  display: block;
-  margin-top: 3px;
-  color: var(--color-dim);
-  font-size: 11px;
-}
+
 .zones[data-float-stage="locate"] .float-playback-row,
 .zones[data-float-stage="locate"] .float-transport > small,
 .observatory-intro[data-float-stage="locate"]
@@ -122,9 +89,6 @@
   }
 }
 @media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
-  .float-invitation-location {
-    display: none;
-  }
   .zones:has([data-float-stage="locate"]) .observatory-sidebar {
     padding-bottom: 108px;
   }
@@ -163,13 +127,13 @@
     visibility: hidden;
   }
 }
-@media (max-width: 380px), (max-height: 620px) {
-  .float-invitation-location {
-    display: none;
-  }
-}
 @media (max-height: 620px) and (min-width: 600px) {
   .observatory-intro[data-float-stage="locate"] .float-heading h2 {
     font-size: 48px;
   }
+}
+
+.zones[data-float-stage="rise"] .camera-recenter:not([data-camera-manual]),
+.zones[data-float-stage="notice"] .camera-recenter:not([data-camera-manual]) {
+  display: none;
 }

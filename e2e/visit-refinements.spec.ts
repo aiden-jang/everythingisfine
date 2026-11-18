@@ -23,7 +23,7 @@ test("completed Continue restarts from the beginning after reload while unfinish
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect.poll(async () => (await visits(page)).recent[0].completed).toBe(true);
   await search.fill("");
-  const resume = page.locator("#continue-story");
+  const resume = page.locator(".story-continue");
   await expect(resume).toContainText("Watch again Vanishing Sea");
   expect(new URLSearchParams(new URL(page.url()).hash.slice(1)).has("story")).toBe(false);
   await page.reload();
@@ -53,7 +53,7 @@ test("Open latest ignores an old held observation instead of resuming it", async
   expect(await slider.inputValue()).not.toBe(newest);
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await search.fill("");
-  const resume = page.locator("#continue-story");
+  const resume = page.locator(".story-continue");
   await expect(resume).toContainText("Open latest Rainbelt");
   await resume.click();
   await expect(slider).toHaveValue(newest);
@@ -109,10 +109,10 @@ for (const blocked of [false, true]) {
     await expect(shelf.locator(".visit-feedback")).toBeFocused();
     await expect(shelf).toContainText(blocked ? "Restored for this visit" : "Restored on this device");
     await shelf.getByRole("button", { name: "Clear recent visits" }).click();
-    await expect(page.locator("#continue-story")).toHaveCount(0);
+    await expect(page.locator(".story-continue")).toHaveCount(0);
     await page.screenshot({ path: test.info().outputPath(`undo-phone-${blocked}.png`) });
     await shelf.getByRole("button", { name: "Undo", exact: true }).click();
-    await expect(page.locator("#continue-story")).toContainText("Continue Vanishing Sea");
+    await expect(page.locator(".story-continue")).toContainText("Continue Vanishing Sea");
     await expect(shelf).toContainText("Saved views (1)");
   });
 }

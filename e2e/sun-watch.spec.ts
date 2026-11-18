@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, openStories, revealStoryTools } from "./feeds";
+import { installFeeds, openStories, revealStoryTools, selectScene } from "./feeds";
 
 async function installSun(page: Page, windAvailable = true, xrayAge = 1) {
   await installFeeds(page, { presentation: "fresh", empty: true });
@@ -43,7 +43,7 @@ test("Sun Watch loads on demand and flies back to Earth inside After Dark", asyn
   await page.emulateMedia({ reducedMotion: "reduce" });
   const requests = await installSun(page);
   await page.goto("/");
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await openStories(page);
   await revealStoryTools(page);
   await expect(page.locator("#open-aurora-overflight")).toBeEnabled();
@@ -74,7 +74,7 @@ test("reduced motion keeps the measurements and aurora available during a solar-
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installSun(page, false, 20);
   await page.goto("/");
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await openStories(page);
   const credit = page.getByRole("link", { name: "aiden jang", exact: true });
   await expect(credit).toBeInViewport({ ratio: 1 });
@@ -103,7 +103,7 @@ test("Sun Watch holds the aurora edition and projection while a wind sample is i
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installSun(page);
   await page.goto("/");
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await revealStoryTools(page);
   await page.locator("#open-aurora-overflight").click();
   const world = page.getByRole("group", { name: "Globe readout" });

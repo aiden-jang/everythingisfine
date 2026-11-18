@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories, revealStoryTools } from "./feeds";
+import { installFeeds, openStories, revealStoryTools, selectScene } from "./feeds";
 
 test("Tonight’s Sky follows the selected city and time on the same globe", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -16,7 +16,7 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await page.goto("/");
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await revealStoryTools(page);
   const open = page.getByRole("button", { name: "Tonight’s Sky", exact: true });
   await open.click();
@@ -116,7 +116,7 @@ test("Moonfall reuses the sky canvas and restores the city, time, and bearing", 
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await revealStoryTools(page);
   await page.getByRole("button", { name: "Tonight’s Sky", exact: true }).click();
   const sky = page.getByRole("region", { name: "Tonight’s Sky" });
@@ -177,7 +177,7 @@ test("Moonfall returns to the Earth map with the same sky time", async ({ page }
   await page.clock.setFixedTime(new Date("2026-11-06T18:00:00Z"));
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await revealStoryTools(page);
   await page.getByRole("button", { name: "Tonight’s Sky", exact: true }).click();
   const sky = page.getByRole("region", { name: "Tonight’s Sky" });

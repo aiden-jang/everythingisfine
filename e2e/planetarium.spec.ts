@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, selectScene, revealScenes } from "./feeds";
 
 test.use({
   video:
@@ -41,18 +41,19 @@ for (const [width, height] of [
           errors.push(message.text());
       });
       await page.goto("/");
+      await revealScenes(page);
       await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
       await page.emulateMedia({ reducedMotion: "no-preference" });
-      await page.getByRole("button", { name: "After Dark", exact: true }).click();
+      await selectScene(page, "After Dark");
       await expect.poll(async () => (await earthPosition(page)).y).toBeGreaterThan(0.98);
       await expect.poll(async () => (await earthPosition(page)).ready).toBe(true);
       await page.waitForTimeout(1100);
       await page.screenshot({ path: test.info().outputPath(`planetarium-${width}.png`) });
-      await page.getByRole("button", { name: "Earth", exact: true }).click();
+      await selectScene(page, "Earth");
       await expect.poll(async () => Math.abs((await earthPosition(page)).y - 0.5)).toBeLessThan(0.01);
       await page.screenshot({ path: test.info().outputPath(`earth-return-${width}.png`) });
       await page.emulateMedia({ reducedMotion: "reduce" });
-      await page.getByRole("button", { name: "After Dark", exact: true }).click();
+      await selectScene(page, "After Dark");
       expect((await earthPosition(page)).y).toBeGreaterThan(0.98);
       expect((await earthPosition(page)).ready).toBe(true);
       await page.getByRole("button", { name: "Explore the globe" }).click();
@@ -80,7 +81,7 @@ test("the reveal survives a saved map and restores its flat framing", { tag: "@d
   await page
     .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
     .click();
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await expect.poll(morph).toBe(0);
   await expect.poll(async () => (await earthPosition(page)).y).toBeGreaterThan(0.98);
   await expect.poll(async () => (await earthPosition(page)).ready).toBe(true);

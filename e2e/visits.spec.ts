@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, selectScene } from "./feeds";
 
 const home = "Everything is fine. Earth, ocean & sky, back to the Observatory";
 test("discovery changes with the scene and keeps the same globe", async ({ page }) => {
@@ -13,7 +13,7 @@ test("discovery changes with the scene and keeps the same globe", async ({ page 
   await expect(page.getByRole("region", { name: "Worth looking at today" })).toContainText(
     "calculated for a level horizon",
   );
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await openStories(page, "all");
   await expect(page.locator(".featured-story button")).toHaveAccessibleName("Moonfall");
   await page.locator(".featured-story button").click();
@@ -28,7 +28,7 @@ test("a saved lunar traverse resumes after a new page visit", async ({ page }) =
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await openStories(page, "all");
   await page.locator(".featured-story button").click();
   await page.getByRole("combobox", { name: "Rover traverse" }).selectOption("1");
@@ -57,12 +57,12 @@ test("a saved float returns to its measured depth after a new page visit", async
   await page.goto("/");
   await openStories(page, "all");
   await page.locator(".featured-story button").click();
-  await page.getByRole("button", { name: "Follow the rise", exact: true }).click();
-  const depth = page.getByRole("slider", { name: "Ascent depth" });
   await page
     .getByRole("group", { name: "Float projection" })
     .getByRole("button", { name: "Map", exact: true })
     .click();
+  await page.getByRole("button", { name: "Follow the rise", exact: true }).click();
+  const depth = page.getByRole("slider", { name: "Ascent depth" });
   await depth.press("End");
   const value = "536"; // The finding keeps the recorded warm maximum, not the final surface sample.
   await page.getByText("Add a note (optional)", { exact: true }).click();
@@ -79,9 +79,8 @@ test("a saved float returns to its measured depth after a new page visit", async
     .getByRole("button", { name: /Float Dive .* °C/ })
     .click();
   await expect(depth).toHaveValue(value);
-  await expect(
-    page.getByRole("group", { name: "Float projection" }).getByRole("button", { name: "Map", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("group", { name: "Float projection" })).toBeHidden();
+  await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("p")).toBe("map");
   await page.getByText("Add a note (optional)", { exact: true }).click();
   await expect(page.getByRole("textbox", { name: /A note for this observation/ })).toHaveValue(
     "The warmer water was below the shallowest sample.",

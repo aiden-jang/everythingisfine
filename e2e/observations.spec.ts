@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, selectScene } from "./feeds";
 
 test("feed status names unavailable sources without increasing the background count", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -111,7 +111,7 @@ test("Orbital Pass shares the city and time between the horizon, globe and map",
     }),
   );
   await page.goto("/");
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await openStories(page);
   const open = page.getByRole("button", { name: "Orbital Pass", exact: true });
   await open.click();
@@ -183,7 +183,7 @@ test("Million-Mile View changes photographs and restores its catalogue on the sa
 
 test("Deep Time preserves its reconstruction age and returns on the same canvas", async ({ page }) => {
   const { canvas, original } = await prepareObservation(page);
-  await page.getByRole("button", { name: "Below the Surface", exact: true }).click();
+  await selectScene(page, "Below the Surface");
   await openStories(page);
   await page.getByRole("button", { name: "Deep Time", exact: true }).click();
   await page.getByRole("button", { name: /Pangaea/ }).click();

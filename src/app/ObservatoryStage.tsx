@@ -9,7 +9,7 @@ import type { Stop } from "./tour";
 import type { AuroraRun } from "../sources/auroraRoute";
 import type { ReactNode } from "react";
 
-const OBSERVATORY_SCENES = [
+export const OBSERVATORY_SCENES = [
   { id: "live", name: "Earth" },
   { id: "depth", name: "Below the Surface" },
   { id: "night", name: "After Dark" },
@@ -95,27 +95,20 @@ export function ObservatoryScenePicker({
   ready,
   deepAvailable,
   onScene,
-  onAll,
 }: {
   scene: EarthScene | null;
   ready: boolean;
   deepAvailable: boolean;
   onScene: (scene: EarthScene) => void;
-  onAll?: () => void;
 }): JSX.Element {
   return (
     <div
       id="observatory-scenes"
       tabIndex={-1}
-      className={`observatory-scenes${onAll ? " observatory-categories" : ""}`}
+      className="observatory-scenes"
       role="group"
       aria-label="Earth scenes"
     >
-      {onAll && (
-        <button type="button" onClick={onAll} aria-pressed={scene === null} disabled={!ready}>
-          <span className="scene-label">All stories</span>
-        </button>
-      )}
       {OBSERVATORY_SCENES.map((option) => (
         <button
           key={option.id}

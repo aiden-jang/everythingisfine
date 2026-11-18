@@ -101,7 +101,7 @@ export function useObservationDeck(
       closeView();
       setTrigger(null);
       requestAnimationFrame(() => {
-        const target = [origin, fallback, "observatory-scenes"]
+        const target = [origin, fallback, "observatory-scenes", "browse-stories"]
           .map((id) => (id ? document.getElementById(id) : null))
           .find((element) => element?.getClientRects().length);
         target?.focus({ preventScroll: true });

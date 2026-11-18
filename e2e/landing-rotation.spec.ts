@@ -46,7 +46,7 @@ test("entering Explore during arrival preserves the camera destination @dev", as
           const zoom = next.state().zoom;
           const button = Array.from(
             document.querySelectorAll<HTMLButtonElement>(".observatory-entry-actions button"),
-          ).find((action) => action.textContent?.trim() === "Explore the layers");
+          ).find((action) => action.textContent?.trim() === "Explore the globe");
           if (!opened && zoom > 1.1 && zoom < 2 && button && !button.disabled) {
             opened = true;
             // Click after this frame publishes its pose, before another frame can finish arrival.

@@ -4,7 +4,7 @@
     grid-template-columns: var(--observatory-width) minmax(0, 1fr);
     grid-template-rows: 1fr;
     grid-template-areas: "welcome canvas";
-    padding-top: 60px;
+    padding-top: var(--head-h);
   }
   .observatory-sidebar {
     --observatory-inline: clamp(24px, 3.2vw, 56px);

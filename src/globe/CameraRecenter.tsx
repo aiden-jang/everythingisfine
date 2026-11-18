@@ -10,6 +10,7 @@ export function CameraRecenter({ guide, wake }: { guide: CameraGuidance; wake: (
   return (
     <button
       type="button"
+      data-camera-manual={manual || undefined}
       className="camera-recenter absolute right-4 top-[calc(var(--scene-hud-top)+48px)] min-h-11 rounded-[7px] border border-hairline bg-deck px-3 text-sm text-ink hover:bg-raised"
       title={
         manual

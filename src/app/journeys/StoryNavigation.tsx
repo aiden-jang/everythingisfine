@@ -1,5 +1,4 @@
 import { usePanelReturn } from "../usePanelReturn";
-import { firstInvitation } from "../storyCuration";
 import { visitAction, restartVisit } from "../visitor/visitAction";
 import { refreshAnnotations } from "../../globe/annotationInput";
 import type { StoryPlace } from "../discovery/places";
@@ -15,7 +14,6 @@ import { useVisitMemory } from "../visitor/useVisitMemory";
 import type { Visit } from "../visitor/library";
 
 const Navigation = createContext<{
-  invitation: ReturnType<typeof firstInvitation>;
   returnLabel: string | undefined;
   openRadar: (at: number | undefined, map: boolean) => void;
   returnToBrowse: () => boolean;
@@ -158,14 +156,13 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       scrollTarget: saved.scrollTarget,
       scroll: saved.scroll,
       focus: saved.trigger,
-      fallback: saved.trigger === "start-story" ? "continue-story" : saved.scrollTarget,
+      fallback: active ? `continue-story-${active}` : saved.scrollTarget,
     });
     return true;
   }
   return (
     <Navigation.Provider
       value={{
-        invitation: firstInvitation(),
         active,
         completed: completion?.id === active && completion.complete,
         completion: reportCompletion,

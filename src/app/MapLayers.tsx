@@ -113,7 +113,6 @@ export function MapLayers({
         </div>
       )}
       <div hidden={layer !== null}>
-        {!archived && <PlaceContext {...places} />}
         {Object.values(controls.enabled).every((on) => !on) && (
           <p role="status">All layers are off. Choose a layer to show its observations.</p>
         )}
@@ -146,15 +145,10 @@ export function MapLayers({
           ) : null}
         </div>
       )}
-      <div
-        className="layer-player"
-        data-expanded={layer === "radar" || undefined}
-        hidden={layer !== "radar" && layer !== null}
-      >
+      <div className="layer-player" hidden={layer !== "radar"}>
         {controls.radar && (
           <Suspense fallback={<p role="status">Loading radar controls…</p>}>
             <RadarLayer
-              compact={layer === null}
               suspended={controls.suspended}
               onView={controls.updateRadar}
               initialAt={controls.selectedTimes.radar}
@@ -174,6 +168,12 @@ export function MapLayers({
         )}
       </div>
       <LayerCatalogue controls={controls} quiet={quiet} disabled={disabled} onInspect={inspect} />
+      {!archived && (
+        <details className="layer-place" hidden={layer !== null}>
+          <summary>Find a place</summary>
+          <PlaceContext {...places} />
+        </details>
+      )}
       <div hidden={layer !== "earthquakes"}>{children}</div>
       {hazardKind && (
         <section aria-label={`${mapLayerNames[layer!]} reports`} className="layer-reports">

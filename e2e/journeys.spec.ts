@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, selectScene } from "./feeds";
 
 async function tides(page: Page) {
   await page.route("https://api.tidesandcurrents.noaa.gov/**", (route) => {
@@ -75,7 +75,7 @@ for (const view of ["Meteor Nights", "Moonfall"] as const) {
     await page.clock.setFixedTime(new Date("2026-11-06T18:00:00Z"));
     await installFeeds(page, { presentation: "fresh", empty: true });
     await page.goto("/");
-    await page.getByRole("button", { name: "After Dark", exact: true }).click();
+    await selectScene(page, "After Dark");
     await openStories(page, "search");
     await page.getByRole("searchbox", { name: "Find a story" }).fill("Tonight’s Sky");
     await page.locator("#search-story-sky").click();

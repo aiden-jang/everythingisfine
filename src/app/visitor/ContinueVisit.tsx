@@ -1,15 +1,12 @@
 import { visitAction } from "./visitAction";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { searchStories } from "../storyIndex";
-import type { EarthScene } from "../useObservatory";
+import type { Visit } from "./library";
 import { visitNote } from "./VisitShelf";
 
-export function ContinueVisit({ scene }: { scene: EarthScene | null }) {
+export function ContinueVisit({ visit }: { visit: Visit }) {
   const navigation = useStoryNavigation();
-  const visit = navigation?.library.recent.find((entry) =>
-    searchStories.some((story) => story.id === entry.id && (!scene || story.scene === scene)),
-  );
-  if (!navigation || !visit) return null;
+  if (!navigation) return null;
   const title = searchStories.find((story) => story.id === visit.id)!.title;
   const kept = navigation.library.saved.find((entry) => entry.id === visit.id && entry.observation);
   const observation = kept?.observation;
@@ -18,10 +15,10 @@ export function ContinueVisit({ scene }: { scene: EarthScene | null }) {
   return (
     <button
       type="button"
-      id="continue-story"
+      id={`continue-story-${visit.id}`}
       className="story-continue"
       disabled={!!reason}
-      onClick={() => navigation.resume(kept ?? visit, "continue-story", !kept)}
+      onClick={() => navigation.resume(kept ?? visit, `continue-story-${visit.id}`, !kept)}
     >
       <span>
         {kept ? "Revisit" : action} {title}

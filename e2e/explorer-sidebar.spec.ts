@@ -159,9 +159,14 @@ for (const width of [1440, 812, 390]) {
     await expect(layers.getByRole("button", { name: "Earthquakes details", exact: true })).toBeFocused();
     await page.getByRole("tab", { name: "Stories", exact: true }).click();
     const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
-    const diagrams = stories.locator(".observatory-categories .scene-symbol");
-    await expect(diagrams).toHaveCount(3);
-    await Promise.all([0, 1, 2].map((index) => expect(diagrams.nth(index)).toBeInViewport({ ratio: 1 })));
+    const category = stories.getByRole("combobox", { name: "Category", exact: true });
+    await expect(category).toBeInViewport({ ratio: 1 });
+    await expect(category.getByRole("option")).toHaveText([
+      "All stories",
+      "Earth",
+      "Below the Surface",
+      "After Dark",
+    ]);
     await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
     await expect(
       stories.getByRole("region", { name: "Selected stories" }).locator(".story-choice > button"),
@@ -186,19 +191,12 @@ for (const width of [1440, 812, 390]) {
     await expect(stories.locator("#story-library-panel-visits")).toBeVisible();
     await saved.click();
     await expect(stories.locator("#story-library-panel-visits")).toBeHidden();
-    await expect(stories.getByRole("button", { name: "All stories", exact: true })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    await stories.getByRole("button", { name: "After Dark", exact: true }).click();
-    await expect(stories.getByRole("heading", { name: "After Dark", exact: true })).toBeVisible();
-    await stories.getByRole("button", { name: "All stories", exact: true }).click();
-    await expect(stories.getByRole("heading", { name: "All stories", exact: true })).toBeVisible();
-    await expect(stories.getByRole("button", { name: "All stories", exact: true })).toHaveAttribute(
-      "aria-pressed",
-      "true",
-    );
-    await stories.getByRole("button", { name: "After Dark", exact: true }).click();
+    await expect(category).toHaveValue("");
+    await category.selectOption("night");
+    await expect(stories.getByRole("button", { name: "Moonfall", exact: true })).toBeVisible();
+    await category.selectOption("");
+    await expect(stories.getByRole("button", { name: "Float Dive", exact: true })).toBeVisible();
+    await category.selectOption("night");
     expect(await camera()).toEqual(pose);
     const search = stories.getByRole("searchbox", { name: "Find a story", exact: true });
     await search.fill("Vanishing Sea");
@@ -216,11 +214,7 @@ for (const width of [1440, 812, 390]) {
     await page.getByRole("button", { name: "Back to stories", exact: true }).click();
     await expect(search).toHaveValue("Vanishing Sea");
     await expect(page.locator(`#${trigger}`)).toBeFocused();
-    await expect(stories.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
-    await expect(stories.getByRole("heading", { name: "Search all stories", exact: true })).toBeVisible();
+    await expect(category).toHaveValue("");
     await expect.poll(camera).toEqual(pose);
     expect(
       await canvas!.evaluate((element) => element === document.querySelector("#globe-view canvas")),

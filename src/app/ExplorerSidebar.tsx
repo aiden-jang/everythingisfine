@@ -3,7 +3,8 @@ import { useReadingArrival } from "./useReadingArrival";
 import type { ObservatoryProps } from "./Observatory";
 import { Discoveries } from "./visitor/Discoveries";
 import { StoriesDrawer } from "./StoriesDrawer";
-import { ObservatoryScenePicker } from "./ObservatoryStage";
+import { OBSERVATORY_SCENES } from "./ObservatoryStage";
+import type { EarthScene } from "./useObservatory";
 import "./explore-panel.css";
 
 export function ExplorerSidebar({
@@ -69,7 +70,6 @@ export function ExplorerSidebar({
           </button>
         ))}
       </div>
-      {notices}
       <div
         ref={browser.pane === "layers" ? panel : undefined}
         id="explorer-layers"
@@ -77,6 +77,7 @@ export function ExplorerSidebar({
         aria-labelledby="explorer-layers-tab"
         hidden={browser.pane !== "layers"}
       >
+        {notices}
         {children}
       </div>
       <div
@@ -87,25 +88,26 @@ export function ExplorerSidebar({
         hidden={browser.pane !== "stories"}
       >
         <h2 className="sr-only">Stories</h2>
-        {!context.views.observing && (
-          <ObservatoryScenePicker
-            scene={browser.category}
-            ready={context.ready}
-            deepAvailable={context.deepAvailable}
-            onAll={() => {
-              observations.setQuery("");
-              browser.select(null);
-            }}
-            onScene={(next) => {
-              observations.setQuery("");
-              browser.select(browser.category === next ? null : next);
-            }}
-          />
-        )}
         <StoriesDrawer
           browse={browser}
           visible={!context.views.observing}
           scene={browser.category}
+          filter={
+            <label className="story-category">
+              <span>Category</span>
+              <select
+                value={browser.category ?? ""}
+                onChange={(event) => browser.select((event.currentTarget.value as EarthScene) || null)}
+              >
+                <option value="">All stories</option>
+                {OBSERVATORY_SCENES.map(({ id, name }) => (
+                  <option key={id} value={id}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          }
           ready={context.ready}
           observations={observations}
           aurora={context.aurora}

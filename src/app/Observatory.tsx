@@ -28,7 +28,6 @@ import "./measurement-sound.css";
 import "./moonfall/moonfall.css";
 import { ObservationDeckShell } from "./observations/ObservationEntry";
 import { ObservatoryEntryActions } from "./ObservatoryEntryActions";
-import { LandingStory } from "./LandingStory";
 import { StoryBoundary } from "./StoryBoundary";
 import { StoryDockProvider } from "./observations/StoryDock";
 export interface ObservatoryProps {
@@ -87,15 +86,8 @@ export interface ObservatoryProps {
   onHistory: (day: string) => void;
 }
 export function Observatory(props: ObservatoryProps): JSX.Element {
-  const navigation = useStoryNavigation();
   return (
-    <StoryBoundary
-      resetKey={props.views.navigation.key}
-      closeLabel={navigation?.returnLabel ?? "Back to home"}
-      onClose={() => {
-        if (!navigation?.returnToBrowse()) props.onHome();
-      }}
-    >
+    <StoryBoundary resetKey={props.views.navigation.key} onHome={props.onHome}>
       <ObservatoryContent {...props} />
     </StoryBoundary>
   );
@@ -308,7 +300,16 @@ function ObservatoryContent({
                     <ObservatoryEntryActions
                       landing={landing}
                       solar={solar}
-                      explore={onExplore}
+                      explore={() => {
+                        browser.show("layers");
+                        onExplore();
+                      }}
+                      browse={() => {
+                        browser.select(null);
+                        requestAnimationFrame(() =>
+                          document.getElementById("story-search-input")?.focus({ preventScroll: true }),
+                        );
+                      }}
                       closeSun={closeSun}
                       fromOval={!!aurora.run}
                     />
@@ -322,7 +323,7 @@ function ObservatoryContent({
                     ) : null}
                   </>
                 )}
-                {!active && !solar && !aurora.run && (
+                {browsing && (
                   <ObservatoryScenePicker
                     scene={browser.category}
                     ready={ready}
@@ -339,7 +340,6 @@ function ObservatoryContent({
                     }}
                   />
                 )}
-                {!browsing && !active && !solar && !aurora.run && scene === "live" && <LandingStory />}
                 {browsing && scene === "depth" && ready && !deepAvailable && (
                   <p id="depth-availability" className="observatory-depth-note">
                     No earthquake at least 70 km deep in this window. Recorded depth stories are still
@@ -361,7 +361,7 @@ function ObservatoryContent({
                     }}
                     onDismiss={() => {
                       onHome();
-                      document.getElementById("observatory-scenes")?.focus();
+                      requestAnimationFrame(() => document.getElementById("browse-stories")?.focus());
                     }}
                   >
                     <div className="observatory-actions">

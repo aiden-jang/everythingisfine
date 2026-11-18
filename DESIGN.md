@@ -265,14 +265,11 @@ Alumni Sans is a variable upright font licensed by the adjacent SIL Open Font Li
 
 The full-viewport landing uses a real oversized globe on the right, extending beyond the viewport,
 with the large invitation at the left. The desktop canvas is an 82vw square positioned 32vw from
-the left and 2dvh from the top. The introduction uses a 42% reading track and open remaining space;
-its top inset is `clamp(112px, 15dvh, 160px)`, with 34px horizontal and 64px bottom clearance.
-Follow this story is a pale filled action; Explore the layers is a quiet secondary action. The three
-diagram-led scenes form a ruled strip along the lower edge. A recorded thumbnail, question and
-source context occupy the lower-right invitation on desktop. Earthquake counts belong to exploration
-rather than the editorial opening; feed availability remains accessible in the header.
-Desktop layouts from 621px to 860px high reduce the top inset to 80px and place the two entry
-actions side by side, preserving separate space for the invitation, actions and diagram strip.
+the left and 2dvh from the top. The introduction and its actions sit together in a 42% reading track
+with 34px horizontal and 64px bottom clearance.
+Explore the globe is the pale filled action and Browse stories is secondary. Category filters
+and returning-visit controls live in the catalogue. Feed availability remains accessible in the header.
+Desktop layouts from 621px to 860px high reduce the headline size and top inset.
 
 Tall layouts below 900px place the 120vw globe above and behind the bounded introduction,
 with the introduction owning vertical scrolling and 24px side insets. The action, source context
@@ -377,7 +374,7 @@ Focus rings and selection brackets are interaction signals, not ambient glows.
 
 ## Shapes
 
-The circle of the globe is the dominant silhouette. The primary Follow this story action uses the field radius;
+The circle of the globe is the dominant silhouette. The primary Explore the globe action uses the field radius;
 search fields and featured image crops use the field radius. Projection controls use the projection
 radius, ordinary controls and recommendation thumbnails use the control radius, and the projection
 pair uses the card radius. Phone recommendations use open ruled rows. Explore and Observatory sheets
@@ -408,11 +405,9 @@ empty result. A failing source is named with its reason and retry, and must not
 blank working layers. An empty filter result has a useful widening/reset action.
 Empty phone lists occupy their status height rather than reserving absent rows.
 
-The landing Follow this story action uses pale ink fill and a directional cue; Explore the layers
-is a text action. Utility buttons use
+The landing Explore the globe action uses pale ink fill and a directional cue. Browse stories is the secondary action. Utility buttons use
 neutral borders and brightness-based hover; inputs remain transparent on the reading deck, with
-a visible hairline and square field corners. Explore tabs use an ink underline, while selected
-diagram-led story filters use the raised fill. The shared focus treatment remains visible across each variant.
+a visible hairline and square field corners. Compact Explore tabs use an ink underline. The Category field sits below story search. The shared focus treatment remains visible across each variant.
 
 ### Observatory presentation and discovery
 
@@ -422,18 +417,14 @@ The compact two-line wordmark returns to the invitation. The globe stage carries
 and scene-specific reference where space allows. Phone and short-height layouts prioritize the
 reachable controls and source disclosure.
 
-Earth, Below the Surface and After Dark are explicit presets, not automatic layer changes.
-Their temporary overrides do not overwrite saved scientific settings. The three scene controls
-use matching globe, depth and constellation diagrams on the landing and story filters, with a finite selection trace and a
-still diagram under reduced motion. Selecting a scene opens its catalogue; selecting it again
-returns to All stories. There is no separate disclosure for content that the selection already opens.
-The observatory retains source status, scoped counts, capture and direct Explore access, including
-empty or unavailable feeds.
+The story browser opens on All stories. Its Earth, Below the Surface and After Dark diagrams
+move the shared world to each scene without overwriting saved layer settings. Selecting a scene
+again returns to All stories. Explore uses a compact Category field below search and leaves the
+camera in place. Switching between Layers and Stories preserves the chosen layer settings.
+The Layers tab starts with available layer controls. Location lives in Find a place, and playback
+lives within the Storm radar inspector. A recent visit replaces the large feature as the opening
+action and each story appears once in the selection.
 
-In Explore, All stories is an explicit category beside the three scenes. Compact diagram-led categories
-reuse the landing symbols at a smaller scale inside the reading panel. One recorded-view feature precedes three
-initial compact recommendations. The panel loads its base and discovery styles through one ordered CSS entry;
-story filters own their sizes independently of the three landing presets.
 The feature's actual image sits above its title, source, short
 promise and Open story action on desktop; on phones it sits beside the reading text. Text has its
 own plain reading surface rather than sitting over a feature-image gradient. Initial recommendation
@@ -763,8 +754,7 @@ its geometry. The preview appears only after recording ends and can be dismissed
 
 #### Curated discovery and story continuity
 
-The first visit offers the recorded Float Dive investigation alongside the invitation, with its
-source context visible at every width. Its editorial priority does not depend on a recent feed
+The catalogue introduces the recorded Float Dive investigation, with its source context visible at every width. Its editorial priority does not depend on a recent feed
 response. Returning visitors keep Continue in the same place. No feed answer claims that rain
 or aurora is visible at the visitor’s location. The editorial catalogue order mixes Earth, ocean
 and sky; the complete catalogue and search retain every experience.
@@ -786,7 +776,7 @@ timeline timing stay intact. Reduced motion restores full configured resolution.
 
 - **Do** keep the real globe as the shared observation surface and preserve geographic camera control.
 - **Do** use Alumni Sans for the invitation and selected player headings, Geist for reading, and tabular figures for updating numbers.
-- **Do** keep matching scene diagrams on the landing and in compact story filters inside Explore.
+- **Do** keep the three scene diagrams in the story browser and group the Explore filters under Category.
 - **Do** separate recorded feature imagery from its source text and preserve capture provenance.
 - **Do** keep View all, Saved & recent and From today’s feeds discoverable, with unavailable reasons visible.
 - **Do** preserve camera, projection, pane, category, query, scroll and focus when returning from a story.
@@ -832,9 +822,8 @@ the reading pane without scrolling the shared world or playback.
 
 ### Connected discovery and kept evidence
 
-The opening gives the two-line invitation an editorial scale and separates Follow this story from
-Explore the layers. A recorded thumbnail makes the first investigation tangible. The familiar
-Earth, Below the Surface and After Dark diagrams remain the category language.
+The opening gives the two-line invitation an editorial scale and offers two routes into the shared world.
+The catalogue uses recorded imagery and source context to make each investigation tangible.
 
 Find and Saved occupy stable positions in the shared header. On phones they use labelled icon
 buttons with full touch targets; projection shares the world’s footer row with Legend and sources,
@@ -851,8 +840,7 @@ reading and kept cards arrive once. Reduced motion presents the same content imm
 
 Recorded observations and Earth stories use one retained playback dock outside the reading scrollport.
 It sits over the world on desktop and short landscape layouts, and below the phone reading panel.
-Projection uses the same world-footer component, including Float Dive; local-sky views retain their
-compass instead of an inappropriate map switch. Controls remain mounted across panel scrolling and resizing.
+Projection uses the shared world-footer component. Float Dive offers it in Locate, leaving Rise and Notice to the measured profile. Local-sky views use a compass. Controls remain mounted across panel scrolling and resizing.
 Scientific explanations and measured section charts sit beside their actions in the reading panel,
 leaving the world clear for the actual terrain, section line and lidar curtain. Newly measured sections
 reveal their chart within that panel without moving keyboard focus or the globe.
@@ -868,5 +856,4 @@ under reduced motion.
 Tonight’s Sky leads with a target chosen from the computed above-horizon bodies. Visible targets
 precede a secondary below-horizon disclosure. City and night remain available, while Moonfall and
 Meteor Nights follow the observing content. Switching back from a shower restores the held sky time
-and bearing for the same city. The radar player stays mounted when its inspector opens, and remains
-reachable while the layer list scrolls. The city selector names its curated scope explicitly.
+and bearing for the same city. The radar player stays mounted between the layer list and its inspector, preserving the selected scan. The city selector names its curated scope explicitly.

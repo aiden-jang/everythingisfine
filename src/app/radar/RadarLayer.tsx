@@ -7,23 +7,16 @@ export function RadarLayer({
   onView,
   initialAt,
   onSelect,
-  compact = false,
   suspended = false,
 }: {
   onView: (view: RadarView) => void;
   initialAt: number | null;
-  compact?: boolean;
   suspended?: boolean;
   onSelect: (id: "radar", at: number | null) => void;
 }): JSX.Element {
   const select = useCallback((at: number | null) => onSelect("radar", at), [onSelect]);
   return (
-    <section
-      id="radar-layer-controls"
-      className="radar-layer"
-      data-compact={compact || undefined}
-      aria-label="Storm radar playback"
-    >
+    <section id="radar-layer-controls" className="radar-layer" aria-label="Storm radar playback">
       <RadarStage
         global
         layer

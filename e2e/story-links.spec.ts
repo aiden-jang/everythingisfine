@@ -109,3 +109,36 @@ test("Tōhoku links retain the two recorded-wave stations and cursor", async ({ 
   await expect(page.getByRole("slider", { name: /Recording time/ })).toHaveValue("1200");
   await expect(page.getByRole("button", { name: "Play recording", exact: true })).toBeVisible();
 });
+
+test("an interrupted story download retries the shared moment once", async ({ page }) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  let attempts = 0;
+  await page.route(/\/a\/RuptureStage-[^/]+\.js$/, (route) =>
+    ++attempts === 1 ? route.abort() : route.continue(),
+  );
+  await page.goto("/#v=observe&story=rupture&t=1299823584000&chapter=waves&choice=1,3");
+  await expect(page.getByRole("combobox", { name: "First station" })).toHaveValue("1");
+  await expect(page.getByRole("combobox", { name: "Second station" })).toHaveValue("3");
+  await expect(page.getByRole("button", { name: "Play recording", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Story unavailable" })).toHaveCount(0);
+  expect(attempts).toBe(2);
+});
+
+test("a persistent story download failure offers a named recovery view", async ({ page }) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  let attempts = 0;
+  await page.route(/\/a\/RuptureStage-[^/]+\.js$/, (route) => {
+    attempts++;
+    return route.abort();
+  });
+  await page.goto("/#v=observe&story=rupture");
+  const status = page.getByRole("region", { name: "Story unavailable" });
+  await expect(status.getByRole("heading")).toHaveText("Couldn’t open Rupture Reveal.");
+  await expect(status).toBeFocused();
+  await expect(status.getByRole("button", { name: "Try again" })).toBeVisible();
+  expect(attempts).toBe(2);
+  await status.getByRole("button", { name: "Back to home" }).click();
+  await expect(page.getByRole("button", { name: "Browse stories" })).toBeVisible();
+});

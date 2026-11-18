@@ -3,7 +3,7 @@
   position: sticky;
   top: calc(-1 * var(--explorer-pad, 20px));
   z-index: 2;
-  gap: 32px;
+  gap: 24px;
   margin: calc(-1 * var(--explorer-pad, 20px)) calc(-1 * var(--explorer-pad, 20px)) 16px;
   padding: 14px var(--explorer-pad, 20px) 0;
   background: inherit;
@@ -13,7 +13,7 @@
   padding: 8px 0 12px;
   color: var(--color-dim);
   border-bottom: 2px solid transparent;
-  font-size: 22px;
+  font-size: 19px;
   font-weight: 550;
   letter-spacing: -0.02em;
   cursor: pointer;
@@ -37,7 +37,7 @@
   color: var(--color-dim);
 }
 .layer-list {
-  margin-block: 24px 8px;
+  margin-block: 0 8px;
 }
 .layer-list[data-inspecting] {
   margin: 0;
@@ -379,14 +379,11 @@
   text-underline-offset: 4px;
 }
 #explorer-stories .stories-drawer {
-  gap: 12px;
+  gap: 8px;
   border-bottom: 0;
 }
-#explorer-stories .story-selection-heading:not(:has(button)) {
-  min-height: 28px;
-}
 #explorer-stories .story-search {
-  margin-top: 0;
+  margin: 0;
 }
 #explorer-stories .featured-story {
   display: grid;
@@ -730,4 +727,17 @@
   #explorer-stories .featured-story button:not([data-story-preview]) {
     min-height: 36px;
   }
+}
+
+.layer-place {
+  margin-top: 14px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.layer-place summary {
+  min-height: 44px;
+  align-content: center;
+  color: var(--color-dim);
+  font-size: 14px;
+  cursor: pointer;
 }

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, selectScene } from "./feeds";
 
 test("Shadow Chase follows the globe and uses the saved city for local circumstances", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 740 });
@@ -9,7 +9,7 @@ test("Shadow Chase follows the globe and uses the saved city for local circumsta
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await openStories(page);
   const trigger = page.getByRole("button", { name: "Shadow Chase", exact: true });
   const canvas = page.locator("#globe-view canvas");
@@ -75,7 +75,7 @@ test("normal motion starts the flight and reaches the saved city when animation 
       });
   });
   await page.goto("/");
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await openStories(page);
   const trigger = page.getByRole("button", { name: "Shadow Chase", exact: true });
   await expect(trigger).toBeEnabled();

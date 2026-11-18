@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, saveImageButton, openStories } from "./feeds";
+import { installFeeds, saveImageButton, openStories, selectScene } from "./feeds";
 
 type Captured = { lines: string[]; size: number; type: string };
 
@@ -28,7 +28,7 @@ test("the featured lunar journey keeps its canvas and saves its own scientific c
   await page.goto("/");
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
-  await page.getByRole("button", { name: "After Dark", exact: true }).click();
+  await selectScene(page, "After Dark");
   await openStories(page);
   await page.getByRole("button", { name: "Moonfall", exact: true }).click();
   const moon = page.getByRole("region", { name: "Moonfall", exact: true });

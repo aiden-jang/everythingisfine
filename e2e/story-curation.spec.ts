@@ -2,26 +2,30 @@ import { expect, test } from "@playwright/test";
 import { installFeeds, openStories } from "./feeds";
 
 for (const width of [1440, 390]) {
-  test(`a first visit has one source-aware invitation and a curated catalogue at ${width}px @dev`, async ({
-    page,
-  }) => {
+  test(`the landing and curated catalogue each have one clear goal at ${width}px @dev`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 });
     await installFeeds(page, { presentation: "fresh", empty: true });
     await page.route(/ovation_aurora_latest\.json/, (route) => route.abort());
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto("/");
-    const entry = page.locator("#start-story");
-    await expect(entry).toContainText("What’s beneath this patch of ocean?");
-    await expect(entry).toContainText("Recorded Argo profile");
-    await page.screenshot({ path: test.info().outputPath(`first-minute-${width}.png`) });
+    const browse = page.getByRole("button", { name: "Browse stories", exact: true });
+    await expect(browse).toBeVisible();
+    await expect(page.getByRole("group", { name: "Earth scenes" })).toHaveCount(0);
+    await expect(page.locator(".story-continue")).toHaveCount(0);
     const canvas = await page.locator("#globe-view canvas").elementHandle();
+    await expect(page.getByText("Loading the globe…", { exact: true })).toBeHidden();
+    await page.screenshot({ path: test.info().outputPath(`first-minute-${width}.png`) });
+    await browse.click();
+    const entry = page.locator("#open-featured-float");
+    await expect(entry).toHaveAccessibleName("Float Dive");
+    await expect(entry).toHaveAccessibleDescription(/Measured ocean profiles · Argo/);
     await entry.click();
     await expect(page.locator(".float-transport")).toBeVisible();
     await expect(page.getByRole("complementary", { name: "About this shared view" })).toBeHidden();
-    await page.getByRole("button", { name: "Back to home", exact: true }).click();
+    await page.getByRole("button", { name: "Back to stories", exact: true }).click();
     await expect(entry).toBeHidden();
-    await expect(page.locator("#continue-story")).toContainText("Float Dive");
-    await expect(page.locator("#continue-story")).toBeFocused();
+    await expect(page.locator(".story-continue")).toContainText("Float Dive");
+    await expect(page.locator(".story-continue")).toBeFocused();
     await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
     await openStories(page, "search");
     await expect(page.locator(".story-choice > button")).toHaveText([

@@ -14,7 +14,7 @@ const tetherError = (page: import("@playwright/test").Page) =>
     );
   });
 
-test("normal-motion Float Dive links its measured sample across the shared globe, map and inspector", async ({
+test("normal-motion Float Dive keeps its measured sample and places map controls in Locate", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -28,6 +28,9 @@ test("normal-motion Float Dive links its measured sample across the shared globe
   const original = await canvas.elementHandle();
   const depth = page.getByRole("slider", { name: "Ascent depth" });
   await expect(depth).toHaveValue("317");
+  const reading = (await page.getByRole("region", { name: "Float Dive", exact: true }).boundingBox())!;
+  const header = (await page.locator("#chrome-head").boundingBox())!;
+  expect(reading.y).toBeGreaterThanOrEqual(header.y + header.height);
   await page.getByRole("button", { name: "View measured profile", exact: true }).click();
   const profile = page.getByRole("region", { name: "Measured float profile" });
   await expect(profile).toBeVisible();
@@ -41,13 +44,9 @@ test("normal-motion Float Dive links its measured sample across the shared globe
   await expect(page.locator("[data-float-depth]")).toContainText("3");
   await profile.getByRole("button", { name: "Salinity", exact: true }).click();
   await expect(profile.getByRole("img", { name: /Practical salinity by estimated depth/ })).toBeVisible();
-  await page
-    .getByRole("group", { name: "Float projection" })
-    .getByRole("button", { name: "Map", exact: true })
-    .click();
-  await expect(depth).toBeHidden();
+  const projection = page.getByRole("group", { name: "Float projection" });
+  await expect(projection).toBeHidden();
   await expect(sample).toHaveValue("596");
-  await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("p")).toBe("map");
   const audit = await new AxeBuilder({ page })
     .include("#observatory-intro")
     .include(".float-profile")
@@ -56,29 +55,25 @@ test("normal-motion Float Dive links its measured sample across the shared globe
   expect(audit.violations).toEqual([]);
   await page.keyboard.press("Escape");
   await expect(profile).toBeHidden();
-  await expect(
-    page.getByRole("group", { name: "Float projection" }).getByRole("button", { name: "Map", exact: true }),
-  ).toBeFocused();
+  await expect(page.getByRole("button", { name: "View measured profile", exact: true })).toBeFocused();
   await page.getByRole("button", { name: "View measured profile", exact: true }).click();
   await expect(profile.getByRole("button", { name: "Close measured profile", exact: true })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(profile).toBeHidden();
   await expect(page.getByRole("button", { name: "View measured profile", exact: true })).toBeFocused();
-  const projection = page.getByRole("group", { name: "Float projection" });
-  await expect(projection.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
   await page
     .getByRole("group", { name: "Float Dive chapters" })
     .getByRole("button", { name: "Locate", exact: true })
     .click();
   await expect(page.locator("[data-float-instrument]")).toHaveCSS("opacity", "0");
+  await projection.getByRole("button", { name: "Map", exact: true }).click();
+  await expect.poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("p")).toBe("map");
   await page
     .getByRole("group", { name: "Float Dive chapters" })
     .getByRole("button", { name: "Rise", exact: true })
     .click();
   await expect(page.locator("[data-float-instrument]")).toHaveCSS("opacity", "1");
+  await expect(projection).toBeHidden();
   await page.getByRole("button", { name: "View measured profile", exact: true }).click();
   const notice = page
     .getByRole("group", { name: "Float Dive chapters" })
@@ -147,9 +142,8 @@ test("an unavailable shared Argo profile never claims an exact saved-moment rest
   await expect(dive.getByText(/Recorded profile · Cycle 268/)).toBeVisible();
   await expect(dive.getByText("The saved sample is outside this profile.", { exact: false })).toBeHidden();
   await expect(page.getByRole("complementary", { name: "About this shared view" })).toBeHidden();
-  await expect(
-    page.getByRole("group", { name: "Float projection" }).getByRole("button", { name: "Map", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("group", { name: "Float projection" })).toBeHidden();
+  expect(new URLSearchParams(new URL(page.url()).hash.slice(1)).get("p")).toBe("map");
   const requested = "recent/6901932/269/1793363040000";
   await expect
     .poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("choice"))

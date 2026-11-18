@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories } from "./feeds";
+import { installFeeds, openStories, selectScene } from "./feeds";
 
 test("Tōhoku reveals the modeled fault before the estimated shaking", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.goto("/");
-  await page.getByRole("button", { name: "Below the Surface", exact: true }).click();
+  await selectScene(page, "Below the Surface");
   await openStories(page);
   const trigger = page.getByRole("button", { name: "Rupture Reveal", exact: true });
   const canvas = page.locator("#globe-view canvas");
