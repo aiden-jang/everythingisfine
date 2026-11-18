@@ -18,6 +18,7 @@ export interface RadarView {
   selectedAt?: number | undefined;
   lightning?: ObservationFrame | undefined;
   feed?: RadarFeedHealth | undefined;
+  canRewind?: ((point: { lon: number; lat: number }) => boolean) | undefined;
 }
 
 export type RadarLayerView = Pick<RadarView, "image" | "at" | "region"> & { kind: "radar-layer" };

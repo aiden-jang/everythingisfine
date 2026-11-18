@@ -75,7 +75,9 @@ export function encode(state: Permalink): string {
   const params = new URLSearchParams(parts.join("&"));
   writeLayers(params, state);
   if (state.story) writeStoryMoment(params, state.story);
-  return !state.layers && !state.layerTimes && !state.story ? parts.join("&") : params.toString();
+  return !state.layers && !state.layerTimes && !state.radarPlace && !state.story
+    ? parts.join("&")
+    : params.toString();
 }
 
 const SOURCES: readonly string[] = ["usgs", "emsc"];
@@ -154,6 +156,9 @@ export function decode(fragment: string): Partial<Permalink> {
   ) {
     out.cursor = c * 1000;
   }
+
+  if (out.presentation !== "explore" || out.catalogue || out.day || out.story || !out.layers?.radar)
+    delete out.radarPlace;
 
   const x = params.get("x")?.split(",").map(Number);
   if (x && x.length === 4 && x.every((n) => Number.isFinite(n))) {

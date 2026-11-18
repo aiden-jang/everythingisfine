@@ -95,6 +95,7 @@ export function PlaceInspection({
   selectQuake,
   selectHazard,
   radarAt,
+  onRewind,
   ...props
 }: PlaceContextProps & {
   point: Coordinates;
@@ -102,6 +103,7 @@ export function PlaceInspection({
   selectQuake: (id: string) => void;
   selectHazard: (id: string) => void;
   radarAt?: number | undefined;
+  onRewind?: (() => void) | undefined;
 }) {
   const coordinates = geographicCoordinates(point);
   const navigation = useStoryNavigation();
@@ -129,6 +131,11 @@ export function PlaceInspection({
           disabled={!!navigation.unavailable("sky")}
         >
           View the sky in {city.name}
+        </button>
+      )}
+      {onRewind && (
+        <button type="button" id="rewind-place-radar" className="place-sky-link" onClick={onRewind}>
+          Rewind radar
         </button>
       )}
       {radarAt !== undefined && (

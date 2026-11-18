@@ -1,3 +1,8 @@
+import { CopyLink } from "./CopyLink";
+import { rewindLink } from "./radar/rewindLink";
+import { refreshAnnotations } from "../globe/annotationInput";
+import { geographicCoordinates } from "../globe/orbitReadout";
+import type { CameraState } from "../globe/controls";
 import { quietLayer } from "./layerQuiet";
 import { matches } from "../data/filter";
 import { useReadingArrival } from "./useReadingArrival";
@@ -30,6 +35,8 @@ export function MapLayers({
   controls,
   places,
   place,
+  readCamera,
+  panelVisible,
   onQuake,
   feeds,
   archived,
@@ -44,6 +51,8 @@ export function MapLayers({
   controls: ReturnType<typeof useMapLayers>;
   places: PlaceContextProps;
   place: ReturnType<typeof usePlaceInspection>;
+  readCamera: () => CameraState;
+  panelVisible: boolean;
   onQuake: (id: string) => void;
   feeds: FeedStatus;
   archived: boolean;
@@ -56,7 +65,27 @@ export function MapLayers({
   canDismiss: boolean;
 }) {
   const navigation = useStoryNavigation();
-  const layer = controls.inspector;
+  const rewindPoint = controls.radar ? controls.rewindPoint : undefined;
+  const layer = rewindPoint ? null : controls.inspector;
+  const rewindAt = controls.radar?.image ? controls.radar.at : undefined;
+
+  function openRewind(point: NonNullable<typeof place.point>) {
+    controls.setRewindPoint(point);
+    refreshAnnotations({ ...point, zoom: Math.max(2.2, readCamera().zoom) });
+    requestAnimationFrame(() =>
+      document.getElementById("radar-rewind-title")?.focus({ preventScroll: true }),
+    );
+  }
+
+  function closeRewind() {
+    controls.setRewindPoint(undefined);
+    controls.selectTime("radar", null);
+    requestAnimationFrame(() =>
+      (document.getElementById("rewind-place-radar") ?? document.getElementById("globe-view"))?.focus({
+        preventScroll: true,
+      }),
+    );
+  }
   const panel = useRef<HTMLElement>(null);
   const reports = {
     ...places,
@@ -70,7 +99,7 @@ export function MapLayers({
     },
   };
   const inspectingPlace = !!place.point;
-  useReadingArrival(panel, inspectingPlace ? "place" : (layer ?? "overview"));
+  useReadingArrival(panel, rewindPoint ? "rewind" : inspectingPlace ? "place" : (layer ?? "overview"));
   useLayoutEffect(() => {
     if (inspectingPlace) document.getElementById("chrome-rail")?.scrollTo({ top: 0 });
   }, [inspectingPlace]);
@@ -118,17 +147,18 @@ export function MapLayers({
       aria-label="Map layers"
       onKeyDown={(event) => {
         if (event.key !== "Escape" || !canDismiss || document.querySelector(":popover-open")) return;
-        if (inspectingPlace || layer) {
+        if (rewindPoint || inspectingPlace || layer) {
           event.preventDefault();
           event.stopPropagation();
-          if (inspectingPlace) {
+          if (rewindPoint) closeRewind();
+          else if (inspectingPlace) {
             place.close();
             document.getElementById("globe-view")?.focus({ preventScroll: true });
           } else back();
         }
       }}
     >
-      {place.point && (
+      {place.point && !rewindPoint && (
         <PlaceInspection
           {...reports}
           point={place.point}
@@ -138,10 +168,13 @@ export function MapLayers({
           }}
           selectQuake={onQuake}
           selectHazard={onHazard}
-          radarAt={controls.radar?.image ? controls.radar.at : undefined}
+          radarAt={rewindAt}
+          onRewind={
+            controls.radar && controls.canRewind?.(place.point) ? () => openRewind(place.point!) : undefined
+          }
         />
       )}
-      {controls.isolated && (
+      {!rewindPoint && controls.isolated && (
         <div className="layer-isolation" role="status">
           <span>Only {mapLayerNames[controls.isolated].toLowerCase()}</span>
           <button type="button" onClick={() => controls.isolate(null)}>
@@ -149,7 +182,7 @@ export function MapLayers({
           </button>
         </div>
       )}
-      <div hidden={layer !== null}>
+      <div hidden={layer !== null || !!rewindPoint}>
         {Object.values(controls.enabled).every((on) => !on) && (
           <p role="status">All layers are off. Choose a layer to show its observations.</p>
         )}
@@ -182,16 +215,39 @@ export function MapLayers({
           ) : null}
         </div>
       )}
-      <div className="layer-player" hidden={layer !== "radar"}>
+      <div
+        className={rewindPoint ? "layer-player place-context place-inspection radar-rewind" : "layer-player"}
+        hidden={layer !== "radar" && !rewindPoint}
+      >
+        {rewindPoint && (
+          <header>
+            <div>
+              <h2 id="radar-rewind-title" tabIndex={-1}>
+                Radar rewind
+              </h2>
+              <p className="place-coordinates">{geographicCoordinates(rewindPoint)}</p>
+            </div>
+            <button type="button" onClick={closeRewind}>
+              Back to live
+            </button>
+          </header>
+        )}
         {controls.radar && (
           <Suspense fallback={<p role="status">Loading radar controls…</p>}>
             <RadarLayer
-              suspended={controls.suspended}
+              suspended={controls.suspended || (!!rewindPoint && !panelVisible)}
+              rewind={!!rewindPoint}
               onView={controls.updateRadar}
               initialAt={controls.selectedTimes.radar}
               onSelect={controls.selectTime}
             />
           </Suspense>
+        )}
+        {rewindPoint && rewindAt !== undefined && (
+          <CopyLink
+            label="Copy radar link"
+            format={(url) => rewindLink(url, readCamera(), rewindPoint, rewindAt, flat)}
+          />
         )}
         {layer === "radar" && !archived && (
           <button
@@ -204,81 +260,83 @@ export function MapLayers({
           </button>
         )}
       </div>
-      <LayerCatalogue controls={controls} quiet={quiet} disabled={disabled} onInspect={inspect} />
-      {!archived && (
-        <details className="layer-place" hidden={layer !== null}>
-          <summary>Find a place</summary>
-          <p className="layer-note">Tap the globe or map for nearby reports, or choose a city below.</p>
-          <PlaceContext {...reports} />
-        </details>
-      )}
-      <div hidden={layer !== "earthquakes"}>{children}</div>
-      {hazardKind && (
-        <section aria-label={`${mapLayerNames[layer!]} reports`} className="layer-reports">
-          {window}
-          <p>Reported events in the selected window. This window is shared with the earthquake reports.</p>
-          {groups.length ? (
-            <HazardList hazards={groups} markId={markId} onHazard={onHazard} inline />
-          ) : (
-            <p role="status">
-              {!controls.enabled[layer!]
-                ? "Enable this layer to see reports."
-                : (health ??
-                  "No matching reports from the available sources. This does not establish an absence of activity.")}
-            </p>
-          )}
-        </section>
-      )}
-      {layer === "aurora" && controls.enabled.aurora && !archived && (
-        <p className="layer-note">
-          {aurora ? (
-            <>
-              {aurora.estimatedTime ? (
-                "Forecast time not supplied by NOAA."
-              ) : (
-                <>
-                  <span>Forecast valid for </span>
-                  <time dateTime={new Date(aurora.forecastAt).toISOString()}>
-                    {layerTime(aurora.forecastAt)}
-                  </time>
-                  .
-                </>
-              )}{" "}
-              Peak modeled probability: {aurora.peak}%. This is a forecast, not an observation of visible
-              aurora.
-            </>
-          ) : (
-            (health ?? "No forecast is available yet.")
-          )}
-        </p>
-      )}
-      {controls.active &&
-        (Object.keys(weatherLayers) as WeatherLayerId[]).map(
-          (id) =>
-            controls.enabled[id] && (
-              <div key={id} hidden={layer !== id}>
-                <Suspense fallback={<p role="status">Loading {weatherLayers[id].label.toLowerCase()}…</p>}>
-                  <WeatherLayer
-                    id={id}
-                    suspended={controls.suspended}
-                    onView={controls.updateWeather}
-                    selectedAt={controls.selectedTimes[id]}
-                    onSelect={controls.selectTime}
-                  />
-                </Suspense>
-              </div>
-            ),
+      <div hidden={!!rewindPoint}>
+        <LayerCatalogue controls={controls} quiet={quiet} disabled={disabled} onInspect={inspect} />
+        {!archived && (
+          <details className="layer-place" hidden={layer !== null}>
+            <summary>Find a place</summary>
+            <p className="layer-note">Tap the globe or map for nearby reports, or choose a city below.</p>
+            <PlaceContext {...reports} />
+          </details>
         )}
-      {layer && !archived && (
-        <button
-          type="button"
-          className="layer-solo"
-          onClick={() => controls.isolate(controls.isolated === layer ? null : layer)}
-        >
-          {controls.isolated === layer ? "Restore chosen layers" : "Show only this layer"}
-        </button>
-      )}
-      {layer && <LayerSources layer={layer} feeds={feeds} />}
+        <div hidden={layer !== "earthquakes"}>{children}</div>
+        {hazardKind && (
+          <section aria-label={`${mapLayerNames[layer!]} reports`} className="layer-reports">
+            {window}
+            <p>Reported events in the selected window. This window is shared with the earthquake reports.</p>
+            {groups.length ? (
+              <HazardList hazards={groups} markId={markId} onHazard={onHazard} inline />
+            ) : (
+              <p role="status">
+                {!controls.enabled[layer!]
+                  ? "Enable this layer to see reports."
+                  : (health ??
+                    "No matching reports from the available sources. This does not establish an absence of activity.")}
+              </p>
+            )}
+          </section>
+        )}
+        {layer === "aurora" && controls.enabled.aurora && !archived && (
+          <p className="layer-note">
+            {aurora ? (
+              <>
+                {aurora.estimatedTime ? (
+                  "Forecast time not supplied by NOAA."
+                ) : (
+                  <>
+                    <span>Forecast valid for </span>
+                    <time dateTime={new Date(aurora.forecastAt).toISOString()}>
+                      {layerTime(aurora.forecastAt)}
+                    </time>
+                    .
+                  </>
+                )}{" "}
+                Peak modeled probability: {aurora.peak}%. This is a forecast, not an observation of visible
+                aurora.
+              </>
+            ) : (
+              (health ?? "No forecast is available yet.")
+            )}
+          </p>
+        )}
+        {controls.active &&
+          (Object.keys(weatherLayers) as WeatherLayerId[]).map(
+            (id) =>
+              controls.enabled[id] && (
+                <div key={id} hidden={layer !== id}>
+                  <Suspense fallback={<p role="status">Loading {weatherLayers[id].label.toLowerCase()}…</p>}>
+                    <WeatherLayer
+                      id={id}
+                      suspended={controls.suspended}
+                      onView={controls.updateWeather}
+                      selectedAt={controls.selectedTimes[id]}
+                      onSelect={controls.selectTime}
+                    />
+                  </Suspense>
+                </div>
+              ),
+          )}
+        {layer && !archived && (
+          <button
+            type="button"
+            className="layer-solo"
+            onClick={() => controls.isolate(controls.isolated === layer ? null : layer)}
+          >
+            {controls.isolated === layer ? "Restore chosen layers" : "Show only this layer"}
+          </button>
+        )}
+        {layer && <LayerSources layer={layer} feeds={feeds} />}
+      </div>
     </section>
   );
 }

@@ -7,7 +7,12 @@ const pixel = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGOQW///PwAFhwLMAV5hdQAAAABJRU5ErkJggg==",
   "base64",
 );
-async function radarSource(page: Page) {
+const transparentPixel = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAC0lEQVR4nGNgAAIAAAUAAXpeqz8AAAAASUVORK5CYII=",
+  "base64",
+);
+
+async function radarSource(page: Page, covered = false) {
   let calls = 0;
   const at = Math.floor(Date.now() / 600_000) * 600_000;
   await page.route("https://api.rainviewer.com/public/weather-maps.json", (route) => {
@@ -20,7 +25,10 @@ async function radarSource(page: Page) {
     });
   });
   await page.route("https://tilecache.rainviewer.com/**", (route) =>
-    route.fulfill({ contentType: "image/png", body: pixel }),
+    route.fulfill({
+      contentType: "image/png",
+      body: covered && route.request().url().includes("/coverage/") ? transparentPixel : pixel,
+    }),
   );
   return { calls: () => calls, at };
 }
@@ -236,4 +244,58 @@ test("Home leaves archive mode and browser Back recovers the recorded day @dev",
   await expect(page.getByRole("button", { name: "back to live", exact: true })).toBeVisible();
   await expect(page.locator("#archive-day")).toHaveValue("2011-03-11");
   await expect.poll(() => radarTexture(page)).toBeNull();
+});
+
+test("place radar rewinds in the shared canvas and copies a held scan @dev", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { dead: true, radar: "default" });
+  const source = await radarSource(page, true);
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: {
+        writeText: async () => {
+          throw new DOMException("Blocked", "NotAllowedError");
+        },
+      },
+    });
+  });
+  await page.goto("/#v=explore&at=139.7,35.7,2.3&layers=radar");
+  const tokyo = page.locator(".place-labels > span").filter({ hasText: /^Tokyo$/ });
+  await expect(tokyo).toBeVisible();
+  const point = (await tokyo.boundingBox())!;
+  await page.mouse.click(point.x + point.width / 2, point.y + point.height);
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  const place = page.getByRole("region", { name: "Around this point" });
+  const coordinates = await place.locator(".place-coordinates").textContent();
+  await place.getByRole("button", { name: "Rewind radar" }).click();
+  const heading = page.getByRole("heading", { name: "Radar rewind" });
+  await expect(heading).toBeFocused();
+  const playback = page.getByRole("region", { name: "Storm radar playback" });
+  const timestamp = playback.locator(".radar-clock time");
+  const slider = playback.getByRole("slider");
+  const held = await longitude(page);
+  await slider.press("Home");
+  await expect(timestamp).toHaveAttribute("datetime", new Date(source.at - 600_000).toISOString());
+  expect(await longitude(page)).toBeCloseTo(held, 3);
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await page.getByRole("button", { name: "Copy radar link" }).click();
+  const link = page.getByRole("textbox", { name: "Link to copy" });
+  await expect(link).toBeVisible();
+  await page.goto(await link.inputValue());
+  await expect(heading).toBeVisible();
+  await expect(page.getByRole("region", { name: "Map", exact: true })).toBeVisible();
+  await expect(timestamp).toHaveAttribute("datetime", new Date(source.at - 600_000).toISOString());
+
+  const samePlace = await longitude(page);
+  await page.getByRole("button", { name: "Back to live", exact: true }).click();
+  await expect(place.locator(".place-coordinates")).toHaveText(coordinates!);
+  await expect(place.locator("time")).toHaveAttribute("datetime", new Date(source.at).toISOString());
+  await expect(place.getByRole("button", { name: "Rewind radar" })).toBeFocused();
+  expect(await longitude(page)).toBeCloseTo(samePlace, 3);
+  const params = new URL(page.url()).hash;
+  expect(params).not.toContain("radarAt");
+  expect(params).not.toContain("radarPlace");
 });

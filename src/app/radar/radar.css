@@ -273,3 +273,16 @@
   color: var(--color-dim);
   letter-spacing: normal;
 }
+
+.radar-rewind.place-inspection {
+  padding-block: 14px;
+}
+.radar-rewind .radar-layer {
+  margin-top: 12px;
+}
+.radar-rewind .radar-transport {
+  padding-top: 12px;
+}
+.radar-rewind .radar-layer-note {
+  margin-block: 6px 12px;
+}

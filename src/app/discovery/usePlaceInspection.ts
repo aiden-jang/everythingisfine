@@ -1,9 +1,11 @@
 import { useCallback, useState } from "react";
 
-export function usePlaceInspection(showPanel: (on: boolean) => void) {
-  const [point, setPoint] = useState<{ lon: number; lat: number } | null>(null);
+type Point = { lon: number; lat: number };
+
+export function usePlaceInspection(showPanel: (on: boolean) => void, initial?: Point) {
+  const [point, setPoint] = useState<Point | null>(initial ?? null);
   const open = useCallback(
-    (point: { lon: number; lat: number }) => {
+    (point: Point) => {
       showPanel(true);
       setPoint(point);
     },

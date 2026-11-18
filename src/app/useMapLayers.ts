@@ -32,6 +32,7 @@ export function useMapLayers(
     () => isolateLayer(savedLayers, archived ? null : isolated),
     [savedLayers, archived, isolated],
   );
+  const [rewindPoint, setRewindPoint] = useState(shared.radarPlace);
   const [radarView, updateRadar] = useState<RadarView | null>(null);
   const [weather, setWeather] = useState<Partial<Record<WeatherLayerId, WeatherLayerView>>>({});
   const [inspector, inspect] = useState<MapLayer | null>(() =>
@@ -65,7 +66,8 @@ export function useMapLayers(
   const radarActive = enabled.radar && active;
   useEffect(() => {
     if (!radarActive) updateRadar(null);
-  }, [radarActive]);
+    if (archived || !enabled.radar) setRewindPoint(undefined);
+  }, [radarActive, archived, enabled.radar]);
   const radar = useMemo<RadarLayerView | null>(
     () =>
       radarActive
@@ -131,6 +133,9 @@ export function useMapLayers(
     change,
     globeFilters,
     radar,
+    rewindPoint,
+    setRewindPoint,
+    canRewind: radarView?.canRewind,
     updateRadar,
     active,
     selectedTimes,

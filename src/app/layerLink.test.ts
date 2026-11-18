@@ -3,6 +3,7 @@ import { decode, encode, type Permalink } from "./permalink";
 import { defaultMapLayers, readMapLayers } from "./layerVisibility";
 import { latestLayerTimes } from "./layerLink";
 import { layerTime } from "./layerTime";
+import { rewindLink } from "./radar/rewindLink";
 
 const view: Permalink = {
   lon: 179,
@@ -56,6 +57,31 @@ describe("shared background layers", () => {
     expect(decode(encode({ ...view, layerTimes: latestLayerTimes })).layerTimes).toBeUndefined();
     expect(decode("windAt=1794502800").layerTimes).toEqual({ ...latestLayerTimes, wind: 1_794_502_800_000 });
   });
+  it("shares a radar reading with its pin, displayed frame, and current map camera", () => {
+    const layers = { ...defaultMapLayers, earthquakes: false };
+    const href = `https://example.com/#${encode({ ...view, layers })}`;
+    const pin = { lon: 179.9998, lat: -42.1834 };
+    const link = rewindLink(href, { lon: 181, lat: -42, zoom: 2.15 }, pin, 1_794_499_200_000, true);
+    const restored = decode(new URL(link).hash);
+    expect(restored).toMatchObject({
+      lon: -179,
+      lat: -42,
+      zoom: 2.15,
+      flat: true,
+      layers,
+      radarPlace: pin,
+      layerTimes: { ...latestLayerTimes, radar: 1_794_499_200_000 },
+    });
+    expect(decode(encode({ ...view, ...restored })).radarPlace).toEqual(pin);
+  });
+  it("requires valid coordinates and an active radar layer in Explore", () => {
+    const base = "v=explore&layers=radar&radarAt=1794499200";
+    for (const bad of ["Infinity,0", "0,89", "0,", "10,20,30"])
+      expect(decode(`${base}&radarPlace=${bad}`).radarPlace).toBeUndefined();
+    expect(decode("v=explore&layers=wind&radarPlace=10,20").radarPlace).toBeUndefined();
+    expect(decode("v=observe&layers=radar&radarPlace=10,20").radarPlace).toBeUndefined();
+  });
+
   it("formats full UTC dates unambiguously across midnight and years", () => {
     expect(layerTime(Date.parse("2026-12-31T23:59:00Z"))).toBe("31 Dec 2026, 23:59 UTC");
     expect(layerTime(Date.parse("2027-01-01T00:00:00Z"))).toBe("1 Jan 2027, 00:00 UTC");

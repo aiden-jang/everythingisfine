@@ -1,3 +1,4 @@
+import { GLOBAL_RADAR_BOUNDS } from "../sources/rainviewer";
 import { mapLayerNames, type MapLayer, type MapLayers } from "./layerVisibility";
 
 export const playbackLayers = ["radar", "wind", "lightning"] as const;
@@ -6,7 +7,11 @@ export const latestLayerTimes: LayerTimes = { radar: null, wind: null, lightning
 export interface SharedLayers {
   layers?: MapLayers;
   layerTimes?: LayerTimes;
+  radarPlace?: { lon: number; lat: number };
 }
+
+export const radarPlaceValue = ({ lon, lat }: NonNullable<SharedLayers["radarPlace"]>) =>
+  `${lon.toFixed(4)},${lat.toFixed(4)}`;
 
 export function writeLayers(params: URLSearchParams, state: SharedLayers): void {
   if (state.layers)
@@ -14,6 +19,7 @@ export function writeLayers(params: URLSearchParams, state: SharedLayers): void 
       "layers",
       (Object.keys(mapLayerNames) as MapLayer[]).filter((id) => state.layers![id]).join(","),
     );
+  if (state.radarPlace) params.set("radarPlace", radarPlaceValue(state.radarPlace));
   for (const id of playbackLayers) {
     const at = state.layerTimes?.[id];
     if (at !== null && at !== undefined) params.set(`${id}At`, String(Math.round(at / 1000)));
@@ -37,6 +43,11 @@ export function readLayers(params: URLSearchParams): SharedLayers {
       result.layerTimes ??= { ...latestLayerTimes };
       result.layerTimes[id] = at;
     }
+  }
+  const point = params.get("radarPlace")?.split(",");
+  if (point?.length === 2 && point.every((value) => value.trim())) {
+    const [lon, lat] = point.map(Number) as [number, number];
+    if (Math.abs(lon) <= 180 && Math.abs(lat) <= GLOBAL_RADAR_BOUNDS[3]) result.radarPlace = { lon, lat };
   }
   return result;
 }

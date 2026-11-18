@@ -8,10 +8,12 @@ export function RadarLayer({
   initialAt,
   onSelect,
   suspended = false,
+  rewind = false,
 }: {
   onView: (view: RadarView) => void;
   initialAt: number | null;
   suspended?: boolean;
+  rewind?: boolean;
   onSelect: (id: "radar", at: number | null) => void;
 }): JSX.Element {
   const select = useCallback((at: number | null) => onSelect("radar", at), [onSelect]);
@@ -21,6 +23,7 @@ export function RadarLayer({
         global
         layer
         suspended={suspended}
+        rewind={rewind}
         onView={onView}
         initialAt={initialAt ?? undefined}
         onSelect={select}

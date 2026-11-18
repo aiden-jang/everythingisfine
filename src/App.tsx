@@ -404,6 +404,7 @@ export function App(): JSX.Element {
     getMoment: observatory.getMoment,
     layers: mapLayers.enabled,
     layerTimes: mapLayers.selectedTimes,
+    radarPlace: mapLayers.rewindPoint,
     camera,
     lastWritten,
   });
@@ -783,11 +784,6 @@ export function App(): JSX.Element {
   const staleCursor = shared.cursor !== undefined && scrub.at === shared.cursor && view.at !== shared.cursor;
 
   const edge = windowStart(now, filters.windowMs, partialArchive ? null : snapshot.coveredSince);
-
-  /*
-   * Three gates: only at 24h, because the baseline counts calendar days; only once the window is
-   * covered, because a day still filling reads as quiet; and an archived day needs neither.
-   */
   const near = useMemo(() => {
     if (replay || here === null) return null;
     return closestTo(feed.store, here, filters, clockAt(), view.at ?? clockAt());
@@ -797,9 +793,9 @@ export function App(): JSX.Element {
 
   const chromeFloats = useFloatingChrome();
   const [headOpen, setHeadOpen] = useStoredFlag("head", true);
-  const [railOpen, setRailOpen] = useStoredFlag("railOpen", true);
+  const [railOpen, setRailOpen] = useStoredFlag("railOpen", true, shared.radarPlace ? true : undefined);
   const railShown = !observatory.observing && (railOpen || !chromeFloats);
-  const place = usePlaceInspection(setRailOpen);
+  const place = usePlaceInspection(setRailOpen, shared.radarPlace);
   const headShown = observatory.observing || headOpen || chromeFloats;
 
   const versus = useMemo(() => versusReference(energyTotal), [energyTotal]);
@@ -1159,6 +1155,8 @@ export function App(): JSX.Element {
                   feeds,
                 }}
                 place={place}
+                readCamera={readCamera.current}
+                panelVisible={railShown}
                 onQuake={selectQuake}
                 controls={{
                   ...mapLayers,
@@ -1348,9 +1346,7 @@ export function App(): JSX.Element {
                 aurora={observatory.observations.entry ? null : (overflight.run?.forecast ?? onGlobe.aurora)}
                 marks={marks}
                 scrubAt={view.at}
-                /* Which moment the light is of. `clockAt` is the app's answer to what time is on screen, and a
-               held cursor overrides it with the same precedence `stillMoment` uses, so the terminator and
-               the caption cannot disagree. See ARCHITECTURE.md#srcapptsx. */
+                /* Keep the light and capture caption on the same clock. See ARCHITECTURE.md#srcapptsx. */
                 moment={overflight.run?.forecast.forecastAt ?? chase.frame ?? litAt}
                 inspection={inspection.run}
                 flat={flat}
@@ -1378,7 +1374,11 @@ export function App(): JSX.Element {
                 onSelectMark={selectMark}
                 placePin={observatory.observing || mapLayers.suspended ? null : place.point}
                 onPlace={
-                  !observatory.observing && !mapLayers.suspended && !selected && !markId
+                  !observatory.observing &&
+                  !mapLayers.suspended &&
+                  !mapLayers.rewindPoint &&
+                  !selected &&
+                  !markId
                     ? place.open
                     : undefined
                 }

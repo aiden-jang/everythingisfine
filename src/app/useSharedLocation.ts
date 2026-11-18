@@ -22,6 +22,7 @@ interface Props {
   getMoment: () => Permalink["story"];
   layers: Permalink["layers"];
   layerTimes: Permalink["layerTimes"];
+  radarPlace: Permalink["radarPlace"];
   camera: MutableRefObject<CameraState>;
   lastWritten: MutableRefObject<string>;
 }
@@ -43,6 +44,7 @@ export function useSharedLocation({
   getMoment,
   layers,
   layerTimes,
+  radarPlace,
   camera,
   lastWritten,
 }: Props) {
@@ -68,6 +70,7 @@ export function useSharedLocation({
         story: getMoment(),
         ...(layers ? { layers } : {}),
         ...(layerTimes ? { layerTimes } : {}),
+        ...(radarPlace && presentation === "explore" && !catalogue && !archive ? { radarPlace } : {}),
         event: reading ? `${reading.source}:${reading.id}` : null,
         day: archive ? new Date(archive.from).toISOString().slice(0, 10) : null,
         mark: markId,
@@ -96,6 +99,7 @@ export function useSharedLocation({
     getMoment,
     layers,
     layerTimes,
+    radarPlace,
     feed,
     camera,
     lastWritten,

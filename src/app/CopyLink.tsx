@@ -2,15 +2,18 @@ import { reportAnalytics } from "../../analytics/browser";
 import { useRef, useState } from "react";
 import { useViewLocation } from "./viewLocation";
 
-export function CopyLink() {
+export function CopyLink({
+  format,
+  label = "Copy link",
+}: { format?: (url: string) => string; label?: string } = {}) {
   const href = useViewLocation();
   const busy = useRef(false);
   const [result, setResult] = useState({ url: "", failed: false, pending: false });
-  const current = result.url === href;
+  const current = result.url === (format?.(href) ?? href);
   const copy = async () => {
     if (busy.current) return;
     busy.current = true;
-    const url = location.href;
+    const url = format?.(location.href) ?? location.href;
     setResult({ url, failed: false, pending: true });
     try {
       await navigator.clipboard.writeText(url);
@@ -31,7 +34,7 @@ export function CopyLink() {
         aria-busy={result.pending}
         onClick={() => void copy()}
       >
-        {result.pending ? "Copying…" : current && !result.failed ? "Link copied" : "Copy link"}
+        {result.pending ? "Copying…" : current && !result.failed ? "Link copied" : label}
       </button>
       {result.failed && !result.pending && (
         <div className="w-full text-[11px] text-dim" role="status">
@@ -40,7 +43,7 @@ export function CopyLink() {
             className="mt-2 min-h-11 w-full border border-hairline bg-deck p-2 text-ink"
             aria-label="Link to copy"
             readOnly
-            value={href}
+            value={format ? result.url : href}
             onFocus={(event) => event.currentTarget.select()}
           />
         </div>

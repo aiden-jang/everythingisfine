@@ -40,6 +40,7 @@ export function RadarStage({
   global,
   layer = false,
   suspended = false,
+  rewind = false,
 }: {
   onView: (view: RadarView) => void;
   initialRegion?: string | undefined;
@@ -48,10 +49,11 @@ export function RadarStage({
   global: boolean;
   layer?: boolean;
   suspended?: boolean;
+  rewind?: boolean;
 }): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
-  const { scans, images, status, checkedAt, lastSuccess, retry } = useRadarScans(held, global);
+  const { scans, images, status, checkedAt, lastSuccess, covers, retry } = useRadarScans(held, global);
   const [chosen, setChosen] = useState<RadarScan | null>(null);
   const [showLightning, setShowLightning] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -85,6 +87,7 @@ export function RadarStage({
   const index = candidate !== null && candidate >= 0 ? candidate : Math.max(0, scans.length - 1);
   const selected = scans[index];
   const image = selected && images.get(selected.id);
+  const canRewind = layer && scans.filter(({ id }) => images.get(id)).length >= 2 ? covers : undefined;
   const region = regionId === "auto" ? (focus ?? undefined) : radarRegions.find(({ id }) => id === regionId);
   const target = useMemo(
     () => (global ? radarCamera(regionId) : regionCamera(region)),
@@ -101,10 +104,11 @@ export function RadarStage({
         image: image ?? null,
         at: image ? selected?.at : undefined,
         selectedAt: restored ? selected?.at : initialAt,
+        canRewind,
         lightning: lightning?.frame ?? undefined,
         feed,
       }),
-    [image, lightning, onView, target, selected?.at, regionId, feed, restored, initialAt],
+    [image, lightning, onView, target, selected?.at, regionId, feed, restored, initialAt, canRewind],
   );
 
   const seek = useCallback(
@@ -117,6 +121,17 @@ export function RadarStage({
     [onSelect],
   );
 
+  const wasRewinding = useRef(rewind);
+  useLayoutEffect(() => {
+    if (wasRewinding.current && !rewind) seek(null);
+    if (!wasRewinding.current && rewind && image && selected) {
+      seek(selected);
+      setPlaying(false);
+    }
+    if ((wasRewinding.current && !rewind) || (rewind && suspended)) setPlaying(false);
+    wasRewinding.current = rewind;
+  }, [rewind, seek, suspended, image, selected]);
+
   useEffect(() => {
     if (layer || global || !latestImage || focus !== undefined) return;
     setFocus(strongestRegion(latestImage) ?? null);
@@ -127,13 +142,14 @@ export function RadarStage({
     const next = scans[index + 1];
     const timer = window.setTimeout(
       () => {
-        seek(next ?? null);
+        if (next) seek(next);
+        else if (!rewind) seek(null);
         if (!next) setPlaying(false);
       },
       index === scans.length - 1 ? 820 : 510,
     );
     return () => window.clearTimeout(timer);
-  }, [image, index, playing, scans, selected, seek, suspended]);
+  }, [image, index, playing, rewind, scans, selected, seek, suspended]);
 
   useEffect(() => {
     function visibility() {
@@ -275,16 +291,18 @@ export function RadarStage({
           </div>
         </RadarTransport>
         <div className="observatory-actions radar-actions">
-          <button
-            type="button"
-            disabled={!selected}
-            onClick={() => {
-              setPlaying(false);
-              seek(null);
-            }}
-          >
-            Latest
-          </button>
+          {!rewind && (
+            <button
+              type="button"
+              disabled={!selected}
+              onClick={() => {
+                setPlaying(false);
+                seek(null);
+              }}
+            >
+              Latest
+            </button>
+          )}
           {scans[0] && latest && (
             <span className="radar-window">
               {shortTime(scans[0].at)}–{shortTime(latest.at)} UTC

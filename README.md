@@ -60,6 +60,8 @@ On desktop, the paired **Globe / Map** control switches the shared view. Source 
 sit together below the canvas. On phones, the globe stays above the adjustable sheet; use its handle
 or the **More controls / More globe** control to change the space available. **Sources & times** opens detailed
 radar, wind and lightning timestamps at every width while radar attribution stays visible. Open **Storm radar details** to play or scrub scans; leaving the inspector preserves the selected scan.
+Tap a covered place and choose **Rewind radar** to step through recent scans with that place in view.
+**Copy radar link** shares the displayed frame while RainViewer still has it. **Back to live** returns to the latest scan.
 
 Each scene highlights Float Dive, Rupture Reveal or Moonfall for new visitors. Returning visitors see one action for their most recent story in that category.
 Focus or hover over a geographically anchored story to preview its region without moving the globe.

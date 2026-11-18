@@ -3,7 +3,7 @@ import { radarCatalogUrl, radarImageUrl, radarScans, type RadarScan } from "../.
 
 import { RAINVIEWER_CATALOGUE, rainviewerScans } from "../../sources/rainviewer";
 import { forgetRainviewer, rainviewerFetch } from "./rainviewerFetch";
-import { globalRadarImage } from "./globalRadarImage";
+import { globalRadarCoverage, globalRadarImage } from "./globalRadarImage";
 
 const POLL_MS = 120_000;
 
@@ -13,6 +13,7 @@ interface RadarData {
   status: "loading" | "ready" | "empty" | "error";
   checkedAt: number;
   lastSuccess?: number | undefined;
+  covers?: Awaited<ReturnType<typeof globalRadarCoverage>>["covers"] | undefined;
 }
 
 const fetchBounded = (url: string, signal: AbortSignal) =>
@@ -65,6 +66,11 @@ export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean
           oldest && !fresh.some(({ id, at }) => id === oldest.id || at === oldest.at)
             ? [...fresh, oldest].sort((a, b) => a.at - b.at)
             : fresh;
+        const queue = [newest, ...scans.filter(({ id }) => id !== newest.id)].filter(
+          ({ id }) => !images.get(id),
+        );
+        const coverage = global && queue.length ? await globalRadarCoverage(signal) : undefined;
+        if (signal.aborted) return;
         const keep = new Set(scans.map(({ id }) => id));
         for (const [id, image] of images) {
           if (!keep.has(id)) {
@@ -72,14 +78,12 @@ export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean
             images.delete(id);
           }
         }
-        const queue = [newest, ...scans.filter(({ id }) => id !== newest.id)].filter(
-          ({ id }) => !images.get(id),
-        );
         for (const { id } of queue) images.delete(id);
         setData((old) => ({
           scans,
           images: new Map(images),
           status: "ready",
+          covers: coverage?.covers ?? old.covers,
           checkedAt: Date.now(),
           lastSuccess: images.get(newest.id) ? Date.now() : old.lastSuccess,
         }));
@@ -89,7 +93,7 @@ export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean
             const { id } = scan;
             let image: ImageBitmap | null = null;
             try {
-              if (global && scan.path) image = await globalRadarImage(scan.path, signal);
+              if (coverage && scan.path) image = await globalRadarImage(scan.path, coverage.mask, signal);
               else {
                 const png = await fetchBounded(radarImageUrl(id), signal);
                 if (png.ok && png.headers.get("Content-Type")?.startsWith("image/"))
