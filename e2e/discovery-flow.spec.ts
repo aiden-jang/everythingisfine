@@ -76,7 +76,8 @@ for (const width of [1440, 390]) {
     }
     await preview.click();
     await expect.poll(async () => (await camera(page))?.lon).toBeCloseTo(59.5, 1);
-    await page.screenshot({ path: test.info().outputPath(`preview-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`preview-${width}.png`) });
     await page.locator("#search-story-aral").click();
     await page.getByRole("button", { name: "Back to stories", exact: true }).click();
     await expect.poll(() => camera(page)).toEqual(before);
@@ -109,7 +110,8 @@ test("returning visits are one action away and preserve their saved moment and f
   const resume = page.locator(".story-continue");
   await expect(resume).toContainText("Continue Vanishing Sea");
   await expect(resume).toBeInViewport({ ratio: 1 });
-  await page.screenshot({ path: test.info().outputPath("continue-phone.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("continue-phone.png") });
   await page.reload();
   await openStories(page, "search");
   await resume.click();
@@ -136,7 +138,8 @@ test("story endings reveal one next story without moving focus and only offer on
   await expect(panel.getByRole("button", { name: "Replay", exact: true })).toHaveCount(1);
   await expect(panel.getByRole("button", { name: "Restart", exact: true })).toHaveCount(0);
   await related.scrollIntoViewIfNeeded();
-  await page.screenshot({ path: test.info().outputPath("story-ending.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("story-ending.png") });
   await slider.press("Home");
   await expect(related).not.toHaveAttribute("open", "");
   await expect(panel.getByRole("button", { name: "Restart", exact: true })).toHaveCount(1);

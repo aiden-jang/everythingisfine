@@ -152,7 +152,8 @@ test("monitor inspection and place comparisons retain their source, time and sha
   await expect(inspect.getByRole("status")).toContainText("12.5 µg/m³ PM₂.₅");
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  await page.screenshot({ path: test.info().outputPath("phone-place-comparison.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("phone-place-comparison.png") });
 });
 
 test("close city labels stay anchored on the globe and map without crowding the view @dev", async ({

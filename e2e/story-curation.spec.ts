@@ -14,7 +14,8 @@ for (const width of [1440, 390]) {
     await expect(page.locator(".story-continue")).toHaveCount(0);
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await expect(page.getByText("Loading the globe…", { exact: true })).toBeHidden();
-    await page.screenshot({ path: test.info().outputPath(`first-minute-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`first-minute-${width}.png`) });
     await browse.click();
     await expect(page.getByRole("tab", { name: "Stories", exact: true })).toHaveAttribute(
       "aria-selected",
@@ -45,7 +46,8 @@ for (const width of [1440, 390]) {
       true,
     );
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath(`curated-stories-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`curated-stories-${width}.png`) });
   });
 }
 
@@ -68,7 +70,8 @@ test("a shared story gives context, holds its moment, and ends with a finding @d
   );
   await expect(panel.getByText("Up next", { exact: true })).toBeVisible();
   await panel.getByRole("region", { name: "What this view showed" }).scrollIntoViewIfNeeded();
-  await page.screenshot({ path: test.info().outputPath("story-finding.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("story-finding.png") });
 });
 
 test("native sharing has a story title and cancellation stays quiet @dev", async ({ page }) => {

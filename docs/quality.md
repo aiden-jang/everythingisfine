@@ -3,6 +3,13 @@
 Run `pnpm run verify` with the runtime selected by `.nvmrc`. The core checks cover dependency
 advisories, repository/documentation rules, CSS, types, lint, formatting, deterministic source tests,
 memory/performance budgets and the production build. Browser verification then reuses that local build.
+Install the browser engines before running verification on a new machine:
+
+```bash
+pnpm exec playwright install chromium webkit
+pnpm run verify
+```
+
 Standalone `pnpm run test:e2e` builds before starting its release server.
 
 ## Browser boundaries
@@ -17,6 +24,9 @@ stable across GitHub runner-image migrations.
 - Both servers belong to the test run. An occupied port fails instead of reusing an unknown preview.
 - Recorded feeds replace the external agency calls and EMSC socket. These tests do not establish
   current provider availability; `pnpm run test:live` is an explicit, separate check.
+- The production WebKit smoke test runs inside the existing core CI job. It holds a story download,
+  returns a failed response, retries it, and checks that playback and return to search work with
+  earthquake feeds down. Run it separately with `pnpm run test:e2e:webkit`.
 
 One software-rendered globe runs per runner. `tools/browser-shards.mjs` balances estimated runtime
 across isolated shards, placing expensive cases first. `tools/browser-costs.json` holds rounded
@@ -26,9 +36,11 @@ cited in the scheduler; refresh estimates from successful test
 durations when workloads change. Unknown files use a typical cost and still run. Estimates affect
 assignment only, never assertions, timeouts or retries. Every test belongs to exactly one shard;
 each runner retains declaration order, and an unsharded run keeps the complete inventory.
-CI keeps core checks and browser runners parallel, then deploys the assets from the successful
-core build only after every shard passes. Failed attempts retain screenshots; the first retry
-records a trace, avoiding tracing overhead on every passing software-rendered journey.
+CI keeps core checks and browser runners parallel, then deploys the bundle that passed WebKit
+only after every Chromium shard passes. The core job runs TypeScript checking. The Chromium
+shards compile their local release bundles with Vite without repeating the separate type check.
+Failed attempts retain screenshots; the first retry records a trace. Screenshots used by assertions
+still run on every verification.
 
 Accessibility journeys scan live and pinned states at phone and desktop widths with axe.
 They check landmark structure, visible-label matching and the applicable automated accessibility rules.
@@ -73,6 +85,8 @@ repository, run:
 EIF_CAPTURE_UI=/private/tmp/eif-review pnpm exec playwright test e2e/quality.spec.ts --project=release
 ```
 
+The same setting enables optional review screenshots in other tests, some of which write beside
+their test results.
 Review the actual images for hierarchy, readable labels, canvas space, clipping and notice placement.
 For Explore, check the large story preview and three recommendations at desktop widths, the complete
 default phone globe below its header, and the readout and Library controls at every sheet stop.
@@ -82,8 +96,8 @@ Keep each run in an ignored local output directory; historical reviews remain in
 
 ## Remaining observations
 
-Chromium automation does not prove native phone sharing, touch behavior on real hardware, spoken
-screen-reader output or current agency availability. Use the [visitor walkthrough](visitor-review.md),
+Chromium and WebKit automation do not establish native phone sharing, touch behavior on real hardware,
+spoken screen-reader output or current agency availability. Use the [visitor walkthrough](visitor-review.md),
 record the device and revision, and separate observed results from unanswered questions.
 
 ## Review artifacts

@@ -2084,7 +2084,8 @@ test("the marks key is reachable at every width", async ({ page }) => {
         ratio: 1,
       });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    if (w === 320) await page.screenshot({ path: test.info().outputPath("phone-map-legend.png") });
+    if (w === 320 && process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath("phone-map-legend.png") });
     if (w < 768) await page.getByRole("button", { name: "Close legend", exact: true }).click();
     else await toggle.click();
   }

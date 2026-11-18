@@ -57,7 +57,8 @@ test("a cinematic story yields during arrival, keeps its time, and recenters the
   await expect.poll(async () => (await pose(page)).manual).toBe(false);
   await expect(time).toHaveValue(held);
   expect(await page.locator("#globe-view canvas").evaluate((el, old) => el === old, original)).toBe(true);
-  await page.screenshot({ path: test.info().outputPath("story-recenter-desktop.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("story-recenter-desktop.png") });
 });
 
 test("phone pinch explores the story and its Recenter stays reachable @dev", async ({ page }) => {
@@ -89,7 +90,8 @@ test("phone pinch explores the story and its Recenter stays reachable @dev", asy
   await expect.poll(async () => (await pose(page)).zoom).toBeGreaterThan(before.zoom);
   const recenter = page.getByRole("button", { name: "Recenter view", exact: true });
   await expect(recenter).toBeInViewport({ ratio: 1 });
-  await page.screenshot({ path: test.info().outputPath("story-recenter-phone.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("story-recenter-phone.png") });
   await recenter.click();
   await expect(recenter).toBeHidden();
   await expect(page.locator("#globe-view")).toBeFocused();

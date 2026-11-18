@@ -41,7 +41,8 @@ test("an interrupted journey resumes its current moment without replacing the gl
   await expect(resume).toBeHidden();
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   await panel.getByRole("button", { name: "Pause", exact: true }).click();
-  await page.screenshot({ path: test.info().outputPath("journey-playback-desktop.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("journey-playback-desktop.png") });
 });
 
 test("a delayed story keeps the globe usable and cannot reopen after returning @dev", async ({ page }) => {
@@ -123,7 +124,8 @@ for (const width of [1440, 390]) {
     await expect.poll(() => camera(page)).toEqual(before);
     await expect.poll(() => page.locator("#chrome-rail").evaluate((el) => el.scrollTop)).toBe(scroll);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath(`returned-stories-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`returned-stories-${width}.png`) });
   });
 }
 
@@ -141,7 +143,8 @@ for (const width of [1440, 390, 320]) {
       const navigation = page.getByRole("navigation", { name: "Explore", exact: true });
       await expect(navigation.getByRole("button")).toHaveCount(1);
       await expect(navigation.getByRole("button", { name: "More globe" })).toBeInViewport({ ratio: 1 });
-      await page.screenshot({ path: test.info().outputPath(`panel-${width}.png`) });
+      if (process.env["EIF_CAPTURE_UI"])
+        await page.screenshot({ path: test.info().outputPath(`panel-${width}.png`) });
     }
     await openStories(page, "search");
     await page.getByRole("searchbox", { name: "Find a story" }).fill("Float Dive");
@@ -166,6 +169,7 @@ for (const width of [1440, 390, 320]) {
     expect(await panel.evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
     expect(await panel.evaluate((node) => node.scrollLeft)).toBe(0);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-    await page.screenshot({ path: test.info().outputPath(`playback-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`playback-${width}.png`) });
   });
 }

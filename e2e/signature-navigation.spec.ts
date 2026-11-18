@@ -11,18 +11,21 @@ for (const width of [320, 390, 1440]) {
     await page.goto("/");
     const original = await page.locator("#globe-view canvas").elementHandle();
     await expect(page.getByRole("button", { name: "Browse stories", exact: true })).toBeEnabled();
-    await page.screenshot({ path: test.info().outputPath(`landing-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`landing-${width}.png`) });
     if (width < 900) await page.getByRole("button", { name: "View options", exact: true }).click();
     await page.getByRole("button", { name: "Find a story", exact: true }).click();
     const search = page.getByRole("searchbox", { name: "Find a story", exact: true });
     await expect(search).toBeFocused();
     await search.fill("Tonga");
     await expect(page.getByRole("region", { name: "Search results" })).toContainText("Tonga");
-    await page.screenshot({ path: test.info().outputPath(`search-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`search-${width}.png`) });
     const saved = page.getByRole("button", { name: "Saved observations and recent visits" });
     await saved.click();
     await expect(page.getByRole("region", { name: "Saved observations", exact: true })).toBeVisible();
-    await page.screenshot({ path: test.info().outputPath(`saved-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`saved-${width}.png`) });
     await page.keyboard.press("Escape");
     await expect(saved).toBeFocused();
     await expect(search).toHaveValue("Tonga");

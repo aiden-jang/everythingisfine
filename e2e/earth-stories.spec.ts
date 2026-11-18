@@ -42,9 +42,11 @@ for (const [id, title, action] of stories) {
       true,
     );
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-    await page.screenshot({ path: test.info().outputPath(`${id}-map.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`${id}-map.png`) });
     await panel.getByRole("button", { name: "Globe", exact: true }).click();
-    await page.screenshot({ path: test.info().outputPath(`${id}-globe.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`${id}-globe.png`) });
     if (id === "fault") {
       await page.locator(".story-sites button:visible").first().click();
       await expect(panel.getByRole("combobox", { name: "Survey measurement" })).not.toHaveValue("");
@@ -103,14 +105,16 @@ test("story search finds another scene and returns to the retained query on a na
   await page.getByRole("button", { name: "Search all stories", exact: true }).click();
   await page.locator("#search-story-comet").click();
   await expect(page.locator("#earth-story-time")).toBeVisible();
-  await page.screenshot({ path: test.info().outputPath("phone-comet.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("phone-comet.png") });
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(search).toHaveValue("NEOWISE");
   await expect(page.locator("#search-story-comet")).toBeFocused();
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  await page.screenshot({ path: test.info().outputPath("phone-story-search.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("phone-story-search.png") });
 });
 
 test("an archived year switch keeps the calendar date and never starts playback", async ({ page }) => {

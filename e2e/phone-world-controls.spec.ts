@@ -57,7 +57,8 @@ test("expanded phone sheet keeps projection, legend and recorded radar sources r
         )
         .toBe(true);
     }
-    await page.screenshot({ path: test.info().outputPath(`world-controls-${viewport.width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`world-controls-${viewport.width}.png`) });
     await projection.click();
     await expect(projection).toHaveText("Globe");
     await projection.click();

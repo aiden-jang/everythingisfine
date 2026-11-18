@@ -41,7 +41,8 @@ test("a kept pressure reading exports its source card and reopens the same stati
   await saveNote.click();
   await expect(saveNote).toBeFocused();
   await expect(collection.getByRole("textbox", { name: "What did you notice?" })).toBeVisible();
-  await page.screenshot({ path: test.info().outputPath("saved-pressure-reading.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("saved-pressure-reading.png") });
   const downloadEvent = page.waitForEvent("download");
   await collection.getByRole("button", { name: "Download card", exact: true }).click();
   const download = await downloadEvent;

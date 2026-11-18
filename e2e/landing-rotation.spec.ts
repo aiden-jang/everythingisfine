@@ -84,7 +84,8 @@ test("the landing globe rotates, pauses, and hands the same camera to Explore @d
     "false",
   );
   await still(page);
-  await page.screenshot({ path: test.info().outputPath("landing-rotation-desktop.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("landing-rotation-desktop.png") });
   await page.getByRole("button", { name: "Auto-rotate globe" }).click();
   await page.keyboard.press("Escape");
   await moving(page);
@@ -222,6 +223,7 @@ for (const [width, height] of [
       ];
     }, after);
     expect(clearEdges).toEqual([null, null, null, null]);
-    await page.screenshot({ path: test.info().outputPath(`landing-zoomed-out-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`landing-zoomed-out-${width}.png`) });
   });
 }

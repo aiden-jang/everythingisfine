@@ -30,7 +30,8 @@ test("completed Continue restarts from the beginning after reload while unfinish
   await openStories(page, "search");
   await expect(resume).toContainText("Watch again Vanishing Sea");
   await resume.scrollIntoViewIfNeeded();
-  await page.screenshot({ path: test.info().outputPath("watch-again-phone.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("watch-again-phone.png") });
   await resume.click();
   await expect(slider).toHaveValue("0");
   await slider.press("ArrowRight");
@@ -110,7 +111,8 @@ for (const blocked of [false, true]) {
     await expect(shelf).toContainText(blocked ? "Restored for this visit" : "Restored on this device");
     await shelf.getByRole("button", { name: "Clear recent visits" }).click();
     await expect(page.locator(".story-continue")).toHaveCount(0);
-    await page.screenshot({ path: test.info().outputPath(`undo-phone-${blocked}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`undo-phone-${blocked}.png`) });
     await shelf.getByRole("button", { name: "Undo", exact: true }).click();
     await page.getByRole("button", { name: "Show highlights", exact: true }).click();
     await expect(page.locator(".story-continue")).toContainText("Continue Vanishing Sea");
@@ -144,7 +146,8 @@ for (const projection of ["globe", "map"]) {
       buttons.map((button) => button.getAttribute("aria-pressed")),
     );
     await page.getByRole("button", { name: "View options", exact: true }).click();
-    await page.screenshot({ path: test.info().outputPath(`reset-${projection}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`reset-${projection}.png`) });
     await page.getByRole("button", { name: "Reset camera", exact: true }).click();
     await expect
       .poll(camera)

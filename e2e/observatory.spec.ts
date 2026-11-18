@@ -81,7 +81,8 @@ for (const [width, height] of [
         );
       });
     expect(collisions, "landing copy, controls and the fixed credit have separate space").toEqual([]);
-    await page.screenshot({ path: test.info().outputPath(`observe-live-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`observe-live-${width}.png`) });
     await selectScene(page, "After Dark");
     await expect(page.getByRole("heading", { name: "The other side of day." })).toBeVisible();
     await expect(stage).toContainText("Catalogue sky");
@@ -96,7 +97,8 @@ for (const [width, height] of [
     await expect(depth).toHaveAttribute("aria-pressed", "true");
     await expect(stage).toContainText("300 / 600 / 900 km");
     expect(await credit.boundingBox()).toEqual(creditPosition);
-    await page.screenshot({ path: test.info().outputPath(`observe-depth-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`observe-depth-${width}.png`) });
     await explore.click();
     await expect(page.locator("#chrome-rail")).toBeVisible();
     await expect(stage).toBeHidden();

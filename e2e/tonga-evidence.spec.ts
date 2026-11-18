@@ -43,7 +43,8 @@ for (const [width, height] of [
     const paper = await story.locator(".tonga-evidence").boundingBox();
     const credit = await page.locator(".creator-credit").boundingBox();
     if (width! < 900) expect(paper!.y + paper!.height).toBeLessThanOrEqual(credit!.y);
-    await page.screenshot({ path: test.info().outputPath(`tonga-inspect-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`tonga-inspect-${width}.png`) });
     const evidence = story.getByRole("region", { name: "Honolulu pressure evidence" });
     for (const name of ["Keep this reading", "Back to journey", "Share finding"]) {
       const button = evidence.getByRole("button", { name, exact: true });

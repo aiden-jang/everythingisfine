@@ -79,7 +79,8 @@ async function annotationLayouts(page: Page, annotation: Locator, name: string) 
       ).toBe(false);
     }
     await painted(page);
-    await page.screenshot({ path: test.info().outputPath(`${name}-${viewport.width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`${name}-${viewport.width}.png`) });
   }
 }
 
@@ -117,7 +118,8 @@ for (const [id, title, chapter, choice] of stories) {
     const selected = await slider.inputValue();
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await painted(page);
-    await page.screenshot({ path: test.info().outputPath(`${id}-globe.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`${id}-globe.png`) });
     await panel.getByRole("button", { name: "Map", exact: true }).click();
     await expect(panel.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
       "aria-pressed",
@@ -125,7 +127,8 @@ for (const [id, title, chapter, choice] of stories) {
     );
     await expect(slider).toHaveValue(selected);
     await painted(page);
-    await page.screenshot({ path: test.info().outputPath(`${id}-map.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`${id}-map.png`) });
     await panel.getByRole("button", { name: "Globe", exact: true }).click();
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
       true,
@@ -140,7 +143,8 @@ for (const [id, title, chapter, choice] of stories) {
     });
     await expect(panel.getByRole("button", { name: "Globe", exact: true })).toBeInViewport();
     await painted(page);
-    await page.screenshot({ path: test.info().outputPath(`${id}-phone.png`), fullPage: true });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`${id}-phone.png`), fullPage: true });
     expect(errors).toEqual([]);
   });
 }
@@ -182,7 +186,8 @@ test("seafloor sections accept coordinates and reopen at the shared measured lin
   await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await annotationLayouts(page, panel.locator(".terrain-section"), "seafloor-section");
-  await page.screenshot({ path: test.info().outputPath("seafloor-phone.png"), fullPage: true });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("seafloor-phone.png"), fullPage: true });
 });
 
 test("the lidar slice keeps its scientific explanation clear of shared world controls", async ({ page }) => {
@@ -231,7 +236,8 @@ for (const [id, title] of [
       )
       .toBeLessThan(5);
     await expect(time).toHaveAttribute("datetime", at!);
-    await page.screenshot({ path: test.info().outputPath(`${id}-city.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`${id}-city.png`) });
     await panel.getByRole("button", { name: "Back to Earth" }).click();
     await expect(page.locator("[data-sky-labels]")).toHaveCount(0);
     await expect(time).toHaveAttribute("datetime", at!);

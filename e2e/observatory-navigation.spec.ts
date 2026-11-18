@@ -160,7 +160,8 @@ for (const width of [1440, 390]) {
       true,
     );
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-    await page.screenshot({ path: test.info().outputPath(`compact-landing-${width}.png`) });
+    if (process.env["EIF_CAPTURE_UI"])
+      await page.screenshot({ path: test.info().outputPath(`compact-landing-${width}.png`) });
     await page.goBack();
     await expect(scenes.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(
       "aria-pressed",

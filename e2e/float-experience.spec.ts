@@ -36,7 +36,8 @@ test("normal-motion Float Dive keeps its measured sample and places map controls
   await expect(profile).toBeVisible();
   await expect(page.locator("[data-float-instrument]")).toHaveCSS("opacity", "1");
   await expect.poll(() => tetherError(page)).toBeLessThan(2);
-  await page.screenshot({ path: test.info().outputPath("float-inspect-desktop.png") });
+  if (process.env["EIF_CAPTURE_UI"])
+    await page.screenshot({ path: test.info().outputPath("float-inspect-desktop.png") });
   const sample = profile.getByRole("slider", { name: "Inspect profile sample" });
   await sample.press("End");
   await expect(depth).toBeHidden();
