@@ -7,7 +7,16 @@ import type { CameraState } from "../globe/controls";
 import { quietLayer } from "./layerQuiet";
 import { matches } from "../data/filter";
 import { useReadingArrival } from "./useReadingArrival";
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useMemo, type ReactNode } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useMemo,
+  type ReactNode,
+  type KeyboardEventHandler,
+} from "react";
 import { PlaceContext, PlaceInspection, type PlaceContextProps } from "./discovery/PlaceContext";
 import type { usePlaceInspection } from "./discovery/usePlaceInspection";
 import { mapLayerNames, type MapLayer } from "./layerVisibility";
@@ -148,24 +157,20 @@ export function MapLayers({
     counts.lightning = controls.weather.lightning.frame.marks?.length ?? 0;
   const quiet = (id: MapLayer) => quietLayer(id, feeds.rows, counts[id], archived);
 
+  const dismissReading: KeyboardEventHandler<HTMLElement> = (event) => {
+    if (event.key !== "Escape" || !canDismiss || document.querySelector(":popover-open")) return;
+    if (!rewindPoint && !inspectingPlace && !layer) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (rewindPoint) closeRewind();
+    else if (inspectingPlace) {
+      place.close();
+      document.getElementById("globe-view")?.focus({ preventScroll: true });
+    } else back();
+  };
+
   return (
-    <section
-      ref={panel}
-      className="map-layers"
-      aria-label="Map layers"
-      onKeyDown={(event) => {
-        if (event.key !== "Escape" || !canDismiss || document.querySelector(":popover-open")) return;
-        if (rewindPoint || inspectingPlace || layer) {
-          event.preventDefault();
-          event.stopPropagation();
-          if (rewindPoint) closeRewind();
-          else if (inspectingPlace) {
-            place.close();
-            document.getElementById("globe-view")?.focus({ preventScroll: true });
-          } else back();
-        }
-      }}
-    >
+    <section ref={panel} className="map-layers" aria-label="Map layers" onKeyDown={dismissReading}>
       {place.point && !rewindPoint && (
         <PlaceInspection
           {...reports}
@@ -250,6 +255,11 @@ export function MapLayers({
             <RadarLayer
               suspended={controls.suspended || (!!rewindPoint && !panelVisible)}
               rewind={!!rewindPoint}
+              dock={
+                panelVisible && !controls.suspended && !reveal && (layer === "radar" || rewindPoint)
+                  ? dismissReading
+                  : undefined
+              }
               hidden={!!reveal}
               onView={controls.updateRadar}
               initialAt={controls.selectedTimes.radar}

@@ -4,7 +4,7 @@ import { sheetStops } from "./sheetLayout";
 describe("phone sheet space", () => {
   it("keeps the existing stops when no footer space is reserved", () => {
     expect(sheetStops(844)).toEqual([180, 363, 692]);
-    expect(sheetStops(844, true)).toEqual([180, 287, 692]);
+    expect(sheetStops(844, true)).toEqual([180, 354, 692]);
   });
 
   it("reserves the credit without squeezing controls below the viewport", () => {

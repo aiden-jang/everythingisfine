@@ -35,7 +35,7 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   const size = () => sheet.getAttribute("aria-valuenow");
   await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.43) - 60));
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
-  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.34) - 60));
+  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.42) - 60));
   const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
   const firstRow = stories.locator(".story-choice").first();
   await expect(firstRow).toBeInViewport({ ratio: 1 });

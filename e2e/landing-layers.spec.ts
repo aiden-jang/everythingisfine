@@ -119,7 +119,8 @@ for (const [width, height] of [
     await expect(controls).toBeVisible();
     expect(await radarTexture(page)).toBe(texture);
     expect(source.calls()).toBe(1);
-    await controls.getByRole("slider").press("Home");
+    const transport = width === 390 ? page.getByRole("group", { name: "Radar scan controls" }) : controls;
+    await transport.getByRole("slider").press("Home");
     await expect(page.locator(".radar-canvas-credit time")).toHaveAttribute(
       "datetime",
       new Date(source.at - 600_000).toISOString(),
@@ -272,7 +273,7 @@ test("place radar rewinds in the shared canvas and copies a held scan @dev", asy
   const heading = page.getByRole("heading", { name: "Radar rewind" });
   await expect(heading).toBeFocused();
   await expect(page.getByRole("button", { name: "Back to live", exact: true })).toBeInViewport();
-  const playback = page.getByRole("region", { name: "Storm radar playback" });
+  const playback = page.getByRole("group", { name: "Radar scan controls" });
   const timestamp = playback.locator(".radar-clock time");
   const slider = playback.getByRole("slider");
   const held = await longitude(page);

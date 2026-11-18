@@ -1,6 +1,7 @@
 import { PlaybackButton } from "../PlaybackButton";
 import { layerTime } from "../layerTime";
 import {
+  type KeyboardEventHandler,
   useCallback,
   useEffect,
   useId,
@@ -8,9 +9,8 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode,
 } from "react";
-import { StoryDock } from "../observations/StoryDock";
+import { RadarTransport } from "./RadarTransport";
 import type { RadarScan } from "../../sources/radar";
 import {
   radarRegions,
@@ -28,10 +28,6 @@ import { radarFeedHealth } from "./radarFeedHealth";
 const label = layerTime;
 const shortTime = (at: number) => new Date(at).toISOString().slice(11, 16);
 
-function RadarTransport({ layer, children }: { layer: boolean; children: ReactNode }): JSX.Element {
-  return layer ? <>{children}</> : <StoryDock label="Radar playback">{children}</StoryDock>;
-}
-
 export function RadarStage({
   onView,
   initialRegion,
@@ -39,6 +35,7 @@ export function RadarStage({
   onSelect,
   global,
   layer = false,
+  dock,
   suspended = false,
   rewind = false,
 }: {
@@ -48,6 +45,7 @@ export function RadarStage({
   onSelect?: (at: number | null) => void;
   global: boolean;
   layer?: boolean;
+  dock?: KeyboardEventHandler<HTMLElement> | undefined;
   suspended?: boolean;
   rewind?: boolean;
 }): JSX.Element {
@@ -219,7 +217,7 @@ export function RadarStage({
             {statusMessage}
           </p>
         )}
-        <RadarTransport layer={layer}>
+        <RadarTransport layer={layer} dock={dock}>
           <div className="radar-clock">
             <label htmlFor={id}>
               {global ? (atLatest ? "Latest frame" : "Frame time") : atLatest ? "Latest scan" : "Scan time"}

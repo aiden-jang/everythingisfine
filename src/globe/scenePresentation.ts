@@ -215,7 +215,7 @@ export function createScenePresentation(
       dive = createFloatPresentation(controls, canvas);
       spin.add(dive.object);
     }
-    dive?.set(float, mode === "dayline");
+    dive?.set(float, mode === "dayline", mode === "dayline" || mode === null);
     const overlay =
       observation ??
       mapLayers?.observation ??
@@ -313,6 +313,7 @@ export function createScenePresentation(
       radar?.setImage(null);
       observations?.dispose();
       shadow?.dispose();
+      dive?.dispose();
       picking.dispose();
     },
   };

@@ -127,7 +127,8 @@ for (const width of [1440, 390]) {
     await expect(radarFeed).toContainText("Available");
     await expect(radarFeed.locator("time")).toBeVisible();
     await page.keyboard.press("Escape");
-    const time = controls.locator(".radar-clock time");
+    const transport = width === 390 ? page.getByRole("group", { name: "Radar scan controls" }) : controls;
+    const time = transport.locator(".radar-clock time");
     await expect(time).toHaveAttribute("datetime", new Date(now).toISOString());
     if (width === 390) {
       expect((await page.locator(".layer-readout").boundingBox())!.height).toBeLessThanOrEqual(44);
@@ -137,13 +138,21 @@ for (const width of [1440, 390]) {
       await expect(reading).toHaveAttribute("datetime", new Date(now).toISOString());
       await page.keyboard.press("Escape");
     }
-    const slider = controls.getByRole("slider", { name: "Radar scan time" });
+    const slider = transport.getByRole("slider", { name: "Radar scan time" });
+    if (width === 390) {
+      const rail = page.locator("#chrome-rail");
+      const before = (await transport.boundingBox())!;
+      await rail.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
+      await expect(slider).toBeInViewport();
+      expect(await transport.boundingBox()).toEqual(before);
+      await rail.evaluate((element) => element.scrollTo({ top: 0 }));
+    }
     await slider.press("Home");
     await expect(time).toHaveAttribute("datetime", new Date(times[0]!).toISOString());
-    await controls.getByRole("button", { name: "Play", exact: true }).click();
-    await expect(controls.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
+    await transport.getByRole("button", { name: "Play", exact: true }).click();
+    await expect(transport.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
     await expect(time).toHaveAttribute("datetime", new Date(now).toISOString());
-    await expect(controls.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
+    await expect(transport.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
     expect(await camera(page)).toEqual(originalCamera);
     await page.getByRole("button", { name: "Map", exact: true }).click();
     await expect.poll(async () => (await camera(page))?.morph).toBe(1);
@@ -151,7 +160,11 @@ for (const width of [1440, 390]) {
     await slider.press("ArrowLeft");
     await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
     expect(await marksVisible(page)).toBe(true);
-    await page.getByRole("button", { name: "Back to layers", exact: true }).click();
+    if (width === 390) {
+      await slider.press("Escape");
+      await expect(transport).toHaveCount(0);
+      await expect(layers.getByRole("button", { name: "Storm radar details" })).toBeFocused();
+    } else await page.getByRole("button", { name: "Back to layers", exact: true }).click();
     await expect(layers.getByRole("button", { name: "Earthquakes", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true",
@@ -159,7 +172,9 @@ for (const width of [1440, 390]) {
     await openLayer(page, "Storm radar");
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/radar-layer-${width}.png` });
-    expect((await new AxeBuilder({ page }).include(".map-layers").analyze()).violations).toEqual([]);
+    const audit = new AxeBuilder({ page }).include(".map-layers");
+    if (width === 390) audit.include(".radar-dock");
+    expect((await audit.analyze()).violations).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
     const closed = Number(await page.locator("html").getAttribute("data-closed-radar-frames"));
     await toggle.click();
@@ -192,12 +207,13 @@ for (const width of [1440, 390]) {
     const layers = page.getByRole("region", { name: "Map layers", exact: true });
     await openLayer(page, "Storm radar");
     const controls = layers.getByRole("region", { name: "Storm radar playback" });
-    const time = controls.locator(".radar-clock time");
+    const transport = width === 390 ? page.getByRole("group", { name: "Radar scan controls" }) : controls;
+    const time = transport.locator(".radar-clock time");
     await expect(time).toHaveAttribute("datetime", new Date(times[2]!).toISOString());
     await page.getByRole("button", { name: "Map", exact: true }).click();
     await expect.poll(async () => (await camera(page))?.morph).toBe(1);
     const mapCamera = await camera(page);
-    await controls.getByRole("slider", { name: "Radar scan time" }).press("ArrowLeft");
+    await transport.getByRole("slider", { name: "Radar scan time" }).press("ArrowLeft");
     await expect(time).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
     await page.evaluate(() => (document.documentElement.dataset["holdRadarImages"] = "true"));
     await layers.getByRole("button", { name: /Follow a radar region/ }).click();
@@ -279,10 +295,12 @@ for (const width of [1440, 390]) {
     const preferences = await page.evaluate(() => localStorage.getItem("eif.mapLayers"));
     const controls = page.locator("#radar-layer-controls");
     await openLayer(page, "Storm radar");
+    const transport = width === 390 ? page.getByRole("group", { name: "Radar scan controls" }) : controls;
+    const time = page.locator("#radar-layer-controls .radar-clock time, .radar-dock .radar-clock time");
     await expect(controls.locator(".radar-warning")).toHaveCount(0);
-    await expect(controls.getByRole("slider", { name: "Radar scan time" })).toBeEnabled();
-    await controls.getByRole("slider", { name: "Radar scan time" }).press("ArrowLeft");
-    const held = await controls.locator("time").getAttribute("datetime");
+    await expect(transport.getByRole("slider", { name: "Radar scan time" })).toBeEnabled();
+    await transport.getByRole("slider", { name: "Radar scan time" }).press("ArrowLeft");
+    const held = await time.getAttribute("datetime");
     const player = await controls.elementHandle();
     await page.getByRole("button", { name: "Back to layers", exact: true }).click();
     const counts = () =>
@@ -318,7 +336,7 @@ for (const width of [1440, 390]) {
     await storiesTab.focus();
     await storiesTab.press("ArrowLeft");
     await expect.poll(() => camera(page)).toEqual(pose);
-    await expect(controls.locator("time")).toHaveAttribute("datetime", held!);
+    await expect(time).toHaveAttribute("datetime", held!);
     await expect(layers.getByRole("button", { name: "Wildfires", exact: true })).toHaveAttribute(
       "aria-pressed",
       "false",
@@ -331,12 +349,12 @@ for (const width of [1440, 390]) {
       true,
     );
     await openLayer(page, "Storm radar");
-    await controls.getByRole("button", { name: "Play", exact: true }).click();
+    await transport.getByRole("button", { name: "Play", exact: true }).click();
     await page.getByRole("tab", { name: "Stories", exact: true }).click();
-    const pausedAt = await controls.locator("time").getAttribute("datetime");
+    const pausedAt = await time.getAttribute("datetime");
     await page.waitForTimeout(1200);
-    expect(await controls.locator("time").getAttribute("datetime")).toBe(pausedAt);
+    expect(await time.getAttribute("datetime")).toBe(pausedAt);
     await page.getByRole("tab", { name: "Layers", exact: true }).click();
-    await expect(controls.locator("time")).not.toHaveAttribute("datetime", pausedAt!);
+    await expect(time).not.toHaveAttribute("datetime", pausedAt!);
   });
 }

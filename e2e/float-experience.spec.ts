@@ -162,3 +162,51 @@ test("an unavailable shared Argo profile never claims an exact saved-moment rest
     .poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("choice"))
     .toBe("recorded/6901932/268/1792482240000");
 });
+
+test("Float Dive returns through the waterline to the same globe and holds the map aim @dev", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page);
+  await page.route("https://erddap.marine.ie/**", (route) =>
+    route.fulfill({ json: { table: { rows: [] } } }),
+  );
+  await page.goto("/#v=explore&at=-49.643,59.915,1.08&catalogue=all");
+  const read = () =>
+    page.evaluate(() =>
+      (
+        window as unknown as {
+          __globe: { state: () => { lon: number; lat: number; zoom: number }; morph: () => number };
+        }
+      ).__globe.state(),
+    );
+  const feature = page.locator("#open-featured-float,#open-story-float").first();
+  await expect(feature).toBeEnabled();
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  const origin = await read();
+  await feature.click();
+  await page.getByRole("button", { name: "Follow the rise", exact: true }).click();
+  const slider = page.getByRole("slider", { name: "Ascent depth" });
+  await slider.press("End");
+  await slider.press("ArrowLeft");
+  await expect(page.locator("[data-float-instrument]")).toHaveCSS("opacity", "1");
+
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.getByRole("button", { name: "Back to stories", exact: true }).click();
+  const pin = page.locator(".float-return-pin");
+  await expect(pin).toBeVisible();
+  await expect.poll(read).toEqual(origin);
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+
+  const start = (await pin.boundingBox())!;
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => (window as unknown as { __globe: { morph: () => number } }).__globe.morph()),
+    )
+    .toBe(1);
+  const end = (await pin.boundingBox())!;
+  expect(Math.hypot(start.x - end.x, start.y - end.y)).toBeLessThan(8);
+  await expect(pin).toHaveText("Argo 6901932");
+});

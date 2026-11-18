@@ -1,4 +1,4 @@
-import { Group, Mesh, PlaneGeometry, ShaderMaterial, Vector4 } from "three";
+import { Group, Mesh, PlaneGeometry, ShaderMaterial, Vector2, Vector4 } from "three";
 
 const water = /* glsl */ `
   uniform float reveal;
@@ -6,6 +6,8 @@ const water = /* glsl */ `
   uniform float aspect;
   uniform float motion;
   uniform vec4 bounds;
+  uniform float departure;
+  uniform vec2 anchor;
   varying vec2 screen;
 
   float capsule(vec2 p, vec2 a, vec2 b, float radius) {
@@ -15,10 +17,13 @@ const water = /* glsl */ `
 
   void main() {
     vec2 uv = screen * 0.5 + 0.5;
-    vec2 local = (uv - bounds.xy) / (bounds.zw - bounds.xy);
+    float fold = smoothstep(0.18, 1.0, departure);
+    vec2 low = mix(bounds.xy, anchor - vec2(0.005), fold);
+    vec2 high = mix(bounds.zw, anchor + vec2(0.005), fold);
+    vec2 local = (uv - low) / (high - low);
     if (local.x < 0.0 || local.x > 1.0 || local.y < 0.0 || local.y > 1.0) discard;
     vec2 p = (local * 2.0 - 1.0) * vec2(aspect, 1.0);
-    float height = 0.64 + 0.025 * sin(p.x * 6.0) + 0.012 * cos(p.x * 13.0);
+    float height = 0.64 + 0.025 * sin(p.x * 6.0) + 0.012 * cos(p.x * 13.0) - 1.02 * smoothstep(0.0, 0.74, departure);
     float below = max(0.0, height - p.y);
     float light = mix(0.11, 1.0, pow(ascent, 2.4));
     vec3 abyss = vec3(0.012, 0.025, 0.063);
@@ -39,7 +44,7 @@ const water = /* glsl */ `
     float grain = 1.0 - smoothstep(0.018, 0.065, length(fract(flecks) - vec2(seed, fract(seed * 7.9))));
     color += vec3(0.12, 0.23, 0.23) * grain * step(0.71, seed) * (1.0 - surface) * mix(0.36, 1.0, light);
 
-    vec2 f = p - vec2(x, mix(-0.61, 0.51, ascent));
+    vec2 f = p - vec2(x, mix(-0.61, 0.51, ascent) - 0.99 * smoothstep(0.0, 0.74, departure));
     float halo = exp(-dot(f * vec2(1.6, 1.0), f * vec2(1.6, 1.0)) * 27.0);
     color += vec3(0.11, 0.16, 0.13) * halo;
     float lamp = exp(-length(f - vec2(0.0, 0.128)) * 30.0);
@@ -57,7 +62,14 @@ const water = /* glsl */ `
     float immersion = 1.0 - smoothstep(tide - 0.13, tide + 0.27, p.y + 0.04 * sin(p.x * 4.0));
     float edge = smoothstep(0.0, 0.018, local.x) * (1.0 - smoothstep(0.982, 1.0, local.x));
     edge *= smoothstep(0.0, 0.018, local.y) * (1.0 - smoothstep(height + 0.05, height + 0.16, p.y));
-    gl_FragColor = vec4(color, mix(reveal, immersion, motion) * edge * 0.96);
+    // During the return, let the depth fall away beneath the waterline before the lens closes at the float.
+    float air = smoothstep(0.05, 0.86, departure);
+    float width = 1.0 - pow(abs(local.x * 2.0 - 1.0), 2.0);
+    float thickness = mix(1.95, 0.19, air) * mix(1.0, max(0.038, width), air);
+    float depthEdge = 1.0 - smoothstep(thickness * 0.65, thickness, below);
+    float crest = mix(1.0, smoothstep(0.0, 0.36, width), air);
+    float outgoing = mix(1.0, depthEdge * crest, smoothstep(0.02, 0.42, departure));
+    gl_FragColor = vec4(color, mix(reveal, immersion, motion) * edge * outgoing * 0.96 * (1.0 - smoothstep(0.82, 1.0, departure)));
   }
 `;
 
@@ -73,6 +85,8 @@ export function createFloatSurface() {
         aspect: { value: 1 },
         motion: { value: 1 },
         bounds: { value: bounds },
+        departure: { value: 0 },
+        anchor: { value: new Vector2(0.5, 0.5) },
       },
       vertexShader: /* glsl */ `
         varying vec2 screen;
@@ -94,6 +108,10 @@ export function createFloatSurface() {
   let inspection = 0;
   return {
     object,
+    departure(amount: number, anchor?: { x: number; y: number }) {
+      sheet.material.uniforms.departure!.value = amount;
+      if (anchor) sheet.material.uniforms.anchor!.value.set(anchor.x, anchor.y);
+    },
     draw(reveal: number, ascent: number, inspecting: number, reduced: boolean) {
       inspection = inspecting;
       sheet.visible = reveal > 0;

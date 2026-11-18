@@ -517,7 +517,7 @@
 }
 @media (max-width: 767px) {
   .zones:has(#explorer-stories:not([hidden])) {
-    --sheet-default: max(34dvh, min(240px, 65dvh));
+    --sheet-default: max(42dvh, min(260px, 65dvh));
   }
   .explorer-tabs {
     top: -28px;

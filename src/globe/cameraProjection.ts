@@ -69,16 +69,17 @@ export function createUnfoldCamera(camera: PerspectiveCamera) {
       // Choose the continuous longitude even if a flight reaches the other side of the seam mid-curl.
       previousLon = previousLon === null ? wrap(lon) : previousLon + wrap(lon - previousLon);
       const pullback = Math.sin(Math.PI * t);
-      const viewLon = previousLon * (1 - 0.48 * pullback);
-      const viewLat = lat * (1 - 0.48 * pullback);
+      const viewLon = previousLon * (1 - 0.18 * pullback);
+      const viewLat = lat * (1 - 0.18 * pullback);
       const yaw = viewLon * DEG * (1 - t);
       const tilt = viewLat * DEG * (1 - t) + 0.12 * pullback;
-      const distanceBack = distance + 1.6 * pullback;
-      unfoldPoint(target, viewLon, viewLat, t).multiplyScalar(t);
+      const distanceBack = distance + 0.88 * pullback;
+      // The view keeps the geographic aim in frame while orbit and scale relax into the map.
+      unfoldPoint(target, previousLon, lat, t);
       camera.position
         .set(Math.cos(tilt) * Math.sin(yaw), Math.sin(tilt), Math.cos(tilt) * Math.cos(yaw))
         .multiplyScalar(distanceBack)
-        .add(target);
+        .addScaledVector(target, t);
       camera.lookAt(target);
       camera.rotateZ(-0.065 * pullback);
     },

@@ -2,12 +2,14 @@ import type { FloatDiveView } from "../app/float/floatPlayback";
 import { spanDeg } from "../geo/sphere";
 import type { Controls } from "./controls";
 import { createFloatSurface } from "./floatSurface";
+import { createFloatDeparture } from "./floatDeparture";
 import { placeFloatReading } from "./floatPlacement";
 
 const ZOOM = 1.35;
 
 export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasElement) {
   const surface = createFloatSurface();
+  let departure: ReturnType<typeof createFloatDeparture> | undefined;
   let wanted: FloatDiveView | null = null;
   let showing: FloatDiveView | null = null;
   let returnCamera: ReturnType<Controls["state"]> | null = null;
@@ -29,15 +31,33 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
           : 0.1;
       const point = surface.size(canvas.clientWidth, canvas.clientHeight, clearance);
       placeFloatReading(canvas, point.x, point.y, reveal > 0.95);
+      departure?.place();
     },
-    set(view: FloatDiveView | null, returnToGlobe: boolean) {
+    set(view: FloatDiveView | null, returnToGlobe: boolean, earth = returnToGlobe) {
+      if (view || !earth) departure?.clear();
       if (view === wanted) {
-        if (!view) restore = returnToGlobe;
+        if (!view && restore !== returnToGlobe) {
+          departure?.clear();
+          restore = returnToGlobe;
+        }
         return;
       }
       wanted?.pause();
-      wanted = view;
       restore = returnToGlobe;
+      if (!view && earth && showing) {
+        const destination = showing.takeDestination() ?? (returnToGlobe ? returnCamera : null);
+        if (destination) {
+          departure ??= createFloatDeparture(controls, canvas, surface);
+          if (departure.begin(showing, reveal, destination)) {
+            wanted = showing = null;
+            returnCamera = null;
+            reveal = inspection = landed = 0;
+            arrived = readyToPlay = false;
+            return;
+          }
+        }
+      }
+      wanted = view;
       if (view || !returnToGlobe) {
         reveal = inspection = 0;
         surface.draw(0, 0, 0, false);
@@ -45,6 +65,7 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
       if (view) returnCamera ??= controls.state();
     },
     step(dt: number, reduced: boolean, elapsed = dt) {
+      if (departure?.active) return departure.step(elapsed, reduced);
       let returning = false;
       if (showing !== wanted || (!wanted && returnCamera)) {
         reveal = reduced ? 0 : Math.max(0, reveal - dt / 0.55);
@@ -96,5 +117,6 @@ export function createFloatPresentation(controls: Controls, canvas: HTMLCanvasEl
       const visible = controls.guidance.following() && showing.read().stage !== "locate" ? 1 : 0;
       return rising || showing !== wanted || reveal !== visible || inspection !== inspect;
     },
+    dispose: () => departure?.dispose(),
   };
 }

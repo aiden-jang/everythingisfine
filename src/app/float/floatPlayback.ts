@@ -1,3 +1,4 @@
+import type { CameraState } from "../../globe/controlsTypes";
 import type { ArgoProfile } from "../../sources/argo";
 
 const ASCENT_SECONDS = 10.5;
@@ -19,6 +20,7 @@ export function createFloatPlayback(profile: ArgoProfile, autoplay: boolean, sou
   const span = deepest - shallowest;
   let current: FloatReading = { index: 0, playing: autoplay, inspecting: false, stage: "rise" };
   let depth = deepest;
+  let destination: CameraState | undefined;
 
   function update(index: number, playing: boolean, changes: Partial<FloatReading> = {}) {
     const next = { ...current, index, playing, ...changes };
@@ -42,6 +44,14 @@ export function createFloatPlayback(profile: ArgoProfile, autoplay: boolean, sou
     profile,
     source,
     depth: () => depth,
+    depart: (camera: CameraState) => {
+      destination = camera;
+    },
+    takeDestination() {
+      const camera = destination;
+      destination = undefined;
+      return camera;
+    },
     read: () => current,
     subscribe(listener: () => void) {
       listeners.add(listener);

@@ -600,8 +600,9 @@ Its independent scan time remains visible; playback never drives the earthquake 
 A covered place with two loaded frames can open **Rewind radar**. The shared camera approaches
 the pin with a slight bank and one geographic light sweep over the radar surface. On the map the
 same sweep follows the flat projection. Playback appears as the shot settles and stays inside the
-place panel. Grabbing the camera ends the reveal immediately. Reduced motion and shared links
-open directly to playback. The camera holds its framing while scans change.
+place panel. On phones, the scan time and playback controls dock above the credit while
+the readings and source details scroll in the sheet. Grabbing the camera ends the reveal immediately.
+Reduced motion and shared links open directly to playback. The camera holds its framing while scans change.
 A copied link carries the pin, camera, projection and displayed frame. **Back to live** restores
 the latest radar at the same place.
 The catalogue's Storm Radar view offers authored regional flights and optional NOAA detail.
@@ -821,6 +822,10 @@ action; shared and saved links still open at their measured sample. The finding 
 temperature samples and marks the sample its Keep action stores. Inspection and ordinary scrubbing
 continue to save the currently selected sample. Returning restores the source camera, projection,
 scroll and focus; a kept observation reopens its measured depth instead of restarting playback.
+On return, the waterline folds into the float’s recorded North Atlantic position on the shared world.
+The camera takes about 1.5 seconds to restore the previous framing and yields to manual input.
+Reduced motion restores that view immediately. The globe and map keep the geographic camera
+aim in frame during the unfold.
 The measurement inspector opens beside the float;
 the selected chart point, instrument reading and playback refer to the same sample. The
 playback deck stays reachable independently of the scrolling reading panel. On phones,
