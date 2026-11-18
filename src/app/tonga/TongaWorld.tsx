@@ -1,5 +1,6 @@
 import { createPortal } from "react-dom";
-import { ORIGIN, stations } from "./tongaTimeline";
+import { ORIGIN, stations, timeIso, timeLabel } from "./tongaTimeline";
+import { PressureChart } from "./PressureChart";
 import type { TongaStation } from "./useTongaPlayback";
 
 export type TongaPhase = "discover" | "follow" | "inspect" | "kept" | "shared";
@@ -7,10 +8,12 @@ export type TongaPhase = "discover" | "follow" | "inspect" | "kept" | "shared";
 export function TongaWorld({
   phase,
   station,
+  signal,
   onInspect,
 }: {
   phase: TongaPhase;
   station: TongaStation;
+  signal: TongaStation | undefined;
   onInspect: (station: TongaStation) => void;
 }) {
   const ordered = [station, ...stations.filter(({ id }) => id !== station.id)];
@@ -33,8 +36,12 @@ export function TongaWorld({
             data-lon={item.lon}
             data-lat={item.lat}
             data-evidence-source={
-              (phase === "inspect" || phase === "shared") && item.id === station.id ? "true" : undefined
+              signal?.id === item.id ||
+              ((phase === "inspect" || phase === "shared") && item.id === station.id)
+                ? "true"
+                : undefined
             }
+            data-station-signal={signal?.id === item.id ? "" : undefined}
             onClick={() => onInspect(item)}
             aria-label={`Inspect ${item.name} pressure`}
           >
@@ -46,6 +53,20 @@ export function TongaWorld({
           </button>
         ))}
       </div>
+      {signal && (
+        <div
+          className="tonga-signal"
+          data-evidence-body=""
+          role="group"
+          aria-label={`${signal.name} recorded pressure pulse`}
+        >
+          <div className="tonga-signal-name">
+            <strong>{signal.name}</strong>
+            <time dateTime={timeIso(signal.peak)}>{timeLabel(signal.peak)} UTC</time>
+          </div>
+          <PressureChart station={signal} minute={signal.peak} compact linked />
+        </div>
+      )}
       {(phase === "inspect" || phase === "shared" || phase === "kept") && (
         <div className="tonga-world-title" aria-hidden="true">
           {phase === "inspect" ? (

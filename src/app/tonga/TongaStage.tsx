@@ -27,6 +27,7 @@ import {
   orbit,
   pressureAt,
   sprite,
+  signalStation,
   stationAt,
   stations,
   timeIso,
@@ -38,7 +39,6 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, shared, remember } = useStorySession();
   const playback = useTongaPlayback(initial);
   const { assets, view, images, minute, ended, arrive } = playback;
-  const station = view.station ?? stationAt(minute);
   const [phase, setPhase] = useState<TongaPhase>(() => {
     if (initial?.at === undefined) return "discover";
     const selected = stations.find(({ id }) => id === initial.choice);
@@ -49,6 +49,8 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
         : "inspect"
       : "follow";
   });
+  const signal = phase === "follow" ? signalStation(minute, view.station) : undefined;
+  const station = view.station ?? signal ?? stationAt(minute);
   const focus = useRef<"sample" | "playback" | "kept" | null>(null);
   useLayoutEffect(() => {
     const zones = document.querySelector<HTMLElement>(".zones");
@@ -177,6 +179,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
           <TongaWorld
             phase={phase}
             station={station}
+            signal={signal}
             onInspect={(selected) => inspect(selected.peak, selected)}
           />
         </>
@@ -333,7 +336,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
             max={END}
             value={Math.floor(minute)}
             aria-valuetext={`${timeLabel(minute)} UTC`}
-            onInput={(event) => playback.seek(event.currentTarget.valueAsNumber)}
+            onInput={(event) => playback.scrub(event.currentTarget.valueAsNumber)}
           />
           <div className="archive-scene-controls">
             <PlaybackButton

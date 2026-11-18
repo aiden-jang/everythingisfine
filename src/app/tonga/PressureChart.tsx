@@ -24,10 +24,14 @@ export function PressureChart({
   station,
   minute,
   onSeek,
+  linked = false,
+  compact = false,
 }: {
   station: Station;
   minute: number;
   onSeek?: (minute: number) => void;
+  linked?: boolean;
+  compact?: boolean;
 }): JSX.Element {
   const { x, y, path, low, high } = charts[stations.indexOf(station)]!;
   const reading = pressureAt(station, minute);
@@ -37,22 +41,24 @@ export function PressureChart({
 
   return (
     <div className="tonga-chart">
-      <div className="tonga-chart-meta">
-        <span>Station pressure</span>
-        <span>
-          {minute < station.start || minute >= end + 1
-            ? `This station’s readings cover ${timeLabel(station.start)}–${timeLabel(end)} UTC`
-            : reading === null
-              ? "No reading at this minute"
-              : `${reading.toFixed(2)} hPa`}
-        </span>
-      </div>
+      {!compact && (
+        <div className="tonga-chart-meta">
+          <span>Station pressure</span>
+          <span>
+            {minute < station.start || minute >= end + 1
+              ? `This station’s readings cover ${timeLabel(station.start)}–${timeLabel(end)} UTC`
+              : reading === null
+                ? "No reading at this minute"
+                : `${reading.toFixed(2)} hPa`}
+          </span>
+        </div>
+      )}
       <div className="tonga-chart-field">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           preserveAspectRatio="none"
           role="img"
-          aria-label={`${station.name} one-minute pressure readings from ${timeLabel(station.start)} to ${timeLabel(end)} UTC. Scale ${low} to ${high} hectopascals.`}
+          aria-label={`${station.name} one-minute pressure readings from ${timeLabel(station.start)} to ${timeLabel(end)} UTC. Scale ${low} to ${high} hectopascals.${compact && reading !== null ? ` Recorded pulse ${reading.toFixed(2)} hPa.` : ""}`}
         >
           <path
             d={`M0 ${inset}H${width}M0 ${height / 2}H${width}M0 ${height - inset}H${width}`}
@@ -69,7 +75,7 @@ export function PressureChart({
                 r="2.5"
                 className="tonga-chart-dot"
                 data-ramp=""
-                data-evidence-point=""
+                data-evidence-point={linked ? "" : undefined}
               />
             </>
           )}
@@ -87,13 +93,15 @@ export function PressureChart({
           />
         )}
       </div>
-      <div className="tonga-chart-meta">
-        <time dateTime={timeIso(station.start)}>{timeLabel(station.start)}</time>
-        <span>
-          {low}–{high} hPa
-        </span>
-        <time dateTime={timeIso(end)}>{timeLabel(end)} UTC</time>
-      </div>
+      {!compact && (
+        <div className="tonga-chart-meta">
+          <time dateTime={timeIso(station.start)}>{timeLabel(station.start)}</time>
+          <span>
+            {low}–{high} hPa
+          </span>
+          <time dateTime={timeIso(end)}>{timeLabel(end)} UTC</time>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 import { Color, FrontSide, Mesh, ShaderMaterial, SphereGeometry, Vector3 } from "three";
 import { attachLonLat, MORPH_GLSL, SPHERE_PHI_START } from "./morph";
-import { AURORA_LAT, AURORA_LON } from "../sources/aurora";
-import { auroraTexture } from "./auroraTexture";
+import { AURORA_LAT, AURORA_LON, type Aurora } from "../sources/aurora";
+import { auroraTexture, writeAurora } from "./auroraTexture";
 import { RADIUS_NIGHT } from "../geo/land";
 
 const NIGHT_SURFACE = {
@@ -28,6 +28,7 @@ const NIGHT_SURFACE = {
         uniform float uMorph;
         uniform sampler2D uAurora;
         uniform float uAuroraOn;
+        uniform float uAuroraWeight;
         uniform vec3 uAuroraColor;
         varying vec3 vNormal;
         varying vec2 vLonLat;
@@ -72,7 +73,7 @@ const NIGHT_SURFACE = {
 
           /* Aurora intensity shares the geographic night mask. See ARCHITECTURE.md#srcglobenightsurfacets. */
           vec2 auv = vec2((vLonLat.x + 0.5) / ${AURORA_LON}.0, (vLonLat.y + 90.5) / ${AURORA_LAT}.0);
-          float glow = clamp(texture2D(uAurora, auv).r * 3.0, 0.0, 1.0) * night * uAuroraOn;
+          float glow = clamp(texture2D(uAurora, auv).r * 3.0, 0.0, 1.0) * night * uAuroraOn * uAuroraWeight;
 
           /* A quarter of a level of noise, because this overlay's alpha changes by less than 1/255 over
              tens of pixels and an 8-bit framebuffer turns that into flat bands across Russia. See ARCHITECTURE.md#srcglobenightsurfacets. */
@@ -119,6 +120,7 @@ export function createNightSurface(morph: { value: number }) {
         uLift: { value: 0.11 },
         uAurora: { value: aurora },
         uAuroraOn: { value: 0 },
+        uAuroraWeight: { value: 1 },
         uAuroraColor: { value: new Color(0x7fc9a6) },
       },
       transparent: true,
@@ -128,5 +130,13 @@ export function createNightSurface(morph: { value: number }) {
     }),
   );
   night.renderOrder = 4.5;
-  return { night, aurora, dayline };
+  return {
+    night,
+    aurora,
+    dayline,
+    setAurora(grid: Aurora | null) {
+      if (grid) writeAurora(aurora, grid);
+      night.material.uniforms["uAuroraOn"]!.value = grid ? 1 : 0;
+    },
+  };
 }

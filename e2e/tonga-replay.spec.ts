@@ -106,6 +106,9 @@ test("Tonga’s reduced-motion archive can jump to measured station pulses on a 
   await replay.getByRole("combobox", { name: "Ground station" }).selectOption("SFO");
   await expect(slider).toHaveAttribute("aria-valuetext", "12:03 UTC");
   await expect(replay.getByText("1022.76 hPa", { exact: true })).toBeVisible();
+  const signal = replay.getByRole("group", { name: "San Francisco recorded pressure pulse" });
+  await expect(signal.locator("time")).toHaveAttribute("datetime", "2022-01-15T12:03:00Z");
+  await expect(signal.getByRole("img")).toHaveAccessibleName(/1022\.76 hPa/);
   await replay.getByRole("button", { name: "Map", exact: true }).click();
   await expect(page.getByRole("group", { name: "Tonga’s shockwave on the map" })).toContainText(
     "Estimated atmospheric wave",
@@ -115,6 +118,7 @@ test("Tonga’s reduced-motion archive can jump to measured station pulses on a 
   expect(await canvas.evaluate((el, prior) => el === prior, original)).toBe(true);
   await slider.press("Home");
   await expect(slider).toHaveAttribute("aria-valuetext", "04:00 UTC");
+  await expect(signal).toHaveCount(0);
   await expect(replay.getByText("This station’s readings cover")).toBeVisible();
   await expect.poll(() => replay.evaluate((dialog) => dialog.scrollWidth - dialog.clientWidth)).toBe(0);
   await page.setViewportSize({ width: 812, height: 375 });

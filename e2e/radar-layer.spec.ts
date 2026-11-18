@@ -26,6 +26,16 @@ const marksVisible = (page: Page) =>
       ).__events.object.parent.visible,
   );
 
+const quakeOpacity = (page: Page) =>
+  page.evaluate(
+    () =>
+      (
+        window as unknown as {
+          __events: { object: { material: { uniforms: { uLayerWeight: { value: number } } } } };
+        }
+      ).__events.object.material.uniforms.uLayerWeight.value,
+  );
+
 async function prepareRadar(page: Page, width: number, unavailable = true) {
   await page.setViewportSize({ width, height: 900 });
   await page.emulateMedia({ reducedMotion: width === 390 ? "reduce" : "no-preference" });
@@ -106,6 +116,7 @@ for (const width of [1440, 390]) {
     expect(await controls.evaluate((node, original) => node === original, player)).toBe(true);
     const status = controls.getByRole("status", { name: "Radar status" });
     await expect(status).toHaveText("Couldn’t reach RainViewer radar.");
+    expect(await quakeOpacity(page)).toBe(1);
     expect(queries()).toBe(1);
     expect(await page.evaluate(() => localStorage.getItem("eif.mapLayers"))).toBeNull();
     const feedToggle = page.getByRole("button", { name: /^Feed status,/ });
@@ -122,6 +133,7 @@ for (const width of [1440, 390]) {
     recover();
     await controls.getByRole("button", { name: "Retry RainViewer" }).click();
     await expect(status).toHaveCount(0);
+    await expect.poll(() => quakeOpacity(page)).toBeLessThan(0.5);
     await expect(feedToggle).toHaveAccessibleName(/All feeds available|8\/8 available/);
     await feedToggle.click();
     await expect(radarFeed).toContainText("Available");
@@ -165,6 +177,7 @@ for (const width of [1440, 390]) {
       await expect(transport).toHaveCount(0);
       await expect(layers.getByRole("button", { name: "Storm radar details" })).toBeFocused();
     } else await page.getByRole("button", { name: "Back to layers", exact: true }).click();
+    await expect.poll(() => quakeOpacity(page)).toBe(1);
     await expect(layers.getByRole("button", { name: "Earthquakes", exact: true })).toHaveAttribute(
       "aria-pressed",
       "true",

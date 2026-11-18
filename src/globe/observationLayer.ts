@@ -328,12 +328,12 @@ export function createObservationLayer(morph: { value: number }) {
       fault?.dispose();
       moon.dispose();
     },
-    step(dt: number, reduced: boolean) {
+    step(dt: number, reduced: boolean, layerWeight = 1) {
       const unfolding = curtain.step(dt, reduced);
       const lifting = terrain.step(dt, reduced);
       if (!prior) return false;
       reveal = reduced ? 1 : Math.min(1, reveal + dt / 1.15);
-      const strength = reveal * reveal * (3 - 2 * reveal);
+      const strength = reveal * reveal * (3 - 2 * reveal) * layerWeight;
       dot.material.uniforms.reveal!.value = strength;
       raster.material.opacity = strength * (prior.frame.raster?.opacity ?? 0.88);
       travel = Math.min(1, travel + dt / 1.05);

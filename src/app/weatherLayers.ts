@@ -25,10 +25,17 @@ export interface WeatherLayerView {
   feed: Pick<FeedRow, "state" | "lastCheck" | "message">;
   lastAvailable?: boolean;
 }
+export type LayerEmphasis = "radar" | "earthquakes" | "aurora";
+
+export function emphasisLayer(layer: string | null): LayerEmphasis | null {
+  return layer === "radar" || layer === "earthquakes" || layer === "aurora" ? layer : null;
+}
+
 export interface MapLayerPresentation {
   kind: "map-layers";
   base?: "landing" | "dayline";
   radar: RadarLayerView | null;
+  emphasis?: LayerEmphasis | null;
   observation: ObservationView | null;
 }
 

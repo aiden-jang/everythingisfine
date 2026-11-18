@@ -10,6 +10,7 @@ import {
   weatherLayers,
   weatherOverlay,
   composeMapLayers,
+  emphasisLayer,
   type WeatherLayerId,
   type WeatherLayerView,
   type PlaybackLayer,
@@ -113,9 +114,14 @@ export function useMapLayers(
     () => weatherOverlay(wind?.frame, lightning?.frame),
     [wind?.frame, lightning?.frame],
   );
+  const subject = emphasisLayer(rewind ? "radar" : inspector);
+  const emphasis = active && subject && enabled[subject] ? subject : null;
   const presentation = useMemo<MapLayerPresentation | null>(
-    () => (!suspended && (radar || observation) ? { kind: "map-layers", radar, observation } : null),
-    [radar, observation, suspended],
+    () =>
+      !suspended && (radar || observation || emphasis)
+        ? { kind: "map-layers", radar, observation, emphasis }
+        : null,
+    [radar, observation, suspended, emphasis],
   );
   const compose = useMemo(() => composeMapLayers(presentation), [presentation]);
   const feeds: FeedRow[] = [

@@ -55,13 +55,14 @@ const SHADER = {
   fragmentShader: /* glsl */ `
     uniform sampler2D uRamp;
     uniform float uDim;
+    uniform float uLayerWeight;
     varying float vRamp;
     varying float vFade;
     varying float vFacing;
 
     void main() {
       if (vFacing <= 0.0 || vFade <= 0.0) discard;
-      gl_FragColor = vec4(texture2D(uRamp, vec2(vRamp, 0.5)).rgb, uDim * vFade * smoothstep(0.0, 0.2, vFacing));
+      gl_FragColor = vec4(texture2D(uRamp, vec2(vRamp, 0.5)).rgb, uDim * uLayerWeight * vFade * smoothstep(0.0, 0.2, vFacing));
     }`,
 };
 
@@ -75,7 +76,7 @@ interface Ring {
 }
 
 export interface RingLayer {
-  object: LineSegments;
+  object: LineSegments<BufferGeometry, ShaderMaterial>;
   /** Starts a front at an epicentre. Ignored once MAX_RINGS are already running. */
   spawn: (lon: number, lat: number, magnitude: number, key?: string) => void;
   /** Advances every front and rewrites the buffer. Returns how many are still alive. */
@@ -117,7 +118,7 @@ export function createRingLayer(ramp: RampName = "thermal", morph = { value: 0 }
   let texture = rampTexture(ramp);
   const material = new ShaderMaterial({
     ...SHADER,
-    uniforms: { uRamp: { value: texture }, uDim: { value: 1 }, uMorph: morph },
+    uniforms: { uRamp: { value: texture }, uDim: { value: 1 }, uLayerWeight: { value: 1 }, uMorph: morph },
     transparent: true,
     depthWrite: false,
     // Like the markers: the fronts carry their own facing test, so depth-testing them against the globe can

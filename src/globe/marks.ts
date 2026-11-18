@@ -53,7 +53,7 @@ export function scaleFor(zoom: number): number {
 }
 
 export interface MarkLayer {
-  object: LineSegments;
+  object: LineSegments<BufferGeometry, LineBasicMaterial>;
   /** The hovered glyph, redrawn bright over itself. A separate object because the marks live in one geometry
    * with one colour, and brightening one glyph in a soup needs a per-vertex attribute and a shader. */
   highlight: LineSegments;

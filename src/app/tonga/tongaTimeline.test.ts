@@ -10,6 +10,8 @@ import {
   latestScan,
   layersAt,
   minuteAt,
+  orbit,
+  signalStation,
   pressureAt,
   stationAt,
   stations,
@@ -44,4 +46,14 @@ it("runs from the opening scan to the far side of Earth on the same UTC clock", 
   expect(waveAngle(ANTIPODE)).toBe(Math.PI);
   const opposite = wavePoint(Math.PI, 0);
   for (let i = 0; i < opposite.length; i++) expect(opposite[i]).toBeCloseTo(-waveOrigin[i]!, 12);
+});
+
+it("gives the global wave room and reveals each station only from its recorded pulse", () => {
+  expect(orbit(410).scale).toBeLessThan(orbit(ERUPTION).scale / 2);
+  for (const station of stations) {
+    expect(signalStation(station.peak - 1, station)).toBeUndefined();
+    expect(signalStation(station.peak, station)).toBe(station);
+    expect(signalStation(station.peak + 44, station)).toBeUndefined();
+    expect(signalStation(station.peak)).toBe(station);
+  }
 });

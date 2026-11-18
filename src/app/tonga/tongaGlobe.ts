@@ -12,7 +12,7 @@ import {
   wavePoint,
 } from "./tongaTimeline";
 
-export const tongaTarget = { ...ORIGIN, zoom: 1.42 };
+export const tongaTarget = { ...ORIGIN, zoom: 0.65 + orbit(WAVE_ORIGIN).scale * 0.47 };
 const bearings = Array.from({ length: 181 }, (_, i) => i * 2 * DEG);
 const farSide = pointOnEarth(antipode);
 
@@ -28,7 +28,19 @@ export function tongaGeography(
       at: Date.parse(timeIso(minute)),
       paths:
         minute > WAVE_ORIGIN && minute < ANTIPODE
-          ? [{ color: 0xb0e8f6, points: bearings.map((bearing) => pointOnEarth(wavePoint(angle, bearing))) }]
+          ? [
+              { color: 0xb0e8f6, points: bearings.map((bearing) => pointOnEarth(wavePoint(angle, bearing))) },
+              ...(minute > WAVE_ORIGIN + 18
+                ? [
+                    {
+                      color: 0x538c9c,
+                      points: bearings.map((bearing) =>
+                        pointOnEarth(wavePoint(waveAngle(minute - 18), bearing)),
+                      ),
+                    },
+                  ]
+                : []),
+            ]
           : [],
       marks: [
         { ...ORIGIN, size: 15, color: 0xd6eaf6 },

@@ -93,6 +93,7 @@ const SHADER = {
   fragmentShader: /* glsl */ `
     uniform sampler2D uRamp;
     uniform float uOpacity;
+    uniform float uLayerWeight;
     uniform float uFocusing;
     varying float vRamp;
     varying float vFacing;
@@ -143,7 +144,7 @@ const SHADER = {
         colour = mix(colour, vec3(0.910, 0.929, 0.961), ring * 0.85);
       }
 
-      gl_FragColor = vec4(colour, alpha * edge * uOpacity);
+      gl_FragColor = vec4(colour, alpha * edge * uOpacity * uLayerWeight);
     }`,
 };
 
@@ -233,6 +234,7 @@ export function createEventLayer(
       uSize: { value: 1 },
       uMagMin: { value: MAG_MIN },
       uOpacity: { value: 1 },
+      uLayerWeight: { value: 1 },
       // 0 draws every event on the surface shell, 1 puts it at its own depth.
       uSink: { value: 0 },
       uFocusing: { value: 0 },

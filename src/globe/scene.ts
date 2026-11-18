@@ -55,7 +55,7 @@ import { createEventLayer, type EventLayer, markerRadiusPx, sinkFraction } from 
 import { createRingLayer, type RingLayer } from "./rings";
 import { createSlabLayer } from "./slab";
 import type { SlabPoint } from "../geo/slab";
-import { writeAurora } from "./auroraTexture";
+import { createLayerEmphasis } from "./layerEmphasis";
 import { createMarkLayer, pickMark, type Mark } from "./marks";
 import type { Aurora } from "../sources/aurora";
 
@@ -277,7 +277,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   coast.renderOrder = 4;
   spin.add(coast);
 
-  const { night, aurora, dayline } = createNightSurface(morph);
+  const { night, aurora, dayline, setAurora } = createNightSurface(morph);
   spin.add(night);
   const eclipseTrack = createEclipseTrack();
   spin.add(eclipseTrack.path);
@@ -363,7 +363,8 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
   });
   const controls = createControls(camera, canvas, DEFAULT_CAMERA, FOV);
   const modern = [fill, coast, plateLines, plateEdge];
-  const presentation = createScenePresentation(spin, catalogue, controls, sunDir, lights, dayline, canvas);
+  const emphasis = createLayerEmphasis(events, marks, rings, night);
+  const presentation = createScenePresentation(spin, catalogue, controls, lights, dayline, canvas, emphasis);
   const inspection = createEventPresentation(camera, controls, catalogue);
   spin.add(inspection.object);
   const resolution = createRenderResolution(renderer, [events, slab, starfield, planets], canvas);
@@ -568,15 +569,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
       figures.setOn(on);
       if (on) lights.begin();
     },
-    setAurora: (grid) => {
-      const material = night.material as ShaderMaterial;
-      if (grid === null) {
-        material.uniforms["uAuroraOn"]!.value = 0;
-        return;
-      }
-      writeAurora(aurora, grid);
-      material.uniforms["uAuroraOn"]!.value = 1;
-    },
+    setAurora,
     render: (full = false) => {
       if (!resolution.frame(full)) return;
       if (presentation.renderMoon(renderer, camera.aspect)) return;

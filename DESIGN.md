@@ -595,6 +595,9 @@ reveals a schematic water column in the same canvas. The instrument rises into s
 while the plots follow the measured levels. Scrubbing stops playback at the selected sample.
 Reduced motion opens directly with a fixed instrument and manual playback.
 
+Inspecting radar, earthquakes or aurora softens other data layers while the inspector is open.
+The original colors, camera, source subscriptions and enabled layers continue through the
+change. Leaving the inspector restores the normal contrast.
 The Storm radar layer updates only the raster while the viewer steers the shared globe or map.
 Its independent scan time remains visible; playback never drives the earthquake timeline.
 A covered place with two loaded frames can open **Rewind radar**. The shared camera approaches
@@ -616,10 +619,12 @@ times stay pinned to geography. Recorded data and model output carry separate la
 Live observation playback runs when requested. Recorded journeys may open with an authored flight.
 Playback stops advancing while the page is hidden.
 
-Tonga begins with a deliberate Follow the wave invitation, opens on the eruption’s infrared scans, widens through the water-vapor difference scans, then
-pulls back into an orbit view on the shared globe. The ring is an estimate of the atmospheric wave. The station chart
-stays tied to measured pressure on the same UTC clock. Chapter jumps and reduced motion use static
-framing.
+Tonga opens close to the eruption’s infrared scans and pulls back through the water-vapor
+difference scans until the wave fits against the curvature of the shared globe. The bright
+ring estimates the leading wave and the fainter ring traces its earlier position. At each
+recorded station pulse, a short-lived trace links the site to the measured reading on the same
+UTC clock. Ordinary scrubbing holds the camera while chapter and station jumps can reframe
+the scene. Reduced motion shows the geographic framing and trace without the authored flight.
 
 Inspecting a station connects its world position to the pale measured-evidence panel. Its trace is
 the only active time control while inspecting; the cinematic clock pauses. The reading panel keeps

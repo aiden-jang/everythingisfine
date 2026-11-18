@@ -25,11 +25,11 @@ const MOTION = "(prefers-reduced-motion: reduce)";
 const duration = (view: TongaPlayback) => (view.anchor === undefined ? DURATION : SURVEY_DURATION);
 const minuteFor = (view: TongaPlayback) => minuteAt(view.elapsed, view.anchor !== undefined);
 
-function survey(minute: number, station?: TongaStation): TongaPlayback {
+function survey(minute: number, station?: TongaStation, anchor = Math.max(410, minute)): TongaPlayback {
   return {
     elapsed: ((minute - START) / (END - START)) * SURVEY_DURATION,
     playing: false,
-    anchor: Math.max(410, minute),
+    anchor,
     ...(station ? { station } : {}),
   };
 }
@@ -132,6 +132,10 @@ export function useTongaPlayback(initial: StoryMoment | undefined) {
     minute: minuteFor(view),
     ended: view.elapsed >= duration(view),
     seek: (minute: number, station?: TongaStation) => update(survey(minute, station)),
+    scrub(minute: number) {
+      const current = clock.current;
+      update(survey(minute, current.station, current.anchor ?? minuteFor(current)));
+    },
     begin() {
       if (matchMedia(MOTION).matches) update(survey(ERUPTION));
       else {

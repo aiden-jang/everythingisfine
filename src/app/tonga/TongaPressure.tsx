@@ -61,6 +61,7 @@ export function TongaPressure({
           {shared ? " · 15 January 2022" : " · drag the trace to inspect"}
         </p>
         <PressureChart
+          linked
           station={station}
           minute={minute}
           {...(!shared ? { onSeek: (next) => onSeek(next, station) } : {})}

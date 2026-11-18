@@ -56,6 +56,7 @@ export function createSurfaceLayers(
   const reveal = { value: 0 };
   let elapsed = 0;
   return {
+    sun,
     rim,
     glint,
     reveal,

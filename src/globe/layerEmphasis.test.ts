@@ -1,0 +1,41 @@
+import { expect, it } from "vitest";
+import { createEventLayer } from "./events";
+import { createLayerEmphasis } from "./layerEmphasis";
+import { createMarkLayer } from "./marks";
+import { createNightSurface } from "./nightSurface";
+import { createRegroup } from "./regroup";
+import { createRingLayer } from "./rings";
+
+it("eases the other layers without changing which data is visible", () => {
+  const morph = { value: 0 };
+  const events = createEventLayer(1, "thermal", morph);
+  const marks = createMarkLayer(morph);
+  const rings = createRingLayer("thermal", morph);
+  const { night } = createNightSurface(morph);
+  const emphasis = createLayerEmphasis(events, marks, rings, night);
+  const weight = events.object.material.uniforms["uLayerWeight"]!;
+  const regroup = createRegroup(events.object);
+
+  expect(emphasis.step("radar", 0.1, false)).toBe(true);
+  expect(weight.value).toBeGreaterThan(0.42);
+  expect(weight.value).toBeLessThan(1);
+  expect(events.object.visible).toBe(true);
+  expect(emphasis.radar()).toBe(1);
+  expect(rings.object.material.uniforms["uLayerWeight"]!.value).toBe(weight.value);
+  events.object.geometry.setDrawRange(0, 1);
+  regroup.begin(false);
+  regroup.step(0.1, false);
+  expect(regroup.object.material.uniforms["uLayerWeight"]).toBe(weight);
+  expect(events.object.material.uniforms["uOpacity"]!.value).toBeCloseTo(0.5);
+  expect(weight.value).toBeLessThan(1);
+  expect(emphasis.step("aurora", 0, true)).toBe(false);
+  expect(weight.value).toBe(1);
+  night.material.uniforms["uAuroraOn"]!.value = 1;
+  expect(emphasis.step("aurora", 0, true)).toBe(false);
+  expect(emphasis.radar()).toBeLessThan(0.5);
+  expect(night.material.uniforms["uAuroraWeight"]!.value).toBe(1);
+  emphasis.step(null, 0, true);
+  expect(emphasis.radar()).toBe(1);
+  expect(weight.value).toBe(1);
+  regroup.dispose();
+});

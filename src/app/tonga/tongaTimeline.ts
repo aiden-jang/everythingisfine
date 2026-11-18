@@ -14,10 +14,14 @@ export const ORIGIN = { lon: -175.387, lat: -20.536 };
 const steps = [
   { elapsed: 0, minute: START },
   { elapsed: 5100, minute: WATER_VAPOR },
-  { elapsed: 8500, minute: 380 },
-  { elapsed: 13200, minute: 540 },
-  { elapsed: 17900, minute: 728 },
-  { elapsed: 21000, minute: 790 },
+  { elapsed: 8200, minute: 380 },
+  { elapsed: 12100, minute: 525 },
+  { elapsed: 14400, minute: 575 },
+  { elapsed: 17500, minute: 710 },
+  { elapsed: 19700, minute: 753 },
+  { elapsed: 20800, minute: 767 },
+  { elapsed: 23000, minute: 815 },
+  { elapsed: 24500, minute: 960 },
   { elapsed: 27100, minute: END },
 ];
 export const DURATION = steps.at(-1)!.elapsed;
@@ -85,14 +89,20 @@ export function pressureAt(station: (typeof stations)[number], minute: number) {
   return value == null ? null : (value * 33.8638867) / 1000;
 }
 
+export function signalStation(minute: number, selected?: (typeof stations)[number]) {
+  const seen = (station: (typeof stations)[number]) =>
+    minute >= station.peak && minute < station.peak + 44 && pressureAt(station, station.peak) !== null;
+  return selected ? (seen(selected) ? selected : undefined) : stations.find(seen);
+}
+
 const shots = [
-  { minute: 325, lon: ORIGIN.lon, lat: ORIGIN.lat, scale: 1.64, bank: -0.14 },
-  { minute: 410, lon: -166, lat: -5, scale: 1.1, bank: -0.065 },
-  { minute: 548, lon: -151, lat: 10, scale: 1, bank: 0 },
-  { minute: 728, lon: -125, lat: 33, scale: 1.03, bank: 0.08 },
-  { minute: 790, lon: -138, lat: 45, scale: 1, bank: 0 },
-  { minute: 1000, lon: -66, lat: 34, scale: 0.95, bank: -0.13 },
-  { minute: 1310, lon: ORIGIN.lon + 180, lat: -ORIGIN.lat, scale: 1.12, bank: 0 },
+  { minute: 305, lon: ORIGIN.lon, lat: ORIGIN.lat, scale: 2.8, bank: -0.07 },
+  { minute: 410, lon: -166, lat: -5, scale: 0.62, bank: 0 },
+  { minute: 548, lon: -151, lat: 10, scale: 0.64, bank: 0 },
+  { minute: 728, lon: -125, lat: 33, scale: 0.68, bank: 0.08 },
+  { minute: 790, lon: -138, lat: 45, scale: 0.66, bank: 0 },
+  { minute: 1000, lon: -66, lat: 34, scale: 0.65, bank: -0.13 },
+  { minute: 1310, lon: ORIGIN.lon + 180, lat: -ORIGIN.lat, scale: 0.73, bank: 0 },
 ];
 
 export function orbit(minute: number) {

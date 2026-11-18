@@ -1,7 +1,7 @@
-import type { Group, Object3D, PerspectiveCamera, Vector3, WebGLRenderer } from "three";
+import type { Group, Object3D, PerspectiveCamera, WebGLRenderer } from "three";
 import type { AuroraRun } from "../sources/auroraRoute";
 import { isGlobalRadar, type RadarView } from "../app/radar/radarCamera";
-import type { MapLayerPresentation } from "../app/weatherLayers";
+import type { LayerEmphasis, MapLayerPresentation } from "../app/weatherLayers";
 import type { CameraState, Controls } from "./controlsTypes";
 import type { createSurfaceLayers } from "./surfaceLayers";
 import { createAuroraVeil } from "./auroraVeil";
@@ -19,6 +19,7 @@ import { createObservationArrival } from "./observationArrival";
 import { createObservationLayer } from "./observationLayer";
 import type { ObservationView } from "../app/observations/types";
 import { createOrbitalFraming } from "./orbitalFraming";
+import type { createLayerEmphasis } from "./layerEmphasis";
 import { createObservationPicking } from "./observationPicking";
 
 export type GlobePresentation =
@@ -50,10 +51,10 @@ export function createScenePresentation(
   spin: Group,
   catalogue: Group,
   controls: Controls,
-  sun: Vector3,
   lights: ReturnType<typeof createSurfaceLayers>,
   dayline: { value: number },
   canvas: HTMLCanvasElement,
+  emphasis: ReturnType<typeof createLayerEmphasis>,
 ) {
   let showDayline = false;
   let planetarium = false;
@@ -84,6 +85,7 @@ export function createScenePresentation(
   const picking = createObservationPicking(canvas, controls);
   let orbitalMoon = false;
   let overviewRadar = false;
+  let liveFocus: LayerEmphasis | null = null;
 
   function step(dt: number, reduced: boolean, elapsed = dt) {
     dayline.value = showDayline ? lights.reveal.value : 0;
@@ -91,11 +93,16 @@ export function createScenePresentation(
     const zoom = controls.state().zoom;
     const detail = Math.max(0, Math.min(1, (zoom - 1) / 1.7));
     const revealingRadar = radarReveal.step(elapsed, reduced);
-    const radarArriving = radar?.step(dt, reduced, overviewRadar ? 0.7 + 0.3 * detail : 1);
+    const focusingLayers = emphasis.step(liveFocus, dt, reduced);
+    const radarArriving = radar?.step(
+      dt,
+      reduced,
+      overviewRadar ? (0.7 + 0.3 * detail) * emphasis.radar() : 1,
+    );
     const diving = dive?.step(dt, reduced, elapsed);
     const lunar = skyView?.moonfall?.step(dt, reduced);
     const approaching = arrival.step(dt, reduced);
-    const tracing = observations?.step(dt, reduced) ?? false;
+    const tracing = observations?.step(dt, reduced, emphasis.weather()) ?? false;
     const orbiting = orbital.step(dt, reduced);
     if (lens && arrival.ready()) lensReveal = reduced ? 1 : Math.min(1, lensReveal + dt / 0.65);
     const guided = controls.guidance.following();
@@ -127,6 +134,7 @@ export function createScenePresentation(
     }
     if (rotate && !following) controls.apply();
     return (
+      focusingLayers ||
       revealingRadar ||
       radarArriving ||
       easing ||
@@ -197,7 +205,7 @@ export function createScenePresentation(
     if (heldRun !== held) controls.holdOverflight(!!heldRun);
     held = heldRun;
     if (skyView && !localLight) {
-      localLight = createLocalSkyLight(sun, controls.localSky.up, canvas);
+      localLight = createLocalSkyLight(lights.sun, controls.localSky.up, canvas);
       spin.add(localLight.object);
     }
     if (localLight)
@@ -205,7 +213,7 @@ export function createScenePresentation(
     if (mode === "dayline" && !showDayline) lights.begin();
     showDayline = mode === "dayline";
     if (route && !veil) {
-      veil = createAuroraVeil(sun);
+      veil = createAuroraVeil(lights.sun);
       spin.add(veil.object);
     }
     if (oval !== route) veil?.set(route);
@@ -261,6 +269,10 @@ export function createScenePresentation(
     observationTarget = observation?.target;
     radarTarget = weather?.target;
     const radarFrame = weather ?? mapLayers?.radar;
+    liveFocus =
+      mode === null && (mapLayers?.emphasis !== "radar" || radarFrame?.image)
+        ? (mapLayers?.emphasis ?? null)
+        : null;
     overviewRadar = !weather && !!mapLayers?.radar;
     if (radarFrame && !radar) {
       radar = createRadarSurface(projection, radarReveal.uniforms);
