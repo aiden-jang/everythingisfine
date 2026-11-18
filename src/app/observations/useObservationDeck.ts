@@ -34,7 +34,11 @@ export function useObservationDeck(
       if (active.current !== entry) return;
       if (next) pending.current = false;
       setView((previous) =>
-        next ? { ...next, cameraKey: entry ?? "observation" } : pending.current ? previous : null,
+        next
+          ? { ...next, cameraKey: [entry ?? "observation", next.cameraKey].filter(Boolean).join(":") }
+          : pending.current
+            ? previous
+            : null,
       );
       const id = active.current;
       if (id && next)

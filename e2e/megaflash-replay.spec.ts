@@ -19,11 +19,12 @@ test("Megaflash starts on the storm and keeps the full trace and keyboard scrub 
       .getByRole("group", { name: "Megaflash on the globe" })
       .getByText("GOES-16 infrared · 08:52 UTC · False color"),
   ).toBeVisible();
-  await expect(panel.getByRole("heading", { name: "The flash spreads" })).toBeVisible();
+  await panel.getByRole("button", { name: "Follow the flash", exact: true }).click();
+  await expect(panel.getByRole("heading", { name: "A flash takes shape." })).toBeVisible();
   await panel.getByRole("button", { name: "Pause", exact: true }).click();
   await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   await panel.getByRole("button", { name: "Full extent" }).click();
-  await expect(panel.getByRole("heading", { name: "Across five states" })).toBeVisible();
+  await expect(panel.getByRole("heading", { name: "Seven seconds. Five states." })).toBeVisible();
   await expect(
     page.getByRole("group", { name: "Megaflash on the globe" }).getByText("829 ± 8 km", { exact: true }),
   ).toBeVisible();
@@ -34,6 +35,8 @@ test("Megaflash starts on the storm and keeps the full trace and keyboard scrub 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await trigger.click();
   await expect(panel.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
+  await panel.getByRole("button", { name: "Inspect pulses", exact: true }).click();
+  await expect(panel.getByRole("heading", { name: "Read the flash." })).toBeVisible();
   const slider = panel.getByRole("slider", { name: "Flash elapsed time" });
   await slider.press("Home");
   await expect(slider).toHaveAttribute("aria-valuetext", "Before the flash");
@@ -41,11 +44,13 @@ test("Megaflash starts on the storm and keeps the full trace and keyboard scrub 
   await expect(slider).toHaveAttribute("aria-valuetext", "≈ 0.00 s");
   await panel.getByRole("button", { name: "Map", exact: true }).click();
   await expect(slider).toHaveAttribute("aria-valuetext", "≈ 0.00 s");
+  await panel.getByRole("button", { name: "Keep this reading", exact: true }).click();
+  await expect(panel.getByRole("button", { name: "Reading kept", exact: true })).toBeDisabled();
   await slider.press("End");
   await expect(slider).toHaveAttribute("aria-valuetext", "7.39 s");
   await expect.poll(() => panel.evaluate((element) => element.scrollWidth - element.clientWidth)).toBe(0);
   await page.setViewportSize({ width: 812, height: 375 });
-  const extent = panel.getByRole("button", { name: "Full extent" });
+  const extent = panel.getByRole("button", { name: "Full extent", exact: true });
   await extent.focus();
   await expect(extent).toBeInViewport();
   await expect(page.getByRole("group", { name: "Megaflash on the map" })).toContainText("829 ± 8 km");

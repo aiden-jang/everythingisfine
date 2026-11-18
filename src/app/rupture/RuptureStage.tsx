@@ -1,19 +1,38 @@
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { StoryDock } from "../observations/StoryDock";
 import { useObservationImage } from "../observations/useObservationData";
-import { ReplayInset } from "../observations/ReplayInset";
-import { japan, ruptureGeography, ruptureLens, ruptureTarget } from "./ruptureGlobe";
+import {
+  japan,
+  ruptureFaultTarget,
+  ruptureGeography,
+  ruptureLens,
+  ruptureShakingTarget,
+  ruptureTarget,
+} from "./ruptureGlobe";
 import { animationDelta } from "../../globe/animation";
-import { drawRupture } from "./drawRupture";
+import { RuptureSources } from "./RuptureSources";
+import type { WavePin, WaveReading } from "./RecordedWaves";
 import {
   ARRIVAL_MS,
   MODEL_SECONDS,
   REVEAL_MS,
   SHAKING_MS,
+  SLIP_MS,
   contours,
+  faultAt,
   revealFrame,
   slipKey,
   stillFrame,
@@ -21,7 +40,7 @@ import {
 
 import { useStorySession } from "../observations/StorySession";
 
-type Mode = "fault" | "shaking" | "playing" | "paused";
+type Mode = "approach" | "fault" | "shaking" | "playing" | "paused";
 type Beat = "approach" | "fault" | "shaking";
 
 const MOTION_QUERY = "(prefers-reduced-motion: reduce)";
@@ -39,12 +58,12 @@ const captions = {
     detail: "The crosshair marks the epicenter. The camera tilts to reveal the fault beneath it.",
   },
   fault: {
-    title: "Modeled fault movement",
+    title: "Beneath the seafloor.",
     detail:
       "Colors show modeled slip in metres. About three minutes of modeled rupture play in five seconds.",
   },
   shaking: {
-    title: "Estimated surface shaking",
+    title: "Back to the surface.",
     detail: "USGS ShakeMap estimates Modified Mercalli intensity (MMI) at each location.",
   },
 };
@@ -55,6 +74,7 @@ function beatAt(ms: number): Beat {
 
 export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, remember } = useStorySession();
+  const timeId = useId();
   const restoredClock = Math.max(
     0,
     Math.min(
@@ -63,45 +83,72 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
         ? Number(initial.chapter.slice(7))
         : ARRIVAL_MS +
             (Math.max(0, ((initial?.at ?? 0) - Date.parse("2011-03-11T05:46:24Z")) / 1000) / MODEL_SECONDS) *
-              5000,
+              SLIP_MS,
     ),
   );
   const [waves, setWaves] = useState(initial?.chapter === "waves");
   const [reduced, setReduced] = useState(() => matchMedia(MOTION_QUERY).matches);
+  const [inspection, setInspection] = useState(() =>
+    initial?.chapter === "fault" && initial.at !== undefined
+      ? Math.max(0, Math.min(MODEL_SECONDS, (initial.at - Date.parse("2011-03-11T05:46:24Z")) / 1000))
+      : MODEL_SECONDS,
+  );
   const [mode, setMode] = useState<Mode>(() =>
     initial
-      ? initial.chapter === "fault" || initial.chapter === "shaking"
+      ? initial.chapter === "fault" || initial.chapter === "shaking" || initial.chapter === "approach"
         ? initial.chapter
         : "paused"
       : matchMedia(MOTION_QUERY).matches
         ? "fault"
-        : "playing",
+        : "approach",
   );
   const [clock, setClock] = useState(initial ? restoredClock : 0);
   const [ready, setReady] = useState(false);
   const arrive = useCallback(() => setReady(true), []);
   const recordedButton = useRef<HTMLButtonElement>(null);
+  const [pins, setPins] = useState<WavePin[]>([]);
+  const waveReading = useRef<WaveReading>();
+  const waveReturn = useRef<{
+    mode: Mode;
+    clock: number;
+    map: boolean;
+    scroll: number;
+    camera?: ReturnType<NonNullable<ReplayProps["readCamera"]>> | undefined;
+  }>();
+  const restoredCamera = useRef(waveReturn.current?.camera);
+  const rememberWaves = useCallback((reading: WaveReading) => {
+    waveReading.current = reading;
+  }, []);
   const elapsed = useRef(clock);
   const { element: coast } = useObservationImage(japan.url);
   const running = mode === "playing" || mode === "paused";
   useStoryCompletion(mode === "shaking");
   const displayed = running ? beatAt(clock) : mode;
   const caption = captions[displayed];
-  const frame = running ? revealFrame(clock) : stillFrame(mode);
+  const frame = useMemo(
+    () =>
+      running || mode === "approach"
+        ? revealFrame(mode === "approach" ? 0 : clock)
+        : mode === "fault"
+          ? faultAt(inspection)
+          : stillFrame("shaking"),
+    [running, mode, clock, inspection],
+  );
 
   useLayoutEffect(() => {
     if (waves) return;
-    const current = mode === "playing" || mode === "paused" ? revealFrame(clock) : stillFrame(mode);
     onView({
       kind: "observation",
-      ...ruptureGeography(current),
+      ...ruptureGeography(frame, running && !restoredCamera.current),
       image: coast,
-      target: ruptureTarget,
+      target:
+        restoredCamera.current ??
+        (mode === "fault" ? ruptureFaultTarget : mode === "shaking" ? ruptureShakingTarget : ruptureTarget),
       lens: ruptureLens,
       arrive,
     });
     remember?.({ chapter: mode === "playing" || mode === "paused" ? `reveal:${clock}` : mode });
-  }, [mode, clock, waves, onView, arrive, coast, remember]);
+  }, [mode, clock, frame, running, waves, onView, arrive, coast, remember]);
 
   useEffect(() => {
     const media = matchMedia(MOTION_QUERY);
@@ -109,7 +156,7 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
       setReduced(event.matches);
       if (event.matches) {
         setMode((current) =>
-          current === "playing" || current === "paused"
+          current === "approach" || current === "playing" || current === "paused"
             ? beatAt(elapsed.current) === "shaking"
               ? "shaking"
               : "fault"
@@ -122,7 +169,7 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
   }, []);
 
   useEffect(() => {
-    if (mode !== "playing" || !ready) return;
+    if (mode !== "playing" || !ready || waves) return;
     let previous: number | undefined;
     let request = 0;
     let lastReadout = 0;
@@ -153,9 +200,14 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
       cancelAnimationFrame(request);
       document.removeEventListener("visibilitychange", visibility);
     };
-  }, [mode, ready]);
+  }, [mode, ready, waves]);
 
   function playback() {
+    restoredCamera.current = undefined;
+    if (reduced) {
+      setMode("shaking");
+      return;
+    }
     if (mode === "playing") {
       setClock(elapsed.current);
       return setMode("paused");
@@ -167,63 +219,101 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
     setMode("playing");
   }
 
+  function inspect(seconds: number) {
+    setInspection(seconds);
+    setMode("fault");
+  }
+
+  function openWaves() {
+    waveReturn.current = {
+      mode: mode === "playing" ? "paused" : mode,
+      clock: elapsed.current,
+      map: panel.map,
+      scroll: document.getElementById("observatory-intro")?.scrollTop ?? 0,
+      camera: panel.readCamera?.(),
+    };
+    setWaves(true);
+    document.getElementById("observatory-intro")?.scrollTo(0, 0);
+  }
+
+  function closeWaves() {
+    const previous = waveReturn.current;
+    restoredCamera.current = previous?.camera;
+    setMode(previous?.mode ?? "shaking");
+    if (previous) {
+      elapsed.current = previous.clock;
+      setClock(previous.clock);
+      panel.onMap(previous.map);
+    }
+    setWaves(false);
+    requestAnimationFrame(() => {
+      if (previous) document.getElementById("observatory-intro")?.scrollTo(0, previous.scroll);
+      recordedButton.current?.focus({ preventScroll: true });
+    });
+  }
+
   return (
     <ReplayPanel
       {...panel}
       title="The Tōhoku rupture"
       location="Offshore Honshu · Japan"
       subtitle="11 Mar 2011 · 05:46:24 UTC · M9.1 · 29 km deep"
-      status={waves ? "Global Seismographic Network · Recorded motion" : caption.title}
-      at={<span>{!waves && displayed === "fault" ? "Depth exaggerated 4×" : "38.297° N / 142.373° E"}</span>}
+      className="rupture-journey"
+      finding={false}
+      save={!waves}
+      status={
+        waves
+          ? "GSN · Recorded motion"
+          : displayed === "fault"
+            ? "USGS · Modeled fault movement"
+            : displayed === "shaking"
+              ? "USGS · Estimated surface shaking"
+              : "11 March 2011"
+      }
+      at={<span>{!waves && frame.depth > 0 ? "Depth exaggerated 4×" : null}</span>}
       inset={
-        !waves &&
-        frame.depth > 0 && (
-          <ReplayInset
-            label="USGS fault cutaway, depth exaggerated four times"
-            width={720}
-            height={510}
-            opacity={frame.depth}
-            detail
-            paint={(context) => drawRupture(context, 720, 510, frame)}
-          />
-        )
+        <div className="recorded-anchors" aria-hidden="true">
+          {waves ? (
+            pins.map(({ id, lon, lat, name }) => (
+              <span key={id} data-observation-anchor="" data-lon={lon} data-lat={lat}>
+                {name.split(",")[0]}
+              </span>
+            ))
+          ) : (
+            <span data-observation-anchor="" data-lon={142.373} data-lat={38.297}>
+              Epicenter
+            </span>
+          )}
+        </div>
       }
-      sources={
-        <>
-          <a
-            href="https://earthquake.usgs.gov/earthquakes/eventpage/usc0001xgp/finite-fault"
-            target="_blank"
-            rel="noreferrer"
-          >
-            USGS finite fault
-          </a>
-          <a
-            href="https://earthquake.usgs.gov/earthquakes/eventpage/usc0001xgp/shakemap"
-            target="_blank"
-            rel="noreferrer"
-          >
-            USGS ShakeMap
-          </a>
-          <span>Coastlines by Natural Earth</span>
-        </>
-      }
+      sources={<RuptureSources />}
     >
       {waves ? (
         <Suspense fallback={<p role="status">Opening recorded waves…</p>}>
           <RecordedWaves
             onView={onView}
-            back={() => {
-              setWaves(false);
-              requestAnimationFrame(() => recordedButton.current?.focus({ preventScroll: true }));
-            }}
+            initialReading={waveReading.current}
+            onReading={rememberWaves}
+            onPins={setPins}
+            back={closeWaves}
+            backLabel={
+              waveReturn.current && waveReturn.current.mode !== "shaking"
+                ? "Back to rupture"
+                : "Back to surface shaking"
+            }
           />
         </Suspense>
       ) : (
         <div className="archive-scene-console">
-          <div className="archive-scene-caption" role="status">
+          <div className="archive-scene-caption recorded-chapter">
             <h3>{caption.title}</h3>
             <p>{caption.detail}</p>
           </div>
+          {mode === "approach" && (
+            <button type="button" className="recorded-primary" onClick={playback}>
+              Follow the rupture
+            </button>
+          )}
           <div className="archive-scene-actions">
             <div className="archive-scene-controls" role="group" aria-label="Rupture views">
               <button
@@ -231,7 +321,7 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
                 className="archive-scene-button"
                 aria-label="Modeled fault movement"
                 aria-pressed={mode === "fault"}
-                onClick={() => setMode("fault")}
+                onClick={() => inspect(MODEL_SECONDS)}
               >
                 Fault movement
               </button>
@@ -240,32 +330,16 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
                 className="archive-scene-button"
                 aria-label="Estimated surface shaking"
                 aria-pressed={mode === "shaking"}
-                onClick={() => setMode("shaking")}
+                onClick={() => {
+                  restoredCamera.current = undefined;
+                  setMode("shaking");
+                }}
               >
                 Surface shaking
               </button>
-              <button
-                ref={recordedButton}
-                type="button"
-                className="archive-scene-button"
-                onClick={() => {
-                  setMode("shaking");
-                  setWaves(true);
-                }}
-              >
+              <button ref={recordedButton} type="button" className="archive-scene-button" onClick={openWaves}>
                 Recorded waves
               </button>
-              {!reduced && (
-                <StoryDock>
-                  <div className="story-dock-time">{caption.title}</div>
-                  <PlaybackButton
-                    playing={mode === "playing"}
-                    ended={mode !== "playing" && mode !== "paused"}
-                    className="archive-scene-button"
-                    onClick={playback}
-                  />
-                </StoryDock>
-              )}
             </div>
             {displayed === "approach" ? (
               <div className="archive-scene-legend" aria-hidden="true" />
@@ -285,6 +359,37 @@ export function RuptureStage({ onView, ...panel }: ReplayProps): JSX.Element {
               </div>
             )}
           </div>
+          {mode !== "approach" && (
+            <StoryDock label="Tōhoku playback">
+              <div className="survey-transport" data-comparing="true">
+                <div className="story-dock-time">
+                  <label htmlFor={timeId}>Modeled rupture time</label>
+                  <span className="story-dock-readout">+{Math.round(frame.modelTime)} s</span>
+                </div>
+                <input
+                  id={timeId}
+                  className="scrub-slider"
+                  type="range"
+                  min={0}
+                  max={Math.ceil(MODEL_SECONDS)}
+                  value={
+                    frame.modelTime >= MODEL_SECONDS ? Math.ceil(MODEL_SECONDS) : Math.round(frame.modelTime)
+                  }
+                  aria-valuetext={`+${Math.round(frame.modelTime)} seconds`}
+                  onChange={(event) => inspect(event.currentTarget.valueAsNumber)}
+                />
+                {!reduced && (
+                  <div className="story-dock-actions">
+                    <PlaybackButton
+                      playing={mode === "playing"}
+                      ended={mode !== "playing" && mode !== "paused"}
+                      onClick={playback}
+                    />
+                  </div>
+                )}
+              </div>
+            </StoryDock>
+          )}
         </div>
       )}
     </ReplayPanel>

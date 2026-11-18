@@ -15,6 +15,7 @@ import {
   SphereGeometry,
   SRGBColorSpace,
   Texture,
+  Vector3,
 } from "three";
 import type { GeoPoint, ObservationFrame, ObservationView } from "../app/observations/types";
 import { DEG, toVec3 } from "../geo/sphere";
@@ -22,6 +23,7 @@ import { MORPH_GLSL, morphable } from "./morph";
 
 import { createObservationCurtain } from "./observationCurtain";
 import { createObservationTerrain } from "./observationTerrain";
+import { createObservationFault } from "./observationFault";
 import { createObservationMoon } from "./observationMoon";
 
 const INK = 0x8adbd8;
@@ -33,21 +35,24 @@ function rows() {
   const coordinates: number[] = [];
   const colors: number[] = [];
   const sizes: number[] = [];
+  const times: number[] = [];
   const color = new Color();
   return {
-    push(point: GeoPoint, rgb: number, size = 0) {
+    push(point: GeoPoint, rgb: number, size = 0, elapsed = 0) {
       position.push(...toVec3(point.lon, point.lat, 1 + (point.lift ?? 0.012)));
       coordinates.push(point.lon, point.lat);
       color.setHex(rgb);
       colors.push(color.r, color.g, color.b);
       sizes.push(size);
+      times.push(elapsed);
     },
     geometry() {
       return new BufferGeometry()
         .setAttribute("position", new BufferAttribute(new Float32Array(position), 3))
         .setAttribute("aLonLat", new BufferAttribute(new Float32Array(coordinates), 2))
         .setAttribute("color", new BufferAttribute(new Float32Array(colors), 3))
-        .setAttribute("aSize", new BufferAttribute(new Float32Array(sizes), 1));
+        .setAttribute("aSize", new BufferAttribute(new Float32Array(sizes), 1))
+        .setAttribute("aElapsed", new BufferAttribute(new Float32Array(times), 1));
     },
   };
 }
@@ -114,6 +119,8 @@ export function createObservationLayer(morph: { value: number }) {
   const moon = createObservationMoon(morph);
   object.add(moon.object);
   const orbital = { value: 0 };
+  const markWindow = { value: new Vector3(0, 0, -1) };
+  let fault: ReturnType<typeof createObservationFault> | undefined;
   const lineMaterial = new ShaderMaterial({
     uniforms: { uMorph: morph, opacity: { value: 0.88 }, phase: { value: -1 }, orbital },
     vertexShader: /* glsl */ `
@@ -154,30 +161,38 @@ export function createObservationLayer(morph: { value: number }) {
         orbital,
         uMorph: morph,
         pixelRatio: { value: 1 },
+        markWindow,
         reveal: { value: 1 },
       },
       vertexShader: /* glsl */ `
       ${MORPH_GLSL}
       attribute vec3 color;
       attribute float aSize;
+      attribute float aElapsed;
+      uniform vec3 markWindow;
       uniform float orbital;
       uniform float pixelRatio;
       varying vec3 tint;
+      varying float visiblePoint;
       void main() {
-        tint = color;
+        bool windowed = markWindow.z >= 0.0;
+        float bright = windowed ? step(markWindow.x, aElapsed) * (1.0 - step(markWindow.y, aElapsed)) : 0.0;
+        visiblePoint = windowed ? (markWindow.z == 0.0 && aElapsed > markWindow.y ? 0.0 : mix(0.28, 1.0, bright)) : 1.0;
+        tint = mix(color, vec3(0.92, 0.85, 1.0), bright * 0.82);
         vec3 point=mix(position,normalize(position)*1.012,uMorph*orbital);
         gl_Position = projectionMatrix * modelViewMatrix * vec4(fmProject(point), 1.0);
-        gl_PointSize = aSize * pixelRatio;
+        gl_PointSize = aSize * pixelRatio * mix(1.0, 2.4, bright);
       }
     `,
       fragmentShader: /* glsl */ `
       varying vec3 tint;
       uniform float reveal;
+      varying float visiblePoint;
       void main() {
         float r = length(gl_PointCoord - 0.5);
         float core = 1.0 - smoothstep(0.15, 0.24, r);
         float rim = (1.0 - smoothstep(0.38, 0.5, r)) * smoothstep(0.26, 0.34, r);
-        gl_FragColor = vec4(tint, reveal * (core + rim * 0.43));
+        gl_FragColor = vec4(tint, reveal * visiblePoint * (core + rim * 0.43));
         #include <colorspace_fragment>
       }
     `,
@@ -239,6 +254,11 @@ export function createObservationLayer(morph: { value: number }) {
     if (view === prior) return;
     curtain.set(view?.curtain);
     terrain.set(view?.terrain);
+    if (view?.fault && !fault) {
+      fault = createObservationFault(morph);
+      object.add(fault.object);
+    }
+    fault?.set(view?.fault);
     moon.set(view);
     orbital.value = view?.frame.orbit ? 1 : 0;
     if (newObservationPlace(view, prior)) reveal = 0;
@@ -256,9 +276,13 @@ export function createObservationLayer(morph: { value: number }) {
       line.geometry.dispose();
       line.geometry = paths.geometry();
     }
+    const window = view?.frame.markWindow;
+    if (window) markWindow.value.set(window.from, window.to, Number(window.showAhead));
+    else markWindow.value.z = -1;
     if (view?.frame.marks !== prior?.frame.marks) {
       const marks = rows();
-      for (const mark of view?.frame.marks ?? []) marks.push(mark, mark.color ?? PALE, mark.size ?? 13);
+      for (const mark of view?.frame.marks ?? [])
+        marks.push(mark, mark.color ?? PALE, mark.size ?? 13, mark.elapsed);
       dot.geometry.dispose();
       dot.geometry = marks.geometry();
     }
@@ -301,6 +325,7 @@ export function createObservationLayer(morph: { value: number }) {
       set(null);
       curtain.dispose();
       terrain.dispose();
+      fault?.dispose();
       moon.dispose();
     },
     step(dt: number, reduced: boolean) {

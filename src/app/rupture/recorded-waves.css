@@ -1,17 +1,17 @@
 .recorded-traces {
   display: grid;
   gap: 8px;
-  padding: 8px clamp(16px, 3vw, 42px) 12px;
+  padding: 4px 0 8px;
 }
 
 .recorded-trace {
-  --trace-color: #8adbd8;
+  --trace-color: #f2be95;
   color: var(--color-dim);
   font: 11px/1.5 var(--font-mono);
 }
 
 .recorded-trace[data-second] {
-  --trace-color: #e5bd91;
+  --trace-color: #a6dce9;
 }
 .recorded-trace strong,
 .recorded-trace svg {
@@ -29,7 +29,8 @@
 .recorded-trace svg {
   display: block;
   width: 100%;
-  height: clamp(26px, 6vh, 52px);
+  height: clamp(28px, 5vh, 44px);
+  background: var(--color-deck);
 }
 .recorded-trace svg * {
   fill: none;

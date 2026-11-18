@@ -266,10 +266,15 @@ subsets: originals remain the authority for scientific analysis.
 | Ozone | NASA GIBS Aura OMI total-column ozone and Ozone Watch area estimates for 2006/2019 |
 | Water | NASA GIBS/JPL GRACE RL06 V2 mascons and land-cell means in labelled regional boxes, relative to 2004–2009 |
 
-Tōhoku orders fault patches by their USGS rupture start and rise times. A depth cutaway accompanies
-the modeled slip, then ShakeMap contours appear on the shared surface. Recorded waves animate the
-station marks while the traces and optional audio stay in the readings panel. Regenerate the packed
+Tōhoku draws the USGS finite-fault patches in the shared renderer, anchored by their longitude and
+latitude. The four-times depth offset and modeled slip timing are shader uniforms, so scrubbing
+does not rebuild the mesh. ShakeMap contours follow on the same surface. The Pacific station
+comparison keeps a fixed camera and a shared time cursor for the two recorded traces. Regenerate the packed
 asset with [make-tohoku.mjs](tools/make-tohoku.mjs).
+
+Megaflash banks over the infrared scan as the GOES-16 optical detections appear. The finished
+view uses the same point geometry for every quarter-second window. The inspector highlights
+the selected window through a shader uniform while keeping the full extent in view.
 
 Katrina opens with a resized WebP of [NASA Terra MODIS imagery from 28 August 2005 at 17:00 UTC](https://science.nasa.gov/earth/earth-observatory/hurricane-katrina-15395/),
 courtesy of the MODIS Rapid Response Team at Goddard Space Flight Center. The photograph dissolves

@@ -111,3 +111,57 @@
     max-height: 65%;
   }
 }
+
+.recorded-chapter h3 {
+  color: var(--color-ink);
+  font:
+    600 clamp(40px, 4.8vw, 68px) / 0.95 "Alumni Sans",
+    var(--font-sans);
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.recorded-chapter p {
+  color: var(--color-dim);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.recorded-primary {
+  justify-self: start;
+  min-height: 44px;
+  padding-inline: 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: var(--color-ink);
+  color: var(--color-void);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.recorded-primary:disabled {
+  opacity: 0.62;
+  cursor: default;
+}
+
+.recorded-anchors {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.recorded-anchors span {
+  position: absolute;
+  visibility: hidden;
+  padding: 3px 5px;
+  transform: translate(8px, -110%);
+  background: var(--color-void);
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+@media (max-width: 599px) {
+  .recorded-chapter h3 {
+    font-size: clamp(33px, 9.1vw, 42px);
+  }
+}

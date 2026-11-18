@@ -41,7 +41,7 @@ export const contours = tohoku.contours.map(({ lines, ...contour }) => ({
 
 export const MODEL_SECONDS = Math.max(...faults.map(({ start, rise }) => start + rise));
 export const ARRIVAL_MS = 1500;
-const SLIP_MS = 5000;
+export const SLIP_MS = 5000;
 const HOLD_MS = 650;
 const LIFT_MS = 1600;
 export const SHAKING_MS = ARRIVAL_MS + SLIP_MS + HOLD_MS;
@@ -49,10 +49,10 @@ export const REVEAL_MS = SHAKING_MS + LIFT_MS;
 
 export const slipKey = [
   { from: 0, label: "0", color: "#345464" },
-  { from: 5, label: "5", color: "#4e8792" },
-  { from: 15, label: "15", color: "#6bb4b3" },
-  { from: 30, label: "30", color: "#a3d4c8" },
-  { from: 50, label: "50+", color: "#e5f2cd" },
+  { from: 5, label: "5", color: "#a87869" },
+  { from: 15, label: "15", color: "#d69878" },
+  { from: 30, label: "30", color: "#ffc089" },
+  { from: 50, label: "50+", color: "#ffe1aa" },
 ];
 
 export function slipColor(slip: number): string {
@@ -88,7 +88,7 @@ interface Camera {
 
 const overview: Camera = { tilt: 0.13, yaw: 0.16, zoom: 0.81, east: -110, north: 10 };
 const entry: Camera = { tilt: 0.97, yaw: -0.15, zoom: 1.42, east: -78, north: -75 };
-const dive: Camera = { tilt: 0.78, yaw: 0.32, zoom: 1.51, east: -36, north: -68 };
+const dive: Camera = { tilt: 0.78, yaw: 0.32, zoom: 1.51, east: -36, north: -171 };
 const overhead: Camera = { tilt: 0, yaw: 0, zoom: 0.94, east: -66, north: -24 };
 
 function move(from: Camera, to: Camera, at: number): Camera {
@@ -117,6 +117,10 @@ export function stillFrame(view: View): RuptureFrame {
     reveal: view === "shaking" ? 1 : 0,
     depth: view === "fault" ? 1 : 0,
   };
+}
+
+export function faultAt(modelTime: number): RuptureFrame {
+  return { ...stillFrame("fault"), modelTime: clampUnit(modelTime / MODEL_SECONDS) * MODEL_SECONDS };
 }
 
 export function revealFrame(ms: number): RuptureFrame {

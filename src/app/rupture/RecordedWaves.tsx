@@ -1,8 +1,9 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useMemo, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { ObservationView } from "../observations/types";
 import stations from "../../sources/observations/recordings/tohoku-waves.json";
 
 import { useStorySession } from "../observations/StorySession";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { StoryDock } from "../observations/StoryDock";
 
 const origin = Date.parse("2011-03-11T05:46:24Z");
@@ -14,7 +15,7 @@ const audioFiles = import.meta.glob<string>("../../sources/observations/recordin
   query: "?url",
 });
 const width = 720;
-const target = { lon: 170, lat: 35, zoom: 0.9 };
+const target = { lon: 177, lat: 35, zoom: 0.94 };
 
 const waves = stations.map((station) => ({
   ...station,
@@ -28,6 +29,13 @@ const waves = stations.map((station) => ({
     .join(" "),
 }));
 type Station = (typeof waves)[number];
+
+export interface WaveReading {
+  first: number;
+  second: number;
+  seconds: number;
+}
+export type WavePin = Pick<Station, "id" | "name" | "lon" | "lat">;
 
 function waveTime(seconds: number) {
   return `${Math.floor(seconds / 60)}:${String(Math.floor(seconds) % 60).padStart(2, "0")}`;
@@ -94,37 +102,59 @@ function StationPicker({
 
 export function RecordedWaves({
   back,
+  backLabel,
+  initialReading,
+  onReading,
+  onPins,
   onView,
 }: {
   back: () => void;
+  backLabel: string;
+  initialReading?: WaveReading | undefined;
+  onReading: (reading: WaveReading) => void;
+  onPins: (pins: WavePin[]) => void;
   onView: (view: ObservationView) => void;
 }): JSX.Element {
   const { initial, remember } = useStorySession();
+  const navigation = useStoryNavigation();
   const selection = initial?.choice?.split(",").map(Number);
   const valid = (n: number | undefined, fallback: number) =>
     n !== undefined && Number.isInteger(n) && n >= 0 && n < waves.length ? n : fallback;
-  const [first, setFirst] = useState(valid(selection?.[0], 0));
+  const [first, setFirst] = useState(initialReading?.first ?? valid(selection?.[0], 0));
   const [second, setSecond] = useState(() => {
-    const picked = valid(selection?.[1], 5);
+    const picked = initialReading?.second ?? valid(selection?.[1], 3);
     return picked === first ? (first + 1) % waves.length : picked;
   });
   const [seconds, setSeconds] = useState(
-    initial?.chapter === "waves"
-      ? Math.max(0, Math.min(duration, ((initial.at ?? origin) - origin) / 1000))
-      : 0,
+    initialReading?.seconds ??
+      (initial?.chapter === "waves"
+        ? Math.max(0, Math.min(duration, ((initial.at ?? origin) - origin) / 1000))
+        : 0),
   );
   const [playing, play] = useState(false);
   const cursor = useRef<HTMLInputElement>(null);
   const sound = useRef<HTMLAudioElement>(null);
   const a = waves[first]!;
   const b = waves[second]!;
+  const pins = useMemo(() => [a, b], [a, b]);
+  useLayoutEffect(() => onPins(pins), [pins, onPins]);
+  const at = origin + seconds * 1000;
+  const choice = `${first},${second}`;
+  const kept = navigation?.library.saved.some(
+    ({ position }) =>
+      position.moment?.id === "rupture" &&
+      position.moment.chapter === "waves" &&
+      position.moment.at === at &&
+      position.moment.choice === choice,
+  );
   useLayoutEffect(() => {
     onView({
       kind: "observation",
+      cameraKey: "waves",
       image: null,
       target,
       frame: {
-        at: origin + seconds * 1000,
+        at,
         marks: [
           { lon: 142.373, lat: 38.297, size: 19, color: 0xe8edf5 },
           ...waves.map((station) => {
@@ -134,14 +164,15 @@ export function RecordedWaves({
               lon: station.lon,
               lat: station.lat,
               size: 8 + Math.sqrt(amplitude / 1000) * 20,
-              color: station === a ? 0x8fe7e8 : station === b ? 0xf0bd8e : 0x8fa7ba,
+              color: station === a ? 0xf2be95 : station === b ? 0xa6dce9 : 0x8fa7ba,
             };
           }),
         ],
       },
     });
-    remember?.({ chapter: "waves", choice: `${first},${second}` });
-  }, [seconds, a, b, first, second, onView, remember]);
+    remember?.({ chapter: "waves", choice });
+    onReading({ first, second, seconds });
+  }, [at, choice, seconds, a, b, first, second, onView, onReading, remember]);
   const running = playing && seconds < duration;
   useEffect(() => cursor.current?.focus({ preventScroll: true }), []);
   useEffect(() => {
@@ -164,31 +195,22 @@ export function RecordedWaves({
   };
   return (
     <>
-      <div className="recorded-traces">
-        <Trace station={a} seconds={seconds} />
-        <Trace station={b} seconds={seconds} second />
-      </div>
       <div className="archive-scene-console">
-        <div className="archive-scene-caption">
-          <h3>When Earth Rings</h3>
+        <div className="archive-scene-caption recorded-chapter">
+          <h3>Two stations. One event.</h3>
           <p>
-            Seven seismometers recorded the same earthquake. Compare two stations on the same clock. Trace
-            height is normalized per instrument. Dotted lines mark approximate onsets detected from the
-            recordings.
+            Both traces share the same clock. Dotted lines mark approximate onsets. Heights are normalized per
+            instrument.
           </p>
-          <a
-            className="observation-source"
-            href="https://ds.iris.edu/ds/nodes/dmc/specialevents/2011/03/11/tohoku-japan-earthquake/"
-            target="_blank"
-            rel="noreferrer"
-          >
-            EarthScope · Global Seismographic Network
-          </a>
         </div>
         <div className="recorded-controls">
           <div className="recorded-pickers">
             <StationPicker label="First station" index={first} other={second} select={setFirst} />
             <StationPicker label="Second station" index={second} other={first} select={setSecond} />
+          </div>
+          <div className="recorded-traces">
+            <Trace station={a} seconds={seconds} />
+            <Trace station={b} seconds={seconds} second />
           </div>
           <StoryDock label="Recorded wave playback">
             <label className="recorded-time">
@@ -230,10 +252,28 @@ export function RecordedWaves({
                 Jump to {b.id} onset
               </button>
             )}
+            {navigation && (
+              <button
+                type="button"
+                className="recorded-primary"
+                disabled={kept}
+                onClick={() => {
+                  const visit = navigation.current();
+                  if (visit) navigation.library.save(visit);
+                }}
+              >
+                {kept ? "Comparison kept" : "Keep this comparison"}
+              </button>
+            )}
             <button type="button" className="archive-scene-button" onClick={back}>
-              Back to surface shaking
+              {backLabel}
             </button>
           </div>
+          {navigation?.library.notice && (
+            <p role="status" className="observation-note">
+              {navigation.library.notice}
+            </p>
+          )}
           <details
             className="recorded-audio"
             onToggle={(event) => {

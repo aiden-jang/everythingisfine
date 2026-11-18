@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { flashGeography } from "./flashGlobe";
 import {
   DURATION,
   FINAL_STEP,
@@ -24,6 +25,16 @@ describe("Megaflash", () => {
     expect(flashFrame(2500, false).camera.roll).not.toBe(0);
     expect(flashFrame(FLIGHT_END, false)).toEqual({ at: DURATION, camera: overview });
     expect(flashFrame(2500, true).camera).toBe(overview);
+  });
+
+  it("holds the same optical detections and camera while inspecting time windows", () => {
+    const first = flashGeography({ at: 250, camera: overview }, "inspect", false);
+    const finish = flashGeography({ at: DURATION, camera: overview }, "inspect", false);
+    expect(first.frame.marks).toHaveLength(trace.length);
+    expect(finish.frame.marks).toBe(first.frame.marks);
+    expect(finish.follow).toBeUndefined();
+    expect(first.frame.markWindow).toEqual({ from: 250, to: 500, showAhead: true });
+    expect(finish.frame.markWindow).toEqual({ from: 7250, to: DURATION, showAhead: true });
   });
 
   it("lets the keyboard scrub from the pre-flash scan to the published duration", () => {

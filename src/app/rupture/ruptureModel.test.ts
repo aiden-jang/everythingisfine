@@ -7,6 +7,7 @@ import {
   SHAKING_MS,
   contours,
   faults,
+  faultAt,
   patchProgress,
   revealFrame,
   stillFrame,
@@ -33,6 +34,15 @@ describe("Tōhoku rupture scene", () => {
     expect(patchProgress(4, 5, 0)).toBe(0);
     expect(patchProgress(5, 5, 0)).toBe(1);
     expect(patchProgress(6, 5, 2)).toBe(0.5);
+  });
+
+  it("keeps the same geographic fault mesh while scrubbing the modeled time", () => {
+    const first = ruptureGeography(faultAt(15)).fault;
+    const second = ruptureGeography(faultAt(120)).fault;
+    expect(first?.model.patches).toHaveLength(325);
+    expect(first?.model.exaggeration).toBe(4);
+    expect(second?.model).toBe(first?.model);
+    expect([first?.seconds, second?.seconds]).toEqual([15, 120]);
   });
 
   it("uses the same geographic coastline for the fault and shaking views", () => {

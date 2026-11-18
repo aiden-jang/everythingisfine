@@ -4,7 +4,7 @@ import { lazy, Suspense } from "react";
 import type { StoryId, useObservationDeck } from "./useObservationDeck";
 import type { SkyCityPreference } from "../tonight/SkyCityPicker";
 import type { EarthScene } from "../useObservatory";
-import { RecordedReplay } from "./RecordedReplay";
+import { RecordedReplay, type ReplayProps } from "./RecordedReplay";
 import { isReplay } from "./replays";
 import { StorySession } from "./StorySession";
 import { observations } from "./catalogue";
@@ -39,6 +39,7 @@ export function ObservationDeckShell({
   entry,
   scene,
   city,
+  readCamera,
   onClose,
   onRadar,
 }: {
@@ -46,6 +47,7 @@ export function ObservationDeckShell({
   entry: StoryId;
   scene: EarthScene;
   city: SkyCityPreference;
+  readCamera: NonNullable<ReplayProps["readCamera"]>;
   onClose: () => void;
   onRadar: () => void;
 }): JSX.Element {
@@ -125,6 +127,7 @@ export function ObservationDeckShell({
         ) : isReplay(entry) ? (
           <RecordedReplay
             entry={entry}
+            readCamera={readCamera}
             map={deck.map}
             onMap={deck.setMap}
             onView={deck.update}

@@ -172,7 +172,8 @@ measurements, not field recordings.
 - **Watch Tōhoku rupture** follows the 2011 earthquake from its epicenter to the modeled fault
   beneath the ocean and then to estimated shaking across Japan. Choose **Fault movement** or
   **Surface shaking** to inspect either view. **Recorded waves** shows the stations on Earth and compares their traces on a
-  shared timeline and offers optional sonification. Reduced motion opens the finished fault view.
+  shared timeline and offers optional sonification. Keep a comparison to return to the same
+  station pair and time. Reduced motion opens the fault view directly.
 - **Eye of the Storm** opens on NASA’s Terra image of Katrina. **Follow the storm** banks over
   the Gulf along NOAA’s 2005 best track to Buras, Louisiana. At the end, compare the offshore peak
   and landfall from a fixed camera, inspect any of seven recorded positions, or keep an exact
@@ -188,9 +189,9 @@ measurements, not field recordings.
   position can be saved.
 - **Iceberg Drift** follows A-68A and its 13 recorded fragments on the globe and map. Choose an
   iceberg to jump to its last listed position, or open a satellite image at one of three chapters.
-- **Watch Megaflash** slows down a 2017 lightning flash from the southern Plains. Follow the
-  GOES-16 optical trace, then pull back to see the span across five states. Reduced motion
-  opens the full trace with the same scrubber.
+- **Megaflash** opens on an archived infrared scan of the 2017 storm. Follow the GOES-16
+  optical trace across five states, then use **Inspect pulses** to highlight quarter-second
+  windows while the camera stays fixed. Reduced motion opens the full extent directly.
 - **Save image** uses the existing captioned image export, including the reference-cutaway label.
 
 The opening pulls back from the horizon into orbit. Long camera flights bank gently, bright stars

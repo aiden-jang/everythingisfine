@@ -44,6 +44,8 @@ export function savedVisitKey(visit: Visit): string {
   if (visit.id === "moonfall" && lunar && lunar.station !== null)
     return `moonfall:${lunar.eva}:${lunar.station}`;
   const moment = visit.position.moment;
+  if (visit.id === "rupture" && moment?.chapter === "waves") return `rupture:waves:${moment.choice}`;
+  if (visit.id === "megaflash" && moment?.chapter === "inspect") return `megaflash:inspect:${moment.at}`;
   if (visit.id === "katrina" && moment?.chapter === "compare" && moment.at !== undefined)
     return `katrina:${moment.at}`;
   if (visit.id === "kilauea" && moment?.chapter === "compare") return "kilauea:compare";

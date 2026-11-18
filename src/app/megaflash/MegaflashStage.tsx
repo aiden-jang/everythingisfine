@@ -3,7 +3,7 @@ import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { StoryDock } from "../observations/StoryDock";
-import { flashGeography, flashLens, flashTarget } from "./flashGlobe";
+import { flashGeography, flashLens, flashStart, flashTarget } from "./flashGlobe";
 import {
   DURATION,
   elapsedFor,
@@ -12,11 +12,13 @@ import {
   flashFrame,
   flashTime,
   scan,
+  trace,
   stepAt,
   timeAtStep,
 } from "./flashTimeline";
 import infrared from "./infrared.webp?url";
 
+import { useStoryNavigation } from "../journeys/StoryNavigation";
 import { useStorySession } from "../observations/StorySession";
 
 const MOTION = "(prefers-reduced-motion: reduce)";
@@ -25,33 +27,38 @@ interface Playback {
   elapsed: number;
   playing: boolean;
   fixed: boolean;
+  phase: "infrared" | "replay" | "extent" | "inspect";
 }
 
-const inspect = (at: number): Playback => ({ elapsed: elapsedFor(at), playing: false, fixed: true });
-const flight = (): Playback => ({ elapsed: 0, playing: true, fixed: false });
+const still = (at: number, phase: Playback["phase"]): Playback => ({
+  elapsed: elapsedFor(at),
+  playing: false,
+  fixed: true,
+  phase,
+});
+const infraredView = () => still(timeAtStep(-1), "infrared");
+const overview = () => still(DURATION, "extent");
+const fixedTarget = { ...flashTarget };
+const flight = (): Playback => ({ elapsed: 0, playing: true, fixed: false, phase: "replay" });
 
 export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
-  const { initial } = useStorySession();
+  const { initial, remember } = useStorySession();
+  const navigation = useStoryNavigation();
   const id = useId();
-  const [view, setView] = useState<Playback>(() =>
-    initial
-      ? inspect(
-          Math.max(
-            0,
-            Math.min(
-              DURATION,
-              (initial.at ?? Date.parse("2017-10-22T08:56:45.834Z")) - Date.parse("2017-10-22T08:56:45.834Z"),
-            ),
-          ),
-        )
-      : matchMedia(MOTION).matches
-        ? inspect(DURATION)
-        : flight(),
-  );
+  const [view, setView] = useState<Playback>(() => {
+    if (!initial) return matchMedia(MOTION).matches ? overview() : infraredView();
+    if (initial.chapter === "infrared") return infraredView();
+    if (initial.chapter === "extent") return overview();
+    const offset = Math.max(0, Math.min(DURATION, (initial.at ?? flashStart) - flashStart));
+    const at = timeAtStep(stepAt(offset));
+    return still(at, initial.chapter === "inspect" || at < DURATION ? "inspect" : "extent");
+  });
   const [image, setImage] = useState<HTMLImageElement | null | undefined>(undefined);
   const [ready, setReady] = useState(false);
   const arrive = useCallback(() => setReady(true), []);
   const clock = useRef(view);
+  const beforeInspect = useRef<{ view: Playback; map: boolean }>();
+  const started = useRef<HTMLButtonElement>(null);
 
   function update(next: Playback) {
     clock.current = next;
@@ -87,7 +94,7 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
       const elapsed = current.elapsed + (previous === undefined ? 0 : now - previous);
       previous = now;
       if (elapsed >= (current.fixed ? elapsedFor(DURATION) : FLIGHT_END)) {
-        update(inspect(DURATION));
+        update(overview());
         return;
       }
       const next = { ...current, elapsed };
@@ -116,7 +123,8 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
     function change(event: MediaQueryListEvent) {
       if (event.matches) {
         const current = clock.current;
-        update(inspect(flashFrame(current.elapsed, current.fixed).at));
+        const { at } = flashFrame(current.elapsed, current.fixed);
+        update(at < 0 ? infraredView() : still(at, current.phase === "replay" ? "inspect" : current.phase));
       }
     }
     motion.addEventListener("change", change);
@@ -126,48 +134,92 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
   useLayoutEffect(() => {
     onView({
       kind: "observation",
-      ...flashGeography(flashFrame(view.elapsed, view.fixed), !view.fixed || view.playing),
+      ...flashGeography(flashFrame(view.elapsed, view.fixed), view.phase, !view.fixed),
       image: image ?? null,
-      target: flashTarget,
+      target: view.fixed ? fixedTarget : flashTarget,
       lens: flashLens,
       arrive,
     });
-  }, [view, image, arrive, onView]);
+    remember?.({ chapter: view.phase });
+  }, [view, image, arrive, onView, remember]);
   const { at } = flashFrame(view.elapsed, view.fixed);
   const before = at < 0;
   const complete = at >= DURATION;
-  useStoryCompletion(complete && !view.playing);
+  const inspecting = view.phase === "inspect";
+  const finished = view.phase === "extent" || inspecting;
+  const kept =
+    inspecting &&
+    navigation?.library.saved.some(
+      ({ position }) =>
+        position.moment?.id === "megaflash" &&
+        position.moment.chapter === "inspect" &&
+        position.moment.at === Math.round(flashStart + at),
+    );
+  useStoryCompletion(finished);
   const label = flashTime(at);
   const progress = before ? -1 : stepAt(at);
-  const scanCaption = waiting
-    ? "Preparing the infrared scan…"
-    : image
-      ? `GOES-16 infrared · ${scan.slice(11, 16)} UTC · False color`
-      : before
-        ? "Infrared image unavailable · showing the storm map"
-        : "Infrared image unavailable · lightning detections shown on the map";
+  const scanCaption = before
+    ? waiting
+      ? "Preparing the infrared scan…"
+      : image
+        ? `GOES-16 infrared · ${scan.slice(11, 16)} UTC · False color`
+        : "Infrared image unavailable · showing the storm map"
+    : inspecting
+      ? "GOES-16 optical detections · 0.25 s windows"
+      : "GOES-16 optical detections";
 
   function togglePlay() {
     const current = clock.current;
-    if (current.playing) {
-      update({ ...current, playing: false });
-    } else if (matchMedia(MOTION).matches) {
-      update({ ...inspect(complete ? 0 : Math.max(0, at)), playing: true });
-    } else if (complete || (current.fixed && before)) {
-      update(flight());
-    } else {
-      update({ ...current, playing: true });
-    }
+    if (current.playing) update({ ...current, playing: false });
+    else if (matchMedia(MOTION).matches) update({ ...still(0, "replay"), playing: true });
+    else if (current.fixed) update(flight());
+    else update({ ...current, playing: true });
+  }
+
+  function inspect(position: number) {
+    const current = clock.current;
+    if (current.phase !== "inspect")
+      beforeInspect.current = { view: { ...current, playing: false }, map: panel.map };
+    update(still(position, "inspect"));
+  }
+
+  function returnFromInspect() {
+    const prior = beforeInspect.current;
+    if (prior && prior.view.phase !== "infrared") {
+      panel.onMap(prior.map);
+      update(prior.view);
+    } else update(overview());
+  }
+
+  function follow() {
+    if (matchMedia(MOTION).matches) update(overview());
+    else update(flight());
+    requestAnimationFrame(() => started.current?.focus({ preventScroll: true }));
   }
 
   return (
     <ReplayPanel
       {...panel}
       title="Megaflash"
+      className="megaflash-journey"
+      finding={false}
+      save={!inspecting}
       location="Southern Plains · United States"
       subtitle="GOES-16 lightning detections · 22 Oct 2017 · 08:56 UTC"
       status={scanCaption}
-      at={complete ? <strong>829 ± 8 km</strong> : <span>{label}</span>}
+      inset={
+        finished && (
+          <div className="recorded-anchors" aria-hidden="true">
+            <span data-observation-anchor="" data-lon={trace[0]![1]} data-lat={trace[0]![2]}>
+              Eastern Texas
+            </span>
+            <span data-observation-anchor="" data-lon={-94.6} data-lat={39.08}>
+              Near Kansas City
+            </span>
+          </div>
+        )
+      }
+      at={finished ? <strong>829 ± 8 km</strong> : <span>{label}</span>}
       sources={
         <>
           <a href="https://doi.org/10.1175/BAMS-D-25-0037.1" target="_blank" rel="noreferrer">
@@ -191,16 +243,26 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
       }
     >
       <div className="archive-scene-console">
-        <div className="archive-scene-caption">
-          <h3>{before ? "Above the storm" : complete ? "Across five states" : "The flash spreads"}</h3>
+        <div className="archive-scene-caption recorded-chapter">
+          <h3>
+            {before
+              ? "Above the storm."
+              : inspecting
+                ? "Read the flash."
+                : finished
+                  ? "Seven seconds. Five states."
+                  : "A flash takes shape."}
+          </h3>
           <p>
             {before
               ? image
                 ? "An infrared scan shows the storm minutes before the first light."
                 : "The lightning timeline starts with the first detected pulse."
-              : complete
-                ? "From eastern Texas to near Kansas City in 7.39 seconds."
-                : "GOES-16 recorded pulses of light as the discharge spread through the storm."}
+              : inspecting
+                ? "Scrub the detections in quarter-second steps. Brighter points mark the selected window."
+                : finished
+                  ? "From eastern Texas to near Kansas City in 7.39 seconds."
+                  : "GOES-16 recorded pulses of light as the discharge spread through the storm."}
           </p>
           <div className="archive-scene-legend flash-legend">
             <span>
@@ -208,42 +270,90 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
             </span>
           </div>
         </div>
-        <StoryDock>
-          <div className="flash-time story-dock-time">
-            <label htmlFor={id}>Flash elapsed time</label>
-            <span className="story-dock-readout">{label}</span>
-          </div>
-          <input
-            id={id}
-            className="scrub-slider flash-scrub"
-            type="range"
-            min={-1}
-            max={FINAL_STEP}
-            value={progress}
-            aria-valuetext={label}
-            onChange={(event) => update(inspect(timeAtStep(event.currentTarget.valueAsNumber)))}
-          />
-          <div className="archive-scene-controls">
-            <PlaybackButton
-              playing={view.playing}
-              ended={complete}
-              className="archive-scene-button"
-              onClick={togglePlay}
+        {finished && (
+          <p className="flash-finding">
+            <strong>829 ± 8 km</strong>
+            <span>WMO-certified span · 7.39 s elapsed</span>
+          </p>
+        )}
+        <StoryDock label="Megaflash playback">
+          <div className="survey-transport" data-comparing="true">
+            <div className="story-dock-time">
+              <label htmlFor={id}>Flash elapsed time</label>
+              <span className="story-dock-readout">{label}</span>
+            </div>
+            <input
+              id={id}
+              className="scrub-slider"
+              type="range"
+              min={-1}
+              max={FINAL_STEP}
+              value={progress}
+              aria-valuetext={label}
+              onChange={(event) => {
+                const position = timeAtStep(event.currentTarget.valueAsNumber);
+                if (position < 0) update(infraredView());
+                else inspect(position);
+              }}
             />
+            {view.phase !== "infrared" && (
+              <div className="story-dock-actions">
+                <PlaybackButton
+                  buttonRef={started}
+                  playing={view.playing}
+                  ended={finished || complete}
+                  onClick={togglePlay}
+                />
+              </div>
+            )}
           </div>
         </StoryDock>
         <div className="archive-scene-controls">
-          <button
-            type="button"
-            className="archive-scene-button"
-            onClick={() => update(inspect(timeAtStep(-1)))}
-          >
-            Before flash
-          </button>
-          <button type="button" className="archive-scene-button" onClick={() => update(inspect(DURATION))}>
-            Full extent
-          </button>
+          {before && view.phase === "infrared" && (
+            <button type="button" className="recorded-primary" onClick={follow}>
+              Follow the flash
+            </button>
+          )}
+          {view.phase === "extent" && (
+            <button type="button" className="recorded-primary" onClick={() => inspect(DURATION)}>
+              Inspect pulses
+            </button>
+          )}
+          {inspecting && navigation && (
+            <button
+              type="button"
+              className="recorded-primary"
+              disabled={kept}
+              onClick={() => {
+                const visit = navigation.current();
+                if (visit) navigation.library.save(visit);
+              }}
+            >
+              {kept ? "Reading kept" : "Keep this reading"}
+            </button>
+          )}
+          {view.phase !== "infrared" && (
+            <button type="button" className="archive-scene-button" onClick={() => update(infraredView())}>
+              Before flash
+            </button>
+          )}
+          {view.phase !== "extent" && (
+            <button
+              type="button"
+              className="archive-scene-button"
+              onClick={inspecting ? returnFromInspect : () => update(overview())}
+            >
+              {inspecting && beforeInspect.current?.view.phase === "replay"
+                ? "Back to replay"
+                : "Full extent"}
+            </button>
+          )}
         </div>
+        {inspecting && navigation?.library.notice && (
+          <p className="observation-note" role="status">
+            {navigation.library.notice}
+          </p>
+        )}
       </div>
     </ReplayPanel>
   );

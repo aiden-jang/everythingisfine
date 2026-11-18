@@ -221,7 +221,7 @@
   gap: 4px 12px;
 }
 
-.replay-region:is(.storm-journey, .kilauea-journey) .stage-readout {
+.replay-region:is(.storm-journey, .kilauea-journey, .megaflash-journey, .rupture-journey) .stage-readout {
   inset-block: calc(var(--stage-inset) + 37px) auto;
   width: fit-content;
   padding: 4px 7px;
@@ -233,6 +233,10 @@
 }
 
 .survey-transport[data-comparing="true"] .story-dock-time {
+  grid-column: 1 / -1;
+}
+
+.survey-transport:not(:has(.story-dock-actions)) :is(.story-dock-time, input[type="range"]) {
   grid-column: 1 / -1;
 }
 

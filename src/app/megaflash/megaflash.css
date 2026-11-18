@@ -1,39 +1,32 @@
-.flash-legend {
-  margin-top: 7px;
+.megaflash-journey .survey-transport input {
+  accent-color: #d9c4ff;
 }
 
 .flash-legend i {
   flex-shrink: 0;
   border: 0;
   border-radius: 50%;
-  background: #9fe8ff;
+  background: #d9c4ff;
 }
 
-.flash-transport {
+.flash-finding {
   display: grid;
-  width: min(100%, 28rem);
-  min-width: 0;
-  gap: 6px;
-}
-
-.flash-time {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 2px 12px;
+  gap: 4px;
+  margin-block: 2px 4px;
+  padding-block: 10px;
+  border-block: 1px solid var(--color-hairline);
   color: var(--color-dim);
-  font-size: 0.75rem;
+  font-size: 12px;
 }
 
-.flash-time span {
-  color: var(--color-ink);
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
+.flash-finding strong {
+  color: #e3d3ff;
+  font: 500 clamp(20px, 3vw, 30px) / 1.1 var(--font-mono);
 }
 
-.flash-scrub {
-  width: 100%;
-  min-height: 44px;
-  cursor: pointer;
+@media (max-width: 599px) {
+  .megaflash-journey:has(.recorded-anchors) .stage-readout {
+    inset: auto auto calc(var(--stage-inset) + 3px) calc(var(--stage-inset) + 12px);
+    max-width: min(47%, 180px);
+  }
 }

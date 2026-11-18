@@ -19,6 +19,10 @@ export function visitNote(visit: Visit) {
     return `${lunarTraverses[lunar.eva]?.stations[lunar.station ?? -1] ?? `Traverse ${lunar.eva + 1}`} · Apollo 17, 1972`;
   if (visit.position.sky) return `${visit.position.sky.city} · saved sky`;
   const moment = visit.position.moment;
+  if (visit.id === "rupture" && moment?.chapter === "waves" && moment.at !== undefined)
+    return `Recorded waves · ${new Date(moment.at).toISOString().slice(11, 19)} UTC`;
+  if (visit.id === "megaflash" && moment?.chapter === "inspect" && moment.at !== undefined)
+    return `Optical detections · ${((moment.at - Date.parse("2017-10-22T08:56:45.834Z")) / 1000).toFixed(2)} s`;
   if (visit.id === "kilauea" && moment?.chapter === "compare")
     return `Kapoho Bay · Shoreline divider at ${moment.choice ?? "50"}%`;
   const at = moment?.at ?? visit.position.radar?.at;

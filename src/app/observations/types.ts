@@ -13,6 +13,7 @@ export interface ObservationMark extends GeoPoint {
   reading?: Measurement;
   size?: number;
   color?: number;
+  elapsed?: number;
 }
 
 export interface ObservationPath {
@@ -40,6 +41,7 @@ export interface ObservationFrame {
   reconstruction?: boolean;
   photograph?: { url: string; alt: string };
   marks?: readonly ObservationMark[];
+  markWindow?: { from: number; to: number; showAhead: boolean };
   paths?: readonly ObservationPath[];
   raster?: ObservationRaster;
   measurements?: readonly Measurement[];
@@ -93,6 +95,14 @@ export interface ReplayCamera extends CameraState {
   pitch?: number;
 }
 
+type FaultPoint = GeoPoint & { depth: number };
+
+export interface ObservationFault {
+  patches: readonly { corners: readonly FaultPoint[]; start: number; rise: number; tint: number }[];
+  guides: readonly FaultPoint[];
+  exaggeration: number;
+}
+
 export interface ObservationView {
   /** False while a DOM photo or video covers the shared canvas. */
   capture?: boolean;
@@ -112,6 +122,7 @@ export interface ObservationView {
     down?: boolean;
   };
   terrain?: { grid: ObservationTerrain; progress: number };
+  fault?: { model: ObservationFault; seconds: number; amount: number };
   moonImage?: HTMLImageElement | null;
   onPick?: ((point: GeoPoint) => void) | undefined;
   pickOnGlobe?: boolean;

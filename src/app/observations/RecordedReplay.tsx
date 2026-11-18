@@ -2,6 +2,7 @@ import { SharedStory } from "./SharedStory";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { lazy, useLayoutEffect, useRef, type ReactNode } from "react";
 import { useObservatoryEscape } from "../useObservatoryEscape";
+import type { CameraState } from "../../globe/controls";
 import type { ObservationView } from "./types";
 import type { ReplayId } from "./replays";
 import { ShareMoment } from "./StorySession";
@@ -19,6 +20,7 @@ import "./world-evidence.css";
 
 export interface ReplayProps {
   map: boolean;
+  readCamera?: () => CameraState;
   onMap: (map: boolean) => void;
   onView: (view: ObservationView) => void;
   onClose: () => void;
