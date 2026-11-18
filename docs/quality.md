@@ -14,8 +14,9 @@ Standalone `pnpm run test:e2e` builds before starting its release server.
 
 ## Browser boundaries
 
-Browser runners use Ubuntu 24.04 to keep their graphics and system dependencies
-stable across GitHub runner-image migrations.
+Chromium runners use Ubuntu 24.04 to keep their graphics and system dependencies
+stable across GitHub runner-image migrations. The core runner uses macOS 15 to exercise
+WebKit with the platform libraries used by Safari.
 
 - The release project uses port 31600 and the ordinary production bundle.
 - The development project uses port 31601 for tests tagged `@dev` that inspect camera/store state.
