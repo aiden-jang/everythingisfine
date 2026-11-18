@@ -58,7 +58,7 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   const original = await canvas.elementHandle();
   await openStories(page);
   expect(attempts).toBe(0);
-  const catalogue = page.getByRole("region", { name: "Stories and layers" });
+  const catalogue = page.getByRole("region", { name: "Story catalogue" });
   const tideRow = catalogue.getByRole("button", { name: "Tide Watch", exact: true });
   await expect(tideRow).toHaveAccessibleDescription(
     "Recent observations Compare measured and predicted tides.",

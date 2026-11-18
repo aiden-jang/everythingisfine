@@ -3092,7 +3092,9 @@ separately to the canvas reservation and handle position.
 ordered CSS module. The four story filters own their sizing in `discovery-layout.css`; landing-preset
 sizing does not override them during cold loading or live style updates.
 
-`ExplorerSidebar` owns the Layers/Stories tabs and their independent scroll positions. Its pane
+`ExplorerSidebar` owns the single story catalogue, the Layers/Stories tabs and their independent scroll positions.
+The landing Browse action, header Find and older catalogue links enter this same browser.
+Scene-only views retain their cinematic framing and return to the catalogue through Browse stories. Its pane
 and category belong to `useObservatory` navigation snapshots. `MapLayers` separates saved visibility
 from one transient inspector; inspecting never starts a feed or changes the camera. Its hidden
 player containers remain mounted while another inspector is open. `EarthquakeInspector` owns the
@@ -3103,6 +3105,10 @@ quake-specific reading hierarchy, while `LayerSources` explains each source's in
 camera, rail scroll and trigger. Closing a story restores that context, preserving query and category;
 browser history separately restores the correct scroll owner. Radar's explicit layer-to-guided path
 hands over the current scan and only copies back timestamps from the compatible worldwide provider.
+Earthquake tours launched from the catalogue retain the same origin. Stop, Escape and completion
+restore its open disclosures, scroll, focus and world framing.
+Direct stories and history-restored stories without an in-memory origin also return to the catalogue,
+focusing their retained entry or the Stories tab.
 
 The globe instance survives presentation and grid changes. Header and footer composition live in
 `GlobeHeader.tsx` and `CanvasFooter.tsx`; no camera or source subscription depends on those elements.

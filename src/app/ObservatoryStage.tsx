@@ -91,24 +91,20 @@ export function ObservatoryStage({
 }
 
 export function ObservatoryScenePicker({
+  id = "observatory-scenes",
   scene,
   ready,
   deepAvailable,
   onScene,
 }: {
+  id?: string;
   scene: EarthScene | null;
   ready: boolean;
   deepAvailable: boolean;
   onScene: (scene: EarthScene) => void;
 }): JSX.Element {
   return (
-    <div
-      id="observatory-scenes"
-      tabIndex={-1}
-      className="observatory-scenes"
-      role="group"
-      aria-label="Earth scenes"
-    >
+    <div id={id} tabIndex={-1} className="observatory-scenes" role="group" aria-label="Earth scenes">
       {OBSERVATORY_SCENES.map((option) => (
         <button
           key={option.id}
@@ -121,7 +117,11 @@ export function ObservatoryScenePicker({
           aria-label={option.name}
           disabled={!ready}
           aria-describedby={
-            option.id === "depth" && scene === "depth" && ready && !deepAvailable
+            id === "observatory-scenes" &&
+            option.id === "depth" &&
+            scene === "depth" &&
+            ready &&
+            !deepAvailable
               ? "depth-availability"
               : undefined
           }
@@ -151,13 +151,5 @@ export function SunCredits(): JSX.Element {
         NASA/GSFC/SDO image
       </a>
     </div>
-  );
-}
-
-export function TourUnavailable({ note }: { note: string }): JSX.Element {
-  return (
-    <p id="tour-availability" className="observatory-summary">
-      {note}
-    </p>
   );
 }

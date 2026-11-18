@@ -8,7 +8,7 @@ export function GlobeUnavailable({
   return (
     <div
       role="status"
-      className="absolute inset-0 z-[3] flex flex-col items-center justify-center gap-3 bg-void px-6 text-center text-dim"
+      className="absolute inset-0 z-[1] flex flex-col items-center justify-center gap-3 bg-void px-6 text-center text-dim"
     >
       <p className="text-[14px]">
         {lost ? "The globe’s graphics were interrupted." : "The globe could not start."}

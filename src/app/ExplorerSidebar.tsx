@@ -5,6 +5,7 @@ import { Discoveries } from "./visitor/Discoveries";
 import { StoriesDrawer } from "./StoriesDrawer";
 import { OBSERVATORY_SCENES } from "./ObservatoryStage";
 import { SceneDiagram } from "./SceneDiagram";
+import { useStoryNavigation } from "./journeys/StoryNavigation";
 import "./explore-panel.css";
 
 export function ExplorerSidebar({
@@ -17,6 +18,7 @@ export function ExplorerSidebar({
   notices: ReactNode;
 }) {
   const { browser, observations } = context.views;
+  const navigation = useStoryNavigation();
   const panel = useRef<HTMLDivElement>(null);
   useReadingArrival(panel, browser.pane);
   const scrolls = useRef({ layers: 0, stories: 0 });
@@ -99,7 +101,7 @@ export function ExplorerSidebar({
                   key={name}
                   type="button"
                   aria-pressed={browser.category === id}
-                  onClick={() => browser.select(id)}
+                  onClick={() => browser.select(browser.category === id ? null : id)}
                 >
                   <SceneDiagram scene={id} />
                   <span>{name}</span>
@@ -128,8 +130,9 @@ export function ExplorerSidebar({
           }}
         >
           <button
+            id="start-story-tour"
             type="button"
-            onClick={context.tour.start}
+            onClick={() => navigation?.tour()}
             disabled={!context.tour.available || !context.ready}
           >
             Take a tour

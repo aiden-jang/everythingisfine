@@ -477,9 +477,13 @@ export async function waitForData(page: Page): Promise<number> {
 }
 
 export async function revealScenes(page: Page) {
-  const browse = page.getByRole("button", { name: "Browse stories", exact: true });
-  if (await browse.isVisible()) await browse.click();
   const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
+  if (!(await scenes.isVisible())) {
+    await page.getByRole("button", { name: "View options", exact: true }).click();
+    const views = page.locator(".scene-view-options");
+    if (!(await views.evaluate((node) => (node as HTMLDetailsElement).open)))
+      await views.locator("summary").click();
+  }
   await expect(scenes).toBeVisible();
   return scenes;
 }
@@ -493,8 +497,11 @@ export async function openStories(page: Page, expand: "catalogue" | "all" | "sea
   const tab = page.getByRole("tab", { name: "Stories", exact: true });
   const exploring = await tab.isVisible();
   if (exploring && (await tab.getAttribute("aria-selected")) !== "true") await tab.click();
-  if (!exploring) await revealScenes(page);
-  const catalogue = page.getByRole("region", { name: "Stories and layers", exact: true });
+  if (!exploring) {
+    await page.getByRole("button", { name: "Explore", exact: true }).click();
+    await tab.click();
+  }
+  const catalogue = page.getByRole("region", { name: "Story catalogue", exact: true });
   await expect(catalogue).toBeVisible();
   if (expand === "search") return;
   const all = catalogue.getByRole("button", { name: /^View all \d+ stories$/ });

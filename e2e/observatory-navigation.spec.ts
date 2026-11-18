@@ -1,11 +1,15 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories, selectScene, revealScenes } from "./feeds";
+import { installFeeds, openStories, revealScenes } from "./feeds";
 
 test("a shared scene opens the same category in a fresh browser @dev", async ({ page, browser }) => {
   await installFeeds(page, { presentation: "fresh" });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
-  await selectScene(page, "After Dark");
+  await openStories(page, "search");
+  await page
+    .getByRole("group", { name: "Story categories" })
+    .getByRole("button", { name: "After Dark", exact: true })
+    .click();
   await expect
     .poll(() => new URLSearchParams(new URL(page.url()).hash.slice(1)).get("catalogue"))
     .toBe("night");
@@ -23,16 +27,21 @@ test("a shared scene opens the same category in a fresh browser @dev", async ({ 
     await expect(other.getByRole("button", { name: "Shadow Chase", exact: true })).toBeVisible();
     await other.getByRole("button", { name: /^View all \d+ stories$/ }).click();
     await expect(other.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
-    await selectScene(other, "After Dark");
+    await other
+      .getByRole("group", { name: "Story categories" })
+      .getByRole("button", { name: "After Dark", exact: true })
+      .click();
     await expect
       .poll(() => new URLSearchParams(new URL(other.url()).hash.slice(1)).get("catalogue"))
       .toBe("all");
     await other.reload();
-    await expect(other.getByRole("region", { name: "Stories and layers", exact: true })).toBeVisible();
+    await expect(other.getByRole("region", { name: "Story catalogue", exact: true })).toBeVisible();
     await expect(other.getByRole("heading", { name: "All stories", exact: true })).toBeVisible();
     await expect(
-      other.getByRole("group", { name: "Earth scenes" }).locator('[aria-pressed="true"]'),
-    ).toHaveCount(0);
+      other
+        .getByRole("group", { name: "Story categories" })
+        .getByRole("button", { name: "All stories", exact: true }),
+    ).toHaveAttribute("aria-pressed", "true");
     await other
       .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
       .click();
@@ -41,7 +50,7 @@ test("a shared scene opens the same category in a fresh browser @dev", async ({ 
       .toBe(false);
     await other.reload();
     await expect(other.getByRole("heading", { name: "Look closer." })).toBeVisible();
-    await expect(other.getByRole("region", { name: "Stories and layers", exact: true })).toHaveCount(0);
+    await expect(other.getByRole("region", { name: "Story catalogue", exact: true })).toHaveCount(0);
   } finally {
     await recipient.close();
   }
@@ -51,19 +60,22 @@ test("Home restores all scenes and browser Back restores it on the same globe @d
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
-  await revealScenes(page);
+  await openStories(page, "search");
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
   const canvas = await page.locator("canvas").elementHandle();
-  await selectScene(page, "After Dark");
+  await page
+    .getByRole("group", { name: "Story categories" })
+    .getByRole("button", { name: "After Dark", exact: true })
+    .click();
   await openStories(page);
   await page.getByRole("searchbox", { name: "Find a story" }).fill("moon");
   await page
     .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
     .click();
   await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
-  await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toHaveCount(0);
   await expect(
-    page.getByRole("group", { name: "Earth scenes" }).locator('[aria-pressed="true"]'),
+    page.getByRole("group", { name: "Story categories" }).locator('[aria-pressed="true"]'),
   ).toHaveCount(0);
   await page.goBack();
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toHaveAttribute(
@@ -117,15 +129,15 @@ for (const width of [1440, 390]) {
     await page.emulateMedia({ reducedMotion: "reduce" });
     await installFeeds(page, { presentation: "fresh" });
     await page.goto("/");
-    const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
-    const stories = page.getByRole("region", { name: "Stories and layers", exact: true });
+    const scenes = page.getByRole("group", { name: "Story categories", exact: true });
+    const stories = page.getByRole("region", { name: "Story catalogue", exact: true });
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await expect(page.getByRole("button", { name: "Stories & layers", exact: true })).toHaveCount(0);
     await expect(stories).toHaveCount(0);
     await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
     await expect(scenes).toHaveCount(0);
     for (const name of ["Earth", "Below the Surface", "After Dark"]) {
-      await revealScenes(page);
+      await page.getByRole("button", { name: "Browse stories", exact: true }).click();
       const category = scenes.getByRole("button", { name, exact: true });
       await category.click();
       await expect(category).toHaveAttribute("aria-pressed", "true");

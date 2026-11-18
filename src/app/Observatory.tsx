@@ -4,12 +4,10 @@ import { useOvalReturn } from "./sun/useSunVisit";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 import type { CameraState } from "../globe/controls";
 import { ExperienceEnding } from "./journeys/ExperienceEnding";
-import { Suspense, type RefObject, type ReactNode } from "react";
-import { useObservatoryScroll } from "./useObservatoryScroll";
-import { ObservatoryStage, ObservatoryScenePicker, SunCredits, TourUnavailable } from "./ObservatoryStage";
+import { Suspense, useLayoutEffect, type RefObject, type ReactNode } from "react";
+import { ObservatoryStage, ObservatoryScenePicker, SunCredits } from "./ObservatoryStage";
 import { ObservatoryTourControls } from "./ObservatoryTourControls";
-import { Discoveries, type DiscoveriesData } from "./visitor/Discoveries";
-import { StoriesDrawer } from "./StoriesDrawer";
+import type { DiscoveriesData } from "./visitor/Discoveries";
 import { MoonfallReadout } from "./moonfall/MoonfallReadout";
 import { FloatReadout } from "./float/FloatReadout";
 import { RadarReadout, StormRadar } from "./radar/StormRadar";
@@ -42,7 +40,6 @@ export interface ObservatoryProps {
   scene: EarthScene;
   at: number;
   ready: boolean;
-  empty: ReturnType<typeof import("./earthquakeStatus").earthquakeEmpty>;
   summary: string;
   feedNote: string | null;
   deepAvailable: boolean;
@@ -50,6 +47,7 @@ export interface ObservatoryProps {
   views: Pick<
     ReturnType<typeof useObservatory>,
     | "observing"
+    | "observeScene"
     | "landing"
     | "sun"
     | "tonight"
@@ -95,39 +93,30 @@ export function Observatory(props: ObservatoryProps): JSX.Element {
 function ObservatoryContent({
   layerReadout,
   explorer,
-  discoveries,
   scene,
   at,
   ready,
-  empty,
   summary,
   deepAvailable,
   aurora,
-  views: { sun, tonight, floatDive, observations, skyCity, closeStory, browser, navigation, landing },
+  views: { sun, tonight, floatDive, observations, skyCity, closeStory, browser, landing, navigation },
   radar,
   feedNote,
   onScene,
   onHome,
   onExplore,
-  onPickDate,
   tour,
-  onHistory,
 }: ObservatoryProps): JSX.Element {
   const navigationContext = useStoryNavigation();
   const closeView = (fallback: () => void) => () => {
     if (!navigationContext?.returnToBrowse()) fallback();
   };
-  const { open: stories, scroll: storyScroll } = browser;
   const active = tour.at !== null;
   const solar = sun.active && !active;
-  const browsing =
-    stories && ![active, solar, aurora.run, tonight.active, floatDive.active, radar.active].some(Boolean);
-  const revealStories = useObservatoryScroll(
-    tour.controls,
-    storyScroll,
-    browsing,
-    [navigation.key, tour.at, browser.home].join(":"),
-  );
+  useLayoutEffect(() => {
+    tour.controls.current?.scrollTo(0, 0);
+    tour.controls.current?.querySelector(".observatory-story")?.scrollTo(0, 0);
+  }, [navigation.key, tour.at, tour.controls]);
   const ovalReturn = useOvalReturn(tour.controls, sun);
   const closeSun = aurora.run
     ? ovalReturn.close
@@ -201,11 +190,7 @@ function ObservatoryContent({
             tabIndex={-1}
             className="observatory-intro"
             ref={tour.controls}
-            onScroll={(event) => {
-              if (browsing) storyScroll.current = event.currentTarget.scrollTop;
-            }}
             data-scene={active ? "tour" : scene}
-            data-browsing={browsing || undefined}
             data-sun-watch={solar || undefined}
             data-storm-radar={radar.active || undefined}
             data-tonight={tonight.active || undefined}
@@ -298,18 +283,12 @@ function ObservatoryContent({
                 ) : (
                   <>
                     <ObservatoryEntryActions
-                      landing={landing}
                       solar={solar}
                       explore={() => {
                         browser.show("layers");
                         onExplore();
                       }}
-                      browse={() => {
-                        browser.select(null);
-                        requestAnimationFrame(() =>
-                          document.getElementById("story-search-input")?.focus({ preventScroll: true }),
-                        );
-                      }}
+                      browse={() => navigationContext?.browse(true)}
                       closeSun={closeSun}
                       fromOval={!!aurora.run}
                     />
@@ -323,60 +302,27 @@ function ObservatoryContent({
                     ) : null}
                   </>
                 )}
-                {browsing && (
+                {!landing && !active && !solar && !aurora.run && (
                   <ObservatoryScenePicker
-                    scene={browser.category}
+                    scene={scene}
                     ready={ready}
                     deepAvailable={deepAvailable}
                     onScene={(next) => {
                       observations.setQuery("");
-                      if (browser.category === next) {
-                        browser.select(null);
+                      if (scene === next) {
+                        onHome();
                         return;
                       }
-                      revealStories();
                       browser.select(next);
                       onScene(next);
                     }}
                   />
                 )}
-                {browsing && scene === "depth" && ready && !deepAvailable && (
+                {scene === "depth" && ready && !deepAvailable && (
                   <p id="depth-availability" className="observatory-depth-note">
                     No earthquake at least 70 km deep in this window. Recorded depth stories are still
                     available.
                   </p>
-                )}
-                {browsing && (
-                  <StoriesDrawer
-                    browse={browser}
-                    scene={browser.category}
-                    ready={ready}
-                    observations={observations}
-                    aurora={aurora}
-                    onHistory={onHistory}
-                    onPickDate={onPickDate}
-                    discoveries={<Discoveries data={discoveries} aurora={aurora} city={skyCity.city} />}
-                    onSelect={() => {
-                      storyScroll.current = tour.controls.current?.scrollTop ?? 0;
-                    }}
-                    onDismiss={() => {
-                      onHome();
-                      requestAnimationFrame(() => document.getElementById("browse-stories")?.focus());
-                    }}
-                  >
-                    <div className="observatory-actions">
-                      <button
-                        type="button"
-                        ref={tour.button}
-                        onClick={tour.start}
-                        disabled={!ready || !tour.available}
-                        aria-describedby={ready && !tour.available ? "tour-availability" : undefined}
-                      >
-                        Take a tour <span aria-hidden="true">→</span>
-                      </button>
-                      {ready && !tour.available && scene === "night" && <TourUnavailable note={empty.text} />}
-                    </div>
-                  </StoriesDrawer>
                 )}
                 {(solar || aurora.run) && auroraControls}
                 {feedNote && !landing ? (

@@ -11,7 +11,7 @@ export function CameraRecenter({ guide, wake }: { guide: CameraGuidance; wake: (
     <button
       type="button"
       data-camera-manual={manual || undefined}
-      className="camera-recenter absolute right-4 top-[calc(var(--scene-hud-top)+48px)] min-h-11 rounded-[7px] border border-hairline bg-deck px-3 text-sm text-ink hover:bg-raised"
+      className="camera-recenter absolute right-4 top-[calc(var(--scene-hud-top)+48px)] z-[2] min-h-11 rounded-[7px] border border-hairline bg-deck px-3 text-sm text-ink hover:bg-raised"
       title={
         manual
           ? journey.interrupted

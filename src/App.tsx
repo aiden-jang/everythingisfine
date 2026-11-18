@@ -989,7 +989,6 @@ export function App(): JSX.Element {
     scene: observatory.scene,
     at: overflight.run?.forecast.forecastAt ?? litAt ?? minuteClock,
     ready: observatory.ready,
-    empty: emptyEarthquakes,
     summary:
       shown === 0 && emptyEarthquakes.kind !== "empty"
         ? emptyEarthquakes.text
@@ -1059,6 +1058,7 @@ export function App(): JSX.Element {
         <SkipControls observing={observatory.observing} railShown={railShown} />
         <h1 className="sr-only">Everything Is Fine</h1>
         <GlobeHeader
+          observatory={observatoryProps}
           keyboard={
             <KeyboardHelp
               mobile

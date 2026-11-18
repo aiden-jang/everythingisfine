@@ -276,14 +276,14 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
                 : "Satellite scans unavailable. The estimated wave and pressure readings remain available."}
             </p>
           )}
-          <div className="archive-scene-controls">
-            <button type="button" onClick={() => playback.seek(ERUPTION)}>
+          <div className="archive-scene-controls" role="group" aria-label="Tonga chapters">
+            <button type="button" aria-pressed={!isVapor && !isOrbit} onClick={() => playback.seek(ERUPTION)}>
               Eruption
             </button>
-            <button type="button" onClick={() => playback.seek(320)}>
+            <button type="button" aria-pressed={isVapor && !isOrbit} onClick={() => playback.seek(320)}>
               Water vapor
             </button>
-            <button type="button" onClick={() => playback.seek(ANTIPODE)}>
+            <button type="button" aria-pressed={minute >= ANTIPODE} onClick={() => playback.seek(ANTIPODE)}>
               Antipode
             </button>
           </div>

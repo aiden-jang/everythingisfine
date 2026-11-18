@@ -139,6 +139,6 @@ test("a persistent story download failure offers a named recovery view", async (
   await expect(status).toBeFocused();
   await expect(status.getByRole("button", { name: "Try again" })).toBeVisible();
   expect(attempts).toBe(2);
-  await status.getByRole("button", { name: "Back to home" }).click();
-  await expect(page.getByRole("button", { name: "Browse stories" })).toBeVisible();
+  await status.getByRole("button", { name: "Back to stories" }).click();
+  await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toBeVisible();
 });

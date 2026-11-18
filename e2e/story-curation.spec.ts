@@ -16,6 +16,12 @@ for (const width of [1440, 390]) {
     await expect(page.getByText("Loading the globe…", { exact: true })).toBeHidden();
     await page.screenshot({ path: test.info().outputPath(`first-minute-${width}.png`) });
     await browse.click();
+    await expect(page.getByRole("tab", { name: "Stories", exact: true })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toHaveCount(1);
+    await expect(page.locator("#observatory-intro")).toHaveCount(0);
     const entry = page.locator("#open-featured-float");
     await expect(entry).toHaveAccessibleName("Float Dive");
     await expect(entry).toHaveAccessibleDescription(/Measured ocean profiles · Argo/);
@@ -26,7 +32,7 @@ for (const width of [1440, 390]) {
     await expect(entry).toBeHidden();
     await expect(page.locator(".story-continue")).toContainText("Float Dive");
     await expect(page.locator(".story-continue")).toBeFocused();
-    await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
+    await page.getByRole("tab", { name: "Layers", exact: true }).click();
     await openStories(page, "search");
     await expect(page.locator(".story-choice > button")).toHaveText([
       "Storm Radar",

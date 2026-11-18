@@ -158,7 +158,13 @@ test("tour controls pause, advance, stop and leave the readings accessible", asy
   await expect(page.locator(".observatory-location")).not.toHaveAttribute("data-tour-location", first!);
   await page.getByRole("button", { name: "Stop", exact: true }).click();
   await expect(tour).toBeVisible();
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
+  await expect(tour).toBeFocused();
+  await tour.click();
+  await expect(page.locator(".observatory-location")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(tour).toBeFocused();
+  await page.getByRole("tab", { name: "Layers", exact: true }).click();
+  await openLayer(page);
   await waitForData(page);
 });
 
@@ -191,8 +197,7 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
-  await revealStoryTools(page);
-  await expect(page.getByRole("button", { name: "Take a tour" })).toBeEnabled();
+  await expect(page.getByText("Loading the globe…", { exact: true })).toBeHidden();
   const contexts = () =>
     page.evaluate(
       () => (window as unknown as { observatoryScene: { contexts: number } }).observatoryScene.contexts,
@@ -282,7 +287,6 @@ test("an empty view stays honest and keeps exploration available", async ({ page
   await installFeeds(page, { empty: true, presentation: "fresh" });
   await page.goto("/");
   await revealStoryTools(page);
-  await expect(page.locator(".observatory-summary")).toContainText("0 earthquakes");
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
   await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeEnabled();
   await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
@@ -292,8 +296,9 @@ test("an empty view stays honest and keeps exploration available", async ({ page
       "No earthquake at least 70 km deep in this window. Recorded depth stories are still available.",
     ),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Browse stories", exact: true }).click();
   await expect(page.getByRole("button", { name: "Rupture Reveal", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
+  await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
   await openLayer(page);
   await expect(page.getByRole("region", { name: "Recent earthquakes" }).getByRole("status")).toHaveText(
@@ -305,11 +310,12 @@ test("unavailable earthquake feeds do not masquerade as an empty or loading view
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { dead: true, presentation: "fresh" });
   await page.goto("/");
-  await revealStoryTools(page);
+  await selectScene(page, "Earth");
   await expect(page.locator(".observatory-source-note")).toContainText("USGS and EMSC are not answering");
   await expect(page.locator(".observatory-summary")).toContainText("Earthquake feeds unavailable.");
+  await revealStoryTools(page);
   await expect(page.getByRole("button", { name: "Take a tour" })).toBeDisabled();
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
+  await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
 });
 
@@ -350,10 +356,11 @@ test("a missing WebGL context still offers the source readings", async ({ page }
     } as typeof get;
   });
   await page.goto("/");
-  await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toBeHidden();
+  await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toBeHidden();
   const scenes = await revealScenes(page);
   for (const scene of ["Earth", "Below the Surface", "After Dark"])
     await expect(scenes.getByRole("button", { name: scene, exact: true })).toBeDisabled();
+  await page.keyboard.press("Escape");
   await expect(page.getByRole("button", { name: /^Explore (the globe|the layers)$/ })).toBeVisible();
   await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   await waitForData(page);

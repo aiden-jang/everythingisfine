@@ -7,6 +7,7 @@ import { useJourneyAnalytics } from "../visitor/useJourneyAnalytics";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { ObservatoryProps } from "../Observatory";
 import { searchStories } from "../storyIndex";
+import { featuredIds, storyButtonId } from "../storyBrowse";
 import type { StoryId } from "../observations/useObservationDeck";
 import { isGlobalRadar } from "../radar/radarCamera";
 import { journeys } from "./catalogue";
@@ -31,6 +32,7 @@ const Navigation = createContext<{
   unavailable: (id: string) => string | null;
   open: (id: string, trigger?: string, keepScene?: boolean) => void;
   start: (id: string) => void;
+  tour: () => void;
   step: (index: number) => void;
   finish: (complete: boolean) => void;
 } | null>(null);
@@ -84,7 +86,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     if (active === null) origin.current = null;
   }, [active, route]);
   const unavailable = (id: string) =>
-    !props.ready ? "The globe is still opening." : id === "aurora" ? props.aurora.unavailable : null;
+    !props.ready ? "Story playback needs the globe." : id === "aurora" ? props.aurora.unavailable : null;
   function rememberOrigin(trigger: string) {
     if (active !== null || origin.current) return;
     const scrollTarget = props.views.observing ? "observatory-intro" : "chrome-rail";
@@ -144,7 +146,19 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
   }
   function returnToBrowse() {
     const saved = origin.current;
-    if (!saved) return false;
+    if (!saved) {
+      if (!active || deck.trigger?.startsWith("event-story-") || deck.trigger?.startsWith("archive-story-"))
+        return false;
+      const category = props.views.browser.category;
+      const full = props.views.browser.expanded === (category ?? "all");
+      const focus = !full
+        ? `continue-story-${active}`
+        : featuredIds[category ?? "live"] === active
+          ? `open-featured-${active}`
+          : storyButtonId(active);
+      showCatalogue(false, focus);
+      return true;
+    }
     origin.current = null;
     props.views.visitCheckpoint.current();
     if (active === "radar" && props.radar.view && isGlobalRadar(props.radar.view.region))
@@ -160,6 +174,31 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     });
     return true;
   }
+  function showCatalogue(focusSearch = false, entry?: string) {
+    panelReturn.cancel();
+    previewOrigin.current = null;
+    origin.current = null;
+    setRoute(null);
+    const focus = focusSearch ? "story-search-input" : (entry ?? "explorer-stories-tab");
+    props.views.navigation.requestExploreFocus(focus);
+    props.views.browser.show("stories");
+    props.onExplore();
+    panelReturn.restore({
+      scrollTarget: "chrome-rail",
+      scroll: props.views.browser.scroll.current,
+      focus,
+      fallback: "explorer-stories-tab",
+    });
+  }
+  const toured = useRef(false);
+  const restoreTour = useRef(returnToBrowse);
+  restoreTour.current = returnToBrowse;
+  useEffect(() => {
+    const running = props.tour.at !== null;
+    const ended = toured.current && !running;
+    toured.current = running;
+    if (ended && active === null) restoreTour.current();
+  }, [props.tour.at, active]);
   return (
     <Navigation.Provider
       value={{
@@ -179,22 +218,12 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
             if (restore) props.explorer.restore(saved.camera, saved.flat);
           }
         },
-        returnLabel: origin.current?.label,
-        browse(focusSearch = false) {
-          panelReturn.cancel();
-          previewOrigin.current = null;
-          origin.current = null;
-          setRoute(null);
-          const focus = focusSearch ? "story-search-input" : "explorer-stories-tab";
-          props.views.navigation.requestExploreFocus(focus);
-          props.views.browser.show("stories");
-          props.onExplore();
-          panelReturn.restore({
-            scrollTarget: "chrome-rail",
-            scroll: props.views.browser.scroll.current,
-            focus,
-          });
-        },
+        returnLabel:
+          origin.current?.label ??
+          (active && !deck.trigger?.startsWith("event-story-") && !deck.trigger?.startsWith("archive-story-")
+            ? "Back to stories"
+            : undefined),
+        browse: showCatalogue,
         explore() {
           if (active !== null && origin.current?.route.origin.presentation === "explore" && returnToBrowse())
             return;
@@ -243,6 +272,10 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           reportAnalytics({ name: "journey_started", journey: id });
           setRoute({ id, step: 0 });
           navigate(first.id, `journey-${id}`);
+        },
+        tour() {
+          rememberOrigin("start-story-tour");
+          props.tour.start();
         },
         step(index) {
           const next = journeys.find((journey) => journey.id === route?.id)?.steps[index];

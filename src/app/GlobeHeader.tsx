@@ -11,6 +11,8 @@ import { CreatorCredit } from "./CreatorCredit";
 import { refreshAnnotations } from "../globe/annotationInput";
 import { HeaderNavigation } from "./HeaderNavigation";
 import { ProjectionSwitch } from "./ProjectionSwitch";
+import { ObservatoryScenePicker } from "./ObservatoryStage";
+import type { ObservatoryProps } from "./Observatory";
 
 interface Props {
   clip: Clip;
@@ -32,6 +34,7 @@ interface Props {
   saveStill: () => void;
   feeds: FeedStatus;
   keyboard: ReactNode;
+  observatory: ObservatoryProps;
   rotation: { enabled: boolean; set: (enabled: boolean) => void };
 }
 
@@ -79,6 +82,7 @@ export function GlobeHeader({
   feeds,
   rotation,
   keyboard,
+  observatory,
 }: Props): JSX.Element {
   return (
     <>
@@ -99,6 +103,16 @@ export function GlobeHeader({
             saveStill={saveStill}
             rotation={rotation}
           >
+            <details className="scene-view-options">
+              <summary>Scene views</summary>
+              <ObservatoryScenePicker
+                id="view-option-scenes"
+                scene={observatory.views.landing ? null : observatory.scene}
+                ready={observatory.ready}
+                deepAvailable={observatory.deepAvailable}
+                onScene={(scene) => observatory.views.observeScene(() => observatory.onScene(scene))}
+              />
+            </details>
             {!observing && (
               <>
                 {keyboard}

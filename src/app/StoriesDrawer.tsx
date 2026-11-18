@@ -75,7 +75,7 @@ export function StoriesDrawer({
         ref={container}
         id="stories-panel"
         className="stories-drawer"
-        aria-label="Stories and layers"
+        aria-label="Story catalogue"
         role="region"
         onClickCapture={onSelect}
         onKeyDown={(event) => {

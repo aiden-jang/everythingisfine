@@ -1,14 +1,12 @@
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 
 export function ObservatoryEntryActions({
-  landing,
   solar,
   explore,
   browse,
   closeSun,
   fromOval,
 }: {
-  landing: boolean;
   solar: boolean;
   explore: () => void;
   browse: () => void;
@@ -24,7 +22,7 @@ export function ObservatoryEntryActions({
           <path d="m5 15 10-10M5 5h10v10" fill="none" stroke="currentColor" strokeWidth="1.5" />
         </svg>
       </button>
-      {landing && (
+      {!solar && (
         <button type="button" id="browse-stories" onClick={browse}>
           Browse stories
         </button>

@@ -98,6 +98,11 @@ describe("the observatory entry", () => {
   it("opens a fresh visit without saving defaults", () => {
     expect(initialPresentation({}, read())).toBe("observe");
   });
+  it("opens older catalogue links in the shared Explore browser", () => {
+    for (const catalogue of ["all", "live", "depth", "night"] as const) {
+      expect(initialPresentation({ catalogue, presentation: "observe" }, read())).toBe("explore");
+    }
+  });
   it("retains explicit layout preferences and lets a saved presentation win", () => {
     expect(initialPresentation({}, read({ railOpen: "0" }))).toBe("explore");
     expect(initialPresentation({}, read({ flat: "1" }))).toBe("explore");

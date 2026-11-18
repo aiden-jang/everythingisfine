@@ -53,13 +53,6 @@
   text-align: left;
   cursor: pointer;
 }
-.observatory-intro[data-browsing] .observatory-story h2 {
-  font-size: 34px;
-  max-width: none;
-}
-.observatory-intro[data-browsing] .observatory-description {
-  display: none;
-}
 .observatory-intro :is(.observation-heading, .tonight-heading, .radar-heading, .float-heading) {
   display: flex;
   flex-direction: column;

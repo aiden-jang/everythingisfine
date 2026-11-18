@@ -144,6 +144,6 @@ test("Storm Radar remains available in the catalogue after exploring the map", a
   await scene.getByRole("button", { name: "Back to stories" }).click();
   await expect(scene).toBeHidden();
   await expect(trigger).toBeFocused();
-  await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toBeVisible();
   expect(await canvas.evaluate((element, original) => element === original, globe)).toBe(true);
 });

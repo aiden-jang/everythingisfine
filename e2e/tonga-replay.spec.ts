@@ -51,6 +51,10 @@ test("Tonga’s reduced-motion archive can jump to measured station pulses on a 
   const replay = page.getByRole("region", { name: "Tonga’s shockwave" });
   await replay.getByRole("button", { name: "Follow the wave", exact: true }).click();
   const slider = replay.getByRole("slider", { name: "Replay time" });
+  const chapters = replay.getByRole("group", { name: "Tonga chapters", exact: true });
+  for (const button of await chapters.getByRole("button").all()) {
+    expect((await button.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  }
   await expect(
     page
       .getByRole("group", { name: "Tonga’s shockwave on the globe" })

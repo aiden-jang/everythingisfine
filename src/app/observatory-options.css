@@ -65,3 +65,32 @@
 .observatory-policy-links a:hover {
   background: var(--color-raised);
 }
+.scene-view-options {
+  border-top: 1px solid var(--color-hairline);
+}
+.scene-view-options > summary {
+  min-height: 44px;
+  padding: 12px 8px;
+  font-size: var(--text-control);
+  cursor: pointer;
+}
+.scene-view-options .observatory-scenes {
+  display: grid;
+  grid-template-columns: 1fr;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  gap: 2px;
+}
+.scene-view-options .observatory-scenes button {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 12px;
+  min-height: 44px;
+  padding: 8px;
+  font-size: var(--text-control);
+}
+.scene-view-options .observatory-scenes svg {
+  width: 22px;
+  height: 22px;
+}

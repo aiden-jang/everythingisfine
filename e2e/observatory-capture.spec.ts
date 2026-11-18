@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, saveImageButton, openStories, selectScene } from "./feeds";
+import { installFeeds, saveImageButton, openStories } from "./feeds";
 
 type Captured = { lines: string[]; size: number; type: string };
 
@@ -28,8 +28,11 @@ test("the featured lunar journey keeps its canvas and saves its own scientific c
   await page.goto("/");
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
-  await selectScene(page, "After Dark");
-  await openStories(page);
+  await openStories(page, "search");
+  await page
+    .getByRole("group", { name: "Story categories", exact: true })
+    .getByRole("button", { name: "After Dark", exact: true })
+    .click();
   await page.getByRole("button", { name: "Moonfall", exact: true }).click();
   const moon = page.getByRole("region", { name: "Moonfall", exact: true });
   await expect(page.getByRole("group", { name: "Lunar view" })).toContainText("Taurus–Littrow Valley");
@@ -52,8 +55,11 @@ test("the featured lunar journey keeps its canvas and saves its own scientific c
   await page.goBack();
   await expect(moon.getByLabel("Rover traverse")).toHaveValue("1");
   await expect(moon.getByRole("slider", { name: "Mapped distance" })).toHaveValue(distance);
-  await moon.getByRole("button", { name: "Back to After Dark", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "The other side of day.", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Moonfall", exact: true })).toBeFocused();
+  await moon.getByRole("button", { name: "Back to stories", exact: true }).click();
+  await expect(page.getByRole("tab", { name: "Stories", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.locator("#continue-story-moonfall")).toBeFocused();
   expect(await canvas.evaluate((element, previous) => element === previous, original)).toBe(true);
 });

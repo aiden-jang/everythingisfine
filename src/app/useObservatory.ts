@@ -90,13 +90,9 @@ export function useObservatory(shared: Partial<Permalink>) {
   } = usePresentation(() => initialPresentation(shared), clearViews, before);
   const [browser, setBrowser] = useState({
     open: !!shared.story || !!shared.catalogue,
-    home: 0,
     expanded: null as string | null,
     sections: [] as string[],
-    pane:
-      shared.catalogue && shared.presentation === "explore"
-        ? ("stories" as const)
-        : ("layers" as "layers" | "stories"),
+    pane: shared.catalogue ? ("stories" as const) : ("layers" as "layers" | "stories"),
     category: shared.story ? scene : shared.catalogue === "all" ? null : (shared.catalogue ?? null),
   });
   const browserScroll = useRef(0);
@@ -202,14 +198,14 @@ export function useObservatory(shared: Partial<Permalink>) {
     },
     checkpoint,
     visitCheckpoint,
-    home(prepare: () => void, browse = false) {
+    home(prepare: () => void) {
       before();
       sharedView.current = false;
       browserScroll.current = 0;
       observations.setQuery("");
       observeScene(() => {
         chooseScene("live");
-        setBrowser((value) => ({ ...value, open: browse, home: value.home + 1, category: null }));
+        setBrowser((value) => ({ ...value, open: false, category: null }));
         prepare();
       });
     },

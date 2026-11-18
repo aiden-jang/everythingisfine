@@ -64,8 +64,8 @@ test("related stories cross scenes and return to an available catalogue control"
   await page.getByText("Keep exploring", { exact: true }).click();
   await page.getByRole("button", { name: /^Lights Return/ }).click();
   await expect(page.getByRole("heading", { name: "Lights Return", exact: true })).toBeVisible();
-  await page.getByRole("button", { name: /Back to After Dark/ }).click();
-  await expect(page.getByRole("group", { name: "Earth scenes", exact: true })).toBeFocused();
+  await page.getByRole("button", { name: "Back to stories", exact: true }).click();
+  await expect(page.locator("#continue-story-lights")).toBeFocused();
 });
 
 for (const view of ["Meteor Nights", "Moonfall"] as const) {
@@ -183,7 +183,7 @@ test("measurement sound requires a gesture, follows readings and closes when the
   await expect.poll(async () => (await audio()).pitches.length).toBe(2);
   const pitches = (await audio()).pitches;
   expect(pitches[1]).toBeGreaterThan(pitches[0]!);
-  await page.getByRole("button", { name: "Back to Observatory", exact: true }).click();
+  await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect.poll(async () => (await audio()).closed).toBe(1);
   await openStories(page);
   await page.getByRole("button", { name: "Tide Watch", exact: true }).click();

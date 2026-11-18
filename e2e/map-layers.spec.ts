@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openLayer, selectScene, revealScenes } from "./feeds";
+import { installFeeds, openLayer, revealScenes, selectScene } from "./feeds";
 
 test("phone navigation follows the visible layers and the guide explains empty coverage", async ({
   page,
@@ -94,9 +94,9 @@ test("hidden base layers stay hidden through landing, scene categories and both 
     .click();
   await revealScenes(page);
   for (const name of ["Earth", "Below the Surface", "After Dark"]) {
-    await page.getByRole("button", { name, exact: true }).click();
+    await selectScene(page, name as "Earth" | "Below the Surface" | "After Dark");
     await expect.poll(counts).toEqual({ quakes: 0, rings: 0, hazards: 0 });
-    await page.getByRole("button", { name, exact: true }).click();
+    await selectScene(page, name as "Earth" | "Below the Surface" | "After Dark");
     await expect.poll(counts).toEqual({ quakes: 0, rings: 0, hazards: 0 });
   }
   await page.getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true }).click();
@@ -112,29 +112,32 @@ test("a quiet landing opens the story catalogue and each scene remains available
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
-  const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
+  const scenes = page.getByRole("group", { name: "Story categories", exact: true });
   await expect(scenes).toHaveCount(0);
-  await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toHaveCount(0);
   await expect(page.locator(".story-continue")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Explore the globe", exact: true })).toBeInViewport();
-  await revealScenes(page);
+  await page.getByRole("button", { name: "Browse stories", exact: true }).click();
   await expect(page.getByRole("searchbox", { name: "Find a story", exact: true })).toBeFocused();
   const canvas = await page.locator("canvas").elementHandle();
-  await selectScene(page, "Earth");
+  await scenes.getByRole("button", { name: "Earth", exact: true }).click();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
   await page.goBack();
-  await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(0);
-  await selectScene(page, "Earth");
+  await expect(scenes.getByRole("button", { name: "All stories", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await scenes.getByRole("button", { name: "Earth", exact: true }).click();
   await page.getByRole("button", { name: "Storm Radar", exact: true }).click();
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
   await expect(page.locator("#continue-story-radar")).toBeFocused();
-  await selectScene(page, "After Dark");
+  await scenes.getByRole("button", { name: "After Dark", exact: true }).click();
   await expect(scenes.locator('[aria-pressed="true"]')).toHaveCount(1);
   await expect(page.getByRole("button", { name: "Shadow Chase", exact: true })).toBeVisible();
   await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
   await expect(page.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
-  await selectScene(page, "Below the Surface");
+  await scenes.getByRole("button", { name: "Below the Surface", exact: true }).click();
   await expect(page.getByRole("button", { name: "Rupture Reveal", exact: true })).toBeVisible();
   expect(await canvas!.evaluate((node) => node === document.querySelector("canvas"))).toBe(true);
 });
@@ -207,7 +210,7 @@ test("Explore switches independent layers without rebuilding the globe @dev", as
   await page.reload();
   await expect(storms).toHaveAttribute("aria-pressed", "false");
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
-  await expect(page.getByRole("region", { name: "Stories and layers", exact: true })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toBeVisible();
 });
 
 test("the full catalogue returns to its original entry after a story @dev", async ({ page }) => {

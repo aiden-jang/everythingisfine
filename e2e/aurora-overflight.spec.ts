@@ -3,7 +3,7 @@ import { installFeeds, revealStoryTools, selectScene } from "./feeds";
 
 const follow = (page: Page) => page.locator("#open-aurora-overflight");
 
-test("After Dark follows the NOAA forecast and returns to the stars", { tag: "@dev" }, async ({ page }) => {
+test("After Dark follows the NOAA forecast and restores its catalogue", { tag: "@dev" }, async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh", empty: true });
@@ -40,7 +40,11 @@ test("After Dark follows the NOAA forecast and returns to the stars", { tag: "@d
   await expect.poll(async () => (await flight()).ready).toBe(true);
   expect(Math.abs((await flight()).lat)).toBeGreaterThanOrEqual(72);
   await page.getByRole("button", { name: "Back to stories" }).click();
-  await expect(readout).toContainText("Catalogue sky");
+  await expect(
+    page
+      .getByRole("group", { name: "Story categories" })
+      .getByRole("button", { name: "After Dark", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   await expect(follow(page)).toBeFocused();
   await expect.poll(async () => (await flight()).sweep).toBe(0);
   expect(errors).toEqual([]);

@@ -416,9 +416,11 @@ The compact two-line wordmark returns to the invitation. The globe stage carries
 and scene-specific reference where space allows. Phone and short-height layouts prioritize the
 reachable controls and source disclosure.
 
-The story browser opens on All stories. Its Earth, Below the Surface and After Dark diagrams
-move the shared world to each scene without overwriting saved layer settings. Selecting a scene
-again returns to All stories. Explore shows the same categories in a compact strip below search.
+The landing’s Browse stories and the header’s Find action open Explore’s single Stories catalogue.
+Older catalogue links also resolve there. Its Earth, Below the Surface and After Dark diagrams filter
+the collection in a compact strip below search. Selecting the active category again returns to All stories.
+The cinematic Earth, depth and sky scene views remain available under View options, separately from
+story filtering. Those scene views provide a Browse stories action into the same catalogue.
 All stories restores the full catalogue. Filtering keeps the query and camera in place. Switching between Layers and Stories preserves the chosen layer settings.
 The Layers tab starts with available layer controls. Location lives in Find a place, and playback
 lives within the Storm radar inspector. A recent visit replaces the large feature as the opening

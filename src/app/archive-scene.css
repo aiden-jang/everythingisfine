@@ -24,7 +24,8 @@
   gap: 6px;
 }
 
-.archive-scene-button {
+.archive-scene-button,
+.archive-scene-controls > button {
   min-height: 44px;
   padding-inline: 10px;
   border: 1px solid var(--color-hairline);
@@ -35,7 +36,8 @@
   cursor: pointer;
 }
 
-.archive-scene-button:is(:hover, [aria-pressed="true"]) {
+.archive-scene-button:is(:hover, [aria-pressed="true"]),
+.archive-scene-controls > button:is(:hover, [aria-pressed="true"]) {
   border-color: var(--color-faint);
   background: var(--color-raised);
 }
