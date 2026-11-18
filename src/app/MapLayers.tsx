@@ -81,9 +81,7 @@ export function MapLayers({
     controls.setRewindPoint(undefined);
     controls.selectTime("radar", null);
     requestAnimationFrame(() =>
-      (document.getElementById("rewind-place-radar") ?? document.getElementById("globe-view"))?.focus({
-        preventScroll: true,
-      }),
+      (document.getElementById("rewind-place-radar") ?? document.getElementById("globe-view"))?.focus(),
     );
   }
   const panel = useRef<HTMLElement>(null);
@@ -101,8 +99,8 @@ export function MapLayers({
   const inspectingPlace = !!place.point;
   useReadingArrival(panel, rewindPoint ? "rewind" : inspectingPlace ? "place" : (layer ?? "overview"));
   useLayoutEffect(() => {
-    if (inspectingPlace) document.getElementById("chrome-rail")?.scrollTo({ top: 0 });
-  }, [inspectingPlace]);
+    if (inspectingPlace || rewindPoint) document.getElementById("chrome-rail")?.scrollTo({ top: 0 });
+  }, [inspectingPlace, rewindPoint]);
   const disabled = (id: MapLayer) => archived && (id === "aurora" || id === "radar" || id in weatherLayers);
   const listScroll = useRef(0);
   const inspect = (id: MapLayer) => {

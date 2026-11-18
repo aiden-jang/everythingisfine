@@ -271,6 +271,7 @@ test("place radar rewinds in the shared canvas and copies a held scan @dev", asy
   await place.getByRole("button", { name: "Rewind radar" }).click();
   const heading = page.getByRole("heading", { name: "Radar rewind" });
   await expect(heading).toBeFocused();
+  await expect(page.getByRole("button", { name: "Back to live", exact: true })).toBeInViewport();
   const playback = page.getByRole("region", { name: "Storm radar playback" });
   const timestamp = playback.locator(".radar-clock time");
   const slider = playback.getByRole("slider");
