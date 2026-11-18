@@ -254,6 +254,7 @@ for (const title of ["Lights Return", "Shadow Chase"]) {
     await expect(search).toHaveValue(title);
     await expect(trigger).toBeFocused();
     await search.fill("");
+    await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
     await expect(page.getByRole("button", { name: "Float Dive", exact: true })).toHaveAccessibleDescription(
       "Measured ocean profiles · Argo Follow a measured profile toward the surface.",
     );
