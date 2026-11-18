@@ -16,6 +16,7 @@ import type { Visit } from "../visitor/library";
 
 const Navigation = createContext<{
   returnLabel: string | undefined;
+  hasReturnOrigin: boolean;
   openRadar: (at: number | undefined, map: boolean) => void;
   returnToBrowse: () => boolean;
   browse: (focusSearch?: boolean) => void;
@@ -203,6 +204,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     <Navigation.Provider
       value={{
         active,
+        hasReturnOrigin: origin.current !== null,
         completed: completion?.id === active && completion.complete,
         completion: reportCompletion,
         browsingStories: props.views.observing

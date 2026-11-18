@@ -153,6 +153,7 @@ for (const width of [1440, 390])
     await page.getByRole("searchbox", { name: "Find a story" }).fill("Float Dive");
     await page.locator("#search-story-float").click();
     const dive = page.getByRole("region", { name: "Float Dive" });
+    await expect(dive.getByRole("complementary", { name: "About this shared view" })).toHaveCount(0);
     await dive.getByRole("button", { name: "Follow the rise", exact: true }).click();
     const depth = page.getByRole("slider", { name: "Ascent depth" });
     await expect(depth).toBeVisible();
@@ -200,6 +201,9 @@ for (const width of [1440, 390])
     expect(new URLSearchParams(new URL(link).hash.slice(1)).get("story")).toBe("float");
     await page.goto(link);
     await expect(depth).toHaveAttribute("aria-valuetext", lastDepth!);
+    await expect(dive.getByRole("complementary", { name: "About this shared view" })).toContainText(
+      "Opened paused",
+    );
     await expect(page.getByRole("button", { name: "Replay", exact: true })).toBeVisible();
     await expect(dive.getByText(/Recorded profile · Cycle 268/)).toBeVisible();
   });

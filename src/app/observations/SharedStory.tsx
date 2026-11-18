@@ -7,7 +7,7 @@ export function SharedStory({ moment }: { moment?: StoryMoment } = {}) {
   const session = useContext(StorySession);
   const navigation = useStoryNavigation();
   const initial = useRef(moment ?? session?.initial).current;
-  if (!initial || navigation?.returnLabel) return null;
+  if (!initial || navigation?.hasReturnOrigin) return null;
   const positioned =
     initial.at !== undefined || (initial.id === "float" && initial.choice && initial.chapter);
   return (
