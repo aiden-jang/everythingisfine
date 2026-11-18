@@ -2,7 +2,8 @@ import { basename } from "node:path";
 import costs from "./browser-costs.json" with { type: "json" };
 import cases from "./browser-case-costs.json" with { type: "json" };
 
-// Ubuntu software-WebGL run 43542029959 (350018c): passing-case timings and file means.
+// Historical case weights calibrated to group runtimes from run 44327457453 (f61c056).
+// The cancelled group includes an average-case allowance for its unfinished final case.
 // Estimates only schedule work; renamed and new tests still run with the file or typical cost.
 export const estimatedSeconds = (test) => {
   const file = basename(test.location.file);
