@@ -4,6 +4,7 @@ An interactive globe for live earthquakes, storms, volcanoes, wildfires, floods,
 Explore a region, compare two agencies' earthquake readings, revisit a past day, or share a view.
 
 [Open the app](https://everythingisfine.aidenjang.com) ·
+[Case study](docs/case-study.md) ·
 [Architecture](SYSTEM.md) · [Contributing](CONTRIBUTING.md) · [Deployment](DEPLOY.md)
 
 ![Everything Is Fine globe](public/share.png)
