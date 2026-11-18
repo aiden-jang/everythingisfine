@@ -19,7 +19,11 @@ interface Props {
   presentation: "observe" | "explore";
   scene: Permalink["scene"];
   catalogue: Permalink["catalogue"];
-  getMoment: () => Permalink["story"];
+  observatory: {
+    getMoment: () => Permalink["story"];
+    navigation: { key: string };
+    observations: { map: boolean };
+  };
   layers: Permalink["layers"];
   layerTimes: Permalink["layerTimes"];
   radarPlace: Permalink["radarPlace"];
@@ -41,7 +45,11 @@ export function useSharedLocation({
   presentation,
   scene,
   catalogue,
-  getMoment,
+  observatory: {
+    getMoment,
+    navigation: { key: navigationKey },
+    observations: { map: storyMap },
+  },
   layers,
   layerTimes,
   radarPlace,
@@ -51,6 +59,8 @@ export function useSharedLocation({
   const heldCursor = playing ? null : at;
   const sharedCursor = useRef(at);
   sharedCursor.current = at;
+  const storyMoment = useRef(getMoment);
+  storyMoment.current = getMoment;
   useLayoutEffect(() => {
     /* Never overwrite a hash this app did not write. See ARCHITECTURE.md#srcappusesharedlocationts. */
     const write = (): void => {
@@ -67,7 +77,7 @@ export function useSharedLocation({
         presentation,
         ...(scene ? { scene } : {}),
         ...(catalogue ? { catalogue } : {}),
-        story: getMoment(),
+        story: storyMoment.current(),
         ...(layers ? { layers } : {}),
         ...(layerTimes ? { layerTimes } : {}),
         ...(radarPlace && presentation === "explore" && !catalogue && !archive ? { radarPlace } : {}),
@@ -96,7 +106,8 @@ export function useSharedLocation({
     presentation,
     scene,
     catalogue,
-    getMoment,
+    navigationKey,
+    storyMap,
     layers,
     layerTimes,
     radarPlace,

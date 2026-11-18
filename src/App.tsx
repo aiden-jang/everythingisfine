@@ -401,7 +401,7 @@ export function App(): JSX.Element {
     catalogue: (observatory.observing ? observatory.browser.open : observatory.browser.pane === "stories")
       ? (observatory.browser.category ?? "all")
       : undefined,
-    getMoment: observatory.getMoment,
+    observatory,
     layers: mapLayers.enabled,
     layerTimes: mapLayers.selectedTimes,
     radarPlace: mapLayers.rewindPoint,

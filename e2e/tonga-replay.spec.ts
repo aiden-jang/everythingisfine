@@ -47,6 +47,18 @@ test("Tonga transitions from satellite imagery to the atmospheric wave and can p
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.addInitScript(() => {
+    const times: number[] = [];
+    window.addEventListener("eif:view-location-change", () => {
+      const now = performance.now();
+      while (times.length && now - times[0]! > 2000) times.shift();
+      times.push(now);
+      const root = document.documentElement;
+      root.dataset["peakLinkWrites"] = String(
+        Math.max(Number(root.dataset["peakLinkWrites"] ?? 0), times.length),
+      );
+    });
+  });
   await page.goto("/");
   await openStories(page);
   const trigger = page.getByRole("button", { name: "Tonga’s shockwave", exact: true });
@@ -76,6 +88,11 @@ test("Tonga transitions from satellite imagery to the atmospheric wave and can p
     "aria-valuetext",
     "22:34 UTC",
   );
+  await expect(page).toHaveURL((url) => {
+    const params = new URLSearchParams(url.hash.slice(1));
+    return params.get("story") === "tonga" && params.get("t") === String(Date.parse("2022-01-15T22:34:00Z"));
+  });
+  expect(Number(await page.locator("html").getAttribute("data-peak-link-writes"))).toBeLessThanOrEqual(8);
   await page.keyboard.press("Escape");
   await expect(replay).toBeHidden();
   await expect(trigger).toBeFocused();
