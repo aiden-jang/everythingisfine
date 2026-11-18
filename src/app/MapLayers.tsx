@@ -58,6 +58,17 @@ export function MapLayers({
   const navigation = useStoryNavigation();
   const layer = controls.inspector;
   const panel = useRef<HTMLElement>(null);
+  const reports = {
+    ...places,
+    feeds: {
+      ...places.feeds,
+      rows: places.feeds.rows.filter(({ id }) =>
+        id === "usgs" || id === "emsc"
+          ? places.filters.sources.has(id)
+          : Object.hasOwn(hazardKinds, id) && controls.visible[id],
+      ),
+    },
+  };
   const inspectingPlace = !!place.point;
   useReadingArrival(panel, inspectingPlace ? "place" : (layer ?? "overview"));
   useLayoutEffect(() => {
@@ -119,7 +130,7 @@ export function MapLayers({
     >
       {place.point && (
         <PlaceInspection
-          {...places}
+          {...reports}
           point={place.point}
           close={() => {
             place.close();
@@ -198,7 +209,7 @@ export function MapLayers({
         <details className="layer-place" hidden={layer !== null}>
           <summary>Find a place</summary>
           <p className="layer-note">Tap the globe or map for nearby reports, or choose a city below.</p>
-          <PlaceContext {...places} />
+          <PlaceContext {...reports} />
         </details>
       )}
       <div hidden={layer !== "earthquakes"}>{children}</div>

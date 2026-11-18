@@ -212,7 +212,7 @@ function NearbyReports({
           </ul>
         </>
       ) : (
-        <p>No available reports within 500 km for these layers and time window.</p>
+        <p>No matching reports from the available feeds.</p>
       )}
       {unavailable.length > 0 && (
         <p role="status">

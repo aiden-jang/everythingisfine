@@ -30,6 +30,7 @@ export function TonightSky({
   view,
   onView,
   onJourney,
+  onLocalSky,
   onClose,
   preference,
   initialMode,
@@ -43,6 +44,7 @@ export function TonightSky({
   view: TonightPresentation | null;
   onView: (next: TonightPresentation) => void;
   onJourney: (next: TonightPresentation) => void;
+  onLocalSky: () => void;
   onClose: () => void;
   preference: SkyCityPreference;
   initialMode: "sky" | "meteors" | "moonfall";
@@ -99,6 +101,10 @@ export function TonightSky({
   const at = current.at;
   const { target } = skyTargets(current.bodies);
   const sun = sunElevation(city.lon, city.lat, at);
+  const pointAtSky = (next: TonightView) => {
+    onLocalSky();
+    onView(next);
+  };
   const sky = sun >= -0.833 ? "Daylight" : sun > -18 ? "Twilight" : "Dark sky";
 
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
@@ -184,7 +190,7 @@ export function TonightSky({
                 type="button"
                 className="tonight-find"
                 onClick={() => {
-                  onView({ ...current, look: aimAt(target), targetName: target.name });
+                  pointAtSky({ ...current, look: aimAt(target), targetName: target.name });
                   setObserving(true);
                   requestAnimationFrame(() =>
                     document.querySelector<HTMLButtonElement>(".tonight-objects button")?.focus(),
@@ -256,7 +262,7 @@ export function TonightSky({
               </div>
             </div>
           </StoryDock>
-          <SkyObjects current={current} sky={sky} onView={onView} />
+          <SkyObjects current={current} sky={sky} onView={pointAtSky} />
         </>
       )}
       <div className="tonight-onward">

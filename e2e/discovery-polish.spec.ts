@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { openLayer, installFeeds, openStories, waitForData } from "./feeds";
 
 test("a picked place keeps its reading and reticle across the shared globe and map", async ({ page }) => {
-  await installFeeds(page, { empty: true });
+  await installFeeds(page, { dead: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.setViewportSize({ width: 1440, height: 850 });
   await page.goto("/#v=explore&at=139.7,35.7,2.3&layers=");
@@ -14,7 +14,8 @@ test("a picked place keeps its reading and reticle across the shared globe and m
   await page.mouse.click(point!.x + point!.width / 2, point!.y + point!.height);
   const reports = page.getByRole("region", { name: "Around this point" });
   await expect(reports).toBeVisible();
-  await expect(reports).toContainText("No available reports within 500 km");
+  await expect(reports).toContainText("No matching reports from the available feeds.");
+  await expect(reports.getByText("Some sources have not answered", { exact: false })).toHaveCount(0);
   const location = await reports.locator(".place-coordinates").textContent();
   const pin = page.locator(".place-reticle");
   await expect(pin).toBeVisible();

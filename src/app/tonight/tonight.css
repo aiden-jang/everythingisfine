@@ -442,6 +442,12 @@
 }
 
 @media (max-width: 599px) {
+  .observatory-stage .stage-readout.tonight-compass {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+
   .observatory-stage[data-stage="tonight"]:has(.story-projection) .stage-ident {
     inset-block-start: calc(var(--stage-inset) + 60px);
     inset-inline-end: var(--stage-inset);

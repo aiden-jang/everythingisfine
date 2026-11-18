@@ -238,6 +238,10 @@ function ObservatoryContent({
                   view={tonight.view}
                   onView={tonight.update}
                   onJourney={tonight.handoff}
+                  onLocalSky={() => {
+                    tonight.setOrbit(false);
+                    observations.setMap(false);
+                  }}
                   readCamera={explorer.read}
                   preference={skyCity}
                   projection={observations}
