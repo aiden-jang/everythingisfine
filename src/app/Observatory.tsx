@@ -169,7 +169,13 @@ function ObservatoryContent({
         <MoonfallReadout view={tonight.view.moonfall} />
       ) : tonight.active ? (
         <Suspense fallback={null}>
-          <TonightCompass view={tonight.view} onView={tonight.update} projection={observations} />
+          <TonightCompass
+            view={tonight.view}
+            onView={tonight.update}
+            projection={observations}
+            orbit={tonight.orbit}
+            onOrbit={tonight.setOrbit}
+          />
         </Suspense>
       ) : (
         !solar && (

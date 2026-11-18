@@ -190,3 +190,71 @@
   justify-content: space-between;
   gap: 12px;
 }
+
+.place-labels > .storm-label {
+  transform: translate(-50%, calc(-100% - 12px));
+  border-bottom: 1px solid var(--color-faint);
+}
+.place-labels > .place-reticle {
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  padding: 0;
+  background: none;
+  color: var(--color-ink);
+  stroke: currentColor;
+  stroke-width: 1;
+  filter: drop-shadow(0 1px 3px var(--color-void));
+}
+
+.place-inspection {
+  margin: 0 0 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 9px;
+  background: var(--color-deck);
+}
+.place-inspection header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 8px;
+}
+.place-inspection h2 {
+  color: var(--color-ink);
+  font-size: 16px;
+  line-height: 1.3;
+}
+.place-inspection .place-coordinates {
+  margin: 4px 0 0;
+  font: 11px/1.5 var(--font-mono);
+}
+.place-inspection button {
+  min-height: 44px;
+  color: var(--color-ink);
+}
+.place-inspection header button {
+  min-width: 44px;
+  margin: -8px -4px 0 0;
+  font-size: var(--text-caption);
+}
+.place-inspection :is(li button, .place-sky-link) {
+  width: 100%;
+  text-align: left;
+  font-size: 13px;
+}
+.place-sky-link {
+  border-top: 1px solid var(--color-hairline);
+}
+.place-inspection button:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.place-inspection .place-radar-time {
+  margin-bottom: 0;
+}
+.place-radar-time small {
+  display: block;
+  margin-top: 2px;
+  font: inherit;
+}

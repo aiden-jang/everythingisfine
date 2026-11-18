@@ -44,6 +44,8 @@ export function Globe({
   onCapture,
   onFrame,
   onSelectMark,
+  onPlace,
+  placePin,
   onCamera,
   onReplay,
   focus = null,
@@ -88,6 +90,7 @@ export function Globe({
   const live = useRef({
     filters,
     onFrame,
+    onPlace,
     selected,
     focus,
     scrubAt,
@@ -106,6 +109,7 @@ export function Globe({
   live.current = {
     filters,
     onFrame,
+    onPlace,
     selected,
     focus,
     scrubAt,
@@ -222,8 +226,7 @@ export function Globe({
         }
       });
       globe.plates.orderFrom(points);
-      // Wakes the loop. On a load where no feed ever answers nothing else is moving, so the flag was set
-      // and the frame that reads it never ran: the boundaries stayed hidden on the load they matter most.
+      // The render loop can be idle if every feed is unavailable.
       wakeRef.current();
     };
 
@@ -419,11 +422,8 @@ export function Globe({
     globe.setSlab(live.current.slab ?? null);
     globe.setDepthSink(live.current.depthSink);
     rampRef.current = (name) => {
-      // Both layers, or a wavefront would stay warm while its own marker turned blue.
       globe.events.setRamp(name);
       globe.rings.setRamp(name);
-      // The colourblind ramp needs greyer geography: cividis's second stop sits 9.3 dE from the blue plate
-      // lines and 12.0 from the neutral ones, and under about 10 two colours stop separating.
       globe.setGeography(name);
       redraw();
     };
@@ -434,7 +434,6 @@ export function Globe({
         onReplayRef.current?.(null);
       }
       archiveTo = snapshot.archive?.to;
-      // Start replay before syncing so events do not flash ahead of the cursor.
       globe.cancelRegroup();
       if (snapshot.seeding && snapshot.arrived.length > 0 && !replay && !reduced.matches) {
         let oldest = Infinity;
@@ -520,8 +519,6 @@ export function Globe({
       if (!tap.up(e) || (morph > 0 && morph < 1)) return;
       // Fingers need a larger hit area than the few pixels occupied by a small quake.
       const slop = e.pointerType === "mouse" ? undefined : TOUCH_SLOP_PX;
-      // Earthquakes first, then the other marks: the ramp belongs to earthquakes and so does the pointer.
-      // A click that hits neither clears both selections.
       const quake = globe.hitTest(e.clientX, e.clientY, feed.store, live.current.filters, clockAt(), slop);
       if (quake) {
         onSelect(quake);
@@ -530,7 +527,10 @@ export function Globe({
       }
       const mark = globe.hitMark(e.clientX, e.clientY, slop);
       onSelectMark?.(mark);
-      if (!mark) onSelect(null);
+      if (mark) return;
+      onSelect(null);
+      const point = live.current.onPlace && !e.shiftKey ? globe.controls.pick(e.clientX, e.clientY) : null;
+      if (point) live.current.onPlace?.(point);
     };
     const onLeave = (): void => {
       hovered = null;
@@ -598,12 +598,10 @@ export function Globe({
     };
   }, [feed, onReady, onSelect, onCapture, onSelectMark, attempt, rotation]);
 
-  // Commit visibility before paint so controls cannot show a hidden layer while its old wavefronts remain.
-  // A filter, selection or held hour redraws the existing scene without rebuilding it.
   useLayoutEffect(() => {
     redrawRef.current();
     wakeRef.current();
-  }, [filters, selected, focus, scrubAt, flat]);
+  }, [filters, selected, focus, scrubAt, flat, placePin]);
 
   useGlobeLayers(
     { ramp, depthSink, cutaway, figures, moment, slab, aurora, marks, globePresentation, inspection },
@@ -641,6 +639,8 @@ export function Globe({
         guide={unavailable ? null : guide}
         wake={() => wakeRef.current()}
         selected={selected}
+        placePin={placePin ?? null}
+        marks={marks}
         orbit={orbit}
         cutaway={flat ? null : cutaway}
         marker={marker}

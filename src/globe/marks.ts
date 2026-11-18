@@ -35,6 +35,7 @@ export interface Mark {
   /** What the hover tooltip says. The label lives on the mark rather than being looked up by the globe,
    * because the globe knows about polylines and deliberately nothing about cyclones. */
   label?: string;
+  caption?: string;
 }
 
 /** The zoom the glyph sizes in `shapes.ts` are tuned for. Chosen by looking: at 2.5 the flames read as what
@@ -219,6 +220,7 @@ export function createMarkLayer(morph: { value: number }): MarkLayer {
       buildHot();
     },
     setZoom: (zoom) => {
+      material.opacity = 0.54 + 0.26 * Math.max(0, Math.min(1, (zoom - 1) / 1.7));
       const next = scaleFor(zoom);
       if (Math.abs(next - scale) < SCALE_STEP * scale) return;
       scale = next;

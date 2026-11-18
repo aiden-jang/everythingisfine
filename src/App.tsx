@@ -7,6 +7,7 @@ import { LayerWindow } from "./app/LayerWindow";
 import { EarthquakeContext, NearbyEarthquake } from "./app/EarthquakeContext";
 import { EarthquakeOptions } from "./app/EarthquakeOptions";
 import { EarthquakeInspector } from "./app/EarthquakeInspector";
+import { usePlaceInspection } from "./app/discovery/usePlaceInspection";
 import { MapLayers } from "./app/MapLayers";
 import { observatoryBackdrop } from "./app/storyBackdrop";
 import { useMapLayers } from "./app/useMapLayers";
@@ -525,7 +526,6 @@ export function App(): JSX.Element {
   }, [missingShared, snapshot.revision]);
 
   const pinned = selected ? feed.store.get(selected) : undefined;
-  // The panel outlives the pin by one exit transition; see where it is rendered.
   const lastPinned = useRef(pinned);
   if (pinned) lastPinned.current = pinned;
   const shownQuake = mapLayers.suspended ? undefined : (pinned ?? lastPinned.current);
@@ -547,28 +547,19 @@ export function App(): JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [snapshot.revision, filters, segments, boundaryKmOf, clockAt],
   );
-  // Looked up at render, not captured on click: the feeds refresh every ten minutes and a captured
-  // card keeps describing a storm that is gone.
   const hazards = useMemo(
     () => hazardGroups(onGlobe, minuteClock, archived),
     [onGlobe, archived, minuteClock],
   );
-  const markSubject = observatory.observing ? null : findSubject(markId, onGlobe);
-  /* Read through a ref: `selectMark` is stable, and the layers change under it. */
+  const markSubject = !observatory.observing ? findSubject(markId, onGlobe) : null;
   const onGlobeRef = useRef(onGlobe);
   onGlobeRef.current = onGlobe;
-  /* The same rule as an earthquake: pick it and the camera goes, lifted clear of whatever is describing it.
-     A flood behind the panel is the same defect as an earthquake behind it. */
   const observingRef = useRef(observatory.observing);
   observingRef.current = observatory.observing;
   const selectMark = useCallback(
     (id: string | null) => {
       setMarkId(id);
-      /*
-       * Clearing a mark must not clear an earthquake. The globe reports a hit as `onSelect(quake)` followed
-       * by `onSelectMark(null)`, so a `setSelected(null)` up here undid the selection on the same tap: every
-       * click on an earthquake flew the camera to it and then showed no panel.
-       */
+      // A quake hit clears the mark without clearing the quake.
       if (id === null) return;
       if (observingRef.current) enterExplore();
       setSelected(null);
@@ -808,6 +799,7 @@ export function App(): JSX.Element {
   const [headOpen, setHeadOpen] = useStoredFlag("head", true);
   const [railOpen, setRailOpen] = useStoredFlag("railOpen", true);
   const railShown = !observatory.observing && (railOpen || !chromeFloats);
+  const place = usePlaceInspection(setRailOpen);
   const headShown = observatory.observing || headOpen || chromeFloats;
 
   const versus = useMemo(() => versusReference(energyTotal), [energyTotal]);
@@ -1166,6 +1158,8 @@ export function App(): JSX.Element {
                   hazards,
                   feeds,
                 }}
+                place={place}
+                onQuake={selectQuake}
                 controls={{
                   ...mapLayers,
                   change: (layer, on) => {
@@ -1382,6 +1376,12 @@ export function App(): JSX.Element {
                 onCapture={onCapture}
                 {...(clip.recording ? { onFrame: clip.onFrame } : {})}
                 onSelectMark={selectMark}
+                placePin={observatory.observing || mapLayers.suspended ? null : place.point}
+                onPlace={
+                  !observatory.observing && !mapLayers.suspended && !selected && !markId
+                    ? place.open
+                    : undefined
+                }
                 onCamera={(state) => {
                   camera.current = state;
                   observeTourCamera(state);

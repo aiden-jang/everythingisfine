@@ -7,6 +7,7 @@ import { rasterGeometry } from "./observationLayer";
 export function createRadarSurface(morph: { value: number }) {
   const geometry = rasterGeometry(RADAR_BOUNDS);
   let worldwide = false;
+  let reveal = 1;
   const material = new MeshBasicMaterial({
     side: DoubleSide,
     transparent: true,
@@ -44,7 +45,7 @@ export function createRadarSurface(morph: { value: number }) {
       material.map.colorSpace = SRGBColorSpace;
       material.map.needsUpdate = true;
     }
-    if (arriving) material.opacity = 0;
+    if (arriving) material.opacity = reveal = 0;
     object.visible = image !== null;
     material.needsUpdate = true;
   }
@@ -52,10 +53,11 @@ export function createRadarSurface(morph: { value: number }) {
   return {
     object,
     setImage,
-    step(dt: number, reduced: boolean): boolean {
-      if (!object.visible || material.opacity === 1) return false;
-      material.opacity = reduced ? 1 : Math.min(1, material.opacity + dt / 0.24);
-      return material.opacity < 1;
+    step(dt: number, reduced: boolean, strength = 1): boolean {
+      if (!object.visible) return false;
+      reveal = reduced ? 1 : Math.min(1, reveal + dt / 0.24);
+      material.opacity = reveal * strength;
+      return reveal < 1;
     },
   };
 }

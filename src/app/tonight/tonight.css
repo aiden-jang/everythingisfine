@@ -436,3 +436,14 @@
   inset-inline-end: calc(var(--stage-inset) + 132px);
   justify-content: start;
 }
+
+.observatory-stage[data-stage="tonight"]:has(.story-projection) .stage-ident {
+  inset-inline-end: calc(var(--stage-inset) + 220px);
+}
+
+@media (max-width: 599px) {
+  .observatory-stage[data-stage="tonight"]:has(.story-projection) .stage-ident {
+    inset-block-start: calc(var(--stage-inset) + 60px);
+    inset-inline-end: var(--stage-inset);
+  }
+}

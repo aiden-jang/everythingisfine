@@ -324,6 +324,8 @@ export function useObservatory(shared: Partial<Permalink>) {
       active: tonight,
       view: localSky,
       entry: skyEntry,
+      orbit: sky.orbit,
+      setOrbit: sky.setOrbit,
       open(mode: "sky" | "meteors" | "moonfall" = "sky", resume?: VisitPosition["sky"] | null) {
         before();
         sky.open(mode, resume);
@@ -384,7 +386,8 @@ export function useObservatory(shared: Partial<Permalink>) {
       if (observations.entry) return observations.view ?? loadingBackdrop.current;
       if (floatView === "opening" || radarOpening) return loadingBackdrop.current;
       if (night) {
-        if (localSky && observations.map && !localSky.moonfall) return skyReference(localSky);
+        if (localSky && (observations.map || sky.orbit) && !localSky.moonfall && !localSky.lunarDeparture)
+          return skyReference(localSky);
         return localSky ?? auroraRun ?? (sunActive ? null : "planetarium");
       }
       return observing && scene === "live" && !guided

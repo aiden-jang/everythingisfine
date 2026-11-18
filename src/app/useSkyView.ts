@@ -15,6 +15,7 @@ type Entry = {
 export function useSkyView(city: string, before: () => void) {
   const [view, setView] = useState<TonightPresentation | "opening" | null>(null);
   const [entry, setEntry] = useState<Entry>({ mode: "sky", revision: 0 });
+  const [orbit, setOrbit] = useState(false);
   const memory = useRef<TonightView | null>(null);
   const update = useCallback((next: TonightPresentation) => {
     // A meteor shower’s selected date must not overwrite the saved general-sky moment.
@@ -22,10 +23,11 @@ export function useSkyView(city: string, before: () => void) {
     setView((active) => (active === null ? null : next));
   }, []);
   const capture = () => {
-    if (view === null || view === "opening") return { view, entry };
+    if (view === null || view === "opening") return { view, entry, orbit };
     const { moonfall, ...sky } = view;
     return {
       view: sky,
+      orbit,
       entry: {
         ...entry,
         look: sky.look,
@@ -37,6 +39,8 @@ export function useSkyView(city: string, before: () => void) {
   return {
     view,
     entry,
+    orbit,
+    setOrbit,
     setView,
     update,
     handoff(next: TonightPresentation) {
@@ -46,9 +50,11 @@ export function useSkyView(city: string, before: () => void) {
     capture,
     restore(saved: ReturnType<typeof capture>) {
       setView(saved.view);
+      setOrbit(saved.orbit);
       setEntry({ ...saved.entry, revision: entry.revision + 1 });
     },
     open(mode: Entry["mode"] = "sky", resume?: VisitPosition["sky"] | null) {
+      setOrbit(false);
       const previous = memory.current;
       setEntry((last) => ({
         mode,
@@ -70,5 +76,9 @@ export function useSkyView(city: string, before: () => void) {
 }
 
 export function skyReference(sky: TonightPresentation): TonightPresentation {
-  return { ...sky, reference: sky.reference ?? { lon: sky.city.lon, lat: sky.city.lat, zoom: 1.35 } };
+  return {
+    ...sky,
+    earthReference: true,
+    reference: sky.reference ?? { lon: sky.city.lon, lat: sky.city.lat, zoom: 1.35 },
+  };
 }

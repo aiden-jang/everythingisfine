@@ -1,8 +1,9 @@
 import { quietLayer } from "./layerQuiet";
 import { matches } from "../data/filter";
 import { useReadingArrival } from "./useReadingArrival";
-import { lazy, Suspense, useRef, useMemo, type ReactNode } from "react";
-import { PlaceContext, type PlaceContextProps } from "./discovery/PlaceContext";
+import { lazy, Suspense, useLayoutEffect, useRef, useMemo, type ReactNode } from "react";
+import { PlaceContext, PlaceInspection, type PlaceContextProps } from "./discovery/PlaceContext";
+import type { usePlaceInspection } from "./discovery/usePlaceInspection";
 import { mapLayerNames, type MapLayer } from "./layerVisibility";
 import type { useMapLayers } from "./useMapLayers";
 import type { FeedStatus } from "./feedStatus";
@@ -28,6 +29,8 @@ const hazardKinds = { cyclones: "cyclone", fires: "fire", floods: "flood", volca
 export function MapLayers({
   controls,
   places,
+  place,
+  onQuake,
   feeds,
   archived,
   aurora,
@@ -40,6 +43,8 @@ export function MapLayers({
 }: {
   controls: ReturnType<typeof useMapLayers>;
   places: PlaceContextProps;
+  place: ReturnType<typeof usePlaceInspection>;
+  onQuake: (id: string) => void;
   feeds: FeedStatus;
   archived: boolean;
   aurora: Aurora | null;
@@ -53,7 +58,11 @@ export function MapLayers({
   const navigation = useStoryNavigation();
   const layer = controls.inspector;
   const panel = useRef<HTMLElement>(null);
-  useReadingArrival(panel, layer ?? "overview");
+  const inspectingPlace = !!place.point;
+  useReadingArrival(panel, inspectingPlace ? "place" : (layer ?? "overview"));
+  useLayoutEffect(() => {
+    if (inspectingPlace) document.getElementById("chrome-rail")?.scrollTo({ top: 0 });
+  }, [inspectingPlace]);
   const disabled = (id: MapLayer) => archived && (id === "aurora" || id === "radar" || id in weatherLayers);
   const listScroll = useRef(0);
   const inspect = (id: MapLayer) => {
@@ -97,13 +106,30 @@ export function MapLayers({
       className="map-layers"
       aria-label="Map layers"
       onKeyDown={(event) => {
-        if (event.key === "Escape" && layer && canDismiss && !document.querySelector(":popover-open")) {
+        if (event.key !== "Escape" || !canDismiss || document.querySelector(":popover-open")) return;
+        if (inspectingPlace || layer) {
           event.preventDefault();
           event.stopPropagation();
-          back();
+          if (inspectingPlace) {
+            place.close();
+            document.getElementById("globe-view")?.focus({ preventScroll: true });
+          } else back();
         }
       }}
     >
+      {place.point && (
+        <PlaceInspection
+          {...places}
+          point={place.point}
+          close={() => {
+            place.close();
+            document.getElementById("globe-view")?.focus({ preventScroll: true });
+          }}
+          selectQuake={onQuake}
+          selectHazard={onHazard}
+          radarAt={controls.radar?.image ? controls.radar.at : undefined}
+        />
+      )}
       {controls.isolated && (
         <div className="layer-isolation" role="status">
           <span>Only {mapLayerNames[controls.isolated].toLowerCase()}</span>
@@ -171,6 +197,7 @@ export function MapLayers({
       {!archived && (
         <details className="layer-place" hidden={layer !== null}>
           <summary>Find a place</summary>
+          <p className="layer-note">Tap the globe or map for nearby reports, or choose a city below.</p>
           <PlaceContext {...places} />
         </details>
       )}

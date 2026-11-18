@@ -501,8 +501,14 @@ camera key takes control without pausing the data timeline. Recenter restores th
 projection changes and frame updates preserve manual control. A new story starts with its own
 framing. A visible following-camera control can release an authored shot before a gesture.
 Map selection waits for a tap, so it does not consume pan or pinch gestures. Supported globe markers
-use the same rule and an equivalent keyboard selector. City labels appear only at close Explore zoom,
-with collision spacing and a small visible limit; geographic story previews never steal the camera.
+use the same rule and an equivalent keyboard selector. Explore adds regional city and storm labels on
+the approach, with more city names closer in. Labels share a collision budget on the globe and map.
+Radar scans and storm tracks stay in their source coordinates as contrast increases with zoom.
+A tap on open geography pins the same location on either projection. The reading shows the closest
+available reports within 500 km, with source, distance and time. The city finder offers a keyboard
+path to nearby reports. Near a featured city, the place reading links directly to its local sky.
+Closing that view restores the map or globe and the pinned reading. Geographic story previews never
+steal the camera.
 
 Date comparisons hold one camera and switch actual observations without inventing intermediate images.
 Two-place comparisons preserve source definitions, both timestamps and any local datum differences.
@@ -857,5 +863,7 @@ under reduced motion.
 
 Tonight’s Sky leads with a target chosen from the computed above-horizon bodies. Visible targets
 precede a secondary below-horizon disclosure. City and night remain available, while Moonfall and
-Meteor Nights follow the observing content. Switching back from a shower restores the held sky time
+Meteor Nights follow the observing content. Orbit, Map and Local sky use the same city, time and
+bearing. The orbit-to-horizon route turns above Earth and pitches into the local sky as it lands.
+Reduced motion settles directly into the requested view. Switching back from a shower restores the held sky time
 and bearing for the same city. The radar player stays mounted between the layer list and its inspector, preserving the selected scan. The city selector names its curated scope explicitly.

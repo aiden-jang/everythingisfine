@@ -71,6 +71,7 @@ export function marksFor({
       points: spiral(storm.lon, storm.lat),
       anchor: at(storm),
       id: `cyclone:${storm.id}`,
+      caption: storm.name,
       label: by(
         storm.peakKmh === null ? storm.name : `${storm.name} · ${Math.round(storm.peakKmh)} km/h`,
         storm.source,

@@ -27,6 +27,7 @@ export type TonightPresentation = TonightView & {
   moonfall?: MoonfallView;
   lunarDeparture?: LunarDeparture;
   reference?: CameraState;
+  earthReference?: true;
 };
 type LocalView = RadarView | TonightPresentation | FloatDiveView | ObservationView;
 
@@ -80,11 +81,14 @@ export function createScenePresentation(
   const orbital = createOrbitalFraming();
   const picking = createObservationPicking(canvas, controls);
   let orbitalMoon = false;
+  let overviewRadar = false;
 
   function step(dt: number, reduced: boolean, elapsed = dt) {
     dayline.value = showDayline ? lights.reveal.value : 0;
     veil?.trace(controls.auroraSweep());
-    const radarArriving = radar?.step(dt, reduced);
+    const zoom = controls.state().zoom;
+    const detail = Math.max(0, Math.min(1, (zoom - 1) / 1.7));
+    const radarArriving = radar?.step(dt, reduced, overviewRadar ? 0.7 + 0.3 * detail : 1);
     const diving = dive?.step(dt, reduced, elapsed);
     const lunar = skyView?.moonfall?.step(dt, reduced);
     const approaching = arrival.step(dt, reduced);
@@ -191,7 +195,8 @@ export function createScenePresentation(
       localLight = createLocalSkyLight(sun, controls.localSky.up, canvas);
       spin.add(localLight.object);
     }
-    if (localLight) controls.setLocalSky(skyView, planetarium && !returningFromArchive);
+    if (localLight)
+      controls.setLocalSky(skyView?.earthReference ? null : skyView, planetarium && !returningFromArchive);
     if (mode === "dayline" && !showDayline) lights.begin();
     showDayline = mode === "dayline";
     if (route && !veil) {
@@ -250,6 +255,7 @@ export function createScenePresentation(
     observationTarget = observation?.target;
     radarTarget = weather?.target;
     const radarFrame = weather ?? mapLayers?.radar;
+    overviewRadar = !weather && !!mapLayers?.radar;
     if (radarFrame && !radar) {
       radar = createRadarSurface(projection);
       spin.add(radar.object);
@@ -293,7 +299,7 @@ export function createScenePresentation(
         localLight?.draw(
           camera,
           amount,
-          projection.value === 0 && controls.localSky.ready() ? skyView : null,
+          projection.value === 0 && amount === 1 && controls.localSky.ready() ? skyView : null,
         ) ?? 1
       );
     },

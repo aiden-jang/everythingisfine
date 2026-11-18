@@ -17,6 +17,7 @@ import type { Visit } from "../visitor/library";
 const Navigation = createContext<{
   returnLabel: string | undefined;
   hasReturnOrigin: boolean;
+  openSkyAt: (city: string, trigger: string) => void;
   openRadar: (at: number | undefined, map: boolean) => void;
   returnToBrowse: () => boolean;
   browse: (focusSearch?: boolean) => void;
@@ -264,6 +265,12 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
             ? route
             : null,
         unavailable,
+        openSkyAt(city, trigger) {
+          if (unavailable("sky")) return;
+          setRoute(null);
+          props.views.skyCity.select(city);
+          navigate("sky", trigger, undefined, false, true);
+        },
         open(id, trigger, keepScene) {
           setRoute(null);
           navigate(id, trigger, undefined, keepScene);

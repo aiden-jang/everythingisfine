@@ -90,7 +90,7 @@ export function createControls(
     const revealing = sky.step(dt, reduced.matches);
     const diving = dive.step(dt, reduced.matches, target === null);
     const flying = aurora.step(dt, reduced.matches);
-    const landing = horizon.step(dt, reduced.matches, target === null);
+    const landing = horizon.step(dt, reduced.matches);
     return revealing || diving || flying || landing;
   };
   const distAt = (zoom: number): number => distance.at(zoom, morph);

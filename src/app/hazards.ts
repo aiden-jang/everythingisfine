@@ -16,6 +16,8 @@ export interface HazardRow {
   measure: string;
   /** How long it has been running, or when the episode ended. Empty when the feed carries no dates. */
   age: string;
+  reportedAt: number | null;
+  source: string;
   lon: number;
   lat: number;
 }
@@ -57,6 +59,8 @@ export function hazardGroups(
           name: c.name,
           measure: c.peakKmh === null ? "" : `${Math.round(c.peakKmh)} km/h`,
           age: spanWords(c.startedAt, c.endedAt, now, live),
+          reportedAt: c.endedAt ?? c.startedAt,
+          source: c.source ?? "GDACS",
           lon: c.lon,
           lat: c.lat,
         })),
@@ -76,6 +80,8 @@ export function hazardGroups(
           // Square kilometres, the unit the legend's total uses, so the two read as the same quantity.
           measure: f.hectares === null ? "" : `${Math.round(f.hectares / 100).toLocaleString("en")} km²`,
           age: spanWords(f.startedAt, f.endedAt, now, live),
+          reportedAt: f.endedAt ?? f.startedAt,
+          source: f.source ?? "GDACS",
           lon: f.lon,
           lat: f.lat,
         })),
@@ -95,6 +101,8 @@ export function hazardGroups(
           name: f.country || "Flood",
           measure: "",
           age: spanWords(f.startedAt, f.endedAt, now, live),
+          reportedAt: f.endedAt ?? f.startedAt,
+          source: f.source ?? "GDACS",
           lon: f.lon,
           lat: f.lat,
         })),
@@ -114,6 +122,8 @@ export function hazardGroups(
           // Never ongoing: no keyless feed says which volcanoes are erupting, so this dates the episode.
           measure: v.country,
           age: spanWords(null, v.endedAt, now, false),
+          reportedAt: v.endedAt,
+          source: v.source ?? "GDACS",
           lon: v.lon,
           lat: v.lat,
         })),

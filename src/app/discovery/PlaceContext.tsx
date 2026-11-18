@@ -9,6 +9,10 @@ import { distanceKm } from "../../geo/sphere";
 import { layerTime } from "../layerTime";
 import { refreshAnnotations } from "../../globe/annotationInput";
 import { DeviceLocation } from "../location/DeviceLocation";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { geographicCoordinates } from "../../globe/orbitReadout";
+
+type Coordinates = { lon: number; lat: number };
 
 export interface PlaceContextProps {
   ready: boolean;
@@ -43,19 +47,9 @@ export function PlaceContext(props: PlaceContextProps) {
   );
 }
 
-function PlaceReadings({ ready, feed, filters, at, now, revision, hazards, feeds }: PlaceContextProps) {
+function PlaceReadings(props: PlaceContextProps) {
   const [name, setName] = useState("");
   const place = skyCities.find((city) => city.name.toLowerCase() === name.trim().toLowerCase());
-  const quakes = useMemo(() => {
-    void revision;
-    return place ? nearbyQuakes(feed, filters, at, now, place) : [];
-  }, [place, feed, filters, at, now, revision]);
-  const other = place
-    ? hazards
-        .flatMap(({ rows }) => rows)
-        .filter((row) => distanceKm(place.lon, place.lat, row.lon, row.lat) <= 500)
-    : [];
-  const unavailable = feeds.rows.filter((row) => row.state === "failed" || row.state === "pending");
   return (
     <>
       <label className="explorer-search">
@@ -79,51 +73,158 @@ function PlaceReadings({ ready, feed, filters, at, now, revision, hazards, feeds
           ))}
         </datalist>
       </label>
-      <DeviceLocation ready={ready} />
+      <DeviceLocation ready={props.ready} />
       {name && !place && (
         <p>Choose one of the featured cities, or use device location to move to your area.</p>
       )}
       {place && (
-        <section aria-label={`Observations around ${name}`}>
+        <section aria-label={`Observations around ${place.name}`}>
           <button type="button" className="place-locate" onClick={() => refreshAnnotations(place)}>
             Locate {place.name}
           </button>
-          <p>Within 500 km · chosen layers and time window. Available reports only.</p>
+          <NearbyReports {...props} point={place} />
+        </section>
+      )}
+    </>
+  );
+}
+
+export function PlaceInspection({
+  point,
+  close,
+  selectQuake,
+  selectHazard,
+  radarAt,
+  ...props
+}: PlaceContextProps & {
+  point: Coordinates;
+  close: () => void;
+  selectQuake: (id: string) => void;
+  selectHazard: (id: string) => void;
+  radarAt?: number | undefined;
+}) {
+  const coordinates = geographicCoordinates(point);
+  const navigation = useStoryNavigation();
+  const city = skyCities.find(({ lon, lat }) => distanceKm(point.lon, point.lat, lon, lat) <= 35);
+  return (
+    <section className="place-context place-inspection" aria-labelledby="place-title">
+      <header>
+        <div>
+          <h2 id="place-title">Around this point</h2>
+          <p role="status" className="place-coordinates">
+            {coordinates}
+          </p>
+        </div>
+        <button type="button" onClick={close} aria-label="Close place readings">
+          Close
+        </button>
+      </header>
+      <NearbyReports {...props} point={point} selectQuake={selectQuake} selectHazard={selectHazard} />
+      {city && navigation && (
+        <button
+          type="button"
+          id="place-open-sky"
+          className="place-sky-link"
+          onClick={() => navigation.openSkyAt(city.name, "place-open-sky")}
+          disabled={!!navigation.unavailable("sky")}
+        >
+          View the sky in {city.name}
+        </button>
+      )}
+      {radarAt !== undefined && (
+        <p className="place-radar-time">
+          RainViewer radar · <time dateTime={new Date(radarAt).toISOString()}>{layerTime(radarAt)}</time>
+          <small>Coverage varies by location.</small>
+        </p>
+      )}
+    </section>
+  );
+}
+
+function NearbyReports({
+  feed,
+  filters,
+  at,
+  now,
+  revision,
+  hazards,
+  feeds,
+  point,
+  selectQuake,
+  selectHazard,
+}: PlaceContextProps & {
+  point: Coordinates;
+  selectQuake?: (id: string) => void;
+  selectHazard?: (id: string) => void;
+}) {
+  const quakes = useMemo(() => {
+    void revision;
+    return nearbyQuakes(feed, filters, at, now, point);
+  }, [point, feed, filters, at, now, revision]);
+  const distance = ({ lon, lat }: Coordinates) => distanceKm(point.lon, point.lat, lon, lat);
+  const other = hazards.flatMap(({ rows }) => rows).filter((row) => distance(row) <= 500);
+  const unavailable = feeds.rows.filter((row) => row.state === "failed" || row.state === "pending");
+  const rows = [
+    ...quakes.map(({ key, primary }) => ({
+      id: key,
+      name: primary.place || "Earthquake",
+      detail: `${primary.magnitude.toFixed(1)} ${primary.scale || "magnitude"} · ${primary.source.toUpperCase()}`,
+      km: distance(primary),
+      time: primary.time,
+      select: selectQuake,
+    })),
+    ...other.map((row) => ({
+      id: row.id,
+      name: row.name,
+      detail: [row.kind, row.measure, row.source].filter(Boolean).join(" · "),
+      km: distance(row),
+      time: row.reportedAt,
+      select: selectHazard,
+    })),
+  ]
+    .sort((a, b) => a.km - b.km)
+    .slice(0, 4);
+  return (
+    <>
+      <p>Within 500 km · chosen layers and time window. Available reports only.</p>
+      {rows.length > 0 ? (
+        <>
           <p>
             {quakes.length} earthquake{quakes.length === 1 ? "" : "s"} · {other.length} other reported event
             {other.length === 1 ? "" : "s"}
           </p>
           <ul>
-            {quakes.slice(0, 3).map(({ key, primary: p }) => (
-              <li key={key}>
-                <strong>{p.place || "Earthquake"}</strong>
+            {rows.map(({ id, name, detail, km, time, select }) => (
+              <li key={id}>
+                {select ? (
+                  <button type="button" onClick={() => select(id)}>
+                    {name}
+                  </button>
+                ) : (
+                  <strong>{name}</strong>
+                )}
                 <span>
-                  {p.magnitude.toFixed(1)} {p.scale || "magnitude"} · {p.source.toUpperCase()}
+                  {detail} · {Math.round(km)} km away
                 </span>
-                <time dateTime={new Date(p.time).toISOString()}>{layerTime(p.time)}</time>
-              </li>
-            ))}
-            {other.slice(0, 3).map((row) => (
-              <li key={row.id}>
-                <strong>{row.name}</strong>
-                <span>
-                  {row.kind} · {row.measure}
-                </span>
-                <span>{row.age}</span>
+                {time != null && <time dateTime={new Date(time).toISOString()}>{layerTime(time)}</time>}
               </li>
             ))}
           </ul>
-          {unavailable.length > 0 && (
-            <p role="status">
-              Some sources have not answered: {unavailable.map((row) => row.label).join(", ")}. Missing
-              reports are not evidence of no activity.
-            </p>
-          )}
-          <p>
-            Weather overlays keep their own displayed scan or forecast times. Counts describe reports, not
-            conditions everywhere in the region.
-          </p>
-        </section>
+        </>
+      ) : (
+        <p>No available reports within 500 km for these layers and time window.</p>
+      )}
+      {unavailable.length > 0 && (
+        <p role="status">
+          Some sources have not answered: {unavailable.map((row) => row.label).join(", ")}. Missing reports
+          are not evidence of no activity.
+        </p>
+      )}
+      {!selectQuake && (
+        <p>
+          Weather overlays keep their own displayed scan or forecast times. Counts describe reports, not
+          conditions everywhere in the region.
+        </p>
       )}
     </>
   );

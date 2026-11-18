@@ -12,11 +12,16 @@ export function TonightCompass({
   view,
   onView,
   projection,
+  orbit,
+  onOrbit,
 }: {
   view: TonightView | null;
   onView: (view: TonightView) => void;
   projection: { map: boolean; setMap: (map: boolean) => void };
+  orbit: boolean;
+  onOrbit: (orbit: boolean) => void;
 }): JSX.Element {
+  const fromEarth = projection.map || orbit;
   return (
     <div
       className="observatory-stage"
@@ -34,7 +39,8 @@ export function TonightCompass({
       <div className="stage-ident">
         <span className="stage-rule" aria-hidden="true" />
         <span>
-          {view?.city.name ?? "After Dark"} · {projection.map ? "Earth reference" : "Local horizon"}
+          {view?.city.name ?? "After Dark"} ·{" "}
+          {projection.map ? "Earth reference" : orbit ? "Orbit" : "Local horizon"}
         </span>
       </div>
       {view?.radiantTrail && (
@@ -49,7 +55,7 @@ export function TonightCompass({
           </span>
         ))}
       </div>
-      {view && projection.map && (
+      {view && fromEarth && (
         <span
           className="sky-reference-marker"
           data-observation-anchor=""
@@ -60,9 +66,29 @@ export function TonightCompass({
         </span>
       )}
       {view && !view.radiantTrail && (
-        <StoryProjection map={projection.map} onMap={projection.setMap} label="Sky reference projection" />
+        <StoryProjection
+          map={projection.map}
+          globeActive={orbit && !projection.map}
+          globeLabel="Orbit"
+          onMap={(map) => {
+            onOrbit(!map);
+            projection.setMap(map);
+          }}
+          label="Sky reference projection"
+        >
+          <button
+            type="button"
+            aria-pressed={!fromEarth}
+            onClick={() => {
+              onOrbit(false);
+              projection.setMap(false);
+            }}
+          >
+            Local sky
+          </button>
+        </StoryProjection>
       )}
-      {view && !projection.map && (
+      {view && !fromEarth && (
         <div className="stage-readout tonight-compass">
           <span>
             Facing {bearingLabel(view.look.azimuth)} · {Math.round(view.look.azimuth) % 360}°

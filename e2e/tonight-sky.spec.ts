@@ -49,6 +49,14 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   expect(Date.parse(sunrise!) - Date.parse(sunset!)).toBeGreaterThan(10 * 3_600_000);
   await expect(targets).not.toHaveText(sunsetReadings, { useInnerText: true });
   await expect(horizon).toContainText("Facing E · 90°");
+  const projection = page.getByRole("group", { name: "Sky reference projection" });
+  await projection.getByRole("button", { name: "Orbit" }).click();
+  await expect(horizon).toContainText("Tokyo · Orbit");
+  await expect(horizon.locator(".sky-reference-marker")).toBeVisible();
+  await expect(time).toHaveAttribute("datetime", sunrise!);
+  await projection.getByRole("button", { name: "Local sky" }).click();
+  await expect(horizon).toContainText("Facing E · 90°");
+  await expect(time).toHaveAttribute("datetime", sunrise!);
   const sunriseReadings = await targets.innerText();
   await sky.getByRole("button", { name: "Meteor Nights", exact: true }).click();
   const linkedMeteor = page.getByRole("region", { name: "Meteor Nights" });

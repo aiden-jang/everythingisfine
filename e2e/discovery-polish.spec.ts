@@ -1,6 +1,41 @@
 import { expect, test, type Page } from "@playwright/test";
 import { openLayer, installFeeds, openStories, waitForData } from "./feeds";
 
+test("a picked place keeps its reading and reticle across the shared globe and map", async ({ page }) => {
+  await installFeeds(page, { empty: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.setViewportSize({ width: 1440, height: 850 });
+  await page.goto("/#v=explore&at=139.7,35.7,2.3&layers=");
+  const canvas = page.locator("#globe-view canvas");
+  const original = await canvas.elementHandle();
+  const tokyo = page.locator(".place-labels > span").filter({ hasText: /^Tokyo$/ });
+  await expect(tokyo).toBeVisible();
+  const point = await tokyo.boundingBox();
+  await page.mouse.click(point!.x + point!.width / 2, point!.y + point!.height);
+  const reports = page.getByRole("region", { name: "Around this point" });
+  await expect(reports).toBeVisible();
+  await expect(reports).toContainText("No available reports within 500 km");
+  const location = await reports.locator(".place-coordinates").textContent();
+  const pin = page.locator(".place-reticle");
+  await expect(pin).toBeVisible();
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await expect(pin).toBeVisible();
+  await expect(reports.locator(".place-coordinates")).toHaveText(location!);
+  const openSky = reports.getByRole("button", { name: "View the sky in Tokyo" });
+  await openSky.click();
+  await expect(page.getByRole("combobox", { name: "City" })).toHaveValue("Tokyo");
+  await page.getByRole("button", { name: "Back to layers", exact: true }).click();
+  await expect(openSky).toBeFocused();
+  await expect(reports.locator(".place-coordinates")).toHaveText(location!);
+  await expect(page.getByRole("region", { name: "Map", exact: true })).toBeVisible();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(reports.getByRole("button", { name: "Close place readings" })).toBeInViewport();
+  await reports.getByRole("button", { name: "Close place readings" }).click();
+  await expect(reports).toHaveCount(0);
+  await expect(pin).toHaveCount(0);
+  expect(await canvas.evaluate((node, before) => node === before, original)).toBe(true);
+});
+
 const camera = (page: Page) =>
   page.evaluate(() => {
     const globe = (
