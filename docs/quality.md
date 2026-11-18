@@ -15,7 +15,7 @@ Standalone `pnpm run test:e2e` builds before starting its release server.
 ## Browser boundaries
 
 Chromium runners use Ubuntu 24.04 to keep their graphics and system dependencies
-stable across GitHub runner-image migrations. The core runner uses macOS 15 to exercise
+stable across GitHub runner-image migrations. The core runner uses macOS 15 on Intel to exercise
 WebKit with the platform libraries used by Safari.
 
 - The release project uses port 31600 and the ordinary production bundle.
