@@ -28,6 +28,7 @@ test("expanded phone sheet keeps projection, legend and recorded radar sources r
     }),
   );
   await page.goto("/#v=explore&at=15,25,1.5");
+  expect(await page.evaluate(() => matchMedia("(pointer: coarse)").matches)).toBe(true);
   const sheet = page.getByRole("separator", { name: "Sheet height", exact: true });
   const projection = page.locator("#view-projection");
   const sources = page.getByRole("button", { name: "Sources & times", exact: true });
@@ -43,6 +44,7 @@ test("expanded phone sheet keeps projection, legend and recorded radar sources r
     { width: 667, height: 375 },
   ]) {
     await page.setViewportSize(viewport);
+    await expect(page.locator(".key-hints")).toBeHidden();
     await sheet.press("Home");
     for (const control of [projection, sources, credit, legend]) {
       await expect(control).toBeInViewport({ ratio: 1 });
@@ -70,6 +72,16 @@ test("expanded phone sheet keeps projection, legend and recorded radar sources r
   await projection.focus();
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(page.locator("#chrome-head #view-projection")).toBeFocused();
+  await expect(page.locator(".key-hints")).toBeHidden();
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator(".canvas-information #view-projection")).toBeFocused();
+  for (const viewport of [
+    { width: 812, height: 375 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.getByRole("button", { name: "View options", exact: true }).click();
+    await expect(page.locator(".mobile-key-hints")).toBeHidden();
+    await page.keyboard.press("Escape");
+  }
 });

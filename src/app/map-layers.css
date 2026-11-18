@@ -228,6 +228,13 @@
   }
 }
 
+@media (hover: none) and (pointer: coarse) {
+  .key-hints,
+  .mobile-key-hints {
+    display: none;
+  }
+}
+
 .map-legend-popover {
   position: fixed;
   inset: calc(var(--head-h) + 12px) 16px auto auto;

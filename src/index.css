@@ -305,13 +305,6 @@
     scroll-padding-block-end: 16px;
   }
 
-  /* Hide keyboard-only hints on coarse pointers rather than narrow desktop windows. */
-  @media (max-width: 767px) and (hover: none) and (pointer: coarse) {
-    .key-hints {
-      display: none;
-    }
-  }
-
   .zone-canvas {
     grid-area: canvas;
     min-width: 0;
