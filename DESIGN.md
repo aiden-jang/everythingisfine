@@ -263,21 +263,20 @@ Alumni Sans is a variable upright font licensed by the adjacent SIL Open Font Li
 
 ### Aperture invitation
 
-The full-viewport landing uses a real oversized globe on the right, extending beyond the viewport,
-with the large invitation at the left. The desktop canvas is an 82vw square positioned 32vw from
-the left and 2dvh from the top. The introduction and its actions sit together in a 42% reading track
+The full-viewport landing uses an oversized globe on the right and a large invitation at the left.
+The desktop canvas has a viewport-bounded height and a fixed visual center beside the copy, so the
+whole globe stays in frame when pulled back. The opening view crops the globe at the edge. The introduction and its actions sit together in a 42% reading track
 with 34px horizontal and 64px bottom clearance.
 Explore the globe is the pale filled action and Browse stories is secondary. Category filters
 and returning-visit controls live in the catalogue. Feed availability remains accessible in the header.
 Desktop layouts from 621px to 860px high reduce the headline size and top inset.
 
-Tall layouts below 900px place the 120vw globe above and behind the bounded introduction,
-with the introduction owning vertical scrolling and 24px side insets. The action, source context
-and scene controls remain reachable below the headline. Viewports at 620px high or less use the
+Tall layouts below 900px place the globe above and behind the introduction and cap its height to
+keep the globe visible on tablets. The introduction owns vertical scrolling and 24px side insets.
+The two entry actions remain reachable below the headline. Viewports at 620px high or less use the
 compact headline, reduced gaps and owned scrolling; the established player landscape layouts
 continue to keep playback visible. Landscape layouts at least 600px wide use a 64px top inset
-and side-by-side entry actions; the story invitation sits beside the copy and actions so the
-scene strip keeps its own row. The short landscape footer keeps radar attribution and Sources
+and side-by-side entry actions. The short landscape footer keeps radar attribution and Sources
 beside the creator credit, with detailed times in Sources and auxiliary solar readouts hidden.
 Do not turn the oversized canvas into horizontal page scrolling.
 
@@ -407,7 +406,7 @@ Empty phone lists occupy their status height rather than reserving absent rows.
 
 The landing Explore the globe action uses pale ink fill and a directional cue. Browse stories is the secondary action. Utility buttons use
 neutral borders and brightness-based hover; inputs remain transparent on the reading deck, with
-a visible hairline and square field corners. Compact Explore tabs use an ink underline. The Category field sits below story search. The shared focus treatment remains visible across each variant.
+a visible hairline and square field corners. Compact Explore tabs use an ink underline. The story category strip sits below search, using matching diagrams, labels and selection rules. The shared focus treatment remains visible across each variant.
 
 ### Observatory presentation and discovery
 
@@ -419,8 +418,8 @@ reachable controls and source disclosure.
 
 The story browser opens on All stories. Its Earth, Below the Surface and After Dark diagrams
 move the shared world to each scene without overwriting saved layer settings. Selecting a scene
-again returns to All stories. Explore uses a compact Category field below search and leaves the
-camera in place. Switching between Layers and Stories preserves the chosen layer settings.
+again returns to All stories. Explore shows the same categories in a compact strip below search.
+All stories restores the full catalogue. Filtering keeps the query and camera in place. Switching between Layers and Stories preserves the chosen layer settings.
 The Layers tab starts with available layer controls. Location lives in Find a place, and playback
 lives within the Storm radar inspector. A recent visit replaces the large feature as the opening
 action and each story appears once in the selection.
@@ -776,7 +775,7 @@ timeline timing stay intact. Reduced motion restores full configured resolution.
 
 - **Do** keep the real globe as the shared observation surface and preserve geographic camera control.
 - **Do** use Alumni Sans for the invitation and selected player headings, Geist for reading, and tabular figures for updating numbers.
-- **Do** keep the three scene diagrams in the story browser and group the Explore filters under Category.
+- **Do** use the three scene diagrams in the story browser and in Explore’s category strip.
 - **Do** separate recorded feature imagery from its source text and preserve capture provenance.
 - **Do** keep View all, Saved & recent and From today’s feeds discoverable, with unavailable reasons visible.
 - **Do** preserve camera, projection, pane, category, query, scroll and focus when returning from a story.

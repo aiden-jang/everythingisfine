@@ -35,8 +35,8 @@ rounded before framing the view. No location is sent to analytics or stored in a
 Camera coordinates can appear in shared view links. See the
 [location privacy notice](https://accounts.aidenjang.com/privacy#legal-location-in-everything-is-fine).
 **Explore the globe** opens Layers beside the shared world. **Browse stories** opens the catalogue.
-The **Stories** tab in Explore offers the same catalogue, with a **Category** filter for Earth,
-Below the Surface or After Dark. Choose Float Dive and then **Follow the rise** to see a
+The **Stories** tab in Explore offers the same catalogue. Choose **Earth**, **Below the Surface**
+or **After Dark** directly below search. **All stories** clears the category and keeps your query. Choose Float Dive and then **Follow the rise** to see a
 measured Argo profile and keep its finding. The wordmark returns to the landing view.
 Browser Back restores the previous view. **Reset camera** in View
 options recenters the current view without changing its projection, layers, filters or held time.

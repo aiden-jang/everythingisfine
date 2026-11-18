@@ -1,6 +1,6 @@
 import type { EarthScene } from "./useObservatory";
 
-export function SceneDiagram({ scene }: { scene: EarthScene }): JSX.Element {
+export function SceneDiagram({ scene }: { scene: EarthScene | null }): JSX.Element {
   return (
     <svg
       viewBox="0 0 32 24"
@@ -10,7 +10,9 @@ export function SceneDiagram({ scene }: { scene: EarthScene }): JSX.Element {
       strokeWidth="1.2"
       aria-hidden="true"
     >
-      {scene === "live" ? (
+      {scene === null ? (
+        <path d="M7.5 5h6v6h-6zm11 0h6v6h-6zm-11 9h6v6h-6zm11 0h6v6h-6z" />
+      ) : scene === "live" ? (
         <>
           <circle cx="16" cy="12" r="9" />
           <ellipse cx="16" cy="12" rx="4.5" ry="9" />

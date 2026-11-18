@@ -16,9 +16,10 @@
 .frame[data-landing] .zone-canvas {
   position: absolute;
   width: 82vw;
-  height: 82vw;
+  --landing-height: min(82vw, 116dvh);
+  height: var(--landing-height);
   left: 32vw;
-  top: 2dvh;
+  top: calc(56dvh - var(--landing-height) / 2);
 }
 .frame[data-landing] .observatory-sidebar {
   position: absolute;
@@ -173,7 +174,7 @@
 @media (max-width: 899px) and (min-height: 621px) {
   .frame[data-landing] .zone-canvas {
     width: 120vw;
-    height: 120vw;
+    --landing-height: min(120vw, 56dvh);
     left: 6vw;
     top: 3dvh;
   }

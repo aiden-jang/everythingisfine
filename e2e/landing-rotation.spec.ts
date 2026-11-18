@@ -1,5 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { installFeeds } from "./feeds";
+import type { Controls } from "../src/globe/controlsTypes";
+import { ZOOM_MIN } from "../src/globe/framing";
 
 const camera = (page: Page) =>
   page.evaluate(() =>
@@ -174,3 +176,52 @@ test("a shared Observatory camera stays at the shared viewpoint @dev", async ({ 
   await still(page);
   expect(await camera(page)).toEqual({ lon: 145, lat: 12, zoom: 1 });
 });
+
+for (const [width, height] of [
+  [1390, 685],
+  [1920, 821],
+  [390, 844],
+] as const) {
+  test(`zooming out keeps the whole landing globe in view at ${width}×${height} @dev`, async ({ page }) => {
+    await page.setViewportSize({ width, height });
+    await page.emulateMedia({ reducedMotion: width === 1390 ? "no-preference" : "reduce" });
+    await installFeeds(page, { presentation: "fresh" });
+    await page.goto("/");
+    await expect.poll(async () => (await camera(page))?.zoom).toBe(1);
+    const center = () =>
+      page.evaluate(() => {
+        const globe = (window as unknown as { __globe: Controls }).__globe;
+        const { lon, lat } = globe.state();
+        return globe.project(lon, lat)!;
+      });
+    const before = await center();
+    if (width >= 900) {
+      await page.mouse.move(before.x, before.y);
+      await page.mouse.wheel(0, 1200);
+    } else {
+      await page.locator("#globe-view").focus();
+      for (let i = 0; i < 5; i++) await page.keyboard.press("-");
+    }
+    await expect.poll(async () => (await camera(page))?.zoom).toBe(ZOOM_MIN);
+    const after = await center();
+    expect(after.x).toBeCloseTo(before.x, 0);
+    expect(after.y).toBeCloseTo(before.y, 0);
+    if (width >= 900) {
+      expect(after.x).toBeGreaterThan(width * 0.6);
+      expect(after.y).toBeLessThan(height * 0.65);
+    } else {
+      expect(after.y).toBeLessThan(height * 0.36);
+    }
+    const clearEdges = await page.evaluate(({ x, y }) => {
+      const globe = (window as unknown as { __globe: Controls }).__globe;
+      return [
+        globe.pick(0, y),
+        globe.pick(innerWidth - 1, y),
+        globe.pick(x, 0),
+        globe.pick(x, innerHeight - 1),
+      ];
+    }, after);
+    expect(clearEdges).toEqual([null, null, null, null]);
+    await page.screenshot({ path: test.info().outputPath(`landing-zoomed-out-${width}.png`) });
+  });
+}

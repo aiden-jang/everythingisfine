@@ -4,7 +4,7 @@ import type { ObservatoryProps } from "./Observatory";
 import { Discoveries } from "./visitor/Discoveries";
 import { StoriesDrawer } from "./StoriesDrawer";
 import { OBSERVATORY_SCENES } from "./ObservatoryStage";
-import type { EarthScene } from "./useObservatory";
+import { SceneDiagram } from "./SceneDiagram";
 import "./explore-panel.css";
 
 export function ExplorerSidebar({
@@ -93,20 +93,19 @@ export function ExplorerSidebar({
           visible={!context.views.observing}
           scene={browser.category}
           filter={
-            <label className="story-category">
-              <span>Category</span>
-              <select
-                value={browser.category ?? ""}
-                onChange={(event) => browser.select((event.currentTarget.value as EarthScene) || null)}
-              >
-                <option value="">All stories</option>
-                {OBSERVATORY_SCENES.map(({ id, name }) => (
-                  <option key={id} value={id}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="story-category" role="group" aria-label="Story categories">
+              {[{ id: null, name: "All stories" }, ...OBSERVATORY_SCENES].map(({ id, name }) => (
+                <button
+                  key={name}
+                  type="button"
+                  aria-pressed={browser.category === id}
+                  onClick={() => browser.select(id)}
+                >
+                  <SceneDiagram scene={id} />
+                  <span>{name}</span>
+                </button>
+              ))}
+            </div>
           }
           ready={context.ready}
           observations={observations}
