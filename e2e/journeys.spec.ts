@@ -72,10 +72,11 @@ for (const view of ["Meteor Nights", "Moonfall"] as const) {
   test(`Tonight’s Sky opens again after its internal ${view} view`, async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.clock.setFixedTime(new Date("2026-11-06T18:00:00Z"));
     await installFeeds(page, { presentation: "fresh", empty: true });
     await page.goto("/");
-    await openStories(page);
     await page.getByRole("button", { name: "After Dark", exact: true }).click();
+    await openStories(page, "search");
     await page.getByRole("searchbox", { name: "Find a story" }).fill("Tonight’s Sky");
     await page.locator("#search-story-sky").click();
     const canvas = await page.locator("#globe-view canvas").elementHandle();
@@ -84,7 +85,15 @@ for (const view of ["Meteor Nights", "Moonfall"] as const) {
     const time = page.getByRole("slider", { name: "City local time", exact: true });
     await time.press("End");
     const savedTime = await time.inputValue();
-    await page.getByRole("button", { name: view, exact: true }).click();
+    const openView = page
+      .getByRole("region", { name: "Tonight’s Sky", exact: true })
+      .getByRole(
+        "button",
+        view === "Moonfall" ? { name: /Moonfall · Taurus–Littrow$/ } : { name: view, exact: true },
+      );
+    await expect(openView).toBeVisible();
+    await openView.click();
+    await expect(page.getByRole("heading", { name: view, exact: true })).toBeVisible();
     await page.getByText("Keep exploring", { exact: true }).click();
     await expect(page.locator(".related-stories button strong")).not.toHaveText("Tonight’s Sky");
     await page.locator(".related-stories button").click();
