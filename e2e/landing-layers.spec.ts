@@ -300,3 +300,57 @@ test("place radar rewinds in the shared canvas and copies a held scan @dev", asy
   expect(params).not.toContain("radarAt");
   expect(params).not.toContain("radarPlace");
 });
+
+test("radar rewind reveals the current scan before showing playback @dev", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { dead: true, radar: "default" });
+  const source = await radarSource(page, true);
+  const shaderErrors: string[] = [];
+  page.on("console", (entry) => {
+    if (entry.type() === "error" && entry.text().includes("Shader Error")) shaderErrors.push(entry.text());
+  });
+  await page.goto("/#v=explore&at=139.7,35.7,2.3&layers=radar");
+  const tokyo = page.locator(".place-labels > span").filter({ hasText: /^Tokyo$/ });
+  await expect(tokyo).toBeVisible();
+  const point = (await tokyo.boundingBox())!;
+  await page.mouse.click(point.x + point.width / 2, point.y + point.height);
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  const place = page.getByRole("region", { name: "Around this point" });
+  // Observe the transient state in the page so a slow software renderer cannot outrun the assertion.
+  const phases = await page.evaluateHandle(() => {
+    const phases: Array<"reveal" | "playback" | "overlap"> = [];
+    const observer = new MutationObserver(() => {
+      const rewind = document.querySelector(".radar-rewind");
+      if (!rewind) return;
+      const revealing = !!rewind.querySelector(':scope > [role="status"].radar-layer-note');
+      const showingPlayer = !!rewind.querySelector("#radar-layer-controls:not([hidden])");
+      const phase = revealing ? (showingPlayer ? "overlap" : "reveal") : showingPlayer ? "playback" : null;
+      if (phase && phases.at(-1) !== phase) phases.push(phase);
+    });
+    observer.observe(document.getElementById("chrome-rail")!, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["hidden"],
+    });
+    return phases;
+  });
+  const rewind = place.getByRole("button", { name: "Rewind radar" });
+  await expect(rewind).toBeVisible();
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await rewind.click();
+  await expect(page.getByRole("button", { name: "Back to live" })).toBeInViewport();
+  const player = page.getByRole("region", { name: "Storm radar playback" });
+  const slider = player.getByRole("slider");
+  await expect(slider).toBeVisible();
+  expect(await phases.jsonValue()).toEqual(["reveal", "playback"]);
+  await slider.press("Home");
+  await expect(player.locator(".radar-clock time")).toHaveAttribute(
+    "datetime",
+    new Date(source.at - 600_000).toISOString(),
+  );
+  expect(await phases.jsonValue()).toEqual(["reveal", "playback"]);
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+  expect(shaderErrors).toEqual([]);
+});

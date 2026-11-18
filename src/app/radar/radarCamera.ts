@@ -21,7 +21,17 @@ export interface RadarView {
   canRewind?: ((point: { lon: number; lat: number }) => boolean) | undefined;
 }
 
-export type RadarLayerView = Pick<RadarView, "image" | "at" | "region"> & { kind: "radar-layer" };
+export interface RadarReveal {
+  target: RadarCamera;
+  finish: () => void;
+}
+
+export const RADAR_REVEAL_TIMEOUT = 2400;
+
+export type RadarLayerView = Pick<RadarView, "image" | "at" | "region"> & {
+  kind: "radar-layer";
+  reveal?: RadarReveal | undefined;
+};
 
 export const national: RadarCamera = { lon: -95.5, lat: 37, zoom: 1.45 };
 

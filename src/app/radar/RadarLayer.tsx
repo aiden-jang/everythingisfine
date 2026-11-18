@@ -9,16 +9,23 @@ export function RadarLayer({
   onSelect,
   suspended = false,
   rewind = false,
+  hidden = false,
 }: {
   onView: (view: RadarView) => void;
   initialAt: number | null;
   suspended?: boolean;
   rewind?: boolean;
+  hidden?: boolean;
   onSelect: (id: "radar", at: number | null) => void;
 }): JSX.Element {
   const select = useCallback((at: number | null) => onSelect("radar", at), [onSelect]);
   return (
-    <section id="radar-layer-controls" className="radar-layer" aria-label="Storm radar playback">
+    <section
+      id="radar-layer-controls"
+      className="radar-layer"
+      aria-label="Storm radar playback"
+      hidden={hidden}
+    >
       <RadarStage
         global
         layer

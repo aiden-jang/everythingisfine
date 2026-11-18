@@ -1,4 +1,5 @@
 import { CopyLink } from "./CopyLink";
+import { RADAR_REVEAL_TIMEOUT } from "./radar/radarCamera";
 import { rewindLink } from "./radar/rewindLink";
 import { refreshAnnotations } from "../globe/annotationInput";
 import { geographicCoordinates } from "../globe/orbitReadout";
@@ -6,7 +7,7 @@ import type { CameraState } from "../globe/controls";
 import { quietLayer } from "./layerQuiet";
 import { matches } from "../data/filter";
 import { useReadingArrival } from "./useReadingArrival";
-import { lazy, Suspense, useLayoutEffect, useRef, useMemo, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useMemo, type ReactNode } from "react";
 import { PlaceContext, PlaceInspection, type PlaceContextProps } from "./discovery/PlaceContext";
 import type { usePlaceInspection } from "./discovery/usePlaceInspection";
 import { mapLayerNames, type MapLayer } from "./layerVisibility";
@@ -68,17 +69,26 @@ export function MapLayers({
   const rewindPoint = controls.radar ? controls.rewindPoint : undefined;
   const layer = rewindPoint ? null : controls.inspector;
   const rewindAt = controls.radar?.image ? controls.radar.at : undefined;
+  const reveal = controls.radar?.reveal;
+  useEffect(() => {
+    if (!reveal) return;
+    // Keep playback available if the rendering loop cannot run.
+    const timeout = setTimeout(reveal.finish, RADAR_REVEAL_TIMEOUT);
+    return () => clearTimeout(timeout);
+  }, [reveal]);
 
   function openRewind(point: NonNullable<typeof place.point>) {
-    controls.setRewindPoint(point);
-    refreshAnnotations({ ...point, zoom: Math.max(2.2, readCamera().zoom) });
+    const target = { ...point, zoom: Math.max(2.2, readCamera().zoom) };
+    const cinematic = !globalThis.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    controls.openRewind(point, cinematic ? target : undefined);
+    if (!cinematic) refreshAnnotations(target);
     requestAnimationFrame(() =>
       document.getElementById("radar-rewind-title")?.focus({ preventScroll: true }),
     );
   }
 
   function closeRewind() {
-    controls.setRewindPoint(undefined);
+    controls.closeRewind();
     controls.selectTime("radar", null);
     requestAnimationFrame(() =>
       (document.getElementById("rewind-place-radar") ?? document.getElementById("globe-view"))?.focus(),
@@ -230,18 +240,24 @@ export function MapLayers({
             </button>
           </header>
         )}
+        {reveal && (
+          <p role="status" className="radar-layer-note">
+            Revealing radar…
+          </p>
+        )}
         {controls.radar && (
-          <Suspense fallback={<p role="status">Loading radar controls…</p>}>
+          <Suspense fallback={reveal ? null : <p role="status">Loading radar controls…</p>}>
             <RadarLayer
               suspended={controls.suspended || (!!rewindPoint && !panelVisible)}
               rewind={!!rewindPoint}
+              hidden={!!reveal}
               onView={controls.updateRadar}
               initialAt={controls.selectedTimes.radar}
               onSelect={controls.selectTime}
             />
           </Suspense>
         )}
-        {rewindPoint && rewindAt !== undefined && (
+        {rewindPoint && !reveal && rewindAt !== undefined && (
           <CopyLink
             label="Copy radar link"
             format={(url) => rewindLink(url, readCamera(), rewindPoint, rewindAt, flat)}

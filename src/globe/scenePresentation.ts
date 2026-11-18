@@ -5,6 +5,7 @@ import type { MapLayerPresentation } from "../app/weatherLayers";
 import type { CameraState, Controls } from "./controlsTypes";
 import type { createSurfaceLayers } from "./surfaceLayers";
 import { createAuroraVeil } from "./auroraVeil";
+import { createRadarReveal } from "./radarReveal";
 import { createRadarSurface } from "./radarSurface";
 import { createLocalSkyLight } from "./localSkyLight";
 import type { FloatDiveView } from "../app/float/floatPlayback";
@@ -69,6 +70,7 @@ export function createScenePresentation(
 
   const projection = { value: 0 };
   const arrival = createObservationArrival(controls, canvas);
+  const radarReveal = createRadarReveal(controls, canvas);
   let observations: ReturnType<typeof createObservationLayer> | undefined;
   let dive: ReturnType<typeof createFloatPresentation> | undefined;
   let shadow: ReturnType<typeof createShadowChase> | undefined;
@@ -88,6 +90,7 @@ export function createScenePresentation(
     veil?.trace(controls.auroraSweep());
     const zoom = controls.state().zoom;
     const detail = Math.max(0, Math.min(1, (zoom - 1) / 1.7));
+    const revealingRadar = radarReveal.step(elapsed, reduced);
     const radarArriving = radar?.step(dt, reduced, overviewRadar ? 0.7 + 0.3 * detail : 1);
     const diving = dive?.step(dt, reduced, elapsed);
     const lunar = skyView?.moonfall?.step(dt, reduced);
@@ -96,7 +99,7 @@ export function createScenePresentation(
     const orbiting = orbital.step(dt, reduced);
     if (lens && arrival.ready()) lensReveal = reduced ? 1 : Math.min(1, lensReveal + dt / 0.65);
     const guided = controls.guidance.following();
-    const bank = guided && replay && !reduced && controls.morph() === 0 ? (replay.bank ?? 0) : 0;
+    const bank = guided && !reduced && controls.morph() === 0 ? (replay?.bank ?? radarReveal.bank()) : 0;
     const pitch = guided && replay && !reduced && controls.morph() === 0 ? (replay.pitch ?? 0) : 0;
     const easing = Math.abs(bank - replayBank) + Math.abs(pitch - replayPitch) > 0.0005;
     const rotate = replayBank !== bank || replayPitch !== pitch;
@@ -124,6 +127,7 @@ export function createScenePresentation(
     }
     if (rotate && !following) controls.apply();
     return (
+      revealingRadar ||
       radarArriving ||
       easing ||
       following ||
@@ -153,6 +157,7 @@ export function createScenePresentation(
     skyView = local?.kind === "tonight" ? local : (observation?.sky ?? null);
     if (skyView?.reference && (!previousSky?.reference || previousSky.city !== skyView.city))
       controls.flyTo(skyView.reference.lon, skyView.reference.lat, skyView.reference.zoom);
+    const sweep = mode === null ? mapLayers?.radar?.reveal : undefined;
     controls.guidance.configure(
       skyView
         ? null
@@ -160,7 +165,7 @@ export function createScenePresentation(
           ? (observation.cameraKey ?? "observation")
           : weather
             ? `radar:${weather.region}`
-            : (float ?? (route ? "aurora" : mode === "planetarium" ? mode : null)),
+            : (float ?? sweep ?? (route ? "aurora" : mode === "planetarium" ? mode : null)),
       () => {
         if (observation) {
           const pose = observation.follow ?? observation.shadow?.pose ?? observation.target;
@@ -252,12 +257,13 @@ export function createScenePresentation(
         controls.flyTo(returnCamera.lon, returnCamera.lat, returnCamera.zoom);
       returnCamera = undefined;
     }
+    radarReveal.set(sweep);
     observationTarget = observation?.target;
     radarTarget = weather?.target;
     const radarFrame = weather ?? mapLayers?.radar;
     overviewRadar = !weather && !!mapLayers?.radar;
     if (radarFrame && !radar) {
-      radar = createRadarSurface(projection);
+      radar = createRadarSurface(projection, radarReveal.uniforms);
       spin.add(radar.object);
     }
     radar?.setImage(radarFrame?.image ?? null, isGlobalRadar(radarFrame?.region));

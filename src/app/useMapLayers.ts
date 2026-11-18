@@ -3,7 +3,7 @@ import type { Filters } from "../data/types";
 import { stored, store } from "./stored";
 import { isolateLayer, mapLayerNames, readMapLayers, type MapLayer } from "./layerVisibility";
 import { layerTime } from "./layerTime";
-import type { RadarLayerView, RadarView } from "./radar/radarCamera";
+import type { RadarLayerView, RadarReveal, RadarView } from "./radar/radarCamera";
 import type { FeedRow } from "./feedStatus";
 import { latestLayerTimes, type LayerTimes, type SharedLayers } from "./layerLink";
 import {
@@ -32,7 +32,19 @@ export function useMapLayers(
     () => isolateLayer(savedLayers, archived ? null : isolated),
     [savedLayers, archived, isolated],
   );
-  const [rewindPoint, setRewindPoint] = useState(shared.radarPlace);
+  const [rewind, setRewind] = useState<{
+    point: NonNullable<SharedLayers["radarPlace"]>;
+    reveal?: RadarReveal;
+  } | null>(() => (shared.radarPlace ? { point: shared.radarPlace } : null));
+  function openRewind(point: NonNullable<SharedLayers["radarPlace"]>, target?: RadarReveal["target"]) {
+    const reveal: RadarReveal | undefined = target && {
+      target,
+      finish: () => {
+        setRewind((current) => (current?.reveal === reveal ? { point } : current));
+      },
+    };
+    setRewind(reveal ? { point, reveal } : { point });
+  }
   const [radarView, updateRadar] = useState<RadarView | null>(null);
   const [weather, setWeather] = useState<Partial<Record<WeatherLayerId, WeatherLayerView>>>({});
   const [inspector, inspect] = useState<MapLayer | null>(() =>
@@ -66,14 +78,20 @@ export function useMapLayers(
   const radarActive = enabled.radar && active;
   useEffect(() => {
     if (!radarActive) updateRadar(null);
-    if (archived || !enabled.radar) setRewindPoint(undefined);
+    if (archived || !enabled.radar) setRewind(null);
   }, [radarActive, archived, enabled.radar]);
   const radar = useMemo<RadarLayerView | null>(
     () =>
       radarActive
-        ? { kind: "radar-layer", region: "world", image: radarView?.image ?? null, at: radarView?.at }
+        ? {
+            kind: "radar-layer",
+            region: "world",
+            image: radarView?.image ?? null,
+            at: radarView?.at,
+            reveal: rewind?.reveal,
+          }
         : null,
-    [radarActive, radarView],
+    [radarActive, radarView, rewind?.reveal],
   );
   const latest = useRef(savedLayers);
   const change = useCallback((layer: MapLayer, on: boolean) => {
@@ -133,8 +151,9 @@ export function useMapLayers(
     change,
     globeFilters,
     radar,
-    rewindPoint,
-    setRewindPoint,
+    rewindPoint: rewind?.point,
+    openRewind,
+    closeRewind: () => setRewind(null),
     canRewind: radarView?.canRewind,
     updateRadar,
     active,

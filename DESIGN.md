@@ -598,7 +598,10 @@ Reduced motion opens directly with a fixed instrument and manual playback.
 The Storm radar layer updates only the raster while the viewer steers the shared globe or map.
 Its independent scan time remains visible; playback never drives the earthquake timeline.
 A covered place with two loaded frames can open **Rewind radar**. The shared camera approaches
-the pin once, then holds its framing while scans change. The player stays inside the place panel.
+the pin with a slight bank and one geographic light sweep over the radar surface. On the map the
+same sweep follows the flat projection. Playback appears as the shot settles and stays inside the
+place panel. Grabbing the camera ends the reveal immediately. Reduced motion and shared links
+open directly to playback. The camera holds its framing while scans change.
 A copied link carries the pin, camera, projection and displayed frame. **Back to live** restores
 the latest radar at the same place.
 The catalogue's Storm Radar view offers authored regional flights and optional NOAA detail.
