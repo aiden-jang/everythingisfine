@@ -58,6 +58,7 @@ import type { SlabPoint } from "../geo/slab";
 import { createLayerEmphasis } from "./layerEmphasis";
 import { createMarkLayer, pickMark, type Mark } from "./marks";
 import type { Aurora } from "../sources/aurora";
+import { fitGlobeCamera } from "./globeFraming";
 
 export type GlobeMoment = number | EclipseFrame | null;
 
@@ -377,15 +378,12 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
     if (width < 1 || height < 1) return;
 
     resolution.resize(width, height);
-    camera.aspect = width / height;
-    camera.updateProjectionMatrix();
-
     // Fit by whichever dimension is tighter. Height alone puts the globe off both sides of a phone; width
     // alone leaves it swimming on a desktop. Zoom is a multiple of this, so a resize keeps where you were.
-    const limiting = Math.min(1, camera.aspect);
+    const { limiting, bleed } = fitGlobeCamera(camera, canvas, width, height);
     const byHeight = 1 / (FILL * Math.tan((FOV / 2) * DEG));
     const fit = byHeight / limiting;
-    controls.setFit(fit, byHeight);
+    controls.setFit(fit, byHeight, bleed);
     // The globe's on-screen radius at the framing shot, which is what marker sizes scale against.
     const radiusPx = (height / 2) * (1 / (fit * Math.tan((FOV / 2) * DEG)));
     events.setGlobeRadius(radiusPx);

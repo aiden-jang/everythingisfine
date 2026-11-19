@@ -181,6 +181,7 @@ test("a shared Observatory camera stays at the shared viewpoint @dev", async ({ 
 for (const [width, height] of [
   [1390, 685],
   [1920, 821],
+  [844, 390],
   [390, 844],
 ] as const) {
   test(`zooming out keeps the whole landing globe in view at ${width}×${height} @dev`, async ({ page }) => {
@@ -211,7 +212,7 @@ for (const [width, height] of [
     const before = await center();
     expect(await clearEdges(before)).toEqual([null, null, null, null]);
     const canvas = (await page.locator("#globe-view").boundingBox())!;
-    expect(canvas.x).toBeGreaterThanOrEqual(0);
+    expect(canvas.x).toBeCloseTo(0, 0);
     expect(canvas.x + canvas.width).toBeLessThanOrEqual(width);
     expect(canvas.y).toBeGreaterThanOrEqual(0);
     expect(canvas.y + canvas.height).toBeLessThanOrEqual(height);
@@ -226,7 +227,7 @@ for (const [width, height] of [
     const after = await center();
     expect(after.x).toBeCloseTo(before.x, 0);
     expect(after.y).toBeCloseTo(before.y, 0);
-    if (width >= 900) {
+    if (width > height) {
       expect(after.x).toBeGreaterThan(width * 0.6);
       expect(after.y).toBeLessThan(height * 0.65);
     } else {

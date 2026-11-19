@@ -9,7 +9,7 @@ const MAX_STATE = 12;
 const ALREADY_OVER = {
   "src/App.tsx": { lines: 1474, state: 12 },
   "src/globe/Globe.tsx": { lines: 656 },
-  "src/globe/scene.ts": { lines: 649 },
+  "src/globe/scene.ts": { lines: 647 },
   "src/app/MagnitudeFilter.tsx": { lines: 536 },
   "src/geo/land.ts": { lines: 477 },
   "src/app/DetailPanel.tsx": { lines: 411 },

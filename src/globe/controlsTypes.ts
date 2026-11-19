@@ -25,7 +25,7 @@ export interface Controls {
    * The framing distances, recomputed on resize. Two of them: `distance` fits the ball by whichever of
    * width and height is tighter, and `byHeight` ignores the width, which is what the map wants.
    */
-  setFit: (distance: number, byHeight: number) => void;
+  setFit: (distance: number, byHeight: number, skyBleed?: number) => void;
   /** Geographic point under a client pixel, or null off the globe. Hover in step 9 needs this. */
   pick: (clientX: number, clientY: number) => { lon: number; lat: number } | null;
   /** The whole camera in three numbers. This is exactly what a permalink has to carry. */

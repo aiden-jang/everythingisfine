@@ -266,6 +266,8 @@ Alumni Sans is a variable upright font licensed by the adjacent SIL Open Font Li
 
 The full-viewport landing fits the globe beside a large invitation on desktop and above it on
 phones. The first visible frame uses the overview lens and fits the whole planet in the canvas.
+On large and short landscape screens, the same starfield extends behind the invitation while the
+globe keeps its own right-hand framing at every zoom level.
 The introduction and its actions sit together in a 42% reading track with 34px horizontal and
 64px bottom clearance.
 Explore the globe is the pale filled action and Browse stories is secondary. Category filters
@@ -298,6 +300,8 @@ In Explore, Layers and Stories share the existing rail and canvas. Changing tabs
 projection, camera, playback or visibility. Scene categories filter Stories without taking the visitor
 back to the landing page. Story returns restore pane, category, query, scroll, focus and camera.
 At tablet widths and above, the canvas reserves room for the rail so it cannot cover the globe.
+Both tabs share the same translucent surface, border and sticky tab bar. The phone surface uses
+a darker fade for readability above the globe.
 
 Layers use compact icon rows grouped into Weather & sky and Reported events, with independent
 visibility switches and details controls. Coverage descriptions live in the inspector; loading and

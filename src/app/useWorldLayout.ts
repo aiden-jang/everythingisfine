@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import { revealReadings, shiftGlobe } from "./presentationMotion";
+import { globeFramingRect } from "../globe/globeFraming";
 
 // Keep the visible pose of an interrupted flight before the next layout takes over.
 function visibleRect(globe: HTMLElement, target: DOMRect): DOMRect {
@@ -34,7 +35,7 @@ export function useWorldLayout(layout: string) {
       : null;
     for (const motion of motions.current) motion.cancel();
     motions.current = [];
-    previous.current = globe.getBoundingClientRect();
+    previous.current = globeFramingRect(globe);
     if (!from || !globe.animate || document.hidden || matchMedia("(prefers-reduced-motion: reduce)").matches)
       return;
     const flight = shiftGlobe(globe, from);
@@ -52,14 +53,14 @@ export function useWorldLayout(layout: string) {
     if (!globe) return;
     const resize = new ResizeObserver(() => {
       if (!motions.current.some((motion) => motion.playState === "running"))
-        previous.current = globe.getBoundingClientRect();
+        previous.current = globeFramingRect(globe);
     });
     resize.observe(globe);
     const stop = () => {
       stopFold(globe);
       for (const motion of motions.current) motion.cancel();
       motions.current = [];
-      previous.current = globe.getBoundingClientRect();
+      previous.current = globeFramingRect(globe);
     };
     const steer = (event: Event) => {
       if (event.target instanceof Element && event.target.closest("#globe-view")) stop();

@@ -106,6 +106,22 @@ describe("cinematic camera and light", () => {
     expect(camera.view?.enabled).toBe(false);
     expect(camera.quaternion.z).toBe(0);
   });
+  it("keeps the landing lens off-centre after the cinematic lift settles", () => {
+    const camera = new PerspectiveCamera();
+    const rig = createCameraRig(camera, { clientWidth: 1400, clientHeight: 740 } as HTMLCanvasElement);
+    rig.setSkyBleed(540);
+    rig.snap(0, 0.12);
+    rig.apply(false);
+    expect(camera.view).toMatchObject({ enabled: true, offsetX: -270, offsetY: -88.8 });
+    rig.snap();
+    rig.apply(false);
+    expect(camera.view).toMatchObject({ enabled: true, offsetX: -270 });
+    expect(camera.view!.offsetY).toBeCloseTo(0);
+    expect(rig.horizontalCentre()).toBeCloseTo(970 / 1400);
+    rig.setSkyBleed(0);
+    rig.apply(false);
+    expect(camera.view?.enabled).toBe(false);
+  });
   it("keeps the surveyed region in frame while banking through a magnified replay", () => {
     for (const lens of [1, 13, 17, 36]) {
       const camera = new PerspectiveCamera(32, 1);

@@ -1,5 +1,7 @@
+import { globeFramingRect } from "../globe/globeFraming";
+
 export function shiftGlobe(globe: HTMLElement, from: DOMRect, id = "globe-presentation"): Animation | null {
-  const to = globe.getBoundingClientRect();
+  const to = globeFramingRect(globe);
   if (Math.min(from.width, from.height, to.width, to.height) < 1) return null;
   const scale = Math.min(from.width, from.height) / Math.min(to.width, to.height);
   const dx = from.x + from.width / 2 - to.x - to.width / 2;

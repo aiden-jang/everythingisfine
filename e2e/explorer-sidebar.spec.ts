@@ -124,6 +124,13 @@ for (const width of [1440, 812, 390]) {
       await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/layers-${width}.png` });
     await expect(page.getByRole("region", { name: "Earthquake activity" })).toBeHidden();
     const canvas = await page.locator("#globe-view canvas").elementHandle();
+    const panelSurface = () =>
+      page.locator("#chrome-rail").evaluate((element) => {
+        const panel = getComputedStyle(element);
+        const tabs = getComputedStyle(element.querySelector(".explorer-tabs")!);
+        return [panel.backgroundImage, panel.borderColor, tabs.backgroundColor, tabs.marginBottom];
+      });
+    const layerSurface = await panelSurface();
     if (width >= 768) {
       const rail = (await page.locator("#chrome-rail").boundingBox())!;
       const globe = (await page.locator("#globe-view").boundingBox())!;
@@ -167,6 +174,7 @@ for (const width of [1440, 812, 390]) {
     await page.getByRole("heading", { name: "Earthquakes", exact: true }).press("Escape");
     await expect(layers.getByRole("button", { name: "Earthquakes details", exact: true })).toBeFocused();
     await page.getByRole("tab", { name: "Stories", exact: true }).click();
+    expect(await panelSurface()).toEqual(layerSurface);
     const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
     const category = stories.getByRole("group", { name: "Story categories", exact: true });
     const allStories = category.getByRole("button", { name: "All stories", exact: true });

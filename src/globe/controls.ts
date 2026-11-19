@@ -228,7 +228,7 @@ export function createControls(
       },
       drag: (prev, next, lastMove, elapsed) => {
         const r = canvas.getBoundingClientRect();
-        const cx = r.left + r.width / 2,
+        const cx = r.left + r.width * rig.horizontalCentre(),
           cy = r.top + r.height / 2;
         const swept = (from: number, to: number, centre: number): number =>
           (angleAt(to - centre) - angleAt(from - centre)) / DEG;
@@ -391,8 +391,9 @@ export function createControls(
     // a pixel is d/focalPx world units and a world unit is 90 degrees.
     degPerPx: (atZoom) => (90 * (atZoom === undefined ? dist() : distAt(atZoom))) / focalPx(),
     degForPx: (px, atZoom) => angleAt(px, atZoom) / DEG,
-    setFit: (d, byHeight) => {
+    setFit: (d, byHeight, skyBleed = 0) => {
       distance.fit(d, byHeight);
+      rig.setSkyBleed(skyBleed);
       apply();
     },
   };
