@@ -1,9 +1,9 @@
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { useWorldLayout } from "../useWorldLayout";
-import { PlaybackButton } from "../PlaybackButton";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
-import { StoryDock } from "../observations/StoryDock";
+import { TongaTimelineDock } from "./TongaTimelineDock";
 import { WorldEvidence } from "../observations/WorldEvidence";
 import { ReplayInset } from "../observations/ReplayInset";
 import { ShareMoment, useStorySession } from "../observations/StorySession";
@@ -18,9 +18,7 @@ import { pressureShare } from "./pressureShare";
 import { useTongaPlayback } from "./useTongaPlayback";
 import {
   ANTIPODE,
-  END,
   ERUPTION,
-  START,
   infrared,
   layersAt,
   latestScan,
@@ -169,6 +167,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     focus.current = "kept";
     setPhase("kept");
   }
+  const atPressurePeak = pressureAt(station, minute) === null;
   const overview = phase === "discover";
   const inspecting = phase === "inspect" || phase === "shared";
 
@@ -345,43 +344,19 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
             <button
               type="button"
               className="tonga-inspect"
-              onClick={() =>
-                inspect(pressureAt(station, minute) === null ? station.peak : Math.floor(minute))
-              }
+              onClick={() => inspect(atPressurePeak ? station.peak : Math.floor(minute))}
             >
-              Inspect {station.name}’s record
+              {atPressurePeak
+                ? `Inspect the pressure peak · ${timeLabel(station.peak)} UTC`
+                : `Inspect ${station.name}’s record`}
             </button>
             <KeepPressure station={station} minute={minute} map={panel.map} onKept={kept} />
           </div>
           <ShareMoment share={pressureShare} />
+          {ended && !view.playing && <ExperienceEnding showSave={false} />}
         </div>
       )}
-      {phase === "follow" && (
-        <StoryDock label="Tonga playback">
-          <div className="tonga-time story-dock-time">
-            <label htmlFor="tonga-replay-time">Replay time</label>
-            <time dateTime={timeIso(minute)}>{timeLabel(minute)} UTC</time>
-          </div>
-          <input
-            id="tonga-replay-time"
-            className="scrub-slider tonga-scrub"
-            type="range"
-            min={START}
-            max={END}
-            value={Math.floor(minute)}
-            aria-valuetext={`${timeLabel(minute)} UTC`}
-            onInput={(event) => playback.scrub(event.currentTarget.valueAsNumber)}
-          />
-          <div className="archive-scene-controls">
-            <PlaybackButton
-              playing={view.playing}
-              ended={ended}
-              className="archive-scene-button"
-              onClick={playback.toggle}
-            />
-          </div>
-        </StoryDock>
-      )}
+      {phase === "follow" && <TongaTimelineDock playback={playback} station={station} />}
     </ReplayPanel>
   );
 }

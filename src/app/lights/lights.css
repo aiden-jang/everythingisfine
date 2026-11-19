@@ -225,3 +225,13 @@
     transition: none;
   }
 }
+
+.lights-map[data-reference] .lights-place::before {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 5px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  content: "";
+}

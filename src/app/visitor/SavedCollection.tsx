@@ -6,10 +6,16 @@ import { EvidenceCard } from "./EvidenceCard";
 import { savedVisitKey, type Visit } from "./library";
 import { exportEvidence } from "./exportEvidence";
 
+const noteDrafts = new Map<string, string>();
+
 function KeptItem({ visit, onClose }: { visit: Visit; onClose: () => void }) {
   const navigation = useStoryNavigation()!;
   const evidence = visitEvidence(visit);
-  const [note, setNote] = useState(visit.note ?? visit.observation?.note ?? "");
+  const key = savedVisitKey(visit);
+  const savedNote = visit.note ?? visit.observation?.note ?? "";
+  const [note, setNote] = useState(() => noteDrafts.get(key) ?? savedNote);
+  const [noteStatus, setNoteStatus] = useState("");
+  const hasDraft = note !== savedNote;
   const [exporting, setExporting] = useState(false);
   const [status, setStatus] = useState("");
   const noteId = useId();
@@ -17,29 +23,47 @@ function KeptItem({ visit, onClose }: { visit: Visit; onClose: () => void }) {
     <div className="kept-item">
       <EvidenceCard evidence={evidence} />
       <details className="kept-note">
-        <summary>{note ? "Your note" : "Add a thought (optional)"}</summary>
+        <summary>
+          {note ? "Your note" : "Add a thought (optional)"}
+          {hasDraft && <span className="note-draft"> · Unsaved draft</span>}
+        </summary>
         <label htmlFor={noteId}>What did you notice?</label>
         <textarea
           id={noteId}
           rows={3}
           maxLength={280}
           value={note}
-          onChange={(event) => setNote(event.currentTarget.value)}
+          onChange={(event) => {
+            const value = event.currentTarget.value;
+            setNote(value);
+            setNoteStatus("");
+            if (value === savedNote) noteDrafts.delete(key);
+            else noteDrafts.set(key, value);
+          }}
         />
         <button
           type="button"
+          aria-disabled={!hasDraft}
           onClick={() => {
-            const { note: previous, ...rest } = visit;
-            void previous;
-            navigation.library.save({
-              ...rest,
-              note: note.trim(),
-              ...(visit.observation ? { observation: { ...visit.observation, note: note.trim() } } : {}),
+            if (!hasDraft) return;
+            const value = note.trim();
+            const saved = navigation.library.save({
+              ...visit,
+              note: value,
+              ...(visit.observation ? { observation: { ...visit.observation, note: value } } : {}),
             });
+            setNoteStatus(saved ? "Note saved." : "Couldn’t save this note.");
+            if (saved) {
+              setNote(value);
+              noteDrafts.delete(key);
+            }
           }}
         >
           Save note
         </button>
+        <span className="note-draft" role="status">
+          {noteStatus || (hasDraft ? "Draft stays here while this tab is open." : "")}
+        </span>
         <small>Only on this device. Notes are excluded from exported cards.</small>
       </details>
       <div className="kept-actions">
@@ -74,7 +98,8 @@ function KeptItem({ visit, onClose }: { visit: Visit; onClose: () => void }) {
         <button
           type="button"
           onClick={() => {
-            navigation.library.remove(savedVisitKey(visit));
+            noteDrafts.delete(key);
+            navigation.library.remove(key);
             requestAnimationFrame(() =>
               document.querySelector<HTMLElement>(".saved-collection h2")?.focus({ preventScroll: true }),
             );
@@ -117,7 +142,20 @@ export function SavedCollection({ onClose }: { onClose: () => void }) {
         </button>
       </div>
       <p>A place, a moment, something you noticed. Kept on this device.</p>
-      {!library.saved.length && <p>Keep an observation or save a view in a story to find it here.</p>}
+      {!library.saved.length && (
+        <div className="saved-empty">
+          <p>Keep a reading in a story and it’ll appear here.</p>
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              navigation.browse(true);
+            }}
+          >
+            Browse stories
+          </button>
+        </div>
+      )}
       <div className="saved-evidence-list">
         {library.saved.map((visit) => (
           <KeptItem key={savedVisitKey(visit)} visit={visit} onClose={onClose} />

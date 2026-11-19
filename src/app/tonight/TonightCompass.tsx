@@ -22,6 +22,7 @@ export function TonightCompass({
   onOrbit: (orbit: boolean) => void;
 }): JSX.Element {
   const fromEarth = projection.map || orbit;
+  const target = view?.bodies.find(({ name }) => name === view.targetName);
   return (
     <div
       className="observatory-stage"
@@ -50,7 +51,7 @@ export function TonightCompass({
       )}
       <div className="tonight-labels" data-sky-labels="" aria-hidden="true">
         {view?.bodies.map(({ name }) => (
-          <span key={name} data-body={name}>
+          <span key={name} data-body={name} data-target={target?.name === name || undefined}>
             {name}
           </span>
         ))}
@@ -58,6 +59,7 @@ export function TonightCompass({
       {view && fromEarth && (
         <span
           className="sky-reference-marker"
+          data-projection-anchor=""
           data-observation-anchor=""
           data-lon={view.city.lon}
           data-lat={view.city.lat}
@@ -92,6 +94,11 @@ export function TonightCompass({
         <div className="stage-readout tonight-compass">
           <span>
             Facing {bearingLabel(view.look.azimuth)} · {Math.round(view.look.azimuth) % 360}°
+            {target && (
+              <small className="tonight-target-bearing">
+                {target.name} · {target.altitude > 0 ? bearingLabel(target.azimuth) : "Below horizon"}
+              </small>
+            )}
           </span>
           <div className="observatory-actions" role="group" aria-label="Look direction">
             {bearings.map(({ short, name, azimuth }) => (
@@ -100,7 +107,7 @@ export function TonightCompass({
                 type="button"
                 aria-label={`Look ${name}`}
                 aria-pressed={view.look.azimuth === azimuth && view.look.altitude === 16}
-                onClick={() => onView({ ...view, look: { azimuth, altitude: 16 }, targetName: undefined })}
+                onClick={() => onView({ ...view, look: { azimuth, altitude: 16 } })}
               >
                 {short}
               </button>

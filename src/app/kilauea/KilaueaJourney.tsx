@@ -6,6 +6,7 @@ import type { ObservationRaster } from "../observations/types";
 import { useObservationImage } from "../observations/useObservationData";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { StoryDock } from "../observations/StoryDock";
+import { TimelineTrack } from "../observations/TimelineTrack";
 import { coastlineDivider, drawLavaComparison, drawLavaSurface } from "./drawLava";
 import { KilaueaFootage } from "./KilaueaFootage";
 import { COAST_COMPARISON, LAST, OCEAN_ENTRY, mapDate, snapshots } from "./lavaTimeline";
@@ -304,20 +305,34 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
             <label htmlFor={id}>{comparing ? "Compare before and after" : "Mapped extent date"}</label>
             <span className="story-dock-readout">{comparing ? `${split}%` : time}</span>
           </div>
-          <input
-            id={id}
-            className="scrub-slider"
-            type="range"
-            min={0}
+          <TimelineTrack
             max={comparing ? 100 : LAST}
-            value={split ?? index}
-            aria-valuetext={time}
-            onInput={(event) => {
-              const next = event.currentTarget.valueAsNumber;
-              if (comparing) setSplit(next);
-              else inspect(next);
-            }}
-          />
+            current={split ?? index}
+            landmark={
+              comparing
+                ? undefined
+                : {
+                    at: OCEAN_ENTRY,
+                    label: `Ocean entry · ${mapDate(snapshots[OCEAN_ENTRY]!.at)}`,
+                    select: () => inspect(OCEAN_ENTRY),
+                  }
+            }
+          >
+            <input
+              id={id}
+              className="scrub-slider"
+              type="range"
+              min={0}
+              max={comparing ? 100 : LAST}
+              value={split ?? index}
+              aria-valuetext={time}
+              onInput={(event) => {
+                const next = event.currentTarget.valueAsNumber;
+                if (comparing) setSplit(next);
+                else inspect(next);
+              }}
+            />
+          </TimelineTrack>
           <div className="story-dock-actions">
             {!invited && (
               <PlaybackButton

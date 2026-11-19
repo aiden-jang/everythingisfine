@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { ObservationFrame } from "./types";
+import { revealReading } from "./revealReading";
 import { layerTime } from "../layerTime";
 import { refreshAnnotations } from "../../globe/annotationInput";
 
@@ -39,7 +40,8 @@ export function FrameComparison({
     <details
       className="frame-comparison"
       onToggle={(event) => {
-        if (!event.currentTarget.open) setPair(null);
+        if (event.currentTarget.open) revealReading(event.currentTarget.querySelector("summary"));
+        else setPair(null);
       }}
     >
       <summary>Compare dates</summary>

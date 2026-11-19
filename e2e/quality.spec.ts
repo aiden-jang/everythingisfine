@@ -52,7 +52,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     }
     const marks =
       width < 768
-        ? page.getByRole("button", { name: "Globe info", exact: true })
+        ? page.getByRole("button", { name: "Sources & legend", exact: true })
         : page.getByText("Legend", { exact: true }).filter({ visible: true });
     await marks.click();
     await page.getByText("Depth, in section", { exact: true }).filter({ visible: true }).click();
@@ -64,7 +64,8 @@ for (const width of [320, 390, 768, 1024, 1440]) {
     await expect(diagram).toBeVisible();
     expect((await diagram.boundingBox())!.width).toBeLessThanOrEqual(width);
     await capture("depth-key");
-    if (width < 768) await page.getByRole("button", { name: "Close globe info", exact: true }).click();
+    if (width < 768)
+      await page.getByRole("button", { name: "Close sources and legend", exact: true }).click();
     else await marks.click();
     if (width < 768) {
       await page.getByRole("button", { name: "View options", exact: true }).click();

@@ -161,6 +161,26 @@
   border: 1px solid var(--color-hairline);
   border-radius: 7px;
 }
+.story-search input::-webkit-search-cancel-button {
+  appearance: none;
+}
+#chrome-rail .story-search:has(.story-search-reset) input {
+  padding-inline-end: 46px;
+}
+.story-search-reset {
+  position: absolute;
+  inset: 0 0 0 auto;
+  display: grid;
+  width: 44px;
+  place-items: center;
+  border-radius: 2px;
+  color: var(--color-dim);
+  cursor: pointer;
+}
+.story-search-reset:hover {
+  color: var(--color-ink);
+  background: var(--color-raised);
+}
 .story-search input::placeholder {
   color: var(--color-dim);
 }

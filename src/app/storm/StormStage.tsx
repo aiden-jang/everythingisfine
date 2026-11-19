@@ -3,6 +3,7 @@ import { PlaybackButton } from "../PlaybackButton";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ReplayPanel, type ReplayProps } from "../observations/RecordedReplay";
 import { StoryDock } from "../observations/StoryDock";
+import { TimelineTrack } from "../observations/TimelineTrack";
 import { gulf, stormGeography, stormLens, stormTarget } from "./stormGlobe";
 import { useObservationImage } from "../observations/useObservationData";
 import {
@@ -267,7 +268,13 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
           )}
         </>
       }
-      at={!visibleArchive && <time dateTime={new Date(storm.at).toISOString()}>{progress}</time>}
+      at={
+        !visibleArchive && (
+          <time dateTime={new Date(storm.at).toISOString()}>
+            <small>{progress.split(" · ")[0]}</small> {progress.split(" · ")[1]}
+          </time>
+        )
+      }
       sources={
         <>
           <a href="https://www.nhc.noaa.gov/data/" target="_blank" rel="noreferrer">
@@ -307,19 +314,35 @@ export function StormStage({ onView, ...panel }: ReplayProps): JSX.Element {
                 <label htmlFor="storm-time">{comparing ? "Recorded fix" : "Track time"}</label>
                 <time dateTime={new Date(storm.at).toISOString()}>{progress}</time>
               </div>
-              <input
-                id="storm-time"
-                className="scrub-slider storm-scrub"
-                type="range"
-                min={0}
+              <TimelineTrack
                 max={comparing ? FIXES.length - 1 : TRACK_MINUTES}
-                value={comparing ? storm.fixIndex : minute}
-                aria-valuetext={progress}
-                onInput={(event) => {
-                  const value = event.currentTarget.valueAsNumber;
-                  update(comparing ? fixedComparison((FIXES[value]!.time - START) / 60_000) : seekTo(value));
-                }}
-              />
+                current={comparing ? storm.fixIndex : minute}
+                landmark={
+                  comparing
+                    ? undefined
+                    : {
+                        at: TRACK_MINUTES,
+                        label: `Landfall · ${stormClock(FIXES.at(-1)!.time)}`,
+                        select: () => compareAt(TRACK_MINUTES),
+                      }
+                }
+              >
+                <input
+                  id="storm-time"
+                  className="scrub-slider storm-scrub"
+                  type="range"
+                  min={0}
+                  max={comparing ? FIXES.length - 1 : TRACK_MINUTES}
+                  value={comparing ? storm.fixIndex : minute}
+                  aria-valuetext={progress}
+                  onInput={(event) => {
+                    const value = event.currentTarget.valueAsNumber;
+                    update(
+                      comparing ? fixedComparison((FIXES[value]!.time - START) / 60_000) : seekTo(value),
+                    );
+                  }}
+                />
+              </TimelineTrack>
               <div className="story-dock-actions archive-scene-controls">
                 <PlaybackButton
                   buttonRef={playback}

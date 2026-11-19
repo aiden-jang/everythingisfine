@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { horizontal, localNight, skyBodies, type SkyCity } from "./tonight";
+import { horizontal, localNight, moonsetBetween, skyBodies, type SkyCity } from "./tonight";
 import { sunElevation } from "./sun";
 
 const newYork: SkyCity = { name: "New York", lat: 40.7128, lon: -74.006, zone: "America/New_York" };
@@ -20,6 +20,14 @@ test("New York Moon and Jupiter agree with airless JPL Horizons reference angles
   expect(Math.abs(moon!.altitude - -58.518062)).toBeLessThan(0.4);
   expect(Math.abs(jupiter!.azimuth - 38.252556)).toBeLessThan(0.4);
   expect(Math.abs(jupiter!.altitude - -26.652232)).toBeLessThan(0.4);
+});
+
+test("moonset marks a descending crossing of the same horizon shown in Tonight’s Sky", () => {
+  const start = Date.parse("2026-11-07T00:00:00Z");
+  const set = moonsetBetween(newYork, start, start + 24 * 60 * 60_000);
+  expect(set).not.toBeNull();
+  expect(skyBodies(newYork, set! - 60_000)[0]!.altitude).toBeGreaterThan(0);
+  expect(skyBodies(newYork, set! + 60_000)[0]!.altitude).toBeLessThan(0);
 });
 
 test("sunset to sunrise stays in the selected city's local calendar across the fall clock change", () => {

@@ -148,6 +148,7 @@ export function LightsReturn({
           >
             <div
               className="lights-map"
+              data-reference={compare || undefined}
               style={
                 { "--lights-entry-scale": landing.scale, "--lights-split": `${split}%` } as CSSProperties
               }

@@ -42,6 +42,7 @@ export function TongaWorld({
                 : undefined
             }
             data-station-signal={signal?.id === item.id ? "" : undefined}
+            data-projection-anchor={station.id === item.id || undefined}
             onClick={() => onInspect(item)}
             aria-label={`Inspect ${item.name} pressure`}
           >

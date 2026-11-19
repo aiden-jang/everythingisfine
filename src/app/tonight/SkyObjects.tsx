@@ -5,9 +5,11 @@ export function SkyObjects({
   current,
   sky,
   onView,
+  moonset,
 }: {
   current: TonightView;
   sky: string;
+  moonset?: string | undefined;
   onView: (view: TonightView) => void;
 }) {
   const { visible, below } = skyTargets(current.bodies);
@@ -24,6 +26,7 @@ export function SkyObjects({
               <button
                 type="button"
                 aria-label={`Find ${body.name}`}
+                aria-pressed={current.targetName === body.name}
                 onClick={() => onView({ ...current, look: aimAt(body), targetName: body.name })}
               >
                 <span>
@@ -31,6 +34,7 @@ export function SkyObjects({
                   <small>
                     {body.lit !== null && `${body.lit}% lit · `}
                     {Math.round(body.altitude)}° above horizon · {bearingLabel(body.azimuth)}
+                    {body.name === "Moon" && moonset && ` · Sets at ${moonset}`}
                   </small>
                 </span>
                 <span>Find</span>
@@ -50,7 +54,9 @@ export function SkyObjects({
             {below.map((body) => (
               <li key={body.name}>
                 <span>{body.name}</span>
-                <small>Below horizon</small>
+                <small>
+                  {body.name === "Moon" && moonset ? `Below horizon · Set at ${moonset}` : "Below horizon"}
+                </small>
               </li>
             ))}
           </ul>

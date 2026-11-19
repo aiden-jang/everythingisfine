@@ -43,8 +43,10 @@ export function StorySearch({
   return (
     <>
       <div className="story-tools">
-        <label className="story-search explorer-search">
-          <span className="sr-only">Find a story</span>
+        <div className="story-search explorer-search">
+          <label className="sr-only" htmlFor="story-search-input">
+            Find a story
+          </label>
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
             <path d="m15 15 6 6" stroke="currentColor" strokeWidth="1.5" />
@@ -62,7 +64,23 @@ export function StorySearch({
               deck.setQuery(e.currentTarget.value);
             }}
           />
-        </label>
+          {deck.query && (
+            <button
+              type="button"
+              className="story-search-reset"
+              aria-label="Clear search"
+              onClick={() => {
+                if (input.current) resetStoryResults(input.current);
+                deck.setQuery("");
+                input.current?.focus({ preventScroll: true });
+              }}
+            >
+              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                <path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              </svg>
+            </button>
+          )}
+        </div>
         {filter}
       </div>
       <div className="story-results" ref={results}>
@@ -106,9 +124,6 @@ export function StorySearch({
                 </div>
               ))}
             </div>
-            <button type="button" className="story-search-clear" onClick={() => deck.setQuery("")}>
-              Clear search
-            </button>
           </section>
         )}
         {children}

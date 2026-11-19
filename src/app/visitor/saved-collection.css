@@ -36,6 +36,21 @@
   font-size: var(--text-control);
   line-height: 1.6;
 }
+.saved-empty {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  margin-top: 24px;
+  color: var(--color-dim);
+  font-size: var(--text-control);
+}
+.saved-empty button {
+  min-height: 44px;
+  color: var(--color-ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
 .saved-evidence-list {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -216,4 +231,9 @@
   .kept-evidence h3 {
     font-size: 44px;
   }
+}
+
+.note-draft {
+  color: var(--color-dim);
+  font-size: 12px;
 }

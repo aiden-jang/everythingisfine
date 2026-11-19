@@ -25,6 +25,12 @@ import { useRadarLightning } from "./useRadarLightning";
 import { useRadarScans } from "./useRadarScans";
 import { radarFeedHealth } from "./radarFeedHealth";
 
+const radarDate = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "UTC",
+});
 const label = layerTime;
 const shortTime = (at: number) => new Date(at).toISOString().slice(11, 16);
 
@@ -224,21 +230,8 @@ export function RadarStage({
             </label>
             {selected && (
               <time dateTime={new Date(selected.at).toISOString()}>
-                {layer ? (
-                  <>
-                    <strong>{shortTime(selected.at)} UTC</strong>
-                    <span>
-                      {new Intl.DateTimeFormat("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        timeZone: "UTC",
-                      }).format(selected.at)}
-                    </span>
-                  </>
-                ) : (
-                  timeLabel
-                )}
+                <strong>{shortTime(selected.at)} UTC</strong>
+                <span className="radar-reading-date">{radarDate.format(selected.at)}</span>
               </time>
             )}
           </div>

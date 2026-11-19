@@ -258,3 +258,9 @@
   margin-top: 2px;
   font: inherit;
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  [data-projection-travel] :is(.pick-corners, .place-reticle, [data-projection-anchor]) {
+    filter: drop-shadow(0 0 5px var(--color-dim));
+  }
+}

@@ -1,5 +1,7 @@
 import { createPortal } from "react-dom";
 import { useLayoutEffect, useMemo, useRef, useSyncExternalStore } from "react";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { TimelineTrack } from "../observations/TimelineTrack";
 import { useStoryCompletion } from "../journeys/useStoryCompletion";
 import { PlaybackButton } from "../PlaybackButton";
 import { MeasurementSound } from "../MeasurementSound";
@@ -25,6 +27,10 @@ export function FloatMeasurements({
   const focusPlayback = useRef(false);
   const transport = useRef<HTMLElement>(null);
   const { samples } = view.profile;
+  const entries = useStoryNavigation()?.library.saved;
+  const kept = entries?.flatMap(({ position }) =>
+    position.float?.profile === view.profile.id ? [position.float.index] : [],
+  );
   const sample = samples[index]!;
   const takeaway = useMemo(() => profileTakeaway(samples), [samples]);
   useStoryCompletion(stage === "notice");
@@ -132,16 +138,18 @@ export function FloatMeasurements({
                   {meters.format(sample.depth)} m · inspect the profile above
                 </p>
               ) : (
-                <input
-                  type="range"
-                  className="scrub-slider float-scrub"
-                  min={0}
-                  max={samples.length - 1}
-                  value={index}
-                  onChange={(event) => view.seek(event.currentTarget.valueAsNumber)}
-                  aria-label="Ascent depth"
-                  aria-valuetext={`${meters.format(sample.depth)} m`}
-                />
+                <TimelineTrack max={samples.length - 1} current={index} kept={kept}>
+                  <input
+                    type="range"
+                    className="scrub-slider float-scrub"
+                    min={0}
+                    max={samples.length - 1}
+                    value={index}
+                    onChange={(event) => view.seek(event.currentTarget.valueAsNumber)}
+                    aria-label="Ascent depth"
+                    aria-valuetext={`${meters.format(sample.depth)} m`}
+                  />
+                </TimelineTrack>
               )}
             </div>
             <button

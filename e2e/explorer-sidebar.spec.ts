@@ -58,14 +58,14 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   expect(collapsed).toBeGreaterThan(half);
   expect(half).toBeGreaterThan(expanded);
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeInViewport();
-  const legend = page.getByRole("region", { name: "Globe information", exact: true });
-  await page.getByRole("button", { name: "Globe info", exact: true }).click();
+  const legend = page.getByRole("region", { name: "Sources & legend", exact: true });
+  await page.getByRole("button", { name: "Sources & legend", exact: true }).click();
   await expect(legend).toBeInViewport({ ratio: 1 });
-  await expect(legend.getByRole("button", { name: "Close globe info" })).toBeFocused();
+  await expect(legend.getByRole("button", { name: "Close sources and legend" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(legend).toBeHidden();
-  await expect(page.getByRole("button", { name: "Globe info", exact: true })).toBeFocused();
-  await page.getByRole("button", { name: "Globe info", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Sources & legend", exact: true })).toBeFocused();
+  await page.getByRole("button", { name: "Sources & legend", exact: true }).click();
   await page.getByRole("button", { name: "View options", exact: true }).click();
   await expect(legend).toBeHidden();
   await page.keyboard.press("Escape");
@@ -95,7 +95,7 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await page.getByText("Keyboard controls", { exact: true }).filter({ visible: true }).click();
   await expect(page.locator(".mobile-key-hints .keyboard-controls")).toBeVisible();
   await page.keyboard.press("Escape");
-  await page.getByRole("button", { name: "Globe info", exact: true }).click();
+  await page.getByRole("button", { name: "Sources & legend", exact: true }).click();
   await expect(legend).toBeInViewport({ ratio: 1 });
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(legend).toHaveCount(0);
@@ -319,4 +319,24 @@ test("panel arrivals work in both directions and settle without replacing the ca
   await expect(page.getByRole("tabpanel", { name: "Stories", exact: true })).toBeVisible();
   expect(await arrivals()).toEqual(["explorer-stories", "explorer-layers"]);
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+});
+
+test("clearing search and dismissing a transient location preview keep keyboard focus @dev", async ({
+  page,
+}) => {
+  await installFeeds(page, { presentation: "fresh", empty: true });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await page.getByRole("button", { name: "Browse stories", exact: true }).click();
+  const search = page.getByRole("searchbox", { name: "Find a story", exact: true });
+  await search.fill("Tonga");
+  const result = page.locator("#search-story-tonga");
+  await result.focus();
+  const dismiss = page.getByRole("button", { name: "Dismiss location preview", exact: true });
+  await dismiss.press("Enter");
+  await expect(result).toBeFocused();
+  await expect(dismiss).toHaveCount(0);
+  await page.getByRole("button", { name: "Clear search", exact: true }).press("Enter");
+  await expect(search).toHaveValue("");
+  await expect(search).toBeFocused();
 });

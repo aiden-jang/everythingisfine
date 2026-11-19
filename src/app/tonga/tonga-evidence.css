@@ -326,3 +326,25 @@
     margin-block: 4px;
   }
 }
+
+.pressure-bookmark,
+.tonga-chart-dot[data-kept-reading] {
+  stroke: var(--color-feed-available);
+  stroke-width: 2px;
+}
+.tonga-chart-dot[data-kept-reading] {
+  animation: pressure-kept 680ms ease-out both;
+}
+@keyframes pressure-kept {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tonga-chart-dot[data-kept-reading] {
+    animation: none;
+  }
+}

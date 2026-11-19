@@ -106,7 +106,7 @@ function paintSurvey(
   ctx.strokeStyle = "#a2c1c2a8";
   ctx.stroke(fixedCoast);
   ctx.stroke(mode === "before" ? oldCoast : map.coast);
-  if (mode === "after" || (mode === "dated" && frame.index >= LAST)) {
+  if (mode !== "dated" || frame.index >= LAST) {
     ctx.setLineDash([5 * unit, 4 * unit]);
     ctx.lineWidth = 2.65 * unit;
     ctx.strokeStyle = "#382a25";

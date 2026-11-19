@@ -172,3 +172,7 @@
     border-color: ButtonText;
   }
 }
+
+.feed-time-label {
+  display: block;
+}

@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from "react";
+import { revealReading } from "../observations/revealReading";
 import { SaveVisit } from "../visitor/VisitShelf";
 import { searchStories } from "../storyIndex";
 import { journeys } from "./catalogue";
@@ -108,11 +109,7 @@ export function ExperienceEnding({
         ref={details}
         className="related-stories"
         onToggle={() => {
-          if (details.current?.open && !completed)
-            details.current.querySelector("button")?.scrollIntoView({
-              block: "nearest",
-              behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth",
-            });
+          if (details.current?.open && !completed) revealReading(details.current.querySelector("summary"));
         }}
       >
         <summary>{completed ? "Up next" : "Keep exploring"}</summary>

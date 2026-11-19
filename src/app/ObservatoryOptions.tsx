@@ -1,6 +1,6 @@
 import { RecordButton } from "./capture/ClipControls";
 import type { Clip } from "./capture/useClip";
-import { useId, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { FullscreenButton } from "./FullscreenButton";
 import "./observatory-options.css";
 
@@ -22,6 +22,13 @@ export function ObservatoryOptions({
   const id = `view-options-${useId()}`;
   const panel = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const [reduced, setReduced] = useState(() => matchMedia("(prefers-reduced-motion: reduce)").matches);
+  useEffect(() => {
+    const preference = matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setReduced(preference.matches);
+    preference.addEventListener("change", update);
+    return () => preference.removeEventListener("change", update);
+  }, []);
   return (
     <>
       <button
@@ -69,7 +76,11 @@ export function ObservatoryOptions({
         >
           Auto-rotate globe <span>{rotation.enabled ? "On" : "Off"}</span>
         </button>
-        <p>Landing page only. Drag to pause rotation.</p>
+        <p>
+          {rotation.enabled && reduced
+            ? "Enabled for the landing page. Paused by reduced motion."
+            : "Landing page only. Drag to pause rotation."}
+        </p>
         <button
           type="button"
           id="capture-still"

@@ -39,6 +39,7 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
   latest.current = navigation;
   const [pinned, setPinned] = useState(false);
   const trigger = useRef<HTMLElement | null>(null);
+  const restoringFocus = useRef(false);
   useEffect(() => () => latest.current?.preview(), []);
   const touch = useRef<{ x: number; y: number; timer: ReturnType<typeof setTimeout>; held: boolean } | null>(
     null,
@@ -59,7 +60,11 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
     setPinned(false);
     setPlace(null);
     navigation?.preview();
-    if (restoreFocus && trigger.current?.isConnected) trigger.current.focus({ preventScroll: true });
+    if (restoreFocus && trigger.current?.isConnected) {
+      restoringFocus.current = true;
+      trigger.current.focus({ preventScroll: true });
+      restoringFocus.current = false;
+    }
   };
   const locate = (region: StoryPlace, button?: HTMLElement) => {
     if (button) {
@@ -71,10 +76,12 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
     navigation?.preview(region);
   };
   const preview = (target: EventTarget | null) => {
-    if (pinned) return;
+    if (pinned || restoringFocus.current) return;
     if (target instanceof Element && target.closest(".discovery-preview")) return;
     const button = target instanceof Element ? target.closest("button[id]") : null;
-    setPlace(button ? (storyPlace(button.id) ?? null) : null);
+    const previewed = button instanceof HTMLElement ? storyPlace(button.id) : undefined;
+    trigger.current = previewed && button instanceof HTMLElement ? button : null;
+    setPlace(previewed ?? null);
   };
   const stage = document.querySelector(".zones");
   return (
@@ -103,6 +110,7 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
             held: false,
             timer: setTimeout(() => {
               if (touch.current) {
+                trigger.current = button instanceof HTMLElement ? button : null;
                 touch.current.held = true;
                 setPlace(region);
               }
@@ -139,7 +147,7 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
             setPlace(null);
         }}
         onKeyDownCapture={(event) => {
-          if (event.key === "Escape" && place && pinned) {
+          if (event.key === "Escape" && place) {
             event.preventDefault();
             event.stopPropagation();
             dismiss(true);
@@ -181,7 +189,7 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
               <div className="discovery-preview-caption">
                 <span>
                   {place.label}
-                  <small>Story region · preview</small>
+                  <small>{pinned ? "Located" : "Story location preview"}</small>
                 </span>
                 {!pinned && (
                   <button type="button" onClick={() => locate(place)}>

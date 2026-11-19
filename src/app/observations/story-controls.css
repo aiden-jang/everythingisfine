@@ -177,7 +177,7 @@
     grid-row: 1 / span 2;
   }
 
-  .story-dock > input[type="range"] {
+  .story-dock > :is(input[type="range"], .timeline-track) {
     grid-column: 1;
   }
 
@@ -267,4 +267,9 @@
   .survey-transport .story-dock-actions {
     grid-area: 1 / 2 / span 2;
   }
+}
+
+.story-dock-time time small {
+  color: var(--color-dim);
+  font-size: 11px;
 }

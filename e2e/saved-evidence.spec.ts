@@ -28,6 +28,7 @@ test("a kept pressure reading exports its source card and reopens the same stati
   const card = collection.getByRole("article");
   await expect(card).toContainText("1017.75 hPa");
   await expect(card).toContainText("Honolulu");
+  await expect(card).toContainText("meanwhile.");
   await expect(card).toContainText("15 Jan 2022, 08:59 UTC");
   await expect(card.getByRole("link", { name: "ASOS / Iowa Environmental Mesonet" })).toHaveAttribute(
     "href",
@@ -37,9 +38,17 @@ test("a kept pressure reading exports its source card and reopens the same stati
   await collection
     .getByRole("textbox", { name: "What did you notice?" })
     .fill("The same event was recorded across the Pacific.");
+  await expect(collection.getByText("Unsaved draft")).toBeVisible();
+  await collection.getByRole("button", { name: "Close saved observations" }).click();
+  await savedTrigger.click();
+  await collection.getByText("Unsaved draft").click();
+  await expect(collection.getByRole("textbox", { name: "What did you notice?" })).toHaveValue(
+    "The same event was recorded across the Pacific.",
+  );
   const saveNote = collection.getByRole("button", { name: "Save note", exact: true });
   await saveNote.click();
   await expect(saveNote).toBeFocused();
+  await expect(collection.getByText("Note saved.", { exact: true })).toBeVisible();
   await expect(collection.getByRole("textbox", { name: "What did you notice?" })).toBeVisible();
   if (process.env["EIF_CAPTURE_UI"])
     await page.screenshot({ path: test.info().outputPath("saved-pressure-reading.png") });
@@ -62,4 +71,5 @@ test("a kept pressure reading exports its source card and reopens the same stati
     "true",
   );
   await expect(story.locator(".tonga-chart-meta").first()).toContainText("1017.75 hPa");
+  await expect(story.locator(".tonga-chart-dot[data-kept-reading]")).toBeVisible();
 });

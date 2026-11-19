@@ -18,11 +18,7 @@ export function EvidenceCard({ evidence }: { evidence: VisitEvidence }) {
   return (
     <article className="kept-evidence" aria-label={`${evidence.title} saved evidence`}>
       <div className="kept-evidence-heading">
-        <strong>
-          Everything
-          <br />
-          is fine.
-        </strong>
+        <strong>meanwhile.</strong>
         <span>{evidence.kind}</span>
       </div>
       <h3>{evidence.title}</h3>

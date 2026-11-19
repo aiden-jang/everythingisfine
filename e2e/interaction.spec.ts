@@ -2070,20 +2070,20 @@ test("the marks key is reachable at every width", async ({ page }) => {
     await page.waitForTimeout(400);
     const toggle =
       w < 768
-        ? page.getByRole("button", { name: "Globe info", exact: true })
+        ? page.getByRole("button", { name: "Sources & legend", exact: true })
         : page.getByText("Legend", { exact: true }).filter({ visible: true });
     await expect(toggle, `visible copies of the key at ${w}x${h}`).toHaveCount(1);
     await expect(toggle).toBeInViewport({ ratio: 1 });
     await toggle.click();
     const openKey =
       w < 768
-        ? page.getByRole("region", { name: "Globe information", exact: true })
+        ? page.getByRole("region", { name: "Sources & legend", exact: true })
         : page.locator(".canvas-legend");
     await expect(openKey).toBeInViewport({ ratio: 1 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     if (w === 320 && process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: test.info().outputPath("phone-map-legend.png") });
-    if (w < 768) await page.getByRole("button", { name: "Close globe info", exact: true }).click();
+    if (w < 768) await page.getByRole("button", { name: "Close sources and legend", exact: true }).click();
     else await toggle.click();
   }
 });

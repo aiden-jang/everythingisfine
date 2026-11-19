@@ -68,6 +68,32 @@ export function skyBodies(city: SkyCity, at: number) {
   ];
 }
 
+export function moonsetBetween(city: SkyCity, start: number, end: number) {
+  const altitude = (at: number) => {
+    const moon = moonPosition(at);
+    return horizontal(city, moon, moonRadii(moon.distanceKm)).altitude;
+  };
+  const interval = 10 * 60_000;
+  let previous = start;
+  let above = altitude(start) >= 0;
+  for (let at = Math.min(start + interval, end); at > previous; at = Math.min(at + interval, end)) {
+    const nextAbove = altitude(at) >= 0;
+    if (above && !nextAbove) {
+      let lo = previous;
+      let hi = at;
+      while (hi - lo > 1_000) {
+        const mid = (lo + hi) / 2;
+        if (altitude(mid) >= 0) lo = mid;
+        else hi = mid;
+      }
+      return Math.round((lo + hi) / 120_000) * 60_000;
+    }
+    previous = at;
+    above = nextAbove;
+  }
+  return null;
+}
+
 function civilClock(zone: string) {
   const format = new Intl.DateTimeFormat("en", {
     timeZone: zone,

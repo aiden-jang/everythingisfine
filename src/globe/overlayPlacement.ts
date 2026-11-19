@@ -50,10 +50,17 @@ export function overlayPlacement({
   scaleText,
 }: Placement) {
   let tooltipKey = "";
+  let projectionMoving = false;
   return () => {
     const state = read();
     const hovered = hover();
     const box = el.getBoundingClientRect();
+    const projection = globe.controls.morph();
+    const moving = projection > 0 && projection < 1;
+    if (projectionMoving !== moving) {
+      projectionMoving = moving;
+      el.closest(".zones")?.toggleAttribute("data-projection-travel", moving);
+    }
     const locate = (t: {
       kind: "quake" | "mark";
       id: string;

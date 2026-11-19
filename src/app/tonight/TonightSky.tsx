@@ -2,10 +2,20 @@ import type { CameraState } from "../../globe/controlsTypes";
 import type { MoonfallProgress } from "../../globe/moonfall/scene";
 import { ExperienceEnding } from "../journeys/ExperienceEnding";
 import { lazy, Suspense, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { aimAt, localNight, openingSky, skyBodies, type SkyLook, type TonightView } from "../../geo/tonight";
+import {
+  aimAt,
+  localNight,
+  moonsetBetween,
+  openingSky,
+  skyBodies,
+  type SkyLook,
+  type TonightView,
+} from "../../geo/tonight";
 import type { LunarDeparture, TonightPresentation } from "../../globe/scenePresentation";
 import { sunElevation } from "../../geo/sun";
 import { useObservatoryEscape } from "../useObservatoryEscape";
+import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { TimelineTrack } from "../observations/TimelineTrack";
 import { StoryDock } from "../observations/StoryDock";
 import { SkyCityPicker, type SkyCityPreference } from "./SkyCityPicker";
 import { MeteorNights } from "./MeteorNights";
@@ -62,6 +72,7 @@ export function TonightSky({
   const [meteorDeparture, setMeteorDeparture] = useState<TonightView | null>(null);
   const [observing, setObserving] = useState(Boolean(initialMoment || initialLook));
   const { city } = preference;
+  const entries = useStoryNavigation()?.library.saved;
   const night = useMemo(() => {
     const at = initialMoment?.city === city.name ? initialMoment.at : openedAt;
     const candidate = localNight(city, at);
@@ -99,6 +110,12 @@ export function TonightSky({
         : null,
   );
   const at = current.at;
+  const moonset = useMemo(() => moonsetBetween(city, night.start, night.end), [city, night.start, night.end]);
+  const kept = entries?.flatMap(({ id, position }) =>
+    id === "sky" && position.sky?.city === city.name
+      ? [Math.floor((position.sky.at - night.start) / MINUTE)]
+      : [],
+  );
   const { target } = skyTargets(current.bodies);
   const sun = sunElevation(city.lon, city.lat, at);
   const pointAtSky = (next: TonightView) => {
@@ -238,20 +255,26 @@ export function TonightSky({
                 <label htmlFor={rangeId}>City local time</label>
                 <time dateTime={new Date(at).toISOString()}>{format.local.format(at)}</time>
               </div>
-              <input
-                id={rangeId}
-                type="range"
-                className="scrub-slider tonight-scrub"
-                min={0}
+              <TimelineTrack
                 max={(night.end - night.start) / MINUTE}
-                value={(at - night.start) / MINUTE}
-                aria-valuetext={format.local.format(at)}
-                onChange={(event) => {
-                  const at = night.start + event.currentTarget.valueAsNumber * MINUTE;
-                  onView({ ...current, at, bodies: skyBodies(city, at) });
-                  setObserving(true);
-                }}
-              />
+                current={(at - night.start) / MINUTE}
+                kept={kept}
+              >
+                <input
+                  id={rangeId}
+                  type="range"
+                  className="scrub-slider tonight-scrub"
+                  min={0}
+                  max={(night.end - night.start) / MINUTE}
+                  value={(at - night.start) / MINUTE}
+                  aria-valuetext={format.local.format(at)}
+                  onChange={(event) => {
+                    const at = night.start + event.currentTarget.valueAsNumber * MINUTE;
+                    onView({ ...current, at, bodies: skyBodies(city, at) });
+                    setObserving(true);
+                  }}
+                />
+              </TimelineTrack>
               <div className="tonight-clock tonight-edges">
                 <span>
                   {night.sunset ? "Sunset" : "Evening"} · {format.clock.format(night.start)}
@@ -262,7 +285,12 @@ export function TonightSky({
               </div>
             </div>
           </StoryDock>
-          <SkyObjects current={current} sky={sky} onView={pointAtSky} />
+          <SkyObjects
+            current={current}
+            sky={sky}
+            onView={pointAtSky}
+            moonset={moonset === null ? undefined : format.clock.format(moonset)}
+          />
         </>
       )}
       <div className="tonight-onward">

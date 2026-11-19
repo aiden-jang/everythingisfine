@@ -1,3 +1,5 @@
+import { useStoryNavigation } from "../journeys/StoryNavigation";
+import { keptPressureMinutes } from "./tongaBookmarks";
 import { pressureAt, stations, timeIso, timeLabel } from "./tongaTimeline";
 
 type Station = (typeof stations)[number];
@@ -35,6 +37,8 @@ export function PressureChart({
 }): JSX.Element {
   const { x, y, path, low, high } = charts[stations.indexOf(station)]!;
   const reading = pressureAt(station, minute);
+  const kept = keptPressureMinutes(useStoryNavigation()?.library.saved, station.id);
+  const isKept = kept.includes(Math.floor(minute));
   const end = station.start + station.values.length - 1;
   const cursor = x(Math.floor(minute) - station.start);
   const peak = x(station.peak - station.start);
@@ -64,6 +68,15 @@ export function PressureChart({
             d={`M0 ${inset}H${width}M0 ${height / 2}H${width}M0 ${height - inset}H${width}`}
             className="tonga-chart-grid"
           />
+          {onSeek &&
+            kept.map((at) => (
+              <path
+                key={at}
+                className="pressure-bookmark"
+                d={`M${x(at - station.start)} 0v6`}
+                aria-hidden="true"
+              />
+            ))}
           {!onSeek && <path d={`M${peak} 0V${height}`} className="tonga-chart-peak" />}
           <path d={path} className="tonga-chart-trace" data-ramp="" />
           {reading !== null && (
@@ -76,6 +89,7 @@ export function PressureChart({
                 className="tonga-chart-dot"
                 data-ramp=""
                 data-evidence-point={linked ? "" : undefined}
+                data-kept-reading={isKept || undefined}
               />
             </>
           )}

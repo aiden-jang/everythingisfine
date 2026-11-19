@@ -2,6 +2,7 @@
 @import "./motion.css";
 @import "./observatory.css";
 @import "./app/aperture.css";
+@import "./app/observations/timeline-track.css";
 
 /* Fonts are self-hosted. Geographic readings use the mono family; display type loads from aperture.css. */
 /* `wght` rather than the index: upright axis only, no italic faces, and nothing here is italic.

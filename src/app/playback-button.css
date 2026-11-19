@@ -1,0 +1,4 @@
+button.story-playback:not([data-playback-intro]) {
+  min-inline-size: 6em;
+  flex-shrink: 0;
+}

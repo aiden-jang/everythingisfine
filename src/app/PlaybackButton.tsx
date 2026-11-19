@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes, Ref } from "react";
+import "./playback-button.css";
 
 type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "type"> & {
   playing: boolean;

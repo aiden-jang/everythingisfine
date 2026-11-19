@@ -32,12 +32,12 @@ export function LayerReadout({
       <button
         ref={trigger}
         className="layer-times-toggle"
-        aria-label={compact ? "Globe info" : "Sources & times"}
+        aria-label={compact ? "Sources & legend" : "Sources & times"}
         type="button"
         {...{ popovertarget: id }}
       >
         {compact ? (
-          <span>Globe info</span>
+          <span>Sources & legend</span>
         ) : (
           <span>
             Sources<span className="layer-times-suffix"> &amp; times</span>
@@ -53,7 +53,7 @@ export function LayerReadout({
         className={compact ? "layer-times-popover globe-info-popover" : "layer-times-popover"}
         {...{ popover: "auto" }}
         role={compact ? "region" : "group"}
-        aria-label={compact ? "Globe information" : "Weather layer times"}
+        aria-label={compact ? "Sources & legend" : "Weather layer times"}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
             event.preventDefault();
@@ -63,9 +63,14 @@ export function LayerReadout({
         }}
       >
         <div className="layer-times-heading">
-          {compact && <h2>Globe information</h2>}
-          <button type="button" autoFocus={compact} onClick={close}>
-            {compact ? "Close globe info" : "Close layer times"}
+          {compact && <h2>Sources & legend</h2>}
+          <button
+            type="button"
+            autoFocus={compact}
+            aria-label={compact ? "Close sources and legend" : "Close layer times"}
+            onClick={close}
+          >
+            Close
           </button>
         </div>
         {compact && hasTimes && <h3>Scan times</h3>}

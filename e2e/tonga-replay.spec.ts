@@ -137,6 +137,9 @@ test("Tonga’s reduced-motion archive can jump to measured station pulses on a 
   await expect(slider).toHaveAttribute("aria-valuetext", "04:00 UTC");
   await expect(signal).toHaveCount(0);
   await expect(replay.getByText("This station’s readings cover")).toBeVisible();
+  const firstReading = replay.getByRole("button", { name: "San Francisco first reading · 11:10 UTC" });
+  await firstReading.click();
+  await expect(slider).toHaveAttribute("aria-valuetext", "11:10 UTC");
   await expect.poll(() => replay.evaluate((dialog) => dialog.scrollWidth - dialog.clientWidth)).toBe(0);
   await page.setViewportSize({ width: 812, height: 375 });
   const station = replay.getByRole("combobox", { name: "Ground station" });

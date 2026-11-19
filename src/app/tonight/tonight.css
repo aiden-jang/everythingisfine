@@ -473,3 +473,13 @@
     inset-inline-end: var(--stage-inset);
   }
 }
+
+.tonight-target-bearing {
+  display: block;
+  color: var(--color-ink);
+  font-size: 11px;
+}
+.tonight-labels [data-target] {
+  color: var(--color-ink);
+  border-bottom: 1px solid var(--color-faint);
+}

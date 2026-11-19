@@ -31,9 +31,9 @@ test("expanded phone sheet keeps projection, legend and recorded radar sources r
   expect(await page.evaluate(() => matchMedia("(pointer: coarse)").matches)).toBe(true);
   const sheet = page.getByRole("separator", { name: "Sheet height", exact: true });
   const projection = page.locator("#view-projection");
-  const information = page.getByRole("button", { name: "Globe info", exact: true });
+  const information = page.getByRole("button", { name: "Sources & legend", exact: true });
   const credit = page.getByRole("link", { name: "Radar by RainViewer", exact: true });
-  const drawer = page.getByRole("region", { name: "Globe information", exact: true });
+  const drawer = page.getByRole("region", { name: "Sources & legend", exact: true });
   await expect(page.locator(".radar-canvas-credit time")).toHaveAttribute(
     "datetime",
     new Date(time * 1000).toISOString(),
@@ -70,7 +70,7 @@ test("expanded phone sheet keeps projection, legend and recorded radar sources r
       "datetime",
       new Date(time * 1000).toISOString(),
     );
-    await drawer.getByRole("button", { name: "Close globe info", exact: true }).click();
+    await drawer.getByRole("button", { name: "Close sources and legend", exact: true }).click();
     await expect(information).toBeFocused();
   }
   await projection.focus();

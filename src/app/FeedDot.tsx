@@ -97,14 +97,16 @@ export function FeedDot({
               >
                 {label}
               </a>
-              {state === "failed" || (state === "ok" && message) ? (
+              {state !== "ok" || message ? (
                 <small className="feed-row-detail" title={message ?? LABEL[state]}>
-                  {state === "failed" ? "Unavailable" : message?.replace(/^Available · /, "")}
+                  {state === "failed"
+                    ? "Unavailable"
+                    : (message?.replace(/^Available · /, "") ?? (state === "pending" ? "Checking" : "Off"))}
                 </small>
               ) : (
                 lastCheck !== undefined && (
                   <span className="feed-row-detail" title={`Last successful check: ${layerTime(lastCheck)}`}>
-                    <span className="sr-only">Last successful check </span>
+                    <span className="feed-time-label">Checked</span>{" "}
                     <time dateTime={new Date(lastCheck).toISOString()}>
                       {new Date(lastCheck).toISOString().slice(11, 16)} UTC
                     </time>

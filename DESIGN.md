@@ -320,7 +320,7 @@ Supplemental inspector disclosures use an 8px gap and retain their 44px controls
 
 Radar starts on unless a saved choice turns it off. Desktop Explore groups attribution and
 Sources & times beside the inline legend. The caption includes the selected UTC scan time when the
-rail folds. On phones, Globe info holds the legend and source times together, scrolls independently
+rail folds. On phones, Sources & legend holds the legend and source times together, scrolls independently
 of the sheet and returns focus on Close or Escape. The projection switch and RainViewer attribution
 stay in fixed positions beside it. The full scan date stays available in the inspector. Guided
 regional radar remains in the radar inspector, and returning restores the camera and compatible scan time.
@@ -873,6 +873,8 @@ a compass. Controls remain mounted across panel scrolling and resizing.
 Scientific explanations and measured section charts sit beside their actions in the reading panel,
 leaving the world clear for the actual terrain, section line and lidar curtain. Newly measured sections
 reveal their chart within that panel without moving keyboard focus or the globe.
+Timeline ticks mark measured or mapped landmarks, while small bookmark marks identify exact kept moments.
+Comparison references stay fixed as imagery changes. Projection highlights follow the selected world anchor.
 Source replacement preserves the focused logical control and reading position. A failed selection
 ends its loading status and leaves the previous data available for manual inspection.
 

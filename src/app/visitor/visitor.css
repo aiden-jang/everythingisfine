@@ -112,3 +112,8 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+
+.visit-save > button {
+  min-inline-size: 115px;
+  text-align: start;
+}
