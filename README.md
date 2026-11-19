@@ -1,4 +1,4 @@
-# Everything Is Fine
+# meanwhile.
 
 An interactive globe for live earthquakes, storms, volcanoes, wildfires, floods, and aurora.
 Explore a region, compare two agencies' earthquake readings, revisit a past day, or share a view.
@@ -7,7 +7,7 @@ Explore a region, compare two agencies' earthquake readings, revisit a past day,
 [Case study](docs/case-study.md) ·
 [Architecture](SYSTEM.md) · [Contributing](CONTRIBUTING.md) · [Deployment](DEPLOY.md)
 
-![Everything Is Fine globe](public/share.png)
+![meanwhile. globe](public/share.png)
 
 ## Run locally
 
@@ -441,7 +441,7 @@ Pushing to `main` triggers the existing Cloudflare deployment after verification
 The app serves static assets with a small anonymous aggregate-analytics Worker and no database. Most feeds load directly in the browser; GFS and Coral Reef Watch use three fixed, hourly cached same-origin routes. See [DEPLOY.md](DEPLOY.md).
 
 Code is [MIT licensed](LICENSE). Report vulnerabilities through
-[private reporting](https://github.com/aiden-jang/everythingisfine/security/advisories/new).
+[private reporting](https://github.com/aiden-jang/meanwhile/security/advisories/new).
 
 The SVG globe mark in `public/icon.svg` also has committed 32px browser and
 180px Apple touch PNGs. Keep the Apple variant opaque and square; iOS applies its

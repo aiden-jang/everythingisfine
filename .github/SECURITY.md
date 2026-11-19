@@ -1,7 +1,7 @@
 # Security policy
 
 Report a suspected vulnerability through
-[GitHub private reporting](https://github.com/aiden-jang/everythingisfine/security/advisories/new).
+[GitHub private reporting](https://github.com/aiden-jang/meanwhile/security/advisories/new).
 Do not publish exploit details or credentials in an issue or pull request.
 
 Include the affected behavior, reproduction steps, and impact. Redact personal information,

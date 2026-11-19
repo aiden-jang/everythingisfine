@@ -106,7 +106,7 @@ export function visitEvidence(visit: Visit): VisitEvidence {
         ? `Altitude above the horizon · ${moon.lit}% illuminated. Calculated positions, not a weather or visibility forecast.`
         : "The city, time and viewing direction are kept.",
       source: "meanwhile. · lunar model",
-      url: "https://github.com/aiden-jang/everythingisfine/blob/main/src/geo/moon.ts",
+      url: "https://github.com/aiden-jang/meanwhile/blob/main/src/geo/moon.ts",
     };
   }
   const radar = visit.position.radar;

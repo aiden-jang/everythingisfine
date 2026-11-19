@@ -46,7 +46,7 @@ carry saved camera and story state forward. Keep the old hostname active for exi
 
 ## Troubleshooting
 
-Start with the failed job in [GitHub Actions](https://github.com/aiden-jang/everythingisfine/actions).
+Start with the failed job in [GitHub Actions](https://github.com/aiden-jang/meanwhile/actions).
 A red quality check or browser shard blocks deployment. Download the browser-results artifact
 for the failing shard and open its trace locally:
 
