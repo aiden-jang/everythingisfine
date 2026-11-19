@@ -38,7 +38,7 @@ import {
 export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const { initial, shared, remember } = useStorySession();
   const playback = useTongaPlayback(initial);
-  const { assets, view, images, minute, ended, arrive } = playback;
+  const { assets, view, images, minute, ended, arrive, ready } = playback;
   const [phase, setPhase] = useState<TongaPhase>(() => {
     if (initial?.at === undefined) return "discover";
     const selected = stations.find(({ id }) => id === initial.choice);
@@ -51,6 +51,8 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
   });
   const signal = phase === "follow" ? signalStation(minute, view.station) : undefined;
   const station = view.station ?? signal ?? stationAt(minute);
+  const scanCanvas = useRef<HTMLCanvasElement>(null);
+  const scanOrigin = useRef<DOMRect | null>(null);
   const focus = useRef<"sample" | "playback" | "kept" | null>(null);
   useLayoutEffect(() => {
     const zones = document.querySelector<HTMLElement>(".zones");
@@ -63,9 +65,34 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
           : focus.current === "kept"
             ? ".tonga-kept .story-share button"
             : null;
+    if (focus.current === "playback") zones?.querySelector("#observatory-intro")?.scrollTo({ top: 0 });
     focus.current = null;
     if (selector) zones?.querySelector<HTMLElement>(selector)?.focus({ preventScroll: true });
+    const canvas = scanCanvas.current;
+    const from = scanOrigin.current;
+    scanOrigin.current = null;
+    const to = canvas?.getBoundingClientRect();
+    const scanFlight =
+      from &&
+      from.width > 0 &&
+      from.height > 0 &&
+      to &&
+      to.width > 0 &&
+      to.height > 0 &&
+      phase === "follow" &&
+      !matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? canvas?.animate(
+            [
+              {
+                transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${from.width / to.width}, ${from.height / to.height})`,
+              },
+              { transform: "none" },
+            ],
+            { duration: 620, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+          )
+        : null;
     return () => {
+      scanFlight?.cancel();
       if (zones) delete zones.dataset["tongaPhase"];
     };
   }, [phase]);
@@ -131,7 +158,10 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
     setPhase("inspect");
   }
   function journey(restart: boolean) {
-    if (restart) playback.begin();
+    if (restart) {
+      if (phase === "discover") scanOrigin.current = scanCanvas.current?.getBoundingClientRect() ?? null;
+      playback.begin();
+    }
     focus.current = "playback";
     setPhase("follow");
   }
@@ -152,11 +182,13 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
       location="Hunga Tonga–Hunga Haʻapai"
       subtitle="GOES-17 and ground pressure · 15 Jan 2022"
       status={
-        assets === "loading"
-          ? "Preparing satellite scans…"
-          : !isOrbit && !hasImage
-            ? "Satellite imagery unavailable for this chapter"
-            : caption
+        overview && !ready
+          ? "Approaching Hunga Tonga…"
+          : assets === "loading"
+            ? "Preparing satellite scans…"
+            : !isOrbit && !hasImage
+              ? "Satellite imagery unavailable for this chapter"
+              : caption
       }
       at={
         hasImage && !isOrbit ? (
@@ -167,8 +199,9 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
       }
       inset={
         <>
-          {orbitMix < 1 && (hasInfrared || hasVapor) && (
+          {(!overview || ready) && orbitMix < 1 && (hasInfrared || hasVapor) && (
             <ReplayInset
+              canvasRef={scanCanvas}
               label={caption}
               width={sprite.width}
               height={sprite.height}
@@ -223,8 +256,9 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
         <h3>
           {overview ? (
             <>
-              One eruption.
-              <br />A global echo.
+              Tonga’s
+              <br />
+              shockwave.
             </>
           ) : phase === "inspect" ? (
             <>
@@ -250,7 +284,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
         </h3>
         <p>
           {overview
-            ? "Follow Tonga’s pressure wave across the Pacific. Then see what a weather station actually recorded."
+            ? "An eruption sent a pressure wave across the Pacific. Follow it from satellite scans to the readings on the ground."
             : phase === "inspect"
               ? "A station records the passing disturbance. Scrub its one-minute pressure readings."
               : phase === "kept"
@@ -323,7 +357,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
         </div>
       )}
       {phase === "follow" && (
-        <StoryDock>
+        <StoryDock label="Tonga playback">
           <div className="tonga-time story-dock-time">
             <label htmlFor="tonga-replay-time">Replay time</label>
             <time dateTime={timeIso(minute)}>{timeLabel(minute)} UTC</time>

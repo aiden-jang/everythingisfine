@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef } from "react";
+import { useLayoutEffect, useRef, type RefObject } from "react";
 
 export function ReplayInset({
   label,
@@ -7,6 +7,7 @@ export function ReplayInset({
   opacity,
   paint,
   detail,
+  canvasRef,
 }: {
   label: string;
   width: number;
@@ -14,12 +15,14 @@ export function ReplayInset({
   opacity: number;
   paint: (context: CanvasRenderingContext2D) => void;
   detail?: boolean;
+  canvasRef?: RefObject<HTMLCanvasElement>;
 }): JSX.Element {
-  const canvas = useRef<HTMLCanvasElement>(null);
+  const localCanvas = useRef<HTMLCanvasElement>(null);
+  const canvas = canvasRef ?? localCanvas;
   useLayoutEffect(() => {
     const context = canvas.current?.getContext("2d");
     if (context) paint(context);
-  }, [paint]);
+  }, [canvas, paint]);
   return (
     <canvas
       ref={canvas}

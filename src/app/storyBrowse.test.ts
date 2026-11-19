@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { browseStories, featuredIds, storyKind } from "./storyBrowse";
+import { browseStories, featuredStoryId, storyKind } from "./storyBrowse";
 import { findStories, searchStories } from "./storyIndex";
 
 describe("story browsing", () => {
@@ -7,7 +7,7 @@ describe("story browsing", () => {
     it(`keeps ${scene ?? "all scenes"} short while preserving the full catalogue`, () => {
       const first = browseStories(scene, false);
       const all = browseStories(scene, true);
-      const featured = featuredIds[scene ?? "live"];
+      const featured = featuredStoryId(scene);
       expect(first.length).toBeGreaterThan(0);
       expect(first.length).toBeLessThanOrEqual(6);
       expect(new Set([...all.map(({ id }) => id), featured]).size).toBe(all.length + 1);

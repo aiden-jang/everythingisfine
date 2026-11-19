@@ -157,12 +157,14 @@
 }
 @media (min-width: 900px) {
   .frame[data-presentation="explore"] .zones:has(#chrome-rail:not([hidden])) {
+    --explorer-left: 24px;
+    --explorer-top-gap: 20px;
     --rail-w: calc(var(--rail-panel-w) + 36px);
   }
   .frame[data-presentation="explore"] #chrome-rail {
-    top: calc(var(--head-h) + 20px);
+    top: calc(var(--head-h) + var(--explorer-top-gap, 20px));
     bottom: 54px;
-    left: 24px;
+    left: var(--explorer-left, 24px);
     width: var(--rail-panel-w);
     --explorer-pad: 22px;
     --explorer-surface: var(--color-deck);
@@ -173,6 +175,25 @@
     scrollbar-color: var(--color-faint) transparent;
   }
 }
+/* Let Layers recede into the scene while keeping the scrolling tab bar readable. */
+.frame[data-presentation="explore"] #chrome-rail:has(#explorer-layers:not([hidden])) {
+  --layers-tint: color-mix(in srgb, var(--color-deck) 82%, var(--color-void));
+  background: linear-gradient(90deg, var(--layers-tint) 12%, transparent);
+  border-color: transparent;
+}
+.frame[data-presentation="explore"] #chrome-rail:has(#explorer-layers:not([hidden])) .explorer-tabs {
+  background: linear-gradient(90deg, var(--layers-tint) 12%, var(--color-void));
+}
+@media (max-width: 767px) {
+  .frame[data-presentation="explore"] #chrome-rail:has(#explorer-layers:not([hidden])) {
+    background: linear-gradient(var(--layers-tint) 16%, var(--color-void));
+    border-top-color: var(--color-hairline);
+  }
+  .frame[data-presentation="explore"] #chrome-rail:has(#explorer-layers:not([hidden])) .explorer-tabs {
+    background: var(--layers-tint);
+  }
+}
+
 @media (max-width: 899px) and (min-height: 621px) {
   .frame[data-landing] .zone-canvas {
     width: 120vw;
@@ -285,6 +306,11 @@
   }
 }
 @media (min-width: 600px) and (max-height: 620px) {
+  .frame[data-landing] .zone-canvas {
+    --landing-height: min(60vw, calc(100dvh - var(--head-h) - 24px));
+    inset: calc((100dvh + var(--head-h) - var(--landing-height)) / 2) 0 auto auto;
+    width: 60vw;
+  }
   .frame[data-landing] .observatory-intro {
     padding-top: 64px;
   }
@@ -353,5 +379,64 @@
 @media (max-width: 380px) {
   .frame .creator-credit {
     left: 18px;
+  }
+}
+
+@media (max-width: 599px) and (orientation: portrait) {
+  .frame[data-landing] .zones {
+    --phone-earth-height: min(95vw, 44dvh);
+  }
+  .frame[data-landing] .zone-canvas {
+    top: var(--head-h);
+    left: 0;
+    width: 100%;
+    height: var(--phone-earth-height);
+  }
+  .frame[data-landing] .observatory-intro {
+    padding-top: calc(var(--head-h) + var(--phone-earth-height) + 16px);
+    gap: 19px;
+  }
+  .frame[data-landing] .observatory-story h2 {
+    font-size: clamp(56px, 18vw, 88px);
+  }
+  .frame[data-landing] .observatory-story h2 br {
+    display: contents;
+  }
+  .frame[data-landing] .observatory-story h2 {
+    white-space: nowrap;
+  }
+  .frame[data-landing] .observatory-stage .stage-ident {
+    display: none;
+  }
+}
+
+@media (max-width: 599px) and (orientation: portrait) and (max-height: 620px) {
+  .frame[data-landing] .zones {
+    --phone-earth-height: min(88vw, 40dvh);
+  }
+  .frame[data-landing] .observatory-intro {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+    gap: 10px;
+    padding-inline: 18px;
+    padding-bottom: 90px;
+  }
+  .frame[data-landing] .observatory-story h2 {
+    font-size: clamp(48px, 16vw, 74px);
+  }
+  .frame[data-landing] .observatory-entry-actions .observatory-primary {
+    min-width: auto;
+    padding-inline: 12px;
+    gap: 8px;
+    font-size: 13px;
+  }
+  .frame[data-landing] .observatory-stage {
+    inset: auto 18px 55px;
+    width: auto;
+    height: auto;
+  }
+  .frame[data-landing] .stage-readout > div:not(.layer-readout),
+  .frame[data-landing] .stage-readout > time {
+    display: none;
   }
 }

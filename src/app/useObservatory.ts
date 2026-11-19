@@ -99,7 +99,7 @@ export function useObservatory(shared: Partial<Permalink>) {
   const sharedView = useRef(shared.lon !== undefined || !!shared.day || shared.cursor != null);
   const [rotation, setRotation] = useStoredFlag("landingRotation", true);
   const chooseScene = useCallback(
-    (next: EarthScene, at: CutawayFocus | null = null, keepDeck = false) => {
+    (next: EarthScene, at: CutawayFocus | null = null, keepDeck = false, open?: () => void) => {
       before();
       setScene(next);
       setBrowser((value) => ({
@@ -115,6 +115,7 @@ export function useObservatory(shared: Partial<Permalink>) {
       setTonightView(null);
       setFloatView(null);
       if (!keepDeck) closeObservations();
+      open?.();
     },
     [closeObservations, before, setTonightView, setRadarView, setFloatView, setSunWatch],
   );
@@ -211,10 +212,10 @@ export function useObservatory(shared: Partial<Permalink>) {
     },
     navigation: {
       requestExploreFocus,
-      prepareStory: (next: EarthScene, keepDeck: boolean) => {
+      prepareStory: (next: EarthScene, keepDeck: boolean, open?: () => void) => {
         loadingBackdrop.current = night ? "planetarium" : "dayline";
-        if (observing) chooseScene(next, null, keepDeck);
-        else changePresentation("observe", true, () => chooseScene(next, null, keepDeck), false);
+        if (observing) chooseScene(next, null, keepDeck, open);
+        else changePresentation("observe", true, () => chooseScene(next, null, keepDeck, open), false);
       },
       key: [
         presentation,

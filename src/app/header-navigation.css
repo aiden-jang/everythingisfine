@@ -103,7 +103,8 @@
 
 @media (max-width: 767px) {
   .canvas-information > .projection-switch {
-    flex: none;
+    position: absolute;
+    inset: auto 12px 24px auto;
     pointer-events: auto;
     background: var(--color-deck);
   }

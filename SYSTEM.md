@@ -413,10 +413,10 @@ The URL carries the enabled layer set and held weather times independently of de
 Shared coverage metadata drives the layer list and per-layer source disclosure. Event sources remain checked when their
 markers are hidden; optional weather sources leave the feed total when off. Live weather retries on
 reconnection, retaining existing data with its original time while recovery is pending.
-The shared readout names wind forecasts and GOES-East lightning with their own timestamps on landing,
-globe and map. Explore groups source times, radar attribution and legend at the canvas edge, with
-author credit and keyboard help secondary. Sources & times uses a native popover at every width for radar, wind
-and lightning details; Close and Escape restore trigger focus, and radar attribution stays visible.
+The shared readout names wind forecasts and GOES-East lightning with their own timestamps on
+landing, globe and map. On desktop, Explore keeps an inline legend beside **Sources & times**.
+On phones, **Globe info** combines both in one popover next to the fixed projection switch. Close
+and Escape restore trigger focus. RainViewer attribution stays visible outside the popover.
 Their frames contribute paths and marks to
 the existing observation renderer, with stable geometry references and no additional canvas.
 The feed total includes each enabled source, reports failure independently, and retains its last

@@ -128,6 +128,7 @@ export function useTongaPlayback(initial: StoryMoment | undefined) {
     assets,
     view,
     images: images.current,
+    ready,
     arrive,
     minute: minuteFor(view),
     ended: view.elapsed >= duration(view),

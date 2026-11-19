@@ -18,6 +18,12 @@ export const featuredStories = {
   },
 } as const;
 
+export const catalogueFeature = {
+  id: "tonga",
+  note: "GOES-17 and ground pressure",
+  reason: "Track the wave across the Pacific.",
+} as const;
+
 // An editorial sequence, rather than source-module insertion order.
 export const storyOrder = [
   "float",

@@ -269,3 +269,111 @@
     box-shadow: 0 0 0 0 #b0e8f6a0;
   }
 }
+
+/* The first story frame occupies the reading and canvas tracks before its chunk resolves. */
+@media (min-width: 900px) and (min-height: 621px) {
+  .frame[data-tonga-opening]
+    .zones:is(:not([data-tonga-phase]), [data-tonga-phase="discover"], [data-tonga-phase="follow"]) {
+    grid-template-areas: "welcome canvas";
+    grid-template-columns: calc(clamp(320px, 29.5vw, 480px) + 36px) minmax(0, 1fr);
+  }
+  .frame[data-tonga-opening]
+    .zones:is([data-tonga-phase="discover"], [data-tonga-phase="follow"])
+    .observatory-sidebar {
+    grid-area: welcome;
+    width: auto;
+    background: none;
+    pointer-events: auto;
+  }
+  .zones[data-tonga-phase="discover"] .tonga-narrative h3 {
+    font-size: clamp(54px, 5.1vw, 76px);
+  }
+  .zones:is([data-tonga-phase="discover"], [data-tonga-phase="follow"]) .replay-stage .stage-readout {
+    left: var(--stage-inset, 20px);
+  }
+  .zones[data-tonga-phase="follow"] .story-dock-host {
+    bottom: 100px;
+    left: calc(clamp(320px, 29.5vw, 480px) + 64px);
+  }
+}
+.zones:is([data-tonga-phase="discover"], [data-tonga-phase="follow"]) .replay-inset {
+  transform: none;
+  transform-origin: top left;
+}
+.zones[data-tonga-phase="follow"] .replay-stage:has(.replay-inset) .tonga-world-anchors {
+  display: none;
+}
+.zones[data-tonga-phase="follow"] .replay-inset {
+  inset: 40px 14px 90px;
+  margin: auto;
+  object-fit: contain;
+}
+.zones[data-tonga-phase="discover"] .replay-inset {
+  inset: auto 5% 16% auto;
+  width: min(38%, 410px);
+  height: auto;
+}
+.zones[data-tonga-phase="follow"] .story-dock .story-playback {
+  min-width: 92px;
+  justify-content: center;
+}
+@media (max-width: 599px) {
+  .zones[data-tonga-phase="follow"] .replay-inset {
+    inset-block: 26px 62px;
+  }
+  .zones[data-tonga-phase="follow"] .story-dock {
+    grid-template-columns: minmax(0, 1fr) minmax(92px, max-content);
+    column-gap: 12px;
+  }
+  .zones[data-tonga-phase="follow"] .story-dock-time {
+    grid-column: 1 / -1;
+  }
+  .zones[data-tonga-phase="follow"] .story-dock .archive-scene-controls {
+    justify-content: flex-end;
+  }
+  .zones[data-tonga-phase="follow"] .story-playback {
+    width: 100%;
+  }
+  .zones[data-tonga-phase="discover"] .replay-inset {
+    inset: 18px 16px auto auto;
+    width: min(37%, 160px);
+  }
+  .zones[data-tonga-phase="discover"] .replay-stage .stage-ident {
+    display: none;
+  }
+  .zones:is([data-tonga-phase="discover"], [data-tonga-phase="follow"]) .replay-stage .stage-readout {
+    bottom: var(--stage-inset);
+    width: max-content;
+    background: none;
+  }
+  .zones[data-tonga-phase="discover"] .tonga-world-anchors button:not(:focus-visible) {
+    width: 44px;
+    padding-inline-start: 8px;
+  }
+  .zones[data-tonga-phase="discover"] .tonga-world-anchors button:not(:focus-visible) span + span {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .zones[data-tonga-phase="discover"] .replay-inset {
+    animation: tonga-scan-aperture 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+@keyframes tonga-scan-aperture {
+  from {
+    clip-path: inset(45% 0 round 4px);
+    opacity: 0;
+  }
+  to {
+    clip-path: inset(0 round 4px);
+  }
+}
+
+@media (max-width: 599px) and (max-height: 620px) {
+  .zones[data-tonga-phase="follow"] .tonga-narrative h3 {
+    font-size: 38px;
+  }
+  .zones[data-tonga-phase="follow"] .tonga-narrative p {
+    margin-block: 10px 12px;
+  }
+}

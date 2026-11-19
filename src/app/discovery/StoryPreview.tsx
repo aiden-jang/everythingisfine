@@ -62,7 +62,10 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
     if (restoreFocus && trigger.current?.isConnected) trigger.current.focus({ preventScroll: true });
   };
   const locate = (region: StoryPlace, button?: HTMLElement) => {
-    if (button) trigger.current = button;
+    if (button) {
+      trigger.current = button;
+      button.focus({ preventScroll: true });
+    }
     setPinned(true);
     setPlace(region);
     navigation?.preview(region);

@@ -137,7 +137,7 @@ test("a quiet landing opens the story catalogue and each scene remains available
   await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
   await expect(page.getByRole("button", { name: "Sun Watch", exact: true })).toBeVisible();
   await scenes.getByRole("button", { name: "Below the Surface", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Rupture Reveal", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^(Open story: )?Rupture Reveal$/ })).toBeVisible();
   expect(await canvas!.evaluate((node) => node === document.querySelector("canvas"))).toBe(true);
 });
 

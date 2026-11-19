@@ -31,9 +31,9 @@ test("expanded phone sheet keeps projection, legend and recorded radar sources r
   expect(await page.evaluate(() => matchMedia("(pointer: coarse)").matches)).toBe(true);
   const sheet = page.getByRole("separator", { name: "Sheet height", exact: true });
   const projection = page.locator("#view-projection");
-  const sources = page.getByRole("button", { name: "Sources & times", exact: true });
+  const information = page.getByRole("button", { name: "Globe info", exact: true });
   const credit = page.getByRole("link", { name: "Radar by RainViewer", exact: true });
-  const legend = page.getByText("Legend", { exact: true });
+  const drawer = page.getByRole("region", { name: "Globe information", exact: true });
   await expect(page.locator(".radar-canvas-credit time")).toHaveAttribute(
     "datetime",
     new Date(time * 1000).toISOString(),
@@ -46,7 +46,7 @@ test("expanded phone sheet keeps projection, legend and recorded radar sources r
     await page.setViewportSize(viewport);
     await expect(page.locator(".key-hints")).toBeHidden();
     await sheet.press("Home");
-    for (const control of [projection, sources, credit, legend]) {
+    for (const control of [projection, information, credit]) {
       await expect(control).toBeInViewport({ ratio: 1 });
       await expect
         .poll(() =>
@@ -63,12 +63,15 @@ test("expanded phone sheet keeps projection, legend and recorded radar sources r
     await expect(projection).toHaveText("Globe");
     await projection.click();
     await expect(projection).toHaveText("Map");
-    await legend.click();
-    await expect(page.getByRole("region", { name: "Legend", exact: true })).toBeInViewport({ ratio: 1 });
-    await page.getByRole("button", { name: "Close legend", exact: true }).click();
-    await sources.click();
-    await expect(page.getByRole("group", { name: "Weather layer times", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Close layer times", exact: true }).click();
+    await information.click();
+    await expect(drawer).toBeInViewport({ ratio: 1 });
+    await expect(drawer.getByRole("heading", { name: "Legend", exact: true })).toBeVisible();
+    await expect(drawer.locator("time").first()).toHaveAttribute(
+      "datetime",
+      new Date(time * 1000).toISOString(),
+    );
+    await drawer.getByRole("button", { name: "Close globe info", exact: true }).click();
+    await expect(information).toBeFocused();
   }
   await projection.focus();
   await page.setViewportSize({ width: 812, height: 375 });

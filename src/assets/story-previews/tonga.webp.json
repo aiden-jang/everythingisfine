@@ -1,4 +1,3 @@
 {
-  "prompt": "Source: actual Everything Is Fine tonga view captured locally on 10 November 2026 from its public scientific provider or bundled source archive. This is a recorded UI preview, not a live measurement. Cropped and resampled to 128 by 112 pixels; original capture retained outside the repository during review. No generated imagery.",
-  "createdAt": "2026-11-10T05:20:33.099Z"
+  "prompt": "GOES-17 infrared scan at 04:20:32 UTC on 15 January 2022. Cropped without resizing from the recorded Tonga story’s infrared sprite. Source data: NOAA GOES-17 ABI Channel 13."
 }

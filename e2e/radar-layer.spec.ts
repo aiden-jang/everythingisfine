@@ -144,8 +144,8 @@ for (const width of [1440, 390]) {
     await expect(time).toHaveAttribute("datetime", new Date(now).toISOString());
     if (width === 390) {
       expect((await page.locator(".layer-readout").boundingBox())!.height).toBeLessThanOrEqual(44);
-      await page.getByRole("button", { name: "Sources & times", exact: true }).click();
-      const reading = page.getByRole("group", { name: "Weather layer times" }).locator("time");
+      await page.getByRole("button", { name: "Globe info", exact: true }).click();
+      const reading = page.getByRole("region", { name: "Globe information" }).locator("time");
       await expect(reading).toBeVisible();
       await expect(reading).toHaveAttribute("datetime", new Date(now).toISOString());
       await page.keyboard.press("Escape");

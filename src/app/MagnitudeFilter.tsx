@@ -108,7 +108,7 @@ export interface MagnitudeFilterProps {
   /** Whether the key below the scale is open. Held outside so it survives a reload. */
   keyOpen: boolean;
   /** Which half to draw. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */
-  part?: "controls" | "key";
+  part?: "controls" | "key" | "embedded-key";
   onKeyOpen: (open: boolean) => void;
   /** True on an archived day, which changes the tense of every layer sentence. */
   archived?: boolean;
@@ -171,9 +171,9 @@ export function MagnitudeFilter({
   // Where the threshold sits along the scale, as a percentage of the track.
   const cut = Math.max(0, Math.min(100, ((value - MAG_MIN) / (MAG_MAX - MAG_MIN)) * 100));
 
-  if (part === "key") {
+  if (part !== "controls") {
     return (
-      <MapLegend open={keyOpen} onChange={onKeyOpen}>
+      <MapLegend open={keyOpen} onChange={onKeyOpen} embedded={part === "embedded-key"}>
         {/* Size carries the same value, so a colourblind viewer and a small screen both still read it. */}
         <div className="mt-2.5 flex items-center gap-2.5 text-[11px] text-faint">
           <span className="flex items-baseline gap-1.5">

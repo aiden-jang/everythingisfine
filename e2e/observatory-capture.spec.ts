@@ -33,7 +33,7 @@ test("the featured lunar journey keeps its canvas and saves its own scientific c
     .getByRole("group", { name: "Story categories", exact: true })
     .getByRole("button", { name: "After Dark", exact: true })
     .click();
-  await page.getByRole("button", { name: "Moonfall", exact: true }).click();
+  await page.getByRole("button", { name: "Open story: Moonfall", exact: true }).click();
   const moon = page.getByRole("region", { name: "Moonfall", exact: true });
   await expect(page.getByRole("group", { name: "Lunar view" })).toContainText("Taurus–Littrow Valley");
   await expect(moon).toHaveRole("region");

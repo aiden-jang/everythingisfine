@@ -710,11 +710,10 @@ explains symbols; it does not contain display controls.
 
 ### src/app/MapLegend.tsx
 
-The outer disclosure starts collapsed and remembers the visitor's choice. Phones use a native
-popover so its content can scroll within the viewport independently of the globe's changing sheet
-height; desktop keeps the same content inline. Both use the existing open state. Close and Escape
-return focus to the summary; native outside dismissal synchronizes the controlled state through
-a DOM toggle listener. The summary prevents its default toggle so there is one owner of `open`.
+Desktop uses an inline disclosure and remembers the visitor’s choice. On phones, the same legend
+content is embedded in the Globe info popover owned by `LayerReadout`, alongside weather times.
+The popover scrolls independently of the Explore sheet. Its close button and Escape restore focus
+to the trigger.
 
 ### src/app/MarkCard.tsx
 

@@ -58,14 +58,14 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   expect(collapsed).toBeGreaterThan(half);
   expect(half).toBeGreaterThan(expanded);
   await expect(page.getByRole("tab", { name: "Layers", exact: true })).toBeInViewport();
-  const legend = page.getByRole("region", { name: "Legend", exact: true });
-  await page.getByText("Legend", { exact: true }).click();
+  const legend = page.getByRole("region", { name: "Globe information", exact: true });
+  await page.getByRole("button", { name: "Globe info", exact: true }).click();
   await expect(legend).toBeInViewport({ ratio: 1 });
-  await expect(legend.getByRole("button", { name: "Close legend" })).toBeFocused();
+  await expect(legend.getByRole("button", { name: "Close globe info" })).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(legend).toBeHidden();
-  await expect(page.getByText("Legend", { exact: true })).toBeFocused();
-  await page.getByText("Legend", { exact: true }).click();
+  await expect(page.getByRole("button", { name: "Globe info", exact: true })).toBeFocused();
+  await page.getByRole("button", { name: "Globe info", exact: true }).click();
   await page.getByRole("button", { name: "View options", exact: true }).click();
   await expect(legend).toBeHidden();
   await page.keyboard.press("Escape");
@@ -95,12 +95,13 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   await page.getByText("Keyboard controls", { exact: true }).filter({ visible: true }).click();
   await expect(page.locator(".mobile-key-hints .keyboard-controls")).toBeVisible();
   await page.keyboard.press("Escape");
-  await page.getByText("Legend", { exact: true }).click();
+  await page.getByRole("button", { name: "Globe info", exact: true }).click();
   await expect(legend).toBeInViewport({ ratio: 1 });
   await page.setViewportSize({ width: 812, height: 375 });
-  await expect(page.locator(".map-legend-popover")).toHaveCount(0);
-  await expect(page.locator(".canvas-legend details").first()).toHaveAttribute("open", "");
-  await expect(page.locator(".canvas-legend")).toBeInViewport({ ratio: 1 });
+  await expect(legend).toHaveCount(0);
+  const desktopLegend = page.locator(".canvas-legend details").first();
+  await desktopLegend.getByText("Legend", { exact: true }).click();
+  await expect(desktopLegend).toHaveAttribute("open", "");
 });
 
 for (const width of [1440, 812, 390]) {
@@ -218,7 +219,7 @@ for (const width of [1440, 812, 390]) {
     await expect(allStories).toHaveAttribute("aria-pressed", "true");
     await afterDark.click();
     await expect(afterDark).toHaveAttribute("aria-pressed", "true");
-    await expect(stories.getByRole("button", { name: "Moonfall", exact: true })).toBeVisible();
+    await expect(stories.getByRole("button", { name: /^(Open story: )?Moonfall$/ })).toBeVisible();
     await allStories.click();
     await expect(stories.getByRole("button", { name: "Float Dive", exact: true })).toBeVisible();
     await afterDark.click();

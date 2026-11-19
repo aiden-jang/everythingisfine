@@ -318,19 +318,13 @@ Recent weather does not masquerade as an archived observation. Archive date and 
 reachable when inspecting another layer. Find a place is distinct from report and story search.
 Supplemental inspector disclosures use an 8px gap and retain their 44px controls.
 
-Radar starts on unless a saved choice turns it off. One canvas information strip groups source
-attribution, independent layer times and the legend; optional keyboard help remains separate
-from the fixed author credit. The compact radar caption keeps RainViewer attribution
-visible with the selected UTC scan time, including when the rail folds. Guided
-regional radar is a secondary action inside the radar inspector; returning restores the camera and
-compatible scan time. The map legend stays with the canvas at every width, independent of the open
-inspector. A collapsed legend occupies only its label width. On phones, its reading opens in a
-viewport-bounded overlay with Close and Escape, keeping the trigger reachable at every sheet height.
-Phone keyboard help lives in View options so it does not cover the globe. Detailed radar, wind and
-lightning times open through Sources & times in a native, viewport-bounded popover at every width; Close and Escape
-return focus to its trigger. Radar attribution remains outside that disclosure. Phones keep the scan
-time inside the disclosure and player so the canvas footer stays on one row; desktop also shows UTC
-beside the attribution. The full scan date stays available in the inspector. The author credit stays
+Radar starts on unless a saved choice turns it off. Desktop Explore groups attribution and
+Sources & times beside the inline legend. The caption includes the selected UTC scan time when the
+rail folds. On phones, Globe info holds the legend and source times together, scrolls independently
+of the sheet and returns focus on Close or Escape. The projection switch and RainViewer attribution
+stay in fixed positions beside it. The full scan date stays available in the inspector. Guided
+regional radar remains in the radar inspector, and returning restores the camera and compatible scan time.
+Phone keyboard help lives in View options so it does not cover the globe. The author credit stays
 at the lower-left viewport edge across home, scenes, Explore and players, outside the moving
 canvas and reading regions. It is rendered once by `CreatorCredit` through `GlobeHeader`. Its
 left inset is 34px on desktop, 24px below 900px and 18px at 380px or less. The bottom inset is
@@ -856,8 +850,8 @@ The opening gives the two-line invitation an editorial scale and offers two rout
 The catalogue uses recorded imagery and source context to make each investigation tangible.
 
 Find and Saved occupy stable positions in the shared header. On phones they use labelled icon
-buttons with full touch targets; projection shares the world’s footer row with Legend and sources,
-so expanding the sheet cannot cover either control. Opening the local collection
+buttons with full touch targets. Projection and Globe info occupy fixed spots in the world's footer,
+clear of the sheet at each stop. Opening the local collection
 preserves the current world and search. Its pale evidence cards contrast with the dark observation
 deck and carry the selected value, place, time, evidence kind and source. Exported cards exclude notes.
 

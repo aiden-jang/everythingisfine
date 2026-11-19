@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { searchStories } from "./storyIndex";
-import { browseStories } from "./storyBrowse";
+import { browseStories, featuredStoryId } from "./storyBrowse";
 import { featuredStories, storyOrder } from "./storyCuration";
 import { storyFindings } from "./journeys/findings";
 
@@ -11,10 +11,13 @@ test("the editorial order preserves every experience once, with cross-scene high
     browseStories(null, true)
       .slice(0, 3)
       .map(({ id }) => id),
-  ).toEqual(["moonfall", "rupture", "katrina"]);
-  expect(new Set(browseStories(null, false).map(({ scene }) => scene)).size).toBe(3);
+  ).toEqual(["float", "moonfall", "rupture"]);
+  expect(new Set(browseStories(null, false).map(({ scene }) => scene))).toEqual(
+    new Set(["live", "night", "depth"]),
+  );
 });
-test("the story catalogue opens with a measured investigation", () => {
+test("the catalogue and Earth feature lead with measured investigations", () => {
+  expect(featuredStoryId(null)).toBe("tonga");
   expect(featuredStories.live.id).toBe("float");
   expect(searchStories.some(({ id }) => id === featuredStories.live.id)).toBe(true);
   expect(featuredStories.live.note).toContain("Argo");

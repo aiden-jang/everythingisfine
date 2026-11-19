@@ -56,14 +56,17 @@ result or drawer entry, including its category, filter, scroll, focus and viewpo
 observations and time period. **Share this moment** copies the story, timestamp, projection, and selected
 city or chapter. Float Dive links retain the profile, selected sample and projection chosen in Locate. Links open paused; recent feeds explain when the linked observation has expired.
 
-On desktop, the paired **Globe / Map** control switches the shared view. Source times and the legend
-sit together below the canvas. On phones, the globe stays above the adjustable sheet; use its handle
-or the **More controls / More globe** control to change the space available. **Sources & times** opens detailed
-radar, wind and lightning timestamps at every width while radar attribution stays visible. Open **Storm radar details** to play or scrub scans; leaving the inspector preserves the selected scan.
+On desktop, **Globe / Map** switches the shared view. **Sources & times** and **Legend**
+sit below the canvas. On phones, **Globe info** opens scan times and the legend together, next to the
+fixed projection switch. Use the sheet handle or **More controls / More globe** to change the space
+available. Radar attribution stays visible. Open **Storm radar details** to scrub scans and return
+to Layers with the selected frame held.
 Tap a covered place and choose **Rewind radar** to step through recent scans with that place in view.
 **Copy radar link** shares the displayed frame while RainViewer still has it. **Back to live** returns to the latest scan.
 
-Each scene highlights Float Dive, Rupture Reveal or Moonfall for new visitors. Returning visitors see one action for their most recent story in that category.
+All stories highlights Tonga’s shockwave through recorded GOES-17 imagery and ground pressure readings.
+Earth, Below the Surface and After Dark highlight Float Dive, Rupture Reveal and Moonfall respectively.
+Returning visitors see one action for their most recent story in that category.
 Focus or hover over a geographically anchored story to preview its region without moving the globe.
 On touch screens, hold the story. **Locate** moves to that region; opening the story starts its own view.
 **Worth looking at today** uses the current earthquake reports, available NOAA aurora forecast,

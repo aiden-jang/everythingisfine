@@ -1,6 +1,6 @@
 import { useWorldLayout } from "./app/useWorldLayout";
 import { closeDetail } from "./app/closeDetail";
-import { ExplorerSidebar } from "./app/ExplorerSidebar";
+import { ExplorerFold, ExplorerSidebar } from "./app/ExplorerSidebar";
 import { StoryNavigation } from "./app/journeys/StoryNavigation";
 import { EarthquakeComparisons } from "./app/EarthquakeComparisons";
 import { LayerWindow } from "./app/LayerWindow";
@@ -107,7 +107,6 @@ export function App(): JSX.Element {
   const historyIntent = useRef<string | null>(null);
   const observatory = useObservatory(shared);
   const { enterExplore, enterObserve, chooseScene, setReady: setGlobeReady } = observatory;
-  useWorldLayout(`${observatory.presentation}:${observatory.landing}`);
   const { flyTo, camera, home, read: readCamera, onReady } = useGlobeCamera(shared, setGlobeReady);
   const [liveFilters, setFilters] = useState<Filters>(() => ({
     minMagnitude: shared.minMagnitude ?? DEFAULT_FILTERS.minMagnitude,
@@ -796,6 +795,7 @@ export function App(): JSX.Element {
   const [headOpen, setHeadOpen] = useStoredFlag("head", true);
   const [railOpen, setRailOpen] = useStoredFlag("railOpen", true, shared.radarPlace ? true : undefined);
   const railShown = !observatory.observing && (railOpen || !chromeFloats);
+  useWorldLayout(`${observatory.presentation}:${observatory.landing}:${railShown}`);
   const place = usePlaceInspection(setRailOpen, shared.radarPlace);
   const headShown = observatory.observing || headOpen || chromeFloats;
 
@@ -876,7 +876,14 @@ export function App(): JSX.Element {
     </MagnitudeFilter>
   );
 
-  const marksKey = cloneElement(marksFilter, { part: "key" });
+  const marksKey =
+    !observatory.observing &&
+    mapLayers.visible.earthquakes &&
+    !section &&
+    !markSubject &&
+    !(shownQuake && pinned)
+      ? cloneElement(marksFilter, { part: chromeFloats ? "key" : "embedded-key" })
+      : null;
 
   const { rows: reaches, note: sourceNote } = earthquakeReach(snapshot, now, filters.windowMs);
   const timelineNotes = [sourceNote, corroborationNote(overlap, overlapFrom, now, filters.windowMs)].filter(
@@ -1042,6 +1049,7 @@ export function App(): JSX.Element {
         className="frame"
         data-presentation={observatory.presentation}
         data-landing={observatory.landing || undefined}
+        data-tonga-opening={observatory.observations.entry === "tonga" || undefined}
       >
         <SkipControls observing={observatory.observing} railShown={railShown} />
         <h1 className="sr-only">meanwhile.</h1>
@@ -1299,23 +1307,7 @@ export function App(): JSX.Element {
             </ExplorerSidebar>
           </aside>
 
-          {/* Keep the toggle at the edge where the rail folds. */}
-          {chromeFloats && !observatory.observing ? (
-            <button
-              type="button"
-              onClick={() => setRailOpen(!railOpen)}
-              aria-label={railOpen ? "Hide the panel" : "Show the panel"}
-              aria-expanded={railOpen}
-              aria-controls="chrome-rail"
-              className="absolute top-[calc(var(--head-h)_+_1rem)] z-[2] cursor-pointer bg-deck/60 px-2.5
-              py-3 font-mono text-[15px] leading-none text-dim backdrop-blur-xl backdrop-saturate-50
-              transition-colors hover:text-ink"
-              /* Clear of the resize handle, or the button eats the top of the drag target. */
-              style={{ left: railOpen ? "calc(var(--rail-w) - 6px)" : 0 }}
-            >
-              {railOpen ? "\u2039" : "\u203a"}
-            </button>
-          ) : null}
+          {chromeFloats && !observatory.observing && <ExplorerFold open={railOpen} onChange={setRailOpen} />}
 
           <Resizer
             axis="x"
@@ -1389,12 +1381,14 @@ export function App(): JSX.Element {
               />
             </Suspense>
             <div className="canvas-information pointer-events-none absolute inset-x-0 bottom-0 z-[1] flex flex-wrap items-end justify-start gap-x-6 gap-y-3 p-4 md:left-[var(--rail-w)]">
-              {!observatory.observing && <LayerReadout controls={mapLayers} />}
-              {observatory.observing ||
-              !mapLayers.visible.earthquakes ||
-              section ||
-              markSubject ||
-              (shownQuake && pinned) ? null : (
+              {!observatory.observing && (
+                <LayerReadout
+                  controls={mapLayers}
+                  compact={!chromeFloats}
+                  legend={!chromeFloats && marksKey}
+                />
+              )}
+              {chromeFloats && marksKey && (
                 <div className="canvas-legend pointer-events-auto ml-auto bg-deck/40 p-3 backdrop-blur-2xl backdrop-saturate-50">
                   {marksKey}
                 </div>

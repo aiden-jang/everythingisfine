@@ -61,7 +61,7 @@ test("Tonga transitions from satellite imagery to the atmospheric wave and can p
   });
   await page.goto("/");
   await openStories(page);
-  const trigger = page.getByRole("button", { name: "Tonga’s shockwave", exact: true });
+  const trigger = page.getByRole("button", { name: /^(Open story: )?Tonga’s shockwave$/ });
   await trigger.click();
   const replay = page.getByRole("region", { name: "Tonga’s shockwave" });
   await replay.getByRole("button", { name: "Follow the wave", exact: true }).click();
@@ -106,7 +106,7 @@ test("Tonga’s reduced-motion archive can jump to measured station pulses on a 
   await openStories(page);
   const canvas = page.locator("#globe-view canvas");
   const original = await canvas.elementHandle();
-  await page.getByRole("button", { name: "Tonga’s shockwave", exact: true }).click();
+  await page.getByRole("button", { name: /^(Open story: )?Tonga’s shockwave$/ }).click();
   const replay = page.getByRole("region", { name: "Tonga’s shockwave" });
   await replay.getByRole("button", { name: "Follow the wave", exact: true }).click();
   const slider = replay.getByRole("slider", { name: "Replay time" });

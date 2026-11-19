@@ -7,7 +7,7 @@ import { useJourneyAnalytics } from "../visitor/useJourneyAnalytics";
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { ObservatoryProps } from "../Observatory";
 import { searchStories } from "../storyIndex";
-import { featuredIds, storyButtonId } from "../storyBrowse";
+import { featuredStoryId, storyButtonId } from "../storyBrowse";
 import type { StoryId } from "../observations/useObservationDeck";
 import { isGlobalRadar } from "../radar/radarCamera";
 import { journeys } from "./catalogue";
@@ -122,10 +122,14 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     const standalone = ["sky", "meteors", "moonfall", "aurora", "sun", "radar", "float"].includes(id);
     const resuming = saved !== undefined;
     if (!fresh) saved ??= memory.library.recent.find((visit) => visit.id === id);
+    const openReplay = () =>
+      deck.open(id as StoryId, trigger, saved?.position.moment ?? (fresh ? null : undefined));
     props.views.navigation.prepareStory(
       keepScene && props.views.observing ? props.scene : story.scene,
       !standalone,
+      standalone ? undefined : openReplay,
     );
+    if (!standalone) return;
     deck.setTrigger(trigger);
     if (saved?.position.sky) props.views.skyCity.select(saved.position.sky.city);
     if (id === "sky" || id === "meteors" || id === "moonfall")
@@ -144,7 +148,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       const exploring = !props.views.observing && !resuming;
       deck.setMap(exploring || !saved ? props.explorer.flat : (saved.position.float?.map ?? false));
       floatDive.open(saved?.position.float);
-    } else deck.open(id as StoryId, trigger, saved?.position.moment ?? (fresh ? null : undefined));
+    }
   }
   function returnToBrowse() {
     const saved = origin.current;
@@ -155,7 +159,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
       const full = props.views.browser.expanded === (category ?? "all");
       const focus = !full
         ? `continue-story-${active}`
-        : featuredIds[category ?? "live"] === active
+        : featuredStoryId(category) === active
           ? `open-featured-${active}`
           : storyButtonId(active);
       showCatalogue(false, focus);

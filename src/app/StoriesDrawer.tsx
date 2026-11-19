@@ -11,7 +11,7 @@ import type { EarthScene, useObservatory } from "./useObservatory";
 import { StorySearch } from "./StorySearch";
 import { StoryPreview } from "./discovery/StoryPreview";
 import { FeaturedStory } from "./FeaturedStory";
-import { browseStories, featuredIds, storyButtonId, storyKind } from "./storyBrowse";
+import { browseStories, featuredStoryId, storyButtonId, storyKind } from "./storyBrowse";
 import { searchStories } from "./storyIndex";
 import { APRIL_ECLIPSE_DAY } from "../geo/aprilEclipse";
 import "./stories.css";
@@ -52,7 +52,7 @@ export function StoriesDrawer({
   const { expanded, expand } = browse;
   const key = scene ?? "all";
   const all = expanded === key;
-  const featured = featuredIds[scene ?? "live"];
+  const featured = featuredStoryId(scene);
   const recent = all
     ? undefined
     : navigation?.library.recent.find(({ id }) =>
@@ -145,7 +145,7 @@ export function StoriesDrawer({
           {!deck.query.trim() && (
             <>
               {sceneEntry}
-              {recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene ?? "live"} />}
+              {recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />}
               <section className="stories-group" aria-label={all ? "All stories" : "Selected stories"}>
                 <h3 className={all ? undefined : "sr-only"}>
                   {all ? "All stories in this selection" : "Start exploring"}

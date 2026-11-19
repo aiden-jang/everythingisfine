@@ -10,6 +10,29 @@ import { useStoryNavigation } from "./journeys/StoryNavigation";
 import { reportAnalytics } from "../../analytics/browser";
 import "./explore-panel.css";
 
+export function ExplorerFold({ open, onChange }: { open: boolean; onChange: (open: boolean) => void }) {
+  return (
+    <button
+      type="button"
+      className="explorer-fold"
+      onClick={() => onChange(!open)}
+      aria-label={open ? "Hide the panel" : "Show the panel"}
+      aria-expanded={open}
+      aria-controls="chrome-rail"
+    >
+      <svg viewBox="0 0 20 20" width="20" height="20" fill="none" aria-hidden="true">
+        <path
+          d="m12 6-4 4 4 4"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
+  );
+}
+
 export function ExplorerSidebar({
   context,
   children,

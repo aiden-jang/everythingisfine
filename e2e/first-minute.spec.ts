@@ -11,7 +11,7 @@ test("the first Float Dive completes its cinematic rise without stretching playb
   await page.goto("/");
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await page.getByRole("button", { name: "Browse stories", exact: true }).click();
-  await page.locator("#open-featured-float").click();
+  await page.locator("#open-story-float").click();
   const panel = page.getByRole("region", { name: "Float Dive", exact: true });
   await panel.getByRole("button", { name: "Follow the rise", exact: true }).click();
   await expect(page.getByRole("button", { name: "Pause", exact: true })).toBeFocused();
@@ -39,7 +39,7 @@ for (const width of [1440, 390]) {
     await page.goto("/");
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await page.getByRole("button", { name: "Browse stories", exact: true }).click();
-    const entry = page.locator("#open-featured-float");
+    const entry = page.locator("#open-story-float");
     await entry.click();
     const panel = page.getByRole("region", { name: "Float Dive", exact: true });
     await expect(panel.getByRole("heading", { name: "Below the blue." })).toBeVisible();
@@ -63,7 +63,7 @@ for (const width of [1440, 390]) {
     expect(kept.observation.temperature).toBe(6.896);
     expect(kept.observation.salinity).toBe(34.928);
     await panel.getByRole("button", { name: "Return to your place", exact: true }).click();
-    await expect(page.locator("#open-featured-float")).toHaveCount(0);
+    await expect(page.locator("#open-story-float")).toHaveCount(0);
     await expect(page.locator(".story-continue")).toBeFocused();
     await expect(page.locator(".story-continue")).toContainText("Kept here · 62 m · 6.90 °C");
     await page.locator(".story-continue").click();

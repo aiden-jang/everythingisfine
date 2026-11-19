@@ -23,9 +23,10 @@ for (const width of [1440, 390]) {
     );
     await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toHaveCount(1);
     await expect(page.locator("#observatory-intro")).toHaveCount(0);
-    const entry = page.locator("#open-featured-float");
+    await expect(page.locator("#open-featured-tonga")).toHaveAccessibleName("Open story: Tonga’s shockwave");
+    const entry = page.locator("#open-story-float");
     await expect(entry).toHaveAccessibleName("Float Dive");
-    await expect(entry).toHaveAccessibleDescription(/Measured ocean profiles · Argo/);
+    await expect(entry).toHaveAccessibleDescription(/Measured profile/);
     await entry.click();
     await expect(page.locator(".float-transport")).toBeVisible();
     await expect(page.getByRole("complementary", { name: "About this shared view" })).toBeHidden();
@@ -36,12 +37,12 @@ for (const width of [1440, 390]) {
     await page.getByRole("tab", { name: "Layers", exact: true }).click();
     await openStories(page, "search");
     await expect(page.locator(".story-choice > button")).toHaveText([
-      "Storm Radar",
+      "Tonga’s shockwave",
       "Tonight’s Sky",
       "Rupture Reveal",
     ]);
     await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
-    await expect(page.locator(".story-choice > button").first()).toHaveText("Moonfall");
+    await expect(page.locator(".story-choice > button").first()).toHaveText("Float Dive");
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
       true,
     );

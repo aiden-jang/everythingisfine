@@ -2068,25 +2068,22 @@ test("the marks key is reachable at every width", async ({ page }) => {
   ] as const) {
     await page.setViewportSize({ width: w, height: h });
     await page.waitForTimeout(400);
-    const shown = await page.evaluate(
-      () =>
-        Array.from(document.querySelectorAll("summary"))
-          .filter((s) => /Legend/.test(s.textContent || ""))
-          .filter((s) => (s as HTMLElement).checkVisibility()).length,
-    );
-    expect(shown, `visible copies of the key at ${w}x${h}`).toBe(1);
-    const toggle = page.getByText("Legend", { exact: true });
+    const toggle =
+      w < 768
+        ? page.getByRole("button", { name: "Globe info", exact: true })
+        : page.getByText("Legend", { exact: true }).filter({ visible: true });
+    await expect(toggle, `visible copies of the key at ${w}x${h}`).toHaveCount(1);
     await expect(toggle).toBeInViewport({ ratio: 1 });
     await toggle.click();
-    await expect(page.locator(".canvas-legend")).toBeInViewport({ ratio: 1 });
-    if (w < 768)
-      await expect(page.getByRole("region", { name: "Legend", exact: true })).toBeInViewport({
-        ratio: 1,
-      });
+    const openKey =
+      w < 768
+        ? page.getByRole("region", { name: "Globe information", exact: true })
+        : page.locator(".canvas-legend");
+    await expect(openKey).toBeInViewport({ ratio: 1 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     if (w === 320 && process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: test.info().outputPath("phone-map-legend.png") });
-    if (w < 768) await page.getByRole("button", { name: "Close legend", exact: true }).click();
+    if (w < 768) await page.getByRole("button", { name: "Close globe info", exact: true }).click();
     else await toggle.click();
   }
 });

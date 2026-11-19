@@ -299,7 +299,7 @@ test("an empty view stays honest and keeps exploration available", async ({ page
     ),
   ).toBeVisible();
   await page.getByRole("button", { name: "Browse stories", exact: true }).click();
-  await expect(page.getByRole("button", { name: "Rupture Reveal", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /^(Open story: )?Rupture Reveal$/ })).toBeVisible();
   await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
   await openLayer(page);

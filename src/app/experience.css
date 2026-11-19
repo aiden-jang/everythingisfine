@@ -45,7 +45,7 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
-.featured-story:hover:has(button:not(:disabled)) .featured-story-link {
+.featured-story-link:hover:not(:disabled) {
   text-decoration-thickness: 2px;
 }
 .featured-story button {

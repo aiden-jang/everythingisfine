@@ -268,8 +268,7 @@ function ObservatoryContent({
                     {landing ? (
                       <>
                         Look
-                        <br />
-                        closer.
+                        <br /> closer.
                       </>
                     ) : (
                       title
