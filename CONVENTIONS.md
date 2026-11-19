@@ -24,8 +24,8 @@ avoids software WebGL contention; sharding divides the suite across machines.
 
 Keep the globe keyless: a person cloning it must not need an account or secret.
 Most public feeds are reached directly from the browser. `worker/index.ts` serves the bounded
-anonymous aggregate-events endpoint and three fixed observation routes for GFS transport,
-Coral Reef Watch heat stress and one temperature pixel. These providers lack browser CORS;
+anonymous aggregate-events endpoint and fixed observation routes for GFS transport and surface
+wind, Coral Reef Watch heat stress and one temperature pixel. These providers lack browser CORS;
 the relay accepts no query parameters, caches hourly and owns no account data or database.
 Adding a data backend or paid provider changes the product boundary and needs an explicit decision.
 The approved `/api/location` route returns only validated coordinates rounded to 0.1 degree from

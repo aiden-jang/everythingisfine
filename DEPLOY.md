@@ -27,11 +27,11 @@ concurrency group so two successful merges do not publish out of order.
 
 ## Hosting and credentials
 
-`wrangler.toml` configures static assets, anonymous analytics and three fixed observation routes.
-It has no database or migration step. Most feeds load directly in the browser. GFS transport and
-Coral Reef Watch use the same-origin Worker relay because their providers do not allow browser CORS.
+`wrangler.toml` configures static assets, anonymous analytics and fixed observation routes.
+It has no database or migration step. Most feeds load directly in the browser. GFS transport,
+surface wind and Coral Reef Watch use the same-origin Worker relay for providers without browser CORS.
 The relay caches successful responses for an hour and provider failures for 30 seconds, limits
-responses to 4 MB, and accepts only the fixed regional subsets. No provider key or secret is required.
+responses to 4 MB, and accepts only fixed data subsets. No provider key or secret is required.
 Vite development and preview use the same route logic with a bounded in-memory cache.
 
 The repository secret `CLOUDFLARE_API_TOKEN` needs Workers Scripts:Edit for this deployment.

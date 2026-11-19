@@ -4,8 +4,6 @@ import { DEG } from "../../geo/sphere";
 import { HOUR, request, utc } from "./common";
 import jetStream from "./jet-stream.nc?url";
 
-const GFS =
-  "https://pae-paha.pacioos.hawaii.edu/thredds/ncss/grid/ncep_global/NCEP_Global_Atmospheric_Model_best.ncd";
 const wrap = (lon: number) => ((lon + 540) % 360) - 180;
 
 function vectors(u: number[], v: number[], lons: number[], lats: number[], offset: number) {
@@ -41,20 +39,7 @@ export const wind: ObservationSource = {
   refreshMs: 3 * HOUR,
   async load(option, signal) {
     const jet = option === "jet";
-    const from = Math.floor((Date.now() - 3 * HOUR) / HOUR) * HOUR;
-    const params = new URLSearchParams({
-      north: "85",
-      south: "-85",
-      west: "0",
-      east: "359.5",
-      horizStride: "12",
-      time_start: utc(from),
-      time_end: utc(from + 27 * HOUR),
-      accept: "netcdf",
-    });
-    params.append("var", "ugrd10m");
-    params.append("var", "vgrd10m");
-    const response = await request(jet ? jetStream : `${GFS}?${params}`, signal);
+    const response = await request(jet ? jetStream : "/api/observations/wind", signal);
     const grid = new NetCDFReader(await response.arrayBuffer());
     const variable = grid.variables.find(({ name }) => name === "time");
     const attributes: readonly Attribute[] = variable?.attributes ?? [];
@@ -63,12 +48,21 @@ export const wind: ObservationSource = {
     const origin = Date.parse(epoch ?? "");
     const field = (name: string) => grid.getDataVariable(name).map(Number);
     const times = field("time");
-    const runs = field(jet ? "reftime" : "time_run");
+    const runs = field("reftime");
     const lons = field("longitude");
     const lats = field("latitude");
-    const u = field(jet ? "u-component_of_wind_isobaric" : "ugrd10m");
-    const v = field(jet ? "v-component_of_wind_isobaric" : "vgrd10m");
-    if (!Number.isFinite(origin) || lons.length < 40 || lats.length < 20 || times.length === 0)
+    const level = jet ? "isobaric" : "height_above_ground";
+    const u = field(`u-component_of_wind_${level}`);
+    const v = field(`v-component_of_wind_${level}`);
+    const cells = lons.length * lats.length * times.length;
+    if (
+      !Number.isFinite(origin) ||
+      lons.length < 40 ||
+      lats.length < 20 ||
+      times.length === 0 ||
+      u.length !== cells ||
+      v.length !== cells
+    )
       throw new Error("Incomplete global wind grid");
     const frames = times
       .map((hour, index) => {
@@ -96,7 +90,7 @@ export const wind: ObservationSource = {
     return {
       target: { lon: -45, lat: 25, zoom: 0.91 },
       frames,
-      note: `${jet ? "Recorded NOAA GFS upper-air forecast via NSF Unidata." : "Current NOAA GFS surface forecast via PacIOOS."} Strokes point downwind. Length and colour indicate speed on a sampled grid.`,
+      note: `NOAA GFS ${jet ? "recorded upper-air" : "current surface"} forecast via NSF Unidata. Strokes point downwind. Length and colour indicate speed on a sampled grid.`,
     };
   },
 };

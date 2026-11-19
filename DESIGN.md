@@ -715,7 +715,7 @@ readings share a reconciliation policy, while GDACS, EONET and NOAA supply their
 respective layers. See [provider coverage](README.md#data-and-attribution).
 
 A small Worker serves static assets and bounded anonymous aggregate analytics;
-its feed relay is three fixed GFS and Coral Reef Watch routes cached for an hour.
+its feed relay uses fixed GFS and Coral Reef Watch routes cached for an hour.
 The relay accepts no parameters and stores no account data or database. The approved location
 route returns coordinates rounded to 0.1 degree without storing location or sending location analytics.
 Fonts are self-hosted.

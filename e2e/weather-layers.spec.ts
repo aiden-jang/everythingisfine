@@ -21,7 +21,7 @@ async function sources(page: Page) {
   let windFailed = true;
   const calls = { wind: 0, lightning: 0 };
   await page.clock.setFixedTime(now);
-  await page.route("https://pae-paha.pacioos.hawaii.edu/**", (route) => {
+  await page.route("**/api/observations/wind", (route) => {
     calls.wind++;
     return windFailed
       ? route.fulfill({ status: 503 })

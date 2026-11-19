@@ -3,8 +3,8 @@
 The meanwhile. observatory is a static TypeScript app built with Vite, Preact through React-compatible
 imports, Tailwind, and three.js. Most public providers are reached directly from the browser.
 The globe needs no API key, account or database. A small Worker
-serves static assets, anonymous aggregate events and three fixed regional observation routes.
-The observation relay supplies only GFS transport, Coral Reef Watch heat stress and the Florida Keys
+serves static assets, anonymous aggregate events and fixed observation routes.
+The observation relay supplies GFS transport and surface wind, Coral Reef Watch heat stress and the Florida Keys
 temperature pixel. It accepts no parameters, caps responses at 4 MB, coalesces concurrent requests
 and caches successes for an hour or provider failures for 30 seconds.
 

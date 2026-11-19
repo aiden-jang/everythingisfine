@@ -1,11 +1,29 @@
 const HOUR = 3_600_000;
-type Source = "river" | "reef" | "reef-temperature";
+const GFS = "https://thredds.ucar.edu/thredds/ncss/grid/grib/NCEP/GFS/Global_0p25deg/Best";
+type Source = "river" | "reef" | "reef-temperature" | "wind";
 type Store = Pick<Cache, "match" | "put">;
 type Fetcher = (url: string, init: RequestInit) => Promise<Response>;
 type Packet = { body: ArrayBuffer; init: { status: number; headers: Record<string, string> } };
 const pending = new Map<string, Promise<Packet>>();
 
 export function observationUrl(source: Source, now: number): string {
+  if (source === "wind") {
+    const start = (Math.floor(now / HOUR) - 3) * HOUR;
+    const params = new URLSearchParams({
+      north: "85",
+      south: "-85",
+      west: "-180",
+      east: "179.75",
+      horizStride: "24",
+      vertCoord: "10",
+      time_start: new Date(start).toISOString(),
+      time_end: new Date(start + 27 * HOUR).toISOString(),
+      accept: "netcdf",
+    });
+    params.append("var", "u-component_of_wind_height_above_ground");
+    params.append("var", "v-component_of_wind_height_above_ground");
+    return `${GFS}?${params}`;
+  }
   if (source === "river") {
     const start = Math.floor((now - 6 * HOUR) / (6 * HOUR)) * 6 * HOUR;
     const params = new URLSearchParams({
@@ -27,13 +45,15 @@ export function observationUrl(source: Source, now: number): string {
       "Precipitation_rate_surface",
     ])
       params.append("var", variable);
-    return `https://thredds.ucar.edu/thredds/ncss/grid/grib/NCEP/GFS/Global_0p25deg/Best?${params}`;
+    return `${GFS}?${params}`;
   }
-  const temperature = source === "reef-temperature";
-  const query = temperature
-    ? "analysed_sst[last-55:1:last][(24.4)][(-81.4)]"
-    : "degree_heating_week[last-49:7:last][(30):2:(18)][(-90):2:(-60)]";
-  return `https://polarwatch.noaa.gov/erddap/griddap/${temperature ? "noaacrwsstDaily.csv" : "noaacrwdhwDaily.nc"}?${encodeURIComponent(query)}`;
+  if (source === "reef-temperature") {
+    // OceanWatch accepts grid indices for this Florida Keys cell (24.425° N, 81.425° W).
+    const query = "analysed_sst[last-55:1:last][2288][5571]";
+    return `https://oceanwatch.pifsc.noaa.gov/erddap/griddap/CRW_sst_v3_1.csv?${encodeURIComponent(query)}`;
+  }
+  const query = "degree_heating_week[last-49:7:last][(30):2:(18)][(-90):2:(-60)]";
+  return `https://polarwatch.noaa.gov/erddap/griddap/noaacrwdhwDaily.nc?${encodeURIComponent(query)}`;
 }
 
 async function provider(source: Source, fetcher: Fetcher, now: number): Promise<Response> {
@@ -99,7 +119,7 @@ export async function relayObservation(
     source = url.pathname.slice("/api/observations/".length);
   if (request.method !== "GET")
     return new Response("Method not allowed", { status: 405, headers: { Allow: "GET" } });
-  if (url.search || !["river", "reef", "reef-temperature"].includes(source))
+  if (url.search || !["river", "reef", "reef-temperature", "wind"].includes(source))
     return new Response("Unknown observation", { status: 404 });
   const key = `${url.origin}/api/observations/${source}?hour=${Math.floor(now / HOUR)}`;
   let work = pending.get(key);

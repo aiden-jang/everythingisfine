@@ -21,6 +21,7 @@ test("observation routes cannot select an arbitrary host, range, method or query
     fetcher = vi.fn(async (_url: string, _init: RequestInit) => netcdf());
   for (const [path, method, status] of [
     ["river?url=https://example.org", "GET", 404],
+    ["wind?west=0", "GET", 404],
     ["other", "GET", 404],
     ["reef", "POST", 405],
   ] as const)
@@ -33,6 +34,29 @@ test("observation routes cannot select an arbitrary host, range, method or query
   expect(decodeURIComponent(observationUrl("reef", now))).toContain(
     "[last-49:7:last][(30):2:(18)][(-90):2:(-60)]",
   );
+});
+
+test("surface wind selects the bounded global 10 m forecast with only the two wind components", async () => {
+  const cache = store();
+  const fetcher = vi.fn(async (_url: string, _init: RequestInit) => netcdf());
+  const result = await relayObservation(request("wind"), cache, fetcher, now);
+  expect(result.status).toBe(200);
+  const wind = new URL(fetcher.mock.calls[0]![0]);
+  expect(wind.origin).toBe("https://thredds.ucar.edu");
+  expect(wind.searchParams.getAll("var")).toEqual([
+    "u-component_of_wind_height_above_ground",
+    "v-component_of_wind_height_above_ground",
+  ]);
+  expect(Object.fromEntries(wind.searchParams)).toMatchObject({
+    north: "85",
+    south: "-85",
+    west: "-180",
+    east: "179.75",
+    vertCoord: "10",
+    horizStride: "24",
+    time_start: "2026-11-09T15:00:00.000Z",
+    time_end: "2026-11-10T18:00:00.000Z",
+  });
 });
 
 test("concurrent readers share one fetch, bodies remain readable and the next hour refreshes", async () => {
@@ -69,12 +93,11 @@ test("provider errors, HTML and oversized streams become short-lived explicit fa
 
 test("published temperature CSV is separate from the binary heat field", async () => {
   const csv = "time,latitude,longitude,analysed_sst\nUTC,degrees_north,degrees_east,degree_C\n";
-  const result = await relayObservation(
-    request("reef-temperature"),
-    store(),
-    async () => new Response(csv),
-    now,
-  );
+  const fetcher = vi.fn(async (_url: string) => new Response(csv));
+  const result = await relayObservation(request("reef-temperature"), store(), fetcher, now);
+  const temperature = new URL(fetcher.mock.calls[0]![0]);
+  expect(temperature.origin).toBe("https://oceanwatch.pifsc.noaa.gov");
+  expect(decodeURIComponent(temperature.search)).toBe("?analysed_sst[last-55:1:last][2288][5571]");
   expect(result.headers.get("Content-Type")).toBe("text/csv");
   expect(await result.text()).toBe(csv);
 });

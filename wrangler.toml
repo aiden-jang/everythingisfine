@@ -2,7 +2,7 @@ name = "everythingisfine"
 main = "worker/index.ts"
 compatibility_date = "2026-08-01"
 
-# Static assets, anonymous aggregate events and three bounded cached observation routes.
+# Static assets, anonymous aggregate events and bounded cached observation routes.
 
 # Keep the legacy hostname proxied for the zone-level redirect.
 workers_dev = false
