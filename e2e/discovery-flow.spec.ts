@@ -64,6 +64,11 @@ for (const width of [1440, 390]) {
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await preview.click();
     await expect.poll(async () => (await camera(page))?.lon).toBeCloseTo(59.5, 1);
+    if (width === 1440) {
+      const rail = (await page.locator("#chrome-rail").boundingBox())!;
+      const previewSurface = (await page.locator(".discovery-preview").boundingBox())!;
+      expect(previewSurface.x).toBeGreaterThanOrEqual(rail.x + rail.width);
+    }
     await page.getByRole("button", { name: "Dismiss location preview" }).click();
     await expect.poll(() => camera(page)).toEqual(before);
     await expect(preview).toBeFocused();
