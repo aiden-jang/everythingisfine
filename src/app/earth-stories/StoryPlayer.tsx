@@ -276,7 +276,7 @@ export function StoryPlayer({
       )}
       {(busy || status === "loading") && <StoryLoading>Loading the selected observations…</StoryLoading>}
       <StoryTimeline
-        startLabel={initial?.at === undefined && clock.position === 0 ? startLabel : undefined}
+        startLabel={clock.cinematic && clock.position === 0 ? startLabel : undefined}
         data={data}
         frame={{ ...frame, caption }}
         settled={!busy && status === "ready"}
