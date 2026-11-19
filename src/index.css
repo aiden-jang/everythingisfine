@@ -757,12 +757,12 @@
     padding-inline: 34px;
   }
 }
-@media (min-width: 768px) {
+@media (min-width: 900px) and (min-height: 621px) {
   .frame {
     --head-h: 68px;
   }
 }
-@media (min-width: 1280px) {
+@media (min-width: 1280px) and (min-height: 621px) {
   .frame {
     --head-h: 76px;
   }
