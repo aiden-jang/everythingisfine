@@ -2967,20 +2967,18 @@ looks like the end of the world rather than a missing draw call.
 
 **Derives aLonLat for a sphere shell from its texture coordinates, not its positions**
 
-Derives `aLonLat` for a sphere shell from its texture coordinates, not its positions.
+Derives `aLonLat` for a sphere shell from its longitude and latitude grid.
 
 `atan2` fails the shells twice: the duplicated seam column reports -180 for one copy and +180 for the
-other, and the pole rows have no longitude at all. The texture coordinate knows both, and only lines up
-with longitude because the shells are built with the seam rotated to the antimeridian.
+other, and the pole rows have no longitude at all. Grid columns carry the longitudes because the shells
+are built with the seam rotated to the antimeridian. Pole UVs include texture sampling offsets, so the
+map uses the column indices directly.
 
-**The pole fans collapse, so the map gets a straight edge**
+**The polar rows tile the map to its edges**
 
-The pole fans collapse, so the map gets a straight edge. A fan cannot tile a straight line: flattened,
-each apex sits at its own column's longitude and the gap between neighbours is a notch, so ninety-six of
-them make a dashed line where the map should simply stop.
-
-Pulling each apex back to the ring below makes those triangles zero-height on the map. The globe is
-untouched: this is an attribute the plane reads and the sphere position ignores.
+The sphere omits zero-area triangles between adjacent pole vertices. The map needs those triangles
+because its longitudes spread the pole vertices into straight edges. Completing the rows keeps the
+daylight and aurora shading continuous to the map boundary.
 
 ### src/globe/planets.ts
 

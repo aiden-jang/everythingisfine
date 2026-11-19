@@ -1,5 +1,5 @@
 import { BufferAttribute } from "three";
-import type { BufferGeometry, Material, Vector3, WebGLProgramParametersWithUniforms } from "three";
+import type { Material, SphereGeometry, Vector3, WebGLProgramParametersWithUniforms } from "three";
 import { DEG } from "../geo/sphere";
 
 /* Globe to map, as one geometry. See ARCHITECTURE.md#srcglobemorphts. */
@@ -125,33 +125,25 @@ export function visibleCopies(
   };
 }
 
-/**
- * Derives `aLonLat` for a sphere shell from its texture coordinates, not its positions. See
- * ARCHITECTURE.md.
- */
-export function attachLonLat(geometry: BufferGeometry): void {
-  const position = geometry.getAttribute("position");
-  const uv = geometry.getAttribute("uv");
-  const out = new Float32Array(position.count * 2);
-
-  for (let v = 0; v < position.count; v += 1) {
-    const y = position.getY(v);
-    const r = Math.hypot(position.getX(v), y, position.getZ(v)) || 1;
-    out[v * 2] = (uv.getX(v) - 0.5) * 360;
-    out[v * 2 + 1] = (Math.asin(y / r) * 180) / Math.PI;
+/** Adds geographic coordinates to a complete sphere built with SPHERE_PHI_START. */
+export function attachLonLat(geometry: SphereGeometry): void {
+  const { widthSegments: width, heightSegments: height } = geometry.parameters;
+  const stride = width + 1;
+  const out = new Float32Array(stride * (height + 1) * 2);
+  for (let row = 0; row <= height; row += 1) {
+    for (let column = 0; column <= width; column += 1) {
+      const v = 2 * (row * stride + column);
+      out[v] = (column / width - 0.5) * 360;
+      out[v + 1] = (0.5 - row / height) * 180;
+    }
   }
-
-  /* The pole fans collapse, so the map gets a straight edge. See ARCHITECTURE.md#srcglobemorphts. */
-  let ring = 0;
-  for (let v = 0; v < position.count; v += 1) {
-    const lat = Math.abs(out[v * 2 + 1]!);
-    if (lat < 89.999 && lat > ring) ring = lat;
+  // Three skips triangles that have zero area on a sphere. They fill the polar rows when unfolded.
+  const faces = Array.from(geometry.index!.array);
+  for (let column = 0; column < width; column += 1) {
+    const south = (height - 1) * stride + column;
+    faces.push(column + 1, column, stride + column + 1, south, south + stride, south + stride + 1);
   }
-  for (let v = 0; v < position.count; v += 1) {
-    const lat = out[v * 2 + 1]!;
-    if (Math.abs(lat) > ring) out[v * 2 + 1] = Math.sign(lat) * ring;
-  }
-
+  geometry.setIndex(faces);
   geometry.setAttribute("aLonLat", new BufferAttribute(out, 2));
 }
 

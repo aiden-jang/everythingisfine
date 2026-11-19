@@ -1,7 +1,30 @@
 import { describe, expect, it } from "vitest";
-import { PerspectiveCamera, Vector3 } from "three";
-import { MAP_HALF_WIDTH, unfoldPoint, visibleCopies } from "./morph";
+import { PerspectiveCamera, SphereGeometry, Vector3 } from "three";
+import { attachLonLat, MAP_HALF_WIDTH, SPHERE_PHI_START, unfoldPoint, visibleCopies } from "./morph";
 import { visibleMapCopies } from "./globeFraming";
+
+it("tiles the complete flat map through both poles with no holes or overlapping triangles", () => {
+  const width = 12;
+  const height = 8;
+  const sphere = new SphereGeometry(1, width, height, SPHERE_PHI_START);
+  attachLonLat(sphere);
+  const coords = sphere.getAttribute("aLonLat");
+  const indices = sphere.index!.array;
+  expect(indices.length).toBe(width * height * 6);
+  expect([coords.getX(0), coords.getY(0)]).toEqual([-180, 90]);
+  expect([coords.getX(coords.count - 1), coords.getY(coords.count - 1)]).toEqual([180, -90]);
+  const areas: number[] = [];
+  for (let i = 0; i < indices.length; i += 3) {
+    const [a, b, c] = [indices[i]!, indices[i + 1]!, indices[i + 2]!];
+    const ax = coords.getX(a);
+    const ay = coords.getY(a);
+    areas.push(
+      ((coords.getX(b) - ax) * (coords.getY(c) - ay) - (coords.getX(c) - ax) * (coords.getY(b) - ay)) / 2,
+    );
+  }
+  expect(Math.min(...areas)).toBeGreaterThan(0);
+  expect(areas.reduce((sum, area) => sum + area, 0)).toBe(360 * 180);
+});
 
 it("includes the map copy visible through the left panel edge", () => {
   const camera = new PerspectiveCamera(45, 2);
