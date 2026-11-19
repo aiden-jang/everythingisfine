@@ -123,9 +123,7 @@ test("scenes preserve existing preferences and shared event links open the explo
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Show the panel", exact: true })).toBeVisible();
-  await page
-    .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
-    .click();
+  await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
   await page.getByRole("button", { name: "Find a story", exact: true }).click();
   await expect(page.getByRole("searchbox", { name: "Find a story", exact: true })).toBeFocused();
@@ -230,9 +228,7 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
   await expect
     .poll(() => page.locator(".zone-canvas").evaluate((node) => node.getAnimations().length))
     .toBe(0);
-  await page
-    .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
-    .click();
+  await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
   expect(await contexts()).toBe(original);
   await expect
@@ -345,9 +341,7 @@ test("the observatory keeps capture recovery and home navigation available", asy
   expect((await downloaded).suggestedFilename()).toMatch(/\.png$/);
   await page.getByRole("button", { name: "Dismiss", exact: true }).click();
   await expect(page.getByRole("button", { name: "View options", exact: true })).toBeFocused();
-  await page
-    .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
-    .click();
+  await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
 });
 
@@ -382,9 +376,7 @@ test("a shared map restores Explore and the Observatory preserves the held view"
   await transport.press("ArrowLeft");
   await expect(page).toHaveURL(/p=map&v=explore.*&c=/);
   const link = page.url();
-  await page
-    .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
-    .click();
+  await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
   await expect(page.locator("main")).toHaveAttribute("data-presentation", "observe");
   await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   await expect(page).toHaveURL(/p=map&v=explore.*&c=/);

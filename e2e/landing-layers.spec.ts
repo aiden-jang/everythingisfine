@@ -128,7 +128,7 @@ for (const [width, height] of [
     const selected = await radarTexture(page);
     await page
       .getByRole("button", {
-        name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+        name: "meanwhile. Earth, ocean & sky, back to the Observatory",
         exact: true,
       })
       .click();
@@ -175,7 +175,7 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
   await page.getByRole("region", { name: "Storm radar playback" }).getByRole("slider").press("Home");
   await page
     .getByRole("button", {
-      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      name: "meanwhile. Earth, ocean & sky, back to the Observatory",
       exact: true,
     })
     .click();
@@ -192,7 +192,7 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
   await page.keyboard.press("Escape");
   await page
     .getByRole("button", {
-      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      name: "meanwhile. Earth, ocean & sky, back to the Observatory",
       exact: true,
     })
     .click();
@@ -206,7 +206,7 @@ test("landing layers yield to After Dark and respect a saved off choice @dev", a
   await expect.poll(() => radarTexture(page)).toBeNull();
   await page
     .getByRole("button", {
-      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      name: "meanwhile. Earth, ocean & sky, back to the Observatory",
       exact: true,
     })
     .click();
@@ -233,7 +233,7 @@ test("Home leaves archive mode and browser Back recovers the recorded day @dev",
   await expect(page.getByRole("button", { name: "back to live", exact: true })).toBeVisible();
   await page
     .getByRole("button", {
-      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      name: "meanwhile. Earth, ocean & sky, back to the Observatory",
       exact: true,
     })
     .click();

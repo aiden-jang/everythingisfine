@@ -36,9 +36,7 @@ test("a pending recent Float Dive link survives reload and Back without becoming
   await page.reload();
   await expect.poll(() => requested).toBe(2);
   expect(requestedProfile()).toBe(profile);
-  await page
-    .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
-    .click();
+  await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
   await page.goBack();
   await expect.poll(() => requested).toBe(3);
   expect(requestedProfile()).toBe(profile);
@@ -121,9 +119,7 @@ test("Float Dive scrubs Argo measurements on the same globe", async ({ page }) =
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(depth).toBeInViewport({ ratio: 1 });
   await expect(page.getByRole("link", { name: "aiden jang", exact: true })).toBeInViewport();
-  await page
-    .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
-    .click();
+  await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
   await page.goBack();
   await expect(depth).toHaveAttribute("aria-valuetext", "0 m");
   await expect(dive.getByText(/Recent profile · Cycle 269/)).toBeVisible();

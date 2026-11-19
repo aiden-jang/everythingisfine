@@ -49,9 +49,7 @@ test("the featured lunar journey keeps its canvas and saves its own scientific c
   expect(result.lines).toContain("Apollo 17 · December 1972 · Traverse 2");
   expect(result.lines.join(" ")).toContain("LRO / USGS terrain");
   expect(result.lines.join(" ")).not.toMatch(/earthquakes|magnitude|Live ·/);
-  await page
-    .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
-    .click();
+  await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
   await page.goBack();
   await expect(moon.getByLabel("Rover traverse")).toHaveValue("1");
   await expect(moon.getByRole("slider", { name: "Mapped distance" })).toHaveValue(distance);

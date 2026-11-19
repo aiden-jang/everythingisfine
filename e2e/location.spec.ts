@@ -50,7 +50,7 @@ test("approximate arrival keeps rounded framing on the same globe and map @dev",
   await page.keyboard.press("Escape");
   await page
     .getByRole("button", {
-      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      name: "meanwhile. Earth, ocean & sky, back to the Observatory",
       exact: true,
     })
     .click();

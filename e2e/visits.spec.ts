@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { installFeeds, openStories, selectScene } from "./feeds";
 
-const home = "Everything is fine. Earth, ocean & sky, back to the Observatory";
+const home = "meanwhile. Earth, ocean & sky, back to the Observatory";
 test("discovery changes with the scene and keeps the same globe", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({ reducedMotion: "reduce" });

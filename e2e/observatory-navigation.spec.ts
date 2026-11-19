@@ -43,7 +43,7 @@ test("a shared scene opens the same category in a fresh browser @dev", async ({ 
         .getByRole("button", { name: "All stories", exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
     await other
-      .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
+      .getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" })
       .click();
     await expect
       .poll(() => new URLSearchParams(new URL(other.url()).hash.slice(1)).has("catalogue"))
@@ -69,9 +69,7 @@ test("Home restores all scenes and browser Back restores it on the same globe @d
     .click();
   await openStories(page);
   await page.getByRole("searchbox", { name: "Find a story" }).fill("moon");
-  await page
-    .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
-    .click();
+  await page.getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" }).click();
   await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
   await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toHaveCount(0);
   await expect(
@@ -107,7 +105,7 @@ test("rapid scene and presentation changes finish at the latest choice @dev", as
     .getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true })
     .dispatchEvent("click");
   await page
-    .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
+    .getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" })
     .dispatchEvent("click");
   await page
     .getByRole("button", { name: /^Explore (the globe|the layers)$/, exact: true })
@@ -149,7 +147,7 @@ for (const width of [1440, 390]) {
       await expect(category).toBeFocused();
       await page
         .getByRole("button", {
-          name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+          name: "meanwhile. Earth, ocean & sky, back to the Observatory",
           exact: true,
         })
         .click();

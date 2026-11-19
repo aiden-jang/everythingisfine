@@ -98,7 +98,7 @@ for (const [width, height] of [
       await expect.poll(async () => (await pose()).lat).toBe(DEFAULT_CAMERA.lat);
       await expect.poll(async () => (await pose()).zoom).toBe(1);
       await page
-        .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
+        .getByRole("button", { name: "meanwhile. Earth, ocean & sky, back to the Observatory" })
         .click();
       await page.emulateMedia({ reducedMotion: "reduce" });
       await selectScene(page, "Below the Surface");

@@ -316,7 +316,7 @@ test("weather selections survive a cinematic detour without resuming playback @d
   await windPanel.getByRole("slider").press("End");
   await page
     .getByRole("button", {
-      name: "Everything is fine. Earth, ocean & sky, back to the Observatory",
+      name: "meanwhile. Earth, ocean & sky, back to the Observatory",
       exact: true,
     })
     .click();
