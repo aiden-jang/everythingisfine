@@ -42,10 +42,12 @@ export function useRadarScans(
     let timer = 0;
     let request: AbortController | null = null;
     let leaving = false;
+    let deferredHistory = false;
 
     async function load() {
       if (document.hidden || leaving || request) return;
       window.clearTimeout(timer);
+      deferredHistory = false;
       const current = new AbortController();
       const { signal } = current;
       request = current;
@@ -128,7 +130,10 @@ export function useRadarScans(
             images.set(id, image);
             // WebKit can cancel requests before dispatching pagehide on the old document.
             // A refused connection must not start a new batch for every remaining scan.
-            if (interrupted) for (const pending of queue) images.set(pending.id, null);
+            if (interrupted) {
+              for (const pending of queue) images.set(pending.id, null);
+              queue.length = 0;
+            }
             setData((old) => ({
               ...old,
               images: new Map(images),
@@ -138,6 +143,7 @@ export function useRadarScans(
           }
         }
         await Promise.all(global ? [next()] : [next(), next(), next()]);
+        if (!signal.aborted) deferredHistory = global && queue.length > 0;
       } catch {
         if (global && !signal.aborted) forgetRainviewer(RAINVIEWER_CATALOGUE);
         if (!signal.aborted) setData((old) => ({ ...old, status: "error", checkedAt: Date.now() }));
@@ -173,7 +179,9 @@ export function useRadarScans(
       if (global) forgetRainviewer(RAINVIEWER_CATALOGUE);
       void load();
     };
-    loadOnDemand.current = () => void load();
+    loadOnDemand.current = () => {
+      if (deferredHistory) void load();
+    };
     void load();
     document.addEventListener("visibilitychange", visibility);
     window.addEventListener("pagehide", leave);
