@@ -62,6 +62,9 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   if (process.env["EIF_CAPTURE_UI"])
     await page.screenshot({ path: `${process.env["EIF_CAPTURE_UI"]}/sheet-390.png` });
   await sheet.press("Home");
+  await expect(sheet).toBeFocused();
+  await expect(sheet).toHaveCSS("outline-style", "none");
+  await expect(sheet.locator("span").last()).toHaveCSS("outline-width", "2px");
   const expanded = Number(await size());
   expect(collapsed).toBeGreaterThan(half);
   expect(half).toBeGreaterThan(expanded);
@@ -335,10 +338,25 @@ test("panel arrivals work in both directions and settle without replacing the ca
     .poll(() => page.locator("#explorer-layers").evaluate((node) => node.getAnimations().length))
     .toBe(0);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.getByRole("tab", { name: "Stories", exact: true }).click();
+  const stories = page.getByRole("tab", { name: "Stories", exact: true });
+  const layers = page.getByRole("tab", { name: "Layers", exact: true });
+  await stories.click();
   await expect(page.getByRole("tabpanel", { name: "Stories", exact: true })).toBeVisible();
   expect(await arrivals()).toEqual(["explorer-stories", "explorer-layers"]);
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
+  expect(await stories.evaluate((tab) => tab.matches(":focus-visible"))).toBe(false);
+  await stories.press("ArrowLeft");
+  await expect(layers).toBeFocused();
+  await layers.press("ArrowRight");
+  await expect(stories).toBeFocused();
+  expect(await stories.evaluate((tab) => getComputedStyle(tab, "::before").borderTopWidth)).toBe("2px");
+
+  const rail = page.locator("#chrome-rail");
+  await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
+  await rail.evaluate((node) => node.scrollTo({ top: 160 }));
+  await expect(rail).toHaveAttribute("data-scrolled", "");
+  await rail.evaluate((node) => node.scrollTo({ top: 0 }));
+  await expect(rail).not.toHaveAttribute("data-scrolled");
 });
 
 test("clearing search and dismissing a transient location preview keep keyboard focus @dev", async ({

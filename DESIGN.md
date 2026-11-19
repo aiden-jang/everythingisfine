@@ -301,7 +301,10 @@ projection, camera, playback or visibility. Scene categories filter Stories with
 back to the landing page. Story returns restore pane, category, query, scroll, focus and camera.
 The camera reserves room for the rail. At 900px and above, the same canvas extends behind much of
 the rail while its optical centre stays fixed on globe and map. The panel grades from a dark
-tint behind labels to a clearer edge, and the tabs and sticky story filters use a coordinated fade.
+tint behind labels to a clear edge without an outer stroke. The tabs and story filters share the
+panel surface at rest and take on a solid tint while content moves beneath them. Explore's keyboard
+focus uses a softer two-pixel outline, padded around tab labels and inset on category buttons, search
+fields and story rows.
 The phone sheet keeps a deeper tint with a soft top edge,
 and its globe controls share a baseline above the drag handle.
 

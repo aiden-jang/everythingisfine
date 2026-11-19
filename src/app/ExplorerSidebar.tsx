@@ -66,6 +66,14 @@ export function ExplorerSidebar({
   useReadingArrival(panel, browser.pane, "fade");
   const scrolls = useRef({ layers: 0, stories: 0 });
   const previous = useRef(browser.pane);
+  useLayoutEffect(() => {
+    const rail = document.getElementById("chrome-rail");
+    if (!rail) return;
+    const markScroll = () => rail.toggleAttribute("data-scrolled", rail.scrollTop > 0);
+    markScroll();
+    rail.addEventListener("scroll", markScroll, { passive: true });
+    return () => rail.removeEventListener("scroll", markScroll);
+  }, []);
   const layerView = useRef<{ camera: ReturnType<typeof context.explorer.read>; flat: boolean } | null>(null);
   useLayoutEffect(() => {
     if (previous.current === browser.pane) return;

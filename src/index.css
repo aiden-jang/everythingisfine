@@ -897,6 +897,24 @@
   top: 20px;
   width: 48px;
 }
+.sheet-grip:focus-visible {
+  outline: none;
+}
+.sheet-grip:focus-visible > span:first-child {
+  background: var(--color-hairline);
+}
+.sheet-grip:focus-visible > span:last-child {
+  outline: 2px solid var(--color-dim);
+  outline-offset: 3px;
+}
+@media (forced-colors: active) {
+  .sheet-grip:focus-visible {
+    outline: none !important;
+  }
+  .sheet-grip:focus-visible > span:last-child {
+    outline-color: Highlight;
+  }
+}
 @media (max-width: 767px) {
   .utility-controls {
     padding: 8px;
@@ -1069,7 +1087,6 @@ textarea::selection {
 }
 
 .mobile-navigation button[aria-expanded="true"] {
-  border-color: var(--color-dim);
   background: var(--color-raised);
 }
 

@@ -7,9 +7,10 @@
   min-height: var(--explorer-tabs-height);
   margin: 0 calc(-1 * var(--explorer-pad));
   padding: 6px var(--explorer-pad) 0;
-  background: inherit;
 }
 .explorer-tabs button {
+  position: relative;
+  isolation: isolate;
   min-height: 44px;
   padding: 8px 0 12px;
   color: var(--color-dim);
@@ -23,6 +24,26 @@
   color: var(--color-ink);
   border-bottom-color: currentColor;
 }
+.explorer-tabs button:is(:hover, :focus-visible) {
+  color: var(--color-ink);
+}
+.explorer-tabs button:focus-visible {
+  outline: none;
+}
+.explorer-tabs button:focus-visible::before {
+  position: absolute;
+  inset: 6px -7px 7px;
+  z-index: -1;
+  border: 2px solid var(--color-dim);
+  border-radius: 6px;
+  background: var(--color-raised);
+  content: "";
+}
+@media (forced-colors: active) {
+  .explorer-tabs button:focus-visible::before {
+    content: none;
+  }
+}
 #chrome-rail {
   --explorer-pad: clamp(20px, 2.35vw, 38px);
   --explorer-tabs-height: 60px;
@@ -34,6 +55,20 @@
   scrollbar-gutter: stable;
   overflow-anchor: none;
   container: explorer / size;
+}
+#chrome-rail :focus-visible {
+  outline-color: var(--color-dim);
+}
+#chrome-rail :is(.story-category button, .explorer-search input):focus-visible {
+  outline-offset: -2px;
+}
+#chrome-rail .story-category button:focus-visible {
+  border-radius: 5px;
+}
+#chrome-rail .story-choice > button:focus-visible::after {
+  border-radius: 6px;
+  outline-color: var(--color-dim);
+  outline-offset: -2px;
 }
 .layer-note,
 .layer-reports > p {
@@ -372,7 +407,6 @@
   border: 1px solid var(--color-hairline);
   border-radius: 7px;
   background: transparent;
-  border-radius: 2px;
   font-size: 16px;
   color: var(--color-ink);
 }
@@ -801,4 +835,19 @@
 .explorer-fold:focus-visible {
   background: var(--color-raised);
   color: var(--color-ink);
+}
+.explorer-resize {
+  top: calc(50% - 22px);
+  height: 44px;
+  border-radius: 6px;
+}
+.explorer-resize > span {
+  inset-block: 8px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--color-faint) 52%, transparent);
+}
+.explorer-resize:is(:hover, :focus-visible) > span {
+  background: var(--color-dim);
 }

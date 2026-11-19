@@ -1317,7 +1317,7 @@ export function App(): JSX.Element {
             max={RAIL_MAX}
             measure={(e) => e.clientX - 24}
             onChange={setRailWidth}
-            className={railShown ? "absolute inset-y-0 hidden xl:block" : "hidden"}
+            className={railShown ? "explorer-resize absolute hidden xl:block" : "hidden"}
             style={{ left: "calc(var(--rail-w) - 18px)" }}
           />
 
