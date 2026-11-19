@@ -109,7 +109,7 @@ export function ExperienceEnding({
         ref={details}
         className="related-stories"
         onToggle={() => {
-          if (details.current?.open && !completed) revealReading(details.current.querySelector("summary"));
+          if (details.current?.open && !completed) revealReading(details.current.querySelector("button"));
         }}
       >
         <summary>{completed ? "Up next" : "Keep exploring"}</summary>
