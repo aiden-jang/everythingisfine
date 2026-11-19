@@ -22,8 +22,8 @@ export function useGlobeCamera(shared: Partial<Permalink>, setReady: (ready: boo
     if (!untouched.current || !mayLocateInitially(shared)) return;
     const stop = requestApproximateLocation((point) => {
       home.current = { ...point, zoom: DEFAULT_CAMERA.zoom };
-      camera.current = { ...camera.current, ...point };
-      flight.current?.(point.lon, point.lat, camera.current.zoom);
+      camera.current = home.current;
+      flight.current?.(point.lon, point.lat, home.current.zoom);
     });
     stopLocation.current = stop;
     return stop;

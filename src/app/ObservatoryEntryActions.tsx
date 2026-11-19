@@ -1,19 +1,4 @@
-import { useStoryNavigation } from "./journeys/StoryNavigation";
-
-export function ObservatoryEntryActions({
-  solar,
-  explore,
-  browse,
-  closeSun,
-  fromOval,
-}: {
-  solar: boolean;
-  explore: () => void;
-  browse: () => void;
-  closeSun: () => void;
-  fromOval: boolean;
-}) {
-  const navigation = useStoryNavigation();
+export function ObservatoryEntryActions({ explore, browse }: { explore: () => void; browse: () => void }) {
   return (
     <div className="observatory-actions observatory-entry-actions">
       <button type="button" className="observatory-primary" onClick={explore}>
@@ -22,16 +7,9 @@ export function ObservatoryEntryActions({
           <path d="m5 15 10-10M5 5h10v10" fill="none" stroke="currentColor" strokeWidth="1.5" />
         </svg>
       </button>
-      {!solar && (
-        <button type="button" id="browse-stories" onClick={browse}>
-          Browse stories
-        </button>
-      )}
-      {solar && !fromOval && (
-        <button type="button" id="back-to-stars" onClick={closeSun}>
-          {navigation?.returnLabel ?? "Back to stars"}
-        </button>
-      )}
+      <button type="button" id="browse-stories" onClick={browse}>
+        Browse stories
+      </button>
     </div>
   );
 }

@@ -3,10 +3,18 @@ import type { ButtonHTMLAttributes, Ref } from "react";
 type Props = Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "type"> & {
   playing: boolean;
   ended?: boolean;
+  startLabel?: string | undefined;
   buttonRef?: Ref<HTMLButtonElement>;
 };
 
-export function PlaybackButton({ playing, ended = false, buttonRef, className = "", ...props }: Props) {
+export function PlaybackButton({
+  playing,
+  ended = false,
+  startLabel,
+  buttonRef,
+  className = "",
+  ...props
+}: Props) {
   return (
     <button
       {...props}
@@ -14,6 +22,7 @@ export function PlaybackButton({ playing, ended = false, buttonRef, className = 
       type="button"
       className={`story-playback ${className}`}
       data-playback-start={!playing || undefined}
+      data-playback-intro={(!playing && !ended && !!startLabel) || undefined}
     >
       <svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true">
         {playing ? (
@@ -24,7 +33,7 @@ export function PlaybackButton({ playing, ended = false, buttonRef, className = 
           <path d="m6 3 11 7-11 7z" fill="currentColor" />
         )}
       </svg>
-      {playing ? "Pause" : ended ? "Replay" : "Play"}
+      {playing ? "Pause" : ended ? "Replay" : (startLabel ?? "Play")}
     </button>
   );
 }

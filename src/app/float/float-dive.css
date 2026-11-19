@@ -366,8 +366,11 @@
   pointer-events: auto;
 }
 .float-transport .float-chapters {
-  justify-content: center;
-  gap: 28px;
+  justify-content: start;
+  gap: 24px;
+}
+.float-transport .float-edges {
+  font-variant-numeric: tabular-nums;
 }
 .float-playback-row {
   display: flex;

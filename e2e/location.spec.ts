@@ -57,6 +57,49 @@ test("approximate arrival keeps rounded framing on the same globe and map @dev",
   await expect.poll(() => camera(page)).toMatchObject({ lon: 151.2, lat: -33.9 });
 });
 
+test("the first landing frames stay wide when location arrives after first paint @dev", async ({ page }) => {
+  await setup(page);
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.addInitScript(() => {
+    localStorage.setItem("eif.landingRotation", "0");
+    type Globe = { state: () => { zoom: number }; step: (dt: number) => boolean };
+    let globe: Globe | undefined;
+    let release: (() => void) | undefined;
+    const firstFrame = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const maxZoom = { value: 0 };
+    Object.assign(window, { maxLandingZoom: maxZoom });
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = async (...args) => {
+      if (String(args[0]) !== "/api/location") return originalFetch(...args);
+      await firstFrame;
+      return Response.json({ location: { lon: -73.9, lat: 42.1 } });
+    };
+    Object.defineProperty(window, "__globe", {
+      configurable: true,
+      get: () => globe,
+      set(next: Globe) {
+        globe = next;
+        const step = next.step;
+        next.step = (dt) => {
+          const moving = step(dt);
+          maxZoom.value = Math.max(maxZoom.value, next.state().zoom);
+          release?.();
+          return moving;
+        };
+      },
+    });
+  });
+  await page.goto("/");
+  await expect.poll(() => camera(page)).toEqual({ lon: -73.9, lat: 42.1, zoom: 1 });
+  expect(
+    await page.evaluate(
+      () => (window as unknown as { maxLandingZoom: { value: number } }).maxLandingZoom.value,
+    ),
+  ).toBe(1);
+});
+
 test("a shared camera takes priority over the visitor's approximate location @dev", async ({ page }) => {
   await setup(page);
   await page.emulateMedia({ reducedMotion: "no-preference" });

@@ -410,6 +410,26 @@
   inset: var(--stage-inset) var(--stage-inset) auto auto;
 }
 
+.zones:has([data-stage="aurora"]) .camera-recenter {
+  top: clamp(72px, calc(var(--scene-hud-top) + 104px), calc(100% - 52px));
+}
+
+.after-dark-return {
+  justify-self: start;
+  align-self: flex-start;
+  min-height: 44px;
+  padding-inline: 8px;
+  margin-inline-start: -8px;
+  border-radius: 6px;
+  color: var(--color-dim);
+  font-size: 13px;
+  cursor: pointer;
+}
+.after-dark-return:hover {
+  background: var(--color-raised);
+  color: var(--color-ink);
+}
+
 .sky-reference-marker {
   position: absolute;
   visibility: hidden;

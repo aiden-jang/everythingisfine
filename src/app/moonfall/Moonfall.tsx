@@ -110,76 +110,82 @@ function TraverseControls({ view, wake }: { view: MoonfallView; wake: () => void
           </div>
         )}
       </div>
-      <div className="observatory-actions moonfall-actions" role="group" aria-label="Lunar projection">
-        <button type="button" aria-pressed={!mapped} onClick={() => act(() => view.project(false))}>
-          Terrain
-        </button>
-        <button type="button" aria-pressed={mapped} onClick={() => act(() => view.project(true))}>
-          Landing map
-        </button>
-      </div>
       <div className="observatory-actions moonfall-actions">
-        {flying ? (
-          <button type="button" onClick={() => act(view.skip)}>
-            Skip descent
-          </button>
-        ) : (
-          <button type="button" data-moonfall-replay="" onClick={() => act(view.replay)}>
-            Replay descent
-          </button>
-        )}
-      </div>
-      <label className="tonight-city">
-        Rover traverse
-        <select value={eva} onChange={(event) => act(() => view.select(Number(event.currentTarget.value)))}>
-          {traverses.map(({ title }, i) => (
-            <option key={title} value={i}>
-              {i + 1} · {title}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="tonight-city">
-        Geology stop
-        <select
-          value={station ?? ""}
-          onChange={(event) => act(() => view.stopAt(Number(event.currentTarget.value)))}
+        <button
+          type="button"
+          className={flying ? "observatory-primary" : undefined}
+          data-moonfall-replay={!flying || undefined}
+          onClick={() => act(flying ? view.skip : view.replay)}
         >
-          <option value="" disabled>
-            Inspect a stop
-          </option>
-          {route.stations.map(({ name }, i) => (
-            <option key={name} value={i}>
-              {name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <StoryDock label="Rover playback">
-        <div className="tonight-time moonfall-transport">
-          <div className="tonight-clock">
-            <label htmlFor={id}>Mapped distance</label>
-            <output htmlFor={id}>{distance}</output>
+          {flying ? "Skip descent" : "Replay descent"}
+        </button>
+      </div>
+      {!flying && (
+        <>
+          <div className="observatory-actions moonfall-actions" role="group" aria-label="Lunar projection">
+            <button type="button" aria-pressed={!mapped} onClick={() => act(() => view.project(false))}>
+              Terrain
+            </button>
+            <button type="button" aria-pressed={mapped} onClick={() => act(() => view.project(true))}>
+              Landing map
+            </button>
           </div>
-          <input
-            id={id}
-            type="range"
-            className="scrub-slider tonight-scrub"
-            min={0}
-            max={250}
-            value={Math.round((250 * meters) / length)}
-            aria-valuetext={distance}
-            onChange={(event) => act(() => view.seek((length * event.currentTarget.valueAsNumber) / 250))}
-          />
-          <div className="observatory-actions moonfall-actions">
-            <PlaybackButton
-              playing={playing}
-              ended={meters >= length}
-              onClick={() => act(view.toggleRoute)}
-            />
-          </div>
-        </div>
-      </StoryDock>
+          <label className="tonight-city">
+            Rover traverse
+            <select
+              value={eva}
+              onChange={(event) => act(() => view.select(Number(event.currentTarget.value)))}
+            >
+              {traverses.map(({ title }, i) => (
+                <option key={title} value={i}>
+                  {i + 1} · {title}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="tonight-city">
+            Geology stop
+            <select
+              value={station ?? ""}
+              onChange={(event) => act(() => view.stopAt(Number(event.currentTarget.value)))}
+            >
+              <option value="" disabled>
+                Inspect a stop
+              </option>
+              {route.stations.map(({ name }, i) => (
+                <option key={name} value={i}>
+                  {name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <StoryDock label="Rover playback">
+            <div className="tonight-time moonfall-transport">
+              <div className="tonight-clock">
+                <label htmlFor={id}>Mapped distance</label>
+                <output htmlFor={id}>{distance}</output>
+              </div>
+              <input
+                id={id}
+                type="range"
+                className="scrub-slider tonight-scrub"
+                min={0}
+                max={250}
+                value={Math.round((250 * meters) / length)}
+                aria-valuetext={distance}
+                onChange={(event) => act(() => view.seek((length * event.currentTarget.valueAsNumber) / 250))}
+              />
+              <div className="observatory-actions moonfall-actions">
+                <PlaybackButton
+                  playing={playing}
+                  ended={meters >= length}
+                  onClick={() => act(view.toggleRoute)}
+                />
+              </div>
+            </div>
+          </StoryDock>
+        </>
+      )}
       <details className="tonight-objects">
         <summary>
           <span>Terrain &amp; routes</span>

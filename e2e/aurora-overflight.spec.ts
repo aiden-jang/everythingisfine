@@ -61,7 +61,9 @@ test("the reduced-motion phone can read the current forecast and exit to Explore
   await expect(page.getByRole("heading", { name: "Into the auroral oval." })).toBeVisible();
   await expect(page.getByRole("link", { name: "NOAA OVATION forecast" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Replay flight" })).toBeFocused();
-  await page.getByRole("button", { name: "Explore the globe" }).click();
+  await expect(page.getByRole("button", { name: "Explore the globe", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Browse stories", exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Explore", exact: true }).click();
   await expect(page.locator("#chrome-rail")).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem("eif.figures"))).toBeNull();
 });

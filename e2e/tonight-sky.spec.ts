@@ -177,8 +177,10 @@ test("Moonfall reuses the sky canvas and restores the city, time, and bearing", 
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await open.click();
   await expect(valley).toContainText("Lunar approach");
+  await expect(moonfall.getByRole("slider", { name: "Mapped distance" })).toHaveCount(0);
   await moonfall.getByRole("button", { name: "Skip descent" }).click();
   await expect(valley).toContainText("Taurus–Littrow Valley");
+  await expect(moonfall.getByRole("slider", { name: "Mapped distance" })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

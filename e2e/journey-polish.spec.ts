@@ -23,7 +23,9 @@ test("an interrupted journey resumes its current moment without replacing the gl
   await page.goto("/#v=observe&story=seafloor");
   const panel = page.getByRole("region", { name: "Seafloor Flight", exact: true });
   const time = panel.getByRole("slider").first();
-  await panel.getByRole("button", { name: "Restart", exact: true }).click();
+  await expect(time).toHaveValue("0");
+  await expect(panel.getByRole("button", { name: "Pause", exact: true })).toHaveCount(0);
+  await panel.getByRole("button", { name: "Begin the descent", exact: true }).click();
   await expect.poll(async () => Number(await time.inputValue())).toBeGreaterThan(0);
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   await page.mouse.move(1100, 350);

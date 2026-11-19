@@ -9,6 +9,7 @@ import { StoryDock } from "../observations/StoryDock";
 
 type Clock = ReturnType<typeof useStoryClock>;
 export function StoryTimeline({
+  startLabel,
   data,
   frame,
   settled,
@@ -19,6 +20,7 @@ export function StoryTimeline({
   time,
   restored,
 }: {
+  startLabel?: string | undefined;
   data: EarthStoryData;
   frame: StoryFrame;
   settled: boolean;
@@ -70,10 +72,11 @@ export function StoryTimeline({
           <PlaybackButton
             playing={clock.playing}
             ended={index === data.frames.length - 1}
+            startLabel={startLabel}
             onClick={clock.toggle}
             disabled={busy}
           />
-          {index < data.frames.length - 1 && (
+          {index < data.frames.length - 1 && (!startLabel || clock.playing) && (
             <button
               type="button"
               title="Restart the story and its cinematic entrance"

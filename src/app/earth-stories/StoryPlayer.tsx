@@ -65,7 +65,9 @@ export function StoryPlayer({
   const [start] = useState(() => nearestFrame(data, restoredAt));
   const selected = data.sites?.find((p) => p.id === site);
   const waiting = useRef(true);
-  const clock = useStoryClock(data.frames.length, start, waiting, initial?.at !== undefined);
+  const startLabel =
+    id === "seafloor" ? "Begin the descent" : id === "aral" ? "Follow the shoreline" : undefined;
+  const clock = useStoryClock(data.frames.length, start, waiting, initial?.at !== undefined, !startLabel);
   const index = Math.min(data.frames.length - 1, Math.floor(clock.position));
   const current = data.frames[index]!;
   const requested = useMemo(() => data.geometry?.(current) ?? current, [data, current]);
@@ -274,6 +276,7 @@ export function StoryPlayer({
       )}
       {(busy || status === "loading") && <StoryLoading>Loading the selected observations…</StoryLoading>}
       <StoryTimeline
+        startLabel={initial?.at === undefined && clock.position === 0 ? startLabel : undefined}
         data={data}
         frame={{ ...frame, caption }}
         settled={!busy && status === "ready"}

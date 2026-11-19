@@ -15,11 +15,7 @@
 }
 .frame[data-landing] .zone-canvas {
   position: absolute;
-  width: 82vw;
-  --landing-height: min(82vw, 116dvh);
-  height: var(--landing-height);
-  left: 32vw;
-  top: calc(56dvh - var(--landing-height) / 2);
+  inset: var(--head-h) clamp(24px, 2.35vw, 38px) 54px 38%;
 }
 .frame[data-landing] .observatory-sidebar {
   position: absolute;
@@ -195,17 +191,18 @@
 }
 
 @media (max-width: 899px) and (min-height: 621px) {
+  .frame[data-landing] .zones {
+    --phone-earth-height: min(95vw, 42dvh);
+  }
   .frame[data-landing] .zone-canvas {
-    width: 120vw;
-    --landing-height: min(120vw, 56dvh);
-    left: 6vw;
-    top: 3dvh;
+    inset: var(--head-h) 0 auto;
+    height: var(--phone-earth-height);
   }
   .frame[data-landing] .observatory-intro {
     grid-template-columns: minmax(0, 1fr);
     gap: 16px;
     align-content: start;
-    padding: clamp(220px, 29dvh, 350px) 24px 94px;
+    padding: calc(var(--head-h) + var(--phone-earth-height) + 16px) 24px 94px;
     overflow-y: auto;
     pointer-events: none;
   }
@@ -387,9 +384,7 @@
     --phone-earth-height: min(95vw, 44dvh);
   }
   .frame[data-landing] .zone-canvas {
-    top: var(--head-h);
-    left: 0;
-    width: 100%;
+    inset: var(--head-h) 0 auto;
     height: var(--phone-earth-height);
   }
   .frame[data-landing] .observatory-intro {

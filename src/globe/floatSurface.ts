@@ -21,12 +21,16 @@ const water = /* glsl */ `
     vec2 low = mix(bounds.xy, anchor - vec2(0.005), fold);
     vec2 high = mix(bounds.zw, anchor + vec2(0.005), fold);
     vec2 local = (uv - low) / (high - low);
-    if (local.x < 0.0 || local.x > 1.0 || local.y < 0.0 || local.y > 1.0) discard;
+    vec3 abyss = vec3(0.012, 0.025, 0.063);
+    float veil = 0.76 * reveal * (1.0 - smoothstep(0.0, 0.42, departure));
+    if (local.x < 0.0 || local.x > 1.0 || local.y < 0.0 || local.y > 1.0) {
+      gl_FragColor = vec4(abyss, veil);
+      return;
+    }
     vec2 p = (local * 2.0 - 1.0) * vec2(aspect, 1.0);
     float height = 0.64 + 0.025 * sin(p.x * 6.0) + 0.012 * cos(p.x * 13.0) - 1.02 * smoothstep(0.0, 0.74, departure);
     float below = max(0.0, height - p.y);
     float light = mix(0.11, 1.0, pow(ascent, 2.4));
-    vec3 abyss = vec3(0.012, 0.025, 0.063);
     vec3 blue = mix(vec3(0.025, 0.16, 0.24), vec3(0.12, 0.57, 0.62), light);
     vec3 color = mix(abyss, blue, exp(-below * mix(3.1, 1.3, light)));
     float shafts = pow(0.5 + 0.5 * cos(p.x * 9.0 + below * 3.0), 9.0)
@@ -69,13 +73,16 @@ const water = /* glsl */ `
     float depthEdge = 1.0 - smoothstep(thickness * 0.65, thickness, below);
     float crest = mix(1.0, smoothstep(0.0, 0.36, width), air);
     float outgoing = mix(1.0, depthEdge * crest, smoothstep(0.02, 0.42, departure));
-    gl_FragColor = vec4(color, mix(reveal, immersion, motion) * edge * outgoing * 0.96 * (1.0 - smoothstep(0.82, 1.0, departure)));
+    float waterAlpha = mix(reveal, immersion, motion) * edge * outgoing * 0.98 * (1.0 - smoothstep(0.82, 1.0, departure));
+    float under = veil * (1.0 - waterAlpha);
+    float opacity = waterAlpha + under;
+    gl_FragColor = vec4((color * waterAlpha + abyss * under) / max(opacity, 0.0001), opacity);
   }
 `;
 
 export function createFloatSurface() {
   const object = new Group();
-  const bounds = new Vector4(0.08, 0.12, 0.94, 0.9);
+  const bounds = new Vector4();
   const sheet = new Mesh(
     new PlaneGeometry(2, 2),
     new ShaderMaterial({
@@ -123,7 +130,7 @@ export function createFloatSurface() {
       if (width <= 0 || height <= 0) return { x: 0.5, y: 0.5 };
       const compact = width < 600;
       const panel = compact ? Math.min(236, width * 0.64) : 280;
-      bounds.set(0.07, clearance, 0.94 - (panel / width) * inspection, 0.91);
+      bounds.set(0.025, clearance, 0.975 - (panel / width) * inspection, 0.98);
       sheet.material.uniforms.aspect!.value =
         ((bounds.z - bounds.x) * width) / ((bounds.w - bounds.y) * height);
       return {

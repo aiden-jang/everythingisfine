@@ -226,7 +226,7 @@ export function ShadowChase({
           </p>
           <div className="observatory-actions shadow-actions" role="group" aria-label="Eclipse viewpoint">
             <button type="button" aria-pressed={!local} onClick={() => show("globe")}>
-              Follow the shadow
+              Shadow track
             </button>
             <button
               type="button"

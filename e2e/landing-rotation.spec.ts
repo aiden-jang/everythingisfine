@@ -195,7 +195,26 @@ for (const [width, height] of [
         const { lon, lat } = globe.state();
         return globe.project(lon, lat)!;
       });
+    const clearEdges = ({ x, y }: { x: number; y: number }) =>
+      page.evaluate(
+        ({ x, y }) => {
+          const globe = (window as unknown as { __globe: Controls }).__globe;
+          return [
+            globe.pick(0, y),
+            globe.pick(innerWidth - 1, y),
+            globe.pick(x, 0),
+            globe.pick(x, innerHeight - 1),
+          ];
+        },
+        { x, y },
+      );
     const before = await center();
+    expect(await clearEdges(before)).toEqual([null, null, null, null]);
+    const canvas = (await page.locator("#globe-view").boundingBox())!;
+    expect(canvas.x).toBeGreaterThanOrEqual(0);
+    expect(canvas.x + canvas.width).toBeLessThanOrEqual(width);
+    expect(canvas.y).toBeGreaterThanOrEqual(0);
+    expect(canvas.y + canvas.height).toBeLessThanOrEqual(height);
     if (width >= 900) {
       await page.mouse.move(before.x, before.y);
       await page.mouse.wheel(0, 1200);
@@ -213,16 +232,7 @@ for (const [width, height] of [
     } else {
       expect(after.y).toBeLessThan(height * 0.36);
     }
-    const clearEdges = await page.evaluate(({ x, y }) => {
-      const globe = (window as unknown as { __globe: Controls }).__globe;
-      return [
-        globe.pick(0, y),
-        globe.pick(innerWidth - 1, y),
-        globe.pick(x, 0),
-        globe.pick(x, innerHeight - 1),
-      ];
-    }, after);
-    expect(clearEdges).toEqual([null, null, null, null]);
+    expect(await clearEdges(after)).toEqual([null, null, null, null]);
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: test.info().outputPath(`landing-zoomed-out-${width}.png`) });
   });

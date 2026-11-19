@@ -264,16 +264,16 @@ Alumni Sans is a variable upright font licensed by the adjacent SIL Open Font Li
 
 ### Aperture invitation
 
-The full-viewport landing uses an oversized globe on the right and a large invitation at the left.
-The desktop canvas has a viewport-bounded height and a fixed visual center beside the copy, so the
-whole globe stays in frame when pulled back. The opening view crops the globe at the edge. The introduction and its actions sit together in a 42% reading track
-with 34px horizontal and 64px bottom clearance.
+The full-viewport landing fits the globe beside a large invitation on desktop and above it on
+phones. The first visible frame uses the overview lens and fits the whole planet in the canvas.
+The introduction and its actions sit together in a 42% reading track with 34px horizontal and
+64px bottom clearance.
 Explore the globe is the pale filled action and Browse stories is secondary. Category filters
 and returning-visit controls live in the catalogue. Feed availability remains accessible in the header.
 Desktop layouts from 621px to 860px high reduce the headline size and top inset.
 
-Tall layouts below 900px place the globe above and behind the introduction and cap its height to
-keep the globe visible on tablets. The introduction owns vertical scrolling and 24px side insets.
+Tall layouts below 900px place the globe above the introduction and cap its height to leave room
+for the invitation on tablets. The introduction owns vertical scrolling and 24px side insets.
 The two entry actions remain reachable below the headline. Viewports at 620px high or less use the
 compact headline, reduced gaps and owned scrolling; the established player landscape layouts
 continue to keep playback visible. Landscape layouts at least 600px wide use a 64px top inset
@@ -533,8 +533,9 @@ globe and map. New York remains the fallback when location is unavailable. Share
 views and story framing keep their own coordinates; a late estimate never interrupts interaction.
 **Use device location** is optional and requests browser permission only after activation.
 
-The opening is a finite horizon-to-orbit shot with a close lens, a vertical framing offset and a
-settling bank. **Reset view** can replay it. Navigation retains critically damped springs: long
+The landing starts in orbit at overview zoom; the approximate location changes its aim at the
+same overview. The close-lens horizon pullback with a settling bank remains available via
+**Reset view** and on direct camera links. Navigation retains critically damped springs: long
 flights pull back and bank proportionally; short hops remain direct. Grabbing or steering interrupts
 the shot, and its lens offset settles independently. The flat map clears the cinematic lens.
 Camera keys, pointer, touch and wheel preserve the same bounds and motion policy. Zoom spans 0.4×
@@ -864,14 +865,20 @@ reading and kept cards arrive once. Reduced motion presents the same content imm
 
 Recorded observations and Earth stories use one retained playback dock outside the reading scrollport.
 It sits over the world on desktop and short landscape layouts, and below the phone reading panel.
-Projection uses the shared world-footer component. Float Dive offers it in Locate, leaving Rise and Notice to the measured profile. Local-sky views use a compass. Controls remain mounted across panel scrolling and resizing.
+Projection uses the shared world-footer component. Float Dive offers it in Locate. During Rise,
+the ocean section fills the stage and the globe dims behind it while the depth control stays within
+reach. Moonfall offers Skip descent during the approach and shows rover playback on arrival.
+Aurora and Sun Watch lead with their own actions and a single contextual return. Local-sky views use
+a compass. Controls remain mounted across panel scrolling and resizing.
 Scientific explanations and measured section charts sit beside their actions in the reading panel,
 leaving the world clear for the actual terrain, section line and lidar curtain. Newly measured sections
 reveal their chart within that panel without moving keyboard focus or the globe.
 Source replacement preserves the focused logical control and reading position. A failed selection
 ends its loading status and leaves the previous data available for manual inspection.
 
-Katrina’s fresh invitation precedes its existing Gulf flight. Saved moments bypass that invitation.
+Katrina’s fresh invitation precedes its existing Gulf flight. Iceberg Drift, Seafloor Flight and
+Vanishing Sea hold their opening view until the visitor starts playback or chooses a moment.
+Saved moments open at the held reading.
 Its ending plots the seven published wind readings and distinguishes the offshore maximum from the
 Buras landfall. Other completed records retain their subject-specific interpretation on a pale reading
 surface, with the source caveats and return action. Findings arrive once and settle without motion

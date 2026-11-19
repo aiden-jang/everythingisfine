@@ -154,7 +154,9 @@ export function ObservationDeck({
                 </button>
               </div>
             </div>
-            <p className="observation-note observation-introduction">{meta.description}</p>
+            <p className="observation-note observation-introduction">
+              {id === "iceberg" ? meta.summary : meta.description}
+            </p>
             <SharedStory />
             {id === "iceberg" && photograph && !deck.map && (
               <div className="observatory-actions">

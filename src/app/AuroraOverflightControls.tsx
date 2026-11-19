@@ -7,10 +7,8 @@ export function AuroraOverflightControls({
   aurora,
   ready,
   solar,
-  onReturn,
-  returnLabel = "Back to stars",
   onSunWatch,
-  onRestoreOval,
+  onCloseSun,
   onTonight,
   city,
 }: {
@@ -18,11 +16,9 @@ export function AuroraOverflightControls({
   ready: boolean;
   solar: boolean;
   onSunWatch: () => void;
-  onRestoreOval: () => void;
+  onCloseSun: () => void;
   onTonight: () => void;
   city: SkyCityPreference;
-  onReturn: () => void;
-  returnLabel?: string | undefined;
 }): JSX.Element {
   const primary = useRef<HTMLButtonElement>(null);
   useLayoutEffect(() => {
@@ -35,22 +31,22 @@ export function AuroraOverflightControls({
   return (
     <div className="aurora-overflight">
       <div className="observatory-actions" role="group" aria-label="After Dark views">
-        <button
-          ref={primary}
-          id="open-aurora-overflight"
-          type="button"
-          className="observatory-primary"
-          disabled={!ready || (!aurora.run && aurora.unavailable !== null)}
-          onClick={() => {
-            if (solar) {
-              if (!aurora.run) aurora.start();
-              onRestoreOval();
-            } else if (aurora.run) aurora.replay();
-            else aurora.start();
-          }}
-        >
-          {solar && aurora.run ? "Back to the oval" : aurora.run ? "Replay flight" : "Follow the aurora"}
-        </button>
+        {(!solar || !aurora.run) && (
+          <button
+            ref={primary}
+            id="open-aurora-overflight"
+            type="button"
+            className={solar ? undefined : "observatory-primary"}
+            disabled={!ready || (!aurora.run && aurora.unavailable !== null)}
+            onClick={() => {
+              if (aurora.run) aurora.replay();
+              else aurora.start();
+              if (solar) onCloseSun();
+            }}
+          >
+            {aurora.run ? "Replay flight" : "Follow the aurora"}
+          </button>
+        )}
         <button type="button" id="open-tonight-sky" onClick={onTonight} disabled={!ready}>
           Tonight’s Sky
         </button>
@@ -70,9 +66,6 @@ export function AuroraOverflightControls({
                 {other.hemisphere === 1 ? "Northern oval" : "Southern oval"}
               </button>
             )}
-            <button type="button" onClick={onReturn}>
-              {returnLabel}
-            </button>
           </>
         )}
       </div>

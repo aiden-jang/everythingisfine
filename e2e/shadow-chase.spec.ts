@@ -48,7 +48,7 @@ test("Shadow Chase follows the globe and uses the saved city for local circumsta
   await expect(sun).toHaveAttribute("data-total", "true");
   expect(await page.evaluate(() => localStorage.getItem("eif.sky-city"))).toBe("New York");
 
-  await panel.getByRole("button", { name: "Follow the shadow", exact: true }).click();
+  await panel.getByRole("button", { name: "Shadow track", exact: true }).click();
   await expect(shadow).toHaveAttribute("aria-valuetext", "10:06 UTC");
   await expect(panel.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
     "aria-pressed",

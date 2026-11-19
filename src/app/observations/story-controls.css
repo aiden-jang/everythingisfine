@@ -91,6 +91,14 @@
   background: var(--color-raised);
 }
 
+.story-dock button[data-playback-intro] {
+  background: var(--color-ink);
+  color: var(--color-void);
+}
+.story-dock button[data-playback-intro]:hover:not(:disabled) {
+  background: var(--color-dim);
+}
+
 .story-dock button:disabled {
   opacity: 0.5;
   cursor: default;

@@ -121,15 +121,16 @@ function ObservatoryContent({
   const closeSun = aurora.run
     ? ovalReturn.close
     : closeView(() => observations.returnTo("open-sun-watch", sun.close));
+  const closeAurora = closeView(() =>
+    observations.returnTo("open-aurora-overflight", () => onScene("night")),
+  );
   const auroraControls = (
     <AuroraOverflightControls
       aurora={aurora}
       ready={ready}
       solar={solar}
-      returnLabel={navigationContext?.returnLabel}
-      onReturn={closeView(() => observations.returnTo("open-aurora-overflight", () => onScene("night")))}
       onSunWatch={ovalReturn.open}
-      onRestoreOval={aurora.run ? closeSun : sun.close}
+      onCloseSun={sun.close}
       onTonight={() => tonight.open()}
       city={skyCity}
     />
@@ -263,6 +264,17 @@ function ObservatoryContent({
               </Suspense>
             ) : (
               <>
+                {(solar || aurora.run) && (
+                  <button
+                    type="button"
+                    className="after-dark-return"
+                    onClick={solar ? closeSun : closeAurora}
+                  >
+                    {solar && aurora.run
+                      ? "Back to the oval"
+                      : (navigationContext?.returnLabel ?? "Back to stars")}
+                  </button>
+                )}
                 <div className="observatory-story" aria-live="polite" aria-atomic="true">
                   <h2 key={title}>
                     {landing ? (
@@ -295,16 +307,15 @@ function ObservatoryContent({
                   <ObservatoryTourControls tour={tour} onExplore={onExplore} />
                 ) : (
                   <>
-                    <ObservatoryEntryActions
-                      solar={solar}
-                      explore={() => {
-                        browser.show("layers");
-                        onExplore();
-                      }}
-                      browse={() => navigationContext?.browse(true)}
-                      closeSun={closeSun}
-                      fromOval={!!aurora.run}
-                    />
+                    {!solar && !aurora.run && (
+                      <ObservatoryEntryActions
+                        explore={() => {
+                          browser.show("layers");
+                          onExplore();
+                        }}
+                        browse={() => navigationContext?.browse(true)}
+                      />
+                    )}
                     {scene !== "night" && !landing ? (
                       <p
                         id={ready && !tour.available ? "tour-availability" : undefined}

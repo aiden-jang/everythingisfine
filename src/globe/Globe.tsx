@@ -1,3 +1,4 @@
+import { isLandingPresentation } from "../app/weatherLayers";
 import { overlayPlacement } from "./overlayPlacement";
 import { exposeScene } from "./debugScene";
 import { watchGraphics, restoreGraphics } from "./graphicsRecovery";
@@ -552,8 +553,7 @@ export function Globe({
     });
     const unsubscribe = feed.subscribe(redrawFromData);
     redraw();
-
-    globe.controls.enter(); // The horizon pullback starts after the first paint.
+    if (!isLandingPresentation(live.current.globePresentation)) globe.controls.enter();
     wake();
 
     const detachViewport = observeViewport(el, globe, redraw, wake, () => {

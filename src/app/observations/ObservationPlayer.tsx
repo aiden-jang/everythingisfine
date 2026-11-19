@@ -226,6 +226,9 @@ export function ObservationPlayer({
                   <PlaybackButton
                     playing={playing}
                     ended={index === frames.length - 1}
+                    startLabel={
+                      id === "iceberg" && index === 0 && selectedAt === null ? "Follow the drift" : undefined
+                    }
                     onClick={() => {
                       if (!playing && index === frames.length - 1) setSelectedAt(frames[0]!.at);
                       setPlaying(!playing);

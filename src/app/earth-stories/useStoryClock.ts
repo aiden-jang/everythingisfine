@@ -5,10 +5,11 @@ export function useStoryClock(
   initial: number,
   waiting: RefObject<boolean>,
   restored: boolean,
+  autoPlay: boolean,
 ) {
   const [position, setPosition] = useState(initial);
   const [playing, setPlaying] = useState(
-    !restored && !matchMedia("(prefers-reduced-motion: reduce)").matches,
+    autoPlay && !restored && !matchMedia("(prefers-reduced-motion: reduce)").matches,
   );
   const [cinematic, setCinematic] = useState(!restored);
   const clock = useRef(position);
