@@ -220,7 +220,9 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
       page.evaluate(() => {
         const globe = document.getElementById("globe-view")?.getBoundingClientRect();
         const panel = document.getElementById("chrome-rail")?.getBoundingClientRect();
-        return Boolean(globe && panel && globe.left >= panel.right - 1);
+        if (!globe || !panel) return false;
+        const overlap = panel.right - globe.left;
+        return overlap > panel.width / 2 && overlap < panel.width && globe.right > panel.right;
       }),
     )
     .toBe(true);

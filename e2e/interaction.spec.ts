@@ -920,7 +920,9 @@ test("a line dragged across the map opens a section through it", async ({ page }
   await expect(page.locator(".zone-canvas")).toContainText("shift-drag");
 
   const box = (await page.locator("canvas").boundingBox())!;
-  const cx = box.x + box.width / 2;
+  const rail = (await page.locator("#chrome-rail").boundingBox())!;
+  // The translucent panel covers part of the canvas. Draw across the exposed map.
+  const cx = (rail.x + rail.width + box.x + box.width) / 2;
   const cy = box.y + box.height * 0.42;
   const before = page.url();
 
