@@ -479,10 +479,11 @@ export function App(): JSX.Element {
     enterObserve();
     beginTour();
   }, [beginTour, chooseScene, enterObserve]);
-  const openExplorer = () => {
+  function openExplorer(showPanel = false) {
+    if (showPanel && !railOpen) setRailOpen(true);
     reportAnalytics({ name: "explore_opened" });
     observatory.exploreScene(stopTour);
-  };
+  }
   const closeReading = (kind: "quake" | "hazard" | "section") =>
     closeDetail(kind, () => {
       if (kind === "quake") setSelected(null);
@@ -987,10 +988,9 @@ export function App(): JSX.Element {
     onHome: returnHome,
     onExplore: openExplorer,
     onPickDate: () => {
-      openExplorer();
+      openExplorer(true);
       mapLayers.inspect("earthquakes");
       observatory.browser.show("layers");
-      setRailOpen(true);
       requestAnimationFrame(() =>
         document.querySelector<HTMLElement>("#archive-day, #archive-return")?.focus(),
       );

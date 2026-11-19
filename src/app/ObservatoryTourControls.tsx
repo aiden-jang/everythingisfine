@@ -35,7 +35,7 @@ export function ObservatoryTourControls({
             Read this event ↗
           </button>
         ) : (
-          <button type="button" onClick={onExplore}>
+          <button type="button" onClick={() => onExplore()}>
             Explore this view ↗
           </button>
         )}

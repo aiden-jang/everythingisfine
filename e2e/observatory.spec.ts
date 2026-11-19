@@ -122,21 +122,25 @@ test("scenes preserve existing preferences and shared event links open the explo
   });
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show the panel", exact: true })).toBeVisible();
   await page
     .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
     .click();
   await expect(page.getByRole("heading", { name: "Look closer." })).toBeVisible();
+  await page.getByRole("button", { name: "Find a story", exact: true }).click();
+  await expect(page.getByRole("searchbox", { name: "Find a story", exact: true })).toBeFocused();
   await selectScene(page, "After Dark");
   await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
   await expect(page.getByRole("button", { name: "Globe", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Show the panel", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Hide the panel", exact: true })).toBeVisible();
   expect(
     await page.evaluate(() => ({
       depth: localStorage.getItem("eif.depthSink"),
       ramp: localStorage.getItem("eif.ramp"),
       figures: localStorage.getItem("eif.figures"),
+      rail: localStorage.getItem("eif.railOpen"),
     })),
-  ).toEqual({ depth: "0", ramp: "cividis", figures: null });
+  ).toEqual({ depth: "0", ramp: "cividis", figures: null, rail: "1" });
   await page.goto("/#e=usgs:missing-shared-event");
   await expect(page.locator("main")).toHaveAttribute("data-presentation", "explore");
 });

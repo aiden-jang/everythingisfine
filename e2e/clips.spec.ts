@@ -93,8 +93,10 @@ test("unsupported browsers preserve the image fallback", async ({ page }) => {
   const menu = page.getByRole("region", { name: "View options", exact: true });
   const bounds = await menu.boundingBox();
   expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(375);
-  await menu.getByRole("link", { name: "Terms", exact: true }).scrollIntoViewIfNeeded();
-  await expect(menu.getByRole("link", { name: "Terms", exact: true })).toBeInViewport();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("navigation", { name: "Legal" }).getByRole("link", { name: "Terms", exact: true }),
+  ).toBeInViewport();
 });
 
 test("the mobile recording notice leaves the visible globe intact", async ({ page }) => {

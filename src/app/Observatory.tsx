@@ -64,7 +64,7 @@ export interface ObservatoryProps {
   layerReadout: ReactNode;
   onScene: (scene: EarthScene) => void;
   onHome: () => void;
-  onExplore: () => void;
+  onExplore: (showPanel?: boolean) => void;
   onPickDate: () => void;
   tour: {
     at: number | null;

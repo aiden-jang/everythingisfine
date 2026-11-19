@@ -185,7 +185,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
     const focus = focusSearch ? "story-search-input" : (entry ?? "explorer-stories-tab");
     props.views.navigation.requestExploreFocus(focus);
     props.views.browser.show("stories");
-    props.onExplore();
+    props.onExplore(true);
     panelReturn.restore({
       scrollTarget: "chrome-rail",
       scroll: props.views.browser.scroll.current,
@@ -239,7 +239,7 @@ export function StoryNavigation({ children, ...props }: ObservatoryProps & { chi
           const focus = pane === "stories" ? "explorer-stories-tab" : "explorer-layers-tab";
           props.views.navigation.requestExploreFocus(focus);
           props.views.browser.show(pane);
-          props.onExplore();
+          props.onExplore(true);
         },
         openRadar(at, map) {
           rememberOrigin("open-explorer-radar");
