@@ -27,7 +27,7 @@ export function ExploreSheet({
     window.addEventListener("resize", resize);
     return () => window.removeEventListener("resize", resize);
   }, []);
-  const stops = sheetStops(viewport.height, panel === "Stories", viewport.footer);
+  const stops = sheetStops(viewport.height, viewport.footer);
   const [first, half, last] = stops;
   useLayoutEffect(() => {
     const zones = document.querySelector<HTMLElement>(".zones");

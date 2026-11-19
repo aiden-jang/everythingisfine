@@ -10,10 +10,31 @@ for (const width of [320, 390, 1440]) {
     await installFeeds(page, { presentation: "fresh" });
     await page.goto("/");
     const original = await page.locator("#globe-view canvas").elementHandle();
-    await expect(page.getByRole("button", { name: "Browse stories", exact: true })).toBeEnabled();
+    const browse = page.getByRole("button", { name: "Browse stories", exact: true });
+    const wordmark = page.locator(".wordmark");
+    await expect(browse).toBeEnabled();
+    await page.evaluate(() => document.fonts.ready);
+    const markBox = await wordmark.boundingBox();
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: test.info().outputPath(`landing-${width}.png`) });
-    if (width < 900) await page.getByRole("button", { name: "View options", exact: true }).click();
+    await browse.click();
+    await expect(page.getByRole("tab", { name: "Stories", exact: true })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(await wordmark.boundingBox()).toEqual(markBox);
+    await wordmark.click();
+    await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+    await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
+    expect(await wordmark.boundingBox()).toEqual(markBox);
+    await page.getByRole("button", { name: "View options", exact: true }).click();
+    const options = page.getByRole("region", { name: "View options", exact: true });
+    await expect(options).toBeVisible();
+    await expect(options).not.toContainText(/Find a story|Scene views|Privacy|Terms/);
+    await page.keyboard.press("Escape");
+    const legal = page.getByRole("navigation", { name: "Legal" });
+    await expect(legal.getByRole("link", { name: "Privacy" })).toBeInViewport();
+    await expect(legal.getByRole("link", { name: "Terms" })).toBeInViewport();
     await page.getByRole("button", { name: "Find a story", exact: true }).click();
     const search = page.getByRole("searchbox", { name: "Find a story", exact: true });
     await expect(search).toBeFocused();

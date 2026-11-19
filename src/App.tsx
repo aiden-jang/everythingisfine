@@ -1046,7 +1046,6 @@ export function App(): JSX.Element {
         <SkipControls observing={observatory.observing} railShown={railShown} />
         <h1 className="sr-only">Everything Is Fine</h1>
         <GlobeHeader
-          observatory={observatoryProps}
           keyboard={
             <KeyboardHelp
               mobile

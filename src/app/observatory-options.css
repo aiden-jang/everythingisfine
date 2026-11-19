@@ -6,6 +6,7 @@
   width: min(290px, calc(100vw - 24px));
   overflow: auto;
   border: 1px solid var(--color-hairline);
+  border-radius: 9px;
   background: var(--color-deck);
   color: var(--color-ink);
   box-shadow: 0 16px 48px #0005;
@@ -43,54 +44,4 @@
   position: static;
   display: block;
   padding: 8px;
-}
-
-.observatory-policy-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 4px;
-  border-top: 1px solid var(--color-hairline);
-}
-.observatory-policy-links a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding-inline: 8px;
-  color: var(--color-ink);
-  font-size: var(--text-control);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.observatory-policy-links a:hover {
-  background: var(--color-raised);
-}
-.scene-view-options {
-  border-top: 1px solid var(--color-hairline);
-}
-.scene-view-options > summary {
-  min-height: 44px;
-  padding: 12px 8px;
-  font-size: var(--text-control);
-  cursor: pointer;
-}
-.scene-view-options .observatory-scenes {
-  display: grid;
-  grid-template-columns: 1fr;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  gap: 2px;
-}
-.scene-view-options .observatory-scenes button {
-  flex-direction: row;
-  justify-content: flex-start;
-  gap: 12px;
-  min-height: 44px;
-  padding: 8px;
-  font-size: var(--text-control);
-}
-.scene-view-options .observatory-scenes svg {
-  width: 22px;
-  height: 22px;
 }

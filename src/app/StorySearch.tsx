@@ -1,4 +1,4 @@
-import { useRef, type ReactNode } from "react";
+import { useRef, type ReactNode, type RefObject } from "react";
 import { StoryPreviewButton } from "./discovery/StoryPreview";
 import { storyKind } from "./storyBrowse";
 import { StoryThumbnail } from "./StoryThumbnail";
@@ -8,6 +8,13 @@ import { findStories } from "./storyIndex";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
 
 type Observatory = ReturnType<typeof useObservatory>;
+
+export function resetStoryResults(target: Element) {
+  const tools = target.closest(".story-tools");
+  if (tools && getComputedStyle(tools).position === "sticky")
+    tools.closest("#chrome-rail")?.scrollTo({ top: 0 });
+}
+
 export function StorySearch({
   deck,
   ready,
@@ -15,6 +22,8 @@ export function StorySearch({
   scene,
   filter,
   onSearchAll,
+  results,
+  children,
 }: {
   filter?: ReactNode;
   scene: import("./useObservatory").EarthScene | null;
@@ -22,6 +31,8 @@ export function StorySearch({
   deck: Observatory["observations"];
   ready: boolean;
   aurora: ReturnType<typeof useAuroraOverflight>;
+  results: RefObject<HTMLDivElement>;
+  children: ReactNode;
 }): JSX.Element {
   const navigation = useStoryNavigation();
   const input = useRef<HTMLInputElement>(null);
@@ -31,68 +42,77 @@ export function StorySearch({
     : "all stories";
   return (
     <>
-      <label className="story-search explorer-search">
-        <span className="sr-only">Find a story</span>
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-          <path d="m15 15 6 6" stroke="currentColor" strokeWidth="1.5" />
-        </svg>
-        <input
-          ref={input}
-          id="story-search-input"
-          type="search"
-          name="story"
-          autoComplete="off"
-          value={deck.query}
-          placeholder="Find a story…"
-          onInput={(e) => deck.setQuery(e.currentTarget.value)}
-        />
-      </label>
-      {filter}
-      {deck.query.trim() && (
-        <section className="stories-group" aria-label="Search results">
-          <p role="status" className="observation-note">
-            {matches.length
-              ? `${matches.length} ${matches.length === 1 ? "match" : "matches"} in ${scope}`
-              : `No matches in ${scope}. Try a place, year or subject.`}
-          </p>
-          {scene && (
-            <button
-              type="button"
-              className="story-search-clear"
-              onClick={() => {
-                onSearchAll();
-                input.current?.focus({ preventScroll: true });
-              }}
-            >
-              Search all stories
+      <div className="story-tools">
+        <label className="story-search explorer-search">
+          <span className="sr-only">Find a story</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+            <path d="m15 15 6 6" stroke="currentColor" strokeWidth="1.5" />
+          </svg>
+          <input
+            ref={input}
+            id="story-search-input"
+            type="search"
+            name="story"
+            autoComplete="off"
+            value={deck.query}
+            placeholder="Find a story…"
+            onInput={(e) => {
+              resetStoryResults(e.currentTarget);
+              deck.setQuery(e.currentTarget.value);
+            }}
+          />
+        </label>
+        {filter}
+      </div>
+      <div className="story-results" ref={results}>
+        {deck.query.trim() && (
+          <section className="stories-group" aria-label="Search results">
+            <p role="status" className="observation-note">
+              {matches.length
+                ? `${matches.length} ${matches.length === 1 ? "match" : "matches"} in ${scope}`
+                : `No matches in ${scope}. Try a place, year or subject.`}
+            </p>
+            {scene && (
+              <button
+                type="button"
+                className="story-search-clear"
+                onClick={() => {
+                  if (input.current) resetStoryResults(input.current);
+                  onSearchAll();
+                  input.current?.focus({ preventScroll: true });
+                }}
+              >
+                Search all stories
+              </button>
+            )}
+            <div>
+              {matches.map((story) => (
+                <div className="story-choice" key={story.id}>
+                  <StoryThumbnail id={story.id} />
+                  <button
+                    type="button"
+                    disabled={!ready || (story.id === "aurora" && !!aurora.unavailable)}
+                    id={`search-story-${story.id}`}
+                    onClick={() => navigation?.open(story.id, `search-story-${story.id}`)}
+                  >
+                    {story.title}
+                  </button>
+                  <small>
+                    <span className="story-kind">{storyKind(story.id)}</span>
+                    {story.id === "aurora" ? (aurora.unavailable ?? story.summary) : story.summary}
+                    <StoryPreviewButton id={story.id} title={story.title} />
+                  </small>
+                </div>
+              ))}
+            </div>
+            <button type="button" className="story-search-clear" onClick={() => deck.setQuery("")}>
+              Clear search
             </button>
-          )}
-          <div>
-            {matches.map((story) => (
-              <div className="story-choice" key={story.id}>
-                <StoryThumbnail id={story.id} />
-                <button
-                  type="button"
-                  disabled={!ready || (story.id === "aurora" && !!aurora.unavailable)}
-                  id={`search-story-${story.id}`}
-                  onClick={() => navigation?.open(story.id, `search-story-${story.id}`)}
-                >
-                  {story.title}
-                </button>
-                <small>
-                  <span className="story-kind">{storyKind(story.id)}</span>
-                  {story.id === "aurora" ? (aurora.unavailable ?? story.summary) : story.summary}
-                  <StoryPreviewButton id={story.id} title={story.title} />
-                </small>
-              </div>
-            ))}
-          </div>
-          <button type="button" className="story-search-clear" onClick={() => deck.setQuery("")}>
-            Clear search
-          </button>
-        </section>
-      )}
+          </section>
+        )}
+        {children}
+      </div>
     </>
   );
 }

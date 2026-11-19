@@ -10,6 +10,7 @@ export function CopyLink({
   const busy = useRef(false);
   const [result, setResult] = useState({ url: "", failed: false, pending: false });
   const current = result.url === (format?.(href) ?? href);
+  const caption = result.pending ? 1 : current && !result.failed ? 2 : 0;
   const copy = async () => {
     if (busy.current) return;
     busy.current = true;
@@ -29,12 +30,16 @@ export function CopyLink({
     <div className="ml-auto flex max-w-full flex-wrap gap-2">
       <button
         type="button"
-        className="min-h-11 cursor-pointer border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:opacity-50"
+        className="inline-grid min-h-11 cursor-pointer place-items-center border border-hairline px-3 py-2 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink disabled:opacity-50"
         disabled={result.pending}
         aria-busy={result.pending}
         onClick={() => void copy()}
       >
-        {result.pending ? "Copying…" : current && !result.failed ? "Link copied" : label}
+        {[label, "Copying…", "Link copied"].map((text, index) => (
+          <span key={index} className={`col-start-1 row-start-1 ${index === caption ? "" : "invisible"}`}>
+            {text}
+          </span>
+        ))}
       </button>
       {result.failed && !result.pending && (
         <div className="w-full text-[11px] text-dim" role="status">

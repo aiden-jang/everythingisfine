@@ -1,20 +1,7 @@
 import { layerMetadata } from "./layerMetadata";
 import type { MapLayer } from "./layerVisibility";
-import type { FeedStatus } from "./feedStatus";
+import { feedSourceLinks, type FeedStatus } from "./feedStatus";
 import { layerTime } from "./layerTime";
-
-const sourceLinks: Record<string, string> = {
-  usgs: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/",
-  emsc: "https://www.seismicportal.eu/fdsn-wsevent.html",
-  cyclones: "https://www.gdacs.org/",
-  fires: "https://www.gdacs.org/",
-  floods: "https://www.gdacs.org/",
-  volcanoes: "https://www.gdacs.org/",
-  aurora: "https://www.swpc.noaa.gov/products/aurora-30-minute-forecast",
-  radar: "https://www.rainviewer.com/",
-  wind: "https://www.nco.ncep.noaa.gov/pmb/products/gfs/",
-  lightning: "https://www.star.nesdis.noaa.gov/goes/",
-};
 
 export function LayerSources({ layer, feeds }: { layer: MapLayer; feeds: FeedStatus }) {
   const meta = layerMetadata[layer];
@@ -29,7 +16,7 @@ export function LayerSources({ layer, feeds }: { layer: MapLayer; feeds: FeedSta
             <div key={row.id}>
               <dt>
                 <a
-                  href={sourceLinks[row.id]}
+                  href={feedSourceLinks[row.id]}
                   target="_blank"
                   rel="noreferrer"
                   aria-describedby="external-link-hint"

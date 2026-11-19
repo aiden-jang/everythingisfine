@@ -33,9 +33,10 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   const header = (await page.locator("#chrome-head").boundingBox())!;
   expect((await canvas!.boundingBox())!.y).toBeGreaterThanOrEqual(header.y + header.height);
   const size = () => sheet.getAttribute("aria-valuenow");
-  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.43) - 60));
+  const defaultSize = String(Math.round(844 * 0.43) - 60);
+  await expect(sheet).toHaveAttribute("aria-valuenow", defaultSize);
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
-  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.42) - 60));
+  await expect(sheet).toHaveAttribute("aria-valuenow", defaultSize);
   const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
   const firstRow = stories.locator(".story-choice").first();
   await expect(firstRow).toBeInViewport({ ratio: 1 });
@@ -45,7 +46,7 @@ test("phone sheet offers three sizes without losing the globe or covering its co
     Math.abs((await page.locator("#chrome-rail").boundingBox())!.y - Number(await size())),
   ).toBeLessThanOrEqual(1);
   await page.getByRole("tab", { name: "Layers", exact: true }).click();
-  await expect(sheet).toHaveAttribute("aria-valuenow", String(Math.round(844 * 0.43) - 60));
+  await expect(sheet).toHaveAttribute("aria-valuenow", defaultSize);
   await navigation.getByRole("button", { name: "More globe", exact: true }).click();
   const collapsed = Number(await size());
   await navigation.getByRole("button", { name: "More controls", exact: true }).click();
@@ -131,11 +132,18 @@ for (const width of [1440, 812, 390]) {
     const camera = () =>
       page.evaluate(() => (window as unknown as { __globe: { state: () => unknown } }).__globe.state());
     const pose = await camera();
+    const switches = layers.locator(".layer-row .layer-visibility");
+    const switchPositions = () =>
+      switches.evaluateAll((buttons) =>
+        buttons.map((button) => [(button as HTMLElement).offsetTop, (button as HTMLElement).offsetLeft]),
+      );
+    const before = await switchPositions();
     await layers.getByRole("button", { name: "Wildfires", exact: true }).click();
     await expect(layers.getByRole("button", { name: "Wildfires", exact: true })).toHaveAttribute(
       "aria-pressed",
       "false",
     );
+    expect(await switchPositions()).toEqual(before);
     await expect(layers.getByRole("button", { name: / details$/ })).toHaveCount(9);
     await layers.getByRole("button", { name: "Tropical cyclones details", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Tropical cyclones", exact: true })).toBeFocused();
@@ -162,6 +170,7 @@ for (const width of [1440, 812, 390]) {
     const category = stories.getByRole("group", { name: "Story categories", exact: true });
     const allStories = category.getByRole("button", { name: "All stories", exact: true });
     const afterDark = category.getByRole("button", { name: "After Dark", exact: true });
+    const search = stories.getByRole("searchbox", { name: "Find a story", exact: true });
     await expect(category).toBeInViewport({ ratio: 1 });
     await expect(category.getByRole("button")).toHaveText([
       "All stories",
@@ -169,6 +178,19 @@ for (const width of [1440, 812, 390]) {
       "Below the Surface",
       "After Dark",
     ]);
+    await page.locator("#chrome-rail").evaluate((rail) => rail.scrollTo({ top: 0 }));
+    await page.evaluate(() => document.fonts.ready);
+    const categoryBox = await category.boundingBox();
+    const searchBox = await search.boundingBox();
+    await page.emulateMedia({ reducedMotion: "no-preference" });
+    for (const name of ["Earth", "Below the Surface", "After Dark", "All stories"]) {
+      const filter = category.getByRole("button", { name, exact: true });
+      await filter.click();
+      await expect(filter).toHaveAttribute("aria-pressed", "true");
+      expect(await category.boundingBox()).toEqual(categoryBox);
+      expect(await search.boundingBox()).toEqual(searchBox);
+    }
+    await page.emulateMedia({ reducedMotion: "reduce" });
     await expect(page.locator(".frame")).toHaveAttribute("data-presentation", "explore");
     await expect(
       stories.getByRole("region", { name: "Selected stories" }).locator(".story-choice > button"),
@@ -202,7 +224,6 @@ for (const width of [1440, 812, 390]) {
     await afterDark.click();
     await expect(afterDark).toHaveAttribute("aria-pressed", "true");
     expect(await camera()).toEqual(pose);
-    const search = stories.getByRole("searchbox", { name: "Find a story", exact: true });
     await search.fill("Vanishing Sea");
     await expect(stories.getByRole("region", { name: "Search results" })).toContainText(
       "No matches in After Dark",

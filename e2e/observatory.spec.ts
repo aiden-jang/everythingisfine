@@ -6,7 +6,7 @@ import {
   openStories,
   saveImageButton,
   revealStoryTools,
-  revealScenes,
+  revealSceneEntry,
   selectScene,
 } from "./feeds";
 
@@ -359,12 +359,9 @@ test("a missing WebGL context still offers the source readings", async ({ page }
   });
   await page.goto("/");
   await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toBeHidden();
-  const scenes = await revealScenes(page);
-  for (const scene of ["Earth", "Below the Surface", "After Dark"])
-    await expect(scenes.getByRole("button", { name: scene, exact: true })).toBeDisabled();
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("button", { name: /^Explore (the globe|the layers)$/ })).toBeVisible();
-  await page.getByRole("button", { name: /^Explore (the globe|the layers)$/ }).click();
+  for (const scene of ["Earth", "Below the Surface", "After Dark"] as const)
+    await expect(await revealSceneEntry(page, scene)).toBeDisabled();
+  await page.getByRole("tab", { name: "Layers", exact: true }).click();
   await waitForData(page);
 });
 

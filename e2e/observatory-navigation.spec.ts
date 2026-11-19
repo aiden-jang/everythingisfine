@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openStories, revealScenes } from "./feeds";
+import { installFeeds, openStories, selectScene } from "./feeds";
 
 test("a shared scene opens the same category in a fresh browser @dev", async ({ page, browser }) => {
   await installFeeds(page, { presentation: "fresh" });
@@ -92,7 +92,7 @@ test("rapid scene and presentation changes finish at the latest choice @dev", as
   await page.emulateMedia({ reducedMotion: "reduce" });
   await installFeeds(page, { presentation: "fresh" });
   await page.goto("/");
-  await revealScenes(page);
+  await selectScene(page, "Earth");
   await expect(page.getByRole("button", { name: "Below the Surface", exact: true })).toBeEnabled();
   const canvas = await page.locator("canvas").elementHandle();
   await page.emulateMedia({ reducedMotion: "no-preference" });

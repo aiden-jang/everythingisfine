@@ -5,13 +5,25 @@
   gap: 8px;
   min-width: 44px;
   min-height: 44px;
+  padding-inline: 10px;
+  border-radius: 7px;
   color: var(--color-dim);
   font-size: 13px;
+  font-weight: 550;
+  cursor: pointer;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
 }
-.header-navigation-action svg {
+.zone-head .header-navigation-action:is(:hover, :focus-visible, [aria-current], [aria-expanded="true"]),
+.frame:has(#story-search-input:focus) .header-find {
+  color: var(--color-ink);
+  background: var(--color-raised);
+}
+.header-navigation-action > svg {
   flex: none;
 }
-.header-find-menu {
+.header-explore > svg {
   display: none;
 }
 .projection-switch[hidden] {
@@ -26,15 +38,9 @@
   z-index: 8;
 }
 @media (max-width: 899px) {
-  .observatory-options .header-find-menu {
-    display: block;
-  }
-  .zone-head .header-find {
-    display: none;
-  }
   .zone-head .header-navigation-action.header-explore {
     width: auto;
-    padding-inline: 4px;
+    padding-inline: 6px;
   }
   .zone-head .header-navigation-action.header-explore > span {
     display: inline;
@@ -61,17 +67,32 @@
     margin: auto;
   }
 }
-@media (max-width: 767px) {
-  .zone-head .feed-toggle {
-    justify-content: center;
-    width: 44px;
-    min-height: 44px;
-    padding-inline: 0;
-    flex: none;
+@media (max-width: 399px) {
+  .frame .zone-head {
+    padding-inline: 12px;
   }
-  .zone-head .feed-toggle > svg,
-  .zone-head .feed-toggle > span[aria-hidden] {
+}
+@media (max-width: 359px) {
+  .frame .zone-head {
+    gap: 4px;
+    padding-inline: 7px;
+  }
+  .zone-head .wordmark-name {
+    font-size: 16px;
+  }
+  .zone-head .observatory-header-actions {
+    gap: 0;
+  }
+  .zone-head .header-navigation-action.header-explore > span {
     display: none;
+  }
+  .header-explore > svg {
+    display: block;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .zone-head .header-navigation-action {
+    transition: none;
   }
 }
 @media (min-width: 900px) {
@@ -87,7 +108,7 @@
     background: var(--color-deck);
   }
   .canvas-information > .projection-switch button {
-    min-width: 52px;
+    width: 60px;
     height: 44px;
     padding-inline: 8px;
     border: 1px solid var(--color-hairline);

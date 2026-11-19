@@ -226,7 +226,7 @@ for (const width of [1440, 390]) {
     );
     await page.getByRole("button", { name: /^Feed status,/ }).click();
     const feedPanel = page.getByRole("region", { name: "Background feed status" });
-    await expect(feedPanel).toContainText("9 background feeds checked.");
+    await expect(feedPanel.getByRole("listitem")).toHaveCount(10);
     for (const label of ["NOAA GFS surface wind", "NOAA GOES-East lightning"])
       await expect(feedPanel.getByRole("listitem").filter({ hasText: label })).toContainText("Available");
     await page.keyboard.press("Escape");

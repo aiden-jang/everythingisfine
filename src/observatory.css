@@ -420,11 +420,7 @@
   }
 }
 
-.frame[data-presentation="observe"] .observatory-header {
-  flex-wrap: nowrap;
-  gap: 12px;
-  height: 60px;
-  padding: 8px 20px;
+.frame[data-presentation="observe"] .zone-head {
   background: transparent;
   backdrop-filter: none;
   border-color: transparent;
@@ -476,20 +472,6 @@
   }
   .frame[data-presentation="observe"] .cutaway-note {
     display: none;
-  }
-  @media (max-width: 639px) {
-    .frame[data-presentation="observe"] .observatory-header {
-      padding-inline: 16px;
-      gap: 8px;
-    }
-    .observatory-header-actions {
-      gap: 8px;
-    }
-  }
-  @media (max-width: 380px) {
-    .observatory-header-actions > span > span:not(:first-child) {
-      display: none;
-    }
   }
 }
 

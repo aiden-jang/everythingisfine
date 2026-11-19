@@ -195,11 +195,6 @@ export function MapLayers({
           </button>
         </div>
       )}
-      <div hidden={layer !== null || !!rewindPoint}>
-        {Object.values(controls.enabled).every((on) => !on) && (
-          <p role="status">All layers are off. Choose a layer to show its observations.</p>
-        )}
-      </div>
       {layer && (
         <div className="layer-inspector-heading">
           <button type="button" onClick={back}>
@@ -292,6 +287,11 @@ export function MapLayers({
             <p className="layer-note">Tap the globe or map for nearby reports, or choose a city below.</p>
             <PlaceContext {...reports} />
           </details>
+        )}
+        {layer === null && Object.values(controls.enabled).every((on) => !on) && (
+          <p role="status" className="layer-note">
+            All layers are off. Turn one on to see its data.
+          </p>
         )}
         <div hidden={layer !== "earthquakes"}>{children}</div>
         {hazardKind && (

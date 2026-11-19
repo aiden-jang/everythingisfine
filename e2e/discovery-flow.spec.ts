@@ -145,7 +145,7 @@ test("story endings reveal one next story without moving focus and only offer on
   await expect(panel.getByRole("button", { name: "Restart", exact: true })).toHaveCount(1);
 });
 
-test("quiet layers explain empty reports beside the toggle and clear the explanation when hidden @dev", async ({
+test("quiet layers explain empty reports in the inspector without shifting their toggle @dev", async ({
   page,
 }) => {
   await installFeeds(page, { empty: true });
@@ -158,13 +158,18 @@ test("quiet layers explain empty reports beside the toggle and clear the explana
     .filter({ has: page.getByRole("button", { name: "Wildfires details", exact: true }) });
   const toggle = row.getByRole("button", { name: "Wildfires", exact: true });
   if ((await toggle.getAttribute("aria-pressed")) !== "true") await toggle.click();
-  await expect(row).toContainText("No matching reports in this time window");
+  const before = await row.boundingBox();
   await toggle.click();
-  await expect(row.locator(".layer-status")).toHaveCount(0);
+  expect(await row.boundingBox()).toEqual(before);
   await toggle.click();
   await openLayer(page, "Wildfires");
   await expect(page.getByRole("heading", { name: "Wildfires", exact: true })).toBeVisible();
   await expect(page.locator(".layer-inspector-heading")).toContainText(
     "No matching reports in this time window",
   );
+  await page
+    .locator(".layer-inspector-heading")
+    .getByRole("button", { name: "Wildfires", exact: true })
+    .click();
+  await expect(page.locator(".layer-inspector-heading")).toContainText("This layer is hidden.");
 });

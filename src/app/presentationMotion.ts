@@ -13,7 +13,10 @@ export function shiftGlobe(globe: HTMLElement, from: DOMRect): Animation | null 
   return flight;
 }
 
-export function revealReadings(panel: HTMLElement | null): Animation | null {
+export function revealReadings(
+  panel: HTMLElement | null,
+  motion: "drift" | "fade" = "drift",
+): Animation | null {
   if (!panel?.getClientRects().length || !panel.animate) return null;
   const previous = panel.getAnimations().filter((motion) => motion.id === "readings-arrival");
   const style = previous.length ? getComputedStyle(panel) : null;
@@ -21,13 +24,15 @@ export function revealReadings(panel: HTMLElement | null): Animation | null {
   for (const motion of previous) motion.cancel();
   if (document.hidden || matchMedia("(prefers-reduced-motion: reduce)").matches) return null;
   const arrival = panel.animate(
-    [
-      from ?? {
-        opacity: 0.72,
-        transform: matchMedia("(max-width: 767px)").matches ? "translateY(8px)" : "translateX(-10px)",
-      },
-      { opacity: 1, transform: "translate(0, 0)" },
-    ],
+    motion === "fade"
+      ? [{ opacity: from?.opacity ?? 0.72 }, { opacity: 1 }]
+      : [
+          from ?? {
+            opacity: 0.72,
+            transform: matchMedia("(max-width: 767px)").matches ? "translateY(8px)" : "translateX(-10px)",
+          },
+          { opacity: 1, transform: "translate(0, 0)" },
+        ],
     { duration: 320, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
   );
   arrival.id = "readings-arrival";

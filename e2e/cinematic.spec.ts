@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { viewOptions, installFeeds, selectScene, revealScenes } from "./feeds";
+import { viewOptions, installFeeds, selectScene } from "./feeds";
 import { DEFAULT_CAMERA } from "../src/globe/framing";
 
 test.use({
@@ -101,9 +101,8 @@ for (const [width, height] of [
         .getByRole("button", { name: "Everything is fine. Earth, ocean & sky, back to the Observatory" })
         .click();
       await page.emulateMedia({ reducedMotion: "reduce" });
-      await revealScenes(page);
+      await selectScene(page, "Below the Surface");
       const dive = page.getByRole("button", { name: "Below the Surface", exact: true });
-      await dive.click();
       await expect(dive).toHaveAttribute("aria-pressed", "true");
       const reduced = await depthView();
       expect(reduced.settled).toBe(true);

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds, openLayer, revealScenes, selectScene } from "./feeds";
+import { installFeeds, openLayer, selectScene } from "./feeds";
 
 test("phone navigation follows the visible layers and the guide explains empty coverage", async ({
   page,
@@ -92,7 +92,6 @@ test("hidden base layers stay hidden through landing, scene categories and both 
       exact: true,
     })
     .click();
-  await revealScenes(page);
   for (const name of ["Earth", "Below the Surface", "After Dark"]) {
     await selectScene(page, name as "Earth" | "Below the Surface" | "After Dark");
     await expect.poll(counts).toEqual({ quakes: 0, rings: 0, hazards: 0 });

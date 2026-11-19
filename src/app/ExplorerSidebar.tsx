@@ -5,7 +5,9 @@ import { Discoveries } from "./visitor/Discoveries";
 import { StoriesDrawer } from "./StoriesDrawer";
 import { OBSERVATORY_SCENES } from "./ObservatoryStage";
 import { SceneDiagram } from "./SceneDiagram";
+import { resetStoryResults } from "./StorySearch";
 import { useStoryNavigation } from "./journeys/StoryNavigation";
+import { reportAnalytics } from "../../analytics/browser";
 import "./explore-panel.css";
 
 export function ExplorerSidebar({
@@ -18,9 +20,10 @@ export function ExplorerSidebar({
   notices: ReactNode;
 }) {
   const { browser, observations } = context.views;
+  const scene = OBSERVATORY_SCENES.find(({ id }) => id === browser.category);
   const navigation = useStoryNavigation();
   const panel = useRef<HTMLDivElement>(null);
-  useReadingArrival(panel, browser.pane);
+  useReadingArrival(panel, browser.pane, "fade");
   const scrolls = useRef({ layers: 0, stories: 0 });
   const previous = useRef(browser.pane);
   const layerView = useRef<{ camera: ReturnType<typeof context.explorer.read>; flat: boolean } | null>(null);
@@ -79,8 +82,8 @@ export function ExplorerSidebar({
         aria-labelledby="explorer-layers-tab"
         hidden={browser.pane !== "layers"}
       >
-        {notices}
         {children}
+        {notices}
       </div>
       <div
         ref={browser.pane === "stories" ? panel : undefined}
@@ -94,6 +97,31 @@ export function ExplorerSidebar({
           browse={browser}
           visible={!context.views.observing}
           scene={browser.category}
+          sceneEntry={
+            scene && (
+              <button
+                type="button"
+                id="open-story-category-scene"
+                className="story-scene-entry"
+                disabled={!context.ready}
+                onClick={() => {
+                  reportAnalytics({ name: "scene_selected", scene: scene.id });
+                  context.views.observeScene(() => {
+                    observations.setQuery("");
+                    context.onScene(scene.id);
+                  });
+                  document
+                    .querySelector<HTMLElement>('#observatory-scenes button[aria-pressed="true"]')
+                    ?.focus({ preventScroll: true });
+                }}
+              >
+                Open {scene.name} scene
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M3 8h10m-4-4 4 4-4 4" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+              </button>
+            )
+          }
           filter={
             <div className="story-category" role="group" aria-label="Story categories">
               {[{ id: null, name: "All stories" }, ...OBSERVATORY_SCENES].map(({ id, name }) => (
@@ -101,7 +129,10 @@ export function ExplorerSidebar({
                   key={name}
                   type="button"
                   aria-pressed={browser.category === id}
-                  onClick={() => browser.select(browser.category === id ? null : id)}
+                  onClick={(event) => {
+                    resetStoryResults(event.currentTarget);
+                    browser.select(browser.category === id ? null : id);
+                  }}
                 >
                   <SceneDiagram scene={id} />
                   <span>{name}</span>

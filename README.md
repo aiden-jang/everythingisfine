@@ -82,7 +82,7 @@ summary. **Compare dates** switches actual observations while holding the camera
 products keep their stated time resolution. Authored flight progress and plate reconstructions do not
 pretend to be dated observation comparisons. No account or remote storage is involved.
 
-**Explore** in the header returns to the browsing view; **Find** opens story search (inside **View options** on phones). **Saved** opens your kept observations
+**Explore** in the header returns to the browsing view. **Find** opens story search on desktop and phones. Inside a story category, **Open scene** starts its cinematic overview. **Saved** opens your kept observations
 and recent journeys without clearing a search or replacing the globe. Evidence cards distinguish
 measured Float Dive and Tonga readings, calculated sky positions, and saved radar scan times.
 Add an optional local note, reopen the saved moment, or download a source-labelled image card.
@@ -149,7 +149,7 @@ measurements, not field recordings.
   of forecasts and select a buoy to compare recent measurements with the nearby model.
 - **Orbital Pass** opens from After Dark’s drawer with a city picker, a local horizon, and
   Globe and Map views of the predicted ground track.
-- **Feed status** lists background sources and optional weather layers, with their last successful check or received message.
+- **Feed status** links to official sources and shows availability, the last successful check or a short issue summary.
   Observatory views fetch their own sources when opened. In Storm Radar, switch projections or turn
   on matched GOES-East lightning scans.
 - **Fault Offset** traces Ridgecrest’s two 2019 surface ruptures, opens surveyed offsets, and wipes

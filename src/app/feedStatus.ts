@@ -13,6 +13,19 @@ export interface FeedRow {
   message?: string | undefined;
 }
 
+export const feedSourceLinks: Record<FeedRow["id"], string> = {
+  usgs: "https://earthquake.usgs.gov/earthquakes/feed/v1.0/",
+  emsc: "https://www.seismicportal.eu/fdsn-wsevent.html",
+  cyclones: "https://www.gdacs.org/",
+  fires: "https://www.gdacs.org/",
+  floods: "https://www.gdacs.org/",
+  volcanoes: "https://www.gdacs.org/",
+  aurora: "https://www.spaceweather.gov/products/aurora-30-minute-forecast",
+  radar: "https://www.rainviewer.com/",
+  wind: "https://www.nco.ncep.noaa.gov/pmb/products/gfs/",
+  lightning: "https://www.star.nesdis.noaa.gov/goes/",
+};
+
 const labels: Record<FeedKey, string> = {
   usgs: "USGS earthquakes",
   emsc: "EMSC earthquakes",

@@ -1,4 +1,3 @@
-import { Fragment } from "react";
 import { mapLayerNames, type MapLayer } from "./layerVisibility";
 import { layerMetadata } from "./layerMetadata";
 import type { useMapLayers } from "./useMapLayers";
@@ -58,50 +57,43 @@ export function LayerCatalogue({
           hidden={group.name === "Reported events" && controls.inspector !== null}
         >
           <h2 hidden={controls.inspector !== null}>{group.name}</h2>
-          {group.layers.map((id) => {
-            const status = disabled(id)
-              ? "Unavailable in this archive"
-              : controls.enabled[id]
-                ? quiet(id)
-                : null;
-            return (
-              <Fragment key={id}>
-                <div className="layer-row" hidden={controls.inspector !== null}>
-                  <div className="layer-summary">
-                    <button
-                      type="button"
-                      id={`inspect-${id}`}
-                      className="layer-inspect"
-                      aria-label={`${mapLayerNames[id]} details`}
-                      aria-describedby={`layer-${id}-coverage`}
-                      onClick={() => onInspect(id)}
-                    >
-                      <LayerIcon layer={id} />
-                      <span className="layer-name">{mapLayerNames[id]}</span>
-                      <svg
-                        className="layer-chevron"
-                        viewBox="0 0 16 16"
-                        width="16"
-                        height="16"
-                        aria-hidden="true"
-                      >
-                        <path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-                      </svg>
-                    </button>
-                    <small id={`layer-${id}-coverage`} className={status ? "layer-status" : "sr-only"}>
-                      {status ?? layerMetadata[id].coverage}
-                    </small>
-                  </div>
-                  <LayerVisibility
-                    layer={id}
-                    on={controls.enabled[id]}
-                    disabled={disabled(id)}
-                    onChange={(on) => controls.change(id, on)}
-                  />
-                </div>
-              </Fragment>
-            );
-          })}
+          {group.layers.map((id) => (
+            <div key={id} className="layer-row" hidden={controls.inspector !== null}>
+              <div className="layer-summary">
+                <button
+                  type="button"
+                  id={`inspect-${id}`}
+                  className="layer-inspect"
+                  aria-label={`${mapLayerNames[id]} details`}
+                  aria-describedby={`layer-${id}-coverage`}
+                  onClick={() => onInspect(id)}
+                >
+                  <LayerIcon layer={id} />
+                  <span className="layer-name">{mapLayerNames[id]}</span>
+                  <svg
+                    className="layer-chevron"
+                    viewBox="0 0 16 16"
+                    width="16"
+                    height="16"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                  </svg>
+                </button>
+                <small id={`layer-${id}-coverage`} className="sr-only">
+                  {disabled(id)
+                    ? "Unavailable in this archive"
+                    : ((controls.enabled[id] ? quiet(id) : null) ?? layerMetadata[id].coverage)}
+                </small>
+              </div>
+              <LayerVisibility
+                layer={id}
+                on={controls.enabled[id]}
+                disabled={disabled(id)}
+                onChange={(on) => controls.change(id, on)}
+              />
+            </div>
+          ))}
         </section>
       ))}
     </div>

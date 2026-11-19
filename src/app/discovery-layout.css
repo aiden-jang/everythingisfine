@@ -1,3 +1,44 @@
+.story-tools,
+.story-results {
+  display: grid;
+  gap: 8px;
+  min-inline-size: 0;
+}
+.story-tools {
+  padding-block-start: 3px;
+  background: var(--explorer-surface);
+}
+.story-results {
+  min-block-size: 112px;
+}
+.story-scene-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding-inline: 6px;
+  border-radius: 6px;
+  color: var(--color-ink);
+  font-size: var(--text-control);
+  text-align: left;
+  cursor: pointer;
+}
+.story-scene-entry:hover:not(:disabled) {
+  background: var(--color-raised);
+}
+.story-scene-entry:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+@container explorer (min-height: 360px) {
+  .story-tools {
+    position: sticky;
+    top: var(--explorer-tabs-height);
+    z-index: 2;
+  }
+}
+
 #explorer-stories .story-category {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

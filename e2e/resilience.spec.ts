@@ -17,7 +17,7 @@ test("phone story loading, retry and return work when feeds are unavailable", as
   await page.getByRole("button", { name: /Feed status/ }).click();
   const feeds = page.getByRole("region", { name: "Background feed status" });
   await expect(feeds).toContainText("USGS");
-  await expect(feeds).toContainText(/unavailable/);
+  await expect(feeds).toContainText("Unavailable");
   await page.getByRole("button", { name: /Feed status/ }).click();
 
   await page.getByRole("button", { name: "Browse stories" }).click();

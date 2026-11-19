@@ -15,6 +15,8 @@ colors:
   ink: "#edf3f3"
   dim: "#a4b6bc"
   faint: "#8da3ab"
+  feed-available: "#8dc5a7"
+  feed-unavailable: "#e9ad98"
   hairline: "rgb(148 163 184 / 0.14)"
   rim: "rgb(120 150 190 / 0.16)"
 typography:
@@ -170,9 +172,8 @@ neutral geography and source-owned ramps kept distinct.
 ### Neutral
 
 Keep controls neutral and low-chroma. Active, focused and selected states use
-brightness, weight and a visible ring. No saturated button accents, status dots,
-selection colors or browser-default range tints. This includes text selection,
-focus outlines and scrollbars.
+brightness, weight and a visible ring. Keep selection, focus, scrollbars and ranges in the neutral
+palette. Feed health uses muted green and warm accents with distinct shapes and text equivalents.
 
 `src/index.css` owns the runtime colors; the frontmatter records their normative design values.
 
@@ -340,15 +341,17 @@ Pinned phone detail cards respect the same band, with the selected marker center
 Float Dive keeps its reading allocation above the shared credit reservation.
 Background wind paths remain quieter than story paths.
 
-The header offers Explore, Saved, source status and View options at every width. Find remains in the
-desktop header and inside View options on phones. On narrow phones,
+The wordmark stays anchored when entering Explore. Explore, Find, Saved, feed status and View options
+have dedicated header controls at every width. Hover and focus strengthen the fill and text without changing
+button dimensions. Feed status keeps a fixed slot as its label changes. Privacy and Terms sit beside the
+author credit, with location privacy also linked from the device-location control. On narrow phones,
 projection sits just beneath the header beside the world. Capture, fullscreen,
 rotation and reset share that menu; keyboard help is a quiet optional disclosure. Phone layouts keep
 the subject above a draggable, keyboard-operable sheet. Expand globe/map enlarges the canvas; the
 other shortcut names the current pane rather than assuming earthquake activity. The handle and
 interactive controls have 44px targets. The phone globe row starts at 43% of viewport height, with
-a 280px floor bounded by 72% on very short screens. Stories starts at 34%, with a 240px floor bounded
-by 65%, to expose the recorded cover and compact story selection on a portrait phone. A manually adjusted
+a 280px floor bounded by 72% on very short screens. Layers and Stories share that starting height.
+A manually adjusted
 height takes precedence in either pane. The baseline lower stop is 20%, with a 180px floor
 bounded by 60%; its upper stop is 82%. Phone stops subtract the credit reservation, with a
 150px minimum globe allocation bounded by 40% on short screens. One shared calculation drives
@@ -419,10 +422,12 @@ reachable controls and source disclosure.
 The landing’s Browse stories and the header’s Find action open Explore’s single Stories catalogue.
 Older catalogue links also resolve there. Its Earth, Below the Surface and After Dark diagrams filter
 the collection in a compact strip below search. Selecting the active category again returns to All stories.
-The cinematic Earth, depth and sky scene views remain available under View options, separately from
-story filtering. Those scene views provide a Browse stories action into the same catalogue.
-All stories restores the full catalogue. Filtering keeps the query and camera in place. Switching between Layers and Stories preserves the chosen layer settings.
-The Layers tab starts with available layer controls. Location lives in Find a place, and playback
+The cinematic Earth, depth and sky views open through a scene action shown within the corresponding
+category. Those scene views provide a Browse stories action into the same catalogue.
+All stories restores the full catalogue. Filtering keeps the query, camera and filter controls in place.
+On taller panels, search and categories stay visible above the scrolling results. Switching between Layers
+and Stories preserves the chosen layer settings. Layer switches keep the same alignment as status changes.
+Coverage and availability details are in the layer inspectors and header feed menu. Location lives in Find a place, and playback
 lives within the Storm radar inspector. A recent visit replaces the large feature as the opening
 action in the highlights. The full catalogue keeps each entry in its original position so returning
 from a story restores the same row and scroll position.

@@ -1,11 +1,12 @@
 .explorer-tabs {
   display: flex;
   position: sticky;
-  top: calc(-1 * var(--explorer-pad, 20px));
-  z-index: 2;
+  top: 0;
+  z-index: 3;
   gap: 24px;
-  margin: calc(-1 * var(--explorer-pad, 20px)) calc(-1 * var(--explorer-pad, 20px)) 16px;
-  padding: 14px var(--explorer-pad, 20px) 0;
+  min-height: var(--explorer-tabs-height);
+  margin: 0 calc(-1 * var(--explorer-pad)) 12px;
+  padding: 6px var(--explorer-pad) 0;
   background: inherit;
 }
 .explorer-tabs button {
@@ -24,10 +25,18 @@
 }
 #chrome-rail {
   --explorer-pad: clamp(20px, 2.35vw, 38px);
+  --explorer-tabs-height: 60px;
+  --explorer-surface: var(--color-void);
   display: block;
-  padding: var(--explorer-pad);
-  background: var(--color-void);
+  padding: 0 var(--explorer-pad) var(--explorer-pad);
+  background: var(--explorer-surface);
   scroll-padding-block: 72px 24px;
+  scrollbar-gutter: stable;
+  overflow-anchor: none;
+  container: explorer / size;
+}
+#chrome-rail:has(#explorer-stories:not([hidden])) .explorer-tabs {
+  margin-block-end: 0;
 }
 .layer-note,
 .layer-reports > p {
@@ -54,14 +63,15 @@
   color: var(--color-dim);
 }
 .layer-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
   align-items: center;
   border-radius: 7px;
 }
 .layer-visibility {
   display: grid;
   place-items: center;
-  flex: 0 0 44px;
+  width: 44px;
   min-height: 44px;
   cursor: pointer;
   border-radius: 7px;
@@ -96,7 +106,6 @@
   opacity: 0.5;
 }
 .layer-summary {
-  flex: 1;
   min-width: 0;
 }
 .layer-inspect {
@@ -121,13 +130,6 @@
 }
 .layer-name {
   overflow-wrap: anywhere;
-}
-.layer-summary .layer-status {
-  display: block;
-  margin: -6px 24px 10px 34px;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--color-dim);
 }
 .layer-row[hidden],
 .layer-group[hidden] {
@@ -296,19 +298,6 @@
 .layer-story-link:hover {
   background: var(--color-raised);
 }
-@media (max-width: 399px) {
-  .zone-head {
-    padding-inline: 12px;
-    gap: 8px;
-  }
-  .zone-head .observatory-header-actions {
-    gap: 5px;
-  }
-  .zone-head .observatory-save {
-    padding-inline: 7px;
-  }
-}
-
 .earthquake-options > button {
   display: block;
   min-height: 44px;
@@ -516,18 +505,12 @@
   display: none;
 }
 @media (max-width: 767px) {
-  .zones:has(#explorer-stories:not([hidden])) {
-    --sheet-default: max(42dvh, min(260px, 65dvh));
-  }
   .explorer-tabs {
-    top: -28px;
-    padding-top: 16px;
     padding-right: 112px;
-    margin-top: -28px;
   }
   #chrome-rail {
     --explorer-pad: 20px;
-    background: var(--color-deck);
+    --explorer-surface: var(--color-deck);
     scroll-padding-top: 88px;
     padding-bottom: max(64px, calc(44px + env(safe-area-inset-bottom)));
     border-radius: 16px 16px 0 0;
@@ -535,12 +518,6 @@
 }
 
 @media (min-width: 768px) {
-  .frame[data-presentation="explore"] {
-    --head-h: 72px;
-  }
-  .frame[data-presentation="explore"] .zone-head {
-    padding-inline: clamp(20px, 2.35vw, 38px);
-  }
   #explorer-stories .explorer-search input {
     min-height: 48px;
     font-size: 15px;
@@ -573,14 +550,17 @@
   order: 1;
 }
 .zone-head .projection-switch button {
+  width: 56px;
   height: 36px;
   border: 0;
   font-size: 13px;
+  padding-inline: 0;
+}
+.zone-head .projection-current {
+  width: 56px;
+  padding-inline: 0;
 }
 @media (max-width: 767px) {
-  .frame[data-presentation="explore"] {
-    --head-h: 68px;
-  }
   .frame[data-presentation="explore"] .globe-scene {
     position: absolute;
     inset: var(--head-h) 0 12px;
@@ -653,25 +633,15 @@
 }
 
 @media (min-width: 1280px) {
-  .frame[data-presentation="explore"] {
-    --head-h: 76px;
-  }
-  #chrome-rail {
-    padding-right: 18px;
-  }
   .explorer-tabs {
     gap: 40px;
-    margin-right: -18px;
-    padding-top: 8px;
-    padding-right: 18px;
   }
   .explorer-tabs button {
     padding-bottom: 8px;
     font-size: clamp(22px, 1.65vw, 26px);
   }
   .zone-head .projection-switch button,
-  .projection-current,
-  .frame[data-presentation="explore"] .observatory-save {
+  .projection-current {
     font-size: 14px;
   }
   #explorer-stories .explorer-search input {

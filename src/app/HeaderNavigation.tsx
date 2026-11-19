@@ -8,7 +8,7 @@ const SavedCollection = lazy(() =>
   import("./visitor/SavedCollection").then((module) => ({ default: module.SavedCollection })),
 );
 
-export function HeaderNavigation() {
+export function HeaderNavigation({ exploring }: { exploring: boolean }) {
   const navigation = useStoryNavigation();
   const [saved, setSaved] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -23,12 +23,26 @@ export function HeaderNavigation() {
       <button
         type="button"
         className="header-navigation-action header-explore"
+        aria-label="Explore"
+        aria-current={exploring ? "location" : undefined}
         aria-description="Open Layers and Stories, or return to your previous Explore view"
         onClick={() => {
           setSaved(false);
           navigation.explore();
         }}
       >
+        <svg
+          viewBox="0 0 24 24"
+          width="18"
+          height="18"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="9" />
+          <path d="m15.5 8.5-2 5-5 2 2-5 5-2Z" />
+        </svg>
         <span>Explore</span>
       </button>
       <button

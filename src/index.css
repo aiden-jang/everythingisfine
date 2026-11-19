@@ -34,6 +34,8 @@
   --color-dim: #a4b6bc;
   /* Secondary text must remain readable against the deck, including small timestamps. */
   --color-faint: #8da3ab;
+  --color-feed-available: #8dc5a7;
+  --color-feed-unavailable: #e9ad98;
 
   /* The one named exception, per DESIGN.md Colors / Neutral: it sits on the silhouette where no marker is drawn
      and never encodes a value. Named because an unstated exception becomes a precedent. */
@@ -121,6 +123,7 @@
    readable in one place. Rows and columns only: no flexbox percentage maths anywhere. */
 @layer components {
   .frame {
+    --head-h: calc(68px + env(safe-area-inset-top));
     display: grid;
     position: relative; /* the header and the floating panels are absolute against this */
     height: 100dvh; /* never 100vh: the iOS Safari URL bar makes it jump */
@@ -134,6 +137,7 @@
     top: 0;
     right: 0;
     left: 0;
+    height: var(--head-h);
     pointer-events: none;
   }
 
@@ -183,13 +187,6 @@
       grid-template-rows: 1fr;
       grid-template-columns: 1fr;
       grid-template-areas: "canvas";
-    }
-
-    .zone-head {
-      /* Declared rather than measured, because the rail starts below it and a value read from the DOM
-         would be a resize observer feeding a layout a variable can state. Not on a phone, where the row
-         wraps to two lines and nothing offsets against it, so a fixed height would only clip. */
-      height: var(--head-h);
     }
 
     .zone-rail {
@@ -748,14 +745,22 @@
 
 /* Controls stay neutral so the event ramp remains the only signal with hue. */
 .zone-head {
+  gap: 8px;
+  padding-block-start: env(safe-area-inset-top);
+  padding-inline: 20px;
+  border-bottom: 1px solid var(--color-hairline);
   background: color-mix(in srgb, var(--color-void) 82%, transparent);
   backdrop-filter: blur(20px) saturate(0.45);
 }
-.zone-head button:not(.wordmark) {
-  min-height: 32px;
-  border-radius: 7px;
-  padding-inline: 12px;
-  font-size: 12px;
+@media (min-width: 900px) {
+  .zone-head {
+    padding-inline: 34px;
+  }
+}
+@media (min-width: 1280px) {
+  .frame {
+    --head-h: 76px;
+  }
 }
 .zone-head button[aria-pressed="true"] {
   border-color: var(--color-dim);
@@ -806,17 +811,8 @@
     gap: 8px;
     padding-inline: 16px;
   }
-  .zone-head button:not(.wordmark) {
-    padding-inline: 8px;
-  }
   .zone-rail {
     border-radius: 20px 20px 0 0;
-  }
-}
-
-@media (max-width: 350px) {
-  .zone-head:not(.observatory-header) {
-    padding-inline: 8px;
   }
 }
 
@@ -827,7 +823,6 @@
 }
 
 @media (pointer: coarse) {
-  .zone-head button:not(.wordmark),
   .zone-rail .disclose,
   .zone-rail input:not([type="range"]) {
     min-height: 44px;
@@ -928,7 +923,7 @@
 @media (width < 768px) {
   .mobile-navigation {
     position: absolute;
-    top: calc(var(--sheet-position) + 16px);
+    top: calc(var(--sheet-position) + 8px);
     right: 16px;
     z-index: 3;
     display: flex;
@@ -940,7 +935,7 @@
     align-items: center;
     justify-content: center;
     gap: 5px;
-    min-width: 90px;
+    width: 108px;
     min-height: 44px;
     padding: 0 9px;
     border: 1px solid var(--color-hairline);
@@ -1076,10 +1071,6 @@ textarea::selection {
   .zone-rail,
   .zone-panel {
     padding-bottom: max(20px, env(safe-area-inset-bottom));
-  }
-
-  .zone-head {
-    padding-top: max(12px, env(safe-area-inset-top));
   }
 }
 

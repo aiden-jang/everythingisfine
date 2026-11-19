@@ -11,8 +11,6 @@ import { CreatorCredit } from "./CreatorCredit";
 import { refreshAnnotations } from "../globe/annotationInput";
 import { HeaderNavigation } from "./HeaderNavigation";
 import { ProjectionSwitch } from "./ProjectionSwitch";
-import { ObservatoryScenePicker } from "./ObservatoryStage";
-import type { ObservatoryProps } from "./Observatory";
 
 interface Props {
   clip: Clip;
@@ -34,7 +32,6 @@ interface Props {
   saveStill: () => void;
   feeds: FeedStatus;
   keyboard: ReactNode;
-  observatory: ObservatoryProps;
   rotation: { enabled: boolean; set: (enabled: boolean) => void };
 }
 
@@ -82,20 +79,15 @@ export function GlobeHeader({
   feeds,
   rotation,
   keyboard,
-  observatory,
 }: Props): JSX.Element {
   return (
     <>
-      <header
-        id="chrome-head"
-        className={`zone-head flex items-center gap-6 px-5 py-3 xl:border-b xl:border-hairline ${observing ? "observatory-header" : ""}`}
-        hidden={!headShown}
-      >
+      <header id="chrome-head" className="zone-head flex items-center" hidden={!headShown}>
         <Wordmark onHome={onHome} />
         <div className="observatory-header-actions">
-          <HeaderNavigation />
           {!observing && <ProjectionSwitch flat={flat} setFlat={setFlat} visible={headShown} />}
-          <FeedDot compact={!observing} feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
+          <HeaderNavigation exploring={!observing} />
+          <FeedDot feeds={feeds} archiveFrom={snapshot.archive?.from ?? null} />
           <ObservatoryOptions
             clip={clip}
             ready={ready}
@@ -103,16 +95,6 @@ export function GlobeHeader({
             saveStill={saveStill}
             rotation={rotation}
           >
-            <details className="scene-view-options">
-              <summary>Scene views</summary>
-              <ObservatoryScenePicker
-                id="view-option-scenes"
-                scene={observatory.views.landing ? null : observatory.scene}
-                ready={observatory.ready}
-                deepAvailable={observatory.deepAvailable}
-                onScene={(scene) => observatory.views.observeScene(() => observatory.onScene(scene))}
-              />
-            </details>
             {!observing && (
               <>
                 {keyboard}

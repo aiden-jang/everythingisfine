@@ -2,7 +2,6 @@ import { RecordButton } from "./capture/ClipControls";
 import type { Clip } from "./capture/useClip";
 import { useId, useRef, type ReactNode } from "react";
 import { FullscreenButton } from "./FullscreenButton";
-import { useStoryNavigation } from "./journeys/StoryNavigation";
 import "./observatory-options.css";
 
 export function ObservatoryOptions({
@@ -23,7 +22,6 @@ export function ObservatoryOptions({
   const id = `view-options-${useId()}`;
   const panel = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
-  const navigation = useStoryNavigation();
   return (
     <>
       <button
@@ -71,7 +69,7 @@ export function ObservatoryOptions({
         >
           Auto-rotate globe <span>{rotation.enabled ? "On" : "Off"}</span>
         </button>
-        <p>On the landing page only. Drag to pause; rotation resumes after 1.5 idle seconds.</p>
+        <p>Landing page only. Drag to pause rotation.</p>
         <button
           type="button"
           id="capture-still"
@@ -87,18 +85,6 @@ export function ObservatoryOptions({
         {!ready && <p id={`${id}-capture-note`}>Image capture is unavailable for this view.</p>}
         <RecordButton clip={clip} ready={ready} close={() => panel.current?.hidePopover()} />
         <FullscreenButton />
-        {navigation && (
-          <button
-            type="button"
-            className="header-find-menu"
-            onClick={() => {
-              panel.current?.hidePopover();
-              navigation.browse(true);
-            }}
-          >
-            Find a story
-          </button>
-        )}
         <div
           className="explorer-view-options"
           onClick={(event) => {
@@ -107,10 +93,6 @@ export function ObservatoryOptions({
         >
           {children}
         </div>
-        <nav className="observatory-policy-links" aria-label="Legal">
-          <a href="https://accounts.aidenjang.com/privacy#legal-cookies-and-analytics">Privacy</a>
-          <a href="https://accounts.aidenjang.com/terms">Terms</a>
-        </nav>
       </div>
     </>
   );

@@ -15,15 +15,21 @@ test("feed status names unavailable sources without increasing the background co
   await expect(panel.getByRole("listitem").filter({ hasText: "RainViewer storm radar" })).toContainText(
     "Off",
   );
-  await expect(panel).toContainText("7 background feeds checked. 1 unavailable.");
-  await expect(panel.getByText("Last successful check", { exact: false }).first()).toBeVisible();
+  const usgs = panel.getByRole("listitem").filter({ hasText: "USGS earthquakes" });
+  await expect(usgs.locator("time")).toBeVisible();
+  await expect(usgs.getByRole("link", { name: "USGS earthquakes" })).toHaveAttribute(
+    "href",
+    "https://earthquake.usgs.gov/earthquakes/feed/v1.0/",
+  );
   await expect(panel.getByRole("listitem").filter({ hasText: "USGS earthquakes" })).toContainText(
     "Available",
   );
   await expect(panel.getByRole("listitem").filter({ hasText: "GDACS wildfires" })).toContainText(
     "Couldn’t reach feed",
   );
-  await expect(panel.getByText("Loads when opened")).toBeVisible();
+  await panel.getByText("About these feeds", { exact: true }).click();
+  await expect(panel.getByText(/Stories check their own sources/)).toBeVisible();
+  await panel.getByText("About these feeds", { exact: true }).click();
   await page.keyboard.press("Escape");
   await expect(panel).toBeHidden();
   await expect(toggle).toBeFocused();

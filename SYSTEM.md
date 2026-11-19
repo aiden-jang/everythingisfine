@@ -195,8 +195,8 @@ changing stored layer choices. Radar and weather players remain mounted while br
 story releases the background players so the story owns its data. Returning to Layers restores the
 inspector, layer selections, scan positions, camera and projection. The canvas stays mounted throughout.
 
-The shared header keeps Explore, Find and Saved reachable during search and playback; phones place
-Find in View options. The evidence collection is loaded on demand. The version-two library reads
+The shared header keeps Explore, Find and Saved reachable during search and playback on desktop and phones.
+The evidence collection is loaded on demand. The version-two library reads
 legacy records, writes a separate `eif.visits-v2` key only on changes, and bounds both record count
 and serialized size. Most stories keep one bookmark; Tonga keeps separate station/minute observations.
 New saves never evict older observations at capacity. Legacy Float observations remain readable. Tonga cards derive pressure only from

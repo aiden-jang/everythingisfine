@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { installFeeds, selectScene, revealScenes } from "./feeds";
+import { installFeeds, selectScene, revealSceneEntry } from "./feeds";
 
 test.use({
   video:
@@ -41,8 +41,7 @@ for (const [width, height] of [
           errors.push(message.text());
       });
       await page.goto("/");
-      await revealScenes(page);
-      await expect(page.getByRole("button", { name: "After Dark", exact: true })).toBeEnabled();
+      await expect(await revealSceneEntry(page, "After Dark")).toBeEnabled();
       await page.emulateMedia({ reducedMotion: "no-preference" });
       await selectScene(page, "After Dark");
       await expect.poll(async () => (await earthPosition(page)).y).toBeGreaterThan(0.98);

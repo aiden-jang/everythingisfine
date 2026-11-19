@@ -1,7 +1,6 @@
 import { useEffect, useId, useRef, type JSX } from "react";
 import { layerTime } from "./layerTime";
-import type { FeedStatus, FeedRow } from "./feedStatus";
-import { observations } from "./observations/catalogue";
+import { feedSourceLinks, type FeedStatus, type FeedRow } from "./feedStatus";
 import "./feed-status.css";
 
 const LABEL: Record<FeedRow["state"], string> = {
@@ -14,11 +13,9 @@ const LABEL: Record<FeedRow["state"], string> = {
 export function FeedDot({
   feeds,
   archiveFrom,
-  compact = false,
 }: {
   feeds: FeedStatus;
   archiveFrom: number | null;
-  compact?: boolean;
 }): JSX.Element {
   const id = `feed-status-${useId()}`;
   const trigger = useRef<HTMLButtonElement>(null);
@@ -39,30 +36,31 @@ export function FeedDot({
     window.addEventListener("resize", move);
     return () => window.removeEventListener("resize", move);
   }, []);
-  if (archiveFrom !== null)
+  if (archiveFrom !== null) {
+    const date = new Date(archiveFrom).toISOString().slice(0, 10);
     return (
-      <span className="font-mono text-[11px] text-dim">
-        {new Date(archiveFrom).toISOString().slice(0, 10)}
-      </span>
+      <time className="feed-archive font-mono text-[11px]" dateTime={date} aria-label={date} title={date}>
+        <span className="feed-wide">{date}</span>
+        <span className="feed-count">{date.slice(5)}</span>
+      </time>
     );
-  const dot = feeds.arrived === feeds.total ? "bg-ink" : "bg-dim";
+  }
   const unavailable = feeds.rows.filter(({ state }) => state === "failed").length;
-  const pending = feeds.total - feeds.arrived - unavailable;
+  const state = unavailable ? "failed" : feeds.settling ? "pending" : "ok";
   return (
     <>
       <button
         type="button"
         className="feed-toggle"
-        data-feed-compact={compact || undefined}
         ref={trigger}
         {...{ popovertarget: id }}
         aria-controls={id}
         onClick={position}
       >
-        <span className={`inline-block size-[6px] rounded-full ${dot}`} aria-hidden="true" />
+        <span className="feed-indicator" data-state={state} aria-hidden="true" />
         <span className="sr-only">Feed status,</span>
-        <span className="feed-wide hidden sm:inline">{feeds.phrase}</span>
-        <span className="feed-count sm:hidden">
+        <span className="feed-wide">{feeds.phrase}</span>
+        <span className="feed-count">
           <span>
             {feeds.arrived}/{feeds.total}
           </span>
@@ -84,55 +82,43 @@ export function FeedDot({
         aria-labelledby={`${id}-title`}
       >
         <h2 id={`${id}-title`}>Background feed status</h2>
-        <p>
-          {pending > 0
-            ? `Checking ${pending} of ${feeds.total} background feeds…`
-            : `${feeds.total} background feeds checked.`}
-          {unavailable > 0 && ` ${unavailable} unavailable.`}
-        </p>
         <ul>
           {feeds.rows.map(({ id: key, label, state, lastCheck, message }) => (
             <li key={key}>
-              <strong>{label}</strong>
-              <span>{message ?? LABEL[state]}</span>
-              {lastCheck !== undefined && (
-                <small>
-                  Last successful check{" "}
-                  <time
-                    dateTime={new Date(lastCheck).toISOString()}
-                    title={new Date(lastCheck).toISOString()}
-                  >
-                    {layerTime(lastCheck)}
-                  </time>
+              <span id={`${id}-${key}-state`} className="feed-row-state" title={LABEL[state]}>
+                <span className="feed-indicator" data-state={state} aria-hidden="true" />
+                <span className="sr-only">{LABEL[state]}</span>
+              </span>
+              <a
+                href={feedSourceLinks[key]}
+                target="_blank"
+                rel="noreferrer"
+                aria-describedby={`${id}-${key}-state external-link-hint`}
+              >
+                {label}
+              </a>
+              {state === "failed" || (state === "ok" && message) ? (
+                <small className="feed-row-detail" title={message ?? LABEL[state]}>
+                  {state === "failed" ? "Unavailable" : message?.replace(/^Available · /, "")}
                 </small>
+              ) : (
+                lastCheck !== undefined && (
+                  <span className="feed-row-detail" title={`Last successful check: ${layerTime(lastCheck)}`}>
+                    <span className="sr-only">Last successful check </span>
+                    <time dateTime={new Date(lastCheck).toISOString()}>
+                      {new Date(lastCheck).toISOString().slice(11, 16)} UTC
+                    </time>
+                  </span>
+                )
               )}
             </li>
           ))}
         </ul>
-        <p>
-          Available means a source answered. Its reports may still cover only part of the world or time
-          period.
-        </p>
         <details>
-          <summary>How the count works</summary>
-          <p>
-            The count includes sources, not visible layers: earthquakes use two sources. Hiding event markers
-            keeps their sources connected. Enabled weather layers join the total; opening a story pauses them.
-            Off means a source is not being checked.
-          </p>
-        </details>
-        <h3>Loads when opened</h3>
-        <p>
-          Float Dive, Sun Watch and other observatory views check their own sources when opened. Find the full
-          catalogue in Explore’s Stories tab.
-        </p>
-        <details>
-          <summary>Other observatory views</summary>
-          <p>
-            {Object.values(observations)
-              .map(({ title }) => title)
-              .join(" · ")}
-          </p>
+          <summary>About these feeds</summary>
+          <p>Filled dot: available. Ring: checking. Diamond: unavailable. Dash: off.</p>
+          <p>Available means the source answered. Coverage varies by place and time.</p>
+          <p>The count excludes inactive feeds. Stories check their own sources when opened.</p>
         </details>
       </div>
     </>

@@ -476,20 +476,21 @@ export async function waitForData(page: Page): Promise<number> {
   return held;
 }
 
-export async function revealScenes(page: Page) {
-  const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
-  if (!(await scenes.isVisible())) {
-    await page.getByRole("button", { name: "View options", exact: true }).click();
-    const views = page.locator(".scene-view-options");
-    if (!(await views.evaluate((node) => (node as HTMLDetailsElement).open)))
-      await views.locator("summary").click();
-  }
-  await expect(scenes).toBeVisible();
-  return scenes;
+type SceneName = "Earth" | "Below the Surface" | "After Dark";
+
+export async function revealSceneEntry(page: Page, name: SceneName) {
+  await openStories(page, "search");
+  const category = page
+    .getByRole("group", { name: "Story categories" })
+    .getByRole("button", { name, exact: true });
+  if ((await category.getAttribute("aria-pressed")) !== "true") await category.click();
+  return page.getByRole("button", { name: `Open ${name} scene`, exact: true });
 }
 
-export async function selectScene(page: Page, name: "Earth" | "Below the Surface" | "After Dark") {
-  await (await revealScenes(page)).getByRole("button", { name, exact: true }).click();
+export async function selectScene(page: Page, name: SceneName) {
+  const scenes = page.getByRole("group", { name: "Earth scenes", exact: true });
+  if (await scenes.isVisible()) await scenes.getByRole("button", { name, exact: true }).click();
+  else await (await revealSceneEntry(page, name)).click();
 }
 
 /** Reach the catalogue through real navigation; secondary tools are opt-in. */

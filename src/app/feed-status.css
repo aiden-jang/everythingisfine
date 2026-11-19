@@ -1,16 +1,63 @@
-.feed-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
+.feed-toggle,
+.feed-archive {
+  inline-size: 184px;
+  min-height: 44px;
+  flex: none;
   color: var(--color-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.feed-toggle {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr) 9px;
+  align-items: center;
+  gap: 8px;
+  padding-inline: 10px;
+  border-radius: 7px;
   cursor: pointer;
-  font-size: var(--text-caption);
+  font-size: 12px;
+  text-align: left;
   white-space: nowrap;
 }
 
-.feed-toggle:hover {
+.feed-toggle:is(:hover, :focus-visible, :has(+ :popover-open)) {
   color: var(--color-ink);
   background: var(--color-raised);
+}
+
+.feed-count {
+  display: none;
+}
+
+.feed-archive {
+  display: grid;
+  place-items: center;
+}
+
+.feed-indicator {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.feed-indicator[data-state="ok"] {
+  background: var(--color-feed-available);
+}
+
+.feed-indicator[data-state="pending"] {
+  border: 1px solid var(--color-dim);
+}
+
+.feed-indicator[data-state="failed"] {
+  border-radius: 0;
+  background: var(--color-feed-unavailable);
+  rotate: 45deg;
+}
+
+.feed-indicator[data-state="off"] {
+  height: 2px;
+  background: var(--color-faint);
 }
 
 .feed-popover {
@@ -25,25 +72,19 @@
   overscroll-behavior: contain;
   padding: 16px;
   border: 1px solid var(--color-hairline);
-  border-radius: 7px;
+  border-radius: 9px;
   color: var(--color-ink);
   background: var(--color-deck);
   font-size: var(--text-control);
 }
 
 .feed-popover h2 {
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.feed-popover h3 {
-  margin-top: 14px;
+  font-size: var(--text-body);
   font-weight: 600;
 }
 
 .feed-popover p,
-.feed-popover small,
-.feed-popover li span {
+.feed-row-detail {
   color: var(--color-dim);
 }
 
@@ -54,19 +95,36 @@
 
 .feed-popover li {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: baseline;
-  gap: 2px 12px;
-  padding-block: 7px;
+  grid-template-columns: 7px minmax(0, 1fr) 84px;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
   border-top: 1px solid var(--color-hairline);
 }
 
-.feed-popover li span {
-  text-align: right;
+.feed-row-state {
+  display: grid;
+  place-items: center;
 }
 
-.feed-popover li small {
-  grid-column: 1 / -1;
+.feed-popover li a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-decoration-color: var(--color-faint);
+  text-underline-offset: 3px;
+}
+
+.feed-popover li a:is(:hover, :focus-visible) {
+  text-decoration-color: var(--color-ink);
+}
+
+.feed-row-detail {
+  text-align: right;
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .feed-popover time {
@@ -78,21 +136,39 @@
   align-content: center;
   cursor: pointer;
 }
+.feed-popover details p + p {
+  margin-top: 8px;
+}
 
-@media (max-width: 1279px) {
-  .zone-head button.feed-toggle[data-feed-compact] {
-    justify-content: center;
-    flex: 0 0 44px;
-    min-height: 44px;
+@media (max-width: 1099px) {
+  .feed-toggle,
+  .feed-archive {
+    inline-size: 44px;
+  }
+
+  .feed-toggle {
+    grid-template-columns: 1fr;
+    justify-items: center;
     padding-inline: 0;
   }
 
-  .feed-toggle[data-feed-compact] .feed-wide,
-  .feed-toggle[data-feed-compact] svg {
+  .feed-wide,
+  .feed-toggle > :is(svg, .feed-indicator) {
     display: none;
   }
 
-  .feed-toggle[data-feed-compact] .feed-count {
+  .feed-count {
     display: inline;
+  }
+}
+
+@media (forced-colors: active) {
+  .feed-indicator {
+    forced-color-adjust: none;
+    background: ButtonText;
+  }
+  .feed-indicator[data-state="pending"] {
+    background: transparent;
+    border-color: ButtonText;
   }
 }

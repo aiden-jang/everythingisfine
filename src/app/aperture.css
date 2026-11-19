@@ -115,6 +115,9 @@
 }
 .frame .creator-credit {
   position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   left: 34px;
   bottom: max(8px, env(safe-area-inset-bottom));
   z-index: 5;
@@ -133,6 +136,12 @@
 .frame .creator-credit a:hover {
   text-decoration: underline;
 }
+.observatory-policy-links {
+  display: flex;
+  gap: 10px;
+  padding-inline-start: 12px;
+  border-inline-start: 1px solid var(--color-hairline);
+}
 .observatory-intro :is(.observation-heading, .tonight-heading, .radar-heading, .float-heading) h2 {
   font-family: "Alumni Sans", var(--font-sans);
   font-variant-numeric: normal;
@@ -150,25 +159,18 @@
   .frame[data-presentation="explore"] .zones:has(#chrome-rail:not([hidden])) {
     --rail-w: calc(var(--rail-panel-w) + 36px);
   }
-  .frame[data-presentation="observe"] .zones {
-    --head-h: 88px;
-  }
-  .frame[data-presentation="observe"] .observatory-header {
-    height: var(--head-h);
-    padding-inline: 34px;
-  }
   .frame[data-presentation="explore"] #chrome-rail {
     top: calc(var(--head-h) + 20px);
     bottom: 54px;
     left: 24px;
     width: var(--rail-panel-w);
     --explorer-pad: 22px;
-    padding: 18px var(--explorer-pad);
+    --explorer-surface: var(--color-deck);
+    padding-inline: var(--explorer-pad);
     border: 1px solid var(--color-hairline);
     border-radius: 10px;
     scrollbar-width: thin;
     scrollbar-color: var(--color-faint) transparent;
-    background: var(--color-deck);
   }
 }
 @media (max-width: 899px) and (min-height: 621px) {
