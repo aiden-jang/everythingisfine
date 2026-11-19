@@ -194,6 +194,11 @@
 .frame[data-presentation="explore"] #chrome-rail[data-scrolled] :is(.explorer-tabs, .story-tools) {
   background: var(--explorer-surface);
 }
+.frame[data-presentation="explore"] #chrome-rail[data-scrolled] .story-tools {
+  box-shadow:
+    calc(-1 * var(--explorer-pad)) 0 var(--explorer-surface),
+    calc(var(--explorer-pad) / 2) 0 10px -3px var(--explorer-surface);
+}
 @media (min-width: 900px) {
   .frame[data-presentation="explore"] #chrome-rail {
     mask-image: linear-gradient(#000 calc(100% - 10px), transparent);
@@ -205,7 +210,7 @@
       transparent
     );
   }
-  .frame[data-presentation="explore"] #chrome-rail[data-scrolled] :is(.explorer-tabs, .story-tools) {
+  .frame[data-presentation="explore"] #chrome-rail[data-scrolled] .explorer-tabs {
     background: linear-gradient(90deg, var(--explorer-surface) calc(100% - var(--explorer-pad)), transparent);
   }
 }

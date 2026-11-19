@@ -5,8 +5,7 @@
   min-inline-size: 0;
 }
 .story-tools {
-  margin-inline: calc(-1 * var(--explorer-pad));
-  padding: 3px var(--explorer-pad) 0;
+  padding-block-start: 3px;
 }
 .story-results {
   min-block-size: 112px;
@@ -39,7 +38,7 @@
   }
   #chrome-rail[data-scrolled] .story-tools::after {
     position: absolute;
-    inset-inline: 0 var(--explorer-pad);
+    inset-inline: 0;
     top: 100%;
     height: 8px;
     background: linear-gradient(var(--explorer-surface), transparent);
