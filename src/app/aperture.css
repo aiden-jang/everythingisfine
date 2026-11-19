@@ -171,6 +171,9 @@
   .frame[data-presentation="explore"] .zones:has(#chrome-rail:not([hidden])) .globe-scene canvas {
     mask-image: linear-gradient(90deg, transparent, #000 92px);
   }
+  .frame[data-presentation="explore"] .globe-unavailable {
+    inset-inline-start: var(--explore-scene-bleed, 0px);
+  }
   .frame[data-presentation="explore"] #chrome-rail {
     top: calc(var(--head-h) + var(--explorer-top-gap, 20px));
     bottom: 54px;
