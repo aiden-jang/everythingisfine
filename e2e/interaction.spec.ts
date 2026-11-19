@@ -2179,7 +2179,7 @@ test("Still hands the picture to the share sheet when there is one", async ({ pa
 
   expect(shared, "the sheet was handed a file").toBeTruthy();
   expect(shared!.type).toBe("image/png");
-  expect(shared!.name).toMatch(/^everything-is-fine-.*\.png$/);
+  expect(shared!.name).toMatch(/^meanwhile-.*\.png$/);
   expect(shared!.transient, "sharing retains the initiating click").toBe(true);
   // A real picture, not an empty canvas: the still is 1200 wide and carries its own caption.
   expect(shared!.size, "the PNG has something in it").toBeGreaterThan(20_000);

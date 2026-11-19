@@ -10,6 +10,8 @@ test("emits a bounded source-specific page for every archived reading", () => {
   assert.equal(new Set(pages.map((page) => page.fileName)).size, 300);
   assert.ok(pages.every((page) => /^share\/tonga\/(PHNL|SFO|PANC)\/\d+\/index.html$/.test(page.fileName)));
   const honolulu = pages.find((page) => page.fileName === "share/tonga/PHNL/539/index.html").source;
+  assert.match(honolulu, /<title>Tonga’s shockwave, recorded in Honolulu\. · meanwhile\.<\/title>/);
+  assert.match(honolulu, /property="og:site_name" content="meanwhile\."/);
   assert.match(honolulu, /1017.75 hPa at 08:59 UTC/);
   assert.match(honolulu, /Tonga’s shockwave, recorded in Honolulu/);
   assert.match(honolulu, /\/share\/tonga-PHNL.png/);

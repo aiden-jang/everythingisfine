@@ -146,7 +146,7 @@ test("reduced motion skips decorative effects and preserves cutaway capture", as
   const image = page.waitForEvent("download");
   await (await saveImageButton(page)).click();
   const capture = await image;
-  expect(capture.suggestedFilename()).toMatch(/^everything-is-fine-.*\.png$/);
+  expect(capture.suggestedFilename()).toMatch(/^meanwhile-.*\.png$/);
   expect(await capture.failure()).toBeNull();
   await capture.saveAs(test.info().outputPath("cutaway-still.png"));
 });

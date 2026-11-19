@@ -92,7 +92,7 @@ test("native sharing has a story title and cancellation stays quiet @dev", async
   await panel.getByRole("button", { name: "Share this moment", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => (window as unknown as { shared?: ShareData }).shared?.title))
-    .toBe("Vanishing Sea · Everything is fine.");
+    .toBe("Vanishing Sea · meanwhile.");
   await expect(panel.getByRole("status", { name: "Sharing status" })).toBeEmpty();
   await expect(panel.getByRole("textbox", { name: "Story link" })).toBeHidden();
 });

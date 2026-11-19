@@ -97,9 +97,7 @@ export function recordClip({
       return;
     }
     const type = recorder.mimeType || mimeType;
-    complete(
-      new File(chunks, `everything-is-fine-${Date.now()}.${type.includes("mp4") ? "mp4" : "webm"}`, { type }),
-    );
+    complete(new File(chunks, `meanwhile-${Date.now()}.${type.includes("mp4") ? "mp4" : "webm"}`, { type }));
   };
   try {
     recorder.start(250);

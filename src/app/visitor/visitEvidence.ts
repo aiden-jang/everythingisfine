@@ -28,7 +28,7 @@ export function visitEvidence(visit: Visit): VisitEvidence {
     kind: "View",
     reading: "A place to return to",
     detail: "Playback settings kept on this device.",
-    source: "Everything is fine",
+    source: "meanwhile.",
     url: "https://everythingisfine.aidenjang.com/",
   };
   if (visit.observation && visit.position.float) {
@@ -105,7 +105,7 @@ export function visitEvidence(visit: Visit): VisitEvidence {
       detail: moon
         ? `Altitude above the horizon · ${moon.lit}% illuminated. Calculated positions, not a weather or visibility forecast.`
         : "The city, time and viewing direction are kept.",
-      source: "Everything is fine · lunar model",
+      source: "meanwhile. · lunar model",
       url: "https://github.com/aiden-jang/everythingisfine/blob/main/src/geo/moon.ts",
     };
   }

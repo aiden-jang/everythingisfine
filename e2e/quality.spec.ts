@@ -175,7 +175,7 @@ test("failed native sharing keeps a downloadable still", async ({ page }) => {
   await expect(page.getByRole("status").filter({ hasText: "Sharing is unavailable" })).toBeVisible();
   const downloaded = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download image", exact: true }).click();
-  expect((await downloaded).suggestedFilename()).toMatch(/^everything-is-fine-.*\.png$/);
+  expect((await downloaded).suggestedFilename()).toMatch(/^meanwhile-.*\.png$/);
   await expect(page.getByText("Image downloaded.", { exact: true })).toBeVisible();
 });
 

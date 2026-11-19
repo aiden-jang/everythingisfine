@@ -77,7 +77,7 @@ const card = (globe, tokens, font) => `<!doctype html>
   <div class="globe"></div>
   <div class="veil"></div>
   <div class="type">
-    <div class="mark">Everything is fine.</div>
+    <div class="mark">meanwhile.</div>
     <div class="rule"></div>
     <!--
       One sentence, and not the same one as og:description. The description sits directly beneath the

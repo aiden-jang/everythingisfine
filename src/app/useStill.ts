@@ -122,7 +122,7 @@ export function useStill(
        * result back in a later task - long enough on a phone for the activation to lapse and the share to be
        * refused. This blocks for a few tens of milliseconds and keeps the gesture.
        */
-      const name = `everything-is-fine-${new Date(cursor ?? Date.now())
+      const name = `meanwhile-${new Date(cursor ?? Date.now())
         .toISOString()
         .replace(/[:.]/g, "-")
         .slice(0, 19)}.png`;

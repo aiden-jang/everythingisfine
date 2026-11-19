@@ -15,7 +15,7 @@ for (const width of [390, 1440]) {
         await page.getByRole("region", { name: "Recent earthquakes" }).getByRole("button").first().click();
         await expect(page.getByRole("button", { name: "Copy link", exact: true })).toBeVisible();
       }
-      await expect(page.getByRole("heading", { level: 1 })).toHaveText("Everything Is Fine");
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText("meanwhile.");
       const scan = await new AxeBuilder({ page })
         .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"])
         .analyze();

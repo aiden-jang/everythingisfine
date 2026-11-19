@@ -19,7 +19,7 @@ export async function exportEvidence(evidence: VisitEvidence) {
     });
     return top + lines.length * size * 1.4;
   };
-  text("Everything is fine.", 90, 30, 550);
+  text("meanwhile.", 90, 30, 550);
   let y = text(evidence.title, 200, 64, 550);
   y = text(evidence.place, y + 24, 32);
   y = text(evidence.kind, y + 20, 24);
@@ -65,7 +65,7 @@ export async function exportEvidence(evidence: VisitEvidence) {
   try {
     const link = document.createElement("a");
     link.href = url;
-    link.download = `everything-is-fine-${evidence.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`;
+    link.download = `meanwhile-${evidence.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.png`;
     link.click();
   } finally {
     setTimeout(() => URL.revokeObjectURL(url), 1000);

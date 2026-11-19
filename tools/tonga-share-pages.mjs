@@ -24,11 +24,11 @@ export function pressurePages(shell) {
       const description = `${((raw / 1000) * 33.8638866667).toFixed(2)} hPa at ${clock(minute)} UTC on 15 January 2022. One-minute station pressure from ASOS / Iowa Environmental Mesonet.`;
       const image = `${origin}/share/tonga-${station.id}.png`;
       const alt = `Tonga’s shockwave: ${station.name} station pressure trace, 15 January 2022. The selected reading is described in the link text.`;
-      const metadata = `<title>${escape(title)}</title>
+      const metadata = `<title>${escape(title)} · meanwhile.</title>
 <meta name="description" content="${escape(description)}" />
 <meta name="robots" content="noindex, follow" />
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="Everything Is Fine" />
+<meta property="og:site_name" content="meanwhile." />
 <meta property="og:title" content="${escape(title)}" />
 <meta property="og:description" content="${escape(description)}" />
 <meta property="og:url" content="${origin}/${path.replace(/index.html$/, "")}" />

@@ -762,7 +762,7 @@ export function App(): JSX.Element {
      climbs through a whole day in 2.8 seconds, which is a flickering tab rather than a readout, and it is
      showing yesterday anyway. See ARCHITECTURE.md#srcapptsx. */
   useEffect(() => {
-    const base = "Everything Is Fine";
+    const base = "meanwhile.";
     if (replay || snapshot.coveredSince === null) {
       document.title = base;
       return;
@@ -1044,7 +1044,7 @@ export function App(): JSX.Element {
         data-landing={observatory.landing || undefined}
       >
         <SkipControls observing={observatory.observing} railShown={railShown} />
-        <h1 className="sr-only">Everything Is Fine</h1>
+        <h1 className="sr-only">meanwhile.</h1>
         <GlobeHeader
           keyboard={
             <KeyboardHelp

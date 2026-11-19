@@ -9,7 +9,7 @@ export function storyShare(moment: StoryMoment, href: string) {
   const story = searchStories.find(({ id }) => id === moment.id);
   return {
     url: url.href,
-    title: `${story?.title ?? "A shared moment"} · Everything is fine.`,
+    title: `${story?.title ?? "A shared moment"} · meanwhile.`,
     text: story?.summary ?? "Explore this view of Earth, ocean and sky.",
   };
 }

@@ -58,7 +58,7 @@ export function wrapProvenance(text: string, measure: (line: string) => number, 
  */
 export function captionLines(caption: StillCaption): [string, string | null, string, string] {
   return [
-    caption.subject ?? "EVERYTHING IS FINE",
+    caption.subject ?? "meanwhile.",
     caption.verdict,
     caption.moment,
     `${caption.filter} · ${caption.host}`,
@@ -154,7 +154,7 @@ export function drawStill(
   if (caption.magnitudeScale === false) {
     ctx.textAlign = "right";
     ctx.font = "500 16px Geist, Helvetica Neue, Arial, sans-serif";
-    ctx.fillText("Everything is fine.", STILL_WIDTH - 40, baseline);
+    ctx.fillText("meanwhile.", STILL_WIDTH - 40, baseline);
     ctx.textAlign = "left";
     return;
   }
