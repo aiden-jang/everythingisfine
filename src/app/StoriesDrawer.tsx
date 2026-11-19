@@ -170,8 +170,10 @@ export function StoriesDrawer({
                           <span className="story-promise">
                             {navigation?.unavailable(story.id) ?? story.summary}
                           </span>
-                          <StoryPreviewButton id={story.id} title={story.title} />
                         </small>
+                        <div className="story-row-preview">
+                          <StoryPreviewButton id={story.id} title={story.title} />
+                        </div>
                         <svg
                           className="story-choice-chevron"
                           viewBox="0 0 16 16"

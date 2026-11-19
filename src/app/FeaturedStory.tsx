@@ -13,7 +13,9 @@ export function FeaturedStory({ scene }: { scene: EarthScene | null }): JSX.Elem
   const unavailable = navigation?.unavailable(story.id);
   return (
     <div className="featured-story" data-feature={selection.id}>
-      <StoryThumbnail id={story.id} />
+      <div className="featured-story-art">
+        <StoryThumbnail id={story.id} />
+      </div>
       <span>
         <strong>{story.title}</strong>
         <small id={`${id}-source`}>{selection.note}</small>

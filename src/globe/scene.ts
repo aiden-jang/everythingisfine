@@ -40,14 +40,7 @@ import { createStarfield } from "./starfield";
 import { createMoon } from "./moon";
 import { createFigures } from "./figures";
 import { createPlanets } from "./planets";
-import {
-  attachLonLat,
-  MAP_HALF_WIDTH,
-  mapRepeatSpacing,
-  morphable,
-  SPHERE_PHI_START,
-  visibleCopies,
-} from "./morph";
+import { attachLonLat, MAP_HALF_WIDTH, mapRepeatSpacing, morphable, SPHERE_PHI_START } from "./morph";
 import { matches } from "../data/filter";
 import type { Filters, SourceId } from "../data/types";
 import { createControls, type Controls } from "./controls";
@@ -58,7 +51,7 @@ import type { SlabPoint } from "../geo/slab";
 import { createLayerEmphasis } from "./layerEmphasis";
 import { createMarkLayer, pickMark, type Mark } from "./marks";
 import type { Aurora } from "../sources/aurora";
-import { fitGlobeCamera } from "./globeFraming";
+import { fitGlobeCamera, visibleMapCopies } from "./globeFraming";
 
 export type GlobeMoment = number | EclipseFrame | null;
 
@@ -606,8 +599,7 @@ export function createGlobe(canvas: HTMLCanvasElement, capacity = 50_000): Globe
 
       /* The map repeats by drawing the world again beside itself. Only the copies that intersect the view
          are drawn: two most of the time, one zoomed in. See ARCHITECTURE.md#srcglobescenets. */
-      const halfHeight = camera.position.z * Math.tan((FOV / 2) * (Math.PI / 180));
-      const { first, last } = visibleCopies(camera.position.x, halfHeight * camera.aspect, period);
+      const { first, last } = visibleMapCopies(camera, period);
 
       renderer.autoClear = true;
       for (let k = first; k <= last; k += 1) {

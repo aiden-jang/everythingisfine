@@ -45,6 +45,9 @@
 .layer-list {
   margin-block: 0 8px;
 }
+.layer-list:not([data-inspecting]) {
+  padding-top: 4px;
+}
 .layer-list[data-inspecting] {
   margin: 0;
 }
@@ -132,20 +135,31 @@
 .layer-group[hidden] {
   display: none;
 }
-.layer-inspect:focus-visible,
-.layer-visibility:focus-visible {
+.layer-inspect:focus-visible {
   background: var(--color-raised);
 }
 .layer-inspect:focus-visible .layer-chevron {
+  color: var(--color-ink);
   opacity: 1;
 }
+.layer-visibility:focus-visible .layer-switch,
+.layer-visibility:active:not(:disabled) .layer-switch {
+  box-shadow:
+    0 0 0 2px var(--color-void),
+    0 0 0 3px var(--color-dim);
+}
 @media (hover: hover) {
-  .layer-inspect:hover,
-  .layer-visibility:hover:not(:disabled) {
+  .layer-inspect:hover:not(:disabled) {
     background: var(--color-raised);
   }
-  .layer-inspect:hover .layer-chevron {
+  .layer-inspect:hover:not(:disabled) .layer-chevron {
+    color: var(--color-ink);
     opacity: 1;
+  }
+  .layer-visibility:hover:not(:disabled) .layer-switch {
+    box-shadow:
+      0 0 0 2px var(--color-void),
+      0 0 0 3px var(--color-dim);
   }
 }
 .layer-inspector-heading {
@@ -391,14 +405,13 @@
   border-radius: 0;
   background: transparent;
 }
-#explorer-stories .featured-story img {
-  position: static;
+#explorer-stories .featured-story-art {
   width: 100%;
   height: 116px;
-  aspect-ratio: 1.8;
-  object-fit: cover;
-  object-position: center top;
   border-radius: 2px;
+}
+#explorer-stories .featured-story-art > img {
+  object-position: center top;
 }
 #explorer-stories .featured-story img[data-story="float"] {
   object-position: left top;
@@ -596,9 +609,8 @@
     align-items: center;
     gap: 16px;
   }
-  #explorer-stories .featured-story img {
+  #explorer-stories .featured-story-art {
     height: 120px;
-    aspect-ratio: auto;
   }
 
   #explorer-stories .featured-story > span {
@@ -665,7 +677,7 @@
     grid-template-columns: 64px minmax(0, 1fr);
     gap: 10px;
   }
-  #explorer-stories .featured-story img {
+  #explorer-stories .featured-story-art {
     height: 76px;
   }
   #explorer-stories .featured-story > span {

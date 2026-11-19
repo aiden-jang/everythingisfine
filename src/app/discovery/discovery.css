@@ -153,6 +153,7 @@
   z-index: 1;
   display: inline-flex;
   align-items: center;
+  gap: 5px;
   min-height: 44px;
   padding: 0 8px;
   margin-left: 8px;
@@ -166,6 +167,11 @@
 .story-preview-action:focus-visible {
   outline: 2px solid var(--color-ink);
   outline-offset: 2px;
+}
+@media (hover: hover) {
+  .story-preview-action:hover:not(:disabled) {
+    background: var(--color-raised);
+  }
 }
 .story-continue {
   display: grid;

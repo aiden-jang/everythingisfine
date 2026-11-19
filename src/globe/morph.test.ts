@@ -1,6 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { Vector3 } from "three";
+import { PerspectiveCamera, Vector3 } from "three";
 import { MAP_HALF_WIDTH, unfoldPoint, visibleCopies } from "./morph";
+import { visibleMapCopies } from "./globeFraming";
+
+it("includes the map copy visible through the left panel edge", () => {
+  const camera = new PerspectiveCamera(45, 2);
+  camera.position.z = 2;
+  const centered = visibleMapCopies(camera, 4);
+  expect(centered.first).toBeCloseTo(0);
+  expect(centered.last).toBe(0);
+
+  camera.setViewOffset(800, 400, -100, 0, 800, 400);
+  expect(visibleMapCopies(camera, 4)).toEqual({ first: -1, last: 0 });
+});
 
 it("opens the seam on a curved sheet and reaches the same map coordinates continuously", () => {
   const west = new Vector3();

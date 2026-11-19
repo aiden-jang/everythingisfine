@@ -190,6 +190,17 @@
     min-height: 68px;
     padding-inline-end: 84px;
   }
+  .frame[data-presentation="explore"] .canvas-information {
+    --explore-control-clearance: 32px;
+    align-items: center;
+    padding-bottom: var(--explore-control-clearance);
+  }
+  .frame[data-presentation="explore"] .canvas-information:has(> .projection-switch) {
+    min-height: calc(44px + var(--explore-control-clearance));
+  }
+  .frame[data-presentation="explore"] .canvas-information > .layer-readout {
+    gap: 0 8px;
+  }
   .radar-canvas-credit a {
     min-height: 44px;
   }

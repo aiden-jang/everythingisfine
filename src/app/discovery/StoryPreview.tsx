@@ -25,10 +25,15 @@ export function StoryPreviewButton({ id, title }: { id: string; title: string })
       data-story-preview=""
       className="story-preview-action"
       aria-label={`Preview ${title}`}
+      title={`Preview ${title}`}
       disabled={!!navigation?.unavailable(id)}
       onClick={(event) => locate(place, event.currentTarget)}
     >
-      Preview
+      <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true">
+        <path d="M12.5 6.5C12.5 10 8 13.5 8 13.5S3.5 10 3.5 6.5a4.5 4.5 0 1 1 9 0Z" />
+        <circle cx="8" cy="6.5" r="1.4" />
+      </svg>
+      <span>Preview</span>
     </button>
   );
 }

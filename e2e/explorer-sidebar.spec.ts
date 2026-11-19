@@ -35,6 +35,14 @@ test("phone sheet offers three sizes without losing the globe or covering its co
   const size = () => sheet.getAttribute("aria-valuenow");
   const defaultSize = String(Math.round(844 * 0.43) - 60);
   await expect(sheet).toHaveAttribute("aria-valuenow", defaultSize);
+  const projection = page.getByRole("button", { name: "Map", exact: true });
+  const sources = page.getByRole("button", { name: "Sources & legend", exact: true });
+  await expect(projection).toBeInViewport();
+  await expect(sources).toBeInViewport();
+  const mapControl = (await projection.boundingBox())!;
+  const sourceControl = (await sources.boundingBox())!;
+  expect(mapControl.y).toBeCloseTo(sourceControl.y);
+  expect((await sheet.boundingBox())!.y - mapControl.y - mapControl.height).toBeGreaterThanOrEqual(8);
   await page.getByRole("tab", { name: "Stories", exact: true }).click();
   await expect(sheet).toHaveAttribute("aria-valuenow", defaultSize);
   const stories = page.getByRole("tabpanel", { name: "Stories", exact: true });
@@ -128,13 +136,15 @@ for (const width of [1440, 812, 390]) {
       page.locator("#chrome-rail").evaluate((element) => {
         const panel = getComputedStyle(element);
         const tabs = getComputedStyle(element.querySelector(".explorer-tabs")!);
-        return [panel.backgroundImage, panel.borderColor, tabs.backgroundColor, tabs.marginBottom];
+        return [panel.backgroundImage, panel.borderColor, tabs.backgroundImage, tabs.marginBottom];
       });
     const layerSurface = await panelSurface();
     if (width >= 768) {
       const rail = (await page.locator("#chrome-rail").boundingBox())!;
       const globe = (await page.locator("#globe-view").boundingBox())!;
-      expect(globe.x).toBeGreaterThanOrEqual(rail.x + rail.width);
+      const overlap = rail.x + rail.width - globe.x;
+      if (width >= 900) expect(overlap).toBeCloseTo(44);
+      else expect(overlap).toBeLessThanOrEqual(0);
       expect(globe.width).toBeGreaterThan(300);
     }
     const camera = () =>

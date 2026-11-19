@@ -2,6 +2,7 @@ import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { useReadingArrival } from "./useReadingArrival";
 import { flushSync } from "react-dom";
 import { shiftGlobe } from "./presentationMotion";
+import { globeFramingRect } from "../globe/globeFraming";
 import type { ObservatoryProps } from "./Observatory";
 import { Discoveries } from "./visitor/Discoveries";
 import { StoriesDrawer } from "./StoriesDrawer";
@@ -19,7 +20,7 @@ export function ExplorerFold({ open, onChange }: { open: boolean; onChange: (ope
       onChange(!open);
       return;
     }
-    const from = scene.getBoundingClientRect();
+    const from = globeFramingRect(scene);
     scene
       .getAnimations()
       .find((motion) => motion.id === "globe-fold")

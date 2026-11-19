@@ -35,7 +35,7 @@ export function createCameraRig(camera: PerspectiveCamera, canvas: HTMLCanvasEle
     },
     apply(flat: boolean): void {
       const offset = flat ? 0 : lift;
-      const bleed = flat ? 0 : skyBleed;
+      const bleed = skyBleed;
       if (offset || bleed) {
         const width = canvas.clientWidth || 1,
           height = canvas.clientHeight || 1;

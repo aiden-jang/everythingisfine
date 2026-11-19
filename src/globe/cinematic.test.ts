@@ -118,6 +118,11 @@ describe("cinematic camera and light", () => {
     expect(camera.view).toMatchObject({ enabled: true, offsetX: -270 });
     expect(camera.view!.offsetY).toBeCloseTo(0);
     expect(rig.horizontalCentre()).toBeCloseTo(970 / 1400);
+    rig.snap(0.2, 0.12);
+    rig.apply(true);
+    expect(camera.view?.offsetX).toBe(-270);
+    expect(camera.view!.offsetY).toBeCloseTo(0);
+    rig.snap();
     rig.setSkyBleed(0);
     rig.apply(false);
     expect(camera.view?.enabled).toBe(false);
