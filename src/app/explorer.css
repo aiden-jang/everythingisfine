@@ -5,7 +5,7 @@
   z-index: 3;
   gap: 24px;
   min-height: var(--explorer-tabs-height);
-  margin: 0 calc(-1 * var(--explorer-pad)) 12px;
+  margin: 0 calc(-1 * var(--explorer-pad));
   padding: 6px var(--explorer-pad) 0;
   background: inherit;
 }
@@ -512,6 +512,7 @@
 }
 @media (max-width: 767px) {
   .explorer-tabs {
+    margin-bottom: 8px;
     padding-right: 112px;
   }
   #chrome-rail {
