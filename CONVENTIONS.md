@@ -1,4 +1,4 @@
-# Working in Everything Is Fine
+# Working in meanwhile.
 
 `AGENTS.md` and `CLAUDE.md` link here so repository guidance has one source.
 Setup and commit conventions are in [CONTRIBUTING.md](CONTRIBUTING.md).

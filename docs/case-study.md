@@ -1,10 +1,10 @@
-# Everything Is Fine
+# meanwhile.
 
 An observatory for Earth, ocean, and sky. [Open the live project](https://meanwhile.aidenjang.com/).
 
 I wanted to give scientific observations a sense of place. An earthquake feed can tell you when and
 where the ground moved. A float profile can tell you the temperature at a particular depth.
-Everything Is Fine lets you see where those readings happened, follow their progression, and return
+The meanwhile. observatory lets you see where those readings happened, follow their progression, and return
 to the view you were exploring.
 
 ## Three ways into the observatory

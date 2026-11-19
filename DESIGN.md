@@ -1,5 +1,5 @@
 ---
-name: Everything Is Fine
+name: meanwhile.
 description: Aperture, a planet-first observation deck for real Earth, ocean and sky readings.
 colors:
   void: "#091219"
@@ -138,7 +138,7 @@ components:
     typography: "{typography.metadata}"
 ---
 
-# Design System: Everything Is Fine
+# Design System: meanwhile.
 
 ## Overview
 

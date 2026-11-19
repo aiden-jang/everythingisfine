@@ -1,6 +1,6 @@
 # Current architecture
 
-Everything Is Fine is a static TypeScript app built with Vite, Preact through React-compatible
+The meanwhile. observatory is a static TypeScript app built with Vite, Preact through React-compatible
 imports, Tailwind, and three.js. Most public providers are reached directly from the browser.
 The globe needs no API key, account or database. A small Worker
 serves static assets, anonymous aggregate events and three fixed regional observation routes.
