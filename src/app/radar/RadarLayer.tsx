@@ -38,7 +38,7 @@ export function RadarLayer({
         initialAt={initialAt ?? undefined}
         onSelect={select}
       />
-      <p className="radar-layer-note">Stripes mark areas with no listed coverage.</p>
+      {rewind && <p className="radar-layer-note">Stripes mark areas with no listed coverage.</p>}
     </section>
   );
 }

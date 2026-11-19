@@ -62,6 +62,13 @@ export function ObservatoryOptions({
         className="observatory-options"
         role="region"
         aria-label="View options"
+        onKeyDown={(event) => {
+          if (event.key !== "Escape") return;
+          event.preventDefault();
+          event.stopPropagation();
+          panel.current?.hidePopover();
+          trigger.current?.focus({ preventScroll: true });
+        }}
         onBlurCapture={(event) => {
           const next = event.relatedTarget;
           if (next instanceof Node && !event.currentTarget.contains(next) && next !== trigger.current)

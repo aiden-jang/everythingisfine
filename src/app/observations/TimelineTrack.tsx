@@ -44,6 +44,7 @@ export function TimelineTrack({
           type="button"
           className="timeline-landmark"
           data-align={landmark.at > (min + max) / 2 ? "end" : "start"}
+          data-edge={landmark.at === min ? "start" : landmark.at === max ? "end" : undefined}
           style={position(landmark.at)}
           aria-label={landmark.label}
           onClick={landmark.select}

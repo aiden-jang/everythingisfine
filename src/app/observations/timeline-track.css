@@ -11,7 +11,7 @@
 .timeline-kept,
 .timeline-track .timeline-landmark {
   position: absolute;
-  inset-inline-start: calc(8px + (100% - 16px) * var(--timeline-position));
+  inset-inline-start: calc(1.5px + (100% - 3px) * var(--timeline-position));
   transform: translateX(-50%);
 }
 .timeline-kept {
@@ -28,7 +28,6 @@
 }
 .timeline-track .timeline-landmark {
   z-index: 1;
-  inset-inline-start: calc(22px + (100% - 44px) * var(--timeline-position));
   bottom: 0;
   width: 44px;
   min-height: 44px;
@@ -43,6 +42,18 @@
   margin: 14px auto 0;
   background: var(--color-dim);
   content: "";
+}
+.timeline-track .timeline-landmark[data-edge="start"] {
+  transform: translateX(-1.5px);
+}
+.timeline-track .timeline-landmark[data-edge="end"] {
+  transform: translateX(calc(-100% + 1.5px));
+}
+.timeline-landmark[data-edge="start"]::after {
+  margin-inline-start: 0;
+}
+.timeline-landmark[data-edge="end"]::after {
+  margin-inline-end: 0;
 }
 .timeline-landmark-label {
   position: absolute;
