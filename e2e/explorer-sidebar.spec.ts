@@ -143,8 +143,10 @@ for (const width of [1440, 812, 390]) {
       const rail = (await page.locator("#chrome-rail").boundingBox())!;
       const globe = (await page.locator("#globe-view").boundingBox())!;
       const overlap = rail.x + rail.width - globe.x;
-      if (width >= 900) expect(overlap).toBeCloseTo(44);
-      else expect(overlap).toBeLessThanOrEqual(0);
+      if (width >= 900) {
+        expect(overlap).toBeGreaterThan(rail.width / 2);
+        expect(overlap).toBeLessThan(rail.width);
+      } else expect(overlap).toBeLessThanOrEqual(0);
       expect(globe.width).toBeGreaterThan(300);
     }
     const camera = () =>

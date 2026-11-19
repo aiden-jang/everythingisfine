@@ -160,7 +160,7 @@
     --rail-w: calc(var(--rail-panel-w) + 36px);
   }
   .frame[data-presentation="explore"] .zones:has(#chrome-rail:not([hidden])) .zone-canvas {
-    --explore-scene-bleed: 56px;
+    --explore-scene-bleed: 300px;
     --rail-w: var(--explore-scene-bleed);
     margin-inline-start: calc(-1 * var(--explore-scene-bleed));
     transform-origin: calc(50% + var(--explore-scene-bleed) / 2) center;
@@ -169,7 +169,7 @@
     transform-origin: calc(50% + var(--explore-scene-bleed, 0px) / 2) center;
   }
   .frame[data-presentation="explore"] .zones:has(#chrome-rail:not([hidden])) .globe-scene canvas {
-    mask-image: linear-gradient(90deg, transparent, #000 var(--explore-scene-bleed));
+    mask-image: linear-gradient(90deg, transparent, #000 92px);
   }
   .frame[data-presentation="explore"] #chrome-rail {
     top: calc(var(--head-h) + var(--explorer-top-gap, 20px));
@@ -191,6 +191,24 @@
 }
 .frame[data-presentation="explore"] #chrome-rail .explorer-tabs {
   background: linear-gradient(90deg, var(--explorer-surface) calc(100% - 52px), var(--explorer-edge));
+}
+@media (min-width: 900px) {
+  .frame[data-presentation="explore"] #chrome-rail {
+    --explorer-sticky: linear-gradient(
+      90deg,
+      var(--explorer-surface) 30%,
+      color-mix(in srgb, var(--explorer-surface) 56%, transparent)
+    );
+    background: linear-gradient(
+      90deg,
+      var(--explorer-surface) 28%,
+      color-mix(in srgb, var(--explorer-surface) 72%, transparent) 61%,
+      color-mix(in srgb, var(--explorer-surface) 36%, transparent)
+    );
+  }
+  .frame[data-presentation="explore"] #chrome-rail :is(.explorer-tabs, .story-tools) {
+    background: var(--explorer-sticky);
+  }
 }
 @media (max-width: 767px) {
   .frame[data-presentation="explore"] #chrome-rail {

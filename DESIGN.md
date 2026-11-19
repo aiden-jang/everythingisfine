@@ -299,9 +299,10 @@ preference after resizing. Fullscreen expands the window without hiding its tool
 In Explore, Layers and Stories share the existing rail and canvas. Changing tabs never changes
 projection, camera, playback or visibility. Scene categories filter Stories without taking the visitor
 back to the landing page. Story returns restore pane, category, query, scroll, focus and camera.
-The camera reserves room for the rail. At 900px and above, the same canvas extends beneath the
-rail's right edge while its optical centre stays fixed on globe and map. Both tabs share the
-tinted edge, border and sticky tab bar. The phone sheet keeps a deeper tint with a soft top edge,
+The camera reserves room for the rail. At 900px and above, the same canvas extends behind much of
+the rail while its optical centre stays fixed on globe and map. The panel grades from a dark
+tint behind labels to a clearer edge, and the tabs and sticky story filters use a coordinated fade.
+The phone sheet keeps a deeper tint with a soft top edge,
 and its globe controls share a baseline above the drag handle.
 
 Layers use compact icon rows grouped into Weather & sky and Reported events, with independent
