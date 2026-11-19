@@ -92,7 +92,14 @@ export function useArchive(
   useEffect(() => {
     mounted.current = true;
     feed.start();
+    const returnToPage = () => {
+      if (!feed.snapshot().archive) feed.start();
+    };
+    window.addEventListener("pagehide", feed.pause);
+    window.addEventListener("pageshow", returnToPage);
     return () => {
+      window.removeEventListener("pagehide", feed.pause);
+      window.removeEventListener("pageshow", returnToPage);
       request.current?.abort();
       request.current = null;
       mounted.current = false;

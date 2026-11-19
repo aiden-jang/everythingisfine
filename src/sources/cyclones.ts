@@ -1,4 +1,4 @@
-import { parseUtc, reportedBy } from "./gdacs";
+import { hasGdacsFeatures, parseUtc, reportedBy } from "./gdacs";
 /* Tropical cyclones, as tracks rather than dots. A storm drawn as a point is a dot that happens to be a
    hurricane; drawn as a track it explains itself, curving poleward as every cyclone does. Only what is
    happening now. GDACS lists 99 and flags 3 `iscurrent`; the other 96 are dead storms. See ARCHITECTURE.md#srcsourcescyclonests. */
@@ -127,7 +127,9 @@ export async function fetchCyclones(
       onAnswer?.(false);
       return [];
     }
-    const current = parseCycloneList(await res.json());
+    const payload = await res.json();
+    if (!hasGdacsFeatures(payload)) throw new Error("Unexpected GDACS cyclone list");
+    const current = parseCycloneList(payload);
     // The list answered, which is what this reports. A storm whose track request fails is still a storm and
     // still drawn where it is, so a missing tail is not a dead feed.
     onAnswer?.(true);

@@ -2,6 +2,10 @@
 
 const ENDPOINT = "https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH";
 
+export function hasGdacsFeatures(payload: unknown): boolean {
+  return Array.isArray((payload as { features?: unknown } | null)?.features);
+}
+
 /** Every alert level, which is the right default: a Green fire can be the biggest one burning. */
 export function listUrl(type: string, levels = "Green;Orange;Red"): string {
   return `${ENDPOINT}?eventlist=${type}&alertlevel=${levels}`;
@@ -85,7 +89,9 @@ export async function fetchList<T>(
       onAnswer?.(false);
       return [];
     }
-    const rows = parse(await res.json());
+    const payload = await res.json();
+    if (!hasGdacsFeatures(payload)) throw new Error("Unexpected GDACS event list");
+    const rows = parse(payload);
     onAnswer?.(true);
     return rows;
   } catch {

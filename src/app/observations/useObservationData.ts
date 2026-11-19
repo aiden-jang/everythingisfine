@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ObservationDataError, type ObservationData, type ObservationSource } from "./types";
+import { pollVisible } from "../pollVisible";
+
+const OBSERVATION_TIMEOUT_MS = 24_000;
 
 type Result = {
   data: ObservationData | null;
@@ -14,59 +17,40 @@ export function useObservationData(source: ObservationSource, option: string) {
   const [revision, retry] = useState(0);
   const [result, setResult] = useState<{ option: string; result: Result } | null>(null);
   useEffect(() => {
-    const abort = new AbortController();
-    let timer = 0;
-    function start() {
-      void source
-        .load(option, abort.signal)
-        .then((data) => {
-          if (abort.signal.aborted) return;
-          if (data.frames.length) cache.current.set(option, data);
-          checked.current.set(option, Date.now());
-          setResult({
-            option,
-            result: {
-              data: cache.current.get(option) ?? null,
-              state: data.frames.length ? "ready" : "empty",
-              lastCheck: checked.current.get(option),
-            },
-          });
-        })
-        .catch((error: unknown) => {
-          if (abort.signal.aborted) return;
-          const detail = error instanceof ObservationDataError ? { reason: error.message } : {};
-          setResult({
-            option,
-            result: {
-              data: cache.current.get(option) ?? null,
-              state: "failed",
-              lastCheck: checked.current.get(option),
-              ...detail,
-            },
-          });
-        })
-        .finally(() => {
-          if (!abort.signal.aborted && source.refreshMs) timer = window.setTimeout(tick, source.refreshMs);
+    return pollVisible(async (signal) => {
+      const deadline = new AbortController();
+      // Keep the deadline active through body reads and decoding, including multi-request sources.
+      const timer = window.setTimeout(() => deadline.abort(), OBSERVATION_TIMEOUT_MS);
+      const attempt = AbortSignal.any([signal, deadline.signal]);
+      try {
+        const data = await source.load(option, attempt);
+        attempt.throwIfAborted();
+        if (data.frames.length) cache.current.set(option, data);
+        checked.current.set(option, Date.now());
+        setResult({
+          option,
+          result: {
+            data: cache.current.get(option) ?? null,
+            state: data.frames.length ? "ready" : "empty",
+            lastCheck: checked.current.get(option),
+          },
         });
-    }
-    function tick() {
-      if (document.hidden) document.addEventListener("visibilitychange", visible);
-      else start();
-    }
-    function visible() {
-      if (document.hidden) return;
-      document.removeEventListener("visibilitychange", visible);
-      start();
-    }
-    const online = () => retry((value) => value + 1);
-    if (source.refreshMs) window.addEventListener("online", online);
-    tick();
-    return () => {
-      abort.abort();
-      window.clearTimeout(timer);
-      document.removeEventListener("visibilitychange", visible);
-      window.removeEventListener("online", online);
-    };
+      } catch (error: unknown) {
+        if (signal.aborted) return;
+        const detail = error instanceof ObservationDataError ? { reason: error.message } : {};
+        setResult({
+          option,
+          result: {
+            data: cache.current.get(option) ?? null,
+            state: "failed",
+            lastCheck: checked.current.get(option),
+            ...detail,
+          },
+        });
+      } finally {
+        window.clearTimeout(timer);
+      }
+    }, source.refreshMs);
   }, [source, option, revision]);
   const state =
     result?.option === option

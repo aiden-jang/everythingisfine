@@ -1,5 +1,16 @@
-import { describe, expect, it } from "vitest";
-import { parseUtc, reportedBy } from "./gdacs";
+import { describe, expect, it, vi } from "vitest";
+import { events, fetchList, parseUtc, reportedBy } from "./gdacs";
+
+it("distinguishes an unexpected successful response from a genuinely empty list", async () => {
+  const answer = vi.fn();
+  for (const [payload, valid] of [
+    [{ error: "unavailable" }, false],
+    [{ features: [] }, true],
+  ] as const) {
+    expect(await fetchList("unused", events, async () => Response.json(payload), answer)).toEqual([]);
+    expect(answer).toHaveBeenLastCalledWith(valid);
+  }
+});
 
 describe("who reported it", () => {
   it("reads the agency GDACS credits", () => {

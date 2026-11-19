@@ -203,8 +203,9 @@ New saves never evict older observations at capacity. Legacy Float observations 
 an actual archived station sample; sky cards identify calculations and radar cards explain scan expiry.
 Observation raster changes retain the previous complete globe frame until matching pixels are ready,
 with the retained time stated while loading. Source failure ends the handoff rather than assigning
-old imagery to a new timestamp. Background hazard polling avoids overlapping requests and sleeps
-while the document is hidden.
+old imagery to a new timestamp. Failed background hazard checks retain the last successful reading
+and timestamp while marking the source unavailable. A valid empty response clears its layer. Live
+polling cancels in-flight work when the page hides, then resumes eligible checks on return or reconnect.
 
 Story thumbnails are cropped captures of the actual rendered views, loaded lazily as WebP assets.
 Featured Float Dive, Rupture Reveal and Moonfall crops retain native detail; the radar and sky

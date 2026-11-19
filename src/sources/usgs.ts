@@ -157,13 +157,11 @@ export function createUsgsSource(runtime: Runtime, urls: string | UsgsUrls = {})
      feeds are rolling windows that restate themselves, so keeping every id ever seen grows forever. See ARCHITECTURE.md#srcsourcesusgsts. */
   let seen = new Map<string, number>();
 
-  const emit = (payload: unknown): void => {
+  const emit = (payload: { features: UsgsFeature[] }): void => {
     const now = runtime.now();
     const { readings, skipped } = parseUsgs(payload, now);
-    const features = ((payload as { features?: unknown })?.features ?? []) as UsgsFeature[];
-
     const revisions = new Map<string, number>();
-    for (const f of features) {
+    for (const f of payload.features) {
       if (typeof f?.id === "string") revisions.set(f.id, revisionOf(f));
     }
 
@@ -196,20 +194,22 @@ export function createUsgsSource(runtime: Runtime, urls: string | UsgsUrls = {})
     abort?.abort();
     abort = new AbortController();
 
-    let payload: unknown;
-    let failure: string | null = null;
+    let payload: { features: UsgsFeature[] } | undefined;
+    let failure = "request failed";
     const target = !seeded && seedUrl ? seedUrl : pollUrl;
     try {
       const res = await runtime.fetch(target, { signal: abort.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      payload = await res.json();
+      const body = (await res.json()) as { features?: unknown } | null;
+      if (!Array.isArray(body?.features)) throw new Error("Unexpected USGS event list");
+      payload = { features: body.features };
     } catch (err) {
       failure = err instanceof Error ? err.message : "request failed";
     }
 
     if (!handlers || lifetime !== generation) return;
 
-    if (failure === null) {
+    if (payload) {
       // The day feed has no result cap, so a successful fetch of it vouches for the whole day.
       // The span the seed asked for, not a day. Hardcoded at a day, choosing a month left the app drawing a
       // month while vouching for the last twenty-four hours of it.

@@ -154,6 +154,7 @@ export function createEmscSource(
   let generation = 0;
   let socket: SocketLike | null = null;
   let timer: TimerId | null = null;
+  let seedRequest: AbortController | null = null;
   let failures = 0;
   let liveSince: number | null = null;
 
@@ -218,11 +219,13 @@ export function createEmscSource(
    */
   const seed = async (): Promise<void> => {
     if (!catalogue) return;
+    const request = new AbortController();
+    seedRequest = request;
     const lifetime = generation;
     const since = new Date(runtime.now() - seedHours * 3_600_000).toISOString().slice(0, 19);
     const query = `${catalogue}?limit=${SEED_LIMIT}&format=json&start=${since}`;
     try {
-      const res = await runtime.fetch(query);
+      const res = await runtime.fetch(query, { signal: request.signal });
       if (!handlers || lifetime !== generation) return;
       if (!res.ok) {
         handlers.onSeedFailed?.();
@@ -266,6 +269,8 @@ export function createEmscSource(
       handlers.onSeeded(full ? oldestOnPage : runtime.now() - seedHours * 3_600_000);
     } catch {
       if (lifetime === generation) handlers?.onSeedFailed?.();
+    } finally {
+      if (seedRequest === request) seedRequest = null;
     }
   };
 
@@ -317,6 +322,7 @@ export function createEmscSource(
     stop: () => {
       generation += 1;
       handlers = null;
+      seedRequest?.abort();
       clearTimer();
       teardownSocket();
       seen.clear();

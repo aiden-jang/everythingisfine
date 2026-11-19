@@ -42,38 +42,44 @@ export function useHazardLayers(): HazardLayers {
   });
 
   useEffect(() => {
-    let alive = true;
-    const answerFor = (layer: HazardLayer) => (ok: boolean) => {
-      if (!alive) return;
-      const at = Date.now();
-      setHealth(({ answered, checked }) => ({
-        answered: { ...answered, [layer]: ok ? "ok" : "failed" },
-        checked: ok ? { ...checked, [layer]: at } : checked,
-      }));
-    };
-    const load = () =>
-      Promise.all([
-        fetchAurora(timedFetch, answerFor("aurora")).then((next) => {
-          if (alive && next) setAurora(next);
-        }),
-        fetchCyclones(timedFetch, answerFor("cyclones")).then((next) => {
-          if (alive) setCyclones(next);
-        }),
-        fetchWildfires(timedFetch, answerFor("fires")).then((next) => {
-          if (alive) setFires(next);
-        }),
-        fetchFloods(timedFetch, answerFor("floods")).then((next) => {
-          if (alive) setFloods(next);
-        }),
-      ]);
-    /* Once, not on the ten-minute clock: the newest episode is weeks old, so polling learns nothing. */
-    void fetchVolcanoes(timedFetch, answerFor("volcanoes")).then((next) => {
-      if (alive) setVolcanoes(next);
-    });
-    const stop = pollVisible(load, POLL_MS);
+    async function refresh<T>(
+      signal: AbortSignal,
+      layer: HazardLayer,
+      fetchLayer: (get: (url: string) => Promise<Response>, onAnswer: (ok: boolean) => void) => Promise<T>,
+      apply: (next: T) => void,
+    ) {
+      let answered = false;
+      const next = await fetchLayer(
+        (url) => timedFetch(url, signal),
+        (ok) => {
+          if (signal.aborted) return;
+          answered = ok;
+          const at = Date.now();
+          setHealth((old) => ({
+            answered: { ...old.answered, [layer]: ok ? "ok" : "failed" },
+            checked: ok ? { ...old.checked, [layer]: at } : old.checked,
+          }));
+        },
+      );
+      if (answered && !signal.aborted) apply(next);
+    }
+    const stop = pollVisible(
+      (signal) =>
+        Promise.all([
+          refresh(signal, "aurora", fetchAurora, setAurora),
+          refresh(signal, "cyclones", fetchCyclones, setCyclones),
+          refresh(signal, "fires", fetchWildfires, setFires),
+          refresh(signal, "floods", fetchFloods, setFloods),
+        ]),
+      POLL_MS,
+    );
+    const stopVolcanoes = pollVisible(
+      (signal) => refresh(signal, "volcanoes", fetchVolcanoes, setVolcanoes),
+      6 * 60 * 60_000,
+    );
     return () => {
-      alive = false;
       stop();
+      stopVolcanoes();
     };
   }, []);
 

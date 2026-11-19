@@ -31,6 +31,24 @@ describeSourceContract({
   expectedFirstBatch: FEED_COUNT,
 });
 
+it("does not report live coverage for an unexpected response with HTTP 200", async () => {
+  const runtime = createFakeRuntime({
+    respond: async () => ({ ok: true, status: 200, json: async () => ({ error: "unavailable" }) }),
+  });
+  const source = createUsgsSource(runtime, { seed: "https://example.invalid/seed" });
+  const statuses: string[] = [];
+  const coverage: number[] = [];
+  source.start({
+    onReadings() {},
+    onStatus: ({ kind }) => statuses.push(kind),
+    onSeeded: (time) => coverage.push(time),
+  });
+  await runtime.flush();
+  expect(statuses).toEqual(["failing"]);
+  expect(coverage).toEqual([]);
+  source.stop();
+});
+
 describe("parsing a real USGS response", () => {
   it("turns every feature in the recording into a reading", () => {
     const { readings, skipped } = parseUsgs(recorded, 1_700_000_000_000);

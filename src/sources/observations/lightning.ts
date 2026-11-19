@@ -75,6 +75,9 @@ export const lightning: ObservationSource = {
   async load(_option, signal) {
     const now = Date.now();
     const result = await Promise.allSettled([catalogue(now - HOUR, signal), catalogue(now, signal)]);
+    signal.throwIfAborted();
+    for (const entry of result)
+      if (entry.status === "rejected" && entry.reason instanceof TypeError) throw entry.reason;
     const recent = result
       .flatMap((value) => (value.status === "fulfilled" ? value.value : []))
       .filter(({ at }) => at <= now && at >= now - WINDOW)

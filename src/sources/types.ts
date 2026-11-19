@@ -75,7 +75,7 @@ export interface GeoEventSource {
  * and reported as a feed failure.
  */
 export const browserRuntime: Runtime = {
-  fetch: (url, init) => fetch(url, init),
+  fetch: (url, init) => timedFetch(url, init?.signal),
   now: () => Date.now(),
   setTimer: (fn, ms) => setTimeout(fn, ms),
   clearTimer: (id) => clearTimeout(id),
@@ -87,8 +87,11 @@ export const browserRuntime: Runtime = {
    the bound is there for the hang, not the wait. */
 export const HAZARD_TIMEOUT_MS = 25_000;
 
-export const timedFetch = (url: string): Promise<Response> =>
-  fetch(url, { signal: AbortSignal.timeout(HAZARD_TIMEOUT_MS) });
+export function timedFetch(url: string, signal?: AbortSignal): Promise<Response> {
+  const timeout = AbortSignal.timeout(HAZARD_TIMEOUT_MS);
+  signal?.throwIfAborted();
+  return fetch(url, { signal: signal ? AbortSignal.any([signal, timeout]) : timeout });
+}
 
 /** Shared by every adapter, so backoff behaviour is one implementation rather than one per source. */
 export function backoffMs(consecutiveFailures: number, baseMs: number, capMs: number): number {

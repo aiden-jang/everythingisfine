@@ -55,6 +55,7 @@ export function frontsFor(snapshot: Pick<FeedSnapshot, "arrived" | "seeding">): 
 export interface Feed {
   store: Store;
   start: () => void;
+  pause: () => void;
   stop: () => void;
   subscribe: (fn: (snapshot: FeedSnapshot) => void) => () => void;
   snapshot: () => FeedSnapshot;
@@ -191,6 +192,14 @@ export function createFeed(capacity = 50_000): Feed {
     }
   };
 
+  function pause() {
+    running = false;
+    for (const source of sources) source.stop();
+    if (pending) cancelAnimationFrame(pending);
+    pending = 0;
+    arrived = [];
+  }
+
   return {
     store,
     snapshot,
@@ -203,6 +212,7 @@ export function createFeed(capacity = 50_000): Feed {
       running = true;
       wire();
     },
+    pause,
     setWindow: (windowMs) => {
       // Only ever wider. See the note on the interface.
       if (windowMs <= seededMs) return false;
@@ -258,12 +268,8 @@ export function createFeed(capacity = 50_000): Feed {
       announceNow();
     },
     stop: () => {
-      running = false;
-      for (const source of sources) source.stop();
-      if (pending) cancelAnimationFrame(pending);
-      pending = 0;
+      pause();
       announced = false;
-      arrived = [];
       listeners.clear();
     },
   };

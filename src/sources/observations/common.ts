@@ -2,7 +2,9 @@ export const MINUTE = 60_000;
 export const HOUR = 60 * MINUTE;
 
 export async function request(url: string, signal: AbortSignal) {
+  signal.throwIfAborted();
   const response = await fetch(url, { signal: AbortSignal.any([signal, AbortSignal.timeout(16_000)]) });
+  signal.throwIfAborted();
   if (!response.ok) throw new Error(`Provider returned ${response.status}`);
   return response;
 }
