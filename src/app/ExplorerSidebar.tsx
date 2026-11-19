@@ -1,5 +1,7 @@
 import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { useReadingArrival } from "./useReadingArrival";
+import { flushSync } from "react-dom";
+import { shiftGlobe } from "./presentationMotion";
 import type { ObservatoryProps } from "./Observatory";
 import { Discoveries } from "./visitor/Discoveries";
 import { StoriesDrawer } from "./StoriesDrawer";
@@ -11,11 +13,25 @@ import { reportAnalytics } from "../../analytics/browser";
 import "./explore-panel.css";
 
 export function ExplorerFold({ open, onChange }: { open: boolean; onChange: (open: boolean) => void }) {
+  function fold() {
+    const scene = document.querySelector<HTMLElement>("#globe-view .globe-scene");
+    if (!scene?.animate || document.hidden || matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      onChange(!open);
+      return;
+    }
+    const from = scene.getBoundingClientRect();
+    scene
+      .getAnimations()
+      .find((motion) => motion.id === "globe-fold")
+      ?.cancel();
+    flushSync(() => onChange(!open));
+    shiftGlobe(scene, from, "globe-fold");
+  }
   return (
     <button
       type="button"
       className="explorer-fold"
-      onClick={() => onChange(!open)}
+      onClick={fold}
       aria-label={open ? "Hide the panel" : "Show the panel"}
       aria-expanded={open}
       aria-controls="chrome-rail"

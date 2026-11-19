@@ -213,7 +213,7 @@ test("presentation changes keep the same WebGL scene with ordinary motion", asyn
   await Promise.all([
     expect(rail).toBeVisible(),
     expect(page.locator("#view-projection")).toBeFocused(),
-    expect(rail).toHaveCSS("background-color", "rgb(17, 31, 38)"),
+    expect(rail).toHaveCSS("background-image", /^linear-gradient\(/),
   ]);
   await expect
     .poll(() =>

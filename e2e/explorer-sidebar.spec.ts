@@ -278,7 +278,7 @@ for (const title of ["Lights Return", "Shadow Chase"]) {
     await search.fill("");
     await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
     await expect(page.getByRole("button", { name: "Float Dive", exact: true })).toHaveAccessibleDescription(
-      "Measured ocean profiles · Argo Follow a measured profile toward the surface.",
+      "Measured profile Rise through an Argo temperature and salinity profile.",
     );
     await expect(page.getByRole("button", { name: "Storm Radar", exact: true })).toHaveAccessibleDescription(
       "Recent observations Scrub recent radar from around the world on the globe.",

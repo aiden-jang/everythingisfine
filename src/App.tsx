@@ -795,7 +795,7 @@ export function App(): JSX.Element {
   const [headOpen, setHeadOpen] = useStoredFlag("head", true);
   const [railOpen, setRailOpen] = useStoredFlag("railOpen", true, shared.radarPlace ? true : undefined);
   const railShown = !observatory.observing && (railOpen || !chromeFloats);
-  useWorldLayout(`${observatory.presentation}:${observatory.landing}:${railShown}`);
+  useWorldLayout(`${observatory.presentation}:${observatory.landing}`);
   const place = usePlaceInspection(setRailOpen, shared.radarPlace);
   const headShown = observatory.observing || headOpen || chromeFloats;
 

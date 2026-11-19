@@ -1,4 +1,4 @@
-export function shiftGlobe(globe: HTMLElement, from: DOMRect): Animation | null {
+export function shiftGlobe(globe: HTMLElement, from: DOMRect, id = "globe-presentation"): Animation | null {
   const to = globe.getBoundingClientRect();
   if (Math.min(from.width, from.height, to.width, to.height) < 1) return null;
   const scale = Math.min(from.width, from.height) / Math.min(to.width, to.height);
@@ -9,7 +9,7 @@ export function shiftGlobe(globe: HTMLElement, from: DOMRect): Animation | null 
     [{ transform: `translate(${dx}px, ${dy}px) scale(${scale})` }, { transform: "translate(0, 0) scale(1)" }],
     { duration: 560, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
   );
-  flight.id = "globe-presentation";
+  flight.id = id;
   return flight;
 }
 

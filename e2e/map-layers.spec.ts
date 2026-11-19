@@ -220,9 +220,10 @@ test("the full catalogue returns to its original entry after a story @dev", asyn
   const allStories = page
     .getByRole("group", { name: "Story categories", exact: true })
     .getByRole("button", { name: "All stories", exact: true });
-  const radar = page.locator("#open-storm-radar");
+  await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
+  const radar = page.getByRole("button", { name: "Storm Radar", exact: true });
   await radar.click();
   await page.getByRole("button", { name: "Back to stories", exact: true }).click();
-  await expect(page.locator("#continue-story-radar")).toBeFocused();
+  await expect(radar).toBeFocused();
   await expect(allStories).toHaveAttribute("aria-pressed", "true");
 });

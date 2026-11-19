@@ -12,12 +12,21 @@ function visibleRect(globe: HTMLElement, target: DOMRect): DOMRect {
   );
 }
 
+function stopFold(globe: HTMLElement) {
+  globe
+    .querySelector(".globe-scene")
+    ?.getAnimations()
+    .find((motion) => motion.id === "globe-fold")
+    ?.cancel();
+}
+
 export function useWorldLayout(layout: string) {
   const previous = useRef<DOMRect | null>(null);
   const motions = useRef<Animation[]>([]);
   useLayoutEffect(() => {
     const globe = document.querySelector<HTMLElement>(".zone-canvas");
     if (!globe) return;
+    stopFold(globe);
     const from = previous.current
       ? motions.current.some((motion) => motion.id === "globe-presentation" && motion.playState === "running")
         ? visibleRect(globe, previous.current)
@@ -47,6 +56,7 @@ export function useWorldLayout(layout: string) {
     });
     resize.observe(globe);
     const stop = () => {
+      stopFold(globe);
       for (const motion of motions.current) motion.cancel();
       motions.current = [];
       previous.current = globe.getBoundingClientRect();
