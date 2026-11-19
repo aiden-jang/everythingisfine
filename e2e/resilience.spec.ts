@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { installFeeds } from "./feeds";
+import { installFeeds, openLayer } from "./feeds";
 
 test("phone story loading, retry and return work when feeds are unavailable", async ({ page }) => {
   await installFeeds(page, { presentation: "fresh", dead: true });
@@ -54,4 +54,65 @@ test("phone story loading, retry and return work when feeds are unavailable", as
   await expect(result).toBeFocused();
   expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
   expect(errors).toEqual([]);
+});
+
+test("phone radar loads history on demand and stops the queue when a connection is interrupted", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await installFeeds(page, { presentation: "fresh", radar: "default", empty: true });
+  const latest = Math.floor(Date.now() / 600_000) * 600_000;
+  const times = Array.from({ length: 5 }, (_, index) => latest - (4 - index) * 600_000);
+  const pixel = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGOQW///PwAFhwLMAV5hdQAAAABJRU5ErkJggg==",
+    "base64",
+  );
+  const requested = new Set<number>();
+  let interrupted = true;
+  await page.route("https://api.rainviewer.com/public/weather-maps.json", (route) =>
+    route.fulfill({
+      json: {
+        host: "https://tilecache.rainviewer.com",
+        radar: { past: times.map((at, index) => ({ time: at / 1000, path: `/v2/radar/frame${index}` })) },
+      },
+    }),
+  );
+  await page.route("https://tilecache.rainviewer.com/**", (route) => {
+    const frame = /\/frame(\d+)\//.exec(route.request().url());
+    if (frame) {
+      const index = Number(frame[1]);
+      requested.add(index);
+      if (interrupted && index === 0) return route.abort();
+    }
+    return route.fulfill({ contentType: "image/png", body: pixel });
+  });
+
+  await page.goto("/");
+  const canvas = await page.locator("#globe-view canvas").elementHandle();
+  const credit = page.locator(".radar-canvas-credit time");
+  await expect(credit).toHaveAttribute("datetime", new Date(latest).toISOString());
+  await expect.poll(() => [...requested]).toEqual([4, 3]);
+  await page.getByRole("button", { name: "Explore the globe", exact: true }).click();
+  await openLayer(page, "Storm radar");
+  const scans = page.getByRole("group", { name: "Radar scan controls" });
+  const slider = scans.getByRole("slider", { name: "Radar scan time" });
+  const status = page.getByRole("region", { name: "Storm radar playback" });
+  await slider.press("Home");
+  await expect(status.getByRole("status", { name: "Radar status" })).toHaveText(
+    "This scan’s image is unavailable.",
+  );
+  await slider.press("ArrowRight");
+  await expect(status.getByRole("status", { name: "Radar status" })).toHaveText(
+    "This scan’s image is unavailable.",
+  );
+  expect([...requested]).toEqual([4, 3, 0]);
+
+  interrupted = false;
+  await status.getByRole("button", { name: "Retry RainViewer" }).click();
+  await expect(credit).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
+  await expect.poll(() => requested.size).toBe(times.length);
+  await page.locator("#view-projection").click();
+  await expect(page.locator("#view-projection")).toHaveText("Globe");
+  await expect(credit).toHaveAttribute("datetime", new Date(times[1]!).toISOString());
+  expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(true);
 });

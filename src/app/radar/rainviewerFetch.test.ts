@@ -9,8 +9,8 @@ async function setup() {
   vi.resetModules();
   const fetch = vi.fn(async () => new Response(new Blob(["radar"], { type: "image/png" })));
   vi.stubGlobal("fetch", fetch);
-  const { rainviewerFetch } = await import("./rainviewerFetch");
-  return { fetch, load: rainviewerFetch, signal: new AbortController().signal };
+  const { rainviewerFetch, RainviewerConnectionError } = await import("./rainviewerFetch");
+  return { fetch, load: rainviewerFetch, RainviewerConnectionError, signal: new AbortController().signal };
 }
 
 test("reopening reuses successful tiles while expired catalogues refresh", async () => {
@@ -48,4 +48,15 @@ test("unsuccessful and invalid responses never enter the cache", async () => {
   await expect(load("tile", signal)).rejects.toThrow();
   await load("tile", signal);
   expect(fetch).toHaveBeenCalledTimes(3);
+});
+
+test("a connection lost while reading a tile is distinct from an HTTP error", async () => {
+  const { fetch, load, signal, RainviewerConnectionError } = await setup();
+  const interrupted = new TypeError("Connection interrupted");
+  fetch.mockResolvedValueOnce(
+    new Response(new ReadableStream({ start: (stream) => stream.error(interrupted) })),
+  );
+  await expect(load("tile", signal)).rejects.toBeInstanceOf(RainviewerConnectionError);
+  fetch.mockResolvedValueOnce(new Response("scan too old", { status: 404 }));
+  await expect(load("tile", signal)).rejects.not.toBeInstanceOf(RainviewerConnectionError);
 });

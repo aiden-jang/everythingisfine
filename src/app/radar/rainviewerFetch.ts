@@ -4,6 +4,12 @@ const MINUTE = 60_000;
 const MAX_BYTES = 16 * 1024 * 1024;
 let bytes = 0;
 
+export class RainviewerConnectionError extends Error {
+  constructor(cause: unknown) {
+    super("RainViewer connection interrupted", { cause });
+  }
+}
+
 export function forgetRainviewer(url: string) {
   const saved = cache.get(url);
   if (saved) bytes -= saved.blob.size;
@@ -40,9 +46,15 @@ export async function rainviewerFetch(url: string, signal: AbortSignal, ttl = 10
   }
   signal.throwIfAborted();
   requests.push(Date.now());
-  const response = await fetch(url, { signal: AbortSignal.any([signal, AbortSignal.timeout(14_000)]) });
+  function connectionFailed(error: unknown): never {
+    signal.throwIfAborted();
+    throw new RainviewerConnectionError(error);
+  }
+  const response = await fetch(url, {
+    signal: AbortSignal.any([signal, AbortSignal.timeout(14_000)]),
+  }).catch(connectionFailed);
   if (!response.ok) throw new Error("RainViewer unavailable");
-  const blob = await response.blob();
+  const blob = await response.blob().catch(connectionFailed);
   signal.throwIfAborted();
   if (!blob.type.startsWith("image/") && !blob.type.includes("json"))
     throw new Error("Unexpected radar data");

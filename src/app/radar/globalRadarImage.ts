@@ -1,5 +1,5 @@
 import { GLOBAL_RADAR_BOUNDS, rainviewerTiles, radarMercatorY } from "../../sources/rainviewer";
-import { forgetRainviewer, rainviewerFetch } from "./rainviewerFetch";
+import { forgetRainviewer, RainviewerConnectionError, rainviewerFetch } from "./rainviewerFetch";
 
 async function tiles(path: string | undefined, signal: AbortSignal): Promise<ImageBitmap[]> {
   const loaded = await Promise.allSettled(
@@ -15,6 +15,10 @@ async function tiles(path: string | undefined, signal: AbortSignal): Promise<Ima
   const images = loaded.flatMap((result) => (result.status === "fulfilled" ? [result.value] : []));
   if (signal.aborted || images.length !== 4) {
     images.forEach((image) => image.close());
+    signal.throwIfAborted();
+    for (const result of loaded)
+      if (result.status === "rejected" && result.reason instanceof RainviewerConnectionError)
+        throw result.reason;
     throw new Error("Incomplete radar mosaic");
   }
   return images;

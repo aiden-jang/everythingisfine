@@ -57,7 +57,12 @@ export function RadarStage({
 }): JSX.Element {
   const id = useId();
   const held = useRef<RadarScan | null>(null);
-  const { scans, images, status, checkedAt, lastSuccess, covers, retry } = useRadarScans(held, global);
+  const { scans, images, status, checkedAt, lastSuccess, covers, retry } = useRadarScans(
+    held,
+    global,
+    !layer || Boolean(dock),
+    initialAt,
+  );
   const [chosen, setChosen] = useState<RadarScan | null>(null);
   const [showLightning, setShowLightning] = useState(false);
   const [playing, setPlaying] = useState(false);

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 import { radarCatalogUrl, radarImageUrl, radarScans, type RadarScan } from "../../sources/radar";
 
 import { RAINVIEWER_CATALOGUE, rainviewerScans } from "../../sources/rainviewer";
-import { forgetRainviewer, rainviewerFetch } from "./rainviewerFetch";
+import { forgetRainviewer, RainviewerConnectionError, rainviewerFetch } from "./rainviewerFetch";
 import { globalRadarCoverage, globalRadarImage } from "./globalRadarImage";
 
 const POLL_MS = 120_000;
@@ -19,7 +19,12 @@ interface RadarData {
 const fetchBounded = (url: string, signal: AbortSignal) =>
   fetch(url, { signal: AbortSignal.any([signal, AbortSignal.timeout(14_000)]) });
 
-export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean) {
+export function useRadarScans(
+  held: RefObject<RadarScan | null>,
+  global: boolean,
+  showHistory: boolean,
+  initialAt: number | undefined,
+) {
   const [data, setData] = useState<RadarData>(() => ({
     scans: [],
     images: new Map(),
@@ -27,15 +32,19 @@ export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean
     checkedAt: Date.now(),
   }));
   const refresh = useRef(() => {});
+  const loadOnDemand = useRef(() => {});
+  const demand = useRef({ showHistory, initialAt });
 
   useEffect(() => {
     const images = new Map<number, ImageBitmap | null>();
+    let coverage: Awaited<ReturnType<typeof globalRadarCoverage>> | undefined;
     let latestAt = 0;
     let timer = 0;
     let request: AbortController | null = null;
+    let leaving = false;
 
     async function load() {
-      if (document.hidden || request) return;
+      if (document.hidden || leaving || request) return;
       window.clearTimeout(timer);
       const current = new AbortController();
       const { signal } = current;
@@ -69,7 +78,16 @@ export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean
         const queue = [newest, ...scans.filter(({ id }) => id !== newest.id)].filter(
           ({ id }) => !images.get(id),
         );
-        const coverage = global && queue.length ? await globalRadarCoverage(signal) : undefined;
+        function nextScan() {
+          if (!global || queue[0]?.id === newest.id) return queue.shift();
+          const { showHistory, initialAt } = demand.current;
+          const selectedAt = held.current?.at ?? initialAt;
+          const selected = queue.findIndex(({ at }) => at === selectedAt);
+          const recent = queue.findIndex(({ id }) => id === fresh.at(-2)?.id);
+          const index = selected >= 0 ? selected : recent >= 0 ? recent : showHistory ? 0 : -1;
+          return index < 0 ? undefined : queue.splice(index, 1)[0];
+        }
+        if (global && queue.length && !coverage) coverage = await globalRadarCoverage(signal);
         if (signal.aborted) return;
         const keep = new Set(scans.map(({ id }) => id));
         for (const [id, image] of images) {
@@ -89,9 +107,10 @@ export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean
         }));
 
         async function next() {
-          for (let scan = queue.shift(); scan && !signal.aborted; scan = queue.shift()) {
+          for (let scan = nextScan(); scan && !signal.aborted; scan = nextScan()) {
             const { id } = scan;
             let image: ImageBitmap | null = null;
+            let interrupted = false;
             try {
               if (coverage && scan.path) image = await globalRadarImage(scan.path, coverage.mask, signal);
               else {
@@ -99,19 +118,23 @@ export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean
                 if (png.ok && png.headers.get("Content-Type")?.startsWith("image/"))
                   image = await createImageBitmap(await png.blob());
               }
-            } catch {
-              // The timestamp remains selectable when its image cannot be read.
+            } catch (error) {
+              interrupted = error instanceof RainviewerConnectionError;
             }
             if (signal.aborted) {
               image?.close();
               break;
             }
             images.set(id, image);
+            // WebKit can cancel requests before dispatching pagehide on the old document.
+            // A refused connection must not start a new batch for every remaining scan.
+            if (interrupted) for (const pending of queue) images.set(pending.id, null);
             setData((old) => ({
               ...old,
               images: new Map(images),
               lastSuccess: id === newest.id && image ? Date.now() : old.lastSuccess,
             }));
+            if (interrupted) break;
           }
         }
         await Promise.all(global ? [next()] : [next(), next(), next()]);
@@ -121,42 +144,62 @@ export function useRadarScans(held: RefObject<RadarScan | null>, global: boolean
       } finally {
         if (request === current) {
           request = null;
-          if (!document.hidden) timer = window.setTimeout(() => void load(), POLL_MS);
+          if (!document.hidden && !leaving) timer = window.setTimeout(() => void load(), POLL_MS);
         }
       }
     }
 
-    function visibility() {
+    function stop() {
       window.clearTimeout(timer);
-      if (document.hidden) {
-        request?.abort();
-        request = null;
-      } else {
-        void load();
-      }
+      request?.abort();
+      request = null;
+    }
+    function visibility() {
+      if (document.hidden) stop();
+      else void load();
+    }
+    function leave() {
+      leaving = true;
+      stop();
+    }
+    function returnToPage() {
+      if (!leaving) return;
+      leaving = false;
+      void load();
     }
 
     refresh.current = () => {
-      request?.abort();
-      request = null;
+      stop();
       if (global) forgetRainviewer(RAINVIEWER_CATALOGUE);
       void load();
     };
+    loadOnDemand.current = () => void load();
     void load();
     document.addEventListener("visibilitychange", visibility);
+    window.addEventListener("pagehide", leave);
+    window.addEventListener("pageshow", returnToPage);
     window.addEventListener("online", refresh.current);
     const online = refresh.current;
     return () => {
-      window.clearTimeout(timer);
+      stop();
       document.removeEventListener("visibilitychange", visibility);
+      window.removeEventListener("pagehide", leave);
+      window.removeEventListener("pageshow", returnToPage);
       window.removeEventListener("online", online);
-      const current = request;
-      request = null;
-      current?.abort();
       for (const image of images.values()) image?.close();
       refresh.current = () => {};
+      loadOnDemand.current = () => {};
     };
   }, [held, global]);
+  useEffect(() => {
+    const previous = demand.current;
+    demand.current = { showHistory, initialAt };
+    if (
+      global &&
+      (showHistory ? !previous.showHistory : initialAt !== undefined && initialAt !== previous.initialAt)
+    )
+      loadOnDemand.current();
+  }, [global, showHistory, initialAt]);
 
   return { ...data, retry: () => refresh.current() };
 }

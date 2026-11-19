@@ -432,7 +432,9 @@ The UI identifies composite time, variable radar age, approximate coverage and p
 the required RainViewer attribution. GOES-East lightning remains in the US detail mode.
 
 A bounded in-memory blob cache reuses tiles across view changes. A sliding request budget stays below
-RainViewer’s per-IP ceiling, including retries; waits abort on exit and hidden-page requests stop.
+RainViewer’s per-IP ceiling, including retries. The background layer prepares the two newest scans
+and a restored selection. Opening the player loads the rest of the archive on the same surface.
+Requests stop when the page is hidden or left, and a connection interruption ends the current batch.
 The catalogue refreshes every two minutes, decoded frames are limited to the active time window plus
 a held selection, and no forecast or discontinued satellite endpoint is requested. Closing the view
 aborts requests, releases decoded images and the active texture, and returns to the originating view.
