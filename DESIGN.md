@@ -15,8 +15,8 @@ colors:
   ink: "#edf3f3"
   dim: "#a4b6bc"
   faint: "#8da3ab"
-  feed-available: "#8dc5a7"
-  feed-unavailable: "#e9ad98"
+  feed-available: "#92c4a8"
+  feed-unavailable: "#dcb3ab"
   hairline: "rgb(148 163 184 / 0.14)"
   rim: "rgb(120 150 190 / 0.16)"
 typography:
@@ -356,7 +356,7 @@ height takes precedence in either pane. The baseline lower stop is 20%, with a 1
 bounded by 60%; its upper stop is 82%. Phone stops subtract the credit reservation, with a
 150px minimum globe allocation bounded by 40% on short screens. One shared calculation drives
 the sheet, navigation and accessible resize values. Browsing expands the sheet by reducing the globe row;
-expanding the globe reduces the sheet. Within that row, the Explore canvas clears the 68px header
+expanding the globe reduces the sheet. Within that row, the Explore canvas clears the 60px header and safe-area inset
 and leaves 12px below, keeping the default globe complete above the sheet.
 The drag handle snaps to those three positions; keyboard arrows allow intermediate adjustments and
 Home/End reach the extremes. Stored heights are bounded to the current viewport after rotation,

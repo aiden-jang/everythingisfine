@@ -34,8 +34,8 @@
   --color-dim: #a4b6bc;
   /* Secondary text must remain readable against the deck, including small timestamps. */
   --color-faint: #8da3ab;
-  --color-feed-available: #8dc5a7;
-  --color-feed-unavailable: #e9ad98;
+  --color-feed-available: #92c4a8;
+  --color-feed-unavailable: #dcb3ab;
 
   /* The one named exception, per DESIGN.md Colors / Neutral: it sits on the silhouette where no marker is drawn
      and never encodes a value. Named because an unstated exception becomes a precedent. */
@@ -123,7 +123,7 @@
    readable in one place. Rows and columns only: no flexbox percentage maths anywhere. */
 @layer components {
   .frame {
-    --head-h: calc(68px + env(safe-area-inset-top));
+    --head-h: calc(60px + env(safe-area-inset-top));
     display: grid;
     position: relative; /* the header and the floating panels are absolute against this */
     height: 100dvh; /* never 100vh: the iOS Safari URL bar makes it jump */
@@ -755,6 +755,11 @@
 @media (min-width: 900px) {
   .zone-head {
     padding-inline: 34px;
+  }
+}
+@media (min-width: 768px) {
+  .frame {
+    --head-h: 68px;
   }
 }
 @media (min-width: 1280px) {
