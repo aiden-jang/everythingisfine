@@ -329,9 +329,12 @@ test("clearing search and dismissing a transient location preview keep keyboard 
   await page.goto("/");
   await page.getByRole("button", { name: "Browse stories", exact: true }).click();
   const search = page.getByRole("searchbox", { name: "Find a story", exact: true });
+  await expect(search).toBeFocused();
   await search.fill("Tonga");
   const result = page.locator("#search-story-tonga");
+  await expect(result).toBeEnabled();
   await result.focus();
+  await expect(result).toBeFocused();
   const dismiss = page.getByRole("button", { name: "Dismiss location preview", exact: true });
   await dismiss.press("Enter");
   await expect(result).toBeFocused();

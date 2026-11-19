@@ -86,7 +86,7 @@ export function moonsetBetween(city: SkyCity, start: number, end: number) {
         if (altitude(mid) >= 0) lo = mid;
         else hi = mid;
       }
-      return Math.round((lo + hi) / 120_000) * 60_000;
+      return Math.round((lo + hi) / 2);
     }
     previous = at;
     above = nextAbove;

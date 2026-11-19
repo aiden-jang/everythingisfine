@@ -96,7 +96,7 @@ test("keyboard previews do not move the camera, and date comparisons preserve fr
   expect(before).toBeDefined();
   await story.focus();
   await expect(story).toBeFocused();
-  await expect(page.getByText("Story region · preview")).toBeVisible();
+  await expect(page.getByText("Story location preview", { exact: true })).toBeVisible();
   expect(await camera(page)).toEqual(before);
   await page.getByRole("button", { name: "Locate", exact: true }).click();
   await expect.poll(async () => (await camera(page))?.lon).toBeCloseTo(59.5, 1);
@@ -136,14 +136,14 @@ test.describe("touch discovery", () => {
     await openStories(page, "search");
     await page.getByRole("searchbox", { name: "Find a story" }).fill("Tonga");
     const story = page.locator("#search-story-tonga");
-    await expect(page.getByText("Story region · preview")).toBeHidden();
+    await expect(page.getByText("Story location preview", { exact: true })).toBeHidden();
     await story.dispatchEvent("pointerdown", {
       pointerType: "touch",
       pointerId: 1,
       clientX: 100,
       clientY: 500,
     });
-    await expect(page.getByText("Story region · preview")).toBeVisible();
+    await expect(page.getByText("Story location preview", { exact: true })).toBeVisible();
     await story.dispatchEvent("pointerup", {
       pointerType: "touch",
       pointerId: 1,
@@ -152,7 +152,7 @@ test.describe("touch discovery", () => {
     });
     await story.dispatchEvent("click");
     await expect(story).toBeVisible();
-    await expect(page.getByText("Story region · preview")).toBeVisible();
+    await expect(page.getByText("Story location preview", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Dismiss location preview" }).click();
     await story.tap();
     await expect(page.getByRole("region", { name: "Tonga’s shockwave", exact: true })).toBeVisible();

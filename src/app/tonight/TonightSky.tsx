@@ -289,7 +289,11 @@ export function TonightSky({
             current={current}
             sky={sky}
             onView={pointAtSky}
-            moonset={moonset === null ? undefined : format.clock.format(moonset)}
+            moonset={
+              moonset === null
+                ? undefined
+                : `${at < moonset ? "Sets at" : "Set at"} ${format.clock.format(moonset)}`
+            }
           />
         </>
       )}

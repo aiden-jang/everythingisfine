@@ -34,7 +34,7 @@ export function SkyObjects({
                   <small>
                     {body.lit !== null && `${body.lit}% lit · `}
                     {Math.round(body.altitude)}° above horizon · {bearingLabel(body.azimuth)}
-                    {body.name === "Moon" && moonset && ` · Sets at ${moonset}`}
+                    {body.name === "Moon" && moonset && ` · ${moonset}`}
                   </small>
                 </span>
                 <span>Find</span>
@@ -54,9 +54,7 @@ export function SkyObjects({
             {below.map((body) => (
               <li key={body.name}>
                 <span>{body.name}</span>
-                <small>
-                  {body.name === "Moon" && moonset ? `Below horizon · Set at ${moonset}` : "Below horizon"}
-                </small>
+                <small>Below horizon{body.name === "Moon" && moonset && ` · ${moonset}`}</small>
               </li>
             ))}
           </ul>

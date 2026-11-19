@@ -18,7 +18,7 @@ test("Kīlauea plays the survey and opens USGS footage on the shared globe", asy
   await panel.getByRole("button", { name: "Follow the lava", exact: true }).click();
   await expect(panel.getByRole("heading", { name: "Fissure 8 reopens" })).toBeVisible();
   await panel.getByRole("button", { name: "Pause", exact: true }).click();
-  await panel.getByRole("button", { name: "Ocean entry" }).click();
+  await panel.getByRole("button", { name: "Ocean entry", exact: true }).click();
   await expect(panel.getByRole("heading", { name: "Lava reaches Kapoho Bay" })).toBeVisible();
   await panel.getByRole("button", { name: "Watch USGS overflight" }).click();
   await expect(page.getByRole("img", { name: /USGS field footage/ })).toBeVisible();
@@ -34,7 +34,7 @@ test("Kīlauea keeps the same coastline comparison on globe and map", async ({ p
   await page.emulateMedia({ reducedMotion: "reduce" });
   const { panel, canvas, original } = await openKilauea(page);
   await expect(panel.getByRole("button", { name: "Follow the lava", exact: true })).toBeVisible();
-  await panel.getByRole("button", { name: "Ocean entry" }).click();
+  await panel.getByRole("button", { name: /^Ocean entry · / }).click();
   await expect(panel.getByRole("slider", { name: "Mapped extent date" })).toHaveAttribute(
     "aria-valuetext",
     "Jun 4 · 22:00 HST",
