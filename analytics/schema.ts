@@ -2,7 +2,7 @@ import { searchStories } from "../src/app/storyIndex";
 import { journeys } from "../src/app/journeys/catalogue";
 // Shared browser/Worker contract. Dynamic path segments never enter an event.
 export const APP = "everythingisfine";
-export const HOST = "everythingisfine.aidenjang.com";
+export const HOST = "meanwhile.aidenjang.com";
 export const PAGES = ["globe", "other"] as const;
 export const ACTIONS = [
   "event_opened",

@@ -14,7 +14,11 @@ test("emits a bounded source-specific page for every archived reading", () => {
   assert.match(honolulu, /property="og:site_name" content="meanwhile\."/);
   assert.match(honolulu, /1017.75 hPa at 08:59 UTC/);
   assert.match(honolulu, /Tonga’s shockwave, recorded in Honolulu/);
-  assert.match(honolulu, /\/share\/tonga-PHNL.png/);
+  assert.match(honolulu, /https:\/\/meanwhile\.aidenjang\.com\/share\/tonga-PHNL\.png/);
+  assert.match(
+    honolulu,
+    /property="og:url" content="https:\/\/meanwhile\.aidenjang\.com\/share\/tonga\/PHNL\/539\/"/,
+  );
   assert.equal((honolulu.match(/og:title/g) ?? []).length, 1);
   assert.equal((honolulu.match(/name="description"/g) ?? []).length, 1);
   assert.match(honolulu, /noindex, follow/);

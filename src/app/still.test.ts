@@ -47,12 +47,12 @@ describe("the caption", () => {
       moment: "Live · 2026-08-21 04:12 UTC",
       verdict: "120 earthquakes. 4 cyclones.",
       filter: "M2.0+ · last 24h",
-      host: "everythingisfine.aidenjang.com",
+      host: "meanwhile.aidenjang.com",
     });
     expect(lines[0]).toBe("meanwhile.");
     expect(lines[1]).toBe("120 earthquakes. 4 cyclones.");
     expect(lines[2]).toBe("Live · 2026-08-21 04:12 UTC");
-    expect(lines[3]).toBe("M2.0+ · last 24h · everythingisfine.aidenjang.com");
+    expect(lines[3]).toBe("M2.0+ · last 24h · meanwhile.aidenjang.com");
   });
 
   it("carries the filter, so an empty ocean is not read as a quiet ocean", () => {

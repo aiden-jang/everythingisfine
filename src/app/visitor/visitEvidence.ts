@@ -29,7 +29,7 @@ export function visitEvidence(visit: Visit): VisitEvidence {
     reading: "A place to return to",
     detail: "Playback settings kept on this device.",
     source: "meanwhile.",
-    url: "https://everythingisfine.aidenjang.com/",
+    url: "https://meanwhile.aidenjang.com/",
   };
   if (visit.observation && visit.position.float) {
     const o = visit.observation;

@@ -38,6 +38,12 @@ The repository secret `CLOUDFLARE_API_TOKEN` needs Workers Scripts:Edit for this
 Wrangler infers the account from the token. Keep the token in GitHub secrets; never put it in
 source, a pull request, or a log.
 
+The public origin is `https://meanwhile.aidenjang.com`. Keep both custom domains in
+`wrangler.toml` so deployments retain their DNS and TLS. The Cloudflare zone's Single Redirect
+matches only `everythingisfine.aidenjang.com` and permanently forwards to the new origin
+with the original path and query. The redirect leaves the fragment out of its target so browsers
+carry saved camera and story state forward. Keep the old hostname active for existing links.
+
 ## Troubleshooting
 
 Start with the failed job in [GitHub Actions](https://github.com/aiden-jang/everythingisfine/actions).

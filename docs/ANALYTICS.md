@@ -1,6 +1,6 @@
 # Analytics
 
-everythingisfine.aidenjang.com reports aggregate traffic and a small closed set of actions to Cloudflare
+meanwhile.aidenjang.com reports aggregate traffic and a small closed set of actions to Cloudflare
 Analytics Engine's existing `aidenjang_events` dataset. No additional provider is used.
 
 The public globe keeps Cloudflare Web Analytics for traffic and performance.

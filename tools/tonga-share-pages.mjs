@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 
 const data = JSON.parse(readFileSync(new URL("../src/app/tonga/tonga.json", import.meta.url), "utf8"));
-const origin = "https://everythingisfine.aidenjang.com";
+const origin = "https://meanwhile.aidenjang.com";
 const escape = (value) =>
   String(value).replace(
     /[&<>"']/g,

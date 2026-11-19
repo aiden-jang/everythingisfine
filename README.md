@@ -3,7 +3,7 @@
 An interactive globe for live earthquakes, storms, volcanoes, wildfires, floods, and aurora.
 Explore a region, compare two agencies' earthquake readings, revisit a past day, or share a view.
 
-[Open the app](https://everythingisfine.aidenjang.com) ·
+[Open the app](https://meanwhile.aidenjang.com) ·
 [Case study](docs/case-study.md) ·
 [Architecture](SYSTEM.md) · [Contributing](CONTRIBUTING.md) · [Deployment](DEPLOY.md)
 
