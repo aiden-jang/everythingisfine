@@ -90,7 +90,7 @@
 }
 @media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
   .zones:has([data-float-stage="locate"]) .observatory-sidebar {
-    padding-bottom: 108px;
+    padding-bottom: calc(119px + env(safe-area-inset-bottom));
   }
   .float-discovery {
     gap: 10px;

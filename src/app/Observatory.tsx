@@ -27,6 +27,7 @@ import "./moonfall/moonfall.css";
 import { ObservationDeckShell } from "./observations/ObservationEntry";
 import { ObservatoryEntryActions } from "./ObservatoryEntryActions";
 import { StoryBoundary } from "./StoryBoundary";
+import { StoryLoading } from "./StoryLoading";
 import { StoryDockProvider } from "./observations/StoryDock";
 export interface ObservatoryProps {
   explorer: {
@@ -207,7 +208,7 @@ function ObservatoryContent({
             role={tonight.active || radar.active ? "group" : undefined}
           >
             {floatDive.active ? (
-              <Suspense fallback={<p role="status">Opening Float Dive…</p>}>
+              <Suspense fallback={<StoryLoading>Opening Float Dive…</StoryLoading>}>
                 <FloatDive
                   view={floatDive.view}
                   resume={floatDive.entry}
@@ -233,7 +234,7 @@ function ObservatoryContent({
                 }
               />
             ) : tonight.active ? (
-              <Suspense fallback={<p role="status">Opening Tonight’s Sky…</p>}>
+              <Suspense fallback={<StoryLoading>Opening Tonight’s Sky…</StoryLoading>}>
                 <TonightSky
                   key={tonight.entry.revision}
                   view={tonight.view}

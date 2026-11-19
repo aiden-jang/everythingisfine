@@ -2,6 +2,17 @@
   border-color: transparent;
   padding-inline: 4px;
 }
+.observatory-entry-actions > .observatory-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.observatory-entry-actions > .observatory-primary svg {
+  flex: none;
+}
+.observatory-actions .observatory-primary:focus-visible {
+  outline-color: var(--color-void);
+}
 
 .featured-story {
   position: relative;

@@ -187,7 +187,8 @@ palette. Feed health uses muted green and warm accents with distinct shapes and 
 | Ink / dim / faint | Primary, secondary and supporting text          |
 | Hairline          | Quiet separators and control edges              |
 
-A 2px text-color focus ring with a 2px offset remains visible. Keep the dark teal ground
+A muted 2px focus ring remains visible. Buttons and input controls use an inset ring, and light
+primary buttons use a dark ring. Keep the dark teal ground
 distinct from pure black. Star, moon and eclipsed tokens describe scientific legend swatches;
 they do not become interface accents.
 The atmospheric rim uses the named rim token along the globe silhouette;

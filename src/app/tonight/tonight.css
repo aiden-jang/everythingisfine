@@ -58,9 +58,15 @@
   background: var(--color-ink);
   color: var(--color-void);
 }
+.tonight-invitation .tonight-find:focus-visible {
+  outline-color: var(--color-void);
+}
 @media (max-width: 599px), (min-height: 621px) and (max-width: 899px) {
   .frame[data-presentation="observe"] .zones:has([data-tonight]):has(.tonight-invitation) {
-    grid-template-rows: minmax(145px, 1fr) clamp(450px, 66dvh, 620px);
+    grid-template-rows: minmax(145px, 1fr) min(
+        clamp(450px, 66dvh, 620px),
+        calc(100dvh - var(--head-h) - 145px)
+      );
   }
   .observatory-intro:has(.tonight-invitation) .tonight-heading h2 {
     font-size: 18px;
@@ -69,6 +75,18 @@
 @media (prefers-reduced-motion: no-preference) {
   .frame[data-presentation="observe"] .zones:has([data-tonight]) {
     transition: grid-template-rows 520ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+@media (max-width: 599px) and (max-height: 670px) {
+  .observatory-intro[data-tonight]:has(.tonight-invitation) {
+    gap: 8px;
+  }
+  .tonight-invitation h3 {
+    max-width: none;
+    font-size: clamp(30px, 8.4vw, 38px);
+  }
+  .tonight-invitation :is(p, .observatory-actions) {
+    margin-top: 8px;
   }
 }
 

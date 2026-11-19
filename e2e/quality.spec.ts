@@ -216,8 +216,12 @@ test("a missing globe explains why a still cannot be captured", async ({ page })
   await expect(page.getByText("The globe could not start.", { exact: true })).toBeVisible();
   const capture = await saveImageButton(page);
   await expect(capture).toBeDisabled();
-  await expect(capture).toHaveAccessibleDescription("Image capture is unavailable for this view.");
-  await expect(page.getByText("Image capture is unavailable for this view.", { exact: true })).toBeVisible();
+  const message = "Image and video capture are unavailable for this view.";
+  await expect(capture).toHaveAccessibleDescription(message);
+  await expect(page.getByRole("button", { name: "Record 10-second clip" })).toHaveAccessibleDescription(
+    message,
+  );
+  await expect(page.getByText(message, { exact: true })).toBeVisible();
 });
 
 test("copy feedback belongs to the pinned link that requested it", async ({ page }) => {

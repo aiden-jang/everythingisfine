@@ -31,12 +31,19 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await expect(invitation.getByRole("heading")).toHaveText(/^Look (north|east|south|west)/);
   await expect(sky.locator(".tonight-below")).not.toHaveAttribute("open");
   await expect(sky.getByRole("button", { name: /below horizon/ })).toHaveCount(0);
+  const find = invitation.getByRole("button", {
+    name: `Find ${target === "Moon" ? "the Moon" : target}`,
+    exact: true,
+  });
+  await page.setViewportSize({ width: 320, height: 640 });
+  const findBounds = (await find.boundingBox())!;
+  const playback = (await page.locator(".story-dock").boundingBox())!;
+  expect(findBounds.y + findBounds.height).toBeLessThanOrEqual(playback.y);
+  await page.setViewportSize({ width: 390, height: 844 });
   const projection = page.getByRole("group", { name: "Sky reference projection" });
   await projection.getByRole("button", { name: "Orbit" }).click();
   await expect(projection.getByRole("button", { name: "Orbit" })).toHaveAttribute("aria-pressed", "true");
-  await invitation
-    .getByRole("button", { name: `Find ${target === "Moon" ? "the Moon" : target}`, exact: true })
-    .click();
+  await find.click();
   await expect(invitation).toHaveCount(0);
   await expect(projection.getByRole("button", { name: "Local sky" })).toHaveAttribute("aria-pressed", "true");
   const horizon = page.getByRole("group", { name: "Local horizon" });

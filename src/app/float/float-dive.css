@@ -416,7 +416,7 @@
   .float-transport {
     left: 12px;
     right: 12px;
-    bottom: 49px;
+    bottom: calc(60px + env(safe-area-inset-bottom));
     padding: 5px 12px 8px;
   }
   .float-playback-row {
@@ -426,7 +426,7 @@
     font-size: 12px;
   }
   .zones:has([data-float-dive]) .observatory-sidebar {
-    padding-bottom: 195px;
+    padding-bottom: calc(206px + env(safe-area-inset-bottom));
   }
 }
 @media (max-height: 620px) and (min-width: 600px) {

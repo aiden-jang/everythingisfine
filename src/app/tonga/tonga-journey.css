@@ -319,7 +319,22 @@
 }
 @media (max-width: 599px) {
   .zones[data-tonga-phase="follow"] .replay-inset {
-    inset-block: 26px 62px;
+    inset-block: 28px 68px;
+    max-height: calc(100% - 96px);
+  }
+  .zones[data-tonga-phase="follow"]:has(.replay-inset) .camera-recenter {
+    inset: auto auto calc(var(--stage-inset, 9px) + 5px) 16px;
+  }
+  .zones[data-tonga-phase="follow"]:has(.replay-inset) .replay-stage .stage-readout {
+    top: 6px;
+    bottom: auto;
+    display: flex;
+    gap: 4px 8px;
+    justify-content: flex-start;
+    max-width: calc(100% - 42px);
+  }
+  .zones[data-tonga-phase="follow"]:has(.replay-inset) .replay-stage .stage-ident {
+    display: none;
   }
   .zones[data-tonga-phase="follow"] .story-dock {
     grid-template-columns: minmax(0, 1fr) minmax(92px, max-content);

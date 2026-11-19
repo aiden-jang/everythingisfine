@@ -95,6 +95,11 @@
 }
 
 .radar-clock time {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0 8px;
   color: var(--color-ink);
 }
 

@@ -19,12 +19,17 @@
   width: 100%;
   min-height: 44px;
   padding: 8px;
+  border-radius: 6px;
   text-align: left;
   font-size: var(--text-control);
   cursor: pointer;
 }
-.observatory-options > button:hover {
+.observatory-options > button:hover:not(:disabled) {
   background: var(--color-raised);
+}
+.observatory-options > .observatory-save {
+  justify-content: flex-start;
+  border-color: transparent;
 }
 .observatory-options > button:disabled {
   opacity: 0.5;

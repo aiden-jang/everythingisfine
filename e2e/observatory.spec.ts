@@ -97,6 +97,16 @@ for (const [width, height] of [
     await expect(depth).toHaveAttribute("aria-pressed", "true");
     await expect(stage).toContainText("300 / 600 / 900 km");
     expect(await credit.boundingBox()).toEqual(creditPosition);
+    if (width === 320 || width === 812) {
+      const alignment = await explore.evaluate((button) => {
+        const label = new Range();
+        label.selectNode(button.firstChild!);
+        const text = label.getBoundingClientRect();
+        const arrow = button.querySelector("svg")!.getBoundingClientRect();
+        return Math.abs(text.y + text.height / 2 - arrow.y - arrow.height / 2);
+      });
+      expect(alignment).toBeLessThan(5);
+    }
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: test.info().outputPath(`observe-depth-${width}.png`) });
     await explore.click();

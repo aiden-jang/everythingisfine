@@ -103,13 +103,16 @@
      Windows and Linux. */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--color-faint) transparent;
+    scrollbar-color: color-mix(in srgb, var(--color-faint) 58%, var(--color-deck)) transparent;
   }
 
-  /* Chrome communicates focus by brightness and a ring, never by hue. ~11:1 against Deck. */
   :focus-visible {
-    outline: 2px solid var(--color-ink);
+    outline: 2px solid var(--color-dim);
     outline-offset: 2px;
+  }
+
+  :where(button, input, select, summary):focus-visible {
+    outline-offset: -2px;
   }
 
   /* The companion rule. Without it, clicking the canvas paints a ring nobody asked for. */

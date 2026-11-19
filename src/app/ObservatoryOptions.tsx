@@ -100,8 +100,13 @@ export function ObservatoryOptions({
         >
           {saving ? "Saving image" : "Save image"}
         </button>
-        {!ready && <p id={`${id}-capture-note`}>Image capture is unavailable for this view.</p>}
-        <RecordButton clip={clip} ready={ready} close={() => panel.current?.hidePopover()} />
+        <RecordButton
+          clip={clip}
+          ready={ready}
+          unavailableNote={`${id}-capture-note`}
+          close={() => panel.current?.hidePopover()}
+        />
+        {!ready && <p id={`${id}-capture-note`}>Image and video capture are unavailable for this view.</p>}
         <FullscreenButton />
         <div
           className="explorer-view-options"

@@ -2,12 +2,23 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 import type { Clip } from "./useClip";
 import "./clip.css";
 
-export function RecordButton({ clip, ready, close }: { clip: Clip; ready: boolean; close?: () => void }) {
+export function RecordButton({
+  clip,
+  ready,
+  close,
+  unavailableNote,
+}: {
+  clip: Clip;
+  ready: boolean;
+  close?: () => void;
+  unavailableNote: string;
+}) {
   return (
     <>
       <button
         type="button"
         disabled={!ready || !clip.supported || clip.recording}
+        aria-describedby={ready ? undefined : unavailableNote}
         onClick={() => {
           close?.();
           clip.start();
@@ -15,11 +26,13 @@ export function RecordButton({ clip, ready, close }: { clip: Clip; ready: boolea
       >
         Record 10-second clip
       </button>
-      <p className="clip-hint">
-        {clip.supported
-          ? "Record, then replay or scrub this view. Silent video with its source and date."
-          : "Video recording is unavailable in this browser. Save image still works."}
-      </p>
+      {ready && (
+        <p className="clip-hint">
+          {clip.supported
+            ? "Record, then replay or scrub this view. Silent video with its source and date."
+            : "Video recording is unavailable in this browser. Save image still works."}
+        </p>
+      )}
     </>
   );
 }
