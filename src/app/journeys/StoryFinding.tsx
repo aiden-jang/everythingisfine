@@ -12,7 +12,8 @@ export function StoryFinding({ id, completed }: { id: string; completed: boolean
   const finding = storyFindings[id];
   const heading = useRef<HTMLHeadingElement>(null);
   useLayoutEffect(() => {
-    if (completed) revealReading(heading.current);
+    const reading = heading.current?.closest("#observatory-intro");
+    if (completed && !reading?.contains(document.activeElement)) revealReading(heading.current);
   }, [completed, id]);
   if (!completed || !finding) return null;
   const held = navigation?.current()?.position.moment;

@@ -128,17 +128,18 @@ test("an interrupted story download retries the shared moment once", async ({ pa
 test("a persistent story download failure offers a named recovery view", async ({ page }) => {
   await installFeeds(page, { presentation: "fresh", empty: true });
   await page.emulateMedia({ reducedMotion: "reduce" });
-  let attempts = 0;
-  await page.route(/\/a\/RuptureStage-[^/]+\.js$/, (route) => {
-    attempts++;
-    return route.abort();
+  let navigations = 0;
+  page.on("request", (request) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame()) navigations++;
   });
+  await page.route(/\/a\/RuptureStage-[^/]+\.js$/, (route) => route.abort());
   await page.goto("/#v=observe&story=rupture");
+  await expect.poll(() => navigations).toBe(2);
   const status = page.getByRole("region", { name: "Story unavailable" });
   await expect(status.getByRole("heading")).toHaveText("Couldn’t open Rupture Reveal.");
   await expect(status).toBeFocused();
   await expect(status.getByRole("button", { name: "Try again" })).toBeVisible();
-  expect(attempts).toBe(2);
   await status.getByRole("button", { name: "Back to stories" }).click();
   await expect(page.getByRole("region", { name: "Story catalogue", exact: true })).toBeVisible();
+  expect(navigations).toBe(2);
 });
