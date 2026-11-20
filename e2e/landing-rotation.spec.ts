@@ -286,7 +286,8 @@ test.describe("landing marker inspection", () => {
     const projected = (await markerPosition())!;
     await page.mouse.move(projected.x, projected.y);
     await expect(label).toContainText("Observed offshore");
-    await expect(label).toContainText("UTC");
+    await expect(page.getByRole("tooltip")).toHaveAccessibleName(/Observed offshore.*UTC/);
+    await expect(globe).toHaveAccessibleDescription(/Observed offshore.*UTC/);
     await page.mouse.move(0, 0);
     await expect(label).toBeEmpty();
     await page.touchscreen.tap(projected.x, projected.y);
@@ -309,6 +310,8 @@ test.describe("landing marker inspection", () => {
       .toContain("Observed offshore");
     await globe.press("Escape");
     await expect(label).toBeEmpty();
+    await expect(page.getByRole("tooltip")).toHaveCount(0);
+    await expect(globe).toHaveAccessibleDescription(/Use the left and right arrows/);
     expect(await camera(page)).toEqual({ ...point, zoom: 1 });
     await globe.press("ArrowRight");
     await expect(label).toContainText("Observed offshore");

@@ -116,6 +116,7 @@ export function overlayPlacement({
       if (!at || !found) {
         if (node === tooltip.current && tooltipKey) {
           tooltipKey = "";
+          node.hidden = true;
           node.replaceChildren();
           el.removeAttribute("aria-describedby");
         }
@@ -173,8 +174,9 @@ export function overlayPlacement({
             gap.textContent = distance;
             node.append(gap);
           }
+          node.hidden = false;
           if (landing) {
-            el.setAttribute("aria-describedby", "globe-marker-preview");
+            el.setAttribute("aria-describedby", node.id);
             tipWidth = node.offsetWidth;
             tipHeight = node.offsetHeight;
           }
