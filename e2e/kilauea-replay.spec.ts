@@ -61,6 +61,7 @@ test("Kīlauea keeps the same coastline comparison on globe and map", async ({ p
   await compare.press("ArrowLeft");
   await expect(compare).toHaveValue("99");
   await panel.getByRole("button", { name: "Keep this comparison" }).click();
+  await expect(panel.getByRole("button", { name: "Comparison kept", exact: true })).toBeVisible();
   const kept = await page.evaluate(() => JSON.parse(localStorage.getItem("eif.visits-v2")!).saved[0]);
   expect(kept.position.moment).toMatchObject({ chapter: "compare", choice: "99" });
   await panel.getByRole("button", { name: "Back to replay", exact: true }).click();

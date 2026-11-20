@@ -123,6 +123,7 @@ test("a kept Katrina peak reopens exactly paused without the invitation", async 
   await panel.getByRole("button", { name: "Follow the storm", exact: true }).click();
   await panel.getByRole("button", { name: "Inspect offshore peak", exact: true }).click();
   await panel.getByRole("button", { name: "Keep this fix", exact: true }).click();
+  await expect(panel.getByRole("button", { name: "Fix kept", exact: true })).toBeVisible();
   const saved = await page.evaluate(() => JSON.parse(localStorage.getItem("eif.visits-v2")!).saved[0]);
   expect(saved.position.moment).toMatchObject({ at: Date.parse("2005-08-28T18:00:00Z"), chapter: "compare" });
   await page.keyboard.press("Escape");
