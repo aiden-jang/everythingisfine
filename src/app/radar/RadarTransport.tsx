@@ -28,18 +28,17 @@ export function RadarTransport({
       target.style.removeProperty("--radar-dock-height");
     };
   }, [target]);
-  if (target)
-    return createPortal(
-      <div
-        ref={container}
-        className="radar-dock"
-        role="group"
-        aria-label="Radar scan controls"
-        onKeyDown={dock}
-      >
-        {children}
-      </div>,
-      target,
-    );
-  return layer ? <>{children}</> : <StoryDock label="Radar playback">{children}</StoryDock>;
+  if (!layer) return <StoryDock label="Radar playback">{children}</StoryDock>;
+  const controls = (
+    <div
+      ref={container}
+      className={target ? "radar-dock" : undefined}
+      role="group"
+      aria-label="Radar scan controls"
+      onKeyDown={target ? dock : undefined}
+    >
+      {children}
+    </div>
+  );
+  return target ? createPortal(controls, target) : controls;
 }

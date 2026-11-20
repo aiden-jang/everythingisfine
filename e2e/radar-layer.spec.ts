@@ -108,7 +108,7 @@ test("a short phone keeps the radar heading and coverage in view when the inspec
     "Recent scans · worldwide network",
   );
   await expect(page.locator(".layer-inspector-heading > p").first()).toBeInViewport({ ratio: 1 });
-  const controls = page.getByRole("region", { name: "Storm radar playback" });
+  const controls = page.getByRole("group", { name: "Radar scan controls" });
   const slider = controls.getByRole("slider", { name: "Radar scan time" });
   await expect(slider).toBeEnabled();
   await slider.press("Home");
