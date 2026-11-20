@@ -1,4 +1,4 @@
-import { Vector3, type PerspectiveCamera } from "three";
+import { Matrix4, Vector3, type PerspectiveCamera } from "three";
 import { DEG } from "../geo/sphere";
 import type { SkyLook, TonightView } from "../geo/tonight";
 
@@ -9,6 +9,10 @@ export function createLocalSkyLabels(canvas: HTMLCanvasElement, up: Vector3) {
   const ray = new Vector3();
   const point = new Vector3();
   let labels: HTMLElement | null = null;
+  const transform = new Matrix4();
+  const lastTransform = new Matrix4();
+  let lastArc: Element | null = null;
+  let lastTrail: readonly SkyLook[] | undefined;
 
   function project(camera: PerspectiveCamera, look: SkyLook) {
     const bearing = look.azimuth * DEG;
@@ -35,18 +39,27 @@ export function createLocalSkyLabels(canvas: HTMLCanvasElement, up: Vector3) {
       east.set(Math.cos(lon), 0, -Math.sin(lon));
       north.crossVectors(up, east);
       camera.getWorldDirection(forward);
-      const arc = labels.parentElement?.querySelector("[data-radiant-arc]");
-      if (arc) {
+    }
+    const arc = labels.parentElement?.querySelector("[data-sky-arc]") ?? null;
+    if (arc) {
+      const trail = view?.nightTrail?.points ?? view?.radiantTrail;
+      transform.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+      if (arc !== lastArc || trail !== lastTrail || !lastTransform.equals(transform)) {
         let path = "";
         let joined = false;
-        for (const look of view.radiantTrail ?? []) {
-          const at = look.altitude > 0 ? project(camera, look) : null;
+        for (const look of trail ?? []) {
+          const at = look.altitude >= 0 ? project(camera, look) : null;
           if (at) path += `${joined ? "L" : "M"}${at.x.toFixed(2)} ${at.y.toFixed(2)} `;
           joined = at !== null;
         }
         arc.setAttribute("d", path);
+        lastTransform.copy(transform);
+        lastTrail = trail;
       }
+    } else {
+      lastTrail = undefined;
     }
+    lastArc = arc;
     const placed: { x: number; y: number }[] = [];
     const preferred = (label: HTMLElement) => Number(label.dataset["body"] === view?.targetName);
     const ordered = Array.from(labels.children) as HTMLElement[];

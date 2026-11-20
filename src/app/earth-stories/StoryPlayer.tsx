@@ -20,6 +20,7 @@ import { point } from "./types";
 import { StoryOverlay } from "./StoryOverlay";
 import { StoryCompass } from "./StoryCompass";
 import { StoryChoices } from "./StoryChoices";
+import { useMooringInspection } from "./useMooringInspection";
 import { useShorelineComparison } from "./useShorelineComparison";
 import { StorySources } from "./StorySources";
 import { useTerrainSection } from "./useTerrainSection";
@@ -60,7 +61,7 @@ export function StoryPlayer({
   const [site, setSite] = useState(initial?.chapter?.startsWith("site:") ? initial.chapter.slice(5) : "");
   const arrive = useCallback(() => setReady(true), []);
   let restoredAt = initial?.at;
-  if ((id === "ozone" || id === "spring") && restoredAt !== undefined)
+  if ((id === "ozone" || id === "spring" || id === "glacier") && restoredAt !== undefined)
     restoredAt = Date.parse(
       `${new Date(data.frames[0]!.at).getUTCFullYear()}${new Date(restoredAt).toISOString().slice(4)}`,
     );
@@ -86,6 +87,7 @@ export function StoryPlayer({
   )
     holding.current = { frame: requested, element: image.element, caption: current.caption };
   const { frame, element, caption } = holding.current;
+  const moorings = useMooringInspection(frame.moorings, clock.pause);
   const section = useTerrainSection(data.terrain, initial?.chapter, () => {
     clock.pause();
     panel.onMap(true);
@@ -146,7 +148,14 @@ export function StoryPlayer({
       ...(shoreline.framing ? { comparisonFrame: shoreline.framing } : {}),
       sky: localSky,
       ...(frame.section && curtainImage.element
-        ? { curtain: { ...frame.section, down: true, image: curtainImage.element } }
+        ? {
+            curtain: {
+              ...frame.section,
+              down: true,
+              image: curtainImage.element,
+              moorings: moorings.visible,
+            },
+          }
         : id === "dust" && slice && curtainImage.element
           ? {
               curtain: {
@@ -198,6 +207,7 @@ export function StoryPlayer({
     remember,
     curtainImage.element,
     lunarImage.element,
+    moorings.visible,
     status,
   ]);
   useJourneyGestures(clock.pause, clock.resume, clock.position < duration);
@@ -242,6 +252,7 @@ export function StoryPlayer({
       />
       {section.controls}
       {section.chart}
+      {moorings.controls}
       {id === "atmospheric-river" && (
         <div className="observatory-actions">
           <button type="button" onClick={onRadar}>
@@ -264,7 +275,7 @@ export function StoryPlayer({
                 if (visible) clock.seek(nearestFrame(data, visible.at));
               }
               panel.onMap(false);
-              setSkyMode(!skyMode);
+              setSkyMode(panel.map || !skyMode);
             }}
           >
             {skyMode && !panel.map ? "Back to Earth" : "See from my city"}
@@ -278,7 +289,8 @@ export function StoryPlayer({
               type="button"
               aria-pressed={slice}
               onClick={() => {
-                clock.seek(nearestFrame(data, Date.parse("2020-06-23T12:00:00Z")));
+                if (!slice) clock.seek(nearestFrame(data, Date.parse("2020-06-23T12:00:00Z")));
+                else clock.pause();
                 setSlice(!slice);
               }}
             >

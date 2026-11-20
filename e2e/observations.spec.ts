@@ -50,8 +50,8 @@ test("Tide Watch preserves its measured sample across projections and recovers w
     if (!predictions) attempts++;
     if (attempts === 1 && !predictions) return route.fulfill({ status: 503 });
     const rows = Array.from({ length: 7 }, (_, index) => ({
-      t: `2026-11-06 12:${String(index * 6).padStart(2, "0")}`,
-      v: (index / 10 + (predictions ? 0.1 : 0.3)).toFixed(1),
+      t: `2026-11-06 12:${String(index * 6 + (predictions && index === 3 ? 1 : 0)).padStart(2, "0")}`,
+      v: (index / 10 + (predictions ? (index === 6 ? 0.45 : 0.1) : 0.3)).toFixed(2),
     }));
     return route.fulfill({ json: { [predictions ? "predictions" : "data"]: rows } });
   });
@@ -93,6 +93,9 @@ test("Tide Watch preserves its measured sample across projections and recovers w
   const slider = tide.getByRole("slider", { name: "Observation time" });
   await slider.press("Home");
   await expect(tide.getByText("0.30 m", { exact: true })).toBeVisible();
+  const bracket = tide.locator(".observation-tide-bracket");
+  await expect(bracket).toBeVisible();
+  await expect(tide.getByText("0.20 m above prediction")).toBeVisible();
   const time = await slider.getAttribute("aria-valuetext");
   await tide.getByRole("button", { name: "Map", exact: true }).click();
   await expect(tide.getByRole("button", { name: "Map", exact: true })).toHaveAttribute(
@@ -100,9 +103,15 @@ test("Tide Watch preserves its measured sample across projections and recovers w
     "true",
   );
   await expect(slider).toHaveAttribute("aria-valuetext", time!);
+  await expect(tide.getByText("0.20 m above prediction")).toBeVisible();
+  await slider.press("ArrowRight");
+  await expect(tide.getByText("No matching prediction")).toBeVisible();
+  await expect(bracket).toHaveCount(0);
   await tide.getByRole("button", { name: "Globe", exact: true }).click();
   await slider.press("End");
   await expect(tide.getByText("0.90 m", { exact: true })).toBeVisible();
+  await expect(tide.getByText("0.15 m below prediction")).toBeVisible();
+  await expect(bracket).toBeVisible();
   await page.setViewportSize({ width: 812, height: 375 });
   await expect(slider).toBeInViewport({ ratio: 1 });
   expect(await canvas.evaluate((element, before) => element === before, original)).toBe(true);

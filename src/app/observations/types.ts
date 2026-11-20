@@ -34,7 +34,13 @@ export interface Measurement {
   value: string;
 }
 
+export interface MooringSection {
+  topDepth: number;
+  readings: readonly { lon: number; depth: number; temperature: number; days: number }[];
+}
+
 export interface ObservationFrame {
+  moorings?: MooringSection;
   at: number;
   timeLabel?: string;
   dateTime?: string;
@@ -121,6 +127,7 @@ export interface ObservationView {
     exaggeration: number;
     image: HTMLImageElement;
     down?: boolean;
+    moorings?: MooringSection | undefined;
   };
   terrain?: { grid: ObservationTerrain; progress: number };
   fault?: { model: ObservationFault; seconds: number; amount: number };

@@ -263,7 +263,9 @@ export function ObservationPlayer({
               </dl>
             </details>
           )}
-          {data.series && <ObservationChart series={data.series} at={frame.at} units={data.units} />}
+          {data.series && (
+            <ObservationChart series={data.series} at={frame.at} units={data.units} tide={frame.tide} />
+          )}
           {id === "air" && (
             <ObservationInspection frame={frame} inspection={inspection} source={metadata.source} />
           )}

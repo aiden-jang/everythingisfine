@@ -115,6 +115,17 @@ for (const [id, title, chapter, choice] of stories) {
     await panel.getByRole("button", { name: chapter, exact: true }).click();
     await expect(panel.getByText("Loading the selected observations…", { exact: true })).toHaveCount(0);
     await expect(panel.getByRole("button", { name: /^(Play|Replay)$/ })).toBeVisible();
+    if (id === "nino") {
+      const reveal = panel.getByRole("button", { name: "Show measured depths" });
+      await reveal.focus();
+      await reveal.press("Space");
+      await expect(reveal).toHaveAttribute("aria-pressed", "true");
+      await panel.getByText("Read monthly means", { exact: true }).click();
+      await panel.getByLabel("Mooring longitude").selectOption("-110");
+      await expect(panel.getByText("28.91 °C · 31 days", { exact: true })).toBeVisible();
+      await panel.getByRole("button", { name: "Late 1998" }).click();
+      await expect(panel.getByText("20.17 °C · 31 days", { exact: true })).toBeVisible();
+    }
     const selected = await slider.inputValue();
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await painted(page);
@@ -126,6 +137,13 @@ for (const [id, title, chapter, choice] of stories) {
       "true",
     );
     await expect(slider).toHaveValue(selected);
+    if (id === "nino") {
+      await expect(panel.getByRole("button", { name: "Show measured depths" })).toHaveAttribute(
+        "aria-pressed",
+        "true",
+      );
+      await expect(panel.getByText("20.17 °C · 31 days", { exact: true })).toBeVisible();
+    }
     await painted(page);
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: test.info().outputPath(`${id}-map.png`) });

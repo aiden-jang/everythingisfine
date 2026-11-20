@@ -44,6 +44,10 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await expect(projection.getByRole("button", { name: "Orbit" })).toHaveAttribute("aria-pressed", "true");
   await find.click();
   await expect(invitation).toHaveCount(0);
+  const nightPath = page.getByRole("img", {
+    name: `${target}’s path above the horizon in Tokyo through the selected night`,
+  });
+  await expect(nightPath.locator("path")).toHaveAttribute("d", /^M.*L/);
   await expect(slider).toBeInViewport({ ratio: 1 });
   const directions = page.getByRole("button", { name: "Directions", exact: true });
   await expect(page.getByRole("button", { name: "Look south" })).toBeHidden();
@@ -76,14 +80,17 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await expect(horizon).toContainText("Facing E · 90°");
   await projection.getByRole("button", { name: "Orbit" }).click();
   await expect(horizon).toContainText("Tokyo · Orbit");
+  await expect(nightPath).toHaveCount(0);
   await expect(horizon.locator(".sky-reference-marker")).toBeVisible();
   await expect(time).toHaveAttribute("datetime", sunrise!);
   await projection.getByRole("button", { name: "Local sky" }).click();
   await expect(horizon).toContainText("Facing E · 90°");
+  await expect(nightPath).toHaveCount(1);
   await expect(time).toHaveAttribute("datetime", sunrise!);
   const sunriseReadings = await targets.innerText();
   await sky.getByRole("button", { name: "Meteor Nights", exact: true }).click();
   const linkedMeteor = page.getByRole("region", { name: "Meteor Nights" });
+  await expect(nightPath).toHaveCount(0);
   await linkedMeteor.getByRole("combobox", { name: "Shower" }).selectOption("2026-12-13");
   await linkedMeteor.getByRole("button", { name: "Jump to a dark window" }).click();
   await horizon.getByRole("button", { name: "Look west" }).click();
@@ -98,6 +105,7 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
   await linkedMeteor.getByRole("combobox", { name: "City" }).selectOption("London");
   await linkedMeteor.getByRole("button", { name: "Sky view", exact: true }).click();
   await expect(city).toHaveValue("London");
+  await expect(nightPath).toHaveCount(0);
   await expect(horizon).toContainText("London · Local horizon");
   await expect(time).not.toHaveAttribute("datetime", sunrise!);
   await city.selectOption("Tokyo");

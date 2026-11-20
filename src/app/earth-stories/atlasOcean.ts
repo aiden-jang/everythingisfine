@@ -141,12 +141,21 @@ export async function reefArchive(): Promise<EarthStoryData> {
 
 export async function ninoStory(): Promise<EarthStoryData> {
   type BuoyFrame = { day: string; image: string; observations: [number, number, number, number][] };
-  const data = await atlasArchive<{ frames: BuoyFrame[] }>("nino");
+  const data = await atlasArchive<{ frames: BuoyFrame[]; depth: [number, number] }>("nino");
   const wrap = (lon: number) => ((lon + 540) % 360) - 180;
   const frames = data.frames.map((f): StoryFrame => ({
     at: date(f.day),
     timeLabel: `${f.day.slice(0, 7)} · monthly mean`,
     caption: "1–501 m depth · exaggerated 4,000×",
+    moorings: {
+      topDepth: data.depth[0],
+      readings: f.observations.map(([lon, depth, temperature, days]) => ({
+        lon: wrap(lon),
+        depth,
+        temperature,
+        days,
+      })),
+    },
     section: {
       image: atlasImage(f.image),
       points: Array.from({ length: 71 }, (_, i) => ({ lon: wrap(130 + i * 2), lat: 0 })),

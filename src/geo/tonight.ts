@@ -24,6 +24,7 @@ export interface TonightView {
   targetName?: string | undefined;
   sunCover?: number;
   radiantTrail?: readonly SkyLook[];
+  nightTrail?: { points: readonly SkyLook[]; following: boolean } | undefined;
 }
 
 const HOUR = 3_600_000;

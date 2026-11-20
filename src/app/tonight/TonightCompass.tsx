@@ -57,9 +57,21 @@ export function TonightCompass({
           {projection.map ? "Earth reference" : orbit ? "Orbit" : "Local horizon"}
         </span>
       </div>
-      {view?.radiantTrail && (
+      {!fromEarth && view?.radiantTrail && (
         <svg className="meteor-arc" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-          <path data-radiant-arc="" pathLength="1" />
+          <path data-sky-arc="" data-radiant-arc="" pathLength="1" />
+        </svg>
+      )}
+      {!fromEarth && view?.nightTrail && target && (
+        <svg
+          key={target.name}
+          className="night-arc"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          role="img"
+          aria-label={`${target.name}’s path above the horizon in ${view.city.name} through the selected night`}
+        >
+          <path data-sky-arc="" pathLength="1" />
         </svg>
       )}
       <div className="tonight-labels" data-sky-labels="" aria-hidden="true">
@@ -124,7 +136,9 @@ export function TonightCompass({
             Facing {bearingLabel(view.look.azimuth)} · {Math.round(view.look.azimuth) % 360}°
             {target && (
               <small className="tonight-target-bearing">
-                {target.name} · {target.altitude > 0 ? bearingLabel(target.azimuth) : "Below horizon"}
+                {target.name}
+                {view.nightTrail && " · Night path"} ·{" "}
+                {target.altitude > 0 ? bearingLabel(target.azimuth) : "Below horizon"}
               </small>
             )}
           </span>
@@ -155,7 +169,11 @@ export function TonightCompass({
                 aria-label={`Look ${name}`}
                 aria-pressed={view.look.azimuth === azimuth && view.look.altitude === 16}
                 onClick={() => {
-                  onView({ ...view, look: { azimuth, altitude: 16 } });
+                  onView({
+                    ...view,
+                    look: { azimuth, altitude: 16 },
+                    nightTrail: view.nightTrail && { ...view.nightTrail, following: false },
+                  });
                   if (toggle.current?.getClientRects().length) {
                     setDirections(false);
                     toggle.current.focus({ preventScroll: true });

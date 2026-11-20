@@ -76,7 +76,8 @@ export default defineConfig({
             id.includes("slab.json") ||
             id.includes("stars.json") ||
             id.includes("figures.json") ||
-            id.endsWith("/src/geo/tonight.ts")
+            id.endsWith("/src/geo/tonight.ts") ||
+            id.endsWith("/src/geo/nightTrail.ts")
           )
             return undefined;
           /*

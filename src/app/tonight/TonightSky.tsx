@@ -12,6 +12,7 @@ import {
   type TonightView,
 } from "../../geo/tonight";
 import type { LunarDeparture, TonightPresentation } from "../../globe/scenePresentation";
+import { nightTrail } from "../../geo/nightTrail";
 import { sunElevation } from "../../geo/sun";
 import { useObservatoryEscape } from "../useObservatoryEscape";
 import { useStoryNavigation } from "../journeys/StoryNavigation";
@@ -33,7 +34,7 @@ function depart(view: TonightView, camera?: CameraState) {
     scroll: document.getElementById("observatory-intro")?.scrollTop ?? 0,
   };
   const aim = moon.altitude > 0 ? { ...view, look: aimAt(moon), targetName: moon.name } : view;
-  return { ...origin, aim: { ...aim, lunarDeparture: origin } };
+  return { ...origin, aim: { ...aim, nightTrail: undefined, lunarDeparture: origin } };
 }
 
 export function TonightSky({
@@ -118,10 +119,14 @@ export function TonightSky({
   );
   const { target } = skyTargets(current.bodies);
   const sun = sunElevation(city.lon, city.lat, at);
-  const pointAtSky = (next: TonightView) => {
+  function findBody(body: TonightView["bodies"][number]) {
+    const points =
+      current.targetName === body.name && current.nightTrail
+        ? current.nightTrail.points
+        : nightTrail(city, body.name, night.start, night.end);
     onLocalSky();
-    onView(next);
-  };
+    onView({ ...current, look: aimAt(body), targetName: body.name, nightTrail: { points, following: true } });
+  }
   const sky = sun >= -0.833 ? "Daylight" : sun > -18 ? "Twilight" : "Dark sky";
 
   useLayoutEffect(() => back.current?.focus({ preventScroll: true }), []);
@@ -207,7 +212,7 @@ export function TonightSky({
                 type="button"
                 className="tonight-find"
                 onClick={() => {
-                  pointAtSky({ ...current, look: aimAt(target), targetName: target.name });
+                  findBody(target);
                   setObserving(true);
                   requestAnimationFrame(() =>
                     document.querySelector<HTMLButtonElement>(".tonight-objects button")?.focus(),
@@ -270,7 +275,16 @@ export function TonightSky({
                   aria-valuetext={format.local.format(at)}
                   onChange={(event) => {
                     const at = night.start + event.currentTarget.valueAsNumber * MINUTE;
-                    onView({ ...current, at, bodies: skyBodies(city, at) });
+                    const bodies = skyBodies(city, at);
+                    const followed =
+                      current.nightTrail?.following &&
+                      bodies.find((body) => body.name === current.targetName);
+                    onView({
+                      ...current,
+                      at,
+                      bodies,
+                      look: followed && followed.altitude > 0 ? aimAt(followed) : current.look,
+                    });
                     setObserving(true);
                   }}
                 />
@@ -288,7 +302,7 @@ export function TonightSky({
           <SkyObjects
             current={current}
             sky={sky}
-            onView={pointAtSky}
+            onFind={findBody}
             moonset={
               moonset === null
                 ? undefined

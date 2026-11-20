@@ -1,5 +1,7 @@
 .saved-collection {
   position: fixed;
+  margin: 0;
+  max-width: none;
   z-index: 12;
   inset: calc(var(--head-h) + 20px) 24px auto auto;
   max-height: calc(100dvh - var(--head-h) - 84px);

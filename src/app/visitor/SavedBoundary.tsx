@@ -10,14 +10,29 @@ export function SavedPanel({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const dialog = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   useLayoutEffect(() => {
-    const title = heading.current;
-    if (title && !title.closest("section")?.contains(document.activeElement))
-      title.focus({ preventScroll: true });
+    const panel = dialog.current!;
+    const phone = window.matchMedia("(max-width: 650px)");
+    const show = () => {
+      const focused = document.activeElement;
+      if (panel.open) panel.close();
+      if (phone.matches) panel.showModal();
+      else panel.show();
+      if (focused instanceof HTMLElement && panel.contains(focused)) focused.focus({ preventScroll: true });
+      else heading.current?.focus({ preventScroll: true });
+    };
+    show();
+    phone.addEventListener("change", show);
+    return () => {
+      phone.removeEventListener("change", show);
+      panel.close();
+    };
   }, []);
   return createPortal(
-    <section
+    <dialog
+      ref={dialog}
       id="saved-observations"
       className="saved-collection"
       aria-label="Saved observations"
@@ -27,6 +42,10 @@ export function SavedPanel({
         if (event.key !== "Escape") return;
         event.preventDefault();
         event.stopPropagation();
+        onClose();
+      }}
+      onCancel={(event) => {
+        event.preventDefault();
         onClose();
       }}
     >
@@ -43,7 +62,7 @@ export function SavedPanel({
         <p>Kept on this device.</p>
       </div>
       {children}
-    </section>,
+    </dialog>,
     document.querySelector(".frame") ?? document.body,
   );
 }

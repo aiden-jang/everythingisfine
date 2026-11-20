@@ -84,7 +84,7 @@ test("two kept Tonga readings reopen independently without replacing the globe",
   const canvas = await page.locator("#globe-view canvas").elementHandle();
   const open = page.locator("#open-saved-observations");
   await open.click();
-  const collection = page.getByRole("region", { name: "Saved observations", exact: true });
+  const collection = page.getByRole("dialog", { name: "Saved observations", exact: true });
   const cards = collection.getByRole("article");
   await expect(cards).toHaveCount(2);
   await cards

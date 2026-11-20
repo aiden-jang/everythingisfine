@@ -18,6 +18,7 @@ export function HeaderNavigation({ exploring }: { exploring: boolean }) {
   if (!navigation) return null;
   const saved = opened || !!navigation.restoredCollection;
   const close = () => {
+    document.querySelector<HTMLDialogElement>("#saved-observations")?.close();
     navigation.dismissRestoration();
     setSaved(false);
     trigger.current?.focus({ preventScroll: true });

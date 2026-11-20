@@ -6,7 +6,7 @@ import { faultStory, fireStory, northStory } from "./groundStories";
 import { satelliteStory } from "./satelliteStories";
 import { cometPosition, cometSky } from "./cometStory";
 import { skyCities } from "../tonight/cities";
-import { curtainGeometry } from "../../globe/observationCurtain";
+import { curtainGeometry, mooringGeometry } from "../../globe/observationCurtain";
 import transect from "../../sources/earth-stories/dust-transect.json";
 import { point } from "./types";
 
@@ -110,5 +110,26 @@ test("the lidar curtain keeps its measured ground coordinates and declared heigh
   const radius = Math.hypot(vertices.getX(1), vertices.getY(1), vertices.getZ(1));
   expect(radius - 1.013).toBeCloseTo((15 * 80) / 6371, 5);
   expect(geometry.index!.count).toBe(18);
+  geometry.dispose();
+});
+
+test("mooring dots follow sensor depths, with the dateline profile present on both map edges", () => {
+  const geometry = mooringGeometry(
+    {
+      topDepth: 1,
+      readings: [
+        { lon: -110, depth: 1, temperature: 23.49, days: 31 },
+        { lon: -180, depth: 500, temperature: 8, days: 31 },
+      ],
+    },
+    4000,
+  );
+  const ll = geometry.getAttribute("aLonLat");
+  const vertices = geometry.getAttribute("position");
+  const radius = (i: number) => Math.hypot(vertices.getX(i), vertices.getY(i), vertices.getZ(i));
+  expect([...ll.array]).toEqual([-110, 0, -180, 0, 180, 0]);
+  expect(radius(0)).toBeCloseTo(1.013, 5);
+  expect(radius(1) - radius(0)).toBeCloseTo((0.499 * 4000) / 6371, 5);
+  expect(radius(2)).toBeCloseTo(radius(1), 5);
   geometry.dispose();
 });

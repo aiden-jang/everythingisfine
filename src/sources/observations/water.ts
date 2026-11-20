@@ -47,18 +47,18 @@ export const tide: ObservationSource = {
     const measured = tides(actual, "data");
     const predictionsAvailable = Array.isArray((forecast as Record<string, unknown> | null)?.["predictions"]);
     const prediction = tides(forecast, "predictions");
+    const predictionByTime = new Map(prediction);
     const levels = [...measured, ...prediction].map(([, level]) => level);
     const min = Math.floor(Math.min(0, ...levels));
     const max = Math.ceil(Math.max(min + 1, ...levels));
     const timeline = measured.filter((_, index) => index % 3 === 0 || index === measured.length - 1);
     const target = { lon: port.lon, lat: port.lat, zoom: 2.7 };
     const frames = timeline.map(([at, level]) => {
-      const expected = sampleAt(prediction, at);
-      const valid = expected && Math.abs(expected[0] - at) < 4 * MINUTE ? expected[1] : undefined;
+      const predicted = predictionByTime.get(at);
       const surface = { ...port, lift: Math.max(0, level + 1) * 0.013 };
       return {
         at,
-        tide: { observed: level, predicted: valid, min, max },
+        tide: { observed: level, predicted, min, max },
         paths: [{ points: [port, surface], color: 0x65d3dd }],
         marks: [
           ...ports.map((station) => ({ ...station, size: 9, color: 0x899ab2 })),
@@ -69,8 +69,8 @@ export const tide: ObservationSource = {
           {
             label: "Predicted tide",
             value:
-              valid !== undefined
-                ? `${valid.toFixed(2)} m`
+              predicted !== undefined
+                ? `${predicted.toFixed(2)} m`
                 : predictionsAvailable
                   ? "No prediction for this time"
                   : "Prediction source unavailable",

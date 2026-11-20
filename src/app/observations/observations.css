@@ -149,6 +149,19 @@
   stroke: var(--color-dim);
 }
 
+.observation-tide-bracket {
+  stroke: var(--color-ink);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.observation-tide-difference {
+  margin: 6px 0 0;
+  color: var(--color-ink);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
 .observation-details summary {
   min-height: 44px;
   display: list-item;

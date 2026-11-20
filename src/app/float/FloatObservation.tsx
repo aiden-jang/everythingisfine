@@ -26,14 +26,14 @@ function ObservationEditor({ view, sampleIndex }: { view: FloatDiveView; sampleI
         <button
           type="button"
           aria-disabled={Boolean(kept && !changed)}
-          onClick={() => {
+          onClick={async () => {
             if (kept && !changed) return;
             const current = navigation.current();
             view.pause();
             const reading = view.profile.samples[index];
             if (current?.id !== "float" || !reading) return;
             setLastAttempt(index);
-            const saved = navigation.library.save({
+            const saved = await navigation.library.save({
               ...current,
               note: note.trim(),
               position: {

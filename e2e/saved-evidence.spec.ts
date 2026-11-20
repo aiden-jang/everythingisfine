@@ -17,14 +17,14 @@ test("a kept pressure reading exports its source card and reopens the same stati
   );
   const savedTrigger = page.locator("#open-saved-observations");
   await savedTrigger.click();
-  await expect(page.getByRole("region", { name: "Saved observations", exact: true })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Saved observations", exact: true })).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByRole("region", { name: "Saved observations", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Saved observations", exact: true })).toHaveCount(0);
   await expect(savedTrigger).toBeFocused();
   await expect(story.getByRole("region", { name: "Kept Tonga readings" })).toBeVisible();
   await page.goto("/");
   await page.locator("#open-saved-observations").click();
-  const collection = page.getByRole("region", { name: "Saved observations", exact: true });
+  const collection = page.getByRole("dialog", { name: "Saved observations", exact: true });
   const card = collection.getByRole("article");
   await expect(card).toContainText("1017.75 hPa");
   await expect(card).toContainText("Honolulu");
@@ -119,7 +119,7 @@ test("two Float readings retain separate notes, focus and scroll after a phone r
   await page.reload();
   await expect(depth).toHaveValue("200");
   await page.locator("#open-saved-observations").click();
-  const collection = page.getByRole("region", { name: "Saved observations", exact: true });
+  const collection = page.getByRole("dialog", { name: "Saved observations", exact: true });
   await expect(collection.getByRole("article")).toHaveCount(2);
   for (const [index, message] of [
     [201, "Next sample"],
@@ -165,7 +165,7 @@ test("Saved can close while its first download is pending and opens cleanly afte
   });
   await page.goto("/");
   const open = page.locator("#open-saved-observations");
-  const collection = page.getByRole("region", { name: "Saved observations", exact: true });
+  const collection = page.getByRole("dialog", { name: "Saved observations", exact: true });
   try {
     await open.click();
     await expect(collection.getByRole("heading", { name: "What you noticed." })).toBeFocused();

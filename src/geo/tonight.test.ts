@@ -1,5 +1,6 @@
 import { expect, test } from "vitest";
 import { horizontal, localNight, moonsetBetween, skyBodies, type SkyCity } from "./tonight";
+import { nightTrail } from "./nightTrail";
 import { sunElevation } from "./sun";
 
 const newYork: SkyCity = { name: "New York", lat: 40.7128, lon: -74.006, zone: "America/New_York" };
@@ -58,4 +59,29 @@ test("polar daylight keeps an evening-to-morning slider with no invented crossin
     start: Date.parse("2026-06-21T16:00:00Z"),
     end: Date.parse("2026-06-22T04:00:00Z"),
   });
+});
+
+test("a selected body's night path shares the time slider's positions and ends at the level horizon", () => {
+  const { start, end } = localNight(newYork, Date.parse("2026-11-06T18:00:00Z"));
+  for (const name of ["Jupiter", "Moon"]) {
+    const points = nightTrail(newYork, name, start, end);
+    const at = (time: number) => {
+      const { azimuth, altitude } = skyBodies(newYork, time).find((body) => body.name === name)!;
+      return { azimuth, altitude };
+    };
+    expect(points[0]).toEqual(at(start));
+    expect(points.at(-1)).toEqual(at(end));
+    expect(points.some((point) => point.altitude === 0)).toBe(true);
+    for (let i = 1; i < points.length; i++) {
+      expect(points[i]!.altitude * points[i - 1]!.altitude).toBeGreaterThanOrEqual(0);
+    }
+  }
+});
+
+test("a polar observing window never invents an above-horizon path for a planet below it", () => {
+  const pole = { name: "South Pole", lon: 0, lat: -90, zone: "UTC" };
+  const { start, end } = localNight(pole, Date.parse("2026-11-06T18:00:00Z"));
+  const path = nightTrail(pole, "Jupiter", start, end);
+  expect(path.length).toBeGreaterThan(2);
+  expect(path.every(({ altitude }) => altitude < 0)).toBe(true);
 });

@@ -44,7 +44,7 @@ for (const width of [320, 390, 1440]) {
       await page.screenshot({ path: test.info().outputPath(`search-${width}.png`) });
     const saved = page.getByRole("button", { name: "Saved observations and recent visits" });
     await saved.click();
-    await expect(page.getByRole("region", { name: "Saved observations", exact: true })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Saved observations", exact: true })).toBeVisible();
     if (process.env["EIF_CAPTURE_UI"])
       await page.screenshot({ path: test.info().outputPath(`saved-${width}.png`) });
     await page.keyboard.press("Escape");

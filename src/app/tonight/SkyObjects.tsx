@@ -1,16 +1,16 @@
-import { aimAt, bearingLabel, type TonightView } from "../../geo/tonight";
+import { bearingLabel, type TonightView } from "../../geo/tonight";
 import { skyTargets } from "./skyTargets";
 
 export function SkyObjects({
   current,
   sky,
-  onView,
+  onFind,
   moonset,
 }: {
   current: TonightView;
   sky: string;
   moonset?: string | undefined;
-  onView: (view: TonightView) => void;
+  onFind: (body: TonightView["bodies"][number]) => void;
 }) {
   const { visible, below } = skyTargets(current.bodies);
   return (
@@ -27,7 +27,7 @@ export function SkyObjects({
                 type="button"
                 aria-label={`Find ${body.name}`}
                 aria-pressed={current.targetName === body.name}
-                onClick={() => onView({ ...current, look: aimAt(body), targetName: body.name })}
+                onClick={() => onFind(body)}
               >
                 <span>
                   <strong>{body.name}</strong>

@@ -12,7 +12,8 @@ function KeptItem({ visit, onClose, returned }: { visit: Visit; onClose: () => v
   const evidence = visitEvidence(visit);
   const key = savedVisitKey(visit);
   const savedNote = visit.note ?? visit.observation?.note ?? "";
-  const [note, setNote] = useState(() => noteDrafts.get(key) ?? savedNote);
+  const [draft, setDraft] = useState(() => noteDrafts.get(key));
+  const note = draft ?? savedNote;
   const [noteStatus, setNoteStatus] = useState("");
   const hasDraft = note !== savedNote;
   const [exporting, setExporting] = useState(false);
@@ -34,7 +35,7 @@ function KeptItem({ visit, onClose, returned }: { visit: Visit; onClose: () => v
           value={note}
           onChange={(event) => {
             const value = event.currentTarget.value;
-            setNote(value);
+            setDraft(value === savedNote ? undefined : value);
             setNoteStatus("");
             if (value === savedNote) noteDrafts.delete(key);
             else noteDrafts.set(key, value);
@@ -43,17 +44,13 @@ function KeptItem({ visit, onClose, returned }: { visit: Visit; onClose: () => v
         <button
           type="button"
           aria-disabled={!hasDraft}
-          onClick={() => {
+          onClick={async () => {
             if (!hasDraft) return;
             const value = note.trim();
-            const saved = navigation.library.save({
-              ...visit,
-              note: value,
-              ...(visit.observation ? { observation: { ...visit.observation, note: value } } : {}),
-            });
+            const saved = await navigation.library.editNote(key, value);
             setNoteStatus(saved ? "Note saved." : "Couldn’t save this note.");
-            if (saved) {
-              setNote(value);
+            if (saved && noteDrafts.get(key)?.trim() === value) {
+              setDraft(undefined);
               noteDrafts.delete(key);
             }
           }}
@@ -119,7 +116,13 @@ export function SavedCollection({ onClose }: { onClose: () => void }) {
   const navigation = useStoryNavigation();
   const restore = navigation?.restoredCollection;
   useLayoutEffect(() => {
-    if (restore) restoreCollection(restore);
+    if (!restore) return;
+    const panel = document.getElementById("saved-observations");
+    if (panel instanceof HTMLDialogElement && !panel.open) {
+      const id = requestAnimationFrame(() => restoreCollection(restore));
+      return () => cancelAnimationFrame(id);
+    }
+    restoreCollection(restore);
   }, [restore]);
   if (!navigation) return null;
   const { library } = navigation;

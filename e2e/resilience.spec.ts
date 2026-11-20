@@ -14,6 +14,11 @@ test("phone story loading, retry and return work when feeds are unavailable", as
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("/");
+  const saved = page.getByRole("button", { name: "Saved observations and recent visits" });
+  await saved.tap();
+  await expect(page.locator("#saved-observations:modal")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(saved).toBeFocused();
   await page.getByRole("button", { name: /Feed status/ }).click();
   const feeds = page.getByRole("region", { name: "Background feed status" });
   await expect(feeds).toContainText("USGS");

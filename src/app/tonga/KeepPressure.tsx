@@ -32,7 +32,7 @@ export function KeepPressure({
         type="button"
         disabled={reading === null}
         aria-disabled={kept || reading === null}
-        onClick={() => {
+        onClick={async () => {
           const current = navigation.current();
           if (kept || current?.id !== "tonga" || reading === null) return;
           setLastAttempt({ station: station.id, at });
@@ -50,7 +50,7 @@ export function KeepPressure({
               },
             },
           };
-          if (navigation.library.save(next)) onKept?.();
+          if (await navigation.library.save(next)) onKept?.();
         }}
       >
         <KeepMark kept={kept} />

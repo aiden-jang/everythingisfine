@@ -1,19 +1,22 @@
 import { useMemo } from "react";
-import type { ObservationSeries } from "./types";
+import type { ObservationFrame, ObservationSeries } from "./types";
 import { summarizeSeries } from "./seriesSummary";
 import { layerTime } from "../layerTime";
 
 const WIDTH = 260;
 const HEIGHT = 66;
+const metres = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 });
 
 export function ObservationChart({
   series,
   at,
   units,
+  tide,
 }: {
   series: readonly ObservationSeries[];
   at: number;
   units?: string | undefined;
+  tide?: ObservationFrame["tide"];
 }): JSX.Element | null {
   const chart = useMemo(() => {
     const points = series.flatMap(({ samples }) => samples);
@@ -26,6 +29,7 @@ export function ObservationChart({
     const y = (value: number) => HEIGHT - 3 - ((HEIGHT - 6) * (value - min)) / (max - min || 1);
     return {
       x,
+      y,
       min,
       max,
       lines: series.map(({ label, samples }) => ({
@@ -35,6 +39,9 @@ export function ObservationChart({
     };
   }, [series]);
   if (!chart) return null;
+  const cursor = Math.min(WIDTH - 1, Math.max(1, chart.x(at)));
+  const bracket = cursor + (cursor < WIDTH / 2 ? 5 : -5);
+  const difference = tide?.predicted === undefined ? undefined : tide.observed - tide.predicted;
   const label = (value: number) =>
     `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${units ?? ""}`;
   return (
@@ -44,12 +51,13 @@ export function ObservationChart({
         {chart.lines.map(({ label: key, path }) => (
           <polyline key={key} points={path} />
         ))}
-        <line
-          x1={Math.min(WIDTH - 1, Math.max(1, chart.x(at)))}
-          x2={Math.min(WIDTH - 1, Math.max(1, chart.x(at)))}
-          y1="1"
-          y2={HEIGHT - 1}
-        />
+        <line x1={cursor} x2={cursor} y1="1" y2={HEIGHT - 1} />
+        {tide?.predicted !== undefined && (
+          <path
+            className="observation-tide-bracket"
+            d={`M${cursor} ${chart.y(tide.observed)}H${bracket}V${chart.y(tide.predicted)}H${cursor}`}
+          />
+        )}
       </svg>
       <div className="observation-chart-key">
         <span>
@@ -62,6 +70,15 @@ export function ObservationChart({
           {label(chart.min)} to {label(chart.max)}
         </span>
       </div>
+      {tide && (
+        <p className="observation-tide-difference">
+          {difference === undefined
+            ? "No matching prediction"
+            : difference === 0
+              ? "Observed level matches prediction"
+              : `${metres.format(Math.abs(difference))} m ${difference > 0 ? "above" : "below"} prediction`}
+        </p>
+      )}
       <details className="observation-details">
         <summary>Read the chart</summary>
         {series.map((entry) => {
