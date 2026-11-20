@@ -35,7 +35,7 @@ describe("measured Argo profile", () => {
 
   it("describes the measured endpoints without assuming the shallow water is warmer", () => {
     expect(profileTakeaway(samples).heading).toContain("warmer than");
-    expect(profileTakeaway(samples).reading).toContain("4.00 °C at 5 m");
+    expect(profileTakeaway(samples).reading).toContain("4.00\u00a0°C at 5\u00a0m");
     const cold = samples.map((sample) => ({ ...sample, temperature: -sample.temperature }));
     expect(profileTakeaway(cold).heading).toContain("colder than");
     const flat = samples.map((sample) => ({ ...sample, temperature: 2 }));
@@ -50,11 +50,11 @@ describe("measured Argo profile", () => {
     ];
     const takeaway = profileTakeaway(profile);
     expect(takeaway.heading).toContain("warmer than");
-    expect(takeaway.reading).toContain("5.60 °C at 5 m");
+    expect(takeaway.reading).toContain("5.60\u00a0°C at 5\u00a0m");
     expect(takeaway.finding.index).toBe(1);
     expect(takeaway.finding.heading).toBe("The warmest water was below the surface.");
-    expect(takeaway.finding.reading).toContain("6.90 °C at 62 m");
-    expect(takeaway.finding.reading).toContain("shallowest sample was 5.60 °C");
+    expect(takeaway.finding.reading).toContain("6.90\u00a0°C at 62\u00a0m");
+    expect(takeaway.finding.reading).toContain("shallowest sample was 5.60\u00a0°C");
   });
 
   it("identifies tied interior maxima and selects an actual representative sample", () => {
@@ -67,7 +67,7 @@ describe("measured Argo profile", () => {
     const { finding } = profileTakeaway(profile);
     expect(finding.index).toBe(2);
     expect(finding.heading).toBe("The warmest samples were below the surface.");
-    expect(finding.reading).toContain("7.00 °C at 60 m, one of 2 samples at the same maximum");
+    expect(finding.reading).toContain("7.00\u00a0°C at 60\u00a0m, one of 2 samples at the same maximum");
   });
 
   it("keeps flat, surface-warmest, and deep-warmest findings grounded in their endpoints", () => {
@@ -82,7 +82,7 @@ describe("measured Argo profile", () => {
       const profile = samples.map((sample, at) => ({ ...sample, temperature: values[at]! }));
       const takeaway = profileTakeaway(profile);
       expect(takeaway.finding).toEqual({ heading: takeaway.heading, reading: takeaway.reading, index });
-      expect(takeaway.finding.reading).not.toContain("62 m");
+      expect(takeaway.finding.reading).not.toContain("62\u00a0m");
       expect(takeaway.finding.heading).not.toContain("below the surface");
     }
   });
@@ -120,6 +120,6 @@ describe("measured Argo profile", () => {
     const { finding } = profileTakeaway(profile.samples);
     expect(profile.samples[finding.index]!.temperature).toBe(6.896);
     expect(Math.round(profile.samples[finding.index]!.depth)).toBe(62);
-    expect(finding.reading).toContain("6.90 °C at 62 m");
+    expect(finding.reading).toContain("6.90\u00a0°C at 62\u00a0m");
   });
 });

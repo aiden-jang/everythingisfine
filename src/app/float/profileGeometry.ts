@@ -65,7 +65,7 @@ export function profileTakeaway(samples: readonly ArgoSample[]) {
         ? "warmer than"
         : "colder than";
   const heading = `The shallowest sample was ${comparison} the deepest one.`;
-  const reading = `${shallow.temperature.toFixed(2)} °C at ${Math.round(shallow.depth).toLocaleString()} m, compared with ${deep.temperature.toFixed(2)} °C at ${Math.round(deep.depth).toLocaleString()}\u00a0m.`;
+  const reading = `${shallow.temperature.toFixed(2)}\u00a0°C at ${Math.round(shallow.depth).toLocaleString()}\u00a0m, compared with ${deep.temperature.toFixed(2)}\u00a0°C at ${Math.round(deep.depth).toLocaleString()}\u00a0m.`;
   const maximum = Math.max(...samples.map((sample) => sample.temperature));
   const warmest = samples.flatMap((sample, index) => (sample.temperature === maximum ? [index] : []));
   const interior = maximum > Math.max(deep.temperature, shallow.temperature);
@@ -77,7 +77,7 @@ export function profileTakeaway(samples: readonly ArgoSample[]) {
           warmest.length === 1
             ? "The warmest water was below the surface."
             : "The warmest samples were below the surface.",
-        reading: `${peak.temperature.toFixed(2)} °C at ${Math.round(peak.depth).toLocaleString()} m${warmest.length > 1 ? `, one of ${warmest.length} samples at the same maximum` : ""}; the shallowest sample was ${shallow.temperature.toFixed(2)} °C at ${Math.round(shallow.depth).toLocaleString()}\u00a0m.`,
+        reading: `${peak.temperature.toFixed(2)}\u00a0°C at ${Math.round(peak.depth).toLocaleString()}\u00a0m${warmest.length > 1 ? `, one of ${warmest.length} samples at the same maximum` : ""}; the shallowest sample was ${shallow.temperature.toFixed(2)}\u00a0°C at ${Math.round(shallow.depth).toLocaleString()}\u00a0m.`,
         index,
       }
     : { heading, reading, index };
