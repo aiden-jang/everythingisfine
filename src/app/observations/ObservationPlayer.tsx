@@ -8,6 +8,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { nearest } from "../../sources/observations/common";
 import { observations, type ObservationId } from "./catalogue";
 import type { ObservationFrame, ObservationSource, ObservationView } from "./types";
+import { RiverReading, useRiverGauge } from "./RiverReading";
 import { ObservationChart } from "./ObservationChart";
 import { DeepTimePin } from "./DeepTimePin";
 import { useObservationData, useObservationImage } from "./useObservationData";
@@ -66,6 +67,8 @@ export function ObservationPlayer({
   const canHold = id === "deep" || id === "swell";
   const inspection = useObservationInspection(frame);
   const inspect = inspection.pick;
+  const river = useRiverGauge(frame, initial?.chapter);
+  const { gauge, shown, pick } = river;
   const presented = useRef<ObservationFrame | null>(null);
   const readiness = observationReadiness({
     hasFrame: !!frame,
@@ -103,10 +106,11 @@ export function ObservationPlayer({
         ? {
             kind: "observation",
             target: (map ? data.mapTarget : undefined) ?? frame.camera ?? data.target,
-            frame,
+            frame: shown ?? frame,
             image: element,
             sky,
             ...(id === "air" ? { onPick: inspect, pickOnGlobe: true } : {}),
+            ...(id === "river" ? { onPick: pick, pickOnGlobe: true } : {}),
             ...(!map && playing && frame.camera ? { follow: frame.camera } : {}),
             ...(data.lens ? { lens: data.lens, arrive: regionalArrival } : {}),
           }
@@ -116,7 +120,7 @@ export function ObservationPlayer({
     if (frame)
       remember?.({
         choice: option,
-        chapter: horizon ? "horizon" : photo ? "photo" : "",
+        chapter: gauge ? `gauge:${gauge.id}` : horizon ? "horizon" : photo ? "photo" : "",
         ...(id === "orbit" ? { city: option } : {}),
       });
   }, [
@@ -136,6 +140,9 @@ export function ObservationPlayer({
     playing,
     preparing,
     readiness,
+    gauge,
+    shown,
+    pick,
   ]);
 
   useEffect(() => {
@@ -201,7 +208,12 @@ export function ObservationPlayer({
       {frame && data && (
         <>
           <StoryDock>
-            <div className="observation-transport">
+            <div
+              className="observation-transport"
+              data-drift-opening={
+                (id === "iceberg" && index === 0 && selectedAt === null && !playing) || undefined
+              }
+            >
               <span>
                 {id === "lightning" && frame === latest ? "Latest available scan" : metadata.time}
                 {" · "}
@@ -232,7 +244,11 @@ export function ObservationPlayer({
                       id === "iceberg" && index === 0 && selectedAt === null ? "Follow the drift" : undefined
                     }
                     onClick={() => {
-                      if (!playing && index === frames.length - 1) setSelectedAt(frames[0]!.at);
+                      if (
+                        !playing &&
+                        (index === frames.length - 1 || (id === "iceberg" && selectedAt === null))
+                      )
+                        setSelectedAt(frames[0]!.at);
                       setPlaying(!playing);
                     }}
                   />
@@ -263,9 +279,19 @@ export function ObservationPlayer({
               </dl>
             </details>
           )}
-          {data.series && (
-            <ObservationChart series={data.series} at={frame.at} units={data.units} tide={frame.tide} />
-          )}
+          {data.series &&
+            (frame.gauges ? (
+              <RiverReading
+                at={frame.at}
+                gauges={frame.gauges}
+                series={data.series}
+                selection={river}
+                current={state === "ready"}
+                pause={() => setPlaying(false)}
+              />
+            ) : (
+              <ObservationChart series={data.series} at={frame.at} units={data.units} tide={frame.tide} />
+            ))}
           {id === "air" && (
             <ObservationInspection frame={frame} inspection={inspection} source={metadata.source} />
           )}

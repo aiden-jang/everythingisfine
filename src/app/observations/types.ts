@@ -10,6 +10,7 @@ export interface GeoPoint {
 }
 
 export interface ObservationMark extends GeoPoint {
+  id?: string;
   reading?: Measurement;
   size?: number;
   color?: number;
@@ -39,7 +40,15 @@ export interface MooringSection {
   readings: readonly { lon: number; depth: number; temperature: number; days: number }[];
 }
 
+export interface RiverGaugeReading {
+  id: string;
+  label: string;
+  available: boolean;
+  value: number | undefined;
+}
+
 export interface ObservationFrame {
+  gauges?: readonly RiverGaugeReading[];
   moorings?: MooringSection;
   at: number;
   timeLabel?: string;
@@ -81,6 +90,9 @@ export interface ObservationTerrain {
 }
 
 export interface ObservationSeries {
+  id?: string;
+  gapAfter?: number;
+  secondary?: boolean;
   label: string;
   samples: readonly (readonly [at: number, value: number])[];
 }

@@ -135,16 +135,6 @@
   stroke: var(--color-hairline);
 }
 
-.observation-chart polyline {
-  stroke: var(--color-ink);
-  stroke-width: 1.25;
-}
-
-.observation-chart polyline:nth-of-type(2) {
-  stroke: var(--color-faint);
-  stroke-dasharray: 3 2;
-}
-
 .observation-chart line {
   stroke: var(--color-dim);
 }
@@ -344,4 +334,85 @@
   font-size: 20px;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
+}
+
+.chart-series-labels,
+.chart-series-labels > span {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+}
+
+.chart-swatch {
+  width: 16px;
+  border-top: 2px solid currentColor;
+}
+
+[data-secondary] > .chart-swatch {
+  border-top-style: dashed;
+}
+
+.observation-chart .chart-trace {
+  stroke: var(--color-ink);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+}
+
+.observation-chart .chart-trace[data-secondary] {
+  stroke: var(--color-faint);
+  stroke-dasharray: 3 2;
+}
+
+.observation-chart[data-river] .chart-trace {
+  opacity: 0.55;
+}
+
+.observation-chart[data-river] .chart-trace[data-active],
+.observation-chart .chart-sample {
+  stroke: var(--color-ink);
+  stroke-width: 2;
+  opacity: 1;
+}
+
+.observation-chart .chart-sample {
+  fill: var(--color-void);
+}
+
+.river-gauges {
+  display: grid;
+  gap: 4px;
+}
+
+.river-gauges button {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  text-align: start;
+}
+
+.river-gauges button[data-highlighted] {
+  border-color: var(--color-faint);
+  background: var(--color-raised);
+}
+
+.river-gauges strong {
+  font-weight: 550;
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+
+.river-reading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: var(--text-control);
+}
+
+.river-reading > [role="status"] {
+  flex-basis: 100%;
+  color: var(--color-dim);
 }

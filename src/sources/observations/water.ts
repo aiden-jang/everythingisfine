@@ -1,5 +1,6 @@
 import type { ObservationData, ObservationSource } from "../../app/observations/types";
-import { HOUR, MINUTE, request, sampleAt, utc } from "./common";
+import { HOUR, MINUTE, request, utc } from "./common";
+import { riverBasins, riverUnit } from "../../app/observations/riverGauges";
 
 const TIDE = "https://api.tidesandcurrents.noaa.gov/api/prod/datagetter";
 const RIVERS = "https://api.waterdata.usgs.gov/ogcapi/v0/collections";
@@ -92,33 +93,6 @@ export const tide: ObservationSource = {
   },
 };
 
-const basins = [
-  {
-    id: "hudson",
-    label: "Hudson River · New York",
-    stations: [
-      { id: "01327750", label: "Fort Edward" },
-      { id: "01358000", label: "Green Island" },
-    ],
-  },
-  {
-    id: "potomac",
-    label: "Potomac River · Mid-Atlantic",
-    stations: [
-      { id: "01613000", label: "Hancock" },
-      { id: "01646500", label: "Little Falls" },
-    ],
-  },
-  {
-    id: "colorado",
-    label: "Colorado River · Grand Canyon",
-    stations: [
-      { id: "09380000", label: "Lees Ferry" },
-      { id: "09402500", label: "Grand Canyon" },
-    ],
-  },
-] as const;
-
 async function gauge(
   station: { id: string; label: string },
   start: number,
@@ -152,14 +126,14 @@ async function gauge(
         : [];
     })
     .sort(([a], [b]) => a - b);
-  return { lon, lat, label: station.label, samples };
+  return { lon, lat, ...station, samples, byTime: new Map(samples) };
 }
 
 export const river: ObservationSource = {
-  options: basins,
+  options: riverBasins,
   refreshMs: 15 * MINUTE,
   async load(option, signal): Promise<ObservationData> {
-    const basin = basins.find(({ id }) => id === option) ?? basins[0];
+    const basin = riverBasins.find(({ id }) => id === option) ?? riverBasins[0];
     const end = Date.now();
     const results = await Promise.allSettled(
       basin.stations.map((station) => gauge(station, end - 24 * HOUR, end, signal)),
@@ -169,46 +143,38 @@ export const river: ObservationSource = {
     const times = [...new Set(stations.flatMap(({ samples }) => samples.map(([at]) => at)))].sort(
       (a, b) => a - b,
     );
-    const frames = times
-      .filter((_, index) => index % 2 === 0 || index === times.length - 1)
-      .map((at) => {
-        const values = stations.map((station) => {
-          const sample = sampleAt(station.samples, at);
-          return {
-            station,
-            value: sample && Math.abs(sample[0] - at) <= 15 * MINUTE ? sample[1] : undefined,
-          };
-        });
-        return {
-          at,
-          marks: values.map(({ station, value }) => ({
-            ...station,
-            color: value === undefined ? 0x899ab2 : 0x6bcfdc,
-            size: value === undefined ? 10 : 11 + Math.log10(1 + Math.max(0, value)) * 3,
-          })),
-          measurements: basin.stations.map(({ label }) => {
-            const value = values.find(({ station }) => station.label === label)?.value;
-            return {
-              label,
-              value:
-                value !== undefined
-                  ? `${Math.round(value).toLocaleString()} ft³/s`
-                  : stations.some((station) => station.label === label)
-                    ? "No reading at this time"
-                    : "Gauge unavailable",
-            };
-          }),
-        };
+    const frames = times.map((at) => {
+      const gauges = basin.stations.map(({ id, label }) => {
+        const station = stations.find((entry) => entry.id === id);
+        return { id, label, available: !!station, value: station?.byTime.get(at) };
       });
+      return {
+        at,
+        gauges,
+        marks: stations.map(({ id, lat, lon, byTime }) => ({
+          id,
+          lat,
+          lon,
+          size: 11,
+          color: byTime.has(at) ? 0x89b3bf : 0x899ab2,
+        })),
+      };
+    });
     const first = stations[0]!;
     const last = stations.at(-1)!;
     return {
       target: { lon: (first.lon + last.lon) / 2, lat: (first.lat + last.lat) / 2, zoom: 2.8 },
       frames,
       initial: frames.length - 1,
-      units: "ft³/s",
-      series: stations.map(({ label, samples }) => ({ label, samples })),
-      note: "Provisional USGS discharge. Markers sit at the gauges. The plots share one scale and clock.",
+      units: riverUnit,
+      series: stations.map(({ id, label, samples }) => ({
+        id,
+        label,
+        samples,
+        gapAfter: 15 * MINUTE,
+        secondary: id === basin.stations[1].id,
+      })),
+      note: "Provisional USGS discharge. Markers sit at the gauges. The chart uses one scale and clock.",
     };
   },
 };

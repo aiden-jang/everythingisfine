@@ -251,3 +251,31 @@
 #explorer-stories .featured-story[data-feature="tonga"] img {
   object-position: center;
 }
+
+.shared-story-compact {
+  display: none;
+}
+
+@media (orientation: landscape) and (max-height: 440px) and (min-width: 600px) {
+  .shared-story {
+    margin-block: 4px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .shared-story-message {
+    display: none;
+  }
+
+  .shared-story-compact {
+    display: block;
+  }
+
+  .shared-story-compact summary {
+    min-height: 44px;
+    align-content: center;
+    cursor: pointer;
+    color: var(--color-dim);
+  }
+}

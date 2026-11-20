@@ -5,9 +5,12 @@ import { savedVisitKey, type Visit } from "./library";
 import "./visitor.css";
 import { layerTime, storyObservationTime } from "../layerTime";
 import { useRef } from "react";
+import { discharge, riverGauge } from "../observations/riverGauges";
 
 const title = (id: string) => searchStories.find((story) => story.id === id)?.title ?? id;
 export function visitNote(visit: Visit) {
+  const river = visit.position.river;
+  if (river) return `${riverGauge(river.gauge)?.label} · ${discharge(river.value)} · ${layerTime(river.at)}`;
   if (visit.observation) {
     const { at, depth, temperature, salinity } = visit.observation;
     return `${layerTime(at)} · ${Math.round(depth).toLocaleString()} m · ${temperature.toFixed(2)} °C · ${salinity.toFixed(3)} salinity`;
@@ -119,13 +122,27 @@ export function SaveVisit() {
           const visit = navigation.current();
           const previous =
             visit && navigation.library.saved.find((entry) => savedVisitKey(entry) === savedVisitKey(visit));
-          if (visit)
+          if (!visit) return;
+          if (visit.id === "river" && visit.position.moment) {
+            const { at: _, ...basin } = visit.position.moment;
+            void _;
+            navigation.library.save({
+              ...visit,
+              position: { moment: basin },
+              ...(previous?.note ? { note: previous.note } : {}),
+            });
+          } else {
             navigation.library.save({ ...visit, ...(previous?.note ? { note: previous.note } : {}) });
+          }
         }}
       >
         {navigation.library.saved.some((entry) => savedVisitKey(entry) === navigation.active)
-          ? "Update saved view"
-          : "Save view"}
+          ? navigation.active === "river"
+            ? "Update river bookmark"
+            : "Update saved view"
+          : navigation.active === "river"
+            ? "Bookmark river"
+            : "Save view"}
       </button>
       <span role="status" aria-label="Saved view status">
         {navigation.library.notice}

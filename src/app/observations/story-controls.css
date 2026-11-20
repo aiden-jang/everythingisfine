@@ -335,3 +335,21 @@
     flex: 1 1 4ch;
   }
 }
+
+@media (orientation: landscape) and (max-height: 440px) and (min-width: 600px) {
+  .story-dock:has([data-drift-opening]) {
+    width: fit-content;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .observation-transport[data-drift-opening] {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: 12px;
+  }
+
+  [data-drift-opening] .observation-scrub {
+    display: none;
+  }
+}

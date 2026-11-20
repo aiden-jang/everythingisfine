@@ -7,16 +7,33 @@ const WIDTH = 260;
 const HEIGHT = 66;
 const metres = new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 3 });
 
+function trace(entry: ObservationSeries, x: (at: number) => number, y: (v: number) => number) {
+  let previous = -Infinity;
+  return entry.samples
+    .map(([at, value]) => {
+      const point = `${x(at).toFixed(1)} ${y(value).toFixed(1)}`;
+      const gap = at - previous > (entry.gapAfter ?? Infinity);
+      const move = previous === -Infinity || gap;
+      previous = at;
+      return move ? `M${point}h.01` : `L${point}`;
+    })
+    .join(" ");
+}
+
 export function ObservationChart({
   series,
   at,
   units,
   tide,
+  station,
+  river,
 }: {
   series: readonly ObservationSeries[];
   at: number;
   units?: string | undefined;
   tide?: ObservationFrame["tide"];
+  station?: string | undefined;
+  river?: boolean;
 }): JSX.Element | null {
   const chart = useMemo(() => {
     const points = series.flatMap(({ samples }) => samples);
@@ -32,9 +49,10 @@ export function ObservationChart({
       y,
       min,
       max,
-      lines: series.map(({ label, samples }) => ({
-        label,
-        path: samples.map(([t, v]) => `${x(t).toFixed(1)},${y(v).toFixed(1)}`).join(" "),
+      lines: series.map((entry, index) => ({
+        ...entry,
+        secondary: entry.secondary ?? index === 1,
+        path: trace(entry, x, y),
       })),
     };
   }, [series]);
@@ -44,14 +62,24 @@ export function ObservationChart({
   const difference = tide?.predicted === undefined ? undefined : tide.observed - tide.predicted;
   const label = (value: number) =>
     `${value.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${units ?? ""}`;
+  const selected = series
+    .find((entry) => entry.id === station && station)
+    ?.samples.find(([time]) => time === at);
   return (
-    <div className="observation-chart">
+    <div className="observation-chart" data-river={river || undefined}>
       <svg viewBox={`0 0 ${WIDTH} ${HEIGHT}`} aria-hidden="true">
         <path d={`M1 1V${HEIGHT - 1}H${WIDTH - 1}`} />
-        {chart.lines.map(({ label: key, path }) => (
-          <polyline key={key} points={path} />
+        {chart.lines.map(({ id, label, path, secondary }) => (
+          <path
+            key={label}
+            d={path}
+            className="chart-trace"
+            data-secondary={secondary || undefined}
+            data-active={(station && id === station) || undefined}
+          />
         ))}
         <line x1={cursor} x2={cursor} y1="1" y2={HEIGHT - 1} />
+        {selected && <circle cx={cursor} cy={chart.y(selected[1])} r="2.75" className="chart-sample" />}
         {tide?.predicted !== undefined && (
           <path
             className="observation-tide-bracket"
@@ -60,12 +88,18 @@ export function ObservationChart({
         )}
       </svg>
       <div className="observation-chart-key">
-        <span>
-          {chart.lines
-            .filter(({ path }) => path)
-            .map(({ label: key }) => key)
-            .join(" · ")}
-        </span>
+        {!river && (
+          <span className="chart-series-labels">
+            {chart.lines
+              .filter(({ path }) => path)
+              .map(({ label, secondary }) => (
+                <span key={label} data-secondary={secondary || undefined}>
+                  <i className="chart-swatch" aria-hidden="true" />
+                  {label}
+                </span>
+              ))}
+          </span>
+        )}
         <span>
           {label(chart.min)} to {label(chart.max)}
         </span>
@@ -83,6 +117,7 @@ export function ObservationChart({
         <summary>Read the chart</summary>
         {series.map((entry) => {
           const summary = summarizeSeries(entry, at);
+          const exact = river ? entry.samples.find(([t]) => t === at) : undefined;
           if (!summary) return null;
           return (
             <section key={entry.label} aria-label={entry.label}>
@@ -94,7 +129,11 @@ export function ObservationChart({
                 {label(summary.min)} to {label(summary.max)}.
               </p>
               <p>
-                Nearest recorded sample: {label(summary.selected[1])} · {layerTime(summary.selected[0])}.
+                {river
+                  ? exact
+                    ? `Selected reading: ${label(exact[1])} · ${layerTime(exact[0])}.`
+                    : "No reading at the selected time."
+                  : `Nearest recorded sample: ${label(summary.selected[1])} · ${layerTime(summary.selected[0])}.`}
               </p>
             </section>
           );

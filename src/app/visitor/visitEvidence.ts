@@ -1,3 +1,4 @@
+import { discharge, gaugeUrl, riverGauge } from "../observations/riverGauges";
 import { lunarTraverses } from "../../sources/moonfall/traverses";
 import type { Visit } from "./library";
 import { earthStories } from "../earth-stories/catalogue";
@@ -44,6 +45,20 @@ export function visitEvidence(visit: Visit): VisitEvidence {
       detail: `${Math.round(o.depth).toLocaleString()} m · ${o.salinity.toFixed(3)} salinity. Depth estimated from pressure.`,
       source: "Argo / Marine Institute",
       url: "https://doi.org/10.17882/42182",
+    };
+  }
+  const river = visit.position.river;
+  const gauge = river && riverGauge(river.gauge);
+  if (river && gauge) {
+    return {
+      ...base,
+      kind: "Measured river discharge",
+      place: gauge.label,
+      time: layerTime(river.at),
+      reading: discharge(river.value),
+      detail: "Provisional discharge at the selected gauge.",
+      source: "USGS Water Data",
+      url: gaugeUrl(gauge.id),
     };
   }
   const moment = visit.position.moment;

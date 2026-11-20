@@ -3,12 +3,14 @@ import { searchStories } from "../storyIndex";
 import { readStoryMoment, writeStoryMoment, type StoryMoment } from "../observations/storyMoment";
 import type { SkyLook } from "../../geo/tonight";
 import type { MoonfallProgress } from "../../globe/moonfall/scene";
+import { riverGauge } from "../observations/riverGauges";
 import type { WindSample } from "../../sources/spaceWeather";
 import { skyCities } from "../tonight/cities";
 
 export interface VisitPosition {
   moment?: StoryMoment;
   solar?: WindSample;
+  river?: { gauge: string; at: number; value: number };
   sky?: { city: string; at: number; look: SkyLook; lunar?: MoonfallProgress };
   float?: { profile: string; index: number; map?: boolean };
   radar?: { region?: string; at?: number; map: boolean };
@@ -38,6 +40,8 @@ export const MAX_SAVED_VISITS = ids.size + 24;
 export const LIBRARY_MAX_LENGTH = 50_000;
 
 export function savedVisitKey(visit: Visit): string {
+  const river = visit.position.river;
+  if (visit.id === "river" && river) return `river:${river.gauge}:${river.at}`;
   const float = visit.position.float;
   if (visit.id === "float" && float) return `float:${float.profile}:${float.index}`;
   const solar = visit.position.solar;
@@ -71,6 +75,19 @@ export function readVisit(value: unknown): Visit | null {
       writeStoryMoment(params, source.moment);
       const moment = readStoryMoment(params);
       if (moment) position.moment = moment;
+    }
+    const river = source.river;
+    if (
+      raw.id === "river" &&
+      river &&
+      typeof river.gauge === "string" &&
+      riverGauge(river.gauge) &&
+      time(river.at) &&
+      Number.isFinite(river.value) &&
+      position.moment?.at === river.at &&
+      position.moment.chapter === `gauge:${river.gauge}`
+    ) {
+      position.river = { gauge: river.gauge, at: river.at, value: river.value };
     }
     const solar = source.solar;
     if (

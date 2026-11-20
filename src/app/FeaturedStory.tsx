@@ -19,7 +19,9 @@ export function FeaturedStory({ scene }: { scene: EarthScene | null }): JSX.Elem
       <span>
         <strong>{story.title}</strong>
         <small id={`${id}-source`}>{selection.note}</small>
-        <span id={`${id}-note`}>{unavailable ?? selection.reason}</span>
+        <span className="featured-reason" id={`${id}-note`}>
+          {unavailable ?? selection.reason}
+        </span>
         <span className="featured-story-actions">
           <button
             className="featured-story-link"
