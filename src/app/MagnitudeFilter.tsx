@@ -39,7 +39,7 @@ function KeyRow({ glyph, note }: { glyph?: ReactNode; note: string | null }): Re
     );
   }
   return (
-    <details className="mt-2">
+    <details className="legend-key-entry mt-2">
       <summary className={`${line} ${indent} cursor-pointer list-none hover:text-dim`}>
         {glyph}
         <span>{head}</span>
@@ -109,6 +109,7 @@ export interface MagnitudeFilterProps {
   keyOpen: boolean;
   /** Which half to draw. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */
   part?: "controls" | "key" | "embedded-key";
+  earthquakeMarks?: boolean;
   onKeyOpen: (open: boolean) => void;
   /** True on an archived day, which changes the tense of every layer sentence. */
   archived?: boolean;
@@ -166,6 +167,7 @@ export function MagnitudeFilter({
   sound,
   children,
   part = "controls",
+  earthquakeMarks = true,
 }: MagnitudeFilterProps): JSX.Element {
   const stops = Array.from({ length: 32 }, (_, i) => rampColorAt(ramp, i / 31));
   // Where the threshold sits along the scale, as a percentage of the track.
@@ -174,39 +176,35 @@ export function MagnitudeFilter({
   if (part !== "controls") {
     return (
       <MapLegend open={keyOpen} onChange={onKeyOpen} embedded={part === "embedded-key"}>
-        {/* Size carries the same value, so a colourblind viewer and a small screen both still read it. */}
-        <div className="mt-2.5 flex items-center gap-2.5 text-[11px] text-faint">
-          <span className="flex items-baseline gap-1.5">
-            {[2, 4, 6].map((m) => (
-              <span
-                key={m}
-                className="inline-block rounded-full"
-                style={{
-                  width: `${2 * (1.7 + 2.9 * Math.sqrt(m - 1))}px`,
-                  height: `${2 * (1.7 + 2.9 * Math.sqrt(m - 1))}px`,
-                  background: rampColorAt(ramp, (m - MAG_MIN) / (MAG_MAX - MAG_MIN)),
-                }}
-              />
-            ))}
-          </span>
-          <span>Larger marks = higher magnitude</span>
-        </div>
+        {earthquakeMarks && (
+          <>
+            <div className="mt-2.5 flex items-center gap-2.5 text-[11px] text-faint">
+              <span className="flex items-baseline gap-1.5">
+                {[2, 4, 6].map((m) => (
+                  <span
+                    key={m}
+                    className="inline-block rounded-full"
+                    style={{
+                      width: `${2 * (1.7 + 2.9 * Math.sqrt(m - 1))}px`,
+                      height: `${2 * (1.7 + 2.9 * Math.sqrt(m - 1))}px`,
+                      background: rampColorAt(ramp, (m - MAG_MIN) / (MAG_MAX - MAG_MIN)),
+                    }}
+                  />
+                ))}
+              </span>
+              <span>Larger marks = higher magnitude</span>
+            </div>
 
-        <DepthKey ramp={ramp} />
+            <DepthKey ramp={ramp} />
 
-        {/* The counts stay, the reasoning folds. "66 above 70 km, 54 between 70 and 300" is the part anybody
-          reads, and the slab explanation behind it is two more lines. */}
-        <KeyRow note={depthNote(depth)} />
+            <KeyRow note={depthNote(depth)} />
 
-        {sinkOn ? (
-          <KeyRow note="Deep events sit inside the globe. Orbit to see their distance below the surface." />
-        ) : null}
+            {sinkOn ? (
+              <KeyRow note="Deep events sit inside the globe. Orbit to see their distance below the surface." />
+            ) : null}
+          </>
+        )}
 
-        {/* An unexplained line on a data visualisation is a question mark, and somebody could read these as
-          a second data layer rather than as the geography the events follow.
-
-          The motion toggle hangs off this row because it is a second reading of these exact lines, not
-          another layer. Off by default: 231 arrows is a mark in every margin on the planet. */}
         <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
           <span className="inline-block h-px w-[38px] shrink-0 bg-plate opacity-90" />
           <span>plate boundaries</span>
@@ -395,79 +393,75 @@ export function MagnitudeFilter({
           </div>
         ) : null}
 
-        {/* Both rows say the fact a viewer would otherwise get wrong. See ARCHITECTURE.md#srcappmagnitudefiltertsx. */}
-        {sky ? (
-          <>
-            <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-              <span
-                className="inline-block size-[5px] shrink-0 rounded-full"
-                style={{ background: "var(--color-star)" }}
-              />
-              <span>the stars are the real ones, down to magnitude 6</span>
-            </div>
-            {/* The planets are drawn as stars on purpose, so the sentence has to carry what the picture
-              deliberately does not: five of them are not stars and will have moved by next week. */}
-            <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-              <span
-                className="inline-block size-[7px] shrink-0 rounded-full"
-                style={{ background: "var(--color-star)" }}
-              />
-              <span>five of them are planets, and they wander</span>
-            </div>
-            <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-              <span
-                className="inline-block size-[9px] shrink-0 rounded-full"
-                style={{ background: "var(--color-moon)" }}
-              />
-              <span>the small disc is the moon, at its real size</span>
-            </div>
-          </>
-        ) : null}
+        {(sky || figuresOn || earthquakeMarks || herePlace) && (
+          <details className="legend-extra">
+            <summary className="disclose text-[11px] text-faint hover:text-dim">More globe guides</summary>
+            {sky ? (
+              <>
+                <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+                  <span
+                    className="inline-block size-[5px] shrink-0 rounded-full"
+                    style={{ background: "var(--color-star)" }}
+                  />
+                  <span>the stars are the real ones, down to magnitude 6</span>
+                </div>
+                <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+                  <span
+                    className="inline-block size-[7px] shrink-0 rounded-full"
+                    style={{ background: "var(--color-star)" }}
+                  />
+                  <span>five of them are planets, and they wander</span>
+                </div>
+                <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+                  <span
+                    className="inline-block size-[9px] shrink-0 rounded-full"
+                    style={{ background: "var(--color-moon)" }}
+                  />
+                  <span>the small disc is the moon, at its real size</span>
+                </div>
+              </>
+            ) : null}
 
-        {/* The only row here describing something nobody measured. There is no honest number to print beside
-          a constellation, so the row says whose idea it is rather than what it counts. */}
-        {figuresOn ? (
-          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-            <span className="inline-block h-[1px] w-[7px] shrink-0 bg-current opacity-60" />
-            <span>the lines are the constellations people drew</span>
-          </div>
-        ) : null}
+            {figuresOn ? (
+              <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+                <span className="inline-block h-[1px] w-[7px] shrink-0 bg-current opacity-60" />
+                <span>the lines are the constellations people drew</span>
+              </div>
+            ) : null}
 
-        {/* The rings' words were JSX rather than a note, so the row could interpolate the playback
-          multiplier. A template string carries that and lets the row take the same shape as the rest. */}
-        <KeyRow
-          // The pair is the head; why they are sped up and what the gap measures are the body.
-          note={
-            "two rings leave each new epicentre. " +
-            "The P-wave, and the slower S behind it. " +
-            `Sped up \u00d7${PLAYBACK} or they would not appear to move, and the gap between them is ` +
-            "how distance to a quake is measured."
-          }
-          glyph={
-            /* Two circles, which is literally what is drawn: the outer is the P front and the inner the S.
+            {earthquakeMarks && (
+              <KeyRow
+                note={
+                  "two rings leave each new epicentre. " +
+                  "The P-wave, and the slower S behind it. " +
+                  `Sped up \u00d7${PLAYBACK} or they would not appear to move, and the gap between them is ` +
+                  "how distance to a quake is measured."
+                }
+                glyph={
+                  /* Two circles, which is literally what is drawn: the outer is the P front and the inner the S.
              On the ramp like the markers, since a ring carries its own event's magnitude colour. */
-            <span className="relative mt-[3px] inline-block size-[13px] shrink-0">
-              <span
-                className="absolute inset-[3.5px] rounded-full border"
-                style={{ borderColor: rampColorAt(ramp, 0.55) }}
+                  <span className="relative mt-[3px] inline-block size-[13px] shrink-0">
+                    <span
+                      className="absolute inset-[3.5px] rounded-full border"
+                      style={{ borderColor: rampColorAt(ramp, 0.55) }}
+                    />
+                    <span
+                      className="absolute inset-0 rounded-full border opacity-45"
+                      style={{ borderColor: rampColorAt(ramp, 0.55) }}
+                    />
+                  </span>
+                }
               />
-              <span
-                className="absolute inset-0 rounded-full border opacity-45"
-                style={{ borderColor: rampColorAt(ramp, 0.55) }}
-              />
-            </span>
-          }
-        />
+            )}
 
-        {/* The city goes in the row rather than in a tooltip, because a tooltip needs the mark found first
-          and this mark exists to be found. "Roughly" is not modesty: a timezone can be a thousand
-          kilometres wide, so somebody in Vancouver gets a tick over Los Angeles. */}
-        {herePlace ? (
-          <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
-            <span className="inline-block size-[9px] shrink-0 border border-current opacity-70" />
-            <span>the four ticks are roughly you, near {herePlace}</span>
-          </div>
-        ) : null}
+            {herePlace ? (
+              <div className="mt-2 flex items-center gap-2.5 text-[11px] text-faint">
+                <span className="inline-block size-[9px] shrink-0 border border-current opacity-70" />
+                <span>the four ticks are roughly you, near {herePlace}</span>
+              </div>
+            ) : null}
+          </details>
+        )}
       </MapLegend>
     );
   }

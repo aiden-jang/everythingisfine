@@ -230,14 +230,34 @@ export function RadarStage({
         )}
         <RadarTransport layer={layer} dock={dock}>
           <div className="radar-clock">
-            <label htmlFor={id}>
-              {global ? (atLatest ? "Latest frame" : "Frame time") : atLatest ? "Latest scan" : "Scan time"}
-            </label>
-            {selected && (
-              <time dateTime={new Date(selected.at).toISOString()}>
-                <strong>{shortTime(selected.at)} UTC</strong>
-                <span className="radar-reading-date">{radarDate.format(selected.at)}</span>
-              </time>
+            <div className="radar-scan-reading">
+              {selected && (
+                <time dateTime={new Date(selected.at).toISOString()}>
+                  <strong>{shortTime(selected.at)} UTC</strong>
+                  <span className="radar-reading-date">{radarDate.format(selected.at)}</span>
+                </time>
+              )}
+              {scans[0] && latest && (
+                <span className="radar-window">
+                  <span className="sr-only">Available scans </span>
+                  {shortTime(scans[0].at)}–{shortTime(latest.at)} UTC
+                </span>
+              )}
+            </div>
+            {!rewind && (
+              <button
+                type="button"
+                className="radar-latest"
+                title="Jump to the latest scan"
+                aria-pressed={atLatest}
+                disabled={!selected}
+                onClick={() => {
+                  setPlaying(false);
+                  seek(null);
+                }}
+              >
+                Latest
+              </button>
             )}
           </div>
           <input
@@ -287,23 +307,6 @@ export function RadarStage({
           </div>
         </RadarTransport>
         <div className="observatory-actions radar-actions">
-          {!rewind && (
-            <button
-              type="button"
-              disabled={!selected}
-              onClick={() => {
-                setPlaying(false);
-                seek(null);
-              }}
-            >
-              Latest
-            </button>
-          )}
-          {scans[0] && latest && (
-            <span className="radar-window">
-              {shortTime(scans[0].at)}–{shortTime(latest.at)} UTC
-            </span>
-          )}
           {!layer && !global && (
             <button
               type="button"

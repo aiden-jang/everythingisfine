@@ -11,7 +11,7 @@ import { usePlaceInspection } from "./app/discovery/usePlaceInspection";
 import { MapLayers } from "./app/MapLayers";
 import { observatoryBackdrop } from "./app/storyBackdrop";
 import { useMapLayers } from "./app/useMapLayers";
-import { hazardsInWindow, markBelongsToLayer, visibleHazards } from "./app/layerVisibility";
+import { hazardsInWindow, hasLegendMarks, markBelongsToLayer, visibleHazards } from "./app/layerVisibility";
 import { SourceFilter } from "./app/SourceFilter";
 import { observatoryCaption } from "./app/observatoryCaption";
 import { useSceneHistory } from "./app/useSceneHistory";
@@ -878,11 +878,11 @@ export function App(): JSX.Element {
 
   const marksKey =
     !observatory.observing &&
-    mapLayers.visible.earthquakes &&
+    hasLegendMarks(mapLayers.visible.earthquakes, onGlobe) &&
     !section &&
     !markSubject &&
     !(shownQuake && pinned)
-      ? cloneElement(marksFilter, { part: "embedded-key" })
+      ? cloneElement(marksFilter, { part: "embedded-key", earthquakeMarks: mapLayers.visible.earthquakes })
       : null;
 
   const { rows: reaches, note: sourceNote } = earthquakeReach(snapshot, now, filters.windowMs);

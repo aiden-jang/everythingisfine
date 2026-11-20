@@ -13,27 +13,32 @@ import { storyPlace, type StoryPlace } from "./places";
 import { refreshAnnotations } from "../../globe/annotationInput";
 import "./discovery.css";
 
-const Preview = createContext<((place: StoryPlace, trigger?: HTMLElement) => void) | null>(null);
+const Preview = createContext<{
+  active: StoryPlace | null;
+  toggle: (place: StoryPlace, trigger: HTMLElement) => void;
+} | null>(null);
 export function StoryPreviewButton({ id, title }: { id: string; title: string }) {
-  const locate = useContext(Preview);
+  const preview = useContext(Preview);
   const navigation = useStoryNavigation();
   const place = storyPlace(id);
-  if (!place || !locate) return null;
+  if (!place || !preview) return null;
+  const active = preview.active === place;
   return (
     <button
       type="button"
       data-story-preview=""
       className="story-preview-action"
       aria-label={`Preview ${title}`}
-      title={`Preview ${title}`}
+      aria-pressed={active}
+      title={active ? "Remove the location preview" : `Preview ${title}`}
       disabled={!!navigation?.unavailable(id)}
-      onClick={(event) => locate(place, event.currentTarget)}
+      onClick={(event) => preview.toggle(place, event.currentTarget)}
     >
       <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true">
         <path d="M12.5 6.5C12.5 10 8 13.5 8 13.5S3.5 10 3.5 6.5a4.5 4.5 0 1 1 9 0Z" />
         <circle cx="8" cy="6.5" r="1.4" />
       </svg>
-      <span>Preview</span>
+      <span>{active ? "On globe" : "Preview"}</span>
     </button>
   );
 }
@@ -90,7 +95,15 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
   };
   const stage = document.querySelector(".zones");
   return (
-    <Preview.Provider value={locate}>
+    <Preview.Provider
+      value={{
+        active: pinned ? place : null,
+        toggle: (region, button) => {
+          if (pinned && place === region) dismiss(true);
+          else locate(region, button);
+        },
+      }}
+    >
       <div
         onPointerOver={(event) => {
           if (event.pointerType !== "touch") preview(event.target);
@@ -180,15 +193,20 @@ export function StoryPreview({ children, scope }: { children: ReactNode; scope: 
         {place &&
           stage &&
           createPortal(
-            <div className="discovery-preview" aria-label="Story location preview">
+            <div
+              className="discovery-preview"
+              aria-label="Story location preview"
+              data-located={pinned || undefined}
+            >
               <span
+                key={place.label}
                 className="discovery-pin"
                 data-observation-anchor=""
                 data-lon={place.lon}
                 data-lat={place.lat}
                 aria-hidden="true"
               />
-              <div className="discovery-preview-caption">
+              <div key={`caption-${place.label}`} className="discovery-preview-caption">
                 <span>
                   {place.label}
                   {!pinned && <small>Story location preview</small>}

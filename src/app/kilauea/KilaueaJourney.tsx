@@ -53,6 +53,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
   const [footage, setFootage] = useState(false);
   const replayIndex = useRef(index);
   const playButton = useRef<HTMLButtonElement>(null);
+  const timeline = useRef<HTMLInputElement>(null);
   const id = useId();
   const [surface] = useState(() => {
     const canvas = document.createElement("canvas");
@@ -160,6 +161,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
     setPlaying(false);
     setFootage(false);
     setSplit(COAST_COMPARISON);
+    requestAnimationFrame(() => timeline.current?.focus({ preventScroll: true }));
   }
 
   function follow() {
@@ -264,7 +266,13 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
               >
                 {kept ? "Comparison kept" : "Keep this comparison"}
               </button>
-              <button type="button" onClick={() => inspect(replayIndex.current)}>
+              <button
+                type="button"
+                onClick={() => {
+                  inspect(replayIndex.current);
+                  requestAnimationFrame(() => timeline.current?.focus({ preventScroll: true }));
+                }}
+              >
                 Back to replay
               </button>
             </>
@@ -299,7 +307,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
           </p>
         )}
       </div>
-      <StoryDock label="Kīlauea playback">
+      <StoryDock label="Kīlauea playback" deferOnShortPhone={invited}>
         <div className="survey-transport" data-comparing={comparing}>
           <div className="story-dock-time">
             <label htmlFor={id}>{comparing ? "Compare before and after" : "Mapped extent date"}</label>
@@ -320,6 +328,7 @@ export function KilaueaJourney({ onView, ...panel }: ReplayProps): JSX.Element {
           >
             <input
               id={id}
+              ref={timeline}
               className="scrub-slider"
               type="range"
               min={0}

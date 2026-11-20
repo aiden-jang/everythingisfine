@@ -249,7 +249,7 @@ export function TonightSky({
         />
       ) : (
         <>
-          <StoryDock label="Tonight’s Sky time">
+          <StoryDock label="Tonight’s Sky time" deferOnShortPhone={!observing}>
             <div className="tonight-time">
               <div className="tonight-clock">
                 <label htmlFor={rangeId}>City local time</label>

@@ -6,7 +6,7 @@ import { VisitShelf } from "./visitor/VisitShelf";
 import { JourneyPicker } from "./journeys/JourneyPicker";
 import { StoryRow } from "./StoryRow";
 import type { EarthScene, useObservatory } from "./useObservatory";
-import { StorySearch } from "./StorySearch";
+import { resetStoryResults, StorySearch } from "./StorySearch";
 import { StoryPreview } from "./discovery/StoryPreview";
 import { FeaturedStory } from "./FeaturedStory";
 import { browseStories, featuredStoryId, storyButtonId } from "./storyBrowse";
@@ -61,6 +61,7 @@ export function StoriesDrawer({
   const selectionScroll = useRef(0);
   const container = useRef<HTMLDivElement>(null);
   const results = useRef<HTMLDivElement>(null);
+  const fullHeading = useRef<HTMLHeadingElement>(null);
   useReadingArrival(results, `${key}:${all}`, "fade");
   const rail = () => container.current?.closest<HTMLElement>("#chrome-rail, #observatory-intro");
   const sections = [
@@ -74,6 +75,7 @@ export function StoriesDrawer({
         ref={container}
         id="stories-panel"
         className="stories-drawer"
+        data-full={all || undefined}
         aria-label="Story catalogue"
         role="region"
         onClickCapture={onSelect}
@@ -81,8 +83,13 @@ export function StoriesDrawer({
           if (event.key !== "Escape") return;
           event.preventDefault();
           event.stopPropagation();
-          if (deck.query) deck.setQuery("");
-          else onDismiss();
+          if (deck.query) {
+            resetStoryResults(event.currentTarget);
+            deck.setQuery("");
+            container.current?.querySelector<HTMLInputElement>('input[type="search"]')?.focus({
+              preventScroll: true,
+            });
+          } else onDismiss();
         }}
       >
         <div className="story-selection-heading">
@@ -140,10 +147,10 @@ export function StoriesDrawer({
           {!deck.query.trim() && (
             <>
               {sceneEntry}
-              {recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />}
+              {!all && (recent ? <ContinueVisit visit={recent} /> : <FeaturedStory scene={scene} />)}
               <section className="stories-group" aria-label={all ? "All stories" : "Selected stories"}>
-                <h3 className={all ? undefined : "sr-only"}>
-                  {all ? "All stories in this selection" : "Start exploring"}
+                <h3 className={all ? undefined : "sr-only"} ref={fullHeading} tabIndex={all ? -1 : undefined}>
+                  {all ? "All stories" : "Start exploring"}
                 </h3>
                 <div>
                   {entries.map((story) => {
@@ -168,11 +175,13 @@ export function StoriesDrawer({
                     onClick={() => {
                       if (!all) selectionScroll.current = rail()?.scrollTop ?? 0;
                       expand(all ? null : key);
-                      if (all)
-                        requestAnimationFrame(() => rail()?.scrollTo({ top: selectionScroll.current }));
+                      requestAnimationFrame(() => {
+                        rail()?.scrollTo({ top: all ? selectionScroll.current : 0 });
+                        if (!all) fullHeading.current?.focus({ preventScroll: true });
+                      });
                     }}
                   >
-                    {all ? "Show highlights" : `View all ${browseStories(scene, true).length + 1} stories`}
+                    {all ? "Show highlights" : `View all ${browseStories(scene, true).length} stories`}
                   </button>
                   <button
                     type="button"

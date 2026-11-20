@@ -160,6 +160,8 @@ for (const width of [1440, 390]) {
     if (width === 390) {
       const rail = page.locator("#chrome-rail");
       const before = (await transport.boundingBox())!;
+      const reading = (await rail.boundingBox())!;
+      expect(reading.y + reading.height).toBeLessThanOrEqual(before.y + 1);
       await rail.evaluate((element) => element.scrollTo({ top: element.scrollHeight }));
       await expect(slider).toBeInViewport();
       expect(await transport.boundingBox()).toEqual(before);

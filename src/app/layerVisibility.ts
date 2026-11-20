@@ -89,6 +89,19 @@ export function visibleHazards<T>(
   };
 }
 
+export function hasLegendMarks(earthquakes: boolean, visible: HazardInput & { aurora: unknown }): boolean {
+  return (
+    earthquakes ||
+    Boolean(
+      visible.cyclones.length ||
+      visible.fires.length ||
+      visible.floods.length ||
+      visible.volcanoes.length ||
+      visible.aurora,
+    )
+  );
+}
+
 export function markBelongsToLayer(mark: string | null, layer: MapLayer): boolean {
   const kind = {
     cyclones: "cyclone",

@@ -142,15 +142,18 @@ export function SavedCollection({ onClose }: { onClose: () => void }) {
           Close
         </button>
       </div>
-      <p>A place, a moment, something you noticed. Kept on this device.</p>
+      <div className="saved-readings-heading">
+        <h3>Saved readings</h3>
+        <p>Kept on this device.</p>
+      </div>
       {!library.saved.length && (
         <div className="saved-empty">
-          <p>Keep a reading in a story and it’ll appear here.</p>
+          <p>Keep a reading from any story that offers one.</p>
           <button
             type="button"
             onClick={() => {
               onClose();
-              navigation.browse(true);
+              navigation.browse();
             }}
           >
             Browse stories
@@ -172,7 +175,7 @@ export function SavedCollection({ onClose }: { onClose: () => void }) {
       </div>
       {library.recent.length > 0 && (
         <details className="saved-recent">
-          <summary>Resume a recent journey</summary>
+          <summary>Recent journeys</summary>
           {library.recent.map((visit) => (
             <button
               type="button"

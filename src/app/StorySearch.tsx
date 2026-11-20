@@ -7,9 +7,7 @@ import { useStoryNavigation } from "./journeys/StoryNavigation";
 type Observatory = ReturnType<typeof useObservatory>;
 
 export function resetStoryResults(target: Element) {
-  const tools = target.closest(".story-tools");
-  if (tools && getComputedStyle(tools).position === "sticky")
-    tools.closest("#chrome-rail")?.scrollTo({ top: 0 });
+  target.closest("#chrome-rail")?.scrollTo({ top: 0 });
 }
 
 export function StorySearch({
@@ -32,6 +30,7 @@ export function StorySearch({
   const navigation = useStoryNavigation();
   const input = useRef<HTMLInputElement>(null);
   const matches = findStories(deck.query, scene);
+  const otherMatches = scene && matches.length === 0 ? findStories(deck.query).length : 0;
   const scope = scene
     ? { live: "Earth", depth: "Below the Surface", night: "After Dark" }[scene]
     : "all stories";
@@ -43,32 +42,49 @@ export function StorySearch({
   return (
     <>
       <div className="story-tools">
-        <div className="story-search explorer-search">
-          <label className="sr-only" htmlFor="story-search-input">
-            Find a story
-          </label>
-          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-            <circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-            <path d="m15 15 6 6" stroke="currentColor" strokeWidth="1.5" />
-          </svg>
-          <input
-            ref={input}
-            id="story-search-input"
-            type="search"
-            name="story"
-            autoComplete="off"
-            value={deck.query}
-            placeholder="Find a story…"
-            onInput={(e) => {
-              resetStoryResults(e.currentTarget);
-              deck.setQuery(e.currentTarget.value);
-            }}
-          />
-          {deck.query && (
-            <button type="button" className="story-search-reset" aria-label="Clear search" onClick={clear}>
-              <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
-                <path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
+        <div className="story-search-line">
+          <div className="story-search explorer-search">
+            <label className="sr-only" htmlFor="story-search-input">
+              Find a story
+            </label>
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <path d="m15 15 6 6" stroke="currentColor" strokeWidth="1.5" />
+            </svg>
+            <input
+              ref={input}
+              id="story-search-input"
+              type="search"
+              name="story"
+              autoComplete="off"
+              value={deck.query}
+              placeholder="Find a story…"
+              onInput={(e) => {
+                resetStoryResults(e.currentTarget);
+                deck.setQuery(e.currentTarget.value);
+              }}
+            />
+            {deck.query && (
+              <button type="button" className="story-search-reset" aria-label="Clear search" onClick={clear}>
+                <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true">
+                  <path d="m4 4 8 8M12 4l-8 8" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                </svg>
+              </button>
+            )}
+          </div>
+          {filter && (
+            <button
+              type="button"
+              className="story-topic-jump"
+              onClick={(event) => {
+                const tools = event.currentTarget.closest(".story-tools");
+                resetStoryResults(event.currentTarget);
+                tools
+                  ?.querySelector<HTMLButtonElement>('.story-category [aria-pressed="true"]')
+                  ?.focus({ preventScroll: true });
+              }}
+            >
+              Topics
             </button>
           )}
         </div>
@@ -80,7 +96,9 @@ export function StorySearch({
             <p role="status" className="observation-note">
               {matches.length
                 ? `${matches.length} ${matches.length === 1 ? "match" : "matches"} in ${scope}`
-                : `No matches in ${scope}. Try a place, year or subject.`}
+                : otherMatches
+                  ? `No matches in ${scope}. ${otherMatches} ${otherMatches === 1 ? "match" : "matches"} in other topics.`
+                  : `No matches in ${scope}. Try a place, year or subject.`}
             </p>
             {scene && (
               <button

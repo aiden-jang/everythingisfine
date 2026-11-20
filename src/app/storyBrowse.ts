@@ -8,10 +8,10 @@ export const featuredStoryId = (scene: EarthScene | null) =>
 
 export function browseStories(scene: EarthScene | null, all: boolean): readonly SearchStory[] {
   const featured = featuredStoryId(scene);
-  const list = searchStories.filter((story) => (!scene || story.scene === scene) && story.id !== featured);
+  const list = searchStories.filter((story) => !scene || story.scene === scene);
   if (all) return list.sort((a, b) => storyRank(a.id) - storyRank(b.id));
   const ids = scene ? sceneHighlights[scene] : ["float", "sky", "rupture"];
-  return ids.slice(0, 3).flatMap((id) => list.filter((story) => story.id === id));
+  return ids.slice(0, 3).flatMap((id) => list.filter((story) => story.id === id && id !== featured));
 }
 export function storyKind(id: string): string {
   if (["orbit", "sky", "shadow", "meteors", "apophis"].includes(id)) return "Prediction";

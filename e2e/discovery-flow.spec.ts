@@ -29,7 +29,7 @@ test("search scopes match the category and expanding the scope preserves the que
     .click();
   const search = page.getByRole("searchbox", { name: "Find a story" });
   await search.fill("Aral");
-  await expect(page.getByText("No matches in After Dark. Try a place, year or subject.")).toBeVisible();
+  await expect(page.getByText("No matches in After Dark. 1 match in other topics.")).toBeVisible();
   await expect(page.locator("#search-story-aral")).toHaveCount(0);
   await page.getByRole("button", { name: "Search all stories", exact: true }).click();
   await expect(search).toHaveValue("Aral");
@@ -63,6 +63,7 @@ for (const width of [1440, 390]) {
     await expect(preview).toBeEnabled();
     const canvas = await page.locator("#globe-view canvas").elementHandle();
     await preview.click();
+    await expect(preview).toHaveAttribute("aria-pressed", "true");
     await expect.poll(async () => (await camera(page))?.lon).toBeCloseTo(59.5, 1);
     if (width === 1440) {
       const rail = (await page.locator("#chrome-rail").boundingBox())!;
@@ -70,6 +71,7 @@ for (const width of [1440, 390]) {
       expect(previewSurface.x).toBeGreaterThanOrEqual(rail.x + rail.width);
     }
     await page.getByRole("button", { name: "Dismiss location preview" }).click();
+    await expect(preview).toHaveAttribute("aria-pressed", "false");
     await expect.poll(() => camera(page)).toEqual(before);
     await expect(preview).toBeFocused();
     if (width === 1440) {

@@ -272,7 +272,7 @@ export function TongaStage({ onView, ...panel }: ReplayProps): JSX.Element {
         <h3>
           {overview ? (
             <>
-              Tonga’s
+              {"Tonga’s "}
               <br />
               shockwave.
             </>

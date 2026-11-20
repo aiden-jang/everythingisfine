@@ -33,18 +33,21 @@ test("Kīlauea keeps the same coastline comparison on globe and map", async ({ p
   await page.setViewportSize({ width: 320, height: 640 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   const { panel, canvas, original } = await openKilauea(page);
-  await expect(panel.getByRole("button", { name: "Follow the lava", exact: true })).toBeVisible();
-  const intro = panel.locator(".kilauea-narrative p").last();
-  const dock = panel.locator(".story-dock");
-  const copy = (await intro.boundingBox())!;
-  const playback = (await dock.boundingBox())!;
-  expect(copy.y + copy.height).toBeLessThanOrEqual(playback.y);
+  const follow = panel.getByRole("button", { name: "Follow the lava", exact: true });
+  const compareCoast = panel.getByRole("button", { name: "Compare coast", exact: true });
+  await expect(follow).toBeInViewport({ ratio: 1 });
+  await expect(compareCoast).toBeInViewport({ ratio: 1 });
+  await expect(panel.getByRole("slider", { name: "Mapped extent date" })).toBeHidden();
+  await follow.click();
+  await expect(panel.getByRole("slider", { name: "Compare before and after" })).toBeFocused();
+  await panel.getByRole("button", { name: "Back to replay", exact: true }).click();
+  await expect(panel.getByRole("slider", { name: "Mapped extent date" })).toBeFocused();
   await panel.getByRole("button", { name: /^Ocean entry · / }).click();
   await expect(panel.getByRole("slider", { name: "Mapped extent date" })).toHaveAttribute(
     "aria-valuetext",
     "Jun 4 · 22:00 HST",
   );
-  await panel.getByRole("button", { name: "Compare coast" }).click();
+  await compareCoast.click();
   const compare = panel.getByRole("slider", { name: "Compare before and after" });
   await compare.press("Home");
   await expect(compare).toHaveAttribute("aria-valuetext", "Before the eruption");

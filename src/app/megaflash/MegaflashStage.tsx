@@ -57,10 +57,12 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
   const [ready, setReady] = useState(false);
   const arrive = useCallback(() => setReady(true), []);
   const clock = useRef(view);
+  const openedPlayback = useRef(Boolean(initial) || view.phase !== "infrared");
   const beforeInspect = useRef<{ view: Playback; map: boolean }>();
   const started = useRef<HTMLButtonElement>(null);
 
   function update(next: Playback) {
+    if (next.phase !== "infrared") openedPlayback.current = true;
     clock.current = next;
     setView(next);
   }
@@ -276,7 +278,7 @@ export function MegaflashStage({ onView, ...panel }: ReplayProps): JSX.Element {
             <span>WMO-certified span · 7.39 s elapsed</span>
           </p>
         )}
-        <StoryDock label="Megaflash playback">
+        <StoryDock label="Megaflash playback" deferOnShortPhone={!openedPlayback.current}>
           <div className="survey-transport" data-comparing="true">
             <div className="story-dock-time">
               <label htmlFor={id}>Flash elapsed time</label>

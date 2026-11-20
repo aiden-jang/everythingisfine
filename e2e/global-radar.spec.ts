@@ -68,7 +68,10 @@ for (const width of [1440, 390]) {
     await slider.press("Home");
     await expect(time).toHaveAttribute("datetime", new Date(times[0]!).toISOString());
     await scene.getByRole("button", { name: "Play", exact: true }).click();
-    await expect(scene.getByText("Latest frame", { exact: true })).toBeVisible();
+    await expect(scene.getByRole("button", { name: "Latest", exact: true })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     await expect(time).toHaveAttribute("datetime", new Date(times[2]!).toISOString());
     expect(requests.filter((path) => path.includes("coverage"))).toHaveLength(4);
     expect(requests).toHaveLength(17);

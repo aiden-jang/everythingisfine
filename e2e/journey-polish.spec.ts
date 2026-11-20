@@ -163,6 +163,7 @@ for (const width of [1440, 390, 320]) {
     expect(button.y + button.height / 2).toBeGreaterThanOrEqual(scrubber.y);
     expect(button.y + button.height / 2).toBeLessThanOrEqual(scrubber.y + scrubber.height);
     expect(button.height).toBeGreaterThanOrEqual(44);
+    if (width === 320) expect(scrubber.width).toBeGreaterThanOrEqual(160);
     await play.click();
     await expect(transport.getByRole("button", { name: "Pause", exact: true })).toBeVisible();
     await transport.getByRole("button", { name: "Pause", exact: true }).click();

@@ -17,9 +17,11 @@ export function StoryDockProvider({ children }: { children: ReactNode }): JSX.El
 export function StoryDock({
   children,
   label = "Story playback",
+  deferOnShortPhone = false,
 }: {
   children: ReactNode;
   label?: string;
+  deferOnShortPhone?: boolean;
 }): JSX.Element | null {
   const target = useContext(DockTarget);
   const dock = useRef<HTMLDivElement>(null);
@@ -38,7 +40,13 @@ export function StoryDock({
   }, [target]);
   return target
     ? createPortal(
-        <div ref={dock} className="story-dock" role="group" aria-label={label}>
+        <div
+          ref={dock}
+          className="story-dock"
+          role="group"
+          aria-label={label}
+          data-short-opening={deferOnShortPhone || undefined}
+        >
           {children}
         </div>,
         target,

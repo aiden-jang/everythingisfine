@@ -85,7 +85,29 @@
 }
 
 .radar-clock {
-  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.radar-scan-reading {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.radar-clock .radar-latest {
+  min-width: 44px;
+  min-height: 44px;
+  padding-inline: 10px;
+  border: 1px solid var(--color-hairline);
+  border-radius: 7px;
+  color: var(--color-dim);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.radar-clock .radar-latest:is(:hover, [aria-pressed="true"]):not(:disabled) {
+  background: var(--color-raised);
+  color: var(--color-ink);
 }
 
 .radar-clock time,
@@ -98,8 +120,7 @@
   display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
-  justify-content: flex-end;
-  gap: 0 8px;
+  gap: 0 6px;
   color: var(--color-ink);
 }
 
@@ -108,8 +129,8 @@
   margin-top: 0;
 }
 
-.radar-actions .radar-window {
-  margin-inline: auto 0;
+.radar-actions:empty {
+  display: none;
 }
 
 .radar-scrub {
@@ -264,6 +285,10 @@
 .radar-layer .radar-transport {
   padding-top: 18px;
 }
+.radar-layer .radar-transport:not(:has(.radar-clock, .radar-warning)),
+.radar-layer .radar-reading:empty {
+  display: none;
+}
 .radar-layer .radar-coverage {
   margin-top: 12px;
 }
@@ -292,10 +317,19 @@
 }
 
 @media (max-width: 767px) {
-  .frame:has(> .radar-dock) #chrome-rail {
-    --radar-dock-height: inherit;
-    padding-bottom: calc(var(--radar-dock-height, 0px) + 24px);
-    scroll-padding-bottom: calc(var(--radar-dock-height, 0px) + 16px);
+  .frame[data-presentation="explore"]:has(> .radar-dock) #chrome-rail {
+    margin-bottom: calc(var(--credit-space) + var(--radar-dock-height, 0px) + 8px);
+    padding-bottom: 12px;
+    scroll-padding-bottom: 12px;
+  }
+
+  .frame:has(.mobile-navigation button[aria-expanded="false"]) > .radar-dock {
+    display: none;
+  }
+
+  .frame[data-presentation="explore"]:has(> .radar-dock):has(.mobile-navigation button[aria-expanded="false"])
+    #chrome-rail {
+    margin-bottom: var(--credit-space);
   }
 
   .radar-dock {
@@ -310,7 +344,7 @@
   }
 
   .radar-dock .radar-clock {
-    align-items: baseline;
+    gap: 6px;
   }
   .radar-dock .radar-clock strong {
     font-weight: 600;
@@ -320,7 +354,7 @@
     margin-inline-start: 4px;
   }
   .radar-dock .radar-scrub {
-    min-height: 36px;
+    min-height: 44px;
   }
   .radar-dock .radar-playback {
     grid-template-columns: minmax(72px, 1fr) minmax(90px, 1.25fr) minmax(72px, 1fr);

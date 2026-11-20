@@ -14,7 +14,9 @@ for (const [width, height] of [
     await page.goto("/#v=observe&story=tonga");
     const story = page.getByRole("region", { name: "Tonga’s shockwave", exact: true });
     const canvas = await page.locator("#globe-view canvas").elementHandle();
-    await story.getByRole("button", { name: "Follow the wave", exact: true }).click();
+    const follow = story.getByRole("button", { name: "Follow the wave", exact: true });
+    if (height === 568) await expect(follow).toBeInViewport({ ratio: 1 });
+    await follow.click();
     await story.getByRole("button", { name: "Pause", exact: true }).click();
     await story.getByRole("button", { name: "Antipode", exact: true }).click();
     const control = page.getByRole("button", { name: "Take control", exact: true });

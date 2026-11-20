@@ -3,6 +3,7 @@ import { layerTime } from "./layerTime";
 import { RadarCanvasCredit } from "./CanvasFooter";
 import type { useMapLayers } from "./useMapLayers";
 import type { WeatherLayerId } from "./weatherLayers";
+import { mapLayerNames, type MapLayer } from "./layerVisibility";
 
 export function LayerReadout({
   controls,
@@ -87,7 +88,18 @@ export function LayerReadout({
             Close
           </button>
         </div>
-        {withLegend && hasTimes && <h3>Scan times</h3>}
+        {withLegend && (
+          <div className="layer-times-enabled">
+            <h3>Enabled layers</h3>
+            <p>
+              {(Object.keys(mapLayerNames) as MapLayer[])
+                .filter((id) => controls.visible[id])
+                .map((id) => mapLayerNames[id])
+                .join(" · ") || "All layers are off."}
+            </p>
+          </div>
+        )}
+        {withLegend && hasTimes && <h3>Displayed times</h3>}
         {controls.radar && (
           <span>
             RainViewer radar ·{" "}

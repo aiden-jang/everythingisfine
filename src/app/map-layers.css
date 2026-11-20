@@ -271,6 +271,35 @@
 .globe-info-popover h3 {
   font-size: 13px;
 }
+.layer-times-enabled {
+  margin-bottom: 12px;
+}
+.layer-times-enabled p {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.globe-info-legend .legend-extra {
+  margin-top: 8px;
+}
+.globe-info-legend .legend-extra > summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+}
+.globe-info-legend .legend-key-entry > summary::after {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin: 5px 2px 0 auto;
+  border: solid currentColor;
+  border-width: 0 1px 1px 0;
+  transform: rotate(45deg);
+}
+.globe-info-legend .legend-key-entry[open] > summary::after {
+  transform: rotate(225deg);
+}
 .globe-info-popover > span {
   margin-top: 4px;
 }

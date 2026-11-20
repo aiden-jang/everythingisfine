@@ -328,11 +328,14 @@ Recent weather does not masquerade as an archived observation. Archive date and 
 reachable when inspecting another layer. Find a place is distinct from report and story search.
 Supplemental inspector disclosures use an 8px gap and retain their 44px controls.
 
-Radar starts on unless a saved choice turns it off. Sources & legend holds scan times and the marks
-key together in Explore. It opens above its trigger on desktop and in its own scrollable sheet on
+Radar starts on unless a saved choice turns it off. Sources & legend leads with enabled layers and
+displayed times, followed by the key to visible marks and optional globe guides. It opens above its
+trigger on desktop and in its own scrollable sheet on
 phones. Close and Escape return focus to the trigger. The projection switch and RainViewer attribution
 keep their own positions beside it. The full scan date stays available in the inspector. Guided
 regional radar remains in the radar inspector, and returning restores the camera and compatible scan time.
+The phone radar dock reserves its own space below the reading and keeps the selected time, scan
+window and Latest action together. Expanding the globe tucks playback away without clearing the scan.
 Phone keyboard help lives in View options so it does not cover the globe. The author credit stays
 at the lower-left viewport edge across home, scenes, Explore and players, outside the moving
 canvas and reading regions. It is rendered once by `CreatorCredit` through `GlobeHeader`. Its
@@ -429,8 +432,10 @@ The cinematic Earth, depth and sky views open through a scene action shown withi
 category. Those scene views provide a Browse stories action into the same catalogue.
 All topics clears the topic filter. View all stories expands the highlights into the full catalogue.
 Filtering keeps the query, camera and filter controls in place.
-On taller panels, search and categories stay visible above the scrolling results and follow the rail’s
-translucent edge. The native scroll thumb stays quiet at rest and becomes clearer while scrolling.
+On taller panels, search and categories stay visible above the scrolling results. The sticky controls
+shield text behind them while the outer rail edge remains translucent. Short full catalogues keep a
+compact search row with a return to topics. The native scroll thumb stays quiet at rest and becomes
+clearer while scrolling.
 Switching between Layers
 and Stories preserves the chosen layer settings. Layer switches keep the same alignment as status changes.
 Coverage and availability details are in the layer inspectors and header feed menu. Location lives in Find a place, and playback

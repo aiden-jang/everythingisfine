@@ -10,8 +10,9 @@ describe("story browsing", () => {
       const featured = featuredStoryId(scene);
       expect(first.length).toBeGreaterThan(0);
       expect(first.length).toBeLessThanOrEqual(6);
-      expect(new Set([...all.map(({ id }) => id), featured]).size).toBe(all.length + 1);
-      expect([...all.map(({ id }) => id), featured].sort()).toEqual(
+      expect(new Set(all.map(({ id }) => id)).size).toBe(all.length);
+      expect(first.map(({ id }) => id)).not.toContain(featured);
+      expect(all.map(({ id }) => id).sort()).toEqual(
         searchStories
           .filter((story) => !scene || story.scene === scene)
           .map(({ id }) => id)

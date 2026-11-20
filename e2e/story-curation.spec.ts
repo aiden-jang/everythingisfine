@@ -41,8 +41,17 @@ for (const width of [1440, 390]) {
       "Tonight’s Sky",
       "Rupture Reveal",
     ]);
+    if (width === 390) await page.setViewportSize({ width: 320, height: 568 });
     await page.getByRole("button", { name: /^View all \d+ stories$/ }).click();
     await expect(page.locator(".story-choice > button").first()).toHaveText("Float Dive");
+    await expect(page.getByRole("heading", { name: "All stories", exact: true, level: 3 })).toBeFocused();
+    if (width === 390) {
+      const rail = page.locator("#chrome-rail");
+      await rail.evaluate((node) => node.scrollTo({ top: 600 }));
+      await expect(page.getByRole("searchbox", { name: "Find a story" })).toBeInViewport({ ratio: 1 });
+      await page.getByRole("button", { name: "Topics", exact: true }).click();
+      await expect(page.getByRole("button", { name: "All topics", exact: true })).toBeFocused();
+    }
     expect(await canvas!.evaluate((node) => node === document.querySelector("#globe-view canvas"))).toBe(
       true,
     );

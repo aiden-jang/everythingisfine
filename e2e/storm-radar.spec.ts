@@ -93,8 +93,9 @@ test("Storm Radar scrubs published scans and keeps a missing image at its own ti
   await expect(scene.getByRole("heading", { name: "Great Lakes" })).toBeVisible();
   await scene.getByRole("button", { name: "Play", exact: true }).click();
   await expect(time).toHaveAttribute("datetime", timestamp(2));
-  await expect(scene.getByText("Latest scan", { exact: true })).toBeVisible();
-  await expect(scene.getByRole("button", { name: "Latest", exact: true })).toBeInViewport();
+  const latest = scene.getByRole("button", { name: "Latest", exact: true });
+  await expect(latest).toHaveAttribute("aria-pressed", "true");
+  await expect(latest).toBeInViewport();
   await page.setViewportSize({ width: 812, height: 375 });
   await scene.getByLabel("Radar region").selectOption("national");
   await expect(slider).toBeInViewport({ ratio: 1 });

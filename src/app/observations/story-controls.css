@@ -213,6 +213,10 @@
 }
 
 @media (max-width: 599px) and (max-height: 700px) {
+  .story-dock-host:has(> [data-short-opening]) {
+    display: none;
+  }
+
   .frame[data-presentation="observe"] .zones:has(.replay-sidebar) {
     grid-template-rows: clamp(148px, 28dvh, 188px) minmax(0, 1fr);
   }

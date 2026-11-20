@@ -405,6 +405,16 @@
 }
 
 @media (max-width: 599px) and (max-height: 620px) {
+  .zones[data-tonga-phase="discover"] .tonga-narrative h3 {
+    font-size: clamp(36px, 12vw, 48px);
+  }
+  .zones[data-tonga-phase="discover"] .tonga-narrative h3 br {
+    display: none;
+  }
+  .zones[data-tonga-phase="discover"] .tonga-narrative p {
+    margin-block: 12px;
+  }
+
   .zones[data-tonga-phase="follow"] .tonga-narrative h3 {
     font-size: 38px;
   }

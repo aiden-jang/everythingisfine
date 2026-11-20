@@ -220,11 +220,7 @@
   }
 }
 .frame[data-presentation="explore"] #chrome-rail[data-scrolled] :is(.explorer-tabs, .story-tools) {
-  background: linear-gradient(
-    90deg,
-    var(--explorer-surface) 68%,
-    color-mix(in srgb, var(--explorer-surface) 82%, transparent)
-  );
+  background: var(--explorer-surface);
 }
 @media (min-width: 900px) {
   .frame[data-presentation="explore"] #chrome-rail {
@@ -236,9 +232,6 @@
       color-mix(in srgb, var(--explorer-surface) 36%, transparent) calc(100% - var(--explorer-pad)),
       transparent
     );
-  }
-  .frame[data-presentation="explore"] #chrome-rail[data-scrolled] :is(.explorer-tabs, .story-tools) {
-    background: linear-gradient(90deg, var(--explorer-surface) 73%, transparent);
   }
 }
 @media (max-width: 767px) {

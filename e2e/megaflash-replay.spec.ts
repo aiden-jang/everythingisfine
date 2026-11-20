@@ -19,7 +19,12 @@ test("Megaflash starts on the storm and keeps the full trace and keyboard scrub 
       .getByRole("group", { name: "Megaflash on the globe" })
       .getByText("GOES-16 infrared · 08:52 UTC · False color"),
   ).toBeVisible();
-  await panel.getByRole("button", { name: "Follow the flash", exact: true }).click();
+  await page.setViewportSize({ width: 320, height: 568 });
+  const follow = panel.getByRole("button", { name: "Follow the flash", exact: true });
+  await expect(follow).toBeInViewport({ ratio: 1 });
+  await expect(panel.getByRole("slider", { name: "Flash elapsed time" })).toBeHidden();
+  await follow.click();
+  await page.setViewportSize({ width: 1440, height: 900 });
   await expect(panel.getByRole("heading", { name: "A flash takes shape." })).toBeVisible();
   await panel.getByRole("button", { name: "Pause", exact: true }).click();
   await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
