@@ -35,22 +35,22 @@ test("Tonight’s Sky follows the selected city and time on the same globe", asy
     name: `Find ${target === "Moon" ? "the Moon" : target}`,
     exact: true,
   });
-  await page.setViewportSize({ width: 320, height: 640 });
-  const findBounds = (await find.boundingBox())!;
-  const playback = (await page.locator(".story-dock").boundingBox())!;
-  expect(findBounds.y + findBounds.height).toBeLessThanOrEqual(playback.y);
-  await page.setViewportSize({ width: 390, height: 844 });
+  const slider = sky.getByRole("slider", { name: "City local time" });
+  await page.setViewportSize({ width: 320, height: 568 });
+  await expect(find).toBeInViewport({ ratio: 1 });
+  await expect(slider).toBeHidden();
   const projection = page.getByRole("group", { name: "Sky reference projection" });
   await projection.getByRole("button", { name: "Orbit" }).click();
   await expect(projection.getByRole("button", { name: "Orbit" })).toHaveAttribute("aria-pressed", "true");
   await find.click();
   await expect(invitation).toHaveCount(0);
+  await expect(slider).toBeInViewport({ ratio: 1 });
+  await page.setViewportSize({ width: 390, height: 844 });
   await expect(projection.getByRole("button", { name: "Local sky" })).toHaveAttribute("aria-pressed", "true");
   const horizon = page.getByRole("group", { name: "Local horizon" });
   await expect(horizon).toContainText("Tokyo · Local horizon");
   await horizon.getByRole("button", { name: "Look east" }).click();
   await expect(horizon).toContainText("Facing E · 90°");
-  const slider = sky.getByRole("slider", { name: "City local time" });
   const time = sky.locator("time");
   await slider.press("Home");
   const sunset = await time.getAttribute("datetime");

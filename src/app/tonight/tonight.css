@@ -78,6 +78,9 @@
   }
 }
 @media (max-width: 599px) and (max-height: 670px) {
+  .zones:has(.tonight-invitation) .story-dock-host {
+    display: none;
+  }
   .observatory-intro[data-tonight]:has(.tonight-invitation) {
     gap: 8px;
   }
@@ -87,6 +90,9 @@
   }
   .tonight-invitation :is(p, .observatory-actions) {
     margin-top: 8px;
+  }
+  .tonight-invitation .tonight-invitation-context {
+    max-width: none;
   }
 }
 
