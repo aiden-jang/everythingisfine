@@ -92,11 +92,9 @@ test("Shadow Chase restores the selected city’s eclipse view without saving th
     "aria-pressed",
     "true",
   );
-  await expect(panel.locator(".shadow-timeline time")).toHaveAttribute(
-    "datetime",
-    new Date(at).toISOString(),
-  );
-  await expect(panel.getByRole("button", { name: "Play", exact: true })).toBeVisible();
+  const playback = panel.getByRole("group", { name: "Eclipse playback", exact: true });
+  await expect(playback.locator("time")).toHaveAttribute("datetime", new Date(at).toISOString());
+  await expect(playback.getByRole("button", { name: "Play", exact: true })).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem("eif.sky-city"))).toBeNull();
 });
 
